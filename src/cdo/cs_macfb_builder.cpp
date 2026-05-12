@@ -33,8 +33,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cfloat>
-#include <climits>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -234,16 +232,16 @@ cs_macfb_builder_reset(cs_macfb_builder_t *macb)
   for (short int f = 0; f < 6; f++) {
     macb->f_axis[f]     = CS_FLAG_N_AXIS;
     macb->f_sgn_axis[f] = 0;
-    macb->f_vol_cv[f]   = -DBL_MAX;
-    macb->f_h_cv[f]     = -DBL_MAX;
+    macb->f_vol_cv[f]   = -cs_dbl_max;
+    macb->f_h_cv[f]     = -cs_dbl_max;
     macb->f_opp_idx[f]  = -1;
 
     for (short int fj = 0; fj < 4; fj++) {
       macb->f2f_idx[f][fj]       = -1;
       macb->f2f_ids[f][fj]       = -1;
-      macb->f2f_h[f][fj]         = -DBL_MAX;
-      macb->f2f_surf_cv_c[f][fj] = -DBL_MAX;
-      macb->dir_values[f][fj]    = -DBL_MAX;
+      macb->f2f_h[f][fj]         = -cs_dbl_max;
+      macb->f2f_surf_cv_c[f][fj] = -cs_dbl_max;
+      macb->dir_values[f][fj]    = -cs_dbl_max;
       macb->f2fo_idx[f][fj][0]   = -1;
       macb->f2fo_idx[f][fj][1]   = -1;
       macb->f2e_ids[f][fj]       = -1;

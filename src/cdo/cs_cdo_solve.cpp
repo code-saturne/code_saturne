@@ -31,18 +31,15 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <limits>
-#include <cstdlib>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "alge/cs_blas.h"
 #include "base/cs_array.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 
@@ -76,9 +73,6 @@
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_SOLVE_DBG > 1
 static int cs_cdo_solve_dbg_counter = 0;  /* Id number for debug */
 #endif
-
-#define DBL_MIN std::numeric_limits<double>::min()
-#define DBL_MAX std::numeric_limits<double>::max()
 
 /*============================================================================
  * Private function prototypes
@@ -178,7 +172,7 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
   case CS_PARAM_RESNORM_NORM2_RHS:
     *normalization = cs_dot_xx(rhs_size, rhs);
     cs::parall::sum(*normalization);
-    if (*normalization < 100*DBL_MIN)
+    if (*normalization < 100 * cs_dbl_min)
       *normalization = 1.0;
     else
       *normalization = sqrt((*normalization));
@@ -186,7 +180,7 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
 
   case CS_PARAM_RESNORM_FILTERED_RHS:
     cs::parall::sum(*normalization);
-    if (*normalization < 100*DBL_MIN)
+    if (*normalization < 100 * cs_dbl_min)
       *normalization = 1.0;
     else
       *normalization = sqrt((*normalization));
@@ -194,7 +188,7 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
 
   case CS_PARAM_RESNORM_WEIGHTED_RHS:
     cs::parall::sum(*normalization);
-    if (*normalization < 100*DBL_MIN)
+    if (*normalization < 100 * cs_dbl_min)
       *normalization = 1.0;
     else
       *normalization = sqrt((*normalization)/vol_tot);
@@ -321,7 +315,7 @@ cs_cdo_solve_scalar_cell_system(cs_lnum_t                n_dofs,
   }
 
   sinfo.n_it = 0;
-  sinfo.res_norm = DBL_MAX;
+  sinfo.res_norm = cs_dbl_max;
   sinfo.rhs_norm = normalization;
 
   const cs_halo_t  *halo = cs_matrix_get_halo(matrix);
@@ -444,7 +438,7 @@ cs_cdo_solve_scalar_system(cs_lnum_t               n_scatter_dofs,
   }
 
   sinfo.n_it = 0;
-  sinfo.res_norm = DBL_MAX;
+  sinfo.res_norm = cs_dbl_max;
   sinfo.rhs_norm = (normalization > 0) ? normalization : 1.0;
 
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
@@ -555,7 +549,7 @@ cs_cdo_solve_vector_system(cs_lnum_t               n_scatter_elts,
   cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
 
   sinfo.n_it = 0;
-  sinfo.res_norm = DBL_MAX;
+  sinfo.res_norm = cs_dbl_max;
   sinfo.rhs_norm = normalization;
 
   cs_sles_convergence_state_t code = cs_sles_solve(sles,

@@ -236,7 +236,7 @@ cs_enforcement_define_at_edges(const cs_cdo_connect_t     *connect,
 /*!
  * \brief  Build the cell-wise value to enforce
  *
- * \param[in]      forced_values     values to enforce or FLT_MAX
+ * \param[in]      forced_values     values to enforce or cs_dbl_max
  * \param[in, out] csys              pointer to a cs_cell_sys_t structure
  * \param[in, out] cw_forced_values  local values to enforce
  *

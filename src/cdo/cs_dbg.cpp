@@ -29,19 +29,15 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-#include "bft/bft_error.h"
-
 #include "alge/cs_matrix_util.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

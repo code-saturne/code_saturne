@@ -29,8 +29,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <limits>
-
 #include "alge/cs_matrix.h"
 #include "base/cs_base.h"
 #include "base/cs_defs.h"
@@ -70,7 +68,7 @@ cs_dbg_check_hmg_dirichlet_cw(const char           *fname,
 {
   for (short int i = 0; i < csys->n_dofs; i++) {
     if (csys->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
-      if (cs::abs(csys->dir_values[i]) > 100*std::numeric_limits<double>::min())
+      if (cs::abs(csys->dir_values[i]) > 100. * cs_dbl_min)
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid value for a homogeneous Dirichlet condition",
                   fname);

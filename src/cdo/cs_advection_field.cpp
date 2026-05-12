@@ -31,23 +31,18 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cctype>
-#include <cfloat>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "base/cs_array.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_field.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_volume_zone.h"
 #include "base/cs_zone.h"
 #include "cdo/cs_cdo_toolbox.h"
@@ -3281,7 +3276,7 @@ cs_advection_get_peclet(const cs_adv_field_t *adv,
       if (_dp3(adv_c.unitv, ptydir) > 0)
         peclet_c = hc * adv_c.meas / _dp3(adv_c.unitv, ptydir);
       else
-        peclet_c = FLT_MAX;
+        peclet_c = cs_dbl_max;
     }
 
     peclet[c_id] = peclet_c;

@@ -31,7 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cfloat>
 #include <cstring>
 
 /*----------------------------------------------------------------------------
@@ -1271,7 +1270,7 @@ cs_iter_algo_update_residual(cs_iter_algo_t      *algo,
 {
   if (algo == nullptr)
     return;
-  assert(res > -DBL_MIN);
+  assert(res > -cs_dbl_min);
 
   if (algo->type & CS_ITER_ALGO_DEFAULT) {
 

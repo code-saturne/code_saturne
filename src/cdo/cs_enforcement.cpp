@@ -32,7 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cfloat>
 #include <cstring>
 
 /*----------------------------------------------------------------------------
@@ -376,7 +375,7 @@ cs_enforcement_define_at_vertices(const cs_cdo_connect_t     *connect,
 
   CS_MALLOC(values, stride * n_vertices, cs_real_t);
   for (cs_lnum_t i = 0; i < stride*n_vertices; i++)
-    values[i] = FLT_MAX; /* By default, max value */
+    values[i] = cs_dbl_max; /* By default, max value */
 
   /* Define the enforcement value for each vertex related to an enforcement */
 
@@ -466,7 +465,7 @@ cs_enforcement_define_at_vertices(const cs_cdo_connect_t     *connect,
   /* Parallel synchronization: If there is a conflict between two definitions
      or if a DoF at the parallel interface is defined and its corresponding one
      is not defined, one takes the min. values (since one initializes with
-     FLT_MAX). */
+     cs_dbl_max). */
 
   if (connect->vtx_ifs != nullptr)
     cs_interface_set_min(connect->vtx_ifs,
@@ -505,7 +504,7 @@ cs_enforcement_define_at_faces(const cs_cdo_connect_t     *connect,
 
   CS_MALLOC(values, stride * n_faces, cs_real_t);
   for (cs_lnum_t i = 0; i < stride*n_faces; i++)
-    values[i] = FLT_MAX; /* By default, max value */
+    values[i] = cs_dbl_max; /* By default, max value */
 
   /* Define the enforcement value for each face related to an enforcement */
 
@@ -595,7 +594,7 @@ cs_enforcement_define_at_faces(const cs_cdo_connect_t     *connect,
   /* Parallel synchronization: If there is a conflict between two definitions
      or if a DoF at the parallel interface is defined and its corresponding one
      is not defined, one takes the min. values (since one initializes with
-     FLT_MAX). */
+     cs_dbl_max). */
 
   if (connect->face_ifs != nullptr)
     cs_interface_set_min(connect->face_ifs,
@@ -634,7 +633,7 @@ cs_enforcement_define_at_edges(const cs_cdo_connect_t     *connect,
 
   CS_MALLOC(values, stride * n_edges, cs_real_t);
   for (cs_lnum_t i = 0; i < stride*n_edges; i++)
-    values[i] = FLT_MAX; /* By default, max value */
+    values[i] = cs_dbl_max; /* By default, max value */
 
   /* Define the enforcement value for each vertex related to an enforcement */
 
@@ -724,7 +723,7 @@ cs_enforcement_define_at_edges(const cs_cdo_connect_t     *connect,
   /* Parallel synchronization: If there is a conflict between two definitions
      or if a DoF at the parallel interface is defined and its corresponding one
      is not defined, one takes the min. values (since one initializes with
-     FLT_MAX). */
+     cs_dbl_max). */
 
   if (connect->edge_ifs != nullptr)
     cs_interface_set_min(connect->edge_ifs,
@@ -741,7 +740,7 @@ cs_enforcement_define_at_edges(const cs_cdo_connect_t     *connect,
 /*!
  * \brief  Build the cell-wise value to enforce
  *
- * \param[in]      forced_values     values to enforce or FLT_MAX
+ * \param[in]      forced_values     values to enforce or cs_dbl_max
  * \param[in, out] csys              pointer to a cs_cell_sys_t structure
  * \param[in, out] cw_forced_values  local values to enforce
  *
@@ -773,12 +772,10 @@ cs_enforcement_dofs_cw(const cs_real_t      *forced_values,
     if (!cs_cdo_bc_is_circulation(csys->dof_flag[i])) {
 
       cs_real_t  _val = forced_values[csys->dof_ids[i]];
-      if (_val < FLT_MAX) {
-
+      if (_val < cs_dbl_max) {
         cw_forced_values[i] = _val;
         has_enforcement = true;
         csys->dof_is_forced[i] = true;
-
       }
 
     } /* DoF is not associated to a Dirichlet BCs */

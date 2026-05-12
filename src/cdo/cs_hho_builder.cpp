@@ -33,16 +33,16 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-#include "bft/bft_error.h"
-
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_time_step.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

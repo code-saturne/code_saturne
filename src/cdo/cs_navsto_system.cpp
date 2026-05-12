@@ -31,7 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cstdlib>
 #include <cstring>
 
 #if defined(HAVE_MPI)

@@ -92,6 +92,12 @@ static constexpr cs_real_t cs_math_zero_threshold = std::numeric_limits<float>::
 /*! DBL_EPSILON (machine zero) */
 static constexpr double cs_dbl_epsilon = std::numeric_limits<double>::epsilon();
 
+/*! DBL_MIN */
+static constexpr double cs_dbl_min = std::numeric_limits<double>::min();
+
+/*! DBL_MAX */
+static constexpr double cs_dbl_max = std::numeric_limits<double>::max();
+
 /*! epsilon \f$ 10^{-12}\f$ */
 static constexpr cs_real_t cs_math_epzero = 1e-12;
 

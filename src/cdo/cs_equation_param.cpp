@@ -33,8 +33,6 @@
 
 #include <cassert>
 #include <cctype> /* tolower() function */
-#include <cstdlib>
-#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -1506,7 +1504,7 @@ cs_equation_param_set(cs_equation_param_t *eqp,
 
   char val[CS_BASE_STRING_LEN];
   for (size_t i = 0; i < strlen(keyval); i++)
-    val[i] = tolower(keyval[i]);
+    val[i] = std::tolower(keyval[i]);
   val[strlen(keyval)] = '\0';
 
   /* Set the couple (key,keyval) */

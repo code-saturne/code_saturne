@@ -32,10 +32,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cmath>
-#include <cfloat>
-#include <cstdio>
-#include <cstdlib>
 
 /*----------------------------------------------------------------------------
  * Local headers

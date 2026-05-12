@@ -31,10 +31,6 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <cstdio>
-#include <cstdlib>
-#include <cmath>
-#include <cfloat>
 #include <cassert>
 #include <cstring>
 
@@ -42,30 +38,29 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "alge/cs_blas.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "base/cs_timer.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_toolbox.h"
-#if defined(DEBUG) && !defined(NDEBUG)
-#include "cdo/cs_dbg.h"
-#endif
+#include "cdo/cs_cdofb_vecteq.h"
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_priv.h"
 #include "cdo/cs_evaluate.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
 #include "cdo/cs_navsto_coupling.h"
 #include "cdo/cs_navsto_param.h"
 #include "cdo/cs_navsto_system.h"
-#include "cdo/cs_cdofb_vecteq.h"
-#include "base/cs_parall.h"
-#include "base/cs_post.h"
 #include "cdo/cs_reco.h"
 #include "cdo/cs_sdm.h"
-#include "base/cs_timer.h"
 
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cdo/cs_dbg.h"
+#endif
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/

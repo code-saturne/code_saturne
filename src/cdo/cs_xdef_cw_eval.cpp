@@ -31,11 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cctype>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers

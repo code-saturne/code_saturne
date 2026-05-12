@@ -31,7 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cstdlib>
 #include <cstring>
 
 #if defined(HAVE_MPI)
@@ -43,7 +42,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_mem.h"
-
 #include "base/cs_post.h"
 #include "base/cs_wall_functions.h"
 #include "cdo/cs_reco.h"

@@ -32,22 +32,18 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "alge/cs_sles.h"
 #include "base/cs_array.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
 #include "base/cs_search.h"

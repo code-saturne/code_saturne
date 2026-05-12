@@ -36,13 +36,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cctype>
-#include <cfloat>
-#include <clocale>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers

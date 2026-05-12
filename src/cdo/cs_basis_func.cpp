@@ -29,15 +29,13 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cmath>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_scheme_geometry.h"
 

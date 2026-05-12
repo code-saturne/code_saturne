@@ -31,11 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cctype>
-#include <cfloat>
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -45,12 +40,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "alge/cs_sles.h"
 #include "base/cs_array.h"
 #include "base/cs_field_default.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "base/cs_post.h"
@@ -3005,7 +3000,7 @@ cs_equation_solve_deprecated(const cs_mesh_t *mesh,
   cs_timer_t t0 = cs_timer_time();
 
   int                     n_iters  = 0;
-  double                  residual = DBL_MAX;
+  double                  residual = cs_dbl_max;
   cs_sles_t              *sles     = cs_sles_find_or_add(eq->field_id, nullptr);
   cs_field_t             *fld      = cs_field_by_id(eq->field_id);
   cs_equation_builder_t  *eqb      = eq->builder;
@@ -3028,7 +3023,7 @@ cs_equation_solve_deprecated(const cs_mesh_t *mesh,
   cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &s_info);
 
   s_info.n_it     = 0;
-  s_info.res_norm = DBL_MAX;
+  s_info.res_norm = cs_dbl_max;
   s_info.rhs_norm = 1.0; /* No renormalization by default (TODO) */
 
   const cs_matrix_t *matrix = cs_cdo_system_get_matrix(sh, 0);

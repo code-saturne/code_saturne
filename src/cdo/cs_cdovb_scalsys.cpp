@@ -33,20 +33,15 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "alge/cs_matrix.h"
 #include "alge/cs_sles.h"
 #include "base/cs_array.h"
+#include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_cdo_system.h"

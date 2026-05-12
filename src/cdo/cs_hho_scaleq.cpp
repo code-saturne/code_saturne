@@ -32,10 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cfloat>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 
 /*----------------------------------------------------------------------------
@@ -398,7 +394,7 @@ _shho_init_cell_system(const cs_cell_mesh_t         *cm,
 #if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
     for (short int f = 0; f < eqc->n_face_dofs*cm->n_fc; f++) {
       if (csys->dof_flag[f] & CS_CDO_BC_HMG_DIRICHLET)
-        if (fabs(csys->dir_values[f]) > 10*DBL_MIN)
+        if (fabs(csys->dir_values[f]) > 10 * cs_dbl_min)
           bft_error(__FILE__, __LINE__, 0,
                     " %s: Invalid enforcement of Dirichlet BCs on faces",
                     __func__);

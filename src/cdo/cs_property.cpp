@@ -31,11 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cctype>
-#include <cfloat>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 
 /*----------------------------------------------------------------------------
@@ -464,7 +459,7 @@ _set_pty_state_flag(cs_property_t *pty)
     bool is_uniform = true;
     bool is_steady = true;
     bool unset = true;
-    double _value = FLT_MAX, eps = 100*cs_math_zero_threshold;
+    double _value = cs_dbl_max, eps = 100 * cs_math_zero_threshold;
 
     for (int id = 0; id < pty->n_definitions; id++) {
 

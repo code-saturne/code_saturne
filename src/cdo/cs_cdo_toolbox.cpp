@@ -31,17 +31,15 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cstdlib>
 #include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "base/cs_boundary_zone.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "cdo/cs_cdo_local.h"

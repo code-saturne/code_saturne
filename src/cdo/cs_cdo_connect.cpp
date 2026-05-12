@@ -32,14 +32,11 @@
 
 #include <cassert>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "fvm/fvm_io_num.h"
 
 #include "base/cs_array.h"
 #include "base/cs_log.h"
@@ -51,6 +48,7 @@
 #include "base/cs_volume_zone.h"
 #include "cdo/cs_flag.h"
 #include "cdo/cs_param_cdo.h"
+#include "fvm/fvm_io_num.h"
 #include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------

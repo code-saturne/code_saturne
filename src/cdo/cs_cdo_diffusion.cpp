@@ -32,18 +32,15 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_reco.h"

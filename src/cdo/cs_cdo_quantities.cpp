@@ -32,27 +32,23 @@
 
 #include <array>
 #include <cassert>
-#include <cfloat>
-#include <climits>
-#include <cmath>
 #include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
-#include "base/cs_mem.h"
-
 #include "base/cs_array.h"
 #include "base/cs_array_reduce.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
-#include "cdo/cs_param_cdo.h"
 #include "base/cs_prototypes.h"
+#include "bft/bft_printf.h"
+#include "cdo/cs_param_cdo.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -178,8 +174,8 @@ _create_cdo_quantities(void)
 
   /* Cell-based quantities */
 
-  cdoq->cell_info.h_min = cdoq->cell_info.meas_min =  DBL_MAX;
-  cdoq->cell_info.h_max = cdoq->cell_info.meas_max = -DBL_MAX;
+  cdoq->cell_info.h_min = cdoq->cell_info.meas_min = cs_dbl_max;
+  cdoq->cell_info.h_max = cdoq->cell_info.meas_max = -cs_dbl_max;
 
   cdoq->n_cells = 0;
   cdoq->n_g_cells = 0;
@@ -188,8 +184,8 @@ _create_cdo_quantities(void)
 
   /* Face-based quantities */
 
-  cdoq->face_info.h_min = cdoq->face_info.meas_min = DBL_MAX;
-  cdoq->face_info.h_max = cdoq->face_info.meas_max = -DBL_MAX;
+  cdoq->face_info.h_min = cdoq->face_info.meas_min = cs_dbl_max;
+  cdoq->face_info.h_max = cdoq->face_info.meas_max = -cs_dbl_max;
 
   cdoq->n_faces = cdoq->n_i_faces = cdoq->n_b_faces = 0;
   cdoq->n_g_faces = 0;
@@ -198,8 +194,8 @@ _create_cdo_quantities(void)
 
   /* Edge-based quantities */
 
-  cdoq->edge_info.h_min = cdoq->edge_info.meas_min = DBL_MAX;
-  cdoq->edge_info.h_max = cdoq->edge_info.meas_max = -DBL_MAX;
+  cdoq->edge_info.h_min = cdoq->edge_info.meas_min = cs_dbl_max;
+  cdoq->edge_info.h_max = cdoq->edge_info.meas_max = -cs_dbl_max;
 
   cdoq->n_edges = 0;
   cdoq->n_g_edges = 0;
@@ -1308,7 +1304,7 @@ _update_subdiv_face_quantities(cs_lnum_t           n_faces,
       cs_real_t  ref_xf[3], delta_xf[3];
 
       int    iter = 0;
-      double tol  = FLT_MAX;
+      double tol  = cs_dbl_max;
 
       const int        n_max_iter = 10;
       const double     tol_eps    = 1e-9;

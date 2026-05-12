@@ -38,13 +38,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-#include "bft/bft_printf.h"
-
 #include "base/cs_array.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_field_operator.h"
+#include "base/cs_mem.h"
+#include "bft/bft_printf.h"
 #include "cdo/cs_cdo_toolbox.h"
 #include "cdo/cs_cdo_turbulence.h"
 #include "cdo/cs_evaluate.h"

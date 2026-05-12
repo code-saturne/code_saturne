@@ -33,18 +33,16 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cfloat>
-#include <climits>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-#include "bft/bft_printf.h"
-
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_param_types.h"
+#include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -676,16 +674,16 @@ cs_cell_mesh_t::reset()
   /* Cell information */
 
   c_id  = -1;
-  xc[0] = xc[1] = xc[2] = -DBL_MAX;
-  vol_c                 = -DBL_MAX;
-  diam_c                = -DBL_MAX;
+  xc[0] = xc[1] = xc[2] = -cs_dbl_max;
+  vol_c                 = -cs_dbl_max;
+  diam_c                = -cs_dbl_max;
 
   /* Vertex information */
 
   for (short int v = 0; v < n_max_vbyc; v++) {
     v_ids[v]  = -1;
-    wvc[v]    = -DBL_MAX;
-    xv[3 * v] = xv[3 * v + 1] = xv[3 * v + 2] = -DBL_MAX;
+    wvc[v]    = -cs_dbl_max;
+    xv[3 * v] = xv[3 * v + 1] = xv[3 * v + 2] = -cs_dbl_max;
   }
 
   /* Edge information */
@@ -693,14 +691,14 @@ cs_cell_mesh_t::reset()
   for (short int e = 0; e < n_max_ebyc; e++) {
     e_ids[e]     = -1;
     e2v_sgn[e]   = 0;
-    pvol_e[e]    = -DBL_MAX;
-    edge[e].meas = dface[e].meas = -DBL_MAX;
-    edge[e].unitv[0] = dface[e].unitv[0] = -DBL_MAX;
-    edge[e].unitv[1] = dface[e].unitv[1] = -DBL_MAX;
-    edge[e].unitv[2] = dface[e].unitv[2] = -DBL_MAX;
-    edge[e].center[0]                    = -DBL_MAX;
-    edge[e].center[1]                    = -DBL_MAX;
-    edge[e].center[2]                    = -DBL_MAX;
+    pvol_e[e]    = -cs_dbl_max;
+    edge[e].meas = dface[e].meas = -cs_dbl_max;
+    edge[e].unitv[0] = dface[e].unitv[0] = -cs_dbl_max;
+    edge[e].unitv[1] = dface[e].unitv[1] = -cs_dbl_max;
+    edge[e].unitv[2] = dface[e].unitv[2] = -cs_dbl_max;
+    edge[e].center[0]                    = -cs_dbl_max;
+    edge[e].center[1]                    = -cs_dbl_max;
+    edge[e].center[2]                    = -cs_dbl_max;
   }
 
   /* Face information */
@@ -708,16 +706,16 @@ cs_cell_mesh_t::reset()
   for (short int f = 0; f < n_max_fbyc; f++) {
     f_ids[f]     = -1;
     f_sgn[f]     = 0;
-    f_diam[f]    = -DBL_MAX;
-    hfc[f]       = -DBL_MAX;
-    pvol_f[f]    = -DBL_MAX;
-    face[f].meas = dedge[f].meas = -DBL_MAX;
-    face[f].unitv[0] = dedge[f].unitv[0] = -DBL_MAX;
-    face[f].unitv[1] = dedge[f].unitv[1] = -DBL_MAX;
-    face[f].unitv[2] = dedge[f].unitv[2] = -DBL_MAX;
-    face[f].center[0]                    = -DBL_MAX;
-    face[f].center[1]                    = -DBL_MAX;
-    face[f].center[2]                    = -DBL_MAX;
+    f_diam[f]    = -cs_dbl_max;
+    hfc[f]       = -cs_dbl_max;
+    pvol_f[f]    = -cs_dbl_max;
+    face[f].meas = dedge[f].meas = -cs_dbl_max;
+    face[f].unitv[0] = dedge[f].unitv[0] = -cs_dbl_max;
+    face[f].unitv[1] = dedge[f].unitv[1] = -cs_dbl_max;
+    face[f].unitv[2] = dedge[f].unitv[2] = -cs_dbl_max;
+    face[f].center[0]                    = -cs_dbl_max;
+    face[f].center[1]                    = -cs_dbl_max;
+    face[f].center[2]                    = -cs_dbl_max;
   }
 
   /* face --> edges connectivity */
@@ -729,8 +727,8 @@ cs_cell_mesh_t::reset()
     e2v_ids[i] = e2f_ids[i] = -1;
     f2e_ids[i] = f2v_ids[i] = -1;
     f2e_sgn[i]              = 0;
-    tef[i] = sefc[i].meas = -DBL_MAX;
-    sefc[i].unitv[0] = sefc[i].unitv[1] = sefc[i].unitv[2] = -DBL_MAX;
+    tef[i] = sefc[i].meas = -cs_dbl_max;
+    sefc[i].unitv[0] = sefc[i].unitv[1] = sefc[i].unitv[2] = -cs_dbl_max;
   }
 };
 
@@ -1423,9 +1421,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       short int *vtag = cs_cdo_local_kbuf[cs_get_thread_id()];
 
       for (short int f = 0; f < cm->n_fc; f++) {
-
-        double fbox[6]
-          = { DBL_MAX, DBL_MAX, DBL_MAX, -DBL_MAX, -DBL_MAX, -DBL_MAX };
+        double fbox[6] = { cs_dbl_max,  cs_dbl_max,  cs_dbl_max,
+                           -cs_dbl_max, -cs_dbl_max, -cs_dbl_max };
 
         /* Reset vtag */
 

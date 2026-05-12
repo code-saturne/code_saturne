@@ -33,11 +33,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cfloat>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
 #if defined(HAVE_OPENMP)
 #include <omp.h>

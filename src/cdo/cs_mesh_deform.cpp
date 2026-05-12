@@ -31,11 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <climits>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
