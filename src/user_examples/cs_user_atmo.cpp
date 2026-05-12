@@ -70,7 +70,7 @@ cs_user_atmo_1d_rad_prf([[maybe_unused]] cs_real_t   preray[],
   /*! [humid_aerosols_atmo] */
 
   cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
-  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+  const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
 
   cs_real_t *zray = at_1d_rad->z;
 
