@@ -1426,8 +1426,9 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 
   /* Prediction ared defined in Fabien Huvelin PhD*/
 
+  constexpr bool use_pred = false;
   /* separate prediction for explicit/None cases */
-  if (cpl->s_it_id == 0) {
+  if (cpl->s_it_id == 0 && use_pred) {
     /* Adams-Bashforth scheme of order 2 if aexxst = 1, bexxst = 0.5 */
     /* Euler explicit scheme of order 1 if aexxst = 1, bexxst = 0 */
     const cs_real_t dt_curr = cs_glob_time_step->dt[0];

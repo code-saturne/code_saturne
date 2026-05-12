@@ -303,6 +303,7 @@ _bface_to_vertex_strided(cs_face_to_vertex_type_t method,
 
   ctx.parallel_for(n_v_values,
                    [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) { v_var[v_id] = 0.; });
+  ctx.wait();
 
   switch (method) {
     case CS_FACE_TO_VERTEX_UNWEIGHTED: {
@@ -337,6 +338,7 @@ _bface_to_vertex_strided(cs_face_to_vertex_type_t method,
           for (cs_lnum_t k = 0; k < stride; k++)
             v_var[v_id * stride + k] *= wb[v_id];
         });
+        ctx.wait();
       }
       else {
         cs_real_t *v_w;
@@ -394,6 +396,7 @@ _bface_to_vertex_strided(cs_face_to_vertex_type_t method,
       ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
         v_w[v_id] = 0.;
       });
+      ctx.wait();
 
       if (b_weight == nullptr) {
         ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_id) {
