@@ -2354,7 +2354,6 @@ cs_flux_through_surface(const char         *scalar_name,
                            1, /* inc */
                            grad);
 
-  cs_real_t *val_f_g_nr = nullptr;
   cs_real_t *flux_d_nr = nullptr;
 
   // for the first iteration before the time loop
@@ -2363,11 +2362,10 @@ cs_flux_through_surface(const char         *scalar_name,
     cs_equation_param_t eqp_loc = *eqp;
     eqp_loc.b_diff_flux_rc = 0; // no reconstruction
 
-    CS_MALLOC_HD(val_f_g_nr, n_b_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(flux_d_nr, n_b_faces, cs_real_t, cs_alloc_mode);
-
-    f->bc_coeffs->val_f = val_f_g_nr;
-    f->bc_coeffs->flux_diff = flux_d_nr;
+    if (f->bc_coeffs->val_f == nullptr)
+      CS_MALLOC_HD(f->bc_coeffs->val_f, n_b_faces, cs_real_t, cs_alloc_mode);
+    if (f->bc_coeffs->flux_diff == nullptr)
+      CS_MALLOC_HD(f->bc_coeffs->flux_diff, n_b_faces, cs_real_t, cs_alloc_mode);
 
     cs_boundary_conditions_update_bc_coeff_face_values
       (ctx, f, f->bc_coeffs, 1, // inc
