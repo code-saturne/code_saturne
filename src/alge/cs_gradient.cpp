@@ -3365,6 +3365,9 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   cs_cocg_6_t  *restrict cocg
     = _get_cell_cocg_lsq(m, halo_type, ctx.use_gpu(), fvq);
 
+  if (cs_glob_timer_kernels_flag > 0)
+    t_cocg = std::chrono::high_resolution_clock::now();
+
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
   /*---------------------------------------------------------------------*/
 
