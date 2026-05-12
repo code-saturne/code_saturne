@@ -86,7 +86,11 @@ typedef enum {
 
 /* Numerical constants */
 
+/*! Smallest measurable difference between two floats */
 static constexpr cs_real_t cs_math_zero_threshold = std::numeric_limits<float>::min();
+
+/*! DBL_EPSILON (machine zero) */
+static constexpr double cs_dbl_epsilon = std::numeric_limits<double>::epsilon();
 
 /*! epsilon \f$ 10^{-12}\f$ */
 static constexpr cs_real_t cs_math_epzero = 1e-12;

@@ -146,7 +146,7 @@ _check_stiffness(cs_lnum_t             c_id,
 
     print_val += fabs(rsum);
 
-    if (rsum > 100*DBL_EPSILON) {
+    if (rsum > 100*cs_dbl_epsilon) {
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_DEFAULT, " %s: row %d Row sum = %5.3e > 0 !\n",
                     __func__, i, rsum);
@@ -222,7 +222,7 @@ _check_vector_hodge(cs_lnum_t                c_id,
     for (int i = 0; i < hmat->n_rows; i++)
       err += fabs(ref[i] - h_in[i]);
     print_val += err;
-    if (err > 100*DBL_EPSILON) {
+    if (err > 100*cs_dbl_epsilon) {
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_DEFAULT,
                     " %s: err = %5.3e, dim = %d\n", __func__, err, dim);

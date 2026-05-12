@@ -422,7 +422,7 @@ cs_compute_grd_ve(const short int      v1,
      Height from this plane to the vertex v1 */
   cs_math_3_cross_product(uvc[v2], deq.unitv, unormal);
   hv = lvc[v1] * _dp3(uvc[v1], unormal);
-  assert(fabs(hv) > DBL_EPSILON); /* Sanity check */
+  assert(fabs(hv) > cs_dbl_epsilon); /* Sanity check */
 
   const double  ohv1 = 1/hv;
   for (int k = 0; k < 3; k++) grd_v1[k] = unormal[k] * ohv1;
@@ -432,7 +432,7 @@ cs_compute_grd_ve(const short int      v1,
      Height from this plane to the vertex v2 */
   cs_math_3_cross_product(uvc[v1], deq.unitv, unormal);
   hv = lvc[v2] * _dp3(uvc[v2], unormal);
-  assert(fabs(hv) > DBL_EPSILON); /* Sanity check */
+  assert(fabs(hv) > cs_dbl_epsilon); /* Sanity check */
 
   const double  ohv2 = 1/hv;
   for (int k = 0; k < 3; k++) grd_v2[k] = unormal[k] * ohv2;

@@ -406,7 +406,7 @@ _fill_histogram_classes_u_bandwidth(user_histogram_t  *histogram,
 
   cs_lnum_t n_bins = n_bins_max;
 
-  if (*bandwidth > DBL_EPSILON) {
+  if (*bandwidth > cs_dbl_epsilon) {
     n_bins = (cs_lnum_t)((max - min) / (*bandwidth));
   }
   else
@@ -567,7 +567,7 @@ _compute_histogram(user_histogram_t  *histogram,
   bandwidth_update
     = IQR / (2 * 0.75) * pow(24.0 * pow(3.14, 0.5) / n_gelts_sample, 1.0 / 3.0);
 
-  if (bandwidth_update > DBL_EPSILON) {
+  if (bandwidth_update > cs_dbl_epsilon) {
     n_bins = (cs_lnum_t)((max - min) / (bandwidth_update));
   }
   else
@@ -583,7 +583,7 @@ _compute_histogram(user_histogram_t  *histogram,
     = cs::abs(bandwidth - bandwidth_update) / bandwidth;
 
   /*perform a loop to try top optimize bandwidth*/
-  while (n_loop < 10 && bandwidth_variation > 0.05 && IQR > DBL_EPSILON
+  while (n_loop < 10 && bandwidth_variation > 0.05 && IQR > cs_dbl_epsilon
          && IQR_var > 0.02 && histogram->n_bins < histogram->n_bins_max) {
 
     bandwidth = bandwidth_update;
@@ -609,7 +609,7 @@ _compute_histogram(user_histogram_t  *histogram,
     min    = histogram->min;
     max    = histogram->max;
 
-    if (bandwidth_update > DBL_EPSILON) {
+    if (bandwidth_update > cs_dbl_epsilon) {
       n_bins = (cs_lnum_t)((max - min) / (bandwidth_update));
     }
     else
@@ -658,7 +658,7 @@ _output_histogram_ot([[maybe_unused]]user_histogram_t  *histogram,
     min_li    = cs::min(l_i[b_id], min_li);
   }
 
-  if (min_li < DBL_EPSILON * 1e4)
+  if (min_li < cs_dbl_epsilon * 1e4)
     return;
 
   /* Ensure surface histogram is higher than zero */
@@ -1459,7 +1459,7 @@ _set_med_layer_mesh([[maybe_unused]]user_profile_t  *profile,
 
   kv_plane_norm = cs_math_3_norm(kv_plane_vec);
 
-  if (kv_plane_norm > DBL_EPSILON) {
+  if (kv_plane_norm > cs_dbl_epsilon) {
     cos_rot_angle = kv_plane_vec[2] / kv_plane_norm;
     sin_rot_angle = kv_plane_vec[0] / kv_plane_norm;
     rot_angle     = acos(cos_rot_angle);
@@ -1508,7 +1508,7 @@ _set_med_layer_mesh([[maybe_unused]]user_profile_t  *profile,
 
   kv_plane_norm = cs_math_3_norm(kv_plane_vec);
 
-  if (kv_plane_norm > DBL_EPSILON) {
+  if (kv_plane_norm > cs_dbl_epsilon) {
     cos_rot_angle = kv_plane_vec[2] / kv_plane_norm;
     sin_rot_angle = kv_plane_vec[1] / kv_plane_norm;
     rot_angle     = acos(cos_rot_angle);
@@ -1556,7 +1556,7 @@ _set_med_layer_mesh([[maybe_unused]]user_profile_t  *profile,
 
   kv_plane_norm = cs_math_3_norm(kv_plane_vec);
 
-  if (kv_plane_norm > DBL_EPSILON) {
+  if (kv_plane_norm > cs_dbl_epsilon) {
     cos_rot_angle = kv_plane_vec[0] / kv_plane_norm;
     sin_rot_angle = kv_plane_vec[1] / kv_plane_norm;
     rot_angle     = acos(cos_rot_angle);
@@ -2662,7 +2662,7 @@ user_profile_compute(user_profile_t  *profile)
     profile->mean_f_n[l_id] = 0.0;
     profile->sd_f_n[l_id]   = 0.0;
 
-    if ((max_field - min_field) > DBL_EPSILON) {
+    if ((max_field - min_field) > cs_dbl_epsilon) {
       /*Create a sample based on elements belonging to each layer*/
       _create_1d_sample_(profile, &n_elts_sample, sample, weights, l_id);
 
