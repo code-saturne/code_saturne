@@ -89,6 +89,7 @@ dist_model_PYTHON = \
   PerformanceTuningModel.py \
   PorosityModel.py \
   ProfilesModel.py \
+  PyVistaWrapper.py \
   ScriptRunningModel.py \
   SolidModel.py \
   SolutionDomainModel.py \

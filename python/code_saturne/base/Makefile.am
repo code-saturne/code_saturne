@@ -37,6 +37,7 @@ dist_general_PYTHON = \
   cs_config.py \
   cs_control.py \
   cs_create.py \
+  cs_csm_reader.py \
   cs_debug_symbol.py \
   cs_debug_wrapper.py \
   cs_exec_environment.py \

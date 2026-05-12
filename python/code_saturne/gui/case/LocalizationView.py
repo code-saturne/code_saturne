@@ -66,6 +66,10 @@ from code_saturne.model.OutputControlModel import OutputControlModel
 if QT_API == "PYQT6":
     from code_saturne.gui.case import resources_pages_rc
 
+# Mesh viewer import (optional: pyvistaWrapper disables the button if unavailable)
+from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -591,6 +595,90 @@ class BoundaryLocalizationView(LocalizationView):
 
         title = self.tr("Boundary regions definition")
         self.groupBoxLocalization.setTitle(title)
+
+        #  "Visualize zone" button
+        # Allows visualizing boundary faces corresponding to the zone
+        # selected in the table, with OR/AND/NOT expression parsing.
+        self.pushButtonVisuZone = QPushButton(self.tr("Visualiser la zone"))
+        self.pushButtonVisuZone.setToolTip(
+            self.tr("Affiche les faces de bord correspondant "
+                    "à la zone sélectionnée"))
+
+        self.pyvista = pyvistaWrapper()
+        if not self.pyvista.isActive():
+            self.pushButtonVisuZone.setEnabled(False)
+            self.pushButtonVisuZone.setToolTip(
+                self.tr("Requiert : pip install pyvista pyvistaqt"))
+
+        self.groupBoxLocalization.layout().addWidget(self.pushButtonVisuZone)
+        self.pushButtonVisuZone.clicked.connect(self.slotVisuZone)
+
+    def slotVisuZone(self):
+        """
+        Open the visualization window for the selected boundary zone.
+
+        Passes to MeshViewerDialog:
+        - zone_label: zone label (e.g. "Wall")
+        - zone_expr:  selection expression (e.g. "WALL1 or WALL2 or WALL3")
+        - case:       case object to load all zones in the viewer's left
+                      panel (list of already defined zones)
+
+        The expression is parsed by parse_localization(), which supports
+        OR, AND, NOT operators on mesh group names.
+        """
+        import os
+        from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog
+        from code_saturne.model.SolutionDomainModel import SolutionDomainModel
+
+        selected = self.tableView.selectionModel().selectedRows()
+        if not selected:
+            QMessageBox.information(self, self.tr("Visualisation"),
+                self.tr("Please first select a zone from the list."))
+            return
+
+        row   = selected[0].row()
+        label = self.modelLocalization.getData(row, 0)  # zone label
+        expr  = self.modelLocalization.getData(row, 2)  # selection expression
+
+        # Reconstruct .csm file path
+        mdl       = SolutionDomainModel(self.case)
+        mesh_list = mdl.getMeshList()
+
+        if not mesh_list:
+            QMessageBox.warning(self, self.tr("Mesh not found"),
+                self.tr("Case has no associated mesh."))
+            return
+
+        mesh_name, mesh_dir = mesh_list[0]
+        if mesh_dir:
+            mesh_file = os.path.join(mesh_dir, mesh_name)
+        else:
+            case_path = self.case['case_path']
+            mesh_file = os.path.join(case_path, '..', 'MESH', mesh_name)
+            mesh_file = os.path.normpath(mesh_file)
+            if not os.path.isfile(mesh_file):
+                mesh_file = os.path.join(case_path, mesh_name)
+
+        if not os.path.isfile(mesh_file):
+            QMessageBox.warning(self, self.tr("File not found"),
+                self.tr("Impossible to find :\n%s" % mesh_file))
+            return
+
+        if not mesh_file.endswith(".csm"):
+            QMessageBox.information(self, self.tr("Unsupported file format"),
+                self.tr("Mesh view functionnality is only available "
+                        "for .csm files."))
+            return
+
+        # Open in boundary zones mode:
+        # - zone_label/zone_expr: pre-select current zone
+        # - case: allows displaying all zones in left panel
+        # Keep reference to prevent garbage collection (non-modal dialog)
+        self._visu_dlg = MeshViewerDialog(self, mesh_file,
+                                           zone_label=label,
+                                           zone_expr=expr,
+                                           case=self.case)
+        self._visu_dlg.exec_()
 
 
 #-------------------------------------------------------------------------------

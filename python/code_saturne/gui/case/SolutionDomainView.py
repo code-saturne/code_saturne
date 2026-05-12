@@ -56,6 +56,10 @@ from code_saturne.model.SolutionDomainModel import RelOrAbsPath, MeshModel, Solu
 if QT_API == "PYQT6":
     from code_saturne.gui.case import resources_pages_rc
 
+# Mesh viewer import (optional: pyvistaWrapper disables the button if unavailable)
+from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -840,6 +844,29 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.pushButtonAddMesh.clicked.connect(self.slotSearchMesh)
         self.pushButtonDeleteMesh.clicked.connect(self.slotDeleteMesh)
 
+        #  "Visualize mesh" button
+        # Added programmatically into the nested QVBoxLayout of groupBoxMeshes
+        # (structure: groupBoxMeshes → QHBoxLayout → QVBoxLayout → buttons)
+        # Does not modify the .ui — non-intrusive to the existing GUI.
+        self.pushButtonVisuMesh = QPushButton(self.tr("View mesh"))
+        self.pushButtonVisuMesh.setToolTip(
+            self.tr("Show 3D mesh and boundary face groups"))
+
+        self.pyvista = pyvistaWrapper()
+        # Disable button if pyvista/pyvistaqt are not installed
+        if not self.pyvista.isActive():
+            self.pushButtonVisuMesh.setEnabled(False)
+            self.pushButtonVisuMesh.setToolTip(
+                self.tr("Required : pip install pyvista pyvistaqt"))
+
+        # Insertion into the nested QVBoxLayout (under +/- buttons)
+        # groupBoxMeshes.layout() returns a QHBoxLayout
+        # itemAt(0).layout() returns the QVBoxLayout containing the buttons
+        hbox = self.groupBoxMeshes.layout()
+        vbox = hbox.itemAt(0).layout()
+        vbox.addWidget(self.pushButtonVisuMesh)
+        self.pushButtonVisuMesh.clicked.connect(self.slotVisuMesh)
+
         # 3) Initialize meshes list
 
         # 3.1) Meshes default directory
@@ -1261,6 +1288,64 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         self._tableViewLayout()
 
+    def slotVisuMesh(self):
+        """
+        Open the 3D visualization window for the selected mesh.
+
+        Supports only .csm files (Code_Saturne native format).
+        The .csm file is searched in order:
+          1. Explicit mesh_dir (column 7 of mesh model)
+          2. MESH directory relative to the case (../MESH/)
+          3. Case directory directly
+
+        Note: .med files are not supported directly because they do not
+        expose all boundary faces of polyhedra. Use cs_preprocess to convert
+        to .csm beforehand.
+        """
+        selectionModel = self.tableViewMeshes.selectionModel()
+        selected = selectionModel.selectedRows()
+
+        if not selected:
+            QMessageBox.information(self,
+                self.tr("Visualisation"),
+                self.tr("Sélectionnez d'abord un maillage dans la liste."))
+            return
+
+        # Retrieve name and directory of selected mesh
+        row       = selected[0].row()
+        mesh_name = self.modelMeshes.dataMeshes[row][0]
+        mesh_dir  = self.modelMeshes.dataMeshes[row][7]
+
+        # Reconstruct absolute path
+        if mesh_dir:
+            mesh_file = os.path.join(mesh_dir, mesh_name)
+        else:
+            # Search in MESH relative to case
+            case_path = self.case['case_path']
+            mesh_file = os.path.join(case_path, '..', 'MESH', mesh_name)
+            mesh_file = os.path.normpath(mesh_file)
+            if not os.path.isfile(mesh_file):
+                mesh_file = os.path.join(case_path, mesh_name)
+
+        if not os.path.isfile(mesh_file):
+            QMessageBox.warning(self,
+                self.tr("Fichier introuvable"),
+                self.tr("Impossible de trouver le fichier :\n%s" % mesh_file))
+            return
+
+        # Only .csm format is supported
+        if not mesh_file.endswith(".csm"):
+            QMessageBox.information(self,
+                self.tr("Format non supporté"),
+                self.tr("La visualisation est disponible uniquement "
+                        "pour les fichiers .csm.\n\n"
+                        "Pour un fichier .med, lancez d'abord "
+                        "'Mesh quality criteria' pour générer le .csm."))
+            return
+
+        # Open dialog in boundary face groups mode (without zone or probes)
+        dlg = MeshViewerDialog(self, mesh_file)
+        dlg.exec_()
 
     @Slot(int)
     def slotArgRunType(self, idx):

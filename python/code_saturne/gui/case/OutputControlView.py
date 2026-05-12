@@ -67,6 +67,10 @@ from code_saturne.model.LocalizationModel import LocalizationModel
 if QT_API == "PYQT6":
     from code_saturne.gui.case import resources_pages_rc
 
+# Mesh viewer import (optional: pyvistaWrapper disables the button if unavailable)
+from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -1545,6 +1549,31 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.toolButtonDuplicate.clicked.connect(self.slotDuplicateMonitoringPoints)
         self.toolButtonImportCSV.clicked.connect(self.slotImportMonitoringPoints)
 
+        #  "Visualize probes" button
+        # Placed in the parent widget of tableViewPoints (outside
+        # groupBoxProbesDisplay which is disabled by default in Salome).
+        # The button is always active if pyvista is available.
+        self.pyvista = pyvistaWrapper()
+        self.pushButtonVisuProbes = QPushButton(self.tr("View probes"))
+        self.pushButtonVisuProbes.setToolTip(
+            self.tr("Show probes with respect to the 3D mesh.\n"
+                    "Allows adding or removing probes."))
+        self.pushButtonVisuProbes.setEnabled(self.pyvista.isActive())
+        self.pushButtonVisuProbes.clicked.connect(self.slotVisuProbes)
+
+        # Insertion into tableViewPoints parent
+        # (avoids groupBoxProbesDisplay which is often disabled)
+        parent_widget = self.tableViewPoints.parent()
+        if parent_widget and parent_widget.layout():
+            parent_widget.layout().addWidget(self.pushButtonVisuProbes)
+        else:
+            # Fallback: tab main layout
+            self.verticalLayout.addWidget(self.pushButtonVisuProbes)
+
+        # Force button enabled even if groupBox changes state
+        self.groupBoxProbesDisplay.toggled.connect(
+            lambda: self.pushButtonVisuProbes.setEnabled(self.pyvista.isActive()))
+
         # lineEdit
         self.lineEditNTLIST.textChanged[str].connect(self.slotListingFrequency)
         self.lineEditNTLAL.textChanged[str].connect(self.slotNTLAL)
@@ -2921,6 +2950,102 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
             idx = idx + 1
 
+    def slotVisuProbes(self):
+        """
+        Open probe visualization window on the 3D mesh.
+
+        Passes to MeshViewerDialog:
+        - probes: list of (label, x, y, z) from OutputControlModel
+        - case:   for saving modifications to the XML
+
+        The viewer allows:
+        - Visualizing existing probes (3D spheres)
+        - Adding/removing probes interactively
+        - Saving modifications via the "Apply" button
+
+        After saving, the probes_updated signal triggers
+        _refresh_monitoring_table() to update the GUI table.
+        """
+        import os
+        from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog
+        from code_saturne.model.SolutionDomainModel import SolutionDomainModel
+
+        # Retrieve probes from the model
+        probes = []
+        n = self.mdl.getNumberOfMonitoringPoints()
+        for i in range(n):
+            label = str(i + 1)
+            name  = self.mdl.getMonitoringPointName(label)
+            x, y, z = self.mdl.getMonitoringPointCoordinates(label)
+            probes.append((str(name), float(x), float(y), float(z)))
+
+        if not probes:
+            QMessageBox.information(self, self.tr("Visualisation"),
+                self.tr("Aucune sonde définie.\n"
+                        "Ajoutez des sondes avec le bouton '+' avant "
+                        "de les visualiser."))
+            return
+
+        # Reconstruct .csm file path
+        mdl       = SolutionDomainModel(self.case)
+        mesh_list = mdl.getMeshList()
+
+        if not mesh_list:
+            QMessageBox.warning(self, self.tr("Maillage introuvable"),
+                self.tr("Aucun maillage associé au cas."))
+            return
+
+        mesh_name, mesh_dir = mesh_list[0]
+        if mesh_dir:
+            mesh_file = os.path.join(mesh_dir, mesh_name)
+        else:
+            case_path = self.case['case_path']
+            mesh_file = os.path.join(case_path, '..', 'MESH', mesh_name)
+            mesh_file = os.path.normpath(mesh_file)
+            if not os.path.isfile(mesh_file):
+                mesh_file = os.path.join(case_path, mesh_name)
+
+        if not os.path.isfile(mesh_file):
+            QMessageBox.warning(self, self.tr("Fichier introuvable"),
+                self.tr("Impossible de trouver :\n%s" % mesh_file))
+            return
+
+        if not mesh_file.endswith(".csm"):
+            QMessageBox.information(self, self.tr("Format non supporté"),
+                self.tr("La visualisation est disponible uniquement "
+                        "pour les fichiers .csm."))
+            return
+
+        # Open in probes mode with case to allow saving
+        # Keep reference to prevent garbage collection
+        self._visu_dlg = MeshViewerDialog(self, mesh_file,
+                                           probes=probes,
+                                           case=self.case)
+        # Connect update signal to refresh the GUI table
+        self._visu_dlg.probes_updated.connect(self._refresh_monitoring_table)
+        self._visu_dlg.exec_()
+
+    def _refresh_monitoring_table(self):
+        """
+        Refresh probe table after modifications from the viewer.
+
+        Called via the probes_updated signal emitted by MeshViewerDialog
+        after clicking "Apply".
+
+        Uses the same logic as slotDeleteMonitoringPoints:
+        completely clears modelMonitoring then rebuilds it from
+        the XML model (source of truth).
+        """
+        self.modelMonitoring.deleteAllData()
+        for n in range(self.mdl.getNumberOfMonitoringPoints()):
+            num = str(n + 1)
+            name = self.mdl.getMonitoringPointName(num)
+            X, Y, Z = self.mdl.getMonitoringPointCoordinates(num)
+            self.__insertMonitoringPoint(num, name, X, Y, Z)
+
+        # Enable/disable duplicate button based on probe count
+        self.toolButtonDuplicate.setEnabled(
+            self.mdl.getNumberOfMonitoringPoints() > 0)
 
     def __salomeHandlerAddMonitoringPoint(self, name, X, Y, Z):
         self.case['probes'].addProbe(str(name), [X, Y, Z])
