@@ -517,7 +517,9 @@ cs_boundary_conditions_type(bool  init,
      origin), we choose the face whose center is closest to it, so
      as to be mesh numbering (and partitioning) independent. */
 
-  if (nt_cur == nt_prev+1) {
+  bool first_pass = (nt_prev > 0 && nt_cur == nt_prev+1) || nt_cur == 0;
+
+  if (first_pass) {
 
     cs_real_t d0min = cs_math_infinite_r;
 
@@ -610,7 +612,7 @@ cs_boundary_conditions_type(bool  init,
       fluid_props->ixyzp0 = 2;
 
   }
-  else if (fluid_props->ixyzp0 < 0 && nt_cur == nt_prev + 1) {
+  else if (fluid_props->ixyzp0 < 0 && first_pass) {
 
     /* If there are no outlet faces, we search for possible Dirichlets
        specified by the user so as to locate the reference point.
@@ -680,7 +682,7 @@ cs_boundary_conditions_type(bool  init,
          _("\n"
            "Boundary faces with free inlet/outlet detected.\n"
            "Update of reference point for total pressure.\n"
-           "  xyzp0 = (%14.5e,%14.5e,%14.5e)"),
+           "  xyzp0 = (%14.5e,%14.5e,%14.5e)\n"),
          xyzp0[0], xyzp0[1], xyzp0[2]);
 
     else
@@ -689,7 +691,7 @@ cs_boundary_conditions_type(bool  init,
          _("\n"
            "Boundary faces with pressure Dirichlet condition detected.\n"
            "Update of reference point for total pressure\n"
-           "  xyzp0 = (%14.5e,%14.5e,%14.5e)"),
+           "  xyzp0 = (%14.5e,%14.5e,%14.5e)\n"),
          xyzp0[0], xyzp0[1], xyzp0[2]);
   }
 
@@ -707,7 +709,7 @@ cs_boundary_conditions_type(bool  init,
   // FIXME: use cs_glob_velocity_param->time control for this.
   //        Why should we ignore pressure gradient for Lagrangian
   //        frozen fields and not for scalar transport on frozen
-  //        velocity field ? This is certainely a bug.
+  //        velocity field ? This is certainly a bug.
 
   if (   _itbslb > -1
       && cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
