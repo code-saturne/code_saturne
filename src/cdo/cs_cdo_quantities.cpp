@@ -33,6 +33,7 @@
 #include <array>
 #include <cassert>
 #include <cstring>
+#include <limits>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -955,7 +956,7 @@ _vtx_algorithm(const cs_cdo_connect_t *connect,
     const cs_lnum_t ve = c2v->idx[c_id + 1];
 
     assert(ve - vs > 0);
-    assert(ve - vs < SHRT_MAX);
+    assert(ve - vs < std::numeric_limits<cs_lnum_t>::max());
 
     cs_real_t *xc = quant->cell_centers[c_id];
 
