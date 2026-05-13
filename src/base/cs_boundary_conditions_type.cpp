@@ -636,14 +636,15 @@ cs_boundary_conditions_type(bool  init,
     _irangd = cs_glob_rank_id;
     cs_parall_min_id_rank_r(&ifadir, &_irangd, d0min);
 
-    if (ifadir > -1)
+    if (ifadir > -1) {
       /* We set ixyzp0 to 2 to update the reference point */
       fluid_props->ixyzp0 = 2;
 
-    if (cs_glob_rank_id == _irangd) {
-      xyzref[0] = b_face_cog[ifadir][0];
-      xyzref[1] = b_face_cog[ifadir][1];
-      xyzref[2] = b_face_cog[ifadir][2];
+      if (cs_glob_rank_id == _irangd) {
+        xyzref[0] = b_face_cog[ifadir][0];
+        xyzref[1] = b_face_cog[ifadir][1];
+        xyzref[2] = b_face_cog[ifadir][2];
+      }
     }
 
     /* Broadcast xyzref from irangd to all other ranks. */
