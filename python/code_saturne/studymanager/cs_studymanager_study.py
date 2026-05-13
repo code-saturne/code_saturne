@@ -2039,33 +2039,33 @@ class Studies(object):
                             slurm_batch_file.write(batch_cmd)
                             slurm_batch_file.flush()
 
-                            # submit batch
-                            if level < 1:
-                                output = subprocess.check_output(['sbatch',
-                                         slurm_batch_name])
-                            else:
-                                # list of dependency id should be in the
-                                # :id1:id2:id3 format
-                                list_id = ""
-                                for item in dep_job_id_list:
-                                    list_id += ":" + str(item)
-                                if len(list_id) > 0:
-                                    output = subprocess.check_output(['sbatch',
-                                             "--dependency=afterany"
-                                             + list_id, slurm_batch_name])
-                                else:
-                                    # empty list can occur with existing runs in study
-                                    output = subprocess.check_output(['sbatch',
-                                             slurm_batch_name])
+                            # sbatch command
+                            command = ['sbatch', slurm_batch_name]
 
-                            # find job id with regex and store it
-                            msg = output.decode('utf-8').strip()
-                            match = re.search('\d+', msg)
-                            job_id = match.group()
-                            tot_job_id_list.append(job_id)
-                            self.reporting('    - %s ...' % msg)
-                            for item in cases_list:
-                                item.job_id = job_id
+                            # list dependencies in :id1:id2:id3 format
+                            list_id = ""
+                            for item in dep_job_id_list:
+                                list_id += ":" + str(item)
+                            if len(list_id) > 0:
+                                # add option after sbatch command
+                                command.insert(1, "--dependency=afterany" + list_id)
+
+                            # submit batch
+                            try:
+                                output = subprocess.check_output(command, stderr=subprocess.STDOUT)
+
+                                # find job id with regex and store it
+                                msg = output.decode('utf-8').strip()
+                                match = re.search('\d+', msg)
+                                job_id = match.group()
+                                tot_job_id_list.append(job_id)
+                                self.reporting('    - %s ...' % msg)
+                                for item in cases_list:
+                                    item.job_id = job_id
+
+                            except subprocess.CalledProcessError as e:
+                                self.reporting('    - Error during submission:')
+                                self.reporting(e.output.decode("utf-8"))
 
                             batch_cmd = ""
                             cur_batch_id += 1
@@ -2104,33 +2104,33 @@ class Studies(object):
                     slurm_batch_file.write(batch_cmd)
                     slurm_batch_file.flush()
 
-                    # submit batch
-                    if level < 1:
-                        output = subprocess.check_output(['sbatch',
-                                                          slurm_batch_name])
-                    else:
-                        # list of dependency id should be in the
-                        # :id1:id2:id3 format
-                        list_id = ""
-                        for item in dep_job_id_list:
-                            list_id += ":" + str(item)
-                        if len(list_id) > 0:
-                            output = subprocess.check_output(['sbatch',
-                                     "--dependency=afterany"
-                                     + list_id, slurm_batch_name])
-                        else:
-                            # empty list can occur with existing runs in study
-                            output = subprocess.check_output(['sbatch',
-                                     slurm_batch_name])
+                    # sbatch command
+                    command = ['sbatch', slurm_batch_name]
 
-                    # find job id with regex and store it
-                    msg = output.decode('utf-8').strip()
-                    match = re.search('\d+', msg)
-                    job_id = match.group()
-                    tot_job_id_list.append(job_id)
-                    self.reporting('    - %s ...' % msg)
-                    for elem in cases_list:
-                        elem.job_id = job_id
+                    # list dependencies in :id1:id2:id3 format
+                    list_id = ""
+                    for item in dep_job_id_list:
+                        list_id += ":" + str(item)
+                    if len(list_id) > 0:
+                        # add option after sbatch command
+                        command.insert(1, "--dependency=afterany" + list_id)
+
+                    # submit batch
+                    try:
+                        output = subprocess.check_output(command, stderr=subprocess.STDOUT)
+
+                        # find job id with regex and store it
+                        msg = output.decode('utf-8').strip()
+                        match = re.search('\d+', msg)
+                        job_id = match.group()
+                        tot_job_id_list.append(job_id)
+                        self.reporting('    - %s ...' % msg)
+                        for item in cases_list:
+                            item.job_id = job_id
+
+                    except subprocess.CalledProcessError as e:
+                        self.reporting('    - Error during submission:')
+                        self.reporting(e.output.decode("utf-8"))
 
                     batch_cmd = ""
                     cur_batch_id += 1
@@ -2165,20 +2165,26 @@ class Studies(object):
         slurm_batch_file.write(batch_cmd)
         slurm_batch_file.flush()
 
-        # list of dependency id should be in the
-        # :id1:id2:id3 format
+        # sbatch command
+        command = ['sbatch', slurm_batch_name]
+
+        # list dependencies in :id1:id2:id3 format
         list_id = ""
         for item in tot_job_id_list:
             list_id += ":" + str(item)
         if len(list_id) > 0:
-            output = subprocess.check_output(['sbatch',"--dependency=afterany"
-                   + list_id, slurm_batch_name])
-        else:
-            # empty list can occur with existing runs in study
-            output = subprocess.check_output(['sbatch', slurm_batch_name])
+            # add option after sbatch command
+            command.insert(1, "--dependency=afterany" + list_id)
 
-        msg = output.decode('utf-8').strip()
-        self.reporting('    - %s ...' % msg)
+        # submit batch
+        try:
+            output = subprocess.check_output(command, stderr=subprocess.STDOUT)
+            msg = output.decode('utf-8').strip()
+            self.reporting('    - %s ...' % msg)
+
+        except subprocess.CalledProcessError as e:
+            self.reporting('    - Error during submission:')
+            self.reporting(e.output.decode("utf-8"))
 
         slurm_batch_file.close()
 
