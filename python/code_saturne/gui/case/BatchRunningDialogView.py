@@ -95,7 +95,7 @@ class BatchRunningDebugOptionsHelpDialogView(QDialog,
         self.retranslateUi(self)
 
         self.setWindowTitle(self.tr("Debugger syntax help"))
-        self.parent = parent
+        self.parent_widget = parent
 
         # Connections
         self.pushButtonClose.clicked.connect(self.slotDebugclose)
@@ -212,13 +212,19 @@ class ListingDialogView(CommandMgrDialogView):
                 os.environ['PYTHONPATH'] = pythonpath_top
 
         # Start process
-        self.proc.start(self.cmd)
+        # PySide6: split cmd into program + args
+        import shlex
+        _parts = shlex.split(self.cmd)
+        if _parts:
+            self.proc.start(_parts[0], _parts[1:])
+        else:
+            self.proc.start(self.cmd)
 
         # Now process is launched, restore environment
         if pythonpath_save:
             os.environ['PYTHONPATH'] = pythonpath_save
 
-        self.proc.waitForFinished(100)
+        # self.proc.waitForFinished(100)  # removed: blocks event loop in PyQt6
 
 
     @Slot()
@@ -841,7 +847,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.Apply()
 
         if self.case.isModified():
-            self.parent.fileSave()
+            self.parent_widget.fileSave()
         else:
             self.jmdl.save(param=self.case['xmlfile'], force=False)
 
@@ -872,7 +878,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             run_title += ' - Job Submission'
             cmd += ' submit'
 
-        dlg = ListingDialogView(self.parent, self.case, run_title, cmd)
+        dlg = ListingDialogView(self.parent_widget, self.case, run_title, cmd)
         dlg.show()
 
         os.chdir(prv_dir)
