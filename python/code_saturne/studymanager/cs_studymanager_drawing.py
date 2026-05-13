@@ -487,64 +487,55 @@ class Figure(object):
         """
         nbr = len(self.subplots)
 
+        ri = 0.9
+        le = 0.15
+        rcParams['font.size'] = 6
+
         if nbr < 3:
             nbrow = 1
             nbcol = nbr
-            rcParams['font.size'] = 6
             rcParams['lines.markersize']= 2
-            ri = 0.9
-            le = 0.15
             hs = 0.35
             ws = 0.5
         elif nbr > 24:
             rcParams['font.size'] = 4
             rcParams['lines.markersize']= 1
             nbrow = 5
-            nbcol = (nbr-1)/nbrow+1
-            hs=0.5
+            nbcol = (nbr-1) // (nbrow+1)
+            hs = 0.5
             if nbcol > 7:
                 hs = 1.0
             elif nbcol > 6:
                 hs = 0.85
             elif nbcol > 5:
                 hs = 0.65
-            ri = 0.9
-            le = 0.15
             ws = 1.25
         elif nbr > 12:
             nbrow = 4
             rcParams['font.size'] = 5
             rcParams['lines.markersize'] = 2
-            nbcol = (nbr-1) / nbrow+1
-            hs=0.45
+            nbcol = (nbr-1) // (nbrow+1)
+            hs = 0.45
             if nbcol > 5:
                 hs = 0.8
             elif nbcol > 4:
                 hs = 0.6
-            ri = 0.9
-            le = 0.15
             ws = 0.99
         elif nbr > 6:
             nbrow = 3
-            nbcol = (nbr-1) / nbrow+1
+            nbcol = (nbr-1) // (nbrow+1)
             rcParams['lines.markersize'] = 3
-            rcParams['font.size'] = 6
             hs = 0.4
             if nbcol > 3:
                 hs = 0.5
-            ri = 0.9
-            le = 0.15
             ws = 0.8
         elif nbr > 2:
             nbrow = 2
-            nbcol = (nbr-1) / nbrow+1
+            nbcol = (nbr-1) // (nbrow+1)
             hs = 0.3
             if nbcol > 2:
                 hs = 0.45
-            ri = 0.9
-            le = 0.15
             ws = 0.6
-            rcParams['font.size'] = 6
             rcParams['lines.markersize']= 4
 
         if self.nbrow:
