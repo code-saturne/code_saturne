@@ -268,15 +268,6 @@ cs_gradient_boundary_iprime_lsq_s
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
   }
 
-  /* For consistency with strided values, ensure bounds with clip_coeff = 1.
-     As the value at I may not be centered between min and max, use same
-     behavior for all clip_coeff values in [0, 1]. For values > 1,
-     allow exceeding bounds by (clip_coeff - 1)*(v_max - v_min). */
-
-  if (clip_coeff >= 0) {
-    clip_coeff = cs::max(0., clip_coeff - 1.0);
-  }
-
   /* Loop on selected boundary faces */
 
   ctx.parallel_for(n_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_idx) {
@@ -612,7 +603,12 @@ cs_gradient_boundary_iprime_lsq_s
       var_iprime_flux[f_idx] = var_i + grad_dot_diipb * clip_d;
     }
 
-    /* Apply simple limiter */
+    /* Apply simple limiter.
+
+       For consistency with strided values, ensure bounds with clip_coeff = 1.
+       As the value at I may not be centered between min and max, use same
+       behavior for all clip_coeff values in [0, 1]. For values > 1,
+       allow exceeding bounds by (clip_coeff - 1)*(v_bound - v_i). */
 
     if (clip_coeff >= 0) {
       if (clip_coeff < 1. || clip_coeff > 1.) {
@@ -735,15 +731,6 @@ cs_gradient_boundary_iprime_lsq_s_ani
     i_poro_duq_0 = f_i_poro_duq_0->val;
     i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
-  }
-
-  /* For consistency with strided values, ensure bounds with clip_coeff = 1.
-     As the value at I may not be centered between min and max, use same
-     behavior for all clip_coeff values in [0, 1]. For values > 1,
-     allow exceeding bounds by (clip_coeff - 1)*(v_max - v_min). */
-
-  if (clip_coeff >= 0) {
-    clip_coeff = cs::max(0., clip_coeff - 1.0);
   }
 
   /* Loop on selected boundary faces */
@@ -1053,12 +1040,20 @@ cs_gradient_boundary_iprime_lsq_s_ani
 
     if (var_iprime != nullptr) {
 
-      /* Apply simple limiter  */
+      /* Apply simple limiter.
+
+       For consistency with strided values, ensure bounds with clip_coeff = 1.
+       As the value at I may not be centered between min and max, use same
+       behavior for all clip_coeff values in [0, 1]. For values > 1,
+       allow exceeding bounds by (clip_coeff - 1)*(v_bound - v_i). */
 
       if (clip_coeff >= 0) {
-        cs_real_t d = var_max - var_min;
-        var_max += d*clip_coeff;
-        var_min -= d*clip_coeff;
+        if (clip_coeff < 1. || clip_coeff > 1.) {
+          cs_real_t d_min = var_min - var_i;
+          cs_real_t d_max = var_max - var_i;
+          var_min = var_i + d_min*clip_coeff;
+          var_max = var_i + d_max*clip_coeff;
+        }
 
         if (var_ip < var_min)
           var_ip = var_min;
