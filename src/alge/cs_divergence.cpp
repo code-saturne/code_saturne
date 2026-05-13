@@ -1014,7 +1014,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
   ctx_c.wait();
 
   /*==========================================================================
-    4. Compute mass flux with reconstruction technics if the mesh is
+    4. Compute mass flux with reconstruction technique if the mesh is
        non orthogonal
     ==========================================================================*/
 
@@ -1029,12 +1029,25 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     CS_MALLOC_HD(val_f, n_b_faces, cs_real_6_t, amode);
     CS_MALLOC_HD(val_ip_g, n_b_faces, cs_real_6_t, amode);
 
+    /* Since the gradient limiter options above are passed by argument
+       and not by the field's equation parameter, we use the closest
+       available setting for the boundary gradient limiter.
+       (knowing that in v9.0, the specific settings for the boundary
+       gradient are not available in the GUI, and so are basically never
+       modified in a specific manner by users. */
+
+    cs_real_t b_clip_coeff = -1;
+    if (imligu == CS_GRADIENT_LIMIT_CELL)
+      b_clip_coeff = climgu;
+    else if (imligu == CS_GRADIENT_LIMIT_FACE)
+      b_clip_coeff = climgu / 1.5;
+
     cs_gradient_boundary_iprime_lsq_strided<6>(m,
                                                fvq,
                                                n_b_faces,
                                                nullptr,
                                                halo_type,
-                                               -1,
+                                               b_clip_coeff,
                                                nullptr,
                                                &bc_coeffs_ts_loc,
                                                nullptr, // gweight,
