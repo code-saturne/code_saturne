@@ -60,8 +60,10 @@ struct _cs_paramedmem_coupling_t {
   /* Coupling Name */
   std::string _name; /* Coupling name */
 
+#if defined(HAVE_MPI)
   /* Current app name */
   ple_coupling_mpi_set_info_t apps[2];
+#endif
 
 #if defined(HAVE_PARAMEDMEM)
 
