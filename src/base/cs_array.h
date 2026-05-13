@@ -519,7 +519,7 @@ cs_array_copy(const cs_lnum_t  size,
 #else
     hipStream_t stream_ = cs_hip_get_stream(0);
 #endif
-    cs_array_copy<T>(stream_, size, src, dest);
+    cs_array_copy<T>(stream_, false, size, src, dest);
     return;
   }
 #endif

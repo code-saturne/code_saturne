@@ -370,6 +370,7 @@ cs_arrays_set_zero(hipStream_t     stream,
  *
  * \param[in]   stream  hip stream used for the operation
  * \param[in]   size    number of elements * dimension
+ * \param[in]   async   use asynchronous mode (no sync)
  * \param[in]   src     source array values
  * \param[out]  dest    destination array values
  */
@@ -378,12 +379,17 @@ cs_arrays_set_zero(hipStream_t     stream,
 template <typename T>
 void
 cs_array_copy(hipStream_t     stream,
+              bool             async,
               const cs_lnum_t  size,
               const T*         src,
               T*               dest)
 {
   CS_HIP_CHECK(hipMemcpyAsync(dest, src, size*sizeof(T),
                               hipMemcpyDeviceToDevice, stream));
+  if (async == false) {
+    CS_HIP_CHECK(hipStreamSynchronize(stream));
+    CS_HIP_CHECK(hipGetLastError());
+  }
 }
 
 /*----------------------------------------------------------------------------*/

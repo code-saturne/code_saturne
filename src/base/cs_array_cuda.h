@@ -368,6 +368,7 @@ cs_arrays_set_zero(cudaStream_t     stream,
  *                 T       type name
  *
  * \param[in]   stream  cuda stream used for the operation
+ * \param[in]   async   use asynchronous mode (no sync)
  * \param[in]   size    number of elements * dimension
  * \param[in]   src     source array values
  * \param[out]  dest    destination array values
@@ -377,12 +378,17 @@ cs_arrays_set_zero(cudaStream_t     stream,
 template <typename T>
 void
 cs_array_copy(cudaStream_t     stream,
+              bool             async,
               const cs_lnum_t  size,
               const T*         src,
               T*               dest)
 {
   cudaMemcpyAsync(dest, src, size*sizeof(T),
                   cudaMemcpyDeviceToDevice, stream);
+  if (async == false) {
+    CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+    CS_CUDA_CHECK(cudaGetLastError());
+  }
 }
 
 /*----------------------------------------------------------------------------*/
