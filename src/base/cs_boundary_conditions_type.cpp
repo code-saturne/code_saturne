@@ -517,9 +517,7 @@ cs_boundary_conditions_type(bool  init,
      origin), we choose the face whose center is closest to it, so
      as to be mesh numbering (and partitioning) independent. */
 
-  bool first_pass = (nt_prev > 0 && nt_cur == nt_prev+1) || nt_cur == 0;
-
-  if (first_pass) {
+  if (nt_cur == nt_prev) {
 
     cs_real_t d0min = cs_math_infinite_r;
 
@@ -612,7 +610,7 @@ cs_boundary_conditions_type(bool  init,
       fluid_props->ixyzp0 = 2;
 
   }
-  else if (fluid_props->ixyzp0 < 0 && first_pass) {
+  else if (fluid_props->ixyzp0 < 0 && nt_cur == nt_prev) {
 
     /* If there are no outlet faces, we search for possible Dirichlets
        specified by the user so as to locate the reference point.
