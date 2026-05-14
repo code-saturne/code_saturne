@@ -45,7 +45,6 @@
 #include "base/cs_field_operator.h"
 #include "base/cs_mem.h"
 #include "atmo/cs_intprf.h"
-#include "lagr/cs_lagr.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
@@ -705,13 +704,10 @@ cs_boundary_conditions_type(bool  init,
 
   // No need to compute pressure gradient for frozen field computations
 
-  // FIXME: use cs_glob_velocity_param->time control for this.
-  //        Why should we ignore pressure gradient for Lagrangian
-  //        frozen fields and not for scalar transport on frozen
-  //        velocity field ? This is certainly a bug.
+  cs_time_control_t *vp_tc = &(vp_param->time_control);
+  bool active_dyn = cs_time_control_is_active(vp_tc, cs_glob_time_step);
 
-  if (   _itbslb > -1
-      && cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
+  if (_itbslb > -1 && active_dyn) {
 
     cs_real_3_t *frcxt = nullptr;
     {
@@ -725,6 +721,13 @@ cs_boundary_conditions_type(bool  init,
     CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode_device);
 
     cs_gradient_porosity_balance(1);
+
+    /* TODO for gradient schemes enabling it (all except iterative),
+       add a cs_field_boundary_gradient_potential function
+       computing the gradient only at boundary cells, as only
+       these values are needed here. Actually, a function combining
+       this with the dot product of the direction of projection
+       of the pressure gradient would be even more efficient. */
 
     cs_field_gradient_potential(CS_F_(p),
                                 true,
