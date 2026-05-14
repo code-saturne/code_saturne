@@ -810,7 +810,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
      operators pipeline could allow optimizing this. */
 
   if (halo_type == CS_HALO_EXTENDED)
-    cs_halo_sync_r(m->halo, CS_HALO_STANDARD, false, grad);
+    cs_halo_sync_r(m->halo, halo_type, false, grad);
 
   const size_t block_size = 128;
   const size_t n_blocks = cs_parall_block_count(n_cells, block_size);
