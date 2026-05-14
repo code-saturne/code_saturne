@@ -515,7 +515,7 @@ cs_boundary_conditions_type(bool  init,
      origin), we choose the face whose center is closest to it, so
      as to be mesh numbering (and partitioning) independent. */
 
-  if (nt_cur == nt_prev+1) {
+  if (nt_cur == nt_prev) {
 
     cs_real_t d0min = cs_math_infinite_r;
 
@@ -608,7 +608,7 @@ cs_boundary_conditions_type(bool  init,
       fluid_props->ixyzp0 = 2;
 
   }
-  else if (fluid_props->ixyzp0 < 0 && nt_cur == nt_prev + 1) {
+  else if (fluid_props->ixyzp0 < 0 && nt_cur == nt_prev) {
 
     /* If there are no outlet faces, we search for possible Dirichlets
        specified by the user so as to locate the reference point.
@@ -632,14 +632,15 @@ cs_boundary_conditions_type(bool  init,
     _irangd = cs_glob_rank_id;
     cs_parall_min_id_rank_r(&ifadir, &_irangd, d0min);
 
-    if (ifadir > -1)
+    if (ifadir > -1) {
       /* We set ixyzp0 to 2 to update the reference point */
       fluid_props->ixyzp0 = 2;
 
-    if (cs_glob_rank_id == _irangd) {
-      xyzref[0] = b_face_cog[ifadir][0];
-      xyzref[1] = b_face_cog[ifadir][1];
-      xyzref[2] = b_face_cog[ifadir][2];
+      if (cs_glob_rank_id == _irangd) {
+        xyzref[0] = b_face_cog[ifadir][0];
+        xyzref[1] = b_face_cog[ifadir][1];
+        xyzref[2] = b_face_cog[ifadir][2];
+      }
     }
 
     /* Broadcast xyzref from irangd to all other ranks. */
@@ -648,7 +649,7 @@ cs_boundary_conditions_type(bool  init,
 
   /* If the reference point has not been specified by the user,
      we change it and shift coefu if there are outputs.
-     Total pressure is also shifted (a priori useless exept if
+     Total pressure is also shifted (a priori useless except if
      the user uses it in cs_user_source_terms for example) */
 
   if (fluid_props->ixyzp0 == 2) {
@@ -678,7 +679,7 @@ cs_boundary_conditions_type(bool  init,
          _("\n"
            "Boundary faces with free inlet/outlet detected.\n"
            "Update of reference point for total pressure.\n"
-           "  xyzp0 = (%14.5e,%14.5e,%14.5e)"),
+           "  xyzp0 = (%14.5e,%14.5e,%14.5e)\n"),
          xyzp0[0], xyzp0[1], xyzp0[2]);
 
     else
@@ -687,7 +688,7 @@ cs_boundary_conditions_type(bool  init,
          _("\n"
            "Boundary faces with pressure Dirichlet condition detected.\n"
            "Update of reference point for total pressure\n"
-           "  xyzp0 = (%14.5e,%14.5e,%14.5e)"),
+           "  xyzp0 = (%14.5e,%14.5e,%14.5e)\n"),
          xyzp0[0], xyzp0[1], xyzp0[2]);
   }
 

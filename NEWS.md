@@ -3,6 +3,9 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix automatic setting of default xyzp0 value (broken and deactivated
+  since version 6.0).
+
 - Fix robustness issues of multigrid linear solver for steady
   convection/diffusion equations (related to loss of diagonal dominance
   through truncation errors).
