@@ -3,13 +3,18 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix crash in restart with time moments and no auxiliary restart file.
+
+- Fix automatic setting of default xyzp0 value (broken and deactivated
+  since version 6.0).
+
 - Fix robustness issues of multigrid linear solver for steady
   convection/diffusion equations (related to loss of diagonal dominance
   through truncation errors).
   * Also allow forcing diagonal dominance of coarse grids (on CPU,
     for scalars) using `cs_grid_set_diag_dom_clip_factor`.
 
-- Atmo: fix bug reading meteo file.
+- Atmospheric model: fix bug reading meteo file.
 
 - GUI: Fix bug in outlet backflow conditions using formulae for NCFD
   Temperature backflow condition used with formulae were wrongly applied.
@@ -22,11 +27,15 @@ Release 9.0.3 (unreleased)
 
 - Radiative FSCK model: fix out-of-bounds error in interpolation.
 
-- Fix incomplete ghost cell synchronization for scalar least-squares
-  gradient with limiter and extended neighborhood.
-
-- Fix missing ghost cell synchronization for boundary-adjacent cells
-  when computing transposed velocity gradient contribution.
+- Various extended boundary gradient and gradient limiter fixes.
+  * Fix reconstruction limiters for boundary reconstruction gradients
+    (which were too "loose").
+  * Fix incomplete ghost cell synchronization for scalar least-squares
+    gradient with limiter and extended neighborhood.
+  * Fix missing ghost cell synchronization for boundary-adjacent cells
+    when computing transposed velocity gradient contribution.
+  * Apply boundary limiter to intermediate boundary vector gradient
+    when a volume limiter is used for tensorial face flux.
 
 - Fix setting of solid particles elasticity coefficient in the GUI for
   neptune_cfd.

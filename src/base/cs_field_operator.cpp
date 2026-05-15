@@ -1012,7 +1012,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
 
   if (gradient_type == CS_GRADIENT_LSQ) {
 
-    cs_real_t climgr = (eqp->imligr < 0) ? -1.0 : eqp->climgr;
+    cs_real_t climgr = (eqp->imligr < 0) ? -1.0 : eqp->b_climgr;
 
     cs_gradient_boundary_iprime_lsq_s(m,
                                       fvq,
@@ -1171,7 +1171,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
 
   if (gradient_type == CS_GRADIENT_LSQ) {
 
-    cs_real_t climgr = (eqp->imligr < 0) ? -1.0 : eqp->climgr;
+    cs_real_t climgr = (eqp->imligr < 0) ? -1.0 : eqp->b_climgr;
 
     const cs_real_3_t *var = (use_previous_t) ?
                                (const cs_real_3_t *)f->val_pre
@@ -1315,7 +1315,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
 
   if (gradient_type == CS_GRADIENT_LSQ) {
 
-    cs_real_t climgr = (eqp->imligr < 0) ? -1.0 : eqp->climgr;
+    cs_real_t climgr = (eqp->imligr < 0) ? -1.0 : eqp->b_climgr;
 
     const cs_real_6_t *var = (use_previous_t) ?
                                (const cs_real_6_t *)f->val_pre

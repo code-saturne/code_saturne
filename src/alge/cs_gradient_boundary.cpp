@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -513,12 +513,20 @@ cs_gradient_boundary_iprime_lsq_s(const cs_mesh_t               *m,
                                  + grad[1]*diipb[f_id][1]
                                  + grad[2]*diipb[f_id][2]);
 
-    /* Apply simple limiter */
+    /* Apply simple limiter.
+
+       For consistency with strided values, ensure bounds with clip_coeff = 1.
+       As the value at I may not be centered between min and max, use same
+       behavior for all clip_coeff values in [0, 1]. For values > 1,
+       allow exceeding bounds by (clip_coeff - 1)*(v_bound - v_i). */
 
     if (clip_coeff >= 0) {
-      cs_real_t d = var_max - var_min;
-      var_max += d*clip_coeff;
-      var_min -= d*clip_coeff;
+      if (clip_coeff < 1. || clip_coeff > 1.) {
+        cs_real_t d_min = var_min - var_i;
+        cs_real_t d_max = var_max - var_i;
+        var_min = var_i + d_min*clip_coeff;
+        var_max = var_i + d_max*clip_coeff;
+      }
 
       if (var_ip < var_min)
         var_ip = var_min;
@@ -768,9 +776,12 @@ cs_gradient_boundary_iprime_lsq_s_ani(const cs_mesh_t               *m,
     /* Apply simple limiter */
 
     if (clip_coeff >= 0) {
-      cs_real_t d = var_max - var_min;
-      var_max += d*clip_coeff;
-      var_min -= d*clip_coeff;
+      if (clip_coeff < 1. || clip_coeff > 1.) {
+        cs_real_t d_min = var_min - var_i;
+        cs_real_t d_max = var_max - var_i;
+        var_min = var_i + d_min*clip_coeff;
+        var_max = var_i + d_max*clip_coeff;
+      }
 
       if (var_ip < var_min)
         var_ip = var_min;
@@ -1290,7 +1301,7 @@ cs_gradient_boundary_iprime_lsq_strided
       } /* End of loop on iterations */
 
       /* If the last correction was too large, we suspect
-         the the algorithm did not converge at all/diverged,
+         the algorithm did not converge at all/diverged,
          so we simply restore the non-reconstructed value
          (additional precaution, not encountered in testing). */
 
@@ -1322,9 +1333,13 @@ cs_gradient_boundary_iprime_lsq_strided
 
     if (b_clip_coeff >= 0) {
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
-        cs_real_t d = var_max[ii] - var_min[ii];
-        var_max[ii] += d*b_clip_coeff;
-        var_min[ii] -= d*b_clip_coeff;
+        if (b_clip_coeff < 1. || b_clip_coeff > 1.) {
+          for (cs_lnum_t ii = 0; ii < stride; ii++) {
+            cs_real_t d = var_max[ii] - var_min[ii];
+            var_max[ii] += d*b_clip_coeff;
+            var_min[ii] -= d*b_clip_coeff;
+          }
+        }
 
         if (var_ip[ii] < var_min[ii])
           var_ip[ii] = var_min[ii];
