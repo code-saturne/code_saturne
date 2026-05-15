@@ -29,7 +29,7 @@ Release 9.0.3 (unreleased)
 
 - Various extended boundary gradient and gradient limiter fixes.
   * Fix reconstruction limiters for boundary reconstruction gradients
-    (which were too "loose").
+    (which were too "loose" and allowed doubling expected bounds).
   * Fix incomplete ghost cell synchronization for scalar least-squares
     gradient with limiter and extended neighborhood.
   * Fix missing ghost cell synchronization for boundary-adjacent cells

@@ -1334,11 +1334,10 @@ cs_gradient_boundary_iprime_lsq_strided
     if (b_clip_coeff >= 0) {
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
         if (b_clip_coeff < 1. || b_clip_coeff > 1.) {
-          for (cs_lnum_t ii = 0; ii < stride; ii++) {
-            cs_real_t d = var_max[ii] - var_min[ii];
-            var_max[ii] += d*b_clip_coeff;
-            var_min[ii] -= d*b_clip_coeff;
-          }
+          cs_real_t d_min = var_min[ii] - var_i[ii];
+          cs_real_t d_max = var_max[ii] - var_i[ii];
+          var_min[ii] = var_i[ii] + d_min*b_clip_coeff;
+          var_max[ii] = var_i[ii] + d_max*b_clip_coeff;
         }
 
         if (var_ip[ii] < var_min[ii])
