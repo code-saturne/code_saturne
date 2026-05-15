@@ -50,6 +50,7 @@
 #include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_file.h"
 #include "base/cs_log.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
@@ -414,15 +415,20 @@ _restart_info_read(void)
   /* Now read time-moment specific data */
 
   if (r == nullptr) {
+    char name[32], path[64];
     if (_restart_uses_main)
-      r = cs_restart_create("main.csc", nullptr, CS_RESTART_MODE_READ);
+      strncpy(name, "main.csc", 32);
     else
-      r = cs_restart_create("auxiliary.csc", nullptr, CS_RESTART_MODE_READ);
+      strncpy(name, "auxiliary.csc", 32);
+    snprintf(path, 64, "restart/%s", name); path[63] = '\0';
+    if (cs_file_isreg(path))
+      r = cs_restart_create(name, nullptr, CS_RESTART_MODE_READ);
   }
 
-  _restart_info_read_auxiliary(r);
-
-  cs_restart_destroy(&r);
+  if (r != nullptr) {
+    _restart_info_read_auxiliary(r);
+    cs_restart_destroy(&r);
+  }
 
   /* Now change checked status */
 
