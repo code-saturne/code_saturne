@@ -609,12 +609,20 @@ cs_gradient_boundary_iprime_lsq_s
       var_iprime_flux[f_idx] = var_i + grad_dot_diipb * clip_d;
     }
 
-    /* Apply simple limiter */
+    /* Apply simple limiter.
+
+       For consistency with strided values, ensure bounds with clip_coeff = 1.
+       As the value at I may not be centered between min and max, use same
+       behavior for all clip_coeff values in [0, 1]. For values > 1,
+       allow exceeding bounds by (clip_coeff - 1)*(v_bound - v_i). */
 
     if (clip_coeff >= 0) {
-      cs_real_t d = var_max - var_min;
-      var_max += d*clip_coeff;
-      var_min -= d*clip_coeff;
+      if (clip_coeff < 1. || clip_coeff > 1.) {
+        cs_real_t d_min = var_min - var_i;
+        cs_real_t d_max = var_max - var_i;
+        var_min = var_i + d_min*clip_coeff;
+        var_max = var_i + d_max*clip_coeff;
+      }
 
       if (var_ip < var_min)
         var_ip = var_min;
@@ -1041,12 +1049,20 @@ cs_gradient_boundary_iprime_lsq_s_ani
 
     if (var_iprime != nullptr) {
 
-      /* Apply simple limiter  */
+      /* Apply simple limiter.
+
+       For consistency with strided values, ensure bounds with clip_coeff = 1.
+       As the value at I may not be centered between min and max, use same
+       behavior for all clip_coeff values in [0, 1]. For values > 1,
+       allow exceeding bounds by (clip_coeff - 1)*(v_bound - v_i). */
 
       if (clip_coeff >= 0) {
-        cs_real_t d = var_max - var_min;
-        var_max += d*clip_coeff;
-        var_min -= d*clip_coeff;
+        if (clip_coeff < 1. || clip_coeff > 1.) {
+          cs_real_t d_min = var_min - var_i;
+          cs_real_t d_max = var_max - var_i;
+          var_min = var_i + d_min*clip_coeff;
+          var_max = var_i + d_max*clip_coeff;
+        }
 
         if (var_ip < var_min)
           var_ip = var_min;
@@ -1624,9 +1640,12 @@ cs_gradient_boundary_iprime_lsq_strided
 
     if (b_clip_coeff >= 0) {
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
-        cs_real_t d = var_max[ii] - var_min[ii];
-        var_max[ii] += d*b_clip_coeff;
-        var_min[ii] -= d*b_clip_coeff;
+        if (b_clip_coeff < 1. || b_clip_coeff > 1.) {
+          cs_real_t d_min = var_min[ii] - var_i[ii];
+          cs_real_t d_max = var_max[ii] - var_i[ii];
+          var_min[ii] = var_i[ii] + d_min*b_clip_coeff;
+          var_max[ii] = var_i[ii] + d_max*b_clip_coeff;
+        }
 
         if (var_ip[ii] < var_min[ii])
           var_ip[ii] = var_min[ii];
