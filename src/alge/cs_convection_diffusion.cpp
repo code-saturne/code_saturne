@@ -1568,89 +1568,6 @@ _reconstruction_check_bounds_strided
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Adust bounds if rc_clip_factor < or > 1, adn check bounds
- * if required by verbosity level or postprocessing.
- *
- * template parameters:
- *   stride        3 for vectors, 6 for symmetric tensors
- *
- * parameters:
- *   ctx            <-> dispatch context
- *   var_name       <-- associated variable name
- *   eqp            <-- equation parameters
- *   face_gradient  <-- use face averaged gradient (instead of cell gradient)
- *                      for reconstruction
- *   ircflb         <-- if > 0, reconstruction at boundary faces
- *   m              <-- pointer to associated mesh structure
- *   fvq            <-- pointer to associated finite volume quantities
- *   ircflu         <-- 1 if reconstruction should be done at boundaries
- *   grad           <-> gradient of pvar (du/dx_j : grad[][j])
- *   df_limiter     <-- optional reconstruction limiter factor, or null
- *   bounds         <-- bounds of pvar in neighboring cells
- *                      - square distance to ref, square norm for vector
- *                      - square distance to ref for tensor
- */
-/*----------------------------------------------------------------------------*/
-
-template <cs_lnum_t stride, typename T>
-static void
-_adjust_and_check_bounds_strided
-(
-  cs_dispatch_context         &ctx,
-  const char                  *var_name,
-  const cs_equation_param_t   &eqp,
-  bool                         face_gradient,
-  int                          ircflb,
-  const cs_mesh_t              *m,
-  const cs_mesh_quantities_t   *fvq,
-  const T                     (*restrict grad)[stride][3],
-  const cs_real_t              *df_limiter,
-  cs_real_t                    *restrict bounds
-)
-{
-  bool no_op = true;
-
-  /* Adjust bounds of reconstruction clip factor is >= 0 and != 1. */
-
-  if (eqp.rc_clip_factor < 1 || eqp.rc_clip_factor > 1) {
-    cs_real_t rc_clip_factor = eqp.rc_clip_factor;
-    no_op = false;
-
-    ctx.parallel_for(m->n_cells_with_ghosts,
-                     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      bounds[c_id] *= rc_clip_factor;
-    });
-  }
-
-  cs_field_t *f_cr
-    = cs_field_by_composite_name_try("algo:reconstruction_clip_ratio",
-                                     var_name);
-  cs_real_t *c_ratio = (f_cr != nullptr) ? f_cr->val : nullptr;
-
-  if (bounds != nullptr && (f_cr != nullptr || eqp.verbosity >= 2)) {
-    no_op = false;
-    if (face_gradient)
-      _reconstruction_check_bounds_strided<stride, true>
-        (var_name, eqp.verbosity,
-         m, fvq, cs_glob_mesh_adjacencies,
-         ircflb,
-         grad, bounds, df_limiter,
-         c_ratio);
-    else
-      _reconstruction_check_bounds_strided<stride, false>
-        (var_name, eqp.verbosity,
-         m, fvq, cs_glob_mesh_adjacencies,
-         ircflb,
-         grad, bounds, df_limiter,
-         c_ratio);
-  }
-
-  if (no_op == false)
-    ctx.wait();
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Add the explicit part of the convection/diffusion terms of a
  * standard transport equation of a scalar field \f$ \varia \f$.
  *
@@ -3865,17 +3782,19 @@ _convection_diffusion_unsteady_strided
   bool pure_upwind = (blencp > 0.) ? false : true;
 
   /* Adjust bounds if reconstruction clip factor is >= 0 and != 1. */
-  if (eqp.rc_clip_factor >= 0)
-    _adjust_and_check_bounds_strided(ctx,
-                                     var_name,
-                                     eqp,
-                                     ircflb,
-                                     true, // face gradient reconstruction
-                                     m,
-                                     fvq,
-                                     grad,
-                                     df_limiter,
-                                     bounds);
+  if (eqp.rc_clip_factor >= 0) {
+    cs_convection_diffusion_adjust_and_check_bounds_strided
+      (ctx,
+       var_name,
+       eqp,
+       ircflb,
+       true, // face gradient reconstruction
+       m,
+       fvq,
+       grad,
+       df_limiter,
+       bounds);
+  }
 
   /* Compute the balance with reconstruction */
 
@@ -4634,7 +4553,7 @@ _convection_diffusion_unsteady_strided
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Adust bounds if rc_clip_factor < or > 1, adn check bounds
+ * \brief Adust bounds if rc_clip_factor < or > 1, and check bounds
  * if required by verbosity level or postprocessing.
  *
  * parameters:
@@ -4709,6 +4628,89 @@ cs_convection_diffusion_adjust_and_check_bounds_scalar
          m, fvq, cs_glob_mesh_adjacencies,
          ircflb,
          pvar, grad, bounds, df_limiter,
+         c_ratio);
+  }
+
+  if (no_op == false)
+    ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Adust bounds if rc_clip_factor < or > 1, and check bounds
+ * if required by verbosity level or postprocessing.
+ *
+ * template parameters:
+ *   stride        3 for vectors, 6 for symmetric tensors
+ *
+ * parameters:
+ *   ctx            <-> dispatch context
+ *   var_name       <-- associated variable name
+ *   eqp            <-- equation parameters
+ *   face_gradient  <-- use face averaged gradient (instead of cell gradient)
+ *                      for reconstruction
+ *   ircflb         <-- if > 0, reconstruction at boundary faces
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   ircflu         <-- 1 if reconstruction should be done at boundaries
+ *   grad           <-> gradient of pvar (du/dx_j : grad[][j])
+ *   df_limiter     <-- optional reconstruction limiter factor, or null
+ *   bounds         <-- bounds of pvar in neighboring cells
+ *                      - square distance to ref, square norm for vector
+ *                      - square distance to ref for tensor
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride, typename T>
+void
+cs_convection_diffusion_adjust_and_check_bounds_strided
+(
+  cs_dispatch_context         &ctx,
+  const char                  *var_name,
+  const cs_equation_param_t   &eqp,
+  bool                         face_gradient,
+  int                          ircflb,
+  const cs_mesh_t              *m,
+  const cs_mesh_quantities_t   *fvq,
+  const T                     (*restrict grad)[stride][3],
+  const cs_real_t              *df_limiter,
+  cs_real_t                    *restrict bounds
+)
+{
+  bool no_op = true;
+
+  /* Adjust bounds of reconstruction clip factor is >= 0 and != 1. */
+
+  if (eqp.rc_clip_factor < 1 || eqp.rc_clip_factor > 1) {
+    cs_real_t rc_clip_factor = eqp.rc_clip_factor;
+    no_op = false;
+
+    ctx.parallel_for(m->n_cells_with_ghosts,
+                     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      bounds[c_id] *= rc_clip_factor;
+    });
+  }
+
+  cs_field_t *f_cr
+    = cs_field_by_composite_name_try("algo:reconstruction_clip_ratio",
+                                     var_name);
+  cs_real_t *c_ratio = (f_cr != nullptr) ? f_cr->val : nullptr;
+
+  if (bounds != nullptr && (f_cr != nullptr || eqp.verbosity >= 2)) {
+    no_op = false;
+    if (face_gradient)
+      _reconstruction_check_bounds_strided<stride, true>
+        (var_name, eqp.verbosity,
+         m, fvq, cs_glob_mesh_adjacencies,
+         ircflb,
+         grad, bounds, df_limiter,
+         c_ratio);
+    else
+      _reconstruction_check_bounds_strided<stride, false>
+        (var_name, eqp.verbosity,
+         m, fvq, cs_glob_mesh_adjacencies,
+         ircflb,
+         grad, bounds, df_limiter,
          c_ratio);
   }
 
@@ -5476,6 +5478,15 @@ cs_convection_diffusion_vector(int                         idtvar,
                                cs_real_3_t       *restrict b_pvar,
                                cs_real_3_t       *restrict rhs)
 {
+  if (_convection_diffusion_scheme_version == 90) {
+    bool prev_scheme = cs_convection_diffusion_vector_v9
+                         (idtvar, f_id, eqp, icvflb, inc, ivisep, imasac,
+                          pvar, pvara, icvfli, bc_coeffs,
+                          i_massflux, b_massflux, i_visc, b_visc,
+                          i_secvis, b_secvis, i_pvar, b_pvar, rhs);
+    if (prev_scheme)
+      return;
+  }
   CS_PROFILE_FUNC_RANGE();
 
   std::chrono::high_resolution_clock::time_point t_start;
@@ -5725,6 +5736,14 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                const cs_real_t              b_visc[],
                                cs_real_6_t        *restrict rhs)
 {
+  if (_convection_diffusion_scheme_version == 90) {
+    bool prev_scheme = cs_convection_diffusion_tensor_v9
+                         (idtvar, f_id, eqp, icvflb, inc, imasac,
+                          pvar, pvara, bc_coeffs,
+                          i_massflux, b_massflux, i_visc, b_visc, rhs);
+    if (prev_scheme)
+      return;
+  }
   CS_PROFILE_FUNC_RANGE();
 
   std::chrono::high_resolution_clock::time_point t_start;
@@ -6599,17 +6618,19 @@ cs_anisotropic_left_diffusion_vector
                                     gradv,
                                     bounds);
 
-    if (eqp.rc_clip_factor >= 0)
-      _adjust_and_check_bounds_strided(ctx,
-                                       var_name,
-                                       eqp,
-                                       ircflb,
-                                       true, // face gradient reconstruction
-                                       m,
-                                       fvq,
-                                       gradv,
-                                       df_limiter,
-                                       bounds);
+    if (eqp.rc_clip_factor >= 0) {
+      cs_convection_diffusion_adjust_and_check_bounds_strided
+        (ctx,
+         var_name,
+         eqp,
+         ircflb,
+         true, // face gradient reconstruction
+         m,
+         fvq,
+         gradv,
+         df_limiter,
+         bounds);
+    }
 
   }
   else {
@@ -7012,17 +7033,19 @@ cs_anisotropic_right_diffusion_vector
                                     grad,
                                     bounds);
 
-    if (eqp.rc_clip_factor >= 0)
-      _adjust_and_check_bounds_strided<3>(ctx,
-                                          var_name,
-                                          eqp,
-                                          1, // possible exchanges if cpl
-                                          false, // cell gradient reconstr.
-                                          m,
-                                          fvq,
-                                          grad,
-                                          df_limiter,
-                                          bounds);
+    if (eqp.rc_clip_factor >= 0) {
+      cs_convection_diffusion_adjust_and_check_bounds_strided<3>
+        (ctx,
+         var_name,
+         eqp,
+         1, // possible exchanges if cpl
+         false, // cell gradient reconstr.
+         m,
+         fvq,
+         grad,
+         df_limiter,
+         bounds);
+    }
 
   }
   else {

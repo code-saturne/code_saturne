@@ -2354,8 +2354,6 @@ cs_flux_through_surface(const char         *scalar_name,
                            1, /* inc */
                            grad);
 
-  cs_real_t *flux_d_nr = nullptr;
-
   // for the first iteration before the time loop
   // FIXME useful
   if (f->bc_coeffs->val_f == nullptr || f->bc_coeffs->flux_diff == nullptr) {
