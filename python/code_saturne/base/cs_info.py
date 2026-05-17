@@ -196,11 +196,7 @@ def launch_manual(reader, m, pkg):
     Launch the corresponding PDF manual.
     """
 
-    sys_tools = ["xdg-open",       # Generic
-                 "gnome-open",     # Gnome
-                 "kfmclient exec", # KDE
-                 "kde-open",       # KDE 4
-                 "exo-open"]       # Xfce
+    sys_tools = ["xdg-open"]  # Generic
 
     if not m == "Doxygen":
         readers = ["okular", "evince", "kpdf", "gpdf", "xpdf", "acroread"]
