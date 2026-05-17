@@ -32,6 +32,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <cfloat>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -1969,9 +1970,11 @@ cs_property_def_iso_by_value(cs_property_t *pty,
   pty->get_eval_at_cell[def_id]    = cs_xdef_eval_scalar_by_val;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_scalar_by_val;
 
-  /* Set automatically the reference value if all cells are selected */
+  /* Set automatically the reference value if all cells are selected
+     or the reference value is equal to 1.0 (default value) */
 
-  if (z_id == 0)
+  if (z_id == 0                                 ||
+      std::fabs(pty->ref_value - 1.0) > FLT_MIN)
     cs_property_set_reference_value(pty, val);
 
   return d;
