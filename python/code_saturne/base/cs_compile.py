@@ -759,9 +759,9 @@ def main(argv, pkg):
     """
 
     try:
-        from code_saturne.base.cs_exec_environment import set_modules, source_rcfile
+        from code_saturne.base.cs_exec_environment import set_pkg_env
     except Exception:
-        from cs_exec_environment import set_modules, source_rcfile
+        from cs_exec_environment import set_pkg_env
 
     test_mode, force_link, keep_going, src_dir, dest_dir, version, \
         cflags, cxxflags, fcflags, nvccflags, hipccflags, libs = process_cmd_line(argv, pkg)
@@ -769,8 +769,7 @@ def main(argv, pkg):
     if (version):
         pkg = pkg.get_alternate_version(version)
 
-    set_modules(pkg)    # Set environment modules if present
-    source_rcfile(pkg)  # Source rcfile if defined
+    set_pkg_env(pkg)    # Set environment modules and source rcfile if defined
 
     if test_mode == True:
         dest_dir = None

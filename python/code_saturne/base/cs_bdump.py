@@ -126,8 +126,7 @@ def main(argv, pkg):
 
     # Set environment modules if present
 
-    cs_exec_environment.set_modules(pkg)
-    cs_exec_environment.source_rcfile(pkg)
+    cs_exec_environment.set_pkg_env(pkg)
 
     # Run executable
 

@@ -460,8 +460,7 @@ class case:
 
         # Set environment modules if present
 
-        cs_exec_environment.set_modules(self.package_compute)
-        cs_exec_environment.source_rcfile(self.package_compute)
+        cs_exec_environment.set_pkg_env(self.package_compute)
 
         # Re-clean os.environment as the above calls may have indirectly
         # restored some unwanted variables (such as lmod macros).

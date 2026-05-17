@@ -134,9 +134,8 @@ def main(argv, pkg):
     Start Qt and a session of the application.
     """
 
-    from code_saturne.base.cs_exec_environment import set_modules, source_rcfile
-    set_modules(pkg)
-    source_rcfile(pkg)
+    from code_saturne.base.cs_exec_environment import set_pkg_env
+    set_pkg_env(pkg)
 
     images_path = os.path.join(pkg.get_dir('pkgdatadir'), 'images')
 

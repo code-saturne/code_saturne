@@ -333,9 +333,8 @@ def run_studymanager(pkg, options):
     # Source environment if required before importing studymanager modules, as
     # it pulls Python packages such as matplotlib which may not be in
     # the standard path.
-    from code_saturne.base.cs_exec_environment import set_modules, source_rcfile, enquote_arg
-    set_modules(pkg)
-    source_rcfile(pkg)
+    from code_saturne.base.cs_exec_environment import set_pkg_env, enquote_arg
+    set_pkg_env(pkg)
 
     from code_saturne.studymanager.cs_studymanager_study import Studies
 

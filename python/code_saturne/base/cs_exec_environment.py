@@ -963,6 +963,16 @@ def source_rcfile(pkg):
 
 #-------------------------------------------------------------------------------
 
+def set_pkg_env(pkg):
+    """
+    Set package environment if needed
+    """
+
+    set_modules(pkg)
+    source_rcfile(pkg)
+
+#-------------------------------------------------------------------------------
+
 def get_ld_library_path_additions(pkg):
     """
     return library search path additions.
