@@ -1583,6 +1583,7 @@ cs_property_finalize_setup(void)
                     pty->name);
     }
     else if (pty->n_definitions == 0) {
+
       /* Default definition based on the reference value */
 
       if (pty->type & CS_PROPERTY_ISO)
@@ -1610,6 +1611,7 @@ cs_property_finalize_setup(void)
                     " value.\n",
                     pty->name);
       cs_log_printf_flush(CS_LOG_WARNINGS);
+
     }
 
     /* Boundary definitions */
@@ -1863,7 +1865,8 @@ cs_property_data_init(bool                 need_tensor,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_constant_value(cs_property_t *pty, double val)
+cs_property_def_constant_value(cs_property_t *pty,
+                               double         val)
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
@@ -1894,6 +1897,7 @@ cs_property_def_constant_value(cs_property_t *pty, double val)
     pty->defs[new_id]                = d;
     pty->get_eval_at_cell[new_id]    = cs_xdef_eval_scalar_by_val;
     pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_scalar_by_val;
+
   }
   else {
     if (pty->n_definitions > 1)
@@ -1934,7 +1938,9 @@ cs_property_def_constant_value(cs_property_t *pty, double val)
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_iso_by_value(cs_property_t *pty, const char *zname, double val)
+cs_property_def_iso_by_value(cs_property_t *pty,
+                             const char    *zname,
+                             double         val)
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
