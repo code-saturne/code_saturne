@@ -363,7 +363,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.setupUi(self)
 
         self.case = case
-        self.parent = parent
+        self.parent_widget = parent
 
         case_is_saved = not self.case.isModified()
 
