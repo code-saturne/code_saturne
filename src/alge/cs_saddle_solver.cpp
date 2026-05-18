@@ -2247,7 +2247,9 @@ cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
 
   /* Normalization of rhs */
 
-  const double  normalization = sqrt(1.0*b11_size);
+  cs_gnum_t b11_gsize = static_cast<cs_gnum_t>(b11_size);
+  cs::parall::sum(b11_gsize);
+  const double normalization = sqrt(1.0*b11_gsize);
 
   /* Solve m11.x = 1 */
 
