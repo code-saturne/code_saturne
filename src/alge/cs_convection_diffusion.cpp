@@ -1858,8 +1858,8 @@ _convection_diffusion_scalar_unsteady
         (ctx,
          var_name,
          eqp,
-         ircflb,
          true, /* face_gradient */
+         ircflb,
          m,
          fvq,
          pvar,
@@ -2982,12 +2982,12 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
         (ctx,
          var_name,
          eqp,
-         ircflb,
          true, /* face_gradient */
+         ircflb,
          m,
          fvq,
          _pvar,
-                                      grad,
+         grad,
          df_limiter,
          bounds);
     }
@@ -3787,8 +3787,8 @@ _convection_diffusion_unsteady_strided
       (ctx,
        var_name,
        eqp,
-       ircflb,
        true, // face gradient reconstruction
+       ircflb,
        m,
        fvq,
        grad,
@@ -4987,6 +4987,83 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add the explicit part of the convection/diffusion terms of a transport
+ * equation of a scalar field \f$ \varia \f$ such as the temperature.
+ *
+ * More precisely, the right hand side \f$ Rhs \f$ is updated as
+ * follows:
+ * \f[
+ * Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
+ *        C_p\dot{m}_\ij \varia_\fij
+ *      - \lambda_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * \warning \f$ Rhs \f$ must have been initialized before calling this function!
+ * \warning The ghost cell values of pvar must already have been synchronized.
+ *
+ * \param[in]     f             pointer to field, or null
+ * \param[in]     eqp           equation parameters)
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     imasac        take mass accumulation into account?
+ * \param[in]     pvar          solved variable
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at boundary faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the r.h.s.
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the r.h.s.
+ * \param[in]     w_stride      stride for weighting coefficient
+ * \param[in]     c_weight      diffusion gradient weighting
+ * \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_diffusion_thermal(const cs_field_t           *f,
+                                const cs_equation_param_t   eqp,
+                                int                         inc,
+                                int                         imasac,
+                                const cs_real_t           * pvar,
+                                cs_field_bc_coeffs_t       *bc_coeffs,
+                                const cs_real_t             i_massflux[],
+                                const cs_real_t             b_massflux[],
+                                const cs_real_t             i_visc[],
+                                const cs_real_t             b_visc[],
+                                const cs_real_t            *c_weight,
+                                const cs_real_t             xcpp[],
+                                cs_real_t        *restrict  rhs)
+{
+  if (_convection_diffusion_scheme_version == 90) {
+    bool prev_scheme = cs_convection_diffusion_thermal_v9
+                         (f, eqp, inc, imasac,
+                          pvar, bc_coeffs,
+                          i_massflux, b_massflux, i_visc, b_visc,
+                          c_weight, xcpp,
+                          rhs);
+    if (prev_scheme)
+      return;
+  }
+
+  CS_PROFILE_FUNC_RANGE();
+
+  _convection_diffusion_scalar_unsteady<true, false>
+    (f, eqp,
+     false, /* icvflb */
+     inc, imasac,
+     pvar,
+     nullptr, /* icvfli */
+     bc_coeffs,
+     i_massflux, b_massflux,
+     i_visc, b_visc, c_weight,
+     xcpp, rhs, nullptr, nullptr);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Update face flux with convection contribution of a standard transport
  * equation of a scalar field \f$ \varia \f$.
  *
@@ -5884,83 +5961,6 @@ cs_convection_diffusion_tensor(int                          idtvar,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add the explicit part of the convection/diffusion terms of a transport
- * equation of a scalar field \f$ \varia \f$ such as the temperature.
- *
- * More precisely, the right hand side \f$ Rhs \f$ is updated as
- * follows:
- * \f[
- * Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
- *        C_p\dot{m}_\ij \varia_\fij
- *      - \lambda_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
- * \f]
- *
- * \warning \f$ Rhs \f$ must have been initialized before calling this function!
- * \warning The ghost cell values of pvar must already have been synchronized.
- *
- * \param[in]     f             pointer to field, or null
- * \param[in]     eqp           equation parameters)
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     imasac        take mass accumulation into account?
- * \param[in]     pvar          solved variable
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_massflux    mass flux at interior faces
- * \param[in]     b_massflux    mass flux at boundary faces
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     w_stride      stride for weighting coefficient
- * \param[in]     c_weight      diffusion gradient weighting
- * \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
- * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_convection_diffusion_thermal(const cs_field_t           *f,
-                                const cs_equation_param_t   eqp,
-                                int                         inc,
-                                int                         imasac,
-                                const cs_real_t           * pvar,
-                                cs_field_bc_coeffs_t       *bc_coeffs,
-                                const cs_real_t             i_massflux[],
-                                const cs_real_t             b_massflux[],
-                                const cs_real_t             i_visc[],
-                                const cs_real_t             b_visc[],
-                                const cs_real_t            *c_weight,
-                                const cs_real_t             xcpp[],
-                                cs_real_t        *restrict  rhs)
-{
-  if (_convection_diffusion_scheme_version == 90) {
-    bool prev_scheme = cs_convection_diffusion_thermal_v9
-                         (f, eqp, inc, imasac,
-                          pvar, bc_coeffs,
-                          i_massflux, b_massflux, i_visc, b_visc,
-                          c_weight, xcpp,
-                          rhs);
-    if (prev_scheme)
-      return;
-  }
-
-  CS_PROFILE_FUNC_RANGE();
-
-  _convection_diffusion_scalar_unsteady<true, false>
-    (f, eqp,
-     false, /* icvflb */
-     inc, imasac,
-     pvar,
-     nullptr, /* icvfli */
-     bc_coeffs,
-     i_massflux, b_massflux,
-     i_visc, b_visc, c_weight,
-     xcpp, rhs, nullptr, nullptr);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Add the explicit part of the diffusion terms with a symmetric tensor
  * diffusivity for a transport equation of a scalar field \f$ \varia \f$.
  *
@@ -6129,8 +6129,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
         (ctx,
          var_name,
          eqp,
-         ircflb,
          false, // cell gradient reconstruction
+         ircflb,
          m,
          fvq,
          pvar,
@@ -6623,8 +6623,8 @@ cs_anisotropic_left_diffusion_vector
         (ctx,
          var_name,
          eqp,
-         ircflb,
          true, // face gradient reconstruction
+         ircflb,
          m,
          fvq,
          gradv,
@@ -7038,8 +7038,8 @@ cs_anisotropic_right_diffusion_vector
         (ctx,
          var_name,
          eqp,
-         1, // possible exchanges if cpl
          false, // cell gradient reconstr.
+         1, // possible exchanges if cpl
          m,
          fvq,
          grad,
@@ -8477,8 +8477,8 @@ cs_face_anisotropic_diffusion_potential
         (ctx,
          var_name,
          *eqp,
-         0,     // ircflb, no boundary rc here,
          false, // cell gradient reconstruction
+         0,     // ircflb, no boundary rc here,
          m,
          fvq,
          pvar,
@@ -9158,8 +9158,8 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
         (ctx,
          var_name,
          *eqp,
-         0,     // ircflb, no boundary rc here
          false, // cell gradient reconstruction
+         0,     // ircflb, no boundary rc here
          m,
          fvq,
          pvar,

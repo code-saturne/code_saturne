@@ -356,8 +356,8 @@ _convection_diffusion_scalar_unsteady_v91
         (ctx,
          var_name,
          eqp,
-         ircflb,
          true, /* face_gradient */
+         ircflb,
          m,
          fvq,
          pvar,
@@ -1263,8 +1263,8 @@ _convection_diffusion_unsteady_strided_v91
       (ctx,
        var_name,
        eqp,
-       ircflb,
        true, // face gradient reconstruction
+       ircflb,
        m,
        fvq,
        grad,
