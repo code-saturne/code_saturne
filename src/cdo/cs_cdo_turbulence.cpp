@@ -357,12 +357,20 @@ _wall_function_2scales_log(const double    pena_bc_coeff,
   double re = sqrt(k)*hfc/nu;
   double g = exp(-re/11.);
   double uk = sqrt((1.-g)*sqrt(cs_turb_cmu)*k + g*nu*uct/hfc);
-  double yplus = hfc*uk/nu;
-  double ustar = uct/(log(yplus)/cs_turb_xkappa + cs_turb_cstlog);
-  double h_t = uk*ustar/uft;
+  double yplus = hfc * uk / nu;
 
-  if (yplus > ypluli) /* In the logarithm zone */
-    res[0] = cs::max(h_t, 0.0);
+  if (yplus > ypluli) { /* In the logarithm zone */
+    double ustar = uct / (log(yplus) / cs_turb_xkappa + cs_turb_cstlog);
+    // FIXME: I set res[0] = 0 if uft = 0.0 but I am not sure
+    if (uft != 0.0) {
+      double h_t = uk * ustar / uft;
+
+      res[0] = cs::max(h_t, 0.0);
+    }
+    else {
+      res[0] = 0.0;
+    }
+  }
   else /* In the linear zone */
     res[0] = pena_bc_coeff;
 }
