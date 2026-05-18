@@ -90,9 +90,6 @@ typedef enum {
  *  \brief Bit values for additional physical modelling related to the
  *  Navier-Stokes system of equations
  *
- * \var CS_NAVSTO_DEFAULT
- * Default parameters.
- *
  * \var CS_NAVSTO_MODEL_STEADY
  * There is no time dependency in the model
  *
@@ -129,7 +126,6 @@ typedef enum {
  */
 
 typedef enum {
-  CS_NAVSTO_MODEL_DEFAULT                         = 0,    /* =   0 */
   CS_NAVSTO_MODEL_STEADY                          = 1<<0, /* =   1 */
   CS_NAVSTO_MODEL_GRAVITY_EFFECTS                 = 1<<1, /* =   2 */
   CS_NAVSTO_MODEL_CORIOLIS_EFFECTS                = 1<<2, /* =   4 */

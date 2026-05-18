@@ -374,11 +374,12 @@ cs_navsto_system_activate(const cs_boundary_t          *boundaries,
 
   /* Initialize the set of parameters */
 
-  navsto->param = cs_navsto_param_create(boundaries,
-                                         model,
-                                         model_flag,
-                                         algo_coupling,
-                                         post_flag);
+  navsto->param =
+    cs_navsto_param_create(boundaries, model, 0, algo_coupling, 0);
+
+  /* Set flags */
+  cs_navsto_system_set_post_flag(post_flag);
+  cs_navsto_system_set_model_flag(model_flag);
 
   /* Set the default boundary condition for the equations of the Navier-Stokes
      system according to the default domain boundary */
@@ -432,31 +433,6 @@ cs_navsto_system_activate(const cs_boundary_t          *boundaries,
     break;
   }
 
-  if (post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
-    navsto->stream_function_eq = cs_equation_add(CS_NAVSTO_STREAM_EQNAME,
-                                                 "stream_function",
-                                                 CS_EQUATION_TYPE_NAVSTO,
-                                                 1,
-                                                 CS_BC_HMG_NEUMANN);
-
-    cs_equation_param_t *eqp
-      = cs_equation_get_param(navsto->stream_function_eq);
-    assert(eqp != nullptr);
-
-    /* Default settings for this equation */
-
-    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
-    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
-    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
-
-    /* This is for post-processing purpose, so, there is no need to have
-     * a restrictive convergence tolerance on the resolution of the linear
-     * system */
-
-    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-6");
-  }
-
   /* Create the main structure to handle the turbulence modelling */
 
   navsto->turbulence = cs_turbulence_create(navsto->param->turbulence);
@@ -466,6 +442,26 @@ cs_navsto_system_activate(const cs_boundary_t          *boundaries,
   cs_navsto_system = navsto;
 
   return navsto;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and initialize the Navier-Stokes (NS) system
+ *
+ * \param[in] boundaries     pointer to the domain boundaries
+ * \param[in] model          type of model related to the NS system
+ * \param[in] algo_coupling  algorithm used for solving the NS system
+ *
+ * \return a pointer to a new allocated cs_navsto_system_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_navsto_system_t *
+cs_navsto_system_activate(const cs_boundary_t       *boundaries,
+                          cs_navsto_param_model_t    model,
+                          cs_navsto_param_coupling_t algo_coupling)
+{
+  return cs_navsto_system_activate(boundaries, model, 0, algo_coupling, 0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2143,5 +2139,71 @@ cs_navsto_system_log_setup(void)
                   mom_eqp->weak_pena_bc_coeff);
   }
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set post flags for the Navier-Stokes (NS) system
+ *
+ * \param[in] post_flag      post-processings options
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_set_post_flag(cs_navsto_param_post_flag_t post_flag)
+{
+  cs_navsto_system_t *ns = cs_navsto_system;
+
+  if (ns == nullptr) {
+    return;
+  }
+
+  ns->param->post_flag = post_flag;
+
+  if (post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
+    ns->stream_function_eq = cs_equation_add(CS_NAVSTO_STREAM_EQNAME,
+                                             "stream_function",
+                                             CS_EQUATION_TYPE_NAVSTO,
+                                             1,
+                                             CS_BC_HMG_NEUMANN);
+
+    cs_equation_param_t *eqp = cs_equation_get_param(ns->stream_function_eq);
+    assert(eqp != nullptr);
+
+    /* Default settings for this equation */
+
+    cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+    cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
+    cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
+
+    /* This is for post-processing purpose, so, there is no need to have
+     * a restrictive convergence tolerance on the resolution of the linear
+     * system */
+
+    cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-6");
+  }
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set model flags for the Navier-Stokes (NS) system
+ *
+ * \param[in] model_flag     additional high-level model options
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_set_model_flag(cs_navsto_param_model_flag_t model_flag)
+{
+  cs_navsto_system_t *ns = cs_navsto_system;
+
+  if (ns == nullptr) {
+    return;
+  }
+
+  ns->param->model_flag = model_flag;
+};
 
 /*----------------------------------------------------------------------------*/

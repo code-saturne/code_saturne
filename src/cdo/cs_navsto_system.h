@@ -451,6 +451,23 @@ cs_navsto_system_activate(const cs_boundary_t          *boundaries,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Allocate and initialize the Navier-Stokes (NS) system
+ *
+ * \param[in] boundaries     pointer to the domain boundaries
+ * \param[in] model          type of model related to the NS system
+ * \param[in] algo_coupling  algorithm used for solving the NS system
+ *
+ * \return a pointer to a new allocated cs_navsto_system_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_navsto_system_t *
+cs_navsto_system_activate(const cs_boundary_t       *boundaries,
+                          cs_navsto_param_model_t    model,
+                          cs_navsto_param_coupling_t algo_coupling);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free the main structure related to the Navier-Stokes system
  */
 /*----------------------------------------------------------------------------*/
@@ -684,6 +701,30 @@ cs_navsto_system_extra_post(void                      *input,
                             const cs_lnum_t            i_face_ids[],
                             const cs_lnum_t            b_face_ids[],
                             const cs_time_step_t      *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set post flags for the Navier-Stokes (NS) system
+ *
+ * \param[in] post_flag      post-processings options
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_set_post_flag(cs_navsto_param_post_flag_t post_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set model flags for the Navier-Stokes (NS) system
+ *
+ * \param[in] model_flag     additional high-level model options
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_set_model_flag(cs_navsto_param_model_flag_t model_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
