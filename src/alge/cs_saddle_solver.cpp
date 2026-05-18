@@ -46,14 +46,15 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_array.h"
 #include "alge/cs_blas.h"
-#include "cdo/cs_cdo_solve.h"
+#include "alge/cs_matrix_default.h"
+#include "base/cs_array.h"
+#include "base/cs_parall.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
-#include "alge/cs_matrix_default.h"
 #include "base/cs_mem.h"
 #include "base/cs_parameters.h"
+#include "cdo/cs_cdo_solve.h"
 #include "cdo/cs_saddle_system.h"
 
 #if 0  /* Set to 1 if systems have to be exported into a binary file */
@@ -339,7 +340,7 @@ _block_pcd_dot_product(cs_saddle_solver_t  *solver,
 
   dp_value += cs_dot(solver->n2_scatter_dofs, x2, y2);
 
-  cs_parall_sum(1, CS_DOUBLE, &dp_value);
+  cs::parall::sum(dp_value);
 
   return dp_value;
 }
@@ -403,7 +404,7 @@ _norm(cs_lnum_t             n1,
   double  sum2 = cs_dot_xx(n2, x2);
 
   square_sum = sum1 + sum2;
-  cs_parall_sum(1, CS_DOUBLE, &square_sum);
+  cs::parall::sum(square_sum);
   assert(square_sum > -DBL_MIN);
 
   return sqrt(square_sum);
@@ -595,7 +596,7 @@ _solve_m11_approximation(cs_saddle_solver_t                   *solver,
     (rset != nullptr) ? rset->n_elts[0] : solver->n1_scatter_dofs;
 
   double  r_norm = cs_dot_xx(n_x1_elts, r);
-  cs_parall_sum(1, CS_DOUBLE, &r_norm);
+  cs::parall::sum(r_norm);
   r_norm = sqrt(fabs(r_norm));
 
   /* Solve the linear solver */
@@ -719,7 +720,7 @@ _solve_schur_approximation(cs_saddle_solver_t  *solver,
          synchronize) */
 
       double  r_norm = cs_dot_xx(n2_elts, r_schur);
-      cs_parall_sum(1, CS_DOUBLE, &r_norm);
+      cs::parall::sum(r_norm);
       r_norm = sqrt(fabs(r_norm));
 
       cs_array_real_fill_zero(n2_elts, z_schur);
@@ -1428,7 +1429,7 @@ _alu_incr_cvg_test(cs_iter_algo_t    *algo,
   /* Compute the new residual based on the norm of the divergence constraint */
 
   cs_real_t  res2_square = cs_dot_wxx(n2_dofs, weights, res2);
-  cs_parall_sum(1, CS_DOUBLE, &res2_square);
+  cs::parall::sum(res2_square);
   assert(res2_square > -DBL_MIN);
   cs_real_t  l2norm_res2 = sqrt(res2_square);
 
@@ -1545,7 +1546,7 @@ _gkb_block22_weighted_norm(const cs_lnum_t   n2_dofs,
 
   /* Parallel synchronization */
 
-  cs_parall_sum(1, CS_DOUBLE, &beta2);
+  cs::parall::sum(beta2);
   assert(beta2 > -DBL_MIN);
 
   /* Keep the value of beta = ||b||_{W22} */
@@ -4915,7 +4916,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
 
   double rhs_norm = _nrhs1_square + _nrhs2_square;
 
-  cs_parall_sum(1, CS_DOUBLE, &rhs_norm);
+  cs::parall::sum(rhs_norm);
   rhs_norm = sqrt(rhs_norm);
   if (rhs_norm < cs_math_zero_threshold) rhs_norm = 1.0;
 
@@ -4928,14 +4929,14 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
     _m11_vector_multiply_allocated(rset, m11, dx1, ctx->rhs);
 
     cs_real_t norm_m11x1 = cs_dot_xx(n1_dofs, ctx->rhs);
-    cs_parall_sum(1, CS_DOUBLE, &norm_m11x1);
+    cs::parall::sum(norm_m11x1);
 
 #   pragma omp parallel for if (n1_dofs > CS_THR_MIN)
     for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
       ctx->rhs[i1] = -m12x2[i1] - ctx->rhs[i1];
 
     cs_real_t norm_split = cs_dot_xx(n1_dofs, ctx->rhs);
-    cs_parall_sum(1, CS_DOUBLE, &norm_split);
+    cs::parall::sum(norm_split);
 
     /* Initial normalization from the newly computed rhs */
 
@@ -5050,7 +5051,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
     double  _nr2_square = cs_dot_xx(n2_dofs, r + ctx->b11_max_size);
 
     residual_norm = _nr1_square + _nr2_square;
-    cs_parall_sum(1, CS_DOUBLE, &residual_norm);
+    cs::parall::sum(residual_norm);
     residual_norm = sqrt(residual_norm)/rhs_norm;
 
     iterup += 1;
