@@ -346,6 +346,11 @@ cs_thermal_system_activate(cs_thermal_model_type_t model,
                          CS_EQUATION_TYPE_THERMAL,
                          1,
                          CS_BC_HMG_NEUMANN);
+
+    /* TODO */
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Work in progress. Not yet fully available.\n", __func__);
+
   }
   else if (model & CS_THERMAL_MODEL_USE_TOTAL_ENERGY) {
     eq = cs_equation_add(CS_THERMAL_EQNAME,

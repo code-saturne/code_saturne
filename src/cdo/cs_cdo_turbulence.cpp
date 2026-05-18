@@ -353,14 +353,13 @@ _wall_function_2scales_log(const double    pena_bc_coeff,
                            cs_real_t      *res)
 {
   const double ypluli = cs_get_glob_wall_functions()->ypluli;
-
-  double re = sqrt(k)*hfc/nu;
-  double g = exp(-re/11.);
-  double uk = sqrt((1.-g)*sqrt(cs_turb_cmu)*k + g*nu*uct/hfc);
-  double yplus = hfc * uk / nu;
+  const double re = sqrt(k)*hfc/nu;
+  const double g = exp(-re/11.);
+  const double uk = sqrt((1.-g)*sqrt(cs_turb_cmu)*k + g*nu*uct/hfc);
+  const double yplus = hfc * uk / nu;
 
   if (yplus > ypluli) { /* In the logarithm zone */
-    double ustar = uct / (log(yplus) / cs_turb_xkappa + cs_turb_cstlog);
+    double ustar = uct / (log(yplus)/cs_turb_xkappa + cs_turb_cstlog);
     // FIXME: I set res[0] = 0 if uft = 0.0 but I am not sure
     if (uft != 0.0) {
       double h_t = uk * ustar / uft;

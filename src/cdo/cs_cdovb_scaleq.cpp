@@ -3485,7 +3485,7 @@ cs_cdovb_scaleq_solve_implicit(bool                       cur2prev,
  *         to a residual). This is useful when the resolution is embedded into
  *         a non-linear process.
  *
- * \param[in]      cur2prev   Not used. Should be done before if needed.
+ * \param[in]      cur2prev   not used. Should be done before if needed.
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure

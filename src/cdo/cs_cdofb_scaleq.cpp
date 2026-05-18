@@ -99,7 +99,7 @@ static cs_cell_builder_t **cs_cdofb_cell_bld = nullptr;
 
 /* Pointer to shared structures */
 
-static const cs_cdo_quantities_t    *cs_shared_quant;
+static const cs_cdo_quantities_t    *cs_shared_cdoq;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
 
@@ -149,32 +149,36 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the boundary conditions known from the settings and build the
- *         list of DoFs associated to an (internal) enforcement
+ * \brief Set the values at boundary faces from the knowledge of the boundary
+ *         conditions. Build if requested the list of DoFs associated with an
+ *         (internal) enforcement
  *
- * \param[in]      t_eval    time at which one evaluates BCs
- * \param[in]      mesh      pointer to a cs_mesh_t structure
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
+ * \param[in]      t_eval  time at which one evaluates BCs
+ * \param[in]      mesh    pointer to a cs_mesh_t structure
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb     pointer to a cs_equation_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_setup(cs_real_t                     t_eval,
-       const cs_mesh_t              *mesh,
-       const cs_equation_param_t    *eqp,
-       cs_equation_builder_t        *eqb)
+_setup(cs_real_t                  t_eval,
+       const cs_mesh_t           *mesh,
+       const cs_equation_param_t *eqp,
+       cs_equation_builder_t     *eqb)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t *cdoq = cs_shared_cdoq;
+  const cs_cdo_connect_t *connect = cs_shared_connect;
 
-  /* Compute the values of the Dirichlet BC */
+  /* Compute the Dirichlet BC at boundary faces */
 
-  CS_MALLOC(eqb->dir_values, quant->n_b_faces, cs_real_t);
-  cs_array_real_fill_zero(quant->n_b_faces, eqb->dir_values);
+  CS_MALLOC(eqb->dir_values, cdoq->n_b_faces, cs_real_t);
+  cs_array_real_fill_zero(cdoq->n_b_faces, eqb->dir_values);
 
-  cs_equation_bc_dirichlet_at_faces(mesh, quant, connect,
-                                    eqp, eqb->face_bc,
+  cs_equation_bc_dirichlet_at_faces(mesh,
+                                    cdoq,
+                                    connect,
+                                    eqp,
+                                    eqb->face_bc,
                                     t_eval,
                                     eqb->dir_values);
 
@@ -699,20 +703,20 @@ cs_cdofb_scaleq_is_initialized(void)
  *         scalar-valued face-based schemes.
  *         Set shared pointers from the main domain members
  *
- * \param[in]  quant       additional mesh quantities struct.
+ * \param[in]  cdoq        additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_init_sharing(const cs_cdo_quantities_t *quant,
+cs_cdofb_scaleq_init_sharing(const cs_cdo_quantities_t *cdoq,
                              const cs_cdo_connect_t    *connect,
                              const cs_time_step_t      *time_step)
 {
   /* Assign static const pointers */
 
-  cs_shared_quant     = quant;
+  cs_shared_cdoq      = cdoq;
   cs_shared_connect   = connect;
   cs_shared_time_step = time_step;
 
@@ -1148,7 +1152,7 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
                             cs_equation_builder_t        *eqb,
                             void                         *context)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_cdoq;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
@@ -1165,8 +1169,8 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
 
   /* By default, 0 is set as initial condition for the computational domain */
 
-  cs_array_real_fill_zero(quant->n_faces, f_vals);
-  cs_array_real_fill_zero(quant->n_cells, c_vals);
+  cs_array_real_fill_zero(cdoq->n_faces, f_vals);
+  cs_array_real_fill_zero(cdoq->n_cells, c_vals);
 
   if (eqp->n_ic_defs > 0) {
 
@@ -1244,16 +1248,16 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
     CS_FREE(def2f_idx);
 
     if (fld->val_pre != nullptr)
-      cs_array_real_copy(quant->n_cells, c_vals, fld->val_pre);
+      cs_array_real_copy(cdoq->n_cells, c_vals, fld->val_pre);
 
   } /* Initial values to set */
 
   /* Set the boundary values as initial values: Compute the values of the
      Dirichlet BC */
 
-  cs_real_t  *b_f_vals = f_vals + quant->n_i_faces;
+  cs_real_t  *b_f_vals = f_vals + cdoq->n_i_faces;
   cs_equation_bc_dirichlet_at_faces(mesh,
-                                    quant,
+                                    cdoq,
                                     connect,
                                     eqp,
                                     eqb->face_bc,
@@ -1261,7 +1265,7 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
                                     b_f_vals);
 
   if (eqc->face_values_pre != nullptr)
-    cs_array_real_copy(quant->n_faces, eqc->face_values, eqc->face_values_pre);
+    cs_array_real_copy(cdoq->n_faces, eqc->face_values, eqc->face_values_pre);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1289,8 +1293,8 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
                             void                       *context)
 {
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_cdoq;
+  const cs_lnum_t  n_faces = cdoq->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
@@ -1300,10 +1304,12 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  /* Build an array storing the Dirichlet values at faces.
-   * First argument is set to t_cur even if this is a steady computation since
-   * one can call this function to compute a steady-state solution at each time
-   * step of an unsteady computation. */
+  /* Build an array storing the Dirichlet values at boundary faces and another
+   * one to enforce values in the computational domain if requested.
+   *
+   * First argument is set to time_eval even if this is a steady computation
+   * since one can call this function to compute a steady-state solution at
+   * each time step of an unsteady computation. */
 
   _setup(time_eval, mesh, eqp, eqb);
 
@@ -1314,7 +1320,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   cs_cdo_system_helper_init_system(sh, &rhs);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)
   {
     const int  t_id = cs_get_thread_id();
 
@@ -1352,7 +1358,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
      * --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       /* Set the current cell flag */
 
@@ -1362,7 +1368,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect, cdoq, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
@@ -1475,7 +1481,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
   /* Last step in the computation of the renormalization coefficient */
 
   cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
-                             quant->vol_tot,
+                             cdoq->vol_tot,
                              n_faces,
                              rhs,
                              &rhs_norm);
@@ -1496,7 +1502,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   /* Update field (cell values ar known) */
 
-  cs_array_real_copy(quant->n_cells, cell_values, fld->val);
+  cs_array_real_copy(cdoq->n_cells, cell_values, fld->val);
 
   cs_sles_free(sles);
   cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
@@ -1528,8 +1534,8 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_cdoq;
+  const cs_lnum_t  n_faces = cdoq->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
@@ -1537,10 +1543,12 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_field_t  *fld = cs_field_by_id(field_id);
   cs_cdo_system_helper_t  *sh = eqb->system_helper;
 
-  /* Build an array storing the Dirichlet values at faces
-   * First argument is set to t_cur even if this is a steady computation since
-   * one can call this function to compute a steady-state solution at each time
-   * step of an unsteady computation. */
+  /* Build an array storing the Dirichlet values at boundary faces and another
+   * one to enforce values in the computational domain if requested.
+   *
+   * First argument is set to time_eval even if this is a steady computation
+   * since one can call this function to compute a steady-state solution at
+   * each time step of an unsteady computation. */
 
   _setup(time_eval, mesh, eqp, eqb);
 
@@ -1551,7 +1559,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
 
   cs_cdo_system_helper_init_system(sh, &rhs);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)
   {
     const int  t_id = cs_get_thread_id();
 
@@ -1589,7 +1597,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
      * --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       /* Set the current cell flag */
 
@@ -1599,7 +1607,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
 
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect, cdoq, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
@@ -1701,7 +1709,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
   /* Last step in the computation of the renormalization coefficient */
 
   cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
-                             quant->vol_tot,
+                             cdoq->vol_tot,
                              n_faces,
                              rhs,
                              &rhs_norm);
@@ -1758,8 +1766,8 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_cdoq;
+  const cs_lnum_t  n_faces = cdoq->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
@@ -1769,8 +1777,10 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
 
-  /* Build an array storing the Dirichlet values at faces
-   * Always evaluated at t_cur + dt */
+  /* Build an array storing the Dirichlet values at boundary faces and another
+   * one to enforce values in the computational domain if requested.
+   *
+   * Always evaluate quantities at t_cur + dt */
 
   _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb);
 
@@ -1781,7 +1791,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
 
   cs_cdo_system_helper_init_system(sh, &rhs);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)
   {
     const int  t_id = cs_get_thread_id();
 
@@ -1827,7 +1837,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
     /* --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       /* Set the current cell flag */
 
@@ -1837,7 +1847,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
 
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect, cdoq, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
@@ -1986,7 +1996,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   /* Last step in the computation of the renormalization coefficient */
 
   cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
-                             quant->vol_tot,
+                             cdoq->vol_tot,
                              n_faces,
                              rhs,
                              &rhs_norm);
@@ -2043,8 +2053,8 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_cdoq;
+  const cs_lnum_t  n_faces = cdoq->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
@@ -2065,21 +2075,22 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
     compute_initial_source = true;
 
-  /* Build an array storing the Dirichlet values at faces
-   * Should not be t_eval since one sets the Dirichlet values
-   * Dirichlet boundary conditions are always evaluated at t_cur + dt
-   */
+  /* Build an array storing the Dirichlet values at boundary faces and another
+   * one to enforce values in the computational domain if requested.
+   *
+   *
+   * Always evaluate quantities at t_cur + dt */
 
   _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb);
 
   /* Initialize the local system: rhs, matrix and assembler values */
 
-  double  rhs_norm = 0.;
-  cs_real_t *rhs      = nullptr;
+  double rhs_norm = 0.;
+  cs_real_t *rhs  = nullptr;
 
   cs_cdo_system_helper_init_system(sh, &rhs);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)
   {
     const int  t_id = cs_get_thread_id();
 
@@ -2128,7 +2139,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
     /* --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       /* Set the current cell flag */
 
@@ -2138,7 +2149,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect, cdoq, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
@@ -2331,7 +2342,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   /* Last step in the computation of the renormalization coefficient */
 
   cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
-                             quant->vol_tot,
+                             cdoq->vol_tot,
                              n_faces,
                              rhs,
                              &rhs_norm);
@@ -2380,7 +2391,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
                         cs_equation_builder_t         *eqb,
                         void                          *context)
 {
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_cdoq;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const char *func_name = __func__;
@@ -2393,10 +2404,10 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
   /* Allocate and initialize the structure storing the balance evaluation */
 
   cs_cdo_balance_t  *eb = cs_cdo_balance_create(cs_flag_primal_cell,
-                                                quant->n_cells);
+                                                cdoq->n_cells);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, ts, eqp, eqb, eqc, pot, eb, cs_cdofb_cell_bld, \
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)                  \
+  shared(cdoq, connect, ts, eqp, eqb, eqc, pot, eb, cs_cdofb_cell_bld, \
          func_name)
   {
     const int  t_id = cs_get_thread_id();
@@ -2469,7 +2480,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
     /* --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       cb->cell_flag = connect->cell_flag[c_id];
 
@@ -2477,7 +2488,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect, cdoq, cm);
 
       /* Set the value of the current potential */
 
@@ -2657,7 +2668,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
   } /* OPENMP Block */
 
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++)
     eb->balance[c_id] =
       eb->unsteady_term[c_id]  + eb->reaction_term[c_id]  +
       eb->diffusion_term[c_id] + eb->advection_term[c_id] +
@@ -2700,13 +2711,13 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *f_values,
   if (diff_flux == nullptr)
     return;
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_cdoq;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   /* If no diffusion, return after resetting */
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    std::memset(diff_flux, 0, quant->n_faces * sizeof(cs_real_t));
+    std::memset(diff_flux, 0, cdoq->n_faces * sizeof(cs_real_t));
     return;
   }
 
@@ -2720,8 +2731,8 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *f_values,
   cs_hodge_compute_t  *get_diffusion_hodge =
     cs_hodge_get_func(__func__, eqp->diffusion_hodgep);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(t_eval, quant, connect, eqp, eqb, diff_flux, c_values,         \
+# pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)                  \
+  shared(t_eval, cdoq, connect, eqp, eqb, diff_flux, c_values,         \
          f_values, get_diffusion_hodge, cs_cdofb_cell_bld)
   {
     const int  t_id = cs_get_thread_id();
@@ -2773,11 +2784,11 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *f_values,
     /* Define the flux by cellwise contributions */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */
 
-      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+      cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
       if (cs_dbg_cw_test(eqp, cm, nullptr))
@@ -2854,11 +2865,11 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_quantities_t  *cdoq = cs_shared_cdoq;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    std::memset(bflux, 0, quant->n_b_faces * sizeof(cs_real_t));
+    std::memset(bflux, 0, cdoq->n_b_faces * sizeof(cs_real_t));
 
     cs_timer_t  t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
@@ -2869,15 +2880,15 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
 
   assert(eqc->diffusion_hodge != nullptr);
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
-  shared(quant, connect, eqp, eqb, eqc, bflux, pot_c, pot_f, diff_pty,  \
+#pragma omp parallel if (cdoq->n_cells > CS_THR_MIN)                   \
+  shared(cdoq, connect, eqp, eqb, eqc, bflux, pot_c, pot_f, diff_pty,  \
          cs_cdofb_cell_bld)                                             \
   firstprivate(t_eval)
   {
     const int  t_id = cs_get_thread_id();
     const cs_cdo_bc_face_t  *face_bc = eqb->face_bc;
     const cs_adjacency_t  *f2c = connect->f2c;
-    const cs_lnum_t  fidx_shift = f2c->idx[quant->n_i_faces];
+    const cs_lnum_t  fidx_shift = f2c->idx[cdoq->n_i_faces];
 
     cs_real_t *pot = nullptr;
     CS_MALLOC(pot, connect->n_max_fbyc + 1, cs_real_t); /* +1 for cell */
@@ -2921,9 +2932,9 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
       cs_hodge_evaluate_property(0, cb->t_pty_eval, 0, hodge);
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
+    for (cs_lnum_t bf_id = 0; bf_id < cdoq->n_b_faces; bf_id++) {
 
-      const cs_lnum_t  f_id = bf_id + quant->n_i_faces;
+      const cs_lnum_t  f_id = bf_id + cdoq->n_i_faces;
       const cs_lnum_t  c_id = f2c->ids[bf_id + fidx_shift];
 
       switch (face_bc->flag[bf_id]) {
@@ -2934,7 +2945,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
       case CS_CDO_BC_NEUMANN:
         { /* Set the local mesh structure for the current cell */
 
-          cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+          cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
           const short int f = cm->get_face(f_id);
 
@@ -2954,7 +2965,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
 
           // FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta)
 
-          cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+          cs_cell_mesh_build(c_id, msh_flag, connect, cdoq, cm);
 
           const short int f = cm->get_face(f_id);
 
@@ -2977,7 +2988,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
 
           /* Set the local mesh structure for the current cell */
 
-          cs_cell_mesh_build(c_id, msh_flag | add_flag, connect, quant, cm);
+          cs_cell_mesh_build(c_id, msh_flag | add_flag, connect, cdoq, cm);
 
           const short int f = cm->get_face(f_id);
 
@@ -3083,7 +3094,7 @@ cs_cdofb_scaleq_extra_post(const cs_equation_param_t  *eqp,
      is a mesh modification. In particular, a removal of 2D extruded border
      faces*/
 
-  bool  use_parent = (cs_shared_quant->remove_boundary_faces) ? false : true;
+  bool  use_parent = (cs_shared_cdoq->remove_boundary_faces) ? false : true;
 
   /* Field post-processing */
 
@@ -3258,7 +3269,7 @@ cs_cdofb_scaleq_read_restart(cs_restart_t    *restart,
   /* ===================== */
 
   const int  b_ml_id = cs_mesh_location_get_id_by_name(N_("boundary_faces"));
-  cs_real_t  *b_values = eqc->face_values + cs_shared_quant->n_i_faces;
+  cs_real_t  *b_values = eqc->face_values + cs_shared_cdoq->n_i_faces;
 
   /* Define the section name */
 
@@ -3333,7 +3344,7 @@ cs_cdofb_scaleq_write_restart(cs_restart_t    *restart,
   /* ===================== */
 
   const int  b_ml_id = cs_mesh_location_get_id_by_name(N_("boundary_faces"));
-  const cs_real_t  *b_values = eqc->face_values + cs_shared_quant->n_i_faces;
+  const cs_real_t  *b_values = eqc->face_values + cs_shared_cdoq->n_i_faces;
 
   /* Define the section name */
 
