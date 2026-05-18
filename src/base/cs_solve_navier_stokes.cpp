@@ -1295,8 +1295,6 @@ _update_fluid_vel(const cs_mesh_t             *m,
                                   cpro_gradp);
     }
 
-
-
     cs_equation_param_t *eqp_u = cs_field_get_equation_param(CS_F_(vel));
 
     if (eqp_u->rk_def.rk_id > -1) {
@@ -2249,16 +2247,16 @@ _velocity_prediction(const cs_mesh_t             *m,
     CS_FREE(cpro_rho_tc);
   }
 
-  cs_gradient_porosity_balance(1);
-
   /* Pressure gradient */
-  if (cs_glob_velocity_pressure_model->iprcdo == 0)
+  if (cs_glob_velocity_pressure_model->iprcdo == 0) {
+    cs_gradient_porosity_balance(1);
     cs_field_gradient_potential(CS_F_(p),
                                 0, /* iprev */
                                 1, /* inc */
                                 vp_param->iphydr,
                                 frcxt,
                                 cpro_gradp);
+  }
 
   const cs_real_3_t *restrict cdgfbo = mq->b_face_cog;
 
