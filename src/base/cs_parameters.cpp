@@ -49,6 +49,7 @@
 #include "base/cs_ale.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
+#include "model/cs_fields_rules_manager.h"
 #include "base/cs_field_pointer.h"
 #include "alge/cs_gradient.h"
 #include "base/cs_log.h"
@@ -69,6 +70,9 @@
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_time_moment.h"
 #include "base/cs_thermal_model.h"
+#include "model/cs_thermal_rules_manager.h"
+#include "model/cs_turbulence_rules_manager.h"
+#include "model/cs_time_stepping_rules_manager.h"
 #include "cfbl/cs_cf_model.h"
 #include "base/cs_sat_coupling.h"
 #include "base/cs_tree.h"
@@ -1179,98 +1183,101 @@ cs_parameters_define_auxiliary_fields(void)
 
   cs_thermal_model_t *th_model = cs_get_glob_thermal_model();
   cs_cf_model_t *th_cf_model = cs_get_glob_cf_model();
+
+  /* Load thermal rules from ThermalRules.xml
+   * The conditional fields are described in the XML and not hardcoded.
+   * ------------------------------------------------------------------ */
+
   cs_fluid_properties_t *fluid_pro = cs_get_glob_fluid_properties();
+  cs_fields_rules_manager *frm = cs_get_fields_rules_manager();
 
+  const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+  const int key_log   = cs_field_key_id("log");
+  const int key_vis   = cs_field_key_id("post_vis");
+
+  /* Helper lambda : creer un champ depuis une regle XML */
+  auto create_from_rule = [&](const cs_field_creation_rule_t &rule,
+                               bool has_previous) -> cs_field_t * {
+
+    /* Determiner le type de champ */
+    int field_type = 0;
+    if (rule.type == "property")
+      field_type = CS_FIELD_PROPERTY | CS_FIELD_INTENSIVE;
+    else if (rule.type == "postprocess")
+      field_type = CS_FIELD_POSTPROCESS;
+    /* internal : field_type = 0 */
+
+    /* Determiner la localisation */
+    int location = CS_MESH_LOCATION_CELLS;
+    if (rule.location == "interior_faces")
+      location = CS_MESH_LOCATION_INTERIOR_FACES;
+    else if (rule.location == "boundary_faces")
+      location = CS_MESH_LOCATION_BOUNDARY_FACES;
+
+    cs_field_t *fld = cs_field_create(rule.name.c_str(),
+                                      field_type,
+                                      location,
+                                      rule.dimension,
+                                      has_previous);
+
+    /* Appliquer post_process et log si specifies dans XML */
+    if (rule.post_process) {
+      fld->set_key_int(key_log, 1);
+      fld->set_key_int(key_vis, post_flag);
+    }
+    if (rule.log && !rule.post_process)
+      fld->set_key_int(key_log, 1);
+
+    return fld;
+  };
+
+  /* --------------------------------------------------------------------- */
+  /* Condition "has_kinetic_st"                                             */
+  /* kinetic_energy_thermal_st, rho_k_prev,                                */
+  /* inner_face_velocity, boundary_face_velocity                           */
+  /* --------------------------------------------------------------------- */
   if (th_model->has_kinetic_st == 1) {
-    cs_field_t *fld
-      = cs_field_create("kinetic_energy_thermal_st",
-                        CS_FIELD_PROPERTY,
-                        CS_MESH_LOCATION_CELLS,
-                        1,
-                        true);
-
-    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-
-    fld->set_key_int("log", 1);
-    fld->set_key_int("post_vis", post_flag);
+    const auto *fields = frm->get_fields("Thermal", "has_kinetic_st");
+    if (fields != nullptr) {
+      for (const auto &rule : *fields) {
+        /* has_previous : true pour kinetic_energy_thermal_st */
+        bool has_prev = (rule.name == "kinetic_energy_thermal_st");
+        create_from_rule(rule, has_prev);
+      }
+    }
   }
 
-  /* Fields used to model the aforepresented source term */
-
-  if (th_model->has_kinetic_st == 1) {
-    cs_field_create("rho_k_prev",
-                    0,
-                    CS_MESH_LOCATION_CELLS,
-                    1,
-                    false);
-
-  }
-
-  if (th_model->has_kinetic_st == 1) {
-    cs_field_create("inner_face_velocity",
-                    0,
-                    CS_MESH_LOCATION_INTERIOR_FACES,
-                    3,
-                    true);
-  }
-
-  if (th_model->has_kinetic_st == 1) {
-    cs_field_create("boundary_face_velocity",
-                    0,
-                    CS_MESH_LOCATION_BOUNDARY_FACES,
-                    3,
-                    true);
-  }
-
-  /* If humid air equation of state, define yv,
-     the mass fraction of water vapor */
-
+  /* --------------------------------------------------------------------- */
+  /* Condition "ieos_moist_air"                                             */
+  /* yv : fraction massique vapeur d eau                                   */
+  /* --------------------------------------------------------------------- */
   if (th_cf_model->ieos == CS_EOS_MOIST_AIR) {
-    cs_field_t *fld = cs_field_create("yv",
-                                      CS_FIELD_PROPERTY | CS_FIELD_INTENSIVE,
-                                      CS_MESH_LOCATION_CELLS,
-                                      1,
-                                      true);
-
-    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-
-    fld->set_key_int("log", 1);
-    fld->set_key_int("post_vis", post_flag);
+    const auto *fields = frm->get_fields("Thermal", "ieos_moist_air");
+    if (fields != nullptr) {
+      for (const auto &rule : *fields)
+        create_from_rule(rule, true);
+    }
   }
 
+  /* --------------------------------------------------------------------- */
+  /* Condition "ieos_not_none_and_temp_or_energy"                          */
+  /* algo:pressure_gradient, algo:pressure_increment_gradient,             */
+  /* isobaric_heat_capacity                                                 */
+  /* --------------------------------------------------------------------- */
   if (th_cf_model->ieos != CS_EOS_NONE) {
-
-    /* Pressure gradient */
     if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
         || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY
         || th_cf_model->ieos == CS_EOS_GAS_MIX) {
 
-      cs_field_create("algo:pressure_gradient",
-                      0,
-                      CS_MESH_LOCATION_CELLS,
-                      3,
-                      false);
-
-      cs_field_create("algo:pressure_increment_gradient",
-                      0,
-                      CS_MESH_LOCATION_CELLS,
-                      3,
-                      false);
-
-      /* FIXME: check relation between this and "specific_heat" field */
-
-      cs_field_t *fld = cs_field_create("isobaric_heat_capacity",
-                                        CS_FIELD_PROPERTY | CS_FIELD_INTENSIVE,
-                                        CS_MESH_LOCATION_CELLS,
-                                        1,
-                                        false);
-
-      fld->set_key_int("log", 1);
-      fld->set_key_int("post_vis", 0);
-
+      const auto *fields = frm->get_fields("Thermal",
+                             "ieos_not_none_and_temp_or_energy");
+      if (fields != nullptr) {
+        for (const auto &rule : *fields)
+          create_from_rule(rule, false);
+      }
     }
 
-    /* For gas mix: variable rho, Cp, Cv */
+    /* Pour gas mix : variable rho, Cp, Cv */
     if (th_cf_model->ieos == CS_EOS_GAS_MIX) {
       fluid_pro->ivivar = 1;
       fluid_pro->icp = 0;
@@ -1278,45 +1285,37 @@ cs_parameters_define_auxiliary_fields(void)
     }
   }
 
-  /* Temperature in case of solving the internal energy equation */
+  /* --------------------------------------------------------------------- */
+  /* Condition "thermal_internal_energy"                                    */
+  /* temperature : creee comme propriete si energie interne resolue        */
+  /* --------------------------------------------------------------------- */
   if (th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
-    cs_field_t *fld = cs_field_create("temperature",
-                                      CS_FIELD_PROPERTY | CS_FIELD_INTENSIVE,
-                                      CS_MESH_LOCATION_CELLS,
-                                      1,
-                                      true);
-
-    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-
-    fld->set_key_int("log", 1);
-    fld->set_key_int("post_vis", post_flag);
+    const auto *fields = frm->get_fields("Thermal",
+                           "thermal_internal_energy");
+    if (fields != nullptr) {
+      for (const auto &rule : *fields)
+        create_from_rule(rule, true);
+    }
   }
 
-  /* CFL conditions */
+  /* --------------------------------------------------------------------- */
+  /* Conditions "cflt_active" et "cflp_active"                             */
+  /* cfl_t, cfl_p                                                           */
+  /* --------------------------------------------------------------------- */
   if (th_model->cflt) {
-    cs_field_t *fld = cs_field_create("cfl_t",
-                                      CS_FIELD_POSTPROCESS,
-                                      CS_MESH_LOCATION_CELLS,
-                                      1,
-                                      false);
-
-    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-
-    fld->set_key_int("log", 1);
-    fld->set_key_int("post_vis", post_flag);
+    const auto *fields = frm->get_fields("Thermal", "cflt_active");
+    if (fields != nullptr) {
+      for (const auto &rule : *fields)
+        create_from_rule(rule, false);
+    }
   }
 
   if (th_model->cflp) {
-    cs_field_t *fld = cs_field_create("cfl_p",
-                                      CS_FIELD_POSTPROCESS,
-                                      CS_MESH_LOCATION_CELLS,
-                                      1,
-                                      false);
-
-    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-
-    fld->set_key_int("log", 1);
-    fld->set_key_int("post_vis", post_flag);
+    const auto *fields = frm->get_fields("Thermal", "cflp_active");
+    if (fields != nullptr) {
+      for (const auto &rule : *fields)
+        create_from_rule(rule, false);
+    }
   }
 
   /* Property fields relative to radiative transfer */
@@ -1684,8 +1683,15 @@ cs_parameters_global_complete(void)
   }
 
   /* Physical properties */
+
+  /* Model rules: theta values are initialized through TimeSteppingRules.xml */
+  cs_time_stepping_rules_manager *ts_rules = cs_get_time_stepping_rules_manager();
+
   int iviext = f_mu->get_key_int(key_t_ext_id);
-  if (fabs(time_scheme->thetvi+999.) > cs_math_epzero) {
+  if (ts_rules->should_auto_init_theta("viscosity", time_scheme->thetvi)) {
+    time_scheme->thetvi = ts_rules->get_theta_for_extrapolation("viscosity", iviext);
+  }
+  else {
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in the data specification"),
@@ -1694,16 +1700,16 @@ cs_parameters_global_complete(void)
          "Do not modify it.\n"),
        iviext);
   }
-  else if (iviext == 0)
-    time_scheme->thetvi = 0.;
-  else if (iviext == 1)
-    time_scheme->thetvi = 0.5;
-  else if (iviext == 2)
-    time_scheme->thetvi = 1.;
 
   if (cs_glob_fluid_properties->icp >= 0) {
+
     int icpext = f_cp->get_key_int(key_t_ext_id);
-    if (fabs(time_scheme->thetcp+999.) > cs_math_epzero) {
+    if (ts_rules->should_auto_init_theta("heat_capacity",
+                                         time_scheme->thetcp)) {
+      time_scheme->thetcp
+        = ts_rules->get_theta_for_extrapolation("heat_capacity", icpext);
+    }
+    else {
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in the data specification"),
@@ -1712,17 +1718,16 @@ cs_parameters_global_complete(void)
            "Do not modify it.\n"),
          icpext);
     }
-    else if (icpext == 0)
-      time_scheme->thetcp = 0.;
-    else if (icpext == 1)
-      time_scheme->thetcp = 0.5;
-    else if (icpext == 2)
-      time_scheme->thetcp = 1.;
   }
 
   /* NS source terms */
   int isno2t = cs_glob_time_scheme->isno2t;
-  if (fabs(time_scheme->thetsn+999.) > cs_math_epzero) {
+  if (ts_rules->should_auto_init_theta("navier_stokes_source",
+                                       time_scheme->thetsn)) {
+    time_scheme->thetsn
+      = ts_rules->get_theta_for_source_term("navier_stokes_source", isno2t);
+  }
+  else {
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in the data specification"),
@@ -1731,16 +1736,15 @@ cs_parameters_global_complete(void)
          "Do not modify it.\n"),
        isno2t);
   }
-  else if (isno2t == 1)
-    time_scheme->thetsn = 0.5;
-  else if (isno2t == 2)
-    time_scheme->thetsn = 1.;
-  else if (isno2t == 0)
-    time_scheme->thetsn = 0.;
 
   /* Turbulent variables source terms */
   int isto2t = cs_glob_time_scheme->isto2t;
-  if (fabs(time_scheme->thetst+999.) > cs_math_epzero) {
+  if (ts_rules->should_auto_init_theta("turbulence_source",
+      time_scheme->thetst)) {
+    time_scheme->thetst
+      = ts_rules->get_theta_for_source_term("turbulence_source", isto2t);
+  }
+  else {
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in the data specification"),
@@ -1749,12 +1753,6 @@ cs_parameters_global_complete(void)
          "Do not modify it.\n"),
        isto2t);
   }
-  else if (isto2t == 1)
-    time_scheme->thetst = 0.5;
-  else if (isto2t == 2)
-    time_scheme->thetst = 1.;
-  else if (isto2t == 0)
-    time_scheme->thetst = 0.;
 
   const int n_fields = cs_field_n_fields();
 
@@ -1964,7 +1962,10 @@ cs_parameters_eqp_complete(void)
     }  /* end if (f->type & CS_FIELD_VARIABLE) */
   }
 
-  /* Diffusivity model */
+  /* Diffusivity model.
+     The diffusion model is described in TurbulenceRules.xml
+     and read through via get_diffusion_model(). */
+
   if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
     cs_field_t *f_rij = CS_F_(rij);
     cs_field_t *f_epsom = (CS_F_(eps) != nullptr) ? CS_F_(eps) : CS_F_(omg);
@@ -1973,12 +1974,27 @@ cs_parameters_eqp_complete(void)
     eqp_rij->normalization_sub_mean = 0;
     if (f_epsom != nullptr && (f_epsom->type & CS_FIELD_VARIABLE))
       eqp_epsom = cs_field_get_equation_param(f_epsom);
-    /* Daly harlow (GGDH) on Rij and epsilon/omega by default */
-    if (cs_glob_turb_rans_model->idirsm != 0) {
+
+    cs_turbulence_rules_manager *rules = cs_get_turbulence_rules_manager();
+    cs_turb_model_t *turb_mdl = cs_get_glob_turb_model();
+    const char *model_name = rules->get_model_name_from_enum(turb_mdl->model);
+    const char *diff_model = rules->get_diffusion_model(model_name);
+
+    bool use_anisotropic = false;
+    if (diff_model != nullptr && strcmp(diff_model, "ANISOTROPIC") == 0) {
+      if (cs_glob_turb_rans_model->idirsm != 0)
+        use_anisotropic = true;
+    }
+    else {
+      /* Fallback to original behavior: Daly-Harlow if idirsm != 0 */
+      if (cs_glob_turb_rans_model->idirsm != 0)
+        use_anisotropic = true;
+    }
+
+    if (use_anisotropic) {
       eqp_rij->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
       if (eqp_epsom != nullptr)
         eqp_epsom->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
-      /* Scalar diffusivity (Shir model) elsewhere (idirsm = 0) */
     }
     else {
       eqp_rij->idften = CS_ISOTROPIC_DIFFUSION;

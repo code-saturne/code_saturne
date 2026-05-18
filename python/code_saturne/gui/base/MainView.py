@@ -446,6 +446,8 @@ class MainView(object):
         # connection for page layout
 
         self.Browser.treeView.pressed.connect(self.displayNewPage)
+        self.Browser.treeView.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.Browser.treeView.customContextMenuRequested.connect(self.slotContextMenuDoc)
         self.destroyed.connect(MainView.updateInstances)
 
         # Ctrl+C signal handler (allow to shutdown the GUI with Ctrl+C)
@@ -1944,6 +1946,71 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         pkg = cs_package(name = 'neptune_cfd')
         self.displayManual(pkg, 'Doxygen')
 
+
+
+    _BASE_URL = "https://code-saturne.org/doc/code_saturne-9.2"
+
+    _DOC_URLS = {
+        "Calculation environment"        : _BASE_URL + "/cs_ug_base_setup.html",
+        "Mesh"                           : _BASE_URL + "/cs_ug_mesh_prepare.html",
+        "Preprocessing"                  : _BASE_URL + "/cs_ug_mesh_prepare.html",
+        "Volume zones"                   : _BASE_URL + "/cs_ug_mesh_select_c.html",
+        "Boundary zones"                 : _BASE_URL + "/cs_ug_mesh_select_c.html",
+        "Calculation features"           : _BASE_URL + "/cs_ug_advanced_setup.html",
+        "Turbulence models"              : _BASE_URL + "/cs_ug_advanced_setup.html",
+        "Thermal model"                  : _BASE_URL + "/cs_ug_advanced_setup.html",
+        "Atmospheric flows"              : _BASE_URL + "/advanced_atmospheric.html",
+        "Electrical models"              : _BASE_URL + "/advanced_electric_arcs.html",
+        "Gas combustion"                 : _BASE_URL + "/advanced_coal_and_gas_combution.html",
+        "Pulverized fuel combustion"     : _BASE_URL + "/advanced_coal_and_gas_combution.html",
+        "Particles and droplets"         : _BASE_URL + "/advanced_particle_tracking.html",
+        "Particles and droplets tracking": _BASE_URL + "/advanced_particle_tracking.html",
+        "Turbomachinery"                 : _BASE_URL + "/advanced_turbomachinery.html",
+        "Deformable mesh"                : _BASE_URL + "/advanced_ale.html",
+        "Groundwater flows"              : _BASE_URL + "/cs_ug_cdo_gwf.html",
+        "Volume conditions"              : _BASE_URL + "/cs_ug_base_setup.html",
+        "Immersed volume conditions"     : _BASE_URL + "/cs_ug_base_setup.html",
+        "Boundary conditions"            : _BASE_URL + "/cs_ug_base_setup.html",
+        "Immersed boundary conditions"   : _BASE_URL + "/cs_ug_base_setup.html",
+        "Coupling parameters"            : _BASE_URL + "/cs_ug_base_setup.html",
+        "Time settings"                  : _BASE_URL + "/cs_ug_base_setup.html",
+        "Start/Restart"                  : _BASE_URL + "/cs_ug_base_setup.html",
+        "Numerical parameters"           : _BASE_URL + "/cs_ug_base_setup.html",
+        "Equation parameters"            : _BASE_URL + "/cs_ug_base_setup.html",
+        "Postprocessing"                 : _BASE_URL + "/cs_ug_output.html",
+        "Calculator"                     : _BASE_URL + "/cs_ug_output.html",
+        "Time averages"                  : _BASE_URL + "/cs_ug_output.html",
+        "Volume solution control"        : _BASE_URL + "/cs_ug_output.html",
+        "Surface solution control"       : _BASE_URL + "/cs_ug_output.html",
+        "Profiles"                       : _BASE_URL + "/cs_ug_output.html",
+        "Balance by zone"                : _BASE_URL + "/cs_ug_output.html",
+        "Performance settings"           : _BASE_URL + "/cs_ug_parallel.html",
+    }
+
+    @Slot(QPoint)
+    def slotContextMenuDoc(self, pos):
+        """
+        Show context menu with documentation link on right click in browser tree.
+        """
+        index = self.Browser.treeView.indexAt(pos)
+        if not index.isValid():
+            return
+        page_name = self.Browser.treeView.model().data(index, Qt.ItemDataRole.DisplayRole)
+        if not page_name:
+            return
+
+        menu = QMenu(self)
+        doc_action = menu.addAction("📖 Open documentation")
+
+        url = self._BASE_URL + "/index.html"
+        for key, link in self._DOC_URLS.items():
+            if key.lower() in str(page_name).lower():
+                url = link
+                break
+
+        action = menu.exec(self.Browser.treeView.viewport().mapToGlobal(pos))
+        if action == doc_action:
+            QDesktopServices.openUrl(QUrl(url))
 
     def slotUndo(self):
         """

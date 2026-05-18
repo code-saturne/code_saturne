@@ -42,7 +42,7 @@ if HAVE_BACKEND
 SUBDIRS += external src
 endif
 
-SUBDIRS +=  python $(NEPTUNE_CFD) $(DOC) $(TSTS)
+SUBDIRS += data_model python $(NEPTUNE_CFD) $(DOC) $(TSTS)
 
 AUX_DIST =
 

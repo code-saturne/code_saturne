@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ModuleRules version="1.0" module="BoundaryConditions">
+
+  <!--
+    BoundaryConditionsRules.xml
+    Centralized rules for boundary conditions
+    de Code_Saturne.
+
+    Lu par :
+    - kernel C++ : cs_boundary_conditions_rules_manager
+    - GUI Python  : BoundaryConditionsRulesManager (ElementTree)
+
+    
+  -->
+
+  <!-- =========================================================== -->
+  <!-- DEFINITIONS                                                   -->
+  <!-- Types valides pour validation GUI et kernel                   -->
+  <!-- =========================================================== -->
+
+  <Definitions>
+
+    <!-- Types de conditions aux limites -->
+    <TypeDef name="BCNature">
+      <Value>inlet</Value>
+      <Value>wall</Value>
+      <Value>outlet</Value>
+      <Value>symmetry</Value>
+      <Value>free_inlet_outlet</Value>
+      <Value>imposed_p_outlet</Value>
+      <Value>free_surface</Value>
+      <Value>groundwater</Value>
+      <Value>undefined</Value>
+    </TypeDef>
+
+    <!-- Velocity specification methods at inlet -->
+    <TypeDef name="VelocityChoice">
+      <Value>norm</Value>
+      <Value>flow1</Value>
+      <Value>flow2</Value>
+      <Value>norm_formula</Value>
+      <Value>flow1_formula</Value>
+      <Value>flow2_formula</Value>
+    </TypeDef>
+
+    <!-- Velocity direction at inlet -->
+    <TypeDef name="VelocityDirection">
+      <Value>normal</Value>
+      <Value>coordinates</Value>
+      <Value>formula</Value>
+    </TypeDef>
+
+    <!-- Turbulence specification methods at inlet -->
+    <TypeDef name="TurbulenceChoice">
+      <Value>hydraulic_diameter</Value>
+      <Value>turbulent_intensity</Value>
+      <Value>formula</Value>
+    </TypeDef>
+
+    <!-- Types de conditions aux limites pour les scalaires -->
+    <TypeDef name="ScalarBC">
+      <Value>dirichlet</Value>
+      <Value>neumann</Value>
+      <Value>dirichlet_formula</Value>
+      <Value>dirichlet_implicit</Value>
+      <Value>neumann_implicit</Value>
+    </TypeDef>
+
+    <!-- Types de conditions compressibles -->
+    <TypeDef name="CompressibleInletChoice">
+      <Value>imposed_inlet</Value>
+      <Value>subsonic_inlet_PH</Value>
+    </TypeDef>
+
+    <TypeDef name="CompressibleOutletChoice">
+      <Value>supersonic_outlet</Value>
+      <Value>subsonic_outlet</Value>
+    </TypeDef>
+
+    <!-- Types de conditions pour la combustion -->
+    <TypeDef name="CombustionInletChoice">
+      <Value>oxydant</Value>
+      <Value>fuel</Value>
+      <Value>unburned</Value>
+      <Value>burned</Value>
+    </TypeDef>
+
+  </Definitions>
+
+  <!-- =========================================================== -->
+  <!-- VALIDATION RULES                                              -->
+  <!-- Validation rules for each BC type                  -->
+  <!-- =========================================================== -->
+
+  <ValidationRules>
+
+    <!-- BC types allowed by nature -->
+    <Rule Type="AllowedNatures">
+      <Nature Name="inlet"             CSFlag="CS_BOUNDARY_INLET"/>
+      <Nature Name="wall"              CSFlag="CS_BOUNDARY_WALL"/>
+      <Nature Name="outlet"            CSFlag="CS_BOUNDARY_OUTLET"/>
+      <Nature Name="symmetry"          CSFlag="CS_BOUNDARY_SYMMETRY"/>
+      <Nature Name="free_inlet_outlet" CSFlag="CS_BOUNDARY_FREE_INLET_OUTLET"/>
+      <Nature Name="imposed_p_outlet"  CSFlag="CS_BOUNDARY_IMPOSED_P_OUTLET"/>
+      <Nature Name="free_surface"      CSFlag="CS_BOUNDARY_FREE_SURFACE"/>
+      <Nature Name="groundwater"       CSFlag="CS_BOUNDARY_GROUNDWATER"/>
+      <Nature Name="undefined"         CSFlag="0"/>
+    </Rule>
+
+    <!-- Turbulence inlet rules: model to BC variables mapping -->
+    <!-- Extrait de cs_gui_boundary_conditions.cpp lignes 2826-3000 -->
+    <Rule Type="TurbulenceInlet" Model="k-epsilon">
+      <NBoundaryValues>2</NBoundaryValues>
+      <MEGFunction>turbulence_ke</MEGFunction>
+      <Variable>k</Variable>
+      <Variable>epsilon</Variable>
+    </Rule>
+
+    <Rule Type="TurbulenceInlet" Model="k-epsilon-PL">
+      <NBoundaryValues>2</NBoundaryValues>
+      <MEGFunction>turbulence_ke</MEGFunction>
+      <Variable>k</Variable>
+      <Variable>epsilon</Variable>
+    </Rule>
+
+    <Rule Type="TurbulenceInlet" Model="k-omega-SST">
+      <NBoundaryValues>2</NBoundaryValues>
+      <MEGFunction>turbulence_kw</MEGFunction>
+      <Variable>k</Variable>
+      <Variable>omega</Variable>
+    </Rule>
+
+    <Rule Type="TurbulenceInlet" Model="Rij-epsilon">
+      <NBoundaryValues>7</NBoundaryValues>
+      <MEGFunction>turbulence_rije</MEGFunction>
+      <Variable>rij</Variable>
+      <Variable>epsilon</Variable>
+    </Rule>
+
+    <Rule Type="TurbulenceInlet" Model="Rij-SSG">
+      <NBoundaryValues>7</NBoundaryValues>
+      <MEGFunction>turbulence_rije</MEGFunction>
+      <Variable>rij</Variable>
+      <Variable>epsilon</Variable>
+    </Rule>
+
+    <Rule Type="TurbulenceInlet" Model="Rij-EBRSM">
+      <NBoundaryValues>8</NBoundaryValues>
+      <MEGFunction>turbulence_rij_ebrsm</MEGFunction>
+      <Variable>rij</Variable>
+      <Variable>epsilon</Variable>
+      <Variable>alpha</Variable>
+    </Rule>
+
+    <Rule Type="TurbulenceInlet" Model="v2f-BL-v2/k">
+      <NBoundaryValues>4</NBoundaryValues>
+      <MEGFunction>turbulence_v2f</MEGFunction>
+      <Variable>k</Variable>
+      <Variable>epsilon</Variable>
+      <Variable>phi</Variable>
+      <Variable>alpha</Variable>
+    </Rule>
+
+    <Rule Type="TurbulenceInlet" Model="Spalart-Allmaras">
+      <NBoundaryValues>1</NBoundaryValues>
+      <MEGFunction>turbulence_spalart</MEGFunction>
+      <Variable>nu_tilda</Variable>
+    </Rule>
+
+    <!-- Scalar BC rules -->
+    <Rule Type="ScalarBCTypes">
+      <Constraint Target="scalar_bc_type" Type="must_be_in">
+        <AllowedValue>dirichlet</AllowedValue>
+        <AllowedValue>neumann</AllowedValue>
+        <AllowedValue>dirichlet_formula</AllowedValue>
+        <AllowedValue>dirichlet_implicit</AllowedValue>
+        <AllowedValue>neumann_implicit</AllowedValue>
+        <ErrorMessage>scalar BC type must be one of: dirichlet, neumann,
+          dirichlet_formula, dirichlet_implicit, neumann_implicit</ErrorMessage>
+      </Constraint>
+    </Rule>
+
+    <!-- Contraintes de validation -->
+    <Constraint Target="velocity_norm" Type="positive_strict">
+      <ErrorMessage>Inlet velocity norm must be strictly positive</ErrorMessage>
+    </Constraint>
+
+    <Constraint Target="hydraulic_diameter" Type="positive_strict">
+      <ErrorMessage>Hydraulic diameter must be strictly positive</ErrorMessage>
+    </Constraint>
+
+    <Constraint Target="turbulent_intensity" Type="range">
+      <MinValue>0.0</MinValue>
+      <MaxValue>100.0</MaxValue>
+      <ErrorMessage>Turbulent intensity must be between 0 and 100 percent</ErrorMessage>
+    </Constraint>
+
+  </ValidationRules>
+
+  <!-- =========================================================== -->
+  <!-- DEFAULTS                                                      -->
+  <!-- =========================================================== -->
+
+  <Defaults>
+    <Default Key="bc_nature"           Value="inlet"/>
+    <Default Key="velocity_choice"     Value="norm"/>
+    <Default Key="velocity_direction"  Value="normal"/>
+    <Default Key="turbulence_choice"   Value="hydraulic_diameter"/>
+    <Default Key="scalar_bc_type"      Value="dirichlet"/>
+  </Defaults>
+
+  <!-- =========================================================== -->
+  <!-- MAPPINGS                                                      -->
+  <!-- Correspondances entre noms XML et flags C++                  -->
+  <!-- =========================================================== -->
+
+  <Mappings>
+
+    <EnumMapping Name="BCNature">
+      <Entry Value="inlet"             Flag="CS_BOUNDARY_INLET"             Enum="1"/>
+      <Entry Value="wall"              Flag="CS_BOUNDARY_WALL"              Enum="2"/>
+      <Entry Value="outlet"            Flag="CS_BOUNDARY_OUTLET"            Enum="3"/>
+      <Entry Value="symmetry"          Flag="CS_BOUNDARY_SYMMETRY"          Enum="4"/>
+      <Entry Value="free_inlet_outlet" Flag="CS_BOUNDARY_FREE_INLET_OUTLET" Enum="5"/>
+      <Entry Value="imposed_p_outlet"  Flag="CS_BOUNDARY_IMPOSED_P_OUTLET"  Enum="6"/>
+      <Entry Value="free_surface"      Flag="CS_BOUNDARY_FREE_SURFACE"      Enum="7"/>
+      <Entry Value="groundwater"       Flag="CS_BOUNDARY_GROUNDWATER"       Enum="8"/>
+      <Entry Value="undefined"         Flag="0"                             Enum="0"/>
+    </EnumMapping>
+
+  </Mappings>
+
+  <!-- =========================================================== -->
+  <!-- BC CODE MAPPINGS                                              -->
+  <!-- boundary_type -> icodcl (legacy solver codes)                -->
+  <!-- Source: cs_boundary_conditions.cpp                           -->
+  <!-- =========================================================== -->
+  <BCCodeMappings>
+    <BCCodeMapping Name="icodcl">
+      <Entry BoundaryType="CS_BOUNDARY_WALL"             icodcl="5"  Label="Smooth wall"/>
+      <Entry BoundaryType="CS_BOUNDARY_ROUGH_WALL"       icodcl="6"  Label="Rough wall"/>
+      <Entry BoundaryType="CS_BOUNDARY_CONVECTIVE_INLET" icodcl="13" Label="Convective inlet"/>
+      <Entry BoundaryType="CS_BOUNDARY_SYMMETRY"         icodcl="3"  Label="Symmetry"/>
+      <Entry BoundaryType="default"                      icodcl="1"  Label="Dirichlet"/>
+    </BCCodeMapping>
+    <LegacyTypeMapping>
+      <Entry Nature="wall"     LegacyCode="CS_SMOOTHWALL" Value="5"/>
+      <Entry Nature="symmetry" LegacyCode="CS_SYMMETRY"   Value="4"/>
+      <Entry Nature="default"  LegacyCode="0"             Value="0"/>
+    </LegacyTypeMapping>
+  </BCCodeMappings>
+
+</ModuleRules>

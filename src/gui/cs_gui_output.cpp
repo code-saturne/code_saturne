@@ -75,6 +75,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "gui/cs_gui_output.h"
+#include "model/cs_turbulence_rules_manager.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -881,14 +882,21 @@ cs_gui_output_boundary(void)
 
   /* Surfacic variables output */
 
-  bool ignore_stresses = false;
-  bool ignore_yplus = false;
-
-  if (   cs_glob_physical_model_flag[CS_GROUNDWATER] != -1
-      || cs_glob_physical_model_flag[CS_SOLIDIFICATION] != -1) {
-    ignore_stresses = true;
-    ignore_yplus = true;
+  /* Get rules manager */
+  cs_turbulence_rules_manager *rules = cs_get_turbulence_rules_manager();
+  
+  /* Determine active physics model */
+  const char *active_physics = "none";
+  if (cs_glob_physical_model_flag[CS_GROUNDWATER] != -1) {
+    active_physics = "groundwater";
   }
+  else if (cs_glob_physical_model_flag[CS_SOLIDIFICATION] != -1) {
+    active_physics = "solidification";
+  }
+  
+  /* Check if variables are forbidden from XML rules */
+  bool stress_allowed = !rules->is_output_boundary_var_forbidden("stress", active_physics);
+  bool yplus_allowed = !rules->is_output_boundary_var_forbidden("yplus", active_physics);
 
   /* CDO-based velocity-pressure does not currently involve
      yplus and stresses computation. */
@@ -896,16 +904,16 @@ cs_gui_output_boundary(void)
   cs_field_t  *f_vel = cs_field_by_name_try("velocity");
   if (f_vel != nullptr) {
     if (f_vel->type & CS_FIELD_CDO) {
-      ignore_stresses = true;
-      ignore_yplus = true;
+      stress_allowed = false;
+      yplus_allowed = false;
     }
   }
   else {
-    ignore_stresses = true;
-    ignore_yplus = true;
+    stress_allowed = false;
+    yplus_allowed = false;
   }
 
-  if (ignore_stresses == false) {
+  if (stress_allowed) {
     if (_surfacic_variable_post("stress", true)) {
       cs_field_t *bf = _boundary_stress();
       bf = cs_field_by_name_try("boundary_stress");
@@ -922,7 +930,7 @@ cs_gui_output_boundary(void)
      (with thermal model), and only handle "post_vis" option here,
      to also allow for logging */
 
-  if (ignore_yplus == false) {
+  if (yplus_allowed) {
     if (_surfacic_variable_post("yplus", true)) {
       cs_field_t *bf = cs_field_by_name_try("yplus");
       if (bf == nullptr) {
@@ -1080,7 +1088,7 @@ cs_gui_postprocess_meshes(void)
                                          n_writers, writer_ids);
     }
     else if (   cs_gui_strcmp(type, "VolumicZone")
-             || cs_gui_strcmp(type, "volume_zone")) {
+             || cs_gui_strcmp(type, "volume_czone")) {
       const cs_zone_t *z = cs_volume_zone_by_name(location);
       cs_post_define_mesh_by_location(id, label, z->location_id,
                                       add_groups, auto_vars,

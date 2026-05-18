@@ -22,7 +22,7 @@
 
 #-------------------------------------------------------------------------------
 
-SUBDIRS = . \
+SUBDIRS = . model \
 bft fvm gui \
 base cdo pprt alge mesh turb \
 atmo cfbl cogz comb ctwr elec gwf lagr rayt \

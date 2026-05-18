@@ -73,6 +73,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "elec/cs_elec_model.h"
+#include "model/cs_elec_rules_manager.h"
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -288,15 +289,17 @@ _cs_electrical_model_verify(void)
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
-  if (ielarc != -1 && ielarc !=  2)
+  /* Validate using ElectricalRules.xml */
+  cs_elec_rules_manager *elec_mgr = cs_get_elec_rules_manager();
+
+  if (!elec_mgr->is_valid_ielarc(ielarc))
     bft_error(__FILE__, __LINE__, 0,
               _("Error for electric arc model\n"
                 "only choice -1 or 2 are permitted yet\n"
                 "model selected : \"%i\";\n"),
               ielarc);
 
-  if (   ieljou != -1 && ieljou !=  1 && ieljou !=  2 && ieljou !=  3
-      && ieljou !=  4)
+  if (!elec_mgr->is_valid_ieljou(ieljou))
     bft_error(__FILE__, __LINE__, 0,
               _("Error for joule model\n"
                 "only choice -1, 1, 2, 3 or 4 are permitted yet\n"
@@ -307,7 +310,7 @@ _cs_electrical_model_verify(void)
   if (cs_glob_elec_option->ielcor != 0 && cs_glob_elec_option->ielcor != 1)
     bft_error(__FILE__, __LINE__, 0,
               _("Error for scaling model\n"
-                "only choice -1 or 2 are permitted yet\n"
+                "only choice 0 or 1 are permitted\n"
                 "model selected : \"%i\";\n"),
               cs_glob_elec_option->ielcor);
 

@@ -30,6 +30,8 @@ Output of volume variables
 # Library modules import
 #-------------------------------------------------------------------------------
 
+import os
+import xml.etree.ElementTree as ET
 import unittest
 
 #-------------------------------------------------------------------------------
@@ -285,6 +287,126 @@ class OutputVolumicVariablesModel(Variables, Model):
                         pass
 
 
+    def __getFieldsFromRules__(self):
+        """
+        Lit FieldsRules.xml et retourne les champs crees par le solver
+        qui ne sont pas encore dans setup.xml.
+        """
+        nodeList = []
+
+        # Supprimer les noeuds crees precedemment (marqueur from_rules="1")
+        for tag in ('variable', 'property'):
+            for node in self.node_output.xmlGetNodeList(tag):
+                if node['from_rules'] == '1':
+                    node.xmlRemoveNode()
+
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        prefix = os.path.normpath(os.path.join(script_dir,
+                                               '..', '..', '..', '..', '..'))
+        xml_path = os.path.join(prefix, 'share', 'code_saturne',
+                                'model', 'FieldsRules.xml')
+
+        if not os.path.exists(xml_path):
+            return nodeList
+
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+        fcr = root.find("FieldCreationRules")
+        if fcr is None:
+            return nodeList
+
+        turb_model = ""
+        node_models = self.case.xmlGetNode('thermophysical_models')
+        if node_models:
+            node_turb = node_models.xmlGetNode('turbulence', 'model')
+            if node_turb:
+                turb_model = node_turb['model'] if node_turb['model'] else ''
+
+        condition_map = {
+            "k-epsilon":        "itytur_eq_2",
+            "k-epsilon-PL":     "itytur_eq_2",
+            "Rij-epsilon":      "second_order",
+            "Rij-SSG":          "second_order",
+            "Rij-EBRSM":        "second_order",
+            "v2f-phi":          "itytur_eq_5",
+            "v2f-BL-v2/k":      "itytur_eq_5",
+            "k-omega-SST":      "model_eq_CS_TURB_K_OMEGA",
+            "Spalart-Allmaras": "model_eq_CS_TURB_SPALART_ALLMARAS",
+        }
+        extra_condition_map = {
+            "Rij-EBRSM":   "model_eq_CS_TURB_RIJ_EPSILON_EBRSM",
+            "v2f-phi":     "model_eq_CS_TURB_V2F_PHI",
+            "v2f-BL-v2/k": "model_eq_CS_TURB_V2F_BL_V2K",
+        }
+
+        existing_names = set()
+        for tag in ('variable', 'property'):
+            for node in self.case.xmlGetNodeList(tag):
+                if node['name']:
+                    existing_names.add(node['name'])
+
+        conditions_to_check = ["always"]
+
+        # Turbulence
+        turb_cond = condition_map.get(turb_model)
+        if turb_cond:
+            conditions_to_check.append(turb_cond)
+        extra_cond = extra_condition_map.get(turb_model)
+        if extra_cond:
+            conditions_to_check.append(extra_cond)
+
+        # Thermique
+        node_thermal = node_models.xmlGetNode('thermal_scalar')
+        thermal_model = node_thermal['model'] if node_thermal else 'off'
+
+        if thermal_model != 'off':
+            conditions_to_check.append('cflt_active')
+        if thermal_model == 'total_energy':
+            conditions_to_check.append('thermal_internal_energy')
+
+        # Compressible
+        node_comp = node_models.xmlGetNode('compressible_model')
+        comp_model = node_comp['model'] if node_comp else 'off'
+
+        if comp_model != 'off':
+            conditions_to_check.append('cflp_active')
+        if comp_model != 'off' and thermal_model in ('temperature', 'total_energy'):
+            conditions_to_check.append('ieos_not_none_and_temp_or_energy')
+
+        for module in fcr.findall("Module"):
+            for rule in module.findall("Rule"):
+                condition = rule.get("Condition", "always")
+                if condition not in conditions_to_check:
+                    continue
+                for field in rule.findall("Field"):
+                    name    = field.get("Name", "")
+                    label   = field.get("Label", name)
+                    dim     = int(field.get("Dimension", "1"))
+                    ftype   = field.get("Type", "variable")
+                    # postprocess n'est pas liste par getVolumeFieldsNodeList
+                    # on le traite comme property pour l'affichage GUI
+                    if ftype == "postprocess":
+                        ftype = "property"
+                    hidden  = field.get("Hidden", "") == "1"
+                    exclude = field.get("ExcludeModel", "")
+                    if hidden:
+                        continue
+                    if exclude and exclude in turb_model:
+                        continue
+                    if name in existing_names:
+                        continue
+                    existing = self.node_output.xmlGetNode(ftype, name=name)
+                    if existing is None:
+                        fake_node = self.node_output.xmlInitNode(ftype, name=name)
+                        if label:
+                            fake_node['label'] = label
+                        if dim > 1:
+                            fake_node['dimension'] = str(dim)
+                        fake_node['from_rules'] = '1'
+                        nodeList.append(fake_node)
+
+        return nodeList
+
     def updateList(self):
         """
         Update list of volume nodes and matching names and category
@@ -333,6 +455,8 @@ class OutputVolumicVariablesModel(Variables, Model):
                                 'Other', list_remain)
         self.__updateListFilter(self.__getListOfEstimator__(),
                                 'Estimator', list_remain)
+        self.__updateListFilter(self.__getFieldsFromRules__(),
+                                'Output', list_remain)
 
         # Remaining nodes
 

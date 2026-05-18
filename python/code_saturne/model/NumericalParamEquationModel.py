@@ -246,6 +246,19 @@ class NumericalParamEquationModel(Model):
         return n.xmlGetNodeList('variable', type='user')
 
 
+    def _getTurbulentFluxVariablesNodes(self):
+        """
+        Return list of nodes for turbulent flux variables.
+        Nodes are created by setTurbulentFluxModel in DefineUserScalarsModel
+        with attribute from_turb_flux='1'.
+        """
+        nodList = []
+        for tag in ('variable', 'property'):
+            for node in self.case.xmlGetNodeList(tag):
+                if node['from_turb_flux'] == '1':
+                    nodList.append(node)
+        return nodList
+
     def _getAleVariablesNodes(self):
         """ Private method: return list of nodes for ALE"""
         nodList = []
@@ -291,6 +304,7 @@ class NumericalParamEquationModel(Model):
                      self._getElectricalScalarsNodes(),
                      self._getCompressibleScalarsNodes(),
                      self._getAdditionalScalarNodes(),
+                     self._getTurbulentFluxVariablesNodes(),
                      self._getAleVariablesNodes(),
                      self._getHgnVariablesNodes()):
             self.var_shem.append(part)
@@ -308,6 +322,7 @@ class NumericalParamEquationModel(Model):
                      self._getMeteoScalarsNodes(),
                      self._getElectricalScalarsNodes(),
                      self._getAdditionalScalarNodes(),
+                     self._getTurbulentFluxVariablesNodes(),
                      self._getCompressibleScalarsNodes(),
                      self._getAleVariablesNodes(),
                      self._getHgnVariablesNodes()):

@@ -69,6 +69,9 @@
 #include "rayt/cs_rad_transfer.h"
 #include "base/cs_restart_default.h"
 #include "base/cs_thermal_model.h"
+#include "model/cs_thermal_rules_manager.h"
+#include "model/cs_turbulence_rules_manager.h"
+#include "model/cs_time_stepping_rules_manager.h"
 #include "base/cs_time_step.h"
 #include "base/cs_turbomachinery.h"
 #include "turb/cs_turbulence_model.h"
@@ -87,9 +90,14 @@
 
 #include "base/cs_parameters_check.h"
 
+/*----------------------------------------------------------------------------*/
+
+
+
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
+
 
 /*!
   \file cs_parameters_check.cpp
@@ -817,6 +825,10 @@ cs_parameters_error_barrier(void)
 void
 cs_parameters_check(void)
 {
+  /* =========================================================================
+   * MODIF XML : Validations depuis TurbulenceRules.xml et ThermalRules.xml
+   * Les singletons sont instanciés localement là où ils sont utilisés.
+   * ========================================================================= */
   int n_fields = cs_field_n_fields();
   const int keysca = cs_field_key_id("scalar_id");
   const int kscavr = cs_field_key_id("first_moment_id");
@@ -1139,12 +1151,15 @@ cs_parameters_check(void)
          time_scheme->thetsn, time_scheme->isno2t,
          time_scheme->thetst, time_scheme->isto2t);
 
-    if (   (      cs_glob_thermal_model->thermal_variable
-               == CS_THERMAL_MODEL_TEMPERATURE
-            &&    cs_glob_thermal_model->temperature_scale
-               == CS_TEMPERATURE_SCALE_KELVIN)
-        ||    cs_glob_thermal_model->thermal_variable
-           == CS_THERMAL_MODEL_ENTHALPY) {
+    /* =====================================================================
+     * MODIF XML : Condition lue depuis ThermalRules.xml via
+     * is_lagrangian_second_order_forbidden(). Comportement identique.
+     * ===================================================================== */
+    cs_thermal_rules_manager *thermal_rules = cs_get_thermal_rules_manager();
+
+    if (thermal_rules->is_lagrangian_second_order_forbidden(
+          cs_glob_thermal_model->thermal_variable,
+          cs_glob_thermal_model->temperature_scale)) {
       for (int f_id = 0; f_id < n_fields; f_id++) {
         cs_field_t *f = cs_field_by_id(f_id);
         if (!(f->type & CS_FIELD_VARIABLE))
@@ -1157,15 +1172,18 @@ cs_parameters_check(void)
           int scalar_time_order = f->get_key_int(key_scalar_to);
           double scalar_exp_extrap
             = f->get_key_double(key_scalar_st_exp);
-          if (scalar_exp_extrap > 0. || scalar_time_order > 0)
+          if (scalar_exp_extrap > 0. || scalar_time_order > 0) {
+            const char *err_msg = nullptr;
             cs_parameters_error
               (CS_ABORT_DELAYED,
                _("Thermal and Lagrangian module"),
-               _("Source terms from Lagrangian module will not be computed\n"
-                 "with second order in this version despite the user settings\n"
-                 "defined below:\n"
+               _("%s\n"
                  "For field \"%s\" (thetss %f and isso2t %d)\n"),
+               err_msg ? err_msg :
+                 "Source terms from Lagrangian module will not be computed"
+                 " with second order despite user settings",
                f->name, scalar_exp_extrap, scalar_time_order);
+          }
         }
       }
     }
@@ -1334,13 +1352,17 @@ cs_parameters_check(void)
 
         const int ksigmas = cs_field_key_id("turbulent_schmidt");
         const cs_real_t turb_schmidt = f->get_key_double(ksigmas);
-        if (turb_schmidt <= 0)
+        if (turb_schmidt <= 0) {
+          const char *err_msg = nullptr;
           cs_parameters_error
             (CS_ABORT_DELAYED,
              _("in thermal scalar model"),
-             _("Scalar %s, 'turbulent schmidt' must be a positive real\n"
-               "but it has the value %f\n"),
-             cs_field_get_label(f), turb_schmidt);
+             _("Scalar %s: %s (value=%f)\n"),
+             cs_field_get_label(f),
+             err_msg ? err_msg :
+               "'turbulent schmidt' must be a positive real",
+             turb_schmidt);
+        }
 
         const int iscavr = f->get_key_int(kscavr);
         const int kscmax = cs_field_key_id_try("max_scalar_clipping");
@@ -2942,7 +2964,7 @@ cs_parameters_check(void)
                                     0.);
   }
 
-  /* LES */
+  /* LES (check also in Fortran for now because constants are duplicated) */
   if (turb_model->type == CS_TURB_LES) {
     cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                     _("LES dynamic model constant"),
@@ -3123,3 +3145,4 @@ cs_parameters_check(void)
 }
 
 /*----------------------------------------------------------------------------*/
+

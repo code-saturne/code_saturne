@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ModuleRules version="1.0" module="Electrical">
+  <!--
+    ElectricalRules.xml
+    Centralized rules for the Electrical module (Joule effect and Electric arcs).
+    Sources:
+    - src/elec/cs_elec_model.h
+    - src/elec/cs_elec_model.cpp
+    - python/code_saturne/model/ElectricalModel.py
+  -->
+
+  <Definitions>
+
+    <!-- Electrical models — GUI level -->
+    <TypeDef name="ElectricalModel">
+      <Value name="off"   Description="No electrical model"/>
+      <Value name="joule" Description="Joule effect model"/>
+      <Value name="arc"   Description="Electric arc model"/>
+    </TypeDef>
+
+    <!-- Joule effect sub-models -->
+    <TypeDef name="JouleModel">
+      <Value name="off"                      Int="-1" Description="Joule effect disabled"/>
+      <Value name="AC/DC"                    Int="1"  Description="AC or DC Joule effect"/>
+      <Value name="three-phase"              Int="2"  Description="Three-phase Joule effect"/>
+      <Value name="AC/DC+Transformer"        Int="3"  Description="AC/DC with transformer"/>
+      <Value name="three-phase+Transformer"  Int="4"  Description="Three-phase with transformer"/>
+    </TypeDef>
+
+    <!-- Electric arc sub-models — ieljou -->
+    <TypeDef name="ElectricArcModel">
+      <Value name="off" Int="-1" Description="Electric arc disabled"/>
+      <Value name="on"  Int="2"  Description="Electric arc enabled"/>
+    </TypeDef>
+
+    <!-- Scaling correction mode — ielcor -->
+    <TypeDef name="ScalingMode">
+      <Value name="off" Int="0" Description="Electric arc scaling disabled"/>
+      <Value name="on"  Int="1" Description="Electric arc scaling enabled"/>
+    </TypeDef>
+
+  </Definitions>
+
+  <!-- ============================================================ -->
+  <!-- DEFAULT VALUES                                                -->
+  <!-- Source: ElectricalModel.py defaultElectricalValues()         -->
+  <!-- ============================================================ -->
+  <Defaults>
+    <Default Key="electrical_model" Value="off"/>
+    <Default Key="joule_model"      Value="AC/DC"/>
+    <Default Key="scaling_mode"     Value="off"/>
+    <Default Key="couimp"           Value="0.0"/>
+    <Default Key="pot_diff"         Value="0.0"/>
+    <Default Key="puisim"           Value="0.0"/>
+    <Default Key="coejou"           Value="1.0"/>
+    <Default Key="elcou"            Value="0.0"/>
+    <Default Key="srrom"            Value="0.0"/>
+  </Defaults>
+
+  <!-- ============================================================ -->
+  <!-- VALIDATION RULES                                              -->
+  <!-- Source: cs_elec_model.cpp _cs_electrical_model_verify()      -->
+  <!-- ============================================================ -->
+  <ValidationRules>
+
+    <!-- Electric arc: only -1 or 2 allowed -->
+    <Rule Type="AllowedValues" Parameter="ielarc">
+      <AllowedValue>-1</AllowedValue>
+      <AllowedValue>2</AllowedValue>
+      <ErrorMessage>Electric arc model: only -1 or 2 are permitted</ErrorMessage>
+    </Rule>
+
+    <!-- Joule effect: only -1, 1, 2, 3, 4 allowed -->
+    <Rule Type="AllowedValues" Parameter="ieljou">
+      <AllowedValue>-1</AllowedValue>
+      <AllowedValue>1</AllowedValue>
+      <AllowedValue>2</AllowedValue>
+      <AllowedValue>3</AllowedValue>
+      <AllowedValue>4</AllowedValue>
+      <ErrorMessage>Joule model: only -1, 1, 2, 3 or 4 are permitted</ErrorMessage>
+    </Rule>
+
+    <!-- Scaling mode: only 0 or 1 allowed -->
+    <Rule Type="AllowedValues" Parameter="ielcor">
+      <AllowedValue>0</AllowedValue>
+      <AllowedValue>1</AllowedValue>
+      <ErrorMessage>Scaling model: only 0 or 1 are permitted</ErrorMessage>
+    </Rule>
+
+    <!-- When scaling is active with electric arc -->
+    <Rule Type="PositiveStrict" Parameter="couimp" When="ielcor=1 AND ielarc>0">
+      <ErrorMessage>COUIMP must be strictly positive when scaling is active</ErrorMessage>
+    </Rule>
+    <Rule Type="PositiveStrict" Parameter="pot_diff" When="ielcor=1">
+      <ErrorMessage>DPOT must be strictly positive when scaling is active</ErrorMessage>
+    </Rule>
+
+    <!-- When scaling is active with Joule effect -->
+    <Rule Type="PositiveStrict" Parameter="puisim" When="ielcor=1 AND ieljou>0">
+      <ErrorMessage>PUISIM must be strictly positive when scaling is active</ErrorMessage>
+    </Rule>
+    <Rule Type="PositiveStrict" Parameter="coejou" When="ielcor=1 AND ieljou>0">
+      <ErrorMessage>COEJOU must be strictly positive when scaling is active</ErrorMessage>
+    </Rule>
+
+  </ValidationRules>
+
+  <!-- ============================================================ -->
+  <!-- PHYSICAL PROPERTIES                                           -->
+  <!-- Source: ElectricalModel.py __updateScalarAndProperty()       -->
+  <!-- ============================================================ -->
+  <PhysicalProperties>
+
+    <!-- Properties common to all electrical models -->
+    <Property name="temperature"  Label="Temperature"          Unit="K"/>
+    <Property name="joule_power"  Label="Joule Power"          Unit="W/m3"/>
+    <Property name="elec_sigma"   Label="Electrical conductivity" Unit="S/m"/>
+
+    <!-- Properties specific to electric arc -->
+    <Property name="current_re"   Label="Real current density"      Unit="A/m2" Model="arc"/>
+    <Property name="current_im"   Label="Imaginary current density" Unit="A/m2" Model="arc"/>
+    <Property name="radiation"    Label="Radiation"                 Unit="W/m3" Model="arc"/>
+
+    <!-- Properties specific to Joule with transformer -->
+    <Property name="voltage_re"   Label="Real electric potential"      Unit="V" Model="joule_transformer"/>
+    <Property name="voltage_im"   Label="Imaginary electric potential" Unit="V" Model="joule_transformer"/>
+
+  </PhysicalProperties>
+
+  <!-- ============================================================ -->
+  <!-- MAPPINGS                                                      -->
+  <!-- Correspondences between GUI names and C++ integer values     -->
+  <!-- ============================================================ -->
+  <Mappings>
+
+    <EnumMapping Name="JouleModel">
+      <Entry Value="off"                     ieljou="-1"/>
+      <Entry Value="AC/DC"                   ieljou="1"/>
+      <Entry Value="three-phase"             ieljou="2"/>
+      <Entry Value="AC/DC+Transformer"       ieljou="3"/>
+      <Entry Value="three-phase+Transformer" ieljou="4"/>
+    </EnumMapping>
+
+    <EnumMapping Name="ElectricArcModel">
+      <Entry Value="off" ielarc="-1"/>
+      <Entry Value="on"  ielarc="2"/>
+    </EnumMapping>
+
+    <EnumMapping Name="ScalingMode">
+      <Entry Value="off" ielcor="0"/>
+      <Entry Value="on"  ielcor="1"/>
+    </EnumMapping>
+
+  </Mappings>
+
+</ModuleRules>

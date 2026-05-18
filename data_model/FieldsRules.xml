@@ -1,0 +1,628 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ModuleRules version="1.0" module="Fields">
+
+  <!--
+    FieldsRules.xml
+    Source de verite unique pour la creation des champs de Code_Saturne.
+    Centralise les regles extraites de :
+    - cs_setup.cpp : _create_variable_fields(), _create_property_fields()
+    - cs_parameters.cpp : cs_parameters_define_auxiliary_fields()
+
+    Lu par :
+    - kernel C++ : cs_fields_rules_manager
+    - GUI Python  : FieldsRulesManager (ElementTree)
+
+    
+  -->
+
+  <!-- =========================================================== -->
+  <!-- DEFINITIONS                                                 -->
+  <!-- =========================================================== -->
+
+  <Definitions>
+
+    <TypeDef name="FieldType">
+      <Value>variable</Value>
+      <Value>property</Value>
+      <Value>postprocess</Value>
+      <Value>internal</Value>
+    </TypeDef>
+
+    <TypeDef name="FieldLocation">
+      <Value>cells</Value>
+      <Value>boundary_faces</Value>
+      <Value>interior_faces</Value>
+      <Value>vertices</Value>
+    </TypeDef>
+
+    <TypeDef name="CreationCondition">
+      <Value>always</Value>
+      <Value>vof_active</Value>
+      <Value>non_compressible</Value>
+      <Value>compressible_or_dilatable</Value>
+      <Value>itytur_eq_2</Value>
+      <Value>second_order</Value>
+      <Value>itytur_eq_5</Value>
+      <Value>model_eq_CS_TURB_K_OMEGA</Value>
+      <Value>model_eq_CS_TURB_SPALART_ALLMARAS</Value>
+      <Value>model_eq_CS_TURB_RIJ_EPSILON_EBRSM</Value>
+      <Value>model_eq_CS_TURB_V2F_PHI</Value>
+      <Value>model_eq_CS_TURB_V2F_BL_V2K</Value>
+      <Value>model_eq_CS_TURB_LES_SMAGO_DYN</Value>
+      <Value>model_eq_CS_TURB_NONE</Value>
+      <Value>has_kinetic_st</Value>
+      <Value>ieos_moist_air</Value>
+      <Value>ieos_not_none_and_temp_or_energy</Value>
+      <Value>thermal_internal_energy</Value>
+      <Value>cflt_active</Value>
+      <Value>cflp_active</Value>
+      <Value>ale_active</Value>
+      <Value>hybrid_blend_active</Value>
+      <Value>hybrid_turb_eq_3</Value>
+      <Value>hybrid_turb_eq_4</Value>
+      <Value>hybrid_turb_eq_4_and_komega</Value>
+      <Value>model_eq_CS_TURB_LES_TAUSGS_OR_KSGS</Value>
+      <Value>model_eq_CS_TURB_RIJ_EPSILON_BFH</Value>
+      <Value>vof_free_surface</Value>
+    </TypeDef>
+
+  </Definitions>
+
+  <!-- =========================================================== -->
+  <!-- FIELD CREATION RULES                                         -->
+  <!-- =========================================================== -->
+
+  <FieldCreationRules>
+
+    <!-- =======================================================
+         MODULE BASE
+         Champs toujours presents quel que soit le modele.
+         Source : cs_setup.cpp _create_variable_fields() L486-560
+         ======================================================= -->
+
+    <Module Name="Base">
+      <Description>
+        Champs de base crees dans toutes les simulations.
+        Velocity et Pressure sont toujours presents.
+        VoidFraction uniquement si algorithme VoF actif.
+        MeshVelocity only if ALE is active.
+      </Description>
+
+      <!-- Velocity: always created, dim=3, solved coupled (u,v,w together) -->
+      <Rule Condition="always">
+        <Description>Champ vitesse toujours present</Description>
+        <Field Name="velocity" Label="Velocity" Dimension="3"
+               Pointer="CS_ENUMF_(vel)" Type="variable"
+               Location="cells" CoupledKey="1" AMRScheme="1"/>
+      </Rule>
+
+      <!-- Pression : toujours creee -->
+      <!-- iconv=0 : equation elliptique sans convection -->
+      <!-- istat : 1 si compressible/dilatable, 0 sinon -->
+      <!-- iwgrec : 1 si VoF pour ponderer la pression -->
+      <Rule Condition="always">
+        <Description>Champ pression toujours present</Description>
+        <Field Name="pressure" Label="Pressure" Dimension="1"
+               Pointer="CS_ENUMF_(p)" Type="variable"
+               Location="cells" NoConvection="1">
+          <!-- istat=1 si compressible ou dilatable, 0 sinon -->
+          <ConditionalParam Name="istat"
+                            Condition="compressible_or_dilatable"
+                            Value="1" Default="0"/>
+          <!-- iwgrec=1 si VoF pour ponderer la pression -->
+          <ConditionalParam Name="iwgrec"
+                            Condition="vof_active"
+                            Value="1" Default="0"/>
+        </Field>
+      </Rule>
+
+      <!-- Fraction volumique VoF : seulement si vof_model > 0 -->
+      <!-- idiff=0 : convection pure sans diffusion -->
+      <!-- ischcv=4 : schema NVD/TVD -->
+      <!-- limiter_choice=11 : limiteur CICSAM -->
+      <!-- isstpc=2 : Beta Limiter -->
+      <!-- bornes physiques [0, 1] -->
+      <Rule Condition="vof_active">
+        <Description>Fraction volumique pour algorithme VoF</Description>
+        <Field Name="void_fraction" Label="Void Fraction" Dimension="1"
+               Pointer="CS_ENUMF_(void_f)" Type="variable"
+               Location="cells"
+               NoDiffusion="1"
+               ConvectionScheme="4"
+               Limiter="11"
+               SlopeTest="2"
+               ScalarMin="0.0"
+               ScalarMax="1.0"/>
+      </Rule>
+
+      <!-- Vitesse maillage ALE : seulement si cs_glob_ale != CS_ALE_NONE -->
+      <!-- istat=0, iconv=0, idifft=0 : equation de deplacement stationnaire -->
+      <!-- relaxv=1 : pas de sous-relaxation -->
+      <!-- Note : si ALE CDO, cree sur les noeuds via cs_variable_cdo_field_create -->
+      <Rule Condition="ale_active">
+        <Description>Vitesse du maillage pour methode ALE</Description>
+        <Field Name="mesh_velocity" Label="Mesh Velocity" Dimension="3"
+               Pointer="CS_ENUMF_(mesh_u)" Type="variable"
+               Location="cells"
+               CoupledKey="1"
+               NoTimeTerm="1"
+               NoConvection="1"
+               NoDiffusionTranspose="1"
+               RelaxV="1"/>
+      </Rule>
+
+    </Module>
+
+    <!-- =======================================================
+         MODULE TURBULENCE
+         Source : cs_setup.cpp _create_variable_fields() L555-650
+         ======================================================= -->
+
+    <Module Name="Turbulence">
+      <Description>
+        Champs turbulence crees selon le modele actif.
+        Chaque famille de modele a ses propres variables.
+      </Description>
+
+      <!-- itytur==2 : k-epsilon, k-epsilon-PL -->
+      <!-- Deux scalaires : energie cinetique + taux de dissipation -->
+      <Rule Condition="itytur_eq_2">
+        <Description>Modeles k-epsilon et k-epsilon-PL</Description>
+        <DetailedDescription>
+          Les modeles k-epsilon sont les plus utilises en CFD industrielle.
+          Ils resolvent deux equations de transport supplementaires :
+          l energie cinetique turbulente k (m2/s2) qui represente l intensite
+          des fluctuations turbulentes, et le taux de dissipation epsilon (m2/s3)
+          qui caracterise la vitesse a laquelle l energie turbulente est dissipee
+          en chaleur. Ces deux champs permettent de calculer la viscosite
+          turbulente mu_t = rho * C_mu * k^2 / epsilon.
+          Utilises pour les ecoulements industriels avec y+ eleve (y+ > 30).
+        </DetailedDescription>
+        <Field Name="k"       Label="Turb Kinetic Energy" Dimension="1"
+               Pointer="CS_ENUMF_(k)"   Type="variable" Location="cells"/>
+        <Field Name="epsilon" Label="Turb Dissipation"    Dimension="1"
+               Pointer="CS_ENUMF_(eps)" Type="variable" Location="cells"/>
+      </Rule>
+
+      <!-- second_order : Rij-epsilon, Rij-SSG -->
+      <!-- rij est un tenseur symetrique dim=6 (r11,r22,r33,r12,r13,r23) -->
+      <!-- CoupledKey=1 : les 6 composantes resolues ensemble -->
+      <!-- epsilon exclu pour LES_TAUSGS qui le calcule algebriquement -->
+      <Rule Condition="second_order">
+        <Description>Modeles Rij (tenseur de Reynolds complet)</Description>
+        <DetailedDescription>
+          Les modeles Rij resolvent directement les 6 composantes du tenseur
+          de Reynolds rij = u_i u_j (r11, r22, r33, r12, r13, r23).
+          Contrairement aux modeles k-epsilon qui supposent une viscosite
+          turbulente isotrope, les modeles Rij capturent l anisotropie
+          de la turbulence. Le tenseur etant symetrique, il a 6 composantes
+          independantes, d ou la dimension 6. Les 6 composantes sont resolues
+          de facon couplee (CoupledKey=1) pour la stabilite numerique.
+          Ces modeles sont plus precis pour les ecoulements avec courbure,
+          rotation ou forte anisotropie turbulente.
+        </DetailedDescription>
+        <Field Name="rij"     Label="Rij"             Dimension="6"
+               Pointer="CS_ENUMF_(rij)" Type="variable"
+               Location="cells" CoupledKey="1"/>
+        <Field Name="epsilon" Label="Turb Dissipation" Dimension="1"
+               Pointer="CS_ENUMF_(eps)" Type="variable"
+               Location="cells"
+               ExcludeModel="CS_TURB_LES_TAUSGS"/>
+      </Rule>
+
+      <!-- EBRSM uniquement : champ alpha supplementaire -->
+      <!-- Equation elliptique : istat=0, iconv=0, idircl=0 -->
+      <!-- idircl=0 car toujours un terme diagonal present -->
+      <Rule Condition="model_eq_CS_TURB_RIJ_EPSILON_EBRSM">
+        <Description>EBRSM : champ alpha pour equation elliptique</Description>
+        <DetailedDescription>
+          Le modele EBRSM (Elliptic Blending Reynolds Stress Model) est une
+          extension des modeles Rij qui ameliore le traitement de la zone
+          proche paroi. Il introduit une variable scalaire alpha qui verifie
+          une equation elliptique (sans terme instationnaire istat=0, sans
+          convection iconv=0). Alpha varie de 0 a la paroi (comportement
+          visqueux) a 1 loin de la paroi (comportement turbulent).
+          Le parametre idircl=0 signifie qu on ne decale pas la diagonale
+          car il y a toujours un terme diagonal present dans l equation.
+        </DetailedDescription>
+        <Field Name="alpha" Label="Alphap" Dimension="1"
+               Pointer="CS_ENUMF_(alp_bl)" Type="variable"
+               Location="cells"
+               NoTimeTerm="1" NoConvection="1" NoDiagShift="1"/>
+      </Rule>
+
+      <!-- itytur==5 : v2f-phi et v2f-BL-v2/k -->
+      <!-- Extension de k-epsilon avec variable phi (fluctuation normale) -->
+      <Rule Condition="itytur_eq_5">
+        <Description>Modeles v2f : k, epsilon + phi</Description>
+        <DetailedDescription>
+          Les modeles v2f sont une extension du k-epsilon qui ameliore
+          le comportement en proche paroi sans recourir aux fonctions
+          d amortissement. En plus de k et epsilon, ils transportent
+          phi = v2/k, la composante normale de la turbulence normalisee,
+          qui represente la redistribution de l energie turbulente.
+          phi vaut 2/3 en turbulence isotrope et tend vers 0 a la paroi.
+          Ces modeles sont particulierement efficaces pour les ecoulements
+          avec separation ou recirculation.
+        </DetailedDescription>
+        <Field Name="k"       Label="Turb Kinetic Energy" Dimension="1"
+               Pointer="CS_ENUMF_(k)"   Type="variable" Location="cells"/>
+        <Field Name="epsilon" Label="Turb Dissipation"    Dimension="1"
+               Pointer="CS_ENUMF_(eps)" Type="variable" Location="cells"/>
+        <Field Name="phi"     Label="Phi"                 Dimension="1"
+               Pointer="CS_ENUMF_(phi)" Type="variable" Location="cells"/>
+      </Rule>
+
+      <!-- v2f-phi uniquement : f_bar equation elliptique -->
+      <Rule Condition="model_eq_CS_TURB_V2F_PHI">
+        <Description>v2f-phi : f_bar equation elliptique</Description>
+        <DetailedDescription>
+          Dans le modele v2f-phi original, f_bar est un terme source
+          elliptique pour l equation de phi. Il verifie une equation
+          de Helmholtz sans terme instationnaire ni convection.
+          f_bar lisse le terme source de phi pour eviter les
+          singularites numeriques en proche paroi.
+        </DetailedDescription>
+        <Field Name="f_bar" Label="f_bar" Dimension="1"
+               Pointer="CS_ENUMF_(f_bar)" Type="variable"
+               Location="cells"
+               NoTimeTerm="1" NoConvection="1" NoDiagShift="1"/>
+      </Rule>
+
+      <!-- v2f-BL-v2/k uniquement : alpha equation elliptique -->
+      <Rule Condition="model_eq_CS_TURB_V2F_BL_V2K">
+        <Description>v2f-BL-v2/k : alpha equation elliptique</Description>
+        <Field Name="alpha" Label="Alpha" Dimension="1"
+               Pointer="CS_ENUMF_(alp_bl)" Type="variable"
+               Location="cells"
+               NoTimeTerm="1" NoConvection="1" NoDiagShift="1"/>
+      </Rule>
+
+      <!-- k-omega-SST : omega a la place d'epsilon -->
+      <Rule Condition="model_eq_CS_TURB_K_OMEGA">
+        <Description>k-omega SST : k + taux de dissipation specifique omega</Description>
+        <DetailedDescription>
+          Le modele k-omega SST (Shear Stress Transport) combine les
+          avantages du k-omega en proche paroi et du k-epsilon loin
+          de la paroi via une fonction de melange. Omega (1/s) est
+          le taux de dissipation specifique : omega = epsilon / (C_mu * k).
+          Le SST est considere comme le meilleur modele RANS pour les
+          ecoulements avec gradient de pression adverse et decollement.
+          Utilisable avec y+ faible (y+ ~ 1) ou eleve (y+ > 30).
+        </DetailedDescription>
+        <Field Name="k"     Label="Turb Kinetic Energy" Dimension="1"
+               Pointer="CS_ENUMF_(k)"   Type="variable" Location="cells"/>
+        <Field Name="omega" Label="Omega"               Dimension="1"
+               Pointer="CS_ENUMF_(omg)" Type="variable" Location="cells"/>
+      </Rule>
+
+      <!-- Spalart-Allmaras : une seule equation, nu_tilda -->
+      <Rule Condition="model_eq_CS_TURB_SPALART_ALLMARAS">
+        <Description>Spalart-Allmaras : modele a une equation</Description>
+        <DetailedDescription>
+          Le modele Spalart-Allmaras est un modele a une seule equation
+          qui transporte directement la viscosite turbulente modifiee
+          nu_tilda (m2/s). Tres utilise en aerodynamique externe
+          (aviation, automobile) pour sa robustesse et sa simplicite.
+          Il ne resout pas k ni epsilon — toute l information turbulente
+          est dans nu_tilda. La viscosite turbulente reelle est obtenue
+          par une fonction d amortissement : mu_t = rho * f_v1 * nu_tilda.
+        </DetailedDescription>
+        <Field Name="nu_tilda" Label="NuTilda" Dimension="1"
+               Pointer="CS_ENUMF_(nusa)" Type="variable" Location="cells"/>
+      </Rule>
+
+    </Module>
+
+    <!-- =======================================================
+         MODULE PROPERTIES
+         Source : cs_setup.cpp _create_property_fields() L758-900
+         ======================================================= -->
+
+    <Module Name="Properties">
+      <Description>
+        Champs proprietes physiques de base.
+        Density, viscosites toujours presents.
+        Epsilon SGS pour LES avec transport tau_SGS.
+        Champs hybrides HTLES pour turbulence hybride RANS/LES.
+        CFL cache en regime permanent.
+        TotalPressure seulement si non compressible.
+      </Description>
+
+      <!-- density + boundary_density : toujours, postprocesses -->
+      <!-- Caches plus tard si constants dans cs_parameters_*_complete -->
+      <Rule Condition="always">
+        <Description>Masse volumique cellules et faces de bord</Description>
+        <Field Name="density"          Label="Density"          Dimension="1"
+               Pointer="CS_ENUMF_(rho)"   Type="property"
+               Location="cells"        PostProcess="1" Log="1"/>
+        <Field Name="boundary_density" Label="Boundary Density" Dimension="1"
+               Pointer="CS_ENUMF_(rho_b)" Type="property"
+               Location="boundary_faces"/>
+      </Rule>
+
+      <!-- viscosites moleculaire et turbulente : toujours -->
+      <!-- turbulent_viscosity cachee si pas de turbulence (CS_TURB_NONE) -->
+      <Rule Condition="always">
+        <Description>Viscosite moleculaire et turbulente</Description>
+        <Field Name="molecular_viscosity" Label="Laminar Viscosity" Dimension="1"
+               Pointer="CS_ENUMF_(mu)"   Type="property" Location="cells"/>
+        <Field Name="turbulent_viscosity" Label="Turb Viscosity"    Dimension="1"
+               Pointer="CS_ENUMF_(mu_t)" Type="property" Location="cells"
+               HideIfModel="CS_TURB_NONE"/>
+      </Rule>
+
+      <!-- epsilon SGS : seulement pour LES avec transport de tau_SGS -->
+      <!-- cree comme propriete (pas variable) car algebrique -->
+      <Rule Condition="model_eq_CS_TURB_LES_TAUSGS_OR_KSGS">
+        <Description>Epsilon SGS pour LES avec transport de tau_SGS ou k_SGS</Description>
+        <Field Name="epsilon" Label="Epsilon SGS" Dimension="1"
+               Pointer="CS_ENUMF_(eps)" Type="property"
+               Location="cells" HasBoundary="1"/>
+      </Rule>
+
+      <!-- hybrid_blend : si schema convectif hybride (ischcv=3) ou hybrid_turb > 0 -->
+      <Rule Condition="hybrid_blend_active">
+        <Description>Fonction de melange hybride RANS/LES f_d</Description>
+        <Field Name="hybrid_blend" Label="Hybrid blending function" Dimension="1"
+               Type="property" Location="cells"/>
+      </Rule>
+
+      <!-- hybrid_sas_source_term : seulement si hybrid_turb == 3 (SAS) -->
+      <Rule Condition="hybrid_turb_eq_3">
+        <Description>Terme source SAS pour modele hybride SAS</Description>
+        <Field Name="hybrid_sas_source_term" Label="SAS hybrid source term"
+               Dimension="1" Type="property" Location="cells"/>
+      </Rule>
+
+      <!-- Champs HTLES : seulement si hybrid_turb == 4 -->
+      <Rule Condition="hybrid_turb_eq_4">
+        <Description>Champs pour modele hybride HTLES (hybrid_turb=4)</Description>
+        <Field Name="k_tot"          Label="Energy total"              Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="k_mod"          Label="Modelised Energy"          Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="k_res"          Label="Resolved Energy"           Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="eps_mod"        Label="Mean Dissipation"          Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="htles_psi"      Label="Psi HTLES"                 Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="htles_r"        Label="Energy ratio"              Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="htles_t"        Label="Time scale HTLES"          Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="htles_icc"      Label="ICC coefficient"           Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="htles_fs"       Label="Shielding function"        Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="Delta_max"      Label="Delta max"                 Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="vel_mag_mean"   Label="Mean velocity mag."        Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="velocity_mean"  Label="Vel Tavg"                  Dimension="3"
+               Type="property" Location="cells"/>
+        <Field Name="ui2_mean"       Label="Vel Tavg"                  Dimension="3"
+               Type="property" Location="cells"/>
+      </Rule>
+
+      <!-- HTLES avec k-omega : champs additionnels -->
+      <Rule Condition="hybrid_turb_eq_4_and_komega">
+        <Description>Champs HTLES supplementaires pour k-omega SST</Description>
+        <Field Name="omg_mod"  Label="Mean Specific Dissipation" Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="f1_kwsst" Label="Function F1 of k-omg SST" Dimension="1"
+               Type="property" Location="cells"/>
+      </Rule>
+
+      <!-- s2 + vel_gradient_trace : seulement pour k-omega SST, caches -->
+      <Rule Condition="model_eq_CS_TURB_K_OMEGA">
+        <Description>Tenseur deformation S2 et trace gradient vitesse pour k-omega</Description>
+        <Field Name="s2"                Label="S2"                   Dimension="1"
+               Type="property" Location="cells" Hidden="1"/>
+        <Field Name="vel_gradient_trace" Label="Vel. Gradient Trace" Dimension="1"
+               Type="property" Location="cells" Hidden="1"/>
+      </Rule>
+
+      <!-- courant_number et fourier_number : caches si regime permanent -->
+      <!-- idtvar < 0 = regime permanent = pas de sens pour CFL -->
+      <Rule Condition="always">
+        <Description>Nombres adimensionnels CFL et Fourier</Description>
+        <Field Name="courant_number" Label="CFL"           Dimension="1"
+               Type="property" Location="cells" HideIfSteady="1"/>
+        <Field Name="fourier_number" Label="Fourier Number" Dimension="1"
+               Type="property" Location="cells" HideIfSteady="1"/>
+      </Rule>
+
+      <!-- volume_courant_number : seulement si VoF -->
+      <Rule Condition="vof_active">
+        <Description>Nombre de Courant volumique pour VoF</Description>
+        <Field Name="volume_courant_number" Label="CourantNbVol" Dimension="1"
+               Type="property" Location="cells" HideIfSteady="1"/>
+      </Rule>
+
+      <!-- total_pressure : seulement si non compressible -->
+      <!-- Sauvegardee dans restart auxiliaire -->
+      <Rule Condition="non_compressible">
+        <Description>Pression totale statique + dynamique</Description>
+        <Field Name="total_pressure" Label="Total Pressure" Dimension="1"
+               Type="property" Location="cells"
+               RestartFile="auxiliary"/>
+      </Rule>
+
+      <!-- LES dynamique : Cs^2 -->
+      <Rule Condition="model_eq_CS_TURB_LES_SMAGO_DYN">
+        <Description>Constante de Smagorinsky au carre pour LES dynamique</Description>
+        <Field Name="smagorinsky_constant^2" Label="Csdyn2" Dimension="1"
+               Type="property" Location="cells"/>
+      </Rule>
+
+      <!-- BFH : beta2 additionnel -->
+      <Rule Condition="model_eq_CS_TURB_RIJ_EPSILON_BFH">
+        <Description>Coefficient beta2 pour modele Rij BFH</Description>
+        <Field Name="algo:rij_beta2" Label="beta2" Dimension="1"
+               Type="property" Location="cells"/>
+      </Rule>
+
+      <!-- drift_velocity : seulement si VoF free surface -->
+      <Rule Condition="vof_free_surface">
+        <Description>Vitesse de derive pour VoF surface libre</Description>
+        <Field Name="drift_velocity" Label="Drift Velocity" Dimension="3"
+               Type="property" Location="cells"/>
+      </Rule>
+
+    </Module>
+
+    <!-- =======================================================
+         MODULE THERMAL
+         Source : cs_parameters.cpp
+         cs_parameters_define_auxiliary_fields() L1185-1330
+         ======================================================= -->
+
+    <Module Name="Thermal">
+      <Description>
+        Champs thermiques auxiliaires crees selon la configuration.
+        KineticST si terme source cinetique actif.
+        Yv si air humide.
+        Temperature si energie interne resolue.
+      </Description>
+
+      <!-- has_kinetic_st : terme source cinetique thermique -->
+      <!-- Cree 4 champs : energie, rho_k_prev, vitesses faces -->
+      <Rule Condition="has_kinetic_st">
+        <Description>Champs pour terme source cinetique thermique</Description>
+        <Field Name="kinetic_energy_thermal_st"
+               Label="Kinetic Energy Thermal ST" Dimension="1"
+               Type="property" Location="cells"
+               PostProcess="1" Log="1"/>
+        <Field Name="rho_k_prev"
+               Label="rho_k_prev" Dimension="1"
+               Type="internal" Location="cells"
+               PostProcess="0"/>
+        <Field Name="inner_face_velocity"
+               Label="Inner Face Velocity" Dimension="3"
+               Type="internal" Location="interior_faces"
+               PostProcess="0"/>
+        <Field Name="boundary_face_velocity"
+               Label="Boundary Face Velocity" Dimension="3"
+               Type="internal" Location="boundary_faces"
+               PostProcess="0"/>
+      </Rule>
+
+      <!-- ieos==CS_EOS_MOIST_AIR : fraction massique vapeur d'eau -->
+      <Rule Condition="ieos_moist_air">
+        <Description>Fraction massique vapeur eau pour air humide</Description>
+        <Field Name="yv" Label="Water Vapor Mass Fraction" Dimension="1"
+               Type="property" Location="cells"
+               PostProcess="1" Log="1"/>
+      </Rule>
+
+      <!-- ieos != NONE et temperature ou energie interne ou gas_mix -->
+      <!-- Gradient pression + capacite calorifique isobare -->
+      <Rule Condition="ieos_not_none_and_temp_or_energy">
+        <Description>Champs compressibles gradient pression et Cp</Description>
+        <Field Name="algo:pressure_gradient"
+               Label="Pressure Gradient" Dimension="3"
+               Type="internal" Location="cells" PostProcess="0"/>
+        <Field Name="algo:pressure_increment_gradient"
+               Label="Pressure Increment Gradient" Dimension="3"
+               Type="internal" Location="cells" PostProcess="0"/>
+        <Field Name="isobaric_heat_capacity"
+               Label="Isobaric Heat Capacity" Dimension="1"
+               Type="property" Location="cells"
+               PostProcess="0" Log="1"/>
+      </Rule>
+
+      <!-- thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY -->
+      <!-- Temperature creee comme propriete car variable resolue = energie -->
+      <Rule Condition="thermal_internal_energy">
+        <Description>Temperature comme propriete si energie interne resolue</Description>
+        <Field Name="temperature" Label="Temperature" Dimension="1"
+               Type="property" Location="cells"
+               PostProcess="1" Log="1"/>
+      </Rule>
+
+      <!-- cflt_active : CFL thermique -->
+      <Rule Condition="cflt_active">
+        <Description>Nombre CFL pour la variable thermique</Description>
+        <Field Name="cfl_t" Label="CFL Thermal" Dimension="1"
+               Type="postprocess" Location="cells"
+               PostProcess="1" Log="1"/>
+      </Rule>
+
+      <!-- cflp_active : CFL pression -->
+      <Rule Condition="cflp_active">
+        <Description>Nombre CFL pour la pression</Description>
+        <Field Name="cfl_p" Label="CFL Pressure" Dimension="1"
+               Type="postprocess" Location="cells"
+               PostProcess="1" Log="1"/>
+      </Rule>
+
+    </Module>
+
+  </FieldCreationRules>
+
+  <!-- =========================================================== -->
+  <!-- VALIDATION RULES                                             -->
+  <!-- =========================================================== -->
+
+  <ValidationRules>
+
+    <Constraint Target="field_dimension" Type="positive_strict">
+      <ErrorMessage>Field dimension must be strictly positive</ErrorMessage>
+    </Constraint>
+
+    <Constraint Target="void_fraction" Type="range">
+      <MinValue>0.0</MinValue>
+      <MaxValue>1.0</MaxValue>
+      <ErrorMessage>void fraction must be between 0 and 1</ErrorMessage>
+    </Constraint>
+
+  </ValidationRules>
+
+  <!-- =========================================================== -->
+  <!-- DEFAULTS                                                     -->
+  <!-- =========================================================== -->
+
+  <Defaults>
+    <Default Key="field_location"  Value="cells"/>
+    <Default Key="field_post_vis"  Value="0"/>
+    <Default Key="field_log"       Value="0"/>
+  </Defaults>
+
+  <!-- =========================================================== -->
+  <!-- MAPPINGS                                                     -->
+  <!-- =========================================================== -->
+
+  <Mappings>
+
+    <EnumMapping Name="FieldLocation">
+      <Entry Value="cells"          Flag="CS_MESH_LOCATION_CELLS"          Enum="1"/>
+      <Entry Value="interior_faces" Flag="CS_MESH_LOCATION_INTERIOR_FACES" Enum="2"/>
+      <Entry Value="boundary_faces" Flag="CS_MESH_LOCATION_BOUNDARY_FACES" Enum="3"/>
+      <Entry Value="vertices"       Flag="CS_MESH_LOCATION_VERTICES"       Enum="4"/>
+    </EnumMapping>
+
+    <EnumMapping Name="FieldType">
+      <Entry Value="variable"    Flag="CS_FIELD_VARIABLE"    Enum="1"/>
+      <Entry Value="property"    Flag="CS_FIELD_PROPERTY"    Enum="2"/>
+      <Entry Value="postprocess" Flag="CS_FIELD_POSTPROCESS" Enum="4"/>
+      <Entry Value="internal"    Flag="0"                    Enum="0"/>
+    </EnumMapping>
+
+    <EnumMapping Name="CreationCondition">
+      <Entry Value="itytur_eq_2"                        Enum="2"/>
+      <Entry Value="second_order"                       Enum="3"/>
+      <Entry Value="itytur_eq_5"                        Enum="5"/>
+      <Entry Value="model_eq_CS_TURB_K_OMEGA"           Enum="60"/>
+      <Entry Value="model_eq_CS_TURB_SPALART_ALLMARAS"  Enum="70"/>
+      <Entry Value="model_eq_CS_TURB_RIJ_EPSILON_EBRSM" Enum="32"/>
+      <Entry Value="model_eq_CS_TURB_V2F_PHI"           Enum="50"/>
+      <Entry Value="model_eq_CS_TURB_V2F_BL_V2K"        Enum="51"/>
+      <Entry Value="model_eq_CS_TURB_LES_SMAGO_DYN"     Enum="41"/>
+    </EnumMapping>
+
+  </Mappings>
+
+</ModuleRules>

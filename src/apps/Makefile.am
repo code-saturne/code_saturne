@@ -81,6 +81,7 @@ else
 libsaturne_a_libs =
 endif
 libsaturne_a_libs += \
+$(top_builddir)/src/model/libcsmodel.a \
 $(top_builddir)/src/fvm/libfvm_filters.a \
 $(top_builddir)/src/base/libcsbase.a \
 $(top_builddir)/src/base/libcscore.a \

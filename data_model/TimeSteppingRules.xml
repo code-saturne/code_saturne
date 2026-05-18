@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ModuleRules version="1.0" module="TimeStepping">
+  
+
+  <Definitions>
+    
+    <TypeDef name="TimeScheme">
+      <Value>steady</Value>
+      <Value>first_order</Value>
+      <Value>second_order</Value>
+    </TypeDef>
+    
+    <TypeDef name="ExtrapolationMethod">
+      <Value>none</Value>          
+      <Value>linear</Value>         
+      <Value>second_order</Value>    
+    </TypeDef>
+    
+    <TypeDef name="SourceTermOrder">
+      <Value>explicit</Value>        
+      <Value>semi_implicit_1</Value> 
+      <Value>semi_implicit_2</Value> 
+    </TypeDef>
+    
+  </Definitions>
+
+
+  <ValidationRules>
+    
+    
+    <Rule Type="ThetaScheme" Property="viscosity">
+      <Extrapolation Method="none" Theta="0.0"/>
+      <Extrapolation Method="linear" Theta="0.5"/>
+      <Extrapolation Method="second_order" Theta="1.0"/>
+      <Description>Viscosity extrapolation scheme</Description>
+    </Rule>
+    
+    <Rule Type="ThetaScheme" Property="heat_capacity">
+      <Extrapolation Method="none" Theta="0.0"/>
+      <Extrapolation Method="linear" Theta="0.5"/>
+      <Extrapolation Method="second_order" Theta="1.0"/>
+      <Description>Heat capacity (Cp) extrapolation scheme</Description>
+    </Rule>
+    
+    <Rule Type="ThetaScheme" Property="navier_stokes_source">
+      <SourceTermOrder Order="explicit" Theta="0.0"/>
+      <SourceTermOrder Order="semi_implicit_1" Theta="0.5"/>
+      <SourceTermOrder Order="semi_implicit_2" Theta="1.0"/>
+      <Description>Navier-Stokes source terms</Description>
+    </Rule>
+    
+    <Rule Type="ThetaScheme" Property="turbulence_source">
+      <SourceTermOrder Order="explicit" Theta="0.0"/>
+      <SourceTermOrder Order="semi_implicit_1" Theta="0.5"/>
+      <SourceTermOrder Order="semi_implicit_2" Theta="1.0"/>
+      <Description>Turbulent source terms</Description>
+    </Rule>
+    
+    <Rule Type="ThetaScheme" Property="scalar_source">
+      <SourceTermOrder Order="explicit" Theta="0.0"/>
+      <SourceTermOrder Order="semi_implicit_1" Theta="0.5"/>
+      <SourceTermOrder Order="semi_implicit_2" Theta="1.0"/>
+      <Description>Scalar source terms</Description>
+    </Rule>
+    
+    <Rule Type="ThetaScheme" Property="scalar_diffusivity">
+      <Extrapolation Method="none" Theta="0.0"/>
+      <Extrapolation Method="linear" Theta="0.5"/>
+      <Extrapolation Method="second_order" Theta="1.0"/>
+      <Description>Scalar diffusivity extrapolation</Description>
+    </Rule>
+    
+    
+    <Rule Type="TimeStepLimits">
+      <Parameter Name="dt_ref" Type="double" Default="0.1">
+        <Range Min="0.0" Exclusive="true"/>
+      </Parameter>
+      <Parameter Name="dt_min" Type="double" Default="1e-5">
+        <Range Min="0.0"/>
+      </Parameter>
+      <Parameter Name="dt_max" Type="double" Default="1e10">
+        <Range Min="0.0" Exclusive="true"/>
+      </Parameter>
+    </Rule>
+    
+    
+    <Rule Type="AutomaticSetting" Setting="ThetaAutoInit">
+      <Property Name="viscosity" Key="iviext">
+        <Mapping ExtrapMethod="0" ThetaValue="0.0"/>
+        <Mapping ExtrapMethod="1" ThetaValue="0.5"/>
+        <Mapping ExtrapMethod="2" ThetaValue="1.0"/>
+      </Property>
+      
+      <Property Name="heat_capacity" Key="icpext">
+        <Mapping ExtrapMethod="0" ThetaValue="0.0"/>
+        <Mapping ExtrapMethod="1" ThetaValue="0.5"/>
+        <Mapping ExtrapMethod="2" ThetaValue="1.0"/>
+      </Property>
+    </Rule>
+    
+    <Rule Type="AutomaticSetting" Setting="ThetaSourceTerms">
+      <SourceTerm Name="navier_stokes" Key="isno2t">
+        <Mapping Order="0" ThetaValue="0.0"/>
+        <Mapping Order="1" ThetaValue="0.5"/>
+        <Mapping Order="2" ThetaValue="1.0"/>
+      </SourceTerm>
+      
+      <SourceTerm Name="turbulence" Key="isto2t">
+        <Mapping Order="0" ThetaValue="0.0"/>
+        <Mapping Order="1" ThetaValue="0.5"/>
+        <Mapping Order="2" ThetaValue="1.0"/>
+      </SourceTerm>
+      
+      <SourceTerm Name="scalar" Key="isso2t">
+        <Mapping Order="0" ThetaValue="0.0"/>
+        <Mapping Order="1" ThetaValue="0.5"/>
+        <Mapping Order="2" ThetaValue="1.0"/>
+      </SourceTerm>
+    </Rule>
+    
+  </ValidationRules>
+  
+
+  <Validations>
+    
+    <Constraint Target="dt_ref" Type="positive_strict">
+      <ErrorMessage>Reference time step must be strictly positive</ErrorMessage>
+    </Constraint>
+    
+    <Constraint Target="dt_min" Type="positive">
+      <ErrorMessage>Minimum time step must be positive or zero</ErrorMessage>
+    </Constraint>
+    
+    <Constraint Target="dt_max" Type="positive_strict">
+      <ErrorMessage>Maximum time step must be strictly positive</ErrorMessage>
+    </Constraint>
+    
+    <Constraint Target="dt_consistency" Type="comparison">
+      <Condition>dt_max > dt_min</Condition>
+      <ErrorMessage>Maximum time step must be greater than minimum time step</ErrorMessage>
+    </Constraint>
+    
+    <Constraint Target="theta" Type="range">
+      <MinValue>0.0</MinValue>
+      <MaxValue>1.0</MaxValue>
+      <ErrorMessage>Theta value must be between 0 and 1</ErrorMessage>
+    </Constraint>
+    
+    <Constraint Target="thetvi" Type="range">
+      <MinValue>0.0</MinValue>
+      <MaxValue>1.0</MaxValue>
+      <ErrorMessage>Viscosity theta must be between 0 and 1</ErrorMessage>
+    </Constraint>
+    
+    <Constraint Target="thetcp" Type="range">
+      <MinValue>0.0</MinValue>
+      <MaxValue>1.0</MaxValue>
+      <ErrorMessage>Heat capacity theta must be between 0 and 1</ErrorMessage>
+    </Constraint>
+    
+    <Constraint Target="cfl_max" Type="positive_strict">
+      <ErrorMessage>Maximum CFL number must be strictly positive</ErrorMessage>
+    </Constraint>
+    
+    <Constraint Target="courant_max" Type="positive_strict">
+      <ErrorMessage>Maximum Courant number must be strictly positive</ErrorMessage>
+    </Constraint>
+    
+    <Constraint Target="nt_max" Type="either_or">
+      <Condition>nt_max > 0</Condition>
+      <Condition>t_max > 0</Condition>
+      <ErrorMessage>Either maximum iterations or maximum time must be specified</ErrorMessage>
+    </Constraint>
+    
+  </Validations>
+
+  
+  <Defaults>
+    <Default Key="time_step_ref" Value="0.1"/>
+    <Default Key="time_step_min" Value="1e-5"/>
+    <Default Key="time_step_max" Value="1e10"/>
+    <Default Key="max_iterations" Value="10"/>
+    <Default Key="max_time" Value="-1.0"/>
+    <Default Key="cfl_max" Value="1.0"/>
+    <Default Key="courant_max" Value="1.0"/>
+    <Default Key="fourier_max" Value="10.0"/>
+    <Default Key="time_order" Value="1"/>
+    <Default Key="theta_default" Value="0.5"/>
+  </Defaults>
+  
+
+  
+  <Mappings>
+    
+    <EnumMapping Name="ExtrapolationMethod">
+      <Entry Value="none" Enum="0" Constant="CS_TIME_EXTRAP_NONE"/>
+      <Entry Value="linear" Enum="1" Constant="CS_TIME_EXTRAP_LINEAR"/>
+      <Entry Value="second_order" Enum="2" Constant="CS_TIME_EXTRAP_SECOND_ORDER"/>
+    </EnumMapping>
+    
+    <EnumMapping Name="SourceTermOrder">
+      <Entry Value="explicit" Enum="0" Constant="CS_SOURCE_TERM_EXPLICIT"/>
+      <Entry Value="semi_implicit_1" Enum="1" Constant="CS_SOURCE_TERM_SEMI_IMPLICIT_1"/>
+      <Entry Value="semi_implicit_2" Enum="2" Constant="CS_SOURCE_TERM_SEMI_IMPLICIT_2"/>
+    </EnumMapping>
+    
+  </Mappings>
+  
+
+  <GUIRules>
+    <ModuleGUI Name="TimeSteppingGUI">
+      <ModelParameters>
+        <Parameter Name="dt_ref" Type="double" Default="0.1">
+          <Description>Reference time step</Description>
+          <Range Min="0.0" Exclusive="true"/>
+        </Parameter>
+        <Parameter Name="dt_min" Type="double" Default="1e-5">
+          <Description>Minimum time step</Description>
+          <Range Min="0.0"/>
+        </Parameter>
+        <Parameter Name="dt_max" Type="double" Default="1e10">
+          <Description>Maximum time step</Description>
+          <Range Min="0.0" Exclusive="true"/>
+        </Parameter>
+      </ModelParameters>
+    </ModuleGUI>
+  </GUIRules>
+  
+</ModuleRules>

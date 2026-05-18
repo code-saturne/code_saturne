@@ -27,7 +27,7 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -108,6 +108,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_setup.h"
+#include "model/cs_fields_rules_manager.h"
+#include "model/cs_turbulent_flux_rules_manager.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -479,6 +481,29 @@ _init_variable_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Helper for equation parameters from cs_field_creation_rule_t
+ *         read in FieldsRules.xml.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_apply_field_eqp_from_rule(cs_field_t                      *f,
+                           const cs_field_creation_rule_t   &rule)
+{
+  if (f == nullptr) return;
+  cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+  if (eqp == nullptr) return;
+
+  if (rule.no_time_term)  eqp->istat  = 0;
+  if (rule.no_convection) eqp->iconv  = 0;
+  if (rule.no_diag_shift) eqp->idircl = 0;
+  if (rule.no_diffusion)  eqp->idiff  = 0;
+  if (rule.convection_scheme > 0) eqp->ischcv = rule.convection_scheme;
+  if (rule.slope_test > 0) eqp->isstpc = rule.slope_test;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create variable fields based on active model.
  */
 /*----------------------------------------------------------------------------*/
@@ -530,7 +555,9 @@ _create_variable_fields(void)
       eqp->iwgrec = 1;
   }
 
-  /* void fraction (VoF algorithm) */
+  /* void_fraction: Condition="vof_active" in FieldsRules.xml Module Base */
+  /* NoDiffusion=1, ConvectionScheme=4 (NVD/TVD), Limiter=11 (CICSAM),   */
+  /* SlopeTest=2 (Beta Limiter), ScalarMin=0, ScalarMax=1                 */
 
   if (cs_glob_vof_parameters->vof_model > 0) {
 
@@ -538,102 +565,128 @@ _create_variable_fields(void)
     cs_field_pointer_map(CS_ENUMF_(void_f),  f);
 
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    eqp->idiff = 0;  // pure convection equation
-
-    // NVD/TVD scheme
-    eqp->ischcv = 4;
-    // (CICSAM limiter)
-    f->set_key_int("limiter_choice", 11);
-    // Beta Limiter
-    eqp->isstpc = 2;
-
-    // Bounds for the beta limiter
-    f->set_key_double("min_scalar", 0.);
-    f->set_key_double("max_scalar", 1.);
+    eqp->idiff   = 0;  /* NoDiffusion=1 in XML: convection pure */
+    eqp->ischcv  = 4;  /* ConvectionScheme=4: NVD/TVD */
+    eqp->isstpc  = 2;  /* SlopeTest=2: Beta Limiter */
+    f->set_key_int("limiter_choice", 11);       /* Limiter=11: CICSAM */
+    f->set_key_double("min_scalar", 0.);        /* ScalarMin=0.0 */
+    f->set_key_double("max_scalar", 1.);        /* ScalarMax=1.0 */
 
   }
 
-  /* Turbulence */
+  /* Turbulence.
 
-  const int itytur = cs_glob_turb_model->itytur;
-  const int order = cs_glob_turb_model->order;
-  const cs_turb_model_type_t model
-    = (cs_turb_model_type_t)cs_glob_turb_model->model;
+     The creation of turbulence fiels is not described by FieldsRules.xml
+     and controlled using cs_get_fields_rules_manager(). */
 
-  if (itytur == 2) {
-    cs_field_pointer_map(CS_ENUMF_(k),
-                         _add_variable_field("k", "Turb Kinetic Energy", 1));
-    cs_field_pointer_map(CS_ENUMF_(eps),
-                         _add_variable_field("epsilon", "Turb Dissipation", 1));
-  }
-  else if (order == CS_TURB_SECOND_ORDER) {
-    cs_field_pointer_map(CS_ENUMF_(rij),
-                         _add_variable_field("rij", "Rij", 6));
-    CS_F_(rij)->set_key_int(keycpl, 1);
+  {
+    const int itytur = cs_glob_turb_model->itytur;
+    const int order  = cs_glob_turb_model->order;
+    const cs_turb_model_type_t model
+      = (cs_turb_model_type_t)cs_glob_turb_model->model;
 
-    /* epsilon or omega given by an algebraic relation in LES with transport of tau_SGS */
-    if (model != CS_TURB_LES_TAUSGS) {
-      if (model == CS_TURB_RIJ_OMEGA) {
-        cs_field_pointer_map(CS_ENUMF_(omg),
-                             _add_variable_field("omega",
-                                                 "Omega", 1));
-      }
-      else {
-        cs_field_pointer_map(CS_ENUMF_(eps),
-                             _add_variable_field("epsilon",
-                                                 "Turb Dissipation", 1));
+    cs_fields_rules_manager *frm = cs_get_fields_rules_manager();
+
+
+    /* Determine based on active model */
+    const char *turb_condition = nullptr;
+    if (itytur == 2)
+      turb_condition = "itytur_eq_2";
+    else if (order == CS_TURB_SECOND_ORDER)
+      turb_condition = "second_order";
+    else if (itytur == 5)
+      turb_condition = "itytur_eq_5";
+    else if (model == CS_TURB_K_OMEGA)
+      turb_condition = "model_eq_CS_TURB_K_OMEGA";
+    else if (model == CS_TURB_SPALART_ALLMARAS)
+      turb_condition = "model_eq_CS_TURB_SPALART_ALLMARAS";
+
+    if (turb_condition != nullptr) {
+      const auto *fields = frm->get_fields("Turbulence", turb_condition);
+      if (fields != nullptr) {
+        for (const auto &rule : *fields) {
+          /* Ignore if models is excluded. */
+          if (!rule.exclude_model.empty()) {
+            /* Epsilon excluded for CS_TURB_LES_TAUSGS */
+            if (model == CS_TURB_LES_TAUSGS
+                && rule.exclude_model == "CS_TURB_LES_TAUSGS")
+              continue;
+          }
+
+          cs_field_t *f = _add_variable_field(rule.name.c_str(),
+                                              rule.label.c_str(),
+                                              rule.dimension);
+          _apply_field_eqp_from_rule(f, rule);
+
+          if (rule.coupled)
+            f->set_key_int(keycpl, 1);
+        }
       }
     }
 
+    /* Additional cases based on the exact model. */
+
+    /* EBRSM: elliptical alpha field */
     if (model == CS_TURB_RIJ_EPSILON_EBRSM) {
-      cs_field_pointer_map(CS_ENUMF_(alp_bl),
-                           _add_variable_field("alpha", "Alphap", 1));
+      const auto *fields
+        = frm->get_fields("Turbulence",
+                          "model_eq_CS_TURB_RIJ_EPSILON_EBRSM");
+      if (fields != nullptr) {
+        for (const auto &rule : *fields) {
+          cs_field_t *f = _add_variable_field(rule.name.c_str(),
+                                              rule.label.c_str(),
+                                              rule.dimension);
+          _apply_field_eqp_from_rule(f, rule);
+        }
+      }
+    }
 
-      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(alp_bl));
-      // Elliptic equation (no convection, no time term)
-      eqp->istat = 0;
-      eqp->iconv = 0;
-      // For alpha, we always have a diagonal term, so do not shift the diagonal
-      eqp->idircl = 0;
-    }
-  }
-  else if (itytur == 5) {
-    cs_field_pointer_map(CS_ENUMF_(k),
-                         _add_variable_field("k", "Turb Kinetic Energy", 1));
-    cs_field_pointer_map(CS_ENUMF_(eps),
-                         _add_variable_field("epsilon", "Turb Dissipation", 1));
-    cs_field_pointer_map(CS_ENUMF_(phi),
-                         _add_variable_field("phi", "Phi", 1));
+    /* v2f-phi: f_bar */
     if (model == CS_TURB_V2F_PHI) {
-      cs_field_pointer_map(CS_ENUMF_(f_bar),
-                           _add_variable_field("f_bar", "f_bar", 1));
-      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(f_bar));
-      // Elliptic equation (no convection, no time term)
-      eqp->istat = 0;
-      eqp->iconv = 0;
-      // For f_bar, we always have a diagonal term, so do not shift the diagonal
-      eqp->idircl = 0;
+      const auto *fields = frm->get_fields("Turbulence",
+                                           "model_eq_CS_TURB_V2F_PHI");
+      if (fields != nullptr) {
+        for (const auto &rule : *fields) {
+          cs_field_t *f = _add_variable_field(rule.name.c_str(),
+                                              rule.label.c_str(),
+                                              rule.dimension);
+          _apply_field_eqp_from_rule(f, rule);
+        }
+      }
     }
-    else if (model == CS_TURB_V2F_BL_V2K) {
-      cs_field_pointer_map(CS_ENUMF_(alp_bl),
-                           _add_variable_field("alpha", "Alpha", 1));
-      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(alp_bl));
-      // Elliptic equation (no convection, no time term)
-      eqp->istat = 0;
-      eqp->iconv = 0;
-      // For alpha, we always have a diagonal term, so do not shift the diagonal
-      eqp->idircl = 0;
+
+    /* v2f-BL-v2/k: alpha */
+    if (model == CS_TURB_V2F_BL_V2K) {
+      const auto *fields = frm->get_fields("Turbulence",
+                                           "model_eq_CS_TURB_V2F_BL_V2K");
+      if (fields != nullptr) {
+        for (const auto &rule : *fields) {
+          cs_field_t *f = _add_variable_field(rule.name.c_str(),
+                                              rule.label.c_str(),
+                                              rule.dimension);
+          _apply_field_eqp_from_rule(f, rule);
+        }
+      }
     }
-  }
-  else if (model == CS_TURB_K_OMEGA) {
-    cs_field_pointer_map(CS_ENUMF_(k),
-                         _add_variable_field("k", "Turb Kinetic Energy", 1));
-    cs_field_pointer_map(CS_ENUMF_(omg),
-                         _add_variable_field("omega", "Omega", 1));
-  }
-  else if (model == CS_TURB_SPALART_ALLMARAS) {
-    cs_field_pointer_map(CS_ENUMF_(nusa),
-                         _add_variable_field("nu_tilda", "NuTilda", 1));
+
+    /* Update global pointers after creation */
+    cs_field_t *f_k   = cs_field_by_name_try("k");
+    cs_field_t *f_eps = cs_field_by_name_try("epsilon");
+    cs_field_t *f_rij = cs_field_by_name_try("rij");
+    cs_field_t *f_omg = cs_field_by_name_try("omega");
+    cs_field_t *f_nu  = cs_field_by_name_try("nu_tilda");
+    cs_field_t *f_phi = cs_field_by_name_try("phi");
+    cs_field_t *f_fbar= cs_field_by_name_try("f_bar");
+    cs_field_t *f_alp = cs_field_by_name_try("alpha");
+
+    if (f_k)    cs_field_pointer_map(CS_ENUMF_(k),      f_k);
+    if (f_eps)  cs_field_pointer_map(CS_ENUMF_(eps),    f_eps);
+    if (f_rij)  cs_field_pointer_map(CS_ENUMF_(rij),    f_rij);
+    if (f_omg)  cs_field_pointer_map(CS_ENUMF_(omg),    f_omg);
+    if (f_nu)   cs_field_pointer_map(CS_ENUMF_(nusa),   f_nu);
+    if (f_phi)  cs_field_pointer_map(CS_ENUMF_(phi),    f_phi);
+    if (f_fbar) cs_field_pointer_map(CS_ENUMF_(f_bar),  f_fbar);
+    if (f_alp)  cs_field_pointer_map(CS_ENUMF_(alp_bl), f_alp);
   }
 
   /* Mesh velocity with ALE */
@@ -777,137 +830,198 @@ _create_property_fields(void)
   /* Main properties
      -------------- */
 
-  // Base properties, always present
+  // Base properties, always present.
 
+  /* Property fields are described in FieldsRules.xml and managed with
+   * cs_get_fields_rules_manager(). */
   {
-    f = _add_property_field("density", "Density", 1, false);
-    cs_field_pointer_map(CS_ENUMF_(rho), f);
+    cs_fields_rules_manager *frm = cs_get_fields_rules_manager();
 
-    // Postprocessed and in the log file by default, hidden later in
-    // cs_parameters_*_complete if constant.
-    f->set_key_int(keyvis, CS_POST_ON_LOCATION);
-    f->set_key_int(keylog, 1);
+    {
+      auto always_fields = frm->get_all_fields("Properties", "always");
+      for (const auto &rule : always_fields) {
 
-    f = _add_property_field_boundary("boundary_density", "Boundary Density",
-                                     1, false);
-    cs_field_pointer_map(CS_ENUMF_(rho_b), f);
+        if (rule.name == "density") {
+          f = _add_property_field(rule.name.c_str(),
+                                  rule.label.c_str(), 1, false);
+          cs_field_pointer_map(CS_ENUMF_(rho), f);
+          f->set_key_int(keyvis, CS_POST_ON_LOCATION); /* PostProcess=1 */
+          f->set_key_int(keylog, 1);                   /* Log=1 */
+        }
+        else if (rule.name == "boundary_density") {
+          /* Location="boundary_faces" in XML */
+          f = _add_property_field_boundary(rule.name.c_str(),
+                                           rule.label.c_str(), 1, false);
+          cs_field_pointer_map(CS_ENUMF_(rho_b), f);
+        }
+        else if (rule.name == "molecular_viscosity") {
+          f = _add_property_field(rule.name.c_str(),
+                                  rule.label.c_str(), 1, false);
+          cs_field_pointer_map(CS_ENUMF_(mu), f);
+        }
+        else if (rule.name == "turbulent_viscosity") {
+          f = _add_property_field(rule.name.c_str(),
+                                  rule.label.c_str(), 1, false);
+          cs_field_pointer_map(CS_ENUMF_(mu_t), f);
+          /* HideIfModel="CS_TURB_NONE" in XML */
+          if (turb_model->model == CS_TURB_NONE)
+            _hide_field(f);
+        }
+      }
+    }
+
+    /* epsilon SGS: Condition="model_eq_CS_TURB_LES_TAUSGS_OR_KSGS" in XML */
+    /* HasBoundary=1 (second arg true) */
+    if (turb_model->model == CS_TURB_LES_TAUSGS
+        || turb_model->model == CS_TURB_LES_KSGS) {
+      const auto *sgs_fields
+        = frm->get_fields("Properties",
+                          "model_eq_CS_TURB_LES_TAUSGS_OR_KSGS");
+      if (sgs_fields != nullptr) {
+        for (const auto &rule : *sgs_fields) {
+          if (rule.name == "epsilon") {
+            f = _add_property_field(rule.name.c_str(),
+                                    rule.label.c_str(), 1, true);
+            cs_field_pointer_map(CS_ENUMF_(eps), f);
+          }
+        }
+      }
+    }
+
+    /* Courant_number + Fourier_number: hidden for pseudo-steady. */
+    {
+      int idtvar = cs_glob_time_step_options->idtvar;
+      auto base_fields = frm->get_all_fields("Properties", "always");
+      for (const auto &rule : base_fields) {
+        if (rule.name == "courant_number" || rule.name == "fourier_number") {
+          f = _add_property_field(rule.name.c_str(),
+                                  rule.label.c_str(), 1, false);
+          if (idtvar < 0) _hide_field(f);
+        }
+      }
+
+      /* Colume_courant_number: only for VoF */
+      if (cs_glob_vof_parameters->vof_model > 0) {
+        const auto *vof_fields = frm->get_fields("Properties", "vof_active");
+        if (vof_fields != nullptr) {
+          for (const auto &rule : *vof_fields) {
+            if (rule.name == "volume_courant_number") {
+              f = _add_property_field(rule.name.c_str(),
+                                      rule.label.c_str(), 1, false);
+              if (idtvar < 0) _hide_field(f);
+            }
+          }
+        }
+      }
+    }
+
+    /* total_pressure: only if incompressible */
+    if (pm_flag[CS_COMPRESSIBLE] < 0) {
+      const auto *nc_fields = frm->get_fields("Properties", "non_compressible");
+      if (nc_fields != nullptr) {
+        for (const auto &rule : *nc_fields) {
+          if (rule.name == "total_pressure") {
+            f = _add_property_field(rule.name.c_str(),
+                                    rule.label.c_str(), 1, false);
+            if (!rule.restart_file.empty()) {
+              int k_restart_id = cs_field_key_id("restart_file");
+              f->set_key_int(k_restart_id, CS_RESTART_AUXILIARY);
+            }
+          }
+        }
+      }
+    }
+
+    /* Dynamic LES: smagorinsky_constant^2 */
+    if (turb_model->model == CS_TURB_LES_SMAGO_DYN) {
+      const auto *les_fields
+        = frm->get_fields("Properties",
+                          "model_eq_CS_TURB_LES_SMAGO_DYN");
+      if (les_fields != nullptr) {
+        for (const auto &rule : *les_fields)
+          _add_property_field(rule.name.c_str(), rule.label.c_str(), 1, false);
+      }
+    }
   }
+  /* Hybrid RANS/LES and k-omega conditions in FieldsRules.xml
+   * Module "Properties":
+   * - hybrid_blend_active  : hybrid_blend
+   * - hybrid_turb_eq_3     : hybrid_sas_source_term (CS_HYBRID_SAS)
+   * - hybrid_turb_eq_4     : k_tot, k_mod, k_res, eps_mod, htles_*
+   * - hybrid_turb_eq_4_and_komega: omg_mod, f1_kwsst
+   * - model_eq_CS_TURB_K_OMEGA: s2, vel_gradient_trace (Hidden=1)
+   * - model_eq_CS_TURB_RIJ_EPSILON_BFH: algo:rij_beta2
+   * ================================================================ */
 
   {
-    f = _add_property_field("molecular_viscosity", "Laminar Viscosity",
-                            1, false);
-    cs_field_pointer_map(CS_ENUMF_(mu), f);
+    cs_fields_rules_manager *frm2 = cs_get_fields_rules_manager();
 
-    f = _add_property_field("turbulent_viscosity", "Turb Viscosity",
-                            1, false);
-    cs_field_pointer_map(CS_ENUMF_(mu_t), f);
-    if (turb_model->model == CS_TURB_NONE)
-      _hide_field(f);
-  }
-  if (turb_model->model == CS_TURB_LES_TAUSGS
-      || turb_model->model == CS_TURB_LES_KSGS)
-  {
-    f = _add_property_field("epsilon", "Epsilon SGS",
-                            1, true);
-    cs_field_pointer_map(CS_ENUMF_(eps), f);
-  }
-  /* Hybrid RANS/LES function f_d is stored for Post Processing in hybrid_blend.
-     If the hybrid spatial scheme is activated for the velocity (ischcv=3)
-     create field hybrid_blend which contains the local blending factor. */
-
-  {
+    /* hybrid_blend: for hybrid convective scheme or hybrid turbulence */
     if (cs_param_cdo_has_fv_main()) {
       cs_equation_param_t *eqp_u = cs_field_get_equation_param(CS_F_(vel));
       if (eqp_u->ischcv == 3 || turb_model->hybrid_turb > 0) {
-        _add_property_field("hybrid_blend",
-                            "Hybrid blending function",
-                            1,
-                            false);
+        const auto *hb_fields = frm2->get_fields("Properties",
+                                                 "hybrid_blend_active");
+        if (hb_fields != nullptr)
+          for (const auto &rule : *hb_fields)
+            _add_property_field(rule.name.c_str(), rule.label.c_str(),
+                                1, false);
       }
     }
 
+    /* hybrid_sas_source_term: hybrid_turb == CS_HYBRID_SAS */
     if (turb_model->hybrid_turb == CS_HYBRID_SAS) {
-      _add_property_field("hybrid_sas_source_term",
-                          "SAS hybrid source term",
-                          1, false);
+      const auto *sas_fields = frm2->get_fields("Properties",
+                                                "hybrid_turb_eq_3");
+      if (sas_fields != nullptr)
+        for (const auto &rule : *sas_fields)
+          _add_property_field(rule.name.c_str(), rule.label.c_str(),
+                              1, false);
     }
+
+    /* HTLES fields: hybrid_turb == CS_HYBRID_HTLES */
     else if (turb_model->hybrid_turb == CS_HYBRID_HTLES) {
-      _add_property_field("k_tot",   "Energy total",     1, false);
-      _add_property_field("k_mod",   "Modelised Energy", 1, false);
-      _add_property_field("k_res",   "Resolved Energy",  1, false);
-      _add_property_field("eps_mod", "Mean Dissipation", 1, false);
+      const auto *htles_fields = frm2->get_fields("Properties",
+                                                  "hybrid_turb_eq_4");
+      if (htles_fields != nullptr)
+        for (const auto &rule : *htles_fields)
+          _add_property_field(rule.name.c_str(), rule.label.c_str(),
+                              rule.dimension, false);
+
+      /* omg_mod + f1_kwsst: k-omega + HTLES */
       if (turb_model->model == CS_TURB_K_OMEGA) {
-        _add_property_field("omg_mod",  "Mean Specific Dissipation", 1, false);
-        _add_property_field("f1_kwsst", "Function F1 of k-omg SST",  1, false);
+        const auto *ko_htles = frm2->get_fields("Properties",
+                                                "hybrid_turb_eq_4_and_komega");
+        if (ko_htles != nullptr)
+          for (const auto &rule : *ko_htles)
+            _add_property_field(rule.name.c_str(), rule.label.c_str(),
+                                1, false);
       }
-      _add_property_field("htles_psi", "Psi HTLES",          1, false);
-      _add_property_field("htles_r",   "Energy ratio",       1, false);
-      _add_property_field("htles_t",   "Time scale HTLES",   1, false);
-      _add_property_field("htles_icc", "ICC coefficient",    1, false);
-      _add_property_field("htles_fs",  "Shielding function", 1, false);
-      _add_property_field("Delta_max", "Delta max",          1, false);
-
-      // Time averaged with exponential filtering, TODO use standard time moment
-      _add_property_field("vel_mag_mean","Mean velocity mag.",1, false);
-      _add_property_field("velocity_mean", "Vel Tavg", 3, false);
-
-      // Diagonal part of time moment of uiuj
-      _add_property_field("ui2_mean", "Vel Tavg", 3, false);
-    }
-  }
-
-  if (turb_model->model == CS_TURB_K_OMEGA) {
-    // Square of the norm of the deviatoric part of the deformation rate
-    // tensor (\f$S^2=2S_{ij}^D S_{ij}^D\f$).
-    f = _add_property_field("s2", "S2", 1, false);
-    _hide_field(f);
-
-    // Divergence of the velocity. More precisely, trace of the velocity gradient
-    // (and not a finite volume divergence term). Defined only for k-omega SST
-    // (because in this case it may be calculated at the same time as \f$S^2\f$)
-    f = _add_property_field("vel_gradient_trace", "Vel. Gradient Trace",
-                            1, false);
-    _hide_field(f);
-  }
-
-  {
-    int idtvar = cs_glob_time_step_options->idtvar;
-
-    f = _add_property_field("courant_number", "CFL", 1, false);
-    if (idtvar < 0)
-      _hide_field(f);
-
-    if (cs_glob_vof_parameters->vof_model > 0) {
-      f = _add_property_field("volume_courant_number", "CourantNbVol", 1, false);
-      if (idtvar < 0)
-        _hide_field(f);
     }
 
-    f = _add_property_field("fourier_number", "Fourier Number", 1, false);
-    if (idtvar < 0)
-      _hide_field(f);
-  }
+    /* s2 + vel_gradient_trace: k-omega SST seulement, Hidden=1 */
+    if (turb_model->model == CS_TURB_K_OMEGA) {
+      const auto *ko_fields = frm2->get_fields("Properties",
+                                               "model_eq_CS_TURB_K_OMEGA");
+      if (ko_fields != nullptr) {
+        for (const auto &rule : *ko_fields) {
+          f = _add_property_field(rule.name.c_str(), rule.label.c_str(),
+                                  1, false);
+          _hide_field(f); /* Hidden=1 in XML */
+        }
+      }
+    }
 
-  // Total pressure is stored in a property field.
-  // if the compressible module is not enabled (otherwise Ptot=P*).
-  // only used if the gravity is set.
-
-  if (pm_flag[CS_COMPRESSIBLE] < 0) {
-    f = _add_property_field("total_pressure", "Total Pressure", 1, false);
-
-    // Save total pressure in auxiliary restart file
-    int k_restart_id = cs_field_key_id("restart_file");
-    f->set_key_int(k_restart_id, CS_RESTART_AUXILIARY);
-  }
-
-  //! Cs^2 for dynamic LES model
-  if (turb_model->model == CS_TURB_LES_SMAGO_DYN) {
-    _add_property_field("smagorinsky_constant^2", "Csdyn2", 1, false);
-  }
-
-  /* Additional beta2 "coefficient" for BFH */
-  if (turb_model->model == CS_TURB_RIJ_EPSILON_BFH) {
-    _add_property_field("algo:rij_beta2", "beta2", 1, false);
+    /* algo:rij_beta2: BFH only */
+    if (turb_model->model == CS_TURB_RIJ_EPSILON_BFH) {
+      const auto *bfh_fields
+        = frm2->get_fields("Properties",
+                           "model_eq_CS_TURB_RIJ_EPSILON_BFH");
+      if (bfh_fields != nullptr)
+        for (const auto &rule : *bfh_fields)
+          _add_property_field(rule.name.c_str(), rule.label.c_str(),
+                              1, false);
+    }
   }
 
   /* Additions for specific models
@@ -1111,7 +1225,7 @@ _additional_fields_stage_1(void)
     }
   }
 
-  /* Time schemes : deducted variables
+  /* Time schemes: deducted variables
      Mass flux scheme */
   if (time_scheme->istmpf == -999) {
     if (time_scheme->time_order == 1) {
@@ -1718,85 +1832,103 @@ _additional_fields_stage_2(void)
   /* Additional variable fields
      -------------------------- */
 
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
-      continue;
-    int scalar_id = (ks > -1) ? f->get_key_int(ks) -1 : -1;
-    if (scalar_id < 0)
-      continue;
+  /* Create turbulent flux fields defined in TurbulentFluxRules.xml
+     using cs_get_turbulent_flux_rules_manager().
+     For each scalar, reads the SGDH/GGDH/AFM/DFM... flux model
+     and created the matching ({scalar}_turbulent_flux, _alpha). */
+  {
+    cs_turbulent_flux_rules_manager *tfrm
+      = cs_get_turbulent_flux_rules_manager();
 
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    if (eqp != nullptr) {
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *f = cs_field_by_id(f_id);
+      if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
+        continue;
+      int scalar_id = (ks > -1) ? f->get_key_int(ks) - 1 : -1;
+      if (scalar_id < 0)
+        continue;
+
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp == nullptr) continue;
+
       int post_flag = f->get_key_int(keyvis);
-      int log_flag = f->get_key_int(keylog);
-      int turb_flux_model = f->get_key_int(kturt);
-      int turb_flux_model_type = turb_flux_model / 10.;
+      int log_flag  = f->get_key_int(keylog);
+      int turb_flux_model      = f->get_key_int(kturt);
+      int turb_flux_model_type = turb_flux_model / 10;
 
-      if (turb_flux_model_type > 0) {
-        char f_tf_name[128];
-        snprintf(f_tf_name, 127, "%s_turbulent_flux", f->name);
-        f_tf_name[127] = '\0';
-        cs_field_t *f_turb_flux = nullptr;
+      if (turb_flux_model_type == 0) continue;
 
-        if (turb_flux_model_type == 3) {
-          f_turb_flux = _add_variable_field(f_tf_name,
-                                            f_tf_name,
-                                            3);
+      /* Read rule in TurbulentFluxRules.xml */
+      const cs_turb_flux_rule_t *rule
+        = tfrm->get_rule_by_value(turb_flux_model);
+
+      /* Name of turbulent flux field */
+      std::string scalar_name = f->name;
+      std::string tf_name
+        = cs_turbulent_flux_rules_manager::resolve_name
+                                             ("{scalar}_turbulent_flux",
+                                              scalar_name);
+
+      cs_field_t *f_turb_flux = nullptr;
+
+      if (turb_flux_model_type == 3) {
+        /* DFM/EB-DFM: coupled vector variable */
+        f_turb_flux = _add_variable_field(tf_name.c_str(),
+                                          tf_name.c_str(), 3);
+        if (rule && !rule->fields.empty() && rule->fields[0].coupled)
           f_turb_flux->set_key_int(keycpl, 1);
+        if (rule && !rule->fields.empty() && rule->fields[0].clipping)
           f_turb_flux->set_key_int(key_clipping_id, 1);
 
-          /* Tensorial diffusivity */
-          cs_equation_param_t *eqp_turb_flux
-            = cs_field_get_equation_param(f_turb_flux);
-          eqp_turb_flux->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
+        /* Tensorial diffusivity for DFM */
+        cs_equation_param_t *eqp_tf
+          = cs_field_get_equation_param(f_turb_flux);
+        eqp_tf->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
 
-          /* If variance is required */
-          cs_real_t grav = cs_math_3_norm(cs_glob_physical_constants->gravity);
-          if (   (   cs_glob_fluid_properties->irovar > 0
-                  || cs_glob_velocity_pressure_model->idilat == 0)
-              && grav > cs_math_epzero) {
-            char f_var_name[128];
-            snprintf(f_var_name, 127, "%s_variance", f->name);
-            f_var_name[127] = '\0';
-
-            cs_field_t *f_var = cs_field_by_name_try(f_var_name);
-            if (f_var == nullptr) {
-              f_var = _add_model_scalar_field(f_var_name, f_var_name, 1);
-              f_var->set_key_int(kscavr, f_id);
-            }
+        /* Variance if gravity + variable density */
+        cs_real_t grav
+          = cs_math_3_norm(cs_glob_physical_constants->gravity);
+        if (   (   cs_glob_fluid_properties->irovar > 0
+                || cs_glob_velocity_pressure_model->idilat == 0)
+            && grav > cs_math_epzero) {
+          std::string var_name
+            = cs_turbulent_flux_rules_manager::resolve_name
+                                                 ("{scalar}_variance",
+                                                  scalar_name);
+          cs_field_t *f_var = cs_field_by_name_try(var_name.c_str());
+          if (f_var == nullptr) {
+            f_var = _add_model_scalar_field(var_name.c_str(),
+                                            var_name.c_str(), 1);
+            f_var->set_key_int(kscavr, f_id);
           }
         }
-        else {
-          f_turb_flux = cs_field_create(f_tf_name,
-                                        CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
-                                        CS_MESH_LOCATION_CELLS,
-                                        3,
-                                        true);
-          f_turb_flux->set_key_int(keyvis, post_flag);
-          f_turb_flux->set_key_int(keylog, log_flag);
-        }
+      }
+      else {
+        /* GGDH/AFM/EB-GGDH/EB-AFM: vector property */
+        f_turb_flux = cs_field_create(tf_name.c_str(),
+                                      CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                                      CS_MESH_LOCATION_CELLS,
+                                      3, true);
+        f_turb_flux->set_key_int(keyvis, post_flag);
+        f_turb_flux->set_key_int(keylog, log_flag);
+      }
 
-        f->set_key_int(kfturt, f_turb_flux->id);
+      f->set_key_int(kfturt, f_turb_flux->id);
 
-        /* Elliptic Blending (AFM or DFM) */
-        if (   turb_flux_model == 11
-            || turb_flux_model == 21
-            || turb_flux_model == 31) {
-          char f_alp_name[128];
-          snprintf(f_alp_name, 127, "%s_alpha", f->name);
-          f_alp_name[127] = '\0';
+      /* Elliptic Blending: alpha field if EB-GGDH, EB-AFM, EB-DFM */
+      if (rule && tfrm->creates_alpha_field(rule->model_name)) {
+        std::string alp_name
+          = cs_turbulent_flux_rules_manager::resolve_name(
+              "{scalar}_alpha", scalar_name);
+        cs_field_t *f_alpha
+          = _add_variable_field(alp_name.c_str(), alp_name.c_str(), 1);
 
-          cs_field_t *f_alpha = _add_variable_field(f_alp_name,
-                                                    f_alp_name,
-                                                    1);
+        cs_equation_param_t *eqp_alp
+          = cs_field_get_equation_param(f_alpha);
+        eqp_alp->iconv = 0;
+        eqp_alp->istat = 0;
 
-          cs_equation_param_t *eqp_alp = cs_field_get_equation_param(f_alpha);
-          eqp_alp->iconv = 0;
-          eqp_alp->istat = 0;
-
-          f->set_key_int(kfturt_alpha, f_alpha->id);
-        }
+        f->set_key_int(kfturt_alpha, f_alpha->id);
       }
     }
   }

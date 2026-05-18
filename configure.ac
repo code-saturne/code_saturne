@@ -1424,7 +1424,7 @@ AC_CONFIG_FILES([Makefile
                  external/Makefile external/atmo/Makefile
                  src/Makefile      src/apps/Makefile src/gui/Makefile
                  src/bft/Makefile  src/fvm/Makefile
-                 src/base/Makefile src/atmo/Makefile src/cdo/Makefile
+                 src/base/Makefile src/model/Makefile src/atmo/Makefile src/cdo/Makefile
                  src/cfbl/Makefile src/cogz/Makefile src/ctwr/Makefile
                  src/elec/Makefile src/comb/Makefile src/gwf/Makefile
                  src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
@@ -1432,7 +1432,8 @@ AC_CONFIG_FILES([Makefile
                  src/user/Makefile src/user_examples/Makefile
                  src/meg/Makefile
                  python/Makefile
-                 doc/Makefile doc/doxygen/Makefile doc/style/csvers.tex
+                 data_model/Makefile doc/Makefile doc/doxygen/Makefile
+                 doc/sphinx/Makefile doc/style/csvers.tex
                  doc/theory/Makefile
                  tests/Makefile
                  config/code_saturne_build.cfg.in])
@@ -1542,6 +1543,7 @@ fi
 echo
 echo " PdfLaTeX (document typesetting) available: "$cs_have_latex""
 echo " Doxygen (document generation) available: "$cs_have_doxygen""
+echo " Sphinx (documentation) available: "$cs_have_sphinx""
 if (test x$cs_have_doxygen = xyes) ; then
   echo "   dot (Graphviz) available: "$cs_have_dot""
   echo "   MathJax enabled: "$cs_enable_mathjax""

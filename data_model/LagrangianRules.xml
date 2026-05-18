@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ModuleRules version="1.0" module="Lagrangian">
+  <!--
+    LagrangianRules.xml
+    Centralized rules for the Lagrangian module.
+    Sources:
+    - src/lagr/cs_lagr.h  (enums CS_LAGR_*, CS_LAGR_PHYS_*)
+    - python/code_saturne/model/LagrangianModel.py
+  -->
+
+  <Definitions>
+
+    <!-- Coupling modes — cs_lagr_module_status_t -->
+    <TypeDef name="LagrangianCouplingMode">
+      <Value name="off"      Enum="CS_LAGR_OFF"                    Int="0" Description="Lagrangian module off"/>
+      <Value name="one_way"  Enum="CS_LAGR_ONEWAY_COUPLING"        Int="1" Description="One-way coupling (no influence on continuous phase)"/>
+      <Value name="two_way"  Enum="CS_LAGR_TWOWAY_COUPLING"        Int="2" Description="Two-way coupling (particles influence continuous phase)"/>
+      <Value name="frozen"   Enum="CS_LAGR_FROZEN_CONTINUOUS_PHASE" Int="3" Description="Frozen continuous phase (restart only)"/>
+    </TypeDef>
+
+    <!-- Physical models for particles -->
+    <TypeDef name="ParticlesModel">
+      <Value name="off"     Enum="CS_LAGR_PHYS_OFF"  Int="0" Description="No specific physical model"/>
+      <Value name="thermal" Enum="CS_LAGR_PHYS_HEAT" Int="1" Description="Heat transfer model"/>
+      <Value name="coal"    Enum="CS_LAGR_PHYS_COAL" Int="2" Description="Pulverised coal model"/>
+      <Value name="ctwr"    Enum="CS_LAGR_PHYS_CTWR" Int="3" Description="Cooling tower model"/>
+    </TypeDef>
+
+    <!-- Particle shape models — cs_lagr_module_shape_t -->
+    <TypeDef name="ParticleShape">
+      <Value name="sphere"           Enum="CS_LAGR_SHAPE_SPHERE_MODEL"           Int="0" Description="Spherical particles"/>
+      <Value name="spheroid_stoc"    Enum="CS_LAGR_SHAPE_SPHEROID_STOC_MODEL"    Int="1" Description="Spheroids (stochastic model)"/>
+      <Value name="spheroid_jeffery" Enum="CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL" Int="2" Description="Spheroids (Jeffery equations)"/>
+    </TypeDef>
+
+  </Definitions>
+
+  <!-- ============================================================ -->
+  <!-- DEFAULT VALUES                                                -->
+  <!-- Source: LagrangianModel.py defaultParticlesValues()          -->
+  <!-- ============================================================ -->
+  <Defaults>
+    <Default Key="model"                    Value="off"/>
+    <Default Key="restart"                  Value="off"/>
+    <Default Key="carrier_field_stationary" Value="off"/>
+    <Default Key="deposition_submodel"      Value="off"/>
+    <Default Key="particles_models"         Value="off"/>
+    <Default Key="evaporation"              Value="off"/>
+    <Default Key="break_up"                 Value="off"/>
+    <Default Key="coal_fouling"             Value="off"/>
+    <Default Key="threshold_temperature"    Value="600.0"/>
+    <Default Key="critical_viscosity"       Value="10000.0"/>
+    <Default Key="fouling_coefficient_1"    Value="0.316608"/>
+    <Default Key="fouling_coefficient_2"    Value="-1.6786"/>
+    <Default Key="iteration_start"          Value="1"/>
+    <Default Key="thermal"                  Value="off"/>
+    <Default Key="dynamic"                  Value="off"/>
+    <Default Key="mass"                     Value="off"/>
+    <Default Key="scheme_order"             Value="1"/>
+    <Default Key="regular_particles"        Value="1"/>
+  </Defaults>
+
+  <!-- ============================================================ -->
+  <!-- VALIDATION RULES                                              -->
+  <!-- ============================================================ -->
+  <ValidationRules>
+
+    <!-- Coupling mode constraints -->
+    <Rule Type="CouplingModeConstraint">
+      <Constraint Model="frozen" RequiresRestart="true"
+        ErrorMessage="Frozen continuous phase requires a restart computation"/>
+    </Rule>
+
+    <!-- Two-way coupling creates a dedicated node -->
+    <Rule Type="TwoWayCouplingNode" Model="two_way">
+      <CreateNode>two_way_coupling</CreateNode>
+    </Rule>
+
+    <!-- Physical model constraints -->
+    <Rule Type="PhysicalModelConstraint" Model="coal">
+      <RequiresCoalCombustion>true</RequiresCoalCombustion>
+      <ErrorMessage>Coal model requires coal combustion to be active</ErrorMessage>
+    </Rule>
+
+    <!-- Scheme order constraints -->
+    <Constraint Target="scheme_order" Type="range">
+      <MinValue>1</MinValue>
+      <MaxValue>2</MaxValue>
+      <ErrorMessage>Scheme order must be 1 or 2</ErrorMessage>
+    </Constraint>
+
+    <!-- Fouling coefficient constraints -->
+    <Constraint Target="threshold_temperature" Type="positive_strict">
+      <ErrorMessage>Threshold temperature must be strictly positive</ErrorMessage>
+    </Constraint>
+    <Constraint Target="critical_viscosity" Type="positive_strict">
+      <ErrorMessage>Critical viscosity must be strictly positive</ErrorMessage>
+    </Constraint>
+
+  </ValidationRules>
+
+  <!-- ============================================================ -->
+  <!-- OUTPUT WRITERS                                                -->
+  <!-- Source: OutputControlModel.addDefaultLagrangianWriter()      -->
+  <!-- ============================================================ -->
+  <OutputRules>
+    <Rule Type="DefaultWriters" When="model_not_off">
+      <Writer Id="-3" Label="LagrangianParticles" Format="ensight"/>
+      <Writer Id="-4" Label="LagrangianStatistics" Format="ensight"/>
+    </Rule>
+    <Rule Type="DefaultMesh" When="model_not_off">
+      <Mesh Id="-3" Label="particles" Type="particles"/>
+    </Rule>
+  </OutputRules>
+
+</ModuleRules>

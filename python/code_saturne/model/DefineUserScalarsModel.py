@@ -485,12 +485,64 @@ class DefineUserScalarsModel(Variables, Model):
 
     @Variables.undoGlobal
     def setTurbulentFluxModel(self, scalar_name, TurbFlux):
-        """Put turbulent flux model of an additional_scalar with name scalar_name"""
-        lst = self.getScalarNameList() + self.getThermalScalarName() + self.getGasCombScalarsNameList()
+        """Put turbulent flux model of an additional_scalar with name scalar_name.
+        Also creates/removes {scalar}_turbulent_flux and {scalar}_alpha nodes
+        in setup.xml based on TurbulentFluxRules.xml.
+        """
+        import xml.etree.ElementTree as ET
+        import os
+
+        lst = self.getScalarNameList() + self.getThermalScalarName()             + self.getGasCombScalarsNameList()
         self.isInList(scalar_name, lst)
 
         n = self.case.xmlGetNode('variable', name=scalar_name)
         n.xmlSetData('turbulent_flux_model', TurbFlux)
+
+        # Read TurbulentFluxRules.xml
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        prefix = os.path.normpath(os.path.join(script_dir,
+                                               '..', '..', '..', '..', '..'))
+        xml_path = os.path.join(prefix, 'share', 'code_saturne',
+                                'model', 'TurbulentFluxRules.xml')
+
+        if not os.path.exists(xml_path):
+            return
+
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+        fcr = root.find("FieldCreationRules")
+        if fcr is None:
+            return
+
+        # Remove old nodes created through this mechanism
+        for tag in ('variable', 'property'):
+            for node in self.case.xmlGetNodeList(tag):
+                if node['from_turb_flux'] == '1':
+                    node_name = node['name'] if node['name'] else ''
+                    if node_name.startswith(scalar_name + '_'):
+                        node.xmlRemoveNode()
+
+        # Creer les nouveaux noeuds selon le modele choisi
+        if TurbFlux in ('SGDH', 'OFF'):
+            return
+
+        for rule in fcr.findall("Rule"):
+            if rule.get("Model") != TurbFlux:
+                continue
+            for field in rule.findall("Field"):
+                name_t  = field.get("NameTemplate", "")
+                label_t = field.get("LabelTemplate", name_t)
+                ftype   = field.get("Type", "variable")
+                dim     = field.get("Dimension", "1")
+                if not name_t:
+                    continue
+                field_name  = name_t.replace("{scalar}", scalar_name)
+                field_label = label_t.replace("{scalar}", scalar_name)
+                new_node = self.scalar_node.xmlInitNode(ftype, name=field_name)
+                new_node['label']          = field_label
+                new_node['from_turb_flux'] = '1'
+                if int(dim) > 1:
+                    new_node['dimension'] = dim
 
 
     @Variables.noUndo

@@ -113,3 +113,8 @@ dist_model_PYTHON = \
   XMLinitialize.py \
   XMLmodel.py \
   XMLvariables.py
+
+# Model rules XML files (installed with Python modules)
+dist_model_DATA = \
+  setup.xml
+

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ModuleRules version="1.0" module="TurbulentFlux">
+  <!--
+    TurbulentFluxRules.xml
+    Source de verite unique pour les modeles de flux turbulent des scalaires.
+    Centralise les regles extraites de :
+    - cs_setup.cpp : creation des champs {scalar}_turbulent_flux et {scalar}_alpha
+    - cs_gui.cpp   : _variable_turbulent_flux_model()
+    Lu par :
+    - kernel C++ : cs_turbulent_flux_rules_manager
+    - GUI Python  : NumericalParamEquationModel (ElementTree)
+    
+  -->
+
+  <!-- =========================================================== -->
+  <!-- DEFINITIONS                                                   -->
+  <!-- =========================================================== -->
+  <Definitions>
+
+    <TypeDef name="TurbulentFluxModel">
+      <Value name="SGDH"    numeric="0"  description="Simple Gradient Diffusion Hypothesis"/>
+      <Value name="GGDH"    numeric="10" description="Generalized Gradient Diffusion Hypothesis"/>
+      <Value name="EB-GGDH" numeric="11" description="Elliptic Blending GGDH"/>
+      <Value name="AFM"     numeric="20" description="Algebraic Flux Model"/>
+      <Value name="EB-AFM"  numeric="21" description="Elliptic Blending AFM"/>
+      <Value name="DFM"     numeric="30" description="Differential Flux Model"/>
+      <Value name="EB-DFM"  numeric="31" description="Elliptic Blending DFM"/>
+    </TypeDef>
+
+    <TypeDef name="FieldType">
+      <Value>variable</Value>
+      <Value>property</Value>
+    </TypeDef>
+
+    <TypeDef name="TurbulenceCompatibility">
+      <Description>
+        SGDH fonctionne avec tous les modeles de turbulence.
+        GGDH, AFM, DFM necessitent un modele Rij (second ordre).
+        EB-GGDH, EB-AFM, EB-DFM necessitent Rij-EBRSM.
+      </Description>
+      <Value>Rij-epsilon</Value>
+      <Value>Rij-SSG</Value>
+      <Value>Rij-EBRSM</Value>
+    </TypeDef>
+
+  </Definitions>
+
+  <!-- =========================================================== -->
+  <!-- REGLES DE CREATION DES CHAMPS                                -->
+  <!-- {scalar} est remplace par le nom du scalaire utilisateur     -->
+  <!-- =========================================================== -->
+  <FieldCreationRules>
+
+    <!-- SGDH (0) : pas de champ supplementaire cree -->
+    <Rule Model="SGDH" NumericValue="0">
+      <Description>
+        SGDH : Simple Gradient Diffusion Hypothesis.
+        Pas de champ supplementaire cree.
+        Fonctionne avec tous les modeles de turbulence.
+      </Description>
+    </Rule>
+
+    <!-- GGDH (10) : {scalar}_turbulent_flux comme propriete -->
+    <Rule Model="GGDH" NumericValue="10">
+      <Description>
+        GGDH : Generalized Gradient Diffusion Hypothesis.
+        Necessite un modele de turbulence Rij (second ordre).
+      </Description>
+      <Field NameTemplate="{scalar}_turbulent_flux"
+             LabelTemplate="{scalar} Turbulent Flux"
+             Dimension="3"
+             Type="property"
+             PostProcess="1" Log="1"/>
+    </Rule>
+
+    <!-- EB-GGDH (11) : {scalar}_turbulent_flux + {scalar}_alpha -->
+    <Rule Model="EB-GGDH" NumericValue="11">
+      <Description>
+        EB-GGDH : Elliptic Blending GGDH.
+        Necessite Rij-EBRSM.
+        Cree un champ alpha pour l equation elliptique.
+      </Description>
+      <Field NameTemplate="{scalar}_turbulent_flux"
+             LabelTemplate="{scalar} Turbulent Flux"
+             Dimension="3"
+             Type="property"
+             PostProcess="1" Log="1"/>
+      <Field NameTemplate="{scalar}_alpha"
+             LabelTemplate="{scalar} Alpha"
+             Dimension="1"
+             Type="variable"/>
+    </Rule>
+
+    <!-- AFM (20) : {scalar}_turbulent_flux comme propriete -->
+    <Rule Model="AFM" NumericValue="20">
+      <Description>
+        AFM : Algebraic Flux Model.
+        Necessite un modele de turbulence Rij (second ordre).
+      </Description>
+      <Field NameTemplate="{scalar}_turbulent_flux"
+             LabelTemplate="{scalar} Turbulent Flux"
+             Dimension="3"
+             Type="property"
+             PostProcess="1" Log="1"/>
+    </Rule>
+
+    <!-- EB-AFM (21) : {scalar}_turbulent_flux + {scalar}_alpha -->
+    <Rule Model="EB-AFM" NumericValue="21">
+      <Description>
+        EB-AFM : Elliptic Blending AFM.
+        Necessite Rij-EBRSM.
+        Cree un champ alpha pour l equation elliptique.
+      </Description>
+      <Field NameTemplate="{scalar}_turbulent_flux"
+             LabelTemplate="{scalar} Turbulent Flux"
+             Dimension="3"
+             Type="property"
+             PostProcess="1" Log="1"/>
+      <Field NameTemplate="{scalar}_alpha"
+             LabelTemplate="{scalar} Alpha"
+             Dimension="1"
+             Type="variable"/>
+    </Rule>
+
+    <!-- DFM (30) : {scalar}_turbulent_flux comme variable couplee -->
+    <Rule Model="DFM" NumericValue="30">
+      <Description>
+        DFM : Differential Flux Model.
+        Necessite un modele de turbulence Rij (second ordre).
+        Cree une variable vectorielle couplee avec diffusivite anisotrope.
+      </Description>
+      <Field NameTemplate="{scalar}_turbulent_flux"
+             LabelTemplate="{scalar} Turbulent Flux"
+             Dimension="3"
+             Type="variable"
+             Coupled="1"
+             Clipping="1"
+             PostProcess="1" Log="1"/>
+    </Rule>
+
+    <!-- EB-DFM (31) : {scalar}_turbulent_flux + {scalar}_alpha -->
+    <Rule Model="EB-DFM" NumericValue="31">
+      <Description>
+        EB-DFM : Elliptic Blending DFM.
+        Necessite Rij-EBRSM.
+        Cree une variable vectorielle couplee + champ alpha elliptique.
+      </Description>
+      <Field NameTemplate="{scalar}_turbulent_flux"
+             LabelTemplate="{scalar} Turbulent Flux"
+             Dimension="3"
+             Type="variable"
+             Coupled="1"
+             Clipping="1"
+             PostProcess="1" Log="1"/>
+      <Field NameTemplate="{scalar}_alpha"
+             LabelTemplate="{scalar} Alpha"
+             Dimension="1"
+             Type="variable"/>
+    </Rule>
+
+  </FieldCreationRules>
+
+</ModuleRules>

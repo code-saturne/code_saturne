@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<ModuleRules version="1.0" module="Thermal">
+
+  
+  <Definitions>
+    
+    <TypeDef name="ThermalVariable">
+      <Value>none</Value>
+      <Value>temperature</Value>
+      <Value>enthalpy</Value>
+      <Value>internal_energy</Value>
+    </TypeDef>
+    
+    <TypeDef name="EquationOfState">
+      <Value>none</Value>
+      <Value>ideal_gas</Value>
+      <Value>moist_air</Value>
+      <Value>real_gas</Value>
+    </TypeDef>
+    
+    <TypeDef name="TemperatureScale">
+      <Value>none</Value>
+      <Value>kelvin</Value>
+      <Value>celsius</Value>
+    </TypeDef>
+    
+    <TypeDef name="ThermoPlane">
+      <Value>PT</Value>  
+      <Value>PH</Value>  
+      <Value>PS</Value> 
+    </TypeDef>
+    
+    <TypeDef name="PropertyMethod">
+      <Value>constant</Value>
+      <Value>thermal_law</Value>
+      <Value>predefined_law</Value>
+      <Value>user_law</Value>
+    </TypeDef>
+    
+  </Definitions>
+  
+
+  <ValidationRules>
+    
+    
+    <Rule Type="RequiredFields" ThermalVariable="temperature">
+      <CreateField Name="temperature" FieldType="variable" Location="cells"/>
+      <CreateField Name="boundary_temperature" FieldType="boundary" Location="boundary_faces"/>
+      <SetFlag Name="is_temperature" Value="1"/>
+      <DiffusivityFormula>lambda</DiffusivityFormula>
+      <ThermoPlane>PT</ThermoPlane>
+    </Rule>
+    
+  
+    <Rule Type="RequiredFields" ThermalVariable="enthalpy">
+      <CreateField Name="enthalpy" FieldType="variable" Location="cells"/>
+      <CreateField Name="boundary_temperature" FieldType="boundary" Location="boundary_faces"/>
+      <CreateField Name="thermal_diffusivity" FieldType="property" Location="cells"/>
+      <SetFlag Name="is_temperature" Value="0"/>
+      <DiffusivityFormula>lambda/cp</DiffusivityFormula>
+      <ThermoPlane>PH</ThermoPlane>
+    </Rule>
+    
+    
+    <Rule Type="RequiredFields" ThermalVariable="internal_energy">
+      <CreateField Name="total_energy" FieldType="variable" Location="cells"/>
+      <CreateField Name="temperature" FieldType="property" Location="cells" PostVis="on" Log="on"/>
+      <CreateField Name="boundary_temperature" FieldType="boundary" Location="boundary_faces"/>
+      <SetFlag Name="is_temperature" Value="0"/>
+      <DiffusivityFormula>lambda/cp</DiffusivityFormula>
+      <ThermoPlane>PH</ThermoPlane>
+    </Rule>
+    
+
+    <Rule Type="KineticSourceTerm" Condition="has_kinetic_st">
+      <CreateField Name="kinetic_energy_thermal_st" FieldType="property" Location="cells" PostVis="on" Log="on"/>
+      <CreateField Name="rho_k_prev" FieldType="internal" Location="cells"/>
+      <CreateField Name="inner_face_velocity" FieldType="internal" Location="interior_faces" Dim="3"/>
+      <CreateField Name="boundary_face_velocity" FieldType="internal" Location="boundary_faces" Dim="3"/>
+    </Rule>
+    
+
+    <Rule Type="MoistAir" EquationOfState="moist_air">
+      <CreateField Name="yv" FieldType="property" Location="cells" PostVis="on" Log="on"/>
+    </Rule>
+    
+
+    <Rule Type="CompressibleFlow" EquationOfState="!none">
+      <Condition ThermalVariable="temperature,internal_energy"/>
+      <CreateField Name="algo:pressure_gradient" FieldType="internal" Location="cells" Dim="3"/>
+      <CreateField Name="algo:pressure_increment_gradient" FieldType="internal" Location="cells" Dim="3"/>
+      <CreateField Name="isobaric_heat_capacity" FieldType="property" Location="cells" Log="on"/>
+    </Rule>
+    
+  </ValidationRules>
+  
+
+  
+  <Validations>
+    
+  
+    <Constraint Target="is_temperature" Type="range">
+      <MinValue>0</MinValue>
+      <MaxValue>1</MaxValue>
+      <ErrorMessage>is_temperature must be 0 or 1</ErrorMessage>
+    </Constraint>
+    
+
+    <Constraint Target="turbulent_schmidt" Type="positive_strict">
+      <ErrorMessage>turbulent_schmidt must be strictly positive</ErrorMessage>
+    </Constraint>
+    
+
+    <Constraint Target="thermal_conductivity" Type="positive_strict">
+      <ErrorMessage>thermal_conductivity must be strictly positive</ErrorMessage>
+    </Constraint>
+    
+
+    <Constraint Target="cp0" Type="positive">
+      <Condition>is_temperature == 1</Condition>
+      <ErrorMessage>CP0 must be positive for temperature scalars</ErrorMessage>
+    </Constraint>
+
+    <Constraint Target="lagrangian_second_order" Type="forbidden">
+      <Condition ThermalVariable="temperature" TemperatureScale="kelvin"/>
+      <Condition ThermalVariable="enthalpy"/>
+      <ErrorMessage>Source terms from Lagrangian module will not be computed with second order</ErrorMessage>
+    </Constraint>
+    
+
+    <Constraint Target="lagrangian_thermal_coupling" Type="requires">
+      <RequiredFlag>solve_particle_temperature</RequiredFlag>
+      <ErrorMessage>Thermal two-way coupling activated but temperature of particles not solved</ErrorMessage>
+    </Constraint>
+   
+
+    <Constraint Target="gravity_without_thermal" Type="warning">
+      <Condition Gravity="!zero" ThermalVariable="none" DensityVariable="constant"/>
+      <WarningMessage>Gravity taken into account without solving a thermal variable</WarningMessage>
+    </Constraint>
+    
+
+    <Constraint Target="thermal_variable" Type="enum_range">
+      <MinValue>CS_THERMAL_MODEL_NONE</MinValue>
+      <MaxValue>CS_THERMAL_MODEL_N_TYPES</MaxValue>
+    </Constraint>
+    
+  </Validations>
+  
+
+  <Defaults>
+    <Default Key="thermal_variable" Value="none"/>
+    <Default Key="equation_of_state" Value="none"/>
+    <Default Key="temperature_scale" Value="kelvin"/>
+    <Default Key="has_kinetic_st" Value="0"/>
+    <Default Key="reference_temperature" Value="293.15"/>
+    <Default Key="reference_pressure" Value="101325.0"/>
+    <Default Key="turbulent_schmidt" Value="0.9"/>
+    <Default Key="thermal_conductivity_method" Value="constant"/>
+  </Defaults>
+  
+
+  
+  <Mappings>
+    
+
+    <EnumMapping Name="ThermalVariable">
+      <Entry Value="none" Enum="0" Constant="CS_THERMAL_MODEL_NONE"/>
+      <Entry Value="temperature" Enum="1" Constant="CS_THERMAL_MODEL_TEMPERATURE"/>
+      <Entry Value="enthalpy" Enum="2" Constant="CS_THERMAL_MODEL_ENTHALPY"/>
+      <Entry Value="internal_energy" Enum="3" Constant="CS_THERMAL_MODEL_INTERNAL_ENERGY"/>
+    </EnumMapping>
+    
+
+    <EnumMapping Name="EquationOfState">
+      <Entry Value="none" Enum="0" Constant="CS_EOS_NONE"/>
+      <Entry Value="ideal_gas" Enum="1" Constant="CS_EOS_IDEAL_GAS"/>
+      <Entry Value="moist_air" Enum="2" Constant="CS_EOS_MOIST_AIR"/>
+      <Entry Value="real_gas" Enum="3" Constant="CS_EOS_REAL_GAS"/>
+    </EnumMapping>
+    
+
+    <EnumMapping Name="TemperatureScale">
+      <Entry Value="none" Enum="0" Constant="CS_TEMPERATURE_SCALE_NONE"/>
+      <Entry Value="kelvin" Enum="1" Constant="CS_TEMPERATURE_SCALE_KELVIN"/>
+      <Entry Value="celsius" Enum="2" Constant="CS_TEMPERATURE_SCALE_CELSIUS"/>
+    </EnumMapping>
+    
+
+    <EnumMapping Name="ThermoPlane">
+      <Entry Value="PT" Enum="0" Constant="CS_PHYS_PROP_PLANE_PT"/>
+      <Entry Value="PH" Enum="1" Constant="CS_PHYS_PROP_PLANE_PH"/>
+      <Entry Value="PS" Enum="2" Constant="CS_PHYS_PROP_PLANE_PS"/>
+    </EnumMapping>
+    
+
+    <PropertyMethods>
+      <Method Name="constant" Description="Constant value"/>
+      <Method Name="thermal_law" Description="CoolProp or EOS table"/>
+      <Method Name="predefined_law" Description="Predefined analytical law"/>
+      <Method Name="user_law" Description="User-defined function"/>
+    </PropertyMethods>
+    
+  </Mappings>
+  
+
+ 
+  
+  <GUIRules>
+    
+    <ThermalScalarGUI>
+      
+      <AvailableModels>
+        <Model Name="off" Label="None" Description="No thermal scalar"/>
+        <Model Name="temperature_celsius" Label="Temperature (Celsius)" Description="Temperature in Celsius"/>
+        <Model Name="temperature_kelvin" Label="Temperature (Kelvin)" Description="Temperature in Kelvin"/>
+        <Model Name="enthalpy" Label="Enthalpy" Description="Enthalpy variable"/>
+        <Model Name="potential_temperature" Label="Potential Temperature" Description="For atmospheric flows"/>
+        <Model Name="liquid_potential_temperature" Label="Liquid Potential Temperature" Description="Liquid pot. temp."/>
+        <Model Name="total_energy" Label="Total Energy" Description="For compressible flows"/>
+      </AvailableModels>
+      
+      <GUIToCppMapping>
+        <Entry GUIModel="temperature_celsius" CppVariable="temperature" VariableName="temperature" TemperatureScale="celsius"/>
+        <Entry GUIModel="temperature_kelvin" CppVariable="temperature" VariableName="temperature" TemperatureScale="kelvin"/>
+        <Entry GUIModel="enthalpy" CppVariable="enthalpy" VariableName="enthalpy" TemperatureScale=""/>
+        <Entry GUIModel="potential_temperature" CppVariable="temperature" VariableName="temperature" TemperatureScale="kelvin" IsAtmospheric="true"/>
+        <Entry GUIModel="liquid_potential_temperature" CppVariable="temperature" VariableName="temperature" TemperatureScale="kelvin" IsAtmospheric="true"/>
+        <Entry GUIModel="total_energy" CppVariable="internal_energy" VariableName="total_energy" TemperatureScale=""/>
+      </GUIToCppMapping>
+      
+      <AutomaticOutputs>
+        <Output Name="tplus" Label="Tplus" Support="boundary" PostProcessing="off" Description="Dimensionless temperature"/>
+        <Output Name="thermal_flux" Label="Thermal flux" Support="boundary" PostProcessing="on" Description="Thermal flux"/>
+        <Output Name="boundary_temperature" Label="Boundary temperature" Support="boundary" PostProcessing="on" Description="Temperature at boundary"/>
+        <Output Name="boundary_layer_nusselt" Label="Dimensionless Thermal flux" Support="boundary" PostProcessing="off" Description="Nusselt number"/>
+      </AutomaticOutputs>
+      
+      <AutomaticFluidProperties>
+        <Property Name="thermal_conductivity" Label="Thermal conductivity" Location="cells" Required="true"/>
+      </AutomaticFluidProperties>
+      
+      <DefaultLabels>
+        <Label Model="temperature_celsius" Variable="TempC"/>
+        <Label Model="temperature_kelvin" Variable="TempK"/>
+        <Label Model="enthalpy" Variable="Enthalpy"/>
+        <Label Model="potential_temperature" Variable="PotTemp"/>
+        <Label Model="liquid_potential_temperature" Variable="LiqPotTemp"/>
+        <Label Model="total_energy" Variable="TotEner"/>
+      </DefaultLabels>
+      
+    </ThermalScalarGUI>
+    
+    <ThermalRadiationGUI>
+      
+      <AvailableModels>
+        <Model Name="off" Label="None" Description="No radiative transfer"/>
+        <Model Name="dom" Label="DOM" Description="Discrete ordinates method"/>
+        <Model Name="p-1" Label="P-1" Description="P-1 approximation"/>
+      </AvailableModels>
+      
+    </ThermalRadiationGUI>
+    
+  </GUIRules>
+
+</ModuleRules>

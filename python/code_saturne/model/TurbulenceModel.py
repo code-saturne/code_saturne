@@ -337,6 +337,7 @@ class TurbulenceModel(Variables, Model):
             self.setNewProperty(self.node_turb, 'turbulent_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
+            self.setWallFunction(3)
 
         elif model_turb == 'Spalart-Allmaras':
             lst = ('nu_tilda')
@@ -345,6 +346,7 @@ class TurbulenceModel(Variables, Model):
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
             self.node_turb.xmlRemoveChild('wall_function')
+            self.setWallFunction(2)
 
         else:
             model_turb = 'off'

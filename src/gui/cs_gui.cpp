@@ -94,6 +94,9 @@
 #include "base/cs_time_moment.h"
 #include "base/cs_time_table.h"
 #include "base/cs_thermal_model.h"
+#include "model/cs_thermal_rules_manager.h"
+#include "model/cs_turbulence_rules_manager.h"
+#include "model/cs_time_stepping_rules_manager.h"
 #include "cdo/cs_thermal_system.h"
 #include "base/cs_physical_properties.h"
 #include "base/cs_time_step.h"
@@ -108,7 +111,7 @@
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_vof.h"
 #include "base/cs_volume_zone.h"
-
+#include "base/cs_field.h"
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -116,6 +119,8 @@
 #include "gui/cs_gui.h"
 
 /*----------------------------------------------------------------------------*/
+
+
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -711,6 +716,11 @@ _scalar_diffusion_value(const cs_field_t  *f,
 
 /*----------------------------------------------------------------------------
  * Check if at least one user property is based on a thermal law.
+ *
+ * Fortran Interface:
+ *
+ * subroutine uiphyv
+ * *****************
  *
  * integer          iviscv   <--  pointer for volumic viscosity viscv
  *----------------------------------------------------------------------------*/
@@ -1701,10 +1711,27 @@ _read_diffusivity(void)
 
     double visls_0 = fprops->lambda0;
 
-    /* for the Temperature, the diffusivity factor is not divided by Cp
-     * i.e. it remains lambda */
-    if (thermal_variable != CS_THERMAL_MODEL_TEMPERATURE)
-      visls_0 /= cs_glob_fluid_properties->cp0;
+    /* =========================================================================
+     * MODIF XML : La formule de diffusivité (lambda ou lambda/cp) est lue
+     * depuis ThermalRules.xml via get_diffusivity_formula().
+     * Fallback : comportement original si XML non disponible.
+     * ========================================================================= */
+    cs_thermal_rules_manager *thermal_rules = cs_get_thermal_rules_manager();
+    const char *thermal_var_name = thermal_rules->get_thermal_variable_name(
+                                      thermal_variable);
+    const char *diffusivity_formula = thermal_rules->get_diffusivity_formula(
+                                        thermal_var_name);
+
+    if (diffusivity_formula != nullptr) {
+      if (strcmp(diffusivity_formula, "lambda/cp") == 0)
+        visls_0 /= cs_glob_fluid_properties->cp0;
+      /* Sinon formule "lambda" -> visls_0 reste inchangé */
+    }
+    else {
+      /* Fallback : comportement original */
+      if (thermal_variable != CS_THERMAL_MODEL_TEMPERATURE)
+        visls_0 /= cs_glob_fluid_properties->cp0;
+    }
 
     cs_field_t *tf = cs_thermal_model_field();
     if (tf != nullptr) {
@@ -4108,12 +4135,25 @@ cs_gui_physical_properties(void)
   material = _thermal_table_choice("material");
   if (material != nullptr) {
     if (!(cs_gui_strcmp(material, "user_material"))) {
-      cs_phys_prop_thermo_plane_type_t thermal_plane = CS_PHYS_PROP_PLANE_PH;
-      if (thermal_variable <= CS_THERMAL_MODEL_TEMPERATURE)
-        thermal_plane = CS_PHYS_PROP_PLANE_PT;
-      //else if (thermal_variable == CS_THERMAL_MODEL_TOTAL_ENERGY)
-      //  // TODO compressible
-      //  thermal_plane = CS_PHYS_PROP_PLANE_PS;
+      /* =========================================================================
+       * MODIF XML : Le plan thermodynamique est lu depuis ThermalRules.xml
+       * via get_thermo_plane_enum(). Fallback si XML non disponible.
+       * ========================================================================= */
+      cs_thermal_rules_manager *thermal_rules = cs_get_thermal_rules_manager();
+      const char *thermal_var_name = thermal_rules->get_thermal_variable_name(
+                                        thermal_variable);
+      int plane_enum = thermal_rules->get_thermo_plane_enum(thermal_var_name);
+
+      cs_phys_prop_thermo_plane_type_t thermal_plane;
+      if (plane_enum >= 0) {
+        thermal_plane = static_cast<cs_phys_prop_thermo_plane_type_t>(plane_enum);
+      }
+      else {
+        /* Fallback : comportement original */
+        thermal_plane = CS_PHYS_PROP_PLANE_PH;
+        if (thermal_variable <= CS_THERMAL_MODEL_TEMPERATURE)
+          thermal_plane = CS_PHYS_PROP_PLANE_PT;
+      }
 
       const cs_temperature_scale_t temperature_scale
         = cs_glob_thermal_model->temperature_scale;
@@ -4784,9 +4824,16 @@ cs_gui_turbomachinery_rotor(void)
 void
 cs_gui_turb_model(void)
 {
-  cs_tree_node_t *tn_t = cs_tree_get_node(cs_glob_tree,
-                                          "thermophysical_models/turbulence");
+  /* =========================================================================
+   * MODIF XML : Remplace les if/else if hardcodés par un appel au manager
+   * TurbulenceRules.xml. get_model_enum() fait le mapping string -> enum.
+   * Chaque propriété (wall_function, gravity, mixing_length, coupled_rij)
+   * est lue conditionnellement selon ce que le XML déclare pour ce modèle.
+   * ========================================================================= */
+  cs_turbulence_rules_manager *rules = cs_get_turbulence_rules_manager();
 
+  cs_tree_node_t *tn_t = cs_tree_get_node(cs_glob_tree,
+                                           "thermophysical_models/turbulence");
   const char *model = cs_tree_node_get_tag(tn_t, "model");
   if (model == nullptr)
     return;
@@ -4795,92 +4842,36 @@ cs_gui_turb_model(void)
   cs_turb_model_t *turb_mdl = cs_get_glob_turb_model();
   cs_turb_rans_model_t *rans_mdl = cs_get_glob_turb_rans_model();
 
-  if (cs_gui_strcmp(model, "off"))
-    turb_mdl->model = CS_TURB_NONE;
-  else if (cs_gui_strcmp(model, "mixing_length")) {
-    turb_mdl->model = CS_TURB_MIXING_LENGTH;
+  turb_mdl->model = (cs_turb_model_type_t)rules->get_model_enum(model);
+
+  if (rules->requires_mixing_length(model))
     cs_gui_node_get_child_real(tn_t, "mixing_length_scale", &(rans_mdl->xlomlg));
-  }
-  else if (cs_gui_strcmp(model, "k-epsilon")) {
-    turb_mdl->model = CS_TURB_K_EPSILON;
+
+  if (rules->requires_wall_function(model))
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
+
+  if (rules->requires_gravity_terms(model))
     cs_gui_node_get_child_status_int(tn_t,
-                                     "gravity_terms",
-                                     &(rans_mdl->has_buoyant_term));
+                                      "gravity_terms",
+                                      &(rans_mdl->has_buoyant_term));
+
+  const char *forced_gravity = rules->get_forced_gravity(model);
+  if (forced_gravity != nullptr) {
+    if (cs_gui_strcmp(forced_gravity, "off"))
+      rans_mdl->has_buoyant_term = 0;
+    else if (cs_gui_strcmp(forced_gravity, "on"))
+      rans_mdl->has_buoyant_term = 1;
   }
-  else if (cs_gui_strcmp(model, "k-epsilon-PL")) {
-    turb_mdl->model = CS_TURB_K_EPSILON_LIN_PROD;
-    cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t,
-                                     "gravity_terms",
-                                     &(rans_mdl->has_buoyant_term));
-  }
-  else if (cs_gui_strcmp(model, "Rij-epsilon")) {
-    turb_mdl->model = CS_TURB_RIJ_EPSILON_LRR;
-    cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t,
-                                     "gravity_terms",
-                                     &(rans_mdl->has_buoyant_term));
-  }
-  else if (cs_gui_strcmp(model, "Rij-SSG")) {
-    turb_mdl->model = CS_TURB_RIJ_EPSILON_SSG;
-    cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t,
-                                     "gravity_terms",
-                                     &(rans_mdl->has_buoyant_term));
+
+  if (rules->supports_coupled_rij(model))
     cs_gui_node_get_child_status_int(tn_t, "coupled_rij", &(rans_mdl->irijco));
-  }
-  else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
-    turb_mdl->model = CS_TURB_RIJ_EPSILON_EBRSM;
-    cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t,
-                                     "gravity_terms",
-                                     &(rans_mdl->has_buoyant_term));
-    cs_gui_node_get_child_status_int(tn_t, "coupled_rij", &(rans_mdl->irijco));
-  }
-  else if (cs_gui_strcmp(model, "LES_Smagorinsky")) {
-    turb_mdl->model = CS_TURB_LES_SMAGO_CONST;
-  }
-  else if (cs_gui_strcmp(model, "LES_dynamique")) {
-    turb_mdl->model = CS_TURB_LES_SMAGO_DYN;
-  }
-  else if (cs_gui_strcmp(model, "LES_WALE")) {
-    turb_mdl->model = CS_TURB_LES_WALE;
-  }
-  else if (cs_gui_strcmp(model, "v2f-phi")) {
-    turb_mdl->model = CS_TURB_V2F_PHI;
-    cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t,
-                                     "gravity_terms",
-                                     &(rans_mdl->has_buoyant_term));
-  }
-  else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
-    turb_mdl->model = CS_TURB_V2F_BL_V2K;
-    cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t,
-                                     "gravity_terms",
-                                     &(rans_mdl->has_buoyant_term));
-  }
-  else if (cs_gui_strcmp(model, "k-omega-SST")) {
-    turb_mdl->model = CS_TURB_K_OMEGA;
-    cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
-    cs_gui_node_get_child_status_int(tn_t,
-                                     "gravity_terms",
-                                     &(rans_mdl->has_buoyant_term));
-  }
-  else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
-    turb_mdl->model = CS_TURB_SPALART_ALLMARAS;
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-        _("Invalid turbulence model: %s.\n"), model);
 
   cs_wall_functions_t *wall_fnt = cs_get_glob_wall_functions();
   if (iwallf != -1)
     wall_fnt->iwallf = (cs_wall_f_type_t)iwallf;
 
-  if (   turb_mdl->model >= CS_TURB_RIJ_EPSILON_LRR
-      && turb_mdl->model <= CS_TURB_RIJ_EPSILON_EBRSM) {
+  /* Garder la lecture de turbulent_diffusion_model pour les modèles Rij */
+  if (rules->is_rij_model(model)) {
     const char *s
       = cs_tree_node_get_child_value_str(tn_t, "turbulent_diffusion_model");
     if (s != nullptr) {
@@ -4890,6 +4881,11 @@ cs_gui_turb_model(void)
         rans_mdl->idirsm = 1;
     }
   }
+
+  /* Fallback pour modèles non reconnus */
+  if (turb_mdl->model == (cs_turb_model_type_t)-1)
+    bft_error(__FILE__, __LINE__, 0,
+        _("Invalid turbulence model: %s.\n"), model);
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
@@ -6040,3 +6036,4 @@ cs_gui_physical_properties_ht_lambda_is_anisotropic(void)
 }
 
 /*----------------------------------------------------------------------------*/
+
