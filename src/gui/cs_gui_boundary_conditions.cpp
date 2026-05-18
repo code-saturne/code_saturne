@@ -3396,6 +3396,12 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
         if (convective_inlet)
           bc_type |= CS_BOUNDARY_CONVECTIVE_INLET;
 
+        cs_tree_node_t *tn_m = cs_tree_get_node(tn_bc, "mapped_inlet");
+
+        int mapped_inlet = 0;
+        cs_gui_node_get_status_int(tn_m, &mapped_inlet);
+        if (mapped_inlet)
+          bc_type |= CS_BOUNDARY_MAPPED;
       }
 
     }

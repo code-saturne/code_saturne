@@ -128,7 +128,10 @@ typedef enum {
   CS_BOUNDARY_COUPLED             = 1<<15,
 
   /*! coupled with decentered flux */
-  CS_BOUNDARY_COUPLED_DF          = 1<<16
+  CS_BOUNDARY_COUPLED_DF          = 1<<16,
+
+  /* mapped */
+  CS_BOUNDARY_MAPPED              = 1<<17
 
 } cs_boundary_flow_subtype_bits_t;
 

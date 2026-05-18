@@ -307,6 +307,9 @@ _flow_type_descr(cs_boundary_type_t  b_type,
   if (b_type & CS_BOUNDARY_COUPLED_DF)
     _descr_append(descr_len_max, descr,
                   _("decentered flux"));
+
+  if (b_type & CS_BOUNDARY_MAPPED)
+    _descr_append(descr_len_max, descr, _("mapped"));
 }
 
 /*----------------------------------------------------------------------------*/
