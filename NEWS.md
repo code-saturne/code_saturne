@@ -88,6 +88,11 @@ Release 9.0.3 (unreleased)
 
 - Notebook: fixes related to notebook variables properties (restart and logging)
 
+### Numerics:
+
+- Backport pure (upwind gradient) SOLU convection scheme for vector and
+  tensor variables to align feature with scalar variables.
+
 ### User changes:
 
 - Increase maximum number of scalars (nscamx) to 1500.

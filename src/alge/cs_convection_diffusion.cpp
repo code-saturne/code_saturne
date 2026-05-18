@@ -1263,6 +1263,129 @@ _slope_test_gradient_strided
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the upwind gradient used in the pure SOLU schemes
+ *        (observed in the litterature) for a vector
+ *
+ * \param[in]     ctx          Reference to dispatch context
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     bc_coeffs    boundary condition structure for the variable
+ * \param[in]     i_massflux   mass flux at interior faces
+ * \param[in]     b_massflux   mass flux at boundary faces
+ * \param[in]     pvar         values
+ * \param[out]    grdpa        upwind gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride, typename T>
+static void
+_upwind_gradient_strided(cs_dispatch_context          &ctx,
+                         const int                     inc,
+                         const cs_field_bc_coeffs_t   *bc_coeffs,
+                         const cs_real_t               i_massflux[],
+                         const cs_real_t               b_massflux[],
+                         const cs_real_t               pvar[][stride],
+                         T                             grdpa[][stride][3])
+{
+  cs_real_t *coefap = bc_coeffs->a;
+  cs_real_t *coefbp = bc_coeffs->b;
+
+  const cs_mesh_t  *m = cs_glob_mesh;
+  cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+                                        fvq->c_disable_flag : nullptr;
+
+  /* Parallel or device dispatch */
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+
+    cs_lnum_t c_id0 = i_face_cells[face_id][0];
+    cs_lnum_t c_id1 = i_face_cells[face_id][1];
+
+    for (cs_lnum_t i = 0; i < stride; i++) {
+      cs_real_t pif = pvar[c_id0][i];
+      cs_real_t pjf = pvar[c_id1][i];
+
+      cs_real_t pfac = (i_massflux[face_id] > 0.) ? pif : pjf;
+      pfac *= i_face_surf[face_id];
+
+      T vfac_i[3], vfac_j[3];
+      const T _pfac = static_cast<T>(pfac);
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        vfac_i[k] = _pfac*i_face_u_normal[face_id][k];
+        vfac_j[k] = - vfac_i[k];
+      }
+
+      cs_dispatch_sum<3>(grdpa[c_id0][i], vfac_i, i_sum_type);
+      cs_dispatch_sum<3>(grdpa[c_id1][i], vfac_j, i_sum_type);
+    }
+  });
+
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+    cs_lnum_t c_id = b_face_cells[face_id];
+
+    for (cs_lnum_t i = 0; i < stride; i++) {
+      cs_real_t pfac = (b_massflux[face_id] < 0) ?
+                        inc*coefap[face_id] + coefbp[face_id] * pvar[c_id][i] :
+                        pvar[c_id][i];
+
+      T vfac[3];
+      const T _pfac = static_cast<T>(pfac * b_face_surf[face_id]);
+      for (cs_lnum_t k = 0; k < 3; k++)
+        vfac[k] = _pfac * b_face_u_normal[face_id][k];
+
+      cs_dispatch_sum<3>(grdpa[c_id][i], vfac, b_sum_type);
+    }
+  });
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+    T unsvol = cs_mq_cell_vol_inv(cell_id, c_disable_flag, cell_vol);
+
+    for (cs_lnum_t i = 0; i < stride; i++) {
+      grdpa[cell_id][i][0] *= unsvol;
+      grdpa[cell_id][i][1] *= unsvol;
+      grdpa[cell_id][i][2] *= unsvol;
+    }
+  });
+
+  ctx.wait();
+
+  /* Synchronization for parallelism or periodicity */
+  _sync_strided_gradient_halo(m, CS_HALO_STANDARD, ctx.use_gpu(), grdpa);
+}
+
+template static void
+_upwind_gradient_strided(cs_dispatch_context          &ctx,
+                         const int                     inc,
+                         const cs_field_bc_coeffs_t   *bc_coeffs,
+                         const cs_real_t               i_massflux[],
+                         const cs_real_t               b_massflux[],
+                         const cs_real_t               pvar[][3],
+                         cs_real_t          (*restrict grdpa)[3][3]);
+
+
+template static void
+_upwind_gradient_strided(cs_dispatch_context          &ctx,
+                         const int                     inc,
+                         const cs_field_bc_coeffs_t   *bc_coeffs,
+                         const cs_real_t               i_massflux[],
+                         const cs_real_t               b_massflux[],
+                         const cs_real_t               pvar[][6],
+                         cs_real_t          (*restrict grdpa)[6][3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add the explicit part of the convection/diffusion terms of a
  * standard transport equation of a scalar field \f$ \varia \f$.
  *
@@ -6460,19 +6583,46 @@ _convection_diffusion_unsteady_strided
      ======================================================================*/
 
   grad_t *grdpa = nullptr;
+  grad_t *gradup = nullptr;
 
   ctx.wait();
 
-  if (iconvp > 0 && pure_upwind == false && isstpp == 0) {
-    CS_MALLOC_HD(grdpa, n_cells_ext, grad_t, amode);
+  if (iconvp > 0 && pure_upwind == false) {
 
-    _slope_test_gradient_strided<stride>(ctx,
-                                         halo_type,
-                                         (const grad_t *)grad,
-                                         grdpa,
-                                         _pvar,
-                                         val_f,
-                                         i_massflux);
+    /* Compute uncentered gradient grdpa for the slope test */
+    if (isstpp == 0) {
+      CS_MALLOC_HD(grdpa, n_cells_ext, grad_t, amode);
+
+      _slope_test_gradient_strided<stride>(ctx,
+                                           halo_type,
+                                           (const grad_t *)grad,
+                                           grdpa,
+                                           _pvar,
+                                           val_f,
+                                           i_massflux);
+    }
+
+    /* Pure SOLU scheme */
+    if (ischcp == 2) {
+      CS_MALLOC_HD(gradup, n_cells_ext, grad_t, cs_alloc_mode);
+
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          gradup[cell_id][i][0] = 0.;
+          gradup[cell_id][i][1] = 0.;
+          gradup[cell_id][i][2] = 0.;
+        }
+      });
+
+      _upwind_gradient_strided(ctx,
+                               inc,
+                               bc_coeffs,
+                               i_massflux,
+                               b_massflux,
+                               pvar,
+                               gradup);
+    }
+
   }
 
   /* ======================================================================
@@ -6603,6 +6753,8 @@ _convection_diffusion_unsteady_strided
       [[fallthrough]];
     case 1:
       [[fallthrough]];
+    case 2:
+      [[fallthrough]];
     case 3:
       ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
@@ -6672,6 +6824,8 @@ _convection_diffusion_unsteady_strided
         }
         else if (ischcp == 3) {
 
+          /* turbulence blending */
+
           cs_real_t hybrid_blend_interp
             = cs_math_fmin(hybrid_blend[ii], hybrid_blend[jj]);
 
@@ -6705,10 +6859,11 @@ _convection_diffusion_unsteady_strided
                         + (1. - hybrid_blend_interp)*pjf_up[isou];
           }
         }
-        else {
 
-          /* Second order
-             ------------*/
+        else if (ischcp == 0) {
+
+          /* Second order (legacy SOLU)
+             -------------------------- */
 
           cs_solu_f_val_strided<stride>(cell_ceni,
                                         i_face_cog[face_id],
@@ -6722,6 +6877,25 @@ _convection_diffusion_unsteady_strided
                                         pjf);
 
         }
+
+        else if (ischcp == 2) {
+
+          /* SOLU
+             ---- */
+
+          cs_solu_f_val_strided<stride>(cell_ceni,
+                                        i_face_cog[face_id],
+                                        gradup[ii],
+                                        _pi,
+                                        pif);
+          cs_solu_f_val_strided<stride>(cell_cenj,
+                                        i_face_cog[face_id],
+                                        gradup[jj],
+                                        _pj,
+                                        pjf);
+
+        }
+
 
         /* Blending
            --------*/
@@ -6792,6 +6966,8 @@ _convection_diffusion_unsteady_strided
     case 0:
       [[fallthrough]];
     case 1:
+      [[fallthrough]];
+    case 2:
       ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
         cs_lnum_t ii = i_face_cells[face_id][0];
@@ -6877,10 +7053,11 @@ _convection_diffusion_unsteady_strided
                                 &pjf[isou]);
 
             }
-            else {
 
-              /* Second order
-                 ------------*/
+            else if (ischcp == 0) {
+
+              /* Second order (legacy SOLU)
+                 -------------------------- */
 
               cs_solu_f_val(cell_ceni,
                             i_face_cog[face_id],
@@ -6892,6 +7069,24 @@ _convection_diffusion_unsteady_strided
                             gradj[isou],
                             _pj[isou],
                             &pjf[isou]);
+
+            }
+            else if (ischcp == 2) {
+
+              /* SOLU
+                 ---- */
+
+              cs_solu_f_val(cell_ceni,
+                            i_face_cog[face_id],
+                            gradup[ii][isou],
+                            _pi[isou],
+                            &pif[isou]);
+              cs_solu_f_val(cell_cenj,
+                            i_face_cog[face_id],
+                            gradup[jj][isou],
+                            _pj[isou],
+                            &pjf[isou]);
+
             }
 
           }
@@ -7179,6 +7374,7 @@ _convection_diffusion_unsteady_strided
 
   /* Free memory */
   CS_FREE_HD(grdpa);
+  CS_FREE_HD(gradup);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
