@@ -184,6 +184,9 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
   nsp->model = model;
   nsp->model_flag = model_flag;
 
+  /* Additional numerical options */
+  nsp->num_flag = 0;
+
   /* Turbulence modelling (pointer to global structures) */
 
   nsp->turbulence = cs_turbulence_param_create();

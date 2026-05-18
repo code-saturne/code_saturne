@@ -971,6 +971,9 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
   cs_navsto_param_t *nsp = ns->param;
   assert(connect != nullptr && quant != nullptr && nsp != nullptr);
 
+  cs_equation_param_t *mom_eqp =
+    cs_navsto_coupling_get_momentum_eqp(nsp, ns->coupling_context);
+
   /* Setup checkings */
 
   if ((nsp->model_flag
@@ -999,6 +1002,20 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
                 " the thermal equation.\n"
                 " Please check your settings.",
                 __func__);
+  }
+
+  if (nsp->num_flag & CS_NAVSTO_NUM_PSEUDO_STEADY) {
+    if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY) {
+      bft_error(
+        __FILE__,
+        __LINE__,
+        0,
+        "%s: Steady simulation with pseudo-steady algorithm is forbidden"
+        " algorithm",
+        __func__);
+    }
+
+    mom_eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED;
   }
 
   /* Remaining boundary conditions:
@@ -1061,9 +1078,6 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
   }
 
   /* Settings with respect to the discretization scheme */
-
-  cs_equation_param_t *mom_eqp
-    = cs_navsto_coupling_get_momentum_eqp(nsp, ns->coupling_context);
 
   switch (nsp->space_scheme) {
 
@@ -2204,6 +2218,27 @@ cs_navsto_system_set_model_flag(cs_navsto_param_model_flag_t model_flag)
   }
 
   ns->param->model_flag = model_flag;
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set numerical flags for the Navier-Stokes (NS) system
+ *
+ * \param[in] mnum_flag     additional high-level numerical options
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_set_num_flag(cs_navsto_param_num_flag_t num_flag)
+{
+  cs_navsto_system_t *ns = cs_navsto_system;
+
+  if (ns == nullptr) {
+    return;
+  }
+
+  ns->param->num_flag = num_flag;
 };
 
 /*----------------------------------------------------------------------------*/

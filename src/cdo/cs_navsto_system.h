@@ -728,6 +728,18 @@ cs_navsto_system_set_model_flag(cs_navsto_param_model_flag_t model_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set numerical flags for the Navier-Stokes (NS) system
+ *
+ * \param[in] mnum_flag     additional high-level numerical options
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_set_num_flag(cs_navsto_param_num_flag_t num_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Summary of the main cs_navsto_system_t structure
  */
 /*----------------------------------------------------------------------------*/

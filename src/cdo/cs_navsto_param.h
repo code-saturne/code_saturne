@@ -54,6 +54,7 @@
 
 typedef cs_flag_t  cs_navsto_param_model_flag_t;
 typedef cs_flag_t  cs_navsto_param_post_flag_t;
+typedef cs_flag_t  cs_navsto_param_num_flag_t;
 
 /*! \enum cs_navsto_param_model_t
  *  \brief Describe the system of equations related to the Navier-Stokes to be
@@ -195,6 +196,20 @@ typedef enum {
   CS_NAVSTO_POST_PRESSURE_GRADIENT        = 1<< 9, /* = 512 */
 
 } cs_navsto_param_post_bit_t;
+
+/*! \enum cs_navsto_param_num_bit_t
+ *  \brief Bit values for additional numeric related to the
+ *  Navier-Stokes system of equations
+ *
+ * \var CS_NAVSTO_NUM_PSEUDO_STEADY
+ * Use pseudo-steady algorith to solve stationnary problem
+ * with unsteady model.
+ *
+ */
+
+typedef enum {
+  CS_NAVSTO_NUM_PSEUDO_STEADY = 1 << 0, /* =   1 */
+} cs_navsto_param_num_bit_t;
 
 /*! \enum cs_navsto_param_coupling_t
  *  \brief Choice of algorithm for solving the system
@@ -457,6 +472,12 @@ typedef struct {
    */
 
   cs_navsto_param_post_flag_t    post_flag;
+
+  /*! \var num_flag
+   * Flag storing which numerical options
+   */
+
+  cs_navsto_param_num_flag_t num_flag;
 
   /*!
    * @}

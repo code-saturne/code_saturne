@@ -42,6 +42,9 @@ Master (not on release branches yet)
 
 - CDO: Add mapped inlet option for Dirichlet boundary conditions.
 
+- CDO: Add pseudo-steady option when solving Navier-Stokes with unsteady
+  model in order to find a stationary solution.
+
 ### User changes:
 
 - Expand use of optional `CATALYST_IMPLEMENTATION_NAME` environment variable
