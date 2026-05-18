@@ -946,6 +946,33 @@ cs_upwind_gradient(cs_dispatch_context          &ctx,
                    const cs_real_t              *pvar,
                    T                           (*grdpa)[3]);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute the upwind gradient used in the pure SOLU schemes
+ *        (observed in the litterature) for a vector
+ *
+ * \param[in]     ctx          Reference to dispatch context
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     halo_type    halo type
+ * \param[in]     bc_coeffs    boundary condition structure for the variable
+ * \param[in]     i_massflux   mass flux at interior faces
+ * \param[in]     b_massflux   mass flux at boundary faces
+ * \param[in]     pvar         values
+ * \param[out]    grdpa        upwind gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride, typename T>
+void
+cs_upwind_gradient_strided(cs_dispatch_context          &ctx,
+                           const int                     inc,
+                           const cs_halo_type_t          halo_type,
+                           const cs_field_bc_coeffs_t   *bc_coeffs,
+                           const cs_real_t               i_massflux[],
+                           const cs_real_t               b_massflux[],
+                           const cs_real_t     *restrict pvar[stride],
+                           T                  (*restrict grdpa)[stride][3]);
+
 /*----------------------------------------------------------------------------
  * Compute the local cell Courant number as the maximum of all cell face based
  * Courant number at each cell.
