@@ -372,6 +372,10 @@ cs_navsto_system_activate(const cs_boundary_t          *boundaries,
 
   cs_navsto_system_t *navsto = _allocate_navsto_system();
 
+  /* Set the static variable */
+
+  cs_navsto_system = navsto;
+
   /* Initialize the set of parameters */
 
   navsto->param =
@@ -436,10 +440,6 @@ cs_navsto_system_activate(const cs_boundary_t          *boundaries,
   /* Create the main structure to handle the turbulence modelling */
 
   navsto->turbulence = cs_turbulence_create(navsto->param->turbulence);
-
-  /* Set the static variable */
-
-  cs_navsto_system = navsto;
 
   return navsto;
 }
