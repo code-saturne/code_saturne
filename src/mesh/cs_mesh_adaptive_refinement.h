@@ -139,6 +139,8 @@ typedef struct {
                                            that tags cells for
                                            coarsening/refinement. */
 
+  bool                    load_balance; /*!< Perform load balancing after
+                                          mesh adaptation. */
 } cs_amr_info_t;
 
 /*=============================================================================
@@ -159,6 +161,7 @@ extern cs_amr_info_t  *cs_glob_amr_info;
  * \param[in]  ts_interval  time_step interval between adaptation steps
  * \param[in]  indic_func   user function marking cells that should be refined
  * \param[in]  indic_input  input for indic_func or nullptr
+ * \param[in]  load_balance activate load balancing post mesh adaptation
  */
 /*----------------------------------------------------------------------------*/
 
@@ -167,7 +170,8 @@ cs_adaptive_refinement_define(int                n_layers,
                               int                n_freq,
                               cs_amr_indicator_t *indic_func,
                               const void         *indic_input,
-                              int                interpolation);
+                              int                interpolation,
+                              bool               load_balance);
 
 /*----------------------------------------------------------------------------*/
 /*

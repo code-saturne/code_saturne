@@ -58,6 +58,8 @@
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
+#include "base/cs_volume_zone.h"
+#include "base/cs_boundary_zone.h"
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
@@ -6494,6 +6496,10 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
        properly reallocate fields (espacially bc_coeffs) */
     cs_mesh_update_selectors(m);
     cs_mesh_location_build(m, -1);
+
+    // Zones must be updated after updating mesh location structures.
+    cs_volume_zone_build_all(true);
+    cs_boundary_zone_build_all(true);
 
     cs_amr_refinement_interpolation_t *_realloc_and_interp_fields =
       cs_glob_amr_info->fields_interp_refinement_func;
