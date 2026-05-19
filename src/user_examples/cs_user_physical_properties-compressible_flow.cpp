@@ -81,7 +81,7 @@ cs_user_physical_properties
   cs_real_t *cpro_viscv = cs_field_by_name_try("volume_viscosity")->val;
 
   const int kivisl = cs_field_key_id("diffusivity_id");
-  int ifcvsl = cs_field_get_key_int(CS_F_(t_kelvin), kivisl);
+  int ifcvsl = CS_F_(t_kelvin)->get_key_int(kivisl);
   if (ifcvsl > -1)
     cpro_vtmpk = cs_field_by_id(ifcvsl)->val;
 
@@ -262,12 +262,12 @@ cs_user_physical_properties
 
       int sc_id = -1;
       if (fld->type & CS_FIELD_VARIABLE)
-        sc_id = cs_field_get_key_int(fld, keysca) - 1;
+        sc_id = fld->get_key_int(keysca) - 1;
       if (sc_id < 0)
         continue;
 
-      int variance_id = cs_field_get_key_int(fld, kscavr);
-      int diffusivity_id = cs_field_get_key_int(fld, kivisl);
+      int variance_id = fld->get_key_int(kscavr);
+      int diffusivity_id = fld->get_key_int(kivisl);
 
       if (variance_id > -1 || diffusivity_id < 0)
         continue;

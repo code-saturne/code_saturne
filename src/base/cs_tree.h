@@ -291,7 +291,7 @@ cs_tree_node_set_values_bool(cs_tree_node_t  *node,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+inline void
 cs_tree_node_set_value_bool(cs_tree_node_t  *node,
                             bool             val)
 {
@@ -341,7 +341,7 @@ cs_tree_node_set_values_int(cs_tree_node_t  *node,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+inline void
 cs_tree_node_set_value_int(cs_tree_node_t  *node,
                            int              val)
 {
@@ -391,7 +391,7 @@ cs_tree_node_set_values_real(cs_tree_node_t   *node,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+inline void
 cs_tree_node_set_value_real(cs_tree_node_t  *node,
                             cs_real_t        val)
 {
@@ -600,7 +600,7 @@ cs_tree_get_node_count(cs_tree_node_t  *node,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_tree_node_t *
+inline cs_tree_node_t *
 cs_tree_get_node_with_tag(cs_tree_node_t   *node,
                           const char       *path,
                           const char       *tag,
@@ -630,7 +630,7 @@ cs_tree_get_node_with_tag(cs_tree_node_t   *node,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_tree_node_t *
+inline cs_tree_node_t *
 cs_tree_get_or_add_node(cs_tree_node_t   *node,
                         const char       *path)
 {
@@ -670,7 +670,7 @@ cs_tree_add_child(cs_tree_node_t  *parent,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_tree_node_t *
+inline cs_tree_node_t *
 cs_tree_add_child_str(cs_tree_node_t  *parent,
                       const char      *name,
                       const char      *val_str)
@@ -693,7 +693,7 @@ cs_tree_add_child_str(cs_tree_node_t  *parent,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_tree_node_t *
+inline cs_tree_node_t *
 cs_tree_add_child_bool(cs_tree_node_t  *parent,
                        const char      *name,
                        bool             val)
@@ -716,7 +716,7 @@ cs_tree_add_child_bool(cs_tree_node_t  *parent,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_tree_node_t *
+inline cs_tree_node_t *
 cs_tree_add_child_int(cs_tree_node_t  *parent,
                       const char      *name,
                       int              val)
@@ -739,7 +739,7 @@ cs_tree_add_child_int(cs_tree_node_t  *parent,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_tree_node_t *
+inline cs_tree_node_t *
 cs_tree_add_child_real(cs_tree_node_t  *parent,
                        const char      *name,
                        cs_real_t        val)

@@ -1,6 +1,6 @@
 
-#ifndef __CS_TURBULENCE_INFLOW_H__
-#define __CS_TURBULENCE_INFLOW_H__
+#ifndef CS_TURBULENCE_INFLOW_H
+#define CS_TURBULENCE_INFLOW_H
 
 /*============================================================================
  * Turbulent inflow generation
@@ -36,10 +36,6 @@
 
 #include "base/cs_base.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -63,7 +59,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_inflow_volume_mass_injection_k_eps(const char  *zone_name,
                                                  double       k,
                                                  double       eps);
@@ -81,7 +77,7 @@ cs_turbulence_inflow_volume_mass_injection_k_eps(const char  *zone_name,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_inflow_volume_mass_injection_ke_hyd_diam(const char  *zone_name,
                                                        double       uref2,
                                                        double       dh,
@@ -90,6 +86,4 @@ cs_turbulence_inflow_volume_mass_injection_ke_hyd_diam(const char  *zone_name,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TURBULENCE_INFLOW_H__ */
+#endif /* CS_TURBULENCE_INFLOW_H */

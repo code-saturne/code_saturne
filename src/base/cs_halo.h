@@ -357,7 +357,7 @@ cs_halo_state_get_default(void);
  */
 /*----------------------------------------------------------------------------*/
 
-static inline size_t
+inline size_t
 cs_halo_pack_size(const cs_halo_t  *halo,
                   cs_datatype_t     data_type,
                   int               stride)

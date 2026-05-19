@@ -87,7 +87,7 @@ typedef struct {
   * \deprecated  use cs_zone_t instead.
   */
 
-typedef struct {
+[[deprecated]] typedef struct {
 
   const char       *name;           /*!< zone name */
 
@@ -111,7 +111,7 @@ typedef struct {
   * \deprecated  use cs_zone_t instead.
   */
 
-typedef struct {
+[[deprecated]] typedef struct {
 
   const char       *name;           /*!< zone name */
 

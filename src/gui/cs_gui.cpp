@@ -1707,7 +1707,7 @@ _read_diffusivity(void)
       visls_0 /= cs_glob_fluid_properties->cp0;
 
     cs_field_t *tf = cs_thermal_model_field();
-    cs_field_set_key_double(tf, kvisls0, visls_0);
+    tf->set_key_double(kvisls0, visls_0);
 
     /* Special case/keyword for Enthalpy diffusivity for combustion */
     for (int m_type = CS_COMBUSTION_3PT;
@@ -1720,7 +1720,7 @@ _read_diffusivity(void)
         bft_printf("==> %s\n", __func__);
         bft_printf("--diftl0  = %f\n", diftl0);
 #endif
-        cs_field_set_key_double(tf, kvisls0, diftl0);
+        tf->set_key_double(kvisls0, diftl0);
         break;
       }
     }
@@ -1737,7 +1737,7 @@ _read_diffusivity(void)
       cs_field_t  *f = cs_field_by_id(f_id);
       if (   (f->type & CS_FIELD_VARIABLE)
           && (f->type & CS_FIELD_USER)) {
-        if (cs_field_get_key_int(f, kscavr) < 0) {
+        if (f->get_key_int(kscavr) < 0) {
 
           if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] > -1) {
             /* Air molar mass */
@@ -1753,12 +1753,12 @@ _read_diffusivity(void)
           else
             density = cs_glob_fluid_properties->ro0;
 
-          double visls_0 = cs_field_get_key_double(f, kvisls0);
+          double visls_0 = f->get_key_double(kvisls0);
           double coeff = visls_0 / density;
           _scalar_diffusion_value(f, &coeff);
           visls_0 = coeff * density;
 
-          cs_field_set_key_double(f, kvisls0, visls_0);
+          f->set_key_double(kvisls0, visls_0);
         }
       }
     }
@@ -1846,9 +1846,9 @@ cs_gui_laminar_viscosity(void)
         if (f->type & CS_FIELD_VARIABLE) {
           if (f == tf) {
             if (choice1 || choice2)
-              cs_field_set_key_int(f, kivisl, 0);
+              f->set_key_int(kivisl, 0);
             else
-              cs_field_set_key_int(f, kivisl, -1);
+              f->set_key_int(kivisl, -1);
           }
         }
       }
@@ -1861,14 +1861,14 @@ cs_gui_laminar_viscosity(void)
     if (   (f->type & CS_FIELD_VARIABLE)
         && (f->type & CS_FIELD_USER)
         && (f != tf)) {
-      int iscal = cs_field_get_key_int(f, keysca);
+      int iscal = f->get_key_int(keysca);
       if (iscal > 0) {
-        if (cs_field_get_key_int(f, kscavr) < 0) {
+        if (f->get_key_int(kscavr) < 0) {
           if (_scalar_properties_choice(f->name, &choice1))
-            cs_field_set_key_int(f, kivisl, choice1 - 1);
+            f->set_key_int(kivisl, choice1 - 1);
           // for groundwater we impose variable property
           if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1)
-            cs_field_set_key_int(f, kivisl, 0);
+            f->set_key_int(kivisl, 0);
         }
       }
     }
@@ -1882,7 +1882,7 @@ cs_gui_laminar_viscosity(void)
         cs_gui_strcmp(prop_choice, "predefined_law"))
       d_f_id = 0;
     cs_field_t *c_temp = cs_field_by_name("temperature");
-    cs_field_set_key_int(c_temp, kivisl, d_f_id);
+    c_temp->set_key_int(kivisl, d_f_id);
   }
 }
 
@@ -2215,9 +2215,7 @@ cs_gui_equation_parameters(void)
           int nvd_limiter = -1;
           _nvd_limiter_scheme_value(tn_v, &nvd_limiter);
           if (nvd_limiter >= 0) {
-            cs_field_set_key_int(f,
-                                 cs_field_key_id("limiter_choice"),
-                                 nvd_limiter);
+            f->set_key_int("limiter_choice", nvd_limiter);
           }
         }
         _slope_test_value(tn_v, &(eqp->isstpc));
@@ -2237,12 +2235,12 @@ cs_gui_equation_parameters(void)
       }
 
       /* only for additional variables (user or model) */
-      int isca = cs_field_get_key_int(f, keysca);
+      int isca = f->get_key_int(keysca);
       if (isca > 0) {
         /* time step factor */
-        double cdtvar = cs_field_get_key_double(f, k_ts_fact);
+        double cdtvar = f->get_key_double(k_ts_fact);
         cs_gui_node_get_child_real(tn_v, "time_step_factor", &cdtvar);
-        cs_field_set_key_double(f, k_ts_fact, cdtvar);
+        f->set_key_double(k_ts_fact, cdtvar);
       }
     }
   }
@@ -2254,7 +2252,7 @@ cs_gui_equation_parameters(void)
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-      int j = cs_field_get_key_int(f, var_key_id) -1;
+      int j = f->get_key_int(var_key_id) -1;
       bft_printf("-->variable[%i] = %s\n", j, f->name);
       bft_printf("--blencv = %f\n", eqp->blencv);
       bft_printf("--epsilo = %g\n", eqp->epsilo);
@@ -2262,8 +2260,8 @@ cs_gui_equation_parameters(void)
       bft_printf("--isstpc = %i\n", eqp->isstpc);
       bft_printf("--ircflu = %i\n", eqp->ircflu);
       bft_printf("--nswrsm = %i\n", eqp->nswrsm);
-      if (cs_field_get_key_int(f, keysca) > 0) {
-        double cdtvar = cs_field_get_key_double(f, k_ts_fact);
+      if (f->get_key_int(keysca) > 0) {
+        double cdtvar = f->get_key_double(k_ts_fact);
         cs_tree_node_t *tn_v = _find_node_variable(f->name);
         cs_gui_node_get_child_real(tn_v, "time_step_factor", &cdtvar);
         bft_printf("--cdtvar = %g\n", cdtvar);
@@ -2578,7 +2576,7 @@ cs_gui_groundwater_property_laws(int  permeability,
           }
 
           /* get diffusivity for current scalar and current zone */
-          int diff_id = cs_field_get_key_int(f, kivisl);
+          int diff_id = f->get_key_int(kivisl);
           cs_field_t *fdiff = cs_field_by_id(diff_id);
 
           for (cs_lnum_t icel = 0; icel < n_cells; icel++) {
@@ -2654,7 +2652,7 @@ cs_gui_groundwater_property_laws(int  permeability,
           cs_field_t *f = cs_field_by_id(f_id);
           if (   (f->type & CS_FIELD_VARIABLE)
               && (f->type & CS_FIELD_USER)) {
-            int diff_id = cs_field_get_key_int(f, kivisl);
+            int diff_id = f->get_key_int(kivisl);
             cs_field_t *fdiff = cs_field_by_id(diff_id);
             cs_real_t *visten = fdiff->val;
 
@@ -3487,7 +3485,7 @@ cs_gui_linear_solvers(void)
             sles_it_type = CS_SLES_FCG;
           else {
             int coupling_id
-              = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+              = f->get_key_int(cs_field_key_id("coupling_entity"));
             if (coupling_id < 0 && cs_gui_strcmp(precond_choice, "none"))
               sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
             else
@@ -4192,9 +4190,8 @@ cs_gui_physical_properties(void)
     cs_gui_properties_value("volume_viscosity", &phys_pp->viscv0);
     double visls_0 = -1;
     cs_gui_properties_value("thermal_conductivity", &visls_0);
-    cs_field_set_key_double(cs_field_by_name("temperature"),
-                            cs_field_key_id("diffusivity_ref"),
-                            visls_0);
+    cs_field_by_name("temperature")->set_key_double("diffusivity_ref",
+                                                    visls_0);
   }
 
   int n_zones_pp
@@ -4207,9 +4204,9 @@ cs_gui_physical_properties(void)
     if (tf != nullptr) {
       phys_pp->icp = 1;
       int k = cs_field_key_id("diffusivity_id");
-      int cond_diff_id = cs_field_get_key_int(tf, k);
+      int cond_diff_id = tf->get_key_int(k);
       if (cond_diff_id < 0)
-        cs_field_set_key_int(tf, k, 0);
+        tf->set_key_int(k, 0);
     }
   }
 
@@ -4450,21 +4447,21 @@ cs_gui_scalar_model_settings(void)
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) { /* variable ? */
-      int i = cs_field_get_key_int(f, keysca) - 1;
+      int i = f->get_key_int(keysca) - 1;
       if (i > -1) { /* additional user or model variable ? */
 
-        double scal_min = cs_field_get_key_double(f, kscmin);
-        double scal_max = cs_field_get_key_double(f, kscmax);
+        double scal_min = f->get_key_double(kscmin);
+        double scal_max = f->get_key_double(kscmax);
 
         cs_tree_node_t *tn_v = _find_node_variable(f->name);
         if (tn_v != nullptr) { /* variable is in xml ? */
           cs_gui_node_get_child_real(tn_v, "min_value", &scal_min);
           cs_gui_node_get_child_real(tn_v, "max_value", &scal_max);
-          cs_field_set_key_double(f, kscmin, scal_min);
-          cs_field_set_key_double(f, kscmax, scal_max);
+          f->set_key_double(kscmin, scal_min);
+          f->set_key_double(kscmax, scal_max);
 
-          cs_field_set_key_double(f, k_beta_max, scal_max);
-          cs_field_set_key_double(f, k_beta_min, scal_min);
+          f->set_key_double(k_beta_max, scal_max);
+          f->set_key_double(k_beta_min, scal_min);
 
 #if _XML_DEBUG_
           bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
@@ -4474,7 +4471,7 @@ cs_gui_scalar_model_settings(void)
           if (turb_model->order == CS_TURB_SECOND_ORDER) {
             int turb_mdl;
             _variable_turbulent_flux_model(tn_v, &turb_mdl);
-            cs_field_set_key_int(f, kturt, turb_mdl);
+            f->set_key_int(kturt, turb_mdl);
 #if _XML_DEBUG_
             bft_printf("--turb_model[%i] = %d\n", i, turb_mdl);
 #endif
@@ -4579,7 +4576,6 @@ cs_gui_thermal_model_code(void)
 void
 cs_gui_time_moments(void)
 {
-  int imom = 1;
   int restart = cs_restart_present();
 
   /* Loop on time average definitions */
@@ -4588,7 +4584,7 @@ cs_gui_time_moments(void)
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
        tn != nullptr;
-       tn = cs_tree_node_get_next_of_name(tn), imom++) {
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
     const char *restart_name;
     cs_time_moment_restart_t  restart_mode = CS_TIME_MOMENT_RESTART_AUTO;
@@ -5414,8 +5410,8 @@ cs_gui_error_estimator(void)
                                       1,
                                       false);
 
-      cs_field_set_key_int(f, cs_field_key_id("log"), 1);
-      cs_field_set_key_int(f, cs_field_key_id("post_vis"), 1);
+      f->set_key_int(cs_field_key_id("log"), 1);
+      f->set_key_int(cs_field_key_id("post_vis"), 1);
 
       cs_field_set_key_str(f, cs_field_key_id("label"), label[i]);
 
@@ -5955,7 +5951,7 @@ cs_gui_physical_variable(void)
       if (_th_f[i]) {
         if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
           int k = cs_field_key_id("diffusivity_id");
-          int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
+          int cond_diff_id = _th_f[i]->get_key_int(k);
           if (cond_diff_id > -1) {
             cond_dif = cs_field_by_id(cond_diff_id);
             if (n_zones_pp > 0) {
@@ -5997,14 +5993,14 @@ cs_gui_physical_variable(void)
     if (   (f->type & CS_FIELD_VARIABLE)
         && (f->type & CS_FIELD_USER)) {
 
-      if (   cs_field_get_key_int(f, kscavr) < 0
-          && cs_field_get_key_int(f, kivisl) >= 0) {
+      if (   f->get_key_int(kscavr) < 0
+          && f->get_key_int(kivisl) >= 0) {
 
         /* Get diffusivity pointer.
          * diff_id is >= 0 since it is a part of the if test
          * above!
          */
-        int diff_id = cs_field_get_key_int(f, kivisl);
+        int diff_id = f->get_key_int(kivisl);
         cs_field_t *c_prop = cs_field_by_id(diff_id);
 
         if (n_zones_pp > 0) {

@@ -247,8 +247,7 @@ _free_surface(const cs_domain_t  *domain,
   const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
 
   /* Boundary mass flux */
-  int iflmab = cs_field_get_key_int(CS_F_(vel),
-                                    cs_field_key_id("boundary_mass_flux_id"));
+  int iflmab = CS_F_(vel)->get_key_int("boundary_mass_flux_id");
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
   /* Transform face flux to vertex displacement */
@@ -2378,23 +2377,19 @@ cs_ale_add_property_fields(void)
 
   /* Add a label for this field */
 
-  cs_field_set_key_str(f_md, cs_field_key_id("label"), "Mesh displacement");
+  f_md->set_key_str("label", "Mesh displacement");
 
   /* Output related to this field */
 
   const int post_flag = CS_POST_ON_LOCATION;
 
-  cs_field_set_key_int(f_md, log_key_id, 1);
-  cs_field_set_key_int(f_md, post_key_id, post_flag);
+  f_md->set_key_int(log_key_id, 1);
+  f_md->set_key_int(post_key_id, post_flag);
 
   /* Handle the restart settings */
 
-  cs_field_set_key_int(f_md,
-                       cs_field_key_id("restart_file"),
-                       CS_RESTART_AUXILIARY);
-  cs_field_set_key_int(f_md,
-                       cs_field_key_id("restart_n_values"),
-                       2);
+  f_md->set_key_int("restart_file", CS_RESTART_AUXILIARY);
+  f_md->set_key_int("restart_n_values", 2);
 
   /* Add the initial vertex coordinates
      ---------------------------------- */
@@ -2407,8 +2402,8 @@ cs_ale_add_property_fields(void)
 
   /* No output related to this field */
 
-  cs_field_set_key_int(f_xyz0, log_key_id, 0);
-  cs_field_set_key_int(f_xyz0, post_key_id, 0);
+  f_xyz0->set_key_int(log_key_id, 0);
+  f_xyz0->set_key_int(post_key_id, 0);
 
   /* Add the cell volume as a owner field to have vol^n and vol^{n+1}
      ----------------------------------------------------------------  */
@@ -2422,8 +2417,8 @@ cs_ale_add_property_fields(void)
 
    /* Add output related to this field */
 
-  cs_field_set_key_int(f_cellvol, log_key_id, 0);
-  cs_field_set_key_int(f_cellvol, post_key_id, 0);
+  f_cellvol->set_key_int(log_key_id, 0);
+  f_cellvol->set_key_int(post_key_id, 0);
 }
 
 /*----------------------------------------------------------------------------*/

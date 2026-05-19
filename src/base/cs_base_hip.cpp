@@ -63,8 +63,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -294,7 +292,7 @@ _initialize_nccl(int  n_devices,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_hip_copy_h2d(void        *dst,
                  const void  *src,
                  size_t       size)
@@ -319,7 +317,7 @@ cs_hip_copy_h2d(void        *dst,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_hip_copy_h2d_async(void        *dst,
                        const void  *src,
                        size_t       size)
@@ -344,7 +342,7 @@ cs_hip_copy_h2d_async(void        *dst,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_hip_copy_d2h(void        *dst,
                  const void  *src,
                  size_t       size)
@@ -368,7 +366,7 @@ cs_hip_copy_d2h(void        *dst,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_hip_copy_d2h_async(void        *dst,
                        const void  *src,
                        size_t       size)
@@ -391,7 +389,7 @@ cs_hip_copy_d2h_async(void        *dst,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_hip_copy_d2d(void        *dst,
                  const void  *src,
                  size_t       size)
@@ -417,7 +415,7 @@ cs_hip_copy_d2d(void        *dst,
  */
 /*----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 cs_hip_get_host_ptr(const void  *ptr)
 {
   hipPointerAttribute_t attributes;
@@ -438,8 +436,6 @@ cs_hip_get_host_ptr(const void  *ptr)
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-END_C_DECLS
 
 /*============================================================================
  * Public function definitions

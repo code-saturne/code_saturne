@@ -1289,9 +1289,9 @@ cs_thermal_model_pdivu(cs_real_t  smbrs[])
   ctx.wait();
 
   cs_real_t *i_massflux
-    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
+    = cs_field_by_id(CS_F_(vel)->get_key_int(kimasf))->val;
   cs_real_t *b_massflux
-    =  cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+    =  cs_field_by_id(CS_F_(vel)->get_key_int(kbmasf))->val;
 
   /* Get pressure gradient, including the pressure increment gradient */
 

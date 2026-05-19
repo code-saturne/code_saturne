@@ -636,7 +636,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
     if (eqp->iwgrec == 1) {
       /* Weighted gradient coefficients */
       int key_id = cs_field_key_id("gradient_weighting_id");
-      int diff_id = cs_field_get_key_int(extra_i[phase_id].pressure, key_id);
+      int diff_id = extra_i[phase_id].pressure->get_key_int(key_id);
       if (diff_id > -1) {
         cs_field_t *weight_f = cs_field_by_id(diff_id);
         weight = weight_f->val;
@@ -645,7 +645,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       /* Internal coupling structure */
       key_id = cs_field_key_id_try("coupling_entity");
       if (key_id > -1) {
-        int coupl_id = cs_field_get_key_int(extra_i[phase_id].pressure, key_id);
+        int coupl_id = extra_i[phase_id].pressure->get_key_int(key_id);
         if (coupl_id > -1)
           cpl = cs_internal_coupling_by_id(coupl_id);
       }
@@ -653,7 +653,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       if (eqp->idiff > 0) {
         int key_id = cs_field_key_id_try("coupling_entity");
         if (key_id > -1) {
-          int coupl_id = cs_field_get_key_int(extra_i[phase_id].pressure, key_id);
+          int coupl_id = extra_i[phase_id].pressure->get_key_int(key_id);
           if (coupl_id > -1)
             cpl = cs_internal_coupling_by_id(coupl_id);
         }

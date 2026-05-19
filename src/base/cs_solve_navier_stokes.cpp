@@ -196,9 +196,9 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   cs_real_t *imasfl
-    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
+    = cs_field_by_id(CS_F_(vel)->get_key_int(kimasf))->val;
   cs_real_t *bmasfl
-    = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+    = cs_field_by_id(CS_F_(vel)->get_key_int(kbmasf))->val;
 
   /* Boundary conditions on the potential (homogenous Neumann) */
 
@@ -1258,7 +1258,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
 
     if (vof_param->vof_model != 0) {
       const int kwgrec = cs_field_key_id_try("gradient_weighting_id");
-      const int iflwgr = cs_field_get_key_int(CS_F_(p), kwgrec);
+      const int iflwgr = CS_F_(p)->get_key_int(kwgrec);
       cs_field_t *f_g = cs_field_by_id(iflwgr);
       if (f_g->dim == 1) {
         cpro_wgrec_s = f_g->val;
@@ -1499,12 +1499,9 @@ _update_fluid_vel(const cs_mesh_t             *m,
       const cs_real_t *cell_f_vol = mq->cell_vol;
 
       /* Id of the volume flux */
-      const int kimasf = cs_field_key_id("inner_mass_flux_id");
-      const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-      const int ivolfl_id
-        = cs_field_get_key_int(cs_field_by_name("void_fraction"), kimasf);
-      const int bvolfl_id
-        = cs_field_get_key_int(cs_field_by_name("void_fraction"), kbmasf);
+      const cs_field_t *f_vf = cs_field_by_name("void_fraction");
+      const int ivolfl_id = f_vf->get_key_int("inner_mass_flux_id");
+      const int bvolfl_id = f_vf->get_key_int("boundary_mass_flux_id");
       const cs_real_t *ivolfl = cs_field_by_id(ivolfl_id)->val;
       const cs_real_t *bvolfl = cs_field_by_id(bvolfl_id)->val;
 
@@ -1695,12 +1692,9 @@ _log_norm(const cs_mesh_t                *m,
   }
 
   if (vof_model > 0) {
-    const int kimasf = cs_field_key_id("inner_mass_flux_id");
-    const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-    const int ivolfl_id
-      = cs_field_get_key_int(cs_field_by_name("void_fraction"), kimasf);
-    const int bvolfl_id
-      = cs_field_get_key_int(cs_field_by_name("void_fraction"), kbmasf);
+    const cs_field_t *f_vf = cs_field_by_name("void_fraction");
+    const int ivolfl_id = f_vf->get_key_int("inner_mass_flux_id");
+    const int bvolfl_id = f_vf->get_key_int("boundary_mass_flux_id");
 
     ivolfl = cs_field_by_id(ivolfl_id)->val;
     bvolfl = cs_field_by_id(bvolfl_id)->val;
@@ -1914,8 +1908,8 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
-  const int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+  const int iflmas = CS_F_(vel)->get_key_int(kimasf);
+  const int iflmab = CS_F_(vel)->get_key_int(kbmasf);
 
   cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
@@ -2066,7 +2060,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   if (cs_glob_time_scheme->isno2t > 0) {
     int kstprv = cs_field_key_id("source_term_prev_id");
-    int istprv = cs_field_get_key_int(CS_F_(vel), kstprv);
+    int istprv = CS_F_(vel)->get_key_int(kstprv);
     if (istprv > -1)
       c_st_vel = (cs_real_3_t *)cs_field_by_id(istprv)->val;
   }
@@ -2138,7 +2132,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   cs_real_3_t *meteo_st = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_OFF) {
     const int kopint = cs_field_key_id_try("opt_interp_id");
-    const int f_oi_id = cs_field_get_key_int(CS_F_(vel), kopint);
+    const int f_oi_id = CS_F_(vel)->get_key_int(kopint);
     if (f_oi_id > -1)
       cs_at_data_assim_source_term(CS_F_(vel)->id,
                                    (cs_real_t *)tsexp,
@@ -2216,7 +2210,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     /* Id weighting field for gradient */
     const int kwgrec = cs_field_key_id_try("gradient_weighting_id");
-    const int iflwgr = cs_field_get_key_int(CS_F_(p), kwgrec);
+    const int iflwgr = CS_F_(p)->get_key_int(kwgrec);
     cs_field_t *f_g = cs_field_by_id(iflwgr);
     cs_real_6_t *cpro_wgrec_v = nullptr;
     cs_real_t *cpro_wgrec_s = nullptr;
@@ -3394,8 +3388,8 @@ _hydrostatic_pressure_prediction(cs_real_t        grdphd[][3],
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
-  const int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+  const int iflmas = CS_F_(vel)->get_key_int(kimasf);
+  const int iflmab = CS_F_(vel)->get_key_int(kbmasf);
 
   cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
@@ -4042,8 +4036,8 @@ cs_solve_navier_stokes(const int        iterns,
 
     const int kimasf = cs_field_key_id("inner_mass_flux_id");
     const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-    const int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
-    const int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+    const int iflmas = CS_F_(vel)->get_key_int(kimasf);
+    const int iflmab = CS_F_(vel)->get_key_int(kbmasf);
 
     cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
     cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;

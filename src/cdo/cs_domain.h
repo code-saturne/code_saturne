@@ -239,7 +239,8 @@ cs_domain_free(cs_domain_t   **p_domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_domain_set_cdo_mode(cs_domain_t *domain, cs_param_cdo_mode_t mode);
+[[deprecated]] void
+cs_domain_set_cdo_mode(cs_domain_t *domain, cs_param_cdo_mode_t mode);
 
 /*----------------------------------------------------------------------------*/
 /*!

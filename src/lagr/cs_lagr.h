@@ -444,7 +444,7 @@ typedef struct {
   */
   union {
     int   solve_temperature;
-    int   itpvar; /* deprecated */
+    [[deprecated]] int   itpvar;
   };
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
@@ -452,7 +452,7 @@ typedef struct {
   */
   union {
     int   solve_diameter;
-    int   idpvar; /* deprecated */
+    [[deprecated]] int   idpvar;
   };
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle mass
@@ -460,7 +460,7 @@ typedef struct {
   */
   union {
     int   solve_mass;
-    int   impvar; /* deprecated */
+    [[deprecated]] int   impvar;
   };
 
   /*  initialization temperature (in degree Celsius) for the particles already

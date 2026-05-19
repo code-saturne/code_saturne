@@ -1,5 +1,5 @@
-#ifndef __CS_BENCHMARK_MATRIX_H__
-#define __CS_BENCHMARK_MATRIX_H__
+#ifndef CS_BENCHMARK_MATRIX_H
+#define CS_BENCHMARK_MATRIX_H
 
 /*============================================================================
  * Sparse Matrix Representation and Operations
@@ -37,10 +37,6 @@
 #include "base/cs_numbering.h"
 #include "base/cs_halo_perio.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -75,7 +71,7 @@ BEGIN_C_DECLS
  *   numbering      <-- vectorization or thread-related numbering info, or NULL
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_benchmark_matrix(int                    n_time_runs,
                     int                    n_types,
                     int                    n_fill_types,
@@ -90,6 +86,4 @@ cs_benchmark_matrix(int                    n_time_runs,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BENCHMARK_MATRIX_H__ */
+#endif /* CS_BENCHMARK_MATRIX_H */

@@ -1250,14 +1250,14 @@ typedef enum {
   CS_EQKEY_HODGE_DIFF_COEF,
   CS_EQKEY_HODGE_TIME_ALGO,
   CS_EQKEY_HODGE_REAC_ALGO,
-  CS_EQKEY_ITSOL,               /* deprecated */
-  CS_EQKEY_ITSOL_ATOL,          /* deprecated */
-  CS_EQKEY_ITSOL_DTOL,          /* deprecated */
-  CS_EQKEY_ITSOL_EPS,           /* deprecated */
-  CS_EQKEY_ITSOL_MAX_ITER,      /* deprecated */
-  CS_EQKEY_ITSOL_RESNORM_TYPE,  /* deprecated */
-  CS_EQKEY_ITSOL_RESTART,       /* deprecated */
-  CS_EQKEY_ITSOL_RTOL,          /* deprecated */
+  CS_EQKEY_ITSOL [[deprecated]],
+  CS_EQKEY_ITSOL_ATOL [[deprecated]],
+  CS_EQKEY_ITSOL_DTOL [[deprecated]],
+  CS_EQKEY_ITSOL_EPS [[deprecated]],
+  CS_EQKEY_ITSOL_MAX_ITER [[deprecated]],
+  CS_EQKEY_ITSOL_RESNORM_TYPE [[deprecated]],
+  CS_EQKEY_ITSOL_RESTART [[deprecated]],
+  CS_EQKEY_ITSOL_RTOL [[deprecated]],
   CS_EQKEY_SOLVER,
   CS_EQKEY_SOLVER_ATOL,
   CS_EQKEY_SOLVER_DTOL,
@@ -1585,7 +1585,7 @@ cs_equation_param_create(const char         *name,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static cs_equation_param_t *
+[[deprecated]] inline cs_equation_param_t *
 cs_equation_create_param(const char         *name,
                          cs_equation_type_t  type,
                          int                 dim,
@@ -1638,7 +1638,7 @@ cs_equation_param_copy_bc(const cs_equation_param_t *ref,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+[[deprecated]] inline void
 cs_equation_copy_param_from(const cs_equation_param_t *ref,
                             cs_equation_param_t       *dst,
                             bool                       copy_fid)
@@ -1705,7 +1705,7 @@ cs_equation_param_set(cs_equation_param_t *eqp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+[[deprecated]] inline void
 cs_equation_set_param(cs_equation_param_t *eqp,
                       cs_equation_key_t    key,
                       const char           *keyval)

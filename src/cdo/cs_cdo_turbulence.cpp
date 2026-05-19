@@ -557,8 +557,8 @@ cs_turbulence_init_setup(cs_turbulence_t     *tbs,
 
     /* Set default value for keys related to log and post-processing */
 
-    cs_field_set_key_int(tbs->mu_t_field, log_key, 1);
-    cs_field_set_key_int(tbs->mu_t_field, post_key, field_post_flag);
+    tbs->mu_t_field->set_key_int(log_key, 1);
+    tbs->mu_t_field->set_key_int(post_key, field_post_flag);
 
     /* Properties (shared) */
 

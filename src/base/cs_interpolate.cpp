@@ -262,7 +262,7 @@ cs_interpolate_from_location_p1(void                *input,
     f = cs_field_by_name_try(name);
     if (f != nullptr) {
       int kbf = cs_field_key_id_try("boundary_value_id");
-      int bf_id = cs_field_get_key_int(f, kbf);
+      int bf_id = f->get_key_int(kbf);
       if (bf_id > -1) {
         CS_MALLOC(bc_coeffs, 1, cs_field_bc_coeffs_t);
         cs_field_bc_coeffs_init(bc_coeffs);
@@ -278,7 +278,7 @@ cs_interpolate_from_location_p1(void                *input,
           int coupled = 0;
           int coupled_key_id = cs_field_key_id_try("coupled");
           if (coupled_key_id > -1)
-            coupled = cs_field_get_key_int(f, coupled_key_id);
+            coupled = f->get_key_int(coupled_key_id);
           if (coupled == 0) {   /* not handled in this case */
             bc_coeffs = nullptr;
           }

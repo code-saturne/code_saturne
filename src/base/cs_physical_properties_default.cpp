@@ -319,7 +319,7 @@ _compute_anisotropic_turbulent_viscosity
 
     const cs_field_t *f = cs_field_by_id(scalar_idx[f_id]);
 
-    const int turb_flux_model = cs_field_get_key_int(f, kturt);
+    const int turb_flux_model = f->get_key_int(kturt);
     const int turb_flux_model_type = turb_flux_model / 10;
     if (turb_flux_model == 31)
       iebdfm = true;
@@ -386,7 +386,7 @@ _clip_rho_mu_cp(cs_dispatch_context         &ctx,
     const int kscacp  = cs_field_key_id("is_temperature");
     for (int f_id = 0; f_id < n_scal; f_id++) {
       const cs_field_t *f_scal = cs_field_by_id(scalar_idx[f_id]);
-      iscacp = cs_field_get_key_int(f_scal, kscacp);
+      iscacp = f_scal->get_key_int(kscacp);
     }
   }
 
@@ -528,7 +528,7 @@ _check_log_scalar_diff(cs_dispatch_context &ctx,
          s_id < n_scal && s_idx < block_size;
          s_id++, s_idx++) {
       const cs_field_t *f = cs_field_by_id(scalar_idx[s_id]);
-      const int ifcvsl = cs_field_get_key_int(f, kivisl);
+      const int ifcvsl = f->get_key_int(kivisl);
 
       if (ifcvsl >= 0) {
         const cs_real_t *cpro_vis = cs_field_by_id(ifcvsl)->val;
@@ -562,7 +562,7 @@ _check_log_scalar_diff(cs_dispatch_context &ctx,
          s_id < n_scal && s_idx < block_size;
          s_id++, s_idx++) {
       const cs_field_t *f = cs_field_by_id(scalar_idx[s_id]);
-      const int ifcvsl = cs_field_get_key_int(f, kivisl);
+      const int ifcvsl = f->get_key_int(kivisl);
 
       const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
@@ -574,7 +574,7 @@ _check_log_scalar_diff(cs_dispatch_context &ctx,
         reduce_idx++;
       }
       else {
-        const cs_real_t visls_0 = cs_field_get_key_double(f, kvisl0);
+        const cs_real_t visls_0 = f->get_key_double(kvisl0);
         vismax = visls_0;
         vismin = visls_0;
       }
@@ -1162,7 +1162,7 @@ cs_physical_properties_update(int   iterns)
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
-    const int sc_id = cs_field_get_key_int(f, keysca) - 1;
+    const int sc_id = f->get_key_int(keysca) - 1;
     if (sc_id < 0)
       continue;
     scalar_idx[n_scal] = f_id;

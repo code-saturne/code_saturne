@@ -263,7 +263,7 @@ cs_hip_get_host_ptr(const void  *ptr);
  */
 /*----------------------------------------------------------------------------*/
 
-static inline unsigned int
+inline unsigned int
 cs_hip_grid_size(cs_lnum_t     n,
                   unsigned int  block_size)
 {

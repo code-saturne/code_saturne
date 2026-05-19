@@ -439,7 +439,7 @@ cs_mesh_quantities_compute_face_cog_un(cs_lnum_t        n_faces,
  *   p_b_face_normal <-> pointer to the border face normal array
  *----------------------------------------------------------------------------*/
 
-void
+[[deprecated]] void
 cs_mesh_quantities_b_faces(const cs_mesh_t   *mesh,
                            cs_real_t         *p_b_face_cog[],
                            cs_real_t         *p_b_face_normal[]);

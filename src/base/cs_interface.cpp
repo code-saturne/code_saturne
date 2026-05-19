@@ -6101,9 +6101,6 @@ cs_interface_tag_local_matches(const cs_interface_t     *itf,
 void
 cs_interface_set_dump(const cs_interface_set_t  *ifs)
 {
-  int i;
-  cs_lnum_t j;
-
   /* Dump local info */
 
   if (ifs == nullptr) {
@@ -6115,10 +6112,9 @@ cs_interface_set_dump(const cs_interface_set_t  *ifs)
              "  n interfaces:   %d\n",
              (const void *)ifs, ifs->size);
 
-  for (i = 0, j = 0; i < ifs->size; i++) {
+  for (int i = 0; i < ifs->size; i++) {
     bft_printf("\n  interface %d:\n", i);
     _cs_interface_dump(ifs->interfaces[i]);
-    j += (ifs->interfaces[i])->size;
   }
 
   if (ifs->periodicity != nullptr)

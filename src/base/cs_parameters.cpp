@@ -1190,8 +1190,8 @@ cs_parameters_define_auxiliary_fields(void)
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
-    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
+    fld->set_key_int("log", 1);
+    fld->set_key_int("post_vis", post_flag);
   }
 
   /* Fields used to model the aforepresented source term */
@@ -1233,8 +1233,8 @@ cs_parameters_define_auxiliary_fields(void)
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
-    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
+    fld->set_key_int("log", 1);
+    fld->set_key_int("post_vis", post_flag);
   }
 
   if (th_cf_model->ieos != CS_EOS_NONE) {
@@ -1264,8 +1264,8 @@ cs_parameters_define_auxiliary_fields(void)
                                         1,
                                         false);
 
-      cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-      cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 0);
+      fld->set_key_int("log", 1);
+      fld->set_key_int("post_vis", 0);
 
     }
 
@@ -1287,8 +1287,8 @@ cs_parameters_define_auxiliary_fields(void)
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
-    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
+    fld->set_key_int("log", 1);
+    fld->set_key_int("post_vis", post_flag);
   }
 
   /* CFL conditions */
@@ -1301,8 +1301,8 @@ cs_parameters_define_auxiliary_fields(void)
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
-    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
+    fld->set_key_int("log", 1);
+    fld->set_key_int("post_vis", post_flag);
   }
 
   if (th_model->cflp) {
@@ -1314,8 +1314,8 @@ cs_parameters_define_auxiliary_fields(void)
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
-    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
+    fld->set_key_int("log", 1);
+    fld->set_key_int("post_vis", post_flag);
   }
 
   /* Property fields relative to radiative transfer */
@@ -1357,8 +1357,8 @@ cs_parameters_create_added_properties(void)
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
 
-    cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(fld, cs_field_key_id("post_vis"), post_flag);
+    fld->set_key_int("log", 1);
+    fld->set_key_int("post_vis", post_flag);
 
     CS_FREE((_user_property_defs + i)->name);
 
@@ -1407,7 +1407,7 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
 
   int kbf = cs_field_key_id_try("boundary_value_id");
 
-  int bf_id = cs_field_get_key_int(f, kbf);
+  int bf_id = f->get_key_int(kbf);
   if (bf_id > -1) {
     bf = cs_field_by_id(bf_id);
     return bf;
@@ -1420,7 +1420,7 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
     return bf;
 
   int scalar_id = (f->type & CS_FIELD_VARIABLE) ?
-    cs_field_get_key_int(f, ks) : -1;
+    f->get_key_int(ks) : -1;
 
   if (scalar_id < 0&& strcmp(f->name, "temperature") != 0)
     return bf;
@@ -1449,21 +1449,17 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
 
     /* Set same label as parent */
 
-    cs_field_set_key_str(bf,
-                         cs_field_key_id("label"),
-                         cs_field_get_label(f));
+    bf->set_key_str("label", cs_field_get_label(f));
 
     /* Set same postprocessing and logging defaults as parent */
 
     int k_log = cs_field_key_id("log");
-    cs_field_set_key_int(bf,
-                         k_log,
-                         cs_field_get_key_int(f, k_log));
+    bf->set_key_int(k_log, f->get_key_int(k_log));
 
     int k_vis = cs_field_key_id("post_vis");
-    int f_vis = cs_field_get_key_int(f, k_vis);
+    int f_vis = f->get_key_int(k_vis);
     f_vis = f_vis | CS_POST_ON_LOCATION;
-    cs_field_set_key_int(bf, k_vis, f_vis);
+    bf->set_key_int(k_vis, f_vis);
 
   }
   else {
@@ -1486,7 +1482,7 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
 
   CS_FREE(b_name);
 
-  cs_field_set_key_int(f, kbf, bf->id);
+  f->set_key_int(kbf, bf->id);
   cs_field_lock_key(f, kbf);
 
   return bf;
@@ -1551,14 +1547,12 @@ cs_parameters_add_boundary_temperature(void)
         /* Set same postprocessing and logging defaults as enthalpy */
 
         int k_log = cs_field_key_id("log");
-        cs_field_set_key_int(bf,
-                             k_log,
-                             cs_field_get_key_int(f, k_log));
+        bf->set_key_int(k_log, f->get_key_int(k_log));
 
         int k_vis = cs_field_key_id("post_vis");
-        int f_vis = cs_field_get_key_int(f, k_vis);
+        int f_vis = f->get_key_int(k_vis);
         f_vis = cs::max(f_vis, 1);
-        cs_field_set_key_int(bf, k_vis, f_vis);
+        bf->set_key_int(k_vis, f_vis);
 
       }
       else {
@@ -1663,14 +1657,14 @@ cs_parameters_global_complete(void)
 
   /* Logging and postprocessing output */
   if (cs_glob_fluid_properties->irovar < 1) {
-    cs_field_set_key_int(f_rho, cs_field_key_id("post_vis"), 0);
-    cs_field_set_key_int(f_rho, cs_field_key_id("log"), 0);
-    cs_field_set_key_int(f_rho_b, cs_field_key_id("post_vis"), 0);
-    cs_field_set_key_int(f_rho_b, cs_field_key_id("log"), 0);
+    f_rho->set_key_int(cs_field_key_id("post_vis"), 0);
+    f_rho->set_key_int(cs_field_key_id("log"), 0);
+    f_rho_b->set_key_int(cs_field_key_id("post_vis"), 0);
+    f_rho_b->set_key_int(cs_field_key_id("log"), 0);
   }
   if (cs_glob_fluid_properties->ivivar < 1) {
-    cs_field_set_key_int(f_mu, cs_field_key_id("post_vis"), 0);
-    cs_field_set_key_int(f_mu, cs_field_key_id("log"), 0);
+    f_mu->set_key_int(cs_field_key_id("post_vis"), 0);
+    f_mu->set_key_int(cs_field_key_id("log"), 0);
   }
 
   /* Time scheme and time stepping */
@@ -1690,7 +1684,7 @@ cs_parameters_global_complete(void)
   }
 
   /* Physical properties */
-  int iviext = cs_field_get_key_int(f_mu, key_t_ext_id);
+  int iviext = f_mu->get_key_int(key_t_ext_id);
   if (fabs(time_scheme->thetvi+999.) > cs_math_epzero) {
     cs_parameters_error
       (CS_ABORT_DELAYED,
@@ -1708,7 +1702,7 @@ cs_parameters_global_complete(void)
     time_scheme->thetvi = 1.;
 
   if (cs_glob_fluid_properties->icp >= 0) {
-    int icpext = cs_field_get_key_int(f_cp, key_t_ext_id);
+    int icpext = f_cp->get_key_int(key_t_ext_id);
     if (fabs(time_scheme->thetcp+999.) > cs_math_epzero) {
       cs_parameters_error
         (CS_ABORT_DELAYED,
@@ -1767,11 +1761,11 @@ cs_parameters_global_complete(void)
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
 
-    int scalar_id = cs_field_get_key_int(f, kscal);
+    int scalar_id = f->get_key_int(kscal);
     if (scalar_id > -1) {
       /* Scalar source terms */
-      int isso2t = cs_field_get_key_int(f, kisso2t);
-      cs_real_t thetss = cs_field_get_key_double(f, kthetss);
+      int isso2t = f->get_key_int(kisso2t);
+      cs_real_t thetss = f->get_key_double(kthetss);
 
       if (fabs(thetss+1.) > cs_math_epzero) {
         cs_parameters_error
@@ -1784,24 +1778,24 @@ cs_parameters_global_complete(void)
       }
       else if (isso2t == 1) {
         thetss = 0.5;
-        cs_field_set_key_double(f, kthetss, thetss);
+        f->set_key_double(kthetss, thetss);
       }
       else if (isso2t == 2) {
         thetss = 1.;
-        cs_field_set_key_double(f, kthetss, thetss);
+        f->set_key_double(kthetss, thetss);
       }
       else if (isso2t == 0) {
         thetss = 0.;
-        cs_field_set_key_double(f, kthetss, thetss);
+        f->set_key_double(kthetss, thetss);
       }
       /* Scalar diffusivity */
-      int f_id_d = cs_field_get_key_int(f, kivisl);
-      if (f_id_d >= 0.)
-        iviext = cs_field_get_key_int(cs_field_by_id(f_id_d), key_t_ext_id);
+      int f_id_d = f->get_key_int(kivisl);
+      if (f_id_d >= 0)
+        iviext = cs_field_by_id(f_id_d)->get_key_int(key_t_ext_id);
       else
         iviext = 0;
 
-      cs_real_t thetvs = cs_field_get_key_double(f, kthetvs);
+      cs_real_t thetvs = f->get_key_double(kthetvs);
       if (fabs(thetvs+1.) > cs_math_epzero) {
         cs_parameters_error
           (CS_ABORT_DELAYED,
@@ -1813,15 +1807,15 @@ cs_parameters_global_complete(void)
       }
       else if (iviext == 0) {
         thetvs = 0.;
-        cs_field_set_key_double(f, kthetvs, thetvs);
+        f->set_key_double(kthetvs, thetvs);
       }
       else if (iviext == 1) {
         thetvs = 0.5;
-        cs_field_set_key_double(f, kthetvs, thetvs);
+        f->set_key_double(kthetvs, thetvs);
       }
       else if (iviext == 2) {
         thetvs = 1.;
-        cs_field_set_key_double(f, kthetvs, thetvs);
+        f->set_key_double(kthetvs, thetvs);
       }
 
     }
@@ -1887,20 +1881,20 @@ cs_parameters_eqp_complete(void)
 
         /* Additional settings for scalars */
 
-        int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+        int scalar_id = (ks > -1) ? f->get_key_int(ks) : -1;
         if (scalar_id > -1) {
 
           /* Turbulent flux constants for GGDH, AFM and DFM */
 
           int turb_flux_model
-            = (kturt > -1) ? cs_field_get_key_int(f, kturt) : 0;
+            = (kturt > -1) ? f->get_key_int(kturt) : 0;
           int turb_flux_model_type = turb_flux_model / 10;
 
           /* AFM and GGDH on the scalar */
           if (   turb_flux_model_type == 1
               || turb_flux_model_type == 2) {
             eqp->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
-            cs_field_set_key_double(f, kctheta, cs_turb_cthafm);
+            f->set_key_double(kctheta, cs_turb_cthafm);
           }
 
           /* DFM on the scalar */
@@ -1908,11 +1902,11 @@ cs_parameters_eqp_complete(void)
             eqp->idifft = 0;
             eqp->idften = CS_ISOTROPIC_DIFFUSION;
             if (turb_flux_model == 31) {
-              cs_field_set_key_double(f, kctheta, cs_turb_cthebdfm);
+              f->set_key_double(kctheta, cs_turb_cthebdfm);
               cs_turb_c2trit = 0.3;
             }
             else
-              cs_field_set_key_double(f, kctheta, cs_turb_cthdfm);
+              f->set_key_double(kctheta, cs_turb_cthdfm);
 
             /* GGDH on the thermal fluxes is automatic.
                GGDH on the variance of the thermal scalar set here. */
@@ -1921,13 +1915,13 @@ cs_parameters_eqp_complete(void)
             if (f_v != nullptr) {
               cs_equation_param_t *eqp_v = cs_field_get_equation_param(f_v);
               eqp_v->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
-              cs_field_set_key_double(f_v, kctheta, cs_turb_csrij);
+              f_v->set_key_double(kctheta, cs_turb_csrij);
             }
           }
 
           /* Non-GGDH, AFM or DFM cases */
           else
-            cs_field_set_key_double(f, kctheta, cs_turb_csrij);
+            f->set_key_double(kctheta, cs_turb_csrij);
         }
       }
 
@@ -2004,7 +1998,7 @@ cs_parameters_eqp_complete(void)
     }
     for (int f_id = 0; f_id < n_fields; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
-      int scalar_id = cs_field_get_key_int(f, ks);
+      int scalar_id = f->get_key_int(ks);
       if (scalar_id > -1) {
         cs_equation_param_t *eqp = cs_field_get_equation_param(f);
         if (eqp->isstpc == -999) eqp->isstpc = 0;
@@ -2069,7 +2063,7 @@ cs_parameters_eqp_complete(void)
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     int scalar_id = (f->type & CS_FIELD_USER) ?
-      cs_field_get_key_int(f, ks) : -1;
+      f->get_key_int(ks) : -1;
     if (scalar_id > -1) {
       cs_equation_param_t *eqp_sca = cs_field_get_equation_param(f);
       if (fabs(eqp_sca->blencv + 1.) < cs_math_epzero) {
@@ -2118,7 +2112,7 @@ cs_parameters_eqp_complete(void)
     }
     for (int f_id = 0; f_id < n_fields; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
-      int scalar_id = cs_field_get_key_int(f, ks);
+      int scalar_id = f->get_key_int(ks);
       if (scalar_id > -1) {
         cs_equation_param_t *eqp_sca = cs_field_get_equation_param(f);
         if (eqp_sca->nswrsm == -1) eqp_sca->nswrsm = 10;
@@ -2246,9 +2240,9 @@ cs_parameters_eqp_complete(void)
       int nscacp = 0;
       for (int f_id = 0; f_id < n_fields; f_id ++) {
         cs_field_t *f_sca = cs_field_by_id(f_id);
-        int isca = cs_field_get_key_int(f_sca, ks);
+        int isca = f_sca->get_key_int(ks);
         if (isca > 0) {
-          int icpsyr = cs_field_get_key_int(f_sca, kcpsyr);
+          int icpsyr = f_sca->get_key_int(kcpsyr);
           if (icpsyr == 1) nscacp++;
         }
       }
@@ -2257,7 +2251,7 @@ cs_parameters_eqp_complete(void)
       if (nscacp == 0) {
         /* We couple the temperature scalar of the phase */
         if (f_t != nullptr)
-          cs_field_set_key_int(f_t, kcpsyr, 1);
+          f_t->set_key_int(kcpsyr, 1);
       }
     }
   }
@@ -2271,9 +2265,9 @@ cs_parameters_eqp_complete(void)
   if (nscal > 0) {
     for (int f_id = 0; f_id < n_fields; f_id ++) {
       cs_field_t *f_sca = cs_field_by_id(f_id);
-      int isca = cs_field_get_key_int(f_sca, ks);
+      int isca = f_sca->get_key_int(ks);
       if (isca > 0) {
-        int iscacp = cs_field_get_key_int(f_sca, kscacp);
+        int iscacp = f_sca->get_key_int(kscacp);
         if (iscacp == -1) {
           if (f_sca == f_t && (cs_glob_thermal_model->thermal_variable
                                == CS_THERMAL_MODEL_TEMPERATURE)) {
@@ -2282,7 +2276,7 @@ cs_parameters_eqp_complete(void)
           else {
             iscacp = 0;
           }
-          cs_field_set_key_int(f_sca, kscacp, iscacp);
+          f_sca->set_key_int(kscacp, iscacp);
         }
       }
     }
@@ -2378,39 +2372,39 @@ cs_parameters_eqp_complete(void)
 
   for (int f_id = 0; f_id < n_fields; f_id ++) {
     cs_field_t *f_sca = cs_field_by_id(f_id);
-    int isca = cs_field_get_key_int(f_sca, ks);
+    int isca = f_sca->get_key_int(ks);
     if (isca > 0) {
-      int iscavr = cs_field_get_key_int(f_sca, kscavr);
+      int iscavr = f_sca->get_key_int(kscavr);
       if (iscavr > 0) {
-        int iclvfl = cs_field_get_key_int(f_sca, kclvfl);
+        int iclvfl = f_sca->get_key_int(kclvfl);
         /* Get the min clipping */
-        cs_real_t scminp = cs_field_get_key_double(f_sca, kscmin);
+        cs_real_t scminp = f_sca->get_key_double(kscmin);
         /* If modified put 2 */
         if (   iclvfl == -1
             && fabs(scminp+cs_math_big_r) >= cs_math_epzero) {
-          cs_field_set_key_int(f_sca, kclvfl, 2);
+          f_sca->set_key_int(kclvfl, 2);
         }
         else if (iclvfl == -1) {
-          cs_field_set_key_int(f_sca, kclvfl, 0);
+          f_sca->set_key_int(kclvfl, 0);
         }
         /* Minimum for variances is 0 or greater */
         /* Set min clipping to 0 */
         scminp = cs::max(0., scminp);
-        cs_field_set_key_double(f_sca, kscmin, scminp);
+        f_sca->set_key_double(kscmin, scminp);
       }
     }
   }
 
   for (int f_id = 0; f_id < n_fields; f_id ++) {
     cs_field_t *f_sca = cs_field_by_id(f_id);
-    int isca = cs_field_get_key_int(f_sca, ks);
+    int isca = f_sca->get_key_int(ks);
     if (isca > 0) {
-      cs_real_t visls_0 = cs_field_get_key_double(f_sca, kvisl0);
+      cs_real_t visls_0 = f_sca->get_key_double(kvisl0);
       /* For scalars which are not variances, define the reference
        * diffusivity */
-      int iscavr = cs_field_get_key_int(f_sca, kscavr);
+      int iscavr = f_sca->get_key_int(kscavr);
       if (iscavr <= 0 && visls_0 < -cs_math_big_r) {
-        int iscacp = cs_field_get_key_int(f_sca, kscacp);
+        int iscacp = f_sca->get_key_int(kscacp);
         if (iscacp > 0) {
           /* For temperature, the diffusivity factor is directly the thermal
            * conductivity lambda = Cp * mu / Pr
@@ -2420,16 +2414,16 @@ cs_parameters_eqp_complete(void)
         else {
           visls_0 = fluid_props->viscl0;
         }
-        cs_field_set_key_double(f_sca, kvisl0, visls_0);
+        f_sca->set_key_double(kvisl0, visls_0);
       }
 
       /* For fluctuation variances, the diffusivity is that of the associated
        * scalar. */
       if (iscavr >= 0) {
         cs_field_t *f_ref = cs_field_by_id(iscavr);
-        visls_0 = cs_field_get_key_double(f_ref, kvisl0);
-        cs_real_t visls_cmp = cs_field_get_key_double(f_sca, kvisl0);
-        cs_field_set_key_double(f_sca, kvisl0, visls_0);
+        visls_0 = f_ref->get_key_double(kvisl0);
+        cs_real_t visls_cmp = f_sca->get_key_double(kvisl0);
+        f_sca->set_key_double(kvisl0, visls_0);
         if (visls_cmp > -cs_math_big_r) {
           cs_parameters_error
             (CS_WARNING,
@@ -2493,8 +2487,8 @@ cs_parameters_eqp_complete(void)
 
   /* Define min/max clipping values of void fraction of VoF model */
   if (cs_glob_vof_parameters->vof_model > 0) {
-    cs_real_t clvfmn = cs_field_get_key_double(CS_F_(void_f), kscmin);
-    cs_real_t clvfmx = cs_field_get_key_double(CS_F_(void_f), kscmax);
+    cs_real_t clvfmn = CS_F_(void_f)->get_key_double(kscmin);
+    cs_real_t clvfmx = CS_F_(void_f)->get_key_double(kscmax);
 
     if (clvfmn < -0.5*cs_math_big_r) {
       clvfmn = 0.;
@@ -2509,8 +2503,8 @@ cs_parameters_eqp_complete(void)
       }
     }
 
-    cs_field_set_key_double(CS_F_(void_f), kscmin, clvfmn);
-    cs_field_set_key_double(CS_F_(void_f), kscmax, clvfmx);
+    CS_F_(void_f)->set_key_double(kscmin, clvfmn);
+    CS_F_(void_f)->set_key_double(kscmax, clvfmx);
   }
 
   /* Setup clippings for turbulence models
@@ -2518,8 +2512,8 @@ cs_parameters_eqp_complete(void)
    * those clippings can be removed by user */
 
   if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
-    cs_field_set_key_int(CS_F_(rij), kclipp, 1);
-    cs_field_set_key_int(CS_F_(eps), kclipp, 1);
+    CS_F_(rij)->set_key_int(kclipp, 1);
+    CS_F_(eps)->set_key_int(kclipp, 1);
   }
 
   /* Setup time control for dynamic variables
@@ -2568,10 +2562,10 @@ cs_parameters_output_complete(void)
       if (f != nullptr) {
         if (cs_field_is_key_set(f, k_vis) == false) {
           int flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-          cs_field_set_key_int(f, k_vis, flag);
+          f->set_key_int(k_vis, flag);
         }
         if (cs_field_is_key_set(f, k_log) == false)
-          cs_field_set_key_int(f, k_log, 1);
+          f->set_key_int(k_log, 1);
       }
     }
   }
@@ -2587,10 +2581,10 @@ cs_parameters_output_complete(void)
     if (f->type & CS_FIELD_PROPERTY) {
       if (cs_field_is_key_set(f, k_vis) == false) {
         int flag = CS_POST_ON_LOCATION;
-        cs_field_set_key_int(f, k_vis, flag);
+        f->set_key_int(k_vis, flag);
       }
       if (cs_field_is_key_set(f, k_log) == false)
-        cs_field_set_key_int(f, k_log, 1);
+        f->set_key_int(k_log, 1);
     }
 
     /* Build clipping field for post-processing */
@@ -2598,7 +2592,7 @@ cs_parameters_output_complete(void)
         && !(f->type & CS_FIELD_CDO)) {
 
       int k_clipping_id = cs_field_key_id("clipping_id");
-      int clip_id = cs_field_get_key_int(f, k_clipping_id);
+      int clip_id = f->get_key_int(k_clipping_id);
 
       if (clip_id >= 0) {
 
@@ -2615,8 +2609,8 @@ cs_parameters_output_complete(void)
                                               false);
 
 
-        cs_field_set_key_int(f_c, k_vis, CS_POST_ON_LOCATION);
-        cs_field_set_key_int(f, k_clipping_id, f_c->id);
+        f_c->set_key_int(k_vis, CS_POST_ON_LOCATION);
+        f->set_key_int(k_clipping_id, f_c->id);
 
       }
 
@@ -2692,7 +2686,7 @@ cs_time_scheme_log_setup(void)
     int iviext = 0;
     const cs_field_t *f = cs_field_by_name_try("molecular_viscosity");
     if (f != nullptr)
-      iviext = cs_field_get_key_int(f, key_t_ext_id);
+      iviext = f->get_key_int(key_t_ext_id);
     if (iviext > 0)
       cs_log_printf
         (CS_LOG_SETUP,
@@ -2704,7 +2698,7 @@ cs_time_scheme_log_setup(void)
     int icpext = 0;
     const cs_field_t *f = cs_field_by_name_try("specific_heat");
     if (f != nullptr)
-      icpext = cs_field_get_key_int(f, key_t_ext_id);
+      icpext = f->get_key_int(key_t_ext_id);
     if (icpext > 0)
       cs_log_printf
         (CS_LOG_SETUP,

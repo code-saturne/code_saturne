@@ -950,10 +950,9 @@ cs_gui_mobile_mesh_init_structures(bool    is_restart,
     cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
 
     /* At each time-step, loop on boundary faces */
-    int izone = 0;
 
     for (tn = tn_b0; tn != nullptr;
-         tn = cs_tree_node_get_next_of_name(tn), izone++) {
+         tn = cs_tree_node_get_next_of_name(tn)) {
       const char *label = cs_tree_node_get_tag(tn, "label");
 
       ale_boundary_nature nature = _get_ale_boundary_nature(tn);

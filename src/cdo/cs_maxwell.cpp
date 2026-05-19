@@ -497,8 +497,8 @@ cs_maxwell_init_setup(void)
                                    3,
                                    true);
 
-    cs_field_set_key_int(mxl->e_field, log_key, 1);
-    cs_field_set_key_int(mxl->e_field, post_key, 1);
+    mxl->e_field->set_key_int(log_key, 1);
+    mxl->e_field->set_key_int(post_key, 1);
 
     mxl->d_field = cs_field_create(CS_MAXWELL_DFIELD_NAME,
                                    field_mask,
@@ -506,8 +506,8 @@ cs_maxwell_init_setup(void)
                                    3,
                                    true);
 
-    cs_field_set_key_int(mxl->d_field, log_key, 1);
-    cs_field_set_key_int(mxl->d_field, post_key, 1);
+    mxl->d_field->set_key_int(log_key, 1);
+    mxl->d_field->set_key_int(post_key, 1);
 
     /* Add the variable field */
 
@@ -525,8 +525,8 @@ cs_maxwell_init_setup(void)
                                    3,
                                    true);
 
-    cs_field_set_key_int(mxl->b_field, log_key, 1);
-    cs_field_set_key_int(mxl->b_field, post_key, 1);
+    mxl->b_field->set_key_int(log_key, 1);
+    mxl->b_field->set_key_int(post_key, 1);
 
     mxl->h_field = cs_field_create(CS_MAXWELL_MFIELD_NAME,
                                    field_mask,
@@ -534,8 +534,8 @@ cs_maxwell_init_setup(void)
                                    3,
                                    true);
 
-    cs_field_set_key_int(mxl->h_field, log_key, 1);
-    cs_field_set_key_int(mxl->h_field, post_key, 1);
+    mxl->h_field->set_key_int(log_key, 1);
+    mxl->h_field->set_key_int(post_key, 1);
 
     /* Add the variable field */
 
@@ -554,8 +554,8 @@ cs_maxwell_init_setup(void)
                                         CS_MESH_LOCATION_CELLS,
                                         1,
                                         true);
-    cs_field_set_key_int(mxl->joule_effect, log_key, 1);
-    cs_field_set_key_int(mxl->joule_effect, post_key, 1);
+    mxl->joule_effect->set_key_int(log_key, 1);
+    mxl->joule_effect->set_key_int(post_key, 1);
 
   }
 

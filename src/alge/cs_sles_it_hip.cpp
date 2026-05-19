@@ -2017,8 +2017,6 @@ cs_sles_it_dot_products_xx_yy_xy_xz_yz
   *yz = s[4];
 }
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -2044,7 +2042,7 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 cs_sles_convergence_state_t
-cs_sles_it_hip_jacobi(cs_sles_it_t              *c,
+cs_sles_it_hip_jacobi(cs_sles_it_t               *c,
                        const cs_matrix_t         *a,
                        cs_lnum_t                  diag_block_size,
                        cs_sles_it_convergence_t  *convergence,
@@ -2983,4 +2981,3 @@ cs_sles_it_hip_gcr(cs_sles_it_t              *c,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS

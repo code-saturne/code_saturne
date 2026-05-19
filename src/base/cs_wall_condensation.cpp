@@ -1078,7 +1078,7 @@ cs_wall_condensation_compute(cs_real_t  total_htc[])
 {
   cs_field_t *f          = cs_field_by_name("pressure");
   const int   var_id_key = cs_field_key_id("variable_id");
-  const int   ipr        = cs_field_get_key_int(f, var_id_key) - 1;
+  const int   ipr        = f->get_key_int(var_id_key) - 1;
 
   cs_lnum_t *ifabor = cs_glob_mesh->b_face_cells;
 
@@ -1178,7 +1178,7 @@ cs_wall_condensation_log(void)
 {
   const cs_field_t *f          = cs_field_by_name("pressure");
   const int         var_id_key = cs_field_key_id("variable_id");
-  const int         ipr        = cs_field_get_key_int(f, var_id_key) - 1;
+  const int         ipr        = f->get_key_int(var_id_key) - 1;
 
   if (_wall_cond.icondb == 0) {
 
@@ -1307,9 +1307,9 @@ cs_wall_condensation_source_terms(const cs_field_t  *f,
   const cs_real_t *flxmst = wall_cond->flxmst;
 
   const int var_id_key = cs_field_key_id("variable_id");
-  const int ivar = cs_field_get_key_int(f, var_id_key) - 1;
+  const int ivar = f->get_key_int(var_id_key) - 1;
 
-  const int ipr = cs_field_get_key_int(CS_F_(p), var_id_key) - 1;
+  const int ipr = CS_F_(p)->get_key_int(var_id_key) - 1;
 
   if (wall_cond->icondb == 0) {
 

@@ -177,11 +177,11 @@ _update_previous_values(int        itrale,
       cs_field_current_to_previous(fld);
 
     // For buoyant scalar with source termes, current to previous for them
-    const int st_prv_id = cs_field_get_key_int(fld, kstprv);
-    const int coupled_with_vel_p_fld = cs_field_get_key_int(fld, key_buoyant_id);
+    const int st_prv_id = fld->get_key_int(kstprv);
+    const int coupled_with_vel_p_fld = fld->get_key_int(key_buoyant_id);
     if (itrale <= 1 || st_prv_id < 0 || coupled_with_vel_p_fld != 1)
       continue;
-    const int st_id = cs_field_get_key_int(fld, kst);
+    const int st_id = fld->get_key_int(kst);
 
     cs_array_copy<cs_real_t>(n_cells_ext,
                              cs_field_by_id(st_id)->val,
@@ -319,7 +319,7 @@ _solve_coupled_vel_p_variables_equation(const int        iterns,
         continue;
 
       const int coupled_with_vel_p_fld
-        = cs_field_get_key_int(f, key_buoyant_id);
+        = f->get_key_int(key_buoyant_id);
       if (coupled_with_vel_p_fld != 1)
         continue;
 
@@ -624,9 +624,9 @@ _solve_most(int              n_var,
         const int kimasf = cs_field_key_id("inner_mass_flux_id");
         const int kbmasf  = cs_field_key_id("boundary_mass_flux_id");
         cs_real_t *b_mass_flux
-          = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+          = cs_field_by_id(CS_F_(vel)->get_key_int(kbmasf))->val;
         cs_real_t *i_mass_flux
-          = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
+          = cs_field_by_id(CS_F_(vel)->get_key_int(kimasf))->val;
         cs_real_t *brom = CS_F_(rho_b)->val;
 
         cs_ale_solve_mesh_velocity(iterns, brom, i_mass_flux, b_mass_flux);
@@ -762,9 +762,9 @@ _transfer_mass_flux_cdo_to_fv()
   const int  kimasf = cs_field_key_id("inner_mass_flux_id");
   const int  kbmasf = cs_field_key_id("boundary_mass_flux_id");
   cs_real_t *b_massflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+    cs_field_by_id(CS_F_(vel)->get_key_int(kbmasf))->val;
   cs_real_t *i_massflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
+    cs_field_by_id(CS_F_(vel)->get_key_int(kimasf))->val;
 
   const cs_real_t *mass_flux_array = cs_navsto_get_mass_flux(false);
   cs_array_copy(n_i_faces, mass_flux_array, i_massflux);
@@ -949,12 +949,12 @@ cs_solve_all()
       if (f->type & CS_FIELD_CDO)
         continue;
       n_var++;
-      const int sc_id = cs_field_get_key_int(f, keysca) - 1;
+      const int sc_id = f->get_key_int(keysca) - 1;
       if (sc_id < 0)
         continue;
       n_scal++;
       if (n_syr_couplings > 0) {
-        if (cs_field_get_key_int(f, kcpsyr) == 1)
+        if (f->get_key_int(kcpsyr) == 1)
           isvhb = f_id;
       }
       else if (nfpt1d > 0) {
@@ -1388,9 +1388,9 @@ cs_solve_all()
     const int kimasf = cs_field_key_id("inner_mass_flux_id");
     const int kbmasf  = cs_field_key_id("boundary_mass_flux_id");
     cs_real_t *b_massflux
-      = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+      = cs_field_by_id(CS_F_(vel)->get_key_int(kbmasf))->val;
     cs_real_t *i_massflux
-      = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
+      = cs_field_by_id(CS_F_(vel)->get_key_int(kimasf))->val;
 
     cs_fan_compute_flows(m,
                          mq,

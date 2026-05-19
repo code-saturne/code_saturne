@@ -116,7 +116,7 @@ extern cs_param_cdo_mode_t  cs_glob_param_cdo_mode;
  */
 /*----------------------------------------------------------------------------*/
 
-void
+[[deprecated]] void
 cs_param_cdo_mode_set(cs_param_cdo_mode_t   mode);
 
 /*----------------------------------------------------------------------------*/

@@ -882,7 +882,7 @@ cs_parameters_check(void)
 
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       if (eqp != nullptr) {
-        int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+        int scalar_id = (ks > -1) ? f->get_key_int(ks) : -1;
         if (f == CS_F_(vel) || scalar_id > -1) {
           if (eqp->nswrsm < nr_sweep_default) {
             cs_log_warning
@@ -921,13 +921,13 @@ cs_parameters_check(void)
 
   int rho_t_ext = 0, mu_t_ext = 0, cp_t_ext = 0;
   if (CS_F_(rho) != nullptr)
-    rho_t_ext = cs_field_get_key_int(CS_F_(rho), key_t_ext);
+    rho_t_ext = CS_F_(rho)->get_key_int(key_t_ext);
   if (CS_F_(mu) != nullptr)
-    mu_t_ext = cs_field_get_key_int(CS_F_(mu), key_t_ext);
+    mu_t_ext = CS_F_(mu)->get_key_int(key_t_ext);
 
   const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
   if (f_cp != nullptr)
-    cp_t_ext = cs_field_get_key_int(f_cp, key_t_ext);
+    cp_t_ext = f_cp->get_key_int(key_t_ext);
 
   if (   fabs(eqp_u->theta - 1.) < cs_math_epzero
       && (   time_scheme->istmpf == 2
@@ -970,9 +970,9 @@ cs_parameters_check(void)
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     if (eqp == nullptr)
       continue;
-    int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+    int scalar_id = (ks > -1) ? f->get_key_int(ks) : -1;
     if (scalar_id > -1) {
-      const int scalar_time_order = cs_field_get_key_int(f, key_scalar_to);
+      const int scalar_time_order = f->get_key_int(key_scalar_to);
       if (scalar_time_order != time_scheme->isno2t) {
         cs_log_warning
           (_("Non standard choice of time-scheme for \"%s\":\n"
@@ -980,12 +980,11 @@ cs_parameters_check(void)
            f->name, scalar_time_order, time_scheme->isno2t);
       }
 
-      const int iscavr = cs_field_get_key_int(f, kscavr);
-      int f_diff_id = cs_field_get_key_int(f, key_diffusivity_id);
+      const int iscavr = f->get_key_int(kscavr);
+      int f_diff_id = f->get_key_int(key_diffusivity_id);
       if (f_diff_id >= 0 && iscavr < 0) {
         const cs_field_t *f_diff = cs_field_by_id(f_diff_id);
-        int scalar_diff_t_ext
-          = cs_field_get_key_int(f_diff, key_t_ext);
+        int scalar_diff_t_ext = f_diff->get_key_int(key_t_ext);
         if (scalar_diff_t_ext != mu_t_ext)
           cs_log_warning
             (_("Non standard choice of time-scheme for \"%s\":\n"
@@ -1097,13 +1096,13 @@ cs_parameters_check(void)
           || rho_t_ext > 0 || mu_t_ext > 0 || cp_t_ext > 0)
         warning = true;
 
-      int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+      int scalar_id = (ks > -1) ? f->get_key_int(ks) : -1;
       if (scalar_id > -1) {
-        int scalar_time_order = cs_field_get_key_int(f, key_scalar_to);
+        int scalar_time_order = f->get_key_int(key_scalar_to);
         double scalar_exp_extrap
-          = cs_field_get_key_double(f, key_scalar_st_exp);
+          = f->get_key_double(key_scalar_st_exp);
         double scalar_diff_extrap
-          = cs_field_get_key_double(f, key_scalar_diff_extrap);
+          = f->get_key_double(key_scalar_diff_extrap);
         if (   scalar_time_order > 0
             || scalar_exp_extrap > 0.
             || scalar_diff_extrap > 0. )
@@ -1153,11 +1152,11 @@ cs_parameters_check(void)
         cs_equation_param_t *eqp = cs_field_get_equation_param(f);
         if (eqp == nullptr)
           continue;
-        int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+        int scalar_id = (ks > -1) ? f->get_key_int(ks) : -1;
         if (scalar_id > -1) {
-          int scalar_time_order = cs_field_get_key_int(f, key_scalar_to);
+          int scalar_time_order = f->get_key_int(key_scalar_to);
           double scalar_exp_extrap
-            = cs_field_get_key_double(f, key_scalar_st_exp);
+            = f->get_key_double(key_scalar_st_exp);
           if (scalar_exp_extrap > 0. || scalar_time_order > 0)
             cs_parameters_error
               (CS_ABORT_DELAYED,
@@ -1196,11 +1195,11 @@ cs_parameters_check(void)
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       if (eqp == nullptr)
         continue;
-      int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+      int scalar_id = (ks > -1) ? f->get_key_int(ks) : -1;
       if (scalar_id > -1) {
-        int scalar_time_order = cs_field_get_key_int(f, key_scalar_to);
+        int scalar_time_order = f->get_key_int(key_scalar_to);
         double scalar_exp_extrap
-          = cs_field_get_key_double(f, key_scalar_st_exp);
+          = f->get_key_double(key_scalar_st_exp);
         if (scalar_exp_extrap > 0. || scalar_time_order > 0)
             cs_parameters_error
               (CS_WARNING,
@@ -1236,7 +1235,7 @@ cs_parameters_check(void)
     if (!(f->type & CS_FIELD_VARIABLE))
       continue;
 
-    const int turb_flux_model = cs_field_get_key_int(f, kturt);
+    const int turb_flux_model = f->get_key_int(kturt);
     if (   turb_flux_model != 0 && turb_flux_model != 10
         && turb_flux_model != 20 && turb_flux_model != 30
         && turb_flux_model != 11 && turb_flux_model != 21
@@ -1255,9 +1254,9 @@ cs_parameters_check(void)
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
-    const int id_var = cs_field_get_key_int(f, keyvar);
+    const int id_var = f->get_key_int(keyvar);
     if (id_var >= 1) {
-      const double dt_var = cs_field_get_key_double(f, key_dt_var);
+      const double dt_var = f->get_key_double(key_dt_var);
       if (dt_var <= 0.)
         cs_parameters_error
           (CS_ABORT_DELAYED,
@@ -1288,7 +1287,7 @@ cs_parameters_check(void)
         if (eqp == nullptr)
           continue;
 
-        int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+        int scalar_id = (ks > -1) ? f->get_key_int(ks) : -1;
         if (scalar_id > -1) {
           cs_log_warning
             (_("Turbulence model with gravity\n"
@@ -1321,10 +1320,10 @@ cs_parameters_check(void)
 
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     if (eqp != nullptr) {
-      int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
+      int scalar_id = (ks > -1) ? f->get_key_int(ks) : -1;
       if (scalar_id > -1) {
         const int kscacp = cs_field_key_id("is_temperature");
-        const int iscacp = cs_field_get_key_int(f, kscacp);
+        const int iscacp = f->get_key_int(kscacp);
         if (iscacp < 0 || iscacp > 2)
           cs_parameters_error
             (CS_ABORT_DELAYED,
@@ -1334,7 +1333,7 @@ cs_parameters_check(void)
              cs_field_get_label(f), iscacp);
 
         const int ksigmas = cs_field_key_id("turbulent_schmidt");
-        const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
+        const cs_real_t turb_schmidt = f->get_key_double(ksigmas);
         if (turb_schmidt <= 0)
           cs_parameters_error
             (CS_ABORT_DELAYED,
@@ -1343,10 +1342,10 @@ cs_parameters_check(void)
                "but it has the value %f\n"),
              cs_field_get_label(f), turb_schmidt);
 
-        const int iscavr = cs_field_get_key_int(f, kscavr);
+        const int iscavr = f->get_key_int(kscavr);
         const int kscmax = cs_field_key_id_try("max_scalar_clipping");
-        const cs_real_t scmaxp = cs_field_get_key_double(f, kscmax);
-        const int iclvfl = cs_field_get_key_int(f, kclvfl);
+        const cs_real_t scmaxp = f->get_key_double(kscmax);
+        const int iclvfl = f->get_key_int(kclvfl);
         if (iscavr > 0 && iclvfl == 2 && scmaxp < 0)
           cs_parameters_error
             (CS_ABORT_DELAYED,
@@ -1355,7 +1354,7 @@ cs_parameters_check(void)
              cs_field_get_label(f), scmaxp);
 
         const int krvarfl = cs_field_key_id_try("variance_dissipation");
-        const cs_real_t rvarfl = cs_field_get_key_double(f, krvarfl);
+        const cs_real_t rvarfl = f->get_key_double(krvarfl);
         if (iscavr > 0 && rvarfl < 0)
           cs_parameters_error
             (CS_ABORT_DELAYED,
@@ -1473,7 +1472,7 @@ cs_parameters_check(void)
          cs_glob_fluid_properties->t0, cs_glob_fluid_properties->p0);
 
     cs_field_t *fth = cs_thermal_model_field();
-    const cs_real_t visls_0 = cs_field_get_key_double(fth, kvisl0);
+    const cs_real_t visls_0 = fth->get_key_double(kvisl0);
     if (visls_0 <= 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
@@ -1748,7 +1747,7 @@ cs_parameters_check(void)
     cs_equation_param_t *eqp = cs_field_get_equation_param(f_th);
     if (eqp->ischcv >= 4) { /* NVD scheme on thermal scalar? */
       cs_nvd_type_t limiter_choice
-        = (cs_nvd_type_t)cs_field_get_key_int(f_th, key_limiter);
+        = (cs_nvd_type_t)f_th->get_key_int(key_limiter);
 
       f_desc = _field_section_desc(f_th, "while reading numerical "
                                          "parameters for variable");
@@ -1891,7 +1890,7 @@ cs_parameters_check(void)
 
     for (int f_id = 0 ; f_id < n_fields ; f_id ++) {
       cs_field_t *f = cs_field_by_id(f_id);
-      int isca = cs_field_get_key_int(f, keysca);
+      int isca = f->get_key_int(keysca);
       if (isca > 0) {
         cs_equation_param_t *eqp = cs_field_get_equation_param(f);
         f_desc = _field_section_desc(f, "in LES, while reading time "
@@ -2015,7 +2014,7 @@ cs_parameters_check(void)
   if (cs_glob_time_step_options->idtvar < 0) {
     for (int f_id = 0 ; f_id < n_fields ; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
-      int ivar = cs_field_get_key_int(f, keyvar);
+      int ivar = f->get_key_int(keyvar);
       if (ivar > 0) {
         cs_equation_param_t *eqp = cs_field_get_equation_param(f);
         f_desc = _field_section_desc(f, "With steady algorithm (SIMPLE), while "
@@ -2042,8 +2041,8 @@ cs_parameters_check(void)
 
         const int kiflux = cs_field_key_id("inner_flux_id");
         const int kbflux = cs_field_key_id("boundary_flux_id");
-        int i_flux_id = cs_field_get_key_int(f, kiflux);
-        int b_flux_id = cs_field_get_key_int(f, kbflux);
+        int i_flux_id = f->get_key_int(kiflux);
+        int b_flux_id = f->get_key_int(kbflux);
 
         cs_parameters_is_equal_int(CS_ABORT_DELAYED,
                                    _(f_desc),
@@ -2093,7 +2092,7 @@ cs_parameters_check(void)
    * integers (negative if one wants to be sure to never enter the loops */
   for (int f_id = 0 ; f_id < n_fields ; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
-    int ivar = cs_field_get_key_int(f, keyvar);
+    int ivar = f->get_key_int(keyvar);
     if (ivar > 0) {
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       f_desc = _field_section_desc(f, "Wile reading numerical parameters "
@@ -2700,7 +2699,7 @@ cs_parameters_check(void)
     cs_field_t  *f = cs_field_by_id(f_id);
     f_desc = _field_section_desc(f, "while reading parameters for "
                                     "field ");
-    int icpsyr = cs_field_get_key_int(f, kcpsyr);
+    int icpsyr = f->get_key_int(kcpsyr);
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _(f_desc),
@@ -2715,7 +2714,7 @@ cs_parameters_check(void)
   int nbsccp = 0, n_coupl;
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
-    nbsccp += cs_field_get_key_int(f, kcpsyr);
+    nbsccp += f->get_key_int(kcpsyr);
   }
 
   /* Check if there is coupling */
@@ -2753,7 +2752,7 @@ cs_parameters_check(void)
        if compressible is not enabled */
     for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
       cs_field_t  *f = cs_field_by_id(f_id);
-      int icpsyr = cs_field_get_key_int(f, kcpsyr);
+      int icpsyr = f->get_key_int(kcpsyr);
       if (icpsyr == 1 && f != tf) {
         cs_parameters_error
           (CS_ABORT_DELAYED,
@@ -2859,8 +2858,8 @@ cs_parameters_check(void)
                                      cs_parameters_iscavr(f),
                                      -1);
 
-      int fscavr_id = cs_field_get_key_int(f, kscavr);
-      int vr_clip = cs_field_get_key_int(f, kclvfl);
+      int fscavr_id = f->get_key_int(kscavr);
+      int vr_clip = f->get_key_int(kclvfl);
 
       if (fscavr_id > -1) {
         cs_field_t *fluct_f = cs_field_by_id(fscavr_id);
@@ -2895,12 +2894,12 @@ cs_parameters_check(void)
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      cs_real_t visls_0 = cs_field_get_key_double(f, kvisl0);
+      cs_real_t visls_0 = f->get_key_double(kvisl0);
       f_desc = _field_section_desc(f, "reference diffusivity value for "
                                    "variable ");
 
-      int diff_id = cs_field_get_key_int(f, kivisl);
-      int isca = cs_field_get_key_int(f, keysca);
+      int diff_id = f->get_key_int(kivisl);
+      int isca = f->get_key_int(keysca);
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
 
       if (isca > 0 && diff_id == -1 && eqp->idiff > 0) {
@@ -3044,7 +3043,7 @@ cs_parameters_check(void)
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
 
-    int t_ext = cs_field_get_key_int(f, cs_field_key_id("time_extrapolated"));
+    int t_ext = f->get_key_int(cs_field_key_id("time_extrapolated"));
 
     f_desc = _field_section_desc(f, "while reading parameters for "
                                     "field ");
@@ -3076,7 +3075,7 @@ cs_parameters_check(void)
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     cs_restart_file_t r_id
-      = (cs_restart_file_t)cs_field_get_key_int(f, restart_file_key_id);
+      = (cs_restart_file_t)f->get_key_int(restart_file_key_id);
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),
                                   "restart_file",

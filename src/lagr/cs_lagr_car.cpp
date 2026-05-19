@@ -172,8 +172,7 @@ cs_lagr_car(int                         iprev,
   cs_real_t diftl0 = -1;
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 0
       || cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == 2)
-    diftl0 = cs_field_get_key_double(cs_field_by_name("enthalpy"),
-                                     cs_field_key_id("diffusivity_ref"));
+    diftl0 = cs_field_by_name("enthalpy")->get_key_double("diffusivity_ref");
 
   /* Compute Tp and Tc in case of thermal model
      -------------------------------------------*/

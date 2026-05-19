@@ -433,11 +433,11 @@ cs_gui_radiative_transfer_postprocess(void)
 #endif
 
       if (f_post_vis >= 0)
-        cs_field_set_key_int(f, k_vis, f_post_vis);
+        f->set_key_int(k_vis, f_post_vis);
       if (f_log >= 0)
-        cs_field_set_key_int(f, k_log, f_log);
+        f->set_key_int(k_log, f_log);
       if (label)
-        cs_field_set_key_str(f, k_lbl, label);
+        f->set_key_str(k_lbl, label);
     }
   }
 }

@@ -124,7 +124,7 @@ cs_rotation_update_coords(cs_lnum_t    n_coords,
  *---------------------------------------------------------------------------*/
 
 CS_F_HOST_DEVICE
-static inline void
+inline void
 cs_rotation_velocity(const cs_rotation_t  *r,
                      const cs_real_t       coords[3],
                      cs_real_t             vr[3])
@@ -147,7 +147,7 @@ cs_rotation_velocity(const cs_rotation_t  *r,
  *   vr <-> vector to which Coriolis term is added
  *---------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE static inline void
+CS_F_HOST_DEVICE inline void
 cs_rotation_add_coriolis_v(const cs_rotation_t  *r,
                            cs_real_t             c,
                            const cs_real_t       v[3],
@@ -170,7 +170,7 @@ cs_rotation_add_coriolis_v(const cs_rotation_t  *r,
  *   vr --> vector associted to Coriolis term
  *---------------------------------------------------------------------------*/
 
-static inline void
+inline void
 cs_rotation_coriolis_v(const cs_rotation_t  *r,
                        cs_real_t             c,
                        const cs_real_t       v[3],
@@ -194,7 +194,7 @@ cs_rotation_coriolis_v(const cs_rotation_t  *r,
  *   tr <-> tensor to which dual tensor of rotation is added
  *---------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE static inline void
+CS_F_HOST_DEVICE inline void
 cs_rotation_add_coriolis_t(const cs_rotation_t  *r,
                            cs_real_t             c,
                            cs_real_t             tr[3][3])
@@ -222,7 +222,7 @@ cs_rotation_add_coriolis_t(const cs_rotation_t  *r,
  *   tr --> dual tensor of rotation
  *---------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE static inline void
+CS_F_HOST_DEVICE inline void
 cs_rotation_coriolis_t(const cs_rotation_t  *r,
                        cs_real_t             c,
                        cs_real_t             tr[3][3])

@@ -208,7 +208,7 @@ cs_liq_t_to_h(cs_real_t  t_l);
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE static inline cs_real_t
+CS_F_HOST_DEVICE inline cs_real_t
 cs_air_pwv_sat(cs_real_t  t_c)
 {
   cs_real_t  a1, b1, c1, ps, pv;
@@ -283,7 +283,7 @@ cs_air_pwv_sat(cs_real_t  t_c)
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE static inline cs_real_t
+CS_F_HOST_DEVICE inline cs_real_t
 cs_air_x_sat(cs_real_t  t_c,
              cs_real_t  p)
 {

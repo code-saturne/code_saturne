@@ -1281,18 +1281,14 @@ cs_compute_porosity_from_scan(void)
   bft_printf(_("\n"));
 
   cs_real_t *restrict i_massflux
-    = cs_field_by_id
-        (cs_field_get_key_int(f, cs_field_key_id("inner_mass_flux_id")))->val;
+    = cs_field_by_id(f->get_key_int("inner_mass_flux_id"))->val;
   cs_real_t *restrict b_massflux
-    = cs_field_by_id
-        (cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id")))->val;
+    = cs_field_by_id(f->get_key_int("boundary_mass_flux_id"))->val;
 
   cs_real_t *restrict i_massflux_h
-    = cs_field_by_id
-        (cs_field_get_key_int(f_holes, cs_field_key_id("inner_mass_flux_id")))->val;
+    = cs_field_by_id(f_holes->get_key_int("inner_mass_flux_id"))->val;
   cs_real_t *restrict b_massflux_h
-    = cs_field_by_id
-        (cs_field_get_key_int(f_holes, cs_field_key_id("boundary_mass_flux_id")))->val;
+    = cs_field_by_id(f_holes->get_key_int("boundary_mass_flux_id"))->val;
 
   /* Local variables */
   cs_real_t *rovsdt, *pvar, *dpvar, *rhs;

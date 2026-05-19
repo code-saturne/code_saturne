@@ -105,7 +105,7 @@ cs_scalar_clipping(cs_field_t  *f)
   int kclipp = cs_field_key_id("clipping_id");
 
   /* Post-process clippings ? */
-  int clip_f_id = cs_field_get_key_int(f, kclipp);
+  int clip_f_id = f->get_key_int(kclipp);
   cs_real_t *cpro_f_clipped = nullptr;
   if (clip_f_id > -1) {
     cpro_f_clipped = cs_field_by_id(clip_f_id)->val;
@@ -114,7 +114,7 @@ cs_scalar_clipping(cs_field_t  *f)
 
   cs_real_t *cvar_scal = f->val;
 
-  int variance_id = cs_field_get_key_int(f, kscavr);
+  int variance_id = f->get_key_int(kscavr);
 
   /* Logging and clippings
    * --------------------- */
@@ -153,8 +153,8 @@ cs_scalar_clipping(cs_field_t  *f)
     iclmax[i] = 0;
   }
 
-  const cs_real_t scminp = cs_field_get_key_double(f, kscmin);
-  const cs_real_t scmaxp = cs_field_get_key_double(f, kscmax);
+  const cs_real_t scminp = f->get_key_double(kscmin);
+  const cs_real_t scmaxp = f->get_key_double(kscmax);
 
   if (scmaxp > scminp && f->dim == 1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -180,7 +180,7 @@ cs_scalar_clipping(cs_field_t  *f)
 
   if (variance_id > -1) {
 
-    const int iclvfl = cs_field_get_key_int(f, kclvfl);
+    const int iclvfl = f->get_key_int(kclvfl);
 
     if (iclvfl == 1) {
 
@@ -191,8 +191,8 @@ cs_scalar_clipping(cs_field_t  *f)
       cs_real_t *cvar_scav = fl->val;
 
       /* Get the min clipping of the corresponding scalar */
-      const cs_real_t scmin = cs_field_get_key_double(fl, kscmin);
-      const cs_real_t scmax = cs_field_get_key_double(fl, kscmax);
+      const cs_real_t scmin = fl->get_key_double(kscmin);
+      const cs_real_t scmax = fl->get_key_double(kscmax);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t vfmax = (cvar_scav[c_id]-scmin)*(scmax-cvar_scav[c_id]);

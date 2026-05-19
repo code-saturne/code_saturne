@@ -91,7 +91,7 @@ typedef struct {
  *                            structure (size = ig->nb_point)
  *----------------------------------------------------------------------------*/
 
-void
+[[deprecated]] void
 cs_interpol_field_on_grid_deprecated(cs_interpol_grid_t *ig,
                                      const cs_real_t    *values_to_interpol,
                                      cs_real_t          *interpoled_values);

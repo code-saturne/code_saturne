@@ -911,7 +911,7 @@ cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
   if (f->type & CS_FIELD_VARIABLE && f->dim > 1) {
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > -1)
-      coupled = cs_field_get_key_int(f, coupled_key_id);
+      coupled = f->get_key_int(coupled_key_id);
   }
 
   if (dim == 1) {

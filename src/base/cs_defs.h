@@ -178,16 +178,6 @@ extern "C" {
 
 #endif /* __cplusplus */
 
-/* Definition of a DEPRECATED decorator which may be called in the code */
-
-#if defined(__GNUC__) || defined(__clang__)
-#  define DEPRECATED __attribute__((deprecated))
-#elif defined(_MSC_VER)
-#  define DEPRECATED __declspec(deprecated)
-#else
-#  define DEPRECATED
-#endif
-
 /*============================================================================
  * Definitions that may not always be provided directly by the system
  *============================================================================*/
@@ -221,24 +211,6 @@ extern "C" {
 
 #if defined(HAVE_SYS_TYPES_H)
 #include <sys/types.h>
-#endif
-
-/* C99 _Bool type */
-
-#if HAVE_STDBOOL_H
-#  include <stdbool.h>
-#else
-#  ifndef __cplusplus
-#    ifndef HAVE__BOOL
-#      define _Bool signed char;
-#    endif
-#    define bool _Bool
-#    define false 0
-#    define true 1
-#  else
-#    define _Bool bool;
-#  endif
-#  define __bool_true_false_are_defined 1
 #endif
 
 /* C++ assert necessary for template */

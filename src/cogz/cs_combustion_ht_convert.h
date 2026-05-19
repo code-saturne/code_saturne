@@ -73,7 +73,7 @@ cs_combustion_h_to_t(const cs_real_t   x_sp[],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+[[deprecated]] inline cs_real_t
 cs_gas_combustion_h_to_t(const cs_real_t   x_sp[],
                          cs_real_t         h)
 {
@@ -108,7 +108,7 @@ cs_combustion_t_to_h(const cs_real_t   x_sp[],
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+[[deprecated]] inline cs_real_t
 cs_gas_combustion_t_to_h(const cs_real_t   x_sp[],
                          cs_real_t         t)
 {

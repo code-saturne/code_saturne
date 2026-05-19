@@ -1,5 +1,5 @@
-#ifndef __CS_FP_EXCEPTION_H__
-#define __CS_FP_EXCEPTION_H__
+#ifndef CS_FP_EXCEPTION_H
+#define CS_FP_EXCEPTION_H
 
 /*============================================================================
  * Program timing information
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public types
  *============================================================================*/
@@ -55,7 +51,7 @@ BEGIN_C_DECLS
  * Uses a counter to handle nested calls.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_fp_exception_enable_trap(void);
 
 /*----------------------------------------------------------------------------
@@ -64,18 +60,16 @@ cs_fp_exception_enable_trap(void);
  * Uses a counter to handle nested calls.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_fp_exception_disable_trap(void);
 
 /*----------------------------------------------------------------------------
  * Restore floating-point exception trapping.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_fp_exception_restore_trap(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_FP_EXCEPTION_H__ */
+#endif /* CS_FP_EXCEPTION_H */

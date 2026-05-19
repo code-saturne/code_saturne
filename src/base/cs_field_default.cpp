@@ -169,8 +169,8 @@ cs_variable_cdo_field_create(const char  *name,
                          created */
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-    cs_field_set_key_int(f, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(f, cs_field_key_id("post_vis"), post_flag);
+    f->set_key_int(cs_field_key_id("log"), 1);
+    f->set_key_int(cs_field_key_id("post_vis"), post_flag);
 
     if (label != nullptr) {
       if (strlen(label) > 0)
@@ -223,16 +223,16 @@ cs_variable_field_create(const char  *name,
   f->set_key_int("variable_id", ivar);
 
   const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-  cs_field_set_key_int(f, cs_field_key_id("log"), 1);
-  cs_field_set_key_int(f, cs_field_key_id("post_vis"), post_flag);
+  f->set_key_int("log", 1);
+  f->set_key_int("post_vis", post_flag);
 
   if (label != nullptr) {
     if (strlen(label) > 0)
-      cs_field_set_key_str(f, cs_field_key_id("label"), label);
+      f->set_key_str("label", label);
   }
 
   if (dim > 1)
-    cs_field_set_key_int(f, cs_field_key_id("coupled"), 1);
+    f->set_key_int("coupled", 1);
 
   if (location_id == CS_MESH_LOCATION_CELLS)
     _variable_equation_param_uninit(f);
@@ -332,7 +332,7 @@ cs_field_get_variance(const cs_field_t  *f)
       cs_field_t *f_c = cs_field_by_id(i);
 
       if (f_c->type & CS_FIELD_VARIABLE) {
-        int parent_id = cs_field_get_key_int(f_c, kscavr);
+        int parent_id = f_c->get_key_int(kscavr);
         if (parent_id == f->id)
           return f_c;
       }
@@ -415,7 +415,7 @@ cs_field_map_and_init_bcs(void)
         bc_flags[f_id*4 + 1] = true;
     }
 
-    int turb_flux_model_type = cs_field_get_key_int(f, k_turb_flux_model) / 10;
+    int turb_flux_model_type = f->get_key_int(k_turb_flux_model) / 10;
 
     /* Boundary conditions of the turbulent fluxes T'u' or Y'u' */
     if (turb_flux_model_type == 3) {
@@ -472,7 +472,7 @@ cs_field_n_scalar_fields(void)
     cs_field_t *f     = cs_field_by_id(f_id);
     if (   f->type & CS_FIELD_VARIABLE
         && !(f->type & CS_FIELD_CDO)) {
-      int i_sca = cs_field_get_key_int(f, k_sca);
+      int i_sca = f->get_key_int(k_sca);
       if (i_sca > 0)
         n_scal++;
     }

@@ -956,9 +956,9 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
       const int kimasf = cs_field_key_id("inner_mass_flux_id");
 
       cs_field_t *mflux =
-        cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf));
+        cs_field_by_id(CS_F_(vel)->get_key_int(kimasf));
       cs_field_t *vof_flux =
-        cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kimasf));
+        cs_field_by_id(CS_F_(void_f)->get_key_int(kimasf));
 
       const cs_real_t oo_rho1 = 1. / cs_glob_vof_parameters->rho1;
 
@@ -974,9 +974,9 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
       const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
 
       cs_field_t *b_mflux
-        = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf));
+        = cs_field_by_id(CS_F_(vel)->get_key_int(kbmasf));
       cs_field_t *b_vof_flux
-        = cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kbmasf));
+        = cs_field_by_id(CS_F_(void_f)->get_key_int(kbmasf));
 
       cs_array_real_set_wscalar(cs_glob_mesh->n_b_faces, oo_rho1,
                                 b_mflux->val, b_vof_flux->val);

@@ -367,7 +367,7 @@ typedef struct {
  */
 /*----------------------------------------------------------------------------*/
 
-static inline bool
+inline bool
 cs_param_amg_boomer_is_needed(cs_param_solver_type_t   solver,
                               cs_param_precond_type_t  precond,
                               cs_param_amg_type_t      amg)
@@ -392,7 +392,7 @@ cs_param_amg_boomer_is_needed(cs_param_solver_type_t   solver,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline bool
+inline bool
 cs_param_amg_gamg_is_needed(cs_param_solver_type_t   solver,
                             cs_param_precond_type_t  precond,
                             cs_param_amg_type_t      amg)
@@ -417,7 +417,7 @@ cs_param_amg_gamg_is_needed(cs_param_solver_type_t   solver,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline bool
+inline bool
 cs_param_amg_hmg_is_needed(cs_param_solver_type_t   solver,
                            cs_param_precond_type_t  precond,
                            cs_param_amg_type_t      amg)
@@ -443,7 +443,7 @@ cs_param_amg_hmg_is_needed(cs_param_solver_type_t   solver,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline bool
+inline bool
 cs_param_amg_inhouse_is_needed(cs_param_solver_type_t   solver,
                                cs_param_precond_type_t  precond,
                                cs_param_amg_type_t      amg)

@@ -568,13 +568,12 @@ _lagr_map_fields_default(void)
       _lagr_extra_module[phase_id].x_eau  = nullptr;
       _lagr_extra_module[phase_id].x_m    = nullptr;
 
-      if (_lagr_extra_module[phase_id].scal_t != nullptr) {
+      const cs_field_t *f_scal_t = _lagr_extra_module[phase_id].scal_t;
+      if (f_scal_t != nullptr) {
         _lagr_extra_module[phase_id].visls0
-          = cs_field_get_key_double(_lagr_extra_module[phase_id].scal_t,
-                                    cs_field_key_id("diffusivity_ref"));
+          = f_scal_t->get_key_double("diffusivity_ref");
 
-        l_id = cs_field_get_key_int(_lagr_extra_module[phase_id].scal_t,
-                                    cs_field_key_id("diffusivity_id"));
+        l_id = f_scal_t->get_key_int("diffusivity_id");
         if (l_id >= 0)
           _lagr_extra_module[phase_id].cpro_viscls = cs_field_by_id(l_id);
       }
@@ -593,13 +592,12 @@ _lagr_map_fields_default(void)
 
       _lagr_extra_module[phase_id].scal_t = cs_thermal_model_field();
 
-      if (_lagr_extra_module[phase_id].scal_t != nullptr) {
+      const cs_field_t *f_scal_t = _lagr_extra_module[phase_id].scal_t;
+      if (f_scal_t != nullptr) {
         _lagr_extra_module[phase_id].visls0
-          = cs_field_get_key_double(_lagr_extra_module[phase_id].scal_t,
-                                    cs_field_key_id("diffusivity_ref"));
+          = f_scal_t->get_key_double("diffusivity_ref");
 
-        l_id = cs_field_get_key_int(_lagr_extra_module[phase_id].scal_t,
-                                    cs_field_key_id("diffusivity_id"));
+        l_id = f_scal_t->get_key_int("diffusivity_id");
         if (l_id >= 0)
           _lagr_extra_module[phase_id].cpro_viscls = cs_field_by_id(l_id);
       }
@@ -1097,8 +1095,8 @@ cs_lagr_add_fields(void)
                       1,
                       false);
 
-  cs_field_set_key_int(f, k_log, 1);
-  cs_field_set_key_int(f, k_vis, 1);
+  f->set_key_int(k_log, 1);
+  f->set_key_int(k_vis, 1);
 
   /* Add TKE for DRSM and LES models */
 
@@ -1116,7 +1114,7 @@ cs_lagr_add_fields(void)
                                 CS_MESH_LOCATION_CELLS,
                                 1,
                                 true);
-    cs_field_set_key_int(f, k_log, 1);
+    f->set_key_int(k_log, 1);
   }
 
   /* Add Dissipation for LES or k-omega */
@@ -1139,7 +1137,7 @@ cs_lagr_add_fields(void)
                                 CS_MESH_LOCATION_CELLS,
                                 1,
                                 true);
-    cs_field_set_key_int(f, k_log, 1);
+    f->set_key_int(k_log, 1);
   }
 
   /* Add field used for injection of particle with Lagrangian module */
@@ -1150,8 +1148,8 @@ cs_lagr_add_fields(void)
                         1,
                         false);
 
-    cs_field_set_key_int(f, k_log, 1);
-    cs_field_set_key_int(f, k_vis, 0);
+    f->set_key_int(k_log, 1);
+    f->set_key_int(k_vis, 0);
   }
 }
 

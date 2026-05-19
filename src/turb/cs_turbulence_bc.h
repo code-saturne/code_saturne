@@ -1,5 +1,5 @@
-#ifndef __CS_TURBULENCE_BC_H__
-#define __CS_TURBULENCE_BC_H__
+#ifndef CS_TURBULENCE_BC_H
+#define CS_TURBULENCE_BC_H
 
 /*============================================================================
  * Base turbulence boundary conditions.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -59,7 +55,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_init_pointers(void);
 
 /*----------------------------------------------------------------------------*/
@@ -68,7 +64,7 @@ cs_turbulence_bc_init_pointers(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_free_pointers(void);
 
 /*----------------------------------------------------------------------------*/
@@ -116,7 +112,7 @@ cs_turbulence_bc_free_pointers(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_ke_hyd_diam(double   uref2,
                              double   dh,
                              double   rho,
@@ -145,7 +141,7 @@ cs_turbulence_bc_ke_hyd_diam(double   uref2,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_ke_turb_intensity(double   uref2,
                                    double   t_intensity,
                                    double   dh,
@@ -187,7 +183,7 @@ cs_turbulence_bc_ke_turb_intensity(double   uref2,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_id,
                                 double      uref2,
                                 double      dh,
@@ -208,7 +204,7 @@ cs_turbulence_bc_inlet_hyd_diam(cs_lnum_t   face_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_id,
                                       double      uref2,
                                       double      t_intensity,
@@ -225,7 +221,7 @@ cs_turbulence_bc_inlet_turb_intensity(cs_lnum_t   face_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
                              double      k,
                              double      eps);
@@ -241,7 +237,7 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_set_uninit_inlet(cs_lnum_t   face_num,
                                   double      k,
                                   double      rij[],
@@ -267,7 +263,7 @@ cs_turbulence_bc_set_uninit_inlet(cs_lnum_t   face_num,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_set_uninit_inlet_hyd_diam(cs_lnum_t   face_id,
                                            double      vel_dir[],
                                            double      shear_dir[],
@@ -293,7 +289,7 @@ cs_turbulence_bc_set_uninit_inlet_hyd_diam(cs_lnum_t   face_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_set_uninit_inlet_turb_intensity(cs_lnum_t   face_id,
                                                  double      uref2,
                                                  double      t_intensity,
@@ -312,7 +308,7 @@ cs_turbulence_bc_set_uninit_inlet_turb_intensity(cs_lnum_t   face_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
                                         double      k,
                                         double      eps,
@@ -328,12 +324,8 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -485,4 +477,4 @@ cs_turbulence_bc_rij_transform(int        is_sym,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_TURBULENCE_BC_H__ */
+#endif /* CS_TURBULENCE_BC_H */

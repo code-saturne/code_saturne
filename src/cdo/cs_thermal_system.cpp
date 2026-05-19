@@ -594,8 +594,8 @@ cs_thermal_system_init_setup(void)
                                        1,
                                        has_previous);
 
-    cs_field_set_key_int(thm->temperature, log_key, 1);
-    cs_field_set_key_int(thm->temperature, post_key, 1);
+    thm->temperature->set_key_int(log_key, 1);
+    thm->temperature->set_key_int(post_key, 1);
   }
 
   if (thm->post & CS_THERMAL_POST_ENTHALPY) {
@@ -605,8 +605,8 @@ cs_thermal_system_init_setup(void)
                                             1,
                                             has_previous);
 
-    cs_field_set_key_int(thm->enthalpy, log_key, 1);
-    cs_field_set_key_int(thm->enthalpy, post_key, 1);
+    thm->enthalpy->set_key_int(log_key, 1);
+    thm->enthalpy->set_key_int(post_key, 1);
 
   } /* enthalpy */
 

@@ -1,5 +1,5 @@
-#ifndef __CS_TURBULENCE_KE_H__
-#define __CS_TURBULENCE_KE_H__
+#ifndef CS_TURBULENCE_KE_H
+#define CS_TURBULENCE_KE_H
 
 /*============================================================================
  * k-epsilon turbulence model.
@@ -35,8 +35,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -53,7 +51,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_ke(int              phase_id,
                  cs_real_t       *prdv2f);
 
@@ -68,7 +66,7 @@ cs_turbulence_ke(int              phase_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_ke_clip(int        phase_id,
                       cs_lnum_t  n_cells,
                       int        iclip);
@@ -81,7 +79,7 @@ cs_turbulence_ke_clip(int        phase_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_ke_mu_t(int  phase_id);
 
 /*----------------------------------------------------------------------------*/
@@ -94,7 +92,7 @@ cs_turbulence_ke_mu_t(int  phase_id);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_ke_q_mu_t(int  phase_id);
 
 /*----------------------------------------------------------------------------*/
@@ -107,12 +105,10 @@ cs_turbulence_ke_q_mu_t(int  phase_id);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_ke_q(int          phase_id,
                    cs_real_6_t  rij[]);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TURBULENCE_KE_H__ */
+#endif /* CS_TURBULENCE_KE_H */

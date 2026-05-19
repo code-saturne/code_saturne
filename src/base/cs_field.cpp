@@ -1163,7 +1163,7 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
       if (f->type & CS_FIELD_VARIABLE) {
         int coupled_key_id = cs_field_key_id_try("coupled");
         if (coupled_key_id > -1)
-          coupled = cs_field_get_key_int(f, coupled_key_id);
+          coupled = f->get_key_int(coupled_key_id);
       }
 
       if (coupled) {
@@ -1226,7 +1226,7 @@ cs_f_field_set_key_int(int  f_id,
 
   cs_field_t *f = cs_field_by_id(f_id);
 
-  retval = cs_field_set_key_int(f, k_id, value);
+  retval = f->set_key_int(k_id, value);
 
   if (retval != 0) {
     const char *key = cs_map_name_to_id_reverse(_key_map, k_id);
@@ -1308,7 +1308,7 @@ cs_f_field_set_key_double(int     f_id,
 
   cs_field_t *f = cs_field_by_id(f_id);
 
-  retval = cs_field_set_key_double(f, k_id, value);
+  retval = f->set_key_double(k_id, value);
 
   if (retval != 0) {
     const char *key = cs_map_name_to_id_reverse(_key_map, k_id);
@@ -1385,7 +1385,7 @@ cs_field_get_bc_coeff_mult(const cs_field_t  *f,
     int coupled = 0;
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > -1)
-      coupled = cs_field_get_key_int(f, coupled_key_id);
+      coupled = f->get_key_int(coupled_key_id);
     if (coupled) {
       *i_mult = 1;
       *b_mult *= f->dim;
@@ -3191,33 +3191,10 @@ cs_field_set_key_int(cs_field_t  *f,
                      int          key_id,
                      int          value)
 {
-  int retval = CS_FIELD_OK;
-
   if (f == nullptr)
     return CS_FIELD_INVALID_FIELD;
-  assert(f->id >= 0 && f->id < _n_fields);
 
-  if (key_id > -1) {
-    cs_field_key_def_t *kd = _key_defs + key_id;
-    assert(key_id < _n_keys);
-    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
-      retval = CS_FIELD_INVALID_CATEGORY;
-    else if (kd->type_id != 'i')
-      retval = CS_FIELD_INVALID_TYPE;
-    else {
-      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      if (kv->is_locked)
-        retval = CS_FIELD_LOCKED;
-      else {
-        kv->val.v_int = value;
-        kv->is_set = 1;
-      }
-    }
-  }
-  else
-    retval = CS_FIELD_INVALID_KEY_ID;
-
-  return retval;
+  return f->set_key_int(key_id, value);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3238,53 +3215,10 @@ int
 cs_field_get_key_int(const cs_field_t  *f,
                      int                key_id)
 {
-  int errcode = CS_FIELD_OK;
-
   if (f == nullptr)
     return CS_FIELD_INVALID_FIELD;
-  assert(f->id >= 0 && f->id < _n_fields);
 
-  if (key_id > -1 && key_id < _n_keys) {
-    cs_field_key_def_t *kd = _key_defs + key_id;
-    assert(key_id < _n_keys);
-    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
-      errcode = CS_FIELD_INVALID_CATEGORY;
-    else if (kd->type_id != 'i')
-      errcode = CS_FIELD_INVALID_TYPE;
-    else {
-      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      int retval = 0;
-      if (kv->is_set)
-        retval = kv->val.v_int;
-      else if (kd->is_sub)
-        retval = cs_field_get_key_int(f, kd->def_val.v_int);
-      else
-        retval = kd->def_val.v_int;
-      return retval;
-    }
-  }
-  else
-    errcode = CS_FIELD_INVALID_KEY_ID;
-
-  if (errcode != CS_FIELD_OK) {
-    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
-    if (errcode == CS_FIELD_INVALID_CATEGORY)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field \"%s\" with type flag %d\n"
-                  "has no value associated with key %d (\"%s\")."),
-                f->name, f->type, key_id, key);
-    else if (errcode == CS_FIELD_INVALID_TYPE)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field \"%s\" has keyword %d (\"%s\")\n"
-                  "of type \"%c\" and not \"%c\"."),
-                f->name, key_id, key, (_key_defs + key_id)->type_id, 'i');
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field keyword with id %d is not defined."),
-                key_id);
-  }
-
-  return CS_FIELD_OK;
+  return f->get_key_int(key_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3310,11 +3244,11 @@ cs_field_set_key_int_bits(cs_field_t  *f,
                           int          key_id,
                           int          mask)
 {
-  int value = cs_field_get_key_int(f, key_id);
+  int value = f->get_key_int(key_id);
 
   value |= mask;
 
-  int retval = cs_field_set_key_int(f, key_id, value);
+  int retval = f->set_key_int(key_id, value);
   return retval;
 }
 
@@ -3341,12 +3275,12 @@ cs_field_clear_key_int_bits(cs_field_t  *f,
                             int          key_id,
                             int          mask)
 {
-  int value = cs_field_get_key_int(f, key_id);
+  int value = f->get_key_int(key_id);
 
   value |= mask;
   value -= mask;
 
-  int retval = cs_field_set_key_int(f, key_id, value);
+  int retval = f->set_key_int(key_id, value);
   return retval;
 }
 
@@ -3371,33 +3305,10 @@ cs_field_set_key_double(cs_field_t  *f,
                         int          key_id,
                         double       value)
 {
-  int retval = CS_FIELD_OK;
-
   if (f == nullptr)
     return CS_FIELD_INVALID_FIELD;
-  assert(f->id >= 0 && f->id < _n_fields);
 
-  if (key_id > -1) {
-    cs_field_key_def_t *kd = _key_defs + key_id;
-    assert(key_id < _n_keys);
-    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
-      retval = CS_FIELD_INVALID_CATEGORY;
-    else if (kd->type_id != 'd')
-      retval = CS_FIELD_INVALID_TYPE;
-    else {
-      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      if (kv->is_locked)
-        retval = CS_FIELD_LOCKED;
-      else {
-        kv->val.v_double = value;
-        kv->is_set = 1;
-      }
-    }
-  }
-  else
-    retval = CS_FIELD_INVALID_KEY_ID;
-
-  return retval;
+  return f->set_key_double(key_id, value);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3418,54 +3329,11 @@ double
 cs_field_get_key_double(const cs_field_t  *f,
                         int                key_id)
 {
-  int errcode = CS_FIELD_OK;
-
   if (f == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Field is not defined.", __func__);
-  assert(f->id >= 0 && f->id < _n_fields);
 
-  if (key_id > -1 && key_id < _n_keys) {
-    cs_field_key_def_t *kd = _key_defs + key_id;
-    assert(key_id < _n_keys);
-    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
-      errcode = CS_FIELD_INVALID_CATEGORY;
-    else if (kd->type_id != 'd')
-      errcode = CS_FIELD_INVALID_TYPE;
-    else {
-      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      double retval = 0.;
-      if (kv->is_set)
-        retval = kv->val.v_double;
-      else if (kd->is_sub)
-        retval = cs_field_get_key_double(f, kd->def_val.v_int);
-      else
-        retval = kd->def_val.v_double;
-      return retval;
-    }
-  }
-  else
-    errcode = CS_FIELD_INVALID_KEY_ID;
-
-  if (errcode != CS_FIELD_OK) {
-    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
-    if (errcode == CS_FIELD_INVALID_CATEGORY)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field %s with type flag %d\n"
-                  "has no value associated with key %d (%s)."),
-                f->name, f->type, key_id, key);
-    else if (errcode == CS_FIELD_INVALID_TYPE)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field \"%s\" has keyword %d (\"%s\")\n"
-                  "of type \"%c\" and not \"%c\"."),
-                f->name, key_id, key, (_key_defs + key_id)->type_id, 'd');
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field keyword with id %d is not defined."),
-                key_id);
-  }
-
-  return 0.;
+  return f->get_key_double(key_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4718,7 +4586,31 @@ cs_field_t::set_key_int
   int  value    /*!<[in]  value */
 )
 {
-  return cs_field_set_key_int(this, key_id, value);
+  int retval = CS_FIELD_OK;
+
+  assert(this->id >= 0 && this->id < _n_fields);
+
+  if (key_id > -1) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(this->type & kd->type_flag))
+      retval = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 'i')
+      retval = CS_FIELD_INVALID_TYPE;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (this->id*_n_keys_max + key_id);
+      if (kv->is_locked)
+        retval = CS_FIELD_LOCKED;
+      else {
+        kv->val.v_int = value;
+        kv->is_set = 1;
+      }
+    }
+  }
+  else
+    retval = CS_FIELD_INVALID_KEY_ID;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4732,7 +4624,7 @@ cs_field_t::set_key_int
 {
   int key_id = cs_field_key_id(key);
 
-  return cs_field_set_key_int(this, key_id, value);
+  return this->set_key_int(key_id, value);
 }
 
 ///@}
@@ -4755,7 +4647,51 @@ cs_field_t::get_key_int
   int  key_id  /*!<[in]  key id */
 ) const
 {
-  return cs_field_get_key_int(this, key_id);
+  int errcode = CS_FIELD_OK;
+
+  assert(this->id >= 0 && this->id < _n_fields);
+
+  if (key_id > -1 && key_id < _n_keys) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(this->type & kd->type_flag))
+      errcode = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 'i')
+      errcode = CS_FIELD_INVALID_TYPE;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (this->id*_n_keys_max + key_id);
+      int retval = 0;
+      if (kv->is_set)
+        retval = kv->val.v_int;
+      else if (kd->is_sub)
+        retval = this->get_key_int(kd->def_val.v_int);
+      else
+        retval = kd->def_val.v_int;
+      return retval;
+    }
+  }
+  else
+    errcode = CS_FIELD_INVALID_KEY_ID;
+
+  if (errcode != CS_FIELD_OK) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
+    if (errcode == CS_FIELD_INVALID_CATEGORY)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" with type flag %d\n"
+                  "has no value associated with key %d (\"%s\")."),
+                this->name, this->type, key_id, key);
+    else if (errcode == CS_FIELD_INVALID_TYPE)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" has keyword %d (\"%s\")\n"
+                  "of type \"%c\" and not \"%c\"."),
+                this->name, key_id, key, (_key_defs + key_id)->type_id, 'i');
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field keyword with id %d is not defined."),
+                key_id);
+  }
+
+  return CS_FIELD_OK;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4768,7 +4704,7 @@ cs_field_t::get_key_int
 {
   int key_id = cs_field_key_id(key);
 
-  return cs_field_get_key_int(this, key_id);
+  return this->get_key_int(key_id);
 }
 
 ///@}
@@ -4877,7 +4813,31 @@ cs_field_t::set_key_double
   double  value    /*!<[in]  value */
 )
 {
-  return cs_field_set_key_double(this, key_id, value);
+  int retval = CS_FIELD_OK;
+
+  assert(this->id >= 0 && this->id < _n_fields);
+
+  if (key_id > -1) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(this->type & kd->type_flag))
+      retval = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 'd')
+      retval = CS_FIELD_INVALID_TYPE;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (this->id*_n_keys_max + key_id);
+      if (kv->is_locked)
+        retval = CS_FIELD_LOCKED;
+      else {
+        kv->val.v_double = value;
+        kv->is_set = 1;
+      }
+    }
+  }
+  else
+    retval = CS_FIELD_INVALID_KEY_ID;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4891,7 +4851,7 @@ cs_field_t::set_key_double
 {
   int key_id = cs_field_key_id(key);
 
-  return cs_field_set_key_double(this, key_id, value);
+  return this->set_key_double(key_id, value);
 }
 
 ///@}
@@ -4914,7 +4874,51 @@ cs_field_t::get_key_double
   int  key_id  /*!<[in]  key id */
 ) const
 {
-  return cs_field_get_key_double(this, key_id);
+  int errcode = CS_FIELD_OK;
+
+  assert(this->id >= 0 && this->id < _n_fields);
+
+  if (key_id > -1 && key_id < _n_keys) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(this->type & kd->type_flag))
+      errcode = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 'd')
+      errcode = CS_FIELD_INVALID_TYPE;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (this->id*_n_keys_max + key_id);
+      double retval = 0.;
+      if (kv->is_set)
+        retval = kv->val.v_double;
+      else if (kd->is_sub)
+        retval = this->get_key_double(kd->def_val.v_int);
+      else
+        retval = kd->def_val.v_double;
+      return retval;
+    }
+  }
+  else
+    errcode = CS_FIELD_INVALID_KEY_ID;
+
+  if (errcode != CS_FIELD_OK) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
+    if (errcode == CS_FIELD_INVALID_CATEGORY)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field %s with type flag %d\n"
+                  "has no value associated with key %d (%s)."),
+                this->name, this->type, key_id, key);
+    else if (errcode == CS_FIELD_INVALID_TYPE)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" has keyword %d (\"%s\")\n"
+                  "of type \"%c\" and not \"%c\"."),
+                this->name, key_id, key, (_key_defs + key_id)->type_id, 'd');
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field keyword with id %d is not defined."),
+                key_id);
+  }
+
+  return 0.;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4927,7 +4931,7 @@ cs_field_t::get_key_double
 {
   int key_id = cs_field_key_id(key);
 
-  return cs_field_get_key_double(this, key_id);
+  return this->get_key_double(key_id);
 }
 
 ///@}
@@ -5411,7 +5415,7 @@ cs_field_t::update_size
       }
     }
     else
-        this->_vals[time_id]->reshape(new_size, this->dim);
+      this->_vals[time_id]->reshape(new_size, this->dim);
 
     /* Update pointers */
     this->update_public_pointers();

@@ -125,7 +125,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
      -------------- */
 
   const int krvarfl = cs_field_key_id("variance_dissipation");
-  const cs_real_t rvarfl = cs_field_get_key_double(fld_scal, krvarfl);
+  const cs_real_t rvarfl = fld_scal->get_key_double(krvarfl);
 
   cs_real_t *f1f2;
   CS_MALLOC(f1f2, n_cells_ext, cs_real_t);
@@ -243,7 +243,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
                        grad);
 
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
-    cs_real_t turb_schmidt = cs_field_get_key_double(fld_scal, ksigmas);
+    cs_real_t turb_schmidt = fld_scal->get_key_double(ksigmas);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -468,7 +468,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
     if (eqp->verbosity >= 1)
       bft_printf(_(log_st_fmt), fld_scal->name);
 
-    int class_id = cs_field_get_key_int(fld_scal, keyccl) - 1;
+    int class_id = fld_scal->get_key_int(keyccl) - 1;
 
     const cs_real_t *cpro_cgch = cs_field_by_id(cm->igmdch[class_id])->val;
 
@@ -491,7 +491,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
     if (eqp->verbosity >= 1)
       bft_printf(_(log_st_fmt), fld_scal->name);
 
-    int class_id = cs_field_get_key_int(fld_scal, keyccl) - 1;
+    int class_id = fld_scal->get_key_int(keyccl) - 1;
 
     const cs_real_t *cvar_xchcl = cs_field_by_id(cm->ixch[class_id])->val;
     const cs_real_t *cvara_xckcl = cs_field_by_id(cm->ixck[class_id])->val_pre;
@@ -557,7 +557,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
       if (eqp->verbosity >= 1)
         bft_printf(_(log_st_fmt), fld_scal->name);
 
-      int class_id = cs_field_get_key_int(fld_scal, keyccl) - 1;
+      int class_id = fld_scal->get_key_int(keyccl) - 1;
       int coal_id = cm->ichcor[class_id] - 1;
 
       const cs_real_t xwatch = cm->xwatch[coal_id];
@@ -592,7 +592,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
     if (strncmp(fld_scal->name, "n_p_age", 7) == 0) {
 
       // index of the coal particle class
-      int class_id = cs_field_get_key_int(fld_scal, keyccl) - 1;
+      int class_id = fld_scal->get_key_int(keyccl) - 1;
 
       const cs_real_t *cvar_xnpcl = cs_field_by_id(cm->inp[class_id])->val;
 
@@ -619,7 +619,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
   if (cm->idrift == 1) {
 
     // index of the coal particle class
-    int class_id = cs_field_get_key_int(fld_scal, keyccl) - 1;
+    int class_id = fld_scal->get_key_int(keyccl) - 1;
 
     if (class_id >= 0) {
       const cs_real_t *cpro_cght = cs_field_by_id(cm->igmhet[class_id])->val;
@@ -719,7 +719,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
     if (eqp->verbosity >= 1)
       bft_printf(_(log_st_fmt), fld_scal->name);
 
-    int class_id = cs_field_get_key_int(fld_scal, keyccl) - 1;
+    int class_id = fld_scal->get_key_int(keyccl) - 1;
     int coal_id = cm->ichcor[class_id] - 1;
 
     const cs_real_t *cvar_xchcl = cs_field_by_id(cm->ixch[class_id])->val;
@@ -759,10 +759,10 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
     const cs_field_t *fld_th = cs_thermal_model_field();
     const int kivisl  = cs_field_key_id("diffusivity_id");
     const int kvisl0 = cs_field_key_id("diffusivity_ref");
-    const cs_real_t visls_0 = cs_field_get_key_double(fld_th, kvisl0);
+    const cs_real_t visls_0 = fld_th->get_key_double(kvisl0);
     const cs_real_t cp0 = cs_glob_fluid_properties->cp0;
 
-    const int ifcvsl = cs_field_get_key_int(fld_th, kivisl);
+    const int ifcvsl = fld_th->get_key_int(kivisl);
     const cs_real_t *cpro_viscls = nullptr;
     if (ifcvsl >= 0)
       cpro_viscls = cs_field_by_id(ifcvsl)->val;

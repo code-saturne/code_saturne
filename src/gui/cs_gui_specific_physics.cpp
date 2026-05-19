@@ -1600,9 +1600,9 @@ cs_gui_gwf_model(int  *permeability,
 
       /* get first-order decay rate */
 
-      cs_real_t decay = cs_field_get_key_double(f, key_decay);
+      cs_real_t decay = f->get_key_double(key_decay);
       cs_gui_node_get_child_real(tn, "fo_decay_rate", &decay);
-      cs_field_set_key_double(f, key_decay, decay);
+      f->set_key_double(key_decay, decay);
 
       /* get chemistry model */
 

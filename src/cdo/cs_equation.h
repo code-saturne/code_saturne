@@ -792,7 +792,7 @@ cs_equation_solve(bool             cur2prev,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+[[deprecated]] void
 cs_equation_build_system(const cs_mesh_t *mesh,
                          cs_equation_t   *eq);
 
@@ -806,7 +806,7 @@ cs_equation_build_system(const cs_mesh_t *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+[[deprecated]] void
 cs_equation_solve_deprecated(const cs_mesh_t *mesh,
                              cs_equation_t   *eq);
 

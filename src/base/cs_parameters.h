@@ -242,7 +242,7 @@ extern cs_tree_node_t  *cs_glob_tree;
  */
 /*----------------------------------------------------------------------------*/
 
-static inline int
+inline int
 cs_parameters_iscavr(cs_field_t *f)
 {
   int iscvr = 0, f_id = 0;
@@ -250,9 +250,9 @@ cs_parameters_iscavr(cs_field_t *f)
   int keysca = cs_field_key_id("scalar_id");
 
   if (kscavr >= 0) {
-    f_id = cs_field_get_key_int(f, kscavr);
+    f_id = f->get_key_int(kscavr);
     if (f_id >= 0)
-      iscvr = cs_field_get_key_int(cs_field_by_id(f_id), keysca);
+      iscvr = cs_field_by_id(f_id)->get_key_int(keysca);
   }
 
   return iscvr;

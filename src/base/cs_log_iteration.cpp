@@ -683,7 +683,7 @@ _log_fields_and_functions(void)
   CS_MALLOC(f_location_id, n_ff, int);
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, log_key_id)) {
+    if (f->get_key_int(log_key_id)) {
       f_location_id[f_id] = f->location_id;
       location_log[f->location_id] = true;
     }
@@ -1795,7 +1795,7 @@ cs_log_equation_convergence_info_write(void)
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
 
-    int log_flag = cs_field_get_key_int(f, keylog);
+    int log_flag = f->get_key_int(keylog);
 
     if (!(f->type & CS_FIELD_VARIABLE))
       continue;

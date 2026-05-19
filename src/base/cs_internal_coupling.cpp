@@ -1094,8 +1094,7 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)cs_glob_mesh->b_face_cells;
 
-  int coupling_id = cs_field_get_key_int(f,
-                                         cs_field_key_id("coupling_entity"));
+  int coupling_id = f->get_key_int("coupling_entity");
   const cs_internal_coupling_t *cpl
     = cs_internal_coupling_by_id(coupling_id);
 
@@ -1268,7 +1267,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)cs_glob_mesh->b_face_cells;
 
-  int coupling_id = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+  int coupling_id = f->get_key_int("coupling_entity");
   const cs_internal_coupling_t *cpl
     = cs_internal_coupling_by_id(coupling_id);
 
@@ -1414,7 +1413,7 @@ cs_internal_coupling_setup(void)
     if (f->type & CS_FIELD_VARIABLE) {
       const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
       if (eqp->icoupl > 0) {
-        cs_field_set_key_int(f, coupling_key_id, coupling_id);
+        f->set_key_int(coupling_key_id, coupling_id);
         // coupling_id++;
       }
     }
@@ -1601,9 +1600,7 @@ void
 cs_ic_field_set_exchcoeff(const cs_field_t *f,
                           const cs_real_t  *h_int_tot)
 {
-  const int coupling_key_id = cs_field_key_id("coupling_entity");
-  int coupling_id = cs_field_get_key_int(f,
-                                         coupling_key_id);
+  int coupling_id = f->get_key_int("coupling_entity");
   const cs_internal_coupling_t  *cpl
     = cs_internal_coupling_by_id(coupling_id);
 
@@ -1649,9 +1646,7 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
 {
   const cs_field_t* f = cs_field_by_id(field_id);
 
-  const int coupling_key_id = cs_field_key_id("coupling_entity");
-  int coupling_id = cs_field_get_key_int(f,
-                                         coupling_key_id);
+  int coupling_id = f->get_key_int("coupling_entity");
   const cs_internal_coupling_t  *cpl
     = cs_internal_coupling_by_id(coupling_id);
   const cs_lnum_t n_local = cpl->n_local;

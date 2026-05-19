@@ -1385,7 +1385,7 @@ cs_convection_diffusion_steady_scalar
   if (icoupl > 0) {
     assert(f_id != -1);
     const int coupling_key_id = cs_field_key_id("coupling_entity");
-    coupling_id = cs_field_get_key_int(f, coupling_key_id);
+    coupling_id = f->get_key_int(coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
     cs_internal_coupling_coupled_faces(cpl,
                                        &n_local,
@@ -1422,7 +1422,7 @@ cs_convection_diffusion_steady_scalar
       if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
         if (eqp.idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
+          int diff_id = f->get_key_int(key_id);
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
@@ -2258,7 +2258,7 @@ cs_face_convection_steady_scalar
       if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
         if (eqp.idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
+          int diff_id = f->get_key_int(key_id);
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;

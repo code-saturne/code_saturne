@@ -3232,7 +3232,7 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
 
       const cs_field_t  *f = cs_field_by_id(f_id);
 
-      if (! (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION))
+      if (! (f->get_key_int(vis_key_id) & CS_POST_ON_LOCATION))
         continue;
 
       const cs_mesh_location_type_t field_loc_type
@@ -3406,7 +3406,7 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
           continue;
       }
 
-      if (! (cs_field_get_key_int(f, vis_key_id) & CS_POST_MONITOR))
+      if (! (f->get_key_int(vis_key_id) & CS_POST_MONITOR))
         continue;
 
       const char *name = cs_field_get_key_str(f, label_key_id);
@@ -3465,7 +3465,7 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
 
         const int vis_key_id = cs_field_key_id("post_vis");
 
-        if (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION) {
+        if (f->get_key_int(vis_key_id) & CS_POST_ON_LOCATION) {
 
           const int label_key_id = cs_field_key_id("label");
           const char *name = cs_field_get_key_str(f, label_key_id);
@@ -3696,7 +3696,7 @@ _attach_probe_set_fields(cs_post_mesh_t  *post_mesh)
 
     bool redundant = false;
 
-    if (cs_field_get_key_int(f, vis_key_id) & vis_key_mask)
+    if (f->get_key_int(vis_key_id) & vis_key_mask)
       redundant = true;
 
     if (! redundant) {
@@ -5299,7 +5299,7 @@ cs_post_mesh_attach_field(int  mesh_id,
       || post_mesh->cat_id == CS_POST_MESH_BOUNDARY
       || post_mesh->cat_id == CS_POST_MESH_SURFACE) {
     const int vis_key_id = cs_field_key_id("post_vis");
-    if (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION)
+    if (f->get_key_int(vis_key_id) & CS_POST_ON_LOCATION)
       redundant = true;
   }
 

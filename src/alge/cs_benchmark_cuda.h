@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -55,7 +51,7 @@ BEGIN_C_DECLS
  *   y               <-> vector
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_mat_vec_exdiag_native_sym_cuda(cs_lnum_t           n_faces,
                                   const cs_lnum_2_t  *face_cell,
                                   const cs_real_t    *xa,
@@ -63,8 +59,5 @@ cs_mat_vec_exdiag_native_sym_cuda(cs_lnum_t           n_faces,
                                   cs_real_t          *y);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
 
 #endif /* __CS_BENCHMARK_CUDA_H__ */

@@ -2242,9 +2242,9 @@ _cs_lagr_moment_associate_field(const char  *name,
 
   /* cs_field_allocate_values(f); */
   const int log_key_id = cs_field_key_id("log");
-  cs_field_set_key_int(f, log_key_id, 1);
+  f->set_key_int(log_key_id, 1);
   const int vis_key_id = cs_field_key_id("post_vis");
-  cs_field_set_key_int(f, vis_key_id, 1);
+  f->set_key_int(vis_key_id, 1);
 
   if (have_previous)
     cs_field_set_n_time_vals(f, 2);

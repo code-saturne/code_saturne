@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_SPMV_HIP_H__
-#define __CS_MATRIX_SPMV_HIP_H__
+#ifndef CS_MATRIX_SPMV_HIP_H
+#define CS_MATRIX_SPMV_HIP_H
 
 /*============================================================================
  * Sparse Matrix-vector multiplication kernels using HIP.
@@ -34,10 +34,6 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*! \file
  *
  * \brief Sparse Matrix SpMV operations with HIP.
@@ -64,7 +60,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_hip_finalize(void);
 
 #if defined(__HIPCC__)
@@ -82,7 +78,7 @@ cs_matrix_spmv_hip_finalize(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_hip_set_stream(hipStream_t  stream);
 
 /*----------------------------------------------------------------------------*/
@@ -93,7 +89,7 @@ cs_matrix_spmv_hip_set_stream(hipStream_t  stream);
  */
 /*----------------------------------------------------------------------------*/
 
-hipStream_t
+extern "C" hipStream_t
 cs_matrix_spmv_hip_get_stream(void);
 
 #endif /* defined(__HIPCC__) */
@@ -110,7 +106,7 @@ cs_matrix_spmv_hip_get_stream(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_hip_native(cs_matrix_t  *matrix,
                            bool          exclude_diag,
                            bool          sync,
@@ -129,7 +125,7 @@ cs_matrix_spmv_hip_native(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_hip_csr(cs_matrix_t  *matrix,
                         bool          exclude_diag,
                         bool          sync,
@@ -150,7 +146,7 @@ cs_matrix_spmv_hip_csr(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_hip_csr_rocsparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
@@ -171,7 +167,7 @@ cs_matrix_spmv_hip_csr_rocsparse(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_hip_msr(cs_matrix_t  *matrix,
                         bool          exclude_diag,
                         bool          sync,
@@ -193,7 +189,7 @@ cs_matrix_spmv_hip_msr(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_hip_msr_rocsparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
@@ -215,7 +211,7 @@ cs_matrix_spmv_hip_msr_rocsparse(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_hip_msr_b(cs_matrix_t  *matrix,
                           bool          exclude_diag,
                           bool          sync,
@@ -242,7 +238,7 @@ cs_matrix_spmv_hip_msr_b(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_hip_msr_b_rocsparse(cs_matrix_t  *matrix,
                                    bool          exclude_diag,
                                    bool          sync,
@@ -269,7 +265,7 @@ cs_matrix_spmv_hip_msr_b_rocsparse(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_hip_msr_bb_rocsparse(cs_matrix_t  *matrix,
                                     bool          exclude_diag,
                                     bool          sync,
@@ -278,6 +274,4 @@ cs_matrix_spmv_hip_msr_bb_rocsparse(cs_matrix_t  *matrix,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MATRIX_SPMV__HIP_H__ */
+#endif /* CS_MATRIX_SPMV_HIP_H */

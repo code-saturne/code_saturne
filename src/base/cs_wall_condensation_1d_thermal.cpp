@@ -377,7 +377,7 @@ cs_wall_condensation_0d_thermal_solve()
 
   cs_field_t *f          = cs_field_by_name("pressure");
   const int   var_id_key = cs_field_key_id("variable_id");
-  const int   ipr        = cs_field_get_key_int(f, var_id_key) - 1;
+  const int   ipr        = f->get_key_int(var_id_key) - 1;
 
   const cs_real_t xlcond = 2278.0e3;
 

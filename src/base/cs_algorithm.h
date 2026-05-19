@@ -68,7 +68,7 @@ namespace algorithm {
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE static inline cs_lnum_t
+CS_F_HOST_DEVICE inline cs_lnum_t
 l_binary_search(cs_lnum_t        l_id_array_size,
                 cs_lnum_t        l_id,
                 const cs_lnum_t  l_id_array[])

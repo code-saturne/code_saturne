@@ -226,9 +226,9 @@ _beta_limiter_denom(cs_field_t                 *f,
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   const cs_real_t *restrict i_massflux =
-    cs_field_by_id(cs_field_get_key_int(f, kimasf))->val;
+    cs_field_by_id(f->get_key_int(kimasf))->val;
   const cs_real_t *restrict b_massflux =
-    cs_field_by_id(cs_field_get_key_int(f, kbmasf))->val;
+    cs_field_by_id(f->get_key_int(kbmasf))->val;
 
   const cs_real_t *hybrid_blend;
   if (CS_F_(hybrid_blend) != nullptr)
@@ -251,7 +251,7 @@ _beta_limiter_denom(cs_field_t                 *f,
 
   if (ischcp == 4) {
     /* get limiter choice */
-    limiter_choice = (cs_nvd_type_t)(cs_field_get_key_int(f, key_lim_choice));
+    limiter_choice = (cs_nvd_type_t)(f->get_key_int(key_lim_choice));
 
     /* local extrema computation */
     CS_MALLOC_HD(local_max, n_cells_ext, cs_real_t, cs_alloc_mode);
@@ -537,17 +537,17 @@ _beta_limiter_num(cs_field_t                 *f,
   int key_scamax_id = cs_field_key_id("max_scalar");
   int key_scamin_id = cs_field_key_id("min_scalar");
 
-  cs_real_t scalar_max = cs_field_get_key_double(f, key_scamax_id);
-  cs_real_t scalar_min = cs_field_get_key_double(f, key_scamin_id);
+  cs_real_t scalar_max = f->get_key_double(key_scamax_id);
+  cs_real_t scalar_min = f->get_key_double(key_scamin_id);
 
   const cs_real_t thetex =  1. - eqp->theta;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   const cs_real_t *restrict i_massflux =
-    cs_field_by_id( cs_field_get_key_int(f, kimasf) )->val;
+    cs_field_by_id(f->get_key_int(kimasf))->val;
   const cs_real_t *restrict b_massflux =
-    cs_field_by_id( cs_field_get_key_int(f, kbmasf) )->val;
+    cs_field_by_id(f->get_key_int(kbmasf))->val;
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     num_inf[c_id] = rovsdt[c_id] * cs::max(pvara[c_id] - scalar_min, 0.);
@@ -1729,7 +1729,7 @@ _convection_diffusion_scalar_unsteady
 
     /* NVD/TVD limiters */
     if (ischcp == 4) {
-      limiter_choice = (cs_nvd_type_t)(cs_field_get_key_int(f, key_lim_choice));
+      limiter_choice = (cs_nvd_type_t)(f->get_key_int(key_lim_choice));
       CS_MALLOC_HD(local_max, n_cells_ext, cs_real_t, cs_alloc_mode);
       CS_MALLOC_HD(local_min, n_cells_ext, cs_real_t, cs_alloc_mode);
       // FIXME replace this with bounds such as those computed with gradients.
@@ -2857,7 +2857,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
 
     /* NVD/TVD limiters */
     if (ischcp == 4) {
-      limiter_choice = (cs_nvd_type_t)cs_field_get_key_int(f, key_lim_choice);
+      limiter_choice = (cs_nvd_type_t)f->get_key_int(key_lim_choice);
       CS_MALLOC_HD(local_max, n_cells_ext, cs_real_t, cs_alloc_mode);
       CS_MALLOC_HD(local_min, n_cells_ext, cs_real_t, cs_alloc_mode);
       cs_field_local_extrema_scalar(f_id,
@@ -2915,7 +2915,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
     if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
       if (eqp.idiff > 0) {
         int key_id = cs_field_key_id("gradient_weighting_id");
-        int diff_id = cs_field_get_key_int(f, key_id);
+        int diff_id = f->get_key_int(key_id);
         if (diff_id > -1) {
           cs_field_t *weight_f = cs_field_by_id(diff_id);
           gweight = weight_f->val;
@@ -4884,7 +4884,7 @@ cs_get_v_slope_test(int                        f_id,
     if (_k_slope_test_f_id < 0)
       _k_slope_test_f_id = cs_field_key_id_try("slope_test_upwind_id");
     if (_k_slope_test_f_id > -1 && isstpp == 0)
-      f_track_slope_test_id = cs_field_get_key_int(f, _k_slope_test_f_id);
+      f_track_slope_test_id = f->get_key_int(_k_slope_test_f_id);
 
     if (f_track_slope_test_id > -1)
       v_slope_test = (cs_field_by_id(f_track_slope_test_id))->val;
@@ -5781,7 +5781,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
         if (eqp.idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
+          int diff_id = f->get_key_int(key_id);
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
@@ -8191,7 +8191,7 @@ cs_face_diffusion_potential(const cs_field_t           *f,
       if (f->type & CS_FIELD_VARIABLE && eqp_f->iwgrec == 1) {
         if (eqp_f->idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
+          int diff_id = f->get_key_int(key_id);
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
@@ -8534,7 +8534,7 @@ cs_face_anisotropic_diffusion_potential
       if (f->type & CS_FIELD_VARIABLE) {
         if (eqp->idifft > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
+          int diff_id = f->get_key_int(key_id);
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             c_visc = weight_f->val;
@@ -8841,7 +8841,7 @@ cs_diffusion_potential(const cs_field_t           *f,
       if (f->type & CS_FIELD_VARIABLE && eqp_f->iwgrec == 1) {
         if (eqp->idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
+          int diff_id = f->get_key_int(key_id);
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
@@ -9207,7 +9207,7 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
       if (f->type & CS_FIELD_VARIABLE) {
         if (eqp_f->idifft > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
+          int diff_id = f->get_key_int(key_id);
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             c_visc = weight_f->val;
@@ -9438,9 +9438,9 @@ cs_cell_courant_number(const cs_field_t    *f,
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   const cs_real_t *restrict i_massflux
-    = cs_field_by_id( cs_field_get_key_int(f, kimasf) )->val;
+    = cs_field_by_id(f->get_key_int(kimasf))->val;
   const cs_real_t *restrict b_massflux
-    = cs_field_by_id( cs_field_get_key_int(f, kbmasf) )->val;
+    = cs_field_by_id(f->get_key_int(kbmasf))->val;
 
   const cs_real_t *restrict dt = CS_F_(dt)->val;
 
@@ -9857,14 +9857,17 @@ cs_upwind_gradient(cs_dispatch_context          &ctx,
 
 template <cs_lnum_t stride, typename T>
 void
-cs_upwind_gradient_strided(cs_dispatch_context          &ctx,
-                           const int                     inc,
-                           const cs_halo_type_t          halo_type,
-                           const cs_field_bc_coeffs_t   *bc_coeffs,
-                           const cs_real_t               i_massflux[],
-                           const cs_real_t               b_massflux[],
-                           const cs_real_t               pvar[][stride],
-                           T                             grdpa[][stride][3])
+cs_upwind_gradient_strided
+(
+  cs_dispatch_context                    &ctx,
+  const int                               inc,
+  [[maybe_unused]] const cs_halo_type_t   halo_type,
+  const cs_field_bc_coeffs_t             *bc_coeffs,
+  const cs_real_t                         i_massflux[],
+  const cs_real_t                         b_massflux[],
+  const cs_real_t                         pvar[][stride],
+  T                                       grdpa[][stride][3]
+)
 {
   CS_PROFILE_FUNC_RANGE();
 

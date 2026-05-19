@@ -1147,7 +1147,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
       if (!(f_scal->type & CS_FIELD_VARIABLE))
         continue;
-      if (cs_field_get_key_int(f_scal, keysca) <= 0)
+      if (f_scal->get_key_int(keysca) <= 0)
         continue;
 
       cs_field_t  *f_scal_b = nullptr;
@@ -1155,7 +1155,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       cs_real_3_t *bvar_v = nullptr;
       cs_real_6_t *bvar_t = nullptr;
 
-      int b_f_id = cs_field_get_key_int(f_scal, kbfid);
+      int b_f_id = f_scal->get_key_int(kbfid);
 
       if (b_f_id > -1)
         f_scal_b = cs_field_by_id(b_f_id);
@@ -1892,7 +1892,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         if (ii == 0) {
           turb  = CS_F_(k);
           if (itytur == 2)
-            sigma = cs_field_get_key_double(turb, ksigmas);
+            sigma = turb->get_key_double(ksigmas);
           else if (model == CS_TURB_K_OMEGA) {
             sigma = cs_turb_ckwsk2; /* FIXME: not consistent with the model */
           }
@@ -1900,7 +1900,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         else {
           if (itytur == 2) {
             turb  = CS_F_(eps);
-            sigma = cs_field_get_key_double(turb, ksigmas);
+            sigma = turb->get_key_double(ksigmas);
           }
           else {
             turb  = CS_F_(omg);
@@ -2231,7 +2231,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         cs_real_t *rcodcl2_eps = eps->bc_coeffs->rcodcl2;
         cs_real_t *rcodcl3_eps = eps->bc_coeffs->rcodcl3;
 
-        cs_real_t sigmae = cs_field_get_key_double(eps, ksigmas);
+        cs_real_t sigmae = eps->get_key_double(ksigmas);
 
         cs_equation_param_t *eqp_eps = cs_field_get_equation_param(eps);
         f_a_t_visc = nullptr, visten = nullptr;
@@ -2465,15 +2465,15 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
         if (ii == 1) {
           v2f = CS_F_(k);
-          sigma = cs_field_get_key_double(v2f, ksigmas);
+          sigma = v2f->get_key_double(ksigmas);
         }
         else if (ii == 2) {
           v2f = CS_F_(eps);
-          sigma = cs_field_get_key_double(v2f, ksigmas);
+          sigma = v2f->get_key_double(ksigmas);
         }
         else {
           v2f = CS_F_(phi);
-          sigma = cs_field_get_key_double(v2f, ksigmas);
+          sigma = v2f->get_key_double(ksigmas);
         }
 
         cs_real_t *coefa_v2f = v2f->bc_coeffs->a;
@@ -2869,20 +2869,20 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
       if (!(f_scal->type & CS_FIELD_VARIABLE))
         continue;
-      if (cs_field_get_key_int(f_scal, keysca) <= 0)
+      if (f_scal->get_key_int(keysca) <= 0)
         continue;
 
       cs_lnum_t isvhbl = -1;
       if (f_scal->id == isvhb)
         isvhbl = isvhb;
 
-      const int ifcvsl = cs_field_get_key_int(f_scal, kivisl);
+      const int ifcvsl = f_scal->get_key_int(kivisl);
       const cs_real_t *viscls = nullptr;
       if (ifcvsl >= 0)
         viscls = cs_field_by_id(ifcvsl)->val;
 
       /* Get the turbulent flux model for the scalar */
-      int turb_flux_model = cs_field_get_key_int(f_scal, kturt);
+      int turb_flux_model = f_scal->get_key_int(kturt);
       int turb_flux_model_type = turb_flux_model / 10;
 
       /* Indicate if Cp is used as a multiplier for a given scalar
@@ -2890,7 +2890,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
          is handled like a temperature. */
       cs_lnum_t ihcp = 0;
       const int kscavr = cs_field_key_id("first_moment_id");
-      const int iscavr = cs_field_get_key_int(f_scal, kscavr);
+      const int iscavr = f_scal->get_key_int(kscavr);
 
       /* Reference diffusivity */
       const int kvisl0 = cs_field_key_id("diffusivity_ref");
@@ -2900,13 +2900,13 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
       if (iscavr > 0) {
         f = cs_field_by_id(iscavr);
-        visls_0 = cs_field_get_key_double(f, kvisl0);
-        iscacp  = cs_field_get_key_int(cs_field_by_id(iscavr), kscacp);
+        visls_0 = f->get_key_double(kvisl0);
+        iscacp  = cs_field_by_id(iscavr)->get_key_int(kscacp);
       }
       else {
         f = f_scal;
-        visls_0 = cs_field_get_key_double(f_scal, kvisl0);
-        iscacp  = cs_field_get_key_int(f_scal, kscacp);
+        visls_0 = f_scal->get_key_double(kvisl0);
+        iscacp  = f_scal->get_key_int(kscacp);
       }
 
       if (iscacp == 1) {
@@ -2940,14 +2940,13 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
           visten = (cs_real_6_t *)f_vis->val;
         }
-        const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
-        ctheta = cs_field_get_key_double(f_scal, kctheta);
+        ctheta = f_scal->get_key_double("turbulent_flux_ctheta");
       }
 
-      cs_real_t turb_schmidt = cs_field_get_key_double(f_scal, ksigmas);
+      cs_real_t turb_schmidt = f_scal->get_key_double(ksigmas);
 
       /* Get boundary value (for post-processing) */
-      int b_f_id = cs_field_get_key_int(f_scal, kbfid);
+      int b_f_id = f_scal->get_key_int(kbfid);
 
       /* Scalar transported quantity */
       if (f->dim == 1) {
@@ -3843,7 +3842,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
          boundary values for the thermal scalar were directly
          saved to the boundary temperature field, so no copy is needed. */
 
-      int b_f_id = cs_field_get_key_int(f_th, kbfid);
+      int b_f_id = f_th->get_key_int(kbfid);
       cs_real_t *bvar_s = nullptr;
 
       if (b_f_id > -1)
@@ -3895,7 +3894,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         int coupled = 0;
         int coupled_key_id = cs_field_key_id_try("coupled");
         if (f->dim > 1 && coupled_key_id > -1)
-          coupled = cs_field_get_key_int(f, coupled_key_id);
+          coupled = f->get_key_int(coupled_key_id);
         if (!coupled)
           continue;
 
@@ -4368,7 +4367,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
     /* internal coupling */
     if (eqp->icoupl > 0) {
       const int coupling_key_id = cs_field_key_id("coupling_entity");
-      int coupling_id = cs_field_get_key_int(f, coupling_key_id);
+      int coupling_id = f->get_key_int(coupling_key_id);
       cpl = cs_internal_coupling_by_id(coupling_id);
     }
 
@@ -4377,7 +4376,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
       if (eqp->idiff > 0) {
         CS_PROFILE_MARK_LINE();
         int key_id = cs_field_key_id("gradient_weighting_id");
-        int diff_id = cs_field_get_key_int(f, key_id);
+        int diff_id = f->get_key_int(key_id);
         if (diff_id > -1) {
           cs_field_t *weight_f = cs_field_by_id(diff_id);
           c_weight = weight_f->val;
@@ -4660,7 +4659,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
     if (eqp->icoupl > 0) {
       CS_PROFILE_MARK_LINE();
       const int coupling_key_id = cs_field_key_id("coupling_entity");
-      int coupling_id = cs_field_get_key_int(f, coupling_key_id);
+      int coupling_id = f->get_key_int(coupling_key_id);
       cpl = cs_internal_coupling_by_id(coupling_id);
     }
     CS_PROFILE_MARK_LINE();
@@ -4669,8 +4668,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
     if ((f->type & CS_FIELD_VARIABLE) && eqp->iwgrec == 1) {
       if (eqp->idiff > 0) {
         CS_PROFILE_MARK_LINE();
-        int key_id = cs_field_key_id("gradient_weighting_id");
-        int diff_id = cs_field_get_key_int(f, key_id);
+        int diff_id = f->get_key_int("gradient_weighting_id");
         if (diff_id > -1) {
           cs_field_t *weight_f = cs_field_by_id(diff_id);
           gweight = weight_f->val;

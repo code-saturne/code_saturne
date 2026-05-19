@@ -457,8 +457,7 @@ cs_matrix_vector_native_multiply(bool              symmetric,
 
   if (f_id != -1) {
     const cs_field_t *f = cs_field_by_id(f_id);
-    int coupling_id = cs_field_get_key_int(f,
-                                           cs_field_key_id("coupling_entity"));
+    int coupling_id = f->get_key_int("coupling_entity");
 
     if (coupling_id > -1)
       cs_internal_coupling_spmv_contribution(false,
@@ -466,7 +465,6 @@ cs_matrix_vector_native_multiply(bool              symmetric,
                                              vx,
                                              vy);
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -964,8 +962,7 @@ cs_matrix_t *
 cs_matrix_by_assembler(const cs_field_t  *f,
                        cs_matrix_type_t   type)
 {
-  int coupling_id = cs_field_get_key_int(f,
-                                         cs_field_key_id("coupling_entity"));
+  int coupling_id = f->get_key_int("coupling_entity");
 
   /* Build matrix assembler on demand */
 
@@ -1015,8 +1012,7 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
                                         const cs_real_t   *da,
                                         const cs_real_t   *xa)
 {
-  int coupling_id = cs_field_get_key_int(f,
-                                         cs_field_key_id("coupling_entity"));
+  int coupling_id = f->get_key_int("coupling_entity");
 
   const cs_mesh_t *mesh = cs_glob_mesh;
 

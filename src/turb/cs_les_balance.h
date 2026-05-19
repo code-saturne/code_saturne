@@ -1,5 +1,5 @@
-#ifndef __CS_LES_BALANCE_H__
-#define __CS_LES_BALANCE_H__
+#ifndef CS_LES_BALANCE_H
+#define CS_LES_BALANCE_H
 
 /*============================================================================
  * Filters for dynamic models.
@@ -33,10 +33,6 @@
 
 #include "base/cs_base.h"
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -152,7 +148,7 @@ extern cs_les_balance_t *cs_glob_les_balance;
  * Create fields used in LES balance computation
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_balance_create_fields(void);
 
 /*----------------------------------------------------------------------------
@@ -162,49 +158,49 @@ cs_les_balance_create_fields(void);
  *  pointer to LES balance global structure
  *----------------------------------------------------------------------------*/
 
-cs_les_balance_t *
+extern "C" cs_les_balance_t *
 cs_get_glob_les_balance(void);
 
 /*----------------------------------------------------------------------------
  * Create a LES balance descriptor.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_balance_create(void);
 
 /*----------------------------------------------------------------------------
  * Update gradients needed in LES balance
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_balance_update_gradients(void);
 
 /*----------------------------------------------------------------------------
  * Compute Rij LES balance.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_balance_compute_rij(void);
 
 /*----------------------------------------------------------------------------
  * Compute Tui LES balance.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_balance_compute_tui(void);
 
 /*----------------------------------------------------------------------------
  * Write the LES balance structure in the auxiliary restart file.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_balance_write_restart(void);
 
 /*----------------------------------------------------------------------------
  * Destroy the LES balance structure.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_balance_finalize(void);
 
 /*----------------------------------------------------------------------------
@@ -215,7 +211,7 @@ cs_les_balance_finalize(void);
  *  frequency_n --> balance computing frequency in time-steps
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_balance_activate(int     type_flag,
                         int     frequency_n);
 
@@ -223,11 +219,9 @@ cs_les_balance_activate(int     type_flag,
  * Compute the LES balance
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_balance_compute(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_LES_BALANCE_H__ */
+#endif /* CS_LES_BALANCE_H */

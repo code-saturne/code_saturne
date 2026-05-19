@@ -1,5 +1,5 @@
-#ifndef __CS_SLES_PC_H__
-#define __CS_SLES_PC_H__
+#ifndef CS_SLES_PC_H
+#define CS_SLES_PC_H
 
 /*============================================================================
  * Sparse Linear Equation Solver Preconditioner driver
@@ -35,10 +35,6 @@
 #include "base/cs_log.h"
 #include "base/cs_halo_perio.h"
 #include "alge/cs_matrix.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -227,7 +223,7 @@ typedef void
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Log preconditioner setup, history and performance data.
  *
  * This function frees resolution-related data, such as multigrid hierarchy,
@@ -240,12 +236,12 @@ typedef void
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_pc_log(cs_sles_pc_t  *pc,
                cs_log_t       log_type);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define sparse linear equation preconditioner.
  *
  * The context pointer is used to point to a structure adapted to the function
@@ -271,7 +267,7 @@ cs_sles_pc_log(cs_sles_pc_t  *pc,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_pc_t *
+extern "C" cs_sles_pc_t *
 cs_sles_pc_define(void                    *context,
                   cs_sles_pc_get_type_t   *get_type_func,
                   cs_sles_pc_setup_t      *setup_func,
@@ -283,19 +279,18 @@ cs_sles_pc_define(void                    *context,
                   cs_sles_pc_destroy_t    *destroy_func);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Destroy a sparse linear equation preconditioner.
- *
  *
  * \param[in, out]  pc   pointer to preconditioner context structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_pc_destroy(cs_sles_pc_t **pc);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a new preconditioner context based on the copy of another.
  *
  * The intended use of this function is to allow associating different
@@ -310,11 +305,11 @@ cs_sles_pc_destroy(cs_sles_pc_t **pc);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_pc_t *
+extern "C" cs_sles_pc_t *
 cs_sles_pc_clone(const cs_sles_pc_t  *src);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return type name of preconditioner context.
  *
  * The returned string is intended to help determine which type is associated
@@ -328,11 +323,11 @@ cs_sles_pc_clone(const cs_sles_pc_t  *src);
  */
 /*----------------------------------------------------------------------------*/
 
-const char *
+extern "C" const char *
 cs_sles_pc_get_type(cs_sles_pc_t  *pc);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return type name of preconditioner context.
  *
  * The returned string is intended mainly for logging.
@@ -341,11 +336,11 @@ cs_sles_pc_get_type(cs_sles_pc_t  *pc);
  */
 /*----------------------------------------------------------------------------*/
 
-const char *
+extern "C" const char *
 cs_sles_pc_get_type_name(cs_sles_pc_t  *pc);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return pointer to preconditioner context structure pointer.
  *
  * The context structure depends on the type of preconditioner used, which may
@@ -358,11 +353,11 @@ cs_sles_pc_get_type_name(cs_sles_pc_t  *pc);
  */
 /*----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 cs_sles_pc_get_context(cs_sles_pc_t  *pc);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return a pointer to the function used to apply a preconditioner.
  *
  * This allows calling the preconditioner with one less level of indirection.
@@ -373,11 +368,11 @@ cs_sles_pc_get_context(cs_sles_pc_t  *pc);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_pc_apply_t *
+extern "C" cs_sles_pc_apply_t *
 cs_sles_pc_get_apply_func(const cs_sles_pc_t *pc);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the required tolerance for preconditioners involving an
  *        iterative solver.
  *
@@ -396,13 +391,13 @@ cs_sles_pc_get_apply_func(const cs_sles_pc_t *pc);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_pc_set_tolerance(cs_sles_pc_t  *pc,
                          double         precision,
                          double         r_norm);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Setup sparse linear equation preconditioner.
  *
  * Use of this function is optional: if a \ref cs_sles_solve is called
@@ -420,7 +415,7 @@ cs_sles_pc_set_tolerance(cs_sles_pc_t  *pc,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_pc_setup(cs_sles_pc_t       *pc,
                  const char         *name,
                  const cs_matrix_t  *a,
@@ -428,7 +423,7 @@ cs_sles_pc_setup(cs_sles_pc_t       *pc,
                  int                 verbosity);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Apply a preconditioner.
  *
  * If no options were previously provided for the matching system,
@@ -446,13 +441,13 @@ cs_sles_pc_setup(cs_sles_pc_t       *pc,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_pc_state_t
+extern "C" cs_sles_pc_state_t
 cs_sles_pc_apply(cs_sles_pc_t        *pc,
                  cs_real_t           *x_in,
                  cs_real_t           *x_out);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free preconditioner setup.
  *
  * This function frees resolution-related data, such as multigrid hierarchy,
@@ -464,51 +459,51 @@ cs_sles_pc_apply(cs_sles_pc_t        *pc,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_pc_free(cs_sles_pc_t  *pc);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create an "identity" (or null) preconditioner.
  *
  * \return  pointer to newly created preconditioner object.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_pc_t *
+extern "C" cs_sles_pc_t *
 cs_sles_pc_none_create(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a Jacobi preconditioner.
  *
  * \return  pointer to newly created preconditioner object.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_pc_t *
+extern "C" cs_sles_pc_t *
 cs_sles_pc_jacobi_create(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a polynomial preconditioner of degree 1.
  *
  * \return  pointer to newly created preconditioner object.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_pc_t *
+extern "C" cs_sles_pc_t *
 cs_sles_pc_poly_1_create(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a polynomial preconditioner of degree 2.
  *
  * \return  pointer to newly created preconditioner object.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_pc_t *
+extern "C" cs_sles_pc_t *
 cs_sles_pc_poly_2_create(void);
 
 /*----------------------------------------------------------------------------
@@ -525,11 +520,9 @@ cs_sles_pc_poly_2_create(void);
  *   pointer to diagonal inverse if present, null otherwise
  *----------------------------------------------------------------------------*/
 
-const cs_real_t *
+extern "C" const cs_real_t *
 cs_sles_pc_get_ad_inv(void  *context);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_SLES_PC_H__ */
+#endif /* CS_SLES_PC_H */

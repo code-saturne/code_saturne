@@ -110,18 +110,19 @@ cs_user_physical_properties
     if (! (f->type & CS_FIELD_VARIABLE))
       continue;
 
-    int drift_flag = cs_field_get_key_int(f, keydri);
+    int drift_flag = f->get_key_int(keydri);
 
     if (drift_flag & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) {
 
       /* Position of variables, coefficients
        * ----------------------------------- */
 
-      cs_real_t *cpro_taup = nullptr, *cpro_taufpt = nullptr, *cpro_viscls = nullptr;
+      cs_real_t *cpro_taup = nullptr, *cpro_taufpt = nullptr;
+      cs_real_t *cpro_viscls = nullptr;
 
       /* Scalar's diffusivity (Brownian motion) */
 
-      int ifcvsl = cs_field_get_key_int(f, kivisl);
+      int ifcvsl = f->get_key_int(kivisl);
       if (ifcvsl > -1)
         cpro_viscls = cs_field_by_id(ifcvsl)->val;
 
@@ -170,7 +171,7 @@ cs_user_physical_properties
         if (t_mdl->itytur == 2 || t_mdl->itytur == 5) {
           const cs_real_t *cvar_k = CS_F_(k)->val;
           const cs_real_t *cvar_eps = CS_F_(eps)->val;
-          const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
+          const cs_real_t turb_schmidt = f->get_key_double(ksigmas);
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
             cs_real_t xk = cvar_k[c_id];
             cs_real_t xeps = cvar_eps[c_id];
@@ -195,7 +196,7 @@ cs_user_physical_properties
         /* k-omega models */
         if (t_mdl->itytur == 6) {
           const cs_real_t *cvar_omg = CS_F_(omg)->val;
-          const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
+          const cs_real_t turb_schmidt = f->get_key_double(ksigmas);
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
             cs_real_t xomg = cvar_omg[c_id];
             cpro_taufpt[c_id] = (3./2.)*(1./turb_schmidt)/xomg;

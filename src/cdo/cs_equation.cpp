@@ -449,8 +449,8 @@ _add_field(int            n_previous,
     eq->boundary_flux_id = cs_field_id_by_name(bdy_flux_name);
 
     const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-    cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("log"), 1);
-    cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("post_vis"), post_flag);
+    bdy_flux_fld->set_key_int("log", 1);
+    bdy_flux_fld->set_key_int("post_vis", post_flag);
 
     CS_FREE(bdy_flux_name);
 

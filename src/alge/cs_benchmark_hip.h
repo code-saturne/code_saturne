@@ -1,5 +1,5 @@
-#ifndef __CS_BENCHMARK_HIP_H__
-#define __CS_BENCHMARK_HIP_H__
+#ifndef CS_BENCHMARK_HIP_H
+#define CS_BENCHMARK_HIP_H
 
 /*============================================================================
  * Low-level operator benchmarking with HIP.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -55,7 +51,7 @@ BEGIN_C_DECLS
  *   y               <-> vector
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_mat_vec_exdiag_native_sym_hip(cs_lnum_t           n_faces,
                                  const cs_lnum_2_t  *face_cell,
                                  const cs_real_t    *xa,
@@ -64,7 +60,4 @@ cs_mat_vec_exdiag_native_sym_hip(cs_lnum_t           n_faces,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-
-#endif /* __CS_BENCHMARK_HIP_H__ */
+#endif /* CS_BENCHMARK_HIP_H */

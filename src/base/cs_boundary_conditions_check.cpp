@@ -451,10 +451,10 @@ cs_boundary_conditions_check(int  bc_type[],
       continue;
     if (f_sc->bc_coeffs == nullptr)
       continue;
-    if (cs_field_get_key_int(f_sc, keysca) <= 0)
+    if (f_sc->get_key_int(keysca) <= 0)
       continue;
 
-    const int iscavr = cs_field_get_key_int(f_sc, kscavr);
+    const int iscavr = f_sc->get_key_int(kscavr);
     int *icodcl_sc = f_sc->bc_coeffs->icodcl;
 
     cs_gnum_t n_field_errors = 0;
@@ -677,7 +677,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
       if (!(f_sc->type & CS_FIELD_VARIABLE))
         continue;
-      if (cs_field_get_key_int(f_sc, keysca) <= 0)
+      if (f_sc->get_key_int(keysca) <= 0)
         continue;
 
       int *icodcl_sc = f_sc->bc_coeffs->icodcl;

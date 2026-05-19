@@ -207,12 +207,12 @@ _read_legacy_field_info(cs_restart_t  *r)
     const cs_field_t *f = cs_field_by_id(f_id);
     int v_num = -1;
     if (kv > -1)
-      v_num = cs_field_get_key_int(f, kv);
+      v_num = f->get_key_int(kv);
     if (v_num > 0) {
       int s_num = -1;
       n_cur[0] += 1;
       if (ks > -1)
-        s_num = cs_field_get_key_int(f, ks);
+        s_num = f->get_key_int(ks);
       if (s_num > -1) {
         n_cur[1] += 1;
         if (f->type & CS_FIELD_USER)
@@ -276,11 +276,11 @@ _read_legacy_field_info(cs_restart_t  *r)
     int old_scal_num = -1;
     int s_num = -1;
     if (ks > -1)
-      s_num = cs_field_get_key_int(f, ks);
+      s_num = f->get_key_int(ks);
     if (s_num > -1) {
       old_scal_num = -1;
       if (kold > -1)
-        old_scal_num = cs_field_get_key_int(f, kold);
+        old_scal_num = f->get_key_int(kold);
       if (old_scal_num < 0) {
         if (f->type & CS_FIELD_USER)
           old_scal_num = s_num + us_shift;
@@ -301,7 +301,7 @@ _read_legacy_field_info(cs_restart_t  *r)
         kold = cs_field_define_key_int("old_scalar_num",
                                        -1,
                                        CS_FIELD_VARIABLE);
-      cs_field_set_key_int(f, kold, old_scal_num);
+      f->set_key_int(kold, old_scal_num);
     }
   }
 
@@ -535,7 +535,7 @@ _read_field_vals_legacy(cs_restart_t  *r,
 
   char old_name[96] = "";
   int ks = cs_field_key_id_try("scalar_id");
-  int scalar_id = cs_field_get_key_int(f, ks);
+  int scalar_id = f->get_key_int(ks);
 
   /* Special case for scalars */
 
@@ -838,7 +838,7 @@ _read_linked_fields_legacy(cs_restart_t  *r,
     if (key_flag == -1 || !(f->type & key_flag))
       continue;
 
-    const int lnk_f_id = cs_field_get_key_int(f, key_id);
+    const int lnk_f_id = f->get_key_int(key_id);
     int s_num = -1;
 
     if (lnk_f_id > -1) {
@@ -853,9 +853,9 @@ _read_linked_fields_legacy(cs_restart_t  *r,
       /* check for (possibly renumbered) scalar */
       if (f->type & CS_FIELD_VARIABLE) {
         if (kold > -1)
-          s_num = cs_field_get_key_int(f, kold);
+          s_num = f->get_key_int(kold);
         if (s_num < 0 && ks > -1)
-          s_num = cs_field_get_key_int(f, ks);
+          s_num = f->get_key_int(ks);
       }
 
       for (int t_id = 0; t_id < 2; t_id++) {
@@ -987,7 +987,7 @@ _check_field_model(cs_restart_t               *r,
 
       int old_f_id = cs_map_name_to_id_try(old_field_map, f_name);
       if (old_f_id > -1) {
-        if (cs_field_get_key_int(f, key_id) != old_key_val[old_f_id])
+        if (f->get_key_int(key_id) != old_key_val[old_f_id])
           n_diff += 1;
       }
 
@@ -1045,7 +1045,7 @@ _check_turb_flux_model(cs_restart_t               *r,
         if (!(f->type & CS_FIELD_VARIABLE))
           continue;
 
-        int s_num = cs_field_get_key_int(f, kold);
+        int s_num = f->get_key_int(kold);
 
         if (s_num > 0) {
           char sec_name[128];
@@ -1059,7 +1059,7 @@ _check_turb_flux_model(cs_restart_t               *r,
                                                 CS_TYPE_int,
                                                 old_s_model);
           if (retcode == CS_RESTART_SUCCESS) {
-            if (cs_field_get_key_int(f, key_id) != old_s_model[0])
+            if (f->get_key_int(key_id) != old_s_model[0])
               n_diff += 1;
           }
         }
@@ -2002,7 +2002,7 @@ cs_restart_read_variables(cs_restart_t               *r,
     if (f->type & CS_FIELD_VARIABLE) {
 
       if (cs_field_is_key_set(f, restart_file_key_id)) {
-        if (cs_field_get_key_int(f, restart_file_key_id) != CS_RESTART_MAIN)
+        if (f->get_key_int(restart_file_key_id) != CS_RESTART_MAIN)
           continue;
       }
 
@@ -2010,7 +2010,7 @@ cs_restart_read_variables(cs_restart_t               *r,
       int t_id_e = f->n_time_vals;
 
       if (cs_field_is_key_set(f, key_n_r)) {
-        t_id_e = cs_field_get_key_int(f, key_n_r);
+        t_id_e = f->get_key_int(key_n_r);
         if (t_id_e > f->n_time_vals)
           t_id_e = f->n_time_vals;
       }
@@ -2106,7 +2106,7 @@ cs_restart_read_variables(cs_restart_t               *r,
       if (f->type & CS_FIELD_VARIABLE) {
         if (!(_read_flag[f_id] & 1)) {
           if (cs_field_is_key_set(f, restart_file_key_id)) {
-            if (cs_field_get_key_int(f, restart_file_key_id) != CS_RESTART_MAIN)
+            if (f->get_key_int(restart_file_key_id) != CS_RESTART_MAIN)
               continue;
           }
           n_missing++;
@@ -2197,9 +2197,9 @@ cs_restart_write_variables(cs_restart_t  *r,
     for (int f_id = 0; f_id < n_fields; f_id++) {
       const cs_field_t *f = cs_field_by_id(f_id);
       if (f->type & CS_FIELD_VARIABLE) {
-        int s_num = cs_field_get_key_int(f, k_sca);
+        int s_num = f->get_key_int(k_sca);
         if (s_num > 0) {
-          int f_turbt = cs_field_get_key_int(f, k_turbt);
+          int f_turbt = f->get_key_int(k_turbt);
           if (f_turbt > 0) {
             turbt_buf[f_id] = f_turbt;
             n_turbt++;
@@ -2230,7 +2230,7 @@ cs_restart_write_variables(cs_restart_t  *r,
     if (f->type & CS_FIELD_VARIABLE) {
 
       if (cs_field_is_key_set(f, restart_file_key_id)) {
-        if (cs_field_get_key_int(f, restart_file_key_id) != CS_RESTART_MAIN)
+        if (f->get_key_int(restart_file_key_id) != CS_RESTART_MAIN)
           continue;
       }
 
@@ -2238,7 +2238,7 @@ cs_restart_write_variables(cs_restart_t  *r,
       int t_id_e = f->n_time_vals;
 
       if (cs_field_is_key_set(f, key_n_r)) {
-        t_id_e = cs_field_get_key_int(f, key_n_r);
+        t_id_e = f->get_key_int(key_n_r);
         if (t_id_e > f->n_time_vals)
           t_id_e = f->n_time_vals;
       }
@@ -2433,7 +2433,7 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
       if (key_flag == -1 || !(f->type & key_flag))
         continue;
     }
-    if (cs_field_get_key_int(f, key_id) > -1)
+    if (f->get_key_int(key_id) > -1)
       n_required += 1;
   }
 
@@ -2494,7 +2494,7 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
           continue;
       }
 
-      const int lnk_f_id = cs_field_get_key_int(f, key_id);
+      const int lnk_f_id = f->get_key_int(key_id);
 
       if (lnk_f_id > -1) {
 
@@ -2619,7 +2619,7 @@ cs_restart_write_linked_fields(cs_restart_t  *r,
       if (key_flag == -1 || !(f->type & key_flag))
         continue;
     }
-    key_val[f_id] = cs_field_get_key_int(f, key_id);
+    key_val[f_id] = f->get_key_int(key_id);
   }
 
   cs_restart_write_section(r,
@@ -2703,7 +2703,7 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
 
       int coupled = 0;
       if (f->dim > 1 && coupled_key_id > -1)
-        coupled = cs_field_get_key_int(f, coupled_key_id);
+        coupled = f->get_key_int(coupled_key_id);
 
       int n_loc_vals = 1;
       int32_t coeff_p[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -2841,7 +2841,7 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
 
       int coupled = 0;
       if (f->dim > 1 && coupled_key_id > -1)
-        coupled = cs_field_get_key_int(f, coupled_key_id);
+        coupled = f->get_key_int(coupled_key_id);
 
       cs_real_t *val_f_pre = (f->n_time_vals > 2) ?
                              f->bc_coeffs->val_f_pre : nullptr;
@@ -3219,13 +3219,13 @@ cs_restart_write_fields(cs_restart_t        *r,
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     /* Variables are handled in previous function */
-    if (cs_field_get_key_int(f, restart_file_key_id) == r_id) {
+    if (f->get_key_int(restart_file_key_id) == r_id) {
 
       /* For current field compute number of time values to write by taking
        * max of the key defined by user and the backward differentiation
        * scheme order.
        */
-      int n_vals_to_write = cs_field_get_key_int(f, key_n_r);
+      int n_vals_to_write = f->get_key_int(key_n_r);
 
       for (int i = 0; i < n_vals_to_write; i++)
         cs_restart_write_field_vals(r, f_id, i);
@@ -3256,8 +3256,8 @@ cs_restart_read_fields(cs_restart_t       *r,
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     int t_id_last = -1;
-    if (cs_field_get_key_int(f, restart_file_key_id) == r_id) {
-      const int n_vals_to_reads = cs_field_get_key_int(f, n_restart_vals_key);
+    if (f->get_key_int(restart_file_key_id) == r_id) {
+      const int n_vals_to_reads = f->get_key_int(n_restart_vals_key);
       for (int i = 0; i < n_vals_to_reads; i++) {
         int retval = cs_restart_read_field_vals(r, f_id, i);
         if (retval != CS_RESTART_SUCCESS)
@@ -3317,35 +3317,35 @@ cs_restart_set_auxiliary_field_options(void)
   if (f_p->irovar == 1 || vof_p->vof_model > 0) {
     int n_time_vals = CS_F_(rho)->n_time_vals;
     if (n_time_vals > 1) {
-      cs_field_set_key_int(CS_F_(rho), k_r_id, i_restart_aux);
-      cs_field_set_key_int(CS_F_(rho_b), k_r_id, i_restart_aux);
+      CS_F_(rho)->set_key_int(k_r_id, i_restart_aux);
+      CS_F_(rho_b)->set_key_int(k_r_id, i_restart_aux);
       if (n_time_vals > 2) {
-        cs_field_set_key_int(CS_F_(rho), k_n_id, n_time_vals-1);
-        cs_field_set_key_int(CS_F_(rho_b), k_n_id, n_time_vals-1);
+        CS_F_(rho)->set_key_int(k_n_id, n_time_vals-1);
+        CS_F_(rho_b)->set_key_int(k_n_id, n_time_vals-1);
       }
     }
   }
 
   /* Molecular viscosity */
-  if ((cs_field_get_key_int(CS_F_(mu), k_t_ext_id) > 0 && f_p->ivivar) ||
+  if ((CS_F_(mu)->get_key_int(k_t_ext_id) > 0 && f_p->ivivar) ||
       vof_p->vof_model > 0) {
-    cs_field_set_key_int(CS_F_(mu), k_r_id, i_restart_aux);
+    CS_F_(mu)->set_key_int(k_r_id, i_restart_aux);
   }
 
   /* Turbulent viscosity */
-  if (cs_field_get_key_int(CS_F_(mu_t), k_t_ext_id) > 0)
-    cs_field_set_key_int(CS_F_(mu_t), k_r_id, i_restart_aux);
+  if (CS_F_(mu_t)->get_key_int(k_t_ext_id) > 0)
+    CS_F_(mu_t)->set_key_int(k_r_id, i_restart_aux);
 
   /* Heat capacity */
   if (CS_F_(cp) != nullptr) {
-    if (cs_field_get_key_int(CS_F_(cp), k_t_ext_id) > 0 ||
+    if (CS_F_(cp)->get_key_int(k_t_ext_id) > 0 ||
         cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 0)
-      cs_field_set_key_int(CS_F_(cp), k_r_id, i_restart_aux);
+      CS_F_(cp)->set_key_int(k_r_id, i_restart_aux);
   }
 
   /* time step if steady alogrithm */
   if (ts_opts->idtvar == CS_TIME_STEP_LOCAL)
-    cs_field_set_key_int(CS_F_(dt), k_r_id, i_restart_aux);
+    CS_F_(dt)->set_key_int(k_r_id, i_restart_aux);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_HYPRE_PRIV_H__
-#define __CS_MATRIX_HYPRE_PRIV_H__
+#ifndef CS_MATRIX_HYPRE_PRIV_H
+#define CS_MATRIX_HYPRE_PRIV_H
 
 /*============================================================================
  * Private types for sparse matrix representation and operations using HYPRE.
@@ -45,8 +45,6 @@
 #include "alge/cs_matrix_hypre.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -99,13 +97,11 @@ typedef struct _cs_matrix_coeffs_hypre_t {
  */
 /*----------------------------------------------------------------------------*/
 
-cs_matrix_coeffs_hypre_t *
+extern "C" cs_matrix_coeffs_hypre_t *
 cs_matrix_hypre_get_coeffs(const cs_matrix_t  *matrix);
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MATRIX_HYPRE_PRIV_H__ */
+#endif /* CS_MATRIX_HYPRE_PRIV_H */

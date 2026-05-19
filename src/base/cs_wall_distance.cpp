@@ -689,11 +689,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   cs_real_t *cofaf_yp = bc_coeffs_yp->af;
   cs_real_t *cofbf_yp = bc_coeffs_yp->bf;
 
-  int iflmas = cs_field_get_key_int(f_yplus,
-                                    cs_field_key_id("inner_mass_flux_id"));
-
-  int iflmab = cs_field_get_key_int(f_yplus,
-                                    cs_field_key_id("boundary_mass_flux_id"));
+  int iflmas = f_yplus->get_key_int("inner_mass_flux_id");
+  int iflmab = f_yplus->get_key_int("boundary_mass_flux_id");
 
   /* Get pointer to the convective mass flux */
   cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;

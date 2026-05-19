@@ -408,9 +408,9 @@ _add_species_field(const char  *name,
   cs_add_model_field_indexes(f);
   cs_gas_mix_add_species(f->id);
 
-  cs_field_set_key_int(f, kivisl, 0);
-  cs_field_set_key_double(f, kscmin, 0.);
-  cs_field_set_key_double(f, kscmax, 1.);
+  f->set_key_int(kivisl, 0);
+  f->set_key_double(kscmin, 0.);
+  f->set_key_double(kscmax, 1.);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -749,7 +749,7 @@ cs_gas_mix_add_variable_fields(void)
 
   f = cs_thermal_model_field();
   if (f != nullptr) {
-    cs_field_set_key_int(f, kivisl, 0);
+    f->set_key_int(kivisl, 0);
   }
 
   cs_gas_mix_type_t mix_type
@@ -861,8 +861,8 @@ cs_gas_mix_add_property_fields(void)
                         1, /* dim */
                         true);
 
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, label);
 
     _map_field(f);
@@ -877,8 +877,8 @@ cs_gas_mix_add_property_fields(void)
                         1, /* dim */
                         false);
 
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 1);
 
     /* Add molecular weight of non-condensable mixture */
     f = cs_field_create("mol_mas_ncond",
@@ -887,8 +887,8 @@ cs_gas_mix_add_property_fields(void)
                         1, /* dim */
                         false);
 
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 1);
 
     cs_thermal_model_t *thm = cs_get_glob_thermal_model();
     /* In case of solving the temperature, we do not need to define tempk */
@@ -902,8 +902,8 @@ cs_gas_mix_add_property_fields(void)
                             1, /* dim */
                             false);
 
-        cs_field_set_key_int(f, keyvis, 0);
-        cs_field_set_key_int(f, keylog, 1);
+        f->set_key_int(keyvis, 0);
+        f->set_key_int(keylog, 1);
 
         cs_field_pointer_map(CS_ENUMF_(t_kelvin), f);
      }
@@ -919,8 +919,8 @@ cs_gas_mix_add_property_fields(void)
   cs_field_pointer_map(CS_ENUMF_(mol_mass),
                        cs_field_by_name_try("mix_mol_mas"));
 
-  cs_field_set_key_int(f, keyvis, 0);
-  cs_field_set_key_int(f, keylog, 1);
+  f->set_key_int(keyvis, 0);
+  f->set_key_int(keylog, 1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -958,7 +958,7 @@ cs_gas_mix_physical_properties(void)
 
   const cs_field_t *th_f = cs_thermal_model_field();
   const int kivisl = cs_field_key_id("diffusivity_id");
-  int ifcvsl = cs_field_get_key_int(th_f, kivisl);
+  int ifcvsl = th_f->get_key_int(kivisl);
 
   /*  Initializations
       --------------- */
@@ -1035,7 +1035,7 @@ cs_gas_mix_physical_properties(void)
   }
   else {
     temp = CS_F_(t_kelvin)->val;
-    ifcvsl = cs_field_get_key_int(CS_F_(t_kelvin), kivisl);
+    ifcvsl = CS_F_(t_kelvin)->get_key_int(kivisl);
     lambda = cs_field_by_id(ifcvsl)->val;
   }
 
@@ -1284,7 +1284,7 @@ cs_gas_mix_physical_properties(void)
 
     const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
     const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
-    ifcvsl = cs_field_get_key_int(f_spe, kivisl);
+    ifcvsl = f_spe->get_key_int(kivisl);
     cs_real_t *cpro_vyk = cs_field_by_id(ifcvsl)->val;
 
     cs_array_real_copy(n_cells, cpro_viscl, cpro_vyk);

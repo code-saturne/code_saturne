@@ -98,7 +98,7 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
   const int kscacp = cs_field_key_id("is_temperature");
 
   const cs_real_t *viscl = CS_F_(mu)->val;
-  const int ifcvsl = cs_field_get_key_int(f_sc, kivisl);
+  const int ifcvsl = f_sc->get_key_int(kivisl);
 
   cs_dispatch_context ctx;
   const cs_real_t csrij = cs_turb_csrij;
@@ -106,8 +106,8 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
   /* Get the turbulent flux model for the scalar */
 
   const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
-  const cs_real_t ctheta = cs_field_get_key_double(f_sc, kctheta);
-  const int turb_flux_model = cs_field_get_key_int(f_sc, kturt);
+  const cs_real_t ctheta = f_sc->get_key_double(kctheta);
+  const int turb_flux_model = f_sc->get_key_int(kturt);
 
   cs_field_t *f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
   cs_real_6_t *visten = (cs_real_6_t *)f_a_t_visc->val;
@@ -122,14 +122,14 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
 
   /* Reference diffusivity of the primal scalar */
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
-  cs_real_t visls_0 = cs_field_get_key_double(f_sc, kvisl0);
+  cs_real_t visls_0 = f_sc->get_key_double(kvisl0);
 
   const cs_real_t *viscls = nullptr;
   if (ifcvsl >= 0)
     viscls = cs_field_by_id(ifcvsl)->val;
 
   /* Does the scalar behave as a temperature ? */
-  const int iscacp = cs_field_get_key_int(f_sc, kscacp);
+  const int iscacp = f_sc->get_key_int(kscacp);
 
   /* Turbulent diffusive flux of the scalar T
      (blending factor so that the component v'T' have only
@@ -315,7 +315,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
 
   const int kivisl  = cs_field_key_id("diffusivity_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  const int ifcvsl  = cs_field_get_key_int(f_v, kivisl);
+  const int ifcvsl  = f_v->get_key_int(kivisl);
 
   cs_dispatch_context ctx;
   const cs_real_t csrij = cs_turb_csrij;
@@ -331,11 +331,13 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
   cs_real_6_t *visten = nullptr;
   if (eqp_v->idften & CS_ANISOTROPIC_DIFFUSION) {
     if (model != CS_TURB_RIJ_EPSILON_EBRSM) {
-      cs_field_t *f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
+      cs_field_t *f_a_t_visc
+        = cs_field_by_name("anisotropic_turbulent_viscosity");
       visten = (cs_real_6_t *)f_a_t_visc->val;
     }
     else {/* EBRSM and (GGDH or AFM) */
-      cs_field_t *f_vis = cs_field_by_name("anisotropic_turbulent_viscosity_scalar");
+      cs_field_t *f_vis
+        = cs_field_by_name("anisotropic_turbulent_viscosity_scalar");
       visten = (cs_real_6_t *)f_vis->val;
     }
   }
@@ -346,14 +348,14 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
     viscls = cs_field_by_id(ifcvsl)->val;
 
   const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
-  const cs_real_t ctheta = cs_field_get_key_double(f_v, kctheta);
+  const cs_real_t ctheta = f_v->get_key_double(kctheta);
 
   /* Retrieve turbulent Schmidt value for current scalar */
-  const cs_real_t turb_schmidt = cs_field_get_key_double(f_v, ksigmas);
+  const cs_real_t turb_schmidt = f_v->get_key_double(ksigmas);
 
   /* Reference diffusivity */
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
-  cs_real_t visls_0 = cs_field_get_key_double(f_v, kvisl0);
+  cs_real_t visls_0 = f_v->get_key_double(kvisl0);
 
   const int *icodcl_v = f_v->bc_coeffs->icodcl;
 
@@ -843,11 +845,11 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
     if (!(f_scal->type & CS_FIELD_VARIABLE))
       continue;
-    if (cs_field_get_key_int(f_scal, keysca) <= 0)
+    if (f_scal->get_key_int(keysca) <= 0)
       continue;
 
     /* Get the associated turbulent flux model */
-    const int turb_flux_model = cs_field_get_key_int(f_scal, kturt);
+    const int turb_flux_model = f_scal->get_key_int(kturt);
     const int turb_flux_model_type = turb_flux_model / 10;
 
     /* u'T' */

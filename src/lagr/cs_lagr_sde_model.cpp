@@ -975,8 +975,7 @@ _lagich(cs_lagr_particle_set_t  &p_set,
                 "with second-order model."));
 
   cs_real_t diftl0 = -1;
-  diftl0 = cs_field_get_key_double(cs_field_by_name("enthalpy"),
-                                   cs_field_key_id("diffusivity_ref"));
+  diftl0 = cs_field_by_name("enthalpy")->get_key_double("diffusivity_ref");
 
   /* Main loop on particles
    * ====================== */

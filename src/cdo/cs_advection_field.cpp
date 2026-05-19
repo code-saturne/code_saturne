@@ -1182,10 +1182,10 @@ cs_advection_field_create_fields(void)
                                           3, /* always a vector-valued field */
                                           has_previous);
 
-        cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+        fld->set_key_int(cs_field_key_id("log"), 1);
 
         if (!cs_flag_test(adv->post_flag, CS_ADVECTION_FIELD_POST_NONE))
-          cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
+          fld->set_key_int(cs_field_key_id("post_vis"), 1);
 
         adv->cell_field_id = cs_field_id_by_name(field_name);
 
@@ -1210,10 +1210,10 @@ cs_advection_field_create_fields(void)
                                         3, /* always a vector-valued field */
                                         has_previous);
 
-      cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
+      fld->set_key_int(cs_field_key_id("log"), 1);
 
       if (!cs_flag_test(adv->post_flag, CS_ADVECTION_FIELD_POST_NONE))
-        cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
+        fld->set_key_int(cs_field_key_id("post_vis"), 1);
 
       adv->vtx_field_id = cs_field_id_by_name(field_name);
 
@@ -1237,8 +1237,8 @@ cs_advection_field_create_fields(void)
                                         1, /* always a scalar-valued field */
                                         has_previous);
 
-      cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-      cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
+      fld->set_key_int(cs_field_key_id("log"), 1);
+      fld->set_key_int(cs_field_key_id("post_vis"), 1);
 
       adv->bdy_field_id = cs_field_id_by_name(field_name);
 

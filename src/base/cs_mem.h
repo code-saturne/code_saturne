@@ -300,15 +300,14 @@ cs_mem_malloc_hd(cs_alloc_mode_t   mode,
 
 #else
 
-inline static void *
-cs_mem_malloc_hd(cs_alloc_mode_t   mode,
-                 size_t            ni,
-                 size_t            size,
-                 const char       *var_name,
-                 const char       *file_name,
-                 int               line_num)
+inline void *
+cs_mem_malloc_hd([[maybe_unused]] cs_alloc_mode_t   mode,
+                 size_t                             ni,
+                 size_t                             size,
+                 const char                        *var_name,
+                 const char                        *file_name,
+                 int                                line_num)
 {
-  CS_UNUSED(mode);
   return cs_mem_malloc(ni, size, var_name, file_name, line_num);
 }
 
@@ -386,15 +385,14 @@ cs_mem_realloc_hd(void            *ptr,
 #else
 
 inline static void *
-cs_mem_realloc_hd(void             *ptr,
-                  cs_alloc_mode_t   mode,
-                  size_t            ni,
-                  size_t            size,
-                  const char       *var_name,
-                  const char       *file_name,
-                  int               line_num)
+cs_mem_realloc_hd(void                              *ptr,
+                  [[maybe_unused]] cs_alloc_mode_t   mode,
+                  size_t                             ni,
+                  size_t                             size,
+                  const char                        *var_name,
+                  const char                        *file_name,
+                  int                                line_num)
 {
-  CS_UNUSED(mode);
   return cs_mem_realloc(ptr, ni, size, var_name, file_name, line_num);
 }
 
@@ -734,9 +732,8 @@ cs_check_device_ptr(const void  *ptr);
 #else
 
 inline static cs_alloc_mode_t
-cs_check_device_ptr(const void  *ptr)
+cs_check_device_ptr([[maybe_unused]] const void  *ptr)
 {
-  CS_UNUSED(ptr);
   return CS_ALLOC_HOST;
 }
 
@@ -861,7 +858,7 @@ cs_set_alloc_mode(void             **host_ptr,
 #if defined(HAVE_ACCEL)
 
 template<typename T>
-static inline void
+inline void
 cs_set_alloc_mode_r(T*                &host_ptr,
                     cs_alloc_mode_t    mode)
 {
@@ -910,10 +907,9 @@ cs_mem_advise_unset_read_mostly(void  *ptr);
 
 #else
 
-static inline void
-cs_mem_advise_unset_read_mostly(void  *ptr)
+inline void
+cs_mem_advise_unset_read_mostly([[maybe_unused]] void  *ptr)
 {
-  CS_UNUSED(ptr);
 }
 
 #endif
@@ -943,10 +939,9 @@ cs_sync_h2d(const void  *ptr);
 
 #else
 
-static inline void
-cs_sync_h2d(const void  *ptr)
+inline void
+cs_sync_h2d([[maybe_unused]] const void  *ptr)
 {
-  CS_UNUSED(ptr);
 }
 
 #endif
@@ -976,10 +971,9 @@ cs_sync_h2d_start(const void  *ptr);
 
 #else
 
-static inline void
-cs_sync_h2d_start(const void  *ptr)
+inline void
+cs_sync_h2d_start([[maybe_unused]] const void  *ptr)
 {
-  CS_UNUSED(ptr);
 }
 
 #endif
@@ -1010,10 +1004,9 @@ cs_sync_d2h(void  *ptr);
 
 #else
 
-static inline void
-cs_sync_d2h(void  *ptr)
+inline void
+cs_sync_d2h([[maybe_unused]] void  *ptr)
 {
-  CS_UNUSED(ptr);
 }
 
 #endif
@@ -1044,10 +1037,9 @@ cs_sync_d2h_start(void  *ptr);
 
 #else
 
-static inline void
-cs_sync_d2h_start(void  *ptr)
+inline void
+cs_sync_d2h_start([[maybe_unused]] void  *ptr)
 {
-  CS_UNUSED(ptr);
 }
 
 #endif
@@ -1078,10 +1070,9 @@ cs_sync_d2h_if_needed(void  *ptr);
 
 #else
 
-static inline void
-cs_sync_d2h_if_needed(void  *ptr)
+inline void
+cs_sync_d2h_if_needed([[maybe_unused]] void  *ptr)
 {
-  CS_UNUSED(ptr);
 }
 
 #endif
@@ -1112,10 +1103,9 @@ cs_sync_d2h_if_needed_start(void  *ptr);
 
 #else
 
-static inline void
-cs_sync_d2h_if_needed_start(void  *ptr)
+inline void
+cs_sync_d2h_if_needed_start([[maybe_unused]] void  *ptr)
 {
-  CS_UNUSED(ptr);
 }
 
 #endif
@@ -1141,7 +1131,7 @@ cs_prefetch_h2d(const void  *ptr,
 
 #else
 
-static inline void
+inline void
 cs_prefetch_h2d([[maybe_unused]] const void  *ptr,
                 [[maybe_unused]] size_t       size)
 {
@@ -1170,12 +1160,10 @@ cs_prefetch_d2h(void    *ptr,
 
 #else
 
-static inline void
-cs_prefetch_d2h(void    *ptr,
-                size_t   size)
+inline void
+cs_prefetch_d2h([[maybe_unused]] void    *ptr,
+                [[maybe_unused]] size_t   size)
 {
-  CS_UNUSED(ptr);
-  CS_UNUSED(size);
 }
 
 #endif
@@ -1194,7 +1182,7 @@ cs_mem_hd_async_wait(void);
 
 #else
 
-static inline void
+inline void
 cs_mem_hd_async_wait(void)
 {
 }

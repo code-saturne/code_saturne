@@ -1490,7 +1490,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
-    coupling_id = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+    coupling_id = f->get_key_int("coupling_entity");
   }
 
   /* Determine if we are in a case with special requirements */
@@ -1551,8 +1551,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     const int kiflux = cs_field_key_id("inner_flux_id");
     const int kbflux = cs_field_key_id("boundary_flux_id");
 
-    int i_flux_id = cs_field_get_key_int(f, kiflux);
-    int b_flux_id = cs_field_get_key_int(f, kbflux);
+    int i_flux_id = f->get_key_int(kiflux);
+    int b_flux_id = f->get_key_int(kbflux);
 
     if (i_flux_id > -1 && b_flux_id > -1) {
       assert(idtvar != -1);

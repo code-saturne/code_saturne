@@ -2484,8 +2484,8 @@ cs_syr_coupling_log_setup(void)
     for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
       if ((f->type & CS_FIELD_VARIABLE) || (f->type & CS_FIELD_USER)) {
-        if (cs_field_get_key_int(f, keysca) > 0) {
-          int icpsyr = cs_field_get_key_int(f, kcpsyr);
+        if (f->get_key_int(keysca) > 0) {
+          int icpsyr = f->get_key_int(kcpsyr);
           if (icpsyr > 0)
             cs_log_printf
               (CS_LOG_SETUP,
@@ -2583,7 +2583,7 @@ cs_syr_coupling_recv_boundary(const int  nvar,
 
     int icpsyr = 0;
     if (f->type & CS_FIELD_VARIABLE)
-      icpsyr = cs_field_get_key_int(f, kcpsyr);
+      icpsyr = f->get_key_int(kcpsyr);
 
     if (icpsyr < 1)
       continue;
@@ -2906,7 +2906,7 @@ cs_syr_coupling_exchange_volume(void)
 
     int icpsyr = 0;
     if (f->type & CS_FIELD_VARIABLE)
-      icpsyr = cs_field_get_key_int(f, kcpsyr);
+      icpsyr = f->get_key_int(kcpsyr);
 
     if (icpsyr < 1)
       continue;

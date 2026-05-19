@@ -666,7 +666,7 @@ _pressure_correction_fv(int                   iterns,
   if (eqp_p->iwgrec == 1) {
     /* Weighting field for gradient */
     int kwgrec = cs_field_key_id("gradient_weighting_id");
-    f_weight = cs_field_by_id(cs_field_get_key_int(f_p, kwgrec));
+    f_weight = cs_field_by_id(f_p->get_key_int(kwgrec));
   }
 
   cs_real_t *cpro_divu = nullptr, *_cpro_divu = nullptr;
@@ -756,8 +756,8 @@ _pressure_correction_fv(int                   iterns,
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
 
-  cs_real_t *imasfl = cs_field_by_id(cs_field_get_key_int(f_p, kimasf))->val;
-  cs_real_t *bmasfl = cs_field_by_id(cs_field_get_key_int(f_p, kbmasf))->val;
+  cs_real_t *imasfl = cs_field_by_id(f_p->get_key_int(kimasf))->val;
+  cs_real_t *bmasfl = cs_field_by_id(f_p->get_key_int(kbmasf))->val;
 
   /* Solving options */
 
@@ -770,8 +770,8 @@ _pressure_correction_fv(int                   iterns,
 
   if (vof_parameters->vof_model > 0) {
     cs_field_t *f_vf = cs_field_by_name("void_fraction");
-    imasfl = cs_field_by_id(cs_field_get_key_int(f_vf, kimasf))->val;
-    bmasfl = cs_field_by_id(cs_field_get_key_int(f_vf, kbmasf))->val;
+    imasfl = cs_field_by_id(f_vf->get_key_int(kimasf))->val;
+    bmasfl = cs_field_by_id(f_vf->get_key_int(kbmasf))->val;
   }
 
   const int i_vof_mass_transfer = (  vof_parameters->vof_model
@@ -1483,9 +1483,9 @@ _pressure_correction_fv(int                   iterns,
     const cs_time_step_t *ts = cs_glob_time_step;
 
     cs_real_t *imasfla
-      = cs_field_by_id(cs_field_get_key_int(f_p, kimasf))->val_pre;
+      = cs_field_by_id(f_p->get_key_int(kimasf))->val_pre;
     cs_real_t *bmasfla
-      = cs_field_by_id(cs_field_get_key_int(f_p, kbmasf))->val_pre;
+      = cs_field_by_id(f_p->get_key_int(kbmasf))->val_pre;
 
     cs_real_t *sti = cs_field_by_name("inner_face_source_term")->val;
 
@@ -1837,7 +1837,7 @@ _pressure_correction_fv(int                   iterns,
 
   if (nfbpcd > 0) {
     const int var_id_key = cs_field_key_id("variable_id");
-    const int ipr = cs_field_get_key_int(f_p, var_id_key);
+    const int ipr = f_p->get_key_int(var_id_key);
 
     cs_real_t *_spcond = spcond + (ipr-1)*nfbpcd;
 
@@ -1853,7 +1853,7 @@ _pressure_correction_fv(int                   iterns,
 
   if (ncmast > 0) {
     const int var_id_key = cs_field_key_id("variable_id");
-    const int ipr = cs_field_get_key_int(f_p, var_id_key);
+    const int ipr = f_p->get_key_int(var_id_key);
 
     cs_real_t *_svcond = svcond + (ipr-1)*ncmast;
     cs_real_t *surfbm = nullptr;
@@ -1877,9 +1877,9 @@ _pressure_correction_fv(int                   iterns,
     if (ieos == CS_EOS_NONE) { // If no particular EOS is set
       if (vp_param->itpcol == 1 && eqp_u->theta < 1.) {
         cs_real_t *imasfla
-          = cs_field_by_id(cs_field_get_key_int(f_p, kimasf))->val_pre;
+          = cs_field_by_id(f_p->get_key_int(kimasf))->val_pre;
         cs_real_t *bmasfla
-          = cs_field_by_id(cs_field_get_key_int(f_p, kbmasf))->val_pre;
+          = cs_field_by_id(f_p->get_key_int(kbmasf))->val_pre;
         cs_real_t *divu_prev;
         CS_MALLOC_HD(divu_prev, n_cells_ext, cs_real_t, amode);
 
@@ -2850,8 +2850,8 @@ _pressure_correction_cdo(cs_real_t              vel[][3],
   const int  kimasf = cs_field_key_id("inner_mass_flux_id");
   const int  kbmasf = cs_field_key_id("boundary_mass_flux_id");
 
-  cs_real_t  *imasfl = cs_field_by_id(cs_field_get_key_int(f_p, kimasf))->val;
-  cs_real_t  *bmasfl = cs_field_by_id(cs_field_get_key_int(f_p, kbmasf))->val;
+  cs_real_t  *imasfl = cs_field_by_id(f_p->get_key_int(kimasf))->val;
+  cs_real_t  *bmasfl = cs_field_by_id(f_p->get_key_int(kbmasf))->val;
 
   cs_real_t  *ipotfl = prcdo->inner_potential_flux;
   cs_real_t  *bpotfl = prcdo->bdy_potential_flux;
@@ -3114,9 +3114,7 @@ cs_pressure_correction_fv_activate(void)
                                     1,
                                     false);
 
-    cs_field_set_key_int(f,
-                         cs_field_key_id("parent_field_id"),
-                         CS_F_(p)->id);
+    f->set_key_int("parent_field_id", CS_F_(p)->id);
   }
 }
 
@@ -3238,9 +3236,7 @@ cs_pressure_correction_cdo_init_setup(void)
 
   /* Associate the pressure increment variable field to the pressure field */
 
-  cs_field_set_key_int(cs_field_by_id(eq->field_id),
-                       cs_field_key_id("parent_field_id"),
-                       CS_F_(p)->id);
+  cs_field_by_id(eq->field_id)->set_key_int("parent_field_id", CS_F_(p)->id);
 
   /* Additional fields */
 
@@ -3255,8 +3251,8 @@ cs_pressure_correction_cdo_init_setup(void)
                             3,
                             false);
 
-  cs_field_set_key_int(prcdo->pressure_gradient, post_key, 1);
-  cs_field_set_key_int(prcdo->pressure_gradient, log_key, field_post_flag);
+  prcdo->pressure_gradient->set_key_int(post_key, 1);
+  prcdo->pressure_gradient->set_key_int(log_key, field_post_flag);
 
   prcdo->pressure_incr_gradient =
     cs_field_find_or_create("algo:pressure_increment_gradient",
@@ -3265,8 +3261,8 @@ cs_pressure_correction_cdo_init_setup(void)
                             3,
                             false);
 
-  cs_field_set_key_int(prcdo->pressure_incr_gradient, post_key, 1);
-  cs_field_set_key_int(prcdo->pressure_incr_gradient, log_key, field_post_flag);
+  prcdo->pressure_incr_gradient->set_key_int(post_key, 1);
+  prcdo->pressure_incr_gradient->set_key_int(log_key, field_post_flag);
 
  /* Activate the diffusion term
   * ---------------------------

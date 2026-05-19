@@ -1,5 +1,5 @@
-#ifndef __CS_LES_FILTER_H__
-#define __CS_LES_FILTER_H__
+#ifndef CS_LES_FILTER_H
+#define CS_LES_FILTER_H
 
 /*============================================================================
  * Filters for dynamic models.
@@ -33,10 +33,6 @@
 
 #include "base/cs_base.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -59,13 +55,9 @@ BEGIN_C_DECLS
  *   f_val   -->  array of filtered values
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_filter_scalar(const cs_real_t  val[],
                      cs_real_t        f_val[]);
-
-END_C_DECLS
-
-#ifdef __cplusplus
 
 /*----------------------------------------------------------------------------
  * Compute filters for dynamic models for vectors.
@@ -87,6 +79,4 @@ cs_les_filter_strided(const cs_real_t  val[][stride],
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* cplusplus */
-
-#endif /* __CS_LES_FILTER_H__ */
+#endif /* CS_LES_FILTER_H */

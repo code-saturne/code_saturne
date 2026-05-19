@@ -151,7 +151,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       cs_field_t *f = cs_field_by_id(f_id);
 
       /* Here we only handle user scalar */
-     if (cs_field_get_key_int(f, keysca) > 1)
+     if (f->get_key_int(keysca) > 1)
        f->bc_coeffs->rcodcl1[face_id] = 1;
     }
   }
@@ -202,7 +202,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
         continue;
 
       cs_real_t normalize = 0;
-      const int sc_id = cs_field_get_key_int(f, keysca) - 1;
+      const int sc_id = f->get_key_int(keysca) - 1;
       if ((f == CS_F_(vel)) || (sc_id > -1))
         normalize = 1;
 

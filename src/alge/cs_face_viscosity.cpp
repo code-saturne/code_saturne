@@ -181,8 +181,8 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
 
   const cs_real_t d2s3m = -2.0/3.0;
 
-  const int iviext = cs_field_get_key_int(CS_F_(mu), key_t_ext_id);
-  const int iviext_t = cs_field_get_key_int(CS_F_(mu_t), key_t_ext_id);
+  const int iviext = CS_F_(mu)->get_key_int(key_t_ext_id);
+  const int iviext_t = CS_F_(mu_t)->get_key_int(key_t_ext_id);
 
   /* Laminar viscosity */
 

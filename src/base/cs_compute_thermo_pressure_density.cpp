@@ -124,12 +124,12 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   const cs_lnum_t *ifbpcd = cs_glob_wall_condensation->ifbpcd;
 
   const int var_id_key = cs_field_key_id("variable_id");
-  const int ipr = cs_field_get_key_int(CS_F_(p), var_id_key) - 1;
+  const int ipr = CS_F_(p)->get_key_int(var_id_key) - 1;
   const cs_real_t *spcond = cs_glob_wall_condensation->spcond + ipr*nfbpcd;
   const cs_real_t *svcond = cs_glob_wall_condensation->svcond + ipr*ncmast;
 
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  int iflmab =  cs_field_get_key_int(CS_F_(p), kbmasf);
+  int iflmab = CS_F_(p)->get_key_int(kbmasf);
   const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
   cs_real_t _new_pther = 0.0;

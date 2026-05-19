@@ -145,7 +145,7 @@ cs_dilatable_scalar_diff_st(int iterns)
 
     if (!(f_scal->type & CS_FIELD_VARIABLE))
       continue;
-    if (cs_field_get_key_int(f_scal, keysca) <= 0)
+    if (f_scal->get_key_int(keysca) <= 0)
       continue;
 
     cs_real_t *cvar_scal = f_scal->val;
@@ -153,17 +153,17 @@ cs_dilatable_scalar_diff_st(int iterns)
     /* Key id for buoyant field (inside the Navier Stokes loop) */
     const int key_coupled_with_vel_p = cs_field_key_id_try("coupled_with_vel_p");
     const int coupled_with_vel_p_fld
-      = cs_field_get_key_int(f_scal, key_coupled_with_vel_p);
+      = f_scal->get_key_int(key_coupled_with_vel_p);
 
     if (   (coupled_with_vel_p_fld == 1 && iterns == -1)
         || (coupled_with_vel_p_fld == 0 && iterns != -1))
       continue;
 
-    const int iscavr = cs_field_get_key_int(f_scal, kscavr);
+    const int iscavr = f_scal->get_key_int(kscavr);
 
     const int iscacp = (iscavr > 0) ?
-      cs_field_get_key_int(cs_field_by_id(iscavr), kscacp):
-      cs_field_get_key_int(f_scal, kscacp);
+      cs_field_by_id(iscavr)->get_key_int(kscacp):
+      f_scal->get_key_int(kscacp);
 
     const int imucpp = (iscacp == 1) ? 1 : 0;
 
@@ -213,11 +213,11 @@ cs_dilatable_scalar_diff_st(int iterns)
          The positive part of (K+K_t) would have been considered but
          should allow negative K_t that is considered non physical here */
 
-      const cs_real_t turb_schmidt = cs_field_get_key_double(f_scal, ksigmas);
+      const cs_real_t turb_schmidt = f_scal->get_key_double(ksigmas);
       int idifft = eqp_sc->idifft;
 
       if (ifcvsl < 0) {
-        const cs_real_t visls_0 = cs_field_get_key_double(f_scal, kvisl0);
+        const cs_real_t visls_0 = f_scal->get_key_double(kvisl0);
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           vistot[c_id] = visls_0
             +   idifft*xcpp[c_id]*cs::max(visct[c_id], 0.)

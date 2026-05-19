@@ -203,10 +203,10 @@ cs_user_postprocess_probes(void)
 
   for (int i = 0; i < 2; i++) {
 
-    cs_probe_set_t *pset
-      = cs_probe_set_create_from_local(wall_defs[i*2+1],
-                                       _b_face_criterion_probes_define,
-                                       (void *)wall_defs[i*2]);  /* input */
+    cs_probe_set_t *pset = cs_probe_set_create_from_local
+                             (wall_defs[i*2+1],
+                              _b_face_criterion_probes_define,
+                              const_cast<char *>(wall_defs[i*2]));  /* input */
 
     cs_probe_set_option(pset, "boundary", "true");
 

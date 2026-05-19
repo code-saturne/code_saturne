@@ -571,8 +571,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   /* Temperature indicator.
      Will multiply by CP in order to have energy. */
-  const int itemperature
-    = cs_field_get_key_int(f, cs_field_key_id("is_temperature"));
+  const int itemperature = f->get_key_int("is_temperature");
 
   /* Specific heat (CP) */
   cs_real_t *cpro_cp = nullptr;
@@ -652,10 +651,10 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   double ndef_balance = 0.;
 
   /* Convective mass fluxes for inner and boundary faces */
-  int iflmas = cs_field_get_key_int(f, cs_field_key_id("inner_mass_flux_id"));
+  int iflmas = f->get_key_int("inner_mass_flux_id");
   const cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
 
-  int iflmab = cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id"));
+  int iflmab = f->get_key_int("boundary_mass_flux_id");
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
   /* Choose gradient type */
@@ -685,7 +684,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
     /* NVD/TVD limiters */
     if (ischcp == 4) {
-      limiter_choice = cs_field_get_key_int(f, key_lim_choice);
+      limiter_choice = f->get_key_int(key_lim_choice);
       CS_MALLOC(local_max, n_cells_ext, cs_real_t);
       CS_MALLOC(local_min, n_cells_ext, cs_real_t);
       cs_field_local_extrema_scalar(field_id,
@@ -803,15 +802,13 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   cs_real_t *c_visc = nullptr;
   CS_MALLOC_HD(c_visc, n_cells_ext, cs_real_t, cs_alloc_mode);
-  const int kivisl
-    = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
+  const int kivisl = f->get_key_int("diffusivity_id");
   if (kivisl != -1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       c_visc[c_id] = cs_field_by_id(kivisl)->val[c_id];
   }
   else {
-    const double visls0
-      = cs_field_get_key_double(f, cs_field_key_id("diffusivity_ref"));
+    const double visls0 = f->get_key_double("diffusivity_ref");
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       c_visc[c_id] = visls0;
     }
@@ -822,7 +819,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   if (eqp->idifft == 1) {
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
-    cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
+    cs_real_t turb_schmidt = f->get_key_double(ksigmas);
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/turb_schmidt;
   }
@@ -1497,10 +1494,10 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
   const cs_real_33_t *b_u = (const cs_real_33_t *)f_vel->bc_coeffs->b;
 
   /* Convective mass fluxes for inner and boundary faces */
-  int iflmas = cs_field_get_key_int(f_pres, cs_field_key_id("inner_mass_flux_id"));
+  int iflmas = f_pres->get_key_int("inner_mass_flux_id");
   const cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
 
-  int iflmab = cs_field_get_key_int(f_pres, cs_field_key_id("boundary_mass_flux_id"));
+  int iflmab = f_pres->get_key_int("boundary_mass_flux_id");
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
   int inc = 1;
@@ -2260,10 +2257,10 @@ cs_flux_through_surface(const char         *scalar_name,
   }
 
   /* Convective mass fluxes for inner and boundary faces */
-  int iflmas = cs_field_get_key_int(f, cs_field_key_id("inner_mass_flux_id"));
+  int iflmas = f->get_key_int("inner_mass_flux_id");
   const cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
 
-  int iflmab = cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id"));
+  int iflmab = f->get_key_int("boundary_mass_flux_id");
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
   /* Face viscosity */
@@ -2275,15 +2272,13 @@ cs_flux_through_surface(const char         *scalar_name,
 
   cs_real_t *c_visc = nullptr;
   CS_MALLOC_HD(c_visc, n_cells_ext, cs_real_t, cs_alloc_mode);
-  const int kivisl
-    = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
+  const int kivisl = f->get_key_int("diffusivity_id");
   if (kivisl != -1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       c_visc[c_id] = cs_field_by_id(kivisl)->val[c_id];
   }
   else {
-    const double visls0
-      = cs_field_get_key_double(f, cs_field_key_id("diffusivity_ref"));
+    const double visls0 = f->get_key_double("diffusivity_ref");
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       c_visc[c_id] = visls0;
     }
@@ -2294,7 +2289,7 @@ cs_flux_through_surface(const char         *scalar_name,
 
   if (eqp->idifft == 1) {
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
-    const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
+    const cs_real_t turb_schmidt = f->get_key_double(ksigmas);
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       c_visc[c_id] += cpro_cp[c_id] * c_visct[c_id]/turb_schmidt;
 
@@ -2321,7 +2316,7 @@ cs_flux_through_surface(const char         *scalar_name,
 
     /* NVD/TVD limiters */
     if (ischcp == 4) {
-      limiter_choice = cs_field_get_key_int(f, key_lim_choice);
+      limiter_choice = f->get_key_int(key_lim_choice);
       CS_MALLOC(local_max, n_cells_ext, cs_real_t);
       CS_MALLOC(local_min, n_cells_ext, cs_real_t);
       cs_field_local_extrema_scalar(field_id,

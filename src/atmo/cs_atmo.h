@@ -180,23 +180,23 @@ typedef struct {
 
   union {
     int met_1d_nlevels_d;
-    int nbmetd; /* deprecated */
+    [[deprecated]] int nbmetd;
   };
   /*! numbers of altitudes for the temperature and specific humidity */
   union {
     int met_1d_nlevels_t;
-    int nbmett; /* deprecated */
+    [[deprecated]] int nbmett;
   };
   /*! numbers of time steps for the meteo profiles */
   union {
     int met_1d_ntimes;
-    int nbmetm;
+    [[deprecated]] int nbmetm;
   };
 
   /*! Number of vertical levels */
   union {
     int met_1d_nlevels_max_t;
-    int nbmaxt;
+    [[deprecated]] int nbmaxt;
   };
 
   /*! Domain orientation (angle in degree between y direction and north),
@@ -229,7 +229,7 @@ typedef struct {
    *   1: Bechtold et al. 1995 (Luc Musson-Genon)
    *   2: Bouzereau et al. 2004
    *   3: Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
-   *                 Deardorff 1977
+   *      Deardorff 1977
    */
   int subgrid_model;
   /*! Option for liquid water content distribution models
@@ -437,6 +437,7 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 typedef struct {
+
   /* Space and time reference of the run */
   /*! Reference pressure (to compute potential temp: 1.0e+5) */
   cs_real_t ps;

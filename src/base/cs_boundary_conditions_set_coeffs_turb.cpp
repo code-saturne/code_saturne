@@ -164,7 +164,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   const int kscacp  = cs_field_key_id("is_temperature");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
 
-  const int ifcvsl = cs_field_get_key_int(f_sc, kivisl);
+  const int ifcvsl = f_sc->get_key_int(kivisl);
   const int thermal_variable = cs_glob_thermal_model->thermal_variable;
   const cs_field_t *f_th = cs_thermal_model_field();
 
@@ -197,9 +197,9 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   /* Get the turbulent flux model for the scalar */
 
   const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
-  const cs_real_t ctheta = cs_field_get_key_double(f_sc, kctheta);
+  const cs_real_t ctheta = f_sc->get_key_double(kctheta);
 
-  const int turb_flux_model = cs_field_get_key_int(f_sc, kturt);
+  const int turb_flux_model = f_sc->get_key_int(kturt);
   const int turb_flux_model_type = turb_flux_model / 10;
 
   cs_real_6_t *visten = nullptr;
@@ -289,7 +289,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   bool *cpl_faces = nullptr;
   if (eqp_sc->icoupl > 0) {
     const int coupling_key_id = cs_field_key_id("coupling_entity");
-    const int coupling_id = cs_field_get_key_int(f_sc, coupling_key_id);
+    const int coupling_id = f_sc->get_key_int(coupling_key_id);
     const cs_internal_coupling_t *cpl = cs_internal_coupling_by_id(coupling_id);
 
     cpl_faces = cpl->coupled_faces;
@@ -311,7 +311,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   cs_field_t *f_scal_b = nullptr;
   cs_real_t *bvar_s = nullptr;
 
-  int b_f_id = cs_field_get_key_int(f_sc, _kbfid);
+  int b_f_id = f_sc->get_key_int(_kbfid);
 
   if (b_f_id > -1)
     f_scal_b = cs_field_by_id(b_f_id);
@@ -332,17 +332,17 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     var_ip = f_scal_b->val;
 
   /* Does the scalar behave as a temperature ? */
-  int iscacp = cs_field_get_key_int(f_sc, kscacp);
+  int iscacp = f_sc->get_key_int(kscacp);
 
   if (f_sc == f_th && thermal_variable == CS_THERMAL_MODEL_TOTAL_ENERGY)
     iscacp = 3; // TODO- generalize this for the keyword itself.
 
   /* Retrieve turbulent Schmidt value for current scalar */
-  const cs_real_t turb_schmidt = cs_field_get_key_double(f_sc, ksigmas);
+  const cs_real_t turb_schmidt = f_sc->get_key_double(ksigmas);
 
   /* Reference diffusivity */
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
-  cs_real_t visls_0 = cs_field_get_key_double(f_sc, kvisl0);
+  cs_real_t visls_0 = f_sc->get_key_double(kvisl0);
 
   cs_field_t *f_id_cv = cs_field_by_name_try("isobaric_heat_capacity");
   if (f_id_cv != nullptr)
@@ -962,7 +962,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
 
-  const int ifcvsl = cs_field_get_key_int(f_v, kivisl);
+  const int ifcvsl = f_v->get_key_int(kivisl);
 
   const cs_real_t *viscls = nullptr;
   if (ifcvsl >= 0)
@@ -981,17 +981,17 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
     cpro_cp = CS_F_(cp)->val;
 
   /* Does the vector behave as a temperature ? */
-  const int iscacp = cs_field_get_key_int(f_v, kscacp);
+  const int iscacp = f_v->get_key_int(kscacp);
 
   /* Retrieve turbulent Schmidt value for current vector */
-  const cs_real_t turb_schmidt = cs_field_get_key_double(f_v, ksigmas);
+  const cs_real_t turb_schmidt = f_v->get_key_double(ksigmas);
 
   /* Reference diffusivity */
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
-  cs_real_t visls_0 = cs_field_get_key_double(f_v, kvisl0);
+  cs_real_t visls_0 = f_v->get_key_double(kvisl0);
 
   /* Get the turbulent flux model for the vector */
-  const int turb_flux_model = cs_field_get_key_int(f_v, kturt);
+  const int turb_flux_model = f_v->get_key_int(kturt);
   const int turb_flux_model_type = turb_flux_model / 10;
 
   cs_real_t *bpro_rough_t = nullptr;
@@ -1340,7 +1340,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   const int *icodcl_th = nullptr;
   cs_real_t turb_prandtl = 1.;
   if (f_th != nullptr) {
-    turb_prandtl = cs_field_get_key_double(f_th, ksigmas);
+    turb_prandtl = f_th->get_key_double(ksigmas);
     icodcl_th = f_th->bc_coeffs->icodcl;
     rcodcl1_th = f_th->bc_coeffs->rcodcl1;
     rcodcl3_th = f_th->bc_coeffs->rcodcl3;
@@ -1507,11 +1507,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   }
 
   const cs_real_t sigmak = (f_k != nullptr) ?
-    cs_field_get_key_double(f_k, ksigmas) : 0;
+    f_k->get_key_double(ksigmas) : 0;
   cs_real_t sigmae = 0.;
   if (f_eps != nullptr)
     if(f_eps->type & CS_FIELD_VARIABLE)
-      sigmae = cs_field_get_key_double(f_eps, ksigmas);
+      sigmae = f_eps->get_key_double(ksigmas);
   if (f_eps != nullptr) {
     if (eqp_eps != nullptr) {
       int df_limiter_id = eqp_eps->diffusion_limiter_id;
@@ -3302,10 +3302,10 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     if (!(f_scal->type & CS_FIELD_VARIABLE))
       continue;
-    if (cs_field_get_key_int(f_scal, keysca) <= 0)
+    if (f_scal->get_key_int(keysca) <= 0)
       continue;
 
-    const int iscavr = cs_field_get_key_int(f_scal, kscavr);
+    const int iscavr = f_scal->get_key_int(kscavr);
 
     if (iscavr <= 0) {
 
@@ -3314,7 +3314,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           (f_scal, isvhb, byplus, bdplus,
            bpro_uk, bpro_ustar, bcfnns, bdlmo, hbord,
           theipb, &tetmax, &tetmin, &tplumx, &tplumn);
-
       }
 
       /* Vector field */

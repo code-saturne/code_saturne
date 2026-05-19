@@ -410,8 +410,8 @@ cs_velocity_pressure_set_n_buoyant_scalars(void)
   for (int f_id = 0 ; f_id < n_fields ; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (   f->type & CS_FIELD_VARIABLE
-        && cs_field_get_key_int(f, key_sca) > -1) {
-      if (cs_field_get_key_int(f, key_buo)) {
+        && f->get_key_int(key_sca) > -1) {
+      if (f->get_key_int(key_buo)) {
         _velocity_pressure_model.n_buoyant_scal += 1;
       }
     }

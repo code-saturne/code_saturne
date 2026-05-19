@@ -139,17 +139,17 @@ cs_ctwr_add_variable_fields(void)
         cs_add_model_field_indexes(f);
       }
       /* Clipping : 0 < ym < 1 */
-      cs_field_set_key_double(f, kscmin, 0.e0);
-      cs_field_set_key_double(f, kscmax,  1.e0);
+      f->set_key_double(kscmin, 0.e0);
+      f->set_key_double(kscmax,  1.e0);
 
       /* Set the class index for the field */
-      cs_field_set_key_int(f, keyccl, class_id);
+      f->set_key_int(keyccl, class_id);
 
       /* Set constant diffusivity for the dry air mass fraction.
        * The diffusivity used in the transport equation will be the cell value
        * of the" diffusivity_ref" for field f */
       int ifcvsl = -1;
-      cs_field_set_key_int(f, kivisl, ifcvsl);
+      f->set_key_int(kivisl, ifcvsl);
 
       /* If mixture model, continuous phase has drift vs. mixture phase */
       if (ct_opt->mixture_model){
@@ -159,7 +159,7 @@ cs_ctwr_add_variable_fields(void)
         /* Activated drift. As it is the continuous phase class (class_id = -1),
          * the convective flux is deduced for classes > 0
          * and bulk class (class_id = 0) */
-        cs_field_set_key_int(f, keydri, drift);
+        f->set_key_int(keydri, drift);
       }
 
       /* Equation parameters */
@@ -206,12 +206,12 @@ cs_ctwr_add_variable_fields(void)
        * This value is updated at the top of each time step in 'ctphyv' along
        * with the other variable properties */
       int ifcvsl = 0;
-      cs_field_set_key_int(f, kivisl, ifcvsl);
+      f->set_key_int(kivisl, ifcvsl);
 
       /* If mixture model, continuous phase has drift vs. mixture phase */
       if (ct_opt->mixture_model){
         /* Associate temperature to continuous phase -> class_id = -1 */
-        cs_field_set_key_int(f, keyccl, class_id);
+        f->set_key_int(keyccl, class_id);
 
         /* Activate the drift versus the mixture velocity */
         int drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
@@ -219,7 +219,7 @@ cs_ctwr_add_variable_fields(void)
         /* Activated drift. As it is the continuous phase class (class_id = -1),
          * the convective flux is deduced for classes > 0
          * and bulk class (class_id = 0) */
-        cs_field_set_key_int(f, keydri, drift);
+        f->set_key_int(keydri, drift);
       }
     }
   }
@@ -248,14 +248,14 @@ cs_ctwr_add_variable_fields(void)
 
     if (ct_opt->mixture_model) {
       /* Clipping of rain mass fraction 0 <= ym_l_r <=1 */
-      cs_field_set_key_double(f, kscmin, 0.e0);
-      cs_field_set_key_double(f, kscmax, 1.e0);
+      f->set_key_double(kscmin, 0.e0);
+      f->set_key_double(kscmax, 1.e0);
     }
     else
-      cs_field_set_key_double(f, kscmin, 0.e0);
+      f->set_key_double(kscmin, 0.e0);
 
     /* Set the class index for the field */
-    cs_field_set_key_int(f, keyccl, class_id);
+    f->set_key_int(keyccl, class_id);
 
     /* Scalar with drift: create additional mass flux.
      * This flux will then be reused for all scalars associated to this class
@@ -264,11 +264,11 @@ cs_ctwr_add_variable_fields(void)
      * TODO : make it optional ?*/
     int drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
 
-    cs_field_set_key_int(f, keydri, drift);
+    f->set_key_int(keydri, drift);
 
     /* Set constant diffusivity for injected liquid mass fraction */
     int ifcvsl = -1;
-    cs_field_set_key_int(f, kivisl, ifcvsl);
+    f->set_key_int(kivisl, ifcvsl);
     cs_add_model_field_indexes(f);
 
     /* Equation parameters */
@@ -288,21 +288,21 @@ cs_ctwr_add_variable_fields(void)
                                     CS_MESH_LOCATION_CELLS,
                                     1);
     f = cs_field_by_id(f_id);
-    cs_field_set_key_int(f, keyccl, class_id);
+    f->set_key_int(keyccl, class_id);
 
     /* Scalar with drift, but do not create an additional mass flux for the
      * enthalpy (use ^= to reset the bit for drift flux calculation).
      * It reuses the mass flux already identified with the mass fraction. */
     drift = CS_DRIFT_SCALAR_ON;
 
-    cs_field_set_key_int(f, keydri, drift);
+    f->set_key_int(keydri, drift);
 
     /* Set variable diffusivity for the injected liquid enthalpy transport.
      * The diffusivity used in the transport equation will be the cell value
      * of the viscls array for field f */
 
     ifcvsl = 0;
-    cs_field_set_key_int(f, kivisl, ifcvsl);
+    f->set_key_int(kivisl, ifcvsl);
     cs_add_model_field_indexes(f);
 
     /* Equation parameters */
@@ -323,7 +323,7 @@ cs_ctwr_add_variable_fields(void)
       f_id = cs_variable_field_create(f_name, f_label,
                                       CS_MESH_LOCATION_CELLS, 3);
       f = cs_field_by_id(f_id);
-      cs_field_set_key_int(f, keyccl, class_id);
+      f->set_key_int(keyccl, class_id);
       cs_add_model_field_indexes(f);
 
       /* Scalar with drift, but do not create an additional mass flux */
@@ -332,10 +332,10 @@ cs_ctwr_add_variable_fields(void)
       else
         drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_NO_MASS_AGGREGATION;
 
-      cs_field_set_key_int(f, keydri, drift);
+      f->set_key_int(keydri, drift);
 
       if (ct_opt->mixture_model)
-        cs_field_set_key_int(f, key_buoyant_id, 1);
+        f->set_key_int(key_buoyant_id, 1);
 
       /* Equation parameters */
       eqp = cs_field_get_equation_param(f);
@@ -363,15 +363,15 @@ cs_ctwr_add_variable_fields(void)
     f = cs_field_by_id(f_id);
 
     /* Clipping of packing liquid mass 0 < y_l_packing */
-    cs_field_set_key_double(f, kscmin, 0.e0);
+    f->set_key_double(kscmin, 0.e0);
 
     /* Set the class index for the field */
-    cs_field_set_key_int(f, keyccl, class_id);
+    f->set_key_int(keyccl, class_id);
 
     /* Setting different density for scalar transport of liquid water
      * in packing */
     const int kromsl = cs_field_key_id("density_id");
-    cs_field_set_key_int(f, kromsl, 0);
+    f->set_key_int(kromsl, 0);
 
     /* Scalar with drift: create additional mass flux.
      * This flux will then be reused for all scalars associated to this class
@@ -384,11 +384,11 @@ cs_ctwr_add_variable_fields(void)
                 + CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX
                 + CS_DRIFT_SCALAR_NO_MASS_AGGREGATION;
 
-    cs_field_set_key_int(f, keydri, drift);
+    f->set_key_int(keydri, drift);
 
     /* Set constant diffusivity for injected liquid mass fraction */
     int ifcvsl = -1;
-    cs_field_set_key_int(f, kivisl, ifcvsl);
+    f->set_key_int(kivisl, ifcvsl);
     cs_add_model_field_indexes(f);
 
     /* Equation parameters */
@@ -399,7 +399,7 @@ cs_ctwr_add_variable_fields(void)
     eqp->idifft = 0;
 
     /* Do not show y_l_packing in post-processing */
-    cs_field_set_key_int(f, cs_field_key_id("post_vis"), 0);
+    f->set_key_int(cs_field_key_id("post_vis"), 0);
 
     /* Transport and solve for the enthalpy of the liquid in packing - with the
      * same drift as the mass y_l_packing in the packing zones.
@@ -414,23 +414,23 @@ cs_ctwr_add_variable_fields(void)
     /* TODO (from ctvarp.f90) : x_p_h_l or y_p_h_2 */
 
     f = cs_field_by_id(f_id);
-    cs_field_set_key_int(f, keyccl, class_id);
+    f->set_key_int(keyccl, class_id);
 
-    cs_field_set_key_int(f, kromsl, 0);
+    f->set_key_int(kromsl, 0);
     /* Scalar with drift, but do not create an additional mass flux for the
      * enthalpy (use ^= to reset the bit for drift flux calculation).
      * It reuses the mass flux already identified with the mass variable. */
     drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX
             + CS_DRIFT_SCALAR_NO_MASS_AGGREGATION;
 
-    cs_field_set_key_int(f, keydri, drift);
+    f->set_key_int(keydri, drift);
 
     /* Set variable diffusivity for the injected liquid enthalpy transport.
      * The diffusivity used in the transport equation will be the cell value
      * of the viscls array for field f */
 
     ifcvsl = 0;
-    cs_field_set_key_int(f, kivisl, ifcvsl);
+    f->set_key_int(kivisl, ifcvsl);
     cs_add_model_field_indexes(f);
 
     /* Equation parameters */
@@ -467,8 +467,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Beta");
   }
   /* CONTINUOUS FIELD (HUMID AIR) PROPERTIES */
@@ -482,8 +482,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Density humid air");
   }
   {
@@ -493,8 +493,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Humidity");
   }
 
@@ -505,8 +505,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Humidity sat");
   }
 
@@ -517,8 +517,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Humidity rel");
   }
 
@@ -530,8 +530,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Enthalpy humid air");
   }
 
@@ -542,8 +542,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Gas mass fraction");
   }
 
@@ -554,8 +554,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_BOUNDARY_FACES,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Boundary gas mass fraction");
   }
 
@@ -567,8 +567,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Vol. frac. air");
   }
 
@@ -580,8 +580,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Temperature rain");
   }
 
@@ -592,8 +592,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Enthalpy rain");
   }
 
@@ -604,8 +604,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Vol. frac. rain");
   }
 
@@ -619,8 +619,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         3,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Drift velocity gas phase");
 
     if (ct_opt->mixture_model) {
@@ -630,8 +630,8 @@ cs_ctwr_add_property_fields(void)
                           CS_MESH_LOCATION_CELLS,
                           3,
                           has_previous);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "Velocity continuous phase");
     }
 
@@ -646,8 +646,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         3,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, f_label);
 
     /* Drift velocity for rain drops */
@@ -658,8 +658,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         3,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, f_label);
   }
 
@@ -671,8 +671,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Temperature liq packing");
   }
   {
@@ -682,8 +682,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Enthalpy liq packing");
   }
   {
@@ -693,8 +693,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Mass frac liq packing");
   }
   {
@@ -704,8 +704,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Velocity liq packing");
   }
   {
@@ -715,8 +715,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Mass flux liq packing");
   }
 
@@ -731,8 +731,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Evaporation packing");
   }
 
@@ -743,8 +743,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Evaporation rain");
   }
 
@@ -755,8 +755,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Thermal power packing");
   }
 
@@ -767,8 +767,8 @@ cs_ctwr_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Thermal power rain");
   }
 }

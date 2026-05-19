@@ -1,5 +1,5 @@
-#ifndef __CS_TURBULENCE_RIJ_H__
-#define __CS_TURBULENCE_RIJ_H__
+#ifndef CS_TURBULENCE_RIJ_H
+#define CS_TURBULENCE_RIJ_H
 
 /*============================================================================
  * Rij-epsilon turbulence model.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -54,7 +50,7 @@ BEGIN_C_DECLS
  !*/
 /*-----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_rij(int phase_id);
 
 /*----------------------------------------------------------------------------*/
@@ -68,7 +64,7 @@ cs_turbulence_rij(int phase_id);
  !*/
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_rij_solve_alpha(int        f_id,
                               int        phase_id,
                               cs_real_t  c_durbin_l);
@@ -85,7 +81,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
                                          cs_real_t  almax);
 
@@ -99,7 +95,7 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_rij_clip(int        phase_id,
                        cs_lnum_t  n_cells);
 
@@ -111,7 +107,7 @@ cs_turbulence_rij_clip(int        phase_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_rij_mu_t(int  phase_id);
 
 /*----------------------------------------------------------------------------*/
@@ -127,7 +123,7 @@ cs_turbulence_rij_mu_t(int  phase_id);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_rij_anisotropic_mu_t
 (
  const cs_mesh_quantities_t  *mq,
@@ -143,11 +139,9 @@ cs_turbulence_rij_anisotropic_mu_t
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_rij_compute_rusanov(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TURBULENCE_RIJ_H__ */
+#endif /* CS_TURBULENCE_RIJ_H */

@@ -134,14 +134,14 @@ cs_drift_boundary_mass_flux(const cs_mesh_t  *m,
 
     if (f_x_p_i != nullptr) {
       x2 = f_x_p_i->val;
-      const int iscdri = cs_field_get_key_int(f_x_p_i, keydri);
+      const int iscdri = f_x_p_i->get_key_int(keydri);
 
       /* We have a boundary flux on particle class */
       if (   !(iscdri & CS_DRIFT_SCALAR_IMPOSED_MASS_FLUX)
           && !(iscdri & CS_DRIFT_SCALAR_ZERO_BNDY_FLUX)
           && !(iscdri & CS_DRIFT_SCALAR_ZERO_BNDY_FLUX_AT_WALLS)) {
 
-        int b_flmass_id = cs_field_get_key_int(f_x_p_i, kbmasf);
+        int b_flmass_id = f_x_p_i->get_key_int(kbmasf);
 
         assert(b_flmass_id > -1);
         /* Pointer to the Boundary mass flux */
@@ -200,8 +200,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
 
-  const int iscdri = cs_field_get_key_int(f_sc, keydri);
-  const int icla = cs_field_get_key_int(f_sc, keyccl);
+  const int iscdri = f_sc->get_key_int(keydri);
+  const int icla = f_sc->get_key_int(keyccl);
 
   class_id_max = cs::max(icla, class_id_max);
 
@@ -218,8 +218,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
   /* Pointers to the mass fluxes of the mix (based on mix velocity) */
 
-  const int iflmas_v = cs_field_get_key_int(f_vel, kimasf);
-  const int iflmab_v = cs_field_get_key_int(f_vel, kbmasf);
+  const int iflmas_v = f_vel->get_key_int(kimasf);
+  const int iflmab_v = f_vel->get_key_int(kbmasf);
   cs_real_t *i_mass_flux_mix = cs_field_by_id(iflmas_v)->val;
   cs_real_t *b_mass_flux_mix = cs_field_by_id(iflmab_v)->val;
 
@@ -259,7 +259,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
   /* Brownian diffusivity */
   cs_real_t *cpro_viscls = nullptr;
-  int ifcvsl = cs_field_get_key_int(f_sc, kivisl);
+  int ifcvsl = f_sc->get_key_int(kivisl);
   if (ifcvsl >= 0)
     cpro_viscls = cs_field_by_id(ifcvsl)->val;
 
@@ -438,7 +438,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       else {
 
         const int kvisl0 = cs_field_key_id("diffusivity_ref");
-        const cs_real_t visls_0 = cs_field_get_key_double(f_sc, kvisl0);
+        const cs_real_t visls_0 = f_sc->get_key_double(kvisl0);
 
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           viscce[c_id] += visls_0 / crom[c_id];
@@ -697,8 +697,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
         if (f_x_p_i != nullptr) {
           x2 = f_x_p_i->val;
 
-          int i_flmass_id = cs_field_get_key_int(f_x_p_i, kimasf);
-          int b_flmass_id = cs_field_get_key_int(f_x_p_i, kbmasf);
+          int i_flmass_id = f_x_p_i->get_key_int(kimasf);
+          int b_flmass_id = f_x_p_i->get_key_int(kbmasf);
 
           assert(b_flmass_id > -1);
           cs_real_t *i_mass_flux2 = cs_field_by_id(i_flmass_id)->val;

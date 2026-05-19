@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_SPMV_CUDA_H__
-#define __CS_MATRIX_SPMV_CUDA_H__
+#ifndef CS_MATRIX_SPMV_CUDA_H
+#define CS_MATRIX_SPMV_CUDA_H
 
 /*============================================================================
  * Sparse Matrix-vector multiplication kernels using CUDA.
@@ -34,10 +34,6 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*! \file cs_matrix_spmv_cuda.h
  *
  * \brief Sparse Matrix SpMV operations with CUDA.
@@ -64,7 +60,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_finalize(void);
 
 #if defined(__CUDACC__)
@@ -82,7 +78,7 @@ cs_matrix_spmv_cuda_finalize(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_set_stream(cudaStream_t  stream);
 
 /*----------------------------------------------------------------------------*/
@@ -93,7 +89,7 @@ cs_matrix_spmv_cuda_set_stream(cudaStream_t  stream);
  */
 /*----------------------------------------------------------------------------*/
 
-cudaStream_t
+extern "C" cudaStream_t
 cs_matrix_spmv_cuda_get_stream(void);
 
 #endif /* defined(__CUDACC__) */
@@ -110,7 +106,7 @@ cs_matrix_spmv_cuda_get_stream(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_native(cs_matrix_t  *matrix,
                            bool          exclude_diag,
                            bool          sync,
@@ -129,7 +125,7 @@ cs_matrix_spmv_cuda_native(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_csr(cs_matrix_t  *matrix,
                         bool          exclude_diag,
                         bool          sync,
@@ -150,7 +146,7 @@ cs_matrix_spmv_cuda_csr(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
@@ -171,7 +167,7 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_msr(cs_matrix_t  *matrix,
                         bool          exclude_diag,
                         bool          sync,
@@ -192,7 +188,7 @@ cs_matrix_spmv_cuda_msr(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
@@ -214,7 +210,7 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
                           bool          exclude_diag,
                           bool          sync,
@@ -241,7 +237,7 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
                                    bool          exclude_diag,
                                    bool          sync,
@@ -268,7 +264,7 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
                                     bool          exclude_diag,
                                     bool          sync,
@@ -277,6 +273,4 @@ cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MATRIX_SPMV__CUDA_H__ */
+#endif /* CS_MATRIX_SPMV__CUDA_H */

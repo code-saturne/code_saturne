@@ -922,7 +922,7 @@ cs_boundary_conditions_type(bool  init,
       cs_lnum_t n_inout_faces = 0;
       cs_lnum_t n_out_faces = e_id-s_id;
 
-      int b_massflux_id = cs_field_get_key_int(CS_F_(vel), kbmasf);
+      int b_massflux_id = CS_F_(vel)->get_key_int(kbmasf);
       const cs_real_t *b_massflux_val = (b_massflux_id > -1) ?
         cs_field_by_id(b_massflux_id)->val : nullptr;
       const cs_real_t *b_face_surf = fvq->b_face_surf;
@@ -1247,11 +1247,11 @@ cs_boundary_conditions_type(bool  init,
 
       /* Turbulent fluxes */
 
-      else if (cs_field_get_key_int(f, keysca) <= 0)
+      else if (f->get_key_int(keysca) <= 0)
         continue;
 
       /* Get the turbulent flux model for the scalar */
-      const int turb_flux_model = cs_field_get_key_int(f, kturt);
+      const int turb_flux_model = f->get_key_int(kturt);
       const int turb_flux_model_type = turb_flux_model / 10;
 
       if (turb_flux_model_type == 3) {
@@ -1335,7 +1335,7 @@ cs_boundary_conditions_type(bool  init,
 
       cs_field_t *f = cs_field_by_id(field_id);
       /* Is field f a variance? */
-      const int iscavr = cs_field_get_key_int(f, kscavr);
+      const int iscavr = f->get_key_int(kscavr);
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
@@ -1351,7 +1351,7 @@ cs_boundary_conditions_type(bool  init,
 
       /* Convective mass flux of the variable */
       const cs_real_t *b_massflux
-        = cs_field_by_id(cs_field_get_key_int(f, kbmasf))->val;
+        = cs_field_by_id(f->get_key_int(kbmasf))->val;
 
       for (int type_idx = 0; type_idx < 2; type_idx++) {
 
@@ -1638,7 +1638,7 @@ cs_boundary_conditions_type(bool  init,
 
     /* Wall values for scalars without diffusion */
 
-    if (cs_field_get_key_int(f, keysca) <= 0)
+    if (f->get_key_int(keysca) <= 0)
       continue;
 
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -1775,7 +1775,7 @@ cs_boundary_conditions_type(bool  init,
 
       /* Convective mass flux of the velocity */
       const cs_real_t *b_massflux
-        = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+        = cs_field_by_id(CS_F_(vel)->get_key_int(kbmasf))->val;
 
       for (cs_lnum_t ii = 0; ii < CS_MAX_BC_TYPE; ii++) {
         const cs_lnum_t s_id = bc_type_idx[ii];

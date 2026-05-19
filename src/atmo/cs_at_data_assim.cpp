@@ -160,7 +160,7 @@ cs_at_data_assim_initialize(void)
                                                    type_flag,
                                                    f->dim,
                                                    ilved);
-    cs_field_set_key_int(f, key_ms, ms->id);
+    f->set_key_int(key_ms, ms->id);
 
     /* create interpol grid for current variable */
 
@@ -174,7 +174,7 @@ cs_at_data_assim_initialize(void)
 
     cs_at_opt_interp_t *oi = cs_at_opt_interp_create(name_buf);
     CS_FREE(name_buf);
-    cs_field_set_key_int(f, key_oi, oi->id);
+    f->set_key_int(key_oi, oi->id);
 
     oi->ig_id = ig->id;
 
@@ -199,13 +199,13 @@ cs_at_data_assim_initialize(void)
                                         f->dim,
                                         false);
     CS_FREE(name_buf);
-    cs_field_set_key_int(f, key_oia, oia_f->id);
+    f->set_key_int(key_oia, oia_f->id);
 
-    cs_field_set_key_int(oia_f, key_vis, CS_POST_ON_LOCATION);
-    cs_field_set_key_int(oia_f, key_log, 1);
+    oia_f->set_key_int(key_vis, CS_POST_ON_LOCATION);
+    oia_f->set_key_int(key_log, 1);
 
     /* back up analysis in auxiliary restart file */
-    cs_field_set_key_int(oia_f, key_rst, CS_RESTART_AUXILIARY);
+    oia_f->set_key_int(key_rst, CS_RESTART_AUXILIARY);
   }
 }
 

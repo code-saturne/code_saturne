@@ -1127,8 +1127,6 @@ _update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1141,7 +1139,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_finalize(void)
 {
   _stream = 0;
@@ -1169,7 +1167,7 @@ cs_matrix_spmv_cuda_finalize(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_set_stream(cudaStream_t  stream)
 {
   _stream = stream;
@@ -1183,7 +1181,7 @@ cs_matrix_spmv_cuda_set_stream(cudaStream_t  stream)
  */
 /*----------------------------------------------------------------------------*/
 
-cudaStream_t
+extern "C" cudaStream_t
 cs_matrix_spmv_cuda_get_stream(void)
 {
   return _stream;
@@ -1201,7 +1199,7 @@ cs_matrix_spmv_cuda_get_stream(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
                            bool                exclude_diag,
                            bool                sync,
@@ -1306,7 +1304,7 @@ cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_csr(cs_matrix_t  *matrix,
                         bool          exclude_diag,
                         bool          sync,
@@ -1368,7 +1366,7 @@ cs_matrix_spmv_cuda_csr(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
@@ -1470,7 +1468,7 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_msr(cs_matrix_t  *matrix,
                         bool          exclude_diag,
                         bool          sync,
@@ -1536,7 +1534,7 @@ cs_matrix_spmv_cuda_msr(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
@@ -1634,7 +1632,7 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
                           bool          exclude_diag,
                           bool          sync,
@@ -1732,7 +1730,7 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
                                    bool          exclude_diag,
                                    bool          sync,
@@ -1838,7 +1836,7 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
                                     bool          exclude_diag,
                                     bool          sync,
@@ -1956,5 +1954,3 @@ cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
 #endif /* defined(HAVE_CUSPARSE) */
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

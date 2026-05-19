@@ -1033,7 +1033,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
   int isrrom = 0;
   const cs_lnum_t  n_cells = domain->mesh->n_cells;
   const int kivisl = cs_field_key_id("diffusivity_id");
-  int diff_id = cs_field_get_key_int(CS_F_(potr), kivisl);
+  int diff_id = CS_F_(potr)->get_key_int(kivisl);
   cs_field_t *c_prop = nullptr;
   if (diff_id > -1)
     c_prop = cs_field_by_id(diff_id);
@@ -1046,7 +1046,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
 
   /* Joule effect (law must be specified by user) */
 
-  int ifcvsl = cs_field_get_key_int(CS_F_(h), kivisl);
+  int ifcvsl = CS_F_(h)->get_key_int(kivisl);
   cs_field_t *diff_th = nullptr;
   if (ifcvsl >= 0)
     diff_th = cs_field_by_id(ifcvsl);
@@ -1073,7 +1073,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
     cs_array<cs_real_t> xkabes(n_gas);
     cs_array_2d<cs_real_t> coef(n_gas, n_gas);
 
-    int ifcsig = cs_field_get_key_int(CS_F_(potr), kivisl);
+    int ifcsig = CS_F_(potr)->get_key_int(kivisl);
 
     if (n_gas == 1) {
       ym[0] = 1.;
@@ -1375,7 +1375,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     }
 
     /* compute current density j = sig E */
-    int diff_id = cs_field_get_key_int(CS_F_(potr), kivisl);
+    int diff_id = CS_F_(potr)->get_key_int(kivisl);
     cs_field_t *c_prop = nullptr;
     if (diff_id > -1)
       c_prop = cs_field_by_id(diff_id);
@@ -1462,7 +1462,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       /* compute electric field E = - grad (potI) */
 
       /* compute current density j = sig E */
-      int diff_id_i = cs_field_get_key_int(CS_F_(poti), kivisl);
+      int diff_id_i = CS_F_(poti)->get_key_int(kivisl);
       cs_field_t *c_propi = nullptr;
       if (diff_id_i > -1)
         c_propi = cs_field_by_id(diff_id_i);
@@ -1755,8 +1755,8 @@ cs_elec_add_variable_fields(void)
     int f_id = cs_variable_field_create("vec_potential", "POT_VEC",
                                         CS_MESH_LOCATION_CELLS, 3);
     f = cs_field_by_id(f_id);
-    //cs_field_set_key_double(f, kscmin, -cs_math_big_r);
-    //cs_field_set_key_double(f, kscmax,  cs_math_big_r);
+    //f->set_key_double(kscmin, -cs_math_big_r);
+    //f->set_key_double(kscmax,  cs_math_big_r);
     f->set_key_int(kivisl, -1);
     cs_add_model_field_indexes(f);
   }

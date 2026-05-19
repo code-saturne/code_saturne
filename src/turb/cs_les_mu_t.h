@@ -1,5 +1,5 @@
-#ifndef __CS_TURBULENCE_VIS_LES_H__
-#define __CS_TURBULENCE_VIS_LES_H__
+#ifndef CS_TURBULENCE_VIS_LES_H
+#define CS_TURBULENCE_VIS_LES_H
 
 /*============================================================================
  * Turbulent viscosity for LES models.
@@ -33,10 +33,6 @@
 
 #include "base/cs_base.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -50,7 +46,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Calculation of  Mij:Mij and Mij:Lij for dynamic Smagorinsky model
  *
  * Please refer to the
@@ -66,7 +62,7 @@ BEGIN_C_DECLS
  !*/
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_mu_t_smago_dyn_prepare(cs_real_t s_n[],
                               cs_real_t sf_n[],
                               cs_real_3_t *f_vel,
@@ -74,7 +70,8 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t s_n[],
                               cs_real_t mijlij[]);
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Calculation of turbulent viscosity for
+/*
+ * \brief Calculation of turbulent viscosity for
  *        a dynamic Smagorinsky LES model
  *
  * \f[ smago = \dfrac{L_{ij}M_{ij}}{M_{ij}M_{ij}} \f]
@@ -86,11 +83,11 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t s_n[],
  !*/
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_mu_t_smago_dyn(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Calculation of the turbulent viscosity for a Smagorinsky LES model
  *
  * \f[ \mu_T = \rho (C_{S} l)^2  \sqrt{2 S_{ij}S_{ij}} \f]
@@ -99,11 +96,11 @@ cs_les_mu_t_smago_dyn(void);
  !*/
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_mu_t_smago_const(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute the turbulent viscosity for the WALE LES model.
  *
  * The turbulent viscosity is:
@@ -116,29 +113,29 @@ cs_les_mu_t_smago_const(void);
  !*/
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_mu_t_wale(void);
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Calculation of turbulent viscosity for
+/*
+ * \brief Calculation of turbulent viscosity for
  *        a k-SGS LES model
  !*/
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_mu_t_ksgs(void);
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Calculation of turbulent viscosity for
+/*
+ * \brief Calculation of turbulent viscosity for
  *        a tau-SGS LES model
  !*/
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_mu_t_tausgs(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_LES_MU_T_H__ */
+#endif /* CS_LES_MU_T_H */

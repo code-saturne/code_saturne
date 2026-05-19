@@ -98,7 +98,7 @@ _theta_scheme_update_after_restart(void)
     cs_field_t *f = cs_field_by_id(f_id);
     if (!(f->type & CS_FIELD_VARIABLE) || (f->type & CS_FIELD_CDO))
       continue;
-    int k_f_id = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
+    int k_f_id = f->get_key_int("diffusivity_id");
     if (k_f_id < 0)
       continue;
     if (    updated[k_f_id] == 0
@@ -151,8 +151,8 @@ cs_theta_scheme_update_var_stage1(void)
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
-  int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+  int iflmas = CS_F_(vel)->get_key_int(kimasf);
+  int iflmab = CS_F_(vel)->get_key_int(kbmasf);
 
   cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
@@ -251,12 +251,12 @@ cs_theta_scheme_update_var_stage1(void)
   }
 
   /* Extrapolate viscosities and heat capacity if required */
-  if (cs_field_get_key_int(CS_F_(mu), key_t_ext_id) > 0)
+  if (CS_F_(mu)->get_key_int(key_t_ext_id) > 0)
     cs_field_current_to_previous(CS_F_(mu));
-  if (cs_field_get_key_int(CS_F_(mu_t), key_t_ext_id) > 0)
+  if (CS_F_(mu)->get_key_int(key_t_ext_id) > 0)
     cs_field_current_to_previous(CS_F_(mu_t));
   if (f_cp != nullptr) {
-    if (cs_field_get_key_int(f_cp, key_t_ext_id) > 0)
+    if (f_cp->get_key_int(key_t_ext_id) > 0)
       cs_field_current_to_previous(f_cp);
   }
 
@@ -265,8 +265,8 @@ cs_theta_scheme_update_var_stage1(void)
     cs_field_t *f = cs_field_by_id(f_id);
     if (!(f->type & CS_FIELD_VARIABLE) || (f->type & CS_FIELD_CDO))
       continue;
-    int i_sca = cs_field_get_key_int(f, k_sca);
-    if ((i_sca > 0) && (cs_field_get_key_int(f, key_t_ext_id) > 0))
+    int i_sca = f->get_key_int(k_sca);
+    if ((i_sca > 0) && (f->get_key_int(key_t_ext_id) > 0))
       cs_field_current_to_previous(f);
   }
 
@@ -329,7 +329,7 @@ cs_theta_scheme_update_var_stage2(void)
    *----------------------------------------------------------------------*/
 
   /* Extrapolate viscosities and heat capacity */
-  if (cs_field_get_key_int(CS_F_(mu), key_t_ext_id) > 0) {
+  if (CS_F_(mu)->get_key_int(key_t_ext_id) > 0) {
     const cs_real_t theta = cs_glob_time_scheme->thetvi;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t _viscol = cpro_viscl[c_id];
@@ -338,7 +338,7 @@ cs_theta_scheme_update_var_stage2(void)
       cproa_viscl[c_id] = _viscol;
     });
   }
-  if (cs_field_get_key_int(CS_F_(mu_t), key_t_ext_id) > 0) {
+  if (CS_F_(mu_t)->get_key_int(key_t_ext_id) > 0) {
     const cs_real_t theta = cs_glob_time_scheme->thetvi;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t _viscot = cpro_visct[c_id];
@@ -348,7 +348,7 @@ cs_theta_scheme_update_var_stage2(void)
     });
   }
   if (f_cp != nullptr) {
-    if (cs_field_get_key_int(f_cp, key_t_ext_id) > 0) {
+    if (f_cp->get_key_int(key_t_ext_id) > 0) {
       const cs_real_t theta = cs_glob_time_scheme->thetcp;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cs_real_t _cp = cpro_cp[c_id];
@@ -366,13 +366,13 @@ cs_theta_scheme_update_var_stage2(void)
     cs_field_t *f = cs_field_by_id(f_id);
     if (!(f->type & CS_FIELD_VARIABLE) || (f->type & CS_FIELD_CDO))
       continue;
-    int i_sca = cs_field_get_key_int(f, k_sca);
+    int i_sca = f->get_key_int(k_sca);
 
     /* Is a scalar and should be computed with theta scheme */
-    if ((i_sca > 0) && (cs_field_get_key_int(f, key_t_ext_id) > 0)) {
+    if ((i_sca > 0) && (f->get_key_int(key_t_ext_id) > 0)) {
 
-      const cs_real_t theta = cs_field_get_key_double(f, kthetvs);
-      int k_f_id = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
+      const cs_real_t theta = f->get_key_double(kthetvs);
+      int k_f_id = f->get_key_int(cs_field_key_id("diffusivity_id"));
       cs_real_t *cpro_visca = cs_field_by_id(k_f_id)->val;
       cs_real_t *cproa_visca = cs_field_by_id(k_f_id)->val_pre;
 
@@ -420,8 +420,8 @@ cs_theta_scheme_update_var_stage3(void)
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
-  int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+  int iflmas = CS_F_(vel)->get_key_int(kimasf);
+  int iflmab = CS_F_(vel)->get_key_int(kbmasf);
 
   cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
@@ -493,8 +493,8 @@ cs_theta_scheme_update_var_stage4(void)
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
-  int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+  int iflmas = CS_F_(vel)->get_key_int(kimasf);
+  int iflmab = CS_F_(vel)->get_key_int(kbmasf);
 
   cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
@@ -561,8 +561,8 @@ cs_theta_scheme_update_var_stage5(void)
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
-  int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+  int iflmas = CS_F_(vel)->get_key_int(kimasf);
+  int iflmab = CS_F_(vel)->get_key_int(kbmasf);
 
   cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
@@ -607,16 +607,16 @@ cs_theta_scheme_update_var_stage5(void)
   }
 
   /* Restore physical properties */
-  if (cs_field_get_key_int(CS_F_(mu), key_t_ext_id) > 0)
+  if (CS_F_(mu)->get_key_int(key_t_ext_id) > 0)
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cpro_viscl[c_id] = cproa_viscl[c_id];
     });
-  if (cs_field_get_key_int(CS_F_(mu_t), key_t_ext_id) > 0)
+  if (CS_F_(mu_t)->get_key_int(key_t_ext_id) > 0)
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cpro_visct[c_id] = cproa_visct[c_id];
     });
   if (f_cp != nullptr) {
-    if (cs_field_get_key_int(f_cp, key_t_ext_id) > 0) {
+    if (f_cp->get_key_int(key_t_ext_id) > 0) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cpro_cp[c_id] = cproa_cp[c_id];
       });
@@ -632,12 +632,12 @@ cs_theta_scheme_update_var_stage5(void)
     cs_field_t *f = cs_field_by_id(f_id);
     if (!(f->type & CS_FIELD_VARIABLE) || (f->type & CS_FIELD_CDO))
       continue;
-    int i_sca = cs_field_get_key_int(f, k_sca);
+    int i_sca = f->get_key_int(k_sca);
 
     /* Is a scalar and should be computed with theta scheme */
-    if ((i_sca > 0) && (cs_field_get_key_int(f, key_t_ext_id) > 0)) {
+    if ((i_sca > 0) && (f->get_key_int(key_t_ext_id) > 0)) {
 
-      int k_f_id = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
+      int k_f_id = f->get_key_int("diffusivity_id");
       cs_real_t *cpro_visca = cs_field_by_id(k_f_id)->val;
       cs_real_t *cproa_visca = cs_field_by_id(k_f_id)->val_pre;
 

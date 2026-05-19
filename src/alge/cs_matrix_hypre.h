@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_HYPRE_H__
-#define __CS_MATRIX_HYPRE_H__
+#ifndef CS_MATRIX_HYPRE_H
+#define CS_MATRIX_HYPRE_H
 
 /*============================================================================
  * Sparse Matrix Representation and Operations using HYPRE library.
@@ -37,10 +37,6 @@
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_assembler.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -69,12 +65,10 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
                          int           use_device);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MATRIX_HYPRE_H__ */
+#endif /* CS_MATRIX_HYPRE_H */

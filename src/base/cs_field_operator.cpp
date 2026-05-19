@@ -339,7 +339,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
   const cs_field_t *parent_f = f;
 
   const int f_parent_id
-    = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+    = f->get_key_int(cs_field_key_id("parent_field_id"));
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
@@ -368,7 +368,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
     if (eqp->iwgrec == 1) {
       /* Weighted gradient coefficients */
       int key_id = cs_field_key_id("gradient_weighting_id");
-      int diff_id = cs_field_get_key_int(parent_f, key_id);
+      int diff_id = parent_f->get_key_int(key_id);
       if (diff_id > -1) {
         cs_field_t *f_weight = cs_field_by_id(diff_id);
         c_weight = f_weight->val;
@@ -379,7 +379,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
     /* Internal coupling structure */
     int key_id = cs_field_key_id_try("coupling_entity");
     if (key_id > -1) {
-      int coupl_id = cs_field_get_key_int(parent_f, key_id);
+      int coupl_id = parent_f->get_key_int(key_id);
       if (coupl_id > -1)
         cpl = cs_internal_coupling_by_id(coupl_id);
     }
@@ -455,7 +455,7 @@ cs_field_gradient_scalar_array(int                         f_id,
   if (f_id > -1) {
     const int key_id = cs_field_key_id_try("coupling_entity");
     if (key_id > -1) {
-      int coupl_id = cs_field_get_key_int(f, key_id);
+      int coupl_id = f->get_key_int(key_id);
       if (coupl_id > -1)
         cpl = cs_internal_coupling_by_id(coupl_id);
     }
@@ -515,7 +515,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
   const cs_field_t *parent_f = f;
 
   const int f_parent_id
-    = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+    = f->get_key_int(cs_field_key_id("parent_field_id"));
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
@@ -551,7 +551,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
 
     if (eqp->iwgrec == 1) {
       int key_id = cs_field_key_id("gradient_weighting_id");
-      int diff_id = cs_field_get_key_int(parent_f, key_id);
+      int diff_id = parent_f->get_key_int(key_id);
       if (diff_id > -1) {
         cs_field_t *f_weight = cs_field_by_id(diff_id);
         c_weight = f_weight->val;
@@ -562,7 +562,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
     /* Internal coupling structure */
     int key_id = cs_field_key_id_try("coupling_entity");
     if (key_id > -1) {
-      int coupl_id = cs_field_get_key_int(parent_f, key_id);
+      int coupl_id = parent_f->get_key_int(key_id);
       if (coupl_id > -1)
         cpl = cs_internal_coupling_by_id(coupl_id);
     }
@@ -640,7 +640,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
     if (eqp->iwgrec == 1) {
       /* Weighted gradient coefficients */
       int key_id = cs_field_key_id("gradient_weighting_id");
-      int diff_id = cs_field_get_key_int(f, key_id);
+      int diff_id = f->get_key_int(key_id);
       if (diff_id > -1) {
         cs_field_t *f_weight = cs_field_by_id(diff_id);
         c_weight = f_weight->val;
@@ -649,7 +649,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
 
     int key_id = cs_field_key_id_try("coupling_entity");
     if (key_id > -1) {
-      int coupl_id = cs_field_get_key_int(f, key_id);
+      int coupl_id = f->get_key_int(key_id);
       if (coupl_id > -1)
         cpl = cs_internal_coupling_by_id(coupl_id);
     }
@@ -673,7 +673,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
     /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
-      if (cs_field_get_key_int(f, coupled_key_id) > 0) {
+      if (f->get_key_int(coupled_key_id) > 0) {
         bc_coeffs = f->bc_coeffs;
         if (use_previous_t) {
           cs_field_bc_coeffs_shallow_copy(bc_coeffs, &bc_coeffs_loc);
@@ -746,7 +746,7 @@ cs_field_gradient_tensor(const cs_field_t          *f,
   if (f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
     int key_id = cs_field_key_id_try("coupling_entity");
     if (key_id > -1) {
-      int coupl_id = cs_field_get_key_int(f, key_id);
+      int coupl_id = f->get_key_int(key_id);
       if (coupl_id > -1)
         cpl = cs_internal_coupling_by_id(coupl_id);
     }
@@ -768,7 +768,7 @@ cs_field_gradient_tensor(const cs_field_t          *f,
   if (f->bc_coeffs != nullptr) {
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
-      if (cs_field_get_key_int(f, coupled_key_id) > 0) {
+      if (f->get_key_int(coupled_key_id) > 0) {
         bc_coeffs = f->bc_coeffs;
         if (use_previous_t) {
           cs_field_bc_coeffs_shallow_copy(bc_coeffs, &bc_coeffs_loc);
@@ -830,7 +830,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
   const cs_field_t *parent_f = f;
 
   const int f_parent_id
-    = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+    = f->get_key_int(cs_field_key_id("parent_field_id"));
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
@@ -859,7 +859,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
     if (eqp->iwgrec == 1) {
       /* Weighted gradient coefficients */
       int key_id = cs_field_key_id("gradient_weighting_id");
-      int diff_id = cs_field_get_key_int(parent_f, key_id);
+      int diff_id = parent_f->get_key_int(key_id);
       if (diff_id > -1) {
         cs_field_t *f_weight = cs_field_by_id(diff_id);
         c_weight = f_weight->val;
@@ -870,7 +870,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
     /* Internal coupling structure */
     int key_id = cs_field_key_id_try("coupling_entity");
     if (key_id > -1) {
-      int coupl_id = cs_field_get_key_int(parent_f, key_id);
+      int coupl_id = parent_f->get_key_int(key_id);
       if (coupl_id > -1)
         cpl = cs_internal_coupling_by_id(coupl_id);
     }
@@ -1007,7 +1007,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
   const cs_field_t *parent_f = f;
 
   const int f_parent_id
-    = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+    = f->get_key_int(cs_field_key_id("parent_field_id"));
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
@@ -1035,7 +1035,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
     /* Internal coupling structure */
     int key_id = cs_field_key_id_try("coupling_entity");
     if (key_id > -1) {
-      int coupl_id = cs_field_get_key_int(parent_f, key_id);
+      int coupl_id = parent_f->get_key_int(key_id);
       if (coupl_id > -1)
         cpl = cs_internal_coupling_by_id(coupl_id);
     }
@@ -1054,7 +1054,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
     /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
-      if (cs_field_get_key_int(f, coupled_key_id) > 0) {
+      if (f->get_key_int(coupled_key_id) > 0) {
         bc_coeffs = f->bc_coeffs;
       }
     }
@@ -1169,7 +1169,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
   const cs_field_t *parent_f = f;
 
   const int f_parent_id
-    = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+    = f->get_key_int(cs_field_key_id("parent_field_id"));
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
@@ -1196,7 +1196,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
     /* Internal coupling structure */
     int key_id = cs_field_key_id_try("coupling_entity");
     if (key_id > -1) {
-      int coupl_id = cs_field_get_key_int(parent_f, key_id);
+      int coupl_id = parent_f->get_key_int(key_id);
       if (coupl_id > -1)
         cpl = cs_internal_coupling_by_id(coupl_id);
     }
@@ -1214,7 +1214,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
     /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
-      if (cs_field_get_key_int(f, coupled_key_id) > 0) {
+      if (f->get_key_int(coupled_key_id) > 0) {
         bc_coeffs = f->bc_coeffs;
       }
     }
@@ -1377,8 +1377,8 @@ cs_field_local_extrema_scalar(int              f_id,
   int key_scamax_id = cs_field_key_id("max_scalar");
   int key_scamin_id = cs_field_key_id("min_scalar");
 
-  cs_real_t scalar_max = cs_field_get_key_double(f, key_scamax_id);
-  cs_real_t scalar_min = cs_field_get_key_double(f, key_scamin_id);
+  cs_real_t scalar_max = f->get_key_double(key_scamax_id);
+  cs_real_t scalar_min = f->get_key_double(key_scamin_id);
 
   /* Bounded by the global extrema */
 # pragma omp parallel for if (n_cells_ext > CS_THR_MIN)

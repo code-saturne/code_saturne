@@ -2816,8 +2816,8 @@ cs_gwf_tpf_init_setup(cs_flag_t     post_flag,
                                       1,
                                       true); /* has_previous */
 
-    cs_field_set_key_int(tpf->g_pressure, log_key, 1);
-    cs_field_set_key_int(tpf->g_pressure, post_key, 1);
+    tpf->g_pressure->set_key_int(log_key, 1);
+    tpf->g_pressure->set_key_int(post_key, 1);
     break;
 
   default:
@@ -2835,9 +2835,9 @@ cs_gwf_tpf_init_setup(cs_flag_t     post_flag,
                                       1,      /* dimension */
                                       true);  /* has_previous */
 
-  cs_field_set_key_int(tpf->l_saturation, log_key, 1);
+  tpf->l_saturation->set_key_int(log_key, 1);
   if (post_flag & CS_GWF_POST_LIQUID_SATURATION)
-    cs_field_set_key_int(tpf->l_saturation, post_key, 1);
+    tpf->l_saturation->set_key_int(post_key, 1);
 
   /* Create a field attached to cells for the mass density of the component in
      the liquid phase */
@@ -2849,8 +2849,8 @@ cs_gwf_tpf_init_setup(cs_flag_t     post_flag,
                                  true);  /* has_previous */
 
   if (post_flag & CS_GWF_POST_COMPONENT_MASS_DENSITY) {
-    cs_field_set_key_int(tpf->l_rho_h, log_key, 1);
-    cs_field_set_key_int(tpf->l_rho_h, post_key, 1);
+    tpf->l_rho_h->set_key_int(log_key, 1);
+    tpf->l_rho_h->set_key_int(post_key, 1);
   }
 
   tpf->g_rho_h = cs_field_create("component_mass_density_in_gas",
@@ -2860,8 +2860,8 @@ cs_gwf_tpf_init_setup(cs_flag_t     post_flag,
                                  true);  /* has_previous */
 
   if (post_flag & CS_GWF_POST_COMPONENT_MASS_DENSITY) {
-    cs_field_set_key_int(tpf->g_rho_h, log_key, 1);
-    cs_field_set_key_int(tpf->g_rho_h, post_key, 1);
+    tpf->g_rho_h->set_key_int(log_key, 1);
+    tpf->g_rho_h->set_key_int(post_key, 1);
   }
 
   /* Set the function for the computation of rhog_h */

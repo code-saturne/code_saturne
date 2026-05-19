@@ -329,8 +329,8 @@ cs_atmo_add_variable_fields(void)
     f = cs_field(f_id);
 
     /* Clipping of rain mass fraction 0 <= ym_l_r <=1 */
-    cs_field_set_key_double(f, kscmin, 0.e0);
-    cs_field_set_key_double(f, kscmax, 1.e0);
+    f->set_key_double(kscmin, 0.e0);
+    f->set_key_double(kscmax, 1.e0);
 
     /* Add the rain mass fraction to the index of fields */
     cs_add_model_field_indexes(f);
@@ -352,8 +352,8 @@ cs_atmo_add_variable_fields(void)
     eqp = cs_field_get_equation_param(f);
 
     /* Clipping of rain mass fraction 0 <= ym_l_r <=1 */
-    cs_field_set_key_double(f, kscmin, 0.e0);
-    cs_field_set_key_double(f, kscmax, 1.e10);
+    f->set_key_double(kscmin, 0.e0);
+    f->set_key_double(kscmax, 1.e10);
 
     /* Add the rain mass fraction to the index of fields */
     cs_add_model_field_indexes(f);
@@ -382,7 +382,7 @@ cs_atmo_add_variable_fields(void)
     cs_field_t *f = cs_field(f_id);
     cs_field_pointer_map(CS_ENUMF_(t), f);
     cs_add_model_field_indexes(f);
-    cs_field_set_key_double(f, kscmin, 0.0);
+    f->set_key_double(kscmin, 0.0);
   }
 
   // Humid atmosphere
@@ -398,7 +398,7 @@ cs_atmo_add_variable_fields(void)
     cs_field_t *f = cs_field(f_id);
     cs_field_pointer_map(CS_ENUMF_(t), f);
     cs_add_model_field_indexes(f);
-    cs_field_set_key_double(f, kscmin, 200.0);
+    f->set_key_double(kscmin, 200.0);
 
     // total water content
     f_id = cs_variable_field_create("ym_water",
@@ -407,7 +407,7 @@ cs_atmo_add_variable_fields(void)
                                     1);
     f = cs_field(f_id);
     cs_add_model_field_indexes(f);
-    cs_field_set_key_double(f, kscmin, 0.0);
+    f->set_key_double(kscmin, 0.0);
 
     // total number droplets
     f_id = cs_variable_field_create("number_of_droplets",
@@ -416,7 +416,7 @@ cs_atmo_add_variable_fields(void)
                                     1);
     f = cs_field(f_id);
     cs_add_model_field_indexes(f);
-    cs_field_set_key_double(f, kscmin, 0.0);
+    f->set_key_double(kscmin, 0.0);
 
   }
 
@@ -467,7 +467,7 @@ cs_atmo_add_variable_fields(void)
   if (at_chem->model > 0) {
     for (int ii = 0; ii  < at_chem->n_species; ii++) {
       cs_field_t *f = cs_field(at_chem->species_to_field_id[ii]);
-      cs_field_set_key_double(f, kscmin, 0.0);
+      f->set_key_double(kscmin, 0.0);
     }
   }
 
@@ -476,13 +476,13 @@ cs_atmo_add_variable_fields(void)
       = at_chem->n_species + at_chem->n_size*(at_chem->n_layer + 1);
     for (int ii = at_chem->n_species; ii < n_end; ii++) {
       cs_field_t *f = cs_field(at_chem->species_to_field_id[ii]);
-      cs_field_set_key_double(f, kscmin, 0.0);
+      f->set_key_double(kscmin, 0.0);
     }
     // Allow large aerosol numbers
     const int n_start = at_chem->n_species + at_chem->n_size*at_chem->n_layer;
     for (int ii = n_start; ii < n_end; ii++) {
       cs_field_t *f = cs_field(at_chem->species_to_field_id[ii]);
-      cs_field_set_key_double(f, kscmax, 1.0e40);
+      f->set_key_double(kscmax, 1.0e40);
     }
   }
 
@@ -526,8 +526,8 @@ cs_atmo_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1,
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Density humid air");
   }
 
@@ -547,8 +547,8 @@ cs_atmo_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         3,
                         false);
-    cs_field_set_key_int(f, keyvis, 1);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 1);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "MomentumSourceTerms");
   }
 
@@ -558,8 +558,8 @@ cs_atmo_add_property_fields(void)
                       CS_MESH_LOCATION_BOUNDARY_FACES,
                       1,
                       false);
-  cs_field_set_key_int(f, keyvis, 0);
-  cs_field_set_key_int(f, keylog, 1);
+  f->set_key_int(keyvis, 0);
+  f->set_key_int(keylog, 1);
   cs_field_set_key_str(f, klbl, "Boundary Roughness");
 
   f = cs_field_create("boundary_thermal_roughness",
@@ -567,8 +567,8 @@ cs_atmo_add_property_fields(void)
                       CS_MESH_LOCATION_BOUNDARY_FACES,
                       1,
                       false);
-  cs_field_set_key_int(f, keyvis, 0);
-  cs_field_set_key_int(f, keylog, 1);
+  f->set_key_int(keyvis, 0);
+  f->set_key_int(keylog, 1);
   cs_field_set_key_str(f, klbl, "Boundary Thermal Roughness");
 
   /* Temperature for DRY or HUMID */
@@ -580,8 +580,8 @@ cs_atmo_add_property_fields(void)
                                            CS_MESH_LOCATION_CELLS,
                                            1,
                                            false);
-    cs_field_set_key_int(f, keyvis, 1);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 1);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "RealTemp");
 
     f = cs_field_create("non_neutral_scalar_correction",
@@ -589,8 +589,8 @@ cs_atmo_add_property_fields(void)
                         CS_MESH_LOCATION_BOUNDARY_FACES,
                         1,
                         false);
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 0);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 0);
     cs_field_set_key_str(f, klbl, "Non Neutral Scalar Correction");
 
     f = cs_field_try("thermal_expansion");
@@ -599,8 +599,8 @@ cs_atmo_add_property_fields(void)
                                            CS_MESH_LOCATION_CELLS,
                                            1,
                                            false);
-    cs_field_set_key_int(f, keyvis, 1);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 1);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Beta");
   }
 
@@ -613,8 +613,8 @@ cs_atmo_add_property_fields(void)
                                            CS_MESH_LOCATION_CELLS,
                                            1,
                                            false);
-    cs_field_set_key_int(f, keyvis, 1);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 1);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "LiqWater");
 
     if (at_opt->sedimentation_model > 0 || at_opt->deposition_model > 0) {
@@ -633,8 +633,8 @@ cs_atmo_add_property_fields(void)
                                              1,
                                              false);
       f = cs_field_try("radiative_cooling");
-      cs_field_set_key_int(f, keyvis, 1);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, 1);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "Radiative cooling");
     }
 
@@ -645,8 +645,8 @@ cs_atmo_add_property_fields(void)
                                            1,
                                            false);
     f = cs_field_try("nebulosity_frac");
-    cs_field_set_key_int(f, keyvis, 1);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 1);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Nebulo frac");
 
     // Diagnosed nebulosity
@@ -656,8 +656,8 @@ cs_atmo_add_property_fields(void)
                                            1,
                                            false);
     f = cs_field_try("nebulosity_diag");
-    cs_field_set_key_int(f, keyvis, 1);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 1);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Nebulo diag");
 
     cs_physical_property_define_from_field("droplet_eq_radius",
@@ -666,8 +666,8 @@ cs_atmo_add_property_fields(void)
                                            1,
                                            false);
     f = cs_field_try("droplet_eq_radius");
-    cs_field_set_key_int(f, keyvis, 1);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 1);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Drop eq radius3");
   }
 
@@ -695,8 +695,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         ground_num + 1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground percentages");
 
     /* Boundary variable fields for the ground */
@@ -708,8 +708,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground T");
 
     /* Ground surface potential temperature (K) */
@@ -718,8 +718,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         true); /* has_previous */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground theta");
 
     /* Ground total water content */
@@ -728,8 +728,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         true); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground qw");
 
     /* ratio of the shallow reservoir water content to its maximum capacity */
@@ -738,8 +738,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground w1");
 
     /* ratio of the deep reservoir water content to its maximum capacity */
@@ -748,8 +748,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground w2");
 
     /* Incident solar radiative flux */
@@ -758,8 +758,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground solar incid flux");
 
     /* Incident solar radiative flux */
@@ -768,8 +768,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground IR incid flux");
 
     /* Boundary parameters fields characterizing ground */
@@ -782,8 +782,8 @@ cs_atmo_add_property_fields(void)
                         CS_MESH_LOCATION_BOUNDARY_FACES,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Albedo");
 
     f = cs_field_try("emissivity");
@@ -796,8 +796,8 @@ cs_atmo_add_property_fields(void)
                           1, /* dim */
                           false); /* has_previous */
 
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Emissivity");
 
     f = cs_field_create("boundary_vegetation",
@@ -805,8 +805,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Vegetation");
 
     /* maximum water capacity of shallow reservoir */
@@ -815,8 +815,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground c1w");
 
     /* ratio of the maximum water capacity of the shallow reservoir to the deep
@@ -826,8 +826,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground c2w");
 
     /* Thermal inertia of the ground */
@@ -836,8 +836,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground Cp");
 
     f = cs_field_create("ground_r1",
@@ -845,8 +845,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground r1");
 
     f = cs_field_create("ground_r2",
@@ -854,8 +854,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground r2");
 
     /* Deep ground temperature (in Celsius)
@@ -865,8 +865,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground deep T");
 
     /* Fields useful for heat budget plot on the ground boundary */
@@ -875,8 +875,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground sensible heat");
 
     f = cs_field_create("ground_latent_heat",
@@ -884,8 +884,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground latent heat");
 
     f = cs_field_create("ground_thermal_rad_upward",
@@ -893,8 +893,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground thermal radiation upward");
 
     f = cs_field_create("ground_thermal_rad_downward",
@@ -902,8 +902,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground thermal radiation downward");
 
     f = cs_field_create("ground_visible_rad_absorbed",
@@ -911,8 +911,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1, /* dim */
                         false); /* has_previous */
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground visible radiation absorbed");
 
     if (cs_glob_atmo_option->ground_meb_model > CS_ATMO_GROUND_GENUINE) {
@@ -921,8 +921,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1,
                           false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "Cover geometry ratio");
 
       f = cs_field_create("cover_reflectivity",
@@ -930,8 +930,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1,
                           false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "Cover reflectivity");
 
       f = cs_field_create("cover_temperature_radiative",
@@ -939,8 +939,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1,
                           false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "Cover temperature radiation");
     }
 
@@ -951,8 +951,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_vapor_mass_plant");
 
       f = cs_field_create("source_term_vapor_mass_ground",
@@ -960,8 +960,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_vapor_mass_ground");
 
       f = cs_field_create("source_term_imp_specific_humidity_plant",
@@ -969,8 +969,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_imp_specific_humidity_plant");
 
       f = cs_field_create("source_term_exp_specific_humidity_plant",
@@ -978,8 +978,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_exp_specific_humidity_plant");
 
       f = cs_field_create("source_term_convective_energy_ground",
@@ -987,8 +987,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_convective_energy_ground");
 
       f = cs_field_create("source_term_convective_energy_plant",
@@ -996,8 +996,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_convective_energy_plant");
 
       f = cs_field_create("source_term_mass_energy_plant",
@@ -1005,8 +1005,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_mass_energy_plant");
 
 
@@ -1015,8 +1015,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_mass_energy_ground");
 
 
@@ -1025,8 +1025,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_rad_lw_up_ground");
 
       f = cs_field_create("source_term_rad_sw_up_ground",
@@ -1034,8 +1034,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_rad_sw_up_ground");
 
       f = cs_field_create("source_term_rad_lw_up_plant",
@@ -1043,8 +1043,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_rad_lw_up_plant");
 
       f = cs_field_create("source_term_rad_sw_up_plant",
@@ -1052,8 +1052,8 @@ cs_atmo_add_property_fields(void)
                         z->location_id,
                         1,
                         false);
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "source_term_rad_sw_up_plant");
 
       f = cs_field_create("ray_net_plant",
@@ -1061,8 +1061,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "ray_net_plant");
 
       f = cs_field_create("ray_net_ir_plant",
@@ -1070,8 +1070,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "ray_net_ir_plant");
 
       f = cs_field_create("ray_net_solar_plant",
@@ -1079,8 +1079,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "ray_net_solar_plant");
 
       f = cs_field_create("ray_ir_plant_to_ground",
@@ -1088,8 +1088,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "ray_ir_plant_to_ground");
 
       f = cs_field_create("ray_ir_atm_to_plant",
@@ -1097,8 +1097,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "ray_ir_atm_to_plant");
 
       f = cs_field_create("et_plant",
@@ -1106,8 +1106,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "et_plant");
 
       f = cs_field_create("et_ground",
@@ -1115,8 +1115,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "et_ground");
 
       f = cs_field_create("assimilation_rate",
@@ -1124,8 +1124,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "assimilation_rate");
 
       f = cs_field_create("gco2",
@@ -1133,8 +1133,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "gco2");
 
       f = cs_field_create("q_emitted_by_the_plant",
@@ -1142,8 +1142,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "q_emitted_by_the_plant");
 
       f = cs_field_create("ground_w1_transpirated_by_the_plant",
@@ -1151,8 +1151,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "ground_w1_transpirated_by_the_plant");
 
       f = cs_field_create("ground_w1_evaporated_by_the_ground",
@@ -1160,8 +1160,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "ground_w1_evaporated_by_the_ground");
 
       f = cs_field_create("leaf_temp",
@@ -1169,8 +1169,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "leaf_temp");
 
       f = cs_field_create("ci_pho",
@@ -1178,8 +1178,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "ci_pho");
 
       f = cs_field_create("latent_heat_plant_to_air",
@@ -1187,8 +1187,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "latent_heat_plant_to_air");
 
       f = cs_field_create("sensible_heat_plant_to_air",
@@ -1196,8 +1196,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "sensible_heat_plant_to_air");
 
       f = cs_field_create("ground_water_potential",
@@ -1205,8 +1205,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "ground_water_potential");
 
       f = cs_field_create("root_water_potential",
@@ -1214,8 +1214,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "root_water_potential");
 
       f = cs_field_create("plant_water_potential",
@@ -1223,8 +1223,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "plant_water_potential");
 
       f = cs_field_create("ground_p_water_volumetric_capacity",
@@ -1232,8 +1232,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "ground_p_water_volumetric_capacity");
 
       f = cs_field_create("root_p_water_volumetric_capacity",
@@ -1241,8 +1241,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "root_p_water_volumetric_capacity");
 
       f = cs_field_create("plant_air_resistance",
@@ -1250,8 +1250,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "plant_air_resistance");
 
       f = cs_field_create("ground_air_resistance",
@@ -1259,8 +1259,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "ground_air_resistance");
 
       f = cs_field_create("water_stress_factor",
@@ -1268,8 +1268,8 @@ cs_atmo_add_property_fields(void)
                           z->location_id,
                           1, /* dim */
                           false); /* has_previous */
-      cs_field_set_key_int(f, keyvis, post_flag);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keyvis, post_flag);
+      f->set_key_int(keylog, 1);
       cs_field_set_key_str(f, klbl, "water_stress_factor");
 
     }
@@ -1520,7 +1520,7 @@ cs_atmo_init_variables_1(void)
     const int sc_id = f->get_key_int(keysca) - 1;
     if (sc_id < 0)
       continue;
-    cs_field_set_key_double(f, ksigmas, 0.7);
+    f->set_key_double(ksigmas, 0.7);
   }
 
   /* Force Rij Matrix stabilisation for all atmospheric models

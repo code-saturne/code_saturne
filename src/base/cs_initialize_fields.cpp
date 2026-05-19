@@ -216,9 +216,9 @@ cs_initialize_fields_stage_0(void)
     cs_cf_thermo_default_init();
 
     /* Default diffusivity for total energy */
-    double visls_0 = cs_field_get_key_double(CS_F_(t), kvisl0);
+    double visls_0 = CS_F_(t)->get_key_double(kvisl0);
     visls_0 /= fluid_props->cv0;
-    cs_field_set_key_double(CS_F_(e_tot), kvisl0, visls_0);
+    CS_F_(e_tot)->set_key_double(kvisl0, visls_0);
   }
 
   /* Scalars diffusivity */
@@ -227,12 +227,12 @@ cs_initialize_fields_stage_0(void)
     cs_field_t *f = cs_field_by_id(f_id);
     if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
       continue;
-    int scalar_id = cs_field_get_key_int(f, keysca) - 1;
+    int scalar_id = f->get_key_int(keysca) - 1;
     if (scalar_id < 0)
       continue;
 
-    int ifcvsl = cs_field_get_key_int(f, kivisl);
-    double visls_0 = cs_field_get_key_double(f, kvisl0);
+    int ifcvsl = f->get_key_int(kivisl);
+    double visls_0 = f->get_key_double(kvisl0);
     /* Diffusivity at current time step (and previous one if second order) */
     if (ifcvsl >= 0) {
       cs_field_t *f_vsl = cs_field_by_id(ifcvsl);
@@ -320,7 +320,7 @@ cs_initialize_fields_stage_0(void)
     const int kscmin = cs_field_key_id_try("min_scalar_clipping");
 
     cs_field_t *f_vf = cs_field_by_name("void_fraction");
-    cs_real_t clvfmn = cs_field_get_key_double(f_vf, kscmin);
+    cs_real_t clvfmn = f_vf->get_key_double(kscmin);
 
     f_vf->get_vals_s().set_to_val(ctx, clvfmn);
   }
@@ -343,9 +343,9 @@ cs_initialize_fields_stage_0(void)
     if (   (! (f->type & CS_FIELD_VARIABLE))
         || (f->type & CS_FIELD_CDO)) /* CDO variables handled elsewhere */
       continue;
-    if (cs_field_get_key_int(f, keysca) < 0)
+    if (f->get_key_int(keysca) < 0)
       continue;
-    if (cs_field_get_key_int(f, kscavr) >= 0)  /* is a variance */
+    if (f->get_key_int(kscavr) >= 0)  /* is a variance */
       continue;
 
     cs_scalar_clipping(f);
@@ -359,10 +359,10 @@ cs_initialize_fields_stage_0(void)
     if (   (! (f->type & CS_FIELD_VARIABLE))
         || (f->type & CS_FIELD_CDO)) /* CDO variables handled elsewhere */
       continue;
-    if (cs_field_get_key_int(f, keysca) < 0)
+    if (f->get_key_int(keysca) < 0)
       continue;
 
-    if (cs_field_get_key_int(f, kscavr) >= 0)
+    if (f->get_key_int(kscavr) >= 0)
       cs_scalar_clipping(f);
   }
 
@@ -462,7 +462,7 @@ cs_initialize_fields_stage_1(void)
     if (eqp->idiff < 1 || eqp->iwgrec != 1)
       continue;
 
-    const cs_field_t *f_wg = cs_field_by_id(cs_field_get_key_int(f, kwgrec));
+    const cs_field_t *f_wg = cs_field_by_id(f->get_key_int(kwgrec));
     if (f_wg->dim == 6) {
       const cs_real_t  t_val[6] = {1., 1., 1., 0., 0., 0.};
       cs_array_real_set_value(m->n_cells_with_ghosts,
@@ -687,17 +687,17 @@ cs_initialize_fields_stage_1(void)
         || f->type & CS_FIELD_CDO
         || f->dim != 1)
       continue;
-    int scalar_id = cs_field_get_key_int(f, keysca) - 1;
+    int scalar_id = f->get_key_int(keysca) - 1;
     if (scalar_id < 0)
       continue;
 
-    if (cs_field_get_key_int(f, kscavr) >= 0)  /* is a variance */
+    if (f->get_key_int(kscavr) >= 0)  /* is a variance */
       continue;
 
     /* Non-variance scalars */
 
-    cs_real_t scminp = cs_field_get_key_double(f, kscmin);
-    cs_real_t scmaxp = cs_field_get_key_double(f, kscmax);
+    cs_real_t scminp = f->get_key_double(kscmin);
+    cs_real_t scmaxp = f->get_key_double(kscmax);
 
     if (scminp <= scmaxp) {
 
@@ -737,17 +737,17 @@ cs_initialize_fields_stage_1(void)
     if (   !(f->type & CS_FIELD_VARIABLE)
         || f->type & CS_FIELD_CDO)
       continue;
-    int scalar_id = cs_field_get_key_int(f, keysca) - 1;
+    int scalar_id = f->get_key_int(keysca) - 1;
     if (scalar_id < 0)
       continue;
 
-    if (cs_field_get_key_int(f, kscavr) < 0)  /* not a variance */
+    if (f->get_key_int(kscavr) < 0)  /* not a variance */
       continue;
 
     /* Variance scalars */
 
-    cs_real_t scminp = cs_field_get_key_double(f, kscmin);
-    cs_real_t scmaxp = cs_field_get_key_double(f, kscmax);
+    cs_real_t scminp = f->get_key_double(kscmin);
+    cs_real_t scmaxp = f->get_key_double(kscmax);
 
     if (scminp <= scmaxp) {
       cs_real_t valmin = HUGE_VALF, valmax = - HUGE_VALF;
@@ -759,7 +759,7 @@ cs_initialize_fields_stage_1(void)
       cs_parall_min_scalars(valmin);
       cs_parall_max_scalars(valmin);
 
-      int iclvfl = cs_field_get_key_int(f, kclvfl);
+      int iclvfl = f->get_key_int(kclvfl);
 
       // Check coherence for variance clippings.
       // For iclvfl = 1, only check positivity, otherwise it well be

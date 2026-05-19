@@ -2078,8 +2078,7 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
       /* Set extended contribution for domain coupling */
 
       if (f != nullptr) {
-        int k_cpl = cs_field_key_id("coupling_entity");
-        int coupling_id = cs_field_get_key_int(f, k_cpl);
+        int coupling_id = f->get_key_int("coupling_entity");
 
         if (coupling_id > -1)
           cs_internal_coupling_matrix_add_values(f, 1, 1, r_g_id, mav);
@@ -2420,8 +2419,7 @@ cs_matrix_compute_coeffs
       /* Set extended contribution for domain coupling */
 
       if (f != nullptr) {
-        int k_cpl = cs_field_key_id("coupling_entity");
-        int coupling_id = cs_field_get_key_int(f, k_cpl);
+        int coupling_id = f->get_key_int("coupling_entity");
 
         if (coupling_id > -1)
           cs_internal_coupling_matrix_add_values(f,

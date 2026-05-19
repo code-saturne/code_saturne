@@ -4331,8 +4331,8 @@ cs_solidification_init_setup(void)
                                      1,
                                      true); /* has_previous */
 
-  cs_field_set_key_int(solid->g_l_field, log_key, 1);
-  cs_field_set_key_int(solid->g_l_field, post_key, 1);
+  solid->g_l_field->set_key_int(log_key, 1);
+  solid->g_l_field->set_key_int(post_key, 1);
 
   /* Add the enthalpy field if not already created */
 
@@ -4351,12 +4351,12 @@ cs_solidification_init_setup(void)
       solid->enthalpy = cs_field_create(
         "enthalpy", field_mask, c_loc_id, 1, true); /* has_previous */
 
-      cs_field_set_key_int(solid->enthalpy, log_key, 1);
+      solid->enthalpy->set_key_int(log_key, 1);
     }
   }
 
   if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
-    cs_field_set_key_int(solid->enthalpy, post_key, 1);
+    solid->enthalpy->set_key_int(post_key, 1);
 
   /* Add a reaction term to the momentum equation */
 

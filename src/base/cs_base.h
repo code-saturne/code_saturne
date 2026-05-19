@@ -108,7 +108,7 @@ extern int cs_mpi_device_support;
  */
 /*----------------------------------------------------------------------------*/
 
-static inline const char *
+inline const char *
 cs_base_strtf(bool  boolean)
 {
   if (boolean)

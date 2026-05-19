@@ -873,7 +873,8 @@ cs_ctwr_source_term(int              f_id,
   cs_field_t *cfld_yh_rain = cs_field_by_name("ymh_l_r"); /* Yp times Tp */
 
   /* Rain drift velocity */
-  cs_field_t *cfld_drift_vel = cs_field_by_composite_name(cfld_yp->name,"drift_vel");
+  cs_field_t *cfld_drift_vel = cs_field_by_composite_name(cfld_yp->name,
+                                                          "drift_vel");
   cs_real_3_t *drift_vel_rain = (cs_real_3_t *)cfld_drift_vel->val;
 
   /* Phases volume fractions */
@@ -882,7 +883,7 @@ cs_ctwr_source_term(int              f_id,
   /* Rain inner mass flux */
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   cs_real_t *imasfl_r = cs_field_by_id
-                         (cs_field_get_key_int(cfld_yp, kimasf))->val;
+                          (cfld_yp->get_key_int(kimasf))->val;
 
   int evap_model = ct_opt->evap_model;
 

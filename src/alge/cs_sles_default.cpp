@@ -199,8 +199,7 @@ _sles_default_native(int                f_id,
 
     if (f_id > -1) {
       const cs_field_t *f = cs_field_by_id(f_id);
-      coupling_id
-        = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+      coupling_id = f->get_key_int("coupling_entity");
     }
 
     if (symmetric) {
@@ -642,7 +641,7 @@ cs_sles_default_get_verbosity(int          f_id,
       retval = cs_field_get_equation_param_const(f)->verbosity;
     }
     else
-      retval = cs_field_get_key_int(f, k_log);
+      retval = f->get_key_int(k_log);
   }
 
   return retval;
@@ -699,8 +698,7 @@ cs_sles_default_get_matrix(int          f_id,
 
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
-    int coupling_id
-      = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+    int coupling_id = f->get_key_int("coupling_entity");
     if (coupling_id > -1)
       need_matrix_assembler = true;
   }
@@ -1156,8 +1154,7 @@ cs_sles_solve_native(int                  f_id,
 
     if (f_id > -1) {
       const cs_field_t *f = cs_field_by_id(f_id);
-      int coupling_id
-        = cs_field_get_key_int(f, cs_field_key_id("coupling_entity"));
+      int coupling_id = f->get_key_int("coupling_entity");
       if (coupling_id > -1)
         need_matrix_assembler = true;
     }

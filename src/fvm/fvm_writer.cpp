@@ -779,7 +779,7 @@ _format_writer_init(fvm_writer_t  *this_writer,
         size_t l = lw + 1 + strlen(mesh_name);
         CS_MALLOC(tmp_name, l + 1, char);
         sprintf(tmp_name, "%s_%s", this_writer->name, mesh_name);
-        for (size_t i = lw + 1, j = 0; i < l; i++, j++) {
+        for (size_t i = lw + 1; i < l; i++) {
           if (tmp_name[i] == ' ')
             tmp_name[i] = '_';
         }

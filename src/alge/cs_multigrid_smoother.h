@@ -1,5 +1,5 @@
-#ifndef __CS_MULTIGRID_SMOOTHER_H__
-#define __CS_MULTIGRID_SMOOTHER_H__
+#ifndef CS_MULTIGRID_SMOOTHER_H
+#define CS_MULTIGRID_SMOOTHER_H
 
 /*============================================================================
  * Sparse Linear Equation Solvers
@@ -36,10 +36,6 @@
 #include "alge/cs_matrix.h"
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_it.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -78,7 +74,7 @@ typedef struct _cs_multigrid_smoother_t  cs_multigrid_smoother_t;
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_it_t *
+extern "C" cs_sles_it_t *
 cs_multigrid_smoother_create(cs_sles_it_type_t     smoother_type,
                              int                   poly_degree,
                              int                   n_iter);
@@ -93,7 +89,7 @@ cs_multigrid_smoother_create(cs_sles_it_type_t     smoother_type,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_multigrid_smoother_destroy(void  **context);
 
 /*----------------------------------------------------------------------------
@@ -107,7 +103,7 @@ cs_multigrid_smoother_destroy(void  **context);
  *   verbosity <-- verbosity level
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_multigrid_smoother_setup(void               *context,
                             const char         *name,
                             const cs_matrix_t  *a,
@@ -136,7 +132,7 @@ cs_multigrid_smoother_setup(void               *context,
  *   convergence state
  *----------------------------------------------------------------------------*/
 
-cs_sles_convergence_state_t
+extern "C" cs_sles_convergence_state_t
 cs_multigrid_smoother_solve(void                *context,
                             const char          *name,
                             const cs_matrix_t   *a,
@@ -163,7 +159,7 @@ cs_multigrid_smoother_solve(void                *context,
  *               (actual type: cs_multigrid_smoother_t  *)
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_multigrid_smoother_free(void  *context);
 
 /*----------------------------------------------------------------------------
@@ -175,7 +171,7 @@ cs_multigrid_smoother_free(void  *context);
  *   log_type <-- log type
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_multigrid_smoother_log(const void  *context,
                           cs_log_t     log_type);
 
@@ -189,11 +185,9 @@ cs_multigrid_smoother_log(const void  *context,
  *   selected solver type
  *----------------------------------------------------------------------------*/
 
-cs_sles_it_type_t
+extern "C" cs_sles_it_type_t
 cs_multigrid_smoother_get_type(const cs_multigrid_smoother_t  *context);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MULTIGRID_SMOOTHER_H__ */
+#endif /* CS_MULTIGRID_SMOOTHER_H */

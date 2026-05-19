@@ -624,8 +624,8 @@ _ensure_boundary_stress_is_present(void)
     int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
 
     bf = cs_field_create(name, type, location_id, 3, false);
-    cs_field_set_key_int(bf, cs_field_key_id("log"), 0);
-    cs_field_set_key_int(bf, cs_field_key_id("post_vis"), 0);
+    bf->set_key_int(cs_field_key_id("log"), 0);
+    bf->set_key_int(cs_field_key_id("post_vis"), 0);
   }
 }
 
@@ -1051,8 +1051,8 @@ cs_function_define_boundary_thermal_flux(void)
       int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
 
       bf = cs_field_create(names[i], type, location_id, 1, false);
-      cs_field_set_key_int(bf, cs_field_key_id("log"), 0);
-      cs_field_set_key_int(bf, cs_field_key_id("post_vis"), 0);
+      bf->set_key_int(cs_field_key_id("log"), 0);
+      bf->set_key_int(cs_field_key_id("post_vis"), 0);
     }
   }
 
@@ -1109,8 +1109,8 @@ cs_function_define_boundary_nusselt(void)
         int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
 
         bf = cs_field_create(names[i], type, location_id, 1, false);
-        cs_field_set_key_int(bf, cs_field_key_id("log"), 0);
-        cs_field_set_key_int(bf, cs_field_key_id("post_vis"), 0);
+        bf->set_key_int(cs_field_key_id("log"), 0);
+        bf->set_key_int(cs_field_key_id("post_vis"), 0);
       }
     }
 
@@ -1254,7 +1254,7 @@ cs_function_field_boundary_nr(int               location_id,
       && f->bc_coeffs != nullptr) {
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > -1)
-      coupled = cs_field_get_key_int(f, coupled_key_id);
+      coupled = f->get_key_int(coupled_key_id);
   }
 
   cs_real_t       *_vals  = static_cast<cs_real_t *>(vals);
@@ -1680,7 +1680,7 @@ cs_function_boundary_nusselt(int               location_id,
       }
 
       const int coupling_key_id = cs_field_key_id("coupling_entity");
-      int coupling_id = cs_field_get_key_int(f_t, coupling_key_id);
+      int coupling_id = f_t->get_key_int(coupling_key_id);
       const cs_internal_coupling_t  *cpl
         = cs_internal_coupling_by_id(coupling_id);
 
@@ -1695,7 +1695,7 @@ cs_function_boundary_nusselt(int               location_id,
     /* Physical property pointers */
 
     const int kivisl = cs_field_key_id("diffusivity_id");
-    const int diff_id = cs_field_get_key_int(f_t, kivisl);
+    const int diff_id = f_t->get_key_int(kivisl);
 
     cs_real_t visls_0 = -1;
     cs_lnum_t viscl_step = 0;
@@ -1708,7 +1708,7 @@ cs_function_boundary_nusselt(int               location_id,
     }
     else {
       const int kvisls0 = cs_field_key_id("diffusivity_ref");
-      visls_0 = cs_field_get_key_double(f_t, kvisls0);
+      visls_0 = f_t->get_key_double(kvisls0);
     }
 
     /* Compute using reconstructed temperature value in boundary cells */

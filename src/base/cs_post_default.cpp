@@ -145,7 +145,7 @@ _write_additional_vars(void                  *input,
       if (f->location_id != CS_MESH_LOCATION_CELLS)
         continue;
 
-      if (! (cs_field_get_key_int(f, vis_key_id) & CS_POST_BOUNDARY_NR))
+      if (! (f->get_key_int(vis_key_id) & CS_POST_BOUNDARY_NR))
         continue;
 
       cs_real_t  *b_face_val = nullptr;

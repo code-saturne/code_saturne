@@ -122,15 +122,14 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   /*! [loc_var_dec] */
 
   const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
-  const cs_real_3_t *cdgfbo
-    = (const cs_real_3_t *)(domain->mesh_quantities->b_face_cog);
+  const cs_real_3_t *cdgfbo = domain->mesh_quantities->b_face_cog;
   const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
 
   const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
   cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
 
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const int iflmab =  cs_field_get_key_int(CS_F_(vel), kbmasf);
+  const int iflmab =  CS_F_(vel)->get_key_int(kbmasf);
   const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
   /* Oxydant temperature needed by the combustion model
@@ -142,7 +141,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   coefg[1] = 1;
 
   cm->tinoxy = fp->t0;
-  cm->hinoxy = cs_gas_combustion_t_to_h(coefg, cm->tinoxy);
+  cm->hinoxy = cs_combustion_t_to_h(coefg, cm->tinoxy);
 
   /*! [loc_var_dec] */
 

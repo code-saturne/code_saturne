@@ -1,5 +1,5 @@
-#ifndef __CS_SLES_PC_PRIV_H__
-#define __CS_SLES_PC_PRIV_H__
+#ifndef CS_SLES_PC_PRIV_H
+#define CS_SLES_PC_PRIV_H
 
 /*============================================================================
  * Sparse Linear Equation Solver preconditioner, private elements
@@ -38,10 +38,6 @@
 #include "base/cs_log.h"
 #include "base/cs_halo_perio.h"
 #include "alge/cs_matrix.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -85,6 +81,4 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_SLES_PC_PRIV_H__ */
+#endif /* CS_SLES_PC_PRIV_H */

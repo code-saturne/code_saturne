@@ -439,8 +439,8 @@ cs_gwf_uspf_init_setup(cs_flag_t      flag,
                   __func__);
     }
 
-    cs_field_set_key_int(mc->pressure_head, log_key, 1);
-    cs_field_set_key_int(mc->pressure_head, post_key, 1);
+    mc->pressure_head->set_key_int(log_key, 1);
+    mc->pressure_head->set_key_int(post_key, 1);
 
   } /* Gravitation effects are activated */
 
@@ -453,9 +453,9 @@ cs_gwf_uspf_init_setup(cs_flag_t      flag,
                                        1,     /* dimension */
                                        true); /* has_previous */
 
-  cs_field_set_key_int(mc->moisture_field, log_key, 1);
+  mc->moisture_field->set_key_int(log_key, 1);
   if (post_flag & CS_GWF_POST_LIQUID_SATURATION)
-    cs_field_set_key_int(mc->moisture_field, post_key, 1);
+    mc->moisture_field->set_key_int(post_key, 1);
 
   /* Field for the permeability */
 
@@ -466,8 +466,8 @@ cs_gwf_uspf_init_setup(cs_flag_t      flag,
                                            true); /* has_previous */
 
   if (post_flag & CS_GWF_POST_PERMEABILITY) {
-    cs_field_set_key_int(mc->permeability_field, log_key, 1);
-    cs_field_set_key_int(mc->permeability_field, post_key, 1);
+    mc->permeability_field->set_key_int(log_key, 1);
+    mc->permeability_field->set_key_int(post_key, 1);
   }
 
   /* Field for the soil capacity */
@@ -478,9 +478,9 @@ cs_gwf_uspf_init_setup(cs_flag_t      flag,
                                        1, /* dimension */
                                        true);
 
-  cs_field_set_key_int(mc->capacity_field, log_key, 1);
+  mc->capacity_field->set_key_int(log_key, 1);
   if (post_flag & CS_GWF_POST_SOIL_CAPACITY)
-    cs_field_set_key_int(mc->capacity_field, post_key, 1);
+    mc->capacity_field->set_key_int(post_key, 1);
 }
 
 /*----------------------------------------------------------------------------*/

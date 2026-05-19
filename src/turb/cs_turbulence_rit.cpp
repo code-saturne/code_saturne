@@ -764,7 +764,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
      cannot be correct (see issue #387). Either we should consider
      ctheta here purely local, or we must use an associated field to save it. */
 
-  /* cs_field_set_key_double(f, kctheta, ctheta); */
+  /* f->set_key_double(kctheta, ctheta); */
 
   cs_field_bc_coeffs_t bc_coeffs_v_loc(3);
   CS_MALLOC_HD(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t, cs_alloc_mode);

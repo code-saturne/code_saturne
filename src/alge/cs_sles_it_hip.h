@@ -1,5 +1,5 @@
-#ifndef __CS_SLES_IT_HIP_H__
-#define __CS_SLES_IT_HIP_H__
+#ifndef CS_SLES_IT_HIP_H
+#define CS_SLES_IT_HIP_H
 
 /*============================================================================
  * Sparse Linear Equation Solvers using HIP
@@ -233,8 +233,6 @@ cs_sles_it_dot_products_xx_yy_xy_xz_yz
 
 #endif // defined(__HIPCC__)
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -259,7 +257,7 @@ BEGIN_C_DECLS
  *   convergence state
  *----------------------------------------------------------------------------*/
 
-cs_sles_convergence_state_t
+extern "C" cs_sles_convergence_state_t
 cs_sles_it_hip_jacobi(cs_sles_it_t              *c,
                        const cs_matrix_t         *a,
                        cs_lnum_t                  diag_block_size,
@@ -290,7 +288,7 @@ cs_sles_it_hip_jacobi(cs_sles_it_t              *c,
  *   convergence state
  *----------------------------------------------------------------------------*/
 
-cs_sles_convergence_state_t
+extern "C" cs_sles_convergence_state_t
 cs_sles_it_hip_block_jacobi(cs_sles_it_t              *c,
                              const cs_matrix_t         *a,
                              cs_lnum_t                  diag_block_size,
@@ -325,7 +323,7 @@ cs_sles_it_hip_block_jacobi(cs_sles_it_t              *c,
  *   convergence state
  *----------------------------------------------------------------------------*/
 
-cs_sles_convergence_state_t
+extern "C" cs_sles_convergence_state_t
 cs_sles_it_hip_fcg(cs_sles_it_t              *c,
                     const cs_matrix_t         *a,
                     cs_lnum_t                  diag_block_size,
@@ -355,7 +353,7 @@ cs_sles_it_hip_fcg(cs_sles_it_t              *c,
  *   convergence state
  *----------------------------------------------------------------------------*/
 
-cs_sles_convergence_state_t
+extern "C" cs_sles_convergence_state_t
 cs_sles_it_hip_gcr(cs_sles_it_t              *c,
                     const cs_matrix_t         *a,
                     cs_lnum_t                  diag_block_size,
@@ -368,6 +366,4 @@ cs_sles_it_hip_gcr(cs_sles_it_t              *c,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_SLES_IT_HIP_H__ */
+#endif /* CS_SLES_IT_HIP_H */

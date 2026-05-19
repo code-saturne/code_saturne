@@ -1542,7 +1542,7 @@ _sat_coupling_send_bnd_data
   const int keysca = cs_field_key_id("scalar_id");
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
-    int is_scalar = cs_field_get_key_int(f, keysca);
+    int is_scalar = f->get_key_int(keysca);
     if (   (is_scalar > -1)
         || (strcmp(f->name, "alpha") == 0)
         || (strcmp(f->name, "wall_distance") == 0)) {
@@ -1595,7 +1595,7 @@ _sat_interpolate_bc_from_b_face_data
   const int kv = cs_field_key_id("variable_id");
 
   /* variable_id numbering starts at 1 because shared with fortran */
-  int ivar = cs_field_get_key_int(f, kv) - 1;
+  int ivar = f->get_key_int(kv) - 1;
 
   /* Mesh quantities */
   cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;

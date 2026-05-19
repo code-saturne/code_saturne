@@ -1,5 +1,5 @@
-#ifndef __CS_TURBULENCE_HTLES_H__
-#define __CS_TURBULENCE_HTLES_H__
+#ifndef CS_TURBULENCE_HTLES_H
+#define CS_TURBULENCE_HTLES_H
 
 /*============================================================================
  * Hybrid Temporal LES turbulence model.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -49,7 +45,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_htles(void);
 
 /*----------------------------------------------------------------------------*/
@@ -58,11 +54,9 @@ cs_turbulence_htles(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_htles_initialization(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TURBULENCE_HTLES_H__ */
+#endif /* CS_TURBULENCE_HTLES_H */

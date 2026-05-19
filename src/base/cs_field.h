@@ -1244,7 +1244,7 @@ cs_field_lock_key(cs_field_t  *f,
  *   0 in case of success, > 1 in case of error
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_field_set_key_int(cs_field_t  *f,
                      int          key_id,
                      int          value);
@@ -1331,7 +1331,7 @@ cs_field_clear_key_int_bits(cs_field_t  *f,
  *   0 in case of success, > 1 in case of error
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_field_set_key_double(cs_field_t  *f,
                         int          key_id,
                         double       value);

@@ -1,5 +1,5 @@
-#ifndef __CS_BALANCE_BY_ZONE_H__
-#define __CS_BALANCE_BY_ZONE_H__
+#ifndef CS_BALANCE_BY_ZONE_H
+#define CS_BALANCE_BY_ZONE_H
 
 /*============================================================================
  * Scalar balance on zones.
@@ -34,10 +34,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -249,6 +245,4 @@ cs_flux_through_surface(const char         *scalar_name,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BALANCE_BY_ZONE_H__ */
+#endif /* CS_BALANCE_BY_ZONE_H */

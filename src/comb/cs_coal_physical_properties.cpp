@@ -1534,8 +1534,8 @@ _physical_properties_combustion_drift(cs_lnum_t  n_cells)
     const cs_field_t *fld = cs_field_by_id(fld_id);
 
     // Index of the scalar class (<0 if the scalar belongs to the gas phase)
-    int class_id = cs_field_get_key_int(fld, keyccl) - 1;
-    int isccdri = cs_field_get_key_int(fld, keydri);
+    int class_id = fld->get_key_int(keyccl) - 1;
+    int isccdri = fld->get_key_int(keydri);
 
     // We only handle here one scalar with a drift per particle class
     if (class_id < 0 || (isccdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) == 0)
@@ -1884,8 +1884,8 @@ cs_coal_physprop(int  *mbrom)
       const cs_field_t *fld = cs_field_by_id(fld_id);
 
       // Index of the scalar class (<0 if the scalar belongs to the gas phase)
-      int class_id = cs_field_get_key_int(fld, keyccl) - 1;
-      int isccdri = cs_field_get_key_int(fld, keydri);
+      int class_id = fld->get_key_int(keyccl) - 1;
+      int isccdri = fld->get_key_int(keydri);
 
       // We only handle here one scalar with a drift per particle class
       if (class_id < 0 || (isccdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) == 0)

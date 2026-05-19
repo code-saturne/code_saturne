@@ -1243,8 +1243,8 @@ cs_mobile_structures_restore_previous_values(int  itrfin)
     int kimasf = cs_field_key_id("inner_mass_flux_id");
     int kbmasf = cs_field_key_id("boundary_mass_flux_id");
 
-    cs_field_t *f_i = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf));
-    cs_field_t *f_b = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf));
+    cs_field_t *f_i = cs_field_by_id(CS_F_(vel)->get_key_int(kimasf));
+    cs_field_t *f_b = cs_field_by_id(CS_F_(vel)->get_key_int(kbmasf));
 
     cs_real_t *imasfl = f_i->val;
     cs_real_t *bmasfl = f_b->val;

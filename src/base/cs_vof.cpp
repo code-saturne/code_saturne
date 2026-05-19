@@ -413,18 +413,18 @@ cs_vof_field_create(void)
                                       CS_MESH_LOCATION_INTERIOR_FACES,
                                       1,
                                       false);
-  cs_field_set_key_int(CS_F_(void_f), k_imasf, f_ivf->id);
-  cs_field_set_key_int(f_ivf, keyvis, 0);
-  cs_field_set_key_int(f_ivf, keylog, 0);
+  CS_F_(void_f)->set_key_int(k_imasf, f_ivf->id);
+  f_ivf->set_key_int(keyvis, 0);
+  f_ivf->set_key_int(keylog, 0);
 
   cs_field_t *f_ivff = cs_field_create("inner_void_fraction_flux",
                                        CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
                                        CS_MESH_LOCATION_INTERIOR_FACES,
                                        1,
                                        false);
-  cs_field_set_key_int(CS_F_(void_f), kiflux, f_ivff->id);
-  cs_field_set_key_int(f_ivff, keyvis, 0);
-  cs_field_set_key_int(f_ivff, keylog, 0);
+  CS_F_(void_f)->set_key_int(kiflux, f_ivff->id);
+  f_ivff->set_key_int(keyvis, 0);
+  f_ivff->set_key_int(keylog, 0);
 
   /* Boundary faces*/
 
@@ -433,18 +433,18 @@ cs_vof_field_create(void)
                                       CS_MESH_LOCATION_BOUNDARY_FACES,
                                       1,
                                       false);
-  cs_field_set_key_int(CS_F_(void_f), k_bmasf, f_bvf->id);
-  cs_field_set_key_int(f_bvf, keyvis, 0);
-  cs_field_set_key_int(f_bvf, keylog, 0);
+  CS_F_(void_f)->set_key_int(k_bmasf, f_bvf->id);
+  f_bvf->set_key_int(keyvis, 0);
+  f_bvf->set_key_int(keylog, 0);
 
   cs_field_t *f_bvff = cs_field_create("boundary_void_fraction_flux",
                                        CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
                                        CS_MESH_LOCATION_BOUNDARY_FACES,
                                        1,
                                        false);
-  cs_field_set_key_int(CS_F_(void_f), kbflux, f_bvff->id);
-  cs_field_set_key_int(f_bvff, keyvis, 0);
-  cs_field_set_key_int(f_bvff, keylog, 0);
+  CS_F_(void_f)->set_key_int(kbflux, f_bvff->id);
+  f_bvff->set_key_int(keyvis, 0);
+  f_bvff->set_key_int(keylog, 0);
 
   /* Drift */
 
@@ -456,8 +456,8 @@ cs_vof_field_create(void)
                         CS_MESH_LOCATION_INTERIOR_FACES,
                         1,
                         false);
-    cs_field_set_key_int(f_idvf, keyvis, 0);
-    cs_field_set_key_int(f_idvf, keylog, 0);
+    f_idvf->set_key_int(keyvis, 0);
+    f_idvf->set_key_int(keylog, 0);
 
     cs_field_t *f_bdvf
       = cs_field_create("boundary_drift_velocity_flux",
@@ -465,8 +465,8 @@ cs_vof_field_create(void)
                         CS_MESH_LOCATION_BOUNDARY_FACES,
                         1,
                         false);
-    cs_field_set_key_int(f_bdvf, keyvis, 0);
-    cs_field_set_key_int(f_bdvf, keylog, 0);
+    f_bdvf->set_key_int(keyvis, 0);
+    f_bdvf->set_key_int(keylog, 0);
 
   }
 
@@ -482,16 +482,16 @@ cs_vof_field_create(void)
                                           CS_MESH_LOCATION_CELLS,
                                           1,
                                           false);
-    cs_field_set_key_int(f_gamma, keyvis, 0);
-    cs_field_set_key_int(f_gamma, keylog, 0);
+    f_gamma->set_key_int(keyvis, 0);
+    f_gamma->set_key_int(keylog, 0);
 
     cs_field_t *f_dgdp = cs_field_create("model:cavitation_st_dgdp",
                                           CS_FIELD_INTENSIVE,
                                           CS_MESH_LOCATION_CELLS,
                                           1,
                                           false);
-    cs_field_set_key_int(f_dgdp, keyvis, 0);
-    cs_field_set_key_int(f_dgdp, keylog, 0);
+    f_dgdp->set_key_int(keyvis, 0);
+    f_dgdp->set_key_int(keylog, 0);
 
   }
 }
@@ -694,19 +694,19 @@ cs_vof_update_phys_prop(const cs_mesh_t  *m)
   const int kbflux = cs_field_key_id("boundary_flux_id");
 
   const cs_real_t *restrict i_voidflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kiflux))->val;
+    cs_field_by_id(CS_F_(void_f)->get_key_int(kiflux))->val;
   const cs_real_t *restrict b_voidflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kbflux))->val;
+    cs_field_by_id(CS_F_(void_f)->get_key_int(kbflux))->val;
 
   const cs_real_t *restrict i_volflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kimasf))->val;
+    cs_field_by_id(CS_F_(void_f)->get_key_int(kimasf))->val;
   const cs_real_t *restrict b_volflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kbmasf))->val;
+    cs_field_by_id(CS_F_(void_f)->get_key_int(kbmasf))->val;
 
   cs_real_t *restrict i_massflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
+    cs_field_by_id(CS_F_(vel)->get_key_int(kimasf))->val;
   cs_real_t *restrict b_massflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+    cs_field_by_id(CS_F_(vel)->get_key_int(kbmasf))->val;
 
   cs_real_t drho = rho2 - rho1;
 
@@ -763,9 +763,9 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
 
   cs_real_t *restrict i_massflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf))->val;
+    cs_field_by_id(CS_F_(vel)->get_key_int(kimasf))->val;
   cs_real_t *restrict b_massflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf))->val;
+    cs_field_by_id(CS_F_(vel)->get_key_int(kbmasf))->val;
 
   cs_real_t *cpro_rom = CS_F_(rho)->val;
   cs_real_t *cproa_rom = CS_F_(rho)->val_pre;
@@ -1004,7 +1004,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   int w_stride = 1;
   if (eqp_volf->iwgrec == 1 && eqp_volf->idiff > 0) {
     int key_id = cs_field_key_id("gradient_weighting_id");
-    int diff_id = cs_field_get_key_int(CS_F_(void_f), key_id);
+    int diff_id = CS_F_(void_f)->get_key_int(key_id);
     if (diff_id > -1) {
       cs_field_t *weight_f = cs_field_by_id(diff_id);
       gweight = weight_f->val;
@@ -1180,7 +1180,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const cs_real_t *restrict i_volflux
-    = cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kimasf))->val;
+    = cs_field_by_id(CS_F_(void_f)->get_key_int(kimasf))->val;
 
   cs_real_t *ipro_idriftf = cs_field_by_name("inner_drift_velocity_flux")->val;
 
@@ -1399,7 +1399,7 @@ cs_vof_drift_term(int                        imrgra,
     ======================================================================*/
 
   const int kiflux = cs_field_key_id("inner_flux_id");
-  int i_flux_id = cs_field_get_key_int(CS_F_(void_f), kiflux);
+  int i_flux_id = CS_F_(void_f)->get_key_int(kiflux);
   cs_real_t *i_flux = cs_field_by_id(i_flux_id)->val;
 
   const cs_real_t kdrift = _vof_parameters.kdrift;
@@ -1532,12 +1532,10 @@ cs_vof_solve_void_fraction(int  iterns)
 
   /* Physical quantities */
 
-  const int iflmas
-    = cs_field_get_key_int(volf2, cs_field_key_id("inner_mass_flux_id"));
+  const int iflmas = volf2->get_key_int("inner_mass_flux_id");
   cs_real_t *i_mass_flux_volf = cs_field_by_id(iflmas)->val;
 
-  const int iflmab
-    = cs_field_get_key_int(volf2, cs_field_key_id("boundary_mass_flux_id"));
+  const int iflmab = volf2->get_key_int("boundary_mass_flux_id");
   cs_real_t *b_mass_flux_volf = cs_field_by_id(iflmab)->val;
 
   /* Key id for clipping */
@@ -1550,7 +1548,7 @@ cs_vof_solve_void_fraction(int  iterns)
   const cs_real_t thets = cs_glob_time_scheme->thetsn;
   if (isno2t > 0) {
     const int kstprv = cs_field_key_id("source_term_prev_id");
-    const int istprv = cs_field_get_key_int(volf2, kstprv);
+    const int istprv = volf2->get_key_int(kstprv);
 
     c_st_voidf = cs_field_by_id(istprv)->val;
   }
@@ -1567,8 +1565,8 @@ cs_vof_solve_void_fraction(int  iterns)
   const int kiflux = cs_field_key_id("inner_flux_id");
   const int kbflux = cs_field_key_id("boundary_flux_id");
 
-  const int icflux_id = cs_field_get_key_int(volf2, kiflux);
-  const int bcflux_id = cs_field_get_key_int(volf2, kbflux);
+  const int icflux_id = volf2->get_key_int(kiflux);
+  const int bcflux_id = volf2->get_key_int(kbflux);
 
   cs_real_t *icflux = cs_field_by_id(icflux_id)->val;
   cs_real_t *bcflux = cs_field_by_id(bcflux_id)->val;
@@ -1800,13 +1798,13 @@ cs_vof_solve_void_fraction(int  iterns)
 
     /* Get the min and max clipping */
 
-    const cs_real_t scminp = cs_field_get_key_double(volf2, kscmin);
-    const cs_real_t scmaxp = cs_field_get_key_double(volf2, kscmax);
+    const cs_real_t scminp = volf2->get_key_double(kscmin);
+    const cs_real_t scmaxp = volf2->get_key_double(kscmax);
     const int kclipp = cs_field_key_id("clipping_id");
 
     /* Postprocess clippings ? */
 
-    const int clip_voidf_id = cs_field_get_key_int(volf2, kclipp);
+    const int clip_voidf_id = volf2->get_key_int(kclipp);
     cs_real_t *voidf_clipped = nullptr;
 
     if (clip_voidf_id >= 0) {
@@ -1942,7 +1940,7 @@ cs_vof_smoothe(const cs_mesh_t              *m,
   int w_stride = 1;
   if (eqp_volf->iwgrec == 1 && eqp_volf->idiff > 0) {
     int key_id = cs_field_key_id("gradient_weighting_id");
-    int diff_id = cs_field_get_key_int(CS_F_(void_f), key_id);
+    int diff_id = CS_F_(void_f)->get_key_int(key_id);
     if (diff_id > -1) {
       cs_field_t *weight_f = cs_field_by_id(diff_id);
       gweight = weight_f->val;

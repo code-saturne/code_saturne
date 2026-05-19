@@ -1,5 +1,5 @@
-#ifndef __CS_TURBULENCE_MODEL_H__
-#define __CS_TURBULENCE_MODEL_H__
+#ifndef CS_TURBULENCE_MODEL_H
+#define CS_TURBULENCE_MODEL_H
 
 /*============================================================================
  * Base turbulence model data.
@@ -32,10 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -549,12 +545,12 @@ cs_turb_init_ref_quantities(void);
  * Clip turbulent fluxes
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_clip_turbulent_fluxes(int  flux_id,
                          int  ivartt);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return or estimate the value of the turbulent kinetic energy
  *        over specified elements.
  *
@@ -572,7 +568,7 @@ cs_clip_turbulent_fluxes(int  flux_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_function_k(int              location_id,
                          cs_lnum_t         n_elts,
                          const cs_lnum_t  *elt_ids,
@@ -580,7 +576,7 @@ cs_turbulence_function_k(int              location_id,
                          void             *vals);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return or estimate the value of the turbulent dissipation
  *        over specified elements.
  *
@@ -598,7 +594,7 @@ cs_turbulence_function_k(int              location_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_function_eps(int              location_id,
                            cs_lnum_t         n_elts,
                            const cs_lnum_t  *elt_ids,
@@ -606,7 +602,7 @@ cs_turbulence_function_eps(int              location_id,
                            void             *vals);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return or estimate the value of the Reynolds stresses
  *        over specified elements.
  *
@@ -624,7 +620,7 @@ cs_turbulence_function_eps(int              location_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_function_rij(int               location_id,
                            cs_lnum_t         n_elts,
                            const cs_lnum_t  *elt_ids,
@@ -633,6 +629,4 @@ cs_turbulence_function_rij(int               location_id,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TURBULENCE_MODEL_H__ */
+#endif /* CS_TURBULENCE_MODEL_H */

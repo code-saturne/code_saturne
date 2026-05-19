@@ -1,6 +1,6 @@
 
-#ifndef __CS_LES_INFLOW_H__
-#define __CS_LES_INFLOW_H__
+#ifndef CS_LES_INFLOW_H
+#define CS_LES_INFLOW_H
 
 /*============================================================================
  * Turbulent inflow generation
@@ -36,10 +36,6 @@
 
 #include "base/cs_base.h"
 #include "base/cs_zone.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -90,7 +86,7 @@ typedef struct {
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_inflow_initialize(void);
 
 /*----------------------------------------------------------------------------*/
@@ -99,7 +95,7 @@ cs_les_inflow_initialize(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_inflow_finalize(void);
 
 /*----------------------------------------------------------------------------*/
@@ -124,7 +120,7 @@ cs_les_inflow_finalize(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
                         bool                   volume_mode,
                         const cs_zone_t       *zone,
@@ -140,34 +136,34 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_volume_initialize(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief General synthetic turbulence generation
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_inflow_compute(void);
 
 /*----------------------------------------------------------------------------
  * Read the restart file of les inflow module.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_synthetic_eddy_restart_read(void);
 
 /*----------------------------------------------------------------------------
  * Write the restart file of les inflow module.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_synthetic_eddy_restart_write(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Generation of synthetic turbulence via the Synthetic Eddy Method (SEM).
  *
  * \param[in]   n_elts              local number of points where
@@ -187,7 +183,7 @@ cs_les_synthetic_eddy_restart_write(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_synthetic_eddy_method(cs_lnum_t           n_elts,
                              const cs_lnum_t     elt_ids[],
                              const cs_real_3_t   point_coordinates[],
@@ -203,7 +199,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_elts,
                              cs_real_3_t         fluctuations[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Rescale fluctuations by statistics following the Lund method.
  *
  * One assumes that the statistics are interlaced and ordered as follows:
@@ -215,13 +211,13 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_elts,
  * \param[in, out]  fluctuations  velocity fluctuations generated
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_rescale_fluctuations(cs_lnum_t          n_points,
                             const cs_real_6_t  statistics[],
                             cs_real_3_t        fluctuations[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set number of structures used for volume SEM when
  *        restarting from another turbulence model.
  *
@@ -232,11 +228,11 @@ cs_les_rescale_fluctuations(cs_lnum_t          n_points,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_synthetic_eddy_set_n_restart_structures(int  n_structures);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return number of structures used for volume SEM when
  *        restarting from another turbulence model.
  *
@@ -244,11 +240,11 @@ cs_les_synthetic_eddy_set_n_restart_structures(int  n_structures);
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_les_synthetic_eddy_get_n_restart_structures(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Query behavior of the LES inflow module in case of restart.
  *
  * See \ref cs_les_synthetic_eddy_set_restart for details.
@@ -258,12 +254,12 @@ cs_les_synthetic_eddy_get_n_restart_structures(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_inflow_get_restart(bool  *allow_read,
                           bool  *allow_write);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define behavior of the LES inflow module in case of restart.
  *
  * By default, a restart file is read if present, and a checkpoint written.
@@ -274,12 +270,12 @@ cs_les_inflow_get_restart(bool  *allow_read,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_les_inflow_set_restart(bool  allow_read,
                           bool  allow_write);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_les_inflow.cpp
  *
  * \brief Generation of synthetic turbulence at LES inlets initialization.
@@ -289,16 +285,16 @@ cs_les_inflow_set_restart(bool  allow_read,
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define parameters of synthetic turbulence at LES inflow.
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_les_inflow_define(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Update of the characteristics of a given synthetic turbulence inlet.
  *
  * \param[in]   zone       pointer to associated boundary zone
@@ -308,14 +304,14 @@ cs_user_les_inflow_define(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_les_inflow_update(const cs_zone_t  *zone,
                           cs_real_t         vel_r[3],
                           cs_real_t        *k_r,
                           cs_real_t        *eps_r);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Definition of mean velocity, Reynolds stresses and dissipation rate
  *        for each boundary face of the given synthetic turbulence inlet.
  *
@@ -345,7 +341,7 @@ cs_user_les_inflow_update(const cs_zone_t  *zone,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_les_inflow_advanced(const cs_zone_t  *zone,
                             cs_real_3_t       vel_l[],
                             cs_real_6_t       rij_l[],
@@ -353,6 +349,4 @@ cs_user_les_inflow_advanced(const cs_zone_t  *zone,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_LES_INFLOW_H__ */
+#endif /* CS_LES_INFLOW_H */

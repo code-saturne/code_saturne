@@ -1,5 +1,5 @@
-#ifndef __CS_TURBULENCE_INIT_H__
-#define __CS_TURBULENCE_INIT_H__
+#ifndef CS_TURBULENCE_INIT_H
+#define CS_TURBULENCE_INIT_H
 
 /*============================================================================
  * Turbulence variables initialization for various models.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -60,7 +56,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_init_by_ref_quantities(void);
 
 /*----------------------------------------------------------------------------*/
@@ -78,11 +74,9 @@ cs_turbulence_init_by_ref_quantities(void);
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_turbulence_init_clip_and_verify(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TURBULENCE_INIT_H__ */
+#endif /* CS_TURBULENCE_INIT_H */

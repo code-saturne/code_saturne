@@ -1,5 +1,5 @@
-#ifndef __CS_TURBULENCE_ROTATION_H__
-#define __CS_TURBULENCE_ROTATION_H__
+#ifndef CS_TURBULENCE_ROTATION_H
+#define CS_TURBULENCE_ROTATION_H
 
 /*============================================================================
  * Computing rotation/curvature correction.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -56,13 +52,11 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_rotation_correction(const cs_real_t   dt[],
                                   cs_real_t         rotfct[],
                                   cs_real_t         ce2rc[]);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TURBULENCE_ROTATION_H__ */
+#endif /* CS_TURBULENCE_ROTATION_H */

@@ -169,7 +169,7 @@ _field_post(const char  *field_type,
   cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "listing_printing"),
                              &f_log);
   if (f_log != -999)
-    cs_field_set_key_int(f, k_log, f_log);
+    f->set_key_int(k_log, f_log);
 
   /* As long as boundary output control is not unified, we need
      to handle them in a specific manner (as keywors may have
@@ -555,8 +555,6 @@ _define_profiles(void)
 {
   /* Loop on 1D profile definitions */
 
-  int profile_id = 0;
-
   const char path0[] = "analysis_control/profiles/profile";
 
   int n_writers = 0;
@@ -570,7 +568,7 @@ _define_profiles(void)
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
        tn != nullptr;
-       tn = cs_tree_node_get_next_of_name(tn), profile_id++) {
+       tn = cs_tree_node_get_next_of_name(tn)) {
 
     const char *name = cs_gui_node_get_tag(tn, "label");
 
@@ -911,8 +909,8 @@ cs_gui_output_boundary(void)
     if (_surfacic_variable_post("stress", true)) {
       cs_field_t *bf = _boundary_stress();
       bf = cs_field_by_name_try("boundary_stress");
-      cs_field_set_key_int(bf, cs_field_key_id("log"), 1);
-      cs_field_set_key_int(bf, cs_field_key_id("post_vis"), 1);
+      bf->set_key_int("log", 1);
+      bf->set_key_int("post_vis", 1);
     }
     if (_surfacic_variable_post("stress_tangential", false))
       cs_function_define_boundary_stress_tangential();
@@ -933,10 +931,10 @@ cs_gui_output_boundary(void)
                              CS_MESH_LOCATION_BOUNDARY_FACES,
                              1,
                              false);
-        cs_field_set_key_int(bf, cs_field_key_id("log"), 1);
-        cs_field_set_key_str(bf, cs_field_key_id("label"), "Yplus");
+        bf->set_key_int("log", 1);
+        bf->set_key_str("label", "Yplus");
       }
-      cs_field_set_key_int(bf, k_vis, 1);
+      bf->set_key_int(k_vis, 1);
     }
 
     if (_surfacic_variable_post("thermal_flux", true)) {
@@ -953,23 +951,23 @@ cs_gui_output_boundary(void)
       int post_vis = _surfacic_variable_post("tplus", true) ? 1 : 0;
       cs_field_t *bf = cs_field_by_name_try("tplus");
       if (bf != nullptr)
-        cs_field_set_key_int(bf, k_vis, post_vis);
+        bf->set_key_int(k_vis, post_vis);
       else if (post_vis) {
         bf = cs_field_create("tplus",
                              CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
                              CS_MESH_LOCATION_BOUNDARY_FACES,
                              1,
                              false);
-        cs_field_set_key_int(bf, k_vis, post_vis);
+        bf->set_key_int(k_vis, post_vis);
         switch (cs_glob_thermal_model->thermal_variable) {
         case CS_THERMAL_MODEL_ENTHALPY:
-          cs_field_set_key_str(bf, cs_field_key_id("label"), "Hplus");
+          bf->set_key_str("label", "Hplus");
           break;
         case CS_THERMAL_MODEL_TOTAL_ENERGY:
-          cs_field_set_key_str(bf, cs_field_key_id("label"), "Eplus");
+          bf->set_key_str("label", "Eplus");
           break;
         default:
-          cs_field_set_key_str(bf, cs_field_key_id("label"), "Tplus");
+          bf->set_key_str("label", "Tplus");
           break;
         }
       }
@@ -995,7 +993,7 @@ cs_gui_output_boundary(void)
     if (post_b_temp) {
       cs_field_t *bf = cs_parameters_add_boundary_temperature();
       if (bf != nullptr)
-        cs_field_set_key_int(bf, k_vis, 1);
+        bf->set_key_int(k_vis, 1);
     }
 
   }

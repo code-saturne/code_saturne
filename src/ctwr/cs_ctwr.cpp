@@ -704,7 +704,7 @@ cs_ctwr_build_all(void)
   cs_field_t *f = cs_field_by_name_try("enthalpy_liquid");
   if (f != nullptr) {
     const int vis_key_id = cs_field_key_id("post_vis");
-    if (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION) {
+    if (f->get_key_int(vis_key_id) & CS_POST_ON_LOCATION) {
       cs_post_add_time_mesh_dep_output(_write_liquid_vars, nullptr);
       cs_field_clear_key_int_bits(f, vis_key_id, CS_POST_ON_LOCATION);
     }

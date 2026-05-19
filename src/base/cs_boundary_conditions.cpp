@@ -2667,8 +2667,7 @@ cs_boundary_conditions_complete(int  bc_type[])
       if (f == CS_F_(vel))
         normalize = 1;
       else {
-        const int keysca = cs_field_key_id("scalar_id");
-        if (cs_field_get_key_int(f, keysca) > 0)
+        if (f->get_key_int("scalar_id") > 0)
           normalize = 1;
       }
 

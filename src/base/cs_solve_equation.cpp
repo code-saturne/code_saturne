@@ -159,19 +159,19 @@ _init_sgdh_diff(const cs_field_t *f,
 
   /* Retrieve turbulent Schmidt value for current scalar */
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
+  const cs_real_t turb_schmidt = f->get_key_double(ksigmas);
 
   /* If turbulent Schmidt is variable, id of the corresponding field */
   cs_real_t *cpro_turb_schmidt = nullptr;
   const int key_turb_schmidt = cs_field_key_id("turbulent_schmidt_id");
-  const int t_scd_id = cs_field_get_key_int(f, key_turb_schmidt);
+  const int t_scd_id = f->get_key_int(key_turb_schmidt);
   if (t_scd_id > -1)
     cpro_turb_schmidt = cs_field_by_id(t_scd_id)->val;
 
   /* Retrieve turbulent diffusivity value for current scalar */
   cs_real_t *cpro_turb_diff = nullptr;
   const int key_turb_diff = cs_field_key_id("turbulent_diffusivity_id");
-  const int t_dif_id = cs_field_get_key_int(f, key_turb_diff);
+  const int t_dif_id = f->get_key_int(key_turb_diff);
 
   /* Variable turbulent diffusivity */
   if (t_dif_id > -1) {
@@ -230,7 +230,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
                                         which f is the variance */
   {
     const int kscavr = cs_field_key_id("first_moment_id");
-    const int ivarsc = cs_field_get_key_int(f, kscavr);
+    const int ivarsc = f->get_key_int(kscavr);
 
     if (ivarsc > -1)
       f_fm = cs_field_by_id(ivarsc);
@@ -263,7 +263,7 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   int variance_turb_flux_model = 0, variance_turb_flux_model_type = 0;
 
   if (f_fm != nullptr) {
-    variance_turb_flux_model = cs_field_get_key_int(f_fm, kturt);
+    variance_turb_flux_model = f_fm->get_key_int(kturt);
     variance_turb_flux_model_type = variance_turb_flux_model / 10;
   }
 
@@ -507,7 +507,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
 
   /* Get the turbulent flux model for the scalar */
   const int kturt = cs_field_key_id("turbulent_flux_model");
-  const int scalar_turb_flux_model = cs_field_get_key_int(f, kturt);
+  const int scalar_turb_flux_model = f->get_key_int(kturt);
   const int scalar_turb_flux_model_type = scalar_turb_flux_model / 10;
 
   cs_real_6_t *vistet;
@@ -534,7 +534,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
   /* weighting field for gradient */
   if (eqp->iwgrec == 1) {
     const int kwgrec = cs_field_key_id_try("gradient_weighting_id");
-    const int iflwgr = cs_field_get_key_int(f, kwgrec);
+    const int iflwgr = f->get_key_int(kwgrec);
     cs_field_t *f_g = cs_field_by_id(iflwgr);
     if (f_g->dim > 1)
       cpro_wgrec_v = (cs_real_6_t *)f_g->val;
@@ -595,7 +595,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
     CS_MALLOC_HD(viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
     const cs_real_6_t *visten = nullptr;
     const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
-    const cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
+    const cs_real_t ctheta = f->get_key_double(kctheta);
 
     if (turb_model->model != CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_field_t * f_vis = cs_field_by_name("anisotropic_turbulent_viscosity");
@@ -719,8 +719,8 @@ _diffusion_terms_vector(const cs_field_t            *f,
   const cs_real_t *cpro_viscls = nullptr;
   const int kivisl = cs_field_key_id("diffusivity_id");
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
-  const int ifcvsl = cs_field_get_key_int(f, kivisl);
-  const cs_real_t visls_0 = cs_field_get_key_double(f, kvisl0);
+  const int ifcvsl = f->get_key_int(kivisl);
+  const cs_real_t visls_0 = f->get_key_double(kvisl0);
   if (ifcvsl > -1)
     cpro_viscls = cs_field_by_id(ifcvsl)->val;
 
@@ -730,7 +730,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
 
   if (eqp->iwgrec == 1) {
     const int kwgrec = cs_field_key_id_try("gradient_weighting_id");
-    const int iflwgr = cs_field_get_key_int(f, kwgrec);
+    const int iflwgr = f->get_key_int(kwgrec);
     cs_field_t *f_g = cs_field_by_id(iflwgr);
     if (f_g->dim > 1)
       cpro_wgrec_v = (cs_real_6_t *)f_g->val;
@@ -742,7 +742,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
   if (eqp->idften & CS_ISOTROPIC_DIFFUSION) {
 
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
-    const cs_real_t turb_schmidt = cs_field_get_key_double(f, ksigmas);
+    const cs_real_t turb_schmidt = f->get_key_double(ksigmas);
 
     const int idifftp = eqp->idifft;
     cs_real_t *w1;
@@ -788,7 +788,7 @@ _diffusion_terms_vector(const cs_field_t            *f,
 
     const cs_real_6_t *visten = nullptr;
     const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
-    const cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
+    const cs_real_t ctheta = f->get_key_double(kctheta);
 
     if (turb_model->model != CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_field_t * f_vis = cs_field_by_name("anisotropic_turbulent_viscosity");
@@ -998,7 +998,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const int keysca = cs_field_key_id("scalar_id");
   const int keyvar = cs_field_key_id("variable_id");
 
-  const int ivar = cs_field_get_key_int(f, keyvar);
+  const int ivar = f->get_key_int(keyvar);
 
   cs_dispatch_context ctx;
 
@@ -1007,7 +1007,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   cs_real_t *dtr = nullptr;
   {
     const int keycdt = cs_field_key_id("time_step_factor");
-    const cs_real_t cdtvar = cs_field_get_key_double(f, keycdt);
+    const cs_real_t cdtvar = f->get_key_double(keycdt);
 
     if (cs::abs(cdtvar - 1.0) > cs_math_epzero) {
       CS_MALLOC_HD(dtr, n_cells_ext, cs_real_t, cs_alloc_mode);
@@ -1028,7 +1028,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const cs_real_t *croma = CS_F_(rho)->val_pre;
 
   const int kromsl = cs_field_key_id_try("density_id");
-  int icrom_scal = cs_field_get_key_int(f, kromsl);
+  int icrom_scal = f->get_key_int(kromsl);
   if (icrom_scal > 0) {
     crom = cs_field_by_id(icrom_scal)->val;
     croma = cs_field_by_id(icrom_scal)->val;
@@ -1040,7 +1040,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Key id for buoyant field (inside the Navier Stokes loop) */
 
   const int key_coupled_with_vel_p = cs_field_key_id_try("coupled_with_vel_p");
-  const int coupled_with_vel_p_fld = cs_field_get_key_int(f, key_coupled_with_vel_p);
+  const int coupled_with_vel_p_fld = f->get_key_int(key_coupled_with_vel_p);
 
   if (   (coupled_with_vel_p_fld == 1 && iterns == -1)
       || (coupled_with_vel_p_fld == 0 && iterns != -1)) {
@@ -1106,8 +1106,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   const int kst = cs_field_key_id_try("source_term_id");
   const int kstprv = cs_field_key_id_try("source_term_prev_id");
-  const int st_id = cs_field_get_key_int(f, kst);
-  const int st_prv_id = cs_field_get_key_int(f, kstprv);
+  const int st_id = f->get_key_int(kst);
+  const int st_prv_id = f->get_key_int(kstprv);
 
   if (st_id > -1) {
     cpro_scal_st = cs_field_by_id(st_id)->val;
@@ -1132,7 +1132,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* Nudging towards optimal interpolation for current scalar */
     const int kopint = cs_field_key_id_try("opt_interp_id");
-    const int f_oi_id =  cs_field_get_key_int(f, kopint);
+    const int f_oi_id =  f->get_key_int(kopint);
     if (f_oi_id > -1)
       cs_at_data_assim_source_term(f->id, rhs, fimp);
 
@@ -1158,7 +1158,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
    * FIXME: test on scalar id since original commit in 2017 is a really dumb
    * idea.  */
   if (cs_glob_lagr_model->precipitation == 1) {
-    const int iscal = cs_field_get_key_int(f, keysca);
+    const int iscal = f->get_key_int(keysca);
     if (iscal == 1)
       cs_lagr_precipitation_mass_st(ts->dt_ref, crom, cvar_var, rhs);
     cs_assert(iscal == 1);  /* Force error in other cases to fix this */
@@ -1183,7 +1183,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   const cs_real_t thetv = eqp->theta;
   const int kthetss = cs_field_key_id_try("st_exp_extrapolated");
-  const cs_real_t thets = cs_field_get_key_double(f, kthetss);
+  const cs_real_t thets = f->get_key_double(kthetss);
 
   if (st_prv_id > -1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1366,9 +1366,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
           const int kimasf = cs_field_key_id_try("inner_mass_flux_id");
           const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
           const cs_real_t *i_massflux
-            = cs_field_by_id(cs_field_get_key_int(f, kimasf) )->val;
+            = cs_field_by_id(f->get_key_int(kimasf) )->val;
           const cs_real_t *b_massflux
-            = cs_field_by_id(cs_field_get_key_int(f, kbmasf) )->val;
+            = cs_field_by_id(f->get_key_int(kbmasf) )->val;
 
           /* precaution for croma */
           cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(),
@@ -1407,10 +1407,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
     if (cs_glob_coal_model != nullptr) {
       const cs_coal_model_t *cm = cs_glob_coal_model;
       const int nclacp = cm->nclacp;
-      const int isca_ih21
-        = cs_field_get_key_int(cs_field_by_id(cm->ih2[0]), keyvar);
+      const int isca_ih21 = cs_field_by_id(cm->ih2[0])->get_key_int(keyvar);
       const int isca_ih2nl
-        = cs_field_get_key_int(cs_field_by_id(cm->ih2[nclacp-1]), keyvar);
+        = cs_field_by_id(cm->ih2[nclacp-1])->get_key_int(keyvar);
       if ((isca_ih21 <= ivar) && (ivar <= isca_ih2nl))
         cs_coal_rad_transfer_st(f, rhs, fimp);
 
@@ -1443,12 +1442,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
   CS_MALLOC_HD(xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   const int kscavr = cs_field_key_id("first_moment_id");
-  const int iscavr = cs_field_get_key_int(f, kscavr);
+  const int iscavr = f->get_key_int(kscavr);
   const int kscacp = cs_field_key_id("is_temperature");
   if (iscavr > 0)
-    iscacp = cs_field_get_key_int(cs_field_by_id(iscavr), kscacp);
+    iscacp = cs_field_by_id(iscavr)->get_key_int(kscacp);
   else
-    iscacp = cs_field_get_key_int(f, kscacp);
+    iscacp = f->get_key_int(kscacp);
 
   /* Multiplier for thermal fields (Cp/Cv) */
 
@@ -1592,8 +1591,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const cs_real_t *viscl = CS_F_(mu)->val;
   const int kivisl = cs_field_key_id("diffusivity_id");
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
-  const int ifcvsl = cs_field_get_key_int(f, kivisl);
-  const cs_real_t visls_0 = cs_field_get_key_double(f, kvisl0);
+  const int ifcvsl = f->get_key_int(kivisl);
+  const cs_real_t visls_0 = f->get_key_double(kvisl0);
   if (ifcvsl > -1)
     cpro_viscls = cs_field_by_id(ifcvsl)->val;
 
@@ -1606,7 +1605,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* If the current scalar is the variance of an other scalar,
    * production and dissipation terms are added. */
   const int krvarfl = cs_field_key_id("variance_dissipation");
-  const cs_real_t rvarfl = cs_field_get_key_double(f, krvarfl);
+  const cs_real_t rvarfl = f->get_key_double(krvarfl);
   if (itspdv == 1)
     _production_and_dissipation_terms(f,
                                       ifcvsl,
@@ -1716,16 +1715,16 @@ cs_solve_equation_scalar(cs_field_t        *f,
    *---------------------------- */
 
   const int keydri = cs_field_key_id_try("drift_scalar_model");
-  const int iscdri = cs_field_get_key_int(f, keydri);
+  const int iscdri = f->get_key_int(keydri);
 
   /* Interior mass flux */
   const int kimasf = cs_field_key_id_try("inner_mass_flux_id");
-  const int iflmas = cs_field_get_key_int(f, kimasf);
+  const int iflmas = f->get_key_int(kimasf);
   cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
 
   /* Boundary mass flux */
   const int kbmasf = cs_field_key_id_try("boundary_mass_flux_id");
-  const int iflmab = cs_field_get_key_int(f, kbmasf);
+  const int iflmab = f->get_key_int(kbmasf);
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
   if (iscdri > 0)
@@ -2102,7 +2101,7 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   const int key_coupled_with_vel_p = cs_field_key_id_try("coupled_with_vel_p");
   const int coupled_with_vel_p_fld
-    = cs_field_get_key_int(f, key_coupled_with_vel_p);
+    = f->get_key_int(key_coupled_with_vel_p);
 
   if (   (coupled_with_vel_p_fld == 1 && iterns == -1)
       || (coupled_with_vel_p_fld == 0 && iterns != -1)) {
@@ -2116,7 +2115,7 @@ cs_solve_equation_vector(cs_field_t       *f,
   cs_real_t *dtr = nullptr;
   {
     const int keycdt = cs_field_key_id("time_step_factor");
-    const cs_real_t cdtvar = cs_field_get_key_double(f, keycdt);
+    const cs_real_t cdtvar = f->get_key_double(keycdt);
 
     if (cs::abs(cdtvar - 1.0) > cs_math_epzero) {
       CS_MALLOC_HD(dtr, n_cells_ext, cs_real_t, cs_alloc_mode);
@@ -2194,8 +2193,8 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   const int kst = cs_field_key_id_try("source_term_id");
   const int kstprv = cs_field_key_id_try("source_term_prev_id");
-  const int st_id = cs_field_get_key_int(f, kst);
-  const int st_prv_id = cs_field_get_key_int(f, kstprv);
+  const int st_id = f->get_key_int(kst);
+  const int st_prv_id = f->get_key_int(kstprv);
 
   if (st_id > -1) {
     cs_field_t *f_st = cs_field_by_id(st_id);
@@ -2225,7 +2224,7 @@ cs_solve_equation_vector(cs_field_t       *f,
   cs_real_3_t *cproa_vect_st = nullptr;
   const cs_real_t thetv = eqp->theta;
   const int kthetss = cs_field_key_id_try("st_exp_extrapolated");
-  const cs_real_t thets = cs_field_get_key_double(f, kthetss);
+  const cs_real_t thets = f->get_key_double(kthetss);
 
   if (st_prv_id > -1) {
     cproa_vect_st = (cs_real_3_t *)cs_field_by_id(st_prv_id)->val;
@@ -2413,17 +2412,14 @@ cs_solve_equation_vector(cs_field_t       *f,
   /* Scalar with a Drift: compute the convective flux
    * ------------------------------------------------ */
 
-  const int keydri = cs_field_key_id_try("drift_scalar_model");
-  const int iscdri = cs_field_get_key_int(f, keydri);
+  const int iscdri = f->get_key_int("drift_scalar_model");
 
   /* Interior mass flux */
-  const int kimasf = cs_field_key_id_try("inner_mass_flux_id");
-  const int iflmas = cs_field_get_key_int(f, kimasf);
+  const int iflmas = f->get_key_int("inner_mass_flux_id");
   cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
 
   /* Boundary mass flux */
-  const int kbmasf = cs_field_key_id_try("boundary_mass_flux_id");
-  const int iflmab = cs_field_get_key_int(f, kbmasf);
+  const int iflmab = f->get_key_int("boundary_mass_flux_id");
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
   if (iscdri > 0)

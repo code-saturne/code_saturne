@@ -2713,7 +2713,7 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t *tracer)
     tracer->diffusivity =
       cs_field_create(name, pty_mask, c_loc_id, field_dim, pty_has_previous);
 
-    cs_field_set_key_int(tracer->diffusivity, cs_field_key_id("log"), 1);
+    tracer->diffusivity->set_key_int("log", 1);
 
   } /* Has diffusion */
 
@@ -2754,8 +2754,8 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t *tracer)
                                        1,
                                        has_previous);
 
-    cs_field_set_key_int(tc->precip_field, log_key, 1);
-    cs_field_set_key_int(tc->precip_field, post_key, 1);
+    tc->precip_field->set_key_int(log_key, 1);
+    tc->precip_field->set_key_int(post_key, 1);
   }
 
   if (tracer->chain_position_id > 0) {

@@ -122,7 +122,7 @@ cs_ctwr_fields_init0(void)
   cs_real_t tkelvin = cs_physical_constants_celsius_to_kelvin;
   const cs_real_t xhum = air_prop->humidity0;
 
-  int rho_l_pack_id = cs_field_get_key_int(CS_F_(y_l_pack), cs_field_key_id("density_id"));
+  int rho_l_pack_id = CS_F_(y_l_pack)->get_key_int("density_id");
   cs_real_t *rho_l_pack = cs_field_by_id(rho_l_pack_id)->val;
 
   /* Initialize liquid density used for packing zones */
@@ -158,8 +158,8 @@ cs_ctwr_fields_init0(void)
      * TODO : check if overwrites what users have specified */
     const int kvisl0 = cs_field_key_id("diffusivity_ref");
 
-    cs_field_set_key_double(ym_w, kvisl0, 1.e-12);
-    cs_field_set_key_double(y_l_p, kvisl0, 1.e-12);
+    ym_w->set_key_double(kvisl0, 1.e-12);
+    y_l_p->set_key_double(kvisl0, 1.e-12);
 
     /* Initialize :
      * - the enthalpies, which are the solution variables
@@ -172,8 +172,8 @@ cs_ctwr_fields_init0(void)
       bft_error(__FILE__, __LINE__, 0, _("Negative lambda or cp for liquid"));
 
     else
-      cs_field_set_key_double(yh_l_p, kvisl0,
-                              air_prop->lambda_l / air_prop->cp_l);
+      yh_l_p->set_key_double(kvisl0,
+                             air_prop->lambda_l / air_prop->cp_l);
   }
 
   else {
@@ -181,8 +181,8 @@ cs_ctwr_fields_init0(void)
     const int kvisl0 = cs_field_key_id("diffusivity_ref");
 
     /* Diffusivities of the dry air and the injected liquid */
-    cs_field_set_key_double(ym_w, kvisl0, 1.e-12);
-    cs_field_set_key_double(y_l_p, kvisl0, 1.e-12);
+    ym_w->set_key_double(kvisl0, 1.e-12);
+    y_l_p->set_key_double(kvisl0, 1.e-12);
 
     /* Restarts - recompute the required properties based on the saved solution
      * variables. For example : the humidity, liquid vertical velocity, etc. */
@@ -211,13 +211,11 @@ cs_ctwr_fields_init1(void)
   cs_field_t *t_l_p = CS_F_(t_l_pack);
 
   /* Liquid inner mass flux */
-  cs_lnum_t iflmas =
-    cs_field_get_key_int(y_l_p, cs_field_key_id("inner_mass_flux_id"));
+  cs_lnum_t iflmas = y_l_p->get_key_int("inner_mass_flux_id");
   cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
 
   /* Liquid boundary mass flux */
-  cs_lnum_t iflmab =
-    cs_field_get_key_int(y_l_p, cs_field_key_id("boundary_mass_flux_id"));
+  cs_lnum_t iflmab = y_l_p->get_key_int("boundary_mass_flux_id");
   cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
   cs_ctwr_init_flow_vars(i_mass_flux);
@@ -279,7 +277,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   else
     rho_h = (cs_real_t *)CS_F_(rho)->val; /* Humid air density */;
 
-  int rho_l_pack_id = cs_field_get_key_int(CS_F_(y_l_pack), cs_field_key_id("density_id"));
+  int rho_l_pack_id = CS_F_(y_l_pack)->get_key_int("density_id");
   cs_real_t *rho_l_pack = cs_field_by_id(rho_l_pack_id)->val;
 
   cs_real_t *t_h = nullptr;
@@ -566,7 +564,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   cs_real_t *t_l_p = (cs_real_t *)CS_F_(t_l_pack)->val;      /* Liquid temperature
                                                          in packing */
 
-  int rho_l_pack_id = cs_field_get_key_int(CS_F_(y_l_pack), cs_field_key_id("density_id"));
+  int rho_l_pack_id = CS_F_(y_l_pack)->get_key_int("density_id");
   cs_real_t *rho_l_pack = cs_field_by_id(rho_l_pack_id)->val;
 
   cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val; /* Liquid velocity

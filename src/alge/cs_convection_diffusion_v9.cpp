@@ -2389,7 +2389,7 @@ cs_convection_diffusion_vector_v9(int                         idtvar,
       if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
         if (eqp.idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
+          int diff_id = f->get_key_int(key_id);
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;

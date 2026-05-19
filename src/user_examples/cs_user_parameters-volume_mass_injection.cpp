@@ -190,7 +190,7 @@ cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
 
     cs_field_t *f = cs_field_by_id(f_id);
     int scalar_id = (f->type & CS_FIELD_VARIABLE) ?
-      cs_field_get_key_int(f, cs_field_key_id("scalar_id")) : -1;
+      f->get_key_int("scalar_id") : -1;
 
     if (scalar_id >= 0) {
       double val = 1;

@@ -1702,9 +1702,7 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
 
     if (n_added_vertex_sections > 0) {
 
-      int ii, jj;
-
-      for (ii = 0, jj = 0; ii < mesh->n_sections; ii++) {
+      for (int ii = 0; ii < mesh->n_sections; ii++) {
 
         const fvm_nodal_section_t *section = mesh->sections[ii];
 
@@ -1717,8 +1715,6 @@ fvm_writer_field_helper_create(const fvm_nodal_t          *mesh,
           h->n_g_vertices_add
             = fvm_tesselation_n_g_vertices_add(section->tesselation);
           h->n_vertices_add += n_vertices_add;
-
-          jj++;
 
         }
 

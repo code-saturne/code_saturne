@@ -482,8 +482,8 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
   const char *eq_name[] = {"mesh_deform_x", "mesh_deform_y", "mesh_deform_z"};
   for (int i = 0; i < 3; i++) {
     cs_field_t *f = cs_field_by_name(eq_name[i]);
-    cs_field_set_key_int(f, cs_field_key_id("log"), 0);
-    cs_field_set_key_int(f, cs_field_key_id("post_vis"), 0);
+    f->set_key_int(cs_field_key_id("log"), 0);
+    f->set_key_int(cs_field_key_id("post_vis"), 0);
   }
 
   if (pre_init_structures == false)

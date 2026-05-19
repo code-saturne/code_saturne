@@ -172,24 +172,20 @@ cs_local_time_step_compute(int  itrale)
 
   /* Pointers to the mass fluxes */
 
-  int iflmas_v
-    = cs_field_get_key_int(vel, cs_field_key_id("inner_mass_flux_id"));
+  int iflmas_v = vel->get_key_int("inner_mass_flux_id");
   const cs_real_t *i_mass_flux_vel = cs_field_by_id(iflmas_v)->val;
 
-  int iflmab_v
-    = cs_field_get_key_int(vel, cs_field_key_id("boundary_mass_flux_id"));
+  int iflmab_v = vel->get_key_int("boundary_mass_flux_id");
   const cs_real_t *b_mass_flux_vel = cs_field_by_id(iflmab_v)->val;
 
   const cs_real_t *i_mass_flux_volf = nullptr, *b_mass_flux_volf = nullptr;
   if (cs_glob_vof_parameters->vof_model > 0) {
     cs_field_t *volf2 = CS_F_(void_f);
 
-    int iflmas
-      = cs_field_get_key_int(volf2, cs_field_key_id("inner_mass_flux_id"));
+    int iflmas = volf2->get_key_int("inner_mass_flux_id");
     i_mass_flux_volf = cs_field_by_id(iflmas)->val;
 
-    int iflmab
-      = cs_field_get_key_int(volf2, cs_field_key_id("boundary_mass_flux_id"));
+    int iflmab = volf2->get_key_int("boundary_mass_flux_id");
     b_mass_flux_volf = cs_field_by_id(iflmab)->val;
   }
 
@@ -996,24 +992,20 @@ cs_courant_fourier_compute(void)
 
   /* Pointers to the mass fluxes */
 
-  int iflmas_v
-    = cs_field_get_key_int(vel, cs_field_key_id("inner_mass_flux_id"));
+  int iflmas_v = vel->get_key_int("inner_mass_flux_id");
   const cs_real_t *i_mass_flux_vel = cs_field_by_id(iflmas_v)->val;
 
-  int iflmab_v
-    = cs_field_get_key_int(vel, cs_field_key_id("boundary_mass_flux_id"));
+  int iflmab_v = vel->get_key_int("boundary_mass_flux_id");
   const cs_real_t *b_mass_flux_vel = cs_field_by_id(iflmab_v)->val;
 
   const cs_real_t *i_mass_flux_volf = nullptr, *b_mass_flux_volf = nullptr;
   if (cs_glob_vof_parameters->vof_model > 0) {
     cs_field_t *volf2 = CS_F_(void_f);
 
-    int iflmas
-      = cs_field_get_key_int(volf2, cs_field_key_id("inner_mass_flux_id"));
+    int iflmas = volf2->get_key_int("inner_mass_flux_id");
     i_mass_flux_volf = cs_field_by_id(iflmas)->val;
 
-    int iflmab
-      = cs_field_get_key_int(volf2, cs_field_key_id("boundary_mass_flux_id"));
+    int iflmab = volf2->get_key_int("boundary_mass_flux_id");
     b_mass_flux_volf = cs_field_by_id(iflmab)->val;
   }
 

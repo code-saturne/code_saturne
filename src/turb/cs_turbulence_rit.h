@@ -1,5 +1,5 @@
-#ifndef __CS_TURBULENCE_RIT_H__
-#define __CS_TURBULENCE_RIT_H__
+#ifndef CS_TURBULENCE_RIT_H
+#define CS_TURBULENCE_RIT_H
 
 /*============================================================================
  * Turbulence transport equation.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -52,7 +48,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_turbulence_rit_div(const int        field_id,
                       const cs_real_t  xcpp[],
                       cs_real_t        vistet[][6],
@@ -60,6 +56,4 @@ cs_turbulence_rit_div(const int        field_id,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TURBULENCE_RIT_H__ */
+#endif /* CS_TURBULENCE_RIT_H */

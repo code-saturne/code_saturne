@@ -175,7 +175,7 @@ cs_solve_transported_variables(int iterns)
 
     if (!(f_scal->type & CS_FIELD_VARIABLE))
       continue;
-    if (cs_field_get_key_int(f_scal, keysca) <= 0)
+    if (f_scal->get_key_int(keysca) <= 0)
       continue;
     if (f_scal->type & CS_FIELD_USER)
       continue;
@@ -192,7 +192,7 @@ cs_solve_transported_variables(int iterns)
             cs_field_t *f_scal = cs_field_by_id(ii);
             if (!(f_scal->type & CS_FIELD_VARIABLE))
               continue;
-            if (cs_field_get_key_int(f_scal, keysca) <= 0)
+            if (f_scal->get_key_int(keysca) <= 0)
               continue;
             if (f_scal->type & CS_FIELD_USER)
               continue;
@@ -223,7 +223,7 @@ cs_solve_transported_variables(int iterns)
 
       if (!(f_scal->type & CS_FIELD_VARIABLE))
         continue;
-      if (cs_field_get_key_int(f_scal, keysca) <= 0)
+      if (f_scal->get_key_int(keysca) <= 0)
         continue;
       if (f_scal->type & CS_FIELD_USER)
         continue;
@@ -281,7 +281,7 @@ cs_solve_transported_variables(int iterns)
          end if
         */
 
-        const int iscavr = cs_field_get_key_int(f_scal, kscavr);
+        const int iscavr = f_scal->get_key_int(kscavr);
 
         int itspdv = -1;
         if (iscavr == -1)
@@ -315,7 +315,7 @@ cs_solve_transported_variables(int iterns)
           cs_real_t *coefb_fm = f_fm->bc_coeffs->b;
           cs_real_t *cvar_fm = f_fm->val;
 
-          const int ifcvsl = cs_field_get_key_int(f_scal, kivisl);
+          const int ifcvsl = f_scal->get_key_int(kivisl);
           const cs_real_t *viscls = nullptr;
           if (ifcvsl >= 0)
             viscls = cs_field_by_id(ifcvsl)->val;
@@ -468,7 +468,7 @@ cs_solve_transported_variables(int iterns)
 
     if (!(f_scal->type & CS_FIELD_VARIABLE))
       continue;
-    if (cs_field_get_key_int(f_scal, keysca) <= 0)
+    if (f_scal->get_key_int(keysca) <= 0)
       continue;
     if (!(f_scal->type & CS_FIELD_USER))
       continue;
@@ -495,7 +495,7 @@ cs_solve_transported_variables(int iterns)
          end if
     */
 
-    const int iscavr = cs_field_get_key_int(f_scal, kscavr);
+    const int iscavr = f_scal->get_key_int(kscavr);
     int itspdv = -1;
 
     if (iscavr == -1)

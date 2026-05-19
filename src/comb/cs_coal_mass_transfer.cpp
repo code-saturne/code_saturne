@@ -575,8 +575,8 @@ cs_coal_mass_transfer(void)
     const int kvisl0 = cs_field_key_id("diffusivity_ref");
     const cs_field_t *fld_th = cs_thermal_model_field();
     cs_real_t cp0 = cs_glob_fluid_properties->cp0;
-    double visls_0 = cs_field_get_key_double(fld_th, kvisl0);
-    int ifcvsl = cs_field_get_key_int(fld_th, kivisl);
+    double visls_0 = fld_th->get_key_double(kvisl0);
+    int ifcvsl = fld_th->get_key_int(kivisl);
     if (ifcvsl >= 0)
       cpro_viscls = cs_field_by_id(ifcvsl)->val;
     int icp = cs_glob_fluid_properties->icp;

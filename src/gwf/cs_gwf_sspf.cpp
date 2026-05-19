@@ -419,8 +419,8 @@ cs_gwf_sspf_init_setup(cs_flag_t flag, cs_gwf_sspf_t *mc)
                   __func__);
     }
 
-    cs_field_set_key_int(mc->pressure_head, log_key, 1);
-    cs_field_set_key_int(mc->pressure_head, post_key, 1);
+    mc->pressure_head->set_key_int(log_key, 1);
+    mc->pressure_head->set_key_int(post_key, 1);
 
   } /* Gravitation effects are activated */
 }

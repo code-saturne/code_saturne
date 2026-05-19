@@ -293,8 +293,9 @@ cs_fan_field_create(void)
       = cs_field_create("fan_id",
                         CS_FIELD_PROPERTY, CS_MESH_LOCATION_CELLS, 1, false);
 
-    cs_field_set_key_int(f_fan, k_log, 1);
-    cs_field_set_key_int(f_fan, k_vis, CS_POST_ON_LOCATION);
+    f_fan->set_key_int(k_log, 1);
+    f_fan->set_key_int(k_vis, CS_POST_ON_LOCATION);
+
   }
 }
 
