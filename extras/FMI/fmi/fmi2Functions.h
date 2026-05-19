@@ -104,7 +104,7 @@
 
 
    Copyright (C) 2008-2011 MODELISAR consortium,
-                 2012-2024 Modelica Association Project "FMI"
+                 2012-2026 Modelica Association Project "FMI"
                  All rights reserved.
 
    This file is licensed by the copyright holders under the 2-Clause BSD License
