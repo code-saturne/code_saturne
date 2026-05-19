@@ -894,7 +894,7 @@ class Case(object):
                         line = [x.strip() for x in lines[i+1].split(";")]
                         vals = [x.split(":") for x in line]
                         vals = [[x[0].strip(),x[1].strip()] for x in vals]
-                        tab.append([name.replace("_", "\_"),
+                        tab.append([name.replace("_", r"\_"),
                                     vals[1][1],
                                     vals[2][1],
                                     self.threshold])
@@ -1342,7 +1342,7 @@ class Studies(object):
                 smgr = XMLengine.Case(package=self.__pkg, file_name=filename,
                                       studymanager=True)
             except Exception as error:
-                print("\n  /!\ ERROR while reading studymanager file :\n"
+                print("\n  /!\\ ERROR while reading studymanager file :\n"
                       + str(error))
                 sys.exit(error)
 
@@ -1605,10 +1605,10 @@ class Studies(object):
 
         self.reporting("  o Create all studies and run folders")
         if self.__force_rm:
-            self.reporting("    /!\ All earlier run folders are erased (option"
+            self.reporting("    /!\\ All earlier run folders are erased (option"
                            " --rm activated)")
         else:
-            self.reporting("    /!\ All earlier run folders will not be erased."
+            self.reporting("    /!\\ All earlier run folders will not be erased."
                            " Use --rm option to do so.")
 
         study_list = []
@@ -1691,7 +1691,7 @@ class Studies(object):
             # Copy external scripts for post-processing
             if write_post:
                 if not new_study:
-                    self.reporting("    /!\ POST folder is overwritten in %s"
+                    self.reporting("    /!\\ POST folder is overwritten in %s"
                                    " use option --dow to disable overwrite" %study)
                 ref = os.path.join(repo_study, "POST")
                 if os.path.isdir(ref):
@@ -1700,11 +1700,11 @@ class Studies(object):
                     try:
                         shutil.copytree(ref, des)
                     except:
-                        self.reporting("    /!\ ERROR while copying POST folder"
+                        self.reporting("    /!\\ ERROR while copying POST folder"
                                        " in %s" %study)
             else:
                 if self.__sheet and not self.__postpro:
-                    self.reporting("    /!\ POST folder is not overwritten in %s"
+                    self.reporting("    /!\\ POST folder is not overwritten in %s"
                                    " as --report option is used without --post"
                                    %study)
 
@@ -1715,7 +1715,7 @@ class Studies(object):
             if os.path.isdir(ref):
                 des = os.path.join(dest_study, "REPORT")
                 if os.path.isdir(des):
-                    self.reporting("    /!\ REPORT folder is overwritten in %s"
+                    self.reporting("    /!\\ REPORT folder is overwritten in %s"
                                    " use option --dow to disable overwrite"
                                    %study)
                     shutil.rmtree(des)
@@ -1726,12 +1726,12 @@ class Studies(object):
                     if os.path.isfile(writeup):
                         os.remove(writeup)
                 except:
-                    self.reporting("    /!\ ERROR while copying REPORT folder"
+                    self.reporting("    /!\\ ERROR while copying REPORT folder"
                                    " in %s" %study)
 
             else:
                 if self.__sheet:
-                    self.reporting("    /!\ REPORT folder is mandatory in STUDY"
+                    self.reporting("    /!\\ REPORT folder is mandatory in STUDY"
                                    " folder to generate description report of"
                                    " study %s" %study)
 
@@ -1744,10 +1744,10 @@ class Studies(object):
                 try:
                     shutil.copytree(ref, des)
                 except:
-                    self.reporting("    /!\ ERROR while copying STYLE folder")
+                    self.reporting("    /!\\ ERROR while copying STYLE folder")
             else:
                 if self.__sheet:
-                    self.reporting("    /!\ STYLE folder is mandatory in"
+                    self.reporting("    /!\\ STYLE folder is mandatory in"
                                    " REPOSITORY to generate description report"
                                    " of study %s" %study)
 
@@ -1760,7 +1760,7 @@ class Studies(object):
                 if os.path.isfile(readme):
                     dest_file = os.path.join(dest_study, "README")
                     if os.path.isfile(dest_file):
-                        self.reporting(f"    /!\ README file is overwritten in {study}"
+                        self.reporting(f"    /!\\ README file is overwritten in {study}"
                                        " use option --dow to disable overwrite")
                     shutil.copyfile(readme, dest_file)
 
@@ -1770,7 +1770,7 @@ class Studies(object):
                     if os.path.isfile(readme):
                         dest_file = os.path.join(dest_study, f)
                         if os.path.isfile(dest_file):
-                            self.reporting(f"    /!\ {f} file is overwritten in {study}"
+                            self.reporting(f"    /!\\ {f} file is overwritten in {study}"
                                            " use option --dow to disable overwrite")
                         shutil.copyfile(readme, dest_file)
 
@@ -2056,7 +2056,7 @@ class Studies(object):
 
                                 # find job id with regex and store it
                                 msg = output.decode('utf-8').strip()
-                                match = re.search('\d+', msg)
+                                match = re.search(r'\d+', msg)
                                 job_id = match.group()
                                 tot_job_id_list.append(job_id)
                                 self.reporting('    - %s ...' % msg)
@@ -2121,7 +2121,7 @@ class Studies(object):
 
                         # find job id with regex and store it
                         msg = output.decode('utf-8').strip()
-                        match = re.search('\d+', msg)
+                        match = re.search(r'\d+', msg)
                         job_id = match.group()
                         tot_job_id_list.append(job_id)
                         self.reporting('    - %s ...' % msg)
@@ -2987,7 +2987,7 @@ class Studies(object):
                                        'in ' + case.study + "/REPORT folder.")
                         os.remove(log_path)
                     else:
-                        self.reporting('    /!\ ERROR: write-up.pdf file was not ' + \
+                        self.reporting('    /!\\ ERROR: write-up.pdf file was not ' + \
                                        'generated. See ' + log_path)
 
                 else:
