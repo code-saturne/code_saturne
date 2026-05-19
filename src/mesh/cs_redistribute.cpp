@@ -789,6 +789,7 @@ void
 cs_redistribute(const int                cell_dest_rank[],
                 cs_redistribute_data_t  *data)
 {
+  assert(0 && "redistribute should be off for now");
 #if defined(HAVE_MPI)
 
   cs_mesh_t *mesh = cs_glob_mesh;

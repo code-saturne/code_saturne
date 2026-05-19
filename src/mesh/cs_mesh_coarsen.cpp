@@ -345,7 +345,9 @@ _cell_equiv(cs_mesh_t  *mesh,
     data->c_r_level = c_r_level;
     data->indic = cs_glob_amr_info->indic_cells;
 
+#if 0
     cs_redistribute(dest_rank, data);
+#endif
 
     CS_FREE(dest_rank);
 
@@ -1240,20 +1242,20 @@ _merge_i_faces(cs_mesh_t       *m,
 
     for (cs_lnum_t i = 0; i < n_new; i++) {
       cs_lnum_t s_id = n2o_idx[i];
+
       cs_lnum_t k_min = s_id;
-      cs_gnum_t gnum_min = i_face_gnum[s_id];
+      cs_gnum_t gnum_min = i_face_gnum[n2o[k_min]];
 
       for (cs_lnum_t j = s_id+1; j < n2o_idx[i+1]; j++) {
-        cs_lnum_t k = n2o[j];
-        cs_gnum_t gnum = i_face_gnum[k];
+        cs_gnum_t gnum = i_face_gnum[n2o[j]];
 
         if (gnum < gnum_min) {
           gnum_min = gnum;
-          k_min = k;
+          k_min = j;
         }
       }
 
-      n2o_flat[i] = k_min;
+      n2o_flat[i] = n2o[k_min];
     }
 
     memcpy(n2o, n2o_flat, n_new*sizeof(cs_lnum_t));
