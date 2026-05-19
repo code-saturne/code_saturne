@@ -207,8 +207,7 @@ _lageqp(cs_real_t   *velocityl,
   /* Gradient of W1
      -------------- */
 
-  cs_field_bc_coeffs_t bc_coeffs_v_loc;
-  cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
+  cs_field_bc_coeffs_t bc_coeffs_v_loc(3);
   CS_MALLOC(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t);
   CS_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
 
@@ -241,8 +240,7 @@ _lageqp(cs_real_t   *velocityl,
   /* Boundary condition for PHI
      -------------------------- */
 
-  cs_field_bc_coeffs_t bc_coeffs_phi_loc;
-  cs_field_bc_coeffs_init(&bc_coeffs_phi_loc);
+  cs_field_bc_coeffs_t bc_coeffs_phi_loc(1);
 
   CS_MALLOC(bc_coeffs_phi_loc.a,  n_b_faces, cs_real_t);
   CS_MALLOC(bc_coeffs_phi_loc.b,  n_b_faces, cs_real_t);
@@ -420,8 +418,7 @@ cs_lagr_poisson(const int  itypfb[])
   cs_real_3_t *grad;
   CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
-  cs_field_bc_coeffs_t bc_coeffs_loc;
-  cs_field_bc_coeffs_init(&bc_coeffs_loc);
+  cs_field_bc_coeffs_t bc_coeffs_loc(1);
 
   CS_MALLOC(bc_coeffs_loc.a,  n_b_faces, cs_real_t);
   CS_MALLOC(bc_coeffs_loc.b,  n_b_faces, cs_real_t);

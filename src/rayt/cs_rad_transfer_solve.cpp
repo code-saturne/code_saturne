@@ -2189,8 +2189,7 @@ _rad_transfer_solve(int bc_type[])
 
     /* Allocate temporary arrays for gradient computation */
 
-    cs_field_bc_coeffs_t bc_coeffs_loc;
-    cs_field_bc_coeffs_init(&bc_coeffs_loc);
+    cs_field_bc_coeffs_t bc_coeffs_loc(3);
 
     CS_MALLOC(bc_coeffs_loc.val_f, 3*n_b_faces, cs_real_t);
 

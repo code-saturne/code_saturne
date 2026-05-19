@@ -1445,7 +1445,7 @@ void
 cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
                                 cs_field_bc_coeffs_t        *copy)
 {
-  memcpy(copy, ref, sizeof(cs_field_bc_coeffs_t));
+  *copy = *ref;
 
   copy->val_f = nullptr;
   copy->flux_diff = nullptr;
@@ -5590,6 +5590,129 @@ cs_field_t::map_to_ns_data()
   }
 
   this->update_public_pointers();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 1D span view of boundary condition external values.
+ *
+ * \return  span view of boundary condition external values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span<cs_real_t>
+cs_field_bc_coeffs_t::get_val_ext
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs_span<cs_real_t>(this->rcodcl1, n_b_faces);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of boundary condition external values.
+ *
+ * \return  2D span view of field boundary condition external values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs::mdspan<cs_real_t, 2, cs::layout::left>
+cs_field_bc_coeffs_t::get_val_ext_2d
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs::mdspan<cs_real_t, 2, cs::layout::left>(this->rcodcl1,
+                                                    n_b_faces,
+                                                    this->dim);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 1D span view of boundary condition external exchange
+ *        coefficient.
+ *
+ * \return  span view of boundary condition external exchange coefficient.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span<cs_real_t>
+cs_field_bc_coeffs_t::get_h_ext
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs_span<cs_real_t>(this->rcodcl2, n_b_faces);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of boundary condition external
+ *        exchange coefficient.
+ *
+ * \return  2D span view of field boundary condition external exchange
+ *          coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+cs::mdspan<cs_real_t, 2, cs::layout::left>
+cs_field_bc_coeffs_t::get_h_ext_2d
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs::mdspan<cs_real_t, 2, cs::layout::left>(this->rcodcl2,
+                                                    n_b_faces,
+                                                    this->dim);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 1D span view of boundary condition prescribed flux.
+ *
+ * \return  span view of boundary condition prescribed flux
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span<cs_real_t>
+cs_field_bc_coeffs_t::get_q_ext
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs_span<cs_real_t>(this->rcodcl3, n_b_faces);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of boundary condition prescribed flux.
+ *
+ * \return  2D span view of field boundary condition prescribed flux
+ */
+/*----------------------------------------------------------------------------*/
+
+cs::mdspan<cs_real_t, 2, cs::layout::left>
+cs_field_bc_coeffs_t::get_q_ext_2d
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs::mdspan<cs_real_t, 2, cs::layout::left>(this->rcodcl3,
+                                                    n_b_faces,
+                                                    this->dim);
 }
 
 /*----------------------------------------------------------------------------*/

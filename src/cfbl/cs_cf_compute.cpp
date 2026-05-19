@@ -1122,8 +1122,7 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
   cs_array<cs_real_t> b_mass_flux(n_b_faces, cs_alloc_mode);
   cs_array<cs_real_t> b_visc(n_b_faces, cs_alloc_mode);
 
-  cs_field_bc_coeffs_t bc_coeffs_loc;
-  cs_field_bc_coeffs_init(&bc_coeffs_loc);
+  cs_field_bc_coeffs_t bc_coeffs_loc(1);
   CS_MALLOC_HD(bc_coeffs_loc.b,  n_b_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, cs_alloc_mode);
   cs_real_t *coefbt = bc_coeffs_loc.b;

@@ -766,8 +766,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
 
   /* cs_field_set_key_double(f, kctheta, ctheta); */
 
-  cs_field_bc_coeffs_t bc_coeffs_v_loc;
-  cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
+  cs_field_bc_coeffs_t bc_coeffs_v_loc(3);
   CS_MALLOC_HD(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t, cs_alloc_mode);
 
@@ -1308,8 +1307,7 @@ cs_turbulence_rit_div(const int        field_id,
     /* Boundary Conditions on T'u' for the divergence term of
      * the thermal transport equation */
 
-    cs_field_bc_coeffs_t bc_coeffs;
-    cs_field_bc_coeffs_init(&bc_coeffs);
+    cs_field_bc_coeffs_t bc_coeffs(1);
 
     bc_coeffs.a = f_ut->bc_coeffs->ad;
     bc_coeffs.b = f_ut->bc_coeffs->bd;

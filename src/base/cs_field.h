@@ -123,7 +123,7 @@ public:
 
   cs_real_t         *flux_diff;    /* face value for diffusion */
 
-  /* Private members */
+  /* Members that should become private */
   cs_real_t         *a;            /* Explicit coefficient */
   cs_real_t         *b;            /* Implicit coefficient */
   cs_real_t         *af;           /* Explicit coefficient for flux */
@@ -133,6 +133,94 @@ public:
   cs_real_t         *ac;           /* Explicit coefficient for convection */
   cs_real_t         *bc;           /* Implicit coefficient for convection */
 
+  /*--------------------------------------------------------------------------
+   * Constructors
+   *--------------------------------------------------------------------------*/
+
+  cs_field_bc_coeffs_t(void)
+  {
+    cs_field_bc_coeffs_t(-1);
+  }
+
+  cs_field_bc_coeffs_t
+  (
+   int  field_dim   //!< Associated field dimension
+  )
+  {
+    icodcl = nullptr;
+    rcodcl1 = nullptr;
+    rcodcl2 = nullptr;
+    rcodcl3 = nullptr;
+
+    h_int_tot = nullptr;
+
+    val_f = nullptr;
+    val_f_pre = nullptr;
+
+    flux_diff = nullptr;
+
+    a = nullptr;
+    b = nullptr;
+    af = nullptr;
+    bf = nullptr;
+    ad = nullptr;
+    bd = nullptr;
+    ac = nullptr;
+    bc = nullptr;
+
+    dim = field_dim;
+  }
+
+  /*--------------------------------------------------------------------------
+   * Destructor
+   *--------------------------------------------------------------------------*/
+
+  ~cs_field_bc_coeffs_t()
+  {
+    /* For now, do not delete data, as it may be shared */
+  }
+
+  /* Accessors for external value (e.g. rcodcl1)
+     ------------------------------------------- */
+
+  cs_span<cs_real_t>
+  get_val_ext
+  (
+  ) const;
+
+  cs::mdspan<cs_real_t, 2, cs::layout::left>
+  get_val_ext_2d
+  (
+  ) const;
+
+  /* Accessors for external exchange coefficient (e.g. rcodcl2)
+     ---------------------------------------------------------- */
+
+  cs_span<cs_real_t>
+  get_h_ext
+  (
+  ) const;
+
+  cs::mdspan<cs_real_t, 2, cs::layout::left>
+  get_h_ext_2d
+  (
+  ) const;
+
+  /* Accessors for prescribed flux density (e.g. rcodcl3)
+     ---------------------------------------------------- */
+
+  cs_span<cs_real_t>
+  get_q_ext
+  (
+  ) const;
+
+  cs::mdspan<cs_real_t, 2, cs::layout::left>
+  get_q_ext_2d
+  (
+  ) const;
+
+private:
+  int dim;  //!< associated field dimension
 };
 
 /* Field descriptor */

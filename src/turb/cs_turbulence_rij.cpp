@@ -463,8 +463,7 @@ _compute_up_rhop(int                 phase_id,
        * We impose in Dirichlet (coefa) the value romb */
       cs_array<cs_real_t> coefb(n_b_faces, cs_alloc_mode);
 
-      cs_field_bc_coeffs_t bc_coeffs_loc;
-      cs_field_bc_coeffs_init(&bc_coeffs_loc);
+      cs_field_bc_coeffs_t bc_coeffs_loc(1);
       bc_coeffs_loc.a = rho_b;
       bc_coeffs_loc.b = coefb.data();
 

@@ -1037,8 +1037,7 @@ cs_turbulence_ke(int              phase_id,
                                  &gradient_type,
                                  &halo_type);
 
-      cs_field_bc_coeffs_t bc_coeffs_loc;
-      cs_field_bc_coeffs_init(&bc_coeffs_loc);
+      cs_field_bc_coeffs_t bc_coeffs_loc(1);
       bc_coeffs_loc.a = bromo;
       bc_coeffs_loc.b = viscb;
 
@@ -1194,8 +1193,7 @@ cs_turbulence_ke(int              phase_id,
     /* Gradient of the Strain (grad S)
        --------------------------------------- */
 
-    cs_field_bc_coeffs_t bc_coeffs_sqs_loc;
-    cs_field_bc_coeffs_init(&bc_coeffs_sqs_loc);
+    cs_field_bc_coeffs_t bc_coeffs_sqs_loc(1);
 
     CS_MALLOC_HD(bc_coeffs_sqs_loc.a, n_b_faces, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(bc_coeffs_sqs_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);

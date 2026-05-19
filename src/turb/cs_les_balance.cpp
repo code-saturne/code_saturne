@@ -369,8 +369,7 @@ _les_balance_laplacian(cs_real_t   *wa,
 
   cs_dispatch_context ctx;
 
-  cs_field_bc_coeffs_t bc_coeffs_loc; // a voir ci dessous (a=af,b=bf)
-  cs_field_bc_coeffs_init(&bc_coeffs_loc);
+  cs_field_bc_coeffs_t bc_coeffs_loc(1);  // see below (a=af,b=bf)
 
   CS_MALLOC_HD(bc_coeffs_loc.a,  n_b_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(bc_coeffs_loc.b,  n_b_faces, cs_real_t, cs_alloc_mode);
@@ -510,8 +509,7 @@ _les_balance_laplacian(cs_real_t   *wa,
 
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
 
-  cs_field_bc_coeffs_t bc_coeffs_v_loc;
-  cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
+  cs_field_bc_coeffs_t bc_coeffs_v_loc(3);
   CS_MALLOC_HD(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t, cs_alloc_mode);
 
@@ -3088,8 +3086,7 @@ cs_les_balance_compute_rij(void)
     uidujdxk[2] = (cs_real_33_t *)cs_field_by_name("u3dkuj_m")->val;
   }
 
-  cs_field_bc_coeffs_t bc_coeffs;
-  cs_field_bc_coeffs_init(&bc_coeffs);
+  cs_field_bc_coeffs_t bc_coeffs(1);
   CS_MALLOC_HD(bc_coeffs.a, n_b_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(bc_coeffs.b, n_b_faces, cs_real_t, cs_alloc_mode);
 
@@ -3520,8 +3517,7 @@ cs_les_balance_compute_tui(void)
   cs_array<cs_real_t> diverg(n_cells_ext, cs_alloc_mode);
   cs_array<cs_real_t> lapl(n_cells_ext, cs_alloc_mode);
 
-  cs_field_bc_coeffs_t bc_coeffs;
-  cs_field_bc_coeffs_init(&bc_coeffs);
+  cs_field_bc_coeffs_t bc_coeffs(1);
   CS_MALLOC_HD(bc_coeffs.a, n_b_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(bc_coeffs.b, n_b_faces, cs_real_t, cs_alloc_mode);
 

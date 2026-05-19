@@ -8958,8 +8958,7 @@ cs_gradient_scalar(const char                    *var_name,
     }
   }
 
-  cs_field_bc_coeffs_t bc_coeffs_loc;
-  cs_field_bc_coeffs_init(&bc_coeffs_loc);
+  cs_field_bc_coeffs_t bc_coeffs_loc(1);
 
   // Use Neumann BC's as default if not provided
   if (bc_coeffs == nullptr) {
@@ -9239,8 +9238,7 @@ cs_gradient_vector(const char                    *var_name,
     }
   }
 
-  cs_field_bc_coeffs_t bc_coeffs_loc;
-  cs_field_bc_coeffs_init(&bc_coeffs_loc);
+  cs_field_bc_coeffs_t bc_coeffs_loc(3);
 
   // Use Neumann BC's as default if not provided
   if (bc_coeffs == nullptr) {
@@ -9463,8 +9461,7 @@ cs_gradient_tensor(const char                  *var_name,
 
   /* Use Neumann BC's as default if not provided */
 
-  cs_field_bc_coeffs_t bc_coeffs_loc;
-  cs_field_bc_coeffs_init(&bc_coeffs_loc);
+  cs_field_bc_coeffs_t bc_coeffs_loc(6);
 
   var_t *val_f_hmg = nullptr, *val_f_wrk = nullptr;
 

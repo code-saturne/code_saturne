@@ -199,8 +199,7 @@ cs_local_time_step_compute(int  itrale)
   cs_array<cs_real_t> dam(n_cells_ext, amode);
   cs_array<cs_real_t> b_visc(n_b_faces, amode);
 
-  cs_field_bc_coeffs_t bc_coeffs_loc;
-  cs_field_bc_coeffs_init(&bc_coeffs_loc);
+  cs_field_bc_coeffs_t bc_coeffs_loc(1);
   CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, amode);
   CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, amode);
 
@@ -316,8 +315,7 @@ cs_local_time_step_compute(int  itrale)
       cs_real_3_t *grad;
       CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, amode);
 
-      cs_field_bc_coeffs_t bc_coeffs_rho;
-      cs_field_bc_coeffs_init(&bc_coeffs_rho);
+      cs_field_bc_coeffs_t bc_coeffs_rho(1);
 
       CS_MALLOC_HD(bc_coeffs_rho.b, n_b_faces, cs_real_t, amode);
       cs_real_t *coefbr = bc_coeffs_rho.b;
@@ -1024,8 +1022,7 @@ cs_courant_fourier_compute(void)
   cs_array<cs_real_t> b_visc(n_b_faces, amode);
   cs_array<cs_real_t> dam(n_cells_ext, amode);
 
-  cs_field_bc_coeffs_t bc_coeffs_loc;
-  cs_field_bc_coeffs_init(&bc_coeffs_loc);
+  cs_field_bc_coeffs_t bc_coeffs_loc(1);
   CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, amode);
   CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, amode);
 
