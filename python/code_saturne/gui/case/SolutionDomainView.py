@@ -760,11 +760,11 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.cartParams[k].addItem(self.tr("geometric"), "geometric")
             self.cartParams[k].addItem(self.tr("parabolic"), "parabolic")
 
-        self.comboBoxXlaw.activated[int].connect(lambda val:
+        self.comboBoxXlaw.activated[str].connect(lambda val:
                 self.slotSetCartesianParam(val, "x_law"))
-        self.comboBoxYlaw.activated[int].connect(lambda val:
+        self.comboBoxYlaw.activated[str].connect(lambda val:
                 self.slotSetCartesianParam(val, "y_law"))
-        self.comboBoxZlaw.activated[int].connect(lambda val:
+        self.comboBoxZlaw.activated[str].connect(lambda val:
                 self.slotSetCartesianParam(val, "z_law"))
 
         # Set initial values
