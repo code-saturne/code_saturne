@@ -41,6 +41,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
 #include "base/cs_mem.h"
 #include "base/cs_post.h"
 #include "base/cs_wall_functions.h"
@@ -1198,5 +1200,84 @@ cs_turb_wall_functions_is_activated(const cs_turbulence_param_t *turbulence)
 
   return false;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute and add the turbulent part of the boundray stress
+ *
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
+ * \param[in] boundary_stress pointer to a \ref cs_field_t structure
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_turbulence_t::add_boundary_stress(const cs_mesh_t *m,
+                                      cs_field_t      *boundary_stress) const
+{
+  /* This a copy of cs_solve_navier_stokes.cpp */
+
+  /* -2/3 rho * grad(k) for Eddy viscosity models with k defined
+   * Note: we do not take the gradient of (rho k), as this would make
+   *       the handling of BC's more complex...
+   *
+   * It is not clear whether the extrapolation in time is useful.
+   *
+   * This explicit term is computed once, at the first iteration on
+   * cs_solve_navier_stokes: it is saved in a field if it must be extrapolated
+   * in time ; it goes into trava if we do not extrapolate or iterate on
+   * cs_solve_navier_stokes. */
+
+  // index of the iteration on Navier-Stokes
+  const int iterns = 1;
+
+  if ((cs_glob_turb_model->order == CS_TURB_FIRST_ORDER &&
+       cs_glob_turb_model->type == CS_TURB_RANS && CS_F_(k) != nullptr) &&
+      cs_glob_turb_rans_model->igrhok == 1 && iterns == 1) {
+    cs_dispatch_context ctx;
+
+    cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+    cs_lnum_t n_b_faces   = m->n_b_faces;
+    cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+    const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+    const cs_rreal_3_t *restrict diipb           = mq->diipb;
+    const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
+
+    cs_real_3_t *b_stress = (cs_real_3_t *)boundary_stress->val;
+
+    cs_real_3_t *grad_k = nullptr;
+    CS_MALLOC_HD(grad_k, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+
+    const cs_field_t *fk      = CS_F_(k);
+    cs_real_t        *cvara_k = fk->val;
+
+    const cs_real_t *crom = CS_F_(rho)->val;
+
+    cs_field_gradient_scalar(fk, true, 1, grad_k);
+
+    constexpr cs_real_t d2s3 = 2.0 / 3.0;
+
+    /* Calculation of wall stresses (part 3/5), if requested */
+    const cs_real_t *coefa_k = fk->bc_coeffs->a;
+    const cs_real_t *coefb_k = fk->bc_coeffs->b;
+
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE(cs_lnum_t f_id) {
+      const cs_lnum_t c_id = b_face_cells[f_id];
+      cs_real_t       xkb =
+        cvara_k[c_id] + cs_math_3_dot_product(diipb[f_id], grad_k[c_id]);
+
+      xkb = coefa_k[f_id] + coefb_k[f_id] * xkb;
+      xkb = d2s3 * crom[c_id] * xkb;
+      for (cs_lnum_t i = 0; i < 3; i++)
+        b_stress[f_id][i] -= xkb * b_face_u_normal[f_id][i];
+    });
+    ctx.wait();
+
+    CS_FREE(grad_k);
+  }
+};
 
 /*----------------------------------------------------------------------------*/

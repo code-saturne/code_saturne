@@ -1038,6 +1038,7 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  * \param[in]      connect       pointer to a \ref cs_cdo_connect_t struct.
  * \param[in]      ts            pointer to a \ref cs_time_step_t struct.
  * \param[in,out]  time_plotter  pointer to a \ref cs_time_plot_t struct.
+ * \param[in]      turb          pointer to a \ref cs_turbulence_t struct.
  * \param[in]      adv_field     pointer to a \ref cs_adv_field_t struct.
  * \param[in]      mass_flux     scalar-valued mass flux for each face
  * \param[in]      p_cell        scalar-valued pressure in each cell
@@ -1047,17 +1048,18 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
-                         const cs_mesh_t             *mesh,
-                         const cs_cdo_quantities_t   *quant,
-                         const cs_cdo_connect_t      *connect,
-                         const cs_time_step_t        *ts,
-                         cs_time_plot_t              *time_plotter,
-                         const cs_adv_field_t        *adv_field,
-                         const cs_real_t             *mass_flux,
-                         const cs_real_t             *p_cell,
-                         const cs_real_t             *u_cell,
-                         const cs_real_t             *u_face)
+cs_cdofb_navsto_extra_op(const cs_navsto_param_t   *nsp,
+                         const cs_mesh_t           *mesh,
+                         const cs_cdo_quantities_t *quant,
+                         const cs_cdo_connect_t    *connect,
+                         const cs_time_step_t      *ts,
+                         cs_time_plot_t            *time_plotter,
+                         const cs_turbulence_t     *turb,
+                         const cs_adv_field_t      *adv_field,
+                         const cs_real_t           *mass_flux,
+                         const cs_real_t           *p_cell,
+                         const cs_real_t           *u_cell,
+                         const cs_real_t           *u_face)
 {
   CS_UNUSED(adv_field);
 
@@ -1329,6 +1331,72 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
                                         velocity_gradient->val + 9*c_id);
 
   } /* Velocity gradient */
+
+  if (nsp->post_flag & CS_NAVSTO_POST_BOUNDARY_STRESS) {
+    cs_field_t *boundary_stress = cs_field_by_name("boundary_stress");
+    assert(boundary_stress != nullptr);
+
+    cs_field_current_to_previous(boundary_stress);
+
+    /* Sanity checks */
+    assert(u_cell != nullptr);
+    assert(u_face != nullptr);
+    assert(p_cell != nullptr);
+    assert(nsp->tot_viscosity != nullptr);
+
+    cs_field_t *velocity_gradient = cs_field_by_name_try("velocity_gradient");
+
+    const cs_lnum_t *bf2c_ids =
+      connect->f2c->ids + connect->f2c->idx[quant->n_i_faces];
+
+#pragma omp parallel for if (quant->n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
+      const cs_lnum_t c_id = bf2c_ids[bf_id];
+
+      cs_real_9_t grad_vel;
+
+      if (velocity_gradient != nullptr) {
+        for (cs_lnum_t i = 0; i < 9; i++) {
+          grad_vel[i] = velocity_gradient->val[9 * c_id + i];
+        }
+      }
+      else {
+        cs_reco_grad_33_cell_from_fb_dofs(c_id,
+                                          connect,
+                                          quant,
+                                          u_cell,
+                                          u_face,
+                                          grad_vel);
+      }
+
+      // mu_tot = mu_laminar + mu_turb
+      const cs_real_t mu_tot =
+        cs_property_get_cell_value(c_id, ts->t_cur, nsp->tot_viscosity);
+
+      // Compute sigma = 2*mu_tot*grad_sym(u) - p*I_d
+      cs_real_6_t sigma;
+
+      // Convention : xx, yy, zz, xy, yz, xz
+      sigma[0] = 2.0 * mu_tot * grad_vel[0] - p_cell[c_id];
+      sigma[1] = 2.0 * mu_tot * grad_vel[4] - p_cell[c_id];
+      sigma[2] = 2.0 * mu_tot * grad_vel[8] - p_cell[c_id];
+      sigma[3] = mu_tot * (grad_vel[1] + grad_vel[3]);
+      sigma[4] = mu_tot * (grad_vel[5] + grad_vel[7]);
+      sigma[5] = mu_tot * (grad_vel[2] + grad_vel[6]);
+
+      // Compute sigma.n
+
+      const cs_real_t *normal = quant->get_bface_normal(bf_id);
+
+      cs_math_sym_33_3_product(sigma, normal, boundary_stress->val + 3 * bf_id);
+    }
+
+    if (turb) {
+      // Turbulence with fisrt-order model add: -2/3*rho*k*n
+      turb->add_boundary_stress(mesh, boundary_stress);
+    }
+
+  } /* Boundary stress */
 
   cs_flag_t  mask_velgrd[3] = { CS_NAVSTO_POST_VORTICITY,
                                 CS_NAVSTO_POST_HELICITY,

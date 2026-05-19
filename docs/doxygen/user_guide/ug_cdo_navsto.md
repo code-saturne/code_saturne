@@ -94,6 +94,7 @@ parameter, this a flag built from the following elemental bit
     - \ref CS_NAVSTO_POST_MASS_DENSITY
     - \ref CS_NAVSTO_POST_CELL_MASS_FLUX_BALANCE
     - \ref CS_NAVSTO_POST_PRESSURE_GRADIENT
+    - \ref CS_NAVSTO_POST_BOUNDARY_STRESS
 
 
 

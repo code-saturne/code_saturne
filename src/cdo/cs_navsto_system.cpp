@@ -715,8 +715,8 @@ cs_navsto_system_init_setup(void)
 
   /* Set the default value for keys related to log and post-processing */
 
-  cs_field_set_key_int(ns->velocity, log_key, 1);
-  cs_field_set_key_int(ns->velocity, post_key, field_post_flag);
+  ns->velocity->set_key_int(log_key, 1);
+  ns->velocity->set_key_int(post_key, field_post_flag);
 
   /* Handle the pressure field */
 
@@ -728,8 +728,8 @@ cs_navsto_system_init_setup(void)
 
   /* Set the default value for keys related to log and post-processing */
 
-  cs_field_set_key_int(ns->pressure, log_key, 1);
-  cs_field_set_key_int(ns->pressure, post_key, field_post_flag);
+  ns->pressure->set_key_int(log_key, 1);
+  ns->pressure->set_key_int(post_key, field_post_flag);
 
   /* Handle the divergence of the velocity field.
    * Up to now, always defined the divergence of the velocity field. This
@@ -749,8 +749,8 @@ cs_navsto_system_init_setup(void)
 
   /* Set default value for keys related to log and post-processing */
 
-  cs_field_set_key_int(ns->velocity_divergence, log_key, 1);
-  cs_field_set_key_int(ns->velocity_divergence, post_key, field_post_flag);
+  ns->pressure->set_key_int(log_key, 1);
+  ns->pressure->set_key_int(post_key, field_post_flag);
 
   if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY) {
 
@@ -764,8 +764,8 @@ cs_navsto_system_init_setup(void)
 
     /* Set the default value for keys related to log and post-processing */
 
-    cs_field_set_key_int(ns->kinetic_energy, log_key, 1);
-    cs_field_set_key_int(ns->kinetic_energy, post_key, field_post_flag);
+    ns->kinetic_energy->set_key_int(log_key, 1);
+    ns->kinetic_energy->set_key_int(post_key, field_post_flag);
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_MASS_DENSITY) {
@@ -780,8 +780,8 @@ cs_navsto_system_init_setup(void)
 
     /* Set the default value for keys related to log and post-processing */
 
-    cs_field_set_key_int(ns->mass_density, log_key, 1);
-    cs_field_set_key_int(ns->mass_density, post_key, field_post_flag);
+    ns->mass_density->set_key_int(log_key, 1);
+    ns->mass_density->set_key_int(post_key, field_post_flag);
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_CELL_MASS_FLUX_BALANCE) {
@@ -794,8 +794,8 @@ cs_navsto_system_init_setup(void)
 
     /* Set the default value for keys related to log and post-processing */
 
-    cs_field_set_key_int(ns->mass_flux_balance, log_key, 1);
-    cs_field_set_key_int(ns->mass_flux_balance, post_key, field_post_flag);
+    ns->mass_flux_balance->set_key_int(log_key, 1);
+    ns->mass_flux_balance->set_key_int(post_key, field_post_flag);
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_PRESSURE_GRADIENT) {
@@ -808,7 +808,7 @@ cs_navsto_system_init_setup(void)
 
     /* Set the default value for keys related to post-processing */
 
-    cs_field_set_key_int(ns->pressure_gradient, post_key, field_post_flag);
+    ns->pressure_gradient->set_key_int(post_key, field_post_flag);
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION)
@@ -827,8 +827,8 @@ cs_navsto_system_init_setup(void)
 
     /* Set default value for keys related to log and post-processing */
 
-    cs_field_set_key_int(ns->helicity, log_key, 1);
-    cs_field_set_key_int(ns->helicity, post_key, field_post_flag);
+    ns->helicity->set_key_int(log_key, 1);
+    ns->helicity->set_key_int(post_key, field_post_flag);
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
@@ -844,8 +844,8 @@ cs_navsto_system_init_setup(void)
 
     /* Set default value for keys related to log and post-processing */
 
-    cs_field_set_key_int(ns->enstrophy, log_key, 1);
-    cs_field_set_key_int(ns->enstrophy, post_key, field_post_flag);
+    ns->enstrophy->set_key_int(log_key, 1);
+    ns->enstrophy->set_key_int(post_key, field_post_flag);
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_VORTICITY) {
@@ -858,8 +858,8 @@ cs_navsto_system_init_setup(void)
 
     /* Set default value for keys related to log and post-processing */
 
-    cs_field_set_key_int(ns->vorticity, log_key, 1);
-    cs_field_set_key_int(ns->vorticity, post_key, field_post_flag);
+    ns->vorticity->set_key_int(log_key, 1);
+    ns->vorticity->set_key_int(post_key, field_post_flag);
   }
 
   if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_GRADIENT) {
@@ -872,8 +872,23 @@ cs_navsto_system_init_setup(void)
 
     /* Set default value for keys related to log and post-processing */
 
-    cs_field_set_key_int(ns->velocity_gradient, log_key, 1);
-    cs_field_set_key_int(ns->velocity_gradient, post_key, field_post_flag);
+    ns->velocity_gradient->set_key_int(log_key, 1);
+    ns->velocity_gradient->set_key_int(post_key, field_post_flag);
+  }
+
+  if (nsp->post_flag & CS_NAVSTO_POST_BOUNDARY_STRESS) {
+    ns->boundary_stress =
+      cs_field_find_or_create("boundary_stress",
+                              CS_FIELD_INTENSIVE | CS_FIELD_POSTPROCESS |
+                                CS_FIELD_CDO,
+                              CS_MESH_LOCATION_BOUNDARY_FACES,
+                              3,
+                              has_previous);
+
+    /* Set default value for keys related to log and post-processing */
+
+    ns->boundary_stress->set_key_int(log_key, 1);
+    ns->boundary_stress->set_key_int(post_key, field_post_flag);
   }
 
   /* Time plot monitor of global quantities predefined by the automatic
@@ -1906,6 +1921,7 @@ cs_navsto_system_extra_op(const cs_mesh_t           *mesh,
                              connect,
                              time_step,
                              navsto->plot_writer,
+                             navsto->turbulence,
                              adv,
                              mass_flux,
                              p_cell,

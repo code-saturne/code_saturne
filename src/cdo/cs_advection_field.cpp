@@ -1888,7 +1888,8 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
         else if (cs_flag_test(cx->value_location, cs_flag_primal_cell)) {
 
           const cs_adjacency_t  *f2c = cs_cdo_connect->f2c;
-          const cs_lnum_t  *const bf2c_ids = f2c->ids + 2*n_i_faces;
+          const cs_lnum_t *const bf2c_ids =
+            f2c->ids + cs_cdo_connect->f2c->idx[n_i_faces];
           const cs_real_t  *const cell_vel = cx->values;
 
 #         pragma omp parallel for if  (n_b_faces > CS_THR_MIN)

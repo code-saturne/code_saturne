@@ -303,6 +303,18 @@ struct _cs_turbulence_t {
 
   cs_turb_update_t             *update;
 
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Compute and add the turbulent part of the boundray stress
+   *
+   * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
+   * \param[in] boundary_stress pointer to a \ref cs_field_t structure
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  add_boundary_stress(const cs_mesh_t *m, cs_field_t *boundary_stress) const;
 };
 
 /*============================================================================

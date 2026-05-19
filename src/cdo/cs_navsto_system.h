@@ -312,6 +312,12 @@ typedef struct {
 
   cs_field_t                 *velocity_gradient;
 
+  /*! \var boundary_stress
+   *       Pointer to a vector-valued \ref cs_field_t
+   */
+
+  cs_field_t *boundary_stress;
+
   /*! \var stream_function_eq
    *       Pointer to a \ref cs_equation_t structure related to the computation
    *       of the stream function -Laplacian(psi) = vorticity_z where psi is

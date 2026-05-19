@@ -46,6 +46,7 @@
 #include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdo_turbulence.h"
 #include "cdo/cs_iter_algo.h"
 #include "cdo/cs_navsto_param.h"
 #include "cdo/cs_sdm.h"
@@ -441,6 +442,7 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  * \param[in]      connect       pointer to a \ref cs_cdo_connect_t struct.
  * \param[in]      ts            pointer to a \ref cs_time_step_t struct.
  * \param[in,out]  time_plotter  pointer to a \ref cs_time_plot_t struct.
+ * \param[in]      turb          pointer to a \ref cs_turbulence_t struct.
  * \param[in]      adv_field     pointer to a \ref cs_adv_field_t struct.
  * \param[in]      mass_flux     scalar-valued mass flux for each face
  * \param[in]      p_cell        scalar-valued pressure in each cell
@@ -450,17 +452,18 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
-                         const cs_mesh_t             *mesh,
-                         const cs_cdo_quantities_t   *quant,
-                         const cs_cdo_connect_t      *connect,
-                         const cs_time_step_t        *ts,
-                         cs_time_plot_t              *time_plotter,
-                         const cs_adv_field_t        *adv_field,
-                         const cs_real_t             *mass_flux,
-                         const cs_real_t             *p_cell,
-                         const cs_real_t             *u_cell,
-                         const cs_real_t             *u_face);
+cs_cdofb_navsto_extra_op(const cs_navsto_param_t   *nsp,
+                         const cs_mesh_t           *mesh,
+                         const cs_cdo_quantities_t *quant,
+                         const cs_cdo_connect_t    *connect,
+                         const cs_time_step_t      *ts,
+                         cs_time_plot_t            *time_plotter,
+                         const cs_turbulence_t     *turb,
+                         const cs_adv_field_t      *adv_field,
+                         const cs_real_t           *mass_flux,
+                         const cs_real_t           *p_cell,
+                         const cs_real_t           *u_cell,
+                         const cs_real_t           *u_face);
 
 /*----------------------------------------------------------------------------*/
 /*!

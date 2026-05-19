@@ -180,6 +180,10 @@ typedef enum {
  *
  * \var CS_NAVSTO_POST_PRESSURE_GRADIENT
  * Compute the presure gradient in each cell.
+ *
+ * \var CS_NAVSTO_POST_BOUNDARY_STRESS
+ * Compute the boundary stress and associate a field to this quantity.
+ *
  */
 
 typedef enum {
@@ -194,6 +198,7 @@ typedef enum {
   CS_NAVSTO_POST_MASS_DENSITY             = 1<< 7, /* = 128 */
   CS_NAVSTO_POST_CELL_MASS_FLUX_BALANCE   = 1<< 8, /* = 256 */
   CS_NAVSTO_POST_PRESSURE_GRADIENT        = 1<< 9, /* = 512 */
+  CS_NAVSTO_POST_BOUNDARY_STRESS          = 1 << 10, /* = 1024 */
 
 } cs_navsto_param_post_bit_t;
 
