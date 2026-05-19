@@ -2582,32 +2582,31 @@ _setup_hierarchy(void             *context,
   /* Prepare preprocessing info if necessary */
 
   if (mg->post_row_max > 0) {
-    if (mg->info.n_calls[0] == 0) {
-      int l_id = 0;
-      const cs_matrix_t *a = cs_grid_get_matrix(f);
-      const cs_lnum_t n_rows_a = cs_matrix_get_n_rows(a);
-      if (n_rows_a == mesh->n_cells)
-        l_id = CS_MESH_LOCATION_CELLS;
-      else if (n_rows_a <= mesh->n_vertices) {
-        l_id = CS_MESH_LOCATION_VERTICES;
-        if (mesh->vtx_range_set != nullptr) {
-          if (mesh->vtx_range_set->n_elts[0] != n_rows_a)
-            l_id = CS_MESH_LOCATION_NONE;
-        }
+    int l_id = 0;
+    const cs_matrix_t *a = cs_grid_get_matrix(f);
+    const cs_lnum_t n_rows_a = cs_matrix_get_n_rows(a);
+    if (n_rows_a == mesh->n_cells)
+      l_id = CS_MESH_LOCATION_CELLS;
+    else if (n_rows_a <= mesh->n_vertices) {
+      l_id = CS_MESH_LOCATION_VERTICES;
+      if (mesh->vtx_range_set != nullptr) {
+        if (mesh->vtx_range_set->n_elts[0] != n_rows_a)
+          l_id = CS_MESH_LOCATION_NONE;
       }
+    }
 #if defined(HAVE_MPI)
-      if (mg->caller_n_ranks > 1) {
-        int _l_id = l_id;
-        MPI_Allreduce(&_l_id, &l_id, 1, MPI_INT, MPI_MAX, mg->caller_comm);
-        if (l_id != _l_id)
-          _l_id = CS_MESH_LOCATION_NONE;
-        MPI_Allreduce(&_l_id, &l_id, 1, MPI_INT, MPI_MIN, mg->caller_comm);
+    if (mg->caller_n_ranks > 1) {
+      int _l_id = l_id;
+      MPI_Allreduce(&_l_id, &l_id, 1, MPI_INT, MPI_MAX, mg->caller_comm);
+      if (l_id != _l_id)
+        _l_id = CS_MESH_LOCATION_NONE;
+      MPI_Allreduce(&_l_id, &l_id, 1, MPI_INT, MPI_MIN, mg->caller_comm);
       }
 #endif
-      if (l_id != CS_MESH_LOCATION_NONE) {
+    if (l_id != CS_MESH_LOCATION_NONE) {
+      if (mg->info.n_calls[0] == 0)
         cs_post_add_time_dep_output(_cs_multigrid_post_function, (void *)mg);
-        _multigrid_add_post(mg, name, l_id, n_rows_a);
-      }
+      _multigrid_add_post(mg, name, l_id, n_rows_a);
     }
   }
 
