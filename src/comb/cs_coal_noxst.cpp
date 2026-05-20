@@ -261,8 +261,7 @@ cs_coal_noxst(const  int        indpdf[],
 
   /* Mark cells for which computation is needed */
 
-  cs_lnum_t *compute_id;
-  CS_MALLOC(compute_id, n_cells, cs_lnum_t);
+  cs_array<cs_lnum_t> compute_id(n_cells);
 
   cs_lnum_t n_compute = 0;
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -274,12 +273,13 @@ cs_coal_noxst(const  int        indpdf[],
     }
   }
 
-  cs_real_t *xmx2, *tfuel;
-  CS_MALLOC(xmx2, n_compute, cs_real_t);
-  CS_MALLOC(tfuel, n_compute, cs_real_t);
+  cs_array<cs_real_t> xmx2(n_compute);
+  cs_array<cs_real_t> tfuel(n_compute);
 
-  cs_array_real_fill_zero(n_compute, xmx2);
-  cs_array_real_fill_zero(n_compute, tfuel);
+  for (cs_lnum_t e_id = 0; e_id < n_compute; e_id++) {
+    xmx2[e_id] = 0.;
+    tfuel[e_id] = 0.;
+  }
 
   /* Compute mean tfuel */
 
@@ -341,7 +341,6 @@ cs_coal_noxst(const  int        indpdf[],
     }
   }
 
-  CS_FREE(xmx2);
 
   cs_gnum_t inok = 0;
   cs_gnum_t i300 = 0, i000 = 0, imini= 0;
@@ -361,12 +360,13 @@ cs_coal_noxst(const  int        indpdf[],
 
   /* Compute coal enthalpy at Tfuel */
 
-  cs_real_t *xxf, *hhf;
-  CS_MALLOC(xxf, n_compute, cs_real_t);
-  CS_MALLOC(hhf, n_compute, cs_real_t);
+  cs_array<cs_real_t> xxf(n_compute);
+  cs_array<cs_real_t> hhf(n_compute);
 
-  cs_array_real_fill_zero(n_compute, xxf);
-  cs_array_real_fill_zero(n_compute, hhf);
+  for (cs_lnum_t e_id = 0; e_id < n_compute; e_id++) {
+    xxf[e_id] = 0.;
+    hhf[e_id] = 0.;
+  }
 
   for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
 
@@ -853,12 +853,6 @@ cs_coal_noxst(const  int        indpdf[],
     } // if (xxf[c_idx] > cs_coal_epsilon)
 
   } // loop on cells
-
-  CS_FREE(xxf);
-  CS_FREE(hhf);
-
-  CS_FREE(tfuel);
-  CS_FREE(compute_id);
 
   if (cs_log_default_is_active()) {
 

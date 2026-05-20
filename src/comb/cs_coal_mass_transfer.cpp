@@ -128,11 +128,10 @@ cs_coal_mass_transfer(void)
   const cs_real_t *cpro_temp = CS_F_(t)->val;
   const cs_real_t *cpro_rom1 = cs_field_by_id(cm->irom1)->val;
 
-  cs_real_t *x2, *x2srho2, *rho1, *w1;
-  CS_MALLOC(x2, n_cells, cs_real_t);
-  CS_MALLOC(x2srho2, n_cells, cs_real_t);
-  CS_MALLOC(rho1, n_cells, cs_real_t);
-  CS_MALLOC(w1, n_cells, cs_real_t);
+  cs_array<cs_real_t> x2(n_cells);
+  cs_array<cs_real_t> x2srho2(n_cells);
+  cs_array<cs_real_t> rho1(n_cells);
+  cs_array<cs_real_t> w1(n_cells);
 
   // Initialization of mass transfer terms
 
@@ -756,13 +755,6 @@ cs_coal_mass_transfer(void)
 
   } /* Case with drying */
 
-
-  /* Free memory */
-
-  CS_FREE(w1);
-  CS_FREE(rho1);
-  CS_FREE(x2srho2);
-  CS_FREE(x2);
 }
 
 /*----------------------------------------------------------------------------*/

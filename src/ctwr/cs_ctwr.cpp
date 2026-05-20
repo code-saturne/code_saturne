@@ -162,8 +162,7 @@ _write_liquid_vars(void                  *input,
     // Liquid mass per unit cell volume
     cs_real_t *y_l_p = (cs_real_t *)CS_F_(y_l_pack)->val;
 
-    cs_real_t *val;
-    CS_MALLOC(val, mesh->n_cells, cs_real_t);
+    cs_array<cs_real_t> val(mesh->n_cells);
 
     /* Value on all cells */
 
@@ -183,12 +182,10 @@ _write_liquid_vars(void                  *input,
     /* Values may be restricted to selection */
 
     if (cell_ids != nullptr) {
-      cs_real_t *_val;
-      CS_MALLOC(_val, n_cells, cs_real_t);
+      auto _val = val.get_deep_copy();
+      val.reshape(n_cells);
       for (cs_lnum_t i = 0; i < n_cells; i++)
         _val[i] = val[cell_ids[i]];
-      CS_FREE(val);
-      val = _val;
     }
 
     const char name[] = "Enthalpy liq packing";
@@ -200,12 +197,11 @@ _write_liquid_vars(void                  *input,
                       true,   /* interlace */
                       false,  /* use_parent */
                       CS_POST_TYPE_cs_real_t,
-                      val,    /* cell values */
+                      val.data(),/* cell values */
                       nullptr,   /* internal face values */
                       nullptr,   /* boundary face values */
                       ts);
 
-    CS_FREE(val);
   }
 }
 
@@ -231,8 +227,7 @@ _packing_selection(void                   *input,
 {
   const cs_ctwr_zone_t **cts = (const cs_ctwr_zone_t **)input;
 
-  bool  *is_packing = nullptr;
-  CS_MALLOC(is_packing, m->n_cells, bool);
+  cs_array<bool> is_packing(m->n_cells);
 
 # pragma omp parallel for if (m->n_cells> CS_THR_MIN)
   for (cs_lnum_t i = 0; i < m->n_cells; i++)
@@ -276,8 +271,6 @@ _packing_selection(void                   *input,
     assert(shift == n_pack_elts);
 
   } /* Build elt_ids */
-
-  CS_FREE(is_packing);
 
   /* Return pointers */
   *n_elts = n_pack_elts;

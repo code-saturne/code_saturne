@@ -750,31 +750,29 @@ _physprop1(const  cs_real_t  f1m[],
   /* Memory allocation
      ----------------- */
 
-  int *intpdf;
-  CS_MALLOC(intpdf, n_cells, int);
+  cs_array<int> intpdf(n_cells);
 
-  cs_real_t *ffuel, *dfuel, *doxyd, *pdfm1;
-  cs_real_t *pdfm2, *hrec, *cx1m, *cx2m, *wmchx1, *wmchx2;
-  cs_real_t *af1, *af2;
-  CS_MALLOC(ffuel, n_cells, cs_real_t);
-  CS_MALLOC(dfuel, n_cells, cs_real_t);
-  CS_MALLOC(doxyd, n_cells, cs_real_t);
-  CS_MALLOC(pdfm1, n_cells, cs_real_t);
-  CS_MALLOC(pdfm2, n_cells, cs_real_t);
-  CS_MALLOC(hrec, n_cells, cs_real_t);
-  CS_MALLOC(cx1m, n_cells, cs_real_t);
-  CS_MALLOC(cx2m, n_cells, cs_real_t);
-  CS_MALLOC(wmchx1, n_cells, cs_real_t);
-  CS_MALLOC(wmchx2, n_cells, cs_real_t);
-  CS_MALLOC(af1, n_cells*n_gas_sp, cs_real_t);
-  CS_MALLOC(af2, n_cells*n_gas_sp, cs_real_t);
+  //cs_real_t *af1, *af2;
+  cs_array<cs_real_t> ffuel(n_cells);
+  cs_array<cs_real_t> dfuel(n_cells);
+  cs_array<cs_real_t> doxyd(n_cells);
+  cs_array<cs_real_t> pdfm1(n_cells);
+  cs_array<cs_real_t> pdfm2(n_cells);
+  cs_array<cs_real_t> hrec(n_cells);
+  cs_array<cs_real_t> cx1m(n_cells);
+  cs_array<cs_real_t> cx2m(n_cells);
+  cs_array<cs_real_t> wmchx1(n_cells);
+  cs_array<cs_real_t> wmchx2(n_cells);
+  cs_array_2d<cs_real_t> af1(n_gas_sp, n_cells);
+  cs_array_2d<cs_real_t> af2(n_gas_sp, n_cells);
 
-  cs_real_t *fs3no = nullptr, *fs4no = nullptr, *yfs4no = nullptr;
-
+  cs_array<cs_real_t> fs3no;
+  cs_array<cs_real_t> fs4no;
+  cs_array_2d<cs_real_t> yfs4no;
   if (cm->ieqnox == 1) {
-    CS_MALLOC(fs3no, n_cells, cs_real_t);
-    CS_MALLOC(fs4no, n_cells, cs_real_t);
-    CS_MALLOC(yfs4no, n_cells*n_gas_sp, cs_real_t);
+    fs3no.reshape(n_cells);
+    fs4no.reshape(n_cells);
+    yfs4no.reshape(n_gas_sp, n_cells);
   }
 
   // Pointer to CHx1 and CHx2
@@ -874,12 +872,12 @@ _physprop1(const  cs_real_t  f1m[],
       cs_real_t f1mc = cvar_f1m_coal[c_id] / cpro_x1[c_id];
       cx1m[c_id] += f1mc * da1w;
 
-      af1[n_cells*ichx1 + c_id] += f1mc * da1;
-      af1[n_cells*ico   + c_id] += f1mc * db1;
-      af1[n_cells*ih2o  + c_id] += f1mc * dc1;
-      af1[n_cells*ih2s  + c_id] += f1mc * dd1;
-      af1[n_cells*ihcn  + c_id] += f1mc * de1;
-      af1[n_cells*inh3  + c_id] += f1mc * df1;
+      af1(ichx1, c_id) += f1mc * da1;
+      af1(ico  , c_id) += f1mc * db1;
+      af1(ih2o , c_id) += f1mc * dc1;
+      af1(ih2s , c_id) += f1mc * dd1;
+      af1(ihcn , c_id) += f1mc * de1;
+      af1(inh3 , c_id) += f1mc * df1;
     }
 
     # pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -887,12 +885,12 @@ _physprop1(const  cs_real_t  f1m[],
       cs_real_t f2mc = cvar_f2m_coal[c_id] / cpro_x1[c_id];
       cx2m[c_id] += f2mc * da2w;
 
-      af2[n_cells*ichx2 + c_id] += f2mc * da2;
-      af2[n_cells*ico   + c_id] += f2mc * db2;
-      af2[n_cells*ih2o  + c_id] += f2mc * dc2;
-      af2[n_cells*ih2s  + c_id] += f2mc * dd2;
-      af2[n_cells*ihcn  + c_id] += f2mc * de2;
-      af2[n_cells*inh3  + c_id] += f2mc * df2;
+      af2(ichx2, c_id) += f2mc * da2;
+      af2(ico  , c_id) += f2mc * db2;
+      af2(ih2o , c_id) += f2mc * dc2;
+      af2(ih2s , c_id) += f2mc * dd2;
+      af2(ihcn , c_id) += f2mc * de2;
+      af2(inh3 , c_id) += f2mc * df2;
 
     }
 
@@ -905,8 +903,8 @@ _physprop1(const  cs_real_t  f1m[],
   # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (auto c_id = 0; c_id < n_cells; c_id++) {
 
-    cs_real_t c_af1 = af1[n_cells*ichx1 + c_id];
-    cs_real_t c_af2 = af2[n_cells*ichx2 + c_id];
+    cs_real_t c_af1 = af1(ichx1, c_id);
+    cs_real_t c_af2 = af2(ichx2, c_id);
 
     if (c_af1 > epzero)
       cx1m[c_id] = (cx1m[c_id]/c_af1 - wmolat_iatc) / wmolat_iath;
@@ -928,14 +926,14 @@ _physprop1(const  cs_real_t  f1m[],
     # pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (auto c_id = 0; c_id < n_cells; c_id++) {
       if (f1m[c_id] > 0)
-        af1[n_cells*g_id + c_id] /= f1m[c_id];
+        af1(g_id, c_id) /= f1m[c_id];
       else
-        af1[n_cells*g_id + c_id] = 0.;
+        af1(g_id, c_id) = 0.;
 
       if (f2m[c_id] > 0)
-        af2[n_cells*g_id + c_id] /= f2m[c_id];
+        af2(g_id, c_id) /= f2m[c_id];
       else
-        af2[n_cells*g_id + c_id] = 0.;
+        af2(g_id, c_id) = 0.;
     }
 
   }
@@ -1143,26 +1141,6 @@ _physprop1(const  cs_real_t  f1m[],
     }
   }
 
-  // Free work arrays
-  CS_FREE(intpdf);
-  CS_FREE(ffuel);
-  CS_FREE(dfuel);
-  CS_FREE(doxyd);
-  CS_FREE(pdfm1);
-  CS_FREE(pdfm2);
-  CS_FREE(hrec);
-  CS_FREE(cx1m);
-  CS_FREE(cx2m);
-  CS_FREE(wmchx1);
-  CS_FREE(wmchx2);
-  CS_FREE(af1);
-  CS_FREE(af2);
-
-  if (cm->ieqnox == 1) {
-    CS_FREE(fs3no);
-    CS_FREE(fs4no);
-    CS_FREE(yfs4no);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
