@@ -101,24 +101,25 @@ from code_saturne.base.cs_meg_to_c import meg_to_c_interpreter
 # Theme
 #-------------------------------------------------------------------------------
 
-def _apply_cs_theme(app, theme=None):
+def _apply_cs_theme(app, themes_dir, theme=None):
     """
     Apply QSS theme to the application.
     theme: 'dark', 'light', or None (reads from QSettings)
     Loads cs_theme_dark.qss or cs_theme_light.qss from the same directory.
     Falls back to cs_theme.qss if specific file not found.
     """
-    base_dir = os.path.dirname(os.path.abspath(__file__))
 
     if theme is None:
         settings = QSettings()
-        theme = settings.value("MainWindow/Theme", "light")
+        if not settings.contains("MainWindow/Theme"):
+            return
+        theme = settings.value("MainWindow/Theme")
 
     qss_file = "cs_theme_%s.qss" % theme
-    qss_path = os.path.join(base_dir, qss_file)
+    qss_path = os.path.join(themes_dir, qss_file)
 
     if not os.path.isfile(qss_path):
-        qss_path = os.path.join(base_dir, "cs_theme.qss")
+        qss_path = os.path.join(themes_dir, "cs_theme.qss")
 
     if os.path.isfile(qss_path):
         try:
@@ -475,7 +476,11 @@ class MainView(object):
             self.restoreState(settings.value("MainWindow/State").toByteArray())
 
         app = QCoreApplication.instance()
-        _apply_cs_theme(app)
+        try:
+            themes_dir = os.path.join(self.package.get_dir("pkgdatadir"), "themes")
+            _apply_cs_theme(app, themes_dir)
+        except Exception:
+            pass
 
         self.palette_default = None
         self.font_default = None
@@ -1688,15 +1693,23 @@ class MainView(object):
         """
         Switch to dark theme.
         """
-        app = QCoreApplication.instance()
-        _apply_cs_theme(app, 'dark')
+        try:
+            app = QCoreApplication.instance()
+            themes_dir = os.path.join(self.package.get_dir("pkgdatadir"), "themes")
+            _apply_cs_theme(app, themes_dir, 'dark')
+        except Exception:
+            pass
 
     def setThemeLight(self):
         """
         Switch to light theme.
         """
-        app = QCoreApplication.instance()
-        _apply_cs_theme(app, 'light')
+        try:
+            app = QCoreApplication.instance()
+            themes_dir = os.path.join(self.package.get_dir("pkgdatadir"), "themes")
+            _apply_cs_theme(app, themes_dir, 'light')
+        except Exception:
+            pass
 
     def restoreStyleDefaults(self):
         """
@@ -1705,10 +1718,13 @@ class MainView(object):
         Restore default style.
         """
 
+        descr = """Restore default color, font, and theme ?
+(theme will only be restored at next restart of this GUI)."""
+
         reply = QMessageBox.question(self, "Restore defaults",
-                                     "Restore default color and font ?",
-                                     QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.Yes:
+                                     descr,
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
             app = QCoreApplication.instance()
             if self.palette_default:
                 app.setPalette(self.palette_default)
@@ -1718,7 +1734,7 @@ class MainView(object):
             settings = QSettings()
             settings.remove("MainWindow/Color")
             settings.remove("MainWindow/Font")
-
+            settings.remove("MainWindow/Theme")
 
     def tr(self, text):
         """

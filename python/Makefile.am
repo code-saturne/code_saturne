@@ -68,6 +68,11 @@ icons_DATA = \
 ${abs_top_srcdir}/python/code_saturne/data/icons/splashscreen.png \
 ${abs_top_srcdir}/python/code_saturne/data/icons/logo_salome_cfd.png
 
+themesdir = ${pkgdatadir}/themes
+
+themes_DATA = \
+${abs_top_srcdir}/python/code_saturne/data/themes/*.qss
+
 clean-local:
 	if test -d build; then \
 		echo "rm -rf build"; \
