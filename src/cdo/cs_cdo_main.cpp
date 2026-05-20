@@ -543,12 +543,11 @@ _solve_domain(cs_domain_t  *domain)
   /* Solve predefined systems */
 
   if (cs_solidification_is_activated()) {
-
     cs_solidification_compute(domain->mesh,
                               domain->connect,
                               domain->cdo_quantities,
-                              domain->time_step);
-
+                              domain->time_step,
+                              domain->is_last_iter);
   }
   else {
 
@@ -583,8 +582,8 @@ _solve_domain(cs_domain_t  *domain)
       cs_navsto_system_compute(domain->mesh,
                                domain->connect,
                                domain->cdo_quantities,
-                               domain->time_step);
-
+                               domain->time_step,
+                               domain->is_last_iter);
   }
 
   cs_domain_set_stage(domain, CS_DOMAIN_STAGE_TIME_STEP_END);
@@ -754,6 +753,9 @@ cs_cdo_solve_unsteady_state_domain(void)
   /* Reactualize the time step to be conform with FV-logic */
   ts->nt_cur += 1;
   ts->t_cur += ts->dt_ref;
+
+  if (cs_glob_domain->is_last_iter)
+    cs_glob_domain->time_step->nt_max = cs_glob_domain->time_step->nt_cur;
 
   /* From now - FV and CDO use the same time */
   /* Extra operations and post-processing of the computed solutions */

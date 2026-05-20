@@ -2822,5 +2822,65 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check the convergence of the pseudo-steady algorithm
+ *        when the unsteady Navier-Stokes system with a CDO face-based scheme
+ *        is used.
+ *
+ * \param[in]  nsp           set of parameters to handle the Navier-Stokes
+ *                           system
+ * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in]  mass_flux_pre pevious scalar-valued mass flux for each face
+ * \param[in]  mass_flux     scalar-valued mass flux for each face
+ * \param[in]  tbs           pointer to a \ref cs_turbulence_t struct.
+ *
+ * \return returns true if the pseudo-steady algorithm has converged else false
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_cdofb_navsto_check_convergence(const cs_navsto_param_t   *nsp,
+                                  const cs_cdo_quantities_t *quant,
+                                  const cs_real_t           *mass_flux_pre,
+                                  const cs_real_t           *mass_flux,
+                                  const cs_turbulence_t     *tbs)
+{
+  if (mass_flux == nullptr || mass_flux_pre == nullptr)
+    return false;
+
+  if (!(nsp->num_flag & CS_NAVSTO_NUM_PSEUDO_STEADY)) {
+    return false;
+  }
+
+  assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
+
+  bool cvg = false;
+
+  // Test convergence on mass fluxes
+  const cs_real_t square_norm2_flux = nsp->square_norm(mass_flux);
+  const cs_real_t square_norm2_diff =
+    nsp->square_norm_diff(mass_flux_pre, mass_flux);
+
+  const cs_real_t norm2_flux = sqrt(square_norm2_flux);
+  const cs_real_t norm2_diff = sqrt(square_norm2_diff);
+
+  if (norm2_diff < nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux)) {
+    cvg = true;
+  }
+
+  if (norm2_diff < nsp->psteady_cvg_param.atol) {
+    cvg = true;
+  }
+
+  // Test convergence on turbulence
+  if (tbs != nullptr) {
+    // TODO
+  }
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------*/
 
 #undef _dp3

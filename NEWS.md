@@ -43,7 +43,9 @@ Master (not on release branches yet)
 - CDO: Add mapped inlet option for Dirichlet boundary conditions.
 
 - CDO: Add pseudo-steady option when solving Navier-Stokes with unsteady
-  model in order to find a stationary solution.
+  model in order to find a stationary solution. The computation is stopped
+  when the the stationary solution is found with respect to convergence
+  parameters.
 
 ### User changes:
 

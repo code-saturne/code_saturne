@@ -151,6 +151,24 @@ typedef void(cs_navsto_check_init_t)(const cs_navsto_param_t   *nsp,
                                      const cs_real_t           *face_vel,
                                      const cs_field_t          *pressure);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute for the current time step the new state for the
+ *         Navier-Stokes system. This means that equations are built and then
+ *         solved.
+ *
+ * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
+ * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef bool(cs_navsto_check_convergence_t)(const cs_navsto_param_t   *nsp,
+                                            const cs_cdo_quantities_t *quant,
+                                            const cs_real_t *mass_flux_pre,
+                                            const cs_real_t *mass_flux,
+                                            const cs_turbulence_t *tbs);
+
 /*=============================================================================
  * Structure definitions
  *============================================================================*/
@@ -405,6 +423,13 @@ typedef struct {
 
   cs_navsto_compute_t               *compute;
 
+  /*! \var compute
+   *       Pointer of functions related to resolution of the Navier-Stokes
+   *       unsteady system. Handle the build of the system and its resolution
+   */
+
+  cs_navsto_check_convergence_t *check_convergence;
+
 } cs_navsto_system_t;
 
 /*============================================================================
@@ -645,14 +670,16 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
  * \param[in] connect    pointer to a cs_cdo_connect_t structure
  * \param[in] quant      pointer to a cs_cdo_quantities_t structure
  * \param[in] time_step  structure managing the time stepping
+ * \param[in, out] is_last_iter  update if is the last iteration
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute(const cs_mesh_t             *mesh,
-                         const cs_cdo_connect_t      *connect,
-                         const cs_cdo_quantities_t   *quant,
-                         const cs_time_step_t        *time_step);
+cs_navsto_system_compute(const cs_mesh_t           *mesh,
+                         const cs_cdo_connect_t    *connect,
+                         const cs_cdo_quantities_t *quant,
+                         const cs_time_step_t      *time_step,
+                         bool                      &is_last_iter);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -240,6 +240,11 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
   nsp->nl_cvg_param.atol = 1e-5;
   nsp->nl_cvg_param.dtol = 1e3;
 
+  nsp->psteady_cvg_param.n_max_iter = 25;
+  nsp->psteady_cvg_param.rtol       = 1e-5;
+  nsp->psteady_cvg_param.atol       = 1e-5;
+  nsp->psteady_cvg_param.dtol       = 1e3;
+
   nsp->anderson_param.n_max_dir = 6;
   nsp->anderson_param.starting_iter = 3;
   nsp->anderson_param.max_cond = -1; /* No test by default */
@@ -469,6 +474,8 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
       nsp->nl_algo_type = CS_PARAM_NL_ALGO_MODIFIED_PICARD;
     else if (strcmp(val, "anderson") == 0)
       nsp->nl_algo_type = CS_PARAM_NL_ALGO_ANDERSON;
+    else if (strcmp(val, "none") == 0)
+      nsp->nl_algo_type = CS_PARAM_NL_ALGO_NONE;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -501,6 +508,28 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
     nsp->nl_cvg_param.rtol = atof(val);
     if (nsp->nl_cvg_param.rtol < 0)
       bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the relative tolerance of the"
+                " non-linear algorithm\n",
+                __func__);
+    break;
+
+  case CS_NSKEY_PSTEADY_ALGO_ATOL:
+    nsp->psteady_cvg_param.atol = atof(val);
+    if (nsp->psteady_cvg_param.atol < 0)
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                " %s: Invalid value for the absolute tolerance of the"
+                " non-linear algorithm\n",
+                __func__);
+    break;
+
+  case CS_NSKEY_PSTEADY_ALGO_RTOL:
+    nsp->psteady_cvg_param.rtol = atof(val);
+    if (nsp->psteady_cvg_param.rtol < 0)
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 " %s: Invalid value for the relative tolerance of the"
                 " non-linear algorithm\n",
                 __func__);

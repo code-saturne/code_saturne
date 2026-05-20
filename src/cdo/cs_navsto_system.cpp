@@ -278,6 +278,7 @@ _allocate_navsto_system(void)
   navsto->check_init          = nullptr;
   navsto->compute_steady      = nullptr;
   navsto->compute             = nullptr;
+  navsto->check_convergence   = nullptr;
 
   return navsto;
 }
@@ -1112,6 +1113,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       ns->init_pressure       = cs_cdofb_navsto_init_pressure;
       ns->check_init          = cs_cdofb_navsto_check_init;
       ns->compute_steady      = nullptr;
+      ns->check_convergence   = cs_cdofb_navsto_check_convergence;
 
       switch (mom_eqp->time_scheme) {
 
@@ -1154,6 +1156,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       ns->init_velocity       = nullptr;
       ns->init_pressure       = cs_cdofb_navsto_init_pressure;
       ns->check_init          = cs_cdofb_navsto_check_init;
+      ns->check_convergence   = cs_cdofb_navsto_check_convergence;
 
       if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
         ns->compute_steady = cs_cdofb_monolithic_steady;
@@ -1191,7 +1194,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
       case CS_TIME_SCHEME_BDF2:
-       if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
+        if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
           ns->compute = cs_cdofb_monolithic;
         else
           ns->compute = cs_cdofb_monolithic_nl;
@@ -1220,6 +1223,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       ns->init_pressure       = cs_cdofb_navsto_init_pressure;
       ns->check_init          = cs_cdofb_navsto_check_init;
       ns->compute_steady      = nullptr;
+      ns->check_convergence   = cs_cdofb_navsto_check_convergence;
 
       switch (mom_eqp->time_scheme) {
 
@@ -1278,6 +1282,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       ns->init_velocity       = nullptr;
       ns->init_pressure       = cs_macfb_navsto_init_pressure;
       ns->check_init          = nullptr;
+      ns->check_convergence   = nullptr;
 
       if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
         ns->compute_steady = cs_macfb_monolithic_steady;
@@ -1767,6 +1772,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t           *mesh,
  * \param[in] connect    pointer to a cs_cdo_connect_t structure
  * \param[in] quant       pointer to a cs_cdo_quantities_t structure
  * \param[in] time_step  structure managing the time stepping
+ * \param[in, out] is_last_iter  update if is the last iteration
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1774,7 +1780,8 @@ void
 cs_navsto_system_compute(const cs_mesh_t           *mesh,
                          const cs_cdo_connect_t    *connect,
                          const cs_cdo_quantities_t *quant,
-                         const cs_time_step_t      *time_step)
+                         const cs_time_step_t      *time_step,
+                         bool                      &is_last_iter)
 {
 
   cs_navsto_system_t *ns = cs_navsto_system;
@@ -1865,6 +1872,26 @@ cs_navsto_system_compute(const cs_mesh_t           *mesh,
 
     if (tbs->compute != nullptr)
       tbs->compute(mesh, connect, quant, time_step, tbs);
+  }
+
+  // Stop computation for PSEUDO_STEADY algorithm
+  if (ns->check_convergence != nullptr) {
+    const bool cvg = ns->check_convergence(nsp,
+                                           quant,
+                                           cs_navsto_get_mass_flux(true),
+                                           cs_navsto_get_mass_flux(false),
+                                           tbs);
+
+    if (!is_last_iter && cvg) {
+      is_last_iter = true;
+
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "\n>> Pseudo-steady algotirhm has converged. The "
+                    "computation is stopped.\n");
+
+      // Always do a log for this iteration
+      cs_log_default_activate(true);
+    }
   }
 }
 

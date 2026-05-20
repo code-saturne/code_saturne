@@ -5094,14 +5094,16 @@ cs_solidification_init_values
  * \param[in] connect    pointer to a cs_cdo_connect_t structure
  * \param[in] quant      pointer to a cs_cdo_quantities_t structure
  * \param[in] time_step  pointer to a cs_time_step_t structure
+ * \param[in, out] is_last_iter  update if is the last iteration
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_compute(const cs_mesh_t              *mesh,
-                          const cs_cdo_connect_t       *connect,
-                          const cs_cdo_quantities_t    *quant,
-                          const cs_time_step_t         *time_step)
+cs_solidification_compute(const cs_mesh_t           *mesh,
+                          const cs_cdo_connect_t    *connect,
+                          const cs_cdo_quantities_t *quant,
+                          const cs_time_step_t      *time_step,
+                          bool                      &is_last_iter)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
 
@@ -5135,7 +5137,7 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
 
   if ((solid->options & CS_SOLIDIFICATION_NO_VELOCITY_FIELD) == 0)
     /* The Navier-Stokes is not solved when the frozen field is set */
-    cs_navsto_system_compute(mesh, connect, quant, time_step);
+    cs_navsto_system_compute(mesh, connect, quant, time_step, is_last_iter);
 
   /* Perform the monitoring */
 

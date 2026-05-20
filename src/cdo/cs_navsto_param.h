@@ -431,11 +431,19 @@ typedef struct {
 
   /*! \var nl_cvg_param
    *  Structure storing several tolerances and metadata to drive the
-   *  convergence of the non-linear iterative algorithm used to solve te
+   *  convergence of the non-linear iterative algorithm used to solve
    *  Navier-Stokes when the advection term is implicit and non linearized.
    */
 
-  cs_param_convergence_t        nl_cvg_param;
+  cs_param_convergence_t nl_cvg_param;
+
+  /*! \var psteady_cvg_param
+   *  Structure storing several tolerances and metadata to drive the
+   *  convergence of the pseudo-steady algorithm used to stop
+   *  Navier-Stokes
+   */
+
+  cs_param_convergence_t psteady_cvg_param;
 
   /*! \var anderson_param
    * Set of parameters to drive the Anderson acceleration (useful if the type
@@ -625,6 +633,12 @@ typedef struct {
  * Relative tolerance at which the non-linearity arising from the advection
  * term is resolved
  *
+ * \var CS_NSKEY_PSTEADY_ALGO_ATOL
+ * Absolute tolerance at which the pseudo-steady algorithm is resolved
+ *
+ * \var CS_NSKEY_PSTEADY_ALGO_RTOL
+ * Relative tolerance at which the pseudo-steady algorithm is resolved
+ *
  * \var CS_NSKEY_NORM_TYPE
  * Type of norm (and dot product) to consider to compute the normalization and
  * quantities when performing the non-linear algorithm.
@@ -650,6 +664,8 @@ typedef enum {
   CS_NSKEY_NL_ALGO_DTOL,
   CS_NSKEY_NL_ALGO_MAX_ITER,
   CS_NSKEY_NL_ALGO_RTOL,
+  CS_NSKEY_PSTEADY_ALGO_ATOL,
+  CS_NSKEY_PSTEADY_ALGO_RTOL,
   CS_NSKEY_NORM_TYPE,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_THERMAL_TOLERANCE,
