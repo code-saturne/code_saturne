@@ -792,10 +792,9 @@ _physprop1(const  cs_real_t  f1m[],
   /* Determine the type of pdf
      ------------------------- */
 
-  cs_real_t *fmini, *fmaxi, *tpdf;
-  CS_MALLOC(fmini, n_cells, cs_real_t);
-  CS_MALLOC(fmaxi, n_cells, cs_real_t);
-  CS_MALLOC(tpdf, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> fmini(n_cells);
+  cs_array<cs_real_t> fmaxi(n_cells);
+  cs_array<cs_real_t> tpdf(n_cells_ext);
 
   # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (auto c_id = 0; c_id < n_cells; c_id++) {
@@ -809,9 +808,9 @@ _physprop1(const  cs_real_t  f1m[],
   cs_combustion_dirac_pdf(n_cells, intpdf, tpdf, ffuel, fvp2m, fmini, fmaxi,
                           doxyd, dfuel, pdfm1, pdfm2, hrec);
 
-  CS_FREE(tpdf);
-  CS_FREE(fmini);
-  CS_FREE(fmaxi);
+  fmini.clear();
+  fmaxi.clear();
+  tpdf.clear();
 
   ipass++;
 
@@ -1407,8 +1406,7 @@ _physical_properties_combustion_drift(cs_lnum_t  n_cells)
 
   const cs_coal_model_t *cm = cs_glob_coal_model;
 
-  cs_real_t *visco;
-  CS_MALLOC(visco, n_cells, cs_real_t);
+  cs_array<cs_real_t> visco(n_cells);
 
   const cs_real_t *cpro_ym1_3 = cs_field_by_id(cm->iym1[3-1])->val;
   const cs_real_t *cpro_ym1_5 = cs_field_by_id(cm->iym1[5-1])->val;
@@ -1436,7 +1434,7 @@ _physical_properties_combustion_drift(cs_lnum_t  n_cells)
     const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
     const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
 
-    cs_arrays_set_value<cs_real_t, 1>(n_cells, viscl0, visco);
+    visco.set_to_val(viscl0);
     cs_arrays_set_value<cs_real_t, 1>(n_cells, ro0, cpro_rom1);
 
     for (int class_id = 0; class_id < cm->nclacp; class_id++) {
@@ -1565,7 +1563,6 @@ _physical_properties_combustion_drift(cs_lnum_t  n_cells)
 
   } // Loop on fields
 
-  CS_FREE(visco);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1624,22 +1621,18 @@ cs_coal_physprop(int  *mbrom)
 
   /* Allocate arrays */
 
-  cs_real_t *f1m, *f2m;
-  CS_MALLOC(f1m, n_cells_ext, cs_real_t);
-  CS_MALLOC(f2m, n_cells_ext, cs_real_t);
-  cs_real_t *f3m, *f4m, *f5m, *f6m, *f7m, *f8m, *f9m;
+  cs_array<cs_real_t> f1m(n_cells_ext);
+  cs_array<cs_real_t> f2m(n_cells_ext);
+  cs_array<cs_real_t> f3m(n_cells_ext);
+  cs_array<cs_real_t> f4m(n_cells_ext);
+  cs_array<cs_real_t> f5m(n_cells_ext);
+  cs_array<cs_real_t> f6m(n_cells_ext);
+  cs_array<cs_real_t> f7m(n_cells_ext);
+  cs_array<cs_real_t> f8m(n_cells_ext);
+  cs_array<cs_real_t> f9m(n_cells_ext);
 
-  CS_MALLOC(f3m, n_cells_ext, cs_real_t);
-  CS_MALLOC(f4m, n_cells_ext, cs_real_t);
-  CS_MALLOC(f5m, n_cells_ext, cs_real_t);
-  CS_MALLOC(f6m, n_cells_ext, cs_real_t);
-  CS_MALLOC(f7m, n_cells_ext, cs_real_t);
-  CS_MALLOC(f8m, n_cells_ext, cs_real_t);
-  CS_MALLOC(f9m, n_cells_ext, cs_real_t);
-
-  cs_real_t *enth1, *fvp2m;
-  CS_MALLOC(enth1, n_cells, cs_real_t);
-  CS_MALLOC(fvp2m, n_cells, cs_real_t);
+  cs_array<cs_real_t> enth1(n_cells);
+  cs_array<cs_real_t> fvp2m(n_cells);
 
   /* Calculation of the physical properties of the dispersed phase
    * -------------------------------------------------------------
@@ -1684,7 +1677,11 @@ cs_coal_physprop(int  *mbrom)
   //   of F9M
   //   of FVP2M
 
-  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0., f1m, f2m);
+  ctx.parallel_for(n_cells, CS_LAMBDA (cs_lnum_t c_id) {
+    f1m[c_id] = 0.;
+    f2m[c_id] = 0.;
+  });
+  ctx.wait();
 
   for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
     const cs_real_t *cvar_f1m = cs_field_by_id(cm->if1m[coal_id])->val;
@@ -1696,10 +1693,10 @@ cs_coal_physprop(int  *mbrom)
     });
   }
 
-  cs_real_t *enthox = nullptr;
+  cs_array<cs_real_t> enthox;
   if (cm->ieqnox == 1) {
     const cs_real_t *cvar_hox = cs_field_by_id(cm->ihox)->val;
-    CS_MALLOC(enthox, n_cells, cs_real_t);
+    enthox.reshape(n_cells);
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
       const cs_real_t xoxyd = cpro_x1[c_id] - f1m[c_id] - f2m[c_id];
@@ -1707,32 +1704,53 @@ cs_coal_physprop(int  *mbrom)
     });
   }
 
-  cs_array_real_copy(n_cells, cs_field_by_id(cm->if7m)->val, f7m);
-  cs_array_real_copy(n_cells, cs_field_by_id(cm->ifvp2m)->val, fvp2m);
+  const cs_real_t *_f7m = cs_field_by_id(cm->if7m)->val;
+  const cs_real_t *_fvp2m = cs_field_by_id(cm->ifvp2m)->val;
 
-  cs_arrays_set_value<cs_real_t, 1>(n_cells, 0.,
-                                    f4m, f5m, f6m, f8m, f9m);
+  ctx.parallel_for(n_cells, CS_LAMBDA (cs_lnum_t c_id) {
+    f4m[c_id] = 0.;
+    f5m[c_id] = 0.;
+    f6m[c_id] = 0.;
+    f8m[c_id] = 0.;
+    f9m[c_id] = 0.;
+
+    f7m[c_id] = _f7m[c_id];
+    fvp2m[c_id] = _fvp2m[c_id];
+  });
+  ctx.wait();
 
   if (cm->noxyd >= 2) {
     const cs_real_t *cvar_f4m = cs_field_by_id(cm->if4m)->val;
-    cs_array_real_copy(n_cells, cvar_f4m, f4m);
+    ctx.parallel_for(n_cells, CS_LAMBDA (cs_lnum_t c_id) {
+      f4m[c_id] = cvar_f4m[c_id];
+    });
     if (cm->noxyd == 3) {
       const cs_real_t *cvar_f5m = cs_field_by_id(cm->if5m)->val;
-      cs_array_real_copy(n_cells, cvar_f5m, f5m);
+      ctx.parallel_for(n_cells, CS_LAMBDA (cs_lnum_t c_id) {
+        f5m[c_id] = cvar_f5m[c_id];
+      });
     }
   }
+
   if (cm->type == CS_COMBUSTION_COAL_WITH_DRYING) {
     const cs_real_t *cvar_f6m = cs_field_by_id(cm->if6m)->val;
-    cs_array_real_copy(n_cells, cvar_f6m, f6m);
+    ctx.parallel_for(n_cells, CS_LAMBDA (cs_lnum_t c_id) {
+      f6m[c_id] = cvar_f6m[c_id];
+    });
   }
 
   if (cm->ihtco2 == 1) {
     const cs_real_t *cvar_f8m = cs_field_by_id(cm->if8m)->val;
-    cs_array_real_copy(n_cells, cvar_f8m, f8m);
+    ctx.parallel_for(n_cells, CS_LAMBDA (cs_lnum_t c_id) {
+      f8m[c_id] = cvar_f8m[c_id];
+    });
   }
+
   if (cm->ihth2o == 1) {
     const cs_real_t *cvar_f9m = cs_field_by_id(cm->if9m)->val;
-    cs_array_real_copy(n_cells, cvar_f9m, f9m);
+    ctx.parallel_for(n_cells, CS_LAMBDA (cs_lnum_t c_id) {
+      f9m[c_id] = cvar_f9m[c_id];
+    });
   }
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
@@ -1780,20 +1798,6 @@ cs_coal_physprop(int  *mbrom)
 
   _physprop1(f1m, f2m, f3m, f4m, f5m, f6m, f7m, f8m, f9m,
              fvp2m, enth1, enthox, cpro_rom1);
-
-  CS_FREE(f1m);
-  CS_FREE(f2m);
-  CS_FREE(f3m);
-  CS_FREE(f4m);
-  CS_FREE(f5m);
-  CS_FREE(f6m);
-  CS_FREE(f7m);
-  CS_FREE(f8m);
-  CS_FREE(f9m);
-
-  CS_FREE(fvp2m);
-  CS_FREE(enth1);
-  CS_FREE(enthox);
 
   /* Calculation of the physical properties of the dispersed phase
    * -------------------------------------------------------------
