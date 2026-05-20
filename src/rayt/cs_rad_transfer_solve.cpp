@@ -49,6 +49,7 @@
 
 #include "atmo/cs_atmo.h"
 #include "alge/cs_blas.h"
+#include "base/cs_array.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_zone.h"
 #include "comb/cs_coal.h"
@@ -422,8 +423,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   }
   else {
     const cs_real_t dcp0 = 1.0 / cs_glob_fluid_properties->cp0;
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-      dcp[cell_id] = dcp0;
+    cs_array_real_set_scalar(n_cells, dcp0, dcp);
   }
 
   /* Upwards/Downwards atmospheric integration */
@@ -560,12 +560,10 @@ _cs_rad_transfer_sol(int                        gg_id,
   }
 
   /* initialization for integration in following loops */
+  cs_array_real_fill_zero(n_b_faces, f_qinci->val);
+  cs_array_real_fill_zero(n_b_faces, f_snplus->val);
 
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-    f_qinci->val[face_id] = 0.0;
-    f_snplus->val[face_id] = 0.0;
-  }
-
+  # pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
     int_rad_domega[cell_id] = 0.0;
     int_abso[cell_id] = 0.0;
@@ -577,9 +575,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   }
 
   /* Save rhs in buffer, reload at each change of direction */
-
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-    rhs0[cell_id] = rhs[cell_id];
+  cs_array_real_copy(n_cells, rhs, rhs0);
 
   /* rovsdt loaded once only */
 
@@ -1163,6 +1159,16 @@ _net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
 static void
 _rad_transfer_solve(int bc_type[])
 {
+  /* Mesh params */
+  cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
+  cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  cs_lnum_t n_b_faces   = cs_glob_mesh->n_b_faces;
+  cs_lnum_t n_i_faces   = cs_glob_mesh->n_i_faces;
+
+  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
+  const cs_nreal_3_t *b_face_u_normal = cs_glob_mesh_quantities->b_face_u_normal;
+
   /* Shorter notation */
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
   const int *pm_flag = cs_glob_physical_model_flag;
@@ -1172,16 +1178,6 @@ _rad_transfer_solve(int bc_type[])
   /* Physical constants */
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
   const cs_real_t c_stefan = cs_physical_constants_stephan;
-
-  /* Mesh params */
-  cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
-  cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  cs_lnum_t n_b_faces   = cs_glob_mesh->n_b_faces;
-  cs_lnum_t n_i_faces   = cs_glob_mesh->n_i_faces;
-
-  const cs_nreal_3_t *b_face_u_normal = cs_glob_mesh_quantities->b_face_u_normal;
-  const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
-  const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   char fname[80];
 
@@ -1322,39 +1318,33 @@ _rad_transfer_solve(int bc_type[])
 
   /* Work arrays */
 
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+  /* Radiation coefficient k of the gas phase */
+  cs_array_real_fill_zero(n_cells, ckg);
 
-    /* Radiation coefficient k of the gas phase */
-    ckg[cell_id] = 0.0;
+  /* Bulk Implicit ST due to emission
+   * for the gas phase and the solid/droplet phase (all classes) */
+  cs_array_real_fill_zero(n_cells, rad_istm);
 
-    /* Bulk Implicit ST due to emission
-     * for the gas phase and the solid/droplet phase (all classes) */
-    rad_istm[cell_id] = 0.0;
+  /* Explicit ST due to emission and absorption */
+  cs_array_real_fill_zero(n_cells, rad_estm);
 
-    /* Explicit ST due to emission and absorption */
-    rad_estm[cell_id] = 0.0;
+  /* Absorption: Sum, i((kg, i+kp) * Integral(Ii)dOmega):
+   * for the gas phase and the solid/droplet phase (all classes) */
+  cs_array_real_fill_zero(n_cells, absom);
 
-    /* Absorption: Sum, i((kg, i+kp) * Integral(Ii)dOmega):
-     * for the gas phase and the solid/droplet phase (all classes) */
-    absom[cell_id] = 0.0;
+  /* Emitted radiation: Sum, i((kg, i+kp) * c_stefan * T^4 *agi):
+   * for the gas phase and the solid/droplet phase (all classes) */
+  cs_array_real_fill_zero(n_cells, emim);
 
-    /* Emitted radiation: Sum, i((kg, i+kp) * c_stefan * T^4 *agi):
-     * for the gas phase and the solid/droplet phase (all classes) */
-    emim[cell_id] = 0.0;
+  /* radiative flux vector */
+  cs_array_real_fill_zero(3 * n_cells, (cs_real_t*)cpro_q);
 
-    /* radiative flux vector */
-    cpro_q[cell_id][0] = 0.0;
-    cpro_q[cell_id][1] = 0.0;
-    cpro_q[cell_id][2] = 0.0;
+  /* Total emitted intensity   */
+  cs_array_real_fill_zero(n_cells, cpro_lumin);
 
-    /* Total emitted intensity   */
-    cpro_lumin[cell_id] = 0.0;
-
-    /* Radiation coefficient of the bulk phase:
-     * for the gas phase and the solid/droplet phase (all classes) */
-    ckmix[cell_id] = 0.0;
-
-  }
+  /* Radiation coefficient of the bulk phase:
+   * for the gas phase and the solid/droplet phase (all classes) */
+  cs_array_real_fill_zero(n_cells, ckmix);
 
   /* In case of grey gas radiation properties (kgi != f(lambda))
    * agi must be set to 1. */
@@ -1381,11 +1371,9 @@ _rad_transfer_solve(int bc_type[])
     cs_real_t *cpro_abso = CS_FI_(rad_abs, class_num)->val;
     cs_real_t *cpro_emi  = CS_FI_(rad_emi, class_num)->val;
     cs_real_t *cpro_stri = CS_FI_(rad_ist, class_num)->val;
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      cpro_abso[cell_id] = 0.0;
-      cpro_emi[cell_id]  = 0.0;
-      cpro_stri[cell_id] = 0.0;
-    }
+    cs_array_real_fill_zero(n_cells, cpro_emi);
+    cs_array_real_fill_zero(n_cells, cpro_abso);
+    cs_array_real_fill_zero(n_cells, cpro_stri);
   }
 
   /* Upward/Downward atmospheric integration */
@@ -1438,9 +1426,8 @@ _rad_transfer_solve(int bc_type[])
         snprintf(fname, 80, "t_p_%02d", class_id+1);
       cs_field_t *f_temp2 = cs_field(fname);
       cs_lnum_t class_num = class_id + 1;
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         tempk(class_num, cell_id) = f_temp2->val[cell_id];
-      }
     }
 
   }
@@ -1476,9 +1463,7 @@ _rad_transfer_solve(int bc_type[])
     /* Absorption coefficient;
        initialization to a non-admissible value
        for testing after cs_user_rad_transfer_absorption(). */
-
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-      ckg[cell_id] = -cs_math_big_r;
+    cs_array_real_set_scalar(n_cells, -cs_math_big_r, ckg);
 
     /* Data from GUI */
     /* FIXME for ADF */
@@ -1524,7 +1509,7 @@ _rad_transfer_solve(int bc_type[])
 
     }
 
-    cs_parall_min(1, CS_DOUBLE, &ckmin);
+    cs_parall_min(1, CS_REAL_TYPE, &ckmin);
 
     if (ckmin < 0.0)
       bft_error
@@ -1549,8 +1534,7 @@ _rad_transfer_solve(int bc_type[])
   }
   else {
     const cs_real_t dcp0 = 1.0 / cs_glob_fluid_properties->cp0;
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-      dcp[cell_id] = dcp0;
+    cs_array_real_set_scalar(n_cells, dcp0, dcp);
   }
 
   /* Check for transparent case => no need to compute absorption or emission */
@@ -1606,41 +1590,39 @@ _rad_transfer_solve(int bc_type[])
       cs_real_t *ck_u = cs_field("rad_absorption_coeff_up")->val;
       cs_real_t *ck_d = cs_field("rad_absorption_coeff_down")->val;
 
-      cs_real_t ckumax = 0.0;
+      cs_real_t ckumax = 0.0, ckdmax = 0.0;
 
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        ckumax = cs::max(ckumax, ck_u[gg_id + cell_id * nwsgg]);
+      # pragma omp simd reduction(max:ckumax, ckdmax)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; ++c_id) {
+        const cs_lnum_t idx = gg_id + c_id * nwsgg;
 
-      cs_parall_max(1, CS_REAL_TYPE, &ckumax);
-
-      if (verbosity > 0 && ckumax <= cs_math_epzero)
-        cs_log_printf
-          (CS_LOG_DEFAULT,
-           _("      Atmospheric radiative transfer with transparent "
-             "medium %s for band %d\n"),
-           _("for upward directions."), _(gg_id));
-
-      cs_real_t ckdmax = 0.0;
-
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        ckdmax = cs::max(ckdmax, ck_d[gg_id + cell_id * nwsgg]);
-
-      cs_parall_max(1, CS_REAL_TYPE, &ckdmax);
-
-      if (verbosity > 0 && ckdmax <= cs_math_epzero)
-        cs_log_printf
-          (CS_LOG_DEFAULT,
-           _("      Atmospheric radiative transfer with transparent "
-             "medium %s for band %d\n"),
-           _("for downward directions."), _(gg_id));
-
-      if (ckumax <= cs_math_epzero && ckdmax <= cs_math_epzero) {
-        cs_log_printf
-          (CS_LOG_DEFAULT,
-           _("      Warning: Atmospheric radiative transfer with transparent "
-             "medium %s for band %d.\n"),
-           _("for downward and upward directions."), _(gg_id));
+        ckumax = cs::max(ckumax, ck_u[idx]);
+        ckdmax = cs::max(ckdmax, ck_d[idx]);
       }
+
+      /* Parallel reductions */
+      cs_parall_max_scalars(ckumax, ckdmax);
+
+      /* Logging */
+      if (    verbosity > 0
+          && (ckumax <= cs_math_epzero || ckdmax <= cs_math_epzero)) {
+
+        const char *direction = nullptr;
+
+        if (ckumax <= cs_math_epzero && ckdmax <= cs_math_epzero)
+          direction = "for upward and downward directions.";
+        else if (ckumax <= cs_math_epzero)
+          direction = "for upward directions.";
+        else
+          direction = "for downward directions.";
+        cs_log_printf(
+                      CS_LOG_DEFAULT,
+                      _("      Atmospheric radiative transfer with transparent "
+                        "medium %s for band %d\n"),
+                      _(direction),
+                      _(gg_id));
+      }
+
       if (idiver > 0) {
         cs_log_printf
           (CS_LOG_DEFAULT,
@@ -1719,7 +1701,7 @@ _rad_transfer_solve(int bc_type[])
       }
 
       /* Test if ckmix is gt zero  */
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         if (ckmix[cell_id] <= 0.0)
           bft_error
             (__FILE__, __LINE__, 0,
@@ -1732,7 +1714,6 @@ _rad_transfer_solve(int bc_type[])
              _("Radiative transfer module (P-1 radiation):\n"
                "-------------------------\n"),
              __func__);
-      }
 
       /* Update Boundary condition coefficients */
 
@@ -2103,10 +2084,8 @@ _rad_transfer_solve(int bc_type[])
     iflux[izone] = 1;
   }
 
-  if (cs_glob_rank_id >= 0) {
-    cs_parall_sum(n_zones, CS_REAL_TYPE, flux);
-    cs_parall_max(n_zones, CS_INT_TYPE, iflux);
-  }
+  cs_parall_sum(n_zones, CS_REAL_TYPE, flux);
+  cs_parall_max(n_zones, CS_INT_TYPE, iflux);
 
   if (verbosity > 0) {
 
@@ -2456,37 +2435,29 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   cs_real_t   *cpro_lumin = CS_F_(rad_energy)->val;
   cs_real_3_t *cpro_q     = (cs_real_3_t *)(CS_F_(rad_q)->val);
 
-  /* Work arrays */
+  /* Radiation coefficient k of the gas phase */
+  cs_array_real_fill_zero(n_cells, ckg);
 
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+  /* Bulk Implicit ST due to emission
+   * for the gas phase and the solid/droplet phase (all classes) */
+  cs_array_real_fill_zero(n_cells, rad_istm);
 
-    /* Radiation coefficient k of the gas phase */
-    ckg[cell_id] = 0.0;
+  /* Explicit ST due to emission and absorption */
+  cs_array_real_fill_zero(n_cells, rad_estm);
 
-    /* Bulk Implicit ST due to emission
-     * for the gas phase and the solid/droplet phase (all classes) */
-    rad_istm[cell_id] = 0.0;
+  /* Absorption: Sum, i((kg, i+kp) * Integral(Ii)dOmega):
+   * for the gas phase and the solid/droplet phase (all classes) */
+  cs_array_real_fill_zero(n_cells, absom);
 
-    /* Explicit ST due to emission and absorption */
-    rad_estm[cell_id] = 0.0;
+  /* Emitted radiation: Sum, i((kg, i+kp) * c_stefan * T^4 *agi):
+   * for the gas phase and the solid/droplet phase (all classes) */
+  cs_array_real_fill_zero(n_cells, emim);
 
-    /* Absorption: Sum, i((kg, i+kp) * Integral(Ii)dOmega):
-     * for the gas phase and the solid/droplet phase (all classes) */
-    absom[cell_id] = 0.0;
+  /* radiative flux vector */
+  cs_array_real_fill_zero(3 * n_cells, (cs_real_t *) cpro_q);
 
-    /* Emitted radiation: Sum, i((kg, i+kp) * c_stefan * T^4 *agi):
-     * for the gas phase and the solid/droplet phase (all classes) */
-    emim[cell_id] = 0.0;
-
-    /* radiative flux vector */
-    cpro_q[cell_id][0] = 0.0;
-    cpro_q[cell_id][1] = 0.0;
-    cpro_q[cell_id][2] = 0.0;
-
-    /* Total emitted intensity   */
-    cpro_lumin[cell_id] = 0.0;
-
-  }
+  /* Total emitted intensity   */
+  cs_array_real_fill_zero(n_cells, cpro_lumin);
 
   /* In case of grey gas radiation properties (kgi != f(lambda))
    * agi must be set to 1. */
@@ -2671,8 +2642,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   /* The total radiative flux is copied in bqinci
    * a) for post-processing reasons and
    * b) in order to calculate bfnet */
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
-    f_qinci->val[ifac] = iqpato[ifac];
+  cs_array_real_copy(n_b_faces, iqpato, f_qinci->val);
 
   /* Net radiative flux at walls: computation and integration */
 
@@ -2740,10 +2710,8 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     iflux[izone] = 1;
   }
 
-  if (cs_glob_rank_id >= 0) {
-    cs_parall_sum(n_zones, CS_REAL_TYPE, flux);
-    cs_parall_max(n_zones, CS_INT_TYPE, iflux);
-  }
+  cs_parall_sum(n_zones, CS_REAL_TYPE, flux);
+  cs_parall_max(n_zones, CS_INT_TYPE, iflux);
 
   if (verbosity > 0) {
 
@@ -2811,12 +2779,10 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 void
 cs_rad_transfer_solve(int bc_type[])
 {
-  if (cs_glob_rad_transfer_params->imrcfsk == 1) {
+  if (cs_glob_rad_transfer_params->imrcfsk == 1)
     _rad_transfer_rcfsk_solve(bc_type);
-  }
-  else {
+  else
     _rad_transfer_solve(bc_type);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
