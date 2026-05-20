@@ -287,7 +287,7 @@ cs_gradient_boundary_iprime_lsq_s
 
     /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
-    cs_real_t cocg[6] = {0., 0., 0., 0., 0., 0.};
+    cs_cocg_t cocg[6] = {0., 0., 0., 0., 0., 0.};
     cs_real_t rhs[3] = {0, 0, 0};
 
     cs_real_t var_i = var[c_id];
@@ -746,7 +746,7 @@ cs_gradient_boundary_iprime_lsq_s_ani
 
     /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
-    cs_real_t cocg[6] = {0., 0., 0., 0., 0., 0.};
+    cs_cocg_t cocg[6] = {0., 0., 0., 0., 0., 0.};
     cs_real_t rhs[3] = {0, 0, 0};
 
     cs_real_t var_i = var[c_id];
@@ -1197,7 +1197,7 @@ cs_gradient_boundary_iprime_lsq_strided
 
     /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
-    cs_real_t cocg[6] = {0., 0., 0., 0., 0., 0.};
+    cs_cocg_t cocg[6] = {0., 0., 0., 0., 0., 0.};
     cs_real_t rhs[stride][3];
     cs_real_t var_i[stride];
 

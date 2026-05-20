@@ -4074,7 +4074,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
 
     cs_real_t rhsv[3] = {0, 0, 0};
-    cs_real_t cocg[6] = {0, 0, 0, 0, 0, 0};
+    cs_cocg_t cocg[6] = {0, 0, 0, 0, 0, 0};
 
     /* Contribution from interior faces
        -------------------------------- */
@@ -8380,7 +8380,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
 
   /* Compute covariance matrix and Right-Hand Side */
 
-  cs_real_t cocg[6] = {0., 0., 0., 0., 0., 0.};
+  cs_cocg_t cocg[6] = {0., 0., 0., 0., 0., 0.};
   cs_real_t rhs[stride][3];
 
   for (int i = 0; i < stride; i++) {
@@ -10023,7 +10023,7 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
-  cs_real_t cocg[6] = {0., 0., 0., 0., 0., 0.};
+  cs_cocg_t cocg[6] = {0., 0., 0., 0., 0., 0.};
   cs_real_t rhsv[3] = {0., 0., 0.};
 
   int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
