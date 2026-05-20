@@ -1245,7 +1245,7 @@ cs_turbulence_ke(int              phase_id,
     if (model == CS_TURB_K_EPSILON) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         prdtke[c_id] = prodk[c_id] + gk[c_id];
-        // Note: only to be consistent with previouls formulation
+        // Note: only to be consistent with previous formulation
         // but not consistant with variant of ce3
         prdeps[c_id] = prodk[c_id] + cs::max(gk[c_id], 0.);
       });
