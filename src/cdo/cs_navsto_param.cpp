@@ -520,7 +520,7 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
                 __LINE__,
                 0,
                 " %s: Invalid value for the absolute tolerance of the"
-                " non-linear algorithm\n",
+                " pseudo-steady algorithm\n",
                 __func__);
     break;
 
@@ -531,7 +531,7 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
                 __LINE__,
                 0,
                 " %s: Invalid value for the relative tolerance of the"
-                " non-linear algorithm\n",
+                " pseudo-steady algorithm\n",
                 __func__);
     break;
 
