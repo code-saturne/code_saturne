@@ -1373,10 +1373,9 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
   /* Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
-  cs_real_t *i_poro_duq_0;
-  cs_real_t *i_poro_duq_1;
-  cs_real_t *b_poro_duq;
-  cs_real_t _f_ext = 0.;
+  cs_real_t *i_poro_duq_0 = nullptr;
+  cs_real_t *i_poro_duq_1 = nullptr;
+  cs_real_t *b_poro_duq = nullptr;
 
   cs_lnum_t is_porous = 0;
   if (f_i_poro_duq_0 != nullptr) {
@@ -1384,11 +1383,6 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
     i_poro_duq_0 = f_i_poro_duq_0->val;
     i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
-  }
-  else {
-    i_poro_duq_0 = &_f_ext;
-    i_poro_duq_1 = &_f_ext;
-    b_poro_duq = &_f_ext;
   }
 
   /* Initialize gradient */
@@ -1421,10 +1415,11 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
                      + (1.0-weight[f_id])* c_weight_s[jj]);
       }
 
-      cs_real_2_t poro = {
-        i_poro_duq_0[is_porous*f_id],
-        i_poro_duq_1[is_porous*f_id]
-      };
+      cs_real_t poro[2] = {0., 0.};
+      if (is_porous > 0) {
+        poro[0] = i_poro_duq_0[is_porous*f_id];
+        poro[1] = i_poro_duq_1[is_porous*f_id];
+      }
 
       /*
         Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
@@ -1475,7 +1470,9 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
       cs_lnum_t ii = b_face_cells[f_id];
 
-      cs_real_t poro = b_poro_duq[is_porous*f_id];
+      cs_real_t poro = 0.;
+      if (is_porous > 0)
+        poro = b_poro_duq[is_porous*f_id];
 
       /*
         Remark: for the cell \f$ \celli \f$ we remove
@@ -2035,10 +2032,11 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                        + (1.0-weight[f_id])* c_weight_s[c_id2]);
         }
 
-        cs_real_2_t poro = {
-          i_poro_duq_0[is_porous*f_id],
-          i_poro_duq_1[is_porous*f_id]
-        };
+        cs_real_2_t poro = {0., 0.};
+        if (is_porous > 0) {
+          poro[0] = i_poro_duq_0[is_porous*f_id];
+          poro[1] = i_poro_duq_1[is_porous*f_id];
+        }
 
         /*
           Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
@@ -2101,7 +2099,9 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
         cs_lnum_t c_id = b_face_cells[f_id];
 
-        cs_real_t poro = b_poro_duq[is_porous*f_id];
+        cs_real_t poro = 0.;
+        if (is_porous > 0)
+          poro = b_poro_duq[is_porous*f_id];
 
         /*
           Remark: for the cell \f$ \celli \f$ we remove

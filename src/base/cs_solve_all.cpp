@@ -1144,7 +1144,7 @@ cs_solve_all()
   cs_real_6_t *ckupdc = nullptr;
 
   if (ncpdct > 0) {
-    CS_MALLOC(icepdc, ncepdc, cs_lnum_t);
+    CS_MALLOC_HD(icepdc, ncepdc, cs_lnum_t, cs_alloc_mode);
     cs_volume_zone_select_type_cells(CS_VOLUME_ZONE_HEAD_LOSS, icepdc);
 
     CS_MALLOC_HD(ckupdc, ncepdc, cs_real_6_t, cs_alloc_mode);
