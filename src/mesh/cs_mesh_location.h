@@ -321,7 +321,10 @@ cs_mesh_location_get_n_elts(int id);
  *   pointer to elements list (0 to n-1 numbering).
  *----------------------------------------------------------------------------*/
 
-[[deprecated]] const cs_lnum_t *
+[[deprecated(
+"Use cs_mesh_location_get_elt_ids_try or cs_mesh_location_get_elt_ids instead"
+)]]
+const cs_lnum_t *
 cs_mesh_location_get_elt_list(int id);
 
 /*----------------------------------------------------------------------------*/

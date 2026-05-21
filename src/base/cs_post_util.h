@@ -80,7 +80,8 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-[[deprecated]] void
+[[deprecated("Use cs_mesh_intersect_segment_cell_select (rename) instead")]]
+void
 cs_cell_segment_intersect_select(void        *input,
                                  cs_lnum_t   *n_cells,
                                  cs_lnum_t  **cell_ids);
@@ -118,7 +119,8 @@ cs_cell_segment_intersect_select(void        *input,
  */
 /*----------------------------------------------------------------------------*/
 
-[[deprecated]] void
+[[deprecated("Use cs_mesh_intersect_polyline_cell_select (rename) instead")]]
+void
 cs_cell_polyline_intersect_select(void         *input,
                                   cs_lnum_t    n_points,
                                   cs_lnum_t    *n_cells,
@@ -159,7 +161,8 @@ cs_cell_polyline_intersect_select(void         *input,
  */
 /*----------------------------------------------------------------------------*/
 
-[[deprecated]] void
+[[deprecated("Use cs_probe_set_create_from_segment function instead")]]
+void
 cs_cell_segment_intersect_probes_define(void          *input,
                                         cs_lnum_t     *n_elts,
                                         cs_real_3_t  **coords,
