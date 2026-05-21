@@ -339,7 +339,11 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[]);
  *   velocity  --> velocity relative to fixed coordinates
  *----------------------------------------------------------------------------*/
 
-[[deprecated]] void
+[[deprecated(
+"Use cs_rotation_velocity for more consistent naming of this "
+"reference frame velocity"
+)]]
+void
 cs_turbomachinery_relative_velocity(int              rotor_num,
                                     const cs_real_t  coords[3],
                                     cs_real_t        velocity[3]);
