@@ -3444,6 +3444,27 @@ _subdivide_face(cs_lnum_t                 f_id,
 
   }
 
+  // The construction of sub-faces must start from a parent corner.
+
+  {
+    char corner_r_gen = vtx_r_gen[f2v_lst_c[0]];
+    int corner_idx = 0;
+
+    for (cs_lnum_t i = 1; i < n_fv_c; i++) {
+      char r_gen = vtx_r_gen[f2v_lst_c[i]];
+      if (r_gen < corner_r_gen) {
+        corner_r_gen = r_gen;
+        corner_idx = i;
+      }
+    }
+
+    cs_lnum_t tmp[32];
+    memcpy(tmp, f2v_lst_c, n_fv_c * sizeof(cs_lnum_t));
+
+    for (cs_lnum_t i = 0; i < n_fv_c; i++)
+      f2v_lst_c[i] = tmp[(corner_idx+i)%n_fv_c];
+  }
+
   switch(f_r_flag) {
 
   case CS_REFINE_NONE:
