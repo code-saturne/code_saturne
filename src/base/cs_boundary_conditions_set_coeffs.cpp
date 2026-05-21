@@ -1572,15 +1572,25 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
   if (_active_dyn) {
 
-    /*--------------------------------------------------------------------------
-     * 10) Pressure: Dirichlet and Neumann and convective outlet
-     *--------------------------------------------------------------------------*/
+    /*------------------------------------------------------------------------
+     * 10) Pressure: by default (update_p_bc_after_prediction=1), pressure BC
+     * coefficients are updated between prediction and correction in
+     * cs_pressure_correction by calling
+     * cs_boundary_conditions_set_coeffs_pressure, to avoid spurious pressure
+     * gradients with time-dependent pressure BCs.
+     * When update_p_bc_after_prediction=0 (legacy), the update is done here.
+     *------------------------------------------------------------------------*/
 
     CS_PROFILE_MARK_LINE();
 
-    cs_boundary_conditions_set_coeffs_pressure(ctx, CS_F_(p));
+    {
+      const cs_velocity_pressure_param_t *vp_param
+        = cs_glob_velocity_pressure_param;
+      if (!vp_param->update_p_bc_after_prediction)
+        cs_boundary_conditions_set_coeffs_pressure(ctx, CS_F_(p));
+    }
 
-    /*-------------------------------------------------------------------------
+    /*------------------------------------------------------------------------
      * 11) void fraction (VOF): Dirichlet and Neumann and convective outlet
      *------------------------------------------------------------------------*/
 
@@ -3929,7 +3939,7 @@ cs_boundary_conditions_set_coeffs_pressure(cs_dispatch_context   &ctx,
         hint = hint / crom[c_id];
     }
     else if (idften_p & CS_ORTHOTROPIC_DIFFUSION) {
-
+      assert(dttens != nullptr);
       hint = (  dttens[c_id][0] * cs_math_pow2(n[0])
               + dttens[c_id][1] * cs_math_pow2(n[1])
               + dttens[c_id][2] * cs_math_pow2(n[2]))
@@ -3941,6 +3951,7 @@ cs_boundary_conditions_set_coeffs_pressure(cs_dispatch_context   &ctx,
 
     /* symmetric tensor diffusivity */
     else if (idften_p & CS_ANISOTROPIC_DIFFUSION) {
+      assert(dttens != nullptr);
 
       visci[0][0] = dttens[c_id][0];
       visci[1][1] = dttens[c_id][1];

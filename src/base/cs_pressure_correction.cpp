@@ -862,27 +862,83 @@ _pressure_correction_fv(int                   iterns,
     iflux[f_id] = 0.;
   });
 
-  if (vp_param->staggered == 0) {
-    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-      coefa_dp[f_id] = 0.;
-      coefaf_dp[f_id] = 0.;
-      coefb_dp[f_id] = coefb_p[f_id];
-      coefbf_dp[f_id] = coefbf_p[f_id];
-      bflux[f_id] = 0.;
-    });
+  if (vp_param->update_p_bc_after_prediction) {
+
+    if (vp_param->staggered == 0) {
+      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefa_dp[f_id] = -coefa_p[f_id];
+        coefaf_dp[f_id] = 0;
+        coefb_dp[f_id] = coefb_p[f_id];
+        coefbf_dp[f_id] = coefbf_p[f_id];
+        bflux[f_id] = 0.;
+      });
+    }
+    else {
+      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefa_dp[f_id] = coefa_p[f_id];
+        coefaf_dp[f_id] = coefaf_p[f_id];
+        coefb_dp[f_id] = coefb_p[f_id];
+        coefbf_dp[f_id] = coefbf_p[f_id];
+        bflux[f_id] = 0.;
+      });
+    }
+
+    ctx.wait();
+    ctx_c.wait();
+
+    cs_boundary_conditions_set_coeffs_pressure(ctx, f_p);
+
+    if (vp_param->staggered == 0) {
+      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefa_dp[f_id] += coefa_p[f_id];
+        coefaf_dp[f_id] = 0;
+        coefb_dp[f_id] = coefb_p[f_id];
+        coefbf_dp[f_id] = coefbf_p[f_id];
+        bflux[f_id] = 0.;
+      });
+    }
+    else {
+      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefa_dp[f_id] = coefa_p[f_id];
+        coefaf_dp[f_id] = coefaf_p[f_id];
+        coefb_dp[f_id] = coefb_p[f_id];
+        coefbf_dp[f_id] = coefbf_p[f_id];
+        bflux[f_id] = 0.;
+      });
+    }
+
+    ctx.wait();
+    ctx_c.wait();
+
   }
   else {
-    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-      coefa_dp[f_id] = coefa_p[f_id];
-      coefaf_dp[f_id] = coefaf_p[f_id];
-      coefb_dp[f_id] = coefb_p[f_id];
-      coefbf_dp[f_id] = coefbf_p[f_id];
-      bflux[f_id] = 0.;
-    });
-  }
 
-  ctx.wait();
-  ctx_c.wait();
+    /* Legacy: pressure BCs were already updated in
+       cs_boundary_conditions_set_coeffs before prediction. */
+
+    if (vp_param->staggered == 0) {
+      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefa_dp[f_id] = 0.;
+        coefaf_dp[f_id] = 0.;
+        coefb_dp[f_id] = coefb_p[f_id];
+        coefbf_dp[f_id] = coefbf_p[f_id];
+        bflux[f_id] = 0.;
+      });
+    }
+    else {
+      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefa_dp[f_id] = coefa_p[f_id];
+        coefaf_dp[f_id] = coefaf_p[f_id];
+        coefb_dp[f_id] = coefb_p[f_id];
+        coefbf_dp[f_id] = coefbf_p[f_id];
+        bflux[f_id] = 0.;
+      });
+    }
+
+    ctx.wait();
+    ctx_c.wait();
+
+  }
 
   /* Compute a pseudo hydrostatic pressure increment stored
      in cvar_hydro_pres(.) with Homogeneous Neumann BCs everywhere. */
@@ -1023,8 +1079,13 @@ _pressure_correction_fv(int                   iterns,
 
           if (indhyd == 1) {
             if (f_hp != nullptr) {
-              coefa_dp[f_id] =   cvar_hydro_pres[c_id]
-                               - cvar_hydro_pres_prev[c_id];
+              if (vp_param->update_p_bc_after_prediction) {
+                coefa_dp[f_id] +=   cvar_hydro_pres[c_id]
+                                 - cvar_hydro_pres_prev[c_id];
+              } else {
+                coefa_dp[f_id] =   cvar_hydro_pres[c_id]
+                                 - cvar_hydro_pres_prev[c_id];
+              }
             }
             coefa_dp[f_id] += cs_math_3_distance_dot_product(cell_cen[c_id],
                                                              b_face_cog[f_id],

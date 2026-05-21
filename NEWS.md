@@ -17,6 +17,13 @@ Master (not on release branches yet)
 
 ### Numerics:
 
+- Update in pressure bc is now done between prediction and correction
+  to avoid taking p^(n+1) bc and p^(n) field in prediction, thus
+  creating spurious pressure gradient in case of time dependent
+  pressure BC.
+  * The old behavior can be restored by setting
+    `cs_glob_velocity_pressure_param->update_pbc_after_prediction` to 0.
+
 - Scheme versioning: add `cs_convection_diffusion_set_scheme_version` function,
   to make it possible to revert to schemes as similar as possible to those
   used in older versions. This will allow making more significant updates

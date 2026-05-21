@@ -2456,7 +2456,7 @@ _additional_fields_stage_2(void)
   if (f_temp_b != nullptr) {
     cs_field_t *f_temp = cs_field_by_name_try("temperature");
     if (f_temp != nullptr)
-      cs_field_set_key_str(f_temp_b, keylbl, cs_field_get_label(f_temp));
+      f_temp_b->set_key_str(keylbl, cs_field_get_label(f_temp));
   }
 
   /* Set some field keys and number of previous values if needed

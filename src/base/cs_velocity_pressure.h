@@ -159,6 +159,16 @@ typedef struct {
                                  - 0: colocated (default)
                                  - 1: staggered */
 
+  int         update_p_bc_after_prediction;
+                              /* update pressure boundary condition coefficients
+                                 between prediction and correction steps
+                                 (avoids spurious pressure gradients with
+                                 time-dependent pressure BCs):
+                                 - 0: legacy behavior, update in
+                                      cs_boundary_conditions_set_coeffs
+                                 - 1: new behavior (default), update in
+                                      cs_pressure_correction */
+
   int         nterup;         /* number of iterations on the pressure-velocity
                                  coupling on Navier-Stokes */
 

@@ -330,6 +330,7 @@ static cs_velocity_pressure_param_t  _velocity_pressure_param =
   .arak   = 1.0,
   .rcfact = 0,
   .staggered = 0,
+  .update_p_bc_after_prediction = 1,
   .nterup = 1,
   .epsup = 1e-5,
   .xnrmu = 0.,
@@ -623,8 +624,8 @@ cs_velocity_pressure_param_log_setup(void)
           "   using the continuity equation)")};
 
   const char *ipucou_value_str[]
-    = {N_("0 (standard algorithm for velocity/pressure coupling)\n"),
-       N_("1 (reinforced velocity/pressure coupling\n"
+    = {N_("0 (standard algorithm for velocity/pressure coupling)"),
+       N_("1 (reinforced velocity/pressure coupling"
           "                   "
           "   in case calculation with long time steps)")};
 
@@ -667,14 +668,19 @@ cs_velocity_pressure_param_log_setup(void)
        eqp->relaxv * vp_param->arak);
   }
   cs_log_printf
-      (CS_LOG_SETUP,
-       _("\n  Factor of Rhie and Chow %d\n"),
-       vp_param->rcfact);
+    (CS_LOG_SETUP,
+     _("    rcfact:        %d (Factor of Rhie and Chow filter)\n"),
+     vp_param->rcfact);
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("    staggered %d (1D staggered scheme option)\n"),
+     _("    staggered:     %d (1D staggered scheme option)\n"),
      vp_param->staggered);
+
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("    update_p_bc_after_prediction: %d (pressure BC after prediction)\n"),
+     vp_param->update_p_bc_after_prediction);
 }
 
 /*----------------------------------------------------------------------------*/
