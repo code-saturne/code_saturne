@@ -141,22 +141,14 @@ _reorder_bc_type(const cs_lnum_t   b_face_n2o[])
 }
 
 /*----------------------------------------------------------------------------
- * Redistribute fields and bc_coeffs based on the mesh distributors.
+ * Redistribute fields and bc_coeffs based on new-to-old element maps.
  *
  * parameters:
- *   cd             <-- pointer to cells distributor
- *   n_cells_ini    <-- number of cells to send
- *   cell_order     <-- cells ordering by associated global number
+ *   mesh           <-- pointer to the mesh
  *   cell_n2o       <-- cells new-to-old mapping
- *   bfd            <-- pointer to boundary faces distributor
- *   n_b_faces_ini  <-- number of boundary faces to send
- *   b_face_order   <-- boundary face ordering by associated global number
- *   b_face_n2o     <-- boundary faces new-to-old mapping
- *   ifd            <-- pointer to internal faces distributor
- *   n_i_faces_ini  <-- number of internal faces to send
- *   i_face_lst     <-- list of internal faces to send
- *   i_face_order   <-- internal faces ordering by associated global number
  *   i_face_n2o     <-- internal faces new-to-old mapping
+ *   b_face_n2o     <-- boundary faces new-to-old mapping
+ *   vtx_n2o        <-- vertices new-to-old mapping
  *----------------------------------------------------------------------------*/
 
 static void
@@ -192,7 +184,7 @@ _renumber_update_fields(cs_mesh_t        *mesh,
       n_elts = mesh->n_i_faces;
       break;
     case CS_MESH_LOCATION_BOUNDARY_FACES:
-      n2o = i_face_n2o;
+      n2o = b_face_n2o;
       n_elts = mesh->n_b_faces;
       break;
     case CS_MESH_LOCATION_VERTICES:
