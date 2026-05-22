@@ -3115,6 +3115,10 @@ cs_cdofb_monolithic_nl(const cs_mesh_t         *mesh,
   cs_real_t *mass_flux_array_k   = nullptr;
   cs_real_t *mass_flux_array_kp1 = sc->mass_flux_array;
 
+  /* Current to previous for main variable fields */
+
+  _mono_fields_to_previous(sc, cc);
+
   while (cvg_status == CS_SLES_ITERATING) {
     /* Start of the system building */
 
@@ -3195,10 +3199,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t         *mesh,
   if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
     cs_iter_algo_release_anderson_arrays(
       (cs_iter_algo_aac_t *)nl_algo->context);
-
-  /* Current to previous for main variable fields */
-
-  _mono_fields_to_previous(sc, cc);
 
   cs_array_real_copy(3 * n_faces, u_f_new, u_f);
   cs_array_real_copy(n_cells, p_c_new, p_c);
