@@ -863,7 +863,7 @@ cs_gas_mix_add_property_fields(void)
 
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, label);
+    f->set_key_str(klbl, label);
 
     _map_field(f);
     _set_predefined_property(f);

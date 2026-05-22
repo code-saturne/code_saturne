@@ -174,7 +174,7 @@ cs_variable_cdo_field_create(const char  *name,
 
     if (label != nullptr) {
       if (strlen(label) > 0)
-        cs_field_set_key_str(f, cs_field_key_id("label"), label);
+        f->set_key_str(cs_field_key_id("label"), label);
     }
 
   }

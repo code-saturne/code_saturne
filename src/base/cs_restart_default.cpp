@@ -981,7 +981,7 @@ _check_field_model(cs_restart_t               *r,
 
       const char *f_name = nullptr;
       if (kr > -1)
-        f_name = cs_field_get_key_str(f, kr);
+        f_name = f->get_key_str(kr);
       if (f_name == nullptr)
         f_name = f->name;
 
@@ -2506,7 +2506,7 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
 
         /* Check if dependent field has explicit rename */
         if (kr > -1)
-          f_lnk_name = cs_field_get_key_str(f, kr);
+          f_lnk_name = f->get_key_str(kr);
 
         /* Otherwise, determine matching name,
            with possible parent field rename */
@@ -2514,7 +2514,7 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
         if (f_lnk_name == nullptr) {
           const char *f_name = nullptr;
           if (kr > -1)
-            f_name = cs_field_get_key_str(f, kr);
+            f_name = f->get_key_str(kr);
           if (f_name == nullptr)
             f_name = f->name;
           int old_f_id = cs_map_name_to_id_try(old_field_map, f_name);
@@ -2695,7 +2695,7 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
 
       const char *name = nullptr;
       if (kr > -1)
-        name = cs_field_get_key_str(f, kr);
+        name = f->get_key_str(kr);
       if (name == nullptr)
         name = f->name;
 
@@ -2955,7 +2955,7 @@ cs_restart_read_field_vals(cs_restart_t  *r,
 
   int kr = cs_field_key_id_try("restart_name");
   if (kr > -1)
-    r_name = cs_field_get_key_str(f, kr);
+    r_name = f->get_key_str(kr);
 
   if (r_name == nullptr)
     r_name = f->name;

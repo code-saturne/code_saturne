@@ -243,7 +243,7 @@ _add_coal_property(const char  *base_name,
 
   f->set_key_int(keyvis, 0);
   f->set_key_int(keylog, 1);
-  cs_field_set_key_str(f, keylbl, label);
+  f->set_key_str(keylbl, label);
 
   return f;
 }
@@ -974,7 +974,7 @@ cs_coal_add_property_fields(void)
       snprintf(name, 64, "age_p_%02d", class_num); name[63] = '\0';
       snprintf(label, 64, "Agep_%02d", class_num); label[63] = '\0';
       f = cs_field_create(name, field_type, CS_MESH_LOCATION_CELLS, 1, false);
-      cs_field_set_key_str(f, keylbl, label);
+      f->set_key_str(keylbl, label);
       f->set_key_int(keyccl, class_num);
       f->set_key_int(keyvis, iopchr);
 

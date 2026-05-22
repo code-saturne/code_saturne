@@ -226,7 +226,7 @@ _add_property_field
   f->set_key_int(keyvis, 0);
   f->set_key_int(keylog, 1);
   if (f_label != nullptr)
-    cs_field_set_key_str(f, keylbl, f_label);
+    f->set_key_str(keylbl, f_label);
 
   return f;
 }
@@ -265,7 +265,7 @@ _add_property_field_boundary
   f->set_key_int(keyvis, 0);
   f->set_key_int(keylog, 1);
   if (f_label != nullptr)
-    cs_field_set_key_str(f, keylbl, f_label);
+    f->set_key_str(keylbl, f_label);
 
   return f;
 }
@@ -1605,7 +1605,7 @@ _additional_fields_stage_1(void)
                                     1,
                                     false);
 
-    cs_field_set_key_str(f, keylbl, "Local Time Step");
+    f->set_key_str(keylbl, "Local Time Step");
 
     if (cs_glob_time_step_options->idtvar == 2) {
       f->set_key_int(keylog, 1);
@@ -2439,7 +2439,7 @@ _additional_fields_stage_2(void)
                        1,
                        false);
     if (f_id < 0) { // Set some properties if the field is new
-      cs_field_set_key_str(f, keylbl, "Yplus");
+      f->set_key_str(keylbl, "Yplus");
       f->set_key_int(keylog, 1);
     }
   }

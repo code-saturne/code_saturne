@@ -1244,7 +1244,7 @@ cs_field_lock_key(cs_field_t  *f,
  *   0 in case of success, > 1 in case of error
  *----------------------------------------------------------------------------*/
 
-extern "C" int
+extern "C" [[deprecated("Use f->set_key_int instead")]] int
 cs_field_set_key_int(cs_field_t  *f,
                      int          key_id,
                      int          value);
@@ -1263,7 +1263,7 @@ cs_field_set_key_int(cs_field_t  *f,
  *   integer value associated with the key id for this field
  *----------------------------------------------------------------------------*/
 
-extern "C" int
+extern "C" [[deprecated("Use f->get_key_int instead")]] int
 cs_field_get_key_int(const cs_field_t  *f,
                      int                key_id);
 
@@ -1285,33 +1285,10 @@ cs_field_get_key_int(const cs_field_t  *f,
  *   0 in case of success, > 1 in case of error
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" [[deprecated("Use f->set_key_int_bits instead")]] int
 cs_field_set_key_int_bits(cs_field_t  *f,
                           int          key_id,
                           int          mask);
-
-/*----------------------------------------------------------------------------
- * Set integer bits matching a mask to 0 for a given key for a field.
- *
- * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
- * If the field category is not compatible with the key (as defined
- * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
- * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
- * If the key value has been locked, CS_FIELD_LOCKED is returned.
- *
- * parameters:
- *   f             <-- pointer to field structure
- *   key_id        <-- id of associated key
- *   mask          <-- mask associated with key
- *
- * returns:
- *   0 in case of success, > 1 in case of error
- *----------------------------------------------------------------------------*/
-
-int
-cs_field_clear_key_int_bits(cs_field_t  *f,
-                            int          key_id,
-                            int          mask);
 
 /*----------------------------------------------------------------------------
  * Assign a floating point value for a given key to a field.
@@ -1331,7 +1308,7 @@ cs_field_clear_key_int_bits(cs_field_t  *f,
  *   0 in case of success, > 1 in case of error
  *----------------------------------------------------------------------------*/
 
-extern "C" int
+extern "C" [[deprecated("Use f->set_key_double instead")]] int
 cs_field_set_key_double(cs_field_t  *f,
                         int          key_id,
                         double       value);
@@ -1350,7 +1327,7 @@ cs_field_set_key_double(cs_field_t  *f,
  *   floating point value associated with the key id for this field
  *----------------------------------------------------------------------------*/
 
-extern "C" double
+extern "C" [[deprecated("Use f->get_key_double instead")]] double
 cs_field_get_key_double(const cs_field_t  *f,
                         int                key_id);
 
@@ -1372,7 +1349,7 @@ cs_field_get_key_double(const cs_field_t  *f,
  *   0 in case of success, > 1 in case of error
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" [[deprecated("Use f->set_key_str instead")]] int
 cs_field_set_key_str(cs_field_t  *f,
                      int          key_id,
                      const char  *str);
@@ -1391,7 +1368,7 @@ cs_field_set_key_str(cs_field_t  *f,
  *   pointer to character string associated with the key id for this field
  *----------------------------------------------------------------------------*/
 
-const char *
+extern "C" [[deprecated("Use f->get_key_str instead")]] const char *
 cs_field_get_key_str(const cs_field_t  *f,
                      int                key_id);
 

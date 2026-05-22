@@ -345,16 +345,6 @@ cs_f_field_set_key_int(int  f_id,
                        int  value);
 
 extern "C" void
-cs_f_field_set_key_int_bits(int  f_id,
-                            int  k_id,
-                            int  mask);
-
-extern "C" void
-cs_f_field_clear_key_int_bits(int  f_id,
-                              int  k_id,
-                              int  mask);
-
-extern "C" void
 cs_f_field_set_key_double(int     f_id,
                           int     k_id,
                           double  value);
@@ -1235,54 +1225,6 @@ cs_f_field_set_key_int(int  f_id,
                 "type flag %d with key %d (\"%s\")."),
               retval, f->name, f->type, k_id, key);
   }
-}
-
-/*----------------------------------------------------------------------------
- * Set integer bits matching a mask to 1 for a given key for a field.
- *
- * If the key id is not valid, or the value type or field category is not
- * compatible, a fatal error is provoked.
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   f_id <-- field id
- *   k_id <-- key id
- *   mask <-- associated mask
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_set_key_int_bits(int  f_id,
-                            int  k_id,
-                            int  mask)
-{
-  cs_field_t *f = cs_field_by_id(f_id);
-
-  cs_field_set_key_int_bits(f, k_id, mask);
-}
-
-/*----------------------------------------------------------------------------
- * Set integer bits matching a mask to 0 for a given key for a field.
- *
- * If the key id is not valid, or the value type or field category is not
- * compatible, a fatal error is provoked.
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   f_id <-- field id
- *   k_id <-- key id
- *   mask <-- associated mask
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_field_clear_key_int_bits(int  f_id,
-                              int  k_id,
-                              int  mask)
-{
-  cs_field_t *f = cs_field_by_id(f_id);
-
-  cs_field_clear_key_int_bits(f, k_id, mask);
 }
 
 /*----------------------------------------------------------------------------
@@ -3244,12 +3186,7 @@ cs_field_set_key_int_bits(cs_field_t  *f,
                           int          key_id,
                           int          mask)
 {
-  int value = f->get_key_int(key_id);
-
-  value |= mask;
-
-  int retval = f->set_key_int(key_id, value);
-  return retval;
+  return f->set_key_int_bits(key_id, mask);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3275,13 +3212,7 @@ cs_field_clear_key_int_bits(cs_field_t  *f,
                             int          key_id,
                             int          mask)
 {
-  int value = f->get_key_int(key_id);
-
-  value |= mask;
-  value -= mask;
-
-  int retval = f->set_key_int(key_id, value);
-  return retval;
+  return f->clear_key_int_bits(key_id, mask);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3357,36 +3288,10 @@ cs_field_set_key_str(cs_field_t  *f,
                      int          key_id,
                      const char  *str)
 {
-  int retval = CS_FIELD_OK;
-
   if (f == nullptr)
     return CS_FIELD_INVALID_FIELD;
-  assert(f->id >= 0 && f->id < _n_fields);
 
-  if (key_id > -1) {
-    cs_field_key_def_t *kd = _key_defs + key_id;
-    assert(key_id < _n_keys);
-    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
-      retval = CS_FIELD_INVALID_CATEGORY;
-    else if (kd->type_id != 's')
-      retval = CS_FIELD_INVALID_TYPE;
-    else {
-      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      if (kv->is_locked)
-        retval = CS_FIELD_LOCKED;
-      else {
-        if (kv->is_set == 0)
-          kv->val.v_p = nullptr;
-        CS_REALLOC(kv->val.v_p, strlen(str) + 1, char);
-        strcpy(reinterpret_cast<char *>(kv->val.v_p), str);
-        kv->is_set = 1;
-      }
-    }
-  }
-  else
-    retval = CS_FIELD_INVALID_KEY_ID;
-
-  return retval;
+  return f->set_key_str(key_id, str);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3408,53 +3313,10 @@ const char *
 cs_field_get_key_str(const cs_field_t  *f,
                      int                key_id)
 {
-  int errcode = CS_FIELD_OK;
-
   if (f == nullptr)
     return nullptr;
-  assert(f->id >= 0 && f->id < _n_fields);
 
-  if (key_id > -1 && key_id < _n_keys) {
-    cs_field_key_def_t *kd = _key_defs + key_id;
-    assert(key_id < _n_keys);
-    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
-      errcode = CS_FIELD_INVALID_CATEGORY;
-    else if (kd->type_id != 's')
-      errcode = CS_FIELD_INVALID_TYPE;
-    else {
-      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      const char *str = nullptr;
-      if (kv->is_set)
-        str = reinterpret_cast<char *>(kv->val.v_p);
-      else if (kd->is_sub)
-        str = cs_field_get_key_str(f, kd->def_val.v_int);
-      else
-        str = reinterpret_cast<char *>(kd->def_val.v_p);
-      return str;
-    }
-  }
-  else
-    errcode = CS_FIELD_INVALID_KEY_ID;
-
-  if (errcode != CS_FIELD_OK) {
-    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
-    if (errcode == CS_FIELD_INVALID_CATEGORY)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field \"%s\" with type flag %d\n"
-                  "has no value associated with key %d (\"%s\")."),
-                f->name, f->type, key_id, key);
-    else if (errcode == CS_FIELD_INVALID_TYPE)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field \"%s\" has keyword %d (\"%s\")\n"
-                  "of type \"%c\" and not \"%c\"."),
-                f->name, key_id, key, (_key_defs + key_id)->type_id, 'i');
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field keyword with id %d is not defined."),
-                key_id);
-  }
-
-  return nullptr;
+  return f->get_key_str(key_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4408,7 +4270,7 @@ cs_field_define_keys_base(void)
 const char *
 cs_field_get_label(const cs_field_t  *f)
 {
-  const char *label = cs_field_get_key_str(f, _k_label);
+  const char *label = f->get_key_str(_k_label);
 
   if (label == nullptr)
     label = f->name;
@@ -4731,7 +4593,12 @@ cs_field_t::set_key_int_bits
   int  mask     /*!<[in]  mask */
 )
 {
-  return cs_field_set_key_int_bits(this, key_id, mask);
+  int value = this->get_key_int(key_id);
+
+  value |= mask;
+
+  int retval = this->set_key_int(key_id, value);
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4745,7 +4612,7 @@ cs_field_t::set_key_int_bits
 {
   int key_id = cs_field_key_id(key);
 
-  return cs_field_set_key_int_bits(this, key_id, mask);
+  return this->set_key_int_bits(key_id, mask);
 }
 
 ///@}
@@ -4772,7 +4639,13 @@ cs_field_t::clear_key_int_bits
   int  mask     /*!<[in]  mask */
 )
 {
-  return cs_field_clear_key_int_bits(this, key_id, mask);
+  int value = this->get_key_int(key_id);
+
+  value |= mask;
+  value -= mask;
+
+  int retval = this->set_key_int(key_id, value);
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4958,7 +4831,34 @@ cs_field_t::set_key_str
   const char  *str      /*!<[in]  string associated with the key */
 )
 {
-  return cs_field_set_key_str(this, key_id, str);
+  int retval = CS_FIELD_OK;
+
+  assert(this->id >= 0 && this->id < _n_fields);
+
+  if (key_id > -1) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(this->type & kd->type_flag))
+      retval = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 's')
+      retval = CS_FIELD_INVALID_TYPE;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (this->id*_n_keys_max + key_id);
+      if (kv->is_locked)
+        retval = CS_FIELD_LOCKED;
+      else {
+        if (kv->is_set == 0)
+          kv->val.v_p = nullptr;
+        CS_REALLOC(kv->val.v_p, strlen(str) + 1, char);
+        strcpy(reinterpret_cast<char *>(kv->val.v_p), str);
+        kv->is_set = 1;
+      }
+    }
+  }
+  else
+    retval = CS_FIELD_INVALID_KEY_ID;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4972,7 +4872,7 @@ cs_field_t::set_key_str
 {
   int key_id = cs_field_key_id(key);
 
-  return cs_field_set_key_str(this, key_id, str);
+  return this->set_key_str(key_id, str);
 }
 
 ///@}
@@ -4995,7 +4895,51 @@ cs_field_t::get_key_str
   int  key_id  /*!<[in]  key id */
 ) const
 {
-  return cs_field_get_key_str(this, key_id);
+  int errcode = CS_FIELD_OK;
+
+  assert(this->id >= 0 && this->id < _n_fields);
+
+  if (key_id > -1 && key_id < _n_keys) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(this->type & kd->type_flag))
+      errcode = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 's')
+      errcode = CS_FIELD_INVALID_TYPE;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (this->id*_n_keys_max + key_id);
+      const char *str = nullptr;
+      if (kv->is_set)
+        str = reinterpret_cast<char *>(kv->val.v_p);
+      else if (kd->is_sub)
+        str = this->get_key_str(kd->def_val.v_int);
+      else
+        str = reinterpret_cast<char *>(kd->def_val.v_p);
+      return str;
+    }
+  }
+  else
+    errcode = CS_FIELD_INVALID_KEY_ID;
+
+  if (errcode != CS_FIELD_OK) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
+    if (errcode == CS_FIELD_INVALID_CATEGORY)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" with type flag %d\n"
+                  "has no value associated with key %d (\"%s\")."),
+                this->name, this->type, key_id, key);
+    else if (errcode == CS_FIELD_INVALID_TYPE)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" has keyword %d (\"%s\")\n"
+                  "of type \"%c\" and not \"%c\"."),
+                this->name, key_id, key, (_key_defs + key_id)->type_id, 'i');
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field keyword with id %d is not defined."),
+                key_id);
+  }
+
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5008,7 +4952,7 @@ cs_field_t::get_key_str
 {
   int key_id = cs_field_key_id(key);
 
-  return cs_field_get_key_str(this, key_id);
+  return this->get_key_str(key_id);
 }
 
 ///@}

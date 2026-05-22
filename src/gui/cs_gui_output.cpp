@@ -187,35 +187,35 @@ _field_post(const char  *field_type,
                                (tn, "postprocessing_recording"),
                              &f_post);
   if (f_post == 1)
-    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
+    f->set_key_int_bits(k_post, CS_POST_ON_LOCATION);
   else if (f_post == 0)
-    cs_field_clear_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
+    f->clear_key_int_bits(k_post, CS_POST_ON_LOCATION);
   else if (allow_default_set) { /* status unspecified here but property
                                    referenced in tree, could be improved by
                                    depending on field type or flags */
-    cs_field_set_key_int_bits(f, k_post, CS_POST_ON_LOCATION);
+    f->set_key_int_bits(k_post, CS_POST_ON_LOCATION);
   }
 
   cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "probes_recording"),
                              &f_monitor);
   if (f_monitor == 1)
-    cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
+    f->set_key_int_bits(k_post, CS_POST_MONITOR);
   else if (f_monitor == 0)
-    cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
+    f->clear_key_int_bits(k_post, CS_POST_MONITOR);
   else if (allow_default_set) { /* status unspecified here but property
                                    referenced in tree, could be improved by
                                    depending on field type or flags */
     if (f->location_id == CS_MESH_LOCATION_CELLS)
-      cs_field_set_key_int_bits(f, k_post, CS_POST_MONITOR);
+      f->set_key_int_bits(k_post, CS_POST_MONITOR);
     else
-      cs_field_clear_key_int_bits(f, k_post, CS_POST_MONITOR);
+      f->clear_key_int_bits(k_post, CS_POST_MONITOR);
   }
 
   /* Take into account labels */
 
   const char *label = cs_tree_node_get_tag(tn, "label");
   if (label != nullptr)
-    cs_field_set_key_str(f, k_lbl, label);
+    f->set_key_str(k_lbl, label);
 }
 
 /*-----------------------------------------------------------------------------

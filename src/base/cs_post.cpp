@@ -3241,7 +3241,7 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
       if (_cs_post_match_post_write_var(post_mesh, field_loc_type) == false)
         continue;
 
-      const char *name = cs_field_get_key_str(f, label_key_id);
+      const char *name = f->get_key_str(label_key_id);
       if (name == nullptr)
         name = f->name;
 
@@ -3409,7 +3409,7 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
       if (! (f->get_key_int(vis_key_id) & CS_POST_MONITOR))
         continue;
 
-      const char *name = cs_field_get_key_str(f, label_key_id);
+      const char *name = f->get_key_str(label_key_id);
       if (name == nullptr)
         name = f->name;
 
@@ -3468,7 +3468,7 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
         if (f->get_key_int(vis_key_id) & CS_POST_ON_LOCATION) {
 
           const int label_key_id = cs_field_key_id("label");
-          const char *name = cs_field_get_key_str(f, label_key_id);
+          const char *name = f->get_key_str(label_key_id);
           if (name == nullptr)
             name = f->name;
 
@@ -3543,7 +3543,7 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
     const cs_mesh_location_type_t field_loc_type
       = cs_mesh_location_get_type(f->location_id);
 
-    const char *name = cs_field_get_key_str(f, label_key_id);
+    const char *name = f->get_key_str(label_key_id);
     if (name == nullptr)
       name = f->name;
 

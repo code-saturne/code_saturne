@@ -706,7 +706,7 @@ cs_ctwr_build_all(void)
     const int vis_key_id = cs_field_key_id("post_vis");
     if (f->get_key_int(vis_key_id) & CS_POST_ON_LOCATION) {
       cs_post_add_time_mesh_dep_output(_write_liquid_vars, nullptr);
-      cs_field_clear_key_int_bits(f, vis_key_id, CS_POST_ON_LOCATION);
+      f->clear_key_int_bits(vis_key_id, CS_POST_ON_LOCATION);
     }
   }
 }

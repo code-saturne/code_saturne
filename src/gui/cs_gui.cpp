@@ -5413,7 +5413,7 @@ cs_gui_error_estimator(void)
       f->set_key_int(cs_field_key_id("log"), 1);
       f->set_key_int(cs_field_key_id("post_vis"), 1);
 
-      cs_field_set_key_str(f, cs_field_key_id("label"), label[i]);
+      f->set_key_str(cs_field_key_id("label"), label[i]);
 
     }
 

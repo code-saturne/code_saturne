@@ -292,7 +292,7 @@ cs_combustion_boundary_conditions(int  bc_type[])
       if (   cm->type == CS_COMBUSTION_3PT_ADIABATIC
           || cm->type == CS_COMBUSTION_3PT_PERMEATIC) {
         coefg[0] = 1.; coefg[1] = 0.; coefg[2] = 0.;
-        cm->hinfue = cs_gas_combustion_t_to_h(coefg, cm->tinfue);
+        cm->hinfue = cs_combustion_t_to_h(coefg, cm->tinfue);
       }
       h_in = cm->hinfue;
       fm_in = 1.;
@@ -306,7 +306,7 @@ cs_combustion_boundary_conditions(int  bc_type[])
       if (   cm->type == CS_COMBUSTION_3PT_ADIABATIC
           || cm->type == CS_COMBUSTION_3PT_PERMEATIC) {
         coefg[0] = 0.; coefg[1] = 1.; coefg[2] = 0.;
-        cm->hinoxy = cs_gas_combustion_t_to_h(coefg, cm->tinoxy);
+        cm->hinoxy = cs_combustion_t_to_h(coefg, cm->tinoxy);
       }
       h_in = cm->hinoxy;
       fm_in = 0.;
@@ -411,7 +411,7 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
       coefg[0] = ci->fment;
       coefg[1] = 1. - ci->fment;
       cs_real_t tgasf = ci->tkent;
-      cs_real_t hgasf = cs_gas_combustion_t_to_h(coefg, tgasf);
+      cs_real_t hgasf = cs_combustion_t_to_h(coefg, tgasf);
       h_in = hgasf;
       ygfm_in = 1.;
     }
@@ -423,7 +423,7 @@ cs_combustion_boundary_conditions_ebu(int  bc_type[])
       coefg[2] = (ci->fment - coefg[0])/fs_1;
       coefg[1] = 1.0 - coefg[0] - coefg[2];
       cs_real_t tgasb = ci->tkent;
-      cs_real_t hgasb = cs_gas_combustion_t_to_h(coefg, tgasb);
+      cs_real_t hgasb = cs_combustion_t_to_h(coefg, tgasb);
       h_in = hgasb;
       ygfm_in = 0.;
     }
@@ -537,7 +537,7 @@ cs_combustion_boundary_conditions_lw(int  bc_type[])
       coefg[0] = ci->fment;
       coefg[1] = 1. - ci->fment;
       cs_real_t tgasf = ci->tkent;
-      cs_real_t hgasf = cs_gas_combustion_t_to_h(coefg, tgasf);
+      cs_real_t hgasf = cs_combustion_t_to_h(coefg, tgasf);
       h_in = hgasf;
       yfm_in = ci->fment;
     }
@@ -545,7 +545,7 @@ cs_combustion_boundary_conditions_lw(int  bc_type[])
       coefg[0] = ci->fment;
       coefg[1] = 1. - ci->fment;
       cs_real_t tgasb = ci->tkent;
-      cs_real_t hgasb = cs_gas_combustion_t_to_h(coefg, tgasb);
+      cs_real_t hgasb = cs_combustion_t_to_h(coefg, tgasb);
       h_in = hgasb;
       yfm_in = 0;
     }

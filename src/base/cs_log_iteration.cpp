@@ -829,7 +829,7 @@ _log_fields_and_functions(void)
       if (f_id < n_fields) { /* Field */
         const cs_field_t  *f = cs_field_by_id(f_id);
 
-        name = cs_field_get_key_str(f, label_key_id);
+        name = f->get_key_str(label_key_id);
         if (name == nullptr)
           name = f->name;
 
@@ -1060,7 +1060,7 @@ _log_fields_and_functions(void)
 
       if (f_id < n_fields) { /* Field */
         const cs_field_t  *f = cs_field_by_id(f_id);
-        name = cs_field_get_key_str(f, label_key_id);
+        name = f->get_key_str(label_key_id);
         if (name == nullptr)
           name = f->name;
         f_dim = f->dim;
@@ -1516,7 +1516,7 @@ _log_clips(void)
     int f_dim = 0;
     if (f_id > -1) {
       const cs_field_t  *f = cs_field_by_id(f_id);
-      name = cs_field_get_key_str(f, label_key_id);
+      name = f->get_key_str(label_key_id);
       if (name == nullptr)
         name = f->name;
       type_idx[1] = clip_id + 1;
@@ -1606,7 +1606,7 @@ _log_clips(void)
       int f_id = _clips[clip_id].f_id;
       if (f_id > -1) {
         const cs_field_t  *f = cs_field_by_id(f_id);
-        name = cs_field_get_key_str(f, label_key_id);
+        name = f->get_key_str(label_key_id);
         if (name == nullptr)
           name = f->name;
       }

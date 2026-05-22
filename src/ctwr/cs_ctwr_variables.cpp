@@ -469,7 +469,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Beta");
+    f->set_key_str(klbl, "Beta");
   }
   /* CONTINUOUS FIELD (HUMID AIR) PROPERTIES */
   /* NB: 'c' stands for continuous and 'p' for particles */
@@ -484,7 +484,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Density humid air");
+    f->set_key_str(klbl, "Density humid air");
   }
   {
     /* Humidity field */
@@ -495,7 +495,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Humidity");
+    f->set_key_str(klbl, "Humidity");
   }
 
   {
@@ -507,7 +507,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Humidity sat");
+    f->set_key_str(klbl, "Humidity sat");
   }
 
   {
@@ -519,7 +519,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Humidity rel");
+    f->set_key_str(klbl, "Humidity rel");
   }
 
 
@@ -532,7 +532,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Enthalpy humid air");
+    f->set_key_str(klbl, "Enthalpy humid air");
   }
 
   {
@@ -544,7 +544,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Gas mass fraction");
+    f->set_key_str(klbl, "Gas mass fraction");
   }
 
   {
@@ -556,7 +556,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Boundary gas mass fraction");
+    f->set_key_str(klbl, "Boundary gas mass fraction");
   }
 
 
@@ -569,7 +569,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Vol. frac. air");
+    f->set_key_str(klbl, "Vol. frac. air");
   }
 
   /* RAIN FIELD PROPERTIES */
@@ -582,7 +582,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Temperature rain");
+    f->set_key_str(klbl, "Temperature rain");
   }
 
   {
@@ -594,7 +594,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Enthalpy rain");
+    f->set_key_str(klbl, "Enthalpy rain");
   }
 
   {
@@ -606,7 +606,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Vol. frac. rain");
+    f->set_key_str(klbl, "Vol. frac. rain");
   }
 
   /* RAIN VELOCITY TRANSPORT EQUATION FOR HOMOGENEOUS MODEL */
@@ -621,7 +621,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Drift velocity gas phase");
+    f->set_key_str(klbl, "Drift velocity gas phase");
 
     if (ct_opt->mixture_model) {
       /* Continuous phase velocity only if mixture model is on */
@@ -632,7 +632,7 @@ cs_ctwr_add_property_fields(void)
                           has_previous);
       f->set_key_int(keyvis, post_flag);
       f->set_key_int(keylog, 1);
-      cs_field_set_key_str(f, klbl, "Velocity continuous phase");
+      f->set_key_str(klbl, "Velocity continuous phase");
     }
 
     char f_name[80];
@@ -648,7 +648,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, f_label);
+    f->set_key_str(klbl, f_label);
 
     /* Drift velocity for rain drops */
     sprintf(f_name, "vd_p_%02d", class_id);
@@ -660,7 +660,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, f_label);
+    f->set_key_str(klbl, f_label);
   }
 
   /* LIQUID IN PACKING FIELD PROPERTIES */
@@ -673,7 +673,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Temperature liq packing");
+    f->set_key_str(klbl, "Temperature liq packing");
   }
   {
     /* Liquid enthalpy in packing */
@@ -684,7 +684,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Enthalpy liq packing");
+    f->set_key_str(klbl, "Enthalpy liq packing");
   }
   {
     /* True liquid mass fraction in packing */
@@ -695,7 +695,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Mass frac liq packing");
+    f->set_key_str(klbl, "Mass frac liq packing");
   }
   {
     /* Liquid vertical velocity in packing */
@@ -706,7 +706,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Velocity liq packing");
+    f->set_key_str(klbl, "Velocity liq packing");
   }
   {
     /* Liquid mass flux in packing */
@@ -717,7 +717,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Mass flux liq packing");
+    f->set_key_str(klbl, "Mass flux liq packing");
   }
 
 
@@ -733,7 +733,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Evaporation packing");
+    f->set_key_str(klbl, "Evaporation packing");
   }
 
   {
@@ -745,7 +745,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Evaporation rain");
+    f->set_key_str(klbl, "Evaporation rain");
   }
 
   {
@@ -757,7 +757,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Thermal power packing");
+    f->set_key_str(klbl, "Thermal power packing");
   }
 
   {
@@ -769,7 +769,7 @@ cs_ctwr_add_property_fields(void)
                         has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
-    cs_field_set_key_str(f, klbl, "Thermal power rain");
+    f->set_key_str(klbl, "Thermal power rain");
   }
 }
 
