@@ -31,7 +31,7 @@
  \brief User subroutine dedicated the use of ALE (Arbitrary Lagrangian
  Eulerian) Method:
   - Fills boundary condition types (\c ale_bc_type, \c impale)
-    and codes(\c icodcl, \c rcodcl) for mesh velocity.
+    and codes(\c icodcl, \c val_ext, \c h_ext, \c q_ext) for mesh velocity.
   - This function also enables one to fix displacement on nodes.
 
  \section intro_ale Introduction
@@ -62,7 +62,7 @@
 
  - \c ale_bc_type[face_id] = \ref CS_BOUNDARY_ALE_IMPOSED_VEL: the mesh velocity
    is imposed on face \c face_id. Thus, the mesh velocity's
-   \c bc_coeffs->rcodcl1 values arrays need to be set.
+   \c bc_coeffs->get_val_ext_v() values arrays need to be set.
 
  \subsection non_std_bc_ale For "non-standard" conditions
 
@@ -72,21 +72,22 @@
   - 3: Neumann
   - 4: Symmetry
 
- The values of the 3 \c rcodcl components are:
-  - \c rcodcl1[face_id]:
+ The values of the 3 exterior value components are:
+  - \c val_ext_v(face_id, coo_id):
      Dirichlet for the variable if \c icodcl[face_id] = 1
-     The dimension of \c rcodcl1[face_id] is in \f$m \cdot s^{-1}\f$
-  - \c rcodcl2[face_id]:
-    "exterior" exchange coefficient; make no sense for the mesh velocity,
+     The dimension of \c val_ext_v is in \f$m \cdot s^{-1}\f$
+
+  - \c h_ext_v(face_id, coo_id):
+    "exterior" exchange coefficient; makes no sense for the mesh velocity,
     so can be ignored.
 
-  - \c rcodcl3[face_id]:
+  - \c q_ext_v(face_id, coo_id):
     Flux density (in \f$kg \cdot m \cdot s^2\f$) = J if icodcl[face_id] = 3
                  (<0 if gain, n outwards-facing normal)
-    \f$ rcodcl3[face_id] = -(mesh_viscosity) \grad {Um}.\vect{n} \f$
+    \f$ q_ext_v(face_id, .) = -(mesh_viscosity) \grad {Um}.\vect{n} \f$
               \f$(Um\f$ represents mesh velocity)
 
-    - \c rcodcl3[face_id] = 0. enables one to specify a homogeneous
+    - \c q_ext_v(face_id, coo_id) = 0. enables one to specify a homogeneous
       Neuman condition on mesh velocity. Any other value make no sense
       in this context.
 
@@ -96,7 +97,7 @@
  default), \c ale_bc_type will define the boundary condition type.
 
  To the contrary, if the user prescribes \c icodcl[face_id] (nonzero) for
- the mesh velocity, the values assigned to rcodcl* will be used for the
+ the mesh velocity, the values assigned to *_ext_v will be used for the
  considered face.
 
  \subsection ug_ex_add_bc_ale Further ALE boundary condition elements

@@ -67,8 +67,6 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
                             [[maybe_unused]] int           bc_type[])
 {
   /*! [init] */
-  const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
-
   const int n_fields = cs_field_n_fields();
 
   cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
@@ -76,9 +74,9 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   const cs_real_t *bpro_rho = CS_F_(rho_b)->val;
 
   const int keysca = cs_field_key_id("scalar_id");
-  const cs_zone_t  *zn = nullptr;
+  const cs_zone_t *zn = nullptr;
 
-  cs_real_t *vel_rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
+  auto vel_val_ext = CS_F_(vel)->bc_coeffs->get_val_ext_v();
 
   /*! [init] */
 
@@ -99,13 +97,13 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     bc_type[face_id] = CS_INLET;
 
-    vel_rcodcl1[n_b_faces*0 + face_id] = 0;     /* vel_x */
-    vel_rcodcl1[n_b_faces*1 + face_id] = 1.1;   /* vel_y */
-    vel_rcodcl1[n_b_faces*2 + face_id] = 0;     /* vel_z */
+    vel_val_ext(face_id, 0) = 0;     /* vel_x */
+    vel_val_ext(face_id, 1) = 0;     /* vel_y */
+    vel_val_ext(face_id, 2) = 0;     /* vel_z */
 
     cs_real_t uref2 = 0;
     for (cs_lnum_t ii = 0; ii < 3; ii++)
-      uref2 += cs_math_pow2(vel_rcodcl1[n_b_faces*ii + face_id]);
+      uref2 += cs_math_pow2(vel_val_ext(face_id, ii));
     uref2 = cs::max(uref2, 1e-12);
 
     /* Turbulence example computed using equations valid for a pipe.
@@ -144,9 +142,10 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field(f_id);
     if (f->get_key_int(keysca) > 0) {
+      auto val_ext = f->bc_coeffs->get_val_ext();
       for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
         const cs_lnum_t face_id = zn->elt_ids[e_idx];
-        f->bc_coeffs->rcodcl1[face_id] = 1.0;
+        val_ext[face_id] = 1.0;
       }
     }
   }
@@ -169,13 +168,13 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     bc_type[face_id] = CS_INLET;
 
-    vel_rcodcl1[n_b_faces*0 + face_id] = 0;     /* vel_x */
-    vel_rcodcl1[n_b_faces*1 + face_id] = 1.1;   /* vel_y */
-    vel_rcodcl1[n_b_faces*2 + face_id] = 0;     /* vel_z */
+    vel_val_ext(face_id, 0) = 0;     /* vel_x */
+    vel_val_ext(face_id, 1) = 1.1;   /* vel_y */
+    vel_val_ext(face_id, 2) = 0;     /* vel_z */
 
     cs_real_t uref2 = 0;
     for (cs_lnum_t ii = 0; ii < 3; ii++)
-      uref2 += cs_math_pow2(vel_rcodcl1[n_b_faces*ii + face_id]);
+      uref2 += cs_math_pow2(vel_val_ext(face_id, ii));
     uref2 = cs::max(uref2, 1e-12);
 
     /* Calculation of turbulent inlet conditions using
@@ -190,9 +189,10 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field(f_id);
     if (f->get_key_int(keysca) > 0) {
+      auto val_ext = f->bc_coeffs->get_val_ext();
       for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
         const cs_lnum_t face_id = zn->elt_ids[e_idx];
-        f->bc_coeffs->rcodcl1[face_id] = 1.0;
+        val_ext[face_id] = 1.0;
       }
     }
   }
@@ -204,10 +204,8 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   zn = cs_boundary_zone_by_name("outlet");
 
   for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
-
     const cs_lnum_t face_id = zn->elt_ids[e_idx];
     bc_type[face_id] = CS_OUTLET;
-
   }
   /*![example_3]*/
 
@@ -216,30 +214,37 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   /*![example_4]*/
   zn = cs_boundary_zone_by_name("5");
 
+  for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
+    const cs_lnum_t face_id = zn->elt_ids[e_idx];
+    bc_type[face_id] =  CS_SMOOTHWALL;
+  }
+
   /* Temperature */
   cs_field_t *th_f = cs_thermal_model_field();
 
-  for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
+  if (th_f != nullptr) {
+    int *th_icodcl = th_f->bc_coeffs->icodcl;
+    auto th_val_ext = th_f->bc_coeffs->get_val_ext();
+    auto th_h_ext = th_f->bc_coeffs->get_h_ext();
+    auto th_q_ext = th_f->bc_coeffs->get_q_ext();
 
-    const cs_lnum_t face_id = zn->elt_ids[e_idx];
-    bc_type[face_id] =  CS_SMOOTHWALL;
+    for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
+      const cs_lnum_t face_id = zn->elt_ids[e_idx];
 
-    if (th_f == nullptr)
-      continue;
+      /* If temperature prescribed to 20 with wall law */
+      th_icodcl[face_id] = CS_BC_WALL_MODELLED;
+      th_val_ext[face_id] = 20.;
 
-    /* If temperature prescribed to 20 with wall law */
-    th_f->bc_coeffs->icodcl[face_id] = CS_BC_WALL_MODELLED;
-    th_f->bc_coeffs->rcodcl1[face_id] = 20.;
+      /* If temperature prescribed to 50 with no wall law (simple Dirichlet)
+       *  with exchange coefficient 8 */
+      th_f->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
+      th_val_ext[face_id] = 50.;
+      th_h_ext[face_id] = 8.;
 
-    /* If temperature prescribed to 50 with no wall law (simple Dirichlet)
-     *  with exchange coefficient 8 */
-    th_f->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
-    th_f->bc_coeffs->rcodcl1[face_id] = 50.;
-    th_f->bc_coeffs->rcodcl2[face_id] = 8.;
-
-    /* If flux prescribed to 4. */
-    th_f->bc_coeffs->icodcl[face_id] = CS_BC_NEUMANN;
-    th_f->bc_coeffs->rcodcl3[face_id] = 4.;
+      /* If flux prescribed to 4. */
+      th_icodcl[face_id] = CS_BC_NEUMANN;
+      th_q_ext[face_id] = 4.;
+    }
   }
   /*![example_4]*/
 
@@ -276,7 +281,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       bpro_roughness_t[face_id] = 0.01;
 
     /* If sliding wall with velocity */
-    CS_F_(vel)->bc_coeffs->rcodcl1[face_id] = 1.;
+    vel_val_ext(face_id, 0) = 1.;
   }
   /*![example_5]*/
 

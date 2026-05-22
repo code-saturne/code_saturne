@@ -75,6 +75,10 @@ its  \ref cs_field_t::bc_coeffs member:
   `rcodcl3[n_b_faces*dim]` contain the associated numerical values (value of the
    Dirichlet condition, of the flux \...).
 
+To access these values, it is recommended to use the `get_val_ext*`,
+`get_h_ext*`, and `get_q_ext*` field boundary condition member functions, which
+return 1-D or 2-S span-type accessors.
+
 In the case of standard boundary conditions, even without the GUI, it is sufficient
 to complete `bc_type[face_id]` and parts of `rcodcl*` arrays, as `icodcl`
 and most of `rcodcl*` are filled automatically based on the boundary condition type.
@@ -97,7 +101,7 @@ For non-standard boundary conditions, those arrays must be fully completed.
 Note that in some cases, a negative value may be used, implying an
 automatic conversion:
 
-- For pressure, Dirichelt definition relative to the solved pressure (P*),
+- For pressure, Dirichlet definition relative to the solved pressure (P*),
   (by default, definition relative to the hydrostatic pressure).
 - For enthalpy, conversion from given temperature
 

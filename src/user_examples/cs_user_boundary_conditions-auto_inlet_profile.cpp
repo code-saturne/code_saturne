@@ -105,6 +105,8 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   constexpr cs_real_t fmprsc = 1.; // mean prescribed velocity
 
+  auto vel_val_ext = CS_F_(vel)->bc_coeffs->get_val_ext_v();
+
   if (nt_cur == 1) {
 
     /* For the Rij-EBRSM model (and possibly V2f), we need a non-flat profile,
@@ -138,16 +140,15 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
       bc_type[face_id] = CS_INLET;
 
-      for (int ii = 0; ii< CS_F_(vel)->dim; ii++)
-        CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*ii + face_id]
-          = -fmprsc*b_face_u_normal[face_id][ii];
+      for (int ii = 0; ii < 3; ii++)
+        vel_val_ext(face_id, ii) = -fmprsc*b_face_u_normal[face_id][ii];
 
       if (mrkcel[c_id] == 1)
-        CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*0 + face_id] = fmprsc/10;
+        vel_val_ext(face_id, 0) = fmprsc/10;
 
       cs_real_t uref2 = 0;
       for (int ii = 0; ii< CS_F_(vel)->dim; ii++)
-        uref2 += pow(CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*ii + face_id], 2);
+        uref2 += cs_math_pow2(vel_val_ext(face_id, ii));
       uref2 = cs::max(uref2, 1e-12);
 
       /* Turbulence example computed using equations valid for a pipe.
@@ -179,26 +180,100 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
                                       xdh,
                                       b_rho,
                                       viscl0);
-
-      for (int f_id = 0; f_id < n_fields; f_id++) {
-        cs_field_t *fld = cs_field(f_id);
-
-        /* Here we only handle user scalar */
-        int sc_id = fld->get_key_int(keysca) - 1;
-        if (sc_id < 0)
-          continue;
-
-        fld->bc_coeffs->rcodcl1[face_id] = 1;
-      }
     }
+
     CS_FREE(mrkcel);
+
+    /* Initialize user scalars inlet */
+
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *fld = cs_field(f_id);
+
+      if (! (fld->type & (CS_FIELD_VARIABLE | CS_FIELD_USER)))
+        continue;
+      int sc_id = fld->get_key_int(keysca) - 1;
+      if (sc_id < 0)
+        continue;
+
+      auto val_ext = fld->bc_coeffs->get_val_ext();
+
+      for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
+        const cs_lnum_t face_id = zn->elt_ids[e_idx];
+        val_ext[face_id] = 1;
+      }
+
+    }
   }
+
   else {
 
     /* Subsequent time steps
      *----------------------*/
 
     cs_real_2_t acc = {0, 0};
+
+    /* Accessors for BC values */
+
+    cs_span<cs_real_t> k_val_ext;
+    cs_span<cs_real_t> eps_val_ext;
+    cs::mdspan<cs_real_t, 2, cs::layout::left> rij_val_ext;
+    cs_span<cs_real_t> alp_bl_val_ext;
+    cs_span<cs_real_t> phi_val_ext;
+    cs_span<cs_real_t> f_bar_val_ext;
+    cs_span<cs_real_t> omg_val_ext;
+    cs_span<cs_real_t> nusa_val_ext;
+
+    const cs_real_t *cvar_k = nullptr;
+    const cs_real_t *cvar_eps = nullptr;
+    const cs_real_6_t *cvar_rij = nullptr;
+    const cs_real_t *cvar_alp_bl = nullptr;
+    const cs_real_t *cvar_phi = nullptr;
+    const cs_real_t *cvar_f_bar = nullptr;
+    const cs_real_t *cvar_omg = nullptr;
+    const cs_real_t *cvar_nusa = nullptr;
+
+    if (cs_glob_turb_model->itytur == 2) {
+      k_val_ext = CS_F_(k)->bc_coeffs->get_val_ext();
+      eps_val_ext = CS_F_(eps)->bc_coeffs->get_val_ext();
+      cvar_k = CS_F_(k)->val;
+      cvar_eps = CS_F_(eps)->val;
+    }
+    else if (cs_glob_turb_model->itytur == 3) {
+      rij_val_ext = CS_F_(rij)->bc_coeffs->get_val_ext_t();
+      eps_val_ext = CS_F_(eps)->bc_coeffs->get_val_ext();
+      cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
+      cvar_eps = CS_F_(eps)->val;
+      if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
+        alp_bl_val_ext = CS_F_(alp_bl)->bc_coeffs->get_val_ext();
+        cvar_alp_bl= CS_F_(alp_bl)->val;
+      }
+    }
+    if (cs_glob_turb_model->itytur == 5) {
+      k_val_ext = CS_F_(k)->bc_coeffs->get_val_ext();
+      eps_val_ext = CS_F_(eps)->bc_coeffs->get_val_ext();
+      phi_val_ext = CS_F_(phi)->bc_coeffs->get_val_ext();
+      cvar_k = CS_F_(k)->val;
+      cvar_eps = CS_F_(eps)->val;
+      cvar_phi = CS_F_(phi)->val;
+      if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
+        f_bar_val_ext = CS_F_(f_bar)->bc_coeffs->get_val_ext();
+        cvar_f_bar = CS_F_(f_bar)->val;
+      }
+      else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
+        alp_bl_val_ext = CS_F_(alp_bl)->bc_coeffs->get_val_ext();
+        cvar_alp_bl= CS_F_(alp_bl)->val;
+      }
+    }
+    else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
+      k_val_ext = CS_F_(k)->bc_coeffs->get_val_ext();
+      omg_val_ext = CS_F_(omg)->bc_coeffs->get_val_ext();
+      cvar_k = CS_F_(k)->val;
+      cvar_omg = CS_F_(omg)->val;
+    }
+    else if (cs_glob_turb_model->model ==  CS_TURB_SPALART_ALLMARAS) {
+      nusa_val_ext = CS_F_(nusa)->bc_coeffs->get_val_ext();
+      cvar_nusa = CS_F_(nusa)->val;
+    }
 
     /* Estimate multiplier */
 
@@ -219,72 +294,67 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
     if (acc[0] > cs_math_epzero)
       fmul = fmprsc/(acc[0]/acc[1]); /* estimate flow multiplier */
 
-    /* Apply BC */
+    /* Apply BCs */
     for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
-
       const cs_lnum_t face_id = zn->elt_ids[e_idx];
       const cs_lnum_t c_id = b_face_cells[face_id];
 
       const cs_real_t vnrm = cs_math_3_norm(cvar_vel[c_id]);
 
-      bc_type[face_id] = CS_INLET;
+      assert(bc_type[face_id] == CS_INLET);
 
-      for (int ii = 0; ii< CS_F_(vel)->dim; ii++)
-        CS_F_(vel)->bc_coeffs->rcodcl1[n_b_faces*ii + face_id]
-          = -fmul*vnrm*b_face_u_normal[face_id][ii];
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        vel_val_ext(face_id, ii) = -fmul*vnrm*b_face_u_normal[face_id][ii];
 
       if (cs_glob_turb_model->itytur == 2) {
-        CS_F_(k)->bc_coeffs->rcodcl1[face_id] = CS_F_(k)->val[c_id];
-        CS_F_(eps)->bc_coeffs->rcodcl1[face_id] = CS_F_(eps)->val[c_id];
+        k_val_ext[face_id] = cvar_k[c_id];
+        eps_val_ext[face_id] = cvar_eps[c_id];
       }
 
       else if (cs_glob_turb_model->itytur == 3) {
-        for (cs_lnum_t ii = 0; ii< CS_F_(rij)->dim; ii++)
-          CS_F_(rij)->bc_coeffs->rcodcl1[n_b_faces*ii + face_id]
-            = CS_F_(rij)->val[c_id];
-
-        CS_F_(eps)->bc_coeffs->rcodcl1[face_id] = CS_F_(eps)->val[c_id];
-
+        for (cs_lnum_t ii = 0; ii< 6; ii++)
+          rij_val_ext(face_id, ii) = cvar_rij[c_id][ii];
+        eps_val_ext[face_id] = cvar_eps[c_id];
         if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
-          CS_F_(alp_bl)->bc_coeffs->rcodcl1[face_id] = CS_F_(alp_bl)->val[c_id];
+          alp_bl_val_ext[face_id] = cvar_alp_bl[c_id];
       }
 
       else if (cs_glob_turb_model->itytur == 5) {
-
-        CS_F_(k)->bc_coeffs->rcodcl1[face_id] = CS_F_(k)->val[c_id];
-        CS_F_(eps)->bc_coeffs->rcodcl1[face_id] = CS_F_(eps)->val[c_id];
-        CS_F_(phi)->bc_coeffs->rcodcl1[face_id] = CS_F_(phi)->val[c_id];
-
+        k_val_ext[face_id] = cvar_k[c_id];
+        eps_val_ext[face_id] = cvar_eps[c_id];
+        phi_val_ext[face_id] = cvar_phi[c_id];
         if (cs_glob_turb_model->model == CS_TURB_V2F_PHI)
-          CS_F_(f_bar)->bc_coeffs->rcodcl1[face_id] = CS_F_(f_bar)->val[c_id];
+          f_bar_val_ext[face_id] = cvar_f_bar[c_id];
         else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K)
-          CS_F_(alp_bl)->bc_coeffs->rcodcl1[face_id] = CS_F_(alp_bl)->val[c_id];
-
+          alp_bl_val_ext[face_id] = cvar_alp_bl[c_id];
       }
 
       else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
-
-        CS_F_(k)->bc_coeffs->rcodcl1[face_id] = CS_F_(k)->val[c_id];
-        CS_F_(omg)->bc_coeffs->rcodcl1[face_id] = CS_F_(omg)->val[c_id];
+        k_val_ext[face_id] = cvar_k[c_id];
+        omg_val_ext[face_id] = cvar_omg[c_id];
       }
-
       else if (cs_glob_turb_model->model ==  CS_TURB_SPALART_ALLMARAS) {
-
-        CS_F_(nusa)->bc_coeffs->rcodcl1[face_id] = CS_F_(nusa)->val[c_id];
-
+        nusa_val_ext[face_id] = cvar_nusa[c_id];
       }
+    }
 
-      for (int f_id = 0; f_id < n_fields; f_id++) {
-        cs_field_t *fld = cs_field(f_id);
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      cs_field_t *fld = cs_field(f_id);
 
-        /* Here we only handle user scalar */
-        int sc_id = fld->get_key_int(keysca) - 1;
-        if (sc_id < 0)
-          continue;
+      if (! (fld->type & (CS_FIELD_VARIABLE | CS_FIELD_USER)))
+        continue;
+      int sc_id = fld->get_key_int(keysca) - 1;
+      if (sc_id < 0)
+        continue;
 
-        fld->bc_coeffs->rcodcl1[face_id] = fld->val[c_id];
+      auto val_ext = fld->bc_coeffs->get_val_ext();
+      cs_real_t *cvar = fld->val;
+
+      for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
+        const cs_lnum_t face_id = zn->elt_ids[e_idx];
+        const cs_lnum_t c_id = b_face_cells[face_id];
+        val_ext[face_id] = cvar[c_id];
       }
-
     }
   }
   /*! [example_1] */

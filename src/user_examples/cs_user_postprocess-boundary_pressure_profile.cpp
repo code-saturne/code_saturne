@@ -92,11 +92,14 @@ cs_user_postprocess_probes(void)
 
   /*! [post_profile_def] */
 
-  cs_probe_set_t *pset
-    = cs_probe_set_create_from_local("foil_profile", /* probes set name */
-                                     cs_b_face_criterion_probes_define,
-                                                      /* probe def. function */
-                                     (void *)"FOIL_WALL"); /* input */
+  // Use static variable as it must always be present when the associated
+  // probe set is actually called.
+  static const char pset_name[] = "FOIL_WALL";
+
+  cs_probe_set_t *pset = cs_probe_set_create_from_local
+                           ("foil_profile",                     /* set name */
+                            cs_b_face_criterion_probes_define,  /* function */
+                            const_cast<char *>(pset_name));     /* input */
 
   /* Indicate that the probes are located on the boundary */
   cs_probe_set_option(pset, "boundary", "true");

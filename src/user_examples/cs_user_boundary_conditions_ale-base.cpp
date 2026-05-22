@@ -41,14 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_boundary_conditions.c
- *
- * \brief User functions for input of calculation parameters.
- */
-/*----------------------------------------------------------------------------*/
-
 /*=============================================================================
  * User function definitions
  *============================================================================*/
@@ -63,36 +55,6 @@
  *                               (see \ref cs_boundary_ale_subtype_bits_t)
  * \param[in]       impale       indicator for prescribed node displacement
  *                               (0 or 1)
- *
- * The icodcl and rcodcl arrays are pre-initialized based on default
- * and GUI-defined definitions, and may be modified here.
- *
- * For a given variable field f, and a given face "face_id", these arrays
- * may be used as follows:
- *
- * - Boundary condition type code given at:
- *   f->bc_coeffs->icodcl[face_id]
- *
- * - Dirichlet value defined at:
- *   f->bc_coeffs->rcodcl1[face_id]
- *
- * - Interior exchange coefficient (infinite if no exchange) at:
- *   f->bc_coeffs->rcodcl2[face_id]
- *
- * - Flux density defined at:
- *   f->bc_coeffs->rcodcl3[face_id]
- *
- * For vector or tensor fields, these arrays are not interleaved,
- * so for a given face "face_id" and field component "comp_id", access
- * is as follows (where n_b_faces is domain->mesh->n_b_faces):
- *
- *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]\n
- *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]\n
- *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]\n\n
- *
- * Only the icodcl code values from the first component are used in the case
- * of vector or tensor fields, so the icodcl values can be defined as for
- * a scalar.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -107,7 +69,6 @@ cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
 
   /*![loc_var]*/
 
-  const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
   const cs_lnum_t *b_face_vtx_idx = domain->mesh->b_face_vtx_idx;
   const cs_lnum_t *b_face_vtx_lst = domain->mesh->b_face_vtx_lst;
   const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
@@ -134,22 +95,20 @@ cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
   /* Example: For boundary faces of zone 'fv' assign a fixed velocity */
   zn = cs_boundary_zone_by_name("fv");
 
-  cs_field_t *mesh_u = CS_F_(mesh_u);
+  auto mesh_u_val_ext = CS_F_(mesh_u)->bc_coeffs->get_val_ext_v();
 
   /* Calculation of displacement at current time step */
   const cs_real_t deltaa = sin(3.141596*(nt_cur-1)/50);
   const cs_real_t delta  = sin(3.141596*nt_cur/50.);
 
   for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
-
     const cs_lnum_t face_id = zn->elt_ids[ilelt];
     const cs_lnum_t c_id = b_face_cells[face_id];
 
     ale_bc_type[face_id] = CS_BOUNDARY_ALE_IMPOSED_VEL;
-    mesh_u->bc_coeffs->rcodcl1[n_b_faces*0 + face_id] = 0;
-    mesh_u->bc_coeffs->rcodcl1[n_b_faces*1 + face_id] = 0;
-    mesh_u->bc_coeffs->rcodcl1[n_b_faces*2 + face_id] = (delta-deltaa)/dt[c_id];
-
+    mesh_u_val_ext(face_id, 0) = 0;
+    mesh_u_val_ext(face_id, 1) = 0;
+    mesh_u_val_ext(face_id, 2) = (delta-deltaa)/dt[c_id];
   }
   /*![example_1]*/
 
@@ -159,7 +118,6 @@ cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
   zn = cs_boundary_zone_by_name("fd");
 
   for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
-
     const cs_lnum_t face_id = zn->elt_ids[ilelt];
 
     for (cs_lnum_t ii = b_face_vtx_idx[face_id];
@@ -183,11 +141,9 @@ cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
   zn = cs_boundary_zone_by_name("sb");
 
   for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
-
     const cs_lnum_t face_id = zn->elt_ids[ilelt];
 
     ale_bc_type[face_id] = CS_BOUNDARY_ALE_SLIDING;
-
   }
   /*![example_3]*/
 
@@ -197,11 +153,9 @@ cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
   zn = cs_boundary_zone_by_name("fixed");
 
   for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
-
     const cs_lnum_t face_id = zn->elt_ids[ilelt];
 
     ale_bc_type[face_id] = CS_BOUNDARY_ALE_FIXED;
-
   }
   /*![example_4]*/
 }

@@ -387,7 +387,7 @@ _boundary_condition_mobile_mesh_rotor_stator_type(void)
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
 
-  cs_real_t *rcodcl1_vel = CS_F_(vel)->bc_coeffs->rcodcl1;
+  auto val_ext_vel = CS_F_(vel)->bc_coeffs->get_val_ext_v();
 
   /* Running velocity for fluid walls and symmetries
      ----------------------------------------------- */
@@ -395,9 +395,9 @@ _boundary_condition_mobile_mesh_rotor_stator_type(void)
   /* For symmetries: mesh velocity is always added as only the normal components
      of the velocity is kept.
 
-     For walls: mesh velocity is taken if the user do not specify RCODCL,
-     otherwise RCODCL is kept for tangential velocity and mesh velocity is taken
-     for the normal component of the velocity.
+     For walls: mesh velocity is taken if the user do not specify val_ext_vel,
+     otherwise val_ext_vel is kept for tangential velocity and mesh velocity
+     is used for the normal component of the velocity.
 
      One relies on BC_TYPE only, so the user must be aware of it when using non
      standard boundary conditions. */
@@ -417,39 +417,41 @@ _boundary_condition_mobile_mesh_rotor_stator_type(void)
 
       if (bc_type[f_id] == CS_SYMMETRY) {
         for (cs_lnum_t k = 0; k < 3; k++)
-          rcodcl1_vel[n_b_faces * k + f_id] = vr[k];
+          val_ext_vel(f_id, k) = vr[k];
       }
 
       if (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL) {
+
+        cs_real_t vel_ext[3] = {val_ext_vel(f_id, 0),
+                                val_ext_vel(f_id, 1),
+                                val_ext_vel(f_id, 2)};
+
         /* If one slip velocity component was modified by the user, only the
            normal component of the velocity is fixed */
 
-        if (   rcodcl1_vel[f_id] > cs_math_infinite_r * 0.5
-            && rcodcl1_vel[n_b_faces + f_id] > cs_math_infinite_r * 0.5
-            && rcodcl1_vel[2*n_b_faces + f_id] > cs_math_infinite_r * 0.5) {
+        if (   vel_ext[0] > cs_math_infinite_r * 0.5
+            && vel_ext[1] > cs_math_infinite_r * 0.5
+            && vel_ext[2] > cs_math_infinite_r * 0.5) {
 
           for (cs_lnum_t k = 0; k < 3; k++)
-            rcodcl1_vel[n_b_faces * k + f_id] = vr[k];
+            val_ext_vel(f_id, k) = vr[k];
 
         }
         else {
-          /* Unspecified RCODCL components are set to 0 */
+          /* Unspecified components are set to 0 */
           for (cs_lnum_t k = 0; k < 3; k++) {
-            if (rcodcl1_vel[n_b_faces * k + f_id] > cs_math_infinite_r * 0.5)
-              rcodcl1_vel[n_b_faces * k + f_id] = 0.;
+            if (vel_ext[k] > cs_math_infinite_r * 0.5)
+              vel_ext[k] = 0.;
           }
 
           const cs_nreal_t *rnxyz = b_face_u_normal[f_id];
-          const cs_real_t rcodcl1[3] = {rcodcl1_vel[n_b_faces*0 + f_id],
-                                        rcodcl1_vel[n_b_faces*1 + f_id],
-                                        rcodcl1_vel[n_b_faces*2 + f_id]};
 
-          cs_real_t rcodsn =   (vr[0] - rcodcl1[0]) * rnxyz[0]
-                             + (vr[1] - rcodcl1[1]) * rnxyz[1]
-                             + (vr[2] - rcodcl1[2]) * rnxyz[2];
+          cs_real_t rcodsn =   (vr[0] - vel_ext[0]) * rnxyz[0]
+                             + (vr[1] - vel_ext[1]) * rnxyz[1]
+                             + (vr[2] - vel_ext[2]) * rnxyz[2];
 
           for (cs_lnum_t k = 0; k < 3; k++)
-            rcodcl1_vel[n_b_faces * k + f_id] = rcodcl1[k] + rcodsn * rnxyz[k];
+            val_ext_vel(f_id, k) = vel_ext[k] + rcodsn * rnxyz[k];
 
         }
       }
@@ -475,9 +477,9 @@ _boundary_condition_mobile_mesh_rotor_stator_type(void)
 
       cs_lnum_t c_id = b_face_cells[f_id];
 
-      if (   rcodcl1_vel[f_id] > cs_math_infinite_r * 0.5
-          && rcodcl1_vel[n_b_faces + f_id] > cs_math_infinite_r * 0.5
-          && rcodcl1_vel[2*n_b_faces + f_id] > cs_math_infinite_r * 0.5
+      if (   val_ext_vel(f_id, 0) > cs_math_infinite_r * 0.5
+          && val_ext_vel(f_id, 1) > cs_math_infinite_r * 0.5
+          && val_ext_vel(f_id, 2) > cs_math_infinite_r * 0.5
           && irotce[c_id] != 0
           && (bc_type[f_id] == CS_SMOOTHWALL || bc_type[f_id] == CS_ROUGHWALL)) {
 
@@ -510,17 +512,15 @@ _boundary_condition_mobile_mesh_rotor_stator_type(void)
  *----------------------------------------------------------------------------*/
 
 static void
-_boundary_condition_rt_type(const cs_mesh_t             *m,
-                            const cs_mesh_quantities_t  *mq,
-                            const bool                  init,
-                            const int                   bc_type[])
+_boundary_condition_rt_type
+(
+  const cs_mesh_t                              *m,
+  [[maybe_unused]] const cs_mesh_quantities_t  *mq,
+  [[maybe_unused]] bool                        init,
+  [[maybe_unused]] const int                   bc_type[]
+)
 {
   /* Unfinished function */
-
-  CS_UNUSED(m);
-  CS_UNUSED(mq);
-  CS_UNUSED(init);
-  CS_UNUSED(bc_type);
 
   const cs_lnum_t n_b_faces =  m->n_b_faces;
 
@@ -536,8 +536,8 @@ _boundary_condition_rt_type(const cs_mesh_t             *m,
   /* TODO: make a rt_bc_type as ale_bc_type  (it is isothp/isothm) */
 
   if (rt_params->save_radiance_dir) {
-    for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 
+    for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
       bool one_dir = false;
       bool finished = false;
       int kdir = 0;
@@ -562,23 +562,17 @@ _boundary_condition_rt_type(const cs_mesh_t             *m,
               }
               int rad_id = n_dirs * gg_id + kdir;
 
-
               cs_field_t *f_rad = CS_FI_(radiance, rad_id);
 
-              // int *icodcl_rad = nullptr;
-              cs_real_t *rcodcl1_rad = nullptr;
-
               if (f_rad->bc_coeffs != nullptr) {
-                // icodcl_rad = f_rad->bc_coeffs->icodcl;
-                rcodcl1_rad = f_rad->bc_coeffs->rcodcl1;
+                // int icodcl_rad = f_rad->bc_coeffs->icodcl;
+                cs_span<cs_real_t> val_ext_rad = f_rad->bc_coeffs->get_val_ext();
+
+                ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+                  if (val_ext_rad[face_id] > cs_math_infinite_r*0.5)
+                    val_ext_rad[face_id] = 0.;
+                });
               }
-
-              ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-                if (rcodcl1_rad[face_id] > cs_math_infinite_r*0.5)
-                  rcodcl1_rad[face_id] = 0.;
-              });
-
-              ctx.wait();
 
             }
           }
@@ -592,24 +586,20 @@ _boundary_condition_rt_type(const cs_mesh_t             *m,
 
       cs_field_t *f_rad = CS_FI_(radiance, gg_id);
 
-      // int *icodcl_rad = nullptr;
-      cs_real_t *rcodcl1_rad = nullptr;
-
       if (f_rad->bc_coeffs != nullptr) {
-        // icodcl_rad = f_rad->bc_coeffs->icodcl;
-        rcodcl1_rad = f_rad->bc_coeffs->rcodcl1;
+        // int icodcl_rad = f_rad->bc_coeffs->icodcl;
+        cs_span<cs_real_t> val_ext_rad = f_rad->bc_coeffs->get_val_ext();
+
+        ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        if (val_ext_rad[face_id] > cs_math_infinite_r*0.5)
+          val_ext_rad[face_id] = 0.;
+        });
       }
-
-      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-        if (rcodcl1_rad[face_id] > cs_math_infinite_r*0.5)
-          rcodcl1_rad[face_id] = 0.;
-      });
-
-      ctx.wait();
 
     }
   }
 
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -632,9 +622,9 @@ _boundary_condition_wall_condensation_1d_thermal(void)
 
   cs_field_t *th_f = cs_thermal_model_field();
   int *icodcl = th_f->bc_coeffs->icodcl;
-  cs_real_t *rcodcl1 = th_f->bc_coeffs->rcodcl1;
-  cs_real_t *rcodcl2 = th_f->bc_coeffs->rcodcl2;
-  cs_real_t *rcodcl3 = th_f->bc_coeffs->rcodcl3;
+  cs_span<cs_real_t> val_ext = th_f->bc_coeffs->get_val_ext();
+  cs_span<cs_real_t> h_ext = th_f->bc_coeffs->get_h_ext();
+  cs_span<cs_real_t> q_ext = th_f->bc_coeffs->get_q_ext();
 
   const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
@@ -645,13 +635,13 @@ _boundary_condition_wall_condensation_1d_thermal(void)
     const cs_lnum_t face_id = ifbpcd[ii];
 
     icodcl[face_id] = 1;
-    rcodcl2[face_id] = cs_math_infinite_r;
-    rcodcl3[face_id] = 0.0;
+    h_ext[face_id] = cs_math_infinite_r;
+    q_ext[face_id] = 0.0;
 
     if (iztag1d[iz] == 1)
-      rcodcl1[face_id] = ztmur[ii];
+      val_ext[face_id] = ztmur[ii];
     else
-      rcodcl1[face_id] = ztpar[iz];
+      val_ext[face_id] = ztpar[iz];
 
   }
 
@@ -675,10 +665,10 @@ _boundary_condition_wall_condensation_1d_thermal(void)
     const cs_lnum_t face_id = ifbpcd[ii];
     const cs_lnum_t c_id = b_face_cells[face_id];
 
-    const cs_real_t temper = rcodcl1[face_id];
+    const cs_real_t temper = val_ext[face_id];
     const cs_real_t enthal = (temper + tkelvi) * cpro_cp[c_id];
 
-    rcodcl1[face_id] = enthal;
+    val_ext[face_id] = enthal;
   }
 
 }
@@ -950,7 +940,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
     CS_MALLOC_HD(vbt2h, n_b_faces, cs_real_t, cs_alloc_mode);
 
     cs_field_t *f_h = CS_F_(h);
-    cs_real_t *rcodcl1_h = f_h->bc_coeffs->rcodcl1;
+    cs_span<cs_real_t> val_ext_h = f_h->bc_coeffs->get_val_ext();
     int       *icodcl_h  = f_h->bc_coeffs->icodcl;
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -958,13 +948,13 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         lbt2h[nbt2h]    = f_id;
         nbt2h           = nbt2h + 1;
         icodcl_h[f_id]  = - icodcl_h[f_id];
-        vbt2h[f_id]     =   rcodcl1_h[f_id];
+        vbt2h[f_id]     =   val_ext_h[f_id];
       }
       else
         vbt2h[f_id] = 0.0;
     }
 
-    cs_ht_convert_t_to_h_faces_l(nbt2h, lbt2h, vbt2h, rcodcl1_h);
+    cs_ht_convert_t_to_h_faces_l(nbt2h, lbt2h, vbt2h, val_ext_h);
   }
 
   /*--------------------------------------------------------------------------
@@ -1074,7 +1064,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
                                      false,
                                      dt,
                                      bc_type,
-                                     CS_F_(vel)->bc_coeffs->rcodcl1);
+                                     CS_F_(vel)->bc_coeffs->get_val_ext_v());
 
     if (rt_params_type != CS_RAD_TRANSFER_NONE)
       _boundary_condition_rt_type(mesh,
@@ -1422,9 +1412,9 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
   { /* Dirichlet and Neumann */
 
-    cs_real_t *rcodcl1_vel = vel->bc_coeffs->rcodcl1;
-    cs_real_t *rcodcl2_vel = vel->bc_coeffs->rcodcl2;
-    cs_real_t *rcodcl3_vel = vel->bc_coeffs->rcodcl3;
+    auto val_ext_vel = vel->bc_coeffs->get_val_ext_v();
+    auto h_ext_vel = vel->bc_coeffs->get_h_ext_v();
+    auto q_ext_vel = vel->bc_coeffs->get_q_ext_v();
 
     cs_real_3_t  *coefa_vel = (cs_real_3_t  *)vel->bc_coeffs->a;
     cs_real_33_t *coefb_vel = (cs_real_33_t *)vel->bc_coeffs->b;
@@ -1448,21 +1438,18 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       else
         hint = (visclc + visctc) / distbf;
 
-      cs_real_t qimpv[3]   = {0., 0., 0.};
-      cs_real_t hextv[3]   = {0., 0., 0.};
-      cs_real_t pimpv[3]   = {0., 0., 0.};
-      cs_real_t cflv[3]    = {0., 0., 0.};
-
       /* Dirichlet boundary conditions
          ----------------------------- */
 
       if (icodcl_vel[f_id] == 1) {
 
-        for (cs_lnum_t k = 0; k < 3; k++)
-          pimpv[k] = rcodcl1_vel[n_b_faces*k + f_id];
+        cs_real_t pimpv[3] = {val_ext_vel(f_id, 0),
+                              val_ext_vel(f_id, 1),
+                              val_ext_vel(f_id, 2)};
 
-        for (cs_lnum_t k = 0; k < 3; k++)
-          hextv[k] = rcodcl2_vel[n_b_faces*k + f_id];
+        cs_real_t hextv[3] = {h_ext_vel(f_id, 0),
+                              h_ext_vel(f_id, 1),
+                              h_ext_vel(f_id, 1)};
 
         cs_boundary_conditions_set_dirichlet_vector(coefa_vel[f_id],
                                                     cofaf_vel[f_id],
@@ -1481,8 +1468,9 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
         /* coupled solving of the velocity components */
 
-        for (cs_lnum_t k = 0; k < 3; k++)
-          qimpv[k] = rcodcl3_vel[n_b_faces*k + f_id];
+        cs_real_t qimpv[3] = {q_ext_vel(f_id, 0),
+                              q_ext_vel(f_id, 1),
+                              q_ext_vel(f_id, 2)};
 
         cs_boundary_conditions_set_neumann_vector(coefa_vel[f_id],
                                                   cofaf_vel[f_id],
@@ -1498,11 +1486,14 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       else if (icodcl_vel[f_id] == 2 && iterns <= 1) {
 
         /* Coupled solving of the velocity components */
-        for (cs_lnum_t k = 0; k < 3; k++)
-          pimpv[k] = rcodcl1_vel[n_b_faces*k + f_id];
 
-        for (cs_lnum_t k = 0; k < 3; k++)
-          cflv[k] = rcodcl2_vel[n_b_faces*k + f_id];
+        cs_real_t pimpv[3] = {val_ext_vel(f_id, 0),
+                              val_ext_vel(f_id, 1),
+                              val_ext_vel(f_id, 2)};
+
+        cs_real_t cflv[3] = {h_ext_vel(f_id, 0),
+                             h_ext_vel(f_id, 1),
+                             h_ext_vel(f_id, 1)};
 
         cs_boundary_conditions_set_convective_outlet_vector(coefa_vel[f_id],
                                                             cofaf_vel[f_id],
@@ -1518,11 +1509,13 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
       else if (icodcl_vel[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
-        for (cs_lnum_t k = 0; k < 3; k++)
-          pimpv[k] = rcodcl1_vel[n_b_faces*k + f_id];
+        cs_real_t pimpv[3] = {val_ext_vel(f_id, 0),
+                              val_ext_vel(f_id, 1),
+                              val_ext_vel(f_id, 2)};
 
-        for (cs_lnum_t k = 0; k < 3; k++)
-          qimpv[k] = rcodcl3_vel[n_b_faces*k + f_id];
+        cs_real_t qimpv[3] = {q_ext_vel(f_id, 0),
+                              q_ext_vel(f_id, 1),
+                              q_ext_vel(f_id, 2)};
 
         cs_boundary_conditions_set_dirichlet_conv_neumann_diff_vector
           (coefa_vel[f_id], cofaf_vel[f_id],
@@ -1537,11 +1530,13 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
       else if (icodcl_vel[f_id] == CS_BC_GENERALIZED_SYM) {
 
-        for (cs_lnum_t k = 0; k < 3; k++)
-          pimpv[k] = rcodcl1_vel[n_b_faces*k + f_id];
+        cs_real_t pimpv[3] = {val_ext_vel(f_id, 0),
+                              val_ext_vel(f_id, 1),
+                              val_ext_vel(f_id, 2)};
 
-        for (cs_lnum_t k = 0; k < 3; k++)
-          qimpv[k] = rcodcl3_vel[n_b_faces*k + f_id];
+        cs_real_t qimpv[3] = {q_ext_vel(f_id, 0),
+                              q_ext_vel(f_id, 1),
+                              q_ext_vel(f_id, 2)};
 
         /* Coupled solving of the velocity components */
 
@@ -1561,12 +1556,14 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       else if (icodcl_vel[f_id] == CS_BC_CIRCULATION) {
 
         /* Dirichlet to impose on the tangential components */
-        for (cs_lnum_t k = 0; k < 3; k++)
-          pimpv[k] = rcodcl1_vel[n_b_faces*k + f_id];
+        cs_real_t pimpv[3] = {val_ext_vel(f_id, 0),
+                              val_ext_vel(f_id, 1),
+                              val_ext_vel(f_id, 2)};
 
         /* Flux to impose on the normal component */
-        for (cs_lnum_t k = 0; k < 3; k++)
-          qimpv[k] = rcodcl3_vel[n_b_faces*k + f_id];
+        cs_real_t qimpv[3] = {q_ext_vel(f_id, 0),
+                              q_ext_vel(f_id, 1),
+                              q_ext_vel(f_id, 2)};
 
         /* coupled solving of the velocity components */
 
@@ -1595,9 +1592,9 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       cs_real_t *cofbf_p = p->bc_coeffs->bf;
 
       const int *icodcl_p = (const int *)p->bc_coeffs->icodcl;
-      const cs_real_t *rcodcl1_p = (const cs_real_t *)p->bc_coeffs->rcodcl1;
-      const cs_real_t *rcodcl2_p = (const cs_real_t *)p->bc_coeffs->rcodcl2;
-      const cs_real_t *rcodcl3_p = (const cs_real_t *)p->bc_coeffs->rcodcl3;
+      const cs_span<cs_real_t> val_ext_p = p->bc_coeffs->get_val_ext();
+      const cs_span<cs_real_t> h_ext_p = p->bc_coeffs->get_h_ext();
+      const cs_span<cs_real_t> q_ext_p = p->bc_coeffs->get_q_ext();
 
       cs_equation_param_t *eqp_p = cs_field_get_equation_param(p);
       cs_real_t *crom = nullptr;
@@ -1682,15 +1679,15 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* We must modify the Dirichlet pressure value again so as to obtain P*
            Because in cs_boundary_conditions_type we have used the total pressure
            provided by the user: ptotal= p*+ rho.g.r.
-           In the compressible case, we leave rcodcl as such. */
+           In the compressible case, we leave BC coefficients as such. */
 
         /* Dirichlet boundary condition
            ----------------------------- */
 
         if (icodcl_p[f_id] == CS_BC_DIRICHLET) {
 
-          const cs_real_t hext = rcodcl2_p[f_id];
-          const cs_real_t pimp = rcodcl1_p[f_id];
+          const cs_real_t hext = h_ext_p[f_id];
+          const cs_real_t pimp = val_ext_p[f_id];
 
           cs_boundary_conditions_set_dirichlet_scalar(coefa_p[f_id],
                                                       cofaf_p[f_id],
@@ -1706,7 +1703,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
         if (icodcl_p[f_id] == CS_BC_NEUMANN) {
 
-          const cs_real_t dimp = rcodcl3_p[f_id];
+          const cs_real_t dimp = q_ext_p[f_id];
 
           cs_boundary_conditions_set_neumann_scalar(coefa_p[f_id],
                                                     cofaf_p[f_id],
@@ -1721,8 +1718,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
         else if (icodcl_p[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
-          const cs_real_t pimp = rcodcl1_p[f_id];
-          const cs_real_t cfl  = rcodcl2_p[f_id];
+          const cs_real_t pimp = val_ext_p[f_id];
+          const cs_real_t cfl  = h_ext_p[f_id];
 
           cs_boundary_conditions_set_convective_outlet_scalar(coefa_p[f_id],
                                                               cofaf_p[f_id],
@@ -1739,8 +1736,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
         else if (icodcl_p[f_id] == 10) {
 
-          const cs_real_t pinf  = rcodcl1_p[f_id];
-          const cs_real_t ratio = rcodcl2_p[f_id];
+          const cs_real_t pinf  = val_ext_p[f_id];
+          const cs_real_t ratio = h_ext_p[f_id];
 
           cs_boundary_conditions_set_affine_function_scalar(coefa_p[f_id],
                                                             cofaf_p[f_id],
@@ -1757,9 +1754,9 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
         else if (icodcl_p[f_id] == 12) {
 
-          const cs_real_t pinf  = rcodcl1_p[f_id];
-          const cs_real_t ratio = rcodcl2_p[f_id];
-          const cs_real_t dimp  = rcodcl3_p[f_id];
+          const cs_real_t pinf  = val_ext_p[f_id];
+          const cs_real_t ratio = h_ext_p[f_id];
+          const cs_real_t dimp  = q_ext_p[f_id];
 
           cs_boundary_conditions_set_affine_function_conv_neumann_diff_scalar
             (coefa_p[f_id], cofaf_p[f_id],
@@ -1772,8 +1769,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
         else if (icodcl_p[f_id] == 13) {
 
-          const cs_real_t pimp = rcodcl1_p[f_id];
-          const cs_real_t dimp = rcodcl3_p[f_id];
+          const cs_real_t pimp = val_ext_p[f_id];
+          const cs_real_t dimp = q_ext_p[f_id];
 
           cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
             (coefa_p[f_id], cofaf_p[f_id],
@@ -1786,7 +1783,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
         else if (icodcl_p[f_id] == 15) {
 
-          const cs_real_t dimp = rcodcl3_p[f_id];
+          const cs_real_t dimp = q_ext_p[f_id];
 
           cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
             (coefa_p[f_id], cofaf_p[f_id],
@@ -3681,8 +3678,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
     cs_field_t *m_vel = cs_field_by_name("mesh_velocity");
 
     int *icodcl_displ = m_vel->bc_coeffs->icodcl;
-    cs_real_t *rcodcl1_displ = m_vel->bc_coeffs->rcodcl1;
-    cs_real_t *rcodcl2_displ = m_vel->bc_coeffs->rcodcl2;
+    auto       val_ext_displ = m_vel->bc_coeffs->get_val_ext_v();
+    auto       h_ext_displ = m_vel->bc_coeffs->get_h_ext_v();
     cs_real_t *rcodcl3_displ = m_vel->bc_coeffs->rcodcl3;
 
     cs_real_3_t  *coefa_mv = (cs_real_3_t  *)m_vel->bc_coeffs->a;
@@ -3739,10 +3736,10 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       if (icodcl_displ[f_id] == CS_BC_DIRICHLET) {
 
         for (cs_lnum_t k = 0; k < 3; k++)
-          pimpv[k] = rcodcl1_displ[n_b_faces*k + f_id];
+          pimpv[k] = val_ext_displ(f_id, k);
 
         for (cs_lnum_t k = 0; k < 3; k++)
-          hextv[k] = rcodcl2_displ[n_b_faces*k + f_id];
+          hextv[k] = h_ext_displ(f_id, k);
 
         cs_boundary_conditions_set_dirichlet_vector_aniso
           (coefa_mv[f_id], cofaf_mv[f_id],
@@ -3774,10 +3771,10 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Coupled solving of the velocity components */
 
         for (cs_lnum_t k = 0; k < 3; k++)
-          pimpv[k] = rcodcl1_displ[n_b_faces*k + f_id];
+          pimpv[k] = val_ext_displ(f_id, k);
 
         for (cs_lnum_t k = 0; k < 3; k++)
-          cflv[k] = rcodcl2_displ[n_b_faces*k + f_id];
+          cflv[k] = h_ext_displ(f_id, k);
 
         cs_boundary_conditions_set_convective_outlet_vector_aniso
           (coefa_mv[f_id], cofaf_mv[f_id],
@@ -4030,7 +4027,7 @@ cs_boundary_conditions_set_coeffs_init(void)
                                    true,
                                    dt,
                                    bc_type,
-                                   CS_F_(vel)->bc_coeffs->rcodcl1);
+                                   CS_F_(vel)->bc_coeffs->get_val_ext_v());
 
   if (cs_glob_rad_transfer_params->type != CS_RAD_TRANSFER_NONE)
     _boundary_condition_rt_type(mesh,

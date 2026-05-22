@@ -193,6 +193,21 @@ public:
   (
   ) const;
 
+  cs_span<cs_real_t>
+  get_val_ext_s
+  (
+  ) const;
+
+  cs::mdspan<cs_real_t, 2, cs::layout::left>
+  get_val_ext_v
+  (
+  ) const;
+
+  cs::mdspan<cs_real_t, 2, cs::layout::left>
+  get_val_ext_t
+  (
+  ) const;
+
   /* Accessors for external exchange coefficient (e.g. rcodcl2)
      ---------------------------------------------------------- */
 
@@ -206,6 +221,16 @@ public:
   (
   ) const;
 
+  cs_span<cs_real_t>
+  get_h_ext_s
+  (
+  ) const;
+
+  cs::mdspan<cs_real_t, 2, cs::layout::left>
+  get_h_ext_v
+  (
+  ) const;
+
   /* Accessors for prescribed flux density (e.g. rcodcl3)
      ---------------------------------------------------- */
 
@@ -216,6 +241,16 @@ public:
 
   cs::mdspan<cs_real_t, 2, cs::layout::left>
   get_q_ext_2d
+  (
+  ) const;
+
+  cs_span<cs_real_t>
+  get_q_ext_s
+  (
+  ) const;
+
+  cs::mdspan<cs_real_t, 2, cs::layout::left>
+  get_q_ext_v
   (
   ) const;
 

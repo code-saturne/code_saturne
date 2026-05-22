@@ -4744,11 +4744,11 @@ cs_post_define_particles_mesh_by_func(int                    mesh_id,
 void
 cs_post_define_1d_thermal_mesh
 (
-  int       mesh_id,
-  bool      time_varying,
-  bool      auto_variable,
-  int       n_writers,
-  const int writer_ids[]
+  int                    mesh_id,
+  bool                   time_varying,
+  [[maybe_unused]] bool  auto_variable,
+  int                    n_writers,
+  const int              writer_ids[]
 )
 {
   cs_post_mesh_t *post_mesh = _predefine_mesh(mesh_id, time_varying, 5,

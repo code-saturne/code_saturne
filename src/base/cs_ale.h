@@ -141,12 +141,15 @@ cs_mesh_velocity_mass_flux(const cs_mesh_t             *m,
  *----------------------------------------------------------------------------*/
 
 void
-cs_boundary_condition_ale_type(const cs_mesh_t            *m,
-                               const cs_mesh_quantities_t *mq,
-                               const bool                  init,
-                               const cs_real_t             dt[],
-                               const int                   bc_type[],
-                               cs_real_t                  *rcodcl1_vel);
+cs_boundary_condition_ale_type
+(
+   const cs_mesh_t                             *m,
+   const cs_mesh_quantities_t                  *mq,
+   const bool                                   init,
+   const cs_real_t                              dt[],
+   const int                                    bc_type[],
+   cs::mdspan<cs_real_t, 2, cs::layout::left>   val_ext_vel
+);
 
 /*----------------------------------------------------------------------------*/
 /*

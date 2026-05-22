@@ -67,8 +67,6 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
                             [[maybe_unused]] int           bc_type[])
 {
   /*! [loc_var_dec] */
-  const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
-
   const int n_fields = cs_field_n_fields();
 
   /* Example of specific boundary conditions fully defined by the user,
@@ -78,51 +76,59 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
    *   - a Dirichlet condition on velocity (sliding wall with no-slip condition)
    *   - a Dirichlet condition on the first scalar. */
 
-  const cs_zone_t  *zn = nullptr;
-
   cs_field_t *scal = cs_field("scalar1");
   /*! [loc_var_dec] */
 
   /*! [example_1] */
-  zn = cs_boundary_zone_by_name("wall_s");
+  {
+    const cs_zone_t *zn = cs_boundary_zone_by_name("wall_s");
 
-  cs_real_t *vel_rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
-  cs_real_t *vel_rcodcl2 = CS_F_(vel)->bc_coeffs->rcodcl2;
-  cs_real_t *vel_rcodcl3 = CS_F_(vel)->bc_coeffs->rcodcl3;
+    const cs_lnum_t n_elts = zn->n_elts;
+    const cs_lnum_t *elt_ids = zn->elt_ids;
 
-  for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
+    int *vel_icodcl = CS_F_(vel)->bc_coeffs->icodcl;
+    auto vel_val_ext = CS_F_(vel)->bc_coeffs->get_val_ext_v();
+    auto vel_h_ext = CS_F_(vel)->bc_coeffs->get_h_ext_v();
+    auto vel_q_ext = CS_F_(vel)->bc_coeffs->get_q_ext_v();
 
-    const cs_lnum_t face_id = zn->elt_ids[ilelt];
+    int *scal_icodcl = scal->bc_coeffs->icodcl;
+    auto scal_val_ext = scal->bc_coeffs->get_val_ext();
+    auto scal_h_ext = scal->bc_coeffs->get_h_ext();
+    auto scal_q_ext = scal->bc_coeffs->get_q_ext();
 
-    bc_type[face_id] = CS_SMOOTHWALL;
+    for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
 
-    scal->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
-    CS_F_(vel)->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
+      const cs_lnum_t face_id = elt_ids[elt_idx];
 
-    /* Dirichlet value */
+      bc_type[face_id] = CS_SMOOTHWALL;
 
-    scal->bc_coeffs->rcodcl1[face_id] = 10.;
+      scal_icodcl[face_id] = CS_BC_DIRICHLET;
+      vel_icodcl[face_id] = CS_BC_DIRICHLET;
 
-    vel_rcodcl1[n_b_faces*0 + face_id] = 1.;
-    vel_rcodcl1[n_b_faces*1 + face_id] = 0.;
-    vel_rcodcl1[n_b_faces*2 + face_id] = 0.;
+      /* Dirichlet value */
 
-    /* No exchange coefficient */
+      scal_val_ext[face_id] = 10.;
 
-    scal->bc_coeffs->rcodcl2[face_id] = cs_math_infinite_r;
+      vel_val_ext(face_id, 0) = 1.;
+      vel_val_ext(face_id, 1) = 0.;
+      vel_val_ext(face_id, 2) = 0.;
 
-    vel_rcodcl2[n_b_faces*0 + face_id] = cs_math_infinite_r;
-    vel_rcodcl2[n_b_faces*1 + face_id] = cs_math_infinite_r;
-    vel_rcodcl2[n_b_faces*2 + face_id] = cs_math_infinite_r;
+      /* No exchange coefficient */
 
-    /* Flux density at 0 */
+      scal_h_ext[face_id] = cs_math_infinite_r;
 
-    scal->bc_coeffs->rcodcl3[face_id] = 0;
+      vel_h_ext(face_id, 0) = cs_math_infinite_r;
+      vel_h_ext(face_id, 1) = cs_math_infinite_r;
+      vel_h_ext(face_id, 2) = cs_math_infinite_r;
 
-    vel_rcodcl3[n_b_faces*0 + face_id] = 0;
-    vel_rcodcl3[n_b_faces*1 + face_id] = 0;
-    vel_rcodcl3[n_b_faces*2 + face_id] = 0;
+      /* Flux density at 0 */
 
+      scal_q_ext[face_id] = 0;
+
+      vel_q_ext(face_id, 0) = 0;
+      vel_q_ext(face_id, 1) = 0;
+      vel_q_ext(face_id, 1) = 0;
+    }
   }
   /*! [example_1] */
 
@@ -132,14 +138,18 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
    * all variables. */
 
   /*! [example_2] */
-  zn = cs_boundary_zone_by_name("surf_h");
 
-  for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
+  {
+    const cs_zone_t *zn = cs_boundary_zone_by_name("surf_h");
 
-    const cs_lnum_t face_id = zn->elt_ids[ilelt];
+    const cs_lnum_t n_elts = zn->n_elts;
+    const cs_lnum_t *elt_ids = zn->elt_ids;
 
     /* CAUTION: the value of bc_type must be assigned to CS_UNDEF */
-    bc_type[face_id] = CS_UNDEF;
+    for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
+      const cs_lnum_t face_id = elt_ids[elt_idx];
+      bc_type[face_id] = CS_UNDEF;
+    }
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
@@ -147,12 +157,20 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
 
-      f->bc_coeffs->icodcl[face_id] = CS_BC_NEUMANN;
+      int *icodcl = f->bc_coeffs->icodcl;
+      auto val_ext = f->bc_coeffs->get_val_ext_2d();
+      auto h_ext = f->bc_coeffs->get_h_ext_2d();
+      auto q_ext = f->bc_coeffs->get_q_ext_2d();
 
-      for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
-        f->bc_coeffs->rcodcl1[n_b_faces*ii + face_id] = 0.;
-        f->bc_coeffs->rcodcl2[n_b_faces*ii + face_id] = cs_math_infinite_r;
-        f->bc_coeffs->rcodcl3[n_b_faces*ii + face_id] = 0.;
+      for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
+        const cs_lnum_t face_id = elt_ids[elt_idx];
+
+        icodcl[face_id] = CS_BC_NEUMANN;
+        for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
+          val_ext(face_id, ii) = 0.;
+          h_ext(face_id, ii) = cs_math_infinite_r;
+          q_ext(face_id, ii) = 0.;
+        }
       }
     }
   }
@@ -165,20 +183,25 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
    * So different from the Sand grain roughness */
 
   /*! [example_3] */
-  zn = cs_boundary_zone_by_name("r_wall");
+  {
+    const cs_zone_t *zn = cs_boundary_zone_by_name("r_wall");
 
-  if (cs_field_try("boundary_roughness") != nullptr) {
+    const cs_lnum_t n_elts = zn->n_elts;
+    const cs_lnum_t *elt_ids = zn->elt_ids;
 
-    cs_real_t *bpro_roughness = cs_field("boundary_roughness")->val;
+    if (cs_field_try("boundary_roughness") != nullptr) {
 
-    for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
+      cs_real_t *bpro_roughness = cs_field("boundary_roughness")->val;
 
-      const cs_lnum_t face_id = zn->elt_ids[ilelt];
+      for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
 
-      bc_type[face_id] = CS_SMOOTHWALL;
+        const cs_lnum_t face_id = elt_ids[elt_idx];
 
-      /* Boundary roughtness (in meter) */
-      bpro_roughness[face_id] = 0.05;
+        bc_type[face_id] = CS_SMOOTHWALL;
+
+        /* Boundary roughtness (in meter) */
+        bpro_roughness[face_id] = 0.05;
+      }
     }
   }
   /*! [example_3] */

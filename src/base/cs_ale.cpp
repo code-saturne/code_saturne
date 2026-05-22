@@ -1588,12 +1588,15 @@ cs_mesh_velocity_mass_flux(const cs_mesh_t             *m,
  *----------------------------------------------------------------------------*/
 
 void
-cs_boundary_condition_ale_type(const cs_mesh_t            *m,
-                               const cs_mesh_quantities_t *mq,
-                               const bool                  init,
-                               const cs_real_t             dt[],
-                               const int                   bc_type[],
-                               cs_real_t                  *rcodcl1_vel)
+cs_boundary_condition_ale_type
+(
+   const cs_mesh_t                             *m,
+   const cs_mesh_quantities_t                  *mq,
+   const bool                                   init,
+   const cs_real_t                              dt[],
+   const int                                    bc_type[],
+   cs::mdspan<cs_real_t, 2, cs::layout::left>   val_ext_vel
+)
 {
   const cs_lnum_t  n_b_faces    = m->n_b_faces;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
@@ -1610,17 +1613,19 @@ cs_boundary_condition_ale_type(const cs_mesh_t            *m,
 
   int       *icodcl_mesh_u   = nullptr;
   cs_real_t *_rcodcl1_mesh_u = nullptr;
-  cs_real_t *rcodcl1_mesh_u  = nullptr;
+  cs::mdspan<cs_real_t, 2, cs::layout::left> val_ext_mesh_u;
 
   if (CS_F_(mesh_u)->bc_coeffs != nullptr) {
     icodcl_mesh_u  = CS_F_(mesh_u)->bc_coeffs->icodcl;
-    rcodcl1_mesh_u = CS_F_(mesh_u)->bc_coeffs->rcodcl1;
+    val_ext_mesh_u = CS_F_(mesh_u)->bc_coeffs->get_val_ext_v();
   }
 
   if (cs_glob_ale == CS_ALE_CDO) {
     const int size_uma = CS_F_(mesh_u)->dim * n_b_faces;
     CS_MALLOC(_rcodcl1_mesh_u, size_uma, cs_real_t);
-    rcodcl1_mesh_u = _rcodcl1_mesh_u;
+    val_ext_mesh_u = cs::mdspan<cs_real_t, 2, cs::layout::left>(_rcodcl1_mesh_u,
+                                                                n_b_faces,
+                                                                3);
 
     cs_real_3_t *b_fluid_vel = nullptr;
     CS_MALLOC(b_fluid_vel, n_b_faces, cs_real_3_t);
@@ -1631,18 +1636,18 @@ cs_boundary_condition_ale_type(const cs_mesh_t            *m,
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       for (cs_lnum_t ii = 0; ii < 3; ii++)
-        rcodcl1_mesh_u[n_b_faces * ii + face_id] = b_fluid_vel[face_id][ii];
+        val_ext_mesh_u(face_id, ii) = b_fluid_vel[face_id][ii];
     }
 
     CS_FREE(b_fluid_vel);
   }
 
-  assert(rcodcl1_mesh_u != nullptr);
+  assert(val_ext_mesh_u.data() != nullptr);
 #pragma omp parallel for if (n_b_faces > CS_THR_MIN)
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
-      if (rcodcl1_mesh_u[n_b_faces * ii + face_id] > cs_math_infinite_r * 0.5)
-        rcodcl1_mesh_u[n_b_faces * ii + face_id] = 0.;
+      if (val_ext_mesh_u(face_id, ii) > cs_math_infinite_r * 0.5)
+        val_ext_mesh_u(face_id, ii) = 0.;
     }
   }
 
@@ -1713,7 +1718,7 @@ cs_boundary_condition_ale_type(const cs_mesh_t            *m,
 
         ale_bc_type[face_id] = CS_BOUNDARY_ALE_IMPOSED_VEL;
         for (cs_lnum_t ii = 0; ii < 3; ii++)
-          rcodcl1_mesh_u[n_b_faces * ii + face_id] = ddep_xyz[ii] * coeff;
+          val_ext_mesh_u(face_id, ii) = ddep_xyz[ii] * coeff;
       }
     }
 
@@ -1727,7 +1732,7 @@ cs_boundary_condition_ale_type(const cs_mesh_t            *m,
           icpt++;
           icodcl_mesh_u[face_id] = CS_BC_DIRICHLET;
           for (cs_lnum_t ii = 0; ii < 3; ii++)
-            rcodcl1_mesh_u[n_b_faces * ii + face_id] = 0.;
+            val_ext_mesh_u(face_id, ii) = 0.;
         }
 
         if (icpt) {
@@ -1847,20 +1852,24 @@ cs_boundary_condition_ale_type(const cs_mesh_t            *m,
     if (ale_bc_type[face_id] != CS_BOUNDARY_ALE_IMPOSED_VEL)
       continue;
 
-    if (bc_type[face_id] == CS_SYMMETRY)
+    if (bc_type[face_id] == CS_SYMMETRY) {
       for (int ii = 0; ii < 3; ii++)
-        rcodcl1_vel[n_b_faces * ii + face_id] =
-          rcodcl1_mesh_u[n_b_faces * ii + face_id];
+        val_ext_vel(face_id, ii) = val_ext_mesh_u(face_id, ii);
+    }
 
     if (bc_type[face_id] == CS_SMOOTHWALL || bc_type[face_id] == CS_ROUGHWALL) {
       /* If nothing is set by the user, then the wall is supposed
        * to move with the sliding wall */
-      if (rcodcl1_vel[n_b_faces * 0 + face_id] > cs_math_infinite_r * 0.5 &&
-          rcodcl1_vel[n_b_faces * 1 + face_id] > cs_math_infinite_r * 0.5 &&
-          rcodcl1_vel[n_b_faces * 2 + face_id] > cs_math_infinite_r * 0.5) {
+
+      const cs_real_t vel_ext[3] = {val_ext_vel(face_id, 0),
+                                    val_ext_vel(face_id, 1),
+                                    val_ext_vel(face_id, 2)};
+
+      if (vel_ext[0] > cs_math_infinite_r * 0.5 &&
+          vel_ext[1] > cs_math_infinite_r * 0.5 &&
+          vel_ext[2] > cs_math_infinite_r * 0.5) {
         for (int ii = 0; ii < 3; ii++)
-          rcodcl1_vel[n_b_faces * ii + face_id] =
-            rcodcl1_mesh_u[n_b_faces * ii + face_id];
+          val_ext_vel(face_id, ii) = val_ext_mesh_u(face_id, ii);
       }
       else {
         /* Otherwise, if the user has set the fluid velocity
@@ -1868,23 +1877,18 @@ cs_boundary_condition_ale_type(const cs_mesh_t            *m,
          * and the tangential part is the one of the user (completed with 0
          * for non set values) */
         for (int ii = 0; ii < 3; ii++) {
-          if (rcodcl1_vel[n_b_faces * ii + face_id] > cs_math_infinite_r * 0.5)
-            rcodcl1_vel[n_b_faces * ii + face_id] = 0.;
+          if (vel_ext[ii] > cs_math_infinite_r * 0.5)
+            val_ext_vel(face_id, ii) = 0.;
         }
 
         const cs_nreal_t *rnxyz = b_face_u_normal[face_id];
 
-        const cs_real_t rcodcxyz[3] = { rcodcl1_vel[n_b_faces * 0 + face_id],
-                                        rcodcl1_vel[n_b_faces * 1 + face_id],
-                                        rcodcl1_vel[n_b_faces * 2 + face_id] };
         cs_real_t rcodsn = 0.;
-        for (int ii = 0; ii < 3; ii++)
-          rcodsn += (rcodcl1_mesh_u[n_b_faces * ii + face_id] - rcodcxyz[ii]) *
-                    rnxyz[ii];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          rcodsn += (val_ext_mesh_u(face_id, ii) - vel_ext[ii]) * rnxyz[ii];
 
-        for (int ii = 0; ii < 3; ii++)
-          rcodcl1_vel[n_b_faces * ii + face_id] =
-            rcodcxyz[ii] + rcodsn * rnxyz[ii];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          val_ext_vel(face_id, ii) = vel_ext[ii] + rcodsn * rnxyz[ii];
       }
     }
   }

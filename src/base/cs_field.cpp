@@ -5561,9 +5561,32 @@ cs_field_bc_coeffs_t::get_val_ext
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a 2D span view of boundary condition external values.
+ * \brief Return a 1D span view of boundary condition external scalar values.
  *
- * \return  2D span view of field boundary condition external values.
+ * This is the same as cs_field_bc_coeffs_t::get_val_ext, with a more explicit
+ * naming scheme which is better aligned with s/v/t (scalar/vector/tensor).
+ *
+ * \return  span view of boundary condition external values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span<cs_real_t>
+cs_field_bc_coeffs_t::get_val_ext_s
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs_span<cs_real_t>(this->rcodcl1, n_b_faces);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of boundary condition external values
+ *        (1st dimension: face id, 2nd dimension: field dimension).
+ *
+ * \return  2D span view of field boundary condition prescribed flux
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5578,6 +5601,47 @@ cs_field_bc_coeffs_t::get_val_ext_2d
   return cs::mdspan<cs_real_t, 2, cs::layout::left>(this->rcodcl1,
                                                     n_b_faces,
                                                     this->dim);
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of boundary condition external vector values.
+ *
+ * \return  2D span view of field boundary condition external vector values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs::mdspan<cs_real_t, 2, cs::layout::left>
+cs_field_bc_coeffs_t::get_val_ext_v
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs::mdspan<cs_real_t, 2, cs::layout::left>(this->rcodcl1,
+                                                    n_b_faces,
+                                                    3);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of boundary condition external tensor values.
+ *
+ * \return  2D span view of field boundary condition external tensor values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs::mdspan<cs_real_t, 2, cs::layout::left>
+cs_field_bc_coeffs_t::get_val_ext_t
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs::mdspan<cs_real_t, 2, cs::layout::left>(this->rcodcl1,
+                                                    n_b_faces,
+                                                    6);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5602,11 +5666,10 @@ cs_field_bc_coeffs_t::get_h_ext
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a 2D span view of boundary condition external
- *        exchange coefficient.
+ * \brief Return a 2D span view of boundary condition external exchange
+ *        coefficient (1st dimension: face id, 2nd dimension: field dimension).
  *
- * \return  2D span view of field boundary condition external exchange
- *          coefficient
+ * \return  2D span view of field boundary condition prescribed flux
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5621,6 +5684,52 @@ cs_field_bc_coeffs_t::get_h_ext_2d
   return cs::mdspan<cs_real_t, 2, cs::layout::left>(this->rcodcl2,
                                                     n_b_faces,
                                                     this->dim);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 1D span view of boundary condition external exchange
+ *        coefficient.
+ *
+ * This is the same as cs_field_bc_coeffs_t::get_h_ext, with a more explicit
+ * naming scheme which is better aligned with s/v/t (scalar/vector/tensor).
+ *
+ * \return  span view of boundary condition external values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span<cs_real_t>
+cs_field_bc_coeffs_t::get_h_ext_s
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs_span<cs_real_t>(this->rcodcl2, n_b_faces);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of boundary condition vector external
+ *        exchange coefficients.
+ *
+ * \return  2D span view of field boundary condition external
+ *          exchange coefficients.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs::mdspan<cs_real_t, 2, cs::layout::left>
+cs_field_bc_coeffs_t::get_h_ext_v
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs::mdspan<cs_real_t, 2, cs::layout::left>(this->rcodcl2,
+                                                    n_b_faces,
+                                                    3);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5644,7 +5753,8 @@ cs_field_bc_coeffs_t::get_q_ext
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a 2D span view of boundary condition prescribed flux.
+ * \brief Return a 2D span view of boundary condition prescribed flux
+ *        (1st dimension: face id, 2nd dimension: field dimension).
  *
  * \return  2D span view of field boundary condition prescribed flux
  */
@@ -5661,6 +5771,49 @@ cs_field_bc_coeffs_t::get_q_ext_2d
   return cs::mdspan<cs_real_t, 2, cs::layout::left>(this->rcodcl3,
                                                     n_b_faces,
                                                     this->dim);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 1D span view of boundary condition prescribed flux.
+ *
+ * This is the same as cs_field_bc_coeffs_t::get_q_ext, with a more explicit
+ * naming scheme which is better aligned with s/v/t (scalar/vector/tensor).
+ *
+ * \return  span view of boundary condition prescribed flux
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span<cs_real_t>
+cs_field_bc_coeffs_t::get_q_ext_s
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs_span<cs_real_t>(this->rcodcl3, n_b_faces);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of boundary condition vector prescribed flux.
+ *
+ * \return  2D span view of field boundary condition prescribed flux
+ */
+/*----------------------------------------------------------------------------*/
+
+cs::mdspan<cs_real_t, 2, cs::layout::left>
+cs_field_bc_coeffs_t::get_q_ext_v
+(
+) const
+{
+  const cs_lnum_t n_b_faces
+    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
+
+  return cs::mdspan<cs_real_t, 2, cs::layout::left>(this->rcodcl3,
+                                                    n_b_faces,
+                                                    3);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -413,6 +413,9 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   {
     cs_field_t *th_f = cs_thermal_model_field();
 
+    auto th_f_val_ext = th_f->bc_coeffs->get_val_ext();
+    auto th_f_h_ext = th_f->bc_coeffs->get_h_ext();
+
     const cs_zone_t *zone = cs_boundary_zone_by_name("51");
     for (cs_lnum_t ilelt = 0; ilelt < zone->n_elts; ilelt++) {
 
@@ -424,8 +427,8 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
        *   imposed heat transfer coefficient */
 
       th_f->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
-      th_f->bc_coeffs->rcodcl1[face_id] = 2.e4;
-      th_f->bc_coeffs->rcodcl2[face_id] = 1.e5;
+      th_f_val_ext[face_id] = 2.e4;
+      th_f_h_ext[face_id] = 1.e5;
 
       /* Real electrical potential: anode boundary condition;
        * pot_diff calculated in cs_user_electric_scaling.c */

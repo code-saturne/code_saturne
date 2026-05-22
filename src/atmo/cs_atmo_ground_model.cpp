@@ -717,7 +717,7 @@ _compute_stomatal_conductance(cs_lnum_t ground_id,
   cs_real_t vj_1 = 0.;
   cs_real_t delta_ci = 0.;
   int i;
-  for (i=0; i<30; i++){
+  for (i=0; i<30; i++) {
 
     vc_0 = vcmax*(ci_pho_0
       - gamma_pho)/(ci_pho_0 + kc
@@ -761,23 +761,23 @@ _compute_stomatal_conductance(cs_lnum_t ground_id,
       * (air_leaf_temp + cs_physical_constants_celsius_to_kelvin)
       + 1./gco2_1);
 
-    if (( f_ci_pho_0 == f_ci_pho_1) && (f_ci_pho_1 != 0.)){
+    if ((f_ci_pho_0 == f_ci_pho_1) && (f_ci_pho_1 != 0.)) {
       ci_pho->val[ground_id] = (ci_pho_0 + ci_pho_1)/2;
     }
-    else if (( f_ci_pho_0 == f_ci_pho_1) && (f_ci_pho_1 == 0.)){
+    else if ((f_ci_pho_0 == f_ci_pho_1) && (f_ci_pho_1 == 0.)) {
       ci_pho->val[ground_id] = ci_pho_1;
     }
-    else if (f_ci_pho_0 == 0. ){
+    else if (f_ci_pho_0 == 0.) {
       ci_pho->val[ground_id] = ci_pho_0;
     }
-    else if (f_ci_pho_1 == 0. ){
+    else if (f_ci_pho_1 == 0.) {
       ci_pho->val[ground_id] = ci_pho_1;
     }
     else {
       ci_pho->val[ground_id] = ci_pho_1 - (ci_pho_1-ci_pho_0)
         / (f_ci_pho_1-f_ci_pho_0)*f_ci_pho_1;
     }
-    if(( ci_pho->val[ground_id] < 0.) || (ci_pho->val[ground_id] > 0.0006)){
+    if(( ci_pho->val[ground_id] < 0.) || (ci_pho->val[ground_id] > 0.0006)) {
       bft_printf("PROBLEM ci equal to %f\n", ci_pho->val[ground_id]);
       ci_pho->val[ground_id] = (ci_pho_0 + ci_pho_1)/2;
     }
@@ -786,7 +786,7 @@ _compute_stomatal_conductance(cs_lnum_t ground_id,
     delta_ci = 1000*(ci_pho->val[ground_id] - ci_pho_1);
   }
 
-  if (ci_pho->val[ground_id] == 0){
+  if (ci_pho->val[ground_id] == 0) {
     bft_printf("PROBLEM ci can't be equal to 0 \n");
   }
   else if (delta_ci/ci_pho->val[ground_id]>0.2) {
@@ -890,7 +890,7 @@ _compute_le_h_and_leaf_temp(cs_lnum_t ground_id,
 
   int nb;
 
-  for (nb=0; nb<30; nb++){
+  for (nb=0; nb<30; nb++) {
 
     pvsat_plant_0 = cs_air_pwv_sat(leaf_temp_0);
     pvsat_plant_1 = cs_air_pwv_sat(leaf_temp_1);
@@ -932,23 +932,23 @@ _compute_le_h_and_leaf_temp(cs_lnum_t ground_id,
     f_leaf_temp_0 = rn_plant_0 - le_plant_0 - hs_plant_0;
     f_leaf_temp_1 = rn_plant_1 - le_plant_1 - hs_plant_1;
 
-    if (( f_leaf_temp_0 == f_leaf_temp_1) && (f_leaf_temp_1 != 0.)){
+    if (( f_leaf_temp_0 == f_leaf_temp_1) && (f_leaf_temp_1 != 0.)) {
       leaf_temp->val[ground_id] = (leaf_temp_0 + leaf_temp_1)/2.;
     }
-    else if (( f_leaf_temp_0 == f_leaf_temp_1) && (f_leaf_temp_1 == 0.)){
+    else if (( f_leaf_temp_0 == f_leaf_temp_1) && (f_leaf_temp_1 == 0.)) {
       leaf_temp->val[ground_id] = leaf_temp_1;
     }
-    else if (f_leaf_temp_0 == 0. ){
+    else if (f_leaf_temp_0 == 0. ) {
       leaf_temp->val[ground_id] = leaf_temp_0;
     }
-    else if (f_leaf_temp_1 == 0. ){
+    else if (f_leaf_temp_1 == 0. ) {
       leaf_temp->val[ground_id] = leaf_temp_1;
     }
     else {
       leaf_temp->val[ground_id] = leaf_temp_1 - (leaf_temp_1-leaf_temp_0)
         / (f_leaf_temp_1-f_leaf_temp_0)*f_leaf_temp_1;
     }
-    if(( leaf_temp->val[ground_id] < -20.) || (leaf_temp->val[ground_id] > 80.)){
+    if(( leaf_temp->val[ground_id] < -20.) || (leaf_temp->val[ground_id] > 80.)) {
       bft_printf("PROBLEM leaf temp equal to %f\n", leaf_temp->val[ground_id]);
       leaf_temp->val[ground_id] = (leaf_temp_0 + leaf_temp_1)/2.;
     }
@@ -1333,11 +1333,11 @@ cs_ground_model(void)
       if (micro_scale_option == CS_ATMO_GROUND_VEGETATION) {
 
         /* Check if latent heat of vaporization of water (J/kg) is defined */
-        if (ct_prop->hv0 < 100000.){
+        if (ct_prop->hv0 < 100000.) {
           ct_prop->hv0 = 2260000.;
         }
         /* Check if density of liquid water (kg/m3) is defined */
-        if (ct_prop->rho_l < 900.){
+        if (ct_prop->rho_l < 900.) {
           ct_prop->rho_l = 1000.;
         }
 
@@ -1379,13 +1379,13 @@ cs_ground_model(void)
 
         cs_real_t air_leaf_temp = atm_temp->val[cell_id]
           - cs_physical_constants_celsius_to_kelvin;
-        if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2){
+        if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2) {
           air_leaf_temp = atm_temp->val[cell_id] * pow(pphy / ps , rscp1)
             - cs_physical_constants_celsius_to_kelvin;
         }
-        else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 1){
+        else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 1) {
           air_leaf_temp = atm_temp->val[cell_id] * pow(pphy / ps , rscp1
-            / (1. + (rvsra - cpvcpa)* ground_total_water->val[ground_id] ))
+            / (1. + (rvsra - cpvcpa)* ground_total_water->val[ground_id]))
             - cs_physical_constants_celsius_to_kelvin;
         }
 
@@ -1759,16 +1759,16 @@ cs_atmo_ground_cat(int call_stage)
 
   if (call_stage == 1) {
     cs_atmo_ground_init_arrays(&n_ground_cat,
-                             &at_opt->ground_cat_thermal_inertia,
-                             &at_opt->ground_cat_roughness,
-                             &at_opt->ground_cat_thermal_roughness,
-                             &at_opt->ground_cat_albedo,
-                             &at_opt->ground_cat_emissi,
-                             &at_opt->ground_cat_vegeta,
-                             &at_opt->ground_cat_w1,
-                             &at_opt->ground_cat_w2,
-                             &at_opt->ground_cat_r1,
-                             &at_opt->ground_cat_r2);
+                               &at_opt->ground_cat_thermal_inertia,
+                               &at_opt->ground_cat_roughness,
+                               &at_opt->ground_cat_thermal_roughness,
+                               &at_opt->ground_cat_albedo,
+                               &at_opt->ground_cat_emissi,
+                               &at_opt->ground_cat_vegeta,
+                               &at_opt->ground_cat_w1,
+                               &at_opt->ground_cat_w2,
+                               &at_opt->ground_cat_r1,
+                               &at_opt->ground_cat_r2);
 
     for (cs_lnum_t n = 1; n <= n_ground_cat; n++) {
       at_opt->ground_cat_thermal_inertia[n] = codinv;

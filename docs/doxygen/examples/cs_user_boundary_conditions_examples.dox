@@ -415,10 +415,10 @@
 
   At all time steps after the first (possibly even the first if the flow
   at the mapping locations is initialized to nonzero values), the values at
-  points mapped to inlet face centers are applied to the field->bc_coeffs->rcodcl1
-  values of the corresponding faces, using the \ref cs_boundary_conditions_mapped_set
-  function. Optionally, a normalization by be applied,
-  ensuring the mean values initially defined are preserved. Normalization
+  points mapped to inlet face centers are applied to the field boundary coefficients
+  external values of the corresponding faces, using the
+  \ref cs_boundary_conditions_mapped_set function. Optionally, a normalization by be
+  applied, ensuring the mean values initially defined are preserved. Normalization
   is recommended for the velocity, and possibly scalars, but not for
   turbulent quantities, which should adapt to the velocity.
 

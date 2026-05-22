@@ -273,12 +273,12 @@ cs_cell_segment_intersect_probes_define(void          *input,
   /* This version is better than cs_cell_segment_intersect_select
      because it gives the cell
      if the segment is included in this cell */
-  cs_cell_polyline_intersect_select(input,
-                                    2,
-                                    &n_cells,
-                                    &cell_ids,
-                                    &seg_c_len,
-                                    &seg_c_cen);
+  cs_mesh_intersect_polyline_cell_select(input,
+                                         2,
+                                         &n_cells,
+                                         &cell_ids,
+                                         &seg_c_len,
+                                         &seg_c_cen);
 
   cs_real_3_t *_coords;
   cs_real_t *_s;
