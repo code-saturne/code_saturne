@@ -117,7 +117,7 @@ static int *_soil_state_array = nullptr;
  *        two-phase flow model.
  *
  * \param[in]  sp       set of modelling parameters
- * \param[in]  pc       capillarity pressure
+ * \param[in]  pc       capillary pressure
  * \param[out] sl_e     effective liquid saturation
  * \param[out] sl       liquid saturation
  * \param[out] lcap     liquid capacity
@@ -201,7 +201,7 @@ _set_kr_vgm_poly2(const cs_gwf_soil_vgm_tpf_param_t    *sp,
  *        liquid phase
  *
  * \param[in]  sp        set of modelling parameters
- * \param[in]  pc        capillarity pressure
+ * \param[in]  pc        capillary pressure
  * \param[out] sl        liquid saturation
  * \param[out] dsldpc    liquid capacity
  * \param[out] krl       relative permeability for the liquid phase
@@ -246,7 +246,7 @@ _eval_vgm_c1_hyperbolic(const cs_gwf_soil_vgm_tpf_param_t    *sp,
  *        gas and liquid phase
  *
  * \param[in]  sp        set of modelling parameters
- * \param[in]  pc        capillarity pressure
+ * \param[in]  pc        capillary pressure
  * \param[out] sl        liquid saturation
  * \param[out] dsldpc    liquid capacity
  * \param[out] krl       relative permeability for the liquid phase
@@ -292,7 +292,7 @@ _eval_vgm_c1_hyperbolic_p2(const cs_gwf_soil_vgm_tpf_param_t    *sp,
  *        liquid phase
  *
  * \param[in]  sp        set of modelling parameters
- * \param[in]  pc        capillarity pressure
+ * \param[in]  pc        capillary pressure
  * \param[out] sl        liquid saturation
  * \param[out] dsldpc    liquid capacity
  * \param[out] krl       relative permeability for the liquid phase
@@ -337,7 +337,7 @@ _eval_vgm_c1_exponential(const cs_gwf_soil_vgm_tpf_param_t    *sp,
  *        gas and liquid phase
  *
  * \param[in]  sp        set of modelling parameters
- * \param[in]  pc        capillarity pressure
+ * \param[in]  pc        capillary pressure
  * \param[out] sl        liquid saturation
  * \param[out] dsldpc    liquid capacity
  * \param[out] krl       relative permeability for the liquid phase
@@ -379,7 +379,7 @@ _eval_vgm_c1_exponential_p2(const cs_gwf_soil_vgm_tpf_param_t    *sp,
  *        the case of a Van Genuchten-Mualem model and a two-phase flow model.
  *
  * \param[in]  sp        set of modelling parameters
- * \param[in]  pc        capillarity pressure
+ * \param[in]  pc        capillary pressure
  * \param[out] sl        liquid saturation
  * \param[out] dsldpc    liquid capacity
  * \param[out] krl       relative permeability for the liquid phase
@@ -641,7 +641,7 @@ _update_iso_soil_tpf(const cs_real_t            t_eval,
 
       const cs_lnum_t  c_id = zone->elt_ids[i];
 
-      /* Mean value of the capillarity pressure in the current cell */
+      /* Mean value of the capillary pressure in the current cell */
 
       double pc_sum = 0;
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
@@ -709,7 +709,7 @@ _update_iso_soil_tpf(const cs_real_t            t_eval,
 
       const cs_lnum_t  c_id = zone->elt_ids[i];
 
-      /* Mean value of the capillarity pressure in the current cell */
+      /* Mean value of the capillary pressure in the current cell */
 
       double  sl_sum = 0, dsldpc_sum = 0, krg_sum = 0, krl_sum = 0;
 
@@ -1824,7 +1824,7 @@ cs_gwf_soil_set_vgm_spf_param(cs_gwf_soil_t         *soil,
  *
  * \param[in, out] soil         pointer to a cs_gwf_soil_t structure
  * \param[in]      n            shape parameter
- * \param[in]      pr_r         reference (capillarity) pressure
+ * \param[in]      pr_r         reference (capillary) pressure
  * \param[in]      sl_r         residual liquid saturation
  * \param[in]      sl_s         saturated (max.) liquid saturation
  */

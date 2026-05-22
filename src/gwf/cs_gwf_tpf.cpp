@@ -808,7 +808,7 @@ _update_pressure(const cs_cdo_connect_t    *connect,
   case CS_GWF_TPF_SOLVER_PLPC_COUPLED:
   case CS_GWF_TPF_SOLVER_PLPC_COUPLED_INCR:
     {
-      /* Main pressure variables: liquid and capillarity pressures */
+      /* Main pressure variables: liquid and capillary pressures */
 
       const cs_real_t *l_pr = tpf->l_pressure->val;
       const cs_real_t *c_pr = tpf->c_pressure->val;
@@ -1953,7 +1953,7 @@ _init_plpc_coupled_solver(cs_gwf_tpf_t       *tpf,
    *
    * Notations are the following :
    * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by "g"
-   * - indice "c" refers to the capillarity pressure
+   * - indice "c" refers to the capillary pressure
    * - Two components: water denoted by "w" and a gaseous component (let's say
    *   hydrogen) denoted by "h". The gaseous component is present in the two
    *   phases whereas water is only considered in the liquid phase.
@@ -1976,7 +1976,7 @@ _init_plpc_coupled_solver(cs_gwf_tpf_t       *tpf,
                               CS_BC_HMG_NEUMANN);
 
   tpf->h_eq = cs_equation_add("h_conservation",       /* equation name */
-                              "capillarity_pressure", /* variable name */
+                              "capillary_pressure",   /* variable name */
                               CS_EQUATION_TYPE_GROUNDWATER,
                               1,
                               CS_BC_HMG_NEUMANN);
@@ -2224,7 +2224,7 @@ _init_plpc_coupled_incr_solver(cs_gwf_tpf_t       *tpf,
    *
    * Notations are the following :
    * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by "g"
-   * - indice "c" refers to the capillarity pressure
+   * - indice "c" refers to the capillary pressure
    * - Two components: water denoted by "w" and a gaseous component (let's say
    *   hydrogen) denoted by "h". The gaseous component is present in the two
    *   phases whereas water is only considered in the liquid phase.
@@ -2246,8 +2246,8 @@ _init_plpc_coupled_incr_solver(cs_gwf_tpf_t       *tpf,
                               1,
                               CS_BC_HMG_NEUMANN);
 
-  tpf->h_eq = cs_equation_add("h_conservation",       /* equation name */
-                              "capillarity_pressure", /* variable name */
+  tpf->h_eq = cs_equation_add("h_conservation",     /* equation name */
+                              "capillary_pressure", /* variable name */
                               CS_EQUATION_TYPE_GROUNDWATER,
                               1,
                               CS_BC_HMG_NEUMANN);
@@ -2435,7 +2435,7 @@ cs_gwf_tpf_create(cs_gwf_model_type_t  model)
   tpf->nl_cvg_param.n_max_iter = 100;
   tpf->nl_cvg_param.rtol = 1e-5;
   tpf->nl_cvg_param.atol = 1e-12;
-  tpf->nl_cvg_param.dtol = 1e8; /* Problems with big capillarity steps may
+  tpf->nl_cvg_param.dtol = 1e8; /* Problems with big capillary steps may
                                    induce locally increment(s) with a strong
                                    variation */
 
@@ -2893,7 +2893,7 @@ cs_gwf_tpf_init_setup(cs_flag_t     post_flag,
 
     int  n_soils = cs_gwf_get_n_soils();
 
-    /* There are 3 pressures (liquid, gas and capillarity), the liquid
+    /* There are 3 pressures (liquid, gas and capillary), the liquid
        saturation and the liquid capacity. For each variable, two quantities
        are considered: the min. and the max. */
 

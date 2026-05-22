@@ -244,12 +244,12 @@ typedef struct {
  *
  * \var CS_GWF_TPF_SOLVER_PLPC_COUPLED_INCR
  *      (dPc, dPl) is the couple of main unknowns. dPc and dPl represents the
- *      increment on the capillarity pressure and liquid pressure
+ *      increement on the capillary pressure and liquid pressure
  *      respectively. The two equations solved are the conservation of the mass
- *      of water and the conservation of the mass of component mainly present
- *      in the gas phase (H2 for instance). A fully coupled approach solver is
- *      considered to solve the system of equations along with a modified
- *      Picard algorithm in the spirit of Celia.
+ *      of water and the conservation of the mass of component mainly present in
+ *      the gas phase (H2 for instance). A fully coupled approach solver is
+ *      considered to solve the system of equations along with a modified Picard
+ *      algorithm in the spirit of Celia.
  */
 
 typedef enum {
@@ -295,13 +295,13 @@ typedef enum {
  *   - Incompressibility of the liquid phase
  *   - Hydrogen pressure is given by the "perfect gas" law in the gas phase and
  *     the Henry's law in the liquid phase (when a miscible model is used)
- * The two primitive variables are the capillarity and liquid pressures with a
- * specific treatment in the saturated case (cf. the cited article or
- * Angelini's PhD thesis)
+ * The two primitive variables are the capillary and liquid pressures with a
+ * specific treatment in the saturated case (cf. the cited article or Angelini's
+ * PhD thesis)
  *
  * Notations are the following :
  * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by "g"
- * - indice "c" refers to the capillarity pressure
+ * - indice "c" refers to the capillary pressure
  * - Two components: water denoted by "w" and a gaseous component (let's say
  *   hydrogen) denoted by "h". The gaseous component is present in the two
  *   phases whereas water is only considered in the liquid phase.
@@ -334,14 +334,14 @@ typedef struct {
 
   /*! \var b01_w_eqp
    * Parameters associated to the (0,1) block in the system of equations. Water
-   * conservation w.r.t. the capillarity pressure.
+   * conservation w.r.t. the capillary pressure.
    */
 
   cs_equation_param_t          *b01_w_eqp;
 
   /*! \var b10_h_eqp
    * Parameters associated to the (1,0) block in the system of equations.
-   * Conservation of the hydrogen w.r.t. the capillarity pressure.
+   * Conservation of the hydrogen w.r.t. the capillary pressure.
    */
 
   cs_equation_param_t          *b10_h_eqp;
@@ -386,7 +386,7 @@ typedef struct {
    *
    * \var lcap_pty
    * Property related to the liquid capacity (derivative of the liquid
-   * saturation w.r.t. the capillarity pressure)
+   * saturation w.r.t. the capillary pressure)
    */
 
   cs_property_t                *krl_pty;
@@ -398,7 +398,7 @@ typedef struct {
    *
    * \var time_wc_pty
    * Property related to the unsteady term of the water conservation equation
-   * w.r.t. the capillarity pressure
+   * w.r.t. the capillary pressure
    *
    * \var diff_wl_pty
    * Property related to the diffusion term of the water conservation equation
@@ -406,11 +406,11 @@ typedef struct {
    *
    * \var time_hc_pty
    * Property related to the unsteady term of the hydrogen conservation equation
-   * w.r.t. the capillarity pressure
+   * w.r.t. the capillary pressure
    *
    * \var diff_hc_pty
    * Property related to the diffusion term of the hydrogen conservation
-   * equation w.r.t. the capillarity pressure
+   * equation w.r.t. the capillary pressure
    *
    * \var time_hl_pty
    * Property related to the unsteady term of the hydrogen conservation equation
@@ -441,8 +441,8 @@ typedef struct {
    * @{
    *
    * \var c_pressure
-   *      Pointer to a \ref cs_field_t structure named "capillarity_pressure".
-   *      Capillarity pressure \f$ P_c = P_g - P_l \f$
+   *      Pointer to a \ref cs_field_t structure named "capillary_pressure".
+   *      Capillary pressure \f$ P_c = P_g - P_l \f$
    *
    * \var l_pressure
    *      Pointer to a \ref cs_field_t structure named "liquid_pressure".
