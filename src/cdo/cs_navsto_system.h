@@ -157,14 +157,22 @@ typedef void(cs_navsto_check_init_t)(const cs_navsto_param_t   *nsp,
  *         Navier-Stokes system. This means that equations are built and then
  *         solved.
  *
- * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
- * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in,out]  nsp       set of parameters to handle the Navier-Stokes
+ *                           system
+ * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in]  ts            pointer to a \ref cs_time_step_t structure
+ * \param[in]  mass_flux_pre pevious scalar-valued mass flux for each face
+ * \param[in]  mass_flux     scalar-valued mass flux for each face
+ * \param[in]  tbs           pointer to a \ref cs_turbulence_t struct.
+ *
+ * \return returns true if the pseudo-steady algorithm has converged else false
+ *
  */
 /*----------------------------------------------------------------------------*/
 
-typedef bool(cs_navsto_check_convergence_t)(const cs_navsto_param_t   *nsp,
+typedef bool(cs_navsto_check_convergence_t)(cs_navsto_param_t         *nsp,
                                             const cs_cdo_quantities_t *quant,
+                                            const cs_time_step_t      *ts,
                                             const cs_real_t *mass_flux_pre,
                                             const cs_real_t *mass_flux,
                                             const cs_turbulence_t *tbs);

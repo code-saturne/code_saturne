@@ -240,10 +240,10 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
   nsp->nl_cvg_param.atol = 1e-5;
   nsp->nl_cvg_param.dtol = 1e3;
 
-  nsp->psteady_cvg_param.n_max_iter = 25;
-  nsp->psteady_cvg_param.rtol       = 1e-5;
-  nsp->psteady_cvg_param.atol       = 1e-5;
-  nsp->psteady_cvg_param.dtol       = 1e3;
+  nsp->psteady_cvg_param.rtol            = 1e-5;
+  nsp->psteady_cvg_param.atol            = 1e-5;
+  nsp->psteady_cvg_param.n_cvg_iter      = 2;
+  nsp->psteady_cvg_param.n_cvg_iter_curr = 0;
 
   nsp->anderson_param.n_max_dir = 6;
   nsp->anderson_param.starting_iter = 3;
@@ -535,6 +535,18 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
                 __func__);
     break;
 
+  case CS_NSKEY_PSTEADY_ALGO_N_CVG_ITER:
+    nsp->psteady_cvg_param.n_cvg_iter = atoi(val);
+    if (nsp->psteady_cvg_param.n_cvg_iter < 0)
+      bft_error(
+        __FILE__,
+        __LINE__,
+        0,
+        " %s: Invalid value for the number of converged iterations of the"
+        " pseudo-steady algorithm\n",
+        __func__);
+    break;
+
   case CS_NSKEY_NORM_TYPE:
     if (strcmp(val, "l2") == 0) {
       nsp->norm_type = CS_NAVSTO_PARAM_NORM_L2;
@@ -769,6 +781,18 @@ cs_navsto_param_log(const cs_navsto_param_t *nsp)
     }
 
   } /* A non-linear treatment is requested */
+
+  if (nsp->num_flag & CS_NAVSTO_NUM_PSEUDO_STEADY) {
+    cs_log_printf(CS_LOG_SETUP, "%s Pseudo-steady algo: activated\n", navsto);
+    cs_log_printf(CS_LOG_SETUP,
+                  "%s Tolerances of pseudo-steady algo:"
+                  " rtol: %5.3e; atol: %5.3e; n_cvg_iter: %d\n",
+                  navsto,
+                  nsp->psteady_cvg_param.rtol,
+                  nsp->psteady_cvg_param.atol,
+                  nsp->psteady_cvg_param.n_cvg_iter);
+
+  } /* A pseudo-steady treatment is requested */
 
   /* Initial conditions for the velocity */
 

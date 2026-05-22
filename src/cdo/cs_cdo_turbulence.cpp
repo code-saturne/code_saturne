@@ -1281,3 +1281,85 @@ _cs_turbulence_t::add_boundary_stress(const cs_mesh_t *m,
 };
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check the convergence of the pseudo-steady algorithm
+ *        when the unsteady Navier-Stokes system with a CDO face-based scheme
+ *        is used.
+ *
+ * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in]  ts            pointer to a \ref cs_time_step_t structure
+ * \param[in]  psp           pointer to a \ref cs_param_psteady_t struct.
+ *
+ * \return returns true if the pseudo-steady algorithm has converged else
+ * false
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+_cs_turbulence_t::check_convergence(const cs_cdo_quantities_t *quant,
+                                    const cs_time_step_t      *ts,
+                                    const cs_param_psteady_t  &psp) const
+{
+  bool cvg = false;
+
+  if (cs_glob_turb_model->order == CS_TURB_FIRST_ORDER &&
+      cs_glob_turb_model->type == CS_TURB_RANS) {
+    cs_dispatch_context ctx;
+
+    const cs_field_t *f_k = CS_F_(k);
+
+    assert(f_k != nullptr);
+
+    const cs_real_t *k_curr = f_k->val;
+    const cs_real_t *k_prev = f_k->val_pre;
+
+    if (k_curr == nullptr || k_prev == nullptr) {
+      return false;
+    }
+
+    const auto cell_vol = quant->cell_vol;
+    cs_lnum_t  n_cells  = quant->n_cells;
+
+    const cs_real_t dt = ts->dt[0];
+
+    struct cs_double_n<2>      rd;
+    struct cs_reduce_sum_nr<2> reducer;
+
+    ctx.parallel_for_reduce(
+      n_cells,
+      rd,
+      reducer,
+      [=] CS_F_HOST_DEVICE(cs_lnum_t c_id, cs_double_n<2> & res) {
+        const cs_real_t diff = k_curr[c_id] - k_prev[c_id];
+
+        res.r[0] = cell_vol[c_id] * diff * diff;
+        res.r[1] = cell_vol[c_id] * k_curr[c_id] * k_curr[c_id];
+      });
+
+    ctx.wait();
+
+    cs::parall::sum(rd.r[0], rd.r[1]);
+
+    const cs_real_t norm2_k_diff = sqrt(rd.r[0]), norm2_k = sqrt(rd.r[1]);
+
+    if (norm2_k_diff < dt * psp.rtol * cs::max(1.0, norm2_k)) {
+      cvg = true;
+    }
+
+    if (norm2_k_diff < dt * psp.atol) {
+      cvg = true;
+    }
+
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "- turbulence k: residual %5.3g (with "
+                  "tolerence relative %5.3g and absolute %5.3g)\n",
+                  norm2_k_diff,
+                  dt * psp.rtol * cs::max(1.0, norm2_k),
+                  dt * psp.atol);
+  }
+
+  return cvg;
+};
+
+/*----------------------------------------------------------------------------*/

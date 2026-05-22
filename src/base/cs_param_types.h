@@ -624,6 +624,34 @@ typedef struct {
 
 } cs_param_convergence_t;
 
+/*! \struct cs_param_psteady_t
+ *  \brief Set of parameters to check the convergence of the pseudo-steady algo.
+ */
+
+typedef struct {
+  /*!
+   * \var atol
+   * Absolute tolerance under which the iterative process is stopped
+   *
+   * \var rtol
+   * Relative tolerance under which the iterative process is stopped
+   *
+   * \var n_cvg_iter
+   * Number of consecutively converged iterations before stopping the iterative
+   * process
+   *
+   * \var n_cvg_iter_curr
+   * Number of iterations which have converged consecutively
+   */
+
+  double atol;
+  double rtol;
+
+  int n_cvg_iter;
+  int n_cvg_iter_curr;
+
+} cs_param_psteady_t;
+
 /*!
  * @}
  * @name Settings for non-linear algorithms

@@ -30,6 +30,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_field.h"
+#include "base/cs_param_types.h"
+#include "base/cs_reducers.h"
 #include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
@@ -315,6 +317,27 @@ struct _cs_turbulence_t {
 
   void
   add_boundary_stress(const cs_mesh_t *m, cs_field_t *boundary_stress) const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Check the convergence of the pseudo-steady algorithm
+   *        when the unsteady Navier-Stokes system with a CDO face-based scheme
+   *        is used.
+   *
+   * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
+   * \param[in]  ts            pointer to a \ref cs_time_step_t structure
+   * \param[in]  psp           pointer to a \ref cs_param_psteady_t struct.
+   *
+   * \return returns true if the pseudo-steady algorithm has converged else
+   * false
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  bool
+  check_convergence(const cs_cdo_quantities_t *quant,
+                    const cs_time_step_t      *ts,
+                    const cs_param_psteady_t  &psp) const;
 };
 
 /*============================================================================

@@ -1876,8 +1876,9 @@ cs_navsto_system_compute(const cs_mesh_t           *mesh,
 
   // Stop computation for PSEUDO_STEADY algorithm
   if (ns->check_convergence != nullptr) {
-    const bool cvg = ns->check_convergence(nsp,
+    const bool cvg = ns->check_convergence(ns->param,
                                            quant,
+                                           time_step,
                                            cs_navsto_get_mass_flux(true),
                                            cs_navsto_get_mass_flux(false),
                                            tbs);

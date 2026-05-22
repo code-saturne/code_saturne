@@ -793,9 +793,10 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
  *        when the unsteady Navier-Stokes system with a CDO face-based scheme
  *        is used.
  *
- * \param[in]  nsp           set of parameters to handle the Navier-Stokes
+ * \param[in,out]  nsp       set of parameters to handle the Navier-Stokes
  *                           system
  * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in]       ts       pointer to a \ref cs_time_step_t structure
  * \param[in]  mass_flux_pre pevious scalar-valued mass flux for each face
  * \param[in]  mass_flux     scalar-valued mass flux for each face
  * \param[in]  tbs           pointer to a \ref cs_turbulence_t struct.
@@ -806,8 +807,9 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_cdofb_navsto_check_convergence(const cs_navsto_param_t   *nsp,
+cs_cdofb_navsto_check_convergence(cs_navsto_param_t         *nsp,
                                   const cs_cdo_quantities_t *quant,
+                                  const cs_time_step_t      *ts,
                                   const cs_real_t           *mass_flux_pre,
                                   const cs_real_t           *mass_flux,
                                   const cs_turbulence_t     *tbs);

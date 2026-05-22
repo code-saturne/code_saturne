@@ -443,7 +443,7 @@ typedef struct {
    *  Navier-Stokes
    */
 
-  cs_param_convergence_t psteady_cvg_param;
+  cs_param_psteady_t psteady_cvg_param;
 
   /*! \var anderson_param
    * Set of parameters to drive the Anderson acceleration (useful if the type
@@ -639,6 +639,10 @@ typedef struct {
  * \var CS_NSKEY_PSTEADY_ALGO_RTOL
  * Relative tolerance at which the pseudo-steady algorithm is resolved
  *
+ * \var CS_NSKEY_PSTEADY_ALGO_N_CVG_ITER
+ *  Number of consecutively converged iterations before stopping the
+ * pseudo-steady algorithm process
+ *
  * \var CS_NSKEY_NORM_TYPE
  * Type of norm (and dot product) to consider to compute the normalization and
  * quantities when performing the non-linear algorithm.
@@ -666,6 +670,7 @@ typedef enum {
   CS_NSKEY_NL_ALGO_RTOL,
   CS_NSKEY_PSTEADY_ALGO_ATOL,
   CS_NSKEY_PSTEADY_ALGO_RTOL,
+  CS_NSKEY_PSTEADY_ALGO_N_CVG_ITER,
   CS_NSKEY_NORM_TYPE,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_THERMAL_TOLERANCE,

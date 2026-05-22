@@ -2827,7 +2827,7 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
  *        when the unsteady Navier-Stokes system with a CDO face-based scheme
  *        is used.
  *
- * \param[in]  nsp           set of parameters to handle the Navier-Stokes
+ * \param[in,out]  nsp           set of parameters to handle the Navier-Stokes
  *                           system
  * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
  * \param[in]  mass_flux_pre pevious scalar-valued mass flux for each face
@@ -2840,8 +2840,9 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_cdofb_navsto_check_convergence(const cs_navsto_param_t   *nsp,
+cs_cdofb_navsto_check_convergence(cs_navsto_param_t         *nsp,
                                   const cs_cdo_quantities_t *quant,
+                                  const cs_time_step_t      *ts,
                                   const cs_real_t           *mass_flux_pre,
                                   const cs_real_t           *mass_flux,
                                   const cs_turbulence_t     *tbs)
@@ -2855,7 +2856,7 @@ cs_cdofb_navsto_check_convergence(const cs_navsto_param_t   *nsp,
 
   assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
 
-  bool cvg = false;
+  bool cvg_iter = false;
 
   // Test convergence on mass fluxes
   const cs_real_t square_norm2_flux = nsp->square_norm(mass_flux);
@@ -2865,20 +2866,46 @@ cs_cdofb_navsto_check_convergence(const cs_navsto_param_t   *nsp,
   const cs_real_t norm2_flux = sqrt(square_norm2_flux);
   const cs_real_t norm2_diff = sqrt(square_norm2_diff);
 
-  if (norm2_diff < nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux)) {
-    cvg = true;
+  const cs_real_t dt = ts->dt[0];
+
+  if (norm2_diff <
+      dt * nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux)) {
+    cvg_iter = true;
   }
 
-  if (norm2_diff < nsp->psteady_cvg_param.atol) {
-    cvg = true;
+  if (norm2_diff < dt * nsp->psteady_cvg_param.atol) {
+    cvg_iter = true;
   }
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\nResiduals of the pseudo-steady algorithm:\n");
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                "- mass flux: residual %5.3g (with "
+                "tolerence relative %5.3g and absolute %5.3g )\n",
+                norm2_diff,
+                dt * nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux),
+                dt * nsp->psteady_cvg_param.atol);
 
   // Test convergence on turbulence
   if (tbs != nullptr) {
-    // TODO
+    cvg_iter =
+      cvg_iter && tbs->check_convergence(quant, ts, nsp->psteady_cvg_param);
   }
 
-  return cvg;
+  if (cvg_iter) {
+    nsp->psteady_cvg_param.n_cvg_iter_curr++;
+  }
+  else {
+    nsp->psteady_cvg_param.n_cvg_iter_curr = 0;
+  }
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                "- number of iteration consecutively converged: %d\n",
+                nsp->psteady_cvg_param.n_cvg_iter_curr);
+
+  return nsp->psteady_cvg_param.n_cvg_iter_curr >=
+         nsp->psteady_cvg_param.n_cvg_iter;
 }
 
 /*----------------------------------------------------------------------------*/
