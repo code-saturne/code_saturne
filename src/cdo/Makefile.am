@@ -118,6 +118,7 @@ cs_macfb_priv.h \
 cs_macfb_vecteq.h \
 cs_maxwell.h \
 cs_mesh_deform.h \
+cs_navsto_context.h \
 cs_navsto_coupling.h \
 cs_navsto_param.h \
 cs_navsto_system.h \

@@ -38,7 +38,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cdo/cs_cdofb_monolithic_priv.h"
+#include "alge/cs_saddle_solver.h"
+#include "cdo/cs_navsto_param.h"
 
 /*============================================================================
  * Macro definitions
@@ -47,6 +48,9 @@
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/* Forward declarations */
+typedef struct _cs_cdofb_monolithic_t cs_cdofb_monolithic_t;
 
 /*============================================================================
  * Public function prototypes
@@ -63,9 +67,9 @@
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_sles_init_sharing(const cs_mesh_t            *mesh,
-                                      const cs_cdo_connect_t     *connect,
-                                      const cs_cdo_quantities_t  *quant);
+cs_cdofb_monolithic_sles_init_sharing(const cs_mesh_t           *mesh,
+                                      const cs_cdo_connect_t    *connect,
+                                      const cs_cdo_quantities_t *quant);
 
 /*----------------------------------------------------------------------------*/
 /*!

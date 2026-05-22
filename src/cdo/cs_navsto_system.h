@@ -37,6 +37,7 @@
 #include "cdo/cs_cdo_turbulence.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_maxwell.h"
+#include "cdo/cs_navsto_context.h"
 #include "cdo/cs_navsto_param.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_thermal_system.h"
@@ -69,13 +70,13 @@
  */
 /*----------------------------------------------------------------------------*/
 
-typedef void *
-(cs_navsto_init_scheme_context_t)(const cs_navsto_param_t    *nsp,
-                                  cs_adv_field_t             *adv_field,
-                                  cs_real_t                  *mflux,
-                                  cs_real_t                  *mflux_pre,
-                                  cs_boundary_type_t         *fb_type,
-                                  void                       *nscc);
+typedef cs::cdo_navsto_ctx_t *(
+  cs_navsto_init_scheme_context_t)(const cs_navsto_param_t *nsp,
+                                   cs_adv_field_t          *adv_field,
+                                   cs_real_t               *mflux,
+                                   cs_real_t               *mflux_pre,
+                                   cs_boundary_type_t      *fb_type,
+                                   void                    *nscc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -83,14 +84,15 @@ typedef void *
  *         for the resolution of the Navier-Stokes system with a specified
  *         coupling algorithm
  *
- * \param[in, out]  scheme_context   pointer to a structure cast on-the-fly
+ * \param[in, out]  scheme_context   pointer to a \ref cs::cdo_navsto_ctx_t
+ *                                   structure
  *
  * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
-typedef void *
-(cs_navsto_free_scheme_context_t)(void     *scheme_context);
+typedef void *(cs_navsto_free_scheme_context_t)(cs::cdo_navsto_ctx_t *
+                                                scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -117,16 +119,15 @@ typedef void
  *         Navier-Stokes system. This means that equations are built and then
  *         solved.
  *
- * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
- * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in]      mesh   pointer to a \ref cs_mesh_t structure
+ * \param[in]      nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] sc     pointer to a \ref cs::cdo_navsto_ctx_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-typedef void
-(cs_navsto_compute_t)(const cs_mesh_t              *mesh,
-                      const cs_navsto_param_t      *nsp,
-                      void                         *scheme_context);
+typedef void(cs_navsto_compute_t)(const cs_mesh_t         *mesh,
+                                  const cs_navsto_param_t *nsp,
+                                  cs::cdo_navsto_ctx_t    *sc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -161,8 +162,7 @@ typedef void(cs_navsto_check_init_t)(const cs_navsto_param_t   *nsp,
  *                           system
  * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
  * \param[in]  ts            pointer to a \ref cs_time_step_t structure
- * \param[in]  mass_flux_pre pevious scalar-valued mass flux for each face
- * \param[in]  mass_flux     scalar-valued mass flux for each face
+ * \param[in]  sc            pointer to a \ref cs::cdo_navsto_ctx_t structure
  * \param[in]  tbs           pointer to a \ref cs_turbulence_t struct.
  *
  * \return returns true if the pseudo-steady algorithm has converged else false
@@ -170,12 +170,11 @@ typedef void(cs_navsto_check_init_t)(const cs_navsto_param_t   *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-typedef bool(cs_navsto_check_convergence_t)(cs_navsto_param_t         *nsp,
-                                            const cs_cdo_quantities_t *quant,
-                                            const cs_time_step_t      *ts,
-                                            const cs_real_t *mass_flux_pre,
-                                            const cs_real_t *mass_flux,
-                                            const cs_turbulence_t *tbs);
+typedef bool(cs_navsto_check_convergence_t)(cs_navsto_param_t          *nsp,
+                                            const cs_cdo_quantities_t  *quant,
+                                            const cs_time_step_t       *ts,
+                                            const cs::cdo_navsto_ctx_t *sc,
+                                            const cs_turbulence_t      *tbs);
 
 /*=============================================================================
  * Structure definitions
@@ -369,12 +368,12 @@ typedef struct {
   void                       *coupling_context;
 
   /*! \var scheme_context
-   *       Additional structure storing information according to the space
-   *       discretization scheme used for solving the model for the
-   *       Navier-Stokes system
+   *       Pointer to an additional \ref cs::cdo_navsto_ctx_t structure storing
+   *       information according to the space discretization scheme used for
+   *       solving the model for the Navier-Stokes system
    */
 
-  void                       *scheme_context;
+  cs::cdo_navsto_ctx_t *scheme_context;
 
   /*!
    * @}

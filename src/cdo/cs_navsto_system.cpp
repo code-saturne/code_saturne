@@ -108,6 +108,25 @@ static cs_navsto_system_t *cs_navsto_system                      = nullptr;
  * Private function prototypes
  *============================================================================*/
 
+// wrappers to make automaticaly the static_cast
+
+template <typename T,
+          void (*F)(const cs_mesh_t *, const cs_navsto_param_t *, T *)>
+static void
+wrap_compute(const cs_mesh_t         *mesh,
+             const cs_navsto_param_t *nsp,
+             cs::cdo_navsto_ctx_t    *ctx)
+{
+  F(mesh, nsp, static_cast<T *>(ctx));
+}
+
+template <typename T, void *(*F)(T *)>
+static void *
+wrap_free(cs::cdo_navsto_ctx_t *ctx)
+{
+  return F(static_cast<T *>(ctx));
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Check if one has at least one boundary with symmetry
@@ -1108,7 +1127,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       /* ============================================= */
 
       ns->init_scheme_context = cs_cdofb_ac_init_scheme_context;
-      ns->free_scheme_context = cs_cdofb_ac_free_scheme_context;
+      ns->free_scheme_context =
+        wrap_free<cs_cdofb_ac_t, cs_cdofb_ac_free_scheme_context>;
       ns->init_velocity       = nullptr;
       ns->init_pressure       = cs_cdofb_navsto_init_pressure;
       ns->check_init          = cs_cdofb_navsto_check_init;
@@ -1119,9 +1139,11 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
 
       case CS_TIME_SCHEME_EULER_IMPLICIT:
         if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
-          ns->compute = cs_cdofb_ac_compute_implicit;
+          ns->compute =
+            wrap_compute<cs_cdofb_ac_t, cs_cdofb_ac_compute_implicit>;
         else
-          ns->compute = cs_cdofb_ac_compute_implicit_nl;
+          ns->compute =
+            wrap_compute<cs_cdofb_ac_t, cs_cdofb_ac_compute_implicit_nl>;
         break;
 
       case CS_TIME_SCHEME_THETA:
@@ -1152,16 +1174,20 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       /* ============================= */
 
       ns->init_scheme_context = cs_cdofb_monolithic_init_scheme_context;
-      ns->free_scheme_context = cs_cdofb_monolithic_free_scheme_context;
+      ns->free_scheme_context =
+        wrap_free<cs_cdofb_monolithic_t,
+                  cs_cdofb_monolithic_free_scheme_context>;
       ns->init_velocity       = nullptr;
       ns->init_pressure       = cs_cdofb_navsto_init_pressure;
       ns->check_init          = cs_cdofb_navsto_check_init;
       ns->check_convergence   = cs_cdofb_navsto_check_convergence;
 
       if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
-        ns->compute_steady = cs_cdofb_monolithic_steady;
+        ns->compute_steady =
+          wrap_compute<cs_cdofb_monolithic_t, cs_cdofb_monolithic_steady>;
       else
-        ns->compute_steady = cs_cdofb_monolithic_steady_nl;
+        ns->compute_steady =
+          wrap_compute<cs_cdofb_monolithic_t, cs_cdofb_monolithic_steady_nl>;
 
       /* When a weak enforcement is used and also an augmentation of the linear
          system, one scales the weak penalization coefficient by the
@@ -1185,9 +1211,11 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       case CS_TIME_SCHEME_STEADY:
         ns->check_init = nullptr;
         if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
-          ns->compute = cs_cdofb_monolithic_steady;
+          ns->compute =
+            wrap_compute<cs_cdofb_monolithic_t, cs_cdofb_monolithic_steady>;
         else
-          ns->compute = cs_cdofb_monolithic_steady_nl;
+          ns->compute =
+            wrap_compute<cs_cdofb_monolithic_t, cs_cdofb_monolithic_steady_nl>;
         break; /* Nothing to set */
 
       case CS_TIME_SCHEME_EULER_IMPLICIT:
@@ -1195,9 +1223,11 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       case CS_TIME_SCHEME_CRANKNICO:
       case CS_TIME_SCHEME_BDF2:
         if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
-          ns->compute = cs_cdofb_monolithic;
+          ns->compute =
+            wrap_compute<cs_cdofb_monolithic_t, cs_cdofb_monolithic>;
         else
-          ns->compute = cs_cdofb_monolithic_nl;
+          ns->compute =
+            wrap_compute<cs_cdofb_monolithic_t, cs_cdofb_monolithic_nl>;
         break;
 
       default:
@@ -1218,7 +1248,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       /* ============================= */
 
       ns->init_scheme_context = cs_cdofb_predco_init_scheme_context;
-      ns->free_scheme_context = cs_cdofb_predco_free_scheme_context;
+      ns->free_scheme_context =
+        wrap_free<cs_cdofb_predco_t, cs_cdofb_predco_free_scheme_context>;
       ns->init_velocity       = nullptr;
       ns->init_pressure       = cs_cdofb_navsto_init_pressure;
       ns->check_init          = cs_cdofb_navsto_check_init;
@@ -1237,7 +1268,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
         break;
 
       case CS_TIME_SCHEME_EULER_IMPLICIT:
-        ns->compute = cs_cdofb_predco_compute_implicit;
+        ns->compute =
+          wrap_compute<cs_cdofb_predco_t, cs_cdofb_predco_compute_implicit>;
         break;
 
       case CS_TIME_SCHEME_THETA:
@@ -1278,16 +1310,20 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       /* ============================= */
 
       ns->init_scheme_context = cs_macfb_monolithic_init_scheme_context;
-      ns->free_scheme_context = cs_macfb_monolithic_free_scheme_context;
+      ns->free_scheme_context =
+        wrap_free<cs_macfb_monolithic_t,
+                  cs_macfb_monolithic_free_scheme_context>;
       ns->init_velocity       = nullptr;
       ns->init_pressure       = cs_macfb_navsto_init_pressure;
       ns->check_init          = nullptr;
       ns->check_convergence   = nullptr;
 
       if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
-        ns->compute_steady = cs_macfb_monolithic_steady;
+        ns->compute_steady =
+          wrap_compute<cs_macfb_monolithic_t, cs_macfb_monolithic_steady>;
       else
-        ns->compute_steady = cs_macfb_monolithic_steady_nl;
+        ns->compute_steady =
+          wrap_compute<cs_macfb_monolithic_t, cs_macfb_monolithic_steady_nl>;
 
       /* When a weak enforcement is used and also an augmentation of the linear
          system, one scales the weak penalization coefficient by the
@@ -1310,9 +1346,11 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
 
       case CS_TIME_SCHEME_STEADY:
         if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
-          ns->compute = cs_macfb_monolithic_steady;
+          ns->compute =
+            wrap_compute<cs_macfb_monolithic_t, cs_macfb_monolithic_steady>;
         else
-          ns->compute = cs_macfb_monolithic_steady_nl;
+          ns->compute =
+            wrap_compute<cs_macfb_monolithic_t, cs_macfb_monolithic_steady_nl>;
         break; /* Nothing to set */
 
       case CS_TIME_SCHEME_EULER_IMPLICIT:
@@ -1320,9 +1358,11 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       case CS_TIME_SCHEME_CRANKNICO:
 
         if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
-          ns->compute = cs_macfb_monolithic;
+          ns->compute =
+            wrap_compute<cs_macfb_monolithic_t, cs_macfb_monolithic>;
         else
-          ns->compute = cs_macfb_monolithic_nl;
+          ns->compute =
+            wrap_compute<cs_macfb_monolithic_t, cs_macfb_monolithic_nl>;
         break;
 
       case CS_TIME_SCHEME_BDF2:
@@ -1879,8 +1919,7 @@ cs_navsto_system_compute(const cs_mesh_t           *mesh,
     const bool cvg = ns->check_convergence(ns->param,
                                            quant,
                                            time_step,
-                                           cs_navsto_get_mass_flux(true),
-                                           cs_navsto_get_mass_flux(false),
+                                           ns->scheme_context,
                                            tbs);
 
     if (!is_last_iter && cvg) {

@@ -48,6 +48,7 @@
 #include "base/cs_timer.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_solve.h"
+#include "cdo/cs_cdofb_monolithic_priv.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_saddle_system.h"
 

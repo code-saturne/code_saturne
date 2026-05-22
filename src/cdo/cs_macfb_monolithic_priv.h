@@ -52,6 +52,7 @@
 #include "cdo/cs_macfb_navsto.h"
 #include "cdo/cs_macfb_priv.h"
 #include "cdo/cs_macfb_vecteq.h"
+#include "cdo/cs_navsto_context.h"
 #include "cdo/cs_navsto_coupling.h"
 #include "cdo/cs_navsto_param.h"
 #include "cdo/cs_static_condensation.h"
@@ -149,106 +150,7 @@ typedef int(cs_macfb_monolithic_solve_t)(const cs_navsto_param_t *nsp,
  *         Case of a monolithic approach (i.e fully coupled)
  */
 
-struct _macfb_monolithic_t {
-
-  /*! \var coupling_context
-   *  Pointer to a \ref cs_navsto_monolithic_t (owned by \ref
-   *  cs_navsto_system_t) containing the settings related to the monolithic
-   *  approach
-   */
-
-  cs_navsto_monolithic_t *coupling_context;
-
-  /*!
-   * @name Main field variables
-   * Fields for every main variable of the equation. Got from cs_navsto_system_t
-   */
-
-  /*! \var velocity
-   *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
-   *  the cell DoFs of the velocity
-   */
-
-  cs_field_t *velocity;
-
-  /*! \var pressure
-   *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
-   *  the cell DoFs of the pressure
-   */
-
-  cs_field_t *pressure;
-
-  /*! \var divergence
-   *  Pointer to \ref cs_real_t containing the values of the divergence on the
-   *  cells
-   */
-
-  cs_field_t *divergence;
-
-  /*!
-   * @}
-   * @name Advection quantities
-   * Members related to the advection
-   * @{
-   *
-   *  \var adv_field
-   *  Pointer to the cs_adv_field_t related to the Navier-Stokes eqs (Shared)
-   */
-  cs_adv_field_t *adv_field;
-
-  /*! \var mass_flux_array
-   *  Current values of the mass flux at primal faces (Shared)
-   */
-  cs_real_t *mass_flux_array;
-
-  /*! \var mass_flux_array_pre
-   *  Previous values of the mass flux at primal faces (Shared)
-   */
-  cs_real_t *mass_flux_array_pre;
-
-  /*!
-   * @}
-   * @name Boundary conditions (BC) management
-   * Functions and elements used for enforcing the BCs
-   * @{
-   *
-   *  \var bf_type
-   *  Array of boundary type for each boundary face. (Shared)
-   */
-
-  const cs_boundary_type_t *bf_type;
-
-  /*!
-   * \var pressure_bc
-   * Structure storing the metadata after processing the user-defined boundary
-   * conditions related to the pressure field
-   */
-
-  cs_cdo_bc_face_t *pressure_bc;
-  int               pressure_rescaling;
-
-  /*! \var apply_fixed_wall
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  wall boundary (no slip boundary)
-   *
-   *  \var apply_sliding_wall
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  wall boundary (a tangential velocity is specified at the wall)
-   *
-   *  \var apply_velocity_inlet
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  boundary with a fixed velocity at the inlet
-   *
-   *  \var apply_symmetry
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  symmetry boundary
-   */
-
-  cs_cdo_apply_boundary_t *apply_fixed_wall;
-  cs_cdo_apply_boundary_t *apply_sliding_wall;
-  cs_cdo_apply_boundary_t *apply_velocity_inlet;
-  cs_cdo_apply_boundary_t *apply_symmetry;
-
+struct _macfb_monolithic_t : public cs::cdo_navsto_monolithic_ctx_t {
   /*!
    * @}
    * @name Build stage
@@ -320,19 +222,6 @@ struct _macfb_monolithic_t {
    */
 
   cs_iter_algo_t *nl_algo;
-
-  /*!
-   * @}
-   * @name Performance monitoring
-   * Monitoring the efficiency of the algorithm used to solve the Navier-Stokes
-   * system
-   * @{
-   */
-
-  /*! \var timer
-   *  Cumulated elapsed time for building and solving the Navier--Stokes system
-   */
-  cs_timer_counter_t timer;
 
   /*! @} */
 };

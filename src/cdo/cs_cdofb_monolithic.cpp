@@ -941,7 +941,7 @@ _steady_build(const cs_navsto_param_t *nsp,
 
   /* Retrieve high-level structures */
 
-  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_navsto_monolithic_t *cc      = sc->coupling_context;
   cs_equation_t          *mom_eq  = cc->momentum;
   cs_cdofb_vecteq_t      *mom_eqc = (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t    *mom_eqp = mom_eq->param;
@@ -1197,7 +1197,7 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
 
   /* Retrieve high-level structures */
 
-  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_navsto_monolithic_t *cc      = sc->coupling_context;
   cs_equation_t          *mom_eq  = cc->momentum;
   cs_cdofb_vecteq_t      *mom_eqc = (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t    *mom_eqp = mom_eq->param;
@@ -1528,7 +1528,7 @@ _theta_scheme_build(const cs_navsto_param_t *nsp,
 
   /* Retrieve high-level structures */
 
-  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_navsto_monolithic_t *cc      = sc->coupling_context;
   cs_equation_t          *mom_eq  = cc->momentum;
   cs_cdofb_vecteq_t      *mom_eqc = (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t    *mom_eqp = mom_eq->param;
@@ -1868,7 +1868,7 @@ _bdf2_scheme_build(const cs_navsto_param_t *nsp,
 {
   /* Retrieve high-level structures */
 
-  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_navsto_monolithic_t *cc      = sc->coupling_context;
   cs_equation_t          *mom_eq  = cc->momentum;
   cs_cdofb_vecteq_t      *mom_eqc = (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t    *mom_eqp = mom_eq->param;
@@ -2252,7 +2252,7 @@ cs_cdofb_monolithic_finalize_common(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void *
+cs::cdo_navsto_ctx_t *
 cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
                                         cs_adv_field_t          *adv_field,
                                         cs_real_t               *mflux,
@@ -2529,17 +2529,15 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
 /*!
  * \brief  Destroy a \ref cs_cdofb_monolithic_t structure
  *
- * \param[in] scheme_context   pointer to a scheme context structure to free
+ * \param[in] sc   pointer to a scheme context structure to free
  *
  * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_monolithic_free_scheme_context(void *scheme_context)
+cs_cdofb_monolithic_free_scheme_context(cs_cdofb_monolithic_t *sc)
 {
-  cs_cdofb_monolithic_t *sc = (cs_cdofb_monolithic_t *)scheme_context;
-
   if (sc == nullptr)
     return sc;
 
@@ -2577,22 +2575,21 @@ cs_cdofb_monolithic_free_scheme_context(void *scheme_context)
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in, out] sc     pointer to a \ref cs_cdofb_monolithic_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_monolithic_steady(const cs_mesh_t         *mesh,
                            const cs_navsto_param_t *nsp,
-                           void                    *scheme_context)
+                           cs_cdofb_monolithic_t   *sc)
 {
   cs_timer_t t_start = cs_timer_time();
 
   /* Retrieve high-level structures */
 
-  cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
   cs_cdo_system_helper_t *sh = sc->system_helper;
-  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_navsto_monolithic_t *cc      = sc->coupling_context;
   cs_equation_t          *mom_eq  = cc->momentum;
   cs_cdofb_vecteq_t      *mom_eqc = (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t    *mom_eqp = mom_eq->param;
@@ -2691,22 +2688,21 @@ cs_cdofb_monolithic_steady(const cs_mesh_t         *mesh,
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in, out] sc     pointer to a \ref cs_cdofb_monolithic_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_monolithic_steady_nl(const cs_mesh_t         *mesh,
                               const cs_navsto_param_t *nsp,
-                              void                    *scheme_context)
+                              cs_cdofb_monolithic_t   *sc)
 {
   cs_timer_t t_start = cs_timer_time();
 
   /* Retrieve high-level structures */
 
-  cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
   cs_cdo_system_helper_t *sh = sc->system_helper;
-  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_navsto_monolithic_t *cc      = sc->coupling_context;
   cs_equation_t          *mom_eq  = cc->momentum;
   cs_cdofb_vecteq_t      *mom_eqc = (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t    *mom_eqp = mom_eq->param;
@@ -2888,22 +2884,21 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t         *mesh,
  *
  * \param[in] mesh            pointer to a \ref cs_mesh_t structure
  * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in] sc     pointer to a \ref cs_cdofb_monolithic_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_monolithic(const cs_mesh_t         *mesh,
                     const cs_navsto_param_t *nsp,
-                    void                    *scheme_context)
+                    cs_cdofb_monolithic_t   *sc)
 {
   const cs_timer_t t_start = cs_timer_time();
 
   /* Retrieve high-level structures */
 
-  cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
   cs_cdo_system_helper_t *sh = sc->system_helper;
-  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_navsto_monolithic_t *cc      = sc->coupling_context;
   cs_equation_t          *mom_eq  = cc->momentum;
   cs_cdofb_vecteq_t      *mom_eqc = (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t    *mom_eqp = mom_eq->param;
@@ -2998,20 +2993,19 @@ cs_cdofb_monolithic(const cs_mesh_t         *mesh,
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in, out] sc     pointer to a \ref cs_cdofb_monolithic_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_monolithic_nl(const cs_mesh_t         *mesh,
                        const cs_navsto_param_t *nsp,
-                       void                    *scheme_context)
+                       cs_cdofb_monolithic_t   *sc)
 {
   cs_timer_t t_start = cs_timer_time();
 
   /* Retrieve high-level structures */
 
-  cs_cdofb_monolithic_t  *sc      = (cs_cdofb_monolithic_t *)scheme_context;
   cs_cdo_system_helper_t *sh      = sc->system_helper;
   cs_navsto_monolithic_t *cc      = sc->coupling_context;
   cs_equation_t          *mom_eq  = cc->momentum;

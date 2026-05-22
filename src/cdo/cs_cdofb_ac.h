@@ -42,7 +42,9 @@
 #include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdofb_navsto.h"
 #include "cdo/cs_equation.h"
+#include "cdo/cs_navsto_context.h"
 #include "cdo/cs_navsto_coupling.h"
 #include "cdo/cs_navsto_param.h"
 #include "cdo/cs_source_term.h"
@@ -55,6 +57,33 @@
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/*! \struct cs_cdofb_ac_t
+ *  \brief Context related to CDO face-based discretization when dealing with
+ *         the Navier-Stokes equations with an Artificial compressibility
+ *         algorithm
+ */
+
+struct cs_cdofb_ac_t : public cs::cdo_navsto_ac_ctx_t {
+  /*!
+   * @}
+   * @name Build stage
+   * Additional members which corresponds to function pointers
+   * @{
+   */
+
+  /*!
+   * \var add_gravity_term
+   * \ref Compute and add the source term related to the gravity vector
+   *      This can be the Boussinesq term or the hydrostatic term (rho*g)
+   */
+
+  cs_cdofb_navsto_source_t *add_gravity_term;
+
+  /*!
+   * @}
+   */
+};
 
 /*============================================================================
  * Inline static function prototypes
@@ -111,26 +140,26 @@ cs_cdofb_ac_init_common(const cs_cdo_quantities_t     *quant,
  */
 /*----------------------------------------------------------------------------*/
 
-void *
-cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
-                                cs_adv_field_t            *adv_field,
-                                cs_real_t                 *mflux,
-                                cs_real_t                 *mflux_pre,
-                                cs_boundary_type_t        *fb_type,
-                                void                      *nsc_input);
+cs::cdo_navsto_ctx_t *
+cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t *nsp,
+                                cs_adv_field_t          *adv_field,
+                                cs_real_t               *mflux,
+                                cs_real_t               *mflux_pre,
+                                cs_boundary_type_t      *fb_type,
+                                void                    *nsc_input);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Destroy a cs_cdofb_ac_t structure
  *
- * \param[in] scheme_context   pointer to a scheme context structure to free
+ * \param[in] sc   pointer to a scheme context structure to free
  *
  * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_ac_free_scheme_context(void   *scheme_context);
+cs_cdofb_ac_free_scheme_context(cs_cdofb_ac_t *sc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -140,14 +169,14 @@ cs_cdofb_ac_free_scheme_context(void   *scheme_context);
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in, out] sc     pointer to a \ref cs_cdofb_ac_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
-                             const cs_navsto_param_t      *nsp,
-                             void                         *scheme_context);
+cs_cdofb_ac_compute_implicit(const cs_mesh_t         *mesh,
+                             const cs_navsto_param_t *nsp,
+                             cs_cdofb_ac_t           *sc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -158,13 +187,13 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in, out] sc     pointer to a \ref cs_cdofb_ac_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
-                                const cs_navsto_param_t      *nsp,
-                                void                         *scheme_context);
+cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t         *mesh,
+                                const cs_navsto_param_t *nsp,
+                                cs_cdofb_ac_t           *sc);
 
 #endif /* CS_CDOFB_AC_H */

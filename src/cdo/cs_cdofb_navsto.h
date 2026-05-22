@@ -48,6 +48,7 @@
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_cdo_turbulence.h"
 #include "cdo/cs_iter_algo.h"
+#include "cdo/cs_navsto_context.h"
 #include "cdo/cs_navsto_param.h"
 #include "cdo/cs_sdm.h"
 #include "mesh/cs_mesh.h"
@@ -796,9 +797,7 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
  * \param[in,out]  nsp       set of parameters to handle the Navier-Stokes
  *                           system
  * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
- * \param[in]       ts       pointer to a \ref cs_time_step_t structure
- * \param[in]  mass_flux_pre pevious scalar-valued mass flux for each face
- * \param[in]  mass_flux     scalar-valued mass flux for each face
+ * \param[in]  sc            pointer to a \ref cs::cdo_navsto_ctx_t structure
  * \param[in]  tbs           pointer to a \ref cs_turbulence_t struct.
  *
  * \return returns true if the pseudo-steady algorithm has converged else false
@@ -807,11 +806,10 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_cdofb_navsto_check_convergence(cs_navsto_param_t         *nsp,
-                                  const cs_cdo_quantities_t *quant,
-                                  const cs_time_step_t      *ts,
-                                  const cs_real_t           *mass_flux_pre,
-                                  const cs_real_t           *mass_flux,
-                                  const cs_turbulence_t     *tbs);
+cs_cdofb_navsto_check_convergence(cs_navsto_param_t          *nsp,
+                                  const cs_cdo_quantities_t  *quant,
+                                  const cs_time_step_t       *ts,
+                                  const cs::cdo_navsto_ctx_t *sc,
+                                  const cs_turbulence_t      *tbs);
 
 #endif /* CS_CDOFB_NAVSTO_H */

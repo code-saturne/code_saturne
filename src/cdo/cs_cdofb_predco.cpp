@@ -90,137 +90,6 @@
  * Local structure definitions
  *============================================================================*/
 
-/*! \struct cs_cdofb_predco_t
- *  \brief Context related to CDO face-based discretization when dealing with
- *         Navier-Stokes equations with a prediction/correction algorithm
- */
-
-typedef struct {
-
-  /*! \var coupling_context
-
-   *  Pointer to a \ref cs_navsto_projection_t_t (owned by
-   *  \ref cs_navsto_system_t) containing the settings related to a prjection
-   *  or prediction/correction algorithm.
-   */
-
-  cs_navsto_projection_t   *coupling_context;
-
-  /*!
-   * @name Main field variables
-   * Fields for every main variable of the equation. Got from cs_navsto_system_t
-   * @{
-   */
-
-  /*! \var velocity
-   *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
-   *  the cell DoFs of the velocity
-   */
-
-  cs_field_t  *velocity;
-
-  /*! \var pressure
-   *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
-   *  the cell DoFs of the pressure
-   */
-
-  cs_field_t  *pressure;
-
-
-  /*! \var divergence
-   *  Pointer to \ref cs_real_t containing the values of the divergence on the
-   *  cells
-   */
-
-  cs_field_t  *divergence;
-
-  /*! \var predicted_velocity_f
-   * Values of the predicted velocity at faces.
-   * This values may not be divergence-free
-   */
-  cs_real_t   *predicted_velocity_f;
-
-  /*!
-   * @}
-   * @name Advection quantities
-   * Members related to the advection
-   * @{
-   *
-   *  \var adv_field
-   *  Pointer to the cs_adv_field_t related to the Navier-Stokes eqs (Shared)
-   */
-  cs_adv_field_t           *adv_field;
-
-  /*! \var mass_flux_array
-   *  Current values of the mass flux at primal faces (Shared)
-   */
-  cs_real_t                *mass_flux_array;
-
-  /*! \var mass_flux_array_pre
-   *  Previous values of the mass flux at primal faces (Shared)
-   */
-  cs_real_t                *mass_flux_array_pre;
-
-  /*!
-   * @}
-   * @name Boundary conditions (BC) management
-   * Functions and elements used for enforcing the BCs
-   * @{
-   *
-   *  \var bf_type
-   *  Array of boundary type for each boundary face. (Shared)
-   */
-
-  const cs_boundary_type_t       *bf_type;
-
-  /*!
-   * \var pressure_bc
-   * Structure storing the metadata after processing the user-defined boundary
-   * conditions related to the pressure field
-   */
-
-  cs_cdo_bc_face_t               *pressure_bc;
-  int                             pressure_rescaling;
-
-  /*! \var apply_fixed_wall
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  wall boundary (no slip boundary)
-   *
-   *  \var apply_sliding_wall
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  wall boundary (a tangential velocity is specified at the wall)
-   *
-   *  \var apply_velocity_inlet
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  boundary with a fixed velocity at the inlet
-   *
-   *  \var apply_symmetry
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  symmetry boundary
-   */
-
-  cs_cdo_apply_boundary_t        *apply_fixed_wall;
-  cs_cdo_apply_boundary_t        *apply_sliding_wall;
-  cs_cdo_apply_boundary_t        *apply_velocity_inlet;
-  cs_cdo_apply_boundary_t        *apply_symmetry;
-
-  /*!
-   * @}
-   * @name Performance monitoring
-   * Monitoring the efficiency of the algorithm used to solve the Navier-Stokes
-   * system
-   * @{
-   */
-
-  /*! \var timer
-   *  Cumulated elapsed time for building and solving the Navier--Stokes system
-   */
-  cs_timer_counter_t  timer;
-
-  /*! @} */
-
-} cs_cdofb_predco_t;
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -747,13 +616,13 @@ cs_cdofb_predco_init_common(const cs_cdo_quantities_t     *quant,
  */
 /*----------------------------------------------------------------------------*/
 
-void *
-cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
-                                    cs_adv_field_t            *adv_field,
-                                    cs_real_t                 *mflux,
-                                    cs_real_t                 *mflux_pre,
-                                    cs_boundary_type_t        *fb_type,
-                                    void                      *nsc_input)
+cs::cdo_navsto_ctx_t *
+cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t *nsp,
+                                    cs_adv_field_t          *adv_field,
+                                    cs_real_t               *mflux,
+                                    cs_real_t               *mflux_pre,
+                                    cs_boundary_type_t      *fb_type,
+                                    void                    *nsc_input)
 {
   assert(nsp != nullptr && nsc_input != nullptr);
 
@@ -862,17 +731,15 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
 /*!
  * \brief  Destroy a cs_cdofb_predco_t structure
  *
- * \param[in] scheme_context   pointer to a scheme context structure to free
+ * \param[in] sc   pointer to a scheme context structure to free
  *
  * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdofb_predco_free_scheme_context(void   *scheme_context)
+cs_cdofb_predco_free_scheme_context(cs_cdofb_predco_t *sc)
 {
-  cs_cdofb_predco_t  *sc = (cs_cdofb_predco_t  *)scheme_context;
-
   if (sc == nullptr)
     return sc;
 
@@ -897,14 +764,14 @@ cs_cdofb_predco_free_scheme_context(void   *scheme_context)
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in, out] sc     pointer to a \ref cs_cdofb_predco_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
-                                 const cs_navsto_param_t      *nsp,
-                                 void                         *scheme_context)
+cs_cdofb_predco_compute_implicit(const cs_mesh_t         *mesh,
+                                 const cs_navsto_param_t *nsp,
+                                 cs_cdofb_predco_t       *sc)
 {
   cs_timer_t  t_cmpt = cs_timer_time();
 
@@ -915,7 +782,6 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Retrieve high-level structures */
 
-  cs_cdofb_predco_t  *sc = (cs_cdofb_predco_t *)scheme_context;
   cs_navsto_projection_t *cc = sc->coupling_context;
   cs_equation_t  *mom_eq = cc->prediction;
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;

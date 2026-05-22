@@ -53,6 +53,7 @@
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_priv.h"
 #include "cdo/cs_iter_algo.h"
+#include "cdo/cs_navsto_context.h"
 #include "cdo/cs_navsto_coupling.h"
 #include "cdo/cs_navsto_param.h"
 #include "cdo/cs_static_condensation.h"
@@ -69,7 +70,7 @@
  *        monolithic approach
  */
 
-typedef struct _cdofb_monolithic_t  cs_cdofb_monolithic_t;
+typedef struct _cs_cdofb_monolithic_t cs_cdofb_monolithic_t;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -156,109 +157,7 @@ typedef int
  *         Case of a monolithic approach (i.e fully coupled)
  */
 
-struct _cdofb_monolithic_t {
-
-  /*! \var coupling_context
-   *  Pointer to a \ref cs_navsto_monolithic_t (owned by \ref
-   *  cs_navsto_system_t) containing the settings related to the monolithic
-   *  approach
-   */
-
-  cs_navsto_monolithic_t   *coupling_context;
-
-  /*!
-   * @name Main field variables
-   * Fields for every main variable of the equation. Got from cs_navsto_system_t
-   */
-
-  /*! \var velocity
-   *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
-   *  the cell DoFs of the velocity
-   */
-
-  cs_field_t               *velocity;
-
-  /*! \var pressure
-   *  Pointer to \ref cs_field_t (owned by \ref cs_navsto_system_t) containing
-   *  the cell DoFs of the pressure
-   */
-
-  cs_field_t               *pressure;
-
-  /*! \var divergence
-   *  Pointer to \ref cs_real_t containing the values of the divergence on the
-   *  cells
-   */
-
-  cs_field_t               *divergence;
-
-  /*!
-   * @}
-   * @name Advection quantities
-   * Members related to the advection
-   * @{
-   *
-   *  \var adv_field
-   *  Pointer to the cs_adv_field_t related to the Navier-Stokes eqs (Shared)
-   */
-
-  cs_adv_field_t           *adv_field;
-
-  /*! \var mass_flux_array
-   *  Current values of the mass flux at primal faces (Shared)
-   */
-
-  cs_real_t                *mass_flux_array;
-
-  /*! \var mass_flux_array_pre
-   *  Previous values of the mass flux at primal faces (Shared)
-   */
-
-  cs_real_t                *mass_flux_array_pre;
-
-  /*!
-   * @}
-   * @name Boundary conditions (BC) management
-   * Functions and elements used for enforcing the BCs
-   * @{
-   *
-   *  \var bf_type
-   *  Array of boundary type for each boundary face. (Shared)
-   */
-
-  const cs_boundary_type_t       *bf_type;
-
-  /*!
-   * \var pressure_bc
-   * Structure storing the metadata after processing the user-defined boundary
-   * conditions related to the pressure field
-   */
-
-  cs_cdo_bc_face_t               *pressure_bc;
-  int                             pressure_rescaling;
-
-  /*! \var apply_fixed_wall
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  wall boundary (no slip boundary)
-   *
-   *  \var apply_sliding_wall
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  wall boundary (a tangential velocity is specified at the wall)
-   *
-   *  \var apply_velocity_inlet
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  boundary with a fixed velocity at the inlet
-   *
-   *  \var apply_symmetry
-   *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
-   *  symmetry boundary
-   */
-
-  cs_cdo_apply_boundary_t        *apply_fixed_wall;
-  cs_cdo_apply_boundary_t        *apply_sliding_wall;
-  cs_cdo_apply_boundary_t        *apply_velocity_inlet;
-  cs_cdo_apply_boundary_t        *apply_symmetry;
-
+struct _cs_cdofb_monolithic_t : public cs::cdo_navsto_monolithic_ctx_t {
   /*!
    * @}
    * @name Build stage
@@ -266,8 +165,8 @@ struct _cdofb_monolithic_t {
    * @{
    */
 
-  cs_cdofb_monolithic_build_t         *steady_build;
-  cs_cdofb_monolithic_build_t         *build;
+  cs_cdofb_monolithic_build_t *steady_build;
+  cs_cdofb_monolithic_build_t *build;
 
   /*!
    * \var add_gravity_term
@@ -275,7 +174,7 @@ struct _cdofb_monolithic_t {
    *      This can be the Boussinesq term or the hydrostatic term (rho*g)
    */
 
-  cs_cdofb_navsto_source_t           *add_gravity_term;
+  cs_cdofb_navsto_source_t *add_gravity_term;
 
   /*!
    * @}
@@ -289,20 +188,20 @@ struct _cdofb_monolithic_t {
    * system of equation
    */
 
-  cs_cdofb_monolithic_assemble_t     *assemble;
+  cs_cdofb_monolithic_assemble_t *assemble;
 
   /* \var block21_op
    * Unassembled (2,1)-block (related to the divergence). Not always
    * allocated. It depends on the solver for the saddle-point system.
    */
 
-  cs_real_t                          *block21_op;
+  cs_real_t *block21_op;
 
   /* \var system_helper
    * Set of structure to handle the saddle-point matrix and its rhs
    */
 
-  cs_cdo_system_helper_t             *system_helper;
+  cs_cdo_system_helper_t *system_helper;
 
   /*!
    * @}
@@ -314,7 +213,7 @@ struct _cdofb_monolithic_t {
    * Function dedicated to the resolution of the saddle-point system
    */
 
-  cs_cdofb_monolithic_solve_t       *solve;
+  cs_cdofb_monolithic_solve_t *solve;
 
   /* \var saddle_solver
    * Set of pointers to enable the resolution of saddle-point system
@@ -325,30 +224,16 @@ struct _cdofb_monolithic_t {
    * Scaling coefficient in case of augmentation of the system
    */
 
-  cs_saddle_solver_t                *saddle_solver;
+  cs_saddle_solver_t *saddle_solver;
 
-  double                             gamma;
+  double gamma;
 
   /*!
    * \var nl_algo
    * Structure used to drive the convergence of high-level iterative algorithms
    */
 
-  cs_iter_algo_t                    *nl_algo;
-
-  /*!
-   * @}
-   * @name Performance monitoring
-   * Monitoring the efficiency of the algorithm used to solve the Navier-Stokes
-   * system
-   * @{
-   */
-
-  /*! \var timer
-   *  Cumulated elapsed time for building and solving the Navier--Stokes system
-   */
-
-  cs_timer_counter_t  timer;
+  cs_iter_algo_t *nl_algo;
 
   /*! @} */
 };
