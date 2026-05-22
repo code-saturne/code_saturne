@@ -475,7 +475,7 @@ _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
   /* No contribution of f to the boundary mass flux */
   cs_field_bc_coeffs_t bc_coeffs_v_loc;
   cs_field_bc_coeffs_shallow_copy(bc_coeffs_vel, &bc_coeffs_v_loc);
-  CS_MALLOC(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t);
+  CS_MALLOC_HD(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t, cs_alloc_mode);
 
   cs_real_33_t *coefbv = (cs_real_33_t *)bc_coeffs_v_loc.b;
   cs_array_real_fill_zero(9*n_b_faces, (cs_real_t *)coefbv);
@@ -1188,22 +1188,24 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
   /* Compute the coefficient CFL/dt */
   cs_real_t psginf = cs_glob_cf_model->psginf;
   if (cs_glob_porous_model >= 1) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      if (has_dc * c_disable_flag[has_dc * c_id] != 0)
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      if (has_dc * c_disable_flag[has_dc * c_id] != 0) {
         wcf[c_id] = cs_math_epzero;
-      else
-        wcf[c_id] =   w1[c_id] * c2[c_id] * crom[c_id]
-                    / ((cvar_pr[c_id] + psginf)*cell_f_vol[c_id]);
-    }
+      }
+      else {
+        wcf[c_id] =  w1[c_id] * c2[c_id] * crom[c_id]
+                  / ((cvar_pr[c_id] + psginf)*cell_f_vol[c_id]);
+      }
+    });
   }
   else {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      wcf[c_id] =   w1[c_id] * c2[c_id] * crom[c_id]
-                  / ((cvar_pr[c_id] + psginf)*cell_f_vol[c_id]);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      wcf[c_id] = w1[c_id] * c2[c_id] * crom[c_id]
+                / ((cvar_pr[c_id] + psginf)*cell_f_vol[c_id]);
+    });
   }
-
-  /* Free memory */
-  cs_field_bc_coeffs_clear(&bc_coeffs_loc);
+    /* Free memory */
+    cs_field_bc_coeffs_clear(&bc_coeffs_loc);
 }
 
 /*---------------------------------------------------------------------------- */

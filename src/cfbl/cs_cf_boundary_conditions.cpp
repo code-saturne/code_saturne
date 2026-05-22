@@ -626,7 +626,7 @@ cs_cf_boundary_conditions_init(void)
   cs_base_at_finalize(_cf_boundary_conditions_finalize);
 
   CS_REALLOC(_ifbet, cs_glob_mesh->n_b_faces, int);
-  CS_REALLOC(_icvfli, cs_glob_mesh->n_b_faces, int);
+  CS_REALLOC_HD(_icvfli, cs_glob_mesh->n_b_faces, int, cs_alloc_mode);
 }
 
 /*----------------------------------------------------------------------------*/
