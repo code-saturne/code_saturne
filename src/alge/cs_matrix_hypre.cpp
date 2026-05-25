@@ -108,7 +108,9 @@
  *  Global variables
  *============================================================================*/
 
-static const char _hypre_ij_type_name[] = "HYPRE_PARCSR";
+const char cs_matrix_hypre_ij_type_name[] = "HYPRE_ParCSR";
+const char cs_matrix_hypre_ij_type_name_device[] = "HYPRE_ParCSR, device";
+
 static const char _hypre_ij_type_fullname[] = "HYPRE IJ (HYPRE_ParCSR)";
 
 static int _device_is_setup = -1;
@@ -1942,7 +1944,10 @@ cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
 
   matrix->type = CS_MATRIX_N_BUILTIN_TYPES;
 
-  matrix->type_name = _hypre_ij_type_name;
+  if (use_device == false)
+    matrix->type_name = cs_matrix_hypre_ij_type_name;
+  else
+    matrix->type_name = cs_matrix_hypre_ij_type_name_device;
   matrix->type_fname = _hypre_ij_type_fullname;
 
   /* Release previous coefficients if present */
@@ -1974,6 +1979,22 @@ cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
     matrix->vector_multiply[i][0] = _mat_vec_p_parcsr;
     matrix->vector_multiply[i][1] = nullptr;
   }
+
+#if defined(HAVE_ACCEL)
+  for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
+    if (use_device) {
+      matrix->vector_multiply_h[i][0] = nullptr;
+      matrix->vector_multiply_d[i][0] = _mat_vec_p_parcsr;
+    }
+    else {
+      matrix->vector_multiply_h[i][0] = _mat_vec_p_parcsr;
+      matrix->vector_multiply_d[i][0] = nullptr;
+    }
+    matrix->vector_multiply[i][0] = _mat_vec_p_parcsr;
+    matrix->vector_multiply_h[i][1] = nullptr;
+    matrix->vector_multiply_d[i][1] = nullptr;
+  }
+#endif /* defined(HAVE_ACCEL) */
 
   matrix->copy_diagonal = _copy_diagonal_ij;
 

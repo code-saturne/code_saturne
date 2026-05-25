@@ -596,7 +596,9 @@ cs_sles_hypre_setup(void               *context,
     sd->precond = nullptr;
   }
 
-  const char expected_matrix_type[] = "HYPRE_PARCSR";
+  const char *expected_matrix_type = (c->use_device) ?
+    cs_matrix_hypre_ij_type_name_device :
+    cs_matrix_hypre_ij_type_name;
   if (strcmp(cs_matrix_get_type_name(a), expected_matrix_type))
     bft_error(__FILE__, __LINE__, 0,
               _("HYPRE [%s]:\n"
