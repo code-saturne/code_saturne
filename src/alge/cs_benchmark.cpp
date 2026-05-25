@@ -835,16 +835,9 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
   /* Allocate and initialize  working arrays */
 
-  if (CS_MEM_ALIGN > 0) {
-    CS_MEMALIGN(x, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
-    CS_MEMALIGN(y, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
-    CS_MEMALIGN(yr0, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
-  }
-  else {
-    CS_MALLOC(x, n_cols_ext*a_block_size, cs_real_t);
-    CS_MALLOC(y, n_cols_ext*a_block_size, cs_real_t);
-    CS_MALLOC(yr0, n_cols_ext*a_block_size, cs_real_t);
-  }
+  CS_MALLOC_HD(x, n_cols_ext*a_block_size, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(y, n_cols_ext*a_block_size, cs_real_t, cs_alloc_mode);
+  CS_MALLOC(yr0, n_cols_ext*a_block_size, cs_real_t);
 
   CS_MALLOC(da, n_cols_ext*a_block_stride, cs_real_t);
   CS_MALLOC(xa, n_edges*2*a_block_stride, cs_real_t);
