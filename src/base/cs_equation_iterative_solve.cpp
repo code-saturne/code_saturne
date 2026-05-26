@@ -837,13 +837,6 @@ _equation_iterative_solve_strided(int                   idtvar,
     /*  Solver residual */
     ressol = residu;
 
-    if (conv_diff_mg) {
-      cs_multigrid_t *mg
-        = static_cast<cs_multigrid_t *>(cs_sles_get_context(sc));
-      cs_multigrid_setup_conv_diff(mg, var_name, a, true,
-                                   cs_sles_get_verbosity(sc));
-    }
-
     CS_PROFILE_MARK_LINE();
     cs_sles_solve_ccc_fv(sc,
                          a,
@@ -1894,13 +1887,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     /* Solver residual */
     ressol = residu;
-
-    if (conv_diff_mg) {
-      cs_multigrid_t *mg
-        = static_cast<cs_multigrid_t *>(cs_sles_get_context(sc));
-      cs_multigrid_setup_conv_diff(mg, var_name, a, true,
-                                   cs_sles_get_verbosity(sc));
-    }
 
     cs_sles_solve_ccc_fv(sc,
                          a,

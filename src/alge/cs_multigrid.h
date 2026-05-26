@@ -177,6 +177,18 @@ cs_multigrid_copy(const void  *context);
  * Set multigrid coarsening parameters.
  *
  * parameters:
+ *   mg             <-> pointer to multigrid info and context
+ *   conv_diff      <-- true if convection/diffusion mode is required
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_conv_diff(cs_multigrid_t  *mg,
+                           bool             conv_diff);
+
+/*----------------------------------------------------------------------------
+ * Set multigrid coarsening parameters.
+ *
+ * parameters:
  *   mg                     <-> pointer to multigrid info and context
  *   aggregation_limit      <-- maximum allowed fine rows per coarse cell
  *   coarsening_type        <-- coarsening type; see cs_grid_coarsening_t

@@ -93,7 +93,7 @@
 
 /*!
   \file cs_grid.cpp
-        Coarse grid construction for multigrid solveru.
+        Coarse grid construction for multigrid solver.
 
   The multigrid solver is based on an aggregation approach, with optional
   relaxation parameter.

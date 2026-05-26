@@ -287,6 +287,7 @@ struct _cs_multigrid_t {
 
   cs_multigrid_type_t     type;     /* Multigrid type */
   cs_multigrid_subtype_t  subtype;  /* Multigrid subtype */
+  bool                    conv_diff;   /* Convection-diffusion mode */
 
   int                     f_settings_threshold;  /* Maximum level considered
                                                     as a fine grid for specific
@@ -4629,6 +4630,7 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
 
   mg->type = mg_type;
   mg->subtype = CS_MULTIGRID_MAIN;
+  mg->conv_diff = false;
 
   mg->caller_n_ranks = cs_glob_n_ranks;
 
@@ -4839,6 +4841,21 @@ cs_multigrid_log(const void  *context,
 
   else if (log_type == CS_LOG_PERFORMANCE)
     _multigrid_performance_log(mg);
+}
+
+/*----------------------------------------------------------------------------
+ * Set multigrid coarsening parameters.
+ *
+ * parameters:
+ *   mg             <-> pointer to multigrid info and context
+ *   conv_diff      <-- true if convection/diffusion mode is required
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_conv_diff(cs_multigrid_t  *mg,
+                           bool             conv_diff)
+{
+  mg->conv_diff = conv_diff;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5195,33 +5212,6 @@ cs_multigrid_setup(void               *context,
                    const char         *name,
                    const cs_matrix_t  *a,
                    int                 verbosity)
-{
-  cs_multigrid_setup_conv_diff(context,
-                               name,
-                               a,
-                               false,
-                               verbosity);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Setup multigrid sparse linear equation solver.
- *
- * \param[in, out]  context    pointer to multigrid solver info and context
- *                             (actual type: cs_multigrid_t  *)
- * \param[in]       name       pointer to name of linear system
- * \param[in]       a          associated matrix
- * \param[in]       conv_diff  convection-diffusion mode
- * \param[in]       verbosity  associated verbosity
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_multigrid_setup_conv_diff(void               *context,
-                             const char         *name,
-                             const cs_matrix_t  *a,
-                             bool                conv_diff,
-                             int                 verbosity)
 
 {
   cs_multigrid_t  *mg = (cs_multigrid_t *)context;
@@ -5260,7 +5250,7 @@ cs_multigrid_setup_conv_diff(void               *context,
                                  extra_diag_block_size,
                                  mesh->i_face_cells,
                                  a,
-                                 conv_diff);
+                                 mg->conv_diff);
 
   cs_multigrid_level_info_t *mg_lv_info = mg->lv_info;
 

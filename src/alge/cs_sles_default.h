@@ -147,30 +147,6 @@ cs_sles_default_release_matrix(cs_matrix_t  **m);
 void
 cs_sles_default_finalize(void);
 
-/*----------------------------------------------------------------------------
- * Call sparse linear equation solver setup for convection-diffusion
- * systems
- *
- * parameters:
- *   f_id                   associated field id, or < 0
- *   name                   associated name if f_id < 0, or NULL
- *   diag_block_size        block sizes for diagonal
- *   extra_diag_block_size  block sizes for extra diagonal
- *   da                     diagonal values (NULL if zero)
- *   xa                     extradiagonal values (NULL if zero)
- *   conv_diff              convection-diffusion mode
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sles_setup_native_conv_diff(int                  f_id,
-                               const char          *name,
-                               const cs_lnum_t      diag_block_size,
-                               const cs_lnum_t      extra_diag_block_size,
-                               const cs_real_t     *da,
-                               const cs_real_t     *xa,
-                               bool                 conv_diff);
-
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Call sparse linear equation solver for general colocated

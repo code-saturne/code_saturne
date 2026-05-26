@@ -3540,15 +3540,16 @@ cs_gui_linear_solvers(void)
           cs_sles_pc_t *pc = cs_multigrid_pc_create(mg_type);
           if (symmetric == false) {
             cs_multigrid_t *mg = (cs_multigrid_t *)cs_sles_pc_get_context(pc);
+            cs_multigrid_set_conv_diff(mg, true);
             cs_multigrid_set_solver_options
               (mg,
                CS_SLES_P_SYM_GAUSS_SEIDEL,
                CS_SLES_P_SYM_GAUSS_SEIDEL,
                CS_SLES_GCR,
-               100, /* n max cycles */
+               1,   /* n max cycles */
                1,   /* n max iter for descent (default 2) */
                1,   /* n max iter for ascent (default 10) */
-               100, /* n max iter coarse solver */
+               500, /* n max iter coarse solver */
                0, 0, 0,  /* precond degree */
                -1, -1, 1); /* precision multiplier */
           }
@@ -3562,6 +3563,7 @@ cs_gui_linear_solvers(void)
 
         /* If we have convection, set appropriate options */
         if (symmetric == false) {
+          cs_multigrid_set_conv_diff(mg, true);
           cs_multigrid_set_solver_options
             (mg,
              CS_SLES_P_SYM_GAUSS_SEIDEL,
