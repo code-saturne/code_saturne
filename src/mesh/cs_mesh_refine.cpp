@@ -997,7 +997,7 @@ _compute_face_r_level(cs_lnum_t        n_v,
   do {
     _n_v = v_count;
     v_count = 0;
-    bool prev_up = (_r_gen[0] > _r_gen[n_v - 1]) ? true : false;
+    bool prev_up = (_r_gen[0] > _r_gen[_n_v - 1]) ? true : false;
 
     for (cs_lnum_t i = 0; i < _n_v; i++) {
       cs_lnum_t i_n = (i+1)%_n_v;
@@ -2297,20 +2297,25 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
     CS_MALLOC(vtx_r_gen_f, n_fv, char);
   }
 
+  cs_mesh_t *mesh = cs_glob_mesh;
+
   int last_corner_idx = 0;
-  cs_lnum_t v0 = f2v_lst[0];
-  char r_lv0 = vtx_r_gen[v0];
+  char r_lv0 = vtx_r_gen[f2v_lst[0]];
+  cs_gnum_t gnum0 = mesh->global_vtx_num[f2v_lst[0]];
 
   /* Copy to local array for cheaper access, as multiple
      passes may be needed */
 
   for (cs_lnum_t i = 0; i < n_fv; i++) {
-    cs_lnum_t j = f2v_lst[i];
-    char r_lv = vtx_r_gen[j];
+    char r_lv = vtx_r_gen[f2v_lst[i]];
+    cs_gnum_t gnum = mesh->global_vtx_num[f2v_lst[i]];
     vtx_r_gen_f[i] = r_lv;
-    if (r_lv < r_lv0) {
+
+    if ((r_lv < r_lv0) ||
+        (r_lv == r_lv0 && gnum < gnum0)) {
       last_corner_idx = i;
       r_lv0 = r_lv;
+      gnum0 = gnum;
     }
   }
 
@@ -2336,7 +2341,7 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
 
   cs_lnum_t n_corner = 0, n_mid = 0, n_fv_c = n_fv;
 
-  v0 = f2v_lst[0];
+  cs_lnum_t v0 = f2v_lst[0];
   r_lv0 = vtx_r_gen[v0];
 
   last_corner_idx = 0;  // Last corner
@@ -3444,25 +3449,35 @@ _subdivide_face(cs_lnum_t                 f_id,
 
   }
 
-  // The construction of sub-faces must start from a parent corner.
+  // The construction of sub-faces must start from the parent corner with
+  // the lowest global vertex id.
 
   {
+    cs_mesh_t *mesh = cs_glob_mesh;
+
     char corner_r_gen = vtx_r_gen[f2v_lst_c[0]];
+    cs_gnum_t corner_gnum = mesh->global_vtx_num[f2v_lst_c[0]];
     int corner_idx = 0;
 
     for (cs_lnum_t i = 1; i < n_fv_c; i++) {
       char r_gen = vtx_r_gen[f2v_lst_c[i]];
-      if (r_gen < corner_r_gen) {
+      cs_gnum_t gnum = mesh->global_vtx_num[f2v_lst_c[i]];
+      if ((r_gen < corner_r_gen) ||
+          (r_gen == corner_r_gen && gnum < corner_gnum)) {
+
         corner_r_gen = r_gen;
         corner_idx = i;
+        corner_gnum = gnum;
       }
     }
 
-    cs_lnum_t tmp[32];
-    memcpy(tmp, f2v_lst_c, n_fv_c * sizeof(cs_lnum_t));
+    if (corner_idx != 0) {
+      cs_lnum_t tmp[32];
+      memcpy(tmp, f2v_lst_c, n_fv_c * sizeof(cs_lnum_t));
 
-    for (cs_lnum_t i = 0; i < n_fv_c; i++)
-      f2v_lst_c[i] = tmp[(corner_idx+i)%n_fv_c];
+      for (cs_lnum_t i = 0; i < n_fv_c; i++)
+        f2v_lst_c[i] = tmp[(corner_idx+i)%n_fv_c];
+    }
   }
 
   switch(f_r_flag) {
@@ -6105,27 +6120,17 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   for (cs_lnum_t i = m->n_cells; i < m->n_cells_with_ghosts; i++)
     c_r_flag[i] = CS_REFINE_NONE;
 
+  if (m->halo != nullptr) {
+    cs_halo_sync_untyped(m->halo,
+                         CS_HALO_STANDARD,
+                         sizeof(cs_mesh_refine_type_t),
+                         c_r_flag);
+  }
+
+
   CS_MALLOC(f_r_flag, n_f_ini, cs_mesh_refine_type_t);
   for (cs_lnum_t i = 0; i < n_f_ini; i++)
     f_r_flag[i] = CS_REFINE_NONE;
-
-  cs_lnum_t n_refined_cells = 0;
-  for (cs_lnum_t i = 0; i < m->n_cells; i++) {
-    if (c_r_flag[i] > CS_REFINE_NONE)
-      n_refined_cells += 1;
-  }
-
-  cs_lnum_t *refined_cell_id = nullptr;
-  if (n_refined_cells < m->n_cells) {
-    CS_MALLOC(refined_cell_id, m->n_cells, cs_lnum_t);
-    n_refined_cells = 0;
-    for (cs_lnum_t i = 0; i < m->n_cells; i++) {
-      if (c_r_flag[i] > CS_REFINE_NONE)
-        refined_cell_id[n_refined_cells++] = i;
-      else
-        refined_cell_id[n_refined_cells++] = -1;
-    }
-  }
 
   t1 = cs_timer_time();
 
@@ -6582,7 +6587,6 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   CS_FREE(c_o2n_idx);
   CS_FREE(c_i_face_idx);
 
-  CS_FREE(refined_cell_id);
   cs_adjacency_destroy(&c2f);
 
   CS_FREE(c_v_idx);
