@@ -375,7 +375,7 @@ _reorder_halo_cells(const cs_mesh_t  *mesh,
   if (mesh->cell_cells_lst != nullptr) {
     for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
       for (cs_lnum_t kk = mesh->cell_cells_idx[ii];
-           kk < mesh->cell_cells_idx[ii];
+           kk < mesh->cell_cells_idx[ii+1];
            kk++) {
         cs_lnum_t gc_id = mesh->cell_cells_lst[kk] - n_cells;
         if (gc_id > -1) {
@@ -1315,7 +1315,7 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
         cs_lnum_t c_id_1 = i_face_cells[f_id][1];
         if (c_id_0 >= n_cells)
           faces_keys[f_id*3] = halo_class[c_id_0 - n_cells];
-        else if (c_id_1 > n_cells)
+        else if (c_id_1 >= n_cells)
           faces_keys[f_id*3] = halo_class[c_id_1 - n_cells];
         else {
           faces_keys[f_id*3] = 0;
