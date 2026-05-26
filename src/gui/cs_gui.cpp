@@ -1707,21 +1707,22 @@ _read_diffusivity(void)
       visls_0 /= cs_glob_fluid_properties->cp0;
 
     cs_field_t *tf = cs_thermal_model_field();
-    tf->set_key_double(kvisls0, visls_0);
+    if (tf != nullptr) {
+      tf->set_key_double(kvisls0, visls_0);
 
-    /* Special case/keyword for Enthalpy diffusivity for combustion */
-    for (int m_type = CS_COMBUSTION_3PT;
-         m_type <= CS_COMBUSTION_COAL;
-         m_type++) {
-      if (cs_glob_physical_model_flag[m_type] > -1) {
-        double diftl0;
-        cs_gui_properties_value("dynamic_diffusion", &diftl0);
+      /* Special case/keyword for Enthalpy diffusivity for combustion */
+      for (int m_type = CS_COMBUSTION_3PT; m_type <= CS_COMBUSTION_COAL;
+           m_type++) {
+        if (cs_glob_physical_model_flag[m_type] > -1) {
+          double diftl0;
+          cs_gui_properties_value("dynamic_diffusion", &diftl0);
 #if _XML_DEBUG_
-        bft_printf("==> %s\n", __func__);
-        bft_printf("--diftl0  = %f\n", diftl0);
+          bft_printf("==> %s\n", __func__);
+          bft_printf("--diftl0  = %f\n", diftl0);
 #endif
-        tf->set_key_double(kvisls0, diftl0);
-        break;
+          tf->set_key_double(kvisls0, diftl0);
+          break;
+        }
       }
     }
   }
