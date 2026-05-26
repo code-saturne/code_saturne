@@ -41,6 +41,7 @@
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
+#include "base/cs_time_step.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 #include "cdo/cs_param_cdo.h"
@@ -1535,13 +1536,16 @@ cs_iter_algo_check_warning(const char          *func_name,
 
     int  n_iter = cs_iter_algo_get_n_iter(algo);
     double  res = cs_iter_algo_get_residual(algo);
+    const cs_time_step_t *ts = cs_glob_time_step;
 
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS,
                   " %s: %s algorithm reaches the max. number of iterations"
                   " when solving equation \"%s\"\n"
-                  " %s: max_iter=%d; last residual=%5.3e\n",
-                  func_name, algo_name, eq_name, func_name, n_iter, res);
+                  " %s: max_iter=%d; last residual=%5.3e\n"
+                  " %s: Current time step=%d\n",
+                  func_name, algo_name, eq_name, func_name, n_iter, res,
+                  func_name, ts->nt_cur);
     cs_log_printf_flush(CS_LOG_WARNINGS);
 
   }
