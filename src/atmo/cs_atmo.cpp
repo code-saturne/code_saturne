@@ -395,17 +395,16 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   int isym = 1;
   bool symmetric = true;
 
-  cs_real_3_t *next_fext;
-  CS_MALLOC_HD(next_fext, m->n_cells_with_ghosts, cs_real_3_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t> next_fext(m->n_cells_with_ghosts, 3, cs_alloc_mode);
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-    next_fext[cell_id][0] = f_ext[cell_id][0] + dfext[cell_id][0];
-    next_fext[cell_id][1] = f_ext[cell_id][1] + dfext[cell_id][1];
-    next_fext[cell_id][2] = f_ext[cell_id][2] + dfext[cell_id][2];
+    next_fext(cell_id, 0) = f_ext[cell_id][0] + dfext[cell_id][0];
+    next_fext(cell_id, 1) = f_ext[cell_id][1] + dfext[cell_id][1];
+    next_fext(cell_id, 2) = f_ext[cell_id][2] + dfext[cell_id][2];
   }
 
   /* Handle parallelism and periodicity */
   if (m->halo != nullptr)
-    cs_halo_sync(m->halo, false, next_fext);
+    cs_halo_sync(m->halo, false, next_fext.data<cs_real_3_t>());
 
   /* Boundary conditions
      =================== */
@@ -439,15 +438,13 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   }
 
   cs_parall_max(1, CS_INT_TYPE, &(eqp_p->ndircl));
-  cs_real_t *rovsdt;
-  CS_MALLOC_HD(rovsdt, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> rovsdt(m->n_cells_with_ghosts, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     rovsdt[cell_id] = 0.;
 
   /* Faces viscosity */
-  cs_real_t *c_visc;
-  CS_MALLOC_HD(c_visc, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> c_visc(m->n_cells_with_ghosts, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     c_visc[cell_id] = 1.;
@@ -477,7 +474,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                     mq,
                     1, /* init */
                     eqp_p->nswrgr,
-                    next_fext,
+                    next_fext.data<cs_real_3_t>(),
                     f->bc_coeffs->bf,
                     i_massflux,
                     b_massflux,
@@ -487,8 +484,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                     c_visc,
                     c_visc);
 
-  cs_real_t *divergfext;
-  CS_MALLOC_HD(divergfext, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> divergfext(m->n_cells_with_ghosts, cs_alloc_mode);
 
   cs_divergence(m,
                 1, /* init */
@@ -512,7 +508,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                          1, /* init */
                          1, /* inc */
                          1, /* iphydp */
-                         next_fext,
+                         next_fext.data<cs_real_3_t>(),
                          pvar,
                          f->bc_coeffs,
                          i_viscm,
@@ -562,7 +558,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                            1, /* init */
                            1, /* inc */
                            1, /* iphydp */
-                           next_fext,
+                           next_fext.data<cs_real_3_t>(),
                            pvar,
                            f->bc_coeffs,
                            i_viscm,
@@ -595,11 +591,6 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   }
 
   cs_sles_free_native(f_id, "");
-
-  CS_FREE(divergfext);
-  CS_FREE(next_fext);
-  CS_FREE(rovsdt);
-  CS_FREE(c_visc);
 
 }
 
@@ -3523,8 +3514,7 @@ cs_atmo_compute_meteo_profiles(void)
     z_ground = f_z_ground->val;
   }
 
-  cs_real_t *dlmo_var = nullptr;
-  CS_MALLOC(dlmo_var, m->n_cells_with_ghosts, cs_real_t);
+  cs_array<cs_real_t> dlmo_var(m->n_cells_with_ghosts);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
     dlmo_var[cell_id] = 0.0;
@@ -3681,7 +3671,6 @@ cs_atmo_compute_meteo_profiles(void)
   }
 
   cs_atmo_hydrostatic_profiles_compute();
-  CS_FREE(dlmo_var);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3823,10 +3812,9 @@ cs_atmo_z_ground_compute(void)
   /* Matrix
    * ====== */
 
-  cs_real_t *rovsdt = nullptr, *dpvar = nullptr, *rhs = nullptr;
-  CS_MALLOC_HD(rovsdt, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(dpvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(rhs, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> rovsdt(m->n_cells_with_ghosts, cs_alloc_mode);
+  cs_array<cs_real_t> dpvar(m->n_cells_with_ghosts, cs_alloc_mode);
+  cs_array<cs_real_t> rhs(m->n_cells_with_ghosts, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
     rhs[cell_id] = 0.;
@@ -3888,9 +3876,6 @@ cs_atmo_z_ground_compute(void)
   else {
     bft_printf("No ground BC or no gravity:"
                " no computation of ground elevation.\n");
-    CS_FREE(rovsdt);
-    CS_FREE(rhs);
-    CS_FREE(dpvar);
     return;
   }
 
@@ -3947,10 +3932,6 @@ cs_atmo_z_ground_compute(void)
     cs_parall_max(1, CS_REAL_TYPE, &inf_norm);
   }
 
-  /* Free memory */
-  CS_FREE(rovsdt);
-  CS_FREE(rhs);
-  CS_FREE(dpvar);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4081,10 +4062,8 @@ cs_atmo_hydrostatic_profiles_compute(void)
        "Density is computed accordingly.\n");
   }
 
-  cs_real_t *i_massflux = nullptr;
-  cs_real_t *b_massflux = nullptr;
-  CS_MALLOC_HD(i_massflux, m->n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_massflux, m->n_b_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> i_massflux(m->n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> b_massflux(m->n_b_faces, cs_alloc_mode);
 
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++)
     i_massflux[face_id] = 0.;
@@ -4092,11 +4071,9 @@ cs_atmo_hydrostatic_profiles_compute(void)
   for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++)
     b_massflux[face_id] = 0.;
 
-  cs_real_t *i_viscm = nullptr;
-  CS_MALLOC_HD(i_viscm, m->n_i_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> i_viscm(m->n_i_faces, cs_alloc_mode);
 
-  cs_real_t *b_viscm = nullptr;
-  CS_MALLOC_HD(b_viscm, m->n_b_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> b_viscm(m->n_b_faces, cs_alloc_mode);
 
   for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++)
     i_viscm[face_id] = 0.;
@@ -4104,36 +4081,31 @@ cs_atmo_hydrostatic_profiles_compute(void)
   for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++)
     b_viscm[face_id] = 0.;
 
-  cs_real_3_t *f_ext, *dfext;
-  CS_MALLOC_HD(f_ext, m->n_cells_with_ghosts, cs_real_3_t, cs_alloc_mode);
-  CS_MALLOC_HD(dfext, m->n_cells_with_ghosts, cs_real_3_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t> f_ext(m->n_cells_with_ghosts, 3, cs_alloc_mode);
+  cs_array_2d<cs_real_t> dfext(m->n_cells_with_ghosts, 3, cs_alloc_mode);
 
   /* dfext is actually a dummy used to copy _hydrostatic_pressure_compute */
   /* f_ext is initialized with an initial density */
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-    f_ext[cell_id][0] = density->val[cell_id] * phys_cst->gravity[0];
-    dfext[cell_id][0] = 0.;
-    f_ext[cell_id][1] = density->val[cell_id] * phys_cst->gravity[1];
-    dfext[cell_id][1] = 0.;
-    f_ext[cell_id][2] = density->val[cell_id] * phys_cst->gravity[2];
-    dfext[cell_id][2] = 0;
+    f_ext(cell_id, 0) = density->val[cell_id] * phys_cst->gravity[0];
+    dfext(cell_id, 0) = 0.;
+    f_ext(cell_id, 1) = density->val[cell_id] * phys_cst->gravity[1];
+    dfext(cell_id, 1) = 0.;
+    f_ext(cell_id, 2) = density->val[cell_id] * phys_cst->gravity[2];
+    dfext(cell_id, 2) = 0;
   }
 
   /* Solving
    * ======= */
 
-  cs_real_t *dam = nullptr;
-  CS_MALLOC_HD(dam, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> dam(m->n_cells_with_ghosts, cs_alloc_mode);
 
-  cs_real_t *xam = nullptr;
-  CS_MALLOC_HD(xam, m->n_i_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> xam(m->n_i_faces, cs_alloc_mode);
 
-  cs_real_t *rhs = nullptr;
-  CS_MALLOC_HD(rhs, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> rhs(m->n_cells_with_ghosts, cs_alloc_mode);
 
-  cs_real_t *dpvar = nullptr;
-  CS_MALLOC_HD(dpvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> dpvar(m->n_cells_with_ghosts, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
     dpvar[cell_id] = 0.;
@@ -4152,8 +4124,8 @@ cs_atmo_hydrostatic_profiles_compute(void)
     /* Update previous values of pressure for the convergence test */
     cs_field_current_to_previous(f);
 
-    _hydrostatic_pressure_compute(f_ext,
-                                  dfext,
+    _hydrostatic_pressure_compute(f_ext.data<cs_real_3_t>(),
+                                  dfext.data<cs_real_3_t>(),
                                   f->val,
                                   f->name,
                                   z_min,
@@ -4183,9 +4155,9 @@ cs_atmo_hydrostatic_profiles_compute(void)
       cs_real_t rho_k = f->val[cell_id] / (rair * temp->val[cell_id]);
       density->val[cell_id] = rho_k;
 
-      f_ext[cell_id][0] = rho_k * phys_cst->gravity[0];
-      f_ext[cell_id][1] = rho_k * phys_cst->gravity[1];
-      f_ext[cell_id][2] = rho_k * phys_cst->gravity[2];
+      f_ext(cell_id, 0) = rho_k * phys_cst->gravity[0];
+      f_ext(cell_id, 1) = rho_k * phys_cst->gravity[1];
+      f_ext(cell_id, 2) = rho_k * phys_cst->gravity[2];
     }
 
     if (cs_log_default_is_active()) {
@@ -4196,17 +4168,6 @@ cs_atmo_hydrostatic_profiles_compute(void)
     }
   }
 
-  /* Free memory */
-  CS_FREE(dpvar);
-  CS_FREE(rhs);
-  CS_FREE(i_viscm);
-  CS_FREE(b_viscm);
-  CS_FREE(xam);
-  CS_FREE(dam);
-  CS_FREE(f_ext);
-  CS_FREE(dfext);
-  CS_FREE(b_massflux);
-  CS_FREE(i_massflux);
 }
 
 /*----------------------------------------------------------------------------*/
