@@ -112,11 +112,11 @@ extern cs_param_cdo_mode_t  cs_glob_param_cdo_mode;
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set the global variable storing the mode of activation to apply to
- *        CDO/HHO schemes. Deprecated way to set the CDO mode.
+ *        CDO/HHO schemes.
  */
 /*----------------------------------------------------------------------------*/
 
-[[deprecated]] void
+void
 cs_param_cdo_mode_set(cs_param_cdo_mode_t   mode);
 
 /*----------------------------------------------------------------------------*/
