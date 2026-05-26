@@ -241,8 +241,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
   }
 
   /* Allocate work arrays */
-  cs_real_3_t *grad;
-  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  cs_array_2d<cs_real_t> grad(n_cells_ext, 3);
 
   /* Compute potential temperature derivatives
      ======================================== */
@@ -255,7 +254,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
   cs_field_gradient_scalar(f_thm,
                            false, // use_previous_t
                            1,    // inc
-                           grad);
+                           grad.data<cs_real_3_t>());
 
   /* TKE Production by gravity term G */
 
@@ -268,7 +267,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
     visct  = cpro_pcvto[c_id];
     cs_real_t beta = f_beta->val[c_id];
 
-    gravke = beta * cs_math_3_dot_product(grad[c_id], grav) / prdtur;
+    gravke = beta * cs_math_3_dot_product(grad.sub_array(c_id), grav) / prdtur;
 
     /* Explicit Buoyant terms */
     gk[c_id] = visct*gravke;
@@ -278,7 +277,6 @@ _dry_atmosphere(const cs_real_t  cromo[],
       f_tke_buoy->val[c_id] = visct*gravke/rho;
   }
 
-  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -321,19 +319,17 @@ _humid_atmosphere(const cs_real_t  cpro_pcvto[],
   cs_field_t *f_beta = cs_field("thermal_expansion");
 
   /* Allocate work arrays */
-  cs_real_3_t *grad;
-  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  cs_array_2d<cs_real_t> grad(n_cells_ext, 3);
 
   /* Compute potential temperature derivatives
      ======================================== */
 
   /* compute the production term in case of humid atmosphere
    * ie. when iatmos eq 2 */
-  cs_real_t *etheta, *eq, *gravke_theta, *gravke_qw;
-  CS_MALLOC(etheta, n_cells_ext, cs_real_t);
-  CS_MALLOC(eq, n_cells_ext, cs_real_t);
-  CS_MALLOC(gravke_theta, n_cells_ext, cs_real_t);
-  CS_MALLOC(gravke_qw, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> etheta(n_cells_ext);
+  cs_array<cs_real_t> eq(n_cells_ext);
+  cs_array<cs_real_t> gravke_theta(n_cells_ext);
+  cs_array<cs_real_t> gravke_qw(n_cells_ext);
 
   /* Computation of the gradient of the potentalp_bl temperature */
 
@@ -390,7 +386,7 @@ _humid_atmosphere(const cs_real_t  cpro_pcvto[],
   cs_field_gradient_scalar(f_thm,
                            false, // use_previous_t
                            1,    // inc
-                           grad);
+                           grad.data<cs_real_3_t>());
 
   /* Production and gravity terms
    * RHS k  = P + G et RHS ep = ce1 P + ce3 * G */
@@ -399,7 +395,7 @@ _humid_atmosphere(const cs_real_t  cpro_pcvto[],
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     gravke_theta[c_id] =   etheta[c_id] * f_beta->val[c_id]
-                         * cs_math_3_dot_product(grad[c_id], grav)
+                         * cs_math_3_dot_product(grad.sub_array(c_id), grav)
                          / prdtur;
   }
 
@@ -412,7 +408,7 @@ _humid_atmosphere(const cs_real_t  cpro_pcvto[],
   cs_field_gradient_scalar(cs_field("ym_water"),
                            false, // use_previous_t
                            1,    // inc
-                           grad);
+                           grad.data<cs_real_3_t>());
 
   /* Production and gravity terms
    * RHS k  = P + G et RHS ep = ce1 P + ce3 * G */
@@ -421,7 +417,7 @@ _humid_atmosphere(const cs_real_t  cpro_pcvto[],
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     gravke_qw[c_id] =   eq[c_id] * f_beta->val[c_id]
-                      * cs_math_3_dot_product(grad[c_id], grav)
+                      * cs_math_3_dot_product(grad.sub_array(c_id), grav)
                       / prdtur;
   }
 
@@ -440,12 +436,6 @@ _humid_atmosphere(const cs_real_t  cpro_pcvto[],
 
   }
 
-  CS_FREE(etheta);
-  CS_FREE(eq);
-  CS_FREE(gravke_theta);
-  CS_FREE(gravke_qw);
-
-  CS_FREE(grad);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

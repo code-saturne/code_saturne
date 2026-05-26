@@ -167,12 +167,12 @@ _gaussian(const cs_mesh_t             *m,
 
   const cs_real_t *cvar_vart = th_f->val;
 
-  cs_real_3_t *dqsd = nullptr, *dtlsd = nullptr;
-  CS_MALLOC_HD(dqsd, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-  CS_MALLOC_HD(dtlsd, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t> dqsd(n_cells_ext, 3, cs_alloc_mode);
+  cs_array_2d<cs_real_t> dtlsd(n_cells_ext, 3, cs_alloc_mode);
 
-  cs_field_gradient_scalar(th_f, true, 1, dtlsd);
-  cs_field_gradient_scalar(cs_field("ym_water"), true, 1, dqsd);
+  cs_field_gradient_scalar(th_f, true, 1, dtlsd.data<cs_real_3_t>());
+  cs_field_gradient_scalar(cs_field("ym_water"), true, 1,
+                           dqsd.data<cs_real_3_t>());
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -220,9 +220,9 @@ _gaussian(const cs_mesh_t             *m,
      const cs_real_t qsl = cs_air_yw_sat(tliq-tkelvi, pp); // saturated vapor content
      const cs_real_t alpha = (clatev*qsl/(rvap*pow(tliq,2)))*pow(pp/ps, rscp);
      const cs_real_t var_q_tl = a_coeff *
-                                (  pow(dqsd[c_id][0] - alpha * dtlsd[c_id][0], 2)
-                                 + pow(dqsd[c_id][1] - alpha * dtlsd[c_id][1], 2)
-                                 + pow(dqsd[c_id][2] - alpha * dtlsd[c_id][2], 2)  );
+                                (  pow(dqsd(c_id, 0) - alpha * dtlsd(c_id, 0), 2)
+                                 + pow(dqsd(c_id, 1) - alpha * dtlsd(c_id, 1), 2)
+                                 + pow(dqsd(c_id, 2) - alpha * dtlsd(c_id, 2), 2)  );
 
      const cs_real_t sig_flu = fmax(sqrt(var_q_tl), 1e-30);
      const cs_real_t qwt = cvar_totwt[c_id]; // total water content
@@ -267,8 +267,6 @@ _gaussian(const cs_mesh_t             *m,
 
   } // end loop on cells
 
-  CS_FREE(dqsd);
-  CS_FREE(dtlsd);
 }
 
 /*----------------------------------------------------------------------------*/

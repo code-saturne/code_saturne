@@ -335,8 +335,7 @@ _compute_gradient(const cs_mesh_t                *m,
   }
 
   // compute sedimentation velocity
-  cs_real_t *sed_vel = nullptr;
-  CS_MALLOC(sed_vel, n_cells, cs_real_t);
+  cs_array<cs_real_t> sed_vel(n_cells);
 
   //taup g, with taup = cuning * d^2 * rhop / (18 * mu) ...
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -346,8 +345,7 @@ _compute_gradient(const cs_mesh_t                *m,
   // take into account deposition if enabled
   if (at_opt->deposition_model > 0) {
 
-    cs_real_t *pres = nullptr;
-    CS_MALLOC(pres, n_cells, cs_real_t);
+    cs_array<cs_real_t> pres(n_cells);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       if (at_opt->meteo_profile == 0) {
@@ -392,14 +390,11 @@ _compute_gradient(const cs_mesh_t                *m,
       sed_vel[c_id] += depo_vel;
     }
 
-    CS_FREE(pres);
   } // end deposition_model > 0
-
-  cs_real_t *local_field = nullptr;
 
   /* Computation of the gradient of rho*qliq*V(r3)*exp(5*sc^2)
    * it corresponds to div(qliq* exp() rho vel_d) */
-  CS_MALLOC(local_field, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> local_field(n_cells_ext);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     local_field[c_id] = cpro_rho[c_id]                 // mass density of the air kg/m3
@@ -417,11 +412,8 @@ _compute_gradient(const cs_mesh_t                *m,
                       * sed_vel[c_id]                // deposition velocity m/s
                       * exp(-pow(at_opt->sigc, 2.0)); // coefficient coming from log-norm
                                                      // law of the droplet spectrum
-  CS_FREE(sed_vel);
 
   _gradient_homogeneous_neumann_sca(local_field, grad2);
-
-  CS_FREE(local_field);
 
 }
 
@@ -654,9 +646,9 @@ cs_atmo_scalar_source_term(int              f_id,
 
     // Source terms in the equation of the liquid potential temperature
     if (fld == th_f) {
-      cs_real_t *ray3Di = nullptr, *ray3Dst = nullptr;
-      CS_MALLOC(ray3Di, n_cells, cs_real_t);
-      CS_MALLOC(ray3Dst, n_cells, cs_real_t);
+      cs_array<cs_real_t> ray3Di(n_cells);
+      cs_array<cs_real_t> ray3Dst(n_cells);
+
       /* Call the 1D radiative model
        * Compute the divergence of the IR and solar radiative fluxes: */
 #if defined(HAVE_FORTRAN)
@@ -698,8 +690,6 @@ cs_atmo_scalar_source_term(int              f_id,
         st_exp[c_id] += cp_rho*(ray3Dst[c_id]-ray3Di[c_id])*pot_temp;
       }
 
-      CS_FREE(ray3Di);
-      CS_FREE(ray3Dst);
     }
 
   }
@@ -832,10 +822,6 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
   const cs_real_t *cpro_rho = CS_F_(rho)->val;
   const cs_real_3_t *cvar_vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
-  cs_real_t *tot_vol = nullptr;
-  cs_real_3_t *mom_a = nullptr;
-  cs_real_3_t *mom_met_a = nullptr;
-
   cs_real_3_t *cpro_momst
     = (cs_real_3_t *)cs_field_by_name("momentum_source_terms")->val;
 
@@ -845,9 +831,9 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
   if (at_opt->open_bcs_treatment != 1)
     n_level = fmax(at_opt->met_1d_nlevels_d, 1);
 
-  CS_MALLOC(tot_vol, n_level, cs_real_t);
-  CS_MALLOC(mom_a, n_level, cs_real_3_t);
-  CS_MALLOC(mom_met_a, n_level, cs_real_3_t);
+  cs_array<cs_real_t> tot_vol(n_level);
+  cs_array_2d<cs_real_t> mom_a(n_level, 3);
+  cs_array_2d<cs_real_t> mom_met_a(n_level, 3);
 
   cs_real_3_t *mom = at_opt->mom_cs;
   cs_real_3_t *mom_met = at_opt->mom_met;
@@ -855,13 +841,8 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
   const cs_real_t uref = cs_glob_turb_ref_values->uref;
 
   // Save previous values
-  cs_array_copy<cs_real_t>(3*n_level,
-                           (const cs_real_t *)(mom),
-                           (cs_real_t *)(mom_a));
-
-  cs_array_copy<cs_real_t>(3*n_level,
-                           (const cs_real_t *)(mom_met),
-                           (cs_real_t *)(mom_met_a));
+  mom_a.copy_data((cs_real_t *)(mom), 3*n_level);
+  mom_met_a.copy_data((cs_real_t *)(mom_met), 3*n_level);
 
   for (int l_id =0; l_id < n_level; l_id++) {
     for (int ii = 0; ii < 3; ii++) {
@@ -973,39 +954,31 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
       mom[l_id][ii] = mom[l_id][ii]/tot_vol[l_id];
   }
 
-  CS_FREE(tot_vol);
-
   /* Computation of the momentum source term
      --------------------------------------- */
 
   // First pass, reset previous values
   if (   cs_glob_time_step->nt_cur < 2
       || cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1) {
-    cs_array_copy<cs_real_t>(3*n_level,
-                             (const cs_real_t *)mom,
-                             (cs_real_t *)mom_a);
+    mom_a.copy_data((cs_real_t *)mom, 3*n_level);
 
-    cs_array_copy<cs_real_t>(3*n_level,
-                             (const cs_real_t *)(mom_met),
-                             (cs_real_t *)(mom_met_a));
+    mom_met_a.copy_data((cs_real_t *)(mom_met), 3*n_level);
 
     cs_array_real_fill_zero(n_level, at_opt->dpdt_met);
   }
 
   // Delta of pressure integrated over a time step for each level
-  cs_real_t *dpdtx = nullptr;
-  cs_real_t *dpdty = nullptr;
-  CS_MALLOC(dpdtx, n_level, cs_real_t);
-  CS_MALLOC(dpdty, n_level, cs_real_t);
+  cs_array<cs_real_t> dpdtx(n_level);
+  cs_array<cs_real_t> dpdty(n_level);
 
   for (int l_id = 0; l_id < n_level; l_id++) {
 
     // Momentum of CS and of the target
     const cs_real_t mom_norm = cs_math_3_norm(mom[l_id]);
-    const cs_real_t mom_norm_a = cs_math_3_norm(mom_a[l_id]);
+    const cs_real_t mom_norm_a = cs_math_3_norm(mom_a.sub_array(l_id));
 
     const cs_real_t mom_met_norm = cs_math_3_norm(mom_met[l_id]);
-    const cs_real_t mom_met_norm_a = cs_math_3_norm(mom_met_a[l_id]);
+    const cs_real_t mom_met_norm_a = cs_math_3_norm(mom_met_a.sub_array(l_id));
 
     // target meteo directions (current and previous)
     cs_real_3_t dir_met = {0.0, 0.0, 0.0};
@@ -1016,7 +989,7 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
         dir_met[ii] = mom_met[l_id][ii] / mom_met_norm;
     if (mom_met_norm_a > cs_math_epzero*uref*phys_pro->ro0)
       for (int ii = 0; ii < 3; ii++)
-        dir_met_a[ii] = mom_met_a[l_id][ii] / mom_met_norm_a;
+        dir_met_a[ii] = mom_met_a(l_id, ii) / mom_met_norm_a;
 
     /* CS directions (current and previous) */
     cs_real_3_t dir = {0.0, 0.0, 0.0};
@@ -1026,10 +999,10 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
         dir[ii] = mom[l_id][ii] / mom_norm;
     if (mom_norm_a > cs_math_epzero*uref*phys_pro->ro0)
       for (int ii = 0; ii < 3; ii++)
-        dir_a[ii] = mom_a[l_id][ii] / mom_norm_a;
+        dir_a[ii] = mom_a(l_id, ii) / mom_norm_a;
 
     cs_real_t dot_dir_dir_met_a = cs_math_3_dot_product(dir_met_a, dir);
-    cs_real_t dot_mom_a_dir = cs_math_3_dot_product(mom_a[l_id], dir);
+    cs_real_t dot_mom_a_dir = cs_math_3_dot_product(mom_a.sub_array(l_id), dir);
 
     /* Formula given by the steady state time integration:
         Dt Dp^n = ( Dt Dp^n-1 - (Qu^n - Qu^n-1)) . Qu^n/ ||Qu^n||^2  Qumet^n
@@ -1050,14 +1023,11 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
     /* Delta of pressure in the target direction
      * Steady state DP and Rotating term due to transient meteo */
     dpdtx[l_id] = at_opt->dpdt_met[l_id] * dir_met[0]
-                - (mom_met[l_id][0] - mom_met_a[l_id][0]);
+                - (mom_met[l_id][0] - mom_met_a(l_id, 0));
     dpdty[l_id] = at_opt->dpdt_met[l_id] * dir_met[1]
-                - (mom_met[l_id][1] - mom_met_a[l_id][1]);
+                - (mom_met[l_id][1] - mom_met_a(l_id, 1));
 
   }
-
-  CS_FREE(mom_a);
-  CS_FREE(mom_met_a);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -1089,8 +1059,6 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
 
   }
 
-  CS_FREE(dpdtx);
-  CS_FREE(dpdty);
 }
 
 /*----------------------------------------------------------------------------*/
