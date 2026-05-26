@@ -255,22 +255,11 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.checkBoxRestart.setChecked(0)
             self.groupBoxRestartOption.hide()
 
-        is_compressible = False
-        for field in mfm.list_of_fields:
-            if field.compressible == 'on':
-                is_compressible = True
-                break
-
-        if is_compressible:
-            self.mdl.setPotentielState('off')
+        status = self.mdl.getPotentielState()
+        if status == 'on':
+            self.checkBoxPotentialState.setChecked(1)
+        else :
             self.checkBoxPotentialState.setChecked(0)
-            self.checkBoxPotentialState.setEnabled(False)
-        else:
-            status = self.mdl.getPotentielState()
-            if status == 'on':
-                self.checkBoxPotentialState.setChecked(1)
-            else :
-                self.checkBoxPotentialState.setChecked(0)
 
         status = self.mdl.getFacesReconstruction()
         if status == 'on':
