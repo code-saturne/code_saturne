@@ -1991,8 +1991,11 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
 
     const int isym = (iconvp == 1) ? 2 : 1;
 
-    if (m_type >= CS_MATRIX_N_BUILTIN_TYPES && amode == CS_ALLOC_DEVICE)
+    if (   (m_type >= CS_MATRIX_N_BUILTIN_TYPES || need_xa)
+        && amode == CS_ALLOC_DEVICE) {
       amode = cs_alloc_mode;
+      cs_matrix_set_alloc_mode(a, amode);
+    }
 
     cs_real_t *da, *xa;
     CS_MALLOC_HD(da, m->n_cells_with_ghosts, cs_real_t, amode);
@@ -2330,6 +2333,12 @@ cs_matrix_compute_coeffs
     const cs_lnum_t n_edges = m->n_i_faces;
     const cs_lnum_2_t *edges = m->i_face_cells;
     const int isym = (iconvp == 1) ? 2 : 1;
+
+    if (   (m_type >= CS_MATRIX_N_BUILTIN_TYPES || need_xa)
+        && amode == CS_ALLOC_DEVICE) {
+      amode = cs_alloc_mode;
+      cs_matrix_set_alloc_mode(a, amode);
+    }
 
     b_t *da;
     cs_real_t *xa;
