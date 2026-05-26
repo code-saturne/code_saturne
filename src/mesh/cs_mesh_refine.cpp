@@ -2301,14 +2301,17 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
 
   int last_corner_idx = 0;
   char r_lv0 = vtx_r_gen[f2v_lst[0]];
-  cs_gnum_t gnum0 = mesh->global_vtx_num[f2v_lst[0]];
+
+  cs_gnum_t gnum0 = 0;
+  if (mesh->global_vtx_num)
+    gnum0 = mesh->global_vtx_num[f2v_lst[0]];
 
   /* Copy to local array for cheaper access, as multiple
      passes may be needed */
 
   for (cs_lnum_t i = 0; i < n_fv; i++) {
     char r_lv = vtx_r_gen[f2v_lst[i]];
-    cs_gnum_t gnum = mesh->global_vtx_num[f2v_lst[i]];
+    cs_gnum_t gnum = gnum0 ? mesh->global_vtx_num[f2v_lst[i]] : 0;
     vtx_r_gen_f[i] = r_lv;
 
     if ((r_lv < r_lv0) ||
@@ -3456,12 +3459,14 @@ _subdivide_face(cs_lnum_t                 f_id,
     cs_mesh_t *mesh = cs_glob_mesh;
 
     char corner_r_gen = vtx_r_gen[f2v_lst_c[0]];
-    cs_gnum_t corner_gnum = mesh->global_vtx_num[f2v_lst_c[0]];
+    cs_gnum_t corner_gnum = 0;
+    if (mesh->global_vtx_num)
+      corner_gnum = mesh->global_vtx_num[f2v_lst_c[0]];
     int corner_idx = 0;
 
     for (cs_lnum_t i = 1; i < n_fv_c; i++) {
       char r_gen = vtx_r_gen[f2v_lst_c[i]];
-      cs_gnum_t gnum = mesh->global_vtx_num[f2v_lst_c[i]];
+      cs_gnum_t gnum = corner_gnum ? mesh->global_vtx_num[f2v_lst_c[i]] : 0;
       if ((r_gen < corner_r_gen) ||
           (r_gen == corner_r_gen && gnum < corner_gnum)) {
 
