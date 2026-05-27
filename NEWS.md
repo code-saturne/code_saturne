@@ -3,6 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix Ustar definition in lagrangian module when used with NCFD.
+
 - Fix crash in restart with time moments and no auxiliary restart file.
 
 - Fix automatic setting of default xyzp0 value (broken and deactivated
