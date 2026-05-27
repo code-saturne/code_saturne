@@ -45,7 +45,7 @@
  *============================================================================*/
 
 static int  _n_meg_defs = 0;
-static cs_meg_xdef_input_t **_meg_defs = NULL;
+static cs_meg_xdef_input_t **_meg_defs = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -139,7 +139,7 @@ cs_meg_xdef_wrapper_add_input
 
   CS_REALLOC(_meg_defs, _n_meg_defs, cs_meg_xdef_input_t *);
 
-  cs_meg_xdef_input_t *d = NULL;
+  cs_meg_xdef_input_t *d = nullptr;
   CS_MALLOC(d, 1, cs_meg_xdef_input_t);
 
   d->type = type;
@@ -147,13 +147,13 @@ cs_meg_xdef_wrapper_add_input
   d->location = location;
   d->stride = stride;
 
-  if (name == NULL || (name != NULL && strlen(name) == 0))
+  if (name == nullptr || (name != nullptr && strlen(name) == 0))
     bft_error(__FILE__, __LINE__, 0,
               _("%s: empty name provided."), __func__);
   snprintf(d->name, 511, "%s", name);
   d->name[511] = '\0';
 
-  if (additional_data != NULL) {
+  if (additional_data != nullptr) {
     snprintf(d->additional_data, 511, "%s", additional_data);
     d->additional_data[511] = '\0';
   }
@@ -197,7 +197,7 @@ cs_meg_xdef_wrapper
 
   const cs_real_3_t *_coords = (const cs_real_3_t *)coords;
 
-  cs_real_t *meg_vals = NULL;
+  cs_real_t *meg_vals = nullptr;
   /* Volume function takes as an input arrays over the entire domain */
   if (_input->type == CS_MEG_VOLUME_FUNC) {
     if (dense_output) {
