@@ -1,5 +1,5 @@
-#ifndef __CS_BOUNDARY_CONDITIONS_SET_COEFFS_H__
-#define __CS_BOUNDARY_CONDITIONS_SET_COEFFS_H__
+#ifndef CS_BOUNDARY_CONDITIONS_SET_COEFFS_H
+#define CS_BOUNDARY_CONDITIONS_SET_COEFFS_H
 
 /*============================================================================
  * Translation of the boundary conditions given by the user in a form
@@ -138,8 +138,21 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 void
 cs_boundary_conditions_set_coeffs_init(void);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Update pressure boundary condition coefficients.
+ *
+ * \param[in]      ctx        associated dispatch context
+ * \param[in]      f_p        pointer to field
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_boundary_conditions_set_coeffs_pressure(cs_dispatch_context   &ctx,
+                                           cs_field_t            *f_p);
+
 /*============================================================================
- * Public C++ function definitions
+ * Public inline function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
