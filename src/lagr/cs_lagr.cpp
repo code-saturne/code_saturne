@@ -540,7 +540,7 @@ _lagr_map_fields_default(void)
       _lagr_extra_module[phase_id].alpha = cs_field_by_name_try(f_name);
       CS_FREE(f_name);
 
-      f_name = _field_name("lagr_velocity_gradient", phase_id);
+      f_name = _field_name("lagr_wall_friction_velocity", phase_id);
       _lagr_extra_module[phase_id].ustar = cs_field_by_name_try(f_name);
       CS_FREE(f_name);
 
@@ -576,9 +576,6 @@ _lagr_map_fields_default(void)
         if (l_id >= 0)
           _lagr_extra_module[phase_id].cpro_viscls = cs_field_by_id(l_id);
       }
-
-      _lagr_extra_module[phase_id].ustar
-        = cs_field_by_name_try("lagr_wall_friction_velocity");
     }
     else {
       /* we use code_saturne */

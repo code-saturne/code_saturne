@@ -3,6 +3,8 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix Ustar definition in lagrangian module when used with NCFD.
+
 - Various extended boundary gradient and gradient limiter fixes.
   * Fix reconstruction limiters for boundary reconstruction gradients
     (which were too "loose" and allowed doubling expected bounds).
