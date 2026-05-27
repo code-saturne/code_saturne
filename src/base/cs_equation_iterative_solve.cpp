@@ -388,6 +388,7 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   /* Determine if we are in a case with special requirements */
 
+#if defined(HAVE_ACCEL)
   bool conv_diff_mg = false;
   if (iconvp > 0) {
     cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
@@ -395,6 +396,7 @@ _equation_iterative_solve_strided(int                   idtvar,
     if (strcmp(sles_type, "cs_multigrid_t") == 0)
       conv_diff_mg = true;
   }
+#endif // HAVE_ACCEL)
 
   /*===========================================================================
    * Iterative process to handle non orthogonalities (starting from the
@@ -1461,12 +1463,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   cs_solving_info_t sinfo;
 
-  int coupling_id = -1;
+  [[maybe_unused]] int coupling_id = -1;
   cs_field_t *f = nullptr;
   cs_real_t *rhsini = nullptr;
   cs_real_t *w1 = nullptr;
-
-  bool conv_diff_mg = false;
 
   /*============================================================================
    * 0.  Initialization
@@ -1488,12 +1488,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* Determine if we are in a case with special requirements */
 
+#if defined(HAVE_ACCEL)
+  bool conv_diff_mg = false;
   if (coupling_id < 0 && iconvp > 0) {
     cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
     const char *sles_type = cs_sles_get_type(sc);
     if (strcmp(sles_type, "cs_multigrid_t") == 0)
       conv_diff_mg = true;
   }
+#endif // HAVE_ACCEL
 
   /* Halo type for BC coeffs */
   cs_halo_type_t bc_halo_type = CS_HALO_STANDARD;
