@@ -1751,8 +1751,6 @@ class meg_to_c_interpreter:
             authorized_fields = ['density', 'molecular_viscosity',
                                  'specific_heat', 'thermal_conductivity']
 
-            compressible_fields = ['d_rho_d_P', 'd_rho_d_h']
-
             gas_liq_fields = ['SaturationTemperature',
                               'SaturationEnthalpyLiquid', 'SaturationEnthalpyGas',
                               'LatentHeat', 'd_Tsat_d_P',
@@ -1774,17 +1772,6 @@ class meg_to_c_interpreter:
                     if tm.getMaterials(fieldId) == 'user_material':
                         for fk in authorized_fields:
                             if tm.getPropertyMode(fieldId, fk) == 'user_law':
-                                name = fk + '_' + str(fieldId)
-                                for zone in vol_zones:
-                                    zname = zone.getLabel()
-                                    z_id = str(zone.getCodeNumber())
-                                    if zone.isNatureActivated('physical_properties'):
-                                        exp, req, sca, sym = tm.getFormulaComponents(fieldId,fk,zone=z_id)
-                                        self.init_block('vol', zname, name,
-                                                        exp, req, sym, sca)
-
-                        if field.compressible == 'on':
-                            for fk in compressible_fields:
                                 name = fk + '_' + str(fieldId)
                                 for zone in vol_zones:
                                     zname = zone.getLabel()

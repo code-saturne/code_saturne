@@ -148,7 +148,7 @@ class ThermodynamicsModel(Variables, Model):
         lst = ('density', 'molecular_viscosity',
                'specific_heat', 'thermal_conductivity',
                'surface_tension',
-               'temperature', 'd_rho_d_P', 'd_rho_d_h',
+               'temperature',
                'SaturationEnthalpyLiquid', 'SaturationEnthalpyGas',
                'd_Hsat_d_P_Liquid', 'd_Hsat_d_P_Gas',
                'SaturationTemperature', 'd_Tsat_d_P', 'LatentHeat')
@@ -567,12 +567,6 @@ class ThermodynamicsModel(Variables, Model):
         elif tag == 'thermal_conductivity':
             return self.getFormulaAlComponents(fieldId, zone)
 
-        elif tag == 'd_rho_d_P':
-            return self.getFormuladrodpComponents(fieldId, zone)
-
-        elif tag == 'd_rho_d_h':
-            return self.getFormuladrodhComponents(fieldId, zone)
-
         elif tag == 'temperature':
             return self.getFormulaTemperatureComponents(fieldId, zone)
 
@@ -806,92 +800,6 @@ class ThermodynamicsModel(Variables, Model):
             symbols.append((label, 'enthalpy_'+str(fieldId)))
             known_fields.append((label, 'enthalpy_'+str(fieldId)))
 
-            # If working on total enthalpy, velocity is needed in order
-            # to compute specific_enthalpy
-            if field.enthalpy_model == 'total_enthalpy':
-                ulabel = self.m_out.getVariableLabel(str(fieldId), "velocity")
-                symbols.append((ulabel, 'velocity_'+str(fieldId)))
-                known_fields.append((ulabel, 'velocity_'+str(fieldId),3))
-
-        symbols.append(('volume', 'Zone volume'))
-
-        for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols.append((s, s))
-            known_fields.append((s, s))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, known_fields, symbols
-
-
-    def getFormuladrodpComponents(self, fieldId, zone="1"):
-        """
-        User formula for d(ro) / dp (compressible flow)
-        """
-        field = self.mainFieldsModel.getFieldFromId(fieldId)
-        exp = self.getFormula(fieldId, 'd_rho_d_P', zone)
-        if not exp:
-            exp = "d_rho_d_P = 0.;"
-        req = [('d_rho_d_P', 'Partial derivative of density with respect to pressure')]
-
-        # Predefined Symbols
-        symbols = []
-
-        # Known fields (for equation->C translation) within the code
-        known_fields = []
-
-        for s in self.list_scalars:
-           symbols.append(s)
-           known_fields.append(s)
-
-        if field.enthalpy_model != "off":
-            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols.append((label, 'enthalpy_'+str(fieldId)))
-            known_fields.append((label, 'enthalpy_'+str(fieldId)))
-            # If working on total enthalpy, velocity is needed in order
-            # to compute specific_enthalpy
-            if field.enthalpy_model == 'total_enthalpy':
-                ulabel = self.m_out.getVariableLabel(str(fieldId), "velocity")
-                symbols.append((ulabel, 'velocity_'+str(fieldId)))
-                known_fields.append((ulabel, 'velocity_'+str(fieldId),3))
-
-        symbols.append(('volume', 'Zone volume'))
-
-        for s in self.m_spe.getScalarByFieldId(fieldId):
-            symbols.append((s, s))
-            known_fields.append((s, s))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols.append((nme, 'value (notebook) = ' + str(val)))
-
-        return  exp, req, known_fields, symbols
-
-
-    def getFormuladrodhComponents(self, fieldId, zone="1"):
-        """
-        User formula for d(ro) / dh (compressible flow)
-        """
-        field = self.mainFieldsModel.getFieldFromId(fieldId)
-        exp = self.getFormula(fieldId, 'd_rho_d_h', zone)
-        if not exp:
-            exp = "d_rho_d_h = 0.;"
-        req = [('d_rho_d_h', 'Partial derivative of density with respect to enthalpy')]
-
-        # Predefined Symbols
-        symbols = []
-
-        # Known fields (for equation->C translation) within the code
-        known_fields = []
-
-        for s in self.list_scalars:
-           symbols.append(s)
-           known_fields.append(s)
-
-        if field.enthalpy_model != "off":
-            label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
-            symbols.append((label, 'enthalpy_'+str(fieldId)))
-            known_fields.append((label, 'enthalpy_'+str(fieldId)))
             # If working on total enthalpy, velocity is needed in order
             # to compute specific_enthalpy
             if field.enthalpy_model == 'total_enthalpy':
