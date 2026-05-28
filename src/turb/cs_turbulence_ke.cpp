@@ -1157,9 +1157,10 @@ cs_turbulence_ke(int              phase_id,
     cs_field_bc_coeffs_t bc_coeffs_sqk_loc;
     cs_field_bc_coeffs_shallow_copy(f_k->bc_coeffs, &bc_coeffs_sqk_loc);
     CS_MALLOC_HD(bc_coeffs_sqk_loc.a, n_b_faces, cs_real_t, cs_alloc_mode);
+    cs_real_t *sqk_loc_coefa = bc_coeffs_sqk_loc.a;
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      bc_coeffs_sqk_loc.a[face_id] = sqrt(coefap[face_id]);
+      sqk_loc_coefa[face_id] = sqrt(coefap[face_id]);
     });
     ctx.wait();
 
@@ -1197,10 +1198,12 @@ cs_turbulence_ke(int              phase_id,
 
     CS_MALLOC_HD(bc_coeffs_sqs_loc.a, n_b_faces, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(bc_coeffs_sqs_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);
+    cs_real_t *sqs_loc_coefa = bc_coeffs_sqs_loc.a;
+    cs_real_t *sqs_loc_coefb = bc_coeffs_sqs_loc.b;
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      bc_coeffs_sqs_loc.a[face_id] = 0.;
-      bc_coeffs_sqs_loc.b[face_id] = 1.;
+      sqs_loc_coefa[face_id] = 0.;
+      sqs_loc_coefb[face_id] = 1.;
     });
     ctx.wait();
 
