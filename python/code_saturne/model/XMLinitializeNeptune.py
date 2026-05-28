@@ -207,6 +207,9 @@ class XMLinitNeptune(BaseXmlInit):
         if from_vers[:3] < "9.0":
             self.__backwardCompatibilityTo_9_0()
 
+        if from_vers[:3] < "9.2":
+            self.__backwardCompatibilityTo_9_2()
+
 
     def __backwardCompatibilityFrom_2_0(self):
         """
@@ -992,11 +995,32 @@ class XMLinitNeptune(BaseXmlInit):
 
         return
 
+    def __backwardCompatibilityTo_9_2(self):
+        """
+        Change XML in order to ensure backward compatibility with v9.2.
+        """
+
+        # Remove drho_dp and drho_dh definitions if they exist in old xml files
+        tm_node = self.case.xmlGetNode('thermophysical_models')
+        props_node = tm_node.xmlGetNode('properties')
+
+        for node in props_node.xmlGetChildNodeList('property'):
+            if node['name'] in ('d_rho_d_P', 'd_rho_d_h'):
+                # Remove nodes for zones other than "all_cells"
+                for node_z in node.xmlGetChildNodeList('zone'):
+                    node_z_f = node_z.xmlGetNode('formula')
+                    if node_z_f != None:
+                        node_z.xmlRemoveNode()
+
+                # Remove node for zone "all_cells"
+                node.xmlRemoveChild('formula')
+
+
     def _backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
         """
-        self.__backwardCompatibilityTo_9_0()
+        self.__backwardCompatibilityTo_9_2()
         return;
 
 #-------------------------------------------------------------------------------
