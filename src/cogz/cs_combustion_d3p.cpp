@@ -315,7 +315,7 @@ cs_combustion_d3p_fields_init0(void)
       coefg[0] = 0.;
       coefg[1] = 1.;
       coefg[2] = 0.;
-      h_air = cs_gas_combustion_t_to_h(coefg, t0);
+      h_air = cs_combustion_t_to_h(coefg, t0);
     }
 
     cs_array_real_set_scalar(n_cells_ext, h_air, cvar_scalt);
@@ -328,13 +328,13 @@ cs_combustion_d3p_fields_init0(void)
     coefg[0] = 0.;
     coefg[1] = 1.;
     coefg[2] = 0.;
-    cm->hinoxy = cs_gas_combustion_t_to_h(coefg, cm->tinoxy);
+    cm->hinoxy = cs_combustion_t_to_h(coefg, cm->tinoxy);
 
     // Fuel enthalpy hinfue at tinfue.
     coefg[0] = 1.;
     coefg[1] = 0.;
     coefg[2] = 0.;
-    cm->hinfue = cs_gas_combustion_t_to_h(coefg, cm->tinfue);
+    cm->hinfue = cs_combustion_t_to_h(coefg, cm->tinfue);
   }
 }
 
@@ -384,7 +384,7 @@ cs_combustion_d3p_fields_init1(void)
   coefg[1] = 0.;
   coefg[2] = 1.;
   cs_real_t tin = std::min(cm->tinfue, cm->tinoxy);
-  cm->hh[nmaxh-1] = cs_gas_combustion_t_to_h(coefg, tin);
+  cm->hh[nmaxh-1] = cs_combustion_t_to_h(coefg, tin);
   cm->hh[0] = cm->hstoea;
   for (int i_h = 1; i_h < nmaxh-1; i_h++) {
     cm->hh[i_h] = cm->hh[0] +   (cm->hh[nmaxh-1] - cm->hh[0])
@@ -401,7 +401,7 @@ cs_combustion_d3p_fields_init1(void)
       coefg[2] = cm->ff[i_f] / fsir;
       cs_real_t hhloc = cm->hinoxy +   (double)(2*i_f)/(double)(nmaxf-1)
                                      * (cm->hh[i_h] - cm->hinoxy);
-      cm->tfh[i_h][i_f] = cs_gas_combustion_h_to_t(coefg, hhloc);
+      cm->tfh[i_h][i_f] = cs_combustion_h_to_t(coefg, hhloc);
     }
     for (int i_f = nmaxf/2+1; i_f < nmaxf; i_f++) {
       // Rich mixture
@@ -412,7 +412,7 @@ cs_combustion_d3p_fields_init1(void)
                            + (double)(2*nmaxf)*cm->hh[i_h]
                            - cm->hinfue*(double)(nmaxf+1))
                         / (double)(nmaxf-1);
-      cm->tfh[i_h][i_f] = cs_gas_combustion_h_to_t(coefg, hhloc);
+      cm->tfh[i_h][i_f] = cs_combustion_h_to_t(coefg, hhloc);
     }
   }
 }

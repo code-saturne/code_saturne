@@ -154,7 +154,7 @@ cs_combustion_ebu_fields_init(void)
     coefg[0] = 0.;
     coefg[1] = 1.;
     coefg[2] = 0.;
-    cs_real_t hair = cs_gas_combustion_t_to_h(coefg, tinitk);
+    cs_real_t hair = cs_combustion_t_to_h(coefg, tinitk);
 
     // Mixture enthalpy
     cs_real_t *cvar_scalt = CS_F_(h)->val;
@@ -317,7 +317,7 @@ cs_combustion_ebu_physical_prop(int  *mbrom)
     cs_real_t masmgf = 1. / nbmol;
 
     // Enthalpy of fresh gases
-    cs_real_t hgf = cs_gas_combustion_t_to_h(coefg, tgf);
+    cs_real_t hgf = cs_combustion_t_to_h(coefg, tgf);
 
     // Molar masse of burned gasses
 
@@ -339,7 +339,7 @@ cs_combustion_ebu_physical_prop(int  *mbrom)
     cs_real_t hgb = hgf;
     if (sub_type%2 == 1 && ygbm > epsi)
       hgb = (cvar_scalt[c_id] - hgf*ygfm) / ygbm;
-    cs_real_t tgb = cs_gas_combustion_h_to_t(coefg, hgb);
+    cs_real_t tgb = cs_combustion_h_to_t(coefg, hgb);
 
     // Mixture temperature
     //   Rq PPl: it would be better to weight by the CP (GF et GB)
