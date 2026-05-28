@@ -2665,7 +2665,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
   /* The cocg term for interior cells only changes if the mesh does */
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    _math_6_inv_cramer_sym_in_place(cocg[c_id]);
+    cs_math_6_gauss_inverse_in_place(cocg[c_id]);
   });
 
   ctx.wait();
