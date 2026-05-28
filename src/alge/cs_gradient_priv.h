@@ -51,9 +51,9 @@
 /* Type for symmetric least-squares covariance matrices
    as they are adimensional, single-precision should be usable here */
 
-typedef cs_real_t  cs_cocg_t;
-typedef cs_real_t  cs_cocg_6_t[6];
-typedef cs_real_t  cs_cocg_33_t[3][3];
+typedef float  cs_cocg_t;
+typedef float  cs_cocg_6_t[6];
+typedef float  cs_cocg_33_t[3][3];
 
 /*============================================================================
  * Global variables
