@@ -210,8 +210,6 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain);
  * \param[in]       frcxt         external forces making hydrostatic pressure
  * \param[in]       dfrcxt        variation of the external forces
  *                                composing the hydrostatic pressure
- * \param[in]       i_visc        visc*surface/dist aux faces internes
- * \param[in]       b_visc        visc*surface/dist aux faces de bord
  */
 /*----------------------------------------------------------------------------*/
 
@@ -229,9 +227,7 @@ cs_pressure_correction(int                   iterns,
                        cs_real_t             spcond[],
                        cs_real_t             svcond[],
                        cs_real_t             frcxt[][3],
-                       cs_real_t             dfrcxt[][3],
-                       cs_real_t             i_visc[],
-                       cs_real_t             b_visc[]);
+                       cs_real_t             dfrcxt[][3]);
 
 /*----------------------------------------------------------------------------*/
 

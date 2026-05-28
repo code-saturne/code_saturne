@@ -1237,7 +1237,8 @@ _update_fluid_vel(const cs_mesh_t             *m,
 
     cs_gradient_porosity_balance(inc);
 
-    if (vp_param->iphydr == 1 || vp_param->iifren == 1)
+    if (vp_param->iphydr == 1 || vp_param->iifren == 1 //FIXME what about staggered?
+        || vp_param->update_p_bc_after_prediction == 1)
       inc = 1;
 
     /* Pressure increment gradient */
@@ -1361,15 +1362,18 @@ _update_fluid_vel(const cs_mesh_t             *m,
       cs_field_t *f_p = CS_F_(p);
       cs_real_t *coefa_p = f_p->bc_coeffs->a;
 
-      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-        /*  automatic inlet/outlet face for atmospheric flow */
-        int iautof = 0;
-        if (iautom != nullptr)
-          iautof = iautom[face_id];
+      // TODO move it in pressure_correction deprecated...
+      if (vp_param->update_p_bc_after_prediction != 1) {
+        ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+          /*  automatic inlet/outlet face for atmospheric flow */
+          int iautof = 0;
+          if (iautom != nullptr)
+            iautof = iautom[face_id];
 
-        if (isostd[face_id] == 1 || iautof > 0)
-          coefa_p[face_id] += coefa_dp[face_id];
-      });
+          if (isostd[face_id] == 1 || iautof > 0 )
+            coefa_p[face_id] += coefa_dp[face_id];
+        });
+      }
 
 #if 0 // FIXME: check c0a96bd9db
       cs_boundary_conditions_update_bc_coeff_face_values
@@ -4373,9 +4377,7 @@ cs_solve_navier_stokes(const int        iterns,
                              w_condensation->spcond,
                              w_condensation->svcond,
                              frcxt,
-                             dfrcxt,
-                             viscf,
-                             viscb);
+                             dfrcxt);
     }
 
     /* Bad cells regularisation */

@@ -150,8 +150,6 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = nullptr;
  * \param[out]     cvar_hydro_pres  hydrostatic pressure increment
  * \param[in]      iflux            work array
  * \param[in]      bflux            work array
- * \param[in,out]  i_visc           work array
- * \param[in,out]  b_visc           work array
  * \param[out]     dphi             work array
  * \param[in,out]  rhs              work array
  */
@@ -167,13 +165,12 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                               cs_real_t              cvar_hydro_pres[],
                               cs_real_t              iflux[],
                               cs_real_t              bflux[],
-                              cs_real_t              i_visc[],
-                              cs_real_t              b_visc[],
                               cs_real_t              dphi[],
                               cs_real_t              rhs[])
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   int *c_disable_flag = mq->c_disable_flag;
@@ -249,8 +246,12 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   CS_MALLOC_HD(next_fext, n_cells_ext, cs_real_3_t, amode);
 
   cs_real_t *rovsdt = nullptr, *viscce = nullptr;
-  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, amode);
-  CS_MALLOC_HD(viscce, n_cells_ext, cs_real_t, amode);
+  cs_real_t *i_visc, *b_visc;
+  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(viscce, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
+
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     const int c_act = 1 - (has_dc * c_disable_flag[has_dc * c_id]);
@@ -269,7 +270,14 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   /* Prepare matrix and boundary conditions
      -------------------------------------- */
 
+  /* Standard initialization */
+
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    iflux[f_id] = 0.;
+  });
+
   ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    bflux[face_id] = 0.;
 
     /* Neumann BC (qimp=0 --> a=af=bf=0, b=1) */
 
@@ -447,6 +455,8 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   cs_sles_free(sc);
   cs_sles_default_release_matrix(&a);
 
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
   CS_FREE(viscce);
   CS_FREE(rovsdt);
   CS_FREE(div_fext);
@@ -504,8 +514,6 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
  * \param[in]       frcxt         external forces making hydrostatic pressure
  * \param[in]       dfrcxt        variation of the external forces
  *                                composing the hydrostatic pressure
- * \param[in]       i_visc        visc*surface/dist aux faces internes
- * \param[in]       b_visc        visc*surface/dist aux faces de bord
  */
 /*----------------------------------------------------------------------------*/
 
@@ -523,9 +531,7 @@ _pressure_correction_fv(int                   iterns,
                         cs_real_t             spcond[],
                         cs_real_t             svcond[],
                         cs_real_t             frcxt[][3],
-                        cs_real_t             dfrcxt[][3],
-                        cs_real_t             i_visc[],
-                        cs_real_t             b_visc[])
+                        cs_real_t             dfrcxt[][3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -617,6 +623,7 @@ _pressure_correction_fv(int                   iterns,
   cs_real_t *weighbtp = nullptr;
 
   cs_real_t *c_visc = nullptr;
+  cs_real_t *i_visc = nullptr, *b_visc = nullptr;
 
   cs_field_t  *f_hp = cs_field_by_name_try("hydrostatic_pressure");
   if (f_hp != nullptr) {
@@ -629,6 +636,8 @@ _pressure_correction_fv(int                   iterns,
   cs_real_t *rhs, *res;
   CS_MALLOC_HD(res, n_cells_ext, cs_real_t, amode);
   CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, amode);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, amode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, amode);
 
   cs_real_t *phia, *iflux, *bflux, *dphi;
   CS_MALLOC_HD(phia, n_cells_ext, cs_real_t, amode);
@@ -851,300 +860,6 @@ _pressure_correction_fv(int                   iterns,
 
   }
 
-  /* Compute an approximated pressure increment if needed,
-   * that is when there are buoyancy terms (gravity and variable density)
-   * with a free outlet.
-   * ==================================================================== */
-
-  /* Standard initialization */
-
-  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-    iflux[f_id] = 0.;
-  });
-
-  if (vp_param->update_p_bc_after_prediction) {
-
-    if (vp_param->staggered == 0) {
-      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        coefa_dp[f_id] = -coefa_p[f_id];
-        coefaf_dp[f_id] = 0;
-        coefb_dp[f_id] = coefb_p[f_id];
-        coefbf_dp[f_id] = coefbf_p[f_id];
-        bflux[f_id] = 0.;
-      });
-    }
-    else {
-      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        coefa_dp[f_id] = coefa_p[f_id];
-        coefaf_dp[f_id] = coefaf_p[f_id];
-        coefb_dp[f_id] = coefb_p[f_id];
-        coefbf_dp[f_id] = coefbf_p[f_id];
-        bflux[f_id] = 0.;
-      });
-    }
-
-    ctx.wait();
-    ctx_c.wait();
-
-    cs_boundary_conditions_set_coeffs_pressure(ctx, f_p);
-
-    if (vp_param->staggered == 0) {
-      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        coefa_dp[f_id] += coefa_p[f_id];
-        coefaf_dp[f_id] = 0;
-        coefb_dp[f_id] = coefb_p[f_id];
-        coefbf_dp[f_id] = coefbf_p[f_id];
-        bflux[f_id] = 0.;
-      });
-    }
-    else {
-      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        coefa_dp[f_id] = coefa_p[f_id];
-        coefaf_dp[f_id] = coefaf_p[f_id];
-        coefb_dp[f_id] = coefb_p[f_id];
-        coefbf_dp[f_id] = coefbf_p[f_id];
-        bflux[f_id] = 0.;
-      });
-    }
-
-    ctx.wait();
-    ctx_c.wait();
-
-  }
-  else {
-
-    /* Legacy: pressure BCs were already updated in
-       cs_boundary_conditions_set_coeffs before prediction. */
-
-    if (vp_param->staggered == 0) {
-      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        coefa_dp[f_id] = 0.;
-        coefaf_dp[f_id] = 0.;
-        coefb_dp[f_id] = coefb_p[f_id];
-        coefbf_dp[f_id] = coefbf_p[f_id];
-        bflux[f_id] = 0.;
-      });
-    }
-    else {
-      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        coefa_dp[f_id] = coefa_p[f_id];
-        coefaf_dp[f_id] = coefaf_p[f_id];
-        coefb_dp[f_id] = coefb_p[f_id];
-        coefbf_dp[f_id] = coefbf_p[f_id];
-        bflux[f_id] = 0.;
-      });
-    }
-
-    ctx.wait();
-    ctx_c.wait();
-
-  }
-
-  /* Compute a pseudo hydrostatic pressure increment stored
-     in cvar_hydro_pres(.) with Homogeneous Neumann BCs everywhere. */
-
-  int indhyd = 0;
-
-  if (vp_param->iphydr == 1 && vp_param->icalhy == 1) {
-
-    int ifcsor = isostd[n_b_faces];
-    cs_parall_max(1, CS_INT_TYPE, &ifcsor);
-
-    /* This computation is needed only if there are outlet faces */
-
-    if (ifcsor > -1 || open_bcs_flag != 0)
-      _hydrostatic_pressure_compute(m, fvq,
-                                    &indhyd, iterns,
-                                    frcxt, dfrcxt, cvar_hydro_pres,
-                                    iflux, bflux, i_visc, b_visc,
-                                    dphi, rhs);
-  }
-
-  /* Compute the BCs for the pressure increment
-     (first we set the BCs of a standard pressure increment,
-     that are (A = 0, B_dp = B_p) for the gradient BCs
-     Then the A_dp is set thank to the pre-computed hydrostatic pressure
-     so that the pressure increment will be 0 on the reference outlet face. */
-
-  if (vp_param->iphydr == 1 || vp_param->iifren == 1) {
-
-    cs_real_t phydr0 = 0.;
-
-    if (f_hp != nullptr && indhyd == 1) {
-
-      /* Use parallel reducer with a single value per rank,
-         so as to be able to access device-only arrays on GPU. */
-      ctx.parallel_for_reduce_sum
-        (1, phydr0, [=] CS_F_HOST_DEVICE(cs_lnum_t i,
-         CS_DISPATCH_REDUCER_TYPE(double) &sum) {
-
-        cs_lnum_t f_id_0 = isostd[n_b_faces];
-        if (f_id_0 > -1 && i == 0) {
-          cs_lnum_t c_id_0 = b_face_cells[f_id_0];
-          cs_real_t d[3] = {b_face_cog[f_id_0][0] - cell_cen[c_id_0][0],
-                            b_face_cog[f_id_0][1] - cell_cen[c_id_0][1],
-                            b_face_cog[f_id_0][2] - cell_cen[c_id_0][2]};
-          sum +=   cvar_hydro_pres[c_id_0]
-                 + d[0] * (dfrcxt[c_id_0][0] + frcxt[c_id_0][0])
-                 + d[1] * (dfrcxt[c_id_0][1] + frcxt[c_id_0][1])
-                 + d[2] * (dfrcxt[c_id_0][2] + frcxt[c_id_0][2]);
-        }
-      });
-
-      ctx.wait();
-      cs_parall_sum(1, CS_REAL_TYPE, &phydr0);  /* > 0 only on one rank */
-
-      /* Rescale cvar_hydro_pres so that it is 0 on the reference face */
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cvar_hydro_pres[c_id] -= phydr0;
-      });
-
-    }
-
-    /* If hydrostatic pressure increment or free entrance Inlet. */
-
-    if (indhyd == 1 || vp_param->iifren == 1) {
-
-      const int idften = eqp_p->idften;
-      const int *auto_flag = cs_glob_bc_pm_info->iautom;
-      const cs_real_t *b_head_loss
-        = cs_boundary_conditions_get_b_head_loss(false);
-
-      cs_real_6_t *vitenp = (cs_real_6_t *)c_visc;
-
-      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-
-        int iautof = 0;
-
-        /* automatic inlet/outlet face for atmospheric flow */
-        if (meteo_profile > 0)
-          iautof = auto_flag[f_id];
-
-        if (isostd[f_id] == 1 || (open_bcs_flag >= 1 && iautof >= 1)) {
-
-          cs_lnum_t c_id = b_face_cells[f_id];
-
-          cs_real_t hint = 0;
-
-          /* Diffusive flux BCs */
-          if (idften & CS_ISOTROPIC_DIFFUSION)
-            hint = c_visc[c_id]/b_dist[f_id];
-
-          /* Symmetric tensor diffusivity */
-          else if (idften & CS_ANISOTROPIC_DIFFUSION) {
-
-            cs_real_t visci[3][3], dist[3];
-            const cs_nreal_t *n = b_face_u_normal[f_id];
-
-            visci[0][0] = vitenp[c_id][0];
-            visci[1][1] = vitenp[c_id][1];
-            visci[2][2] = vitenp[c_id][2];
-            visci[1][0] = vitenp[c_id][3];
-            visci[0][1] = vitenp[c_id][3];
-            visci[2][1] = vitenp[c_id][4];
-            visci[1][2] = vitenp[c_id][4];
-            visci[2][0] = vitenp[c_id][5];
-            visci[0][2] = vitenp[c_id][5];
-
-            dist[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
-            dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
-            dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
-
-            /* ||Ki.S||^2 */
-            cs_real_t viscis =   cs_math_pow2(  visci[0][0]*n[0]
-                                              + visci[1][0]*n[1]
-                                              + visci[2][0]*n[2])
-                               + cs_math_pow2(  visci[0][1]*n[0]
-                                              + visci[1][1]*n[1]
-                                              + visci[2][1]*n[2])
-                               + cs_math_pow2(  visci[0][2]*n[0]
-                                              + visci[1][2]*n[1]
-                                              + visci[2][2]*n[2]);
-
-            /* IF.Ki.S */
-            cs_real_t fikis
-              = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
-                 + cs_math_3_dot_product(dist, visci[1]) * n[1]
-                 + cs_math_3_dot_product(dist, visci[2]) * n[2]);
-
-            /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-               NB: eps =1.d-1 must be consistent
-               with `cs_face_anisotropic_viscosity_scalar`. */
-
-            fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*b_dist[f_id]);
-
-            hint = viscis/fikis;
-
-          }
-
-          if (indhyd == 1) {
-            if (f_hp != nullptr) {
-              if (vp_param->update_p_bc_after_prediction) {
-                coefa_dp[f_id] +=   cvar_hydro_pres[c_id]
-                                 - cvar_hydro_pres_prev[c_id];
-              } else {
-                coefa_dp[f_id] =   cvar_hydro_pres[c_id]
-                                 - cvar_hydro_pres_prev[c_id];
-              }
-            }
-            coefa_dp[f_id] += cs_math_3_distance_dot_product(cell_cen[c_id],
-                                                             b_face_cog[f_id],
-                                                             dfrcxt[c_id]);
-          }
-
-          /* Free entrance boundary face (Bernoulli condition to link the
-             pressure increment and the predicted velocity) */
-
-          if (bc_type[f_id] == CS_FREE_INLET) {
-
-            /* Boundary mass flux intensity of the predicted velocity */
-            cs_real_t bpmasf = cs_math_3_dot_product(vel[c_id],
-                                                     b_face_u_normal[f_id]);
-
-            /* Ingoing mass Flux, Bernoulli relationship is used */
-            if (bpmasf <= 0) {
-
-              /* Head loss of the fluid outside the domain, between infinity and
-                 the entrance */
-
-              cs_real_t kpdc = b_head_loss[f_id];
-              cs_real_t rho = brom[f_id];
-              cs_real_t cfl =   -(bmasfl[f_id]/b_face_surf[f_id]*dt[c_id])
-                              / (2.*rho*b_dist[f_id])*(1. + kpdc);
-
-              cs_real_t pimp = coefa_dp[f_id] - cvar_pr[c_id]
-                               -   0.5 * (1. + kpdc) * bmasfl[f_id]*bpmasf
-                                 / cs::abs(b_face_surf[f_id]);
-
-              /* Convective_outlet BC */
-
-              // Gradient BCs
-              coefb_dp[f_id] = cfl / (1.0 + cfl);
-              coefa_dp[f_id] = (1.0 - coefb_dp[f_id]) * pimp;
-
-              // Flux BCs
-              coefaf_dp[f_id] = - hint * coefa_dp[f_id];
-              coefbf_dp[f_id] =   hint * (1.0 - coefb_dp[f_id]);
-            }
-
-            else
-              coefaf_dp[f_id] = - hint*coefa_dp[f_id];
-
-          }
-
-          /* Other boundary face types */
-
-          else
-            coefaf_dp[f_id] = - hint*coefa_dp[f_id];
-
-        } /* if (isostd[f_id] == 1 || (open_bcs_flag >= 1 && iautof >= 1)) */
-
-      }); /* End of loop on boundary faces */
-
-    }  /* if (indhyd == 1 || vp_param->iifren == 1) */
-
-  } /* if (vp_param->iphydr == 1 && vp_param->iifren == 1) */
-
   /* Building the linear system to solve.
    * ==================================== */
 
@@ -1364,30 +1079,6 @@ _pressure_correction_fv(int                   iterns,
   ctx.wait(); // needed for rovsdt and b_visc
   ctx_c.wait(); // needed for i_visc
 
-  cs_matrix_t *a = cs_sles_default_get_matrix(f_p->id, nullptr, 1, 1, symmetric);
-
-#if defined(HAVE_ACCEL)
-  cs_matrix_set_alloc_mode(a, ctx.alloc_mode());
-#endif
-
-  cs_matrix_compute_coeffs(a,
-                           f_p,
-                           eqp_p->iconv,
-                           eqp_p->idiff,
-                           eqp_p->ndircl,
-                           1.0, // thetap
-                           1.0, // relaxp
-                           0,   // imucpp
-                           bc_coeffs_dp,
-                           rovsdt,
-                           imasfl,
-                           bmasfl,
-                           i_visc,
-                           b_visc,
-                           nullptr);
-
-  cs_sles_t *sc = cs_sles_find_or_add(f_p->id, nullptr);
-
   /* Mass flux initialization
      ------------------------ */
 
@@ -1401,6 +1092,7 @@ _pressure_correction_fv(int                   iterns,
   /* Pressure gradient.
      NB: for the VOF algo. the weighting is automatically done
      through the iwgrec variable calculation option.
+     TODO: use the one of prediction...
   */
 
   cs_field_gradient_potential(f_p,
@@ -1412,7 +1104,9 @@ _pressure_correction_fv(int                   iterns,
 
   const cs_real_t arak = vp_param->arak;
 
-  /* Rhie and Chow filter */
+  /* Rhie and Chow filter, compute:
+   * vel + dt/rho grad(p^n)
+   */
   if (arak > 0.) {
 
     if (vp_param->iphydr == 1) {
@@ -1539,132 +1233,8 @@ _pressure_correction_fv(int                   iterns,
       bmasfl);
   }
 
-  if (vp_param->staggered == 1) {
-
-    const cs_time_step_t *ts = cs_glob_time_step;
-
-    cs_real_t *imasfla
-      = cs_field_by_id(f_p->get_key_int(kimasf))->val_pre;
-    cs_real_t *bmasfla
-      = cs_field_by_id(f_p->get_key_int(kbmasf))->val_pre;
-
-    cs_real_t *sti = cs_field_by_name("inner_face_source_term")->val;
-
-    if (ts->nt_cur == 1 && ts->nt_prev == 0) {
-      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        imasfla[f_id] = imasfl[f_id];
-      });
-
-      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        bmasfla[f_id] = bmasfl[f_id];
-      });
-
-    }
-
-    if (cs_glob_porous_model >= 1) {
-
-      const cs_real_t *c_porosity = cs_field_by_name("porosity")->val;
-
-      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        cs_lnum_t c_id_0 = i_face_cells[f_id][0];
-        cs_lnum_t c_id_1 = i_face_cells[f_id][1];
-        cs_real_t dtm = 0.5 * (dt[c_id_0]+dt[c_id_1]);
-        cs_real_t porosf = cs::min(c_porosity[c_id_0], c_porosity[c_id_1]);
-        imasfl[f_id] =   taui[f_id] / dtm
-                       * imasfla[f_id]+porosf*taui[f_id]*sti[f_id]
-                       * i_face_surf[f_id];
-      });
-
-    }
-
-    else { /* cs_glob_porous_model == 0) */
-
-      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        cs_lnum_t c_id_0 = i_face_cells[f_id][0];
-        cs_lnum_t c_id_1 = i_face_cells[f_id][1];
-        cs_real_t dtm = 0.5 * (dt[c_id_0] + dt[c_id_1]);
-        imasfl[f_id] =   taui[f_id] / dtm
-                       * imasfla[f_id]+taui[f_id]*sti[f_id]
-                       * i_face_surf[f_id];
-      });
-
-    } /* end of test on cs_glob_porous_model */
-
-    ctx_c.wait();
-
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-      cs_lnum_t c_id = b_face_cells[f_id];
-
-      if (bc_type[f_id] == CS_INLET) {
-
-        bmasfl[f_id] = taub[f_id] / dt[c_id] * bmasfl[f_id];
-
-        cs_real_t dimp =   -(1. - dt[c_id]/taub[f_id])
-                         * bmasfl[f_id]/b_face_surf[f_id];
-        cs_real_t hint = taub[f_id] / b_dist[f_id];
-
-        /* Neumann_scalar BC */
-
-        // Gradient BCs
-        coefa_dp[f_id] = -dimp/cs::max(hint, 1.e-300);
-        coefb_dp[f_id] = 1.;
-
-        // Flux BCs
-        coefaf_dp[f_id] = dimp;
-        coefbf_dp[f_id] = 0.;
-      }
-      else
-        bmasfl[f_id] = taub[f_id] / dt[c_id] * bmasfla[f_id];
-    });
-
-    ctx.wait();
-
-  } /* end if (vp_param->staggered == 1) */
-
-  /* Project exterior forces to faces */
-
-  if (vp_param->iphydr == 1) {
-
-    cs_gradient_porosity_balance(0);
-
-    /* Scalar diffusivity */
-    if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
-      cs_ext_force_flux(m,
-                        fvq,
-                        0,  /* init */
-                        eqp_p->nswrgr,
-                        dfrcxt,
-                        coefbf_dp,
-                        imasfl,
-                        bmasfl,
-                        i_visc,
-                        b_visc,
-                        c_visc,
-                        c_visc,
-                        c_visc);
-
-    /* Tensor diffusivity */
-    else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
-      cs_ext_force_anisotropic_flux(m,
-                                    fvq,
-                                    0,  /* init */
-                                    eqp_p->nswrgr,
-                                    eqp_p->ircflu,
-                                    dfrcxt,
-                                    coefbf_dp,
-                                    i_visc,
-                                    b_visc,
-                                    (cs_real_6_t *)c_visc,
-                                    weighf,
-                                    imasfl,
-                                    bmasfl);
-
-  }
-
-  cs_gradient_porosity_balance(1);
-
-  /* Rhie and Chow filter
-     ==================== */
+  /* Rhie and Chow filter -div(dt grad(p^n))
+     ====================================== */
 
   if (arak > 0.) {
 
@@ -1816,6 +1386,439 @@ _pressure_correction_fv(int                   iterns,
     CS_FREE(ipro_visc);
     CS_FREE(bpro_visc);
   }
+
+  /* Update pressure and pressure increment BCs
+   * ========================================== */
+
+  if (vp_param->update_p_bc_after_prediction == 1) {
+
+    /* BC (dP) = BC(P^n+1) - BC(P^n) */
+    if (vp_param->staggered == 0) {
+      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefa_dp[f_id] = -coefa_p[f_id];
+        coefaf_dp[f_id] = -coefaf_p[f_id];
+      });
+    }
+
+    ctx.wait();
+    ctx_c.wait();
+
+    cs_boundary_conditions_set_coeffs_pressure(ctx, f_p);
+
+    if (vp_param->staggered == 0) {
+      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefa_dp[f_id] += coefa_p[f_id];
+        /* Note: Af should be recomputed as "hint * A" instead */
+        coefaf_dp[f_id] += coefaf_p[f_id];
+        coefb_dp[f_id] = coefb_p[f_id];
+        coefbf_dp[f_id] = coefbf_p[f_id];
+      });
+    }
+    else {
+      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefa_dp[f_id] = coefa_p[f_id];
+        coefaf_dp[f_id] = coefaf_p[f_id];
+        coefb_dp[f_id] = coefb_p[f_id];
+        coefbf_dp[f_id] = coefbf_p[f_id];
+      });
+    }
+
+    ctx.wait();
+    ctx_c.wait();
+
+  }
+  else {
+
+    /* Legacy: pressure BCs were already updated in
+       cs_boundary_conditions_set_coeffs before prediction. */
+
+    if (vp_param->staggered == 0) {
+      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefa_dp[f_id] = 0.;
+        coefaf_dp[f_id] = 0.;
+        coefb_dp[f_id] = coefb_p[f_id];
+        coefbf_dp[f_id] = coefbf_p[f_id];
+      });
+    }
+    else {
+      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        coefa_dp[f_id] = coefa_p[f_id];
+        coefaf_dp[f_id] = coefaf_p[f_id];
+        coefb_dp[f_id] = coefb_p[f_id];
+        coefbf_dp[f_id] = coefbf_p[f_id];
+      });
+    }
+
+    ctx.wait();
+    ctx_c.wait();
+
+  }
+
+  /* Compute an approximated pressure increment if needed,
+   * that is when there are buoyancy terms (gravity and variable density)
+   * with a free outlet.
+   * ==================================================================== */
+
+  /* Compute a pseudo hydrostatic pressure increment stored
+     in cvar_hydro_pres(.) with Homogeneous Neumann BCs everywhere. */
+
+  int indhyd = 0;
+
+  if (vp_param->iphydr == 1 && vp_param->icalhy == 1) {
+
+    int ifcsor = isostd[n_b_faces];
+    cs_parall_max(1, CS_INT_TYPE, &ifcsor);
+
+    /* This computation is needed only if there are outlet faces */
+
+    if (ifcsor > -1 || open_bcs_flag != 0)
+      _hydrostatic_pressure_compute(m, fvq,
+                                    &indhyd, iterns,
+                                    frcxt, dfrcxt, cvar_hydro_pres,
+                                    iflux, bflux,
+                                    dphi, rhs);
+  }
+
+  /* Compute the BCs for the pressure increment
+     (first we set the BCs of a standard pressure increment,
+     that are (A = 0, B_dp = B_p) for the gradient BCs
+     Then the A_dp is set thank to the pre-computed hydrostatic pressure
+     so that the pressure increment will be 0 on the reference outlet face. */
+
+  if (vp_param->iphydr == 1 || vp_param->iifren == 1) {
+
+    cs_real_t phydr0 = 0.;
+
+    if (f_hp != nullptr && indhyd == 1) {
+
+      /* Use parallel reducer with a single value per rank,
+         so as to be able to access device-only arrays on GPU. */
+      ctx.parallel_for_reduce_sum
+        (1, phydr0, [=] CS_F_HOST_DEVICE(cs_lnum_t i,
+         CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+
+        cs_lnum_t f_id_0 = isostd[n_b_faces];
+        if (f_id_0 > -1 && i == 0) {
+          cs_lnum_t c_id_0 = b_face_cells[f_id_0];
+          cs_real_t d[3] = {b_face_cog[f_id_0][0] - cell_cen[c_id_0][0],
+                            b_face_cog[f_id_0][1] - cell_cen[c_id_0][1],
+                            b_face_cog[f_id_0][2] - cell_cen[c_id_0][2]};
+          sum +=   cvar_hydro_pres[c_id_0]
+                 + d[0] * (dfrcxt[c_id_0][0] + frcxt[c_id_0][0])
+                 + d[1] * (dfrcxt[c_id_0][1] + frcxt[c_id_0][1])
+                 + d[2] * (dfrcxt[c_id_0][2] + frcxt[c_id_0][2]);
+        }
+      });
+
+      ctx.wait();
+      cs_parall_sum(1, CS_REAL_TYPE, &phydr0);  /* > 0 only on one rank */
+
+      /* Rescale cvar_hydro_pres so that it is 0 on the reference face */
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cvar_hydro_pres[c_id] -= phydr0;
+      });
+
+    }
+
+    /* If hydrostatic pressure increment or free entrance Inlet. */
+
+    if (indhyd == 1 || vp_param->iifren == 1) {
+
+      const int idften = eqp_p->idften;
+      const int *auto_flag = cs_glob_bc_pm_info->iautom;
+      const cs_real_t *b_head_loss
+        = cs_boundary_conditions_get_b_head_loss(false);
+
+      cs_real_6_t *vitenp = (cs_real_6_t *)c_visc;
+
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+
+        int iautof = 0;
+
+        /* automatic inlet/outlet face for atmospheric flow */
+        if (meteo_profile > 0)
+          iautof = auto_flag[f_id];
+
+        if (isostd[f_id] == 1 || (open_bcs_flag >= 1 && iautof >= 1)) {
+
+          cs_lnum_t c_id = b_face_cells[f_id];
+
+          cs_real_t hint = 0;
+
+          /* Diffusive flux BCs */
+          if (idften & CS_ISOTROPIC_DIFFUSION)
+            hint = c_visc[c_id]/b_dist[f_id];
+
+          /* Symmetric tensor diffusivity */
+          else if (idften & CS_ANISOTROPIC_DIFFUSION) {
+
+            cs_real_t visci[3][3], dist[3];
+            const cs_nreal_t *n = b_face_u_normal[f_id];
+
+            visci[0][0] = vitenp[c_id][0];
+            visci[1][1] = vitenp[c_id][1];
+            visci[2][2] = vitenp[c_id][2];
+            visci[1][0] = vitenp[c_id][3];
+            visci[0][1] = vitenp[c_id][3];
+            visci[2][1] = vitenp[c_id][4];
+            visci[1][2] = vitenp[c_id][4];
+            visci[2][0] = vitenp[c_id][5];
+            visci[0][2] = vitenp[c_id][5];
+
+            dist[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
+            dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
+            dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
+
+            /* ||Ki.S||^2 */
+            cs_real_t viscis =   cs_math_pow2(  visci[0][0]*n[0]
+                                              + visci[1][0]*n[1]
+                                              + visci[2][0]*n[2])
+                               + cs_math_pow2(  visci[0][1]*n[0]
+                                              + visci[1][1]*n[1]
+                                              + visci[2][1]*n[2])
+                               + cs_math_pow2(  visci[0][2]*n[0]
+                                              + visci[1][2]*n[1]
+                                              + visci[2][2]*n[2]);
+
+            /* IF.Ki.S */
+            cs_real_t fikis
+              = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
+                 + cs_math_3_dot_product(dist, visci[1]) * n[1]
+                 + cs_math_3_dot_product(dist, visci[2]) * n[2]);
+
+            /* Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+               NB: eps =1.d-1 must be consistent
+               with `cs_face_anisotropic_viscosity_scalar`. */
+
+            fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*b_dist[f_id]);
+
+            hint = viscis/fikis;
+
+          }
+
+          if (indhyd == 1) {
+            cs_real_t f_dot_if = cs_math_3_distance_dot_product(cell_cen[c_id],
+                                                                b_face_cog[f_id],
+                                                                dfrcxt[c_id]);
+
+            if (f_hp != nullptr) {
+              cs_real_t dph = cvar_hydro_pres[c_id]
+                            - cvar_hydro_pres_prev[c_id] + f_dot_if;
+              if (vp_param->update_p_bc_after_prediction == 1) {
+
+                coefa_dp[f_id] += dph;
+                coefa_p[f_id] += dph;
+              } else {
+                coefa_dp[f_id] = dph;
+              }
+            }
+            else
+              coefa_dp[f_id] += f_dot_if;
+          }
+
+          /* Free entrance boundary face (Bernoulli condition to link the
+             pressure increment and the predicted velocity) */
+
+          if (bc_type[f_id] == CS_FREE_INLET) {
+
+            /* Boundary mass flux intensity of the predicted velocity */
+            cs_real_t bpmasf = cs_math_3_dot_product(vel[c_id],
+                                                     b_face_u_normal[f_id]);
+
+            /* Ingoing mass Flux, Bernoulli relationship is used */
+            if (bpmasf <= 0) {
+
+              /* Head loss of the fluid outside the domain, between infinity and
+                 the entrance */
+
+              cs_real_t kpdc = b_head_loss[f_id];
+              cs_real_t rho = brom[f_id];
+              cs_real_t cfl =   -(bmasfl[f_id]/b_face_surf[f_id]*dt[c_id])
+                              / (2.*rho*b_dist[f_id])*(1. + kpdc);
+
+              cs_real_t pimp = coefa_dp[f_id] - cvar_pr[c_id]
+                               -   0.5 * (1. + kpdc) * bmasfl[f_id]*bpmasf
+                                 / cs::abs(b_face_surf[f_id]);
+
+              /* Convective_outlet BC */
+
+              // Gradient BCs
+              coefb_dp[f_id] = cfl / (1.0 + cfl);
+              coefa_dp[f_id] = (1.0 - coefb_dp[f_id]) * pimp;
+
+              // Flux BCs
+              coefaf_dp[f_id] = - hint * coefa_dp[f_id];
+              coefbf_dp[f_id] =   hint * (1.0 - coefb_dp[f_id]);
+            }
+
+            else
+              coefaf_dp[f_id] = - hint*coefa_dp[f_id];
+
+          }
+
+          /* Other boundary face types */
+
+          else
+            coefaf_dp[f_id] = - hint*coefa_dp[f_id];
+
+        } /* if (isostd[f_id] == 1 || (open_bcs_flag >= 1 && iautof >= 1)) */
+
+      }); /* End of loop on boundary faces */
+
+    }  /* if (indhyd == 1 || vp_param->iifren == 1) */
+
+  } /* if (vp_param->iphydr == 1 && vp_param->iifren == 1) */
+
+
+  if (vp_param->staggered == 1) {
+
+    const cs_time_step_t *ts = cs_glob_time_step;
+
+    cs_real_t *imasfla
+      = cs_field_by_id(f_p->get_key_int(kimasf))->val_pre;
+    cs_real_t *bmasfla
+      = cs_field_by_id(f_p->get_key_int(kbmasf))->val_pre;
+
+    cs_real_t *sti = cs_field_by_name("inner_face_source_term")->val;
+
+    if (ts->nt_cur == 1 && ts->nt_prev == 0) {
+      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        imasfla[f_id] = imasfl[f_id];
+      });
+
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        bmasfla[f_id] = bmasfl[f_id];
+      });
+
+    }
+
+    if (cs_glob_porous_model >= 1) {
+
+      const cs_real_t *c_porosity = cs_field_by_name("porosity")->val;
+
+      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        cs_lnum_t c_id_0 = i_face_cells[f_id][0];
+        cs_lnum_t c_id_1 = i_face_cells[f_id][1];
+        cs_real_t dtm = 0.5 * (dt[c_id_0]+dt[c_id_1]);
+        cs_real_t porosf = cs::min(c_porosity[c_id_0], c_porosity[c_id_1]);
+        imasfl[f_id] =   taui[f_id] / dtm
+                       * imasfla[f_id]+porosf*taui[f_id]*sti[f_id]
+                       * i_face_surf[f_id];
+      });
+
+    }
+
+    else { /* cs_glob_porous_model == 0) */
+
+      ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        cs_lnum_t c_id_0 = i_face_cells[f_id][0];
+        cs_lnum_t c_id_1 = i_face_cells[f_id][1];
+        cs_real_t dtm = 0.5 * (dt[c_id_0] + dt[c_id_1]);
+        imasfl[f_id] =   taui[f_id] / dtm
+                       * imasfla[f_id]+taui[f_id]*sti[f_id]
+                       * i_face_surf[f_id];
+      });
+
+    } /* end of test on cs_glob_porous_model */
+
+    ctx_c.wait();
+
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      cs_lnum_t c_id = b_face_cells[f_id];
+
+      if (bc_type[f_id] == CS_INLET) {
+
+        bmasfl[f_id] = taub[f_id] / dt[c_id] * bmasfl[f_id];
+
+        cs_real_t dimp =   -(1. - dt[c_id]/taub[f_id])
+                         * bmasfl[f_id]/b_face_surf[f_id];
+        cs_real_t hint = taub[f_id] / b_dist[f_id];
+
+        /* Neumann_scalar BC */
+
+        // Gradient BCs
+        coefa_dp[f_id] = -dimp/cs::max(hint, 1.e-300);
+        coefb_dp[f_id] = 1.;
+
+        // Flux BCs
+        coefaf_dp[f_id] = dimp;
+        coefbf_dp[f_id] = 0.;
+      }
+      else
+        bmasfl[f_id] = taub[f_id] / dt[c_id] * bmasfla[f_id];
+    });
+
+    ctx.wait();
+
+  } /* end if (vp_param->staggered == 1) */
+
+  /* Project exterior forces increment to faces:
+   * dt df_ext. S_f
+   * */
+
+  if (vp_param->iphydr == 1) {
+
+    cs_gradient_porosity_balance(0);
+
+    /* Scalar diffusivity */
+    if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
+      cs_ext_force_flux(m,
+                        fvq,
+                        0,  /* init */
+                        eqp_p->nswrgr,
+                        dfrcxt,
+                        coefbf_dp,
+                        imasfl,
+                        bmasfl,
+                        i_visc,
+                        b_visc,
+                        c_visc,
+                        c_visc,
+                        c_visc);
+
+    /* Tensor diffusivity */
+    else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
+      cs_ext_force_anisotropic_flux(m,
+                                    fvq,
+                                    0,  /* init */
+                                    eqp_p->nswrgr,
+                                    eqp_p->ircflu,
+                                    dfrcxt,
+                                    coefbf_dp,
+                                    i_visc,
+                                    b_visc,
+                                    (cs_real_6_t *)c_visc,
+                                    weighf,
+                                    imasfl,
+                                    bmasfl);
+
+  }
+
+  cs_gradient_porosity_balance(1);
+
+  cs_matrix_t *a = cs_sles_default_get_matrix(f_p->id, nullptr, 1, 1, symmetric);
+
+#if defined(HAVE_ACCEL)
+  cs_matrix_set_alloc_mode(a, ctx.alloc_mode());
+#endif
+
+  cs_matrix_compute_coeffs(a,
+                           f_p,
+                           eqp_p->iconv,
+                           eqp_p->idiff,
+                           eqp_p->ndircl,
+                           1.0, // thetap
+                           1.0, // relaxp
+                           0,   // imucpp
+                           bc_coeffs_dp,
+                           rovsdt,
+                           imasfl, //useless
+                           bmasfl, //useless
+                           i_visc,
+                           b_visc,
+                           nullptr);
+
+  cs_sles_t *sc = cs_sles_find_or_add(f_p->id, nullptr);
 
   /*
    * Solving (Loop over the non-orthogonalities)
@@ -2032,7 +2035,7 @@ _pressure_correction_fv(int                   iterns,
                  -1,
                  itypfl,
                  iflmb0,
-                 1,  /* init */
+                 1,  /* init: initialize it to 0 */
                  1,  /* inc */
                  eqp_p->imrgra,
                  1,  /* nswrgu (to save time, no space reconstruction */
@@ -2101,7 +2104,8 @@ _pressure_correction_fv(int                   iterns,
     int inc = 0;  /* by increment */
     if (   vp_param->iphydr == 1
         || vp_param->iifren == 1
-        || vp_param->staggered == 1)
+        || vp_param->staggered == 1
+        || vp_param->update_p_bc_after_prediction == 1)
       inc = 1;    /* not by increment */
 
     cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), phi);
@@ -2241,7 +2245,8 @@ _pressure_correction_fv(int                   iterns,
       int init = 0;
       int inc = 0;  /* by increment */
       if (   vp_param->iphydr == 1
-          || vp_param->iifren == 1)
+          || vp_param->iifren == 1 //FIXME add staggered?
+          || vp_param->update_p_bc_after_prediction == 1)
         inc = 1;    /* not by increment */
 
       /*  ---> Handle parallelism and periodicity */
@@ -2404,7 +2409,8 @@ _pressure_correction_fv(int                   iterns,
       int inc = 0;  /* by increment */
       if (   vp_param->iphydr == 1
           || vp_param->iifren == 1
-          || vp_param->staggered == 1)
+          || vp_param->staggered == 1
+          || vp_param->update_p_bc_after_prediction == 1)
         inc = 1;    /* not by increment */
 
       cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), phi);
@@ -2538,7 +2544,8 @@ _pressure_correction_fv(int                   iterns,
        boundary conditions on the pressure (coefa) */
     if (   vp_param->iphydr == 1
         || vp_param->iifren == 1
-        || vp_param->staggered == 1)
+        || vp_param->staggered == 1
+        || vp_param->update_p_bc_after_prediction == 1)
       inc = 1;
 
     /*  ---> Handle parallelism and periodicity */
@@ -2798,6 +2805,8 @@ _pressure_correction_fv(int                   iterns,
   CS_FREE(cpro_vitenp);
   CS_FREE(weighbtp);
 
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
   CS_FREE(taui);
   CS_FREE(taub);
   CS_FREE(wrk2);
@@ -3488,8 +3497,6 @@ cs_pressure_correction_cdo_destroy_all(void)
  * \param[in]       frcxt         external forces making hydrostatic pressure
  * \param[in]       dfrcxt        variation of the external forces
  *                                composing the hydrostatic pressure
- * \param[in]       i_visc        visc*surface/dist aux faces internes
- * \param[in]       b_visc        visc*surface/dist aux faces de bord
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3507,9 +3514,7 @@ cs_pressure_correction(int                   iterns,
                        cs_real_t             spcond[],
                        cs_real_t             svcond[],
                        cs_real_t             frcxt[][3],
-                       cs_real_t             dfrcxt[][3],
-                       cs_real_t             i_visc[],
-                       cs_real_t             b_visc[])
+                       cs_real_t             dfrcxt[][3])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -3532,9 +3537,7 @@ cs_pressure_correction(int                   iterns,
                             spcond,
                             svcond,
                             frcxt,
-                            dfrcxt,
-                            i_visc,
-                            b_visc);
+                            dfrcxt);
   else
     _pressure_correction_cdo(vel,
                              bc_coeffs_v);
