@@ -167,13 +167,12 @@ cs_user_postprocess_values
     if (strncmp(name, "foil_profile", strlen("foil_profile")) == 0) {
       /*! [variables_def] */
       const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-      const cs_real_3_t *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
+      const cs_real_3_t *b_face_cog = mq->b_face_cog;
       /*! [variables_def] */
 
       /*! [profile_variables] */
 
-      cs_real_t *val;
-      CS_MALLOC(val, n_b_faces, cs_real_t);
+      cs_array<cs_real_t> val(n_b_faces);
 
       /* x coordinate */
       for (cs_lnum_t i = 0; i < n_b_faces; i++) {
@@ -225,8 +224,6 @@ cs_user_postprocess_values
          nullptr,                           /* interpolation input */
          val,
          ts);
-
-      CS_FREE(val);
       /*! [profile_variables] */
     }
   }

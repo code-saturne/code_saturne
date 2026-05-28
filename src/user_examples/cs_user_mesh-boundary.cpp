@@ -71,15 +71,13 @@ cs_user_mesh_boundary([[maybe_unused]] cs_mesh_t  *mesh)
 
   /*! [mesh_thinwall] */
   {
-    cs_lnum_t   n_selected_faces = 0;
-    cs_lnum_t  *selected_faces = nullptr;
-
     /* example of multi-line character string */
 
     const char criteria[] = "plane[0, -1, 0, 0.5, epsilon = 0.0001]"
                             " or plane[-1, 0, 0, 0.5, epsilon = 0.0001]";
-
-    CS_MALLOC(selected_faces, mesh->n_i_faces, cs_lnum_t);
+   
+    cs_lnum_t n_selected_faces = 0;
+    cs_array<cs_lnum_t>selected_faces(mesh->n_i_faces);
 
     cs_selector_get_i_face_list(criteria,
                                 &n_selected_faces,
@@ -88,8 +86,6 @@ cs_user_mesh_boundary([[maybe_unused]] cs_mesh_t  *mesh)
     cs_mesh_boundary_insert(mesh,
                             n_selected_faces,
                             selected_faces);
-
-    CS_FREE(selected_faces);
   }
   /*! [mesh_thinwall] */
 
@@ -98,12 +94,10 @@ cs_user_mesh_boundary([[maybe_unused]] cs_mesh_t  *mesh)
 
   /*! [mesh_boundary_cells] */
   {
-    cs_lnum_t   n_selected_cells = 0;
-    cs_lnum_t  *selected_cells = nullptr;
-
     const char criteria[] = "box[0.5, 0.5, 0, 1, 1, 0.05]";
 
-    CS_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
+    cs_lnum_t n_selected_cells = 0;
+    cs_array<cs_lnum_t>selected_cells(mesh->n_cells);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_cells,
@@ -113,8 +107,6 @@ cs_user_mesh_boundary([[maybe_unused]] cs_mesh_t  *mesh)
                                              "zone_interface",
                                              n_selected_cells,
                                              selected_cells);
-
-    CS_FREE(selected_cells);
   }
   /*! [mesh_boundary_cells] */
 }

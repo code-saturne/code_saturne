@@ -59,10 +59,11 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
                             [[maybe_unused]] int           bc_type[])
 {
   /*! [loc_var_dec] */
-  const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
   const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
+  const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
   const cs_real_t *b_face_surf = domain->mesh_quantities->b_face_surf;
-  const cs_nreal_3_t *b_face_u_normal = domain->mesh_quantities->b_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal
+    = domain->mesh_quantities->b_face_u_normal;
   /*! [loc_var_dec] */
 
   /* Assign boundary conditions to boundary faces here

@@ -65,12 +65,6 @@ cs_user_physical_properties
   /* Number of fields */
   const int n_fields = cs_field_n_fields();
 
-  /* Key id for drift scalar */
-  const int keydri = cs_field_key_id("drift_scalar_model");
-
-  /* Key id of the coal scalar class */
-  const int keyccl = cs_field_key_id("scalar_class");
-
   const int *iym1 = cs_glob_coal_model->iym1;
 
   auto cpro_ym1_3 = cs_field(iym1[2])->get_val_s();
@@ -197,11 +191,11 @@ cs_user_physical_properties
 
   /* Loop on fields */
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    const cs_field_t *fld =  cs_field(f_id);
+    const cs_field_t *fld = cs_field(f_id);
 
     /* Index of the scalar class (<0 if the scalar belongs to the gas phase) */
-    int icla =  fld->get_key_int(keyccl);
-    int iscdri = fld->get_key_int(keydri);
+    int icla =  fld->get_key_int("scalar_class");
+    int iscdri = fld->get_key_int("drift_scalar_model");
 
     /*  We only handle here one scalar with a drift per gas class */
     if ((icla < 0) && (iscdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX)) {
@@ -224,8 +218,8 @@ cs_user_physical_properties
     const cs_field_t *fld =  cs_field(f_id);
 
     /* Index of the scalar class (<0 if the scalar belongs to the gas phase) */
-    int icla =  fld->get_key_int(keyccl);
-    int iscdri = fld->get_key_int(keydri);
+    int icla =  fld->get_key_int("scalar_class");
+    int iscdri = fld->get_key_int("drift_scalar_model");
 
     /* We only handle here one scalar with a drift per particle class */
     if ((icla > -1) && (iscdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX)) {

@@ -71,7 +71,6 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
 
   const int n_fields = cs_field_n_fields();
-  const int keysca = cs_field_key_id("scalar_id");
 
   const int nt_cur = domain->time_step->nt_cur;
 
@@ -133,6 +132,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       }
     }
 
+    const cs_real_t inv_ten = 0.1;
     for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
 
       const cs_lnum_t face_id = zn->elt_ids[e_idx];
@@ -143,8 +143,8 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       for (int ii = 0; ii < 3; ii++)
         vel_val_ext(face_id, ii) = -fmprsc*b_face_u_normal[face_id][ii];
 
-      if (mrkcel[c_id] == 1)
-        vel_val_ext(face_id, 0) = fmprsc/10;
+      if (mrkcel.size() > 0 && mrkcel[c_id] == 1)
+        vel_val_ext(face_id, 0) = fmprsc * inv_ten;
 
       cs_real_t uref2 = 0;
       for (int ii = 0; ii< CS_F_(vel)->dim; ii++)
@@ -189,7 +189,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
       if (! (fld->type & (CS_FIELD_VARIABLE | CS_FIELD_USER)))
         continue;
-      int sc_id = fld->get_key_int(keysca) - 1;
+      int sc_id = fld->get_key_int("scalar_id") - 1;
       if (sc_id < 0)
         continue;
 
@@ -341,7 +341,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
       if (! (fld->type & (CS_FIELD_VARIABLE | CS_FIELD_USER)))
         continue;
-      int sc_id = fld->get_key_int(keysca) - 1;
+      int sc_id = fld->get_key_int("scalar_id") - 1;
       if (sc_id < 0)
         continue;
 

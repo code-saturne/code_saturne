@@ -164,7 +164,7 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
   cs_lnum_t *connect = nullptr, *order = nullptr;
   cs_gnum_t *vtx_gnum = nullptr, *edge_gnum = nullptr;
   double *val = nullptr;
-  cs_coord_t *coords = nullptr;
+  cs_real_t *coords = nullptr;
   fvm_nodal_t *nm = nullptr;
   fvm_io_num_t *io_num = nullptr;
 
@@ -210,7 +210,7 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
     if (block_size > 0) {
       CS_MALLOC(connect, block_size*2, cs_lnum_t);
       CS_MALLOC(val, block_size+1, double);
-      CS_MALLOC(coords, (block_size+1)*3, double);
+      CS_MALLOC(coords, (block_size+1)*3, cs_real_t);
       CS_MALLOC(vtx_gnum, block_size+1, cs_gnum_t);
       CS_MALLOC(edge_gnum, block_size, cs_gnum_t);
     }
@@ -218,7 +218,7 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
     /* Distribute blocks on ranks */
 
     cs_part_to_block_copy_array(d,
-                                CS_DOUBLE,
+                                CS_REAL_TYPE,
                                 3,
                                 mq->cell_cen,
                                 coords);

@@ -66,51 +66,41 @@
 /*----------------------------------------------------------------------------*/
 
 static int
-_read_plane_data(const cs_mesh_t *mesh,
-                 cs_real_t *p_normals[],
-                 cs_real_t *p_origins[],
+_read_plane_data(cs_real_t  p_normals[],
+                 cs_real_t  p_origins[],
                  const char *file_name,
                  const char *absolute_file_path,
                  const char *var_normals_name,
                  const char *var_origins_name)
 {
   cs_restart_t *restart;
-  int n_values_per_location;
+  int n_values_per_location = 3;
 
   restart = cs_restart_create(file_name,
                               absolute_file_path,
                               CS_RESTART_MODE_READ);
 
-  n_values_per_location = 3;
-  *p_normals = NULL;
-  CS_MALLOC(*p_normals, n_values_per_location*mesh->n_cells,
-      cs_real_t);
-
-  if (CS_RESTART_SUCCESS != cs_restart_read_section(restart, var_normals_name,
-      1, // location at cells
-      n_values_per_location,
-      CS_TYPE_cs_real_t,
-      *p_normals)) {
-    fprintf(stderr, "Error reading plane normals!\n");
-    CS_FREE(p_normals);
+  if (CS_RESTART_SUCCESS != cs_restart_read_section(restart,
+                                                    var_normals_name,
+                                                    1, // location at cells
+                                                    n_values_per_location,
+                                                    CS_TYPE_cs_real_t,
+                                                    p_normals)) {
     cs_restart_destroy(&restart);
-    return 1;
+    bft_error(__FILE__, __LINE__, 0,
+              "Error reading plane normals in %s!\n",
+              __func__);
   }
 
-  *p_origins = NULL;
-  CS_MALLOC(*p_origins, n_values_per_location*mesh->n_cells,
-      cs_real_t);
-
   if (CS_RESTART_SUCCESS != cs_restart_read_section(restart, var_origins_name,
-      1, // location at cells
-      n_values_per_location,
-      CS_TYPE_cs_real_t,
-      *p_origins)) {
-    fprintf(stderr, "Error reading plane origins!\n");
-    CS_FREE(p_normals);
-    CS_FREE(p_origins);
+                                                    1, // location at cells
+                                                    n_values_per_location,
+                                                    CS_TYPE_cs_real_t,
+                                                    p_origins)) {
     cs_restart_destroy(&restart);
-    return 1;
+    bft_error(__FILE__, __LINE__, 0,
+              "Error reading plane origins in function %s!\n",
+              __func__);
   }
 
   cs_restart_destroy(&restart);
@@ -132,7 +122,8 @@ _read_plane_data(const cs_mesh_t *mesh,
 void
 cs_user_mesh_modify([[maybe_unused]] cs_mesh_t  *mesh)
 {
-  cs_real_t *p_normals = nullptr, *p_origins = nullptr;
+  cs_array<cs_real_t> p_normals(3 * mesh->n_cells);
+  cs_array<cs_real_t> p_origins(3 * mesh->n_cells);
 
   /* Modify the input strings here. */
   const char *file_name = "file_name.csc";
@@ -140,8 +131,8 @@ cs_user_mesh_modify([[maybe_unused]] cs_mesh_t  *mesh)
   const char *var_normals_name = "plane_normals";
   const char *var_origins_name = "plane_origins";
 
-  int ret = _read_plane_data(mesh,
-                             &p_normals, &p_origins,
+  int ret = _read_plane_data(p_normals,
+                             p_origins,
                              file_name,
                              absolute_file_path,
                              var_normals_name, var_origins_name);
@@ -149,9 +140,6 @@ cs_user_mesh_modify([[maybe_unused]] cs_mesh_t  *mesh)
   if (ret != 0) return;
 
   cs_mesh_cut(mesh, (cs_real_3_t *)p_normals, (cs_real_3_t *)p_origins);
-
-  CS_FREE(p_normals);
-  CS_FREE(p_origins);
 }
 
 /*----------------------------------------------------------------------------*/

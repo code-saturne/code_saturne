@@ -68,8 +68,8 @@ cs_user_porosity([[maybe_unused]] cs_domain_t   *domain)
 /*!< [user_poro_cad_zone] */
 
 /*!< [user_poro_cad_init] */
-  cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_mesh_t *m = domain->mesh;
+  cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
@@ -78,10 +78,8 @@ cs_user_porosity([[maybe_unused]] cs_domain_t   *domain)
 
   auto cell_porosity = cs_field("porosity")->get_val_s();
 
-  cs_real_t  *i_face_porosity, *b_face_porosity;
-
-  CS_MALLOC(i_face_porosity, m->n_i_faces, cs_real_t);
-  CS_MALLOC(b_face_porosity, m->n_b_faces, cs_real_t);
+  cs_array<cs_real_t>i_face_porosity(m->n_i_faces);
+  cs_array<cs_real_t>b_face_porosity(m->n_b_faces);
 
   for (cs_lnum_t i = 0; i < m->n_i_faces; i++)
     i_face_porosity[i] = 1;
@@ -146,9 +144,6 @@ cs_user_porosity([[maybe_unused]] cs_domain_t   *domain)
     }
 
   }
-
-  CS_FREE(i_face_porosity);
-  CS_FREE(b_face_porosity);
 
   /* Four set face factor */
 

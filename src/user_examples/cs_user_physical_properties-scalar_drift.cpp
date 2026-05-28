@@ -68,14 +68,8 @@ cs_user_physical_properties
 
   auto cpro_viscl = CS_F_(mu)->get_val_s();
 
-  /* Key id for drift scalar */
-  const int keydri = cs_field_key_id("drift_scalar_model");
-
-  /* Key id for diffusivity id */
-  const int kivisl = cs_field_key_id("diffusivity_id");
-
   /* Number of fields */
-  const int nfld = cs_field_n_fields();
+  const int n_fields = cs_field_n_fields();
   /*! [init] */
 
   /* The following examples should be adapted by the user
@@ -101,7 +95,7 @@ cs_user_physical_properties
 
   /* Loop over fields which are scalar with a drift */
 
-  for (int iflid = 0; iflid < nfld; iflid++) {
+  for (int iflid = 0; iflid < n_fields; iflid++) {
 
     cs_field_t  *f = cs_field(iflid);
 
@@ -110,7 +104,7 @@ cs_user_physical_properties
     if (! (f->type & CS_FIELD_VARIABLE))
       continue;
 
-    int drift_flag = f->get_key_int(keydri);
+    int drift_flag = f->get_key_int("drift_scalar_model");
 
     if (drift_flag & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX) {
 
@@ -123,7 +117,7 @@ cs_user_physical_properties
 
       /* Scalar's diffusivity (Brownian motion) */
 
-      int ifcvsl = f->get_key_int(kivisl);
+      int ifcvsl = f->get_key_int("diffusivity_id");
       if (ifcvsl > -1)
         cpro_viscls = cs_field(ifcvsl)->get_val_s();
 

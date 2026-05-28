@@ -77,12 +77,9 @@ cs_user_source_terms
 
   /* x, y, z of origin, and x, y, z of destination */
   /* From North to South at the middle of the first elevation*/
-  cs_lnum_t n_points = 2;
-
-  cs_array_2d<cs_real_t> point_coords(n_points, 3); /* Segment: 2 points */
-
-  point_coords(0, 0) = 0.; point_coords(0, 1) = 15.; point_coords(0, 2) = 0.5;
-  point_coords(1, 0) = 0.; point_coords(1, 1) = 0.;  point_coords(1, 2) = 0.5;
+  constexpr cs_lnum_t n_points = 2;
+  cs_real_3_t point_coords[n_points] = {{0., 15., 0.5},
+                                        {0.,  0., 0.5}};
 
   /* Initialize on first pass */
   if (n_elts < 0) {
@@ -90,7 +87,7 @@ cs_user_source_terms
     /* Select cells and count length
      * Note: elt_ids and seg_c_len are allocated here, and
      * should be deallocated at the end of the calculation */
-    cs_mesh_intersect_polyline_cell_select(point_coords.data<cs_real_3_t>(),
+    cs_mesh_intersect_polyline_cell_select(point_coords,
                                            n_points,
                                            &n_elts,
                                            &elt_ids,
@@ -114,8 +111,8 @@ cs_user_source_terms
     cs::parall::sum(n_g_elts);
 
     bft_printf("BRIN [%f, %f, %f] -> [%f, %f, %f] n_cells=%ld, length=%f\n",
-               point_coords(0, 0), point_coords(0, 1), point_coords(0, 2),
-               point_coords(1, 0), point_coords(1, 1), point_coords(1, 2),
+               point_coords[0][0], point_coords[0][1], point_coords[0][2],
+               point_coords[1][0], point_coords[1][1], point_coords[1][2],
                n_g_elts, len);
   }
 

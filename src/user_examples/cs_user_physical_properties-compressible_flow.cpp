@@ -80,8 +80,7 @@ cs_user_physical_properties
   /* Molecular volumetric viscosity */
   auto cpro_viscv = cs_field_try("volume_viscosity")->get_val_s();
 
-  const int kivisl = cs_field_key_id("diffusivity_id");
-  int ifcvsl = CS_F_(t_kelvin)->get_key_int(kivisl);
+  int ifcvsl = CS_F_(t_kelvin)->get_key_int("diffusivity_id");
   if (ifcvsl > -1)
     cpro_vtmpk = cs_field(ifcvsl)->get_val_s();
 
@@ -246,8 +245,6 @@ cs_user_physical_properties
   {
     /*! [example_5] */
     const int n_fields = cs_field_n_fields();
-    const int keysca = cs_field_key_id("scalar_id");
-    const int kscavr = cs_field_key_id("first_moment_id");
 
     /* Loop on the scalars fields */
     for (int f_id = 0; f_id < n_fields; f_id++) {
@@ -262,12 +259,12 @@ cs_user_physical_properties
 
       int sc_id = -1;
       if (fld->type & CS_FIELD_VARIABLE)
-        sc_id = fld->get_key_int(keysca) - 1;
+        sc_id = fld->get_key_int("scalar_id") - 1;
       if (sc_id < 0)
         continue;
 
-      int variance_id = fld->get_key_int(kscavr);
-      int diffusivity_id = fld->get_key_int(kivisl);
+      int variance_id = fld->get_key_int("first_moment_id");
+      int diffusivity_id = fld->get_key_int("diffusivity_id");
 
       if (variance_id > -1 || diffusivity_id < 0)
         continue;

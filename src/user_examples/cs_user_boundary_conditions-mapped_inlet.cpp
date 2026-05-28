@@ -168,20 +168,18 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     cs_real_t coord_shift[1][3] = {{5.95, 0, 0}};
 
-    cs_lnum_t *cells_ids;
-    CS_MALLOC(cells_ids, n_cells_ext, cs_lnum_t);
+    cs_array<cs_lnum_t>cell_ids(n_cells_ext);
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      cells_ids[c_id] = c_id;
+      cell_ids[c_id] = c_id;
 
     inlet_l = cs_boundary_conditions_map(CS_MESH_LOCATION_CELLS,
                                          n_cells,
                                          zn->n_elts,
-                                         cells_ids,
+                                         cell_ids,
                                          zn->elt_ids,
                                          coord_shift,
                                          0,
                                          0.10);
-    CS_FREE(cells_ids);
   }
 
   /*![example_1_map_init]*/

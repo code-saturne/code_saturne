@@ -168,8 +168,8 @@ _allocate_med_mesh_struct([[maybe_unused]] cs_lnum_t n_layers)
 #if defined(HAVE_MEDCOUPLING)
   CS_MALLOC(med_t->layer_mesh, n_layers, MEDCouplingUMesh *);
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
-    char name[10];
-    snprintf(name, 10, "%s_%d", "layer", layer_id);
+    char name[64];
+    snprintf(name, 63, "%s_%d", "layer", layer_id);
     MEDCoupling::MEDCouplingUMesh *mesh
       = MEDCoupling::MEDCouplingUMesh::New(name, 3);
     med_t->layer_mesh[layer_id] = mesh;
@@ -238,8 +238,7 @@ _create_1d_sample_(user_profile_t  *profile,
   cs_array<cs_lnum_t> selected_cells(n_cells);
 
   cs_selector_get_cell_list(profile->criteria,
-                            &n_selected_cells,
-                            selected_cells);
+                            &n_selected_cells, selected_cells);
 
   cs_real_t sel_cells_weight = 0.0;
 
@@ -394,8 +393,9 @@ _fill_histogram_classes_u_bandwidth(user_histogram_t  *histogram,
        cs_real_t sigma     = histogram->sd;
   */
   cs_lnum_t n_bins_max = histogram->n_bins_max;
-  cs_real_t min        = histogram->min;
-  cs_real_t max        = histogram->max;
+
+  cs_real_t min = histogram->min;
+  cs_real_t max = histogram->max;
 
   max              = (max - min) * 0.001 + max;
   histogram->max = max; /* ensure all values are caught */
@@ -736,8 +736,7 @@ _calculate_min_max_dir(user_profile_t  *profile)
   cs_array<cs_lnum_t> selected_cells(m->n_cells);
 
   cs_selector_get_cell_list(profile->criteria,
-                            &n_selected_cells,
-                            selected_cells);
+                            &n_selected_cells, selected_cells);
 
   cs_lnum_t  n_selected_vertices = 0;
 
@@ -1030,8 +1029,8 @@ _set_stl_layers_seeds(user_profile_t  *profile,
   // Allocate memory for the cells list which will be populated by cs_selector
   cs_array<cs_lnum_t> selected_cells(cs_glob_mesh->n_cells_with_ghosts);
 
-  cs_selector_get_cell_list(
-    profile->criteria, &n_selected_cells, selected_cells);
+  cs_selector_get_cell_list(profile->criteria,
+                            &n_selected_cells, selected_cells);
 
   // Calculate center lower plane (plane 0 in _set_layers_stl_mesh)
   cs_real_3_t O_planes_coord[1];
@@ -1320,9 +1319,6 @@ _set_med_layer_mesh([[maybe_unused]]user_profile_t  *profile,
                     [[maybe_unused]]cs_lnum_t        layer_id)
 {
 #if defined(HAVE_MEDCOUPLING)
-  // Get mesh quantities
-  const cs_real_t  *vtx_coord  = cs_glob_mesh->vtx_coord;
-
   // Set vector orthogonal spatial system
   cs_real_t n_v[3];
   cs_real_t dir_norm = cs_math_3_norm(profile->dir_v);
@@ -1606,8 +1602,7 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile)
   cs_array<cs_lnum_t> selected_cells(n_cells_with_ghosts);
 
   cs_selector_get_cell_list(profile->criteria,
-                            &n_selected_cells,
-                            selected_cells);
+                            &n_selected_cells, selected_cells);
 
   // Reset layer volume arrays
 
@@ -1676,8 +1671,8 @@ _compute_cell_volume_per_layer_stl(user_profile_t  *profile)
   // Allocate memory for the cells list which will be populated by cs_selector
   cs_array<cs_lnum_t> selected_cells(n_cells_with_ghosts);
 
-  cs_selector_get_cell_list(
-    profile->criteria, &n_selected_cells, selected_cells);
+  cs_selector_get_cell_list(profile->criteria,
+                            &n_selected_cells, selected_cells);
 
   // Reset layer volume arrays
 
@@ -1800,8 +1795,8 @@ _compute_cell_vol_per_layer_med([[maybe_unused]] user_profile_t *profile)
   // Allocate memory for the cells list which will be populated by cs_selector
   cs_array<cs_lnum_t> selected_cells(n_cells_with_ghosts);
 
-  cs_selector_get_cell_list(
-    profile->criteria, &n_selected_cells, selected_cells);
+  cs_selector_get_cell_list(profile->criteria,
+                            &n_selected_cells, selected_cells);
 
   // reset layer volume arrays
 
@@ -2159,6 +2154,8 @@ _user_output_profile_stl_mesh(user_profile_t  *profile,
   }
 }
 
+#if defined(HAVE_MEDCOUPLING_LOADER)
+
 /*----------------------------------------------------------------------------
  * Output the med mesh into .med files stored in ./profiles/<profile name>
  *
@@ -2186,6 +2183,8 @@ _output_profile_med_mesh([[maybe_unused]] user_profile_t  *profile,
   }
 #endif
 }
+
+#endif // defined(HAVE_MEDCOUPLING_LOADER)
 
 /*============================================================================
  * Public function definitions
@@ -2685,10 +2684,10 @@ user_profile_output(user_profile_t  *profile,
 
     const char prefix[] = "./profiles";
 
-    char dirname[80];
-    char dirname_histograms[150];
+    char dirname[550];
+    char dirname_histograms[600];
 
-    snprintf(dirname, 80, "./profiles/%s", profile->name);
+    snprintf(dirname, 550, "./profiles/%s", profile->name);
     dirname[79] = '\0';
 
     /* Create main directory if not present */
@@ -2713,7 +2712,7 @@ user_profile_output(user_profile_t  *profile,
 
     /* Create histograms directory if not present */
 
-    snprintf(dirname_histograms, 150, "%s/histograms", dirname);
+    snprintf(dirname_histograms, 600, "%s/histograms", dirname);
     dirname_histograms[149] = '\0';
 
     if (cs_file_isdir(dirname_histograms) != 1)

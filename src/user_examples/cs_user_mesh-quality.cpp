@@ -88,10 +88,8 @@ cs_user_mesh_smoothe([[maybe_unused]] cs_mesh_t  *mesh)
 {
   /*! [mesh_smoothing] */
 
-  double feature_angle = 25; /* bounded between 0 and 90 degrees */
-  int *vtx_is_fixed = nullptr;
-
-  CS_MALLOC(vtx_is_fixed, mesh->n_vertices, int);
+  cs_real_t feature_angle = 25; /* bounded between 0 and 90 degrees */
+  cs_array<int>vtx_is_fixed(mesh->n_vertices);
 
   /* Get fixed boundary vertices flag */
 
@@ -102,10 +100,6 @@ cs_user_mesh_smoothe([[maybe_unused]] cs_mesh_t  *mesh)
   /* Call unwarping smoother */
 
   cs_mesh_smoother_unwarp(mesh, vtx_is_fixed);
-
-  /* Free memory */
-
-  CS_FREE(vtx_is_fixed);
 
   /*! [mesh_smoothing] */
 }
@@ -136,27 +130,20 @@ cs_user_mesh_bad_cells_tag
   const cs_lnum_t  n_cells_wghosts = mesh->n_cells_with_ghosts;
   unsigned  *bad_cell_flag         = mesh_quantities->bad_cell_flag;
 
-  double *volume  = mesh_quantities->cell_vol;
-
-  cs_lnum_t cell_id;
-  cs_gnum_t n_cells_tot, iwarning, ibad;
+  cs_real_t *volume = mesh_quantities->cell_vol;
+  cs_gnum_t iwarning, ibad;
 
   /*---------------------------------------*/
   /* User condition: check for cell volume */
   /*---------------------------------------*/
 
-  cs_lnum_t  *bad_vol_cells = nullptr;
-
-  CS_MALLOC(bad_vol_cells, n_cells_wghosts, cs_lnum_t);
-
-  for (cell_id = 0; cell_id < n_cells_wghosts; cell_id++)
-    bad_vol_cells[cell_id] = 0;
+  cs_array<cs_lnum_t>bad_vol_cells(n_cells_wghosts);
+  bad_vol_cells.zero();
 
   /* Get the total number of cells within the domain */
-  n_cells_tot = n_cells;
-  cs_parall_counter(&n_cells_tot, 1);
+  const cs_gnum_t n_cells_tot = mesh->n_g_cells;
 
-  for (cell_id = 0; cell_id < n_cells; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
     /* Compare the cell volume to the user condition */
 
@@ -173,7 +160,7 @@ cs_user_mesh_bad_cells_tag
 
   ibad = 0;
   iwarning = 0;
-  for (cell_id = 0; cell_id < n_cells; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     if (bad_cell_flag[cell_id] & CS_BAD_CELL_USER) {
       ibad++;
       iwarning++;
@@ -181,10 +168,8 @@ cs_user_mesh_bad_cells_tag
   }
 
   /* Parallel processing */
-  if (cs_glob_rank_id >= 0) {
-    cs_parall_counter(&ibad, 1);
-    cs_parall_counter(&iwarning, 1);
-  }
+  cs_parall_counter(&ibad, 1);
+  cs_parall_counter(&iwarning, 1);
 
   /* Display log output */
   bft_printf("\n  Criteria 6: User Specific Tag:\n");
@@ -198,14 +183,6 @@ cs_user_mesh_bad_cells_tag
        " --------\n"
        "    Mesh quality issue based on user criteria has been detected\n\n"
        "    The mesh should be re-considered using the listed criteria.\n\n");
-
-  /* Post processing is activated automatically in mesh quality mode
-     for the CS_BAD_CELL_USER tag, as for all tags defined in
-     cs_user_bad_cells.h.
-     For a different tag, postprocessing could be done with a user
-     postprocessing function, or calling directly cs_post_write_var(). */
-
-  CS_FREE(bad_vol_cells);
 
   /*! [mesh_tag_bad_cells] */
 }

@@ -58,7 +58,7 @@
 
   \section cs_user_postprocess_h_writers_mesh Mesh or sub-mesh output writers
 
-  The following local variable definitions can shared beween several examples:
+  The following local variable definitions can be shared beween several examples:
 
   \snippet cs_user_postprocess.cpp post_define_writer_freq
 

@@ -418,31 +418,28 @@ cs_user_time_moments(void)
   /*! [tmom_velocity_rotation] */
 
   /*! [tmom_all_variables] */
-  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
+  constexpr int n_moment_fields = 1;
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
 
     cs_field_t *f = cs_field(f_id);
-    if (f->type & CS_FIELD_VARIABLE) {
+    if (!(f->type & CS_FIELD_VARIABLE))
+      continue;
 
-      int moment_f_id[] = {f_id};
-      int moment_c_id[] = {-1};
-      int n_fields = 1;
-      const char extension[] = "_mean";
-      char *mean_name;
-      CS_MALLOC(mean_name, strlen(f->name) + 1 + 5, char);
+    int moment_f_id[] = {f_id};
+    int moment_c_id[] = {-1};
+    std::string mean_name = std::string(f->name) + "_mean";
 
-      strcpy(mean_name, f->name); /* copy field name into the new var */
-      strcat(mean_name, extension); /* add the extension */
-
-      cs_time_moment_define_by_field_ids(mean_name,
-                                         n_fields,
-                                         moment_f_id,
-                                         moment_c_id,
-                                         CS_TIME_MOMENT_MEAN,
-                                         10, /* nt_start */
-                                         -1, /* t_start */
-                                         CS_TIME_MOMENT_RESTART_AUTO,
-                                         nullptr);
-    }
+    cs_time_moment_define_by_field_ids(mean_name.c_str(),
+                                       n_moment_fields,
+                                       moment_f_id,
+                                       moment_c_id,
+                                       CS_TIME_MOMENT_MEAN,
+                                       10, /* nt_start */
+                                       -1, /* t_start */
+                                       CS_TIME_MOMENT_RESTART_AUTO,
+                                       nullptr);
   }
   /*! [tmom_all_variables] */
 }

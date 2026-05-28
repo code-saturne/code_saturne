@@ -43,6 +43,13 @@
  * User function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*
+ * Setup function for 1D wall thermal module, used to define global
+ * parameters and options, such as postprocessing.
+ */
+/*----------------------------------------------------------------------------*/
+
 #pragma weak cs_user_1d_wall_thermal_setup
 void
 cs_user_1d_wall_thermal_setup(void)

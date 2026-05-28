@@ -45,13 +45,13 @@
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief setup function for 1D wall thermal module, used to define global
+ * Setup function for 1D wall thermal module, used to define global
  * parameters and options, such as postprocessing.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_1d_wall_thermal_setup()
+cs_user_1d_wall_thermal_setup(void)
 {
   /*! [th1d_activate_postprocessing] */
   cs_1d_wall_thermal_post_set_status(true);
@@ -85,7 +85,6 @@ cs_user_1d_wall_thermal_setup()
                                               geom_factor);
   }
   /*! [th1d_define_layer_mesh] */
-
 
   /*! [th1d_define_layer_properties] */
   {
@@ -126,7 +125,6 @@ cs_user_1d_wall_thermal_setup()
     cs_1d_wall_thermal_zone_define_robin_bc_const(zone, Text, hext);
   }
   /*! [th1d_define_robin_bc] */
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -142,10 +142,6 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
             const cs_equation_t        *eq,
             bool                        anacomp)
 {
-  int  len;
-
-  char  *postlabel = nullptr;
-
   const double  tcur = time_step->t_cur;
   const cs_lnum_t  n_vertices = cdoq->n_vertices;
   const cs_field_t  *field = cs_equation_get_field(eq);
@@ -192,7 +188,8 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
     for (int i = 0; i < n_vertices; i++)
       ddip[i] = rpex[i] - pdi[i];
 
-    len = strlen(field->name) + 7 + 1;
+    char  *postlabel = nullptr;
+    size_t len = strlen(field->name) + 7 + 1;
     CS_MALLOC(postlabel, len, char);
     sprintf(postlabel, "%s.Error", field->name);
 
