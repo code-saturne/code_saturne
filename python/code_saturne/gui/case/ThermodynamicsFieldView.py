@@ -779,8 +779,6 @@ temperature = enthalpy / 1000;
                 self.lineEditThermalConductivity.setReadOnly(False)
                 self.lineEditThermalConductivity.setEnabled(is_main_zone)
 
-            self.groupBoxCompressible.hide()
-
             list = [('density', 'Density'),
                     ('molecular_viscosity', 'Viscosity'),
                     ('specific_heat', 'SpecificHeat'),
