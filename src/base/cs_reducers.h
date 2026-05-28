@@ -194,7 +194,6 @@ struct cs_reduce_min3float_max3float {
     a.r1[1] = cs_math_infinite_r;
     a.r1[2] = cs_math_infinite_r;
 
-
     a.r2[0] = -cs_math_infinite_r;
     a.r2[1] = -cs_math_infinite_r;
     a.r2[2] = -cs_math_infinite_r;
@@ -519,6 +518,27 @@ struct cs_reduce_min_nr {
   combine(volatile T &a, volatile const T &b) const {
     for (size_t i = 0; i < stride; i++) {
       a.r[i] = cs::min(a.r[i], b.r[i]);
+    }
+  }
+};
+
+// Strided max:
+
+template<size_t stride>
+struct cs_reduce_max_nr {
+  using T = cs_data_double_n<stride>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = -HUGE_VAL;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.r[i] = cs::max(a.r[i], b.r[i]);
     }
   }
 };

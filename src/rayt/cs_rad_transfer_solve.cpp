@@ -66,6 +66,7 @@
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "base/cs_parameters_check.h"
+#include "base/cs_reducers.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_equation_iterative_solve.h"
 #include "alge/cs_gradient.h"
@@ -405,6 +406,8 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   cs_field_t *f_snplus = cs_field("rad_net_flux");
 
+  cs_dispatch_context ctx;
+
   /* Allocate work arrays */
 
   cs_array<cs_real_t> ck_u_d;
@@ -417,14 +420,16 @@ _cs_rad_transfer_sol(int                        gg_id,
   cs_array<cs_real_t> dcp(n_cells_ext);
 
   if (cs_glob_fluid_properties->icp > 0) {
-    const cs_field_t *f_cp = CS_F_(cp);
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-      dcp[cell_id] = 1. / f_cp->val[cell_id];
+    const cs_real_t *f_cp_val = CS_F_(cp)->val;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+      dcp[cell_id] = 1. / f_cp_val[cell_id];
+    });
   }
   else {
     const cs_real_t dcp0 = 1.0 / cs_glob_fluid_properties->cp0;
-    cs_array_real_set_scalar(n_cells, dcp0, dcp);
+    cs_arrays_set_value<cs_real_t, 1>(ctx, n_cells, dcp0, dcp);
   }
+  ctx.wait();
 
   /* Upwards/Downwards atmospheric integration */
   /* Postprocessing atmospheric upwards and downwards flux */
@@ -446,7 +451,6 @@ _cs_rad_transfer_sol(int                        gg_id,
   }
 
   cs_real_t vect_s[3];
-  cs_real_t vect_s0[3];
   cs_real_t domegat = 0;
   bool one_dir = false;
   cs_real_t muzero_cor = 0.;
@@ -480,20 +484,18 @@ _cs_rad_transfer_sol(int                        gg_id,
                                  &omega,
                                  &fo);
 
-    /* Zenithal angle:
-     * muzero is almost cos(za),
-     * but take earth curvature into account */
-    cs_real_t sinza = sqrt(1. - muzero_cor * muzero_cor);
-    vect_s0[0] = - sinza * sin(omega);
-    vect_s0[1] = - sinza * cos(omega);
-    vect_s0[2] = - muzero_cor; /*  cos(za) */
-
     /* For direct solar radiation */
     if (   (gg_id == rt_params->atmo_dr_id)
         || (gg_id == rt_params->atmo_dr_o3_id)) {
-      vect_s[0] = vect_s0[0];
-      vect_s[1] = vect_s0[1];
-      vect_s[2] = vect_s0[2];
+
+      /* Zenithal angle:
+       * muzero is almost cos(za),
+       * but take earth curvature into account */
+      cs_real_t sinza = sqrt(1. - muzero_cor * muzero_cor);
+
+      vect_s[0] = - sinza * sin(omega);
+      vect_s[1] = - sinza * cos(omega);
+      vect_s[2] = - muzero_cor; /*  cos(za) */;
 
       if (verbosity > 0)
         bft_printf("     Solar direction [%f, %f, %f]\n",
@@ -559,31 +561,33 @@ _cs_rad_transfer_sol(int                        gg_id,
     }
   }
 
-  /* initialization for integration in following loops */
-  cs_array_real_fill_zero(n_b_faces, f_qinci->val);
-  cs_array_real_fill_zero(n_b_faces, f_snplus->val);
-
-  # pragma omp parallel for if (n_cells_ext > CS_THR_MIN)
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    int_rad_domega[cell_id] = 0.0;
-    int_abso[cell_id] = 0.0;
-    int_emi[cell_id] = 0.0;
-    int_rad_ist[cell_id] = 0.0;
-    q[cell_id][0] = 0.0;
-    q[cell_id][1] = 0.0;
-    q[cell_id][2] = 0.0;
-  }
-
   /* Save rhs in buffer, reload at each change of direction */
   cs_array_real_copy(n_cells, rhs, rhs0);
 
+  /* initialization for integration in following loops */
+  cs_arrays_set_zero<cs_real_t, 1>(ctx, n_b_faces, f_qinci->val, f_snplus->val);
+
+  cs_arrays_set_zero<cs_real_t, 1>(ctx,
+                                   n_cells_ext,
+                                   int_rad_domega,
+                                   int_abso,
+                                   int_emi,
+                                   int_rad_ist);
+
+  cs_arrays_set_zero<cs_real_t, 3>(ctx, n_cells_ext,
+                                   reinterpret_cast<cs_real_t *>(q));
+
   /* rovsdt loaded once only */
 
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     rovsdt[cell_id] = cs::max(rovsdt[cell_id], 0.0);
+  });
+
+  ctx.wait();
 
   /* Angular discretization */
 
+  int rt_n_dirs = rt_params->ndirs;
   int kdir = 0;
 
   /* When having only one direction, one pass is enough... */
@@ -657,7 +661,24 @@ _cs_rad_transfer_sol(int                        gg_id,
 
             cs_real_t mu = cs_math_3_dot_product(grav, vect_s)
                          / cs_math_3_norm(grav);
-            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+            int atmo_ir_id = rt_params->atmo_ir_id;
+            bool diffuse_solar_ir_or_uv
+              = (   gg_id == rt_params->atmo_df_id
+                 || gg_id == rt_params->atmo_df_o3_id);
+            cs_real_t *radiance_op = nullptr;
+
+            if (diffuse_solar_ir_or_uv) {
+              /* Delta function for the moment: take the opposite direction */
+              /* Opposite direction */
+              int kdir2 = kdir -     jj * rt_params->ndirs
+                               - 2 * ii * rt_params->ndirs
+                               - 4 * kk * rt_params->ndirs;
+              int rad_id2 = n_dirs * gg_id + kdir2;
+              radiance_op = CS_FI_(radiance, rad_id2)->val;
+            }
+
+            ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
               cs_real_t ck_op;
               /* ck contains dtau/dz */
               if (mu < 0.0) {
@@ -673,7 +694,7 @@ _cs_rad_transfer_sol(int                        gg_id,
               rovsdt[cell_id] =  ck_u_d[cell_id] * cell_vol[cell_id];
 
               /* Emission in Infra red */
-              if (gg_id == rt_params->atmo_ir_id)
+              if (gg_id == atmo_ir_id)
                 rhs[cell_id] =   ck_u_d[cell_id] * cell_vol[cell_id]
                              * c_stefan * cs_math_pow4(tempk[cell_id]) * onedpi;
 
@@ -683,9 +704,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
               /* Diffuse Solar IR (H2O band)
                * or Diffuse Solar UV (O3 band) */
-              if (   gg_id == rt_params->atmo_df_id
-                  || gg_id == rt_params->atmo_df_o3_id) {
-
+              if (diffuse_solar_ir_or_uv) {
                 cs_real_t factor = 0;
                 /* w0 (1 +- g) S0 */
                 cs_real_t _w0 = w0[gg_id + cell_id * stride];
@@ -707,21 +726,11 @@ _cs_rad_transfer_sol(int                        gg_id,
                 factor = 0.5 * (1. + _gapc);
                 rovsdt[cell_id] *= (1. - _w0 * factor);
 
-                /* Delta function for the moment: take the opposite direction */
-                /* Opposite direction */
-                int kdir2 = kdir -     jj * rt_params->ndirs
-                                 - 2 * ii * rt_params->ndirs
-                                 - 4 * kk * rt_params->ndirs;
-                int rad_id2 = n_dirs * gg_id + kdir2;
-
-                cs_real_t *radiance_op = CS_FI_(radiance, rad_id2)->val;
                 factor = 0.5 * (1. - _gapc);
                 rhs[cell_id] +=  ck_op * _w0 * factor
                   * radiance_op[cell_id] * cell_vol[cell_id];
-
-
               }
-            }
+            });
           }
 
           /* Implicit source term (rovsdt seen above) */
@@ -817,7 +826,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
           if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
 
-            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+            ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
               cs_real_t aa = radiance[cell_id] * domegat;
               int_rad_domega[cell_id]  += aa;
               /* Absorption */
@@ -838,27 +847,29 @@ _cs_rad_transfer_sol(int                        gg_id,
               q[cell_id][0] += aa * vect_s[0];
               q[cell_id][1] += aa * vect_s[1];
               q[cell_id][2] += aa * vect_s[2];
-            }
+            });
 
           }
           else {
 
-            for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+            ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
               cs_real_t aa = radiance[cell_id] * domegat;
               int_rad_domega[cell_id]  += aa;
               q[cell_id][0] += aa * vect_s[0];
               q[cell_id][1] += aa * vect_s[1];
               q[cell_id][2] += aa * vect_s[2];
-            }
+            });
 
           }
+          ctx.wait();
 
-          /* Flux incident to boundary */
+          /* Incident flux to boundary */
 
           cs_field_t *f_albedo = cs_field_try("boundary_albedo");
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
             cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[face_id];
-            cs_real_t aa = cs_math_3_dot_product(vect_s, b_face_u_normal[face_id]);
+            cs_real_t aa = cs_math_3_dot_product(vect_s,
+                                                 b_face_u_normal[face_id]);
             aa = 0.5 * (aa + cs::abs(aa)) * domegat;
             f_snplus->val[face_id] += aa;
             f_qinci->val[face_id] += aa * radiance[cell_id];
@@ -925,38 +936,38 @@ _cs_rad_transfer_sol(int                        gg_id,
   if (rt_params->atmo_model == CS_RAD_ATMO_3D_NONE) {
 
     /* Absorption */
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       int_abso[cell_id] = ckg[cell_id] * int_rad_domega[cell_id];
+    });
 
     /* Emission and implicit ST */
     if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0) {
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        int_emi[cell_id] = 0.0;
-        int_rad_ist[cell_id] = 0.0;
-      }
+      cs_arrays_set_zero<cs_real_t, 1>(ctx, n_cells,
+                                       int_emi, int_rad_ist);
     }
     else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == -1
              && cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == -1) {
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
-          * cs_math_pow4(tempk[cell_id]);
+                            * cs_math_pow4(tempk[cell_id]);
 
         int_rad_ist[cell_id] -=   16.0 * dcp[cell_id] * ckg[cell_id]
-          * c_stefan * cs_math_pow3(tempk[cell_id]);
-      }
+                                * c_stefan * cs_math_pow3(tempk[cell_id]);
+      });
     }
     else {
       cs_real_t *cpro_t4m = cs_field("temperature_4")->val;
       cs_real_t *cpro_t3m = cs_field("temperature_3")->val;
 
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
-          * cpro_t4m[cell_id];
+                            * cpro_t4m[cell_id];
 
         int_rad_ist[cell_id] -=   16.0 * dcp[cell_id] * ckg[cell_id]
-          * c_stefan * cpro_t3m[cell_id];
-      }
+                                * c_stefan * cpro_t3m[cell_id];
+      });
     }
+    ctx.wait();
 
   }
 
@@ -1201,6 +1212,7 @@ _rad_transfer_solve(int bc_type[])
   cs_array<cs_real_t> flurdb(n_b_faces);
 
   /* Allocate work arrays */
+
   /* Absorption coefficient of the bulk phase */
   cs_array<cs_real_t> ckmix(n_cells_ext);
 
@@ -1291,12 +1303,13 @@ _rad_transfer_solve(int bc_type[])
   cs_real_t onedpi = 1.0 / cs_math_pi;
 
   /* Bulk absorption:
-   * Radiation absorbed by the gas phase and the solid phase
-     (all particles classes) */
+     Radiation absorbed by the gas phase and the solid phase
+     (all particles classes)
+     Sum, i((kg, i+kp) * Integral(Ii)dOmega) */
   cs_real_t *absom = CS_FI_(rad_abs, 0)->val;
 
-  /* Bulk emission by the gas phase and the solid phase
-     (all particles classes)*/
+  /* Emitted radiation: Sum, i((kg, i+kp) * c_stefan * T^4 *agi):
+   * for the gas phase and the solid/droplet phase (all classes) */
   cs_real_t *emim = CS_FI_(rad_emi, 0)->val;
 
   /* Bulk implicit source term */
@@ -1308,52 +1321,36 @@ _rad_transfer_solve(int bc_type[])
   /* Medium (gas) Absorption coefficient */
   cs_real_t *ckg = CS_FI_(rad_cak, 0)->val;
 
+  /* Total emitted intensity */
+  cs_real_t *cpro_lumin = CS_F_(rad_energy)->val;
+
   /* Work arrays */
   cs_array<cs_real_t> int_abso;
   cs_array<cs_real_t> int_emi(n_cells_ext);
   cs_array<cs_real_t> int_rad_ist(n_cells_ext);
 
-  cs_real_t *cpro_lumin = CS_F_(rad_energy)->val;
   cs_real_3_t *cpro_q = (cs_real_3_t *)(CS_F_(rad_q)->val);
+
+  cs_dispatch_context ctx;
 
   /* Work arrays */
 
-  /* Radiation coefficient k of the gas phase */
-  cs_array_real_fill_zero(n_cells, ckg);
-
-  /* Bulk Implicit ST due to emission
-   * for the gas phase and the solid/droplet phase (all classes) */
-  cs_array_real_fill_zero(n_cells, rad_istm);
-
-  /* Explicit ST due to emission and absorption */
-  cs_array_real_fill_zero(n_cells, rad_estm);
-
-  /* Absorption: Sum, i((kg, i+kp) * Integral(Ii)dOmega):
-   * for the gas phase and the solid/droplet phase (all classes) */
-  cs_array_real_fill_zero(n_cells, absom);
-
-  /* Emitted radiation: Sum, i((kg, i+kp) * c_stefan * T^4 *agi):
-   * for the gas phase and the solid/droplet phase (all classes) */
-  cs_array_real_fill_zero(n_cells, emim);
+  cs_arrays_set_zero<cs_real_t, 1>(ctx, n_cells,
+                                   ckg, rad_istm, rad_estm,
+                                   absom, emim, cpro_lumin, ckmix);
 
   /* radiative flux vector */
-  cs_array_real_fill_zero(3 * n_cells, (cs_real_t*)cpro_q);
-
-  /* Total emitted intensity   */
-  cs_array_real_fill_zero(n_cells, cpro_lumin);
-
-  /* Radiation coefficient of the bulk phase:
-   * for the gas phase and the solid/droplet phase (all classes) */
-  cs_array_real_fill_zero(n_cells, ckmix);
+  cs_arrays_set_zero<cs_real_t, 3>(ctx, n_cells, (cs_real_t*)cpro_q);
 
   /* In case of grey gas radiation properties (kgi != f(lambda))
    * agi must be set to 1. */
   for (int i = 0; i < nwsgg; i++) {
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       kgi(i, cell_id) = 0.0;
       agi(i, cell_id) = 1.0;
-    }
+    });
   }
+  ctx.wait();
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     iqpato[ifac] = 0.0;
@@ -1371,10 +1368,10 @@ _rad_transfer_solve(int bc_type[])
     cs_real_t *cpro_abso = CS_FI_(rad_abs, class_num)->val;
     cs_real_t *cpro_emi  = CS_FI_(rad_emi, class_num)->val;
     cs_real_t *cpro_stri = CS_FI_(rad_ist, class_num)->val;
-    cs_array_real_fill_zero(n_cells, cpro_emi);
-    cs_array_real_fill_zero(n_cells, cpro_abso);
-    cs_array_real_fill_zero(n_cells, cpro_stri);
+    cs_arrays_set_zero<cs_real_t, 1>(ctx, n_cells,
+                                     cpro_emi, cpro_abso, cpro_stri);
   }
+  ctx.wait();
 
   /* Upward/Downward atmospheric integration */
   /* Postprocessing atmospheric upward and downward flux */
@@ -1590,18 +1587,23 @@ _rad_transfer_solve(int bc_type[])
       cs_real_t *ck_u = cs_field("rad_absorption_coeff_up")->val;
       cs_real_t *ck_d = cs_field("rad_absorption_coeff_down")->val;
 
-      cs_real_t ckumax = 0.0, ckdmax = 0.0;
+      struct cs_data_double_n<2> rd_ck;
+      struct cs_reduce_max_nr<2> reducer_ck;
 
-      # pragma omp simd reduction(max:ckumax, ckdmax)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; ++c_id) {
+      ctx.parallel_for_reduce(n_cells, rd_ck, reducer_ck, CS_LAMBDA
+                              (cs_lnum_t c_id, cs_data_double_n<2> &res)
+      {
         const cs_lnum_t idx = gg_id + c_id * nwsgg;
 
-        ckumax = cs::max(ckumax, ck_u[idx]);
-        ckdmax = cs::max(ckdmax, ck_d[idx]);
-      }
+        res.r[0] = ck_u[idx];
+        res.r[1] = ck_d[idx];
+      });
+      ctx.wait();
 
       /* Parallel reductions */
-      cs_parall_max_scalars(ckumax, ckdmax);
+      cs_parall_max(2, CS_REAL_TYPE, rd_ck.r);
+
+      cs_real_t ckumax = rd_ck.r[0], ckdmax = rd_ck.r[1];
 
       /* Logging */
       if (    verbosity > 0
@@ -2435,38 +2437,27 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   cs_real_t   *cpro_lumin = CS_F_(rad_energy)->val;
   cs_real_3_t *cpro_q     = (cs_real_3_t *)(CS_F_(rad_q)->val);
 
-  /* Radiation coefficient k of the gas phase */
-  cs_array_real_fill_zero(n_cells, ckg);
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  /* balance_by_zone case not ported to GPU */
 
-  /* Bulk Implicit ST due to emission
-   * for the gas phase and the solid/droplet phase (all classes) */
-  cs_array_real_fill_zero(n_cells, rad_istm);
-
-  /* Explicit ST due to emission and absorption */
-  cs_array_real_fill_zero(n_cells, rad_estm);
-
-  /* Absorption: Sum, i((kg, i+kp) * Integral(Ii)dOmega):
-   * for the gas phase and the solid/droplet phase (all classes) */
-  cs_array_real_fill_zero(n_cells, absom);
-
-  /* Emitted radiation: Sum, i((kg, i+kp) * c_stefan * T^4 *agi):
-   * for the gas phase and the solid/droplet phase (all classes) */
-  cs_array_real_fill_zero(n_cells, emim);
+  cs_arrays_set_zero<cs_real_t, 1>(ctx, n_cells,
+                                   ckg, rad_istm, rad_estm,
+                                   absom, emim, cpro_lumin);
 
   /* radiative flux vector */
-  cs_array_real_fill_zero(3 * n_cells, (cs_real_t *) cpro_q);
-
-  /* Total emitted intensity   */
-  cs_array_real_fill_zero(n_cells, cpro_lumin);
+  cs_arrays_set_zero<cs_real_t, 3>(ctx, n_cells_ext,
+                                   reinterpret_cast<cs_real_t *>(cpro_q));
 
   /* In case of grey gas radiation properties (kgi != f(lambda))
    * agi must be set to 1. */
   for (int i = 0; i < nwsgg; i++) {
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       kgi(i, cell_id) = 0.0;
       agi(i, cell_id) = 1.0;
-    }
+    });
   }
+
+  ctx.wait();
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     iqpato[ifac] = 0.0;
@@ -2477,10 +2468,12 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     }
   }
 
-  if (pm_flag[CS_COMBUSTION_SLFM] >= 0)
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
+  if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
+    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
       for (int i = 0; i < nwsgg; i++)
         w_gg(i, ifac) = 0.0;
+    }
+  }
 
   /* Upward/Downward atmospheric integration */
   /* Postprocessing atmospheric upward and downward flux */
