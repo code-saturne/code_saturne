@@ -621,8 +621,6 @@ temperature = enthalpy / 1000;
         self.tableViewProperties.clicked.connect(self.slotChangeSelection)
         self.pushButtonEOS.clicked.connect(self.slotEOS)
         self.pushButtonTemperature.clicked.connect(self.slotFormulaTemperature)
-        self.pushButtondRodp.clicked.connect(self.slotFormuladrodp)
-        self.pushButtondRodh.clicked.connect(self.slotFormuladrodh)
 
         # load Field
         for fieldId in self.mdl.mainFieldsModel.getFieldIdList():
@@ -816,22 +814,6 @@ temperature = enthalpy / 1000;
                     __line.setEnabled(False)
                     __line.setText("")
                     __button.setStyleSheet("background-color: None")
-
-            # Test for compressible flow
-            if field.compressible == "on":
-                self.groupBoxCompressible.show()
-                exp = self.mdl.getFormula(fieldId, 'd_rho_d_P', zone=self.zone_id)
-                if exp:
-                    self.pushButtondRodp.setStyleSheet("background-color: green")
-                    self.pushButtondRodp.setToolTip(exp)
-                else:
-                    self.pushButtondRodp.setStyleSheet("background-color: red")
-                exp = self.mdl.getFormula(fieldId, 'd_rho_d_h', zone=self.zone_id)
-                if exp:
-                    self.pushButtondRodh.setStyleSheet("background-color: green")
-                    self.pushButtondRodh.setToolTip(exp)
-                else:
-                    self.pushButtondRodh.setStyleSheet("background-color: red")
 
             # Temperature / enthalpy law
             self.groupBoxTemperature.hide()
@@ -1065,64 +1047,6 @@ temperature = enthalpy / 1000;
             self.mdl.setFormula(str(fieldId), 'temperature', result, zone=self.zone_id)
             self.pushButtonTemperature.setStyleSheet("background-color: green")
             self.pushButtonTemperature.setToolTip(result)
-
-
-    @Slot()
-    def slotFormuladrodp(self):
-        """
-        User formula for d(ro) / dp (compressible flow)
-        """
-        fieldId = self.currentFluid
-        exp, req, sca, symbols = self.mdl.getFormuladrodpComponents(fieldId, zone=self.zone_id)
-
-        exa = "d_rho_d_P = 0.;"
-
-        vname = "d_rho_d_P_%s" % (str(fieldId))
-        dialog = QMegEditorView(parent        = self,
-                                function_type = 'vol',
-                                zone_name     = self.zone_name,
-                                variable_name = vname,
-                                expression    = exp,
-                                required      = req,
-                                symbols       = symbols,
-                                known_fields  = sca,
-                                examples      = exa)
-
-        if dialog.exec():
-            result = dialog.get_result()
-            log.debug("slotFormuladrodp -> %s" % str(result))
-            self.mdl.setFormula(str(fieldId), 'd_rho_d_P', result, zone=self.zone_id)
-            self.pushButtondRodp.setStyleSheet("background-color: green")
-            self.pushButtondRodp.setToolTip(result)
-
-
-    @Slot()
-    def slotFormuladrodh(self):
-        """
-        User formula for d(ro) / dh (compressible flow)
-        """
-        fieldId = self.currentFluid
-        exp, req, sca, symbols = self.mdl.getFormuladrodhComponents(fieldId, zone=self.zone_id)
-
-        exa = "d_rho_d_h = 0.;"
-
-        vname = "d_rho_d_h_%s" % (str(fieldId))
-        dialog = QMegEditorView(parent        = self,
-                                function_type = 'vol',
-                                zone_name     = self.zone_name,
-                                variable_name = vname,
-                                expression    = exp,
-                                required      = req,
-                                symbols       = symbols,
-                                known_fields  = sca,
-                                examples      = exa)
-
-        if dialog.exec():
-            result = dialog.get_result()
-            log.debug("slotFormuladrodh -> %s" % str(result))
-            self.mdl.setFormula(str(fieldId), 'd_rho_d_h', result, zone=self.zone_id)
-            self.pushButtondRodh.setStyleSheet("background-color: green")
-            self.pushButtondRodh.setToolTip(result)
 
 
 #-------------------------------------------------------------------------------
