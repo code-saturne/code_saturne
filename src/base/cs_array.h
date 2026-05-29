@@ -52,6 +52,9 @@
 #include "base/cs_mdspan.h"
 #include "base/cs_parall.h"
 
+#if defined(__cplusplus)
+#include <limits>
+#endif
 /*----------------------------------------------------------------------------*/
 
 /*=============================================================================
@@ -1257,6 +1260,9 @@ public:
                   " cs::array<T,1> or cs::array<T>");
     _span::set_size_(size);
     allocate_(file_name, line_number);
+#if defined(CS_ARRAY_DBG_INIT)
+    set_to_nan_();
+#endif
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1286,6 +1292,9 @@ public:
   {
     _span::set_size_(dims);
     allocate_(file_name, line_number);
+#if defined(CS_ARRAY_DBG_INIT)
+    set_to_nan_();
+#endif
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1321,6 +1330,9 @@ public:
     cs_lnum_t tmp_size[N] = {size1, size2};
     _span::set_size_(tmp_size);
     allocate_(file_name, line_number);
+#if defined(CS_ARRAY_DBG_INIT)
+    set_to_nan_();
+#endif
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1357,6 +1369,9 @@ public:
     cs_lnum_t tmp_size[N] = {size1, size2, size3};
     _span::set_size_(tmp_size);
     allocate_(file_name, line_number);
+#if defined(CS_ARRAY_DBG_INIT)
+    set_to_nan_();
+#endif
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1394,6 +1409,9 @@ public:
     cs_lnum_t tmp_size[N] = {size1, size2, size3, size4};
     _span::set_size_(tmp_size);
     allocate_(file_name, line_number);
+#if defined(CS_ARRAY_DBG_INIT)
+    set_to_nan_();
+#endif
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2268,6 +2286,21 @@ private:
     }
   };
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Private setter to NaN to detect non initialized values arrays.
+   */
+  /*--------------------------------------------------------------------------*/
+  CS_F_HOST
+  inline
+  void
+  set_to_nan_()
+  {
+    auto& ctx = cs::execution::default_context();
+    constexpr T tmp_nan = std::numeric_limits<T>::signaling_NaN();
+    _span::set_to_val(ctx, tmp_nan);
+    ctx.wait();
+  }
   /*===========================================================================
    * Private members
    *==========================================================================*/
