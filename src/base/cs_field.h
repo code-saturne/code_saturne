@@ -371,20 +371,41 @@ public:
     const int time_id = 0
   ) const;
 
+  [[deprecated("Use `get_val_s` instead")]]
   cs_span<cs_real_t>
   get_vals_s
   (
     const int time_id = 0
   ) const;
 
+  [[deprecated("Use `get_val_v` instead")]]
   cs_span_2d<cs_real_t>
   get_vals_v
   (
     const int time_id = 0
   ) const;
 
+  [[deprecated("Use `get_val_t` instead")]]
   cs_span_2d<cs_real_t>
   get_vals_t
+  (
+    const int time_id = 0
+  ) const;
+
+  cs_span<cs_real_t>
+  get_val_s
+  (
+    const int time_id = 0
+  ) const;
+
+  cs_span_2d<cs_real_t>
+  get_val_v
+  (
+    const int time_id = 0
+  ) const;
+
+  cs_span_2d<cs_real_t>
+  get_val_t
   (
     const int time_id = 0
   ) const;
@@ -413,20 +434,41 @@ public:
     const int time_id = 0
   ) const;
 
+  [[deprecated("Use `get_ns_val_s` instead")]]
   cs_span_2d<cs_real_t>
   get_ns_vals_s
   (
     const int time_id = 0
   ) const;
 
+  [[deprecated("Use `get_ns_val_v` instead")]]
   cs_span_3d<cs_real_t>
   get_ns_vals_v
   (
     const int time_id = 0
   ) const;
 
+  [[deprecated("Use `get_ns_val_t` instead")]]
   cs_span_3d<cs_real_t>
   get_ns_vals_t
+  (
+    const int time_id = 0
+  ) const;
+
+  cs_span_2d<cs_real_t>
+  get_ns_val_s
+  (
+    const int time_id = 0
+  ) const;
+
+  cs_span_3d<cs_real_t>
+  get_ns_val_v
+  (
+    const int time_id = 0
+  ) const;
+
+  cs_span_3d<cs_real_t>
+  get_ns_val_t
   (
     const int time_id = 0
   ) const;

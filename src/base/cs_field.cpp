@@ -4988,6 +4988,83 @@ cs_field_t::view
 /*----------------------------------------------------------------------------*/
 
 cs_span<cs_real_t>
+cs_field_t::get_val_s
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  if (this->dim != 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a scalar and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  return this->_vals[time_id]->view_1d();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of field values. If the field is not a vector
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span_2d<cs_real_t>(:,3) view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span_2d<cs_real_t>
+cs_field_t::get_val_v
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  if (this->dim != 3)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a vector and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  /* Object is cs_array_2d, hence 'view()' already returns a cs_span_2d
+   * with correct dimensions.
+   */
+  return this->_vals[time_id]->view();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of field values. If the field is not a tensor
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span_2d<cs_real_t>(:,6) view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span_2d<cs_real_t>
+cs_field_t::get_val_t
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  if (this->dim != 6)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a tensor and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  /* Object is cs_array_2d, hence 'view()' already returns a cs_span_2d
+   * with correct dimensions.
+   */
+  return this->_vals[time_id]->view();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 1D span view of field values. If the field is not a scalar
+ *        a fatal error is provoked.
+ *
+ * \deprecated Use get_val_s instead
+ *
+ * \return  cs_span<cs_real_t> view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span<cs_real_t>
 cs_field_t::get_vals_s
 (
   const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
@@ -5005,6 +5082,8 @@ cs_field_t::get_vals_s
 /*!
  * \brief Return a 2D span view of field values. If the field is not a vector
  *        a fatal error is provoked.
+ *
+ * \deprecated Use get_val_v instead
  *
  * \return  cs_span_2d<cs_real_t>(:,3) view of field values.
  */
@@ -5031,6 +5110,8 @@ cs_field_t::get_vals_v
 /*!
  * \brief Return a 2D span view of field values. If the field is not a tensor
  *        a fatal error is provoked.
+ *
+ * \deprecated Use get_val_t instead
  *
  * \return  cs_span_2d<cs_real_t>(:,6) view of field values.
  */
@@ -5173,6 +5254,8 @@ cs_field_t::ns_view
  * \brief Return a 1D span view of field values. If the field is not a scalar
  *        a fatal error is provoked.
  *
+ * \deprecated Use get_ns_val_s instead
+ *
  * \return  cs_span<cs_real_t> view of field values.
  */
 /*----------------------------------------------------------------------------*/
@@ -5207,6 +5290,8 @@ cs_field_t::get_ns_vals_s
  * \brief Return a 2D span view of field values. If the field is not a vector
  *        a fatal error is provoked.
  *
+ * \deprecated Use get_ns_val_v instead
+ *
  * \return  cs_span_2d<cs_real_t>(:,3) view of field values.
  */
 /*----------------------------------------------------------------------------*/
@@ -5239,12 +5324,112 @@ cs_field_t::get_ns_vals_v
  * \brief Return a 2D span view of field values. If the field is not a tensor
  *        a fatal error is provoked.
  *
+ * \deprecated Use get_ns_val_t instead
+ *
  * \return  cs_span_2d<cs_real_t>(:,6) view of field values.
  */
 /*----------------------------------------------------------------------------*/
 
 cs_span_3d<cs_real_t>
 cs_field_t::get_ns_vals_t
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  if (this->dim != 6)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a tensor and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->_ns_vals == nullptr && this->is_series_owner())
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not associated to a multidimensional "
+                "series.\n"),
+              __func__, this->name);
+
+  /* Object is cs_array_3d, hence 'view()' already returns a cs_span_3d
+   * with correct dimensions.
+   */
+  return _fields[this->ns_owner]->_ns_vals[time_id]->view();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 1D span view of field values. If the field is not a scalar
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span<cs_real_t> view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span_2d<cs_real_t>
+cs_field_t::get_ns_val_s
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  if (this->dim != 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a scalar and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->_ns_vals == nullptr && this->is_series_owner())
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not associated to a multidimensional "
+                "series.\n"),
+              __func__, this->name);
+
+  cs_field_t *ofield = _fields[this->ns_owner];
+
+  cs_lnum_t dim1 = ofield->_ns_vals[time_id]->extent(0);
+  cs_lnum_t dim2 = ofield->_ns_vals[time_id]->extent(1);
+
+  return ofield->_ns_vals[time_id]->get_mdspan(dim1, dim2);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of field values. If the field is not a vector
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span_2d<cs_real_t>(:,3) view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span_3d<cs_real_t>
+cs_field_t::get_ns_val_v
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  if (this->dim != 3)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a vector and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->_ns_vals == nullptr && this->is_series_owner())
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not associated to a multidimensional "
+                "series.\n"),
+              __func__, this->name);
+
+  /* Object is cs_array_3d, hence 'view()' already returns a cs_span_3d
+   * with correct dimensions.
+   */
+ return  _fields[this->ns_owner]->_ns_vals[time_id]->view();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of field values. If the field is not a tensor
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span_2d<cs_real_t>(:,6) view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span_3d<cs_real_t>
+cs_field_t::get_ns_val_t
 (
   const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
 ) const
