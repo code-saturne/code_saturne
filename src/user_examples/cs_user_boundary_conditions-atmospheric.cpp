@@ -164,10 +164,10 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
     cs_span<cs_real_t> bpro_roughness_t;
 
     if (cs_field_try("boundary_roughness") != nullptr)
-      bpro_roughness = cs_field("boundary_roughness")->get_vals_s();
+      bpro_roughness = cs_field("boundary_roughness")->get_val_s();
 
     if (cs_field_try("boundary_thermal_roughness") != nullptr)
-      bpro_roughness = cs_field("boundary_thermal_roughness")->get_vals_s();
+      bpro_roughness = cs_field("boundary_thermal_roughness")->get_val_s();
 
     const cs_zone_t *zn = cs_boundary_zone_by_name("b_5");
 
@@ -191,9 +191,9 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   if (z_id > -1) {
     const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
 
-    auto ground_temperature = cs_field("ground_temperature")->get_vals_s();
-    auto ground_pot_temperature = cs_field("ground_pot_temperature")->get_vals_s();
-    auto ground_total_water = cs_field("ground_total_water")->get_vals_s();
+    auto ground_temperature = cs_field("ground_temperature")->get_val_s();
+    auto ground_pot_temperature = cs_field("ground_pot_temperature")->get_val_s();
+    auto ground_total_water = cs_field("ground_total_water")->get_val_s();
 
     cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 

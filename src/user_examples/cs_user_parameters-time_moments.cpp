@@ -77,8 +77,8 @@ _simple_data_sum([[maybe_unused]] const void  *input,
   const int location_id = CS_MESH_LOCATION_CELLS;
   const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
 
-  auto s1 = cs_field("species_1")->get_vals_s();
-  auto s2 = cs_field("species_2")->get_vals_s();
+  auto s1 = cs_field("species_1")->get_val_s();
+  auto s2 = cs_field("species_2")->get_val_s();
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
     vals[i] = s1[i] + s2[i];

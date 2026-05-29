@@ -1039,7 +1039,7 @@ cs_physical_properties_update(int   iterns)
   // Get View
   cs_span<cs_real_t> rho_b_view;
   if (rho_b_f != nullptr && n_b_faces > 0)
-    rho_b_view = rho_b_f->get_vals_s();
+    rho_b_view = rho_b_f->get_val_s();
 
   int mbrom = 0;
   static bool first_pass = true;
@@ -1099,8 +1099,8 @@ cs_physical_properties_update(int   iterns)
   // Boundary density based on adjacent cell value if not explicitly set.
   if (mbrom == 0 && rho_b_f != nullptr) {
     assert(CS_F_(rho) != nullptr);
-    const cs_span<cs_real_t> crom = CS_F_(rho)->get_vals_s();
-    cs_span<cs_real_t> brom = rho_b_f->get_vals_s();
+    const cs_span<cs_real_t> crom = CS_F_(rho)->get_val_s();
+    cs_span<cs_real_t> brom = rho_b_f->get_val_s();
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       brom[face_id] = crom[b_face_cells[face_id]];

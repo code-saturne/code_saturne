@@ -136,8 +136,8 @@ cs_turbulence_init_by_ref_quantities(void)
 
   if (turb_model->itytur == 2 || turb_model->itytur == 5) {
 
-    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_vals_s();
-    cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_vals_s();
+    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_val_s();
+    cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_val_s();
 
     cs_real_t k_ini = -cs_math_big_r, ep_ini = -cs_math_big_r;
 
@@ -155,16 +155,16 @@ cs_turbulence_init_by_ref_quantities(void)
       cs_turbulence_ke_clip(-1, n_cells, 1);
 
     if (turb_model->model == CS_TURB_V2F_PHI) {
-      cs_span<cs_real_t> cvar_phi = CS_F_(phi)->get_vals_s();
-      cs_span<cs_real_t> cvar_fb = CS_F_(f_bar)->get_vals_s();
+      cs_span<cs_real_t> cvar_phi = CS_F_(phi)->get_val_s();
+      cs_span<cs_real_t> cvar_fb = CS_F_(f_bar)->get_val_s();
       ctx.parallel_for(n_cells_ext, CS_LAMBDA (cs_lnum_t e_id) {
         cvar_phi[e_id] = 2./3.;
         cvar_fb[e_id]  = 0.;
       });
     }
     else if (turb_model->model == CS_TURB_V2F_BL_V2K) {
-      cs_span<cs_real_t> cvar_phi = CS_F_(phi)->get_vals_s();
-      cs_span<cs_real_t> cvar_al = CS_F_(alp_bl)->get_vals_s();
+      cs_span<cs_real_t> cvar_phi = CS_F_(phi)->get_val_s();
+      cs_span<cs_real_t> cvar_al = CS_F_(alp_bl)->get_val_s();
       ctx.parallel_for(n_cells_ext, CS_LAMBDA (cs_lnum_t e_id) {
         cvar_phi[e_id] = 2./3.;
         cvar_al[e_id]  = 1.;
@@ -176,8 +176,8 @@ cs_turbulence_init_by_ref_quantities(void)
     cs_turbulence_rij_init_by_ref_quantities(uref, almax);
 
   else if (turb_model->model == CS_TURB_K_OMEGA) {
-    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_vals_s();
-    cs_span<cs_real_t> cvar_omg = CS_F_(omg)->get_vals_s();
+    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_val_s();
+    cs_span<cs_real_t> cvar_omg = CS_F_(omg)->get_val_s();
 
     cs_real_t k_ini = -cs_math_big_r, omg_ini = -cs_math_big_r;
 
@@ -197,7 +197,7 @@ cs_turbulence_init_by_ref_quantities(void)
 
   else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
 
-    cs_span<cs_real_t> cvar_nusa = CS_F_(nusa)->get_vals_s();
+    cs_span<cs_real_t> cvar_nusa = CS_F_(nusa)->get_val_s();
 
     cs_real_t nusa_ini = -cs_math_big_r;
 
@@ -242,8 +242,8 @@ cs_turbulence_init_clip_and_verify(void)
 
   if (turb_model->itytur == 2 || turb_model->itytur == 5) {
 
-    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_vals_s();
-    cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_vals_s();
+    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_val_s();
+    cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_val_s();
 
     struct cs_data_double_n<2> rd_ke;
     struct cs_reduce_min_nr<2> reducer_ke;
@@ -281,13 +281,13 @@ cs_turbulence_init_clip_and_verify(void)
       struct cs_data_double_n<4> rd;
       struct cs_reduce_minmax_n<2> reducer;
 
-      cs_span<cs_real_t> cvar_phi = CS_F_(phi)->get_vals_s();
+      cs_span<cs_real_t> cvar_phi = CS_F_(phi)->get_val_s();
 
       int n_minmax = 1;
       if (turb_model->model == CS_TURB_V2F_BL_V2K) {
         n_minmax = 2;
 
-        cs_span<cs_real_t> cvar_al = CS_F_(alp_bl)->get_vals_s();
+        cs_span<cs_real_t> cvar_al = CS_F_(alp_bl)->get_val_s();
 
         ctx.parallel_for_reduce(n_cells, rd, reducer, CS_LAMBDA
                                 (cs_lnum_t c_id, cs_data_double_n<4> &res)
@@ -350,8 +350,8 @@ cs_turbulence_init_clip_and_verify(void)
 
   else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
-    cs_span_2d<cs_real_t> cvar_rij = CS_F_(rij)->get_vals_t();
-    cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_vals_s();
+    cs_span_2d<cs_real_t> cvar_rij = CS_F_(rij)->get_val_t();
+    cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_val_s();
 
     struct cs_data_double_n<4> rd_rij;
     struct cs_reduce_min_nr<4> reducer_rij;
@@ -371,7 +371,7 @@ cs_turbulence_init_clip_and_verify(void)
 
     /* If EBRSM, compute min/max of alpha */
     if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
-      cs_span<cs_real_t> cvar_al = CS_F_(alp_bl)->get_vals_s();
+      cs_span<cs_real_t> cvar_al = CS_F_(alp_bl)->get_val_s();
       ctx.parallel_for_reduce(n_cells, rd_alpha, reducer_alpha, CS_LAMBDA
                               (cs_lnum_t c_id, cs_data_double_n<2> &res)
       {
@@ -428,8 +428,8 @@ cs_turbulence_init_clip_and_verify(void)
   }
   else if (turb_model->model == CS_TURB_K_OMEGA) {
 
-    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_vals_s();
-    cs_span<cs_real_t> cvar_omg = CS_F_(omg)->get_vals_s();
+    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_val_s();
+    cs_span<cs_real_t> cvar_omg = CS_F_(omg)->get_val_s();
 
     struct cs_data_double_n<2> rd_komg;
     struct cs_reduce_min_nr<2> reducer_komg;
@@ -460,7 +460,7 @@ cs_turbulence_init_clip_and_verify(void)
   }
   else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
 
-    cs_span<cs_real_t> cvar_nusa = CS_F_(nusa)->get_vals_s();
+    cs_span<cs_real_t> cvar_nusa = CS_F_(nusa)->get_val_s();
 
     struct cs_data_double_n<1> rd_sa;
     struct cs_reduce_min_nr<1> reducer_sa;

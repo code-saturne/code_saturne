@@ -333,7 +333,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   /*! [example_4] */
   {
-    cs_span_2d<cs_real_t> cvara_potva = cs_field("vec_potential")->get_vals_v(1);
+    cs_span_2d<cs_real_t> cvara_potva = cs_field("vec_potential")->get_val_v(1);
 
     const cs_zone_t *zone = cs_boundary_zone_by_name("2");
     for (cs_lnum_t ilelt = 0; ilelt < zone->n_elts; ilelt++) {

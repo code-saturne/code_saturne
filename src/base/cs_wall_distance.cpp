@@ -169,7 +169,7 @@ cs_wall_distance(int iterns)
   else {
     wall_dist_pre = f_w_dist->val_pre;
 
-    cs_span<cs_real_t> wall_dist_pre_view = f_w_dist->get_vals_s(1);
+    cs_span<cs_real_t> wall_dist_pre_view = f_w_dist->get_val_s(1);
     wall_dist_pre_view.zero();
   }
 

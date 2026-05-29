@@ -78,7 +78,7 @@ cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
   const cs_real_t *dt = CS_F_(dt)->val;
 
   /* nodes displacement */
-  auto disale = cs_field("mesh_displacement")->get_vals_v();
+  auto disale = cs_field("mesh_displacement")->get_val_v();
 
   const cs_zone_t  *zn = nullptr;
 

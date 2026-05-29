@@ -255,10 +255,10 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   cs_span<cs_real_t> bpro_roughness_t;
 
   if (cs_field_try("boundary_roughness") != nullptr)
-    bpro_roughness = cs_field("boundary_roughness")->get_vals_s();
+    bpro_roughness = cs_field("boundary_roughness")->get_val_s();
 
   if (cs_field_try("boundary_thermal_roughness") != nullptr)
-    bpro_roughness_t = cs_field("boundary_thermal_roughness")->get_vals_s();
+    bpro_roughness_t = cs_field("boundary_thermal_roughness")->get_val_s();
 
   zn = cs_boundary_zone_by_name("7");
 

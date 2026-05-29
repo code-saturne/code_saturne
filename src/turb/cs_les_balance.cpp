@@ -1246,7 +1246,7 @@ _les_balance_compute_uidivturflux(const void   *input,
 
   cs_real_t sigmas;
 
-  auto vel = CS_F_(vel)->get_vals_v();
+  auto vel = CS_F_(vel)->get_val_v();
 
   sigmas = sca->get_key_double("turbulent_schmidt");
 
@@ -1306,8 +1306,8 @@ _les_balance_compute_tdivturflux(const void   *input,
   cs_array<cs_real_t> diverg(n_cells_ext, cs_alloc_mode);
   cs_array_2d<cs_real_t> w1(n_cells, 3, cs_alloc_mode);
 
-  auto grdt = _gradt[isca]->get_vals_v();
-  auto mu_t = CS_F_(mu_t)->get_vals_s();
+  auto grdt = _gradt[isca]->get_val_v();
+  auto mu_t = CS_F_(mu_t)->get_val_s();
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t k = 0; k < 3; k++)
@@ -1318,7 +1318,7 @@ _les_balance_compute_tdivturflux(const void   *input,
 
   _les_balance_divergence_vector(w1.data<cs_real_3_t>(), diverg);
 
-  auto cvar_sca = sca->get_vals_s();
+  auto cvar_sca = sca->get_val_s();
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     vals[c_id] = cvar_sca[c_id]*diverg[c_id];

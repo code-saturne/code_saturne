@@ -561,7 +561,7 @@ cs_time_stepping(void)
     */
 
     if (idtvar != CS_TIME_STEP_ADAPTIVE) {
-      cs_span<cs_real_t> dt = CS_F_(dt)->get_vals_s();
+      cs_span<cs_real_t> dt = CS_F_(dt)->get_val_s();
 
       cs_coupling_sync_apps(0,      /* flags */
                             ts->nt_cur,

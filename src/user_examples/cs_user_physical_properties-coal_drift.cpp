@@ -96,7 +96,7 @@ cs_user_physical_properties
   const cs_real_t *cpro_temp = CS_F_(t)->val;
 
   /* Gas density */
-  auto cpro_rom1 = cs_field("rho_gas")->get_vals_s();
+  auto cpro_rom1 = cs_field("rho_gas")->get_val_s();
 
   /* First initialization */
   if (cs_glob_time_step->nt_cur <= 1) {

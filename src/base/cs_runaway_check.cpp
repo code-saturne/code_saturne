@@ -133,7 +133,7 @@ _update_check_bounds(cs_log_check_bounds_t *cb)
       vmax = sqrt(vmax);
   }
   else if (f->dim == 6) {
-    cs_span_2d<cs_real_t> f_view = f->get_vals_t();
+    cs_span_2d<cs_real_t> f_view = f->get_val_t();
 
     ctx.parallel_for_reduce(_n_elts, vmax, reducer, CS_LAMBDA
                             (cs_lnum_t i, cs_real_t &res)
