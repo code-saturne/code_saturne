@@ -3532,16 +3532,16 @@ cs_atmo_compute_meteo_profiles(void)
   /* Profiles */
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
 
-    if (c_disable_flag != nullptr)
-      if (c_disable_flag[cell_id] == 1)
-        continue;
-
     cs_real_t z_grd = 0.;
     if (z_ground != nullptr)
       z_grd = z_ground[cell_id];
 
     /* Local elevation */
     cs_real_t z = cs::max(cell_cen[cell_id][2] - z_grd, 0.);
+
+    if (c_disable_flag != nullptr)
+      if (c_disable_flag[cell_id] == 1)
+        z = 0.;
 
     /* Velocity profile */
     cs_real_t u_norm = ustar0 / kappa * cs_mo_psim(z+z0, z0, dlmo);
@@ -3602,10 +3602,15 @@ cs_atmo_compute_meteo_profiles(void)
       scht = f_qw->get_key_double("turbulent_schmidt");
 
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
+      if (c_disable_flag != nullptr)
+        if (c_disable_flag[cell_id] == 1)
+          continue;
+
       cs_real_t z_grd = 0.;
       if (z_ground != nullptr)
         z_grd = z_ground[cell_id];
-      cs_real_t z = cell_cen[cell_id][2] - z_grd;
+      cs_real_t z = cs::max(cell_cen[cell_id][2] - z_grd, 0.);
+
       f_met_qw->val[cell_id]
         = qw0 + qwstar / kappa * cs_mo_psih(z + z0, z0, dlmo, scht);
     }
@@ -3623,7 +3628,7 @@ cs_atmo_compute_meteo_profiles(void)
       if (z_ground != nullptr)
         z_grd = z_ground[cell_id];
 
-      cs_real_t z = cell_cen[cell_id][2] - z_grd;
+      cs_real_t z = cs::max(cell_cen[cell_id][2] - z_grd, 0.);
       if (z >= z_lim) {
          /* mode = 0 is ustar=cst */
         dlmo_var[cell_id] = dlmo * (z_lim + z0) / (z + z0);
