@@ -1341,13 +1341,14 @@ _cs_turbulence_t::check_convergence(const cs_cdo_quantities_t *quant,
 
     cs::parall::sum(rd.r[0], rd.r[1]);
 
-    const cs_real_t norm2_k_diff = sqrt(rd.r[0]), norm2_k = sqrt(rd.r[1]);
+    // Simulate temporal derivative
+    const cs_real_t norm2_k_diff = sqrt(rd.r[0]) / dt, norm2_k = sqrt(rd.r[1]);
 
-    if (norm2_k_diff < dt * psp.rtol * cs::max(1.0, norm2_k)) {
+    if (norm2_k_diff < psp.rtol * cs::max(1.0, norm2_k)) {
       cvg = true;
     }
 
-    if (norm2_k_diff < dt * psp.atol) {
+    if (norm2_k_diff < psp.atol) {
       cvg = true;
     }
 
@@ -1355,8 +1356,8 @@ _cs_turbulence_t::check_convergence(const cs_cdo_quantities_t *quant,
                   "- turbulence k: residual %5.3g (with "
                   "tolerence relative %5.3g and absolute %5.3g)\n",
                   norm2_k_diff,
-                  dt * psp.rtol * cs::max(1.0, norm2_k),
-                  dt * psp.atol);
+                  psp.rtol * cs::max(1.0, norm2_k),
+                  psp.atol);
   }
 
   return cvg;

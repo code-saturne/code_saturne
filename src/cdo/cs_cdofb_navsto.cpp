@@ -2864,17 +2864,17 @@ cs_cdofb_navsto_check_convergence(cs_navsto_param_t          *nsp,
   const cs_real_t square_norm2_diff =
     nsp->square_norm_diff(mass_flux_pre, mass_flux);
 
-  const cs_real_t norm2_flux = sqrt(square_norm2_flux);
-  const cs_real_t norm2_diff = sqrt(square_norm2_diff);
-
   const cs_real_t dt = ts->dt[0];
 
-  if (norm2_diff <
-      dt * nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux)) {
+  const cs_real_t norm2_flux = sqrt(square_norm2_flux);
+  // Simulate temporal derivative
+  const cs_real_t norm2_diff = sqrt(square_norm2_diff) / dt;
+
+  if (norm2_diff < nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux)) {
     cvg_iter = true;
   }
 
-  if (norm2_diff < dt * nsp->psteady_cvg_param.atol) {
+  if (norm2_diff < nsp->psteady_cvg_param.atol) {
     cvg_iter = true;
   }
 
@@ -2885,8 +2885,8 @@ cs_cdofb_navsto_check_convergence(cs_navsto_param_t          *nsp,
                 "- mass flux: residual %5.3g (with "
                 "tolerence relative %5.3g and absolute %5.3g )\n",
                 norm2_diff,
-                dt * nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux),
-                dt * nsp->psteady_cvg_param.atol);
+                nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux),
+                nsp->psteady_cvg_param.atol);
 
   // Test convergence on turbulence
   if (tbs != nullptr) {
