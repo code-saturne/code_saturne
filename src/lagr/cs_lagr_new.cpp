@@ -800,8 +800,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
   }
 
-  cs_array_2d<cs_real_33_t> eig_vec(n_phases, n_cells);
-  cs_array_2d<cs_real_3_t> eig_val(n_phases, n_cells);
+  cs_array_4d<cs_real_t> eig_vec(n_phases, n_cells, 3, 3);
+  cs_array_3d<cs_real_t> eig_val(n_phases, n_cells, 3);
 
   /* First stage: compute cell values
    * Initialization from the mean Eulerian fluid
@@ -847,20 +847,20 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           sym_rij[2][0] = 0.;
         }
 
-        eig_vec(phase_id, cell_id)[0][0] = 1;
-        eig_vec(phase_id, cell_id)[0][1] = 0;
-        eig_vec(phase_id, cell_id)[0][2] = 0;
-        eig_vec(phase_id, cell_id)[1][0] = 0;
-        eig_vec(phase_id, cell_id)[1][1] = 1;
-        eig_vec(phase_id, cell_id)[1][2] = 0;
-        eig_vec(phase_id, cell_id)[2][0] = 0;
-        eig_vec(phase_id, cell_id)[2][1] = 0;
-        eig_vec(phase_id, cell_id)[2][2] = 1;
+        eig_vec(phase_id, cell_id, 0, 0) = 1;
+        eig_vec(phase_id, cell_id, 0, 1) = 0;
+        eig_vec(phase_id, cell_id, 0, 2) = 0;
+        eig_vec(phase_id, cell_id, 1, 0) = 0;
+        eig_vec(phase_id, cell_id, 1, 1) = 1;
+        eig_vec(phase_id, cell_id, 1, 2) = 0;
+        eig_vec(phase_id, cell_id, 2, 0) = 0;
+        eig_vec(phase_id, cell_id, 2, 1) = 0;
+        eig_vec(phase_id, cell_id, 2, 2) = 1;
 
         cs_math_33_eig_val_vec(sym_rij,
                                tol_err,
-                               eig_val(phase_id, cell_id),
-                               eig_vec(phase_id, cell_id));
+                               eig_val.sub_array(phase_id, cell_id),
+                               (cs_real_3_t *)eig_vec.sub_array(phase_id, cell_id));
       }
     }
     if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
@@ -873,7 +873,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++)
               vel_fluct_coef[i][j] =
-                sqrt(eig_val(0, cell_id)[j]) * eig_vec(0, cell_id)[j][i];
+                sqrt(eig_val(0, cell_id, j)) * eig_vec(0, cell_id, j, i);
           }
 
           cs_real_33_t inv_vel_fluct_coef;
@@ -911,18 +911,18 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
-        eig_vec(phase_id, cell_id)[0][0] = 1.;
-        eig_vec(phase_id, cell_id)[1][1] = 1.;
-        eig_vec(phase_id, cell_id)[2][2] = 1.;
-        eig_vec(phase_id, cell_id)[0][1] = 0.;
-        eig_vec(phase_id, cell_id)[0][2] = 0.;
-        eig_vec(phase_id, cell_id)[1][0] = 0.;
-        eig_vec(phase_id, cell_id)[1][2] = 0.;
-        eig_vec(phase_id, cell_id)[2][0] = 0.;
-        eig_vec(phase_id, cell_id)[2][1] = 0.;
-        eig_val(phase_id, cell_id)[0] = 0.;
-        eig_val(phase_id, cell_id)[1] = 0.;
-        eig_val(phase_id, cell_id)[2] = 0.;
+        eig_vec(phase_id, cell_id, 0, 0) = 1.;
+        eig_vec(phase_id, cell_id, 1, 1) = 1.;
+        eig_vec(phase_id, cell_id, 2, 2) = 1.;
+        eig_vec(phase_id, cell_id, 0, 1) = 0.;
+        eig_vec(phase_id, cell_id, 0, 2) = 0.;
+        eig_vec(phase_id, cell_id, 1, 0) = 0.;
+        eig_vec(phase_id, cell_id, 1, 2) = 0.;
+        eig_vec(phase_id, cell_id, 2, 0) = 0.;
+        eig_vec(phase_id, cell_id, 2, 1) = 0.;
+        eig_val(phase_id, cell_id, 0) = 0.;
+        eig_val(phase_id, cell_id, 1) = 0.;
+        eig_val(phase_id, cell_id, 2) = 0.;
       }
     }
   }
@@ -998,12 +998,12 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
         vel_seen[phase_id*3 + i] = loc_fluid_vel[phase_id][i]
-          + vagaus(phase_id, l_id, 0) * sqrt(eig_val(phase_id, c_id)[0])
-            * eig_vec(phase_id, c_id)[0][i]
-          + vagaus(phase_id, l_id, 1) * sqrt(eig_val(phase_id, c_id)[1])
-            * eig_vec(phase_id, c_id)[1][i]
-          + vagaus(phase_id, l_id, 2) * sqrt(eig_val(phase_id, c_id)[2])
-            * eig_vec(phase_id, c_id)[2][i];
+          + vagaus(phase_id, l_id, 0) * sqrt(eig_val(phase_id, c_id, 0))
+            * eig_vec(phase_id, c_id, 0, i)
+          + vagaus(phase_id, l_id, 1) * sqrt(eig_val(phase_id, c_id, 1))
+            * eig_vec(phase_id, c_id, 1, i)
+          + vagaus(phase_id, l_id, 2) * sqrt(eig_val(phase_id, c_id, 2))
+            * eig_vec(phase_id, c_id, 2, i);
       }
       for (cs_lnum_t ij = 0; ij < 9; ij++) {
         vel_seen_vel_cov[phase_id*9 + ij] = 0.;
