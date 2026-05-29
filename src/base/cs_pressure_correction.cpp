@@ -252,7 +252,6 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
 
-
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     const int c_act = 1 - (has_dc * c_disable_flag[has_dc * c_id]);
 
@@ -291,6 +290,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   });
 
+  ctx.wait();
   ctx_c.wait();
 
   cs_face_viscosity(m,
@@ -741,6 +741,7 @@ _pressure_correction_fv(int                   iterns,
                             + one_m_theta * broma[f_id];
       });
 
+      ctx_c.wait();
       ctx.wait();
 
       brom = bpro_rho_tc;
