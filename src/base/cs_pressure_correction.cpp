@@ -1529,6 +1529,8 @@ _pressure_correction_fv(int                   iterns,
       const int *auto_flag = cs_glob_bc_pm_info->iautom;
       const cs_real_t *b_head_loss
         = cs_boundary_conditions_get_b_head_loss(false);
+      int update_p_bc_after_prediction
+        = vp_param->update_p_bc_after_prediction;
 
       cs_real_6_t *vitenp = (cs_real_6_t *)c_visc;
 
@@ -1603,13 +1605,13 @@ _pressure_correction_fv(int                   iterns,
                                                                 dfrcxt[c_id]);
 
             if (f_hp != nullptr) {
-              cs_real_t dph = cvar_hydro_pres[c_id]
-                            - cvar_hydro_pres_prev[c_id] + f_dot_if;
-              if (vp_param->update_p_bc_after_prediction == 1) {
-
+              cs_real_t dph =   cvar_hydro_pres[c_id]
+                              - cvar_hydro_pres_prev[c_id] + f_dot_if;
+              if (update_p_bc_after_prediction == 1) {
                 coefa_dp[f_id] += dph;
                 coefa_p[f_id] += dph;
-              } else {
+              }
+              else {
                 coefa_dp[f_id] = dph;
               }
             }
