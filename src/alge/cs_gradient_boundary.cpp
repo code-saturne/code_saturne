@@ -215,6 +215,11 @@ cs_gradient_boundary_iprime_lsq_s
 {
   CS_PROFILE_FUNC_RANGE();
 
+  std::chrono::high_resolution_clock::time_point t_start, t_stop;
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   /* Initialization */
 
   if (n_faces <= 0)
@@ -627,6 +632,17 @@ cs_gradient_boundary_iprime_lsq_s
     var_iprime[f_idx] = var_ip;
 
   });
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    ctx.wait();
+    t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed;
+    printf("%d: %s", cs_glob_rank_id, __func__);
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_start);
+    printf(" = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -684,6 +700,11 @@ cs_gradient_boundary_iprime_lsq_s_ani
    cs_real_t                    var_iprime_flux[])
 {
   CS_PROFILE_FUNC_RANGE();
+
+  std::chrono::high_resolution_clock::time_point t_start, t_stop;
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
 
   /* Initialization */
 
@@ -1065,6 +1086,17 @@ cs_gradient_boundary_iprime_lsq_s_ani
     }
 
   });
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    ctx.wait();
+    t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed;
+    printf("%d: %s", cs_glob_rank_id, __func__);
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_start);
+    printf(" = %ld\n", elapsed.count());
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1414,7 +1446,8 @@ cs_gradient_boundary_iprime_lsq_strided
        Caution: in this function, the local gradient storage is transposed
        relative to that used in usual global (by array) computations, so
        as to allow using a usually oversized (fixed at compilation) leading
-       dimension while (stride, where vectors require 3 and symmetric tensors 6). */
+       dimension while (stride, where vectors require 3 and symmetric
+       tensors 6). */
 
     cs_real_t grad[stride][3];
 
@@ -1632,9 +1665,8 @@ cs_gradient_boundary_iprime_lsq_strided
 
   }); /* End of loop on selected faces */
 
-  ctx.wait();
-
   if (cs_glob_timer_kernels_flag > 0) {
+    ctx.wait();
     t_stop = std::chrono::high_resolution_clock::now();
     std::chrono::microseconds elapsed;
     printf("%d: %s", cs_glob_rank_id, __func__);
