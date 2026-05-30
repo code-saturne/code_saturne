@@ -27,7 +27,7 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C and C++ library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <chrono>
@@ -39,6 +39,10 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+
+#if defined(HAVE_CUDA)
+#include <cub/cub.cuh>
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -89,6 +93,8 @@
  * Private function definitions
  *============================================================================*/
 
+#if defined(HAVE_OPENMP)
+
 /*--------------------------------------------------------------------------*/
 /*!
  * \brief Transform a count to an index in place, OpenMP threaded version.
@@ -100,8 +106,6 @@
  * \param[in, out]  a <-> count in, index out (size: n+1)
  */
 /*--------------------------------------------------------------------------*/
-
-#if defined(HAVE_OPENMP)
 
 static void
 _count_to_index_inplace_omp(int        n_threads,
@@ -174,6 +178,92 @@ _count_to_index_inplace_omp(int        n_threads,
 
 #endif // defined(HAVE_OPENMP)
 
+#if defined(HAVE_CUDA)
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Transform a count to an index in place, CUDA (cub) version.
+ *
+ * For n input elements, the array size should be size n+1, to account
+ * for the past-the-end count.
+ *
+ * \param[in]       n     number of elements
+ * \param[in, out]  a <-> count in, index out (size: n+1)
+ */
+/*--------------------------------------------------------------------------*/
+
+static void
+_count_to_index_inplace_cuda(cudaStream_t  stream,
+                             cs_lnum_t     n,
+                             cs_lnum_t     a[])
+{
+  // Ensure past-the-end value is initialized.
+  cudaMemsetAsync(&(a[n]), 0, sizeof(cs_lnum_t), stream);
+
+  assert(a != nullptr && n > 0);
+
+  unsigned char *tmp_storage = nullptr;
+  size_t tmp_storage_size = 0;
+
+  cub::DeviceScan::ExclusiveSum(tmp_storage, tmp_storage_size,
+                                a, a, n+1, stream);
+
+  CS_MALLOC_HD(tmp_storage, tmp_storage_size, unsigned char, CS_ALLOC_DEVICE);
+
+  cub::DeviceScan::ExclusiveSum(tmp_storage, tmp_storage_size,
+                                a, a, n+1, stream);
+
+  cub::SyncStream(stream);
+
+  CS_FREE(tmp_storage);
+}
+
+#endif
+
+#if defined(HAVE_HIP)
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Transform a count to an index in place, ROCm (rocPRIM) version.
+ *
+ * For n input elements, the array size should be size n+1, to account
+ * for the past-the-end count.
+ *
+ * \param[in]       n     number of elements
+ * \param[in, out]  a <-> count in, index out (size: n+1)
+ */
+/*--------------------------------------------------------------------------*/
+
+static void
+_count_to_index_inplace_rocm(hipStream_t  stream,
+                             cs_lnum_t    n,
+                             cs_lnum_t    a[])
+{
+  // Ensure past-the-end value is initialized.
+  hipMemsetAsync(&(a[n]), 0, sizeof(cs_lnum_t), stream);
+
+  assert(a != nullptr && n > 0);
+
+  unsigned char *tmp_storage = nullptr;
+  size_t tmp_storage_size = 0;
+
+  rocprim::exclusive_scan(tmp_storage, tmp_storage_size,
+                          a, a, 0, n+1, rocprim::plus<cs_lnum_t>(),
+                          stream);
+
+  CS_MALLOC_HD(tmp_storage, tmp_storage_size, unsigned char, CS_ALLOC_DEVICE);
+
+  rocprim::exclusive_scan(tmp_storage, tmp_storage_size,
+                          a, a, 0, n+1, rocprim::plus<cs_lnum_t>(),
+                          stream);
+
+  cub::SyncStream(stream);
+
+  CS_FREE(tmp_storage);
+}
+
+#endif
+
 /*--------------------------------------------------------------------------*/
 /*!
  * \brief Transform a count to an index in place, Serial version.
@@ -228,9 +318,17 @@ count_to_index(cs_dispatch_context  &ctx,
                cs_lnum_t             n,
                cs_lnum_t             a[])
 {
-#if defined(HAVE_CUDA) || defined(HAVE_HIP)
+#if defined(HAVE_CUDA)
+  if (ctx.use_gpu()) {
+    _count_to_index_inplace_cuda(ctx.stream(), n, a);
+    return;
+  }
+#endif
+
+#if defined(HAVE_HIP)
   if (ctx.use_gpu()) {
     // TODO: call GPU code for this and return;
+    // Currently defaults to OpenMP (requiring UVM).
   }
 #endif
 
