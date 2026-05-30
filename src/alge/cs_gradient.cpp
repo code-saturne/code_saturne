@@ -2675,67 +2675,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 }
 
 /*----------------------------------------------------------------------------
- * Return current symmetric 3x3 matrix cocg for least squares algorithm
- *
- * parameters:
- *   m          <--  mesh
- *   halo_type  <--  halo type
- *   accel      <--  use accelerator device (if true, cocg and cocgb
- *                   pointers returned are device pointers)
- *   fvq        <--  mesh quantities
- *
- * return:
- *   pointer to cocg coupling coefficients (covariance matrices)
- *----------------------------------------------------------------------------*/
-
-static cs_cocg_6_t *
-_get_cell_cocg_lsq(const cs_mesh_t               *m,
-                   cs_halo_type_t                 halo_type,
-                   bool                           accel,
-                   const cs_mesh_quantities_t    *fvq)
-{
-  cs_gradient_quantities_t  *gq = _gradient_quantities_get(0);
-
-  cs_cocg_6_t *_cocg = nullptr;
-
-  bool extended = (   halo_type == CS_HALO_EXTENDED
-                   && m->cell_cells_idx) ? true : false;
-
-  if (extended) {
-    _cocg = gq->cocg_lsq_ext;
-  }
-  else {
-    _cocg = gq->cocg_lsq;
-  }
-
-  /* Compute if not present yet.
-   *
-   * TODO: when using accelerators, this implies a first computation will be
-   *       run on the host. This will usually be amortized, but could be
-   *       further improved. */
-
-  if (_cocg == nullptr)
-    _compute_cell_cocg_lsq(m, extended, fvq, gq);
-
-  /* Set pointers */
-
-  if (extended)
-    _cocg = gq->cocg_lsq_ext;
-  else
-    _cocg = gq->cocg_lsq;
-
-  /* If used on accelerator, copy/prefetch values and switch to
-     device pointers */
-
-  if (accel) {
-    cs_sync_h2d(_cocg);
-    _cocg = (cs_cocg_6_t *)cs_get_device_ptr(_cocg);
-  }
-
-  return _cocg;
-}
-
-/*----------------------------------------------------------------------------
  * Compute cell gradient using least-squares reconstruction.
  *
  * parameters:
@@ -2792,7 +2731,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
   //_gradient_quantities_destroy();
   cs_cocg_6_t  *restrict cocg
-    = _get_cell_cocg_lsq(m, halo_type, on_device, fvq);
+    = cs_gradient_get_cell_cocg_lsq(m, halo_type, on_device, fvq);
 
 #if defined(HAVE_CUDA)
 
@@ -3050,7 +2989,7 @@ _lsq_scalar_gradient_gather
 
   //_gradient_quantities_destroy();
   cs_cocg_6_t  *restrict cocg
-    = _get_cell_cocg_lsq(m, halo_type, ctx.use_gpu(), fvq);
+    = cs_gradient_get_cell_cocg_lsq(m, halo_type, ctx.use_gpu(), fvq);
 
   if (cs_glob_timer_kernels_flag > 0)
     t_cocg = std::chrono::high_resolution_clock::now();
@@ -3363,7 +3302,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
   //_gradient_quantities_destroy();
   cs_cocg_6_t  *restrict cocg
-    = _get_cell_cocg_lsq(m, halo_type, ctx.use_gpu(), fvq);
+    = cs_gradient_get_cell_cocg_lsq(m, halo_type, ctx.use_gpu(), fvq);
 
   if (cs_glob_timer_kernels_flag > 0)
     t_cocg = std::chrono::high_resolution_clock::now();
@@ -3745,7 +3684,7 @@ _lsq_scalar_gradient_hyd_p_gather
 
   //_gradient_quantities_destroy();
   cs_cocg_6_t  *restrict cocg
-    = _get_cell_cocg_lsq(m, halo_type, ctx.use_gpu(), fvq);
+    = cs_gradient_get_cell_cocg_lsq(m, halo_type, ctx.use_gpu(), fvq);
 
   if (cs_glob_timer_kernels_flag > 0)
     t_cocg = std::chrono::high_resolution_clock::now();
@@ -6864,7 +6803,7 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
 
   //_gradient_quantities_destroy();
   cs_cocg_6_t *restrict cocg
-    = _get_cell_cocg_lsq(m, halo_type, on_device, fvq);
+    = cs_gradient_get_cell_cocg_lsq(m, halo_type, on_device, fvq);
 
 #if defined(HAVE_CUDA)
 
@@ -7165,7 +7104,7 @@ _lsq_strided_gradient_gather(cs_dispatch_context         &ctx,
 
   //_gradient_quantities_destroy();
   cs_cocg_6_t *restrict cocg
-    = _get_cell_cocg_lsq(m, halo_type, on_device, fvq);
+    = cs_gradient_get_cell_cocg_lsq(m, halo_type, on_device, fvq);
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
   /*---------------------------------------------------------------------*/
@@ -8740,6 +8679,71 @@ _gradient_strided_cell(const cs_mesh_t             *m,
     }
 
   }  /* End of correction in case of Neumann BC's */
+}
+
+/*============================================================================
+ * Semi-private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return current symmetric 3x3 matrix cocg for least squares algorithm
+ *
+ * parameters:
+ *   m          <--  mesh
+ *   halo_type  <--  halo type
+ *   accel      <--  use accelerator device (if true, cocg and cocgb
+ *                   pointers returned are device pointers)
+ *   fvq        <--  mesh quantities
+ *
+ * return:
+ *   pointer to cocg coupling coefficients (covariance matrices)
+ *----------------------------------------------------------------------------*/
+
+cs_cocg_6_t *
+cs_gradient_get_cell_cocg_lsq(const cs_mesh_t               *m,
+                              cs_halo_type_t                 halo_type,
+                              bool                           accel,
+                              const cs_mesh_quantities_t    *fvq)
+{
+  cs_gradient_quantities_t  *gq = _gradient_quantities_get(0);
+
+  cs_cocg_6_t *_cocg = nullptr;
+
+  bool extended = (   halo_type == CS_HALO_EXTENDED
+                   && m->cell_cells_idx) ? true : false;
+
+  if (extended) {
+    _cocg = gq->cocg_lsq_ext;
+  }
+  else {
+    _cocg = gq->cocg_lsq;
+  }
+
+  /* Compute if not present yet.
+   *
+   * TODO: when using accelerators, this implies a first computation will be
+   *       run on the host. This will usually be amortized, but could be
+   *       further improved. */
+
+  if (_cocg == nullptr)
+    _compute_cell_cocg_lsq(m, extended, fvq, gq);
+
+  /* Set pointers */
+
+  if (extended)
+    _cocg = gq->cocg_lsq_ext;
+  else
+    _cocg = gq->cocg_lsq;
+
+  /* If used on accelerator, copy/prefetch values and switch to
+     device pointers */
+
+  if (accel) {
+    cs_sync_h2d(_cocg);
+    _cocg = (cs_cocg_6_t *)cs_get_device_ptr(_cocg);
+  }
+
+  return _cocg;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

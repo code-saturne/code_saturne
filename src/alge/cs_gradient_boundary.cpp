@@ -1188,8 +1188,6 @@ cs_gradient_boundary_iprime_lsq_strided
   const cs_lnum_t *restrict cell_cells = ma->cell_cells;
   const cs_lnum_t *restrict cell_cells_e = ma->cell_cells_e;
   const cs_lnum_t *restrict cell_b_faces = ma->cell_b_faces;
-  const cs_lnum_t *restrict cell_hb_faces_idx = ma->cell_hb_faces_idx;
-  const cs_lnum_t *restrict cell_hb_faces = ma->cell_hb_faces;
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
@@ -1200,6 +1198,9 @@ cs_gradient_boundary_iprime_lsq_strided
 #if (B_DIRECTION_LSQ == CS_IF_LSQ)
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 #endif
+
+  cs_cocg_6_t  *restrict cocg_c
+    = cs_gradient_get_cell_cocg_lsq(m, halo_type, ctx.use_gpu(), fvq);
 
   /* Loop on selected boundary faces */
 
@@ -1229,7 +1230,7 @@ cs_gradient_boundary_iprime_lsq_strided
 
     /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
-    cs_cocg_t cocg[6] = {0., 0., 0., 0., 0., 0.};
+    cs_cocg_t *cocg = cocg_c[c_id];
     cs_real_t rhs[stride][3];
     cs_real_t var_i[stride];
 
@@ -1275,13 +1276,6 @@ cs_gradient_boundary_iprime_lsq_strided
 
           cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
 
-          cocg[0] += dc[0]*dc[0]*ddc;
-          cocg[1] += dc[1]*dc[1]*ddc;
-          cocg[2] += dc[2]*dc[2]*ddc;
-          cocg[3] += dc[0]*dc[1]*ddc;
-          cocg[4] += dc[1]*dc[2]*ddc;
-          cocg[5] += dc[0]*dc[2]*ddc;
-
           const cs_real_t *var_j = var[c_id1];
           cs_real_t var_d[stride];
 
@@ -1309,13 +1303,6 @@ cs_gradient_boundary_iprime_lsq_strided
 
           const cs_real_t *var_j = var[c_id1];
 
-          cocg[0] += dc[0]*dc[0]*ddc;
-          cocg[1] += dc[1]*dc[1]*ddc;
-          cocg[2] += dc[2]*dc[2]*ddc;
-          cocg[3] += dc[0]*dc[1]*ddc;
-          cocg[4] += dc[1]*dc[2]*ddc;
-          cocg[5] += dc[0]*dc[2]*ddc;
-
           cs_real_t _weight =   2. * c_weight[c_id1]
                               / (c_weight[c_id] + c_weight[c_id1]);
           cs_real_t var_d[stride];
@@ -1333,16 +1320,6 @@ cs_gradient_boundary_iprime_lsq_strided
       }
 
     } /* End of contribution from interior and extended cells */
-
-    /* Contribution from hidden boundary faces */
-
-    if (cell_hb_faces_idx != nullptr) {
-      _add_hb_faces_cocg_lsq_cell(c_id,
-                                  cell_hb_faces_idx,
-                                  cell_hb_faces,
-                                  b_face_u_normal,
-                                  cocg);
-    }
 
     /* Contribution from boundary faces. */
 
@@ -1385,13 +1362,6 @@ cs_gradient_boundary_iprime_lsq_strided
         dif[ll] = b_face_cog[c_f_id][ll] - cell_cen[c_id][ll];
 
       ddif = 1. / cs_math_3_square_norm(dif);
-
-      cocg[0] += dif[0]*dif[0]*ddif;
-      cocg[1] += dif[1]*dif[1]*ddif;
-      cocg[2] += dif[2]*dif[2]*ddif;
-      cocg[3] += dif[0]*dif[1]*ddif;
-      cocg[4] += dif[1]*dif[2]*ddif;
-      cocg[5] += dif[0]*dif[2]*ddif;
 #elif (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
       ddif = 1. / b_dist[c_f_id];
 
@@ -1399,13 +1369,6 @@ cs_gradient_boundary_iprime_lsq_strided
         dif[ll] =   b_face_u_normal[c_f_id][ll]
                   + ddif * diipb[c_f_id][ll];
       }
-
-      cocg[0] += dif[0]*dif[0];
-      cocg[1] += dif[1]*dif[1];
-      cocg[2] += dif[2]*dif[2];
-      cocg[3] += dif[0]*dif[1];
-      cocg[4] += dif[1]*dif[2];
-      cocg[5] += dif[0]*dif[2];
 #endif
 
       for (cs_lnum_t kk = 0; kk < stride; kk++) {
@@ -1422,24 +1385,6 @@ cs_gradient_boundary_iprime_lsq_strided
       }
 
     } /* End of contribution from boundary faces */
-
-    /* Invert local covariance matrix */
-
-    cs_real_t a00 = cocg[1]*cocg[2] - cocg[4]*cocg[4];
-    cs_real_t a01 = cocg[4]*cocg[5] - cocg[3]*cocg[2];
-    cs_real_t a02 = cocg[3]*cocg[4] - cocg[1]*cocg[5];
-    cs_real_t a11 = cocg[0]*cocg[2] - cocg[5]*cocg[5];
-    cs_real_t a12 = cocg[3]*cocg[5] - cocg[0]*cocg[4];
-    cs_real_t a22 = cocg[0]*cocg[1] - cocg[3]*cocg[3];
-
-    cs_real_t det_inv = 1. / (cocg[0]*a00 + cocg[3]*a01 + cocg[5]*a02);
-
-    cocg[0] = a00 * det_inv;
-    cocg[1] = a11 * det_inv;
-    cocg[2] = a22 * det_inv;
-    cocg[3] = a01 * det_inv;
-    cocg[4] = a12 * det_inv;
-    cocg[5] = a02 * det_inv;
 
     /* First estimate of cell gradient.
 

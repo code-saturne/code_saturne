@@ -141,6 +141,26 @@ cs_sync_strided_gradient_halo_d(const cs_mesh_t         *m,
  * Semi-private function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Return current symmetric 3x3 matrix cocg for least squares algorithm
+ *
+ * parameters:
+ *   m          <--  mesh
+ *   halo_type  <--  halo type
+ *   accel      <--  use accelerator device (if true, cocg and cocgb
+ *                   pointers returned are device pointers)
+ *   fvq        <--  mesh quantities
+ *
+ * return:
+ *   pointer to cocg coupling coefficients (covariance matrices)
+ *----------------------------------------------------------------------------*/
+
+cs_cocg_6_t *
+cs_gradient_get_cell_cocg_lsq(const cs_mesh_t               *m,
+                              cs_halo_type_t                 halo_type,
+                              bool                           accel,
+                              const cs_mesh_quantities_t    *fvq);
+
 #if defined(HAVE_CUDA)
 
 /*----------------------------------------------------------------------------
