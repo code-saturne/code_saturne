@@ -1391,49 +1391,41 @@ _pressure_correction_fv(int                   iterns,
   /* Update pressure and pressure increment BCs
    * ========================================== */
 
-  if (vp_param->update_p_bc_after_prediction == 1) {
+  int update_p_bc_after_prediction
+    = vp_param->update_p_bc_after_prediction;
+  int staggered = vp_param->staggered;
+
+  if (update_p_bc_after_prediction == 1 && staggered == 0) {
 
     /* BC (dP) = BC(P^n+1) - BC(P^n) */
-    if (vp_param->staggered == 0) {
-      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        coefa_dp[f_id] = -coefa_p[f_id];
-        coefaf_dp[f_id] = -coefaf_p[f_id];
-      });
-    }
+    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      coefa_dp[f_id] = -coefa_p[f_id];
+      coefaf_dp[f_id] = -coefaf_p[f_id];
+    });
+
+    cs_boundary_conditions_set_coeffs_pressure(ctx, f_p);
 
     ctx.wait();
     ctx_c.wait();
 
-    cs_boundary_conditions_set_coeffs_pressure(ctx, f_p);
-
-    if (vp_param->staggered == 0) {
-      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        coefa_dp[f_id] += coefa_p[f_id];
-        /* Note: Af should be recomputed as "hint * A" instead */
-        coefaf_dp[f_id] += coefaf_p[f_id];
-        coefb_dp[f_id] = coefb_p[f_id];
-        coefbf_dp[f_id] = coefbf_p[f_id];
-      });
-    }
-    else {
-      ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-        coefa_dp[f_id] = coefa_p[f_id];
-        coefaf_dp[f_id] = coefaf_p[f_id];
-        coefb_dp[f_id] = coefb_p[f_id];
-        coefbf_dp[f_id] = coefbf_p[f_id];
-      });
-    }
+    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      coefa_dp[f_id] += coefa_p[f_id];
+      /* Note: Af should be recomputed as "hint * A" instead */
+      coefaf_dp[f_id] += coefaf_p[f_id];
+      coefb_dp[f_id] = coefb_p[f_id];
+      coefbf_dp[f_id] = coefbf_p[f_id];
+    });
 
     ctx.wait();
     ctx_c.wait();
 
   }
-  else {
+  else { /* else vp_param->update_p_bc_after_prediction == 0 */
 
     /* Legacy: pressure BCs were already updated in
        cs_boundary_conditions_set_coeffs before prediction. */
 
-    if (vp_param->staggered == 0) {
+    if (staggered == 0) {
       ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
         coefa_dp[f_id] = 0.;
         coefaf_dp[f_id] = 0.;
@@ -1453,7 +1445,7 @@ _pressure_correction_fv(int                   iterns,
     ctx.wait();
     ctx_c.wait();
 
-  }
+  } /* end condition on vp_param->update_p_bc_after_prediction */
 
   /* Compute an approximated pressure increment if needed,
    * that is when there are buoyancy terms (gravity and variable density)
@@ -1529,8 +1521,6 @@ _pressure_correction_fv(int                   iterns,
       const int *auto_flag = cs_glob_bc_pm_info->iautom;
       const cs_real_t *b_head_loss
         = cs_boundary_conditions_get_b_head_loss(false);
-      int update_p_bc_after_prediction
-        = vp_param->update_p_bc_after_prediction;
 
       cs_real_6_t *vitenp = (cs_real_6_t *)c_visc;
 
@@ -1605,9 +1595,11 @@ _pressure_correction_fv(int                   iterns,
                                                                 dfrcxt[c_id]);
 
             if (f_hp != nullptr) {
-              cs_real_t dph =   cvar_hydro_pres[c_id]
-                              - cvar_hydro_pres_prev[c_id] + f_dot_if;
-              if (update_p_bc_after_prediction == 1) {
+              cs_real_t dph = cvar_hydro_pres[c_id]
+                            - cvar_hydro_pres_prev[c_id] + f_dot_if;
+              if (   update_p_bc_after_prediction == 1
+                  && staggered == 0) {
+
                 coefa_dp[f_id] += dph;
                 coefa_p[f_id] += dph;
               }

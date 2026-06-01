@@ -1586,7 +1586,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
     {
       const cs_velocity_pressure_param_t *vp_param
         = cs_glob_velocity_pressure_param;
-      if (!vp_param->update_p_bc_after_prediction)
+      if (!vp_param->update_p_bc_after_prediction || vp_param->staggered == 1)
         cs_boundary_conditions_set_coeffs_pressure(ctx, CS_F_(p));
     }
 
