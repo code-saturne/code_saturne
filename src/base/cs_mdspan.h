@@ -251,6 +251,9 @@ public:
     cs_lnum_t i /*!<[in] Index of value to get */
   )
   {
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(i);
+#endif
     return _data[i];
   }
 
@@ -269,6 +272,9 @@ public:
     cs_lnum_t i /*!<[in] Index of value to get */
   ) const
   {
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(i);
+#endif
     return _data[i];
   }
 
@@ -290,6 +296,9 @@ public:
   )
   {
     check_operator_args_(i);
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(i);
+#endif
     return _data[i];
   }
 
@@ -311,6 +320,9 @@ public:
   ) const
   {
     check_operator_args_(i);
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(i);
+#endif
     return _data[i];
   }
 
@@ -333,6 +345,9 @@ public:
   )
   {
     check_operator_args_(i,j);
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(i,j);
+#endif
 
     if (L == layout::right)
       return _data[i*_offset[0] + j];
@@ -361,6 +376,9 @@ public:
   ) const
   {
     check_operator_args_(i,j);
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(i,j);
+#endif
 
     if (L == layout::right)
       return _data[i*_offset[0] + j];
@@ -388,6 +406,9 @@ public:
   )
   {
     check_operator_args_(indices...);
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(indices...);
+#endif
 
     return _data[data_offset_(indices...)];
   }
@@ -410,6 +431,9 @@ public:
   ) const
   {
     check_operator_args_(indices...);
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(indices...);
+#endif
 
     return _data[data_offset_(indices...)];
   }
@@ -1071,6 +1095,69 @@ protected:
     cs_lnum_t loc_dims[N] = {dims...};
 
     set_size_(loc_dims);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Check if provided arguments are within array bounds
+   *
+   * \return True if out of bounds, false otherwise
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  inline
+  bool
+  check_bounds_
+  (
+    Args... dims
+  ) const
+  {
+    bool out_of_bounds = false;
+    constexpr int n_idx = sizeof...(Args);
+    cs_lnum_t idx[n_idx] = {dims...};
+    for (int i = 0; i < n_idx; i++) {
+      if (idx[i] >= _extent[i]) {
+        out_of_bounds = true;
+        break;
+      }
+    }
+
+    if (out_of_bounds) {
+      char err[256] = "Error: Out of bounds access with indices [";
+      const char *sep = ",\0";
+      const char *closeb = "]\0";
+      for (int i = 0; i < n_idx; i++) {
+        char tmp[20] = "";
+        uint_to_char(tmp, idx[i]);
+        concatenate_char(err, tmp);
+        if (i < n_idx - 1)
+          concatenate_char(err, sep);
+      }
+      concatenate_char(err, closeb);
+
+      const char *tmp2 = " but extents are [\0";
+      concatenate_char(err, tmp2);
+      for (int i = 0; i < n_idx; i++) {
+        char tmp[20] = "";
+        uint_to_char(tmp, _extent[i]);
+        concatenate_char(err, tmp);
+        if (i < n_idx - 1)
+          concatenate_char(err, sep);
+      }
+      concatenate_char(err, closeb);
+
+#if !defined(__CUDA_ARCH__) && \
+    !defined(SYCL_LANGUAGE_VERSION) && \
+    !defined(__HIP_DEVICE_COMPILE__)
+      bft_error(__FILE__,__LINE__,0,"%s\n", err);
+#else
+      const char *empty = " ";
+      __assert_fail(err, empty, 0, empty);
+#endif
+    }
+    return out_of_bounds;
   }
 
   /*===========================================================================

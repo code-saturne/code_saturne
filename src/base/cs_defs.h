@@ -866,6 +866,99 @@ swap_objects
   for (std::size_t i = 0; i < N; ++i)
     swap_objects(obj1[i], obj2[i]);
 }
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Count number of digits in an integer
+ *
+ * \return number of digits
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename Id1>
+CS_F_HOST_DEVICE
+inline
+unsigned int
+number_of_digits
+(
+  Id1 val /*!<[in] Integer */
+)
+{
+  static_assert(std::is_integral<Id1>::value, "Non integral input arguments.");
+
+  unsigned int retval = 1;
+  while (val >= 10) {
+    val /= 10;
+    retval += 1;
+  }
+
+  return retval;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Convert an unsigned integer to an array of char
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename Id1>
+CS_F_HOST_DEVICE
+inline
+void
+uint_to_char
+(
+ char *dest, /*!<[in,out] char* in which to store integer value */
+ Id1   val   /*!<[in]     integer to convert to string */
+)
+{
+  static_assert(std::is_integral<Id1>::value, "Non integral input arguments.");
+  assert(val >= 0);
+
+  unsigned int n_digits = number_of_digits(val);
+  int pos = n_digits - 1;
+
+  if (val == 0) {
+    dest[0] = '0';
+    dest[1] = '\0';
+  }
+  else {
+    Id1 v = val;
+    while (v > 0) {
+      auto const num = v % 10;
+      v /= 10;
+      dest[pos] = '0' + num;
+      --pos;
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Concatenate two strings (char *)
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+inline
+void
+concatenate_char
+(
+  char       *dest, /*!<[in,out] Char to which we add another char* */
+  const char *src   /*!<[in]     input char* to concatenate to the other */
+)
+{
+  int dst_pos = 0;
+  while (dest[dst_pos] != 0) {
+    dst_pos += 1;
+  }
+
+  int i = 0;
+  while (src[i] != 0) {
+    dest[i + dst_pos] = src[i];
+    i += 1;
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 
 } // namespace cs
