@@ -1294,12 +1294,12 @@ _coarsen_step(const int indic[])
 /*----------------------------------------------------------------------------*/
 
 void
-cs_adaptive_refinement_define(int                  n_layers,
-                              int                  nt_interval,
-                              cs_amr_indicator_t  *indic_func,
-                              const void          *indic_input,
-                              int                  interpolation,
-                              bool                 load_balance)
+cs_adaptive_refinement_define(int                     n_layers,
+                              int                     nt_interval,
+                              cs_amr_indicator_t     *indic_func,
+                              const void             *indic_input,
+                              int                     interpolation,
+                              [[maybe_unused]] bool   load_balance)
 {
   _amr_info.is_set = true;
   _amr_info.n_layers = n_layers;
@@ -1458,8 +1458,11 @@ cs_adaptive_refinement_step(void)
 
   if (!cs_glob_amr_info->load_balance) {
     cs_renumber_update();
-  } else {
+  }
+  else {
+#if defined(HAVE_MPI)
     _load_balance(true);
+#endif
   }
 
   if (cs_log_default_is_active())
