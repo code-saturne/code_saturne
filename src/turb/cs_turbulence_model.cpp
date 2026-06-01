@@ -349,7 +349,7 @@
 
 static cs_turb_model_t  _turb_model =
 {
-  {.model  = -999},
+  .model  = -999,
   .itytur = -999,
   .hybrid_turb = 0,
   .type = -1,
