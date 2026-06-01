@@ -104,7 +104,8 @@ typedef void
                                      const cs_lnum_t  n_i_elts,
                                      const cs_lnum_t  n2o_idx[],
                                      const cs_lnum_t  n2o[],
-                                     cs_real_t        measure[]);
+                                     const cs_real_t  measure[],
+                                     const cs_lnum_t  i_face_map[]);
 
 /*----------------------------------------------------------------------------
  * Structure containing general information on the adaptive meshing process

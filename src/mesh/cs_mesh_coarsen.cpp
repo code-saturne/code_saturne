@@ -664,16 +664,19 @@ _update_i_face_arrays(cs_mesh_t        *m,
  *
  * Interior faces separating merged cells are removed.
  *
- * \param[in, out]  m      mesh
- * \param[in]       n_new  new number of cells
- * \param[in]       c_o2n  cell old to new renumbering
+ * \param[in, out]  m              mesh
+ * \param[in]       n_new          new number of cells
+ * \param[in]       c_o2n          cell old to new renumbering
+ * \param[out]      i_f_n2o_pre    new-to-old map of interior faces induced by
+ *                                 cell merge
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _merge_cells(cs_mesh_t       *m,
              cs_lnum_t        n_new,
-             const cs_lnum_t  c_o2n[])
+             const cs_lnum_t  c_o2n[],
+             cs_lnum_t       *i_f_n2o[])
 {
   const cs_lnum_t n_old = m->n_cells;
 
@@ -775,21 +778,19 @@ _merge_cells(cs_mesh_t       *m,
   cs_lnum_t n_i_faces_new = 0;
 
   {
-    cs_lnum_t  *i_f_n2o;
-    CS_MALLOC(i_f_n2o, m->n_i_faces, cs_lnum_t);
+    CS_MALLOC(*i_f_n2o, m->n_i_faces, cs_lnum_t);
+    cs_lnum_t *_i_f_n2o = *i_f_n2o;
 
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
       cs_lnum_t i0 = m->i_face_cells[f_id][0];
       cs_lnum_t i1 = m->i_face_cells[f_id][1];
       if (i0 != i1) {
-        i_f_n2o[n_i_faces_new] = f_id;
+        _i_f_n2o[n_i_faces_new] = f_id;
         n_i_faces_new++;
       }
     }
 
-    _update_i_face_arrays(m, n_i_faces_new, i_f_n2o);
-
-    CS_FREE(i_f_n2o);
+    _update_i_face_arrays(m, n_i_faces_new, _i_f_n2o);
   }
 }
 
@@ -1948,12 +1949,61 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   /* In case of adaptive mesh refinement, we need to keep the measure
      of cells, internal faces and boundary faces */
-  cs_real_t *volume = nullptr;
-  cs_real_t  *i_face_cog = nullptr, *i_face_normal = nullptr;
-  cs_real_t  *b_face_cog = nullptr, *b_face_normal = nullptr;
+  // NOTE: we can simply get these from cs_glob_mesh_quantities if
+  //       we're sure it exists at this stage. For now, compute them.
 
-  if (cs_glob_amr_info->is_set)
+  cs_real_t *volume = nullptr;
+  cs_real_t *i_face_surf = nullptr, *b_face_surf = nullptr;
+
+  if (cs_glob_amr_info->is_set) {
+
+    // Cells.
+
     volume = cs_mesh_quantities_cell_volume(m);
+
+    // Interior faces.
+
+    cs_real_t *i_face_cog = nullptr, *i_face_normal = nullptr;
+
+    CS_MALLOC(i_face_cog,    m->n_i_faces * m->dim, cs_real_t);
+    CS_MALLOC(i_face_normal, m->n_i_faces * m->dim, cs_real_t);
+
+    cs_mesh_quantities_compute_face_cog_sn(m->n_i_faces,
+                                           (const cs_real_3_t *)m->vtx_coord,
+                                           m->i_face_vtx_idx,
+                                           m->i_face_vtx_lst,
+                                           (cs_real_3_t *)i_face_cog,
+                                           (cs_real_3_t *)i_face_normal);
+
+    CS_FREE(i_face_cog);
+
+    CS_MALLOC(i_face_surf, m->n_i_faces, cs_real_t);
+    for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++)
+      i_face_surf[f_id] = cs_math_3_norm(i_face_normal + 3*f_id);
+
+    CS_FREE(i_face_normal);
+
+    // Boundary faces.
+
+    cs_real_t *b_face_cog = nullptr, *b_face_normal = nullptr;
+    CS_MALLOC(b_face_cog,    m->n_b_faces * m->dim, cs_real_t);
+    CS_MALLOC(b_face_normal, m->n_b_faces * m->dim, cs_real_t);
+
+    cs_mesh_quantities_compute_face_cog_sn(m->n_b_faces,
+                                           (const cs_real_3_t *)m->vtx_coord,
+                                           m->b_face_vtx_idx,
+                                           m->b_face_vtx_lst,
+                                           (cs_real_3_t *)b_face_cog,
+                                           (cs_real_3_t *)b_face_normal);
+
+    CS_FREE(b_face_cog);
+
+    CS_MALLOC(b_face_surf, m->n_b_faces, cs_real_t);
+    for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++)
+      b_face_surf[f_id] = cs_math_3_norm(b_face_normal + 3*f_id);
+
+    CS_FREE(b_face_normal);
+  }
 
   cs_timer_t t0 = cs_timer_time();
 
@@ -1967,31 +2017,10 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   /* Merge step */
 
-  _merge_cells(m, n_c_new, c_o2n);
+  cs_lnum_t *i_face_n2o_pre = nullptr;
 
-  if (cs_glob_amr_info->is_set) {
+  _merge_cells(m, n_c_new, c_o2n, &i_face_n2o_pre);
 
-    CS_MALLOC(i_face_cog, m->n_i_faces * m->dim, cs_real_t);
-    CS_MALLOC(i_face_normal, m->n_i_faces * m->dim, cs_real_t);
-
-    cs_mesh_quantities_compute_face_cog_sn(m->n_i_faces,
-                                           (const cs_real_3_t *)m->vtx_coord,
-                                           m->i_face_vtx_idx,
-                                           m->i_face_vtx_lst,
-                                           (cs_real_3_t *)i_face_cog,
-                                           (cs_real_3_t *)i_face_normal);
-
-
-    CS_MALLOC(b_face_cog, m->n_b_faces * m->dim, cs_real_t);
-    CS_MALLOC(b_face_normal, m->n_b_faces * m->dim, cs_real_t);
-
-    cs_mesh_quantities_compute_face_cog_sn(m->n_b_faces,
-                                           (const cs_real_3_t *)m->vtx_coord,
-                                           m->b_face_vtx_idx,
-                                           m->b_face_vtx_lst,
-                                           (cs_real_3_t *)b_face_cog,
-                                           (cs_real_3_t *)b_face_normal);
-  }
 
   /* Flag merged cells (> 0 for merged cells) */
 
@@ -2041,7 +2070,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
   mv_save = m->verbosity;
   m->verbosity = -1;
 
-  cs_mesh_update_auxiliary(cs_glob_mesh);
+  cs_mesh_update_auxiliary(m);
 
   m->verbosity = mv_save;
 
@@ -2058,37 +2087,40 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
     cs_amr_coarsening_interpolation_t *_realloc_and_interp_fields =
       cs_glob_amr_info->fields_interp_coarsening_func;
-    cs_real_t *face_surf = NULL;
+
+    /* Internal faces. */
 
     cs_lnum_t *n2o_idx = nullptr, *n2o = nullptr;
     _build_n2o_indexed(n_i_old, m->n_i_faces, i_f_o2n, &n2o_idx, &n2o);
-
-    CS_MALLOC(face_surf, n_i_old, cs_real_t);
-    for (cs_lnum_t face_id = 0; face_id < n_i_old; face_id ++)
-      face_surf[face_id] = cs_math_3_norm(i_face_normal + face_id*3);
 
     _realloc_and_interp_fields(m,
                                CS_MESH_LOCATION_INTERIOR_FACES,
                                n_i_old,
                                n2o_idx,
                                n2o,
-                               face_surf);
+                               i_face_surf,
+                               i_face_n2o_pre);
 
+    CS_FREE(i_face_surf);
     CS_FREE(n2o_idx); CS_FREE(n2o);
-    _build_n2o_indexed(n_b_old, m->n_b_faces, b_f_o2n, &n2o_idx, &n2o);
 
-    CS_REALLOC(face_surf, n_b_old, cs_real_t);
-    for (cs_lnum_t face_id = 0; face_id < n_b_old; face_id ++)
-      face_surf[face_id] = cs_math_3_norm(b_face_normal + face_id*3);
+    /* Boundary faces. */
+
+    _build_n2o_indexed(n_b_old, m->n_b_faces, b_f_o2n, &n2o_idx, &n2o);
 
     _realloc_and_interp_fields(m,
                                CS_MESH_LOCATION_BOUNDARY_FACES,
                                n_b_old,
                                n2o_idx,
                                n2o,
-                               face_surf);
+                               b_face_surf,
+                               nullptr);
 
+    CS_FREE(b_face_surf);
     CS_FREE(n2o_idx); CS_FREE(n2o);
+
+    /* Cells. */
+
     _build_n2o_indexed(n_c_ini, m->n_cells, c_o2n, &n2o_idx, &n2o);
 
     _realloc_and_interp_fields(m,
@@ -2096,15 +2128,14 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
                                n_c_ini,
                                n2o_idx,
                                n2o,
-                               volume);
+                               volume,
+                               nullptr);
 
-    CS_FREE(n2o_idx); CS_FREE(n2o);
-    CS_FREE(face_surf);
-    CS_FREE(i_face_normal); CS_FREE(i_face_cog);
-    CS_FREE(b_face_normal); CS_FREE(b_face_cog);
     CS_FREE(volume);
+    CS_FREE(n2o_idx); CS_FREE(n2o);
   }
 
+  CS_FREE(i_face_n2o_pre);
   CS_FREE(i_f_o2n);
   CS_FREE(b_f_o2n);
   CS_FREE(c_o2n);

@@ -532,6 +532,8 @@ _realloc_and_update_bc_coeffs_refinement(const cs_field_t  *f,
  *   n2o         <-- new to old values
  *   measure     <-- element measure on old mesh (face surface for
  *                    internal and boundary faces, cell volume for cells)
+ *   i_face_map  <-- intermediate internal face map.
+                     TODO: better refactoring?
  *----------------------------------------------------------------------------*/
 
 static void
@@ -539,7 +541,8 @@ _realloc_and_update_field_coarsening(cs_field_t      *f,
                                      [[maybe_unused]] const cs_lnum_t n_old,
                                      const cs_lnum_t  n2o_idx[],
                                      const cs_lnum_t  n2o[],
-                                     const cs_real_t  measure[])
+                                     const cs_real_t  measure[],
+                                     const cs_lnum_t  i_face_map[])
 {
   cs_lnum_t n_new = cs_mesh_location_get_n_elts(f->location_id)[0];
 
@@ -576,6 +579,7 @@ _realloc_and_update_field_coarsening(cs_field_t      *f,
           /* Compute mean value on old cells */
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t o_id = n2o[j];
+            o_id = i_face_map ? i_face_map[o_id] : o_id;
             measure_tot += measure[o_id];
             for (cs_lnum_t k = 0; k < f->series_size(); k++) {
               val_mean(k) += old_val_i(k, o_id, idim) * measure[o_id];
@@ -614,6 +618,7 @@ _realloc_and_update_field_coarsening(cs_field_t      *f,
           /* Compute mean value on old cells */
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t o_id = n2o[j];
+            o_id = i_face_map ? i_face_map[o_id] : o_id;
              measure_tot += measure[o_id];
              val_mean    += old_val_i(o_id,idim) * measure[o_id];
              val_sum     += old_val_i(o_id,idim);
@@ -881,7 +886,8 @@ _realloc_and_interp_after_coarsening
   [[maybe_unused]] const cs_lnum_t  n_i_elts,
   const cs_lnum_t                   n2o_idx[],
   const cs_lnum_t                   n2o[],
-  cs_real_t                         measure[]
+  const cs_real_t                   measure[],
+  const cs_lnum_t                   i_face_map[]
 )
 {
   const int n_fields = cs_field_n_fields();
@@ -894,7 +900,8 @@ _realloc_and_interp_after_coarsening
       = cs_mesh_location_get_type(f->location_id);
 
     if ( field_loc_type == location_id ) {
-      _realloc_and_update_field_coarsening(f, n_old, n2o_idx, n2o, measure);
+      _realloc_and_update_field_coarsening(f, n_old, n2o_idx, n2o, measure,
+                                           i_face_map);
 
       /* When dealing with fields on cells, we need to sync halo cells*/
       if (field_loc_type == CS_MESH_LOCATION_CELLS)
@@ -1451,7 +1458,6 @@ cs_adaptive_refinement_step(void)
 
   if (!cs_glob_amr_info->load_balance) {
     cs_renumber_update();
-    cs_matrix_update_mesh();
   } else {
     _load_balance(true);
   }
