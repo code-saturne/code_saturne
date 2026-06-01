@@ -2534,7 +2534,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
   }
   else {
     cocg = gq->cocg_lsq;
-    cocgb =gq->cocgb_s_lsq;
+    cocgb = gq->cocgb_s_lsq;
   }
 
   if (cocg == nullptr) {
@@ -2778,8 +2778,12 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   /* Compute Right-Hand Side */
   /*-------------------------*/
 
-  cs_real_4_t  *restrict rhsv;
-  CS_MALLOC(rhsv, n_cells_ext, cs_real_4_t);
+  const cs_alloc_mode_t amode
+    = (on_device) ? cs_alloc_mode_device : cs_alloc_mode;
+
+  using rhs_t = T[4];
+  rhs_t *restrict rhsv;
+  CS_MALLOC_HD(rhsv, n_cells_ext, rhs_t, amode);
 
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     rhsv[c_id][0] = 0.0;
@@ -2811,7 +2815,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
       cs_real_t pfac_ii = pfac * cw_ii;
       cs_real_t pfac_jj = pfac * cw_jj;
-      cs_real_t fctb_ii[3], fctb_jj[3];
+      T fctb_ii[3], fctb_jj[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++) {
         fctb_ii[ll] = dc[ll] * pfac_jj;
         fctb_jj[ll] = dc[ll] * pfac_ii;
@@ -2827,7 +2831,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
       cs_real_t pfac =   (rhsv[jj][3] - rhsv[ii][3])
                        / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-      cs_real_t fctb[3];
+      T fctb[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         fctb[ll] = dc[ll] * pfac;
 
@@ -2850,19 +2854,15 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
         cs_lnum_t jj = cell_cells_e[cidx];
 
-        cs_real_t pfac, dc[3], fctb[4];
-
+        cs_real_t dc[3];
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
-        pfac =   (rhsv[jj][3] - rhsv[ii][3])
-               / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        cs_real_t pfac =   (rhsv[jj][3] - rhsv[ii][3])
+                         / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
-          fctb[ll] = dc[ll] * pfac;
-
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          rhsv[ii][ll] += fctb[ll];
+          rhsv[ii][ll] += dc[ll] * pfac;
 
       }
     });
@@ -2894,7 +2894,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     cs_real_t pfac = (val_f[f_id] - rhsv[c_id][3]) * ddif;
 
-    cs_real_t fctb[3];
+    T fctb[3];
     for (cs_lnum_t ll = 0; ll < 3; ll++) {
       fctb[ll] = dif[ll] * pfac;
     }
@@ -2907,15 +2907,15 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   /*------------------*/
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    grad[c_id][0] =   cocg[c_id][0] *rhsv[c_id][0]
-                    + cocg[c_id][3] *rhsv[c_id][1]
-                    + cocg[c_id][5] *rhsv[c_id][2];
-    grad[c_id][1] =   cocg[c_id][3] *rhsv[c_id][0]
-                    + cocg[c_id][1] *rhsv[c_id][1]
-                    + cocg[c_id][4] *rhsv[c_id][2];
-    grad[c_id][2] =   cocg[c_id][5] *rhsv[c_id][0]
-                    + cocg[c_id][4] *rhsv[c_id][1]
-                    + cocg[c_id][2] *rhsv[c_id][2];
+    grad[c_id][0] =   cocg[c_id][0] * rhsv[c_id][0]
+                    + cocg[c_id][3] * rhsv[c_id][1]
+                    + cocg[c_id][5] * rhsv[c_id][2];
+    grad[c_id][1] =   cocg[c_id][3] * rhsv[c_id][0]
+                    + cocg[c_id][1] * rhsv[c_id][1]
+                    + cocg[c_id][4] * rhsv[c_id][2];
+    grad[c_id][2] =   cocg[c_id][5] * rhsv[c_id][0]
+                    + cocg[c_id][4] * rhsv[c_id][1]
+                    + cocg[c_id][2] * rhsv[c_id][2];
   });
 
   ctx.wait();
@@ -3018,7 +3018,7 @@ _lsq_scalar_gradient_gather
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
 
-    cs_real_t rhsv[3] = {0, 0, 0};
+    T rhsv[3] = {0, 0, 0};
     cs_real_t v_ii = pvar[ii];
     cs_real_t v_min = v_ii, v_max = v_ii;
     auto cell_cen_ii = cell_cen[ii];
@@ -3313,8 +3313,9 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   /* Compute Right-Hand Side */
   /*-------------------------*/
 
-  cs_real_4_t  *restrict rhsv;
-  CS_MALLOC_HD(rhsv, n_cells_ext, cs_real_4_t, amode);
+  using rhs_t = T[4];
+  rhs_t  *restrict rhsv;
+  CS_MALLOC_HD(rhsv, n_cells_ext, rhs_t, amode);
 
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     rhsv[c_id][0] = 0.0;
@@ -3377,7 +3378,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
       cs_real_t pfac_ii = pfac * c_weight_s[jj];
       cs_real_t pfac_jj = pfac * c_weight_s[ii];
 
-      cs_real_t rhsv_ii[3], rhsv_jj[3];
+      T rhsv_ii[3], rhsv_jj[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++) {
         rhsv_ii[ll] = dc[ll] * pfac_ii;
         rhsv_jj[ll] = dc[ll] * pfac_jj;
@@ -3429,7 +3430,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
       }
       pfac /= cs_math_3_square_norm(dc);
 
-      cs_real_t fctb[3];
+      T fctb[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++) {
         fctb[ll] = dc[ll] * pfac;
       }
@@ -3471,7 +3472,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
          *  c) - 0.5 * dc * f_ext[jj]
          */
 
-        cs_real_t pfac, dc[3], fctb[4];
+        cs_real_t pfac, dc[3];
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -3482,9 +3483,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
                 / cs_math_3_square_norm(dc);
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
-          fctb[ll] = dc[ll] * pfac;
-
-        cs_dispatch_sum<3>(rhsv[ii], fctb, i_sum_type);
+          rhsv[ii][ll] += dc[ll] * pfac;
 
       }
     });
@@ -3527,7 +3526,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
     cs_real_t pfac = ddif * (val_f[f_id] - rhsv[c_id][3] - poro - if_dot_fext);
 
-    cs_real_t fctb[3];
+    T fctb[3];
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       fctb[ll] = dif[ll] * pfac;
 
@@ -3713,7 +3712,7 @@ _lsq_scalar_gradient_hyd_p_gather
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
 
-    cs_real_t rhsv[3] = {0, 0, 0};
+    T rhsv[3] = {0, 0, 0};
 
     /* Contribution from interior faces
        -------------------------------- */
@@ -3764,12 +3763,8 @@ _lsq_scalar_gradient_hyd_p_gather
         pfac /= (  pond       *w_ii
                  + (1. - pond)*w_jj);
 
-        cs_real_t fctb[3];
         for (cs_lnum_t ll = 0; ll < 3; ll++)
-          fctb[ll] = dc[ll] * pfac;
-
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          rhsv[ll] += w_jj * fctb[ll];
+          rhsv[ll] += w_jj * dc[ll] * pfac;
       }
 
     }
@@ -3808,12 +3803,8 @@ _lsq_scalar_gradient_hyd_p_gather
                             - poro[1])
                          * ddc;
 
-        cs_real_t fctb[3];
         for (cs_lnum_t ll = 0; ll < 3; ll++)
-          fctb[ll] = dc[ll] * pfac;
-
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          rhsv[ll] += fctb[ll];
+          rhsv[ll] += dc[ll] * pfac;
       }
 
     }  /* End for face-adjacent cells */
@@ -3841,7 +3832,7 @@ _lsq_scalar_gradient_hyd_p_gather
          *  c) - 0.5 * dc * f_ext[jj]
          */
 
-        cs_real_t pfac, dc[3], fctb[4];
+        cs_real_t pfac, dc[3];
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -3854,10 +3845,7 @@ _lsq_scalar_gradient_hyd_p_gather
                 * ddc;
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
-          fctb[ll] = dc[ll] * pfac;
-
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          rhsv[ll] += fctb[ll];
+          rhsv[ll] += dc[ll] * pfac;
 
       }
 
@@ -4012,7 +4000,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
 
-    cs_real_t rhsv[3] = {0, 0, 0};
+    T rhsv[3] = {0, 0, 0};
     cs_cocg_t cocg[6] = {0, 0, 0, 0, 0, 0};
 
     /* Contribution from interior faces
@@ -4256,8 +4244,8 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                                   (const cs_real_t (*)[1])val_f,
                                   (const cs_real_t (*)[1])c_var,
                                   c_weight_s,
-                                  (const cs_real_t (*)[1][3])r_grad,
-                                  (cs_real_t (*)[1][3])grad);
+                                  (const T (*)[1][3])r_grad,
+                                  (T (*)[1][3])grad);
     return;
   }
 #endif
@@ -4276,8 +4264,8 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                                  (const cs_real_t (*)[1])val_f,
                                  (const cs_real_t (*)[1])c_var,
                                  c_weight_s,
-                                 (const cs_real_t (*)[1][3])r_grad,
-                                 (cs_real_t (*)[1][3])grad);
+                                 (const T (*)[1][3])r_grad,
+                                 (T (*)[1][3])grad);
     return;
   }
 #endif
@@ -4391,13 +4379,13 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
               + dofij[f_id][1] * (r_grad[c_id1][1]+r_grad[c_id2][1])
               + dofij[f_id][2] * (r_grad[c_id1][2]+r_grad[c_id2][2])) * 0.5;
 
-      pfaci = (pfaci + rfac) * i_face_surf[f_id];
-      pfacj = (pfacj + rfac) * i_face_surf[f_id];
+      T _pfaci = (pfaci + rfac) * i_face_surf[f_id];
+      T _pfacj = (pfacj + rfac) * i_face_surf[f_id];
 
       T rhsv1[3], rhsv2[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        rhsv1[j] =   pfaci * i_face_u_normal[f_id][j];
-        rhsv2[j] = - pfacj * i_face_u_normal[f_id][j];
+        rhsv1[j] =   _pfaci * i_face_u_normal[f_id][j];
+        rhsv2[j] = - _pfacj * i_face_u_normal[f_id][j];
       }
 
       if (c_id1 < n_cells)
@@ -4423,7 +4411,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                  \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
       */
 
-      cs_real_t pfac = (val_f[f_id] - c_var[c_id]) * b_face_surf[f_id];
+      T pfac = (val_f[f_id] - c_var[c_id]) * b_face_surf[f_id];
 
       T rhsv[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
@@ -4475,11 +4463,8 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                  +dofij[f_id][1]*(r_grad[c_id1][1]+r_grad[c_id2][1])
                  +dofij[f_id][2]*(r_grad[c_id1][2]+r_grad[c_id2][2]));
 
-      pfaci = (pfaci + rfac) * i_face_surf[f_id];
-      pfacj = (pfacj + rfac) * i_face_surf[f_id];
-
-      const T _pfaci = static_cast<T>(pfaci);
-      const T _pfacj = static_cast<T>(pfacj);
+      T _pfaci = (pfaci + rfac) * i_face_surf[f_id];
+      T _pfacj = (pfacj + rfac) * i_face_surf[f_id];
 
       T rhsv1[3], rhsv2[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
@@ -6695,7 +6680,7 @@ _compute_gradient_lsq(cs_dispatch_context    &ctx,
                       [[maybe_unused]] bool   on_device,
                       cs_lnum_t               n_cells,
                       const cs_cocg_6_t      *restrict cocg,
-                      const cs_real_t       (*restrict rhs)[stride][3],
+                      const T               (*restrict rhs)[stride][3],
                       T                     (*restrict grad)[stride][3])
 {
 #if defined(HAVE_ACCEL)
@@ -6772,7 +6757,7 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
 {
   CS_PROFILE_FUNC_RANGE();
 
-  using grad_t = cs_real_t[stride][3];
+  using grad_t = T[stride][3];
   const cs_lnum_t n_cells     = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
@@ -6849,7 +6834,7 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
   grad_t *rhs;
   CS_MALLOC_HD(rhs, n_cells_ext, grad_t, cs_alloc_mode_device);
 
-  cs_arrays_set_zero<cs_real_t, 3>(ctx, n_cells_ext*stride, (cs_real_t*)rhs);
+  cs_arrays_set_zero<T, 3>(ctx, n_cells_ext*stride, (T *)rhs);
 
   if (cs_glob_timer_kernels_flag > 0)
     t_init = std::chrono::high_resolution_clock::now();
@@ -6878,7 +6863,7 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
 
         cs_real_t pfac_ii = pfac * cw_ii;
         cs_real_t pfac_jj = pfac * cw_jj;
-        cs_real_t fctb_ii[3], fctb_jj[3];
+        T fctb_ii[3], fctb_jj[3];
         for (cs_lnum_t ll = 0; ll < 3; ll++) {
           fctb_ii[ll] = dc[ll] * pfac_jj;
           fctb_jj[ll] = dc[ll] * pfac_ii;
@@ -6892,7 +6877,7 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
     else { /* if (c_weight == nullptr) */
       for (cs_lnum_t kk = 0; kk < stride; kk++) {
         cs_real_t pfac = (pvar[jj][kk] - pvar[ii][kk]) * ddc;
-        cs_real_t fctb[3];
+        T fctb[3];
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           fctb[ll] = dc[ll] * pfac;
 
@@ -6958,7 +6943,7 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
     for (cs_lnum_t kk = 0; kk < stride; kk++) {
       cs_real_t pfac = (val_f[f_id][kk] - pvar[c_id][kk]) * ddif;
 
-      cs_real_t fctb[3];
+      T fctb[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++) {
         fctb[ll] = dif[ll] * pfac;
       }
@@ -6975,7 +6960,7 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
     for (cs_lnum_t kk = 0; kk < stride; kk++) {
       cs_real_t pfac = (val_f[f_id][kk] - pvar[c_id][kk]) * unddij;
 
-      cs_real_t fctb[3];
+      T fctb[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++) {
         fctb[ll] = dif[ll] * pfac;
       }
@@ -7076,7 +7061,7 @@ _lsq_strided_gradient_gather(cs_dispatch_context         &ctx,
 {
   CS_PROFILE_FUNC_RANGE();
 
-  using grad_t = cs_real_t[stride][3];
+  using grad_t = T[stride][3];
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_cells = m->n_b_cells;
@@ -7142,7 +7127,7 @@ _lsq_strided_gradient_gather(cs_dispatch_context         &ctx,
     auto pvar_ii = pvar[ii];
     auto cell_cen_ii = cell_cen[ii];
 
-    cs_real_t _rhs[stride][3];
+    T _rhs[stride][3];
 
     for (cs_lnum_t kk = 0; kk < stride; kk++) {
       for (cs_lnum_t ll = 0; ll < 3; ll++)
@@ -7195,7 +7180,7 @@ _lsq_strided_gradient_gather(cs_dispatch_context         &ctx,
       auto pvar_ii = pvar[ii];
       auto cell_cen_ii = cell_cen[ii];
 
-      cs_real_t _rhs[stride][3];
+      T _rhs[stride][3];
       for (cs_lnum_t kk = 0; kk < stride; kk++) {
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           _rhs[kk][ll] = 0.;

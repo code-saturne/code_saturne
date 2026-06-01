@@ -2577,7 +2577,6 @@ _pressure_correction_fv(int                   iterns,
                                               imasfl, bmasfl);
     }
 
-
     /* The last increment is not reconstructed so as to fulfill exactly
        the continuity equation (see theory guide). The value of dfrcxt has
        no importance. */

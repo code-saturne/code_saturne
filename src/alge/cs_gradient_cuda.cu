@@ -120,8 +120,8 @@ template <typename grad_t, typename T>
 __global__ static void
 _compute_gradient_lsq_s(cs_lnum_t     n_cells,
                         grad_t      (*grad)[3],
-                        T            *cocg,
-                        cs_real_3_t  *rhsv)
+                        cs_cocg_6_t  *cocg,
+                        const T     (*rhsv)[3])
 {
   size_t t_id = blockIdx.x * blockDim.x + threadIdx.x;
   size_t c_id = t_id / 3;
@@ -144,6 +144,7 @@ _compute_gradient_lsq_s(cs_lnum_t     n_cells,
  * Recompute the rhsv contribution from interior and extended cells
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 __global__ static void
 _compute_rhsv_lsq_s_i_face(cs_lnum_t          size,
                            const cs_lnum_t   *cell_cells_idx,
@@ -151,7 +152,7 @@ _compute_rhsv_lsq_s_i_face(cs_lnum_t          size,
                            const cs_real_3_t *cell_cen,
                            const cs_real_t   *c_weight,
                            const cs_real_t   *pvar,
-                           cs_real_3_t       *rhsv)
+                           T                  rhsv[][3])
 {
   cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
   if (c_id < size) {
@@ -184,6 +185,7 @@ _compute_rhsv_lsq_s_i_face(cs_lnum_t          size,
  * Compute rhsv from contributions at boundaries
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 __global__ static void
 _compute_rhsv_lsq_s_b_face(cs_lnum_t          n_b_cells,
                            const cs_lnum_t    b_cells[],
@@ -194,7 +196,7 @@ _compute_rhsv_lsq_s_b_face(cs_lnum_t          n_b_cells,
                            const cs_rreal_t   diipb[][3],
                            const cs_real_t    val_f[],
                            const cs_real_t    pvar[],
-                           cs_real_3_t       *rhsv)
+                           T                  rhsv[][3])
 {
   cs_lnum_t b_c_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -240,10 +242,10 @@ _compute_rhsv_lsq_s_b_face(cs_lnum_t          n_b_cells,
  * Initialize RHSV with pvar
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 __global__ static void
 _init_rhsv(cs_lnum_t         size,
-           cs_real_3_t      *restrict rhsv,
-           const cs_real_t  *pvar)
+           T      (*restrict rhsv)[3])
 {
   cs_lnum_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -258,7 +260,7 @@ _init_rhsv(cs_lnum_t         size,
  * Compute rhsv contributions from neigboring cells for strided case
  *----------------------------------------------------------------------------*/
 
-template <unsigned int blocksize, cs_lnum_t stride>
+template <unsigned int blocksize, cs_lnum_t stride, typename T>
 __global__ static void
 _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
                                const cs_lnum_t      *restrict cell_cells_idx,
@@ -271,7 +273,7 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
                                const cs_real_t     (*restrict pvar)[stride],
                                const cs_real_t      *restrict weight,
                                const cs_real_t      *restrict c_weight,
-                               cs_real_t           (*restrict rhs)[stride][3])
+                               T                   (*restrict rhs)[stride][3])
 {
   cs_lnum_t c_id1 = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -283,7 +285,7 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
   // size_t i = (c_id / 3) % 3;
   // size_t j = c_id % 3;
 
-  cs_real_t _rhs[stride][3];
+  T _rhs[stride][3];
 
   for (cs_lnum_t i = 0; i < stride; i++) {
     for (cs_lnum_t j = 0; j < 3; j++) {
@@ -300,7 +302,7 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
   cs_lnum_t s_id = cell_cells_idx[c_id1];
   cs_lnum_t e_id = cell_cells_idx[c_id1 + 1];
 
-  cs_real_t dc[stride], fctb[stride], lweight, ddc;
+  cs_real_t dc[stride], lweight, ddc;
 
   for (cs_lnum_t idx = s_id; idx < e_id; idx++) {
     cs_lnum_t c_id2 = cell_cells[idx];
@@ -330,8 +332,7 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
     for (cs_lnum_t i = 0; i < stride; i++) {
       cs_real_t pfac = (pvar2[i] - pvar1[i]) * ddc;
       for (cs_lnum_t j = 0; j < 3; j++) {
-        fctb[j] = dc[j] * pfac;
-        _rhs[i][j] += lweight * fctb[j];
+        _rhs[i][j] += lweight * dc[j] * pfac;
       }
     }
 
@@ -378,7 +379,7 @@ _compute_rhs_lsq_strided_cells(cs_lnum_t             n_cells,
  * Compute base rhsv contributions from boundary faces for strided case
  *----------------------------------------------------------------------------*/
 
-template <unsigned int blocksize, cs_lnum_t stride>
+template <unsigned int blocksize, cs_lnum_t stride, typename T>
 __global__ static void
 _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
                                 const cs_lnum_t      *restrict cell_b_faces_idx,
@@ -392,7 +393,7 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
                                 const cs_real_t     (*restrict val_f)[stride],
                                 const cs_real_t     (*restrict pvar)[stride],
                                 cs_cocg_6_t          *restrict cocg,
-                                cs_real_t           (*restrict rhs)[stride][3])
+                                T                   (*restrict rhs)[stride][3])
 {
   cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -405,7 +406,7 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
 
-  cs_real_t _rhs[stride][3];
+  T _rhs[stride][3];
 
   for (cs_lnum_t i = 0; i < stride; i++){
     for (cs_lnum_t j = 0; j < 3; j++){
@@ -465,9 +466,9 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
 template <cs_lnum_t stride, typename T>
 __global__ static void
 _compute_gradient_lsq_strided(cs_lnum_t          n_cells,
-                              T       (*restrict grad)[stride][3],
+                              T                (*restrict grad)[stride][3],
                               cs_cocg_6_t       *restrict cocg,
-                              const cs_real_t  (*restrict rhs)[stride][3])
+                              const T          (*restrict rhs)[stride][3])
 {
   size_t t_id = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -933,8 +934,9 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   cudaStream_t stream = cs_cuda_get_stream(0);
   cudaStream_t stream1 = cs_cuda_get_stream(1);
 
-  cs_real_3_t *rhsv;
-  CS_MALLOC_HD(rhsv, n_cells_ext, cs_real_3_t, CS_ALLOC_DEVICE);
+  using rhs_t = T[3];
+  rhs_t *rhsv;
+  CS_MALLOC_HD(rhsv, n_cells_ext, rhs_t, CS_ALLOC_DEVICE);
 
   void *_pvar_d = nullptr, *_flux = nullptr;
   const cs_real_t *pvar_d = nullptr, *flux = nullptr;
@@ -981,7 +983,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
     = cs_get_device_ptr_const(fvq->weight);
 
   _init_rhsv<<<gridsize_ext, blocksize, 0, stream>>>
-    (n_cells_ext, rhsv, pvar_d);
+    (n_cells_ext, rhsv);
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
   /*---------------------------------------------------------------------*/
@@ -1212,7 +1214,7 @@ cs_gradient_strided_lsq_cuda
     CS_CUDA_CHECK(cudaEventRecord(e_h2d, stream));
 
   //decltype(grad) rhs_d;
-  using rhs_d_t = cs_real_t[stride][3];
+  using rhs_d_t = T[stride][3];
   rhs_d_t *rhs_d;
   CS_MALLOC_HD(rhs_d, n_cells, rhs_d_t, CS_ALLOC_DEVICE);
 
