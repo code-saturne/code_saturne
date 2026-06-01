@@ -644,6 +644,8 @@ on several rules.
   dependent. With *gcc*, the following command is
   useful: `gcc -dM -E - < /dev/null`
 
+  * For C++, use `g++ -dM -E -x c++ - < /dev/null`
+
 - One of the main uses of the preprocessor is conditional compilation
   ```{.c}
 #if defined (HAVE_MPI)
@@ -669,28 +671,18 @@ code_saturne defines several preprocessor macros, among which the following:
 
 Two macros of special importance are:
   - \ref BEGIN_C_DECLS
-    - In C++, expands to
+    - Expands to
       ```extern "C" {```
-    - Empty in C.
+
   - \ref END_C_DECLS
-    - In C++, expands to
+    - Expands to
       ```}```
-    - Empty in C.
 
 Using `extern "C"` in C++ tells the C++ compiler to generate C-linkable code,
 with no [name mangling](https://en.wikipedia.org/wiki/Name_mangling).
-Code enclosed in these sections can be called from C code.
-If a header file includes C++ contructs with no C equivalents, that
-code must also be protected by an
-```{.cpp}
-#ifdef __cplusplus
-...
-#endif
-```
-sequence so as to be ignored by the C compiler.
-Starting with code_saturne 9.1, we will not try to ensure C compatibility
-anymore, so these constructs are important mainly in regard to versions
-9.0 and older.
+Code enclosed in these sections uses C linkage, which
+was useful until code_saturne 9.1, where C/C++ compatibility
+was maintaned.
 
 ### Preprocessors in various programming languages
 
@@ -729,7 +721,7 @@ int f(int n, double x[]) {
 - Local definitions ensure variables are _local_ (and thus automatically private)
   in OpenMP sections.
 
-Since the C99 standard, variables may be defined in a
+Variables may be defined in a
 function body, or even in a control structure:
 
 ```{.cpp}
@@ -867,9 +859,6 @@ C Pragmas
 Another type of element may start with a `#`, but is not related to the
 preprocessor: `pragmas`
 - `#pragma omp ...` for optional thread/task parallelism using the _OpenMP_ model
-- `#pragma disjoint(<variable list)` for directives specific to optimizations
-   using the IBM XL compilers (at least in older versions); in most cases,
-   the `restrict` keyword is a more portable alternative
 - `#pragma GCC ...` for directives specific to GCC
 
 The most frequent pragmas in code_saturne are related to _OpenMP_ parallelism
@@ -908,7 +897,8 @@ C++ allows a more portable alternative to C decorators, called
 [attributes](https://en.cppreference.com/w/cpp/language/attributes).
 
 Attributes most often used in code_saturne include `[[fallthrough]]`, which
-indicates that if a `swich`/`case` entry continues to the next case without a
+indicates that if a `switch`/`case` entry continues to the next case without a
 `break` statement, this is intentional, and the compiler should not emit a
-warning, and `[[maybe_unused]]`, which also avoids a comppiler warning if a
+warning, and `[[maybe_unused]]`, which also avoids a compiler warning if a
 function parameter is not used in a given case).
+The `[[deprecated]]` attribute is also used so as to emit compiler warnings for code which should be replaced by a more current alternative.
