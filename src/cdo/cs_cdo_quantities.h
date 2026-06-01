@@ -308,7 +308,7 @@ typedef struct cs_cdo_quantities_t { /* Specific mesh quantities */
    */
   /*----------------------------------------------------------------------------*/
 
-  inline const cs_real_t *
+  inline const cs_nreal_t *
   get_bface_normal(cs_lnum_t bf_id) const
   {
     assert(bf_id >= 0 && bf_id < this->n_b_faces);

@@ -1025,7 +1025,7 @@ cs_convection_diffusion_secvis
   const cs_real_t              i_visc[],
   const cs_real_t              i_secvis[],
   const cs_real_t              b_secvis[],
-  const cs_real_t              gradv[][3][3],
+  const cs_rreal_t             gradv[][3][3],
   cs_real_3_t        *restrict rhs
 );
 

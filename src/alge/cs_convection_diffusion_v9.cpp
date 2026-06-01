@@ -255,7 +255,7 @@ _convection_diffusion_scalar_unsteady_v91
 
   /* Allocate work arrays */
 
-  CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(grad, n_cells_ext, cs_rreal_3_t, cs_alloc_mode);
 
   const cs_real_t rc_clip_factor
     = (eqp.ircflu != 0) ? eqp.rc_clip_factor : -1;

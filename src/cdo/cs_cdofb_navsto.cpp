@@ -1386,7 +1386,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t   *nsp,
 
       // Compute sigma.n
 
-      const cs_real_t *normal = quant->get_bface_normal(bf_id);
+      const cs_nreal_t *normal = quant->get_bface_normal(bf_id);
 
       cs_math_sym_33_3_product(sigma, normal, boundary_stress->val + 3 * bf_id);
     }
