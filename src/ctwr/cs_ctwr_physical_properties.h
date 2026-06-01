@@ -1,5 +1,5 @@
-#ifndef __CS_CTWR_PHYSPROP_H__
-#define __CS_CTWR_PHYSPROP_H__
+#ifndef CS_CTWR_PHYSPROP_H
+#define CS_CTWR_PHYSPROP_H
 
 /*============================================================================
  * Cooling towers related functions
@@ -36,11 +36,7 @@
 #include "base/cs_field.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute cell reference pressure
  *
  * \param[in]     cell_id       Cell index
@@ -56,7 +52,7 @@ cs_ctwr_compute_reference_pressure(cs_lnum_t  cell_id,
                                    cs_field_t *ref_pressure);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Update the thermo physical properties fields for the humid air and
  *        the liquid
  *
@@ -72,7 +68,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
                       cs_real_t  p0);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Reset the field variables based on the restart values
  *
  * \param[in]     rho0        Reference density of humid air
@@ -92,6 +88,4 @@ cs_ctwr_restart_field_vars(cs_real_t  rho0,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_CTWR_PHYSPROP_H__ */
+#endif /* CS_CTWR_PHYSPROP_H */

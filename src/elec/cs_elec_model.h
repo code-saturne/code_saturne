@@ -1,5 +1,5 @@
-#ifndef __CS_ELEC_MODEL_H__
-#define __CS_ELEC_MODEL_H__
+#ifndef CS_ELEC_MODEL_H
+#define CS_ELEC_MODEL_H
 
 /*============================================================================
  * General parameters management.
@@ -36,10 +36,6 @@
 #include "cdo/cs_domain.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -341,6 +337,4 @@ cs_elec_define_functions(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_ELEC_MODEL_H__ */
+#endif /* CS_ELEC_MODEL_H */

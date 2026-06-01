@@ -368,6 +368,7 @@ cs_gui_turb_ref_values(void);
  * Logging output for MEI usage.
  *----------------------------------------------------------------------------*/
 
+[[deprecated("Remove this call to now empty function")]]
 void
 cs_gui_usage_log(void);
 

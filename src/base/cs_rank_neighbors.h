@@ -1,5 +1,5 @@
-#ifndef __CS_RANK_NEIGHBORS_H__
-#define __CS_RANK_NEIGHBORS_H__
+#ifndef CS_RANK_NEIGHBORS_H
+#define CS_RANK_NEIGHBORS_H
 
 /*============================================================================
  * Management of parallel rank neighbors.
@@ -37,10 +37,6 @@
 
 #include "base/cs_defs.h"
 #include "base/cs_block_dist.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -242,6 +238,4 @@ cs_rank_neighbors_set_exchange_type(cs_rank_neighbors_exchange_t  t);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_RANK_NEIGHBORS_H__ */
+#endif /* CS_RANK_NEIGHBORS_H */

@@ -525,30 +525,4 @@ cs_gui_node_get_child_status_bool(cs_tree_node_t  *node,
   }
 }
 
-/*-----------------------------------------------------------------------------
- * Add timing increment to global MEI time counter.
- *
- * parameters:
- *   t <-- timing increment to add
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_add_mei_time(double t)
-{
-  _cs_gui_mei_time += t;
-}
-
-/*-----------------------------------------------------------------------------
- * Get cumulative global MEI time counter.
- *
- * returns:
- *   cumulative global MEI time counter
- *----------------------------------------------------------------------------*/
-
-double
-cs_gui_get_mei_times(void)
-{
-  return _cs_gui_mei_time;
-}
-
 /*----------------------------------------------------------------------------*/

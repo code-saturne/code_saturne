@@ -1,5 +1,5 @@
-#ifndef __CS_CTWR_INIT_H__
-#define __CS_CTWR_INIT_H__
+#ifndef CS_CTWR_INIT_H
+#define CS_CTWR_INIT_H
 
 /*============================================================================
  * Cooling towers related functions
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -56,7 +52,7 @@ void
 cs_ctwr_fields_init1(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialize the field variables
  *
  * \param[in]     rho0        Reference density of humid air
@@ -73,7 +69,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
                         cs_real_t  molmassrat);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialize the flow variables relevant to the cooling tower scalars
  * inside the packing zones
  *
@@ -86,6 +82,4 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[]);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_CTWR_INIT_H__ */
+#endif /* CS_CTWR_INIT_H */

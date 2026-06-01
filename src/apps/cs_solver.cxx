@@ -591,7 +591,6 @@ _run(void)
 
   /* Print some mesh statistics */
 
-  cs_gui_usage_log();
   cs_mesh_selector_stats(cs_glob_mesh);
 
   /* Finalizations related to some models */

@@ -1,5 +1,5 @@
-#ifndef __CS_RESTART_MAP_H__
-#define __CS_RESTART_MAP_H__
+#ifndef CS_RESTART_MAP_H
+#define CS_RESTART_MAP_H
 
 /*============================================================================
  * Checkpoint / restart extension to mapped meshes
@@ -38,10 +38,6 @@
 #include "base/cs_defs.h"
 #include "base/cs_restart.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -62,7 +58,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Indicate restart files should be mapped to a given mesh input
  *
  * \param[in]  mesh_path           path to mesh input
@@ -73,7 +69,7 @@ void
 cs_restart_map_set_mesh_input(const char  *mesh_path);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Return path of mesh if a restart mapping of restart files to
  *         a different mesh has been defined, null otherwise.
  *
@@ -85,7 +81,7 @@ const char *
 cs_restart_map_get_mesh_input(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set options relative to restart file mapping to a given mesh input.
  *
  * \param[in]  apply_mesh_deformation  apply mesh deformation from upstream
@@ -105,7 +101,7 @@ cs_restart_map_set_options(bool   apply_mesh_deformation,
                            float  tolerance_fraction);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Indicate whether location for restart file mapping is needed at
  *         cells or vertices.
  *
@@ -133,7 +129,7 @@ cs_restart_map_set_locations(bool map_cell_centers,
                              bool map_vertices);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Build mapping of restart files to different mesh if defined.
  */
 /*----------------------------------------------------------------------------*/
@@ -142,7 +138,7 @@ void
 cs_restart_map_build(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Free restart file mapping to different mesh.
  *
  * Revert restart reading to default behavior.
@@ -154,6 +150,4 @@ cs_restart_map_free(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_RESTART_MAP_H__ */
+#endif /* CS_RESTART_MAP_H */

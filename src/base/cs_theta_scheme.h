@@ -1,5 +1,5 @@
-#ifndef __CS_SEARCH_H__
-#define __CS_SEARCH_H__
+#ifndef CS_THETA_SCHEME_H
+#define CS_THETA_SCHEME_H
 
 /*============================================================================
  * Management of the mass flux, the viscosity, the density, the specific
@@ -36,10 +36,6 @@
 
 #include "base/cs_base.h"
 
-/*---------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function definitions
  *===========================================================================*/
@@ -75,6 +71,4 @@ cs_theta_scheme_update_var_stage5(void);
 
 /*---------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_SEARCH_H__ */
+#endif /* CS_THETA_SCHEME_H */

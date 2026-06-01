@@ -1,5 +1,5 @@
-#ifndef __CS_NUMBERING_H__
-#define __CS_NUMBERING_H__
+#ifndef CS_NUMBERING_H
+#define CS_NUMBERING_H
 
 /*============================================================================
  * Numbering information for vectorization or multithreading
@@ -34,10 +34,6 @@
 #include "base/cs_defs.h"
 #include "base/cs_base.h"
 #include "base/cs_log.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -240,6 +236,4 @@ cs_numbering_dump(const cs_numbering_t  *numbering);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_NUMBERING_H__ */
+#endif /* CS_NUMBERING_H */

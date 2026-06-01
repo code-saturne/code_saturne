@@ -1,5 +1,5 @@
-#ifndef __CS_SOLID_ZONE_H__
-#define __CS_SOLID_ZONE_H__
+#ifndef CS_SOLID_ZONE_H
+#define CS_SOLID_ZONE_H
 
 /*============================================================================
  * Solid zones handling.
@@ -39,10 +39,6 @@
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_zone.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -60,7 +56,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief build solid flag for mesh cells.
  *
  * If no solid cells are present, returned pointer is null.
@@ -104,6 +100,4 @@ cs_solid_zone_set_scalar_on_cells(cs_real_t  ref_val,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_SOLID_ZONE_H__ */
+#endif /* CS_SOLID_ZONE_H */

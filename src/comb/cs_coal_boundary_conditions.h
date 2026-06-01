@@ -1,5 +1,5 @@
-#ifndef __CS_COAL_BOUNDARY_CONDITIONS_H__
-#define __CS_COAL_BOUNDARY_CONDITIONS_H__
+#ifndef CS_COAL_BOUNDARY_CONDITIONS_H
+#define CS_COAL_BOUNDARY_CONDITIONS_H
 
 /*============================================================================
  * Coal combustion model boundary conditions.
@@ -38,10 +38,6 @@
 #include "base/cs_defs.h"
 #include "comb/cs_coal.h"
 #include "base/cs_zone.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -190,6 +186,4 @@ cs_coal_boundary_conditions_density(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_COAL_BOUNDARY_CONDITIONS_H_ */
+#endif /* CS_COAL_BOUNDARY_CONDITIONS_H */

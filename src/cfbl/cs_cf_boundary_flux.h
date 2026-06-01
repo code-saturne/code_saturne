@@ -1,5 +1,5 @@
-#ifndef __CS_CF_BOUNDARY_FLUX_H__
-#define __CS_CF_BOUNDARY_FLUX_H__
+#ifndef CS_CF_BOUNDARY_FLUX_H
+#define CS_CF_BOUNDARY_FLUX_H
 
 /*============================================================================
  * Compute the flux at the boundary.
@@ -36,10 +36,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes
@@ -78,6 +74,4 @@ cs_cf_boundary_rusanov(const cs_lnum_t  f_id,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_CF_BOUNDARY_FLUX_H__ */
+#endif /* CS_CF_BOUNDARY_FLUX_H */

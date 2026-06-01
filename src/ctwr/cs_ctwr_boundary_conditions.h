@@ -1,5 +1,5 @@
-#ifndef __CS_CTWR_BCOND_H__
-#define __CS_CTWR_BCOND_H__
+#ifndef CS_CTWR_BOUNDARY_CONDITIONS_H
+#define CS_CTWR_BOUNDARY_CONDITIONS_H
 
 /*============================================================================
  * Cooling towers functions for boundary conditions
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------
  * Automatic boundary condition for cooling towers
  *----------------------------------------------------------------------------*/
@@ -46,6 +42,4 @@ cs_ctwr_bcond(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_CTWR_BCOND_H__ */
+#endif /* CS_CTWR_BOUNDARY_CONDITIONS */

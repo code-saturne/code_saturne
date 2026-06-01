@@ -1,5 +1,5 @@
-#ifndef __CS_GUI_UTIL_H__
-#define __CS_GUI_UTIL_H__
+#ifndef CS_GUI_UTIL_H
+#define CS_GUI_UTIL_H
 
 /*============================================================================
  * Management of the GUI parameters file: xpath request and utilities
@@ -33,10 +33,6 @@
 
 #include "base/cs_base.h"
 #include "base/cs_tree.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes
@@ -261,28 +257,6 @@ cs_gui_node_get_child_status_bool(cs_tree_node_t  *node,
                                   const char      *child_name,
                                   bool            *status);
 
-/*-----------------------------------------------------------------------------
- * Add timing increment to global MEI time counter.
- *
- * parameters:
- *   t <-- timing increment to add
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_add_mei_time(double t);
-
-/*-----------------------------------------------------------------------------
- * Get cumulative global MEI time counter.
- *
- * returns:
- *   cumulative global MEI time counter
- *----------------------------------------------------------------------------*/
-
-double
-cs_gui_get_mei_times(void);
-
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_GUI_UTIL_H__ */
+#endif /* CS_GUI_UTIL_H */

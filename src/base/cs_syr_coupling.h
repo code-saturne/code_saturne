@@ -1,5 +1,5 @@
-#ifndef __CS_SYR_COUPLING_H__
-#define __CS_SYR_COUPLING_H__
+#ifndef CS_SYR_COUPLING_H
+#define CS_SYR_COUPLING_H
 
 /*============================================================================
  * SYRTHES coupling
@@ -39,10 +39,6 @@
 
 #include "base/cs_base.h"
 #include "base/cs_zone.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro Definitions
@@ -153,7 +149,7 @@ void
 cs_syr_coupling_set_explicit_treatment(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set time synchronization mode for a given SYRTHES coupling.
  *
  * This will suggest options on the SYRTHES side.
@@ -184,7 +180,7 @@ cs_syr_coupling_set_time_sync_flag(int  cpl_id,
                                    int  flag);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Log SYRTHES coupling setup information.
  */
 /*----------------------------------------------------------------------------*/
@@ -193,7 +189,7 @@ void
 cs_syr_coupling_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create coupled meshes and setup PLE locator for Syrthes couplings.
  */
 /*----------------------------------------------------------------------------*/
@@ -202,7 +198,7 @@ void
 cs_syr_coupling_init_meshes(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Check if the given SYRTHES coupling number is a surface couplings.
  *
  * \param[in] cpl_id   matching SYRTHES coupling id
@@ -215,7 +211,7 @@ int
 cs_syr_coupling_is_surf(int  cpl_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Read boundary field/variable values relative to a SYRTHES coupling.
  *
  * \param[in]   nvar     number of variables
@@ -230,7 +226,7 @@ cs_syr_coupling_recv_boundary(const int  nvar,
                               int        bc_type[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Send field/variable values relative to a SYRTHES coupling.
  *
  * \param[in]  h_wall   wall thermal exchange coefficient
@@ -243,7 +239,7 @@ cs_syr_coupling_send_boundary(const cs_real_t  h_wall[],
                               cs_real_t        v_fluid[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Exchange volume values relative to a SYRTHES coupling.
  */
 /*----------------------------------------------------------------------------*/
@@ -252,7 +248,7 @@ void
 cs_syr_coupling_exchange_volume(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the source term (implicit and/or explicit part) for a
  *         volume coupling with SYRTHES.
  *
@@ -268,7 +264,7 @@ cs_syr_coupling_volume_source_terms(int        field_id,
                                     cs_real_t  st_imp[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Get number of coupled elements with SYRTHES.
  *
  * \param[in]   cpl_id  coupling id
@@ -283,7 +279,7 @@ cs_syr_coupling_n_elts(int  cpl_id,
                        int  mode);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Get local ids of elements coupled with SYRTHES
  *
  * \param[in]    cpl_id   coupling id
@@ -298,7 +294,7 @@ cs_syr_coupling_elt_ids(int        cpl_id,
                         cs_lnum_t  elt_ids[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Receive coupling variables from SYRTHES.
  *
  * \param[in]    cpl_id   coupling id
@@ -313,7 +309,7 @@ cs_syr_coupling_recv_tsolid(int        cpl_id,
                             cs_real_t  t_solid[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Send coupling variables to SYRTHES.
  *
  * \param[in]    cpl_id   coupling id
@@ -379,6 +375,4 @@ cs_syr_coupling_is_bnd_zone_coupled
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_SYR_COUPLING_H__ */
+#endif /* CS_SYR_COUPLING_H */

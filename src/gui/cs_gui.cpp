@@ -4949,25 +4949,6 @@ cs_gui_turb_ref_values(void)
 void
 cs_gui_usage_log(void)
 {
-  double mei_wtime = cs_gui_get_mei_times();
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-    double _wtime_loc = mei_wtime;
-    MPI_Allreduce(&_wtime_loc, &mei_wtime, 1, MPI_DOUBLE, MPI_MAX,
-                   cs_glob_mpi_comm);
-  }
-
-#endif
-
-  if (mei_wtime > 0.0) {
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("\nTime elapsed defining values using MEI: %12.5f\n"),
-                  mei_wtime);
-    cs_log_printf(CS_LOG_PERFORMANCE, "\n");
-    cs_log_separator(CS_LOG_PERFORMANCE);
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -6026,7 +6007,6 @@ cs_gui_physical_variable(void)
                     c_prop->val[c_id] *= cs_glob_fluid_properties->ro0;
                   }
                 }
-                cs_gui_add_mei_time(cs_timer_wtime() - time0);
 #if _XML_DEBUG
                 bft_printf("==> %s\n", __func__);
                 bft_printf("--law for the diffusivity coefficient "

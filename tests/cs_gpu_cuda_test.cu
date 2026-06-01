@@ -724,11 +724,9 @@ _dot_products_1(double   t_measure,
   return test_sum;
 }
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 main_cuda(void)
 {
   // double t_measure = 10.0;
@@ -756,5 +754,3 @@ main_cuda(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -1,5 +1,5 @@
-#ifndef __CS_CTWR_SOURCE_TERMS_H__
-#define __CS_CTWR_SOURCE_TERMS_H__
+#ifndef CS_CTWR_SOURCE_TERMS_H
+#define CS_CTWR_SOURCE_TERMS_H
 
 /*============================================================================
  * Cooling towers related functions
@@ -34,11 +34,7 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Phase change source terms - Exchange terms between the injected
  *        liquid and the water vapor phase in the bulk, humid air
  *
@@ -54,7 +50,7 @@ cs_ctwr_source_term(int              f_id,
                     cs_real_t        imp_st[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief cs_dof_func_t function to compute volume mass injection for
  *   pressure (mass) equation resulting from water evaporatin in the
  *   packing zones.
@@ -75,7 +71,7 @@ cs_ctwr_volume_mass_injection_packing_dof_func(cs_lnum_t         n_elts,
                                                cs_real_t        *retval);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief cs_dof_func_t function to compute volume mass injection for
  *   pressure (mass) equation resulting from evaporation of the rain.
  *
@@ -95,7 +91,7 @@ cs_ctwr_volume_mass_injection_evap_rain_dof_func(cs_lnum_t         n_elts,
                                                  cs_real_t        *retval);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief cs_dof_func_t function to compute volume mass injection for
  *   pressure (mass) equation for the rain.
  *
@@ -115,7 +111,7 @@ cs_ctwr_volume_mass_injection_rain_dof_func(cs_lnum_t         n_elts,
                                             cs_real_t        *retval);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief cs_dof_func_t function to compute volume mass injection for
  *   yphp rain equation (enthalpy).
  *
@@ -136,6 +132,4 @@ cs_ctwr_volume_mass_injection_yh_rain_dof_func(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_CTWR_SOURCE_TERMS_H__ */
+#endif /* CS_CTWR_SOURCE_TERMS_H */

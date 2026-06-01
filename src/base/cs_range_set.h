@@ -1,5 +1,5 @@
-#ifndef __CS_RANGE_SET_H__
-#define __CS_RANGE_SET_H__
+#ifndef CS_RANGE_SET_H
+#define CS_RANGE_SET_H
 
 /*============================================================================
  * Operations related to handling of an owning rank for distributed entities.
@@ -44,10 +44,6 @@
 
 #include "mesh/cs_mesh_builder.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -85,7 +81,7 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define global ids and a partitioning of data based on local ranges
  *        for elements which may be shared across ranks or have halo elements.
  *
@@ -138,7 +134,7 @@ cs_range_set_define(const cs_interface_set_t  *ifs,
                     cs_gnum_t                 *g_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a range set (with associated range and global ids) for the
  *        partitioning of data based on local ranges for elements which may
  *        be shared across ranks or have halo elements.
@@ -180,7 +176,7 @@ cs_range_set_create(const cs_interface_set_t  *ifs,
                     cs_gnum_t                  g_id_base);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a range set (with associated range and global ids) from
  *        an existing partition of data based on local ranges for elements
  *        which may be shared across ranks or have halo elements.
@@ -208,7 +204,7 @@ cs_range_set_create_from_shared(const cs_interface_set_t  *ifs,
                                 cs_gnum_t                 *g_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Destroy a range set structure.
  *
  * \param[in, out]  rs  pointer to pointer to structure to destroy
@@ -219,7 +215,7 @@ void
 cs_range_set_destroy(cs_range_set_t  **rs);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set values of a given array to zero for indexes of elements
  *        outside the local range.
  *
@@ -241,7 +237,7 @@ cs_range_set_zero_out_of_range(const cs_range_set_t  *rs,
                                void                  *val);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Synchronize values elements associated with a range set, using
  *        either a halo or an interface set.
  *
@@ -259,7 +255,7 @@ cs_range_set_sync(const cs_range_set_t  *rs,
                   void                  *val);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Gather element values associated with a range set to a compact set.
  *
  * \param[in]   rs        pointer to range set structure, or nullptr
@@ -279,7 +275,7 @@ cs_range_set_gather(const cs_range_set_t  *rs,
                     void                  *dest_val);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Scatter element values associated with a range set to the full set.
  *
  * This includes parallel synchronization when the range set is associated
@@ -303,6 +299,4 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_RANGE_SET_H__ */
+#endif /* CS_RANGE_SET_H */

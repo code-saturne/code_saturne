@@ -1,5 +1,5 @@
-#ifndef __CS_CF_ENERGY_H__
-#define __CS_CF_ENERGY_H__
+#ifndef CS_CF_ENERGY_H
+#define CS_CF_ENERGY_H
 
 /*============================================================================
  * Solve the convection/diffusion equation (with eventual source terms)
@@ -38,10 +38,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -57,6 +53,4 @@ cs_cf_energy(int f_sc_id);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_CF_ENERGY_H__ */
+#endif /* CS_CF_ENERGY_H */

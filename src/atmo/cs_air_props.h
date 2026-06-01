@@ -1,5 +1,5 @@
-#ifndef __CS_AIR_PROPS_H__
-#define __CS_AIR_PROPS_H__
+#ifndef CS_AIR_PROPS_H
+#define CS_AIR_PROPS_H
 
 /*============================================================================
  * Specific laws for air properties (temperature, enthalpy)
@@ -38,10 +38,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Structure definition
@@ -403,6 +399,4 @@ cs_air_rho_humidair(cs_real_t  x,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_AIR_PROPERTIES_H__ */
+#endif /* CS_AIR_PROPERTIES_H */

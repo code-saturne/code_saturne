@@ -1,5 +1,5 @@
-#ifndef __CS_IO_H__
-#define __CS_IO_H__
+#ifndef CS_IO_H
+#define CS_IO_H
 
 /*============================================================================
  *  Low level file I/O utility functions for Preprocessor and restart files
@@ -35,10 +35,6 @@
 
 #include "base/cs_base.h"
 #include "base/cs_file.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro Definitions
@@ -684,6 +680,4 @@ cs_io_dump(const cs_io_t  *cs_io);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_IO_H__ */
+#endif /* CS_IO_H */

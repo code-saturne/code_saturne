@@ -1,5 +1,5 @@
-#ifndef __CS_ATMO_CHEMISTRY_H__
-#define __CS_ATMO_CHEMISTRY_H__
+#ifndef CS_ATMO_CHEMISTRY_H
+#define CS_ATMO_CHEMISTRY_H
 
 /*============================================================================
  * Main for atmospheric chemistry related functions
@@ -32,10 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Local Macro definitions
@@ -401,6 +397,4 @@ cs_atmo_compute_gaseous_chemistry(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_ATMO_CHEMISTRY_H__ */
+#endif /* CS_ATMO_CHEMISTRY_H */

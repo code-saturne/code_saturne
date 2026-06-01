@@ -1,5 +1,5 @@
-#ifndef __CS_RUNAWAY_H__
-#define __CS_RUNAWAY_H__
+#ifndef CS_RUNAWAY_H
+#define CS_RUNAWAY_H
 
 /*============================================================================
  * Runaway (diverging) computation detection.
@@ -38,10 +38,6 @@
 #include "base/cs_base.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_time_step.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -95,6 +91,4 @@ cs_runaway_check_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_RUNAWAY_H__ */
+#endif /* CS_RUNAWAY_H */

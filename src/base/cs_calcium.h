@@ -1,5 +1,5 @@
-#ifndef __CS_CALCIUM_H__
-#define __CS_CALCIUM_H__
+#ifndef CS_CALCIUM_H
+#define CS_CALCIUM_H
 
 /*============================================================================
  * Basic CALCIUM-mappable functions for code coupling
@@ -32,10 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro Definitions
@@ -121,7 +117,5 @@ cs_calcium_set_verbosity(int  n_echo);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_CALCIUM_H__ */
+#endif /* CS_CALCIUM_H */
 

@@ -1,5 +1,5 @@
-#ifndef __CS_UTILITIES_H__
-#define __CS_UTILITIES_H__
+#ifndef CS_UTILITIES_H
+#define CS_UTILITIES_H
 
 /*============================================================================
  * Global utilities functions used for initialize and finalize calls.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -53,6 +49,4 @@ cs_utilities_destroy_all_remapping(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_UTILITIES_H__ */
+#endif /* CS_UTILITIES_H */

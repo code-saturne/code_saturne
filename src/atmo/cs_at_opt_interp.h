@@ -1,5 +1,5 @@
-#ifndef __CS_AT_OPT_INTERP_H__
-#define __CS_AT_OPT_INTERP_H__
+#ifndef CS_AT_OPT_INTERP_H
+#define CS_AT_OPT_INTERP_H
 
 /*============================================================================
  * Optimal Interpolation.
@@ -39,10 +39,6 @@
 
 #include "base/cs_field.h"
 #include "base/cs_measures_util.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -270,6 +266,4 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_AT_OPT_INTERP_H__ */
+#endif /* CS_AT_OPT_INTERP_H */

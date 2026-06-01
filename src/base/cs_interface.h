@@ -1,5 +1,5 @@
-#ifndef __CS_INTERFACE_H__
-#define __CS_INTERFACE_H__
+#ifndef CS_INTERFACE_H
+#define CS_INTERFACE_H
 
 /*============================================================================
  * Main structure for handling of interfaces associating mesh elements
@@ -35,10 +35,6 @@
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_periodicity.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -650,6 +646,4 @@ cs_interface_set_dump(const cs_interface_set_t  *ifs);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_INTERFACE_H__ */
+#endif /* CS_INTERFACE_H */
