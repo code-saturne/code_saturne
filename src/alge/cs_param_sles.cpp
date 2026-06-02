@@ -76,6 +76,63 @@
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check if the SLES settings is consistent
+ *
+ * \param[in] slesp     pointer to a \ref cs_param_sles_t structure
+ * \param[in] precond   type of preconditioner
+ * \param[in] amg_type  type of AMG method
+ *
+ * \return false if checkings fail
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_check_slesp_settings(const cs_param_sles_t    *slesp,
+                      cs_param_precond_type_t   precond,
+                      cs_param_amg_type_t       amg_type)
+{
+  assert(slesp != nullptr);
+
+  if (slesp->precond != precond)
+    return false;
+
+  if (slesp->precond == CS_PARAM_PRECOND_AMG) {
+
+    if (slesp->amg_type != amg_type)
+      return false;
+    else {
+      switch (slesp->solver_class) {
+      case CS_PARAM_SOLVER_CLASS_CS:
+        if (amg_type != CS_PARAM_AMG_INHOUSE_K &&
+            amg_type != CS_PARAM_AMG_INHOUSE_V)
+          return false;
+        break; // Avoid a compiler warning
+      case CS_PARAM_SOLVER_CLASS_PETSC:
+        if (amg_type != CS_PARAM_AMG_PETSC_GAMG_V    &&
+            amg_type != CS_PARAM_AMG_PETSC_GAMG_W    &&
+            amg_type != CS_PARAM_AMG_PETSC_HMG_V     &&
+            amg_type != CS_PARAM_AMG_PETSC_HMG_W     &&
+            amg_type != CS_PARAM_AMG_HYPRE_BOOMER_V  &&
+            amg_type != CS_PARAM_AMG_HYPRE_BOOMER_W)
+          return false;
+        break; // Avoid a compiler warning
+      case CS_PARAM_SOLVER_CLASS_HYPRE:
+        if (amg_type != CS_PARAM_AMG_HYPRE_BOOMER_V  &&
+            amg_type != CS_PARAM_AMG_HYPRE_BOOMER_W)
+          return false;
+        break; // Avoid a compiler warning
+      default:
+        return true;
+      }
+    }
+
+  } // AMG precond.
+
+  return true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check if PETSc or HYPRE is available and return the possible solver
  *        class
  *
@@ -1285,7 +1342,6 @@ cs_param_sles_set_amg_type(const char       *keyval,
   return EXIT_SUCCESS;  /* Equal to 0 */
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set the type of block preconditioner associated to this SLES from its
@@ -1525,6 +1581,14 @@ cs_param_sles_amg_inhouse_advanced(cs_param_sles_t  *slesp,
   if (slesp == nullptr)
     return;
 
+  if (!_check_slesp_settings(slesp,
+                             CS_PARAM_PRECOND_AMG, CS_PARAM_AMG_INHOUSE_K)
+      &&
+      !_check_slesp_settings(slesp,
+                             CS_PARAM_PRECOND_AMG, CS_PARAM_AMG_INHOUSE_V))
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid settings detected.\n",
+              __func__);
+
   assert(slesp->context_param != nullptr);
   cs_param_amg_inhouse_t *amgp =
     static_cast<cs_param_amg_inhouse_t *>(slesp->context_param);
@@ -1627,12 +1691,12 @@ cs_param_sles_boomeramg(cs_param_sles_t                    *slesp,
  *        members are kept to their values. Please refer to the HYPRE user
  *        guide for more details about the following options.
  *
- * \param[in, out] slesp            pointer to a cs_param_sles_t structure
- * \param[in]      strong_thr       value of the strong threshold (coarsening)
- * \param[in]      interp_algo      algorithm used for the interpolation
- * \param[in]      p_max            max number of elements per row (interp)
- * \param[in]      n_agg_lv         aggressive coarsening (number of levels)
- * \param[in]      n_agg_paths      aggressive coarsening (number of paths)
+ * \param[in, out] slesp         pointer to a cs_param_sles_t structure
+ * \param[in]      strong_thr    value of the strong threshold (coarsening)
+ * \param[in]      interp_algo   algorithm used for the interpolation
+ * \param[in]      p_max         max number of elements per row (interp)
+ * \param[in]      n_agg_lv      aggressive coarsening (number of levels)
+ * \param[in]      n_agg_paths   aggressive coarsening (number of paths)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1646,6 +1710,14 @@ cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
 {
   if (slesp == nullptr)
     return;
+
+  if (!_check_slesp_settings(slesp,
+                             CS_PARAM_PRECOND_AMG, CS_PARAM_AMG_HYPRE_BOOMER_V)
+      &&
+      !_check_slesp_settings(slesp,
+                             CS_PARAM_PRECOND_AMG, CS_PARAM_AMG_HYPRE_BOOMER_W))
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid settings detected.\n",
+              __func__);
 
   if (slesp->context_param == nullptr)
     slesp->context_param = cs_param_amg_boomer_create();
@@ -1756,6 +1828,14 @@ cs_param_sles_gamg_advanced(cs_param_sles_t *slesp,
   if (slesp == nullptr)
     return;
 
+  if (!_check_slesp_settings(slesp,
+                             CS_PARAM_PRECOND_AMG, CS_PARAM_AMG_PETSC_GAMG_V)
+      &&
+      !_check_slesp_settings(slesp,
+                             CS_PARAM_PRECOND_AMG, CS_PARAM_AMG_PETSC_GAMG_W))
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid settings detected.\n",
+              __func__);
+
   if (slesp->context_param == nullptr)
     slesp->context_param = cs_param_amg_gamg_create();
 
@@ -1859,6 +1939,14 @@ cs_param_sles_hmg_advanced(cs_param_sles_t *slesp,
 {
   if (slesp == nullptr)
     return;
+
+  if (!_check_slesp_settings(slesp,
+                             CS_PARAM_PRECOND_AMG, CS_PARAM_AMG_PETSC_HMG_V)
+      &&
+      !_check_slesp_settings(slesp,
+                             CS_PARAM_PRECOND_AMG, CS_PARAM_AMG_PETSC_HMG_W))
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid settings detected.\n",
+              __func__);
 
   if (slesp->context_param == nullptr)
     slesp->context_param = cs_param_amg_hmg_create();
@@ -2084,6 +2172,10 @@ cs_param_sles_hpddm_advanced(cs_param_sles_t *slesp,
 {
   if (slesp == nullptr)
     return;
+
+  if (!_check_slesp_settings(slesp, CS_PARAM_PRECOND_HPDDM, CS_PARAM_AMG_NONE))
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid settings detected.\n",
+              __func__);
 
   if (slesp->context_param == nullptr)
     slesp->context_param = cs_param_hpddm_create();
