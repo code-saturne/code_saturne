@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_MODAK_H__
-#define __CS_RAD_TRANSFER_MODAK_H__
+#ifndef CS_RAD_TRANSFER_MODAK_H
+#define CS_RAD_TRANSFER_MODAK_H
 
 /*============================================================================
  * Radiation solver Grey Body library (Modak's model).
@@ -80,4 +80,4 @@ cs_rad_transfer_modak(cs_real_t        ck[],
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_MODAK_H__ */
+#endif /* CS_RAD_TRANSFER_MODAK_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_SOLVE_NAVIER_STOKES_H__
-#define __CS_SOLVE_NAVIER_STOKES_H__
+#ifndef CS_SOLVE_NAVIER_STOKES_H
+#define CS_SOLVE_NAVIER_STOKES_H
 
 /*============================================================================
  * Solve the Navier-Stokes equations.
@@ -109,4 +109,4 @@ cs_solve_navier_stokes(const int        iterns,
 
 END_C_DECLS
 
-#endif /* __CS_SOLVE_NAVIER_STOKES_H__ */
+#endif /* CS_SOLVE_NAVIER_STOKES_H */

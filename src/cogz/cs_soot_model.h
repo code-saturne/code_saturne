@@ -1,5 +1,5 @@
-#ifndef __CS_SOOT_MODEL_H__
-#define __CS_SOOT_MODEL_H__
+#ifndef CS_SOOT_MODEL_H
+#define CS_SOOT_MODEL_H
 
 /*============================================================================
  * Soot production models.
@@ -79,4 +79,4 @@ cs_soot_production(int        f_id,
 
 END_C_DECLS
 
-#endif /* __CS_SOOT_MODEL__ */
+#endif /* CS_SOOT_MODEL__ */

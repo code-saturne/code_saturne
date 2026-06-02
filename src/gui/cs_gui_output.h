@@ -1,5 +1,5 @@
-#ifndef __CS_GUI_OUTPUT_H__
-#define __CS_GUI_OUTPUT_H__
+#ifndef CS_GUI_OUTPUT_H
+#define CS_GUI_OUTPUT_H
 
 /*============================================================================
  * Management of the GUI parameters file: main parameters
@@ -78,4 +78,4 @@ cs_gui_postprocess_writers(void);
 
 END_C_DECLS
 
-#endif /* __CS_GUI_OUTPUT_H__ */
+#endif /* CS_GUI_OUTPUT_H */

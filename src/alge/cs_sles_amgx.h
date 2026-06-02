@@ -1,5 +1,5 @@
-#ifndef __CS_SLES_AMGX_H__
-#define __CS_SLES_AMGX_H__
+#ifndef CS_SLES_AMGX_H
+#define CS_SLES_AMGX_H
 
 /*============================================================================
  * Sparse Linear Equation Solvers using AmgX
@@ -365,4 +365,4 @@ cs_sles_amgx_library_info(cs_log_t  log_type);
 
 END_C_DECLS
 
-#endif /* __CS_SLES_AMGX_H__ */
+#endif /* CS_SLES_AMGX_H */

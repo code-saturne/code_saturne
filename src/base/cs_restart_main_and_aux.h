@@ -1,5 +1,5 @@
-#ifndef __CS_RESTART_MAIN_AND_AUX_H__
-#define __CS_RESTART_MAIN_AND_AUX_H__
+#ifndef CS_RESTART_MAIN_AND_AUX_H
+#define CS_RESTART_MAIN_AND_AUX_H
 
 /*============================================================================
  * Checkpoint/restart handling for default application.
@@ -63,4 +63,4 @@ cs_restart_main_and_aux_read(void);
 
 END_C_DECLS
 
-#endif /* __CS_RESTART_MAIN_AND_AUX_H__ */
+#endif /* CS_RESTART_MAIN_AND_AUX_H */

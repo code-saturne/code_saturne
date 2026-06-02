@@ -1,5 +1,5 @@
-#ifndef __CS_FACE_VISCOSITY_H__
-#define __CS_FACE_VISCOSITY_H__
+#ifndef CS_FACE_VISCOSITY_H
+#define CS_FACE_VISCOSITY_H
 
 /*============================================================================
  * Face viscosity
@@ -186,4 +186,4 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
 
 END_C_DECLS
 
-#endif /* __CS_FACE_VISCOSITY_H__ */
+#endif /* CS_FACE_VISCOSITY_H */

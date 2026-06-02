@@ -1,5 +1,5 @@
-#ifndef __CS_DIVERGENCE_H__
-#define __CS_DIVERGENCE_H__
+#ifndef CS_DIVERGENCE_H
+#define CS_DIVERGENCE_H
 
 /*============================================================================
  * Divergence operators.
@@ -330,4 +330,4 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
 END_C_DECLS
 
-#endif /* __CS_DIVERGENCE_H__ */
+#endif /* CS_DIVERGENCE_H */

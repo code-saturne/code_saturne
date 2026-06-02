@@ -1,5 +1,5 @@
-#ifndef __FVM_NEIGHBORHOOD_H__
-#define __FVM_NEIGHBORHOOD_H__
+#ifndef __FVM_NEIGHBORHOOD_H
+#define __FVM_NEIGHBORHOOD_H
 
 /*============================================================================
  * Search octrees and quadtrees of boxes.
@@ -286,4 +286,4 @@ fvm_neighborhood_dump(const fvm_neighborhood_t  *n);
 
 END_C_DECLS
 
-#endif /* __FVM_NEIGHBORHOOD_H__ */
+#endif /* __FVM_NEIGHBORHOOD_H */

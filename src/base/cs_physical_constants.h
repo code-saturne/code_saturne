@@ -1,5 +1,5 @@
-#ifndef __CS_PHYSICAL_CONSTANTS_H__
-#define __CS_PHYSICAL_CONSTANTS_H__
+#ifndef CS_PHYSICAL_CONSTANTS_H
+#define CS_PHYSICAL_CONSTANTS_H
 
 /*============================================================================
  * Base physical constants data.
@@ -191,4 +191,4 @@ cs_fluid_properties_log_setup(void);
 
 END_C_DECLS
 
-#endif /* __CS_PHYSICAL_CONSTANTS_H__ */
+#endif /* CS_PHYSICAL_CONSTANTS_H */

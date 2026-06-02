@@ -1,5 +1,5 @@
-#ifndef __FVM_CONVERT_ARRAY_H__
-#define __FVM_CONVERT_ARRAY_H__
+#ifndef __FVM_CONVERT_ARRAY_H
+#define __FVM_CONVERT_ARRAY_H
 
 /*============================================================================
  * Functions related to the transformation of data arrays for import
@@ -114,4 +114,4 @@ fvm_convert_array(const int                     src_dim,
 
 END_C_DECLS
 
-#endif /* __FVM_CONVERT_ARRAY_H__ */
+#endif /* __FVM_CONVERT_ARRAY_H */

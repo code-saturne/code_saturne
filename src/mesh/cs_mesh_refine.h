@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_REFINE_H__
-#define __CS_MESH_REFINE_H__
+#ifndef CS_MESH_REFINE_H
+#define CS_MESH_REFINE_H
 
 /*============================================================================
  * Mesh refinement.
@@ -106,4 +106,4 @@ cs_mesh_refine_set_option(const char  *key,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_REFINE_H__ */
+#endif /* CS_MESH_REFINE_H */

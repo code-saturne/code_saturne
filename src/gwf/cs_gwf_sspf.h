@@ -1,5 +1,5 @@
-#ifndef __CS_GWF_SSPF_H__
-#define __CS_GWF_SSPF_H__
+#ifndef CS_GWF_SSPF_H
+#define CS_GWF_SSPF_H
 
 /*============================================================================
  * Main functions to handle single-phase flows in a saturated porous media
@@ -247,4 +247,4 @@ cs_gwf_sspf_extra_post(int                        mesh_id,
 
 END_C_DECLS
 
-#endif /* __CS_GWF_SSPF_H__ */
+#endif /* CS_GWF_SSPF_H */

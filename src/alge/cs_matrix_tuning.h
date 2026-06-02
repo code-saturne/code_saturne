@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_TUNING_H__
-#define __CS_MATRIX_TUNING_H__
+#ifndef CS_MATRIX_TUNING_H
+#define CS_MATRIX_TUNING_H
 
 /*============================================================================
  * Sparse Matrix Representation and Operations
@@ -84,4 +84,4 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
 
 END_C_DECLS
 
-#endif /* __CS_MATRIX_TUNING_H__ */
+#endif /* CS_MATRIX_TUNING_H */

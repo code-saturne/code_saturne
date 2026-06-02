@@ -1,5 +1,5 @@
-#ifndef __FVM_SELECTOR_POSTFIX_H__
-#define __FVM_SELECTOR_POSTFIX_H__
+#ifndef __FVM_SELECTOR_POSTFIX_H
+#define __FVM_SELECTOR_POSTFIX_H
 
 /*============================================================================
  * Expression handling for entity selection based on groups or attributes
@@ -203,4 +203,4 @@ fvm_selector_postfix_dump(const fvm_selector_postfix_t  *pf,
 
 END_C_DECLS
 
-#endif /* __FVM_SELECTOR_POSTFIX_H__ */
+#endif /* __FVM_SELECTOR_POSTFIX_H */

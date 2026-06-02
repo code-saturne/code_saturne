@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_QUERY_H__
-#define __CS_LAGR_QUERY_H__
+#ifndef CS_LAGR_QUERY_H
+#define CS_LAGR_QUERY_H
 
 /*============================================================================
  * Caller interaction with Lagrangian module.
@@ -73,4 +73,4 @@ cs_lagr_particle_restart(void);
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_QUERY_H__ */
+#endif /* CS_LAGR_QUERY_H */

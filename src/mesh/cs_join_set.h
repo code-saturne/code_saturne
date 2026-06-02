@@ -1,5 +1,5 @@
-#ifndef __CS_JOIN_SET_H__
-#define __CS_JOIN_SET_H__
+#ifndef CS_JOIN_SET_H
+#define CS_JOIN_SET_H
 
 /*============================================================================
  * Subroutines useful to manage list structures
@@ -432,4 +432,4 @@ cs_join_gset_dump(FILE                  *f,
 
 END_C_DECLS
 
-#endif /* __CS_JOIN_SET_H__ */
+#endif /* CS_JOIN_SET_H */

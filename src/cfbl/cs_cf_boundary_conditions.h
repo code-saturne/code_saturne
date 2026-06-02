@@ -1,5 +1,5 @@
-#ifndef __CS_CF_BOUNDARY_CONDITIONS_H__
-#define __CS_CF_BOUNDARY_CONDITIONS_H__
+#ifndef CS_CF_BOUNDARY_CONDITIONS_H
+#define CS_CF_BOUNDARY_CONDITIONS_H
 
 /*============================================================================
  * Compressible flow boundary conditions.
@@ -102,4 +102,4 @@ cs_cf_boundary_conditions_reset(void);
 
 END_C_DECLS
 
-#endif /* __CS_CF_BOUNDARY_CONDITIONS_H__ */
+#endif /* CS_CF_BOUNDARY_CONDITIONS_H */

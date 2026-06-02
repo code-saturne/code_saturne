@@ -1,5 +1,5 @@
-#ifndef __CS_INITIALIZE_FIELDS_H__
-#define __CS_INITIALIZE_FIELDS_H__
+#ifndef CS_INITIALIZE_FIELDS_H
+#define CS_INITIALIZE_FIELDS_H
 
 /*============================================================================
  * Initialize fields.
@@ -79,4 +79,4 @@ cs_initialize_fields_stage_1(void);
 
 END_C_DECLS
 
-#endif /* __CS_INITIALIZE_FIELDS_H__ */
+#endif /* CS_INITIALIZE_FIELDS_H */

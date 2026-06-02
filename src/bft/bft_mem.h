@@ -1,5 +1,5 @@
-#ifndef __BFT_MEM_H__
-#define __BFT_MEM_H__
+#ifndef __BFT_MEM_H
+#define __BFT_MEM_H
 
 /*============================================================================
  * Legacy memory allocation wrappers with optional tracing
@@ -94,4 +94,4 @@ cs_mem_free(_ptr, #_ptr, __FILE__, __LINE__), _ptr = NULL
 
 END_C_DECLS
 
-#endif /* __BFT_MEM_H__ */
+#endif /* __BFT_MEM_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_GWF_SOIL_H__
-#define __CS_GWF_SOIL_H__
+#ifndef CS_GWF_SOIL_H
+#define CS_GWF_SOIL_H
 
 /*============================================================================
  * Set of main functions to handle soils in the groundwater flow module
@@ -828,4 +828,4 @@ cs_gwf_soil_set_joining_poly_order(int    order);
 
 END_C_DECLS
 
-#endif /* __CS_GWF_SOIL_H__ */
+#endif /* CS_GWF_SOIL_H */

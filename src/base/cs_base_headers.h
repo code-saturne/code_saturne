@@ -1,5 +1,5 @@
-#ifndef __CS_BASE_HEADERS_H__
-#define __CS_BASE_HEADERS_H__
+#ifndef CS_BASE_HEADERS_H
+#define CS_BASE_HEADERS_H
 
 /*============================================================================
  * Global code_saturne headers file for easier include
@@ -135,4 +135,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_BASE_HEADERS_H__ */
+#endif /* CS_BASE_HEADERS_H */

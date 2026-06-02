@@ -1,5 +1,5 @@
-#ifndef __CS_CF_MODEL_H__
-#define __CS_CF_MODEL_H__
+#ifndef CS_CF_MODEL_H
+#define CS_CF_MODEL_H
 
 /*============================================================================
  * Thermodynamic laws for the compressible module
@@ -160,4 +160,4 @@ cs_cf_physical_properties(void);
 
 END_C_DECLS
 
-#endif /* __CS_CF_MODEL_H__ */
+#endif /* CS_CF_MODEL_H */

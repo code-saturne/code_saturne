@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_BAD_CELLS_H__
-#define __CS_MESH_BAD_CELLS_H__
+#ifndef CS_MESH_BAD_CELLS_H
+#define CS_MESH_BAD_CELLS_H
 
 /*============================================================================
  * Detect bad cells within meshes.
@@ -129,4 +129,4 @@ cs_mesh_bad_cells_postprocess(const cs_mesh_t             *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_BAD_CELLS_H__ */
+#endif /* CS_MESH_BAD_CELLS_H */

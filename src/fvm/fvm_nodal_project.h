@@ -1,5 +1,5 @@
-#ifndef __FVM_NODAL_PROJECT_H__
-#define __FVM_NODAL_PROJECT_H__
+#ifndef __FVM_NODAL_PROJECT_H
+#define __FVM_NODAL_PROJECT_H
 
 /*============================================================================
  * Projection of nodal sections associated with a mesh
@@ -80,4 +80,4 @@ fvm_nodal_project_coords(fvm_nodal_t  *this_nodal,
 
 END_C_DECLS
 
-#endif /* __FVM_NODAL_PROJECT_H__ */
+#endif /* __FVM_NODAL_PROJECT_H */

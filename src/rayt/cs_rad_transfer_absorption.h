@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_ABSORPTION_H__
-#define __CS_RAD_TRANSFER_ABSORPTION_H__
+#ifndef CS_RAD_TRANSFER_ABSORPTION_H
+#define CS_RAD_TRANSFER_ABSORPTION_H
 
 /*============================================================================
  * Radiative transfer module, absorption coefficient.
@@ -112,4 +112,4 @@ cs_rad_transfer_absorption_check_p1(const cs_real_t  cpro_cak[]);
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_ABSORPTION_H__ */
+#endif /* CS_RAD_TRANSFER_ABSORPTION_H */

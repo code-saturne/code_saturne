@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_FIELDS__
-#define __CS_RAD_TRANSFER_FIELDS__
+#ifndef CS_RAD_TRANSFER_FIELDS__
+#define CS_RAD_TRANSFER_FIELDS__
 
 /*============================================================================
  * Radiation solver operations.
@@ -77,4 +77,4 @@ cs_rad_transfer_add_property_fields(void);
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_FIELDS__ */
+#endif /* CS_RAD_TRANSFER_FIELDS__ */

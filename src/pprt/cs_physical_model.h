@@ -1,5 +1,5 @@
-#ifndef __CS_PHYSICAL_MODEL_H__
-#define __CS_PHYSICAL_MODEL_H__
+#ifndef CS_PHYSICAL_MODEL_H
+#define CS_PHYSICAL_MODEL_H
 
 /*============================================================================
  * General parameters management.
@@ -91,4 +91,4 @@ extern int cs_glob_physical_model_flag[];
 
 END_C_DECLS
 
-#endif /* __CS_PHYSICAL_MODEL_H__ */
+#endif /* CS_PHYSICAL_MODEL_H */

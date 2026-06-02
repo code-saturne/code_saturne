@@ -1,5 +1,5 @@
-#ifndef __CS_TIMER_H__
-#define __CS_TIMER_H__
+#ifndef CS_TIMER_H
+#define CS_TIMER_H
 
 /*============================================================================
  * Program timing information
@@ -212,4 +212,4 @@ cs_timer_cpu_time_method(void);
 
 END_C_DECLS
 
-#endif /* __CS_TIMER_H__ */
+#endif /* CS_TIMER_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_HEADERS_H__
-#define __CS_LAGR_HEADERS_H__
+#ifndef CS_LAGR_HEADERS_H
+#define CS_LAGR_HEADERS_H
 
 /*============================================================================
  * Global code_saturne headers file for easier include
@@ -63,4 +63,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_LAGR_HEADERS_H__ */
+#endif /* CS_LAGR_HEADERS_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_BCS_H__
-#define __CS_RAD_TRANSFER_BCS_H__
+#ifndef CS_RAD_TRANSFER_BCS_H
+#define CS_RAD_TRANSFER_BCS_H
 
 /*============================================================================
  * Radiation solver boundary conditions treatment.
@@ -149,4 +149,4 @@ cs_rad_transfer_bc_coeffs_p1(int                    bc_type[],
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_BCS_H__ */
+#endif /* CS_RAD_TRANSFER_BCS_H */

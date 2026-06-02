@@ -1,5 +1,5 @@
-#ifndef __FVM_TRACE_H__
-#define __FVM_TRACE_H__
+#ifndef __FVM_TRACE_H
+#define __FVM_TRACE_H
 
 /*============================================================================
  * Tracing utility functions for profiling and debugging
@@ -69,4 +69,4 @@ fvm_trace_mem_status(const char  *descr);
 
 END_C_DECLS
 
-#endif /* __FVM_TRACE_H__ */
+#endif /* __FVM_TRACE_H */

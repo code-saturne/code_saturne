@@ -1,5 +1,5 @@
-#ifndef __CS_SEARCH_H__
-#define __CS_SEARCH_H__
+#ifndef CS_SEARCH_H
+#define CS_SEARCH_H
 
 /*============================================================================
  * Search elements in arrays
@@ -105,4 +105,4 @@ cs_search_gindex_binary(size_t             size,
 
 END_C_DECLS
 
-#endif /* __CS_SEARCH_H__ */
+#endif /* CS_SEARCH_H */

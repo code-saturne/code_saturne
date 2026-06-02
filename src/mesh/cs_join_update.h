@@ -1,5 +1,5 @@
-#ifndef __CS_JOIN_UPDATE_H__
-#define __CS_JOIN_UPDATE_H__
+#ifndef CS_JOIN_UPDATE_H
+#define CS_JOIN_UPDATE_H
 
 /*============================================================================
  * Structure and function headers handling with mesh update during
@@ -118,4 +118,4 @@ cs_join_update_mesh_clean(cs_join_param_t   param,
 
 END_C_DECLS
 
-#endif /* __CS_JOIN_UPDATE_H__ */
+#endif /* CS_JOIN_UPDATE_H */

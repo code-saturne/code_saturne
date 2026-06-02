@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_AUX_MEAN_FLUID_QUANTITIES_H__
-#define __CS_LAGR_AUX_MEAN_FLUID_QUANTITIES_H__
+#ifndef CS_LAGR_AUX_MEAN_FLUID_QUANTITIES_H
+#define CS_LAGR_AUX_MEAN_FLUID_QUANTITIES_H
 
 /*============================================================================
  * Functions and types for lagrangian field gradients
@@ -145,4 +145,4 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_AUX_MEAN_FLUID_QUANTITIES_H__ */
+#endif /* CS_LAGR_AUX_MEAN_FLUID_QUANTITIES_H */

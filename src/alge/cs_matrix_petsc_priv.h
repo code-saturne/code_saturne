@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_PETSC_PRIV_H__
-#define __CS_MATRIX_PETSC_PRIV_H__
+#ifndef CS_MATRIX_PETSC_PRIV_H
+#define CS_MATRIX_PETSC_PRIV_H
 
 /*============================================================================
  * Private types for sparse matrix representation and operations using PETSc.
@@ -102,4 +102,4 @@ cs_matrix_petsc_get_coeffs(const cs_matrix_t  *matrix);
 
 END_C_DECLS
 
-#endif /* __CS_MATRIX_PETSC_PRIV_H__ */
+#endif /* CS_MATRIX_PETSC_PRIV_H */

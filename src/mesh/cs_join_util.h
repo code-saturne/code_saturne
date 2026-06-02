@@ -1,5 +1,5 @@
-#ifndef __CS_JOIN_UTIL_H__
-#define __CS_JOIN_UTIL_H__
+#ifndef CS_JOIN_UTIL_H
+#define CS_JOIN_UTIL_H
 
 /*============================================================================
  * Manipulation of low-level structures for joining operations
@@ -484,4 +484,4 @@ cs_join_build_edges_lst(cs_lnum_t        n_faces,
 
 END_C_DECLS
 
-#endif /* __CS_JOIN_UTIL_H__ */
+#endif /* CS_JOIN_UTIL_H */

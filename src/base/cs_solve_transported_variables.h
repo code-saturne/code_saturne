@@ -1,5 +1,5 @@
-#ifndef __CS_SOLVE_TRANSPORTED_VARIABLES__
-#define __CS_SOLVE_TRANSPORTED_VARIABLES__
+#ifndef CS_SOLVE_TRANSPORTED_VARIABLES__
+#define CS_SOLVE_TRANSPORTED_VARIABLES__
 
 /*============================================================================
  * Resolution of source term convection diffusion equations
@@ -66,4 +66,4 @@ cs_solve_transported_variables(int iterns);
 
 END_C_DECLS
 
-#endif /* __CS_SOLVE_TRANSPORTED_VARIABLES__ */
+#endif /* CS_SOLVE_TRANSPORTED_VARIABLES__ */

@@ -1,5 +1,5 @@
-#ifndef __CS_GAS_MIX_H__
-#define __CS_GAS_MIX_H__
+#ifndef CS_GAS_MIX_H
+#define CS_GAS_MIX_H
 
 /*============================================================================
  * Base gas mix data.
@@ -224,4 +224,4 @@ cs_gas_mix_physical_properties(void);
 
 END_C_DECLS
 
-#endif /* __CS_GAS_MIX_H__ */
+#endif /* CS_GAS_MIX_H */

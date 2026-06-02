@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_H__
-#define __CS_MESH_H__
+#ifndef CS_MESH_H
+#define CS_MESH_H
 
 /*============================================================================
  * Main structure associated to a mesh
@@ -719,4 +719,4 @@ cs_mesh_i_faces_thread_block_range(const cs_mesh_t     *m,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_H__ */
+#endif /* CS_MESH_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_PROBE_H__
-#define __CS_PROBE_H__
+#ifndef CS_PROBE_H
+#define CS_PROBE_H
 
 /*============================================================================
  * Set of structures and functions to handle probes and profiles
@@ -648,4 +648,4 @@ cs_probe_set_get_elt_ids(const cs_probe_set_t  *pset,
 
 END_C_DECLS
 
-#endif /* __CS_PROBE_H__ */
+#endif /* CS_PROBE_H */

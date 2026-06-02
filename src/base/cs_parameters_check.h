@@ -1,5 +1,5 @@
-#ifndef __CS_PARAMETERS_CHECK_H__
-#define __CS_PARAMETERS_CHECK_H__
+#ifndef CS_PARAMETERS_CHECK_H
+#define CS_PARAMETERS_CHECK_H
 
 /*============================================================================
  * Log field and other array statistics at relevant time steps.
@@ -399,4 +399,4 @@ cs_parameters_check(void);
 
 END_C_DECLS
 
-#endif /* __CS_PARAMETERS_CHECK_H__ */
+#endif /* CS_PARAMETERS_CHECK_H */

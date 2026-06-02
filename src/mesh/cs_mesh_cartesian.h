@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_CARTESIAN_H__
-#define __CS_MESH_CARTESIAN_H__
+#ifndef CS_MESH_CARTESIAN_H
+#define CS_MESH_CARTESIAN_H
 
 /*============================================================================
  * Cartesian mesh generation
@@ -379,4 +379,4 @@ cs_mesh_cartesian_set_max_number_of_blocks(int  n_blocks);
 
 END_C_DECLS
 
-#endif /* __CS_MESH_CARTESIAN_H__ */
+#endif /* CS_MESH_CARTESIAN_H */

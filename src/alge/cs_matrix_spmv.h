@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_SPMV_H__
-#define __CS_MATRIX_SPMV_H__
+#ifndef CS_MATRIX_SPMV_H
+#define CS_MATRIX_SPMV_H
 
 /*============================================================================
  * Sparse Matrix-vector multiplication functions and kernels.
@@ -140,4 +140,4 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 
 END_C_DECLS
 
-#endif /* __CS_MATRIX_SPMV_H__ */
+#endif /* CS_MATRIX_SPMV_H */

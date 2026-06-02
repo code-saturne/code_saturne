@@ -1,5 +1,5 @@
-#ifndef __CS_NOTEBOOK_H__
-#define __CS_NOTEBOOK_H__
+#ifndef CS_NOTEBOOK_H
+#define CS_NOTEBOOK_H
 
 /*============================================================================
  * Notebook management.
@@ -280,4 +280,4 @@ cs_notebook_uncertain_output(void);
 
 END_C_DECLS
 
-#endif /* __CS_NOTEBOOK_H__ */
+#endif /* CS_NOTEBOOK_H */

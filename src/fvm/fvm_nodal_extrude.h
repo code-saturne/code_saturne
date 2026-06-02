@@ -1,5 +1,5 @@
-#ifndef __FVM_NODAL_EXTRUDE_H__
-#define __FVM_NODAL_EXTRUDE_H__
+#ifndef __FVM_NODAL_EXTRUDE_H
+#define __FVM_NODAL_EXTRUDE_H
 
 /*============================================================================
  * Extrusion of a nodal representation associated with a mesh
@@ -75,4 +75,4 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
 
 END_C_DECLS
 
-#endif /* __FVM_NODAL_EXTRUDE_H__ */
+#endif /* __FVM_NODAL_EXTRUDE_H */

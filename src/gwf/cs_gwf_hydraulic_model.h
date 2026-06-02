@@ -1,5 +1,5 @@
-#ifndef __CS_GWF_HYDRAULIC_MODEL_H__
-#define __CS_GWF_HYDRAULIC_MODEL_H__
+#ifndef CS_GWF_HYDRAULIC_MODEL_H
+#define CS_GWF_HYDRAULIC_MODEL_H
 
 /*============================================================================
  * Structures related to the hydraulic models available in the GWF module
@@ -694,4 +694,4 @@ typedef struct {
 
 END_C_DECLS
 
-#endif /* __CS_GWF_HYDRAULIC_MODEL_H__ */
+#endif /* CS_GWF_HYDRAULIC_MODEL_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_ATMO_IMBRICATION_H__
-#define __CS_ATMO_IMBRICATION_H__
+#ifndef CS_ATMO_IMBRICATION_H
+#define CS_ATMO_IMBRICATION_H
 
 /*============================================================================
  * Atmospheric imbrication related functions
@@ -124,4 +124,4 @@ cs_summon_cressman(cs_real_t the_time);
 
 END_C_DECLS
 
-#endif /* __CS_ATMO_IMBRICATION_H__ */
+#endif /* CS_ATMO_IMBRICATION_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_SADDLE_SOLVER_SETUP_H__
-#define __CS_SADDLE_SOLVER_SETUP_H__
+#ifndef CS_SADDLE_SOLVER_SETUP_H
+#define CS_SADDLE_SOLVER_SETUP_H
 
 /*============================================================================
  * Routines to handle the SLES settings for a saddle-point problem
@@ -72,4 +72,4 @@ cs_saddle_solver_setup_sles(void);
 
 END_C_DECLS
 
-#endif /* __CS_SADDLE_SOLVER_SETUP_H__ */
+#endif /* CS_SADDLE_SOLVER_SETUP_H */

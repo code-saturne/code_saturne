@@ -1,5 +1,5 @@
-#ifndef __CS_SLES_IT_PRIV_H__
-#define __CS_SLES_IT_PRIV_H__
+#ifndef CS_SLES_IT_PRIV_H
+#define CS_SLES_IT_PRIV_H
 
 /*============================================================================
  * Sparse Linear Equation Solvers: private elements.
@@ -413,4 +413,4 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_SLES_IT_PRIV_H__ */
+#endif /* CS_SLES_IT_PRIV_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_INTPRF_H__
-#define __CS_INTPRF_H__
+#ifndef CS_INTPRF_H
+#define CS_INTPRF_H
 
 /*============================================================================
  * Temporal and z-axis interpolation for meteorological profiles.
@@ -96,4 +96,4 @@ cs_intprz(int               nprofz,
 
 END_C_DECLS
 
-#endif /* __CS_INTPRF_H__ */
+#endif /* CS_INTPRF_H */

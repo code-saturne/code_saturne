@@ -1,5 +1,5 @@
-#ifndef __CS_GUI_RADIATIVE_TRANSFER_H__
-#define __CS_GUI_RADIATIVE_TRANSFER_H__
+#ifndef CS_GUI_RADIATIVE_TRANSFER_H
+#define CS_GUI_RADIATIVE_TRANSFER_H
 
 /*============================================================================
  * Management of the GUI parameters file: radiative transfer
@@ -88,4 +88,4 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
 END_C_DECLS
 
-#endif /* __CS_GUI_RADIATIVE_TRANSFER_H__ */
+#endif /* CS_GUI_RADIATIVE_TRANSFER_H */

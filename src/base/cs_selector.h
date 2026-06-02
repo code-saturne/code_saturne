@@ -1,5 +1,5 @@
-#ifndef __CS_SELECTOR_H__
-#define __CS_SELECTOR_H__
+#ifndef CS_SELECTOR_H
+#define CS_SELECTOR_H
 
 /*============================================================================
  * Build selection lists for faces or cells
@@ -224,4 +224,4 @@ cs_selector_get_family_list(const char  *criteria,
 
 END_C_DECLS
 
-#endif /* __CS_SELECTOR_H__ */
+#endif /* CS_SELECTOR_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_GWF_PARAM_H__
-#define __CS_GWF_PARAM_H__
+#ifndef CS_GWF_PARAM_H
+#define CS_GWF_PARAM_H
 
 /*============================================================================
  * Types related to the groundwater flow module
@@ -362,4 +362,4 @@ typedef enum {
 
 END_C_DECLS
 
-#endif /* __CS_GWF_PARAM_H__ */
+#endif /* CS_GWF_PARAM_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_BASE_H__
-#define __CS_BASE_H__
+#ifndef CS_BASE_H
+#define CS_BASE_H
 
 /*============================================================================
  * Definitions, global variables, and base functions
@@ -626,4 +626,4 @@ cs_base_get_run_identity(char  **run_id,
 
 END_C_DECLS
 
-#endif /* __CS_BASE_H__ */
+#endif /* CS_BASE_H */

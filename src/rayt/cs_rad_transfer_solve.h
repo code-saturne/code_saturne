@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_DOM_H__
-#define __CS_RAD_TRANSFER_DOM_H__
+#ifndef CS_RAD_TRANSFER_DOM_H
+#define CS_RAD_TRANSFER_DOM_H
 
 /*============================================================================
  * Radiation solver boundary conditions treatment.
@@ -72,4 +72,4 @@ cs_rad_transfer_solve(int  bc_type[]);
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_DOM_H__ */
+#endif /* CS_RAD_TRANSFER_DOM_H */

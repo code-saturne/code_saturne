@@ -1,5 +1,5 @@
-#ifndef __CS_RESOURCE_H__
-#define __CS_RESOURCE_H__
+#ifndef CS_RESOURCE_H
+#define CS_RESOURCE_H
 
 /*============================================================================
  * Resource allocation management (available time).
@@ -111,4 +111,4 @@ cs_resource_get_max_timestep(int   ts_cur,
 
 END_C_DECLS
 
-#endif /* __CS_RESOURCE_H__ */
+#endif /* CS_RESOURCE_H */

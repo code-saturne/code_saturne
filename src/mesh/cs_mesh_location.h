@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_LOCATION_H__
-#define __CS_MESH_LOCATION_H__
+#ifndef CS_MESH_LOCATION_H
+#define CS_MESH_LOCATION_H
 
 /*============================================================================
  * Mesh locations management.
@@ -472,4 +472,4 @@ cs_mesh_location_set_explicit_ids(int   id,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_LOCATION_H__ */
+#endif /* CS_MESH_LOCATION_H */

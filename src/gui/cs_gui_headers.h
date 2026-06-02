@@ -1,5 +1,5 @@
-#ifndef __CS_GUI_HEADERS_H__
-#define __CS_GUI_HEADERS_H__
+#ifndef CS_GUI_HEADERS_H
+#define CS_GUI_HEADERS_H
 
 /*============================================================================
  * Global code_saturne headers file for easier include
@@ -42,4 +42,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_GUI_HEADERS_H__ */
+#endif /* CS_GUI_HEADERS_H */

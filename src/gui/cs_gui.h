@@ -1,5 +1,5 @@
-#ifndef __CS_GUI_H__
-#define __CS_GUI_H__
+#ifndef CS_GUI_H
+#define CS_GUI_H
 
 /*============================================================================
  * Management of the GUI parameters file: main parameters
@@ -503,4 +503,4 @@ cs_gui_physical_properties_ht_lambda_is_anisotropic(void);
 
 END_C_DECLS
 
-#endif /* __CS_GUI_H__ */
+#endif /* CS_GUI_H */

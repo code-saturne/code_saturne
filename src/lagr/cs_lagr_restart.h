@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_RESTART_H__
-#define __CS_LAGR_RESTART_H__
+#ifndef CS_LAGR_RESTART_H
+#define CS_LAGR_RESTART_H
 
 /*============================================================================
  * Checkpoint/restart handling for Lagrangian module.
@@ -82,4 +82,4 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r);
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_RESTART_H__ */
+#endif /* CS_LAGR_RESTART_H */

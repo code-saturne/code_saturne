@@ -1,5 +1,5 @@
-#ifndef __CS_SLES_HYPRE_H__
-#define __CS_SLES_HYPRE_H__
+#ifndef CS_SLES_HYPRE_H
+#define CS_SLES_HYPRE_H
 
 /*============================================================================
  * Sparse Linear Equation Solvers using HYPRE
@@ -373,4 +373,4 @@ cs_sles_hypre_library_info(cs_log_t  log_type);
 
 END_C_DECLS
 
-#endif /* __CS_SLES_HYPRE_H__ */
+#endif /* CS_SLES_HYPRE_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_PROTOTYPES_H__
-#define __CS_PROTOTYPES_H__
+#ifndef CS_PROTOTYPES_H
+#define CS_PROTOTYPES_H
 
 /*============================================================================
  * Prototypes for user-defined functions.
@@ -1632,4 +1632,4 @@ cs_user_zones(void);
 
 END_C_DECLS
 
-#endif /* __CS_PROTOTYPES_H__ */
+#endif /* CS_PROTOTYPES_H */

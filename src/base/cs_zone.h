@@ -1,5 +1,5 @@
-#ifndef __CS_ZONE_H__
-#define __CS_ZONE_H__
+#ifndef CS_ZONE_H
+#define CS_ZONE_H
 
 /*============================================================================
  * Base zones handling.
@@ -138,4 +138,4 @@ typedef struct {
 
 END_C_DECLS
 
-#endif /* __CS_ZONE_H__ */
+#endif /* CS_ZONE_H */

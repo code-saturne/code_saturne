@@ -1,5 +1,5 @@
-#ifndef __CS_TIMER_STATS_H__
-#define __CS_TIMER_STATS_H__
+#ifndef CS_TIMER_STATS_H
+#define CS_TIMER_STATS_H
 
 /*============================================================================
  * Application timer statistics and graphs
@@ -263,4 +263,4 @@ cs_timer_stats_increment_stage(void);
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_TIMER_STATS_H__ */
+#endif /* CS_TIMER_STATS_H */

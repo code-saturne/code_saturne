@@ -1,5 +1,5 @@
-#ifndef __CS_CF_CFL_COMPUTE__
-#define __CS_CF_CFL_COMPUTE__
+#ifndef CS_CF_CFL_COMPUTE__
+#define CS_CF_CFL_COMPUTE__
 
 /*============================================================================
  * Operators for compressible flows
@@ -95,4 +95,4 @@ cs_cf_cfl_compute(cs_real_t wcf[]);
 
 END_C_DECLS
 
-#endif /* __CS_CF_CFL_COMPUTE__ */
+#endif /* CS_CF_CFL_COMPUTE__ */

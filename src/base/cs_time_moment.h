@@ -469,4 +469,4 @@ cs_time_moment_restart_write(cs_restart_t  *restart);
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_TIME_MOMENT_H__ */
+#endif /* CS_TIME_MOMENT_H */

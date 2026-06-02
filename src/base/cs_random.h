@@ -1,5 +1,5 @@
-#ifndef __CS_RANDOM_H__
-#define __CS_RANDOM_H__
+#ifndef CS_RANDOM_H
+#define CS_RANDOM_H
 
 /*============================================================================
  * Random number generation.
@@ -146,4 +146,4 @@ cs_random_restore(cs_real_t  save_block[1634]);
 
 END_C_DECLS
 
-#endif /* __CS_RANDOM_H__ */
+#endif /* CS_RANDOM_H */

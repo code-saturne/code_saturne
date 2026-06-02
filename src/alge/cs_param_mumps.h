@@ -1,5 +1,5 @@
-#ifndef __CS_PARAM_MUMPS_H__
-#define __CS_PARAM_MUMPS_H__
+#ifndef CS_PARAM_MUMPS_H
+#define CS_PARAM_MUMPS_H
 
 /*============================================================================
  * Routines and structure to handle the MUMPS settings
@@ -256,4 +256,4 @@ cs_param_mumps_log(const char              *name,
 
 END_C_DECLS
 
-#endif /* __CS_PARAM_MUMPS_H__ */
+#endif /* CS_PARAM_MUMPS_H */

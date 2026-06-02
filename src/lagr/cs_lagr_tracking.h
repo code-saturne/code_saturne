@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_TRACKING_H__
-#define __CS_LAGR_TRACKING_H__
+#ifndef CS_LAGR_TRACKING_H
+#define CS_LAGR_TRACKING_H
 
 /*============================================================================
  * Functions and types for the Lagrangian module
@@ -140,4 +140,4 @@ END_C_DECLS
 
 #endif //__cplusplus
 
-#endif /* __CS_LAGR_TRACKING_H__ */
+#endif /* CS_LAGR_TRACKING_H */

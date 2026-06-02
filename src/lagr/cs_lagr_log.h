@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_LOG_H__
-#define __CS_LAGR_LOG_H__
+#ifndef CS_LAGR_LOG_H
+#define CS_LAGR_LOG_H
 
 /*============================================================================
  * Lagrangian module logging
@@ -67,4 +67,4 @@ cs_lagr_log_iteration(void);
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_LOG_H__ */
+#endif /* CS_LAGR_LOG_H */

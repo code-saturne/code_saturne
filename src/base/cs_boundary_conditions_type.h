@@ -1,5 +1,5 @@
-#ifndef __CS_BOUNDARY_CONDITIONS_TYPE_H__
-#define __CS_BOUNDARY_CONDITIONS_TYPE_H__
+#ifndef CS_BOUNDARY_CONDITIONS_TYPE_H
+#define CS_BOUNDARY_CONDITIONS_TYPE_H
 
 /*============================================================================
  * Handle boundary condition type codes.
@@ -64,4 +64,4 @@ cs_boundary_conditions_type(bool  init,
 
 END_C_DECLS
 
-#endif /* __CS_BOUNDARY_CONDITIONS_TYPE_H__ */
+#endif /* CS_BOUNDARY_CONDITIONS_TYPE_H */

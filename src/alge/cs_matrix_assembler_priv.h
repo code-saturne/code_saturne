@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_ASSEMBLER_PRIV_H__
-#define __CS_MATRIX_ASSEMBLER_PRIV_H__
+#ifndef CS_MATRIX_ASSEMBLER_PRIV_H
+#define CS_MATRIX_ASSEMBLER_PRIV_H
 
 /*============================================================================
  * Incremental or general construction of matrix.
@@ -274,4 +274,4 @@ _g_id_binary_find(cs_lnum_t        g_id_array_size,
 
 END_C_DECLS
 
-#endif /* __CS_MATRIX_ASSEMBLER_PRIV_H__ */
+#endif /* CS_MATRIX_ASSEMBLER_PRIV_H */

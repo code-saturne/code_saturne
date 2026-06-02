@@ -1,5 +1,5 @@
-#ifndef __CS_GEOM_H__
-#define __CS_GEOM_H__
+#ifndef CS_GEOM_H
+#define CS_GEOM_H
 
 /*============================================================================
  * Geometric utility functions.
@@ -129,4 +129,4 @@ cs_geom_segment_intersect_face(int               orient,
 
 END_C_DECLS
 
-#endif /* __CS_GEOM_H__ */
+#endif /* CS_GEOM_H */

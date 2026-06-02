@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_EXTRUDE_H__
-#define __CS_MESH_EXTRUDE_H__
+#ifndef CS_MESH_EXTRUDE_H
+#define CS_MESH_EXTRUDE_H
 
 /*============================================================================
  * Mesh extrusion.
@@ -223,4 +223,4 @@ cs_mesh_extrude_vectors_destroy(cs_mesh_extrude_vectors_t  **e);
 
 END_C_DECLS
 
-#endif /* __CS_MESH_EXTRUDE_H__ */
+#endif /* CS_MESH_EXTRUDE_H */

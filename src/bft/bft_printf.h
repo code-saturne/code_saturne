@@ -1,5 +1,5 @@
-#ifndef __BFT_PRINTF_H__
-#define __BFT_PRINTF_H__
+#ifndef __BFT_PRINTF_H
+#define __BFT_PRINTF_H
 
 /*============================================================================
  * Base user-definable printf() wrapper or replacement
@@ -158,4 +158,4 @@ bft_printf_flush_proxy_set(bft_printf_flush_proxy_t  *const fct);
 
 END_C_DECLS
 
-#endif /* __BFT_PRINTF_H__ */
+#endif /* __BFT_PRINTF_H */

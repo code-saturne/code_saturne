@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_INTERSECT_H__
-#define __CS_MESH_INTERSECT_H__
+#ifndef CS_MESH_INTERSECT_H
+#define CS_MESH_INTERSECT_H
 
 /*============================================================================
  * Postprocessing utility functions.
@@ -153,4 +153,4 @@ cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_INTERSECT_H__ */
+#endif /* CS_MESH_INTERSECT_H */

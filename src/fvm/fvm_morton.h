@@ -1,5 +1,5 @@
-#ifndef __FVM_MORTON_H__
-#define __FVM_MORTON_H__
+#ifndef __FVM_MORTON_H
+#define __FVM_MORTON_H
 
 /*============================================================================
  * Morton encoding for 2D or 3D coordinates.
@@ -366,4 +366,4 @@ fvm_morton_dump(int                 dim,
 
 END_C_DECLS
 
-#endif /* __FVM_MORTON_H__ */
+#endif /* __FVM_MORTON_H */

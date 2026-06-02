@@ -1,5 +1,5 @@
-#ifndef __CS_MEG_HEADERS_H__
-#define __CS_MEG_HEADERS_H__
+#ifndef CS_MEG_HEADERS_H
+#define CS_MEG_HEADERS_H
 
 /*============================================================================
  * All MEG-related header files for easier include
@@ -34,4 +34,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_MEG_HEADERS_H__ */
+#endif /* CS_MEG_HEADERS_H */

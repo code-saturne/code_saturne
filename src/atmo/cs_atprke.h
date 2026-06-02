@@ -1,5 +1,5 @@
-#ifndef __CS_ATPRKE_H__
-#define __CS_ATPRKE_H__
+#ifndef CS_ATPRKE_H
+#define CS_ATPRKE_H
 
 /*============================================================================
  * Modify the k-epsilon turbulence model for the atmospheric module.
@@ -75,4 +75,4 @@ cs_atmo_buoyancy_ke_prod(cs_real_t  gk[]);
 
 END_C_DECLS
 
-#endif /* __CS_ATPRKE_H__ */
+#endif /* CS_ATPRKE_H */

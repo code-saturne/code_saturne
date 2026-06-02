@@ -1,5 +1,5 @@
-#ifndef __FVM_PERIODICITY_H__
-#define __FVM_PERIODICITY_H__
+#ifndef __FVM_PERIODICITY_H
+#define __FVM_PERIODICITY_H
 
 /*============================================================================
  * Main structure for handling of periodicities
@@ -396,4 +396,4 @@ fvm_periodicity_dump(const fvm_periodicity_t  *this_periodicity);
 
 END_C_DECLS
 
-#endif /* __FVM_PERIODICITY_H__ */
+#endif /* __FVM_PERIODICITY_H */

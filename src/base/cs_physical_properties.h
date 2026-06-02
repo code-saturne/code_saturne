@@ -1,5 +1,5 @@
-#ifndef __CS_PHYSICAL_PROPERTIES_H__
-#define __CS_PHYSICAL_PROPERTIES_H__
+#ifndef CS_PHYSICAL_PROPERTIES_H
+#define CS_PHYSICAL_PROPERTIES_H
 
 /*============================================================================
  * Physical properties computation and management.
@@ -315,4 +315,4 @@ cs_physical_property_update_zone_values(const char       *name,
 
 END_C_DECLS
 
-#endif /* __CS_PHYSICAL_PROPERTIES_H__ */
+#endif /* CS_PHYSICAL_PROPERTIES_H */

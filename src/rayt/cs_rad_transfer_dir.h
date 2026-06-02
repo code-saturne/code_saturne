@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_DIR_H__
-#define __CS_RAD_TRANSFER_DIR_H__
+#ifndef CS_RAD_TRANSFER_DIR_H
+#define CS_RAD_TRANSFER_DIR_H
 
 /*============================================================================
  * Radiation solver operations.
@@ -64,4 +64,4 @@ cs_rad_transfer_dir(void);
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_DIR_H__ */
+#endif /* CS_RAD_TRANSFER_DIR_H */

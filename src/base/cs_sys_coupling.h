@@ -1,5 +1,5 @@
-#ifndef __CS_SYS_COUPLING_H__
-#define __CS_SYS_COUPLING_H__
+#ifndef CS_SYS_COUPLING_H
+#define CS_SYS_COUPLING_H
 
 /*============================================================================
  * SYSTEM Scale code coupling (0D/1D equations)
@@ -326,4 +326,4 @@ cs_sys_coupling_all_finalize(void);
 
 END_C_DECLS
 
-#endif /* __CS_SYS_COUPLING_H__ */
+#endif /* CS_SYS_COUPLING_H */

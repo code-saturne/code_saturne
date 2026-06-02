@@ -1,5 +1,5 @@
-#ifndef __CS_MATH_H__
-#define __CS_MATH_H__
+#ifndef CS_MATH_H
+#define CS_MATH_H
 
 /*============================================================================
  * Mathematical base functions.
@@ -2514,4 +2514,4 @@ cs_math_fw_and_bw_lu(const cs_real_t  a_lu[],
 
 END_C_DECLS
 
-#endif /* __CS_MATH_H__ */
+#endif /* CS_MATH_H */

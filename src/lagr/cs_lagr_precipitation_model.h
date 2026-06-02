@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_PRECIPITATION_H__
-#define __CS_LAGR_PRECIPITATION_H__
+#ifndef CS_LAGR_PRECIPITATION_H
+#define CS_LAGR_PRECIPITATION_H
 
 /*============================================================================
  * Functions and types for precipitation model
@@ -71,4 +71,4 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR__H_PRECIPITATION_ */
+#endif /* CS_LAGR__H_PRECIPITATION_ */

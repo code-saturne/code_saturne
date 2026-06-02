@@ -1,5 +1,5 @@
-#ifndef __FVM_NODAL_PRIV_H__
-#define __FVM_NODAL_PRIV_H__
+#ifndef __FVM_NODAL_PRIV_H
+#define __FVM_NODAL_PRIV_H
 
 /*============================================================================
  * Main structure for a nodal representation associated with a mesh
@@ -327,4 +327,4 @@ fvm_nodal_cell_face_connect(fvm_element_t   element_type,
 
 END_C_DECLS
 
-#endif /* __FVM_NODAL_PRIV_H__ */
+#endif /* __FVM_NODAL_PRIV_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_LOG_H__
-#define __CS_LOG_H__
+#ifndef CS_LOG_H
+#define CS_LOG_H
 
 /*============================================================================
  * Program timing information
@@ -322,4 +322,4 @@ cs_log_warning(const char *format,
 
 END_C_DECLS
 
-#endif /* __CS_LOG_H__ */
+#endif /* CS_LOG_H */

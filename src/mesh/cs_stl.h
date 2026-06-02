@@ -1,5 +1,5 @@
-#ifndef __CS_STL_H__
-#define __CS_STL_H__
+#ifndef CS_STL_H
+#define CS_STL_H
 
 /*============================================================================
  * STL reader and writer.
@@ -353,4 +353,4 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
 
 END_C_DECLS
 
-#endif /* __CS_STL_H__ */
+#endif /* CS_STL_H */

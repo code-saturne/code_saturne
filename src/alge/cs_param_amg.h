@@ -1,5 +1,5 @@
-#ifndef __CS_PARAM_AMG_H__
-#define __CS_PARAM_AMG_H__
+#ifndef CS_PARAM_AMG_H
+#define CS_PARAM_AMG_H
 
 /*============================================================================
  * Routines to handle the set of parameters for algebraic multigrids (AMG)
@@ -704,4 +704,4 @@ cs_param_amg_inhouse_log(const char                    *name,
 
 END_C_DECLS
 
-#endif /* __CS_PARAM_AMG_H__ */
+#endif /* CS_PARAM_AMG_H */

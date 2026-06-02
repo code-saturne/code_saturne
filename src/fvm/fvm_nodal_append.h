@@ -1,5 +1,5 @@
-#ifndef __FVM_NODAL_APPEND_H__
-#define __FVM_NODAL_APPEND_H__
+#ifndef __FVM_NODAL_APPEND_H
+#define __FVM_NODAL_APPEND_H
 
 /*============================================================================
  * Append sections to a nodal representation associated with a mesh
@@ -128,4 +128,4 @@ fvm_nodal_append_shared(fvm_nodal_t    *this_nodal,
 
 END_C_DECLS
 
-#endif /* __FVM_NODAL_APPEND_H__ */
+#endif /* __FVM_NODAL_APPEND_H */

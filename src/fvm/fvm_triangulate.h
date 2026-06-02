@@ -1,5 +1,5 @@
-#ifndef __FVM_TRIANGULATE_H__
-#define __FVM_TRIANGULATE_H__
+#ifndef __FVM_TRIANGULATE_H
+#define __FVM_TRIANGULATE_H
 
 /*============================================================================
  * Triangulation of a polygon
@@ -171,4 +171,4 @@ fvm_triangulate_quadrangle(int               dim,
 
 END_C_DECLS
 
-#endif /* __FVM_TRIANGULATE_H__ */
+#endif /* __FVM_TRIANGULATE_H */

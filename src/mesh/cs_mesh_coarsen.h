@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_COARSEN_H__
-#define __CS_MESH_COARSEN_H__
+#ifndef CS_MESH_COARSEN_H
+#define CS_MESH_COARSEN_H
 
 /*============================================================================
  * Mesh coarsening.
@@ -84,4 +84,4 @@ cs_mesh_coarsen_simple_selected(cs_mesh_t        *m,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_COARSEN_H__ */
+#endif /* CS_MESH_COARSEN_H */

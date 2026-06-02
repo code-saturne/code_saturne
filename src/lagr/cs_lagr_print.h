@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_PRINT_H__
-#define __CS_LAGR_PRINT_H__
+#ifndef CS_LAGR_PRINT_H
+#define CS_LAGR_PRINT_H
 
 /*============================================================================
  * Functions and types for lagrangian specific prints
@@ -76,4 +76,4 @@ cs_lagr_print_finalize(void);
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_PRINT_H__ */
+#endif /* CS_LAGR_PRINT_H */

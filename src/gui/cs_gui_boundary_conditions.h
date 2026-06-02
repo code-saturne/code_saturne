@@ -1,5 +1,5 @@
-#ifndef __CS_GUI_BOUNDARY_CONDITION_H__
-#define __CS_GUI_BOUNDARY_CONDITION_H__
+#ifndef CS_GUI_BOUNDARY_CONDITION_H
+#define CS_GUI_BOUNDARY_CONDITION_H
 
 /*============================================================================
  * Management of the GUI parameters file: boundary conditions
@@ -149,4 +149,4 @@ cs_gui_boundary_conditions_dof_func_meg(cs_lnum_t         n_elts,
 
 END_C_DECLS
 
-#endif /* __CS_GUI_BOUNDARY_CONDITION_H__ */
+#endif /* CS_GUI_BOUNDARY_CONDITION_H */

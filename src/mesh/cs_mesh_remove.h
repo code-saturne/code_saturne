@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_REMOVE_H__
-#define __CS_MESH_REMOVE_H__
+#ifndef CS_MESH_REMOVE_H
+#define CS_MESH_REMOVE_H
 
 /*============================================================================
  * Functions to remove mesh elements.
@@ -96,4 +96,4 @@ cs_mesh_remove_cells_from_selection_criteria
 
 END_C_DECLS
 
-#endif /* __CS_MESH_REMOVE_H__ */
+#endif /* CS_MESH_REMOVE_H */

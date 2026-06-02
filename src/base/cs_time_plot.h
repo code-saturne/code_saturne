@@ -1,5 +1,5 @@
-#ifndef __CS_TIME_PLOT_H__
-#define __CS_TIME_PLOT_H__
+#ifndef CS_TIME_PLOT_H
+#define CS_TIME_PLOT_H
 
 /*============================================================================
  * Time_Plot helper structures
@@ -219,4 +219,4 @@ cs_time_plot_get_flush_default(float  *flush_wtime,
 
 END_C_DECLS
 
-#endif /* __CS_PROBE_H__ */
+#endif /* CS_PROBE_H */

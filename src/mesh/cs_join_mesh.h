@@ -1,5 +1,5 @@
-#ifndef __CS_JOIN_MESH_H__
-#define __CS_JOIN_MESH_H__
+#ifndef CS_JOIN_MESH_H
+#define CS_JOIN_MESH_H
 
 /*============================================================================
  * Subroutines useful to manipulate a cs_join_mesh_t structure
@@ -490,4 +490,4 @@ cs_join_mesh_dump_edges(FILE                   *f,
 
 END_C_DECLS
 
-#endif /* __CS_JOIN_MESH_H__ */
+#endif /* CS_JOIN_MESH_H */

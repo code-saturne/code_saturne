@@ -1,5 +1,5 @@
-#ifndef __CS_MULTIGRID_H__
-#define __CS_MULTIGRID_H__
+#ifndef CS_MULTIGRID_H
+#define CS_MULTIGRID_H
 
 /*============================================================================
  * Multigrid solver.
@@ -589,4 +589,4 @@ cs_multigrid_get_grid(const cs_multigrid_t  *mg,
 
 END_C_DECLS
 
-#endif /* __CS_MULTIGRID_H__ */
+#endif /* CS_MULTIGRID_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_ATMO_AEROSOL_SSH_H__
-#define __CS_ATMO_AEROSOL_SSH_H__
+#ifndef CS_ATMO_AEROSOL_SSH_H
+#define CS_ATMO_AEROSOL_SSH_H
 
 /*============================================================================
  * Main for atmospheric aerosols library SSH related functions
@@ -161,4 +161,4 @@ cs_atmo_aerosol_ssh_time_advance(void);
 
 END_C_DECLS
 
-#endif /* __CS_ATMO_AEROSOL_SSH_H__ */
+#endif /* CS_ATMO_AEROSOL_SSH_H */

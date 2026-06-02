@@ -1,5 +1,5 @@
-#ifndef __CS_JOIN_POST_H__
-#define __CS_JOIN_POST_H__
+#ifndef CS_JOIN_POST_H
+#define CS_JOIN_POST_H
 
 /*============================================================================
  * Subroutines to manage post-treatment for joining operation
@@ -158,4 +158,4 @@ cs_join_post_dump_mesh(const char            *basename,
 
 END_C_DECLS
 
-#endif /* __CS_JOIN_POST_H__ */
+#endif /* CS_JOIN_POST_H */

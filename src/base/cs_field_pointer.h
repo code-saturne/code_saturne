@@ -1,5 +1,5 @@
-#ifndef __CS_FIELD_POINTER_H__
-#define __CS_FIELD_POINTER_H__
+#ifndef CS_FIELD_POINTER_H
+#define CS_FIELD_POINTER_H
 
 /*============================================================================
  * Field pointers and ids for standard and model fields
@@ -341,4 +341,4 @@ cs_field_pointer_map_atmospheric(int        n_chem_species,
 
 END_C_DECLS
 
-#endif /* __CS_FIELD_POINTER_H__ */
+#endif /* CS_FIELD_POINTER_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_COMBUSTION_GAS_H__
-#define __CS_COMBUSTION_GAS_H__
+#ifndef CS_COMBUSTION_GAS_H
+#define CS_COMBUSTION_GAS_H
 
 /*============================================================================
  * Gas combustion model.
@@ -484,4 +484,4 @@ cs_combustion_gas_yg2xye(const cs_real_t  yg[],
 
 END_C_DECLS
 
-#endif /* __CS_COMBUSTION_GAS_H__ */
+#endif /* CS_COMBUSTION_GAS_H */

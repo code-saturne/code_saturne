@@ -1,5 +1,5 @@
-#ifndef __FVM_NODAL_FROM_DESC_H__
-#define __FVM_NODAL_FROM_DESC_H__
+#ifndef __FVM_NODAL_FROM_DESC_H
+#define __FVM_NODAL_FROM_DESC_H
 
 /*============================================================================
  * Initialization of a nodal connectivity definition based upon
@@ -163,4 +163,4 @@ fvm_nodal_from_desc_cell(const cs_lnum_t    cell_id,
 
 END_C_DECLS
 
-#endif /* __FVM_NODAL_FROM_DESC_H__ */
+#endif /* __FVM_NODAL_FROM_DESC_H */

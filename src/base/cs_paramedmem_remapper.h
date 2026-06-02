@@ -1,5 +1,5 @@
-#ifndef __CS_PARAMEDMEM_REMAPPER_HXX__
-#define __CS_PARAMEDMEM_REMAPPER_HXX__
+#ifndef CS_PARAMEDMEM_REMAPPER_HXX__
+#define CS_PARAMEDMEM_REMAPPER_HXX__
 
 /*============================================================================
  * Parallel interpolation using ParaMEDMEM OverlapDEC
@@ -167,4 +167,4 @@ cs_paramedmem_remapper_destroy_all(void);
 
 END_C_DECLS
 
-#endif /* __CS_PARAMEDMEM_REMAPPER_HXX__ */
+#endif /* CS_PARAMEDMEM_REMAPPER_HXX__ */

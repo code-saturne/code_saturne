@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_SOURCE_TERMS_H__
-#define __CS_RAD_TRANSFER_SOURCE_TERMS_H__
+#ifndef CS_RAD_TRANSFER_SOURCE_TERMS_H
+#define CS_RAD_TRANSFER_SOURCE_TERMS_H
 
 /*============================================================================
  * Radiation solver operations.
@@ -72,4 +72,4 @@ cs_rad_transfer_source_terms(cs_real_t  smbrs[],
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_SOURCE_TERMS_H__ */
+#endif /* CS_RAD_TRANSFER_SOURCE_TERMS_H */

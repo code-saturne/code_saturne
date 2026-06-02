@@ -1,5 +1,5 @@
-#ifndef __CS_HGN_THERMO_H__
-#define __CS_HGN_THERMO_H__
+#ifndef CS_HGN_THERMO_H
+#define CS_HGN_THERMO_H
 
 /*============================================================================
  * Thermodynamic for the compressible homogeneous two-phase flow model
@@ -188,4 +188,4 @@ cs_hgn_thermo_eq(cs_real_t  e,
 
 END_C_DECLS
 
-#endif /* __CS_HGN_THERMO_H__ */
+#endif /* CS_HGN_THERMO_H */

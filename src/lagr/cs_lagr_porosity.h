@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_POROSITY_H__
-#define __CS_LAGR_POROSITY_H__
+#ifndef CS_LAGR_POROSITY_H
+#define CS_LAGR_POROSITY_H
 
 /*============================================================================
  * Handling of porosity due to particle deposition.
@@ -69,4 +69,4 @@ cs_lagr_porosity(void);
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_POROSITY_H__ */
+#endif /* CS_LAGR_POROSITY_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_LAGESP_H__
-#define __CS_LAGR_LAGESP_H__
+#ifndef CS_LAGR_LAGESP_H
+#define CS_LAGR_LAGESP_H
 
 /*============================================================================
  * Functions and types for LAGESP
@@ -144,4 +144,4 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 
 #endif /* __cplusplus */
 
-#endif /* __CS_LAGR_LAGESP_H__ */
+#endif /* CS_LAGR_LAGESP_H */

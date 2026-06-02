@@ -1,5 +1,5 @@
-#ifndef __CS_GUI_PARTICLES_H__
-#define __CS_GUI_PARTICLES_H__
+#ifndef CS_GUI_PARTICLES_H
+#define CS_GUI_PARTICLES_H
 
 /*============================================================================
  * Reader of the parameters file: lagrangian particles
@@ -59,4 +59,4 @@ cs_gui_particles_bcs(void);
 
 END_C_DECLS
 
-#endif /* __CS_GUI_PARTICLES_H__ */
+#endif /* CS_GUI_PARTICLES_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_PARTITION_H__
-#define __CS_PARTITION_H__
+#ifndef CS_PARTITION_H
+#define CS_PARTITION_H
 
 /*============================================================================
  * Define cs_mesh_t fields from cs_mesh_builder_t fields.
@@ -246,4 +246,4 @@ cs_partition(cs_mesh_t             *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_PARTITION_H__ */
+#endif /* CS_PARTITION_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_H__
-#define __CS_LAGR_H__
+#ifndef CS_LAGR_H
+#define CS_LAGR_H
 
 /*============================================================================
  * Functions and types for the Lagrangian module
@@ -1438,4 +1438,4 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_H__ */
+#endif /* CS_LAGR_H */

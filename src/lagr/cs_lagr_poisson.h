@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_POISSON_H__
-#define __CS_LAGR_POISSON_H__
+#ifndef CS_LAGR_POISSON_H
+#define CS_LAGR_POISSON_H
 
 /*============================================================================
  * Functions and types for poisson equation resolution
@@ -65,4 +65,4 @@ cs_lagr_poisson(const int  itypfb[]);
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_POISSON_H__ */
+#endif /* CS_LAGR_POISSON_H */

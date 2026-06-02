@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_RESTART_H__
-#define __CS_RAD_TRANSFER_RESTART_H__
+#ifndef CS_RAD_TRANSFER_RESTART_H
+#define CS_RAD_TRANSFER_RESTART_H
 
 /*============================================================================
  * Radiation solver restart file management
@@ -73,4 +73,4 @@ cs_rad_transfer_read(void);
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_RESTART_H__ */
+#endif /* CS_RAD_TRANSFER_RESTART_H */

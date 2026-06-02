@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_BUILDER_H__
-#define __CS_MESH_BUILDER_H__
+#ifndef CS_MESH_BUILDER_H
+#define CS_MESH_BUILDER_H
 
 /*============================================================================
  * Auxiliary structure used to read, write, and partition mesh data.
@@ -185,4 +185,4 @@ cs_mesh_builder_extract_periodic_faces_g(int                        n_init_perio
 
 END_C_DECLS
 
-#endif /* __CS_MESH_BUILDER_H__ */
+#endif /* CS_MESH_BUILDER_H */

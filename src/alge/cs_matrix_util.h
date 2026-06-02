@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_UTIL_H__
-#define __CS_MATRIX_UTIL_H__
+#ifndef CS_MATRIX_UTIL_H
+#define CS_MATRIX_UTIL_H
 
 /*============================================================================
  * Utilitary functions for sparse matrixes.
@@ -126,4 +126,4 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
 
 END_C_DECLS
 
-#endif /* __CS_MATRIX_UTIL_H__ */
+#endif /* CS_MATRIX_UTIL_H */

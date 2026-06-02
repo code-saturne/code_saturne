@@ -1,5 +1,5 @@
-#ifndef __CS_DEFS_H__
-#define __CS_DEFS_H__
+#ifndef CS_DEFS_H
+#define CS_DEFS_H
 
 /*============================================================================
  * Base macro and typedef definitions for system portability
@@ -1064,4 +1064,4 @@ cs_datatype_from_type<int64_t>()
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_DEFS_H__ */
+#endif /* CS_DEFS_H */

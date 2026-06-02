@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_OPTIONS_H__
-#define __CS_RAD_TRANSFER_OPTIONS_H__
+#ifndef CS_RAD_TRANSFER_OPTIONS_H
+#define CS_RAD_TRANSFER_OPTIONS_H
 
 /*============================================================================
  * Radiation solver options.
@@ -82,4 +82,4 @@ cs_rad_transfer_log_setup(void);
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_options_H__ */
+#endif /* CS_RAD_TRANSFER_options_H */

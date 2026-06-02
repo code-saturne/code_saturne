@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_ADF_MODELS_H__
-#define __CS_RAD_TRANSFER_ADF_MODELS_H__
+#ifndef CS_RAD_TRANSFER_ADF_MODELS_H
+#define CS_RAD_TRANSFER_ADF_MODELS_H
 
 /*============================================================================
  * Radiation solver operations.
@@ -103,4 +103,4 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_ADF_MODELS_H__ */
+#endif /* CS_RAD_TRANSFER_ADF_MODELS_H */

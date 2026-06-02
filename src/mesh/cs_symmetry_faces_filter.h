@@ -1,5 +1,5 @@
-#ifndef __CS_SYMMETRY_FACES_FILTER_H__
-#define __CS_SYMMETRY_FACES_FILTER_H__
+#ifndef CS_SYMMETRY_FACES_FILTER_H
+#define CS_SYMMETRY_FACES_FILTER_H
 
 /*============================================================================
  * Filter symmetry faces whose effects cancel out
@@ -104,4 +104,4 @@ cs_symmetry_faces_filter_cancel(const cs_mesh_t             *m,
 
 END_C_DECLS
 
-#endif /* __CS_SYMMETRY_FACES_FILTER__ */
+#endif /* CS_SYMMETRY_FACES_FILTER__ */

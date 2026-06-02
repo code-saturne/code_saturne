@@ -872,4 +872,4 @@ cs_runge_kutta_integrators_destroy();
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __RK_INTEGRATOR_H__ */
+#endif /* __RK_INTEGRATOR_H */

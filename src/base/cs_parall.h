@@ -1,5 +1,5 @@
-#ifndef __CS_PARALL_H__
-#define __CS_PARALL_H__
+#ifndef CS_PARALL_H
+#define CS_PARALL_H
 
 /*============================================================================
  * Functions dealing with parallelism
@@ -2054,4 +2054,4 @@ cs_parall_min_strided
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_PARALL_H__ */
+#endif /* CS_PARALL_H */

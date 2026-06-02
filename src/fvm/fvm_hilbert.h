@@ -1,5 +1,5 @@
-#ifndef __FVM_HILBERT_H__
-#define __FVM_HILBERT_H__
+#ifndef __FVM_HILBERT_H
+#define __FVM_HILBERT_H
 
 /*============================================================================
  * Hilbert space-filling curve construction for coordinates.
@@ -177,4 +177,4 @@ fvm_hilbert_compare(const void  *elt1,
 
 END_C_DECLS
 
-#endif /* __FVM_HILBERT_H__ */
+#endif /* __FVM_HILBERT_H */

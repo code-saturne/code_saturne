@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_COHERENCY_H__
-#define __CS_MESH_COHERENCY_H__
+#ifndef CS_MESH_COHERENCY_H
+#define CS_MESH_COHERENCY_H
 
 /*============================================================================
  * Functions checking the coherency of the mesh
@@ -52,4 +52,4 @@ cs_mesh_coherency_check(void);
 
 END_C_DECLS
 
-#endif /* __CS_MESH_COHERENCY_H__ */
+#endif /* CS_MESH_COHERENCY_H */

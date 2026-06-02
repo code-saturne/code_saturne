@@ -1,5 +1,5 @@
-#ifndef __CS_CONVECTION_DIFFUSION_PRIV_H__
-#define __CS_CONVECTION_DIFFUSION_PRIV_H__
+#ifndef CS_CONVECTION_DIFFUSION_PRIV_H
+#define CS_CONVECTION_DIFFUSION_PRIV_H
 
 /*============================================================================
  * Private functions for convection-diffusion operators.
@@ -2785,4 +2785,4 @@ cs_convection_diffusion_tensor_v9(int                          idtvar,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_CONVECTION_DIFFUSION_PRIV_H__ */
+#endif /* CS_CONVECTION_DIFFUSION_PRIV_H */

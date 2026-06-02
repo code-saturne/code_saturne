@@ -1,5 +1,5 @@
-#ifndef __CS_PARAMEDMEM_HXX__
-#define __CS_PARAMEDMEM_HXX__
+#ifndef CS_PARAMEDMEM_HXX__
+#define CS_PARAMEDMEM_HXX__
 
 /*============================================================================
  * MEDCoupling ParaMESH/ParaFIELD wrapper functions.
@@ -192,4 +192,4 @@ cs_paramedmem_coupling_define_mesh_fields(void);
 void
 cs_paramedmem_coupling_log_setup(void);
 
-#endif /* __CS_PARAMEDMEM_HXX__ */
+#endif /* CS_PARAMEDMEM_HXX__ */

@@ -1,5 +1,5 @@
-#ifndef __CS_SCALAR_CLIPPING_H__
-#define __CS_SCALAR_CLIPPING_H__
+#ifndef CS_SCALAR_CLIPPING_H
+#define CS_SCALAR_CLIPPING_H
 
 /*============================================================================
  * Clip scalar (i.e. convected/diffused) fields.
@@ -72,4 +72,4 @@ cs_scalar_clipping(cs_field_t  *f);
 
 END_C_DECLS
 
-#endif /* __CS_SCALAR_CLIPPING_H__ */
+#endif /* CS_SCALAR_CLIPPING_H */

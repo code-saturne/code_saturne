@@ -1,5 +1,5 @@
-#ifndef __CS_JOIN_INTERSECT_H__
-#define __CS_JOIN_INTERSECT_H__
+#ifndef CS_JOIN_INTERSECT_H
+#define CS_JOIN_INTERSECT_H
 
 /*============================================================================
  * Set of subroutines for finding intersections between bounding boxes
@@ -343,4 +343,4 @@ cs_join_inter_edges_dump(FILE                         *f,
 
 END_C_DECLS
 
-#endif /* __CS_JOIN_INTERSECT_H__ */
+#endif /* CS_JOIN_INTERSECT_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_PUN_H__
-#define __CS_RAD_TRANSFER_PUN_H__
+#ifndef CS_RAD_TRANSFER_PUN_H
+#define CS_RAD_TRANSFER_PUN_H
 
 /*============================================================================
  * Radiation solver boundary conditions treatment.
@@ -98,4 +98,4 @@ cs_rad_transfer_pun(int                          iband,
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_PUN_H__ */
+#endif /* CS_RAD_TRANSFER_PUN_H */

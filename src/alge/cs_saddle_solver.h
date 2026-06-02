@@ -1,5 +1,5 @@
-#ifndef __CS_SADDLE_SOLVER_H__
-#define __CS_SADDLE_SOLVER_H__
+#ifndef CS_SADDLE_SOLVER_H
+#define CS_SADDLE_SOLVER_H
 
 /*============================================================================
  * Solvers for saddle-point systems arising from CDO discretizations
@@ -1030,4 +1030,4 @@ cs_saddle_solver_afs(cs_saddle_solver_t  *solver,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_SADDLE_SOLVER_H__ */
+#endif /* CS_SADDLE_SOLVER_H */

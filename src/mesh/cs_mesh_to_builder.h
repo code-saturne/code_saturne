@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_TO_BUILDER_H__
-#define __CS_MESH_TO_BUILDER_H__
+#ifndef CS_MESH_TO_BUILDER_H
+#define CS_MESH_TO_BUILDER_H
 
 /*============================================================================
  * Define cs_mesh_builder_t fields from cs_mesh_t fields.
@@ -114,4 +114,4 @@ cs_mesh_to_builder_perio_faces(const cs_mesh_t    *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_TO_BUILDER_H__ */
+#endif /* CS_MESH_TO_BUILDER_H */

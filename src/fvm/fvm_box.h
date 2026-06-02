@@ -1,5 +1,5 @@
-#ifndef __FVM_BOX_H__
-#define __FVM_BOX_H__
+#ifndef __FVM_BOX_H
+#define __FVM_BOX_H
 
 /*============================================================================
  * Handle boxes aligned with Cartesian axes.
@@ -278,4 +278,4 @@ fvm_box_distrib_dump_statistics(const fvm_box_distrib_t  *distrib,
 
 END_C_DECLS
 
-#endif /* __FVM_BOX_H__ */
+#endif /* __FVM_BOX_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_BOUNDARY_CONDITIONS_SET_COEFFS_SYMMETRY_H__
-#define __CS_BOUNDARY_CONDITIONS_SET_COEFFS_SYMMETRY_H__
+#ifndef CS_BOUNDARY_CONDITIONS_SET_COEFFS_SYMMETRY_H
+#define CS_BOUNDARY_CONDITIONS_SET_COEFFS_SYMMETRY_H
 
 /*============================================================================
  * Boundary condition management.
@@ -73,4 +73,4 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
 END_C_DECLS
 
-#endif /* __CS_BOUNDARY_CONDITIONS_SET_COEFFS_SYMMETRY_H__ */
+#endif /* CS_BOUNDARY_CONDITIONS_SET_COEFFS_SYMMETRY_H */

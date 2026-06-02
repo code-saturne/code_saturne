@@ -1,5 +1,5 @@
-#ifndef __CS_GWF_TRACER_H__
-#define __CS_GWF_TRACER_H__
+#ifndef CS_GWF_TRACER_H
+#define CS_GWF_TRACER_H
 
 /*============================================================================
  * Set of main functions to handle soils in the groundwater flow module
@@ -781,4 +781,4 @@ cs_gwf_tracer_decay_chain_get_equation_param(cs_gwf_tracer_decay_chain_t  *tdc,
 
 END_C_DECLS
 
-#endif /* __CS_GWF_TRACER_H__ */
+#endif /* CS_GWF_TRACER_H */

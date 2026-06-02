@@ -1,5 +1,5 @@
-#ifndef __CS_ATMO_H__
-#define __CS_ATMO_H__
+#ifndef CS_ATMO_H
+#define CS_ATMO_H
 
 /*============================================================================
  * Main for atmospheric related functions
@@ -785,4 +785,4 @@ cs_atmo_projection
 
 END_C_DECLS
 
-#endif /* __CS_ATMO_H__ */
+#endif /* CS_ATMO_H */

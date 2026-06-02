@@ -1,5 +1,5 @@
-#ifndef __CS_PARAM_HPDDM_H__
-#define __CS_PARAM_HPDDM_H__
+#ifndef CS_PARAM_HPDDM_H
+#define CS_PARAM_HPDDM_H
 
 /*============================================================================
  * Routines and structure to handle the HPDDM settings
@@ -143,4 +143,4 @@ cs_param_hpddm_log(const char *name, const cs_param_hpddm_t *hpddmp);
 
 END_C_DECLS
 
-#endif /* __CS_PARAM_HPDDM_H__ */
+#endif /* CS_PARAM_HPDDM_H */

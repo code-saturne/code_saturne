@@ -1,5 +1,5 @@
-#ifndef __CS_BOUNDARY_CONDITIONS_SET_COEFFS_TURB__
-#define __CS_BOUNDARY_CONDITIONS_SET_COEFFS_TURB__
+#ifndef CS_BOUNDARY_CONDITIONS_SET_COEFFS_TURB__
+#define CS_BOUNDARY_CONDITIONS_SET_COEFFS_TURB__
 
 /*============================================================================
  * Wall boundary condition management.
@@ -109,4 +109,4 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
 END_C_DECLS
 
-#endif /* __CS_BOUNDARY_CONDITIONS_SET_COEFFS_TURB__ */
+#endif /* CS_BOUNDARY_CONDITIONS_SET_COEFFS_TURB__ */

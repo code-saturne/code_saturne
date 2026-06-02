@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_WALL_FLUX_H__
-#define __CS_RAD_TRANSFER_WALL_FLUX_H__
+#ifndef CS_RAD_TRANSFER_WALL_FLUX_H
+#define CS_RAD_TRANSFER_WALL_FLUX_H
 
 /*============================================================================
  * Radiation solver operations.
@@ -94,4 +94,4 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_WALL_FLUX_H__ */
+#endif /* CS_RAD_TRANSFER_WALL_FLUX_H */

@@ -1,5 +1,5 @@
-#ifndef __FVM_NODAL_H__
-#define __FVM_NODAL_H__
+#ifndef __FVM_NODAL_H
+#define __FVM_NODAL_H
 
 /*============================================================================
  * Main structure for a nodal representation associated with a mesh
@@ -571,4 +571,4 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal);
 
 END_C_DECLS
 
-#endif /* __FVM_NODAL_H__ */
+#endif /* __FVM_NODAL_H */

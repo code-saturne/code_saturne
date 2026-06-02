@@ -1,5 +1,5 @@
-#ifndef __CS_MEG_XDEF_WRAPPER_H__
-#define __CS_MEG_XDEF_WRAPPER_H__
+#ifndef CS_MEG_XDEF_WRAPPER_H
+#define CS_MEG_XDEF_WRAPPER_H
 
 /*============================================================================
  * MEG (Mathematical Expression Generator) functions xdef wrapper

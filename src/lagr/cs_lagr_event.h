@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_EVENT_H__
-#define __CS_LAGR_EVENT_H__
+#ifndef CS_LAGR_EVENT_H
+#define CS_LAGR_EVENT_H
 
 /*============================================================================
  * Lagrangian particle event model
@@ -517,4 +517,4 @@ cs_lagr_event_set_boundary_interaction(void);
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_EVENT_H__ */
+#endif /* CS_LAGR_EVENT_H */

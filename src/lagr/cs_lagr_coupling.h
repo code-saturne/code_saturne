@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_COUPLING_H__
-#define __CS_LAGR_COUPLING_H__
+#ifndef CS_LAGR_COUPLING_H
+#define CS_LAGR_COUPLING_H
 
 /*============================================================================
  * Functions and types for the Lagrangian module
@@ -103,4 +103,4 @@ cs_lagr_coupling_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_LAGR_COUPLING_H__ */
+#endif /* CS_LAGR_COUPLING_H */

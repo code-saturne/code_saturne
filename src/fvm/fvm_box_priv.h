@@ -1,5 +1,5 @@
-#ifndef __FVM_BOX_PRIV_H__
-#define __FVM_BOX_PRIV_H__
+#ifndef __FVM_BOX_PRIV_H
+#define __FVM_BOX_PRIV_H
 
 /*============================================================================
  * Handle bounding boxes.
@@ -102,4 +102,4 @@ struct _fvm_box_set_t {
 
 END_C_DECLS
 
-#endif /* __FVM_BOX_PRIV_H__ */
+#endif /* __FVM_BOX_PRIV_H */

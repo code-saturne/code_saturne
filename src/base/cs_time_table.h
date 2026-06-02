@@ -1,5 +1,5 @@
-#ifndef __CS_TIME_TABLE_H__
-#define __CS_TIME_TABLE_H__
+#ifndef CS_TIME_TABLE_H
+#define CS_TIME_TABLE_H
 
 /*============================================================================
  * Tabulation handling for code_saturne
@@ -399,4 +399,4 @@ cs_time_table_destroy_all(void);
 
 END_C_DECLS
 
-#endif /* __CS_TIME_TABLE_H__ */
+#endif /* CS_TIME_TABLE_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_VERTEX_TO_CELL_H__
-#define __CS_VERTEX_TO_CELL_H__
+#ifndef CS_VERTEX_TO_CELL_H
+#define CS_VERTEX_TO_CELL_H
 
 /*============================================================================
  * Vertex to cell interpolation.
@@ -106,4 +106,4 @@ cs_vertex_to_cell(cs_vertex_to_cell_type_t   method,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_VERTEX_TO_CELL__ */
+#endif /* CS_VERTEX_TO_CELL__ */

@@ -1,5 +1,5 @@
-#ifndef __CS_POST_DEFAULT_H__
-#define __CS_POST_DEFAULT_H__
+#ifndef CS_POST_DEFAULT_H
+#define CS_POST_DEFAULT_H
 
 /*============================================================================
  * Post-processing management
@@ -75,4 +75,4 @@ cs_post_default_write_variables(void);
 
 END_C_DECLS
 
-#endif /* __CS_POST_DEFAULT_H__ */
+#endif /* CS_POST_DEFAULT_H */

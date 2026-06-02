@@ -1,5 +1,5 @@
-#ifndef __CS_COMBUSTION_BSH_HEADERS_H__
-#define __CS_COMBUSTION_BSH_HEADERS_H__
+#ifndef CS_COMBUSTION_BSH_HEADERS_H
+#define CS_COMBUSTION_BSH_HEADERS_H
 
 /*============================================================================
  * Burke Schumann combustion model.
@@ -96,4 +96,4 @@ cs_compute_burke_schumann_enthalpy
 
 END_C_DECLS
 
-#endif /* __CS_COMBUSTION_BSH_HEADERS_H__ */
+#endif /* CS_COMBUSTION_BSH_HEADERS_H */

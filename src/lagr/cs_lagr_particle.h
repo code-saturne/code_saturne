@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_PARTICLE_H__
-#define __CS_LAGR_PARTICLE_H__
+#ifndef CS_LAGR_PARTICLE_H
+#define CS_LAGR_PARTICLE_H
 
 /*============================================================================
  * Lagrangian module particle model
@@ -1864,4 +1864,4 @@ cs_lagr_particles_attr_n_set_val(cs_lagr_particle_set_t  *particle_set,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_LAGR_PARTICLE_H__ */
+#endif /* CS_LAGR_PARTICLE_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_GWF_USPF_H__
-#define __CS_GWF_USPF_H__
+#ifndef CS_GWF_USPF_H
+#define CS_GWF_USPF_H
 
 /*============================================================================
  * Main functions to handle single-phase flows in an unsaturated porous media
@@ -228,4 +228,4 @@ cs_gwf_uspf_extra_post(int                        mesh_id,
 
 END_C_DECLS
 
-#endif /* __CS_GWF_USPF_H__ */
+#endif /* CS_GWF_USPF_H */

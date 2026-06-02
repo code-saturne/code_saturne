@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_INJECTION_H__
-#define __CS_LAGR_INJECTION_H__
+#ifndef CS_LAGR_INJECTION_H
+#define CS_LAGR_INJECTION_H
 
 /*============================================================================
  * Functions and types for lagent
@@ -63,4 +63,4 @@ cs_lagr_injection(int        time_id,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_INJECTION_H__ */
+#endif /* CS_LAGR_INJECTION_H */

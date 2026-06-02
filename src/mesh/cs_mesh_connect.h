@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_CONNECT_H__
-#define __CS_MESH_CONNECT_H__
+#ifndef CS_MESH_CONNECT_H
+#define CS_MESH_CONNECT_H
 
 /*============================================================================
  * Extract nodal connectivity mesh representations from a native mesh.
@@ -159,4 +159,4 @@ cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_CONNECT_H__ */
+#endif /* CS_MESH_CONNECT_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_PARAM_SLES_SETUP_H__
-#define __CS_PARAM_SLES_SETUP_H__
+#ifndef CS_PARAM_SLES_SETUP_H
+#define CS_PARAM_SLES_SETUP_H
 
 /*============================================================================
  * Routines to handle the SLES settings relying on a cs_param_sles_t
@@ -148,4 +148,4 @@ cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
 
 END_C_DECLS
 
-#endif /* __CS_PARAM_SLES_SETUP_H__ */
+#endif /* CS_PARAM_SLES_SETUP_H */

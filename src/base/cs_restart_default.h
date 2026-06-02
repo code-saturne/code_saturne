@@ -1,5 +1,5 @@
-#ifndef __CS_RESTART_DEFAULT_H__
-#define __CS_RESTART_DEFAULT_H__
+#ifndef CS_RESTART_DEFAULT_H
+#define CS_RESTART_DEFAULT_H
 
 /*============================================================================
  * Checkpoint/restart handling for default application.
@@ -344,4 +344,4 @@ cs_restart_get_field_read_status(const int f_id);
 
 END_C_DECLS
 
-#endif /* __CS_RESTART_DEFAULT_H__ */
+#endif /* CS_RESTART_DEFAULT_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_QUALITY_H__
-#define __CS_MESH_QUALITY_H__
+#ifndef CS_MESH_QUALITY_H
+#define CS_MESH_QUALITY_H
 
 /*============================================================================
  * Compute several mesh quality criteria.
@@ -102,4 +102,4 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_QUALITY_H__ */
+#endif /* CS_MESH_QUALITY_H */

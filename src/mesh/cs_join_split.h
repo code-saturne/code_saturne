@@ -1,5 +1,5 @@
-#ifndef __CS_JOIN_SPLIT_H__
-#define __CS_JOIN_SPLIT_H__
+#ifndef CS_JOIN_SPLIT_H
+#define CS_JOIN_SPLIT_H
 
 /*============================================================================
  * Set of subroutines for cutting faces during face joining.
@@ -91,4 +91,4 @@ cs_join_split_update_struct(const cs_join_param_t   param,
 
 END_C_DECLS
 
-#endif /* __CS_JOIN_SPLIT_H__ */
+#endif /* CS_JOIN_SPLIT_H */

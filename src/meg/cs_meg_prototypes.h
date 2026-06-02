@@ -1,5 +1,5 @@
-#ifndef __CS_MEG_PROTOTYPES_H__
-#define __CS_MEG_PROTOTYPES_H__
+#ifndef CS_MEG_PROTOTYPES_H
+#define CS_MEG_PROTOTYPES_H
 
 /*============================================================================
  * Prototypes for MEG (Mathematical Expression Generator) functions
@@ -245,4 +245,4 @@ cs_meg_ibm_fsi_func_by_name
 
 END_C_DECLS
 
-#endif /* __CS_MEG_PROTOTYPES_H__ */
+#endif /* CS_MEG_PROTOTYPES_H */

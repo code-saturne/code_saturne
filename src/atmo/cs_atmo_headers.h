@@ -1,5 +1,5 @@
-#ifndef __CS_ATMO_HEADERS_H__
-#define __CS_ATMO_HEADERS_H__
+#ifndef CS_ATMO_HEADERS_H
+#define CS_ATMO_HEADERS_H
 
 /*============================================================================
  * Atmospheric code_saturne header file for easier include
@@ -45,4 +45,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_ATMO_HEADERS_H__ */
+#endif /* CS_ATMO_HEADERS_H */

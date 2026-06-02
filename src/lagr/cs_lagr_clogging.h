@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_CLOGGING_H__
-#define __CS_LAGR_CLOGGING_H__
+#ifndef CS_LAGR_CLOGGING_H
+#define CS_LAGR_CLOGGING_H
 
 /*============================================================================
  * Clogging modeling.
@@ -136,5 +136,5 @@ cs_lagr_clogging_barrier(cs_lagr_particle_set_t         &p_set,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_LAGR_CLOGGING_H__ */
+#endif /* CS_LAGR_CLOGGING_H */
 

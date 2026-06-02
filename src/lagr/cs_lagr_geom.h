@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_GEOM_H__
-#define __CS_LAGR_GEOM_H__
+#ifndef CS_LAGR_GEOM_H
+#define CS_LAGR_GEOM_H
 
 /*============================================================================
  * Lagrangian geometty-related functions
@@ -62,4 +62,4 @@ cs_lagr_geom(void);
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_GEOM_H__ */
+#endif /* CS_LAGR_GEOM_H */

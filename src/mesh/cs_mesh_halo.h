@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_HALO_H__
-#define __CS_MESH_HALO_H__
+#ifndef CS_MESH_HALO_H
+#define CS_MESH_HALO_H
 
 /*============================================================================
  * Structure and function headers handling with ghost cells
@@ -65,4 +65,4 @@ cs_mesh_halo_define(cs_mesh_t           *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_HALO_H__ */
+#endif /* CS_MESH_HALO_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_RENUMBER_H__
-#define __CS_RENUMBER_H__
+#ifndef CS_RENUMBER_H
+#define CS_RENUMBER_H
 
 /*============================================================================
  * Optional mesh renumbering
@@ -395,4 +395,4 @@ cs_renumber_vertices(cs_mesh_t  *mesh);
 
 END_C_DECLS
 
-#endif /* __CS_RENUMBER_H__ */
+#endif /* CS_RENUMBER_H */

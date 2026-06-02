@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_ASSEMBLER_H__
-#define __CS_MATRIX_ASSEMBLER_H__
+#ifndef CS_MATRIX_ASSEMBLER_H
+#define CS_MATRIX_ASSEMBLER_H
 
 /*============================================================================
  * Incremental or general construction of matrix.
@@ -677,4 +677,4 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav);
 
 END_C_DECLS
 
-#endif /* __CS_MATRIX_ASSEMBLER_H__ */
+#endif /* CS_MATRIX_ASSEMBLER_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_OPTIONS_H__
-#define __CS_LAGR_OPTIONS_H__
+#ifndef CS_LAGR_OPTIONS_H
+#define CS_LAGR_OPTIONS_H
 
 /*============================================================================
  * Functions and types for the Lagrangian module
@@ -75,4 +75,4 @@ cs_lagr_options_definition(int         is_restart,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_OPTIONS_H__ */
+#endif /* CS_LAGR_OPTIONS_H */

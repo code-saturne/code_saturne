@@ -1,5 +1,5 @@
-#ifndef __CS_CFBL_HEADERS_H__
-#define __CS_CFBL_HEADERS_H__
+#ifndef CS_CFBL_HEADERS_H
+#define CS_CFBL_HEADERS_H
 
 /*============================================================================
  * Compressible code_saturne header file for easier include
@@ -39,4 +39,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_CFBL_HEADERS_H__ */
+#endif /* CS_CFBL_HEADERS_H */

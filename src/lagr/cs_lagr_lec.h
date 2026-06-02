@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_LEC_H__
-#define __CS_LAGR_LEC_H__
+#ifndef CS_LAGR_LEC_H
+#define CS_LAGR_LEC_H
 
 /*============================================================================
  * Functions and types for lagrangian specific prints
@@ -78,4 +78,4 @@ cs_restart_lagrangian_checkpoint_write(void);
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_LEC_H__ */
+#endif /* CS_LAGR_LEC_H */

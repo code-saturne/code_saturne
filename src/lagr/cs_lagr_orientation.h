@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_ORIENTATION_H__
-#define __CS_LAGR_ORIENTATION_H__
+#ifndef CS_LAGR_ORIENTATION_H
+#define CS_LAGR_ORIENTATION_H
 
 /*============================================================================
  * Functions and types for orientation
@@ -81,4 +81,4 @@ cs_lagr_orientation_dyn_jeffery(cs_lnum_t        p_id,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_ORIENTATION_H__ */
+#endif /* CS_LAGR_ORIENTATION_H */

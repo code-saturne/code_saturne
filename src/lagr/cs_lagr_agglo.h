@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_AGGLO_H__
-#define __CS_LAGR_AGGLO_H__
+#ifndef CS_LAGR_AGGLO_H
+#define CS_LAGR_AGGLO_H
 
 /*============================================================================
  * Agglomeration modeling.
@@ -112,4 +112,4 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_AGGLO_H__*/
+#endif /* CS_LAGR_AGGLO_H*/

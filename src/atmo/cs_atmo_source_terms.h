@@ -1,5 +1,5 @@
-#ifndef __CS_ATMO_SOURCE_TERMS_H__
-#define __CS_ATMO_SOURCE_TERMS_H__
+#ifndef CS_ATMO_SOURCE_TERMS_H
+#define CS_ATMO_SOURCE_TERMS_H
 
 /*============================================================================
  * Main for atmospheric source terms
@@ -104,4 +104,4 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[]);
 
 END_C_DECLS
 
-#endif /* __CS_ATMO_SOURCE_TERMS_H__ */
+#endif /* CS_ATMO_SOURCE_TERMS_H */

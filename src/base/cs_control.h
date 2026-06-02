@@ -1,5 +1,5 @@
-#ifndef __CS_CONTROL_H__
-#define __CS_CONTROL_H__
+#ifndef CS_CONTROL_H
+#define CS_CONTROL_H
 
 /*============================================================================
  * Interactive control management.
@@ -81,4 +81,4 @@ cs_control_send_state(void);
 
 END_C_DECLS
 
-#endif /* __CS_CONTROL_H__ */
+#endif /* CS_CONTROL_H */

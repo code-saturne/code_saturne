@@ -1,5 +1,5 @@
-#ifndef __CS_EXECUTION_CONTEXT_H__
-#define __CS_EXECUTION_CONTEXT_H__
+#ifndef CS_EXECUTION_CONTEXT_H
+#define CS_EXECUTION_CONTEXT_H
 
 /*============================================================================
  * Class to handle different execution policies (MPI, OpenMP, CUDA, ...)
@@ -604,4 +604,4 @@ using cs_mpi_wrapper = cs::execution::mpi_wrapper;
 
 /*--------------------------------------------------------------------------*/
 
-#endif /* __CS_EXECUTION_CONTEXT_H__ */
+#endif /* CS_EXECUTION_CONTEXT_H */

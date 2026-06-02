@@ -1,5 +1,5 @@
-#ifndef __CS_FUNCTION_DEFAULT_H__
-#define __CS_FUNCTION_DEFAULT_H__
+#ifndef CS_FUNCTION_DEFAULT_H
+#define CS_FUNCTION_DEFAULT_H
 
 /*============================================================================
  * Base predefined function objects.
@@ -385,4 +385,4 @@ cs_function_define_vorticity
 
 END_C_DECLS
 
-#endif /* __CS_FUNCTION_DEFAULT_H__ */
+#endif /* CS_FUNCTION_DEFAULT_H */

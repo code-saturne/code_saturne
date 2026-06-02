@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_EXTRACT_H__
-#define __CS_LAGR_EXTRACT_H__
+#ifndef CS_LAGR_EXTRACT_H
+#define CS_LAGR_EXTRACT_H
 
 /*============================================================================
  * Extract information from lagrangian particles.
@@ -164,4 +164,4 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_EXTRACT_H__ */
+#endif /* CS_LAGR_EXTRACT_H */

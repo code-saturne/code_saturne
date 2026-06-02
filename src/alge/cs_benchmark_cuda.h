@@ -1,5 +1,5 @@
-#ifndef __CS_BENCHMARK_CUDA_H__
-#define __CS_BENCHMARK_CUDA_H__
+#ifndef CS_BENCHMARK_CUDA_H
+#define CS_BENCHMARK_CUDA_H
 
 /*============================================================================
  * Low-level operator benchmarking with CUDA.
@@ -60,4 +60,4 @@ cs_mat_vec_exdiag_native_sym_cuda(cs_lnum_t           n_faces,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_BENCHMARK_CUDA_H__ */
+#endif /* CS_BENCHMARK_CUDA_H */

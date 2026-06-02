@@ -1,5 +1,5 @@
-#ifndef __CS_GUI_CONJUGATE_HEAT_TRANSFER_H__
-#define __CS_GUI_CONJUGATE_HEAT_TRANSFER_H__
+#ifndef CS_GUI_CONJUGATE_HEAT_TRANSFER_H
+#define CS_GUI_CONJUGATE_HEAT_TRANSFER_H
 
 /*============================================================================
  * Management of the GUI parameters file: conjugate heat transfer
@@ -57,4 +57,4 @@ void cs_gui_syrthes_coupling(void);
 
 END_C_DECLS
 
-#endif /* __CS_GUI_CONJUGATE_HEAT_TRANSFER_H__ */
+#endif /* CS_GUI_CONJUGATE_HEAT_TRANSFER_H */

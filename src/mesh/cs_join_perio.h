@@ -1,5 +1,5 @@
-#ifndef __CS_JOIN_PERIO_H__
-#define __CS_JOIN_PERIO_H__
+#ifndef CS_JOIN_PERIO_H
+#define CS_JOIN_PERIO_H
 
 /*============================================================================
  * Structure and function headers handling with periodicity for joining
@@ -245,4 +245,4 @@ cs_join_perio_transfer_builder(void);
 
 END_C_DECLS
 
-#endif /* __CS_JOIN_PERIO_H__ */
+#endif /* CS_JOIN_PERIO_H */

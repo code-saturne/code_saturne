@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_SDE_MODEL_H__
-#define __CS_LAGR_SDE_MODEL_H__
+#ifndef CS_LAGR_SDE_MODEL_H
+#define CS_LAGR_SDE_MODEL_H
 
 /*============================================================================
  * Lagrangian module physical model
@@ -83,4 +83,4 @@ cs_lagr_sde_model(cs_lagr_particle_set_t  &p_set,
 #endif
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_LAGR_SDE_MODEL_H__ */
+#endif /* CS_LAGR_SDE_MODEL_H */

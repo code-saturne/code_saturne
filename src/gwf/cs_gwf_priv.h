@@ -1,5 +1,5 @@
-#ifndef __CS_GWF_PRIV_H__
-#define __CS_GWF_PRIV_H__
+#ifndef CS_GWF_PRIV_H
+#define CS_GWF_PRIV_H
 
 /*============================================================================
  * Structures/types related to the groundwater flow module
@@ -292,4 +292,4 @@ cs_gwf_update_head(const cs_cdo_connect_t      *connect,
 
 END_C_DECLS
 
-#endif /* __CS_GWF_PRIV_H__ */
+#endif /* CS_GWF_PRIV_H */

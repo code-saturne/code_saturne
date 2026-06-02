@@ -1,5 +1,5 @@
-#ifndef __CS_SAT_COUPLING_H__
-#define __CS_SAT_COUPLING_H__
+#ifndef CS_SAT_COUPLING_H
+#define CS_SAT_COUPLING_H
 
 /*============================================================================
  * Functions associated with code coupling.
@@ -306,4 +306,4 @@ cs_sat_coupling_all_finalize(void);
 
 END_C_DECLS
 
-#endif /* __CS_COUPLAGE_H__ */
+#endif /* CS_COUPLAGE_H */

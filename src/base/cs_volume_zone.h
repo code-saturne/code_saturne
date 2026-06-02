@@ -1,5 +1,5 @@
-#ifndef __CS_VOLUME_ZONE_H__
-#define __CS_VOLUME_ZONE_H__
+#ifndef CS_VOLUME_ZONE_H
+#define CS_VOLUME_ZONE_H
 
 /*============================================================================
  * Volume zones handling.
@@ -404,4 +404,4 @@ cs_volume_zone_print_info(void);
 
 END_C_DECLS
 
-#endif /* __CS_VOLUME_ZONE_H__ */
+#endif /* CS_VOLUME_ZONE_H */

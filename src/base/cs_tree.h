@@ -1,5 +1,5 @@
-#ifndef __CS_TREE_H__
-#define __CS_TREE_H__
+#ifndef CS_TREE_H
+#define CS_TREE_H
 
 /*============================================================================
  * Tree structure used to store data and settings.
@@ -911,4 +911,4 @@ cs_tree_dump(cs_log_t                log,
 
 END_C_DECLS
 
-#endif /* __CS_TREE_H__ */
+#endif /* CS_TREE_H */

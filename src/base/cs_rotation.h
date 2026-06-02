@@ -1,5 +1,5 @@
-#ifndef __CS_ROTATION_H__
-#define __CS_ROTATION_H__
+#ifndef CS_ROTATION_H
+#define CS_ROTATION_H
 
 /*============================================================================
  * Rotation modeling features.
@@ -279,4 +279,4 @@ cs_rotation_to_array(int        r_num,
 
 END_C_DECLS
 
-#endif /* __CS_ROTATION_H__ */
+#endif /* CS_ROTATION_H */

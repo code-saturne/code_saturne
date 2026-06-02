@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_ADJACENCIES_H__
-#define __CS_MESH_ADJACENCIES_H__
+#ifndef CS_MESH_ADJACENCIES_H
+#define CS_MESH_ADJACENCIES_H
 
 /*============================================================================
  * Additional mesh adjacencies.
@@ -523,4 +523,4 @@ cs_mesh_adjacency_v2v(const cs_mesh_t  *m);
 
 END_C_DECLS
 
-#endif /* __CS_MESH_ADJACENCIES__ */
+#endif /* CS_MESH_ADJACENCIES__ */

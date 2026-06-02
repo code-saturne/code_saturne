@@ -1,5 +1,5 @@
-#ifndef __CS_CUDA_CONTRIB_H__
-#define __CS_CUDA_CONTRIB_H__
+#ifndef CS_CUDA_CONTRIB_H
+#define CS_CUDA_CONTRIB_H
 
 /*============================================================================
  * CUDA utility functions, from CUDA libraries or examples itself.
@@ -55,4 +55,4 @@ __device__ __forceinline__ int warpReduceSum<int>(unsigned int mask,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_CUDA_CONTRIB_H__ */
+#endif /* CS_CUDA_CONTRIB_H */

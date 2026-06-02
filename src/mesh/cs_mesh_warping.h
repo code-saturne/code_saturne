@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_WARPING_H__
-#define __CS_MESH_WARPING_H__
+#ifndef CS_MESH_WARPING_H
+#define CS_MESH_WARPING_H
 
 /*============================================================================
  * Cut warped faces in serial or parallel with/without periodicity.
@@ -99,4 +99,4 @@ cs_mesh_warping_get_defaults(double  *max_warp_angle,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_WARPING_H__ */
+#endif /* CS_MESH_WARPING_H */

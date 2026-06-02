@@ -1,5 +1,5 @@
-#ifndef __CS__ATMO_VARIABLES_H__
-#define __CS__ATMO_VARIABLES_H__
+#ifndef CS__ATMO_VARIABLES_H
+#define CS__ATMO_VARIABLES_H
 
 /*============================================================================
  * Functions relative to atmospheric model fields.
@@ -87,4 +87,4 @@ cs_atmo_init_variables_2(void);
 
 END_C_DECLS
 
-#endif /* __CS_ATMO_VARIABLES_H__ */
+#endif /* CS_ATMO_VARIABLES_H */

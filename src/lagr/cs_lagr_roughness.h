@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_ROUGHNESS_H__
-#define __CS_LAGR_ROUGHNESS_H__
+#ifndef CS_LAGR_ROUGHNESS_H
+#define CS_LAGR_ROUGHNESS_H
 
 /*============================================================================
  * Surface roughness
@@ -116,5 +116,5 @@ cs_lagr_roughness_barrier(cs_lagr_particle_set_t          p_set,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_ROUGHNESS_H__ */
+#endif /* CS_LAGR_ROUGHNESS_H */
 

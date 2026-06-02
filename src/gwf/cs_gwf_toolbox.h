@@ -1,5 +1,5 @@
-#ifndef __CS_GWF_TOOLBOX_H__
-#define __CS_GWF_TOOLBOX_H__
+#ifndef CS_GWF_TOOLBOX_H
+#define CS_GWF_TOOLBOX_H
 
 /*============================================================================
  * Set of pratical functions dedicated to the groundwater flow module
@@ -77,4 +77,4 @@ cs_gwf_toolbox_bateman(double                              time_eval,
 
 END_C_DECLS
 
-#endif /* __CS_GWF_TOOLBOX_H__ */
+#endif /* CS_GWF_TOOLBOX_H */

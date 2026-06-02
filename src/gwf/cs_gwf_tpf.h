@@ -1,5 +1,5 @@
-#ifndef __CS_GWF_TPF_H__
-#define __CS_GWF_TPF_H__
+#ifndef CS_GWF_TPF_H
+#define CS_GWF_TPF_H
 
 /*============================================================================
  * Main functions dedicated to the modelling of two-phase flows in a porous
@@ -296,4 +296,4 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
 
 END_C_DECLS
 
-#endif /* __CS_GWF_TPF_H__ */
+#endif /* CS_GWF_TPF_H */

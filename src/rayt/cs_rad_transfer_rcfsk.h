@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_RCFSK_H__
-#define __CS_RAD_TRANSFER_RCFSK_H__
+#ifndef CS_RAD_TRANSFER_RCFSK_H
+#define CS_RAD_TRANSFER_RCFSK_H
 
 /*============================================================================
  * Radiation solver operations.
@@ -80,4 +80,4 @@ cs_rad_transfer_rcfsk(const cs_real_t  *pco2,
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_RCFSK_H__ */
+#endif /* CS_RAD_TRANSFER_RCFSK_H */

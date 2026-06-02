@@ -1,5 +1,5 @@
-#ifndef __CS_HT_CONVERT_H__
-#define __CS_HT_CONVERT_H__
+#ifndef CS_HT_CONVERT_H
+#define CS_HT_CONVERT_H
 
 /*============================================================================
  * Enthaly to and from temperature conversion.
@@ -133,4 +133,4 @@ cs_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
 
 END_C_DECLS
 
-#endif /* __CS_HT_CONVERT_H__ */
+#endif /* CS_HT_CONVERT_H */

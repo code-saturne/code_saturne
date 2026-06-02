@@ -1,5 +1,5 @@
-#ifndef __CS_PREPROCESS_H__
-#define __CS_PREPROCESS_H__
+#ifndef CS_PREPROCESS_H
+#define CS_PREPROCESS_H
 
 /*============================================================================
  * Handle successive preprocessing operations.
@@ -111,4 +111,4 @@ cs_preprocess_mesh_update_device(void);
 
 END_C_DECLS
 
-#endif /* __CS_PREPROCESS_H__ */
+#endif /* CS_PREPROCESS_H */

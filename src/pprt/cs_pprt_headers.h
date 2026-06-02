@@ -1,5 +1,5 @@
-#ifndef __CS_PPRT_HEADERS_H__
-#define __CS_PPRT_HEADERS_H__
+#ifndef CS_PPRT_HEADERS_H
+#define CS_PPRT_HEADERS_H
 
 /*============================================================================
  * Global code_saturne headers file for easier include
@@ -34,4 +34,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_PPRT_HEADERS_H__ */
+#endif /* CS_PPRT_HEADERS_H */

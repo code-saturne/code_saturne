@@ -1,5 +1,5 @@
-#ifndef __CS_JOIN_H__
-#define __CS_JOIN_H__
+#ifndef CS_JOIN_H
+#define CS_JOIN_H
 
 /*============================================================================
  * Structure and function headers handling with joining operation
@@ -142,4 +142,4 @@ cs_join_mark_selected_faces(const cs_mesh_t  *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_JOIN_H__ */
+#endif /* CS_JOIN_H */

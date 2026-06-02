@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_PRIV_H__
-#define __CS_MATRIX_PRIV_H__
+#ifndef CS_MATRIX_PRIV_H
+#define CS_MATRIX_PRIV_H
 
 /*============================================================================
  * Private types for sparse matrix representation and operations.
@@ -404,4 +404,4 @@ struct _cs_matrix_variant_t {
 
 END_C_DECLS
 
-#endif /* __CS_MATRIX_PRIV_H__ */
+#endif /* CS_MATRIX_PRIV_H */

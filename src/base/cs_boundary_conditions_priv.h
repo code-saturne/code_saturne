@@ -1,5 +1,5 @@
-#ifndef __CS_BOUNDARY_CONDITIONS_PRIV_H__
-#define __CS_BOUNDARY_CONDITIONS_PRIV_H__
+#ifndef CS_BOUNDARY_CONDITIONS_PRIV_H
+#define CS_BOUNDARY_CONDITIONS_PRIV_H
 
 /*============================================================================
  * Private types for boundary condition handling.
@@ -211,4 +211,4 @@ cs_boundary_conditions_open_find(const  cs_zone_t   *zone);
 
 END_C_DECLS
 
-#endif /* __CS_BOUNDARY_CONDITIONS_PRIV_H__ */
+#endif /* CS_BOUNDARY_CONDITIONS_PRIV_H */

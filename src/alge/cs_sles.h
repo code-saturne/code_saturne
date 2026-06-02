@@ -1,5 +1,5 @@
-#ifndef __CS_SLES_H__
-#define __CS_SLES_H__
+#ifndef CS_SLES_H
+#define CS_SLES_H
 
 /*============================================================================
  * Sparse Linear Equation Solver driver
@@ -892,4 +892,4 @@ cs_sles_name(int          f_id,
 
 END_C_DECLS
 
-#endif /* __CS_SLES_H__ */
+#endif /* CS_SLES_H */

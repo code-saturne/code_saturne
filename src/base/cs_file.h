@@ -1,5 +1,5 @@
-#ifndef __CS_FILE_H__
-#define __CS_FILE_H__
+#ifndef CS_FILE_H
+#define CS_FILE_H
 
 /*============================================================================
  * File and directory operations, with parallel file I/O
@@ -941,4 +941,4 @@ cs_file_endswith(const char  *path,
 
 END_C_DECLS
 
-#endif /* __CS_FILE_H__ */
+#endif /* CS_FILE_H */

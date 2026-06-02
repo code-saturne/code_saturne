@@ -1,5 +1,5 @@
-#ifndef __FVM_TO_MELISSA_H__
-#define __FVM_TO_MELISSA_H__
+#ifndef __FVM_TO_MELISSA_H
+#define __FVM_TO_MELISSA_H
 
 /*============================================================================
  * Write a nodal representation associated with a mesh and associated
@@ -198,4 +198,4 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
 
 END_C_DECLS
 
-#endif /* __FVM_TO_MELISSA_H__ */
+#endif /* __FVM_TO_MELISSA_H */

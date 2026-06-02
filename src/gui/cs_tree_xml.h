@@ -1,5 +1,5 @@
-#ifndef __CS_TREE_XML_H__
-#define __CS_TREE_XML_H__
+#ifndef CS_TREE_XML_H
+#define CS_TREE_XML_H
 
 /*============================================================================
  * Read a tree structure from an xml file.
@@ -70,4 +70,4 @@ cs_tree_xml_read(cs_tree_node_t  *r,
 
 END_C_DECLS
 
-#endif /* __CS_TREE_XML_H__ */
+#endif /* CS_TREE_XML_H */

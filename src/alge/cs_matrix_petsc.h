@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_PETSC_H__
-#define __CS_MATRIX_PETSC_H__
+#ifndef CS_MATRIX_PETSC_H
+#define CS_MATRIX_PETSC_H
 
 /*============================================================================
  * Sparse Matrix Representation and Operations using PETSc library.
@@ -90,4 +90,4 @@ cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
 
 END_C_DECLS
 
-#endif /* __CS_MATRIX_PETSC_H__ */
+#endif /* CS_MATRIX_PETSC_H */

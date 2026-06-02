@@ -1,5 +1,5 @@
-#ifndef __CS_HGN_PHASE_THERMO_H__
-#define __CS_HGN_PHASE_THERMO_H__
+#ifndef CS_HGN_PHASE_THERMO_H
+#define CS_HGN_PHASE_THERMO_H
 
 /*============================================================================
  * Phase thermodynamic for the compressible homogeneous two-phase model
@@ -180,4 +180,4 @@ cs_hgn_phase_thermo_internal_energy_sv(cs_real_t s,
 
 END_C_DECLS
 
-#endif  /* __CS_HGN_PHASE_THERMO_H__ */
+#endif  /* CS_HGN_PHASE_THERMO_H */

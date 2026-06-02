@@ -1,5 +1,5 @@
-#ifndef __CS_HEAD_LOSSES_H__
-#define __CS_HEAD_LOSSES_H__
+#ifndef CS_HEAD_LOSSES_H
+#define CS_HEAD_LOSSES_H
 
 /*============================================================================
  * Head losses computation.
@@ -68,4 +68,4 @@ cs_head_losses_compute(cs_real_6_t cku[]);
 
 END_C_DECLS
 
-#endif /* __CS_HEAD_LOSSES_H__ */
+#endif /* CS_HEAD_LOSSES_H */

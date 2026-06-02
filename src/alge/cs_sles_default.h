@@ -1,5 +1,5 @@
-#ifndef __CS_SLES_DEFAULT_H__
-#define __CS_SLES_DEFAULT_H__
+#ifndef CS_SLES_DEFAULT_H
+#define CS_SLES_DEFAULT_H
 
 /*============================================================================
  * Sparse Linear Equation Solvers
@@ -263,4 +263,4 @@ cs_sles_default_error(cs_sles_t                    *sles,
 
 END_C_DECLS
 
-#endif /* __CS_SLES_DEFAULT_H__ */
+#endif /* CS_SLES_DEFAULT_H */

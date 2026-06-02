@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_HEADERS_H__
-#define __CS_RAD_HEADERS_H__
+#ifndef CS_RAD_HEADERS_H
+#define CS_RAD_HEADERS_H
 
 /*============================================================================
  * Global code_saturne headers file for easier include
@@ -47,4 +47,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_RAD_HEADERS_H__ */
+#endif /* CS_RAD_HEADERS_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_NEW_H__
-#define __CS_LAGR_NEW_H__
+#ifndef CS_LAGR_NEW_H
+#define CS_LAGR_NEW_H
 
 /*============================================================================
  * Handling of new particles.
@@ -130,4 +130,4 @@ cs_lagr_new_v(cs_lagr_particle_set_t  &p_set,
 
 #endif //__cplusplus
 
-#endif /* __CS_LAGR_NEW_H__ */
+#endif /* CS_LAGR_NEW_H */

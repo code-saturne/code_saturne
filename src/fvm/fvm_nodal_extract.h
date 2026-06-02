@@ -1,5 +1,5 @@
-#ifndef __FVM_NODAL_EXTRACT_H__
-#define __FVM_NODAL_EXTRACT_H__
+#ifndef __FVM_NODAL_EXTRACT_H
+#define __FVM_NODAL_EXTRACT_H
 
 /*============================================================================
  * Main structure for a nodal representation associated with a mesh
@@ -196,4 +196,4 @@ fvm_nodal_extents(const fvm_nodal_t  *this_nodal,
 
 END_C_DECLS
 
-#endif /* __FVM_NODAL_EXTRACT_H__ */
+#endif /* __FVM_NODAL_EXTRACT_H */

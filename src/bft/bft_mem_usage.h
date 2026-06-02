@@ -1,5 +1,5 @@
-#ifndef __BFT_MEM_USAGE_H__
-#define __BFT_MEM_USAGE_H__
+#ifndef __BFT_MEM_USAGE_H
+#define __BFT_MEM_USAGE_H
 
 /*============================================================================
  * Base memory usage information (System and Library dependent)
@@ -123,4 +123,4 @@ bft_mem_usage_n_calls(size_t count[3]);
 
 END_C_DECLS
 
-#endif /* __BFT_MEM_USAGE_H__ */
+#endif /* __BFT_MEM_USAGE_H */

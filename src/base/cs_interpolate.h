@@ -1,5 +1,5 @@
-#ifndef __CS_INTERPOLATE_H__
-#define __CS_INTERPOLATE_H__
+#ifndef CS_INTERPOLATE_H
+#define CS_INTERPOLATE_H
 
 /*============================================================================
  * Interpolation function handling.
@@ -155,4 +155,4 @@ cs_interpolate_from_location_p1(void                *input,
 
 END_C_DECLS
 
-#endif /* __CS_INTERPOLATE_H__ */
+#endif /* CS_INTERPOLATE_H */

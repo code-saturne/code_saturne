@@ -530,4 +530,4 @@ cs_gradient_vector_synced_input(const char                  *var_name,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_GRADIENT__ */
+#endif /* CS_GRADIENT__ */

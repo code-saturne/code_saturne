@@ -1,5 +1,5 @@
-#ifndef __CS_PRE_PROCESSOR_DATA_H__
-#define __CS_PRE_PROCESSOR_DATA_H__
+#ifndef CS_PRE_PROCESSOR_DATA_H
+#define CS_PRE_PROCESSOR_DATA_H
 
 /*============================================================================
  * Exchange of data between code_saturne Kernel and Preprocessor
@@ -165,5 +165,5 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_PRE_PROCESSOR_DATA_H__ */
+#endif /* CS_PRE_PROCESSOR_DATA_H */
 

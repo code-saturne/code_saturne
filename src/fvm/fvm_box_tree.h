@@ -1,5 +1,5 @@
-#ifndef __FVM_BOX_TREE_H__
-#define __FVM_BOX_TREE_H__
+#ifndef __FVM_BOX_TREE_H
+#define __FVM_BOX_TREE_H
 
 /*============================================================================
  * Search octrees and quadtrees of boxes.
@@ -239,4 +239,4 @@ fvm_box_tree_dump(fvm_box_tree_t  *bt);
 
 END_C_DECLS
 
-#endif /* __FVM_BOX_TREE_H__ */
+#endif /* __FVM_BOX_TREE_H */

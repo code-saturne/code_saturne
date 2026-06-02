@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_RESUSPENSION_H__
-#define __CS_LAGR_RESUSPENSION_H__
+#ifndef CS_LAGR_RESUSPENSION_H
+#define CS_LAGR_RESUSPENSION_H
 
 /*============================================================================
  * Methods for particle resuspension
@@ -62,4 +62,4 @@ cs_lagr_resuspension(void);
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_RESUSPENSION_H__ */
+#endif /* CS_LAGR_RESUSPENSION_H */

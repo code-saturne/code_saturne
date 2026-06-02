@@ -1,5 +1,5 @@
-#ifndef __FVM_SORT_PARTITION_H__
-#define __FVM_SORT_PARTITION_H__
+#ifndef __FVM_SORT_PARTITION_H
+#define __FVM_SORT_PARTITION_H
 
 /*============================================================================
  * Data partitioning for parallel sort or order operations.
@@ -137,4 +137,4 @@ cs_sort_partition_dest_rank_id(cs_lnum_t                      sampling_factor,
 
 END_C_DECLS
 
-#endif /* __FVM_SORT_PARTITION_H__ */
+#endif /* __FVM_SORT_PARTITION_H */

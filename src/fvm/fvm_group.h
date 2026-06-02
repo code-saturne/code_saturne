@@ -1,5 +1,5 @@
-#ifndef __FVM_GROUP_H__
-#define __FVM_GROUP_H__
+#ifndef __FVM_GROUP_H
+#define __FVM_GROUP_H
 
 /*============================================================================
  * Definition of entity groups
@@ -189,4 +189,4 @@ fvm_group_class_set_dump(const fvm_group_class_set_t  *this_group_class_set);
 
 END_C_DECLS
 
-#endif /* __FVM_GROUP_H__ */
+#endif /* __FVM_GROUP_H */

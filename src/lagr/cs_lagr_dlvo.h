@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_DLVO_H__
-#define __CS_LAGR_DLVO_H__
+#ifndef CS_LAGR_DLVO_H
+#define CS_LAGR_DLVO_H
 
 /*============================================================================
  * Functions and types for the clogging modeling
@@ -174,5 +174,5 @@ cs_lagr_barrier(cs_lagr_particle_set_t   &p_set,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_LAGR_DLVO_H__ */
+#endif /* CS_LAGR_DLVO_H */
 

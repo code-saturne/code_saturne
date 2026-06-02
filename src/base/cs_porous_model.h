@@ -1,5 +1,5 @@
-#ifndef __CS_POROUS_MODEL_H__
-#define __CS_POROUS_MODEL_H__
+#ifndef CS_POROUS_MODEL_H
+#define CS_POROUS_MODEL_H
 
 /*============================================================================
  * Porous model management
@@ -211,4 +211,4 @@ cs_porous_model_post_immmersed_plane(const cs_lnum_t      n_ib_cells,
 
 END_C_DECLS
 
-#endif /* __CS_POROUS_MODEL_H__ */
+#endif /* CS_POROUS_MODEL_H */

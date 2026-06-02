@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_SMOOTHER_H__
-#define __CS_MESH_SMOOTHER_H__
+#ifndef CS_MESH_SMOOTHER_H
+#define CS_MESH_SMOOTHER_H
 
 /*============================================================================
  * Mesh smoothing.
@@ -81,4 +81,4 @@ cs_mesh_smoother_unwarp(cs_mesh_t  *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_SMOOTHER_H__ */
+#endif /* CS_MESH_SMOOTHER_H */

@@ -1,5 +1,5 @@
-#ifndef __FVM_WRITER_H__
-#define __FVM_WRITER_H__
+#ifndef __FVM_WRITER_H
+#define __FVM_WRITER_H
 
 /*============================================================================
  * Handle export of mesh and fields.
@@ -433,4 +433,4 @@ fvm_writer_get_times(fvm_writer_t        *this_writer,
 
 END_C_DECLS
 
-#endif /* __FVM_WRITER_H__ */
+#endif /* __FVM_WRITER_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_FUNCTION_H__
-#define __CS_FUNCTION_H__
+#ifndef CS_FUNCTION_H
+#define CS_FUNCTION_H
 
 /*============================================================================
  * Function objects management.
@@ -387,4 +387,4 @@ cs_function_evaluate(const cs_function_t   *f,
 
 END_C_DECLS
 
-#endif /* __CS_FUNCTION_H__ */
+#endif /* CS_FUNCTION_H */

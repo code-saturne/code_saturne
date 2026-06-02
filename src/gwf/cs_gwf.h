@@ -1,5 +1,5 @@
-#ifndef __CS_GWF_H__
-#define __CS_GWF_H__
+#ifndef CS_GWF_H
+#define CS_GWF_H
 
 /*============================================================================
  * Set of main functions to handle the groundwater flow module with CDO
@@ -540,4 +540,4 @@ cs_gwf_extra_post(void                   *input,
 
 END_C_DECLS
 
-#endif /* __CS_GWF_H__ */
+#endif /* CS_GWF_H */

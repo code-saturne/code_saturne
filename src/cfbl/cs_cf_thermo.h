@@ -1,5 +1,5 @@
-#ifndef __CS_CF_THERMO_H__
-#define __CS_CF_THERMO_H__
+#ifndef CS_CF_THERMO_H
+#define CS_CF_THERMO_H
 
 /*============================================================================
  * Thermodynamic laws for the compressible module
@@ -751,4 +751,4 @@ cs_cf_thermo_b_rho_from_pt(cs_lnum_t  face_id,
 
 END_C_DECLS
 
-#endif /* __CS_CF_THERMO_H__ */
+#endif /* CS_CF_THERMO_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_HEAD_LOSSES_H__
-#define __CS_LAGR_HEAD_LOSSES_H__
+#ifndef CS_LAGR_HEAD_LOSSES_H
+#define CS_LAGR_HEAD_LOSSES_H
 
 /*============================================================================
  * Functions and types for head losses and porosity
@@ -70,4 +70,4 @@ cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_HEAD_LOSSES_H__ */
+#endif /* CS_LAGR_HEAD_LOSSES_H */

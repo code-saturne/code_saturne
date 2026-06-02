@@ -1,5 +1,5 @@
-#ifndef __CS_PART_TO_BLOCK_H__
-#define __CS_PART_TO_BLOCK_H__
+#ifndef CS_PART_TO_BLOCK_H
+#define CS_PART_TO_BLOCK_H
 
 /*============================================================================
  * Convert between general domain partition and block distribution.
@@ -187,4 +187,4 @@ cs_part_to_block_copy_indexed(cs_part_to_block_t   *d,
 
 END_C_DECLS
 
-#endif /* __CS_PART_TO_BLOCK_H__ */
+#endif /* CS_PART_TO_BLOCK_H */

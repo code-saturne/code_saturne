@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_DEPOSITION_MODEL_H__
-#define __CS_LAGR_DEPOSITION_MODEL_H__
+#ifndef CS_LAGR_DEPOSITION_MODEL_H
+#define CS_LAGR_DEPOSITION_MODEL_H
 
 /*============================================================================
  * Functions and types for the Lagrangian module
@@ -114,4 +114,4 @@ cs_lagr_deposition(cs_real_t  dtp,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_DEPOSITION_MODEL_H__ */
+#endif /* CS_LAGR_DEPOSITION_MODEL_H */

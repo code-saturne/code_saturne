@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_FRAGMENTATION_H__
-#define __CS_LAGR_FRAGMENTATION_H__
+#ifndef CS_LAGR_FRAGMENTATION_H
+#define CS_LAGR_FRAGMENTATION_H
 
 /*============================================================================
  * Fragmentation modeling.
@@ -97,4 +97,4 @@ cs_lagr_fragmentation(cs_real_t  dt,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_FRAGMENTATION_H__*/
+#endif /* CS_LAGR_FRAGMENTATION_H*/

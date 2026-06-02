@@ -1,5 +1,5 @@
-#ifndef __CS_THERMAL_MODEL_H__
-#define __CS_THERMAL_MODEL_H__
+#ifndef CS_THERMAL_MODEL_H
+#define CS_THERMAL_MODEL_H
 
 /*============================================================================
  * Base thermal model data.
@@ -388,4 +388,4 @@ cs_thermal_model_pdivu(cs_real_t  smbrs[]);
 
 END_C_DECLS
 
-#endif /* __CS_THERMAL_MODEL_H__ */
+#endif /* CS_THERMAL_MODEL_H */

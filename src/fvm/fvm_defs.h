@@ -1,5 +1,5 @@
-#ifndef __FVM_DEFS_H__
-#define __FVM_DEFS_H__
+#ifndef __FVM_DEFS_H
+#define __FVM_DEFS_H
 
 /*============================================================================
  * Definitions, global variables, and base functions
@@ -76,4 +76,4 @@ extern const char  *fvm_element_type_name[];
 
 END_C_DECLS
 
-#endif /* __FVM_DEFS_H__ */
+#endif /* __FVM_DEFS_H */

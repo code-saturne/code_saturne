@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_BOUNDARY_H__
-#define __CS_MESH_BOUNDARY_H__
+#ifndef CS_MESH_BOUNDARY_H
+#define CS_MESH_BOUNDARY_H
 
 /*============================================================================
  * Insert boundaries into the mesh.
@@ -136,4 +136,4 @@ cs_mesh_boundary_remove_periodicity(cs_mesh_t  *mesh);
 
 END_C_DECLS
 
-#endif /* __CS_MESH_BOUNDARY_H__ */
+#endif /* CS_MESH_BOUNDARY_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_JOIN_MERGE_H__
-#define __CS_JOIN_MERGE_H__
+#ifndef CS_JOIN_MERGE_H
+#define CS_JOIN_MERGE_H
 
 /*============================================================================
  * Set of subroutines for:
@@ -140,4 +140,4 @@ cs_join_merge_update_struct(cs_join_param_t          param,
 
 END_C_DECLS
 
-#endif /* __CS_JOIN_MERGE_H__ */
+#endif /* CS_JOIN_MERGE_H */

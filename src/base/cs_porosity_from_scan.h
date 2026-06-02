@@ -1,5 +1,5 @@
-#ifndef __CS_POROSITY_FROM_SCAN_H__
-#define __CS_POROSITY_FROM_SCAN_H__
+#ifndef CS_POROSITY_FROM_SCAN_H
+#define CS_POROSITY_FROM_SCAN_H
 
 /*============================================================================
  * Main for cooling towers related functions
@@ -253,4 +253,4 @@ cs_porous_model_restart_read_stage_2(void);
 
 END_C_DECLS
 
-#endif /* __CS_POROSITY_FROM_SCAN_H__ */
+#endif /* CS_POROSITY_FROM_SCAN_H */

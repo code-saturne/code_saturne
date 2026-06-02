@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_STAT_H__
-#define __CS_LAGR_STAT_H__
+#ifndef CS_LAGR_STAT_H
+#define CS_LAGR_STAT_H
 
 /*============================================================================
  * Functions and types for the Lagrangian module
@@ -765,4 +765,4 @@ cs_lagr_stat_get_moment_age(cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_LAGR_STAT_H__ */
+#endif /* CS_LAGR_STAT_H */

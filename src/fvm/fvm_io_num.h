@@ -1,5 +1,5 @@
-#ifndef __FVM_IO_NUM_H__
-#define __FVM_IO_NUM_H__
+#ifndef __FVM_IO_NUM_H
+#define __FVM_IO_NUM_H
 
 /*============================================================================
  * Main structure for an I/O numbering scheme associated with mesh entities
@@ -376,4 +376,4 @@ fvm_io_num_dump(const fvm_io_num_t  *const this_io_num);
 
 END_C_DECLS
 
-#endif /* __FVM_IO_NUM_H__ */
+#endif /* __FVM_IO_NUM_H */

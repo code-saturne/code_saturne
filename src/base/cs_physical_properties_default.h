@@ -1,5 +1,5 @@
-#ifndef __CS_PHYSICAL_PROPERTIES_DEFAULT_H__
-#define __CS_PHYSICAL_PROPERTIES_DEFAULT_H__
+#ifndef CS_PHYSICAL_PROPERTIES_DEFAULT_H
+#define CS_PHYSICAL_PROPERTIES_DEFAULT_H
 
 /*============================================================================
  *  physical properties variable in time.
@@ -63,4 +63,4 @@ cs_physical_properties_update(int   iterns);
 
 END_C_DECLS
 
-#endif /* __CS_PHYSICAL_PROPERTIES_DEFAULT__H__ */
+#endif /* CS_PHYSICAL_PROPERTIES_DEFAULT__H */

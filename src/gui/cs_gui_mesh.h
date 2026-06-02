@@ -1,5 +1,5 @@
-#ifndef __CS_GUI_MESH_H__
-#define __CS_GUI_MESH_H__
+#ifndef CS_GUI_MESH_H
+#define CS_GUI_MESH_H
 
 /*============================================================================
  * Management of the GUI parameters file: mesh related options
@@ -116,4 +116,4 @@ cs_gui_mesh_cartesian_define(void);
 
 END_C_DECLS
 
-#endif /* __CS_GUI_MESH_H__ */
+#endif /* CS_GUI_MESH_H */

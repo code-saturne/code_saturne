@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_PROTOTYPES_H__
-#define __CS_LAGR_PROTOTYPES_H__
+#ifndef CS_LAGR_PROTOTYPES_H
+#define CS_LAGR_PROTOTYPES_H
 
 /*============================================================================
  * Prototypes for Fortran functions and subroutines callable from C
@@ -421,5 +421,5 @@ cs_lagr_user_internal_interaction(cs_lagr_particle_set_t    &p_set,
 
 #endif /* __cplusplus  */
 
-#endif /* __CS_LAGR_PROTOTYPES_H__ */
+#endif /* CS_LAGR_PROTOTYPES_H */
 

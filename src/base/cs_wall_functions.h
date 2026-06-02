@@ -1,5 +1,5 @@
-#ifndef __CS_WALL_FUNCTIONS_H__
-#define __CS_WALL_FUNCTIONS_H__
+#ifndef CS_WALL_FUNCTIONS_H
+#define CS_WALL_FUNCTIONS_H
 
 /*============================================================================
  * Wall functions
@@ -1361,4 +1361,4 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
 
 END_C_DECLS
 
-#endif /* __CS_WALL_FUNCTIONS_H__ */
+#endif /* CS_WALL_FUNCTIONS_H */

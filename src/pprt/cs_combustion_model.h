@@ -1,5 +1,5 @@
-#ifndef __CS_COMBUSTION_MODEL_H__
-#define __CS_COMBUSTION_MODEL_H__
+#ifndef CS_COMBUSTION_MODEL_H
+#define CS_COMBUSTION_MODEL_H
 
 /*============================================================================
  * Combustion model parameters.
@@ -133,4 +133,4 @@ cs_combustion_dirac_pdf(cs_lnum_t         n_cells,
 
 END_C_DECLS
 
-#endif /* __CS_COMBUSTION_MODEL_H__ */
+#endif /* CS_COMBUSTION_MODEL_H */

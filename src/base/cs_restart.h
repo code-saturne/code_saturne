@@ -1,5 +1,5 @@
-#ifndef __CS_RESTART_H__
-#define __CS_RESTART_H__
+#ifndef CS_RESTART_H
+#define CS_RESTART_H
 
 /*============================================================================
  * Manage checkpoint / restart files
@@ -1000,4 +1000,4 @@ cs_restart_multiwriters_destroy_all(void);
 
 END_C_DECLS
 
-#endif /* __CS_RESTART_H__ */
+#endif /* CS_RESTART_H */

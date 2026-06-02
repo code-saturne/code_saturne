@@ -1,5 +1,5 @@
-#ifndef __CS_RAD_TRANSFER_H__
-#define __CS_RAD_TRANSFER_H__
+#ifndef CS_RAD_TRANSFER_H
+#define CS_RAD_TRANSFER_H
 
 /*============================================================================
  * Radiation solver operations.
@@ -248,4 +248,4 @@ cs_rad_time_is_active(void);
 
 END_C_DECLS
 
-#endif /* __CS_RAD_TRANSFER_H__ */
+#endif /* CS_RAD_TRANSFER_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_BOUNDARY_LAYER_H__
-#define __CS_MESH_BOUNDARY_LAYER_H__
+#ifndef CS_MESH_BOUNDARY_LAYER_H
+#define CS_MESH_BOUNDARY_LAYER_H
 
 /*============================================================================
  * Insert boundary cell layers into the mesh.
@@ -82,4 +82,4 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_BOUNDARY_LAYER_H__ */
+#endif /* CS_MESH_BOUNDARY_LAYER_H */

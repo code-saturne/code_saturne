@@ -1,5 +1,5 @@
-#ifndef __CS_HGN_SOURCE_TERMS_STEP_H__
-#define __CS_HGN_SOURCE_TERMS_STEP_H__
+#ifndef CS_HGN_SOURCE_TERMS_STEP_H
+#define CS_HGN_SOURCE_TERMS_STEP_H
 
 /*============================================================================
  * Source terms computation for compressible homogeneous two-phase flow model
@@ -66,4 +66,4 @@ void cs_hgn_source_terms_step(const cs_mesh_t *m);
 
 END_C_DECLS
 
-#endif /* __CS_HGN_SOURCE_TERMS_STEP_H__ */
+#endif /* CS_HGN_SOURCE_TERMS_STEP_H */

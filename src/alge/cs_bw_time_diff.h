@@ -1,5 +1,5 @@
-#ifndef __CS_BW_TIME_DIFF_H__
-#define __CS_BW_TIME_DIFF_H__
+#ifndef CS_BW_TIME_DIFF_H
+#define CS_BW_TIME_DIFF_H
 
 /*============================================================================
  * Time operators.
@@ -60,4 +60,4 @@ cs_backward_differentiation_in_time(const cs_field_t    *f,
 
 END_C_DECLS
 
-#endif /* __CS_BW_TIME_DIFF_H__ */
+#endif /* CS_BW_TIME_DIFF_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_GROUP_H__
-#define __CS_MESH_GROUP_H__
+#ifndef CS_MESH_GROUP_H
+#define CS_MESH_GROUP_H
 
 /*============================================================================
  * Management of mesh groups.
@@ -215,4 +215,4 @@ cs_mesh_group_b_faces_add(cs_mesh_t        *mesh,
 
 END_C_DECLS
 
-#endif /* __CS_MESH_GROUP_H__ */
+#endif /* CS_MESH_GROUP_H */

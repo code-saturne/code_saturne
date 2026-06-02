@@ -1,5 +1,5 @@
-#ifndef __CS_SOLVE_EQUATION_H__
-#define __CS_SOLVE_EQUATION_H__
+#ifndef CS_SOLVE_EQUATION_H
+#define CS_SOLVE_EQUATION_H
 
 /*============================================================================
  * Solve the convection diffusion equation with additional terms.
@@ -102,4 +102,4 @@ cs_solve_equation_vector(cs_field_t       *f,
 
 END_C_DECLS
 
-#endif /* __CS_SOLVE_EQUATION_H__ */
+#endif /* CS_SOLVE_EQUATION_H */

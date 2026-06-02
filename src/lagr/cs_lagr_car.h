@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_LAGCAR_H__
-#define __CS_LAGR_LAGCAR_H__
+#ifndef CS_LAGR_LAGCAR_H
+#define CS_LAGR_LAGCAR_H
 
 /*============================================================================
  * Compute particle characteristics: Tp, TL et PI
@@ -121,4 +121,4 @@ cs_lagr_get_force_p(const cs_real_t             dt_part,
 
 #endif /* __cplusplus */
 
-#endif /* __CS_LAGR_LAGCAR_H__ */
+#endif /* CS_LAGR_LAGCAR_H */

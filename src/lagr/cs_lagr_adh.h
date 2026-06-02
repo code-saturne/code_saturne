@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_ADHESION_H__
-#define __CS_LAGR_ADHESION_H__
+#ifndef CS_LAGR_ADHESION_H
+#define CS_LAGR_ADHESION_H
 
 /*============================================================================
  * Functions and types for the Lagrangian module
@@ -83,4 +83,4 @@ cs_lagr_adh_pp(cs_real_t   rpart,
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_ADHESION_H__ */
+#endif /* CS_LAGR_ADHESION_H */

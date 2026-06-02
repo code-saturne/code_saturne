@@ -1,5 +1,5 @@
-#ifndef __CS_CTWR_HEADERS_H__
-#define __CS_CTWR_HEADERS_H__
+#ifndef CS_CTWR_HEADERS_H
+#define CS_CTWR_HEADERS_H
 
 /*============================================================================
  * Global code_saturne headers file for easier include
@@ -39,4 +39,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_CTWR_HEADERS_H__ */
+#endif /* CS_CTWR_HEADERS_H */

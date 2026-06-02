@@ -1,5 +1,5 @@
-#ifndef __CS_PARAM_SADDLE_H__
-#define __CS_PARAM_SADDLE_H__
+#ifndef CS_PARAM_SADDLE_H
+#define CS_PARAM_SADDLE_H
 
 /*============================================================================
  * Routines to handle the SLES settings
@@ -874,4 +874,4 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep);
 
 END_C_DECLS
 
-#endif /* __CS_PARAM_SADDLE_H__ */
+#endif /* CS_PARAM_SADDLE_H */

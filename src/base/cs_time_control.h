@@ -1,5 +1,5 @@
-#ifndef __CS_TIME_CONTROL_H__
-#define __CS_TIME_CONTROL_H__
+#ifndef CS_TIME_CONTROL_H
+#define CS_TIME_CONTROL_H
 
 /*============================================================================
  * Time dependency control for variables or properties.
@@ -260,4 +260,4 @@ cs_time_control_copy_from_default(cs_time_control_t *tc);
 
 END_C_DECLS
 
-#endif /* __CS_TIME_CONTROL_H__ */
+#endif /* CS_TIME_CONTROL_H */

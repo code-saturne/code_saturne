@@ -1,5 +1,5 @@
-#ifndef __FVM_HEADERS_H__
-#define __FVM_HEADERS_H__
+#ifndef __FVM_HEADERS_H
+#define __FVM_HEADERS_H
 
 /*============================================================================
  * Global code_saturne headers file for easier include
@@ -51,4 +51,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __FVM_HEADERS_H__ */
+#endif /* __FVM_HEADERS_H */

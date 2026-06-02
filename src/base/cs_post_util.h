@@ -1,5 +1,5 @@
-#ifndef __CS_POST_UTIL_H__
-#define __CS_POST_UTIL_H__
+#ifndef CS_POST_UTIL_H
+#define CS_POST_UTIL_H
 
 /*============================================================================
  * Postprocessing utility functions.
@@ -496,4 +496,4 @@ cs_post_bnd_scalar_b_zone_mean(const cs_zone_t *z,
 
 END_C_DECLS
 
-#endif /* __CS_POST_UTIL_H__ */
+#endif /* CS_POST_UTIL_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_PARAM_TYPES_H__
-#define __CS_PARAM_TYPES_H__
+#ifndef CS_PARAM_TYPES_H
+#define CS_PARAM_TYPES_H
 
 /*============================================================================
  * Set of definitions of structures and types used for setting a case
@@ -1156,4 +1156,4 @@ cs_param_get_precond_block_name(cs_param_precond_block_t   type);
 
 END_C_DECLS
 
-#endif /* __CS_PARAM_TYPES_H__ */
+#endif /* CS_PARAM_TYPES_H */
