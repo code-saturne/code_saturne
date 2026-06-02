@@ -228,7 +228,7 @@ _distribute_bc_coeff(cs_all_to_all_t  *bfd,
                      const cs_lnum_t   b_face_order[],
                      const cs_lnum_t   b_face_n2o[])
 {
-  int coeff_exists = *coeff != nullptr;
+  int coeff_exists = (*coeff != nullptr);
   cs_parall_max(1, CS_INT_TYPE, &coeff_exists);
 
   if (!coeff_exists)
@@ -789,7 +789,6 @@ void
 cs_redistribute(const int                cell_dest_rank[],
                 cs_redistribute_data_t  *data)
 {
-  assert(0 && "redistribute should be off for now");
 #if defined(HAVE_MPI)
 
   cs_mesh_t *mesh = cs_glob_mesh;

@@ -345,9 +345,7 @@ _cell_equiv(cs_mesh_t  *mesh,
     data->c_r_level = c_r_level;
     data->indic = cs_glob_amr_info->indic_cells;
 
-#if 0
     cs_redistribute(dest_rank, data);
-#endif
 
     CS_FREE(dest_rank);
 

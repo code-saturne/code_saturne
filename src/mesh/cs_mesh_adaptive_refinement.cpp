@@ -1319,8 +1319,7 @@ cs_adaptive_refinement_define(int                     n_layers,
   if (cs_glob_n_ranks == 1)
     load_balance = false;
 #endif
-  //_amr_info.load_balance = load_balance;
-  _amr_info.load_balance = false;
+  _amr_info.load_balance = load_balance;
 
   cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_CONNECT;
 }
