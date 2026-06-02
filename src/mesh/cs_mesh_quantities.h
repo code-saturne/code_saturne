@@ -34,10 +34,6 @@
 #include "base/cs_base.h"
 #include "mesh/cs_mesh.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -167,8 +163,6 @@ extern unsigned cs_glob_mesh_quantities_flag;
  * Templated inline functions
  *============================================================================*/
 
-END_C_DECLS
-
 #if defined(__cplusplus)
 
 /*----------------------------------------------------------------------------*/
@@ -201,8 +195,6 @@ cs_mq_cell_vol_inv(cs_lnum_t         c_id,
 }
 
 #endif // defined(__cplusplus)
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes
@@ -265,7 +257,7 @@ cs_mesh_quantities_face_cog_choice(int  algo_choice);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_mesh_quantities_t *
+extern "C" cs_mesh_quantities_t *
 cs_mesh_quantities_create(void);
 
 /*----------------------------------------------------------------------------*/
@@ -278,7 +270,7 @@ cs_mesh_quantities_create(void);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_mesh_quantities_t *
+extern "C" cs_mesh_quantities_t *
 cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------*/
@@ -503,7 +495,7 @@ cs_mesh_quantities_cell_volume(const cs_mesh_t  *mesh);
  *   allow_error     <-- 1 if errors are allowed, 0 otherwise
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
                              const cs_mesh_quantities_t  *mesh_quantities,
                              int                          allow_error);
@@ -594,7 +586,5 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
                         const cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MESH_QUANTITIES_H */

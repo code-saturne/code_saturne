@@ -35,10 +35,6 @@
 
 #include "lagr/cs_lagr_particle.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -105,8 +101,6 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
 
 void
 cs_lagr_tracking_finalize(void);
-
-END_C_DECLS
 
 #if defined(__cplusplus)
 

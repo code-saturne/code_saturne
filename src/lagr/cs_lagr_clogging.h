@@ -34,10 +34,6 @@
 #include "base/cs_defs.h"
 #include "lagr/cs_lagr_particle.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -94,8 +90,6 @@ cs_lagr_clogging_initialize(const cs_real_t   *water_permit,
 
 void
 cs_lagr_clogging_finalize(void);
-
-END_C_DECLS
 
 /*=============================================================================
  * C++ Function definitions

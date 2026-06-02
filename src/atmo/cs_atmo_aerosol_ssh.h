@@ -44,10 +44,6 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -159,6 +155,6 @@ cs_atmo_aerosol_ssh_get_gas(cs_real_t*);
 void
 cs_atmo_aerosol_ssh_time_advance(void);
 
-END_C_DECLS
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_ATMO_AEROSOL_SSH_H */

@@ -53,8 +53,6 @@
  * Public function prototypes
  *============================================================================*/
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialization for new particles.
@@ -77,8 +75,6 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                           const cs_lagr_injection_set_t  *zis);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #if defined(__cplusplus)
 
