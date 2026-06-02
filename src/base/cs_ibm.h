@@ -495,7 +495,7 @@ cs_ibm_user_parameters(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_ibm_init_writer(void);
 
 /*----------------------------------------------------------------------------*/
@@ -508,7 +508,7 @@ cs_ibm_init_writer(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_ibm_object_transform_from_init(cs_ibm_object_t *obj,
                                   cs_real_34_t     matrix);
 
@@ -545,19 +545,11 @@ cs_ibm_volumic_zone(const cs_mesh_quantities_t *mesh_quantities);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_ibm.cpp
- *
- * \brief User function. Define immersed boundaries in time and space.
- */
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief User function in which the user defines the objects to model.
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_ibm_define_objects(void);
 
 /*----------------------------------------------------------------------------*/
@@ -567,7 +559,7 @@ cs_user_ibm_define_objects(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_ibm_parameters(void);
 
 /*----------------------------------------------------------------------------*/
@@ -579,7 +571,7 @@ cs_user_ibm_parameters(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_ibm_object_transformations(const cs_real_t time);
 
 /*----------------------------------------------------------------------------*/
@@ -593,20 +585,11 @@ cs_user_ibm_object_transformations(const cs_real_t time);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_ibm_solid_por(const cs_lnum_t    c_id,
                       const cs_real_3_t  xyz,
                       const cs_real_t    t,
                       const int          num_object);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_ibm_modify.cpp
- *
- * \brief User function. Locally modify a given porosity to take into
- *         account erosion effect (for instance).
- */
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -622,7 +605,7 @@ cs_user_ibm_solid_por(const cs_lnum_t    c_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_ibm_modify(const cs_mesh_t             *mesh,
                    const cs_mesh_quantities_t  *mesh_quantities);
 
