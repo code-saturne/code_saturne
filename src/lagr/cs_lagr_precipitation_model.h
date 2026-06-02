@@ -71,4 +71,4 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
 END_C_DECLS
 
-#endif /* CS_LAGR__H_PRECIPITATION_ */
+#endif /* CS_LAGR_PRECIPITATION_H */

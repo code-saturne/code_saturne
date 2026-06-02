@@ -63,4 +63,4 @@ cs_physical_properties_update(int   iterns);
 
 END_C_DECLS
 
-#endif /* CS_PHYSICAL_PROPERTIES_DEFAULT__H */
+#endif /* CS_PHYSICAL_PROPERTIES_DEFAULT_H */
