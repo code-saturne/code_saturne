@@ -1,5 +1,5 @@
-#ifndef __FVM_BOX_PRIV_H
-#define __FVM_BOX_PRIV_H
+#ifndef FVM_BOX_PRIV_H
+#define FVM_BOX_PRIV_H
 
 /*============================================================================
  * Handle bounding boxes.
@@ -37,10 +37,6 @@
 #include "fvm/fvm_morton.h"
 
 #include "fvm/fvm_box.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro and type definitions
@@ -100,6 +96,4 @@ struct _fvm_box_set_t {
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_BOX_PRIV_H */
+#endif /* FVM_BOX_PRIV_H */

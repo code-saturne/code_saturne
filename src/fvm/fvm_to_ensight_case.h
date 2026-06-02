@@ -1,5 +1,5 @@
-#ifndef __FVM_TO_ENSIGHT_CASE_H
-#define __FVM_TO_ENSIGHT_CASE_H
+#ifndef FVM_TO_ENSIGHT_CASE_H
+#define FVM_TO_ENSIGHT_CASE_H
 
 /*============================================================================
  * Manage case files associated with the EnSight Gold writer
@@ -225,4 +225,4 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
 
 END_C_DECLS
 
-#endif /* __FVM_TO_ENSIGHT_CASE_H */
+#endif /* FVM_TO_ENSIGHT_CASE_H */

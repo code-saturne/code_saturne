@@ -1,5 +1,5 @@
-#ifndef __BFT_ERROR_H
-#define __BFT_ERROR_H
+#ifndef BFT_ERROR_H
+#define BFT_ERROR_H
 
 /*============================================================================
  * Base error handling
@@ -119,4 +119,4 @@ bft_error_handler_set(bft_error_handler_t  *const handler);
 
 END_C_DECLS
 
-#endif /* __BFT_ERROR_H */
+#endif /* BFT_ERROR_H */

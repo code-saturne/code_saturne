@@ -1,5 +1,5 @@
-#ifndef __FVM_TO_CCM_H
-#define __FVM_TO_CCM_H
+#ifndef FVM_TO_CCM_H
+#define FVM_TO_CCM_H
 
 #if defined(HAVE_CCM)
 
@@ -208,4 +208,4 @@ END_C_DECLS
 
 #endif /* HAVE_CCM */
 
-#endif /* __FVM_TO_CCM_H */
+#endif /* FVM_TO_CCM_H */

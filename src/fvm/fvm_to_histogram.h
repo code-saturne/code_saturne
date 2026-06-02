@@ -1,5 +1,5 @@
-#ifndef __FVM_TO_HISTOGRAM_H
-#define __FVM_TO_HISTOGRAM_H
+#ifndef FVM_TO_HISTOGRAM_H
+#define FVM_TO_HISTOGRAM_H
 
 /*============================================================================
  * Write a nodal representation associated with a mesh and associated
@@ -231,4 +231,4 @@ fvm_to_histogram_flush(void  *writer);
 
 END_C_DECLS
 
-#endif /* __FVM_TO_HISTOGRAM_H */
+#endif /* FVM_TO_HISTOGRAM_H */

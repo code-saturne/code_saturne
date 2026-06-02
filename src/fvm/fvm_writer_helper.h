@@ -1,5 +1,5 @@
-#ifndef __FVM_WRITER_HELPER_H
-#define __FVM_WRITER_HELPER_H
+#ifndef FVM_WRITER_HELPER_H
+#define FVM_WRITER_HELPER_H
 
 /*============================================================================
  * Helper types and functions for mesh and field writers
@@ -500,4 +500,4 @@ fvm_writer_field_component_name(char    *s,
 
 END_C_DECLS
 
-#endif /* __FVM_WRITER_HELPER_H */
+#endif /* FVM_WRITER_HELPER_H */

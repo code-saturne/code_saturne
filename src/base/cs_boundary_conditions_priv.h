@@ -45,8 +45,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -208,7 +206,5 @@ cs_boundary_conditions_open_t *
 cs_boundary_conditions_open_find(const  cs_zone_t   *zone);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_BOUNDARY_CONDITIONS_PRIV_H */

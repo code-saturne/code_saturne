@@ -1,5 +1,5 @@
-#ifndef CS_PARAMEDMEM_HXX__
-#define CS_PARAMEDMEM_HXX__
+#ifndef CS_PARAMEDMEM_HXX
+#define CS_PARAMEDMEM_HXX
 
 /*============================================================================
  * MEDCoupling ParaMESH/ParaFIELD wrapper functions.
@@ -69,7 +69,7 @@ typedef enum {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Retrieve coupling struct pointer by id
  *
  * \param[in] cpl_id  index of the sought coupling
@@ -83,7 +83,7 @@ cs_paramedmem_coupling_t *
 cs_paramedmem_coupling_by_id(int cpl_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Retrieve coupling struct pointer by name
  *
  * \param[in] name  name of the coupling
@@ -96,7 +96,7 @@ cs_paramedmem_coupling_t *
 cs_paramedmem_coupling_by_name(const char *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a new ParaMEDMEM coupling
  *
  * \param[in] app1_name  Name of app n°1 or NULL if calling app is app1
@@ -114,7 +114,7 @@ cs_paramedmem_coupling_create(const char *app1_name,
                               const char *cpl_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a new ParaMEDMEM handler structure with no actual coupling.
  *
  * This can be useful for a "dry run" when setting up a coupling, so as to
@@ -135,7 +135,7 @@ cs_paramedmem_coupling_t *
 cs_paramedmem_coupling_create_uncoupled(const char *cpl_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Destroy a given ParaMEDMEM coupling structure
  *
  * \param[in] c pointer to cs_paramedmem_coupling_t structure
@@ -146,7 +146,7 @@ void
 cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t *c);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Destroy all coupling structures
  */
 /*----------------------------------------------------------------------------*/
@@ -155,7 +155,7 @@ void
 cs_paramedmem_coupling_all_finalize(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Get number of defined couplings
  *
  * \return number of defined couplings (int)
@@ -166,7 +166,7 @@ int
 cs_paramedmem_get_number_of_couplings(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief initialize couplings based on user functions
  */
 /*----------------------------------------------------------------------------*/
@@ -175,7 +175,7 @@ void
 cs_paramedmem_coupling_all_init(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief initialize coupled mesh and fields based on user functions
  */
 /*----------------------------------------------------------------------------*/
@@ -184,7 +184,7 @@ void
 cs_paramedmem_coupling_define_mesh_fields(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Log ParaMEDMEM coupling setup information
  */
 /*----------------------------------------------------------------------------*/
@@ -192,4 +192,6 @@ cs_paramedmem_coupling_define_mesh_fields(void);
 void
 cs_paramedmem_coupling_log_setup(void);
 
-#endif /* CS_PARAMEDMEM_HXX__ */
+/*----------------------------------------------------------------------------*/
+
+#endif /* CS_PARAMEDMEM_HXX */

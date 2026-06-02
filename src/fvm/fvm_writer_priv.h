@@ -1,5 +1,5 @@
-#ifndef __FVM_WRITER_PRIV_H
-#define __FVM_WRITER_PRIV_H
+#ifndef FVM_WRITER_PRIV_H
+#define FVM_WRITER_PRIV_H
 
 /*============================================================================
  * Private types for mesh and field writers
@@ -193,4 +193,4 @@ struct _fvm_writer_t {
 
 END_C_DECLS
 
-#endif /* __FVM_WRITER_PRIV_H */
+#endif /* FVM_WRITER_PRIV_H */

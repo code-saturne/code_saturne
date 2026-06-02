@@ -1,5 +1,5 @@
-#ifndef __FVM_TO_MED_H
-#define __FVM_TO_MED_H
+#ifndef FVM_TO_MED_H
+#define FVM_TO_MED_H
 
 #if defined(HAVE_MED)
 
@@ -254,6 +254,6 @@ fvm_to_med_export_field(void                      *const this_writer,
 
 END_C_DECLS
 
-#endif /* __FVM_TO_MED_H */
+#endif /* FVM_TO_MED_H */
 
 #endif /* HAVE_MED */

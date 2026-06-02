@@ -1,5 +1,5 @@
-#ifndef __FVM_POINT_LOCATION_H
-#define __FVM_POINT_LOCATION_H
+#ifndef FVM_POINT_LOCATION_H
+#define FVM_POINT_LOCATION_H
 
 /*============================================================================
  * Locate local points in a nodal representation associated with a mesh
@@ -130,4 +130,4 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
 
 END_C_DECLS
 
-#endif /* __FVM_POINT_LOCATION_H */
+#endif /* FVM_POINT_LOCATION_H */

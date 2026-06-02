@@ -1,5 +1,5 @@
-#ifndef __FVM_CONVERT_ARRAY_H
-#define __FVM_CONVERT_ARRAY_H
+#ifndef FVM_CONVERT_ARRAY_H
+#define FVM_CONVERT_ARRAY_H
 
 /*============================================================================
  * Functions related to the transformation of data arrays for import
@@ -39,10 +39,6 @@
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_nodal.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -112,6 +108,4 @@ fvm_convert_array(const int                     src_dim,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_CONVERT_ARRAY_H */
+#endif /* FVM_CONVERT_ARRAY_H */

@@ -1,5 +1,5 @@
-#ifndef __BFT_BACKTRACE_H
-#define __BFT_BACKTRACE_H
+#ifndef BFT_BACKTRACE_H
+#define BFT_BACKTRACE_H
 
 /*============================================================================
  * Obtaining a stack backtrace
@@ -186,4 +186,4 @@ bft_backtrace_print_set(bft_backtrace_print_t  *const fct);
 
 END_C_DECLS
 
-#endif /* __BFT_BACKTRACE_H */
+#endif /* BFT_BACKTRACE_H */

@@ -1,5 +1,5 @@
-#ifndef __BFT_MEM_H
-#define __BFT_MEM_H
+#ifndef BFT_MEM_H
+#define BFT_MEM_H
 
 /*============================================================================
  * Legacy memory allocation wrappers with optional tracing
@@ -34,10 +34,6 @@
 /* Local headers */
 
 #include "base/cs_mem.h"
-
-/*-----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Public macros
@@ -92,6 +88,4 @@ cs_mem_free(_ptr, #_ptr, __FILE__, __LINE__), _ptr = NULL
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __BFT_MEM_H */
+#endif /* BFT_MEM_H */

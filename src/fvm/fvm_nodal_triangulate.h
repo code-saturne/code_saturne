@@ -1,5 +1,5 @@
-#ifndef __FVM_NODAL_TRIANGULATE_H
-#define __FVM_NODAL_TRIANGULATE_H
+#ifndef FVM_NODAL_TRIANGULATE_H
+#define FVM_NODAL_TRIANGULATE_H
 
 /*============================================================================
  * Triangulation of nodal sections associated with a mesh
@@ -35,10 +35,6 @@
 
 #include "fvm/fvm_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -69,6 +65,4 @@ fvm_nodal_triangulate_polygons(fvm_nodal_t  *this_nodal,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_NODAL_TRIANGULATE_H */
+#endif /* FVM_NODAL_TRIANGULATE_H */

@@ -1,5 +1,5 @@
-#ifndef __FVM_TO_ENSIGHT_H
-#define __FVM_TO_ENSIGHT_H
+#ifndef FVM_TO_ENSIGHT_H
+#define FVM_TO_ENSIGHT_H
 
 /*============================================================================
  * Write a nodal representation associated with a mesh and associated
@@ -196,4 +196,4 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
 
 END_C_DECLS
 
-#endif /* __FVM_TO_ENSIGHT_H */
+#endif /* FVM_TO_ENSIGHT_H */

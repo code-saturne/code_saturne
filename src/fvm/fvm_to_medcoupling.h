@@ -1,5 +1,5 @@
-#ifndef __FVM_TO_MEDCOUPLING_H
-#define __FVM_TO_MEDCOUPLING_H
+#ifndef FVM_TO_MEDCOUPLING_H
+#define FVM_TO_MEDCOUPLING_H
 
 #if defined(HAVE_MEDCOUPLING)
 
@@ -186,4 +186,4 @@ END_C_DECLS
 
 #endif /* defined(HAVE_MEDCOUPLING) */
 
-#endif /* __FVM_TO_MEDCOUPLING_H */
+#endif /* FVM_TO_MEDCOUPLING_H */

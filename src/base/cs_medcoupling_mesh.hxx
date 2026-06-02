@@ -1,5 +1,5 @@
-#ifndef __CS_MEDCOUPLING_MESH_HXX__
-#define __CS_MEDCOUPLING_MESH_HXX__
+#ifndef CS_MEDCOUPLING_MESH_HXX
+#define CS_MEDCOUPLING_MESH_HXX
 
 /*============================================================================
  * Usage of MEDCoupling base components.
@@ -51,8 +51,6 @@
 using namespace MEDCoupling;
 
 #endif
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------
  * MEDCoupling mesh structure
@@ -321,6 +319,4 @@ cs_medcoupling_create_annulus_mesh(const cs_real_t origin[],
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MEDCOUPLING_MESH_HXX__ */
+#endif /* CS_MEDCOUPLING_MESH_HXX */

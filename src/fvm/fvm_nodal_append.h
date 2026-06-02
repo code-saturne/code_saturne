@@ -1,5 +1,5 @@
-#ifndef __FVM_NODAL_APPEND_H
-#define __FVM_NODAL_APPEND_H
+#ifndef FVM_NODAL_APPEND_H
+#define FVM_NODAL_APPEND_H
 
 /*============================================================================
  * Append sections to a nodal representation associated with a mesh
@@ -35,10 +35,6 @@
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_nodal.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -126,6 +122,4 @@ fvm_nodal_append_shared(fvm_nodal_t    *this_nodal,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_NODAL_APPEND_H */
+#endif /* FVM_NODAL_APPEND_H */

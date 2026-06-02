@@ -1,5 +1,5 @@
-#ifndef __FVM_SELECTOR_POSTFIX_H
-#define __FVM_SELECTOR_POSTFIX_H
+#ifndef FVM_SELECTOR_POSTFIX_H
+#define FVM_SELECTOR_POSTFIX_H
 
 /*============================================================================
  * Expression handling for entity selection based on groups or attributes
@@ -35,10 +35,6 @@
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_group.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -201,6 +197,4 @@ fvm_selector_postfix_dump(const fvm_selector_postfix_t  *pf,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_SELECTOR_POSTFIX_H */
+#endif /* FVM_SELECTOR_POSTFIX_H */

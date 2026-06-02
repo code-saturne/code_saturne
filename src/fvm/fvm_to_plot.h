@@ -1,5 +1,5 @@
-#ifndef __FVM_TO_PLOT_H
-#define __FVM_TO_PLOT_H
+#ifndef FVM_TO_PLOT_H
+#define FVM_TO_PLOT_H
 
 /*============================================================================
  * Write a nodal representation associated with a mesh and associated
@@ -185,4 +185,4 @@ fvm_to_plot_flush(void  *writer);
 
 END_C_DECLS
 
-#endif /* __FVM_TO_PLOT_H */
+#endif /* FVM_TO_PLOT_H */

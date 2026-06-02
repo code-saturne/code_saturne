@@ -1,5 +1,5 @@
-#ifndef __FVM_TRIANGULATE_H
-#define __FVM_TRIANGULATE_H
+#ifndef FVM_TRIANGULATE_H
+#define FVM_TRIANGULATE_H
 
 /*============================================================================
  * Triangulation of a polygon
@@ -34,10 +34,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "fvm/fvm_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -169,6 +165,4 @@ fvm_triangulate_quadrangle(int               dim,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_TRIANGULATE_H */
+#endif /* FVM_TRIANGULATE_H */

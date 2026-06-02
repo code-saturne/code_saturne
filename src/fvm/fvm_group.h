@@ -1,5 +1,5 @@
-#ifndef __FVM_GROUP_H
-#define __FVM_GROUP_H
+#ifndef FVM_GROUP_H
+#define FVM_GROUP_H
 
 /*============================================================================
  * Definition of entity groups
@@ -34,10 +34,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "fvm/fvm_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -187,6 +183,4 @@ fvm_group_class_set_dump(const fvm_group_class_set_t  *this_group_class_set);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_GROUP_H */
+#endif /* FVM_GROUP_H */

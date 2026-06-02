@@ -1,5 +1,5 @@
-#ifndef __FVM_PERIODICITY_H
-#define __FVM_PERIODICITY_H
+#ifndef FVM_PERIODICITY_H
+#define FVM_PERIODICITY_H
 
 /*============================================================================
  * Main structure for handling of periodicities
@@ -34,10 +34,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "fvm/fvm_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -394,6 +390,4 @@ fvm_periodicity_dump(const fvm_periodicity_t  *this_periodicity);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_PERIODICITY_H */
+#endif /* FVM_PERIODICITY_H */

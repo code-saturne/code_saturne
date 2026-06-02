@@ -32,10 +32,6 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*
  * \brief Initialize the notebook object (based on cs_tree_node_t).
  */
@@ -277,7 +273,5 @@ void
 cs_notebook_uncertain_output(void);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_NOTEBOOK_H */

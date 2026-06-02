@@ -1,5 +1,5 @@
-#ifndef __FVM_NODAL_EXTRUDE_H
-#define __FVM_NODAL_EXTRUDE_H
+#ifndef FVM_NODAL_EXTRUDE_H
+#define FVM_NODAL_EXTRUDE_H
 
 /*============================================================================
  * Extrusion of a nodal representation associated with a mesh
@@ -36,10 +36,6 @@
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_nodal.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -73,6 +69,4 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_NODAL_EXTRUDE_H */
+#endif /* FVM_NODAL_EXTRUDE_H */

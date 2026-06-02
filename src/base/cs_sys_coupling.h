@@ -34,8 +34,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 typedef enum
 {
   CS_SYS_CPL_BC_INLET,
@@ -323,7 +321,5 @@ void
 cs_sys_coupling_all_finalize(void);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_SYS_COUPLING_H */

@@ -1,5 +1,5 @@
-#ifndef __FVM_SELECTOR_H
-#define __FVM_SELECTOR_H
+#ifndef FVM_SELECTOR_H
+#define FVM_SELECTOR_H
 
 /*============================================================================
  * Mechanism for entity selection based on groups or attributes
@@ -206,4 +206,4 @@ fvm_selector_dump(const fvm_selector_t  *this_selector);
 
 END_C_DECLS
 
-#endif /* __FVM_SELECTOR_H */
+#endif /* FVM_SELECTOR_H */

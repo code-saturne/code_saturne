@@ -1,5 +1,5 @@
-#ifndef __FVM_INTERPOLATE_H
-#define __FVM_INTERPOLATE_H
+#ifndef FVM_INTERPOLATE_H
+#define FVM_INTERPOLATE_H
 
 /*============================================================================
  * Interpolate data defined on a nodal representation associated with a mesh.
@@ -35,10 +35,6 @@
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_nodal.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -86,6 +82,4 @@ fvm_interpolate_vtx_data(const fvm_nodal_t       *this_nodal,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_INTERPOLATE_H */
+#endif /* FVM_INTERPOLATE_H */

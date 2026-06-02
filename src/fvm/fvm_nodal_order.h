@@ -1,5 +1,5 @@
-#ifndef __FVM_NODAL_ORDER_H
-#define __FVM_NODAL_ORDER_H
+#ifndef FVM_NODAL_ORDER_H
+#define FVM_NODAL_ORDER_H
 
 /*============================================================================
  * Ordering of nodal mesh entity lists and connectivity
@@ -98,4 +98,4 @@ fvm_nodal_order_vertices(fvm_nodal_t       *this_nodal,
 
 END_C_DECLS
 
-#endif /* __FVM_NODAL_ORDER_H */
+#endif /* FVM_NODAL_ORDER_H */

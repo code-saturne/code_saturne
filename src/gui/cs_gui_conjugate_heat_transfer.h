@@ -33,8 +33,6 @@
 
 #include "base/cs_base.h"
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public Function prototypes
  *============================================================================*/
@@ -54,7 +52,5 @@ BEGIN_C_DECLS
 void cs_gui_syrthes_coupling(void);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_GUI_CONJUGATE_HEAT_TRANSFER_H */

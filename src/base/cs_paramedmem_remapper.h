@@ -1,5 +1,5 @@
-#ifndef CS_PARAMEDMEM_REMAPPER_HXX__
-#define CS_PARAMEDMEM_REMAPPER_HXX__
+#ifndef CS_PARAMEDMEM_REMAPPER_HXX
+#define CS_PARAMEDMEM_REMAPPER_HXX
 
 /*============================================================================
  * Parallel interpolation using ParaMEDMEM OverlapDEC
@@ -32,8 +32,6 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 typedef struct _cs_paramedmem_remapper_t cs_paramedmem_remapper_t;
 
@@ -165,6 +163,4 @@ cs_paramedmem_remapper_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* CS_PARAMEDMEM_REMAPPER_HXX__ */
+#endif /* CS_PARAMEDMEM_REMAPPER_HXX */

@@ -1,5 +1,5 @@
-#ifndef __FVM_BOX_H
-#define __FVM_BOX_H
+#ifndef FVM_BOX_H
+#define FVM_BOX_H
 
 /*============================================================================
  * Handle boxes aligned with Cartesian axes.
@@ -35,10 +35,6 @@
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_morton.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro and type definitions
@@ -276,6 +272,4 @@ fvm_box_distrib_dump_statistics(const fvm_box_distrib_t  *distrib,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_BOX_H */
+#endif /* FVM_BOX_H */

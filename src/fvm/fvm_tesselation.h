@@ -1,5 +1,5 @@
-#ifndef __FVM_TESSELATION_H
-#define __FVM_TESSELATION_H
+#ifndef FVM_TESSELATION_H
+#define FVM_TESSELATION_H
 
 /*============================================================================
  * Structure describing a mesh section's subdivision into simpler elements
@@ -438,4 +438,4 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation);
 
 END_C_DECLS
 
-#endif /* __FVM_TESSELATION_H */
+#endif /* FVM_TESSELATION_H */

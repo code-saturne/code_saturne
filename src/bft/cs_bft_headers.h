@@ -1,5 +1,5 @@
-#ifndef __BFT_HEADERS_H
-#define __BFT_HEADERS_H
+#ifndef BFT_HEADERS_H
+#define BFT_HEADERS_H
 
 /*============================================================================
  * Global code_saturne headers file for easier include
@@ -35,4 +35,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __BFT_HEADERS_H */
+#endif /* BFT_HEADERS_H */

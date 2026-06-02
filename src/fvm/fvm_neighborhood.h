@@ -1,5 +1,5 @@
-#ifndef __FVM_NEIGHBORHOOD_H
-#define __FVM_NEIGHBORHOOD_H
+#ifndef FVM_NEIGHBORHOOD_H
+#define FVM_NEIGHBORHOOD_H
 
 /*============================================================================
  * Search octrees and quadtrees of boxes.
@@ -34,10 +34,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "fvm/fvm_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -284,6 +280,4 @@ fvm_neighborhood_dump(const fvm_neighborhood_t  *n);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_NEIGHBORHOOD_H */
+#endif /* FVM_NEIGHBORHOOD_H */

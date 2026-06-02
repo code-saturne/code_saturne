@@ -1,5 +1,5 @@
-#ifndef __FVM_TRACE_H
-#define __FVM_TRACE_H
+#ifndef FVM_TRACE_H
+#define FVM_TRACE_H
 
 /*============================================================================
  * Tracing utility functions for profiling and debugging
@@ -28,10 +28,6 @@
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -67,6 +63,4 @@ fvm_trace_mem_status(const char  *descr);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_TRACE_H */
+#endif /* FVM_TRACE_H */

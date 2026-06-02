@@ -1,5 +1,5 @@
-#ifndef __FVM_SORT_PARTITION_H
-#define __FVM_SORT_PARTITION_H
+#ifndef FVM_SORT_PARTITION_H
+#define FVM_SORT_PARTITION_H
 
 /*============================================================================
  * Data partitioning for parallel sort or order operations.
@@ -40,10 +40,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro and type definitions
@@ -135,6 +131,4 @@ cs_sort_partition_dest_rank_id(cs_lnum_t                      sampling_factor,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __FVM_SORT_PARTITION_H */
+#endif /* FVM_SORT_PARTITION_H */

@@ -35,10 +35,6 @@
 
 #include "bft/bft_error.h"
 
-/*-----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public types
  *============================================================================*/
@@ -224,7 +220,7 @@ cs_mem_init(const char  *log_file_name);
  * writes final information to the log file and closes is.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_mem_end(void);
 
 /*----------------------------------------------------------------------------
@@ -234,7 +230,7 @@ cs_mem_end(void);
  *   1 if cs_mem_init has been called, 0 otherwise.
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_mem_initialized(void);
 
 /*----------------------------------------------------------------------------
@@ -260,7 +256,7 @@ cs_mem_initialized(void);
  *   pointer to allocated memory.
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 cs_mem_malloc(size_t       ni,
               size_t       size,
               const char  *var_name,
@@ -290,7 +286,7 @@ cs_mem_malloc(size_t       ni,
  */
 /*----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 cs_mem_malloc_hd(cs_alloc_mode_t   mode,
                  size_t            ni,
                  size_t            size,
@@ -300,7 +296,7 @@ cs_mem_malloc_hd(cs_alloc_mode_t   mode,
 
 #else
 
-inline void *
+extern "C" inline void *
 cs_mem_malloc_hd([[maybe_unused]] cs_alloc_mode_t   mode,
                  size_t                             ni,
                  size_t                             size,
@@ -333,7 +329,7 @@ cs_mem_malloc_hd([[maybe_unused]] cs_alloc_mode_t   mode,
  *   pointer to allocated memory.
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 cs_mem_realloc(void        *ptr,
                size_t       ni,
                size_t       size,
@@ -373,7 +369,7 @@ cs_mem_realloc(void        *ptr,
 
 #if defined(HAVE_ACCEL)
 
-void *
+extern "C" void *
 cs_mem_realloc_hd(void            *ptr,
                   cs_alloc_mode_t  mode,
                   size_t           ni,
@@ -384,7 +380,7 @@ cs_mem_realloc_hd(void            *ptr,
 
 #else
 
-inline static void *
+extern "C" inline void *
 cs_mem_realloc_hd(void                              *ptr,
                   [[maybe_unused]] cs_alloc_mode_t   mode,
                   size_t                             ni,
@@ -417,7 +413,7 @@ cs_mem_realloc_hd(void                              *ptr,
  *   null pointer.
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 cs_mem_free(void        *ptr,
             const char  *var_name,
             const char  *file_name,
@@ -445,7 +441,7 @@ cs_mem_free(void        *ptr,
  *   pointer to allocated memory.
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 cs_mem_memalign(size_t       alignment,
                 size_t       ni,
                 size_t       size,
@@ -460,7 +456,7 @@ cs_mem_memalign(size_t       alignment,
  * \return current memory handled through cs_mem_...() (in kB).
  *----------------------------------------------------------------------------*/
 
-size_t
+extern "C" size_t
 cs_mem_size_current(void);
 
 /*----------------------------------------------------------------------------*/
@@ -470,7 +466,7 @@ cs_mem_size_current(void);
  * \return maximum memory handled through cs_mem_...() (in kB).
  *----------------------------------------------------------------------------*/
 
-size_t
+extern "C" size_t
 cs_mem_size_max(void);
 
 /*----------------------------------------------------------------------------
@@ -482,7 +478,7 @@ cs_mem_size_max(void);
  *   1 if memory aligned allocation is possible, 0 otherwise.
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_mem_have_memalign(void);
 
 /*----------------------------------------------------------------------------*/
@@ -492,7 +488,7 @@ cs_mem_have_memalign(void);
  *   pointer to the error handler function.
  *----------------------------------------------------------------------------*/
 
-bft_error_handler_t *
+extern "C" bft_error_handler_t *
 cs_mem_error_handler_get(void);
 
 /*----------------------------------------------------------------------------
@@ -507,7 +503,7 @@ cs_mem_error_handler_get(void);
  *   handler <-- pointer to the error handler function.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_mem_error_handler_set(bft_error_handler_t *handler);
 
 /*============================================================================
@@ -524,7 +520,7 @@ cs_mem_error_handler_set(bft_error_handler_t *handler);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_mem_set_omp_target_device_id(int  device_id);
 
 #endif
@@ -551,7 +547,7 @@ cs_mem_set_omp_target_device_id(int  device_id);
  * \return 1 if stats are available, O otherwise.
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_mem_stats(uint64_t  *alloc_cur,
              uint64_t  *alloc_max,
              uint64_t  *n_allocs,
@@ -560,10 +556,6 @@ cs_mem_stats(uint64_t  *alloc_cur,
              uint64_t  *n_current);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
-#if defined(__cplusplus)
 
 #if defined(HAVE_ACCEL)
 
@@ -580,7 +572,7 @@ END_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_copy_h2d(void        *dest,
             const void  *src,
             size_t       size);
@@ -598,7 +590,7 @@ cs_copy_h2d(void        *dest,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_copy_d2h(void        *dest,
             const void  *src,
             size_t       size);
@@ -616,7 +608,7 @@ cs_copy_d2h(void        *dest,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_copy_d2d(void        *dest,
             const void  *src,
             size_t       size);
@@ -641,12 +633,12 @@ cs_copy_d2d(void        *dest,
 
 #if defined(HAVE_ACCEL)
 
-void *
+extern "C" void *
 cs_get_device_ptr(void  *ptr);
 
 #else
 
-inline static void *
+extern "C" inline void *
 cs_get_device_ptr(void  *ptr)
 {
   return ptr;
@@ -691,7 +683,7 @@ cs_get_device_ptr_const(const void  *ptr);
 
 #else
 
-inline static const void *
+inline const void *
 cs_get_device_ptr_const(const void  *ptr)
 {
   return ptr;
@@ -731,7 +723,7 @@ cs_check_device_ptr(const void  *ptr);
 
 #else
 
-inline static cs_alloc_mode_t
+inline cs_alloc_mode_t
 cs_check_device_ptr([[maybe_unused]] const void  *ptr)
 {
   return CS_ALLOC_HOST;
@@ -752,12 +744,12 @@ cs_check_device_ptr([[maybe_unused]] const void  *ptr)
 
 #if defined(HAVE_ACCEL)
 
-bool
+extern "C" bool
 cs_mem_is_device_ptr(const void  *ptr);
 
 #else
 
-inline static bool
+extern "C" inline bool
 cs_mem_is_device_ptr(const void  *ptr)
 {
   CS_UNUSED(ptr);
@@ -784,7 +776,7 @@ cs_mem_is_device_ptr(const void  *ptr)
 
 #if defined(HAVE_ACCEL)
 
-void *
+extern "C" void *
 cs_associate_device_ptr(void    *host_ptr,
                         size_t   ni,
                         size_t   size);
@@ -808,7 +800,7 @@ cs_associate_device_ptr(void    *host_ptr,
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_disassociate_device_ptr(void  *host_ptr);
 
 #else
@@ -832,7 +824,7 @@ cs_disassociate_device_ptr(void  *host_ptr);
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_set_alloc_mode(void             **host_ptr,
                   cs_alloc_mode_t     mode);
 
@@ -883,7 +875,7 @@ cs_set_alloc_mode_r(T*                &host_ptr,
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_mem_advise_set_read_mostly(void  *ptr);
 
 #else
@@ -902,7 +894,7 @@ cs_mem_advise_set_read_mostly(void  *ptr);
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_mem_advise_unset_read_mostly(void  *ptr);
 
 #else
@@ -934,12 +926,12 @@ cs_mem_advise_unset_read_mostly([[maybe_unused]] void  *ptr)
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_sync_h2d(const void  *ptr);
 
 #else
 
-inline void
+extern "C" inline void
 cs_sync_h2d([[maybe_unused]] const void  *ptr)
 {
 }
@@ -966,12 +958,12 @@ cs_sync_h2d([[maybe_unused]] const void  *ptr)
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_sync_h2d_start(const void  *ptr);
 
 #else
 
-inline void
+extern "C" inline void
 cs_sync_h2d_start([[maybe_unused]] const void  *ptr)
 {
 }
@@ -999,12 +991,12 @@ cs_sync_h2d_start([[maybe_unused]] const void  *ptr)
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_sync_d2h(void  *ptr);
 
 #else
 
-inline void
+extern "C" inline void
 cs_sync_d2h([[maybe_unused]] void  *ptr)
 {
 }
@@ -1032,12 +1024,12 @@ cs_sync_d2h([[maybe_unused]] void  *ptr)
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_sync_d2h_start(void  *ptr);
 
 #else
 
-inline void
+extern "C" inline void
 cs_sync_d2h_start([[maybe_unused]] void  *ptr)
 {
 }
@@ -1065,12 +1057,12 @@ cs_sync_d2h_start([[maybe_unused]] void  *ptr)
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_sync_d2h_if_needed(void  *ptr);
 
 #else
 
-inline void
+extern "C" inline void
 cs_sync_d2h_if_needed([[maybe_unused]] void  *ptr)
 {
 }
@@ -1098,12 +1090,12 @@ cs_sync_d2h_if_needed([[maybe_unused]] void  *ptr)
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_sync_d2h_if_needed_start(void  *ptr);
 
 #else
 
-inline void
+extern "C" inline void
 cs_sync_d2h_if_needed_start([[maybe_unused]] void  *ptr)
 {
 }
@@ -1125,13 +1117,13 @@ cs_sync_d2h_if_needed_start([[maybe_unused]] void  *ptr)
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_prefetch_h2d(const void  *ptr,
                 size_t       size);
 
 #else
 
-inline void
+extern "C" inline void
 cs_prefetch_h2d([[maybe_unused]] const void  *ptr,
                 [[maybe_unused]] size_t       size)
 {
@@ -1154,13 +1146,13 @@ cs_prefetch_h2d([[maybe_unused]] const void  *ptr,
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_prefetch_d2h(void    *ptr,
                 size_t   size);
 
 #else
 
-inline void
+extern "C" inline void
 cs_prefetch_d2h([[maybe_unused]] void    *ptr,
                 [[maybe_unused]] size_t   size)
 {
@@ -1177,12 +1169,12 @@ cs_prefetch_d2h([[maybe_unused]] void    *ptr,
 
 #if defined(HAVE_ACCEL)
 
-void
+extern "C" void
 cs_mem_hd_async_wait(void);
 
 #else
 
-inline void
+extern "C" inline void
 cs_mem_hd_async_wait(void)
 {
 }
@@ -1199,7 +1191,7 @@ cs_mem_hd_async_wait(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_mem_device_pool_set_active(bool  status);
 
 /*----------------------------------------------------------------------------*/
@@ -1215,7 +1207,7 @@ cs_mem_device_pool_set_active(bool  status);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_mem_device_pool_set_max_capacity(size_t  size);
 
 /*----------------------------------------------------------------------------*/
@@ -1226,7 +1218,7 @@ cs_mem_device_pool_set_max_capacity(size_t  size);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_mem_device_pool_set_max_tries(short int  n_tries);
 
 /*----------------------------------------------------------------------------*/
@@ -1235,13 +1227,11 @@ cs_mem_device_pool_set_max_tries(short int  n_tries);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_mem_device_pool_clear(void);
 
 #endif // defined(HAVE_ACCEL)
 
 /*----------------------------------------------------------------------------*/
-
-#endif /* defined(__cplusplus) */
 
 #endif /* CS_MEM_H */

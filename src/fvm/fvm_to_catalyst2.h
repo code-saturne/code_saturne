@@ -1,5 +1,5 @@
-#ifndef __FVM_TO_CATALYST2_H
-#define __FVM_TO_CATALYST2_H
+#ifndef FVM_TO_CATALYST2_H
+#define FVM_TO_CATALYST2_H
 
 #if defined(HAVE_CATALYST2)
 
@@ -229,4 +229,4 @@ END_C_DECLS
 
 #endif /* defined(HAVE_CATALYST2) */
 
-#endif /* __FVM_TO_CATALYST2_H */
+#endif /* FVM_TO_CATALYST2_H */

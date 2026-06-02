@@ -1,5 +1,5 @@
-#ifndef __FVM_TO_CGNS_H
-#define __FVM_TO_CGNS_H
+#ifndef FVM_TO_CGNS_H
+#define FVM_TO_CGNS_H
 
 #if defined(HAVE_CGNS)
 
@@ -254,4 +254,4 @@ END_C_DECLS
 
 #endif /* HAVE_CGNS */
 
-#endif /* __FVM_TO_CGNS_H */
+#endif /* FVM_TO_CGNS_H */
