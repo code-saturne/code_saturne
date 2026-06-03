@@ -756,16 +756,16 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.cartParams["y_law"] = ComboModel(self.comboBoxYlaw, 3, 1)
         self.cartParams["z_law"] = ComboModel(self.comboBoxZlaw, 3, 1)
         for k in ("x_law", "y_law", "z_law"):
-            self.cartParams[k].addItem(self.tr("constant"), "constant")
-            self.cartParams[k].addItem(self.tr("geometric"), "geometric")
-            self.cartParams[k].addItem(self.tr("parabolic"), "parabolic")
+            self.cartParams[k].addItem(self.tr("Constant"), "constant")
+            self.cartParams[k].addItem(self.tr("Geometric"), "geometric")
+            self.cartParams[k].addItem(self.tr("Parabolic"), "parabolic")
 
-        self.comboBoxXlaw.activated[str].connect(lambda val:
-                self.slotSetCartesianParam(val, "x_law"))
-        self.comboBoxYlaw.activated[str].connect(lambda val:
-                self.slotSetCartesianParam(val, "y_law"))
-        self.comboBoxZlaw.activated[str].connect(lambda val:
-                self.slotSetCartesianParam(val, "z_law"))
+        self.comboBoxXlaw.activated[int].connect(lambda val:
+                self.slotSetCartesianParamCombo(val, "x_law"))
+        self.comboBoxYlaw.activated[int].connect(lambda val:
+                self.slotSetCartesianParamCombo(val, "y_law"))
+        self.comboBoxZlaw.activated[int].connect(lambda val:
+                self.slotSetCartesianParamCombo(val, "z_law"))
 
         # Set initial values
         self.mesh_origin = self.mdl.getMeshOrigin()
@@ -1199,7 +1199,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.slotSetCartesianParam(val, k)
 
 
-    @Slot(int)
+    @Slot(str)
     def slotSetCartesianParam(self, text, name):
 
         val = text
@@ -1218,6 +1218,13 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         d = name.split("_")[0] + "_direction"
         p = name.split("_")[1]
         self.mdl.setCartesianParam(d, p,val)
+
+
+    @Slot(int)
+    def slotSetCartesianParamCombo(self, idx, name):
+
+        text = list(self.cartParams[name].dicoM2V.keys())[idx]
+        self.slotSetCartesianParam(text, name)
 
 
     @Slot()
