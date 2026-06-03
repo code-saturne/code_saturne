@@ -158,7 +158,7 @@ class CodeNumberDelegate(QItemDelegate):
             if value != self.value and str(value) in self.mdl.getCodeNumbersList():
                 title = self.tr("Warning")
                 msg   = self.tr("Zone number can be used only once.\n"\
-                            "Please give another value.")
+                                "Please give another value.")
                 QMessageBox.warning(self.parent, title, msg)
                 return
 
@@ -388,6 +388,9 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         self.tableView.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.tableView.horizontalHeader().setSectionResizeMode(last_section, QHeaderView.ResizeMode.Stretch)
 
+        self.tableView.resizeColumnsToContents()
+        self.tableView.resizeRowsToContents()
+
         # Connections
         self.pushButtonNew.clicked.connect(self.slotAddZone)
         self.pushButtonDelete.clicked.connect(self.slotDeleteZone)
@@ -462,7 +465,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         if file_name:
             for loc in Informations(file_name, entity).getLocalizations():
                 if loc not in self.mdl.getLocalizationsZonesList():
-                    zone = Zone(self.zoneType, case = self.case, localization = loc)
+                    zone = Zone(self.zoneType, case=self.case, localization=loc)
                     self.mdl.addZone(zone)
                     self.modelLocalization.addItem(zone)
 
