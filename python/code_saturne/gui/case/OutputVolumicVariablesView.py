@@ -49,6 +49,8 @@ from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import RegExpValidator
 from code_saturne.gui.base.QtPage import ComboModel
 from code_saturne.gui.case.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
+from code_saturne.model.CompressibleModel import CompressibleModel
+from code_saturne.model.HTSModel import HTSModel
 from code_saturne.model.OutputControlModel import OutputControlModel
 from code_saturne.model.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 from code_saturne.model.UserCalculatorModel import UserCalculatorModel
@@ -624,6 +626,10 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
             self.groupBox_2.hide()
 
         elif self.case.xmlRootNode().tagName == "Code_Saturne_GUI":
+
+            if HTSModel(self.case).getHTSModel() != 'off' \
+               or CompressibleModel(self.case).getCompressibleModel() != "off":
+                self.groupBox_2.hide()
 
             self.correctionEstimator = ComboModel(self.comboBoxIescor, 2, 1)
             self.correctionEstimator.addItem(self.tr("off"), '0')

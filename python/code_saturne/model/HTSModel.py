@@ -97,11 +97,18 @@ class HTSModel(Variables, Model):
             self.node_hts['model'] = model
             if self.node_vp:
                 self.node_vp.xmlRemoveChild('variable')
-
                 self.node_vp.xmlRemoveChild('property')
             #ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
             for v in self.var_list:
                 self.setNewVariable(self.node_hts, v, tpe="model", label=v)
+
+            node_control = self.case.xmlGetNode('analysis_control')
+            node_time    = node_control.xmlGetNode('time_parameters')
+            if node_time:
+                nn = node_time.xmlGetNode('property', name='courant_number')
+                if nn:
+                    nn.xmlRemoveNode()
+
         elif oldModel and oldModel != "off":
             self.__removeVariablesAndProperties()
             #ThermalScalarModel(self.case).setThermalModel('off')

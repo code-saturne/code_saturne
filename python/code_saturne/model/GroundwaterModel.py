@@ -118,29 +118,21 @@ class GroundwaterModel(Variables, Model):
             if nn:
                 nn.xmlRemoveNode()
             self.setNewVariable(node, 'hydraulic_head')
-            nn =  node.xmlGetNode('property', name='total_pressure')
-            if nn:
-                nn.xmlRemoveNode()
-            nn = node.xmlGetNode('property', name='yplus')
-            if nn:
-                nn.xmlRemoveNode()
-            nn =  node.xmlGetNode('property', name='stress')
-            if nn:
-                nn.xmlRemoveNode()
-            nn =  node.xmlGetNode('property', name='stress_normal')
-            if nn:
-                nn.xmlRemoveNode()
-            nn =  node.xmlGetNode('property', name='stress_tangential')
-            if nn:
-                nn.xmlRemoveNode()
+            props_to_remove = ['total_pressure', 'yplus',
+                               'stress', 'stress_normal', 'stress_tangential']
+            for name in props_to_remove:
+                nn =  node.xmlGetNode('property', name=name)
+                if nn:
+                    nn.xmlRemoveNode()
             node_control = self.case.xmlGetNode('analysis_control')
-            node_time    = node_control.xmlInitNode('time_parameters')
-            nn = node_time.xmlGetNode('property', name='courant_number')
-            if nn:
-                nn.xmlRemoveNode()
-            nn = node_time.xmlGetNode('property', name='fourier_number')
-            if nn:
-                nn.xmlRemoveNode()
+            node_time    = node_control.xmlGetNode('time_parameters')
+            if node_time:
+                nn = node_time.xmlGetNode('property', name='courant_number')
+                if nn:
+                    nn.xmlRemoveNode()
+                nn = node_time.xmlGetNode('property', name='fourier_number')
+                if nn:
+                    nn.xmlRemoveNode()
 
         elif old_choice and old_choice != "off":
             TurbulenceModel(self.case).setTurbulenceModel("k-epsilon-PL")

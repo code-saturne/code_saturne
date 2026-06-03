@@ -161,18 +161,25 @@ class TimeStepModel(Model):
                 algo = "simplec"
         self.setVelocityPressureAlgorithm(algo)
 
+        ts_props = {'courant_number': True, 'fourier_number': True}
         from code_saturne.model.GroundwaterModel import GroundwaterModel
-        if GroundwaterModel(self.case).getGroundwaterModel() == 'off':
-            Variables(self.case).setNewProperty(self.node_time, 'courant_number')
-            Variables(self.case).setNewProperty(self.node_time, 'fourier_number')
+        if GroundwaterModel(self.case).getGroundwaterModel() != 'off':
+            ts_props['courant_number'] = False
+            ts_props['fourier_number'] = False
+            del GroundwaterModel
         else:
-            nn = self.node_time.xmlGetNode('property', name='courant_number')
-            if nn:
-                nn.xmlRemoveNode()
-            nn = self.node_time.xmlGetNode('property', name='fourier_number')
-            if nn:
-                nn.xmlRemoveNode()
-        del GroundwaterModel
+            from code_saturne.model.HTSModel import HTSModel
+            if HTSModel(self.case).getHTSModel() != 'off':
+               ts_props['courant_number'] = False
+            del HTSModel
+
+        for name in ts_props.keys():
+            if ts_props[name]:
+                Variables(self.case).setNewProperty(self.node_time, name)
+            else:
+                nn = self.node_time.xmlGetNode('property', name=name)
+                if nn:
+                    nn.xmlRemoveNode()
 
         if val in (1, 2):
             Variables(self.case).setNewProperty(self.node_time, 'local_time_step')

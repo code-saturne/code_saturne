@@ -82,7 +82,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
         self.hts_activated = HTSModel(self.case).getHTSModel() != 'off'
 
-        # Check if xml contains deprecated steady algorithme
+        # Check if xml contains deprecated steady algorithm
         has_deprecated_steady = False
         if str(self.mdl.getTimePassing()) == '-1':
             has_deprecated_steady = True
