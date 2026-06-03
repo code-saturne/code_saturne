@@ -90,7 +90,8 @@ Most command-line options are detailed here:
   **destination**
 - `-d REFERENCE, --ref-dir=REFERENCE`: absolute reference directory to compare
   dest with
-- `-p, --post`: postprocess results of computations
+- `-p, --post`: postprocess results of computations and copy data used to
+  display results in POST directory
 - `--report`: generate V&V description report
 - `-m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...`: addresses for
   sending the reports
@@ -136,7 +137,8 @@ Examples
   ```
   $ code_saturne smgr -r -c
   ```
-- as above, and plots results if defined in `smgr.xml`
+- as above, and plots results if defined in `smgr.xml`. Also store data used to
+  display results in POST directory
   ```
   $ code_saturne smgr -rcp
   ```
@@ -175,6 +177,11 @@ the command line.
 `write-up.pdf` is generated only if the option `--report` is present in the
 command line. The content of POST folder in **destination** is not overwriten
 if the option `-p, --post` is not also present in the command line.
+
+`-p, --post` options postprocess results of computations and copy data used to
+display results in POST directory. The data concerned are those used within the
+`<data>` and `<probes>` markups in the SMGR file. They are copied into the POST
+folder with the following structure: `POST/CURRENT/<case>/<run_id>`.
 
 SMGR parameter file
 ===================
@@ -638,6 +645,9 @@ Subsets and figures are defined as markup children of `<study>`.
 </study>
 ```
 
+Data files specified with the `<data>` markup are copied in
+`POST/CURRENT/<case>/<run_id>` directory.
+
 Define curves
 -------------
 
@@ -836,6 +846,9 @@ should be used as a child of a markup `<case>` as illustrated below:
 <figure title="Results" name="MyFigure" idlist="1"/>
 <figure title="Grid1: probes for velocity"  name="MyProbes" idlist="2"/>
 ```
+
+Data files specified with the `<probes>` markup are copied in
+`POST/CURRENT/<case>/<run_id>` directory.
 
 The attributes are:
 - `file`: name of the file to be read on the disk;

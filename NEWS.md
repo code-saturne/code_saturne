@@ -120,6 +120,9 @@ Master (not on release branches yet)
 ### SMGR
 
 - SLURM batch mode: read batch example from installation config on cluster
+- The postprocessing step now copy data used to display results into the
+  destination POST folder with the following structure:
+  `POST/CURRENT/<case>/<run_id>`
 
 Release 9.1.0 (2025-12-30)
 --------------------------

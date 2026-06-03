@@ -2669,12 +2669,13 @@ class Studies(object):
     def check_data(self, case):
         """
         Check coherency between xml file of parameters and destination
-        for data markups of a run.
+        for data markups of a run. Copy data in POST/CURRENT.
         """
         for node in self.__parser.getChildren(case.node, "data"):
 
             plots, file_name, dest, repo = self.__parser.getResult(node)
             # we check in monitoring and profiles folders if no dest is given
+            tmp = dest
             if dest:
                 msg = case.check_file(case.run_dir, dest, file_name)
             else:
@@ -2682,11 +2683,23 @@ class Studies(object):
                     msg = case.check_file(case.run_dir, sd, file_name)
                     # stop if file is found
                     if not msg:
+                        tmp = sd
                         break
 
             if msg:
                 self.reporting(msg)
                 return False
+            else:
+                # copy data in POST/CURRENT/"CASE"/"run_id" folder
+                input_file = os.path.join(case.run_dir, tmp, file_name)
+                file_dest = os.path.join(self.__dest, case.study, 'POST',
+                                         'CURRENT', case.label, case.run_id,
+                                         file_name)
+                dest_folder = os.path.dirname(file_dest)
+                # create folders if necessary
+                if not os.path.exists(dest_folder):
+                    os.makedirs(dest_folder)
+                shutil.copyfile(input_file, file_dest)
 
         return True
 
@@ -2695,7 +2708,7 @@ class Studies(object):
     def check_probes(self, case):
         """
         Check coherency between xml file of parameters and destination
-        for probes markups of a run.
+        for probes markups of a run. Copy probes in POST/CURRENT.
         """
         for node in self.__parser.getChildren(case.node, "probes"):
             file_name, dest, fig = self.__parser.getProbes(node)
@@ -2705,6 +2718,17 @@ class Studies(object):
             if msg:
                 self.reporting(msg)
                 return False
+            else:
+                # copy probes in POST/CURRENT/"CASE"/"run_id" folder
+                input_file = os.path.join(case.run_dir, dest, file_name)
+                file_dest = os.path.join(self.__dest, case.study, 'POST',
+                                         'CURRENT', case.label, case.run_id,
+                                         file_name)
+                dest_folder = os.path.dirname(file_dest)
+                # create folders if necessary
+                if not os.path.exists(dest_folder):
+                    os.makedirs(dest_folder)
+                shutil.copyfile(input_file, file_dest)
 
         return True
 
@@ -2733,6 +2757,7 @@ class Studies(object):
         for case in self.graph.graph_dict:
             if case.plot:
                 # verify input, data and probes
+                # copy data and probes in POST/CURRENT
                 self.check_input(case)
                 found_data = self.check_data(case)
                 found_probes = self.check_probes(case)
@@ -2839,36 +2864,6 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def copy_input(self, i_nodes, s_label, c_label, run_label, r_label="RESU"):
-        """
-        Copy input in POST for later description report generation
-        """
-
-        # list of accepted formats
-        input_format = ['.png', '.jpg', '.pdf', '.tex', '.jpeg']
-
-        for i_node in i_nodes:
-            file_name, tmp, repo, tex = self.__parser.getInput(i_node)
-            input_file = os.path.join(self.__dest, s_label, c_label, r_label,
-                                      run_label, file_name)
-
-            # Input copied in POST/"CURRENT"/CASE/run_id folder
-            # file_name can include another folder (ex: datasets/fig.png)
-            file_dest = os.path.join(self.__dest, s_label, 'POST', 'CURRENT',
-                                     c_label, run_label, file_name)
-            dest_folder = os.path.dirname(file_dest)
-
-            if os.path.isfile(input_file):
-                file_format = input_file[-4:]
-                if input_file[-5] == ".":
-                    file_format = input_file[-5:]
-                if file_format in input_format:
-                    if not os.path.exists(dest_folder):
-                        os.makedirs(dest_folder)
-                    shutil.copyfile(input_file, file_dest)
-
-    #---------------------------------------------------------------------------
-
     def build_reports(self, report_fig):
         """
         @type report_fig: C{String}
@@ -2933,8 +2928,6 @@ class Studies(object):
                                    "case %s}" % case.label)
                     self.report_input(doc, nodes, case.study, case.label,
                                       case.resu, case.run_id)
-                    # copy input in POST (TODO: should be moved)
-                    self.copy_input(nodes, case.study, case.label, case.run_id)
 
         attached_files.append(doc.close())
 
