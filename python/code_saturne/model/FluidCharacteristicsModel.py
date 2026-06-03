@@ -216,7 +216,7 @@ class FluidCharacteristicsModel(Variables, Model):
                                               ref_tag="sigma0",
                                               unit="N/m")
         self.properties_info.add_property(name="specific_heat",
-                                          output="Sepcific heat",
+                                          output="Specific heat",
                                           ref_tag="cp0",
                                           unit="J/kg/K")
         self.properties_info.add_property(name="thermal_conductivity",
