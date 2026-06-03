@@ -957,7 +957,7 @@ class RankSpinBoxWidget(QSpinBox):
         if steps > 0:
             self.setValue(v*2)
         elif steps < 0 and v > 1:
-            self.setValue(v/2)
+            self.setValue(v//2)
 
     def stepEnabled(self):
         v = self.value()
@@ -989,7 +989,7 @@ class BufferSpinBoxWidget(QSpinBox):
             else:
                 self.setValue(self.basesize)
         elif steps < 0 and v > 0:
-            self.setValue(v/2)
+            self.setValue(v//2)
 
     def textFromValue(self, v):
         """
