@@ -533,8 +533,8 @@ cs_vof_log_setup(void)
        "    sigma:       %14.5e (surface tension)\n"
        "  Drift velocity:\n"
        "    idrift:          %10d (0: disabled; > 0: enabled)\n"
-       "    kdrift       %14.5e (Diffusion effect coeff.)\n"
-       "    cdrift       %14.5e (Diffusion flux coeff.)\n"),
+       "    cdrift       %14.5e (Diffusion flux coeff.)\n"
+       "    kdrift       %14.5e (Diffusion effect coeff.)\n"),
      vp->rho1, vp->mu1, vp->rho2, vp->mu2, vp->sigma_s,
      vp->idrift, vp->cdrift, vp->kdrift);
 
