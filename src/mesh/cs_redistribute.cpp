@@ -273,11 +273,18 @@ _distribute_bc_type(cs_all_to_all_t  *bfd,
   _exchange_and_order(bfd, 1, copy, pm->izfppp,
                       b_face_order);
 
-  if (pm->iautom) {
-    memcpy(copy, pm->iautom, n_b_faces_ini*sizeof(int));
-    CS_REALLOC(pm->iautom, mesh->n_b_faces, int);
-    _exchange_and_order(bfd, 1, copy, pm->iautom,
-                        b_face_order);
+  {
+    int iautom_exists = (pm->iautom != nullptr) ? 1 : 0;
+    cs_parall_max(1, CS_INT_TYPE, &iautom_exists);
+    if (iautom_exists) {
+      if (pm->iautom)
+        memcpy(copy, pm->iautom, n_b_faces_ini*sizeof(int));
+      else
+        memset(copy, 0, n_b_faces_ini*sizeof(int));
+      CS_REALLOC(pm->iautom, mesh->n_b_faces, int);
+      _exchange_and_order(bfd, 1, copy, pm->iautom,
+                          b_face_order);
+    }
   }
 
   int **bc_type = cs_boundary_conditions_get_bc_type_addr();
@@ -904,23 +911,33 @@ cs_redistribute(const int                cell_dest_rank[],
   CS_FREE(b_face_gnum);
 
   // AMR fields
+  /* Use a global max so all ranks participate in the collective exchange,
+   * even those with no local boundary faces (mesh->b_face_r_c_idx == nullptr).
+   * A per-rank conditional would desynchronize the bfd all-to-all call
+   * sequence, causing subsequent exchanges to receive wrong data. */
 
-  if (mesh->b_face_r_c_idx) {
-    int *b_face_r_c_idx_s = nullptr;
-    CS_MALLOC(b_face_r_c_idx_s, mesh->n_b_faces, int);
-    for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++)
-      b_face_r_c_idx_s[f_id] = mesh->b_face_r_c_idx[f_id];
-    CS_FREE(mesh->b_face_r_c_idx);
-    int *b_face_r_c_idx_r = cs_all_to_all_copy_array(bfd,
-                                                     1,
-                                                     false,
-                                                     b_face_r_c_idx_s);
-    CS_FREE(b_face_r_c_idx_s);
-    if (b_face_r_c_idx_r) {
-      CS_MALLOC(mesh->b_face_r_c_idx, n_b_faces, char);
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
-        mesh->b_face_r_c_idx[f_id] = b_face_r_c_idx_r[b_face_order[f_id]];
-      CS_FREE(b_face_r_c_idx_r);
+  {
+    int r_c_idx_exists = (mesh->b_face_r_c_idx != nullptr) ? 1 : 0;
+    cs_parall_max(1, CS_INT_TYPE, &r_c_idx_exists);
+
+    if (r_c_idx_exists) {
+      int *b_face_r_c_idx_s = nullptr;
+      CS_MALLOC(b_face_r_c_idx_s, mesh->n_b_faces, int);
+      for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++)
+        b_face_r_c_idx_s[f_id] = mesh->b_face_r_c_idx
+                                  ? mesh->b_face_r_c_idx[f_id] : 0;
+      CS_FREE(mesh->b_face_r_c_idx);
+      int *b_face_r_c_idx_r = cs_all_to_all_copy_array(bfd,
+                                                       1,
+                                                       false,
+                                                       b_face_r_c_idx_s);
+      CS_FREE(b_face_r_c_idx_s);
+      if (b_face_r_c_idx_r) {
+        CS_MALLOC(mesh->b_face_r_c_idx, n_b_faces, char);
+        for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
+          mesh->b_face_r_c_idx[f_id] = b_face_r_c_idx_r[b_face_order[f_id]];
+        CS_FREE(b_face_r_c_idx_r);
+      }
     }
   }
 
