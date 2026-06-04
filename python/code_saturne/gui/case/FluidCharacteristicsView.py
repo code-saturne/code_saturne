@@ -225,9 +225,10 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         s = self.m_th.getThermalScalarName()
         tsm = self.mdl.tsm
 
-        self.m_hts = HTSModel(self.case)
+        self.hts = False
         n_al = 2
-        if self.m_hts.getHTSModel() != 'off':
+        if HTSModel(self.case).getHTSModel() != 'off':
+            self.hts = True
             n_al = 3
 
         # Particular Widget init. taking into account chosen fluid model
@@ -704,7 +705,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                     __button.hide()
 
             # HTS
-            if self.m_hts.getHTSModel() != 'off':
+            if self.hts:
                 self.groupBoxMu.setVisible(False)
 
             # Compressible Flows
