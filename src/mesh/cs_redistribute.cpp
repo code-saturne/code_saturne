@@ -46,6 +46,7 @@
 #include "base/cs_renumber.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_volume_zone.h"
+#include "base/cs_renumber_update.h"
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_builder.h"
@@ -168,7 +169,6 @@ _distribute_face(cs_mesh_t *mesh,
  *   send_data    <-- values to send
  *   recv_data    <-> values to receive
  *   b_face_order <-- boundary faces ordering by associated global number
- *   b_face_n2o   <-- boundary faces new-to-old mapping
  *----------------------------------------------------------------------------*/
 
 template <typename T>
@@ -177,8 +177,7 @@ _exchange_and_order(cs_all_to_all_t  *d,
                     int               stride,
                     const T           send_data[],
                     T                 recv_data[],
-                    const cs_lnum_t   b_face_order[],
-                    const cs_lnum_t   b_face_n2o[])
+                    const cs_lnum_t   b_face_order[])
 {
   cs_lnum_t n_elem_recv = cs_all_to_all_n_elts_dest(d);
 
@@ -188,15 +187,14 @@ _exchange_and_order(cs_all_to_all_t  *d,
                            send_data,
                            recv_data);
 
-  if (!b_face_order && !b_face_n2o) return;
+  if (!b_face_order) return;
 
   T *copy;
   CS_MALLOC(copy, n_elem_recv*stride, T);
   memcpy(copy, recv_data, n_elem_recv*stride*sizeof(T));
 
   for (cs_lnum_t new_id = 0; new_id < n_elem_recv; new_id++) {
-    cs_lnum_t old_id = b_face_n2o ? b_face_n2o[new_id] : new_id;
-    cs_lnum_t pre_id = b_face_order ? b_face_order[old_id] : old_id;
+    cs_lnum_t pre_id = b_face_order ? b_face_order[new_id] : new_id;
     const T *orig = copy + stride*pre_id;
     T *dest = recv_data + stride*new_id;
     for (int i = 0; i < stride; i++)
@@ -216,7 +214,6 @@ _exchange_and_order(cs_all_to_all_t  *d,
  *   copy_buf     <-- copy buffer
  *   coeff        <-> BC coefficients
  *   b_face_order <-- boundary faces ordering by associated global number
- *   b_face_n2o   <-- boundary faces new-to-old mapping
  *----------------------------------------------------------------------------*/
 
 static void
@@ -225,8 +222,7 @@ _distribute_bc_coeff(cs_all_to_all_t  *bfd,
                      int               stride,
                      cs_real_t         copy_buf[],
                      cs_real_t        *coeff[],
-                     const cs_lnum_t   b_face_order[],
-                     const cs_lnum_t   b_face_n2o[])
+                     const cs_lnum_t   b_face_order[])
 {
   int coeff_exists = (*coeff != nullptr);
   cs_parall_max(1, CS_INT_TYPE, &coeff_exists);
@@ -247,8 +243,7 @@ _distribute_bc_coeff(cs_all_to_all_t  *bfd,
                       stride,
                       copy_buf,
                       *coeff,
-                      b_face_order,
-                      b_face_n2o);
+                      b_face_order);
 }
 
 /*----------------------------------------------------------------------------
@@ -258,14 +253,12 @@ _distribute_bc_coeff(cs_all_to_all_t  *bfd,
  *   bfd           <-- pointer to parallel distributor
  *   n_b_faces_ini <-- initial number of boundary faces
  *   b_face_order  <-- boundary faces ordering by associated global number
- *   b_face_n2o    <-- boundary faces new-to-old mapping
  *----------------------------------------------------------------------------*/
 
 static void
 _distribute_bc_type(cs_all_to_all_t  *bfd,
                     cs_lnum_t         n_b_faces_ini,
-                    const cs_lnum_t   b_face_order[],
-                    const cs_lnum_t   b_face_n2o[])
+                    const cs_lnum_t   b_face_order[])
 {
   cs_mesh_t *mesh = cs_glob_mesh;
   cs_boundary_condition_pm_info_t *pm = cs_glob_bc_pm_info;
@@ -276,20 +269,20 @@ _distribute_bc_type(cs_all_to_all_t  *bfd,
   memcpy(copy, pm->izfppp, n_b_faces_ini*sizeof(int));
   CS_REALLOC(pm->izfppp, mesh->n_b_faces, int);
   _exchange_and_order(bfd, 1, copy, pm->izfppp,
-                      b_face_order, b_face_n2o);
+                      b_face_order);
 
   if (pm->iautom) {
     memcpy(copy, pm->iautom, n_b_faces_ini*sizeof(int));
     CS_REALLOC(pm->iautom, mesh->n_b_faces, int);
     _exchange_and_order(bfd, 1, copy, pm->iautom,
-                        b_face_order, b_face_n2o);
+                        b_face_order);
   }
 
   int **bc_type = cs_boundary_conditions_get_bc_type_addr();
   memcpy(copy, *bc_type, n_b_faces_ini*sizeof(int));
   CS_REALLOC(*bc_type, mesh->n_b_faces, int);
   _exchange_and_order(bfd, 1, copy, *bc_type,
-                      b_face_order, b_face_n2o);
+                      b_face_order);
 
   CS_FREE(copy);
 
@@ -303,35 +296,28 @@ _distribute_bc_type(cs_all_to_all_t  *bfd,
  *   cd             <-- pointer to cells distributor
  *   n_cells_ini    <-- number of cells to send
  *   cell_order     <-- cells ordering by associated global number
- *   cell_n2o       <-- cells new-to-old mapping
  *   bfd            <-- pointer to boundary faces distributor
  *   n_b_faces_ini  <-- number of boundary faces to send
  *   b_face_order   <-- boundary face ordering by associated global number
- *   b_face_n2o     <-- boundary faces new-to-old mapping
  *   ifd            <-- pointer to internal faces distributor
  *   n_i_faces_ini  <-- number of internal faces to send
  *   i_face_lst     <-- list of internal faces to send
  *   i_face_order   <-- internal faces ordering by associated global number
- *   i_face_n2o     <-- internal faces new-to-old mapping
  *----------------------------------------------------------------------------*/
 
 static void
-_distribute_fields(cs_all_to_all_t  *cd,
+_distribute_fields(cs_mesh_t *       mesh,
+                   cs_all_to_all_t  *cd,
                    cs_lnum_t         n_cells_ini,
                    const cs_lnum_t   cell_order[],
-                   const cs_lnum_t   cell_n2o[],
                    cs_all_to_all_t  *bfd,
                    cs_lnum_t         n_b_faces_ini,
                    const cs_lnum_t   b_face_order[],
-                   const cs_lnum_t   b_face_n2o[],
                    cs_all_to_all_t  *ifd,
                    cs_lnum_t         n_i_faces_ini,
                    const cs_lnum_t   i_face_lst[],
-                   const cs_lnum_t   i_face_order[],
-                   const cs_lnum_t   i_face_n2o[])
+                   const cs_lnum_t   i_face_order[])
 {
-  cs_mesh_t *mesh = cs_glob_mesh;
-
   // Cell-centered fields.
 
   int n_fields = cs_field_n_fields();
@@ -344,6 +330,7 @@ _distribute_fields(cs_all_to_all_t  *cd,
     // Make a copy before resizing the field pointers.
 
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(field->location_id);
+    assert(n_elts[2] == mesh->n_cells_with_ghosts);
 
     cs_real_t **copy;
     CS_MALLOC(copy, field->n_time_vals, cs_real_t *);
@@ -368,8 +355,7 @@ _distribute_fields(cs_all_to_all_t  *cd,
       CS_FREE(copy[j]);
 
       for (cs_lnum_t new_id = 0; new_id < mesh->n_cells; new_id++) {
-        cs_lnum_t old_id = cell_n2o ? cell_n2o[new_id] : new_id;
-        cs_lnum_t pre_id = cell_order[old_id];
+        cs_lnum_t pre_id = cell_order[new_id];
 
         const cs_real_t *orig = recv_buf + field->dim*pre_id;
         cs_real_t *dest = field->vals[j] + field->dim*new_id;
@@ -409,8 +395,7 @@ _distribute_fields(cs_all_to_all_t  *cd,
                         i_mult,
                         i_copy,
                         bcc->icodcl,
-                        b_face_order,
-                        b_face_n2o);
+                        b_face_order);
 
     CS_FREE(i_copy);
 
@@ -426,8 +411,7 @@ _distribute_fields(cs_all_to_all_t  *cd,
                           1,
                           rcod + dim*n_b_faces_ini,
                           buf,
-                          b_face_order,
-                          b_face_n2o);
+                          b_face_order);
     }
 
     memcpy(rcod, bcc->rcodcl2, n_b_faces_ini*a_mult*sizeof(cs_real_t));
@@ -438,8 +422,7 @@ _distribute_fields(cs_all_to_all_t  *cd,
                           1,
                           rcod + dim*n_b_faces_ini,
                           buf,
-                          b_face_order,
-                          b_face_n2o);
+                          b_face_order);
     }
 
     memcpy(rcod, bcc->rcodcl3, n_b_faces_ini*a_mult*sizeof(cs_real_t));
@@ -450,39 +433,38 @@ _distribute_fields(cs_all_to_all_t  *cd,
                           1,
                           rcod + dim*n_b_faces_ini,
                           buf,
-                          b_face_order,
-                          b_face_n2o);
+                          b_face_order);
     }
 
     CS_FREE(rcod);
 
     _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &bcc->a,
-                         b_face_order, b_face_n2o);
+                         b_face_order);
     _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &bcc->b,
-                         b_face_order, b_face_n2o);
+                         b_face_order);
     _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &bcc->af,
-                         b_face_order, b_face_n2o);
+                         b_face_order);
     _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &bcc->bf,
-                         b_face_order, b_face_n2o);
+                         b_face_order);
     _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &bcc->ad,
-                         b_face_order, b_face_n2o);
+                         b_face_order);
     _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &bcc->bd,
-                         b_face_order, b_face_n2o);
+                         b_face_order);
     _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &bcc->ac,
-                         b_face_order, b_face_n2o);
+                         b_face_order);
     _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &bcc->bc,
-                         b_face_order, b_face_n2o);
+                         b_face_order);
 
     _distribute_bc_coeff(bfd, n_b_faces_ini, 1, a_copy, &bcc->h_int_tot,
-                         b_face_order, b_face_n2o);
+                         b_face_order);
 
     _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &bcc->val_f,
-                         b_face_order, b_face_n2o);
+                         b_face_order);
     _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy,
-                         &bcc->val_f_pre, b_face_order, b_face_n2o);
+                         &bcc->val_f_pre, b_face_order);
 
     _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &bcc->flux_diff,
-                         b_face_order, b_face_n2o);
+                         b_face_order);
 
     CS_FREE(a_copy);
     CS_FREE(b_copy);
@@ -520,8 +502,7 @@ _distribute_fields(cs_all_to_all_t  *cd,
       CS_FREE(copy[j]);
 
       for (cs_lnum_t new_id = 0; new_id < mesh->n_b_faces; new_id++) {
-        cs_lnum_t old_id = b_face_n2o ? b_face_n2o[new_id] : new_id;
-        cs_lnum_t pre_id = b_face_order[old_id];
+        cs_lnum_t pre_id = b_face_order[new_id];
 
         const cs_real_t *orig = recv_buf + field->dim*pre_id;
         cs_real_t *dest = field->vals[j] + field->dim*new_id;
@@ -574,8 +555,7 @@ _distribute_fields(cs_all_to_all_t  *cd,
       CS_FREE(copy[j]);
 
       for (cs_lnum_t new_id = 0; new_id < mesh->n_i_faces; new_id++) {
-        cs_lnum_t old_id = i_face_n2o ? i_face_n2o[new_id] : new_id;
-        cs_lnum_t pre_id = i_face_order[old_id];
+        cs_lnum_t pre_id = i_face_order[new_id];
 
         const cs_real_t *orig = recv_buf + field->dim*pre_id;
         cs_real_t *dest = field->vals[j] + field->dim*new_id;
@@ -598,8 +578,7 @@ _distribute_fields(cs_all_to_all_t  *cd,
 
   _distribute_bc_type(bfd,
                       n_b_faces_ini,
-                      b_face_order,
-                      b_face_n2o);
+                      b_face_order);
 }
 
 /*----------------------------------------------------------------------------
@@ -631,14 +610,12 @@ _free_field_gradients(void)
  *   cd             <-- pointer to cells distributor
  *   n_cells_ini    <-- number of cells to send
  *   cell_order     <-- cells ordering by associated global number
- *   cell_n2o       <-- cells new-to-old mapping
  *   data           <-> pointer to data to be redistributed
  *----------------------------------------------------------------------------*/
 
 void
 _distribute_data(cs_all_to_all_t *cd,
                  const int cell_order[],
-                 const int cell_n2o[],
                  cs_redistribute_data_t *data)
 {
   if (!data)
@@ -650,49 +627,51 @@ _distribute_data(cs_all_to_all_t *cd,
     int *c_r_level = cs_all_to_all_copy_array(cd, 1, false, data->c_r_level);
     CS_REALLOC(data->c_r_level, mesh->n_cells_with_ghosts, int);
     for (cs_lnum_t new_id = 0; new_id < mesh->n_cells; new_id++) {
-      int old_id = cell_n2o ? cell_n2o[new_id] : new_id;
-      int pre_id = cell_order ? cell_order[old_id] : old_id;
+      int pre_id = cell_order ? cell_order[new_id] : new_id;
       data->c_r_level[new_id] = c_r_level[pre_id];
     }
     CS_FREE(c_r_level);
-
-    cs_halo_sync_untyped(mesh->halo,
-                         CS_HALO_STANDARD,
-                         sizeof(int),
-                         data->c_r_level);
   }
 
   if (data->c_r_flag) {
     int *c_r_flag = cs_all_to_all_copy_array(cd, 1, false, data->c_r_flag);
     CS_REALLOC(data->c_r_flag, mesh->n_cells_with_ghosts, int);
     for (cs_lnum_t new_id = 0; new_id < mesh->n_cells; new_id++) {
-      int old_id = cell_n2o ? cell_n2o[new_id] : new_id;
-      int pre_id = cell_order ? cell_order[old_id] : old_id;
+      int pre_id = cell_order ? cell_order[new_id] : new_id;
       data->c_r_flag[new_id] = c_r_flag[pre_id];
     }
     CS_FREE(c_r_flag);
-
-    cs_halo_sync_untyped(mesh->halo,
-                         CS_HALO_STANDARD,
-                         sizeof(int),
-                         data->c_r_flag);
   }
 
   if (data->indic) {
     int *indic = cs_all_to_all_copy_array(cd, 1, false, data->indic);
     CS_REALLOC(data->indic, mesh->n_cells_with_ghosts, int);
     for (cs_lnum_t new_id = 0; new_id < mesh->n_cells; new_id++) {
-      int old_id = cell_n2o ? cell_n2o[new_id] : new_id;
-      int pre_id = cell_order ? cell_order[old_id] : old_id;
+      int pre_id = cell_order ? cell_order[new_id] : new_id;
       data->indic[new_id] = indic[pre_id];
     }
     CS_FREE(indic);
-
-    cs_halo_sync_untyped(mesh->halo,
-                         CS_HALO_STANDARD,
-                         sizeof(int),
-                         data->indic);
   }
+}
+
+template <typename T>
+static void
+_reorder_buffer(T               *buffer,
+                cs_lnum_t        n_elem,
+                const cs_lnum_t  order[])
+{
+  if (!buffer || !order)
+    return;
+
+  T *copy = nullptr;
+  CS_MALLOC(copy, n_elem, T);
+  memcpy(copy, buffer, n_elem * sizeof(T));
+
+  for (cs_lnum_t i = 0; i < n_elem; i++) {
+    buffer[i] = copy[order[i]];
+  }
+
+  CS_FREE(copy);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1391,72 +1370,43 @@ cs_redistribute(const int                cell_dest_rank[],
   // - periodicity features
   // - face status flags
 
-  // Update the halo
-
   cs_mesh_builder_destroy(&builder);
+
+  // Update the halo.
 
   cs_mesh_free_rebuildable(mesh, true);
   mesh->n_cells_with_ghosts = mesh->n_cells;
 
   cs_mesh_init_halo(mesh, nullptr, mesh->halo_type, -1, true);
 
-  cs_lnum_t *cell_n2o = nullptr, *vtx_n2o= nullptr;
-  cs_lnum_t *i_face_n2o = nullptr, *b_face_n2o = nullptr;
+  cs_mesh_update_partial();
 
-  cs_renumber_mesh(mesh, &cell_n2o, &i_face_n2o, &b_face_n2o, &vtx_n2o);
+  // Redistribute the fields and miscellaneous data.
 
-  cs_mesh_update_auxiliary(mesh);
-  cs_mesh_quantities_compute(cs_glob_mesh,cs_glob_mesh_quantities);
-  cs_ext_neighborhood_reduce(mesh, cs_glob_mesh_quantities);
-
-  cs_mesh_init_group_classes(mesh);
-
-  cs_mesh_update_selectors(mesh);
-  cs_mesh_location_build(mesh, -1);
-  cs_volume_zone_build_all(true);
-  cs_boundary_zone_build_all(true);
-
-#if defined(DEBUG)
-  cs_mesh_coherency_check();
-#endif
-
-  cs_mesh_adjacencies_update_mesh();
-  cs_matrix_update_mesh();
-
-  /* Field distribution
-     ------------------ */
-
-  _distribute_fields(cd,
+  _distribute_fields(mesh,
+                     cd,
                      n_cells_ini,
                      cell_order,
-                     cell_n2o,
                      bfd,
                      n_b_faces_ini,
                      b_face_order,
-                     b_face_n2o,
                      ifd,
                      n_i_faces_ini,
                      i_face_lst,
-                     i_face_order,
-                     i_face_n2o);
+                     i_face_order);
 
-  _distribute_data(cd, cell_order, cell_n2o, data);
-
-  CS_FREE(vtx_n2o);
-  CS_FREE(cell_n2o);
-  CS_FREE(i_face_n2o);
-  CS_FREE(b_face_n2o);
 
   CS_FREE(i_face_lst);
-
   CS_FREE(i_face_order);
   CS_FREE(b_face_order);
-  CS_FREE(cell_order);
-
-  cs_all_to_all_destroy(&cd);
   cs_all_to_all_destroy(&bfd);
   cs_all_to_all_destroy(&ifd);
 
+  _distribute_data(cd, cell_order, data);
+
+  CS_FREE(cell_order);
+
+  cs_all_to_all_destroy(&cd);
   CS_FREE(_dest_rank);
 
 #endif // defined(HAVE_MPI)

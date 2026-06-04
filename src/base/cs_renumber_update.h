@@ -39,14 +39,30 @@
  * Public function definitions
  *============================================================================*/
 
-#include "cs_renumber.h"
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Renumber fields and bc_coeffs based on new-to-old element map.
+ *
+ * \param[in]  cell_n2o        cells new-to-old mapping
+ * \param[in]  i_face_n2o      internal faces new-to-old mapping
+ * \param[in]  b_face_n2o      boundary faces new-to-old mapping
+ * \param[in]  vtx_n2o         vertices new-to-old mapping
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_renumber_update_fields(cs_mesh_t        *mesh,
-                          const cs_lnum_t   cell_n2o[],
+cs_renumber_update_fields(const cs_lnum_t   cell_n2o[],
                           const cs_lnum_t   i_face_n2o[],
                           const cs_lnum_t   b_face_n2o[],
                           const cs_lnum_t   vtx_n2o[]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Renumber bc_types based on new-to-old element map.
+ *
+ * \param[in]  b_face_n2o      boundary faces new-to-old mapping
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_renumber_update_bc_types(const cs_lnum_t   b_face_n2o[]);
@@ -60,6 +76,21 @@ cs_renumber_update_bc_types(const cs_lnum_t   b_face_n2o[]);
 
 void
 cs_renumber_update(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Update some mesh structures.
+ *
+ * This function regroups all the data that needs to be updated after some
+ * mesh operations, such as renumbering or redistribution.
+ *
+ * \param[in]       mesh            pointer to mesh
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_update_partial(void);
+
 
 /*----------------------------------------------------------------------------*/
 

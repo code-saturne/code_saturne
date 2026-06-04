@@ -1455,14 +1455,10 @@ cs_adaptive_refinement_step(void)
   /* We could use a more advanced test to perform load balancing only
      if imbalance reaches a certain threshold. */
 
-  if (!cs_glob_amr_info->load_balance) {
-    cs_renumber_update();
-  }
-  else {
-#if defined(HAVE_MPI)
+  if (cs_glob_amr_info->load_balance)
     _load_balance(true);
-#endif
-  }
+
+  cs_renumber_update();
 
   if (cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT,

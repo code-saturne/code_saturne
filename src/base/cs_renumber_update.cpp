@@ -114,13 +114,36 @@ _reorder_bc_vals(cs_lnum_t         n_b_faces,
 }
 
 /*----------------------------------------------------------------------------
- * Distribute BC types.
+ * Free field gradients.
  *
- * parameters:
- *   bfd           <-- pointer to parallel distributor
- *   n_b_faces     <-- number of boundary faces
- *   b_face_n2o    <-- boundary faces new-to-old mapping
+ * Gradients are assumed to be computed on-the-fly when needed.
  *----------------------------------------------------------------------------*/
+
+static void
+_free_field_gradients(void)
+{
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (f->grad)
+      CS_FREE(f->grad);
+  }
+}
+
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Renumber bc_types based on new-to-old element map.
+ *
+ * \param[in]  b_face_n2o      boundary faces new-to-old mapping
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_renumber_update_bc_types(const cs_lnum_t   b_face_n2o[])
@@ -140,25 +163,25 @@ cs_renumber_update_bc_types(const cs_lnum_t   b_face_n2o[])
   CS_FREE(buffer);
 }
 
-/*----------------------------------------------------------------------------
- * Redistribute fields and bc_coeffs based on new-to-old element maps.
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Renumber fields and bc_coeffs based on new-to-old element map.
  *
- * parameters:
- *   mesh           <-- pointer to the mesh
- *   cell_n2o       <-- cells new-to-old mapping
- *   i_face_n2o     <-- internal faces new-to-old mapping
- *   b_face_n2o     <-- boundary faces new-to-old mapping
- *   vtx_n2o        <-- vertices new-to-old mapping
- *----------------------------------------------------------------------------*/
+ * \param[in]  cell_n2o        cells new-to-old mapping
+ * \param[in]  i_face_n2o      internal faces new-to-old mapping
+ * \param[in]  b_face_n2o      boundary faces new-to-old mapping
+ * \param[in]  vtx_n2o         vertices new-to-old mapping
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_renumber_update_fields(cs_mesh_t        *mesh,
-                          const cs_lnum_t   cell_n2o[],
+cs_renumber_update_fields(const cs_lnum_t   cell_n2o[],
                           const cs_lnum_t   i_face_n2o[],
                           const cs_lnum_t   b_face_n2o[],
                           const cs_lnum_t   vtx_n2o[])
 {
-  // Cell-centered fields.
+  cs_mesh_t *mesh = cs_glob_mesh;
 
   int n_fields = cs_field_n_fields();
 
@@ -285,29 +308,6 @@ cs_renumber_update_fields(cs_mesh_t        *mesh,
   CS_FREE(buffer);
 }
 
-/*----------------------------------------------------------------------------
- * Free field gradients.
- *
- * Gradients are assumed to be computed on-the-fly when needed.
- *----------------------------------------------------------------------------*/
-
-static void
-_free_field_gradients(void)
-{
-  const int n_fields = cs_field_n_fields();
-
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    if (f->grad)
-      CS_FREE(f->grad);
-  }
-}
-
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -320,24 +320,48 @@ cs_renumber_update(void)
 {
   cs_mesh_t *mesh = cs_glob_mesh;
 
-  /* Free some elements which will need to be rebuilt when/if used.
-     Halos are needed at some interior steps so destroyed later. */
-
   cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
 
   _free_field_gradients();
   cs_gradient_free_quantities();
   cs_cell_to_vertex_free();
 
-  cs_lnum_t *cell_n2o = nullptr, *vtx_n2o= nullptr;
+  cs_lnum_t *cell_n2o = nullptr, *vtx_n2o = nullptr;
   cs_lnum_t *i_face_n2o = nullptr, *b_face_n2o = nullptr;
 
   cs_renumber_mesh(mesh, &cell_n2o, &i_face_n2o, &b_face_n2o, &vtx_n2o);
 
-  /* Re-compute mesh related quantities */
+  cs_mesh_update_partial();
+
+  cs_renumber_update_fields(cell_n2o,
+                            i_face_n2o,
+                            b_face_n2o,
+                            vtx_n2o);
+
+  cs_renumber_update_bc_types(b_face_n2o);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update some mesh structures.
+ *
+ * This function regroups all the data that needs to be updated after some
+ * mesh operations, such as renumbering or redistribution.
+ *
+ * \param[in]       mesh            pointer to mesh
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_update_partial(void)
+{
+  cs_mesh_t *mesh = cs_glob_mesh;
 
   cs_mesh_update_auxiliary(mesh);
-  cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
+
+  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
+  cs_mesh_quantities_compute(mesh, cs_glob_mesh_quantities);
+  cs_ext_neighborhood_reduce(mesh, cs_glob_mesh_quantities);
 
   cs_mesh_init_group_classes(mesh);
 
@@ -346,27 +370,8 @@ cs_renumber_update(void)
   cs_volume_zone_build_all(true);
   cs_boundary_zone_build_all(true);
 
-#if defined(DEBUG)
-  cs_mesh_coherency_check();
-#endif
-
   cs_mesh_adjacencies_update_mesh();
   cs_matrix_update_mesh();
-
-  /* Renumber fields. */
-
-  cs_renumber_update_fields(mesh,
-                            cell_n2o,
-                            i_face_n2o,
-                            b_face_n2o,
-                            vtx_n2o);
-
-  cs_renumber_update_bc_types(b_face_n2o);
-
-  CS_FREE(vtx_n2o);
-  CS_FREE(b_face_n2o);
-  CS_FREE(i_face_n2o);
-  CS_FREE(cell_n2o);
 }
 
 /*----------------------------------------------------------------------------*/
