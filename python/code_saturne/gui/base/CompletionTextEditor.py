@@ -48,29 +48,28 @@ def CompletionTextEdit(target):
 
     def keyPressEvent(target, event):
         if target.completer and target.completer.popup().isVisible():
-            if event.key() in (
-            Qt.Key_Enter,
-            Qt.Key_Return,
-            Qt.Key_Escape,
-            Qt.Key_Tab,
-            Qt.Key_Backtab):
+            if event.key() in (Qt.Key.Key_Enter,
+                               Qt.Key.Key_Return,
+                               Qt.Key.Key_Escape,
+                               Qt.Key.Key_Tab,
+                               Qt.Key.Key_Backtab):
                 event.ignore()
                 return
 
         ## has ctrl-E been pressed??
-        isShortcut = (event.modifiers() == Qt.ControlModifier and
+        isShortcut = (event.modifiers() == Qt.KeyboardModifier.ControlModifier and
                       event.key() == Qt.Key_E)
         if (not target.completer or not isShortcut):
             QTextEdit.keyPressEvent(target, event)
 
         ## ctrl or shift key on it's own??
-        ctrlOrShift = event.modifiers() in (Qt.ControlModifier ,
-                    Qt.ShiftModifier)
+        ctrlOrShift = event.modifiers() in (Qt.KeyboardModifier.ControlModifier,
+                                            Qt.KeyboardModifier.ShiftModifier)
         if ctrlOrShift and len(event.text()) < 1:
             # ctrl or shift key on it's own
             return
 
-        hasModifier = ((event.modifiers() != Qt.NoModifier) and
+        hasModifier = ((event.modifiers() != Qt.KeyboardModifier.NoModifier) and
                         not ctrlOrShift)
 
         completionPrefix = target.textUnderCursor()
