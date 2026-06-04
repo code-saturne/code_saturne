@@ -4507,7 +4507,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
 {
   cs_lnum_t  dim = m->dim;
   cs_lnum_t  n_i_faces = m->n_i_faces;
-  cs_lnum_t  n_b_faces = m->n_b_faces;
+  cs_lnum_t  n_b_faces = cs::max(m->n_b_faces, m->n_b_faces_all);
   cs_lnum_t  n_cells_with_ghosts = m->n_cells_with_ghosts;
 
   const cs_alloc_mode_t amode = cs_alloc_mode_read_mostly;
@@ -4579,8 +4579,8 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
 
   /* Compute some distances relative to faces and associated weighting */
 
-  _compute_face_distances(m->n_i_faces,
-                          m->n_b_faces,
+  _compute_face_distances(n_i_faces,
+                          n_b_faces,
                           (const cs_lnum_2_t *)(m->i_face_cells),
                           m->b_face_cells,
                           mq->i_face_u_normal,
@@ -4598,8 +4598,8 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   /* Compute some vectors relative to faces to handle non-orthogonalities */
 
   _compute_face_vectors(dim,
-                        m->n_i_faces,
-                        m->n_b_faces,
+                        n_i_faces,
+                        n_b_faces,
                         (const cs_lnum_2_t *)(m->i_face_cells),
                         m->b_face_cells,
                         mq->b_face_u_normal,
