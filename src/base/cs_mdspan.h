@@ -1164,10 +1164,10 @@ protected:
    * Private members
    *==========================================================================*/
 
-  cs_lnum_t  _extent[N];
-  cs_lnum_t  _offset[N];
-  cs_lnum_t  _size;
-  mutable T*         _data;
+  cs_lnum_t   _extent[N];
+  cs_lnum_t   _offset[N];
+  cs_lnum_t   _size;
+  mutable T*  _data;
 };
 
 } /* namespace cs */
