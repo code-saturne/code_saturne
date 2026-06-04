@@ -230,9 +230,11 @@ _distribute_bc_coeff(cs_all_to_all_t  *bfd,
   if (!coeff_exists)
     return;
 
-  assert(*coeff);
-
-  memcpy(copy_buf, *coeff, n_b_faces_ini*stride*sizeof(cs_real_t));
+  /* *coeff may be nullptr on ranks with no boundary faces while other ranks
+   * have it allocated; those ranks still must participate in the collective
+   * exchange, but have nothing to copy. */
+  if (*coeff != nullptr)
+    memcpy(copy_buf, *coeff, n_b_faces_ini*stride*sizeof(cs_real_t));
   CS_FREE(*coeff);
 
   cs_lnum_t n_elts = cs_all_to_all_n_elts_dest(bfd);
