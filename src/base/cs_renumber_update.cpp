@@ -122,8 +122,8 @@ _reorder_bc_vals(cs_lnum_t         n_b_faces,
  *   b_face_n2o    <-- boundary faces new-to-old mapping
  *----------------------------------------------------------------------------*/
 
-static void
-_reorder_bc_type(const cs_lnum_t   b_face_n2o[])
+void
+cs_renumber_update_bc_types(const cs_lnum_t   b_face_n2o[])
 {
   cs_mesh_t *mesh = cs_glob_mesh;
   cs_boundary_condition_pm_info_t *pm = cs_glob_bc_pm_info;
@@ -151,12 +151,12 @@ _reorder_bc_type(const cs_lnum_t   b_face_n2o[])
  *   vtx_n2o        <-- vertices new-to-old mapping
  *----------------------------------------------------------------------------*/
 
-static void
-_renumber_update_fields(cs_mesh_t        *mesh,
-                        const cs_lnum_t   cell_n2o[],
-                        const cs_lnum_t   i_face_n2o[],
-                        const cs_lnum_t   b_face_n2o[],
-                        const cs_lnum_t   vtx_n2o[])
+void
+cs_renumber_update_fields(cs_mesh_t        *mesh,
+                          const cs_lnum_t   cell_n2o[],
+                          const cs_lnum_t   i_face_n2o[],
+                          const cs_lnum_t   b_face_n2o[],
+                          const cs_lnum_t   vtx_n2o[])
 {
   // Cell-centered fields.
 
@@ -353,15 +353,15 @@ cs_renumber_update(void)
   cs_mesh_adjacencies_update_mesh();
   cs_matrix_update_mesh();
 
-  /* Re-distribute fields */
+  /* Renumber fields. */
 
-  _renumber_update_fields(mesh,
-                          cell_n2o,
-                          i_face_n2o,
-                          b_face_n2o,
-                          vtx_n2o);
+  cs_renumber_update_fields(mesh,
+                            cell_n2o,
+                            i_face_n2o,
+                            b_face_n2o,
+                            vtx_n2o);
 
-  _reorder_bc_type(b_face_n2o);
+  cs_renumber_update_bc_types(b_face_n2o);
 
   CS_FREE(vtx_n2o);
   CS_FREE(b_face_n2o);

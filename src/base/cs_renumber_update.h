@@ -39,6 +39,19 @@
  * Public function definitions
  *============================================================================*/
 
+#include "cs_renumber.h"
+
+void
+cs_renumber_update_fields(cs_mesh_t        *mesh,
+                          const cs_lnum_t   cell_n2o[],
+                          const cs_lnum_t   i_face_n2o[],
+                          const cs_lnum_t   b_face_n2o[],
+                          const cs_lnum_t   vtx_n2o[]);
+
+void
+cs_renumber_update_bc_types(const cs_lnum_t   b_face_n2o[]);
+
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Renumber mesh and update all associated data.
