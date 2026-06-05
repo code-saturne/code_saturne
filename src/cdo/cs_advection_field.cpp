@@ -375,7 +375,7 @@ cs_advection_field_get_n_fields(void)
 /*----------------------------------------------------------------------------*/
 
 cs_adv_field_t *
-cs_advection_field_by_name(const char *name)
+cs_advection_field_by_name(const std::string &name)
 {
   if (_n_adv_fields <= 0)
     return nullptr;
@@ -477,9 +477,7 @@ cs_advection_field_add(const char                  *name,
 
   /* Copy name */
 
-  size_t len = strlen(name);
-  CS_MALLOC(adv->name, len + 1, char);
-  strncpy(adv->name, name, len + 1);
+  adv->name = std::string(name);
 
   adv->id        = new_id;
   adv->status    = status;
@@ -550,7 +548,6 @@ cs_advection_field_destroy_all(void)
     if (adv->bdy_def_ids != nullptr)
       CS_FREE(adv->bdy_def_ids);
 
-    CS_FREE(adv->name);
     CS_FREE(adv);
 
     /* All other pointers are shared */
@@ -574,22 +571,12 @@ cs_advection_field_destroy_all(void)
 
 bool
 cs_advection_field_check_name(const cs_adv_field_t *adv,
-                              const char           *ref_name)
+                              const std::string    &ref_name)
 {
   if (adv == nullptr)
     return false;
 
-  int reflen = strlen(ref_name);
-  int len    = strlen(adv->name);
-
-  if (reflen == len) {
-    if (strcmp(ref_name, adv->name) == 0)
-      return true;
-    else
-      return false;
-  }
-  else
-    return false;
+  return adv->name == ref_name;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -615,11 +602,10 @@ cs_advection_field_log_setup(void)
 
     if (adv == nullptr)
       continue;
-    assert(strlen(adv->name) < 200);
 
     /* Category of advection field */
 
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Category: ", adv->name);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Category: ", adv->name.c_str());
     if (adv->status & CS_ADVECTION_FIELD_NAVSTO)
       cs_log_printf(CS_LOG_SETUP, "Related to Navier-Stokes\n");
     else if (adv->status & CS_ADVECTION_FIELD_GWF)
@@ -630,7 +616,7 @@ cs_advection_field_log_setup(void)
 
     /* Type of advection field */
 
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Type: ", adv->name);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Type: ", adv->name.c_str());
     if (adv->status & CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR)
       cs_log_printf(CS_LOG_SETUP, "Velocity vector\n");
     else if (adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX)
@@ -641,22 +627,25 @@ cs_advection_field_log_setup(void)
     if (adv->status & CS_ADVECTION_FIELD_LEGACY_FV)
       cs_log_printf(CS_LOG_SETUP,
                     "  * %s | %s\n",
-                    adv->name,
+                    adv->name.c_str(),
                     "Related to Legacy FV schemes\n");
     if (adv->status & CS_ADVECTION_FIELD_STEADY)
-      cs_log_printf(
-        CS_LOG_SETUP, "  * %s | Time status: Steady-state\n", adv->name);
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | Time status: Steady-state\n",
+                    adv->name.c_str());
     else
-      cs_log_printf(
-        CS_LOG_SETUP, "  * %s | Time status: Unsteady\n", adv->name);
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | Time status: Unsteady\n",
+                    adv->name.c_str());
 
     if (adv->post_flag & CS_ADVECTION_FIELD_POST_NONE)
       cs_log_printf(CS_LOG_SETUP,
                     "  * %s | No postprocessing of the adv. field\n",
-                    adv->name);
+                    adv->name.c_str());
     if (adv->post_flag & CS_ADVECTION_FIELD_POST_COURANT)
       cs_log_printf(CS_LOG_SETUP,
-                    "  * %s | Postprocess the Courant number\n", adv->name);
+                    "  * %s | Postprocess the Courant number\n",
+                    adv->name.c_str());
 
     /* Where fields are defined */
 
@@ -671,13 +660,13 @@ cs_advection_field_log_setup(void)
 
     cs_log_printf(CS_LOG_SETUP,
                   "  * %s | Fields defined at cells: %s; at vertices: %s\n",
-                  adv->name,
+                  adv->name.c_str(),
                   cs_base_strtf(at_cells),
                   cs_base_strtf(at_vertices));
     cs_log_printf(CS_LOG_SETUP,
                   "  * %s | Fields defined at boundary faces: %s;"
                   " at interior faces: %s\n\n",
-                  adv->name,
+                  adv->name.c_str(),
                   cs_base_strtf(at_bfaces),
                   cs_base_strtf(at_ifaces));
 
@@ -688,7 +677,8 @@ cs_advection_field_log_setup(void)
 
     cs_log_printf(CS_LOG_SETUP,
                   "  * %s | Number of boundary flux definitions: %d\n",
-                  adv->name, adv->n_bdy_flux_defs);
+                  adv->name.c_str(),
+                  adv->n_bdy_flux_defs);
     if (adv->n_bdy_flux_defs > 0)
       cs_log_printf(CS_LOG_SETUP, "\n");
     for (int ib = 0; ib < adv->n_bdy_flux_defs; ib++) {
@@ -865,16 +855,22 @@ cs_advection_field_def_by_array(cs_adv_field_t *adv,
   /* Checkings */
 
   if ((val_location & CS_FLAG_SCALAR) && context.stride == 3)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Incompatible setting for advection field %s\n"
               " Array is set as a flux while the advection field as a vector.",
-              __func__, adv->name);
+              __func__,
+              adv->name.c_str());
 
   if ((val_location & CS_FLAG_VECTOR) && context.stride == 1)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Incompatible setting for advection field %s\n"
               " Array is set as a vector while the advection field as a flux.",
-              __func__, adv->name);
+              __func__,
+              adv->name.c_str());
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
                                           context.stride,
@@ -910,10 +906,13 @@ cs_advection_field_def_by_field(cs_adv_field_t *adv, cs_field_t *field)
 
   int dim = _get_dim_def(adv);
   if (field->dim != dim)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: Inconsistency found between the field dimension and the"
               " definition of the advection field %s.\n",
-              __func__, adv->name);
+              __func__,
+              adv->name.c_str());
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_FIELD,
                                           dim,
@@ -1030,11 +1029,14 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t *adv,
     return nullptr;
 
   if (val_loc & CS_FLAG_VECTOR)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Advection field: %s\n"
               " The boundary flux is not compatible with a vector-valued"
               " definition.\n",
-              __func__, adv->name);
+              __func__,
+              adv->name.c_str());
 
   cs_flag_t state_flag = 0;
   cs_flag_t meta_flag  = 0;
@@ -1051,7 +1053,8 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t *adv,
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Invalid settings detected for tha adv. field \"%s\"\n"
                   "    A full-length array is set since z_id=0.",
-                  __func__, adv->name);
+                  __func__,
+                  adv->name.c_str());
     cs_log_printf_flush(CS_LOG_WARNINGS);
 
   }
@@ -1109,10 +1112,13 @@ cs_advection_field_def_boundary_flux_by_field(cs_adv_field_t *adv,
   /* Set the stride accord to the status (flux or vector) */
 
   if (field->dim != 1)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: Inconsistency found in the field dimension.\n"
               " A flux is requested (dim = 1) for advection field %s\n",
-              __func__, adv->name);
+              __func__,
+              adv->name.c_str());
 
   cs_xdef_t *d = cs_xdef_boundary_create(CS_XDEF_BY_FIELD,
                                          1, /* dim. */
@@ -1172,9 +1178,9 @@ cs_advection_field_create_fields(void)
 
         /* Define the name of the new field related the cell array */
 
-        len = strlen(adv->name) + strlen("_cells") + 1;
+        len = adv->name.size() + strlen("_cells") + 1;
         CS_MALLOC(field_name, len, char);
-        sprintf(field_name, "%s_cells", adv->name);
+        sprintf(field_name, "%s_cells", adv->name.c_str());
 
         cs_field_t *fld = cs_field_create(field_name,
                                           field_mask,
@@ -1200,9 +1206,9 @@ cs_advection_field_create_fields(void)
       /* The creation of a field to store the value at vertices has been
          requested. Add this field */
 
-      len = strlen(adv->name) + strlen("_vertices") + 1;
+      len = adv->name.size() + strlen("_vertices") + 1;
       CS_MALLOC(field_name, len, char);
-      sprintf(field_name, "%s_vertices", adv->name);
+      sprintf(field_name, "%s_vertices", adv->name.c_str());
 
       cs_field_t *fld = cs_field_create(field_name,
                                         field_mask,
@@ -1227,9 +1233,9 @@ cs_advection_field_create_fields(void)
          into account the normal flux used in the treatment of the boundary
          conditions for instance */
 
-      len = strlen(adv->name) + strlen("_boundary_flux") + 1;
+      len = adv->name.size() + strlen("_boundary_flux") + 1;
       CS_MALLOC(field_name, len, char);
-      sprintf(field_name, "%s_boundary_flux", adv->name);
+      sprintf(field_name, "%s_boundary_flux", adv->name.c_str());
 
       cs_field_t *fld = cs_field_create(field_name,
                                         field_mask,
@@ -1286,11 +1292,14 @@ cs_advection_field_finalize_setup(void)
 
         if (adv->n_bdy_flux_defs > 1
             || adv->bdy_flux_defs[0]->type != CS_XDEF_BY_FIELD)
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     "%s: Invalid setting found for the advection field %s\n"
                     " No need to perform additional setting when the legacy"
                     " FV mass flux is used.\n",
-                    __func__, adv->name);
+                    __func__,
+                    adv->name.c_str());
       }
 
       fld = cs_field_by_name("inner_mass_flux");
@@ -1301,11 +1310,14 @@ cs_advection_field_finalize_setup(void)
       if (adv->definition == nullptr)
         cs_advection_field_def_by_field(adv, fld);
       else if (adv->definition->type != CS_XDEF_BY_FIELD)
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   "%s: Invalid setting found for the advection field %s\n"
                   " No need to perform additional setting when the legacy"
                   " FV mass flux is used.\n",
-                  __func__, adv->name);
+                  __func__,
+                  adv->name.c_str());
     }
 
     if (adv->n_bdy_flux_defs > 1) {
@@ -2732,10 +2744,14 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t *cm,
             = nv.meas * cm->face[f].meas * _dp3(nv.unitv, cm->face[f].unitv);
       }
       else
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   " %s: Invalid support for evaluating the advection field %s"
                   " at the cell center of cell %ld.",
-                  __func__, adv->name, (long)cm->c_id);
+                  __func__,
+                  adv->name.c_str(),
+                  (long)cm->c_id);
     } break; /* Definition by array */
 
     case CS_XDEF_BY_FIELD: {
@@ -2988,10 +3004,13 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t *cm,
           = nv.meas * cm->dface[e].meas * _dp3(nv.unitv, cm->dface[e].unitv);
     }
     else
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 " Invalid support for evaluating the advection field %s"
                 " at the cell center of cell %ld.",
-                adv->name, (long)cm->c_id);
+                adv->name.c_str(),
+                (long)cm->c_id);
 
   } break;
 

@@ -913,7 +913,7 @@ cs_cdofb_navsto_check_init([[maybe_unused]] const cs_navsto_param_t *nsp,
   } /* Loop on cells */
 
   cs::parall::sum(div_norm2);
-  div_norm2 = sqrt(div_norm2);
+  div_norm2 = std::sqrt(div_norm2);
 
   // We choose 1e-6 since it is small but not enougth to avoid to detect false
   // error
@@ -1076,11 +1076,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t   *nsp,
   for (cs_lnum_t i = 0; i < quant->n_b_faces; i++)
     belong_to_default[i] = true;
 
-  cs_real_t *boundary_fluxes = nullptr;
-  CS_MALLOC(boundary_fluxes, boundaries->n_boundaries + 1, cs_real_t);
-  std::memset(boundary_fluxes,
-              0,
-              (boundaries->n_boundaries + 1) * sizeof(cs_real_t));
+  std::vector<cs_real_t> boundary_fluxes(boundaries->n_boundaries + 1, 0.0);
 
   for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
 
@@ -1106,8 +1102,8 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t   *nsp,
 
   /* Parallel synchronization if needed */
 
-  cs_parall_sum(boundaries->n_boundaries + 1, CS_REAL_TYPE, boundary_fluxes);
-  cs_parall_counter_max(&default_case_count, 1);
+  cs::parall::sum(boundary_fluxes);
+  cs::parall::max(default_case_count);
 
   /* Output result */
 
@@ -1140,7 +1136,6 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t   *nsp,
   /* Free temporary buffers */
 
   CS_FREE(belong_to_default);
-  CS_FREE(boundary_fluxes);
 
   /* Predefined post-processing */
   /* ========================== */
@@ -1176,7 +1171,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t   *nsp,
     } /* Loop on cells */
 
     cs::parall::sum(div_norm2);
-    col_vals[n_cols++] = sqrt(div_norm2);
+    col_vals[n_cols++] = std::sqrt(div_norm2);
 
   } /* Velocity divergence */
 
@@ -1868,7 +1863,7 @@ cs_cdofb_block_dirichlet_wsym(short int                  fb,
 
   /* coeff * \meas{f} / h_f  \equiv coeff * h_f */
 
-  const double pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[fb].meas);
+  const double pcoef = eqp->weak_pena_bc_coeff * std::sqrt(cm->face[fb].meas);
 
   bc_op->val[fb * (n_dofs + 1)] += pcoef; /* Diagonal term */
 
@@ -2143,7 +2138,7 @@ cs_cdofb_navsto_nl_algo_cvg(const cs_navsto_param_t *nsp,
 
   double  res = nsp->square_norm_diff(pre_iterate, cur_iterate);
 
-  cs_iter_algo_update_residual(algo, sqrt(res));
+  cs_iter_algo_update_residual(algo, std::sqrt(res));
 
   /* Update the convergence members */
 
@@ -2866,9 +2861,9 @@ cs_cdofb_navsto_check_convergence(cs_navsto_param_t          *nsp,
 
   const cs_real_t dt = ts->dt[0];
 
-  const cs_real_t norm2_flux = sqrt(square_norm2_flux);
+  const cs_real_t norm2_flux = std::sqrt(square_norm2_flux);
   // Simulate temporal derivative
-  const cs_real_t norm2_diff = sqrt(square_norm2_diff) / dt;
+  const cs_real_t norm2_diff = std::sqrt(square_norm2_diff) / dt;
 
   if (norm2_diff < nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux)) {
     cvg_iter = true;

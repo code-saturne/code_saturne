@@ -641,9 +641,7 @@ cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
   CS_MALLOC(belong_to_default, quant->n_b_faces, bool);
   cs_array_bool_fill_true(quant->n_b_faces, belong_to_default);
 
-  cs_real_t *boundary_fluxes = nullptr;
-  CS_MALLOC(boundary_fluxes, boundaries->n_boundaries + 1, cs_real_t);
-  cs_array_real_fill_zero(boundaries->n_boundaries + 1, boundary_fluxes);
+  std::vector<cs_real_t> boundary_fluxes(boundaries->n_boundaries + 1, 0.0);
 
   for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
 
@@ -669,8 +667,8 @@ cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
 
   /* Parallel synchronization if needed */
 
-  cs_parall_sum(boundaries->n_boundaries + 1, CS_REAL_TYPE, boundary_fluxes);
-  cs_parall_counter_max(&default_case_count, 1);
+  cs::parall::sum(boundary_fluxes);
+  cs::parall::max(default_case_count);
 
   /* Output result */
 
@@ -707,7 +705,6 @@ cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
   /* Free temporary buffers */
 
   CS_FREE(belong_to_default);
-  CS_FREE(boundary_fluxes);
 
   /* Predefined post-processing */
   /* ========================== */
@@ -741,7 +738,7 @@ cs_macfb_navsto_extra_op(const cs_navsto_param_t   *nsp,
     } /* Loop on cells */
 
     cs::parall::sum(div_norm2);
-    col_vals[n_cols++] = sqrt(div_norm2);
+    col_vals[n_cols++] = std::sqrt(div_norm2);
 
   } /* Velocity divergence */
 

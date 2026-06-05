@@ -323,7 +323,7 @@ _check_nl_cvg(cs_param_nl_algo_t        nl_algo_type,
 {
   assert(algo != nullptr);
 
-  double  res = sqrt(cs_cdo_blas_square_norm_pcsp_diff(pre_iter, cur_iter));
+  double res = std::sqrt(cs_cdo_blas_square_norm_pcsp_diff(pre_iter, cur_iter));
 
   /* Update the residual value */
 
@@ -501,7 +501,7 @@ _do_monitoring(const cs_cdo_quantities_t *quant,
 
   /* Finalize the monitoring step */
 
-  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_REAL_TYPE, solid->state_ratio);
+  cs::parall::sum(solid->state_ratio);
   const double  inv_voltot = 100./quant->vol_tot;
   for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++)
     solid->state_ratio[i] *= inv_voltot;
@@ -1208,7 +1208,7 @@ _update_velocity_forcing(const cs_mesh_t             *mesh,
    * This should be done done now to avoid going to the cell enforcement whereas
    * there is nothing to do locally */
 
-  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
+  cs::parall::sum(solid->n_g_cells);
 
   assert(cs_property_is_uniform(solid->viscosity));
   const cs_real_t  viscl0 = cs_property_get_cell_value(0, ts->t_cur,
@@ -2817,7 +2817,7 @@ _stefan_thermal_non_linearities(const cs_mesh_t              *mesh,
 
   /* Parallel synchronization of the number of cells in each state */
 
-  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
+  cs::parall::sum(solid->n_g_cells);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2883,7 +2883,7 @@ _voller_prakash_87(const cs_mesh_t              *mesh,
   /* Parallel synchronization of the number of cells in each state (It should
      be done after _enforce_solid_cells() */
 
-  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
+  cs::parall::sum(solid->n_g_cells);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2926,7 +2926,7 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
 
   cs_iter_algo_reset(algo);
 
-  double  normalization = sqrt(cs_cdo_blas_square_norm_pcsp(hkp1));
+  double normalization = std::sqrt(cs_cdo_blas_square_norm_pcsp(hkp1));
   if (normalization > cs_math_zero_threshold)
     cs_iter_algo_set_normalization(algo, normalization);
 
@@ -3001,7 +3001,7 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
   /* Parallel synchronization of the number of cells in each state (It should
      be done after _enforce_solid_cells() */
 
-  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
+  cs::parall::sum(solid->n_g_cells);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3136,7 +3136,7 @@ _default_binary_coupling(const cs_mesh_t           *mesh,
 
       cs_real_t  parall_delta_max[2] = {delta_temp, delta_cbulk};
 
-      cs_parall_max(2, CS_REAL_TYPE, parall_delta_max);
+      cs::parall::max(parall_delta_max);
 
       delta_temp = parall_delta_max[0];
       delta_cbulk = parall_delta_max[1];
@@ -5254,7 +5254,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
 
       cs::parall::sum(si, vol_tot);
 
-      output_values[n_output_values] = sqrt(si/vol_tot);
+      output_values[n_output_values] = std::sqrt(si / vol_tot);
       n_output_values++;
 
     }

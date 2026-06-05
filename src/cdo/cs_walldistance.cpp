@@ -142,7 +142,8 @@ _compute_poisson_cdovcb(const cs_cdo_connect_t    *connect,
     cs_real_t vgrd2 = _dp3(vtx_gradient[i], vtx_gradient[i]);
     if (vgrd2 + 2 * var[i] < 0)
       count++;
-    cs_real_t d1 = sqrt(vgrd2 + 2 * cs::abs(var[i])), d2 = sqrt(vgrd2);
+    cs_real_t d1 = std::sqrt(vgrd2 + 2 * cs::abs(var[i])),
+              d2 = std::sqrt(vgrd2);
     if (d1 - d2 < 0)
       dist[i] = d1 + d2;
     else
@@ -279,7 +280,8 @@ _compute_poisson_cdovb(const cs_cdo_connect_t    *connect,
     cs_real_t vgrd2 = _dp3(vtx_gradient[i], vtx_gradient[i]);
     if (vgrd2 + 2 * var[i] < 0)
       count++;
-    cs_real_t d1 = sqrt(vgrd2 + 2 * cs::abs(var[i])), d2 = sqrt(vgrd2);
+    cs_real_t d1 = std::sqrt(vgrd2 + 2 * cs::abs(var[i])),
+              d2 = std::sqrt(vgrd2);
     if (d1 - d2 < 0)
       dist[i] = d1 + d2;
     else
@@ -361,7 +363,7 @@ _compute_poisson_cdofb(const cs_cdo_connect_t    *connect,
     cs_real_t tmp = _dp3(cell_gradient, cell_gradient) + 2 * c_var[c_id];
     assert(tmp >= 0.); /* Sanity check */
 
-    dist[c_id] = sqrt(tmp) - cs_math_3_norm(cell_gradient);
+    dist[c_id] = std::sqrt(tmp) - cs_math_3_norm(cell_gradient);
 
   } /* Loop on cells */
 

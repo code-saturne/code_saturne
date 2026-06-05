@@ -31,6 +31,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include <string>
+
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_flag.h"
@@ -223,7 +225,7 @@ typedef struct cs_cell_sys_t {
   /*--------------------------------------------------------------------------*/
 
   void
-  dump(const char msg[]) const;
+  dump(const std::string &msg) const;
 
 } cs_cell_sys_t;
 

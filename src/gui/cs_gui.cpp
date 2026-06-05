@@ -5883,8 +5883,6 @@ cs_gui_time_tables(void)
 void
 cs_gui_physical_variable(void)
 {
-  double time0 = cs_timer_wtime();
-
   int n_zones_pp
     = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_PHYSICAL_PROPERTIES);
   int n_zones = cs_volume_zone_n_zones();

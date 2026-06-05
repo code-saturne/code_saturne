@@ -868,11 +868,11 @@ _compute_quant_info(cs_cdo_quantities_t *quant)
 
     if (meas > quant->face_info.meas_max) {
       quant->face_info.meas_max = meas;
-      quant->face_info.h_max    = sqrt(meas);
+      quant->face_info.h_max    = std::sqrt(meas);
     }
     if (meas < quant->face_info.meas_min) {
       quant->face_info.meas_min = meas;
-      quant->face_info.h_min    = sqrt(meas);
+      quant->face_info.h_min    = std::sqrt(meas);
     }
 
   } /* Loop on interior faces */
@@ -882,11 +882,11 @@ _compute_quant_info(cs_cdo_quantities_t *quant)
 
     if (meas > quant->face_info.meas_max) {
       quant->face_info.meas_max = meas;
-      quant->face_info.h_max    = sqrt(meas);
+      quant->face_info.h_max    = std::sqrt(meas);
     }
     if (meas < quant->face_info.meas_min) {
       quant->face_info.meas_min = meas;
-      quant->face_info.h_min    = sqrt(meas);
+      quant->face_info.h_min    = std::sqrt(meas);
     }
 
   } /* Loop on border faces */
@@ -918,7 +918,7 @@ _compute_quant_info(cs_cdo_quantities_t *quant)
                        quant->edge_info.meas_max,  quant->edge_info.h_max,
                        -quant->edge_info.meas_min, -quant->edge_info.h_min };
 
-    cs_parall_max(12, CS_DOUBLE, buf);
+    cs::parall::max(buf);
 
     quant->cell_info.meas_max = buf[0];
     quant->cell_info.h_max    = buf[1];
@@ -1327,7 +1327,7 @@ _update_subdiv_face_quantities(cs_lnum_t           n_faces,
         for (int k = 0; k < 3; k++)
           delta_xf[k] = new_xf[k] - ref_xf[k];
 
-        tol = _n3(delta_xf) * sqrt(1. / f_surf[f_id]);
+        tol = _n3(delta_xf) * std::sqrt(1. / f_surf[f_id]);
         iter++;
 
         for (int k = 0; k < 3; k++)
@@ -1796,16 +1796,16 @@ cs_cdo_quantities_t::check(int                         verb,
 
   cs_gnum_t counters[4] =
     {n_neg_volumes, n_c_issues, n_fc_issues, n_vc_issues};
-  cs_parall_counter(counters, 4);
+  cs::parall::sum(counters);
   n_neg_volumes = counters[0];
   n_c_issues    = counters[1];
   n_fc_issues   = counters[2];
   n_vc_issues   = counters[3];
 
-  cs_parall_min(1, CS_DOUBLE, &min_vol);
+  cs::parall::min(min_vol);
 
   double max_pct[3] = {max_c_pct, max_fc_pct, max_vc_pct};
-  cs_parall_max(3, CS_DOUBLE, &max_pct);
+  cs::parall::max(max_pct);
   max_c_pct  = max_pct[0];
   max_fc_pct = max_pct[1];
   max_vc_pct = max_pct[2];

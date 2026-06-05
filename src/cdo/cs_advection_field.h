@@ -31,6 +31,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include <string>
+
 #include "base/cs_field.h"
 #include "base/cs_param_types.h"
 #include "cdo/cs_cdo_connect.h"
@@ -195,7 +197,7 @@ typedef struct {
    */
 
   int                           id;
-  char                *restrict name;
+  std::string                   name;
   cs_advection_field_status_t   status;
   cs_flag_t                     post_flag;
 
@@ -303,11 +305,11 @@ cs_advection_field_is_cellwise(const cs_adv_field_t   *adv)
  */
 /*----------------------------------------------------------------------------*/
 
-static inline const char *
-cs_advection_field_get_name(const cs_adv_field_t   *adv)
+static inline std::string
+cs_advection_field_get_name(const cs_adv_field_t *adv)
 {
-  if (adv == NULL)
-    return NULL;
+  if (adv == nullptr)
+    return std::string("");
 
   return adv->name;
 }
@@ -432,7 +434,7 @@ cs_advection_field_get_n_fields(void);
 /*----------------------------------------------------------------------------*/
 
 cs_adv_field_t *
-cs_advection_field_by_name(const char   *name);
+cs_advection_field_by_name(const std::string &name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -497,8 +499,8 @@ cs_advection_field_destroy_all(void);
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_advection_field_check_name(const cs_adv_field_t   *adv,
-                              const char             *ref_name);
+cs_advection_field_check_name(const cs_adv_field_t *adv,
+                              const std::string    &ref_name);
 
 /*----------------------------------------------------------------------------*/
 /*!

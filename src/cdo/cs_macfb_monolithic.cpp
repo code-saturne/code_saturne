@@ -1451,7 +1451,8 @@ cs_macfb_monolithic_steady_nl(const cs_mesh_t         *mesh,
      mass flux norm */
 
   cs_iter_algo_set_normalization(nl_algo,
-                                 sqrt(nsp->square_norm(sc->mass_flux_array)));
+                                 std::sqrt(
+                                   nsp->square_norm(sc->mass_flux_array)));
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
@@ -1692,7 +1693,8 @@ cs_macfb_monolithic_nl(const cs_mesh_t         *mesh,
      mass flux norm */
 
   cs_iter_algo_set_normalization(nl_algo,
-                                 sqrt(nsp->square_norm(sc->mass_flux_array)));
+                                 std::sqrt(
+                                   nsp->square_norm(sc->mass_flux_array)));
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START

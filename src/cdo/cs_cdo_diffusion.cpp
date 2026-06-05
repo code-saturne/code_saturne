@@ -2006,7 +2006,7 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Update the RHS and the local system matrix */
 
-      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi / std::sqrt(fm->face.meas), fm, ntrgrd, csys);
 
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
@@ -2096,7 +2096,7 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Update the RHS and the local system matrix */
 
-      const double  pcoef = chi/sqrt(cm->face[f].meas);
+      const double pcoef = chi / std::sqrt(cm->face[f].meas);
 
       for (short int v = 0; v < fm->n_vf; v++) {
 
@@ -2228,7 +2228,8 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
 
       /* Add contribution to the linear system of the penalized part */
 
-      const double  pcoef = eqp->weak_pena_bc_coeff/sqrt(cm->face[f].meas);
+      const double pcoef =
+        eqp->weak_pena_bc_coeff / std::sqrt(cm->face[f].meas);
 
       for (int vfi = 0; vfi < fm->n_vf; vfi++) {
 
@@ -2364,7 +2365,7 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Update the RHS and the local system matrix */
 
-      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi / std::sqrt(fm->face.meas), fm, ntrgrd, csys);
 
       /* Add contribution to the linear system */
 
@@ -2552,9 +2553,9 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
       /* Update the RHS and the local system matrix */
 
 #if 1 /* Default choice */
-      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi / std::sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
-      _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
+      _wbs_nitsche(chi / std::sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
 #endif
 
       /* Add contribution to the linear system */
@@ -2655,9 +2656,9 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
       /* Update the RHS and the local system matrix */
 
 #if 1 /* Default choice */
-      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi / std::sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
-      _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
+      _wbs_nitsche(chi / std::sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
 #endif
 
       /* Add contribution to the linear system */
@@ -2741,9 +2742,9 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
       /* Update the RHS and the local system matrix */
 
 #if 1 /* Default choice */
-      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi / std::sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
-      _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
+      _wbs_nitsche(chi / std::sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
 #endif
 
       /* Add contribution to the linear system */
@@ -2840,9 +2841,9 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
       /* Update the RHS and the local system matrix */
 
 #if 1 /* Default choice */
-      _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
+      _svb_nitsche(chi / std::sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
-      _wbs_nitsche(chi/sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
+      _wbs_nitsche(chi / std::sqrt(cm->face[f].meas), fm, ntrgrd, cb, csys);
 #endif
 
       /* Add contribution to the linear system */
