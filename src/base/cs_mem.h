@@ -174,9 +174,9 @@ _ptr = (_type *) cs_mem_memalign(_align, _ni, sizeof(_type), \
 
 #if defined(HAVE_ACCEL)
 
-extern cs_alloc_mode_t  cs_alloc_mode;
-extern cs_alloc_mode_t  cs_alloc_mode_read_mostly;
-extern cs_alloc_mode_t  cs_alloc_mode_device;
+extern "C" cs_alloc_mode_t  cs_alloc_mode;
+extern "C" cs_alloc_mode_t  cs_alloc_mode_read_mostly;
+extern "C" cs_alloc_mode_t  cs_alloc_mode_device;
 
 #else
 

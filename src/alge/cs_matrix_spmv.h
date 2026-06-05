@@ -37,10 +37,6 @@
 #include "alge/cs_matrix_priv.h"
 #include "alge/cs_matrix.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -65,7 +61,7 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
+cs_matrix_spmv_set_defaults(cs_matrix_t *m);
 
 /*----------------------------------------------------------------------------
  * Select the sparse matrix-vector product function to be used by a
@@ -123,20 +119,17 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *----------------------------------------------------------------------------*/
 
 int
-cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
-                        cs_matrix_fill_type_t        fill_type,
-                        cs_matrix_spmv_type_t        spmv_type,
-                        const cs_numbering_t        *numbering,
-                        const char                  *func_name,
-                        cs_matrix_vector_product_t  *spmv[CS_MATRIX_SPMV_N_TYPES],
-                        char                   spmv_xy_hd[CS_MATRIX_SPMV_N_TYPES]);
+cs_matrix_spmv_set_func(
+  cs_matrix_type_t            m_type,
+  cs_matrix_fill_type_t       fill_type,
+  cs_matrix_spmv_type_t       spmv_type,
+  const cs_numbering_t       *numbering,
+  const char                 *func_name,
+  cs_matrix_vector_product_t *spmv[CS_MATRIX_SPMV_N_TYPES],
+  char                        spmv_xy_hd[CS_MATRIX_SPMV_N_TYPES]);
 
 /*======================================à=======================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MATRIX_SPMV_H */

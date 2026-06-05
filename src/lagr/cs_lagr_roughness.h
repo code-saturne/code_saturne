@@ -32,10 +32,6 @@
 #include "base/cs_defs.h"
 #include "lagr/cs_lagr_particle.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -111,10 +107,6 @@ cs_lagr_roughness_barrier(cs_lagr_particle_set_t          p_set,
                           cs_lnum_t                       p_id,
                           cs_lnum_t                       iel,
                           cs_real_t                      *energy_barrier);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_LAGR_ROUGHNESS_H */
 

@@ -34,10 +34,6 @@
 #include "mesh/cs_mesh.h"
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -101,9 +97,5 @@ cs_mesh_refine_simple_selected(cs_mesh_t        *m,
 void
 cs_mesh_refine_set_option(const char  *key,
                           const char  *value);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MESH_REFINE_H */

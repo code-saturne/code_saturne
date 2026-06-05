@@ -39,10 +39,6 @@
 #include "base/cs_defs.h"
 #include "mesh/cs_mesh.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -463,9 +459,5 @@ cs_mesh_location_get_explicit_ids(int id);
 void
 cs_mesh_location_set_explicit_ids(int   id,
                                   bool  explicit_elt_ids);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MESH_LOCATION_H */

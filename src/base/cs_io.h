@@ -83,7 +83,7 @@ typedef struct {
 
 /* Default hints for files using this API (for MPI-IO) */
 
-extern int       cs_glob_io_hints;
+extern "C"  int cs_glob_io_hints;
 
 /*============================================================================
  * Public function prototypes

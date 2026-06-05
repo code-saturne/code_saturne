@@ -164,7 +164,7 @@ typedef struct {
 } cs_porosity_ibm_opt_t;
 
 /* Pointer to options structure */
-extern cs_porosity_ibm_opt_t *cs_glob_porosity_ibm_opt;
+extern "C" cs_porosity_ibm_opt_t *cs_glob_porosity_ibm_opt;
 
 typedef struct
 {
@@ -244,7 +244,7 @@ typedef struct
 
 /* Pointer to the cs_ibm structure for various arrays */
 
-extern cs_ibm_t  *cs_ibm;
+extern "C" cs_ibm_t  *cs_ibm;
 
 /*============================================================================
  * Public function prototypes

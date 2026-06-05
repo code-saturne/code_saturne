@@ -117,7 +117,7 @@ typedef struct {
 
 /* Names for numbering types */
 
-extern const char  *cs_numbering_type_name[];
+extern "C" const char  *cs_numbering_type_name[];
 
 /*=============================================================================
  * Public function prototypes

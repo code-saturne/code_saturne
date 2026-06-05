@@ -34,10 +34,6 @@
 #include "base/cs_param_types.h"
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*!
   \file cs_param_amg.h
 
@@ -700,9 +696,5 @@ cs_param_amg_get_inhouse_solver_name(cs_param_amg_inhouse_solver_t  solver);
 void
 cs_param_amg_inhouse_log(const char                    *name,
                          const cs_param_amg_inhouse_t  *amgp);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_PARAM_AMG_H */

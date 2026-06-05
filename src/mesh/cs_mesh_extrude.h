@@ -34,10 +34,6 @@
 #include "mesh/cs_mesh.h"
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -218,9 +214,5 @@ cs_mesh_extrude_vectors_create(const cs_mesh_extrude_face_info_t  *efi);
 
 void
 cs_mesh_extrude_vectors_destroy(cs_mesh_extrude_vectors_t  **e);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MESH_EXTRUDE_H */

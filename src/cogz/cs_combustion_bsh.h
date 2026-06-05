@@ -39,10 +39,6 @@
 
 #include "cogz/cs_combustion_gas.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -91,9 +87,5 @@ cs_compute_burke_schumann_enthalpy
   cs_real_t t,
   cs_real_t yspec[CS_COMBUSTION_GAS_MAX_ELEMENTARY_COMPONENTS]
 );
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_COMBUSTION_BSH_HEADERS_H */

@@ -40,10 +40,6 @@
 #include "base/cs_defs.h"
 #include "mesh/cs_mesh_builder.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -160,9 +156,5 @@ void
 cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
                                cs_mesh_builder_t  *mesh_builder,
                                bool                ignore_cartesian);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_PRE_PROCESSOR_DATA_H */

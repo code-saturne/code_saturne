@@ -29,10 +29,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -140,9 +136,5 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev,
                                   cs_real_3_t   *grad_lagr_time_r_et,
                                   cs_real_3_t   *grad_lagr_time,
                                   cs_real_4_t   *anisotropic_euler);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_LAGR_AUX_MEAN_FLUID_QUANTITIES_H */

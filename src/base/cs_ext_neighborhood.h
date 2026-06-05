@@ -68,7 +68,7 @@ typedef enum {
 
 /* Short names for extended neighborhood types */
 
-extern const char *cs_ext_neighborhood_type_name[];
+extern "C" const char *cs_ext_neighborhood_type_name[];
 
 /*============================================================================
  * Public function prototypes

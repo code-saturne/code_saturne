@@ -34,10 +34,6 @@
 #include "base/cs_defs.h"
 #include "base/cs_restart.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -75,9 +71,5 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r);
 
 int
 cs_lagr_restart_write_particle_data(cs_restart_t  *r);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_LAGR_RESTART_H */

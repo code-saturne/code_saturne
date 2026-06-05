@@ -38,9 +38,6 @@
 #include "base/cs_block_dist.h"
 #include "base/cs_interface.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -179,9 +176,5 @@ cs_mesh_builder_extract_periodic_faces_g(int                        n_init_perio
                                          const cs_interface_set_t  *face_ifs);
 
 #endif /* defined(HAVE_MPI) */
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MESH_BUILDER_H */

@@ -253,7 +253,7 @@ struct cs_field_pointer_array_t {
 
 /* Pointers */
 
-extern struct cs_field_pointer_array_t  *cs_glob_field_pointers;
+extern "C" struct cs_field_pointer_array_t  *cs_glob_field_pointers;
 
 /*=============================================================================
  * Public function prototypes

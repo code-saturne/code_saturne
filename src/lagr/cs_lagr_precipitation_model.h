@@ -29,10 +29,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -66,9 +62,5 @@ cs_lagr_precipitation_mass_st(cs_real_t        dtref,
 void
 cs_lagr_precipitation_injection(cs_real_t   *vela,
                                 cs_real_t   *val);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_LAGR_PRECIPITATION_H */

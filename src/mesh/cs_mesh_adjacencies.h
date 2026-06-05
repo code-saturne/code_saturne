@@ -41,13 +41,7 @@
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*=============================================================================
- * Macro definitions
- *============================================================================*/
+/*============================================================================*/
 
 /*!
  * @defgroup adjacency flags specifying metadata related to a cs_adjacency_t
@@ -523,9 +517,5 @@ cs_mesh_adjacency_c2f_boundary(const cs_mesh_t  *m);
 
 cs_adjacency_t *
 cs_mesh_adjacency_v2v(const cs_mesh_t  *m);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MESH_ADJACENCIES__ */

@@ -36,10 +36,6 @@
 #include "alge/cs_sles_it.h"
 #include "alge/cs_sles_pc.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -582,9 +578,5 @@ cs_multigrid_set_merge_bottom_options(cs_multigrid_t  *mg,
 const cs_grid_t *
 cs_multigrid_get_grid(const cs_multigrid_t  *mg,
                       int                    level);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MULTIGRID_H */

@@ -37,10 +37,6 @@
 #include "bft/bft_printf.h"
 #include "turb/cs_turbulence_model.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -1357,9 +1353,5 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
                          cs_real_t           dplus,
                          cs_real_t          *htur,
                          cs_real_t          *yplim);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_WALL_FUNCTIONS_H */

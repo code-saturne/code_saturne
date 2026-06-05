@@ -129,11 +129,11 @@ typedef long cs_file_off_t;
 
 /* names associated with file access methods */
 
-extern const char  *cs_file_access_name[];
+extern "C" const char  *cs_file_access_name[];
 
 /* names associated with MPI-IO positioning */
 
-extern const char  *cs_file_mpi_positioning_name[];
+extern "C" const char  *cs_file_mpi_positioning_name[];
 
 /*=============================================================================
  * Public function prototypes

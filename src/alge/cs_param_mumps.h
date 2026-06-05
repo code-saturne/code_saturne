@@ -31,10 +31,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*!
   \file cs_param_mumps.h
 
@@ -251,9 +247,5 @@ cs_param_mumps_copy(const cs_param_mumps_t  *mumpsp);
 void
 cs_param_mumps_log(const char              *name,
                    const cs_param_mumps_t  *mumpsp);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_PARAM_MUMPS_H */

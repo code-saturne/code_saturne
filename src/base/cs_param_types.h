@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -1151,9 +1147,5 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond);
 
 const char *
 cs_param_get_precond_block_name(cs_param_precond_block_t   type);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_PARAM_TYPES_H */
