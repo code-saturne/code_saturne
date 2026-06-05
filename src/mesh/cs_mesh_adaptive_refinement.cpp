@@ -57,12 +57,19 @@
 #include "alge/cs_matrix_default.h"
 
 #include "base/cs_array.h"
+#include "base/cs_boundary_conditions.h"
 #include "base/cs_ext_neighborhood.h"
 #include "base/cs_field.h"
+#include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_renumber.h"
+#include "base/cs_renumber_update.h"
+#include "base/cs_timer_stats.h"
+
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_coarsen.h"
@@ -70,11 +77,6 @@
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_refine.h"
-#include "base/cs_boundary_conditions.h"
-#include "base/cs_field_default.h"
-#include "base/cs_parall.h"
-#include "base/cs_renumber.h"
-#include "base/cs_renumber_update.h"
 #include "mesh/cs_redistribute.h"
 
 /*----------------------------------------------------------------------------
@@ -112,6 +114,17 @@ static cs_amr_info_t _amr_info = {
 };
 
 cs_amr_info_t *cs_glob_amr_info = &_amr_info;
+
+/* Timer statistics */
+
+static cs_timer_counter_t   _amr_t_tot;           /* Total time in AMR */
+static cs_timer_counter_t   _amr_t_coarsen;       /* Coarsening time */
+static cs_timer_counter_t   _amr_t_refine;        /* Refinement time */
+static cs_timer_counter_t   _amr_t_data;          /* Data update time */
+static cs_timer_counter_t   _amr_t_load_balance;  /* Load balancing time */
+static cs_timer_counter_t   _amr_t_renumber;      /* Renumbering */
+
+static int _amr_stat_id = -1;
 
 /*============================================================================
  * Private function definitions
@@ -1277,13 +1290,43 @@ _coarsen_step(const int indic[])
   CS_FREE(selected_cells);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize AMR.
+ *
+ * This simply logs associated timers.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_amr_finalize(void)
+{
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Total elapsed time for AMR:  %.3f s\n\n"
+                  "  Mesh coarsening:  %.3f s\n"
+                  "  Mesh refinement:  %.3f s\n"
+                  "  Data updates:  %.3f s\n"
+                  "  Load balancing:  %.3f s\n"
+                  "  Renumbering:  %.3f s\n\n"),
+                _amr_t_tot.nsec*1e-9,
+                _amr_t_coarsen.nsec*1e-9,
+                _amr_t_refine.nsec*1e-9,
+                _amr_t_data.nsec*1e-9,
+                _amr_t_load_balance.nsec*1e-9,
+                _amr_t_renumber.nsec*1e-9);
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
+}
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Activation and Initializing af the global AMR strcture
+ * \brief Activation and Initializing af the global AMR structure
  *
  * \param[in]  n_layers      number of layers of refinement around user criteria
  * \param[in]  nt_interval   time_step interval between adaptation steps
@@ -1301,6 +1344,18 @@ cs_adaptive_refinement_define(int                     n_layers,
                               int                     interpolation,
                               [[maybe_unused]] bool   load_balance)
 {
+  if (! _amr_info.is_set) {
+    CS_TIMER_COUNTER_INIT(_amr_t_tot);
+    CS_TIMER_COUNTER_INIT(_amr_t_coarsen);
+    CS_TIMER_COUNTER_INIT(_amr_t_refine);
+    CS_TIMER_COUNTER_INIT(_amr_t_data);
+    CS_TIMER_COUNTER_INIT(_amr_t_load_balance);
+    CS_TIMER_COUNTER_INIT(_amr_t_renumber);
+
+    // Set finalization callback
+    _amr_finalize();
+  }
+
   _amr_info.is_set = true;
   _amr_info.n_layers = n_layers;
   cs_time_control_init_by_time_step(&_amr_info.time_control,
@@ -1322,6 +1377,13 @@ cs_adaptive_refinement_define(int                     n_layers,
   _amr_info.load_balance = load_balance;
 
   cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_CONNECT;
+
+  // Initialize timers.
+
+  int stats_root = cs_timer_stats_id_by_name("operations");
+  if (stats_root > -1) {
+    _amr_stat_id = cs_timer_stats_create("operations", "AMR", "AMR");
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1430,9 +1492,11 @@ cs_adaptive_refinement_step(void)
                     "Starting mesh adaptation (AMR)\n"
                     "------------------------------\n\n"));
 
-  cs_mesh_t *mesh = cs_glob_mesh;
-  int *&indic = cs_glob_amr_info->indic_cells;
+  cs_timer_t t0 = cs_timer_time();
 
+  cs_mesh_t *mesh = cs_glob_mesh;
+
+  int *&indic = cs_glob_amr_info->indic_cells;
   CS_MALLOC(indic, mesh->n_cells_with_ghosts, int);
   memset(indic, 0, mesh->n_cells_with_ghosts*sizeof(int));
 
@@ -1440,31 +1504,56 @@ cs_adaptive_refinement_step(void)
 
   _propagate_refinement(mesh, indic);
 
-  _build_coarsen_refine_buffer_zone(mesh, indic);
+  cs_timer_t t1 = cs_timer_time();
 
+  _build_coarsen_refine_buffer_zone(mesh, indic);
   _coarsen_step(indic);
+
+  cs_timer_t t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&_amr_t_coarsen, &t1, &t2);
 
   _update_amr_mesh_data(mesh);
 
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_amr_t_data, &t2, &t1);
+
   _refine_step(indic);
+
+  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&_amr_t_refine, &t1, &t2);
 
   _update_amr_mesh_data(mesh);
 
   CS_FREE(indic);
 
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_amr_t_data, &t2, &t1);
+
   /* We could use a more advanced test to perform load balancing only
      if imbalance reaches a certain threshold. */
 
-  if (cs_glob_amr_info->load_balance)
+  if (cs_glob_amr_info->load_balance) {
     _load_balance(true);
 
+    t2 = cs_timer_time();
+    cs_timer_counter_add_diff(&_amr_t_load_balance, &t1, &t2);
+    t1 = t2;
+  }
+
   cs_renumber_update();
+  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&_amr_t_renumber, &t1, &t2);
 
   if (cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n"
                     "Completed mesh adaptation\n"
                     "-------------------------\n\n"));
+
+  cs_timer_counter_add_diff(&_amr_t_tot, &t0, &t1);
+
+  if (_amr_stat_id > -1)
+    cs_timer_stats_add_diff(_amr_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
