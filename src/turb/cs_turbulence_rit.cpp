@@ -158,7 +158,7 @@ _turb_flux_st(const char          *name,
     = (cs_turb_model_type_t)cs_glob_turb_model->model;
 
   /* Get the turbulent flux model */
-  int turb_flux_model =  f->get_key_int("turbulent_flux_model");
+  int turb_flux_model = f->get_key_int("turbulent_flux_model");
 
   if (f_tv != nullptr) {
     cvar_tt = f_tv->val;
@@ -211,8 +211,24 @@ _turb_flux_st(const char          *name,
 
   const cs_real_t rhebdfm = 0.5;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
+#if defined(HAVE_ACCEL)
+  cs_real_t *_grav = nullptr;
+  if (cs_get_device_id() > -1) {
+    CS_MALLOC_HD(_grav, 3, cs_real_t, cs_alloc_mode);
+    for (int i = 0; i < 3; i++) {
+      _grav[i] = cs_glob_physical_constants->gravity[i];
+    }
 
-  cs_field_t *f_beta2 = cs_field_try("algo:rij_beta2");
+    cs_mem_advise_set_read_mostly(_grav);
+
+    grav = _grav;
+  }
+#endif
+
+  cs_field_t * f_beta2 = cs_field_try("algo:rij_beta2");
+  cs_real_t * v_beta2 = nullptr;
+  if (f_beta2 != nullptr)
+    v_beta2 = f_beta2->val;
 
   const cs_real_t c1trit = cs_turb_c1trit;
   const cs_real_t crij1  = cs_turb_crij1;
@@ -301,8 +317,8 @@ _turb_flux_st(const char          *name,
           pk -= xrij[i][j]*gradv[c_id][i][j];
       }
 
-      if (f_beta2 != nullptr)
-        beta2 = f_beta2->val[c_id];
+      if (v_beta2 != nullptr)
+        beta2 = v_beta2[c_id];
 
       for (cs_lnum_t i = 0; i < 3; i++) {
         /* Pope 1994:
@@ -326,7 +342,7 @@ _turb_flux_st(const char          *name,
             * (gradv[c_id][i][j]+gradv[c_id][j][i])* xuta[c_id][j];
 
          if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
-             && rans_mdl->has_buoyant_term == 1)
+             && has_buoyant_term == 1)
            phiit[i] += c3trit*(cpro_beta[c_id] * grav[i] * cvar_tt[c_id]);
 
          if (f_phi_ut != nullptr) /* Save it if needed */
@@ -350,7 +366,7 @@ _turb_flux_st(const char          *name,
                                 -xrij[2][i] * gradt[c_id][2]);
 
          if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
-             && rans_mdl->has_buoyant_term == 1)
+             && has_buoyant_term == 1)
            phiith[i] += c3trit*(cpro_beta[c_id] * grav[i] * cvar_tt[c_id]);
 
          phiitw[i] =   -1. / xttdrbw *xxc1   /* FIXME full implicit */
@@ -374,82 +390,82 @@ _turb_flux_st(const char          *name,
     }
 
     for (cs_lnum_t i = 0; i < 3; i++) {
-       /* Production terms
-        *----------------- */
+      /* Production terms
+       *----------------- */
 
-       /* Production term due to the mean velocity */
-       const cs_real_t prod_by_vel_grad_i =
-         - cs_math_3_dot_product(gradv[c_id][i], xuta[c_id]);
-       if (prod_by_vel_grad_ut != nullptr) /* Save it if needed */
-         prod_by_vel_grad_ut[c_id][i] = prod_by_vel_grad_i;
+      /* Production term due to the mean velocity */
+      const cs_real_t prod_by_vel_grad_i =
+        - cs_math_3_dot_product(gradv[c_id][i], xuta[c_id]);
+      if (prod_by_vel_grad_ut != nullptr) /* Save it if needed */
+        prod_by_vel_grad_ut[c_id][i] = prod_by_vel_grad_i;
 
-       /* Production term due to the mean temperature */
+      /* Production term due to the mean temperature */
       const cs_real_t prod_by_scal_grad_i =  - (   xrij[i][0]*gradt[c_id][0]
                                                  + xrij[i][1]*gradt[c_id][1]
                                                  + xrij[i][2]*gradt[c_id][2]);
-       if (prod_by_scal_grad_ut != nullptr) /* Save it if needed */
-         prod_by_scal_grad_ut[c_id][i] = prod_by_scal_grad_i;
+      if (prod_by_scal_grad_ut != nullptr) /* Save it if needed */
+        prod_by_scal_grad_ut[c_id][i] = prod_by_scal_grad_i;
 
-       /* Production term due to the gravity */
-       cs_real_t buoyancy_i = 0.;
-       if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
-           && rans_mdl->has_buoyant_term == 1)
-         buoyancy_i = -grav[i] * cpro_beta[c_id] * cvara_tt[c_id];
+      /* Production term due to the gravity */
+      cs_real_t buoyancy_i = 0.;
+      if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
+          && has_buoyant_term == 1)
+        buoyancy_i = -grav[i] * cpro_beta[c_id] * cvara_tt[c_id];
 
-       if (buo_ut != nullptr) /* Save it if needed */
-         buo_ut[c_id][i] = buoyancy_i;
+      if (buo_ut != nullptr) /* Save it if needed */
+        buo_ut[c_id][i] = buoyancy_i;
 
-       /* Dissipation (Wall term only because "h" term is zero */
-       const cs_real_t dissip_i =  (1.-alpha)/xttdrbw
-                                 * (  xxc2 * xuta[c_id][i]
-                                    + xxc3 * (  xuta[c_id][0]*xnal[0]*xnal[i]
-                                              + xuta[c_id][1]*xnal[1]*xnal[i]
-                                              + xuta[c_id][2]*xnal[2]*xnal[i]));
-       if (dissip_ut != nullptr)/* Save it if needed */
-         dissip_ut[c_id][i] = dissip_i;
+      /* Dissipation (Wall term only because "h" term is zero */
+      const cs_real_t dissip_i =  (1.-alpha)/xttdrbw
+                                * (  xxc2 * xuta[c_id][i]
+                                   + xxc3 * (  xuta[c_id][0]*xnal[0]*xnal[i]
+                                             + xuta[c_id][1]*xnal[1]*xnal[i]
+                                             + xuta[c_id][2]*xnal[2]*xnal[i]));
+      if (dissip_ut != nullptr)/* Save it if needed */
+        dissip_ut[c_id][i] = dissip_i;
 
-       /* Save production terms for post-processing */
-       if (prod_ut != nullptr)
-         prod_ut[c_id][i] = prod_by_vel_grad_i + prod_by_scal_grad_i
-                          + buoyancy_i - dissip_i;
+      /* Save production terms for post-processing */
+      if (prod_ut != nullptr)
+        prod_ut[c_id][i] = prod_by_vel_grad_i + prod_by_scal_grad_i
+                         + buoyancy_i - dissip_i;
 
-       rhs_ut[c_id][i] += (  prod_by_vel_grad_i + prod_by_scal_grad_i
-                           + buoyancy_i + phiit[i] - dissip_i)
-                         * cell_f_vol[c_id]*crom[c_id];
+      rhs_ut[c_id][i] += (  prod_by_vel_grad_i + prod_by_scal_grad_i
+                          + buoyancy_i + phiit[i] - dissip_i)
+                        * cell_f_vol[c_id]*crom[c_id];
 
-       /* TODO we can implicit more terms */
-       cs_real_t imp_term =   cell_f_vol[c_id] * crom[c_id]
-                  * (1.-alpha)/xttdrbw * (xxc2+xxc3*xnal[i]*xnal[i]);
+      /* TODO we can implicit more terms */
+      cs_real_t imp_term =   cell_f_vol[c_id] * crom[c_id]
+                 * (1.-alpha)/xttdrbw * (xxc2+xxc3*xnal[i]*xnal[i]);
 
-       fimp[c_id][i][i] += cs::max(imp_term, 0);
+      fimp[c_id][i][i] += cs::max(imp_term, 0);
 
-       if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
-           && rans_mdl->has_buoyant_term == 1) {
+      if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
+          && has_buoyant_term == 1) {
 
-         /* Stable if negative w'T' */
-         cs_real_t mez[3];
-         cs_math_3_normalize(grav, mez);
-         cs_real_t wptp = -cs_math_3_dot_product(mez, xuta[c_id]);
-         cs_real_t w2 = cs_math_3_sym_33_3_dot_product(mez,
-                                                       cvar_rij[c_id],
-                                                       mez);
+        /* Stable if negative w'T' */
+        cs_real_t mez[3];
+        cs_math_3_normalize(grav, mez);
+        cs_real_t wptp = -cs_math_3_dot_product(mez, xuta[c_id]);
+        cs_real_t w2 = cs_math_3_sym_33_3_dot_product(mez,
+                                                      cvar_rij[c_id],
+                                                      mez);
 
-         if (wptp < - cs_math_epzero * sqrt(cvara_tt[c_id] * w2)) {
+        if (wptp < - cs_math_epzero * sqrt(cvara_tt[c_id] * w2)) {
 
-           /* Note Cauchy Schwarz implies that
-            * T'2/|w'T'| > |w'T'| / w'2
-            * */
-           imp_term =   cell_f_vol[c_id] * crom[c_id]
-             * grav[i] * cpro_beta[c_id] * cvara_tt[c_id] / wptp;
+          /* Note Cauchy Schwarz implies that
+           * T'2/|w'T'| > |w'T'| / w'2
+           * */
+          imp_term =   cell_f_vol[c_id] * crom[c_id]
+            * grav[i] * cpro_beta[c_id] * cvara_tt[c_id] / wptp;
 
-           fimp[c_id][i][i] += cs::max(imp_term, 0);
-         }
-       }
-
+          fimp[c_id][i][i] += cs::max(imp_term, 0);
+        }
+      }
     }
   });
 
   ctx.wait();
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -652,7 +668,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
        */
       if (turb_flux_model == 21) {
         if ((cvara_tt != nullptr) && (cpro_beta != nullptr)
-            && rans_mdl->has_buoyant_term == 1)
+            && has_buoyant_term == 1)
           temp[ii] -=   ctheta * xtt * eta_ebafm
                       * cpro_beta[c_id] * grav[ii] * cvara_tt[c_id];
         for (cs_lnum_t jj = 0; jj < 3; jj++) {
@@ -1377,10 +1393,9 @@ cs_turbulence_rit_div(const int        field_id,
           dvol = 1.0/cell_f_vol[c_id];
         divut[c_id] *= dvol;
       });
-      ctx.wait();
     }
   }
-
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
