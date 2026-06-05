@@ -258,22 +258,20 @@ cs_lagr_shape_model_t *cs_glob_lagr_shape_model
 
 /* lagr agglomeration model structure and associated pointer */
 static cs_lagr_agglomeration_model_t _cs_glob_lagr_agglomeration_model
-  = {
-    .n_max_classes = 10000,
-    .min_stat_weight = 0.,
-    .max_stat_weight = 0.,
-    .scalar_kernel = 0.,
-    .base_diameter = 0.};
+  = {.n_max_classes = 10000,
+     .min_stat_weight = 0.,
+     .max_stat_weight = 0.,
+     .scalar_kernel = 0.,
+     .base_diameter = 0.};
 
 cs_lagr_agglomeration_model_t *cs_glob_lagr_agglomeration_model
   = &_cs_glob_lagr_agglomeration_model;
 
 /* lagr fragmentation model structure and associated pointer */
 static cs_lagr_fragmentation_model_t _cs_glob_lagr_fragmentation_model
-  = {
-    .scalar_kernel = 0.,
-    .base_diameter = 0.,
-    nullptr};
+  = {.scalar_kernel = 0.,
+     .base_diameter = 0.,
+     .function_kernel = nullptr};
 
 cs_lagr_fragmentation_model_t *cs_glob_lagr_fragmentation_model
   = &_cs_glob_lagr_fragmentation_model;
@@ -308,8 +306,7 @@ static cs_lagr_source_terms_t _cs_glob_lagr_source_terms
      .t_st_k = nullptr,
      .t_st_rij = nullptr,
      .t_st_t_e = nullptr,
-     .t_st_t_i = nullptr
-  };
+     .t_st_t_i = nullptr};
 
 cs_lagr_source_terms_t *cs_glob_lagr_source_terms
 = &_cs_glob_lagr_source_terms;

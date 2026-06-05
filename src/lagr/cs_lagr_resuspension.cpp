@@ -164,7 +164,6 @@ void
 cs_lagr_resuspension(void)
 {
   cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
-  const cs_lagr_attribute_map_t *p_am = p_set.p_am;
 
   cs_lagr_boundary_interactions_t *lag_bi = cs_glob_lagr_boundary_interactions;
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -202,15 +201,14 @@ cs_lagr_resuspension(void)
 
   for (cs_lnum_t p_id = 0; p_id < p_set.n_particles; p_id++) {
 
-    unsigned char *part = p_set.p_buffer + p_am->extents * p_id;
-
     cs_lnum_t face_id = p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID);
     cs_real_t p_mass = p_set.attr_real(p_id, CS_LAGR_MASS);
     cs_real_t p_stat_weight = p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT);
     cs_real_t p_diam = p_set.attr_real(p_id, CS_LAGR_DIAMETER);
 
     cs_real_t *part_vel = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
-    cs_real_t *prev_part_vel = p_set.attr_n_get_ptr<cs_real_t>(p_id, 1, CS_LAGR_VELOCITY);
+    cs_real_t *prev_part_vel
+      = p_set.attr_n_get_ptr<cs_real_t>(p_id, 1, CS_LAGR_VELOCITY);
 
     test_colli = 0;
 
@@ -308,8 +306,8 @@ cs_lagr_resuspension(void)
 
             if (kinetic_energy > adhesion_energ) {
 
-              /* The particle is resuspended
-               * with an angle (determined using the large-scale asperity radius) */
+              /* The particle is resuspended with an angle
+                 (determined using the large-scale asperity radius) */
 
               p_set.unset_flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
               p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE) = 0.0;
@@ -320,7 +318,8 @@ cs_lagr_resuspension(void)
 
               cs_real_t norm_velocity = cs_math_3_norm(part_vel);
 
-              cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)*2.0/p_mass);
+              cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)
+                                          *2.0/p_mass);
               cs_real_t angle_reent =
                 acos(p_diam * 0.5 /
                      (p_diam * 0.5 + cs_glob_lagr_reentrained_model->rayasg));
@@ -381,7 +380,8 @@ cs_lagr_resuspension(void)
 
                 cs_real_t norm_velocity = cs_math_3_norm(part_vel);
 
-                cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)*2.0/p_mass);
+                cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)
+                                            *2.0/p_mass);
                 cs_real_t angle_reent =
                   acos(p_diam * 0.5 /
                        (p_diam * 0.5 + cs_glob_lagr_reentrained_model->rayasg));
@@ -504,7 +504,8 @@ cs_lagr_resuspension(void)
 
             cs_real_t norm_velocity = cs_math_3_norm(part_vel);
 
-            cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)*2.0/p_mass);
+            cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)
+                                        *2.0/p_mass);
             cs_real_t angle_reent =
               acos(p_diam * 0.5 /
                    (p_diam * 0.5 + cs_glob_lagr_reentrained_model->rayasg));
@@ -537,7 +538,6 @@ cs_lagr_resuspension(void)
     } /* End of multilayer resuspension */
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

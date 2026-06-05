@@ -1089,7 +1089,7 @@ _check_moment_type(int  type)
 inline static int
 _n_stat_types(void)
 {
-  return CS_LAGR_STAT_ATTR + CS_LAGR_N_ATTRIBUTES;
+  return (int)CS_LAGR_STAT_ATTR + (int)CS_LAGR_N_ATTRIBUTES;
 }
 
 /*---------------------------------------------------------------------------*/
