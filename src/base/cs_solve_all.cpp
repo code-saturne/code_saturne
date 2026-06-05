@@ -97,6 +97,8 @@
 
 #include "cfbl/cs_cf_model.h"
 
+#include "mesh/cs_mesh_adaptive_refinement.h"
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -1058,6 +1060,17 @@ cs_solve_all()
 
   /* Halo synchronization (only variables require this) */
   if (m->halo != nullptr) {
+
+    /* After AMR load-balancing, cells are redistributed between ranks.
+     * The standard sync below covers standard ghost cells. If extended
+     * neighborhood is active, extended ghost cells also need syncing
+     * because they may be uninitialized after the redistribution */
+    cs_halo_type_t sync_type = CS_HALO_STANDARD;
+    if (   cs_glob_amr_info->is_set
+        && cs_glob_amr_info->load_balance
+        && m->halo_type == CS_HALO_EXTENDED)
+      sync_type = CS_HALO_EXTENDED;
+
     for (int f_id = 0; f_id < n_fields; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
       if (!(f->type & CS_FIELD_VARIABLE))
@@ -1066,7 +1079,7 @@ cs_solve_all()
       if ((f->type & CS_FIELD_CDO))
         continue;
 
-      cs_field_synchronize(f, CS_HALO_STANDARD);
+      cs_field_synchronize(f, sync_type);
     }
 
     static bool first_pass = true;
