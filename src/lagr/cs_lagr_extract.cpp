@@ -31,27 +31,15 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
 
-#include "base/cs_base.h"
-#include "base/cs_field.h"
-#include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
-#include "base/cs_parall.h"
-#include "lagr/cs_lagr_tracking.h"
-#include "base/cs_selector.h"
-#include "base/cs_timer.h"
-#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

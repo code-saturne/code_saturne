@@ -33,9 +33,6 @@
 #include <string.h>
 #include <assert.h>
 
-#if defined(HAVE_MPI)
-#endif
-
 #if defined (HAVE_MKL_SPARSE_IE)
   #if defined(HAVE_LONG_LNUM)
     #define MKL_ILP64

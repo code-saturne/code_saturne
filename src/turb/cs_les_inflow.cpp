@@ -30,10 +30,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -47,7 +45,6 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
-#include "base/cs_base.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
@@ -63,6 +60,8 @@
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
+#include "base/cs_mdspan.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

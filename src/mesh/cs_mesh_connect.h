@@ -33,8 +33,8 @@
 
 #include "fvm/fvm_nodal.h"
 
-#include "base/cs_base.h"
 #include "mesh/cs_mesh.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 

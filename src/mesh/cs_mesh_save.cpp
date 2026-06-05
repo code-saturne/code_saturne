@@ -31,9 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -46,20 +43,15 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
-#include "fvm/fvm_io_num.h"
-#include "fvm/fvm_periodicity.h"
 
-#include "base/cs_base.h"
-#include "base/cs_block_dist.h"
 #include "base/cs_io.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_builder.h"
 #include "mesh/cs_mesh_to_builder.h"
 #include "base/cs_parall.h"
-#include "base/cs_part_to_block.h"
+#include "base/cs_file.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

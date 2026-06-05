@@ -66,6 +66,8 @@
 #include "base/cs_parall.h"
 #include "base/cs_reducers.h"
 #include "base/cs_sort_partition.h"
+#include "base/cs_block_dist.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

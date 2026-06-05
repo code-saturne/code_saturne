@@ -35,7 +35,6 @@
 
 #include "fvm/fvm_periodicity.h"
 
-#include "base/cs_base.h"
 #include "base/cs_block_dist.h"
 #include "base/cs_interface.h"
 

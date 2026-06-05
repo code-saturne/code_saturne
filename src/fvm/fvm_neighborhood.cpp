@@ -31,8 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <limits.h>
-#include <math.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -46,7 +44,6 @@
 
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
-#include "base/cs_part_to_block.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -56,6 +53,7 @@
 #include "fvm/fvm_neighborhood.h"
 
 #include "base/cs_all_to_all.h"
+#include "base/cs_block_dist.h"
 
 /*----------------------------------------------------------------------------*/
 

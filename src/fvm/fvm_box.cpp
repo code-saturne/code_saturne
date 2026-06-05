@@ -31,20 +31,17 @@
  *---------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <float.h>
 #include <limits.h>
-#include <math.h>
 #include <stdlib.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *---------------------------------------------------------------------------*/
 
 #include "base/cs_all_to_all.h"
-#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "bft/bft_printf.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -942,4 +939,3 @@ fvm_box_distrib_dump_statistics(const fvm_box_distrib_t  *distrib,
 #endif /* defined(HAVE_MPI) */
 
 /*---------------------------------------------------------------------------*/
-

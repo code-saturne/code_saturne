@@ -43,22 +43,16 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
 #include "base/cs_field.h"
-#include "base/cs_field_pointer.h"
-#include "lagr/cs_lagr.h"
-#include "lagr/cs_lagr_extract.h"
-#include "lagr/cs_lagr_tracking.h"
-#include "base/cs_log.h"
-#include "base/cs_map.h"
 #include "base/cs_mem.h"
-#include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
-#include "base/cs_prototypes.h"
-#include "mesh/cs_mesh_location.h"
 #include "base/cs_restart.h"
 #include "base/cs_thermal_model.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_extract.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

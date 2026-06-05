@@ -34,7 +34,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -46,7 +45,6 @@
 #include "base/cs_mem.h"
 #include "base/cs_timer.h"
 
-#include "fvm/fvm_defs.h"
 #include "fvm/fvm_group.h"
 #include "fvm/fvm_selector_postfix.h"
 

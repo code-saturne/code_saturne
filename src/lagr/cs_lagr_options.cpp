@@ -48,9 +48,7 @@
 #include "base/cs_file.h"
 #include "base/cs_mem.h"
 #include "gui/cs_gui_particles.h"
-#include "gui/cs_gui_util.h"
 #include "mesh/cs_mesh_location.h"
-#include "base/cs_parameters.h"
 #include "base/cs_parameters_check.h"
 #include "pprt/cs_physical_model.h"
 #include "turb/cs_turbulence_model.h"
@@ -59,8 +57,10 @@
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_event.h"
 #include "lagr/cs_lagr_particle.h"
-#include "lagr/cs_lagr_post.h"
 #include "lagr/cs_lagr_prototypes.h"
+#include "base/cs_log.h"
+#include "base/cs_time_step.h"
+#include "lagr/cs_lagr_stat.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

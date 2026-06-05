@@ -29,53 +29,27 @@
  *============================================================================*/
 
 #include "base/cs_defs.h"
-#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <limits.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <ctype.h>
-#include <float.h>
 #include <assert.h>
+#include <math.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
 #include "bft/bft_error.h"
 
-#include "fvm/fvm_periodicity.h"
-
-#include "base/cs_base.h"
-#include "base/cs_halo.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "base/cs_random.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_particle.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_order.h"
-#include "base/cs_parall.h"
-#include "base/cs_random.h"
-#include "base/cs_search.h"
-#include "base/cs_timer_stats.h"
-
-#include "base/cs_field.h"
-#include "base/cs_field_pointer.h"
-
-#include "lagr/cs_lagr_clogging.h"
-#include "lagr/cs_lagr_roughness.h"
-#include "lagr/cs_lagr_dlvo.h"
-#include "lagr/cs_lagr_stat.h"
-#include "lagr/cs_lagr.h"
-#include "lagr/cs_lagr_tracking.h"
-#include "lagr/cs_lagr_prototypes.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

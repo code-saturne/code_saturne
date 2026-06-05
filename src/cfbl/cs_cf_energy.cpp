@@ -33,40 +33,40 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
-
 #include "alge/cs_blas.h"
 #include "alge/cs_divergence.h"
 #include "alge/cs_face_viscosity.h"
+#include "alge/cs_gradient.h"
 #include "base/cs_array.h"
-#include "base/cs_assert.h"
 #include "base/cs_equation_iterative_solve.h"
+#include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_gas_mix.h"
+#include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
+#include "base/cs_log.h"
 #include "base/cs_mass_source_terms.h"
-#include "base/cs_mem.h"
+#include "base/cs_math.h"
+#include "base/cs_mdspan.h"
+#include "base/cs_numbering.h"
+#include "base/cs_parall.h"
+#include "base/cs_param_types.h"
+#include "base/cs_physical_constants.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_scalar_clipping.h"
+#include "base/cs_time_step.h"
 #include "base/cs_volume_mass_injection.h"
+#include "cdo/cs_domain.h"
+#include "cdo/cs_equation_param.h"
 #include "cfbl/cs_cf_boundary_conditions.h"
-#include "cfbl/cs_cf_model.h"
 #include "cfbl/cs_cf_thermo.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"

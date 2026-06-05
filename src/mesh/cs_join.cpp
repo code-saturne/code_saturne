@@ -30,12 +30,8 @@
  * Standard C library headers
  *---------------------------------------------------------------------------*/
 
-#include <assert.h>
 #include <errno.h>
-#include <assert.h>
-#include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -64,6 +60,9 @@
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
 #include "base/cs_timer.h"
+#include "fvm/fvm_group.h"
+#include "fvm/fvm_selector.h"
+#include "mesh/cs_mesh_builder.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

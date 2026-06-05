@@ -30,29 +30,17 @@
  * Standard C library headers
  *---------------------------------------------------------------------------*/
 
-#include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
-#include <float.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
-#include "fvm/fvm_io_num.h"
-#include "fvm/fvm_periodicity.h"
 
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
-#include "base/cs_search.h"
-#include "base/cs_sort.h"
-#include "mesh/cs_join_perio.h"
-#include "mesh/cs_join_post.h"
-#include "mesh/cs_join_util.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

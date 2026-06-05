@@ -30,61 +30,47 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
 #include <math.h>
-#include <float.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_profiling.h"
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
-#include "base/cs_array.h"
 #include "alge/cs_balance.h"
 #include "alge/cs_blas.h"
 #include "alge/cs_convection_diffusion.h"
-#include "base/cs_boundary_conditions_set_coeffs.h"
-#include "base/cs_dispatch.h"
-#include "cdo/cs_equation.h"
-#include "base/cs_equation_iterative_solve.h"
 #include "alge/cs_face_viscosity.h"
+#include "alge/cs_gradient.h"
+#include "base/cs_array.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_equation_iterative_solve.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
-#include "base/cs_field_pointer.h"
 #include "base/cs_field_operator.h"
-#include "base/cs_mem.h"
-#include "alge/cs_gradient.h"
-#include "lagr/cs_lagr.h"
+#include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_log_iteration.h"
 #include "base/cs_mass_source_terms.h"
 #include "base/cs_math.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
-#include "base/cs_porous_model.h"
 #include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_reducers.h"
-#include "base/cs_rotation.h"
 #include "base/cs_solid_zone.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_time_step.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_volume_mass_injection.h"
+#include "lagr/cs_lagr.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "pprt/cs_physical_model.h"
 #include "turb/cs_turbulence_model.h"
 #include "turb/cs_turbulence_rotation.h"
-#include "base/cs_volume_mass_injection.h"
-#include "base/cs_velocity_pressure.h"
-#include "base/cs_wall_functions.h"
 
 /* Atmospheric model headers
    (we should not need to call them here, we should be more modular */

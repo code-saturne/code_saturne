@@ -35,12 +35,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm/fvm_nodal.h"
-#include "fvm/fvm_writer.h"
 
-#include "base/cs_base.h"
 #include "lagr/cs_lagr_particle.h"
-#include "base/cs_time_step.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 

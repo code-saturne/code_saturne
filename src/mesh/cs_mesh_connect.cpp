@@ -31,8 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -41,12 +39,10 @@
 
 #include "bft/bft_error.h"
 
-#include "base/cs_base.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_sort.h"
 
-#include "fvm/fvm_defs.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_nodal_from_desc.h"
 #include "fvm/fvm_nodal_order.h"

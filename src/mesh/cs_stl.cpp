@@ -45,18 +45,17 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "fvm/fvm_writer.h"
-#include "base/cs_mem.h"
-#include "base/cs_post.h"
-
-#include "fvm/fvm_nodal_append.h"
-#include "fvm/fvm_neighborhood.h"
-
 #include "base/cs_math.h"
-#include "mesh/cs_mesh_headers.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
+#include "base/cs_post.h"
 #include "base/cs_rotation.h"
+#include "base/cs_selector.h"
+#include "fvm/fvm_neighborhood.h"
+#include "fvm/fvm_nodal_append.h"
+#include "fvm/fvm_writer.h"
+#include "mesh/cs_mesh_headers.h"
 
 /*----------------------------------------------------------------------------
  * Header of the current file

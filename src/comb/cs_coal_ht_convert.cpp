@@ -32,10 +32,6 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -45,15 +41,9 @@
 
 #include "comb/cs_coal.h"
 #include "base/cs_field.h"
-#include "base/cs_log.h"
 #include "base/cs_math.h"
-#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
-#include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
-#include "base/cs_prototypes.h"
-#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

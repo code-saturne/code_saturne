@@ -30,10 +30,6 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
 
 /*----------------------------------------------------------------------------
  * BFT library headers
@@ -41,7 +37,6 @@
 
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
-#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers

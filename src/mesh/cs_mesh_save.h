@@ -35,8 +35,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_builder.h"
 
 /*============================================================================
  *  Public function prototypes
@@ -62,4 +62,3 @@ cs_mesh_save(cs_mesh_t          *mesh,
 /*----------------------------------------------------------------------------*/
 
 #endif /* CS_MESH_SAVE_H */
-

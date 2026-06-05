@@ -33,14 +33,12 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
 #include "base/cs_mem.h"
 
 #include "fvm/fvm_defs.h"
@@ -52,6 +50,7 @@
 
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_nodal_priv.h"
+#include "bft/bft_error.h"
 #include "fvm/fvm_nodal_extract.h"
 
 /*----------------------------------------------------------------------------*/
@@ -1458,4 +1457,3 @@ fvm_nodal_extents(const fvm_nodal_t  *this_nodal,
 }
 
 /*----------------------------------------------------------------------------*/
-

@@ -31,9 +31,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
 #include "base/cs_interface.h"
 #include "mesh/cs_mesh.h"
+#include "base/cs_defs.h"
 
 /*=============================================================================
  * Public function prototypes

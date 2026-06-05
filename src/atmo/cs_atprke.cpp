@@ -60,6 +60,9 @@
 
 #include "atmo/cs_atmo_profile_std.h"
 #include "atmo/cs_intprf.h"
+#include "base/cs_array.h"
+#include "base/cs_mdspan.h"
+#include "base/cs_parameters.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

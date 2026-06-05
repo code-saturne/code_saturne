@@ -41,7 +41,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
 #include "fvm/fvm_convert_array.h"
 #include "fvm/fvm_nodal.h"
@@ -54,6 +53,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "fvm/fvm_writer.h"
+#include "fvm/fvm_io_num.h"
+#include "fvm/fvm_tesselation.h"
 #include "fvm/fvm_writer_helper.h"
 
 /*----------------------------------------------------------------------------*/
@@ -2444,4 +2445,3 @@ fvm_writer_field_component_name(char    *s,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
-

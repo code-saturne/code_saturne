@@ -109,6 +109,13 @@
 #include "atmo/cs_atmo_imbrication.h"
 #include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_at_data_assim.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_mdspan.h"
+#include "base/cs_param_types.h"
+#include "base/cs_time_step.h"
+#include "base/cs_zone.h"
+#include "cdo/cs_equation_param.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------*/
 

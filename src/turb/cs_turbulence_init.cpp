@@ -32,30 +32,19 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
-#include "base/cs_array.h"
-#include "base/cs_assert.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
-#include "alge/cs_gradient.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
-#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_parall.h"
-#include "mesh/cs_mesh_location.h"
 #include "base/cs_reducers.h"
 
 /*----------------------------------------------------------------------------
@@ -67,7 +56,6 @@
 #include "turb/cs_turbulence_rij.h"
 
 #include "turb/cs_turbulence_init.h"
-#include "base/cs_log_iteration.h"
 
 /*=============================================================================
  * Additional doxygen documentation

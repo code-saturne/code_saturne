@@ -42,19 +42,17 @@
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
-#include "fvm/fvm_nodal.h"
-#include "fvm/fvm_nodal_from_desc.h"
-#include "fvm/fvm_nodal_order.h"
 
 #include "base/cs_all_to_all.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_search.h"
-#include "mesh/cs_join_post.h"
 #include "mesh/cs_join_set.h"
 #include "mesh/cs_join_util.h"
 #include "base/cs_parall.h"
+#include "base/cs_block_dist.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -84,7 +84,6 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -98,7 +97,6 @@
 #include "fvm/fvm_io_num.h"
 #include "fvm/fvm_triangulate.h"
 
-#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 

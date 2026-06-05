@@ -30,12 +30,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <float.h>
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
+#include <float.h>
 #include <math.h>
 
 #if defined(HAVE_MPI)
@@ -50,9 +46,9 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_all_to_all.h"
+#include "base/cs_base.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_parall.h"
 
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_quality.h"

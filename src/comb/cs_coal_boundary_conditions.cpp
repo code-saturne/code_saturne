@@ -31,35 +31,30 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
 
 #include "base/cs_boundary.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_zone.h"
 #include "comb/cs_coal.h"
 #include "comb/cs_coal_ht_convert.h"
-#include "pprt/cs_combustion_model.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parameters.h"
 #include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
-#include "base/cs_prototypes.h"
+#include "base/cs_time_step.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

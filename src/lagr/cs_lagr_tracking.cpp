@@ -34,13 +34,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <limits.h>
-#include <stdio.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <ctype.h>
 #include <float.h>
 #include <assert.h>
 
@@ -53,7 +49,6 @@
 
 #include "fvm/fvm_periodicity.h"
 
-#include "base/cs_base.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_physical_constants.h"
 #include "mesh/cs_geom.h"
@@ -64,18 +59,15 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_random.h"
-#include "base/cs_rotation.h"
 #include "base/cs_search.h"
 #include "base/cs_timer_stats.h"
 #include "base/cs_turbomachinery.h"
 #include "turb/cs_turbulence_model.h"
 
 #include "base/cs_field.h"
-#include "base/cs_field_pointer.h"
 
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_car.h"
@@ -88,12 +80,13 @@
 #include "lagr/cs_lagr_particle.h"
 #include "lagr/cs_lagr_porosity.h"
 #include "lagr/cs_lagr_prototypes.h"
-#include "lagr/cs_lagr_post.h"
-#include "lagr/cs_lagr_resuspension.h"
 #include "lagr/cs_lagr_roughness.h"
 #include "lagr/cs_lagr_sde.h"
 #include "lagr/cs_lagr_sde_model.h"
 #include "lagr/cs_lagr_stat.h"
+#include "base/cs_array.h"
+#include "base/cs_mdspan.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

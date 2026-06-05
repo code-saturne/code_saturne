@@ -30,13 +30,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <limits.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <ctype.h>
 #include <float.h>
 #include <assert.h>
 
@@ -47,7 +42,6 @@
 #include "bft/bft_printf.h"
 #include "bft/bft_error.h"
 
-#include "base/cs_base.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 
@@ -58,15 +52,11 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
-#include "base/cs_parameters.h"
 #include "base/cs_parameters_check.h"
-#include "pprt/cs_physical_model.h"
 #include "base/cs_physical_constants.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_time_step.h"
 
 #include "base/cs_field.h"
-#include "base/cs_field_pointer.h"
 #include "base/cs_random.h"
 
 #include "lagr/cs_lagr.h"

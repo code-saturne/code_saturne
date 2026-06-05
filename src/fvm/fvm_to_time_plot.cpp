@@ -34,7 +34,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -43,20 +42,12 @@
 
 #include "bft/bft_error.h"
 
-#include "fvm/fvm_defs.h"
-#include "fvm/fvm_convert_array.h"
-#include "fvm/fvm_io_num.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_nodal_priv.h"
 #include "fvm/fvm_writer_helper.h"
-#include "fvm/fvm_writer_priv.h"
 
-#include "base/cs_block_dist.h"
-#include "base/cs_file.h"
 #include "base/cs_map.h"
 #include "base/cs_mem.h"
-#include "base/cs_parall.h"
-#include "base/cs_part_to_block.h"
 #include "base/cs_time_plot.h"
 
 /*----------------------------------------------------------------------------
@@ -736,4 +727,3 @@ fvm_to_time_plot_export_field(void                  *writer,
 }
 
 /*----------------------------------------------------------------------------*/
-

@@ -31,8 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <stdio.h>
-#include <string.h>
 #include <math.h>
 
 /*----------------------------------------------------------------------------
@@ -43,7 +41,6 @@
 #include "bft/bft_printf.h"
 #include "base/cs_mem.h"
 
-#include "fvm/fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

@@ -34,39 +34,27 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <limits.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
-#include <ctype.h>
-#include <float.h>
-#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
 #include "base/cs_math.h"
-#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 
-#include "bft/bft_error.h"
 
 #include "base/cs_physical_constants.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_random.h"
 #include "base/cs_thermal_model.h"
 
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_stat.h"
-#include "lagr/cs_lagr_tracking.h"
-#include "lagr/cs_lagr_roughness.h"
 #include "lagr/cs_lagr_adh.h"
 #include "lagr/cs_lagr_event.h"
+#include "base/cs_field.h"
+#include "lagr/cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

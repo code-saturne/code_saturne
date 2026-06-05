@@ -24,35 +24,32 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_config.h"
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
 
 /*----------------------------------------------------------------------------
  * BFT library headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_math.h"
-#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "cfbl/cs_hgn_thermo.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_array.h"
+#include "base/cs_halo.h"
+#include "base/cs_mdspan.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

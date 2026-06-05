@@ -30,10 +30,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -54,7 +51,6 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_time_step.h"
 #include "turb/cs_turbulence_model.h"

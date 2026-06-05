@@ -35,11 +35,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <ctype.h>
-#include <stdarg.h>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -49,7 +46,6 @@
 #include "bft/bft_printf.h"
 #include "bft/bft_error.h"
 
-#include "base/cs_base.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_file.h"
 #include "base/cs_math.h"
@@ -57,18 +53,14 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_restart_default.h"
-#include "base/cs_timer_stats.h"
 #include "base/cs_time_step.h"
 
 #include "base/cs_log.h"
 #include "base/cs_array_reduce.h"
 #include "base/cs_field.h"
-#include "base/cs_field_pointer.h"
 
-#include "lagr/cs_lagr_tracking.h"
 #include "lagr/cs_lagr.h"
 
 /*----------------------------------------------------------------------------

@@ -34,15 +34,6 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <limits.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <ctype.h>
-#include <float.h>
-#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -59,9 +50,12 @@
 #include "alge/cs_gradient.h"
 #include "alge/cs_face_viscosity.h"
 
-#include "lagr/cs_lagr.h"
-#include "lagr/cs_lagr_tracking.h"
 #include "lagr/cs_lagr_stat.h"
+#include "base/cs_field.h"
+#include "base/cs_halo.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_equation_param.h"
+#include "lagr/cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

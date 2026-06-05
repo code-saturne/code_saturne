@@ -33,27 +33,18 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
-
-#include "base/cs_log.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
-#include "base/cs_map.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_parall.h"
 #include "base/cs_param_types.h"
-#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh.h"
 
 #include "turb/cs_turbulence_model.h"
 

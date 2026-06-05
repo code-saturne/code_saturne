@@ -34,25 +34,15 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <limits.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
-#include <ctype.h>
-#include <float.h>
-#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
 #include "base/cs_math.h"
-#include "base/cs_physical_constants.h"
 #include "base/cs_random.h"
 
 /*----------------------------------------------------------------------------

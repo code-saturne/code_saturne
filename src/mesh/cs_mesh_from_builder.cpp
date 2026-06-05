@@ -30,24 +30,17 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 #include <math.h>
-#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
-#include "fvm/fvm_periodicity.h"
 
-#include "base/cs_base.h"
 #include "base/cs_all_to_all.h"
 #include "base/cs_block_dist.h"
 #include "base/cs_block_to_part.h"
@@ -55,7 +48,8 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_builder.h"
 #include "base/cs_order.h"
-#include "mesh/cs_partition.h"
+#include "base/cs_interface.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

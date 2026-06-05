@@ -29,6 +29,7 @@
 
 #include "base/cs_defs.h"
 #include "lagr/cs_lagr_particle.h"
+#include "base/cs_array.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -26,6 +26,8 @@
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "fvm/fvm_group.h"
+#include "fvm/fvm_tesselation.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -37,7 +39,6 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -53,12 +54,10 @@
 #include "bft/bft_error.h"
 
 #include "fvm/fvm_defs.h"
-#include "fvm/fvm_convert_array.h"
 #include "fvm/fvm_io_num.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_nodal_priv.h"
 #include "fvm/fvm_writer_helper.h"
-#include "fvm/fvm_writer_priv.h"
 
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
@@ -4371,4 +4370,3 @@ fvm_to_cgns_flush(void  *this_writer_p)
 /*----------------------------------------------------------------------------*/
 
 #endif /* defined(HAVE_CGNS) */
-

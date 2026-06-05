@@ -34,26 +34,15 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <limits.h>
 #include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <ctype.h>
-#include <float.h>
-#include <assert.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_parall.h"
 #include "base/cs_time_step.h"
 
 #include "lagr/cs_lagr.h"
-#include "lagr/cs_lagr_particle.h"
-#include "lagr/cs_lagr_tracking.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -30,9 +30,6 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -43,7 +40,6 @@
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
-#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parameters.h"
@@ -51,7 +47,6 @@
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_physical_properties.h"
-#include "base/cs_prototypes.h"   // for cs_add_model_field_indexes
 #include "base/cs_restart_default.h"
 #include "base/cs_velocity_pressure.h"
 
@@ -61,6 +56,9 @@
 
 #include "cfbl/cs_cf_model.h"
 #include "cfbl/cs_cf_thermo.h"
+#include "base/cs_log.h"
+#include "base/cs_thermal_model.h"
+#include "cdo/cs_equation_param.h"
 
 /*=============================================================================
  * Additional doxygen documentation

@@ -23,42 +23,27 @@
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <errno.h>
 #include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <math.h>
-#include <float.h>
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_log.h"
-#include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
-#include "gui/cs_gui_output.h"
 #include "gui/cs_gui_radiative_transfer.h"
 
 #include "base/cs_parameters.h"
 #include "base/cs_parameters_check.h"
 #include "base/cs_post.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_thermal_model.h"
 
 #include "rayt/cs_rad_transfer.h"
@@ -67,8 +52,9 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "rayt/cs_rad_transfer_fields.h"
+#include "cdo/cs_equation_param.h"
 #include "pprt/cs_physical_model.h"
+#include "rayt/cs_rad_transfer_fields.h"
 
 /*=============================================================================
  * Additional Doxygen documentation

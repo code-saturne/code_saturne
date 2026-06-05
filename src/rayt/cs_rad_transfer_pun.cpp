@@ -23,48 +23,23 @@
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <math.h>
-#include <float.h>
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
-
+#include "alge/cs_face_viscosity.h"
+#include "alge/cs_gradient.h"
+#include "base/cs_equation_iterative_solve.h"
 #include "base/cs_field_pointer.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
-#include "base/cs_mem.h"
-#include "mesh/cs_mesh.h"
-#include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
-#include "base/cs_thermal_model.h"
-#include "alge/cs_face_viscosity.h"
-#include "base/cs_equation_iterative_solve.h"
-#include "alge/cs_gradient.h"
-#include "alge/cs_face_viscosity.h"
-
-#include "gui/cs_gui_radiative_transfer.h"
+#include "mesh/cs_mesh.h"
 #include "rayt/cs_rad_transfer.h"
-#include "rayt/cs_rad_transfer_wall_flux.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

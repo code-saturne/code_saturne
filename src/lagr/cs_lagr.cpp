@@ -34,14 +34,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <limits.h>
 #include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include <ctype.h>
-#include <float.h>
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
@@ -51,11 +45,8 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
-#include "base/cs_base.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_field.h"
-#include "base/cs_field_operator.h"
-#include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
@@ -65,24 +56,17 @@
 #include "base/cs_volume_zone.h"
 
 #include "base/cs_parameters.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_time_step.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_thermal_model.h"
 #include "turb/cs_turbulence_model.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_parall.h"
-#include "base/cs_post.h"
-#include "base/cs_post_default.h"
-#include "base/cs_prototypes.h"
 #include "rayt/cs_rad_transfer.h"
-#include "base/cs_random.h"
 #include "base/cs_velocity_pressure.h"
 
 #include "gui/cs_gui_particles.h"
-#include "gui/cs_gui_util.h"
 
-#include "lagr/cs_lagr.h"
 
 #include "lagr/cs_lagr_lec.h"
 #include "lagr/cs_lagr_geom.h"
@@ -100,9 +84,6 @@
 #include "lagr/cs_lagr_print.h"
 #include "lagr/cs_lagr_poisson.h"
 #include "lagr/cs_lagr_post.h"
-#include "lagr/cs_lagr_sde.h"
-#include "lagr/cs_lagr_sde_model.h"
-#include "lagr/cs_lagr_orientation.h"
 #include "lagr/cs_lagr_prototypes.h"
 #include "lagr/cs_lagr_agglo.h"
 #include "lagr/cs_lagr_fragmentation.h"
@@ -112,7 +93,6 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "lagr/cs_lagr.h"
 
 /*----------------------------------------------------------------------------*/
 

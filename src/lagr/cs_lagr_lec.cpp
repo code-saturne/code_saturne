@@ -34,40 +34,29 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <limits.h>
 #include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <ctype.h>
-#include <float.h>
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
 #include "bft/bft_error.h"
 
 #include "base/cs_log.h"
 #include "base/cs_field.h"
-#include "base/cs_mem.h"
 #include "base/cs_parameters_check.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
-#include "pprt/cs_physical_model.h"
 #include "turb/cs_turbulence_model.h"
 
 #include "lagr/cs_lagr.h"
-#include "lagr/cs_lagr_tracking.h"
-#include "lagr/cs_lagr_post.h"
 #include "lagr/cs_lagr_stat.h"
 #include "lagr/cs_lagr_restart.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

@@ -37,7 +37,6 @@
 #include "fvm/fvm_selector.h"
 #include "fvm/fvm_periodicity.h"
 
-#include "base/cs_base.h"
 #include "base/cs_halo.h"
 #include "base/cs_interface.h"
 #include "base/cs_numbering.h"

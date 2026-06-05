@@ -30,13 +30,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 #include <math.h>
-#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -48,9 +44,7 @@
 #include "fvm/fvm_periodicity.h"
 #include "fvm/fvm_selector.h"
 
-#include "base/cs_base.h"
 #include "base/cs_halo.h"
-#include "base/cs_halo_perio.h"
 #include "base/cs_interface.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"

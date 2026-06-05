@@ -34,7 +34,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm/fvm_defs.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_writer.h"
 

@@ -34,12 +34,6 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <ctype.h>
-#include <float.h>
-#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers

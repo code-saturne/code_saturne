@@ -30,17 +30,13 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
 
 #include "cdo/cs_equation_param.h"
 #include "base/cs_field.h"
@@ -57,6 +53,9 @@
 #include "pprt/cs_physical_model.h"
 #include "base/cs_post.h"
 #include "base/cs_thermal_model.h"
+#include "base/cs_base.h"
+#include "base/cs_log.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

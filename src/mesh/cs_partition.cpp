@@ -32,7 +32,6 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <locale.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,10 +66,8 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_SCOTCH)
-#include <stdint.h>
 #include <scotch.h>
 #elif defined(HAVE_PTSCOTCH)
-#include <stdint.h>
 #include <ptscotch.h>
 #endif
 

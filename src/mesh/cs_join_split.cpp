@@ -30,7 +30,6 @@
  * Standard C library headers
  *---------------------------------------------------------------------------*/
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -52,6 +51,7 @@
 #include "base/cs_order.h"
 #include "base/cs_search.h"
 #include "mesh/cs_join_post.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

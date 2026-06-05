@@ -23,44 +23,25 @@
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <errno.h>
 #include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <math.h>
-#include <float.h>
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
-
-#include "base/cs_log.h"
 #include "base/cs_boundary_zone.h"
+#include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_thermal_model.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_parall.h"
-#include "base/cs_parameters.h"
-#include "alge/cs_sles.h"
-#include "alge/cs_sles_it.h"
-#include "base/cs_thermal_model.h"
-#include "base/cs_timer.h"
-
 #include "rayt/cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------

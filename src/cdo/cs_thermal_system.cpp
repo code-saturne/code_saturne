@@ -32,9 +32,6 @@
 
 #include <cassert>
 
-#if defined(HAVE_MPI)
-#endif
-
 #include "base/cs_array.h"
 #include "base/cs_mem.h"
 #include "base/cs_syr_coupling.h"

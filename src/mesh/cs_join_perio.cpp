@@ -40,6 +40,7 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "fvm/fvm_io_num.h"
 #include "fvm/fvm_periodicity.h"
 
 #include "base/cs_mem.h"

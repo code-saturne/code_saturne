@@ -30,20 +30,14 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_math.h"
 #include "base/cs_mem.h"
 
-#include "fvm/fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

@@ -30,8 +30,6 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <string.h>
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
@@ -43,7 +41,6 @@
 
 #include "fvm/fvm_periodicity.h"
 
-#include "base/cs_base.h"
 #include "base/cs_interface.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"

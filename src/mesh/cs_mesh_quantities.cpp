@@ -33,8 +33,6 @@
 #include <math.h>
 #include <float.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
@@ -53,9 +51,11 @@
 #include "base/cs_mem.h"
 #include "base/cs_porosity_from_scan.h"
 #include "base/cs_porous_model.h"
-#include "base/cs_post.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
+#include "base/cs_halo.h"
+#include "base/cs_interface.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

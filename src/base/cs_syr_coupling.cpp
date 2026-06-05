@@ -57,9 +57,6 @@
 #include "fvm/fvm_nodal_extract.h"
 #include "fvm/fvm_nodal_project.h"
 
-#if defined(HAVE_MPI)
-#endif
-
 #include "base/cs_base.h"
 #include "base/cs_coupling.h"
 #include "base/cs_field.h"

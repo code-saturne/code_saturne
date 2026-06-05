@@ -34,23 +34,18 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <limits.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <ctype.h>
-#include <float.h>
 #include <assert.h>
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_array.h"
 #include "alge/cs_balance.h"
 #include "alge/cs_face_viscosity.h"
+#include "base/cs_array.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
@@ -58,17 +53,15 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "lagr/cs_lagr.h"
-#include "lagr/cs_lagr_tracking.h"
-#include "lagr/cs_lagr_stat.h"
-#include "mesh/cs_mesh.h"
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
-#include "pprt/cs_physical_model.h"
-#include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
-#include "turb/cs_turbulence_model.h"
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_stat.h"
+#include "mesh/cs_mesh.h"
+#include "pprt/cs_physical_model.h"
 #include "turb/cs_les_balance.h"
+#include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

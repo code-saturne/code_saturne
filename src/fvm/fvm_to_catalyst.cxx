@@ -105,6 +105,7 @@
 #include "fvm/fvm_nodal_priv.h"
 #include "fvm/fvm_writer_priv.h"
 
+#include "base/cs_base.h"
 #include "base/cs_file.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"

@@ -30,26 +30,18 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <float.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
-#include <math.h>
 
 #include <new>  // For placement new
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
 #include "fvm/fvm_triangulate.h"
@@ -66,6 +58,11 @@
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_adaptive_refinement.h"
+#include "base/cs_halo.h"
+#include "base/cs_interface.h"
+#include "base/cs_log.h"
+#include "base/cs_timer.h"
+#include "mesh/cs_mesh_builder.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

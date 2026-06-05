@@ -31,21 +31,13 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
 #include <math.h>
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_boundary_zone.h"
@@ -56,14 +48,17 @@
 #include "cdo/cs_domain.h"
 #include "cdo/cs_equation.h"
 
-#include "base/cs_log.h"
 #include "base/cs_interface.h"
-#include "mesh/cs_mesh_builder.h"
+#include "base/cs_log.h"
+#include "base/cs_parall.h"
 #include "cdo/cs_mesh_deform.h"
 #include "mesh/cs_mesh_extrude.h"
-#include "mesh/cs_mesh_group.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_parall.h"
+#include "base/cs_field.h"
+#include "base/cs_timer.h"
+#include "base/cs_zone.h"
+#include "cdo/cs_param_cdo.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

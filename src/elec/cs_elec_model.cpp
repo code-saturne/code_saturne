@@ -34,7 +34,6 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -47,7 +46,6 @@
 
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
-#include "base/cs_file.h"
 #include "base/cs_log.h"
 #include "base/cs_parall.h"
 #include "base/cs_math.h"
@@ -57,16 +55,20 @@
 #include "base/cs_time_step.h"
 #include "base/cs_parameters.h"
 #include "base/cs_field_pointer.h"
-#include "alge/cs_gradient.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_thermal_model.h"
-#include "turb/cs_turbulence_model.h"
 #include "gui/cs_gui_specific_physics.h"
-#include "gui/cs_gui_util.h"
 #include "base/cs_post.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_array.h"
+#include "base/cs_base.h"
+#include "base/cs_function.h"
+#include "base/cs_halo.h"
+#include "base/cs_mdspan.h"
+#include "base/cs_restart_default.h"
+#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

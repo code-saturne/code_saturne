@@ -31,17 +31,11 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_nodal.h"
@@ -49,7 +43,6 @@
 
 #include "base/cs_assert.h"
 #include "base/cs_math.h"
-#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

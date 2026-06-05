@@ -33,16 +33,13 @@
 #include <assert.h>
 #include <float.h>
 #include <math.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_mem.h"
-#include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
