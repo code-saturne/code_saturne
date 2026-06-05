@@ -46,6 +46,9 @@
 #include "base/cs_range_set.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_cdo_connect.h"
+#include "base/cs_interface.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*============================================================================
  * Macro definitions
@@ -479,14 +482,14 @@ static inline cs_cdo_system_matrix_class_t
 cs_cdo_system_get_matrix_class(const cs_cdo_system_helper_t  *sh,
                                int                            block_id)
 {
-  if (sh == NULL)
+  if (sh == nullptr)
     return   CS_CDO_SYSTEM_MATRIX_NONE;
   if (block_id < 0 || block_id >= sh->n_blocks)
     return   CS_CDO_SYSTEM_MATRIX_NONE;
 
   cs_cdo_system_block_t  *b = sh->blocks[block_id];
 
-  assert(b != NULL);
+  assert(b != nullptr);
   return b->info.matrix_class;
 }
 

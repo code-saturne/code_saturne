@@ -31,14 +31,11 @@
  * Standard C library headers
  *---------------------------------------------------------------------------*/
 
-#include <assert.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *---------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
 #include "base/cs_dispatch.h"
 #include "base/cs_field.h"
@@ -50,6 +47,8 @@
 #include "base/cs_restart_default.h"
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_vof.h"
+#include "base/cs_time_step.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

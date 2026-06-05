@@ -32,9 +32,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "alge/cs_param_amg.h"
-#include "alge/cs_param_hpddm.h"
 #include "alge/cs_param_mumps.h"
 #include "base/cs_param_types.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 

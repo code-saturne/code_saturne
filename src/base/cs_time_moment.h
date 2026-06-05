@@ -35,10 +35,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
+#include "base/cs_defs.h"
 #include "base/cs_field.h"
-#include "base/cs_restart.h"
 #include "base/cs_function.h"
+#include "base/cs_restart.h"
 
 /*============================================================================
  * Macro definitions

@@ -31,9 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -41,10 +39,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
 #include "base/cs_assert.h"
-#include "base/cs_block_dist.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_timer.h"

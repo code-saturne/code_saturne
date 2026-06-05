@@ -45,6 +45,7 @@
 
 #include "alge/cs_sles_it.h"
 #include "base/cs_array.h"
+#include "base/cs_boundary_zone.h"
 #include "base/cs_field.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
@@ -55,6 +56,15 @@
 #include "cdo/cs_reco.h"
 #include "gwf/cs_gwf_soil.h"
 #include "mesh/cs_mesh_location.h"
+#include "base/cs_interface.h"
+#include "base/cs_param_types.h"
+#include "base/cs_time_step.h"
+#include "base/cs_volume_zone.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_property.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

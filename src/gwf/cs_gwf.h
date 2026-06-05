@@ -33,6 +33,12 @@
 
 #include "base/cs_base.h"
 #include "cdo/cs_equation.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_advection_field.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "gwf/cs_gwf_hydraulic_model.h"
+#include "mesh/cs_mesh.h"
 #include "gwf/cs_gwf_param.h"
 #include "gwf/cs_gwf_priv.h"
 #include "gwf/cs_gwf_soil.h"

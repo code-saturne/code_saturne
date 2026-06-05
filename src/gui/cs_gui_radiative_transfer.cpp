@@ -64,6 +64,10 @@
 #include "base/cs_field_pointer.h"
 
 #include "rayt/cs_rad_transfer.h"
+#include "base/cs_param_types.h"
+#include "base/cs_time_control.h"
+#include "base/cs_tree.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

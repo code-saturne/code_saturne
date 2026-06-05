@@ -35,25 +35,23 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <cassert>
+#include <cstdio>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_boundary_zone.h"
+#include "base/cs_base.h"
 #include "base/cs_coupling.h"
 #include "base/cs_log.h"
-#include "base/cs_log_iteration.h"
-#include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_resource.h"
 #include "base/cs_restart.h"
 #include "base/cs_time_step.h"
+#include "bft/bft_error.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_quadrature.h"
-#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

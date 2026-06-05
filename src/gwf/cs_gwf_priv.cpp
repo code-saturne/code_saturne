@@ -40,13 +40,24 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cdo/cs_advection_field.h"
 #include "base/cs_array.h"
-#include "cdo/cs_evaluate.h"
+#include "base/cs_boundary_zone.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
+#include "cdo/cs_advection_field.h"
+#include "cdo/cs_evaluate.h"
 #include "cdo/cs_reco.h"
+#include "base/cs_field.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "base/cs_zone.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_xdef.h"
+#include "gwf/cs_gwf_param.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

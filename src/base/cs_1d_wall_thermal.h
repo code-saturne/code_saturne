@@ -35,10 +35,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
 #include "base/cs_zone.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_writer.h"
+#include "base/cs_defs.h"
 
 /*=============================================================================
  * Macro definitions

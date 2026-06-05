@@ -73,6 +73,12 @@
 #include "base/cs_vof.h"
 #include "base/cs_wall_condensation.h"
 #include "base/cs_wall_condensation_1d_thermal.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_restart.h"
+#include "base/cs_restart_default.h"
+#include "cdo/cs_equation_param.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

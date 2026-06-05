@@ -52,7 +52,6 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,7 +73,6 @@
 #endif
 
 #if defined(HAVE_MPI_IO)
-#include <limits.h>
 #endif
 
 #if defined(HAVE_ZLIB)

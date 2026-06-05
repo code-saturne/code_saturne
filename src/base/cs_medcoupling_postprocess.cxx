@@ -41,13 +41,13 @@
 #include "base/cs_function.h"
 #include "base/cs_halo.h"
 #include "base/cs_math.h"
-#include "base/cs_mem.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_quantities.h"
-
 #include "base/cs_medcoupling_utils.h"
-#include "cs_medcoupling_mesh.hxx"
+#include "base/cs_mem.h"
 #include "base/cs_post.h"
+#include "cs_medcoupling_mesh.hxx"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
 
 #if defined(HAVE_MEDCOUPLING)
 #include <MEDCoupling_version.h>

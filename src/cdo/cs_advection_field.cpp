@@ -31,6 +31,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
+#include <cmath>
+#include <cstdio>
 #include <cstring>
 
 /*----------------------------------------------------------------------------
@@ -38,18 +40,21 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_array.h"
+#include "base/cs_base.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_field.h"
+#include "base/cs_interface.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_volume_zone.h"
 #include "base/cs_zone.h"
 #include "cdo/cs_cdo_toolbox.h"
 #include "cdo/cs_evaluate.h"
-#include "cdo/cs_param_cdo.h"
+#include "cdo/cs_quadrature.h"
 #include "cdo/cs_reco.h"
 #include "cdo/cs_xdef.h"
+#include "cdo/cs_xdef_cw_eval.h"
+#include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------

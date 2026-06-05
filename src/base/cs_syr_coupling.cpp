@@ -30,12 +30,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <assert.h>
-#include <math.h>
+#include <stdio.h>
+#include <string.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -45,8 +42,8 @@
  * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include <ple_defs.h>
 #include <ple_coupling.h>
+#include <ple_defs.h>
 #include <ple_locator.h>
 
 /*----------------------------------------------------------------------------
@@ -61,27 +58,34 @@
 #include "fvm/fvm_nodal_project.h"
 
 #if defined(HAVE_MPI)
-#include "base/cs_coupling.h"
 #endif
 
-#include "cfbl/cs_cf_thermo.h"
+#include "base/cs_base.h"
 #include "base/cs_coupling.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_ht_convert.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_post.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_time_step.h"
+#include "base/cs_timer_stats.h"
+#include "cdo/cs_param_cdo.h"
+#include "cdo/cs_thermal_system.h"
+#include "cfbl/cs_cf_thermo.h"
+#include "fvm/fvm_io_num.h"
+#include "fvm/fvm_writer.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
-#include "base/cs_parall.h"
-#include "base/cs_post.h"
-#include "base/cs_parameters.h"
-#include "base/cs_prototypes.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "pprt/cs_physical_model.h"
-#include "base/cs_selector.h"
-#include "base/cs_thermal_model.h"
-#include "cdo/cs_thermal_system.h"
-#include "base/cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

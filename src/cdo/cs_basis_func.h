@@ -28,11 +28,19 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
+ * Standard C library headers
+ *----------------------------------------------------------------------------*/
+
+#include <cstdio>
+
+/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_quadrature.h"
+#include "cdo/cs_sdm.h"
 
 /*============================================================================
  * Macro definitions
@@ -236,7 +244,7 @@ typedef struct {
 static inline short int
 cs_basis_func_get_poly_order(const cs_basis_func_t   *bf)
 {
-  if (bf == NULL)
+  if (bf == nullptr)
     return -1;
   else
     return bf->poly_order;

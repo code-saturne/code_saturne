@@ -31,8 +31,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
-#include "cdo/cs_equation.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions

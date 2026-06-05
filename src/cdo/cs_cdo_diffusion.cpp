@@ -38,18 +38,16 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_log.h"
 #include "base/cs_math.h"
-#include "base/cs_mem.h"
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_reco.h"
 #include "cdo/cs_reco_cw.h"
 #include "cdo/cs_scheme_geometry.h"
-
-#if defined(DEBUG) && !defined(NDEBUG)
-#include "cdo/cs_dbg.h"
-#endif
+#include "bft/bft_error.h"
+#include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_flag.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

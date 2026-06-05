@@ -30,13 +30,12 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <float.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <cassert>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -57,7 +56,6 @@ extern "C" {
 #if defined(HAVE_METIS)
 #include <metis.h>
 #endif
-
 }
 
 #endif /* defined(HAVE_METIS) || defined(HAVE_PARMETIS) */
@@ -81,20 +79,24 @@ extern "C" {
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "fvm/fvm_morton.h"
 #include "fvm/fvm_hilbert.h"
+#include "fvm/fvm_morton.h"
 
 #include "base/cs_array.h"
-#include "base/cs_defs.h"
+#include "base/cs_base.h"
 #include "base/cs_halo.h"
-#include "mesh/cs_join.h"
+#include "base/cs_interface.h"
+#include "base/cs_log.h"
 #include "base/cs_mem.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_adjacencies.h"
+#include "base/cs_numbering.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
 #include "base/cs_sort.h"
+#include "fvm/fvm_io_num.h"
+#include "mesh/cs_join.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

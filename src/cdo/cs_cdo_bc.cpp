@@ -39,7 +39,7 @@
 #include "base/cs_array.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_mem.h"
-#include "mesh/cs_mesh_location.h"
+#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

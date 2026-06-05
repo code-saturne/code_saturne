@@ -36,6 +36,7 @@
 #include "base/cs_medcoupling_intersector.h"
 #include "mesh/cs_stl.h"
 #include "cdo/cs_xdef.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 

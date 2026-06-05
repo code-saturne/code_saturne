@@ -39,6 +39,7 @@
 #include "fvm/fvm_nodal.h"
 
 #include "base/cs_base.h"
+#include "base/cs_defs.h"
 
 /*============================================================================
  * Global variables

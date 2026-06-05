@@ -41,10 +41,15 @@
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
-#include "base/cs_range_set.h"
 #include "base/cs_volume_zone.h"
 #include "cdo/cs_quadrature.h"
 #include "mesh/cs_mesh.h"
+#include "base/cs_interface.h"
+#include "base/cs_param_types.h"
+#include "base/cs_zone.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_flag.h"
+#include "fvm/fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

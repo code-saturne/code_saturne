@@ -53,6 +53,7 @@
 #include "base/cs_post.h"
 #include "base/cs_time_plot.h"
 #include "cdo/cs_cdovb_priv.h"
+#include "cdo/cs_equation.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_reco.h"
 #include "gwf/cs_gwf_priv.h"
@@ -61,6 +62,21 @@
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"
+#include "alge/cs_sles.h"
+#include "base/cs_base.h"
+#include "base/cs_math.h"
+#include "base/cs_time_step.h"
+#include "base/cs_volume_zone.h"
+#include "base/cs_zone.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_advection_field.h"
+#include "cdo/cs_cdo_blas.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_equation_system.h"
+#include "cdo/cs_equation_system_param.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_iter_algo.h"
+#include "mesh/cs_mesh_adjacencies.h"
 #endif
 
 /*----------------------------------------------------------------------------

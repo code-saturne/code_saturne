@@ -33,10 +33,9 @@
 
 #include "base/cs_defs.h"
 
-#include "base/cs_halo.h"
 #include "base/cs_numbering.h"
 #include "alge/cs_matrix_priv.h"
-#include "alge/cs_matrix_assembler.h"
+#include "alge/cs_matrix.h"
 
 /*----------------------------------------------------------------------------*/
 

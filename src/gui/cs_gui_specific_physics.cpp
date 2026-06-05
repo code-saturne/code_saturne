@@ -72,6 +72,11 @@
 #include "cogz/cs_combustion_gas.h"
 #include "elec/cs_elec_model.h"
 #include "rayt/cs_rad_transfer.h"
+#include "base/cs_time_step.h"
+#include "base/cs_tree.h"
+#include "cdo/cs_domain.h"
+#include "cdo/cs_equation.h"
+#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

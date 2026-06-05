@@ -39,6 +39,7 @@
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_defs.h"
 
 /*============================================================================
  * Structure definition

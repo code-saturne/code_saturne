@@ -30,7 +30,6 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <algorithm>
 #include <cassert>
 
 /*----------------------------------------------------------------------------
@@ -43,11 +42,9 @@
 #include "cdo/cs_flag.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_scheme_geometry.h"
-
-#if defined(DEBUG) && !defined(NDEBUG) /* For debugging purpose */
-#include "base/cs_log.h"
-#include "cdo/cs_dbg.h"
-#endif
+#include "bft/bft_error.h"
+#include "cdo/cs_advection_field.h"
+#include "cdo/cs_hodge.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

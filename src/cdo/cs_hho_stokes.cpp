@@ -39,19 +39,18 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_boundary_zone.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_post.h"
-#include "base/cs_search.h"
-#include "cdo/cs_equation_priv.h"
+#include "cdo/cs_equation_builder.h"
 #include "cdo/cs_hho_builder.h"
-#include "cdo/cs_quadrature.h"
-#include "cdo/cs_reco.h"
-#include "cdo/cs_scheme_geometry.h"
 #include "cdo/cs_sdm.h"
-#include "cdo/cs_source_term.h"
-#include "mesh/cs_mesh_location.h"
+#include "base/cs_param_types.h"
+#include "base/cs_timer.h"
+#include "base/cs_zone.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_param_cdo.h"
+#include "cdo/cs_xdef.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

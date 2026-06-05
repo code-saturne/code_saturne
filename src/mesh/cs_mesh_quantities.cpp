@@ -46,15 +46,16 @@
 
 #include "base/cs_array.h"
 #include "base/cs_base.h"
+#include "base/cs_field.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_adjacencies.h"
 #include "base/cs_porosity_from_scan.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_post.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

@@ -31,11 +31,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "alge/cs_matrix.h"
 #include "alge/cs_matrix_assembler.h"
-#include "base/cs_param_types.h"
 #include "base/cs_range_set.h"
 #include "cdo/cs_sdm.h"
+#include "base/cs_defs.h"
 
 /*============================================================================
  * Macro definitions

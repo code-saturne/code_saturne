@@ -40,8 +40,12 @@
 
 #include "base/cs_array.h"
 #include "base/cs_mem.h"
-#include "base/cs_parall.h"
 #include "cdo/cs_cdo_bc.h"
+#include "base/cs_interface.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "bft/bft_error.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

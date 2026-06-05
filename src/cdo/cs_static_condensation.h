@@ -29,8 +29,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
+#include "base/cs_defs.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*============================================================================
  * Macro definitions

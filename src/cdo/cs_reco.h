@@ -31,12 +31,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "assert.h"
 
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
-#include "cdo/cs_flag.h"
+#include "base/cs_defs.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*============================================================================
  * Macro definitions
@@ -690,7 +690,7 @@ cs_reco_scalar_v2c_full(const cs_adjacency_t        *c2v,
                         const double                *array,
                         cs_real_t                   *reco)
 {
-  cs_reco_scalar_v2c(cdoq->n_cells, NULL, c2v, cdoq, array, false, reco);
+  cs_reco_scalar_v2c(cdoq->n_cells, nullptr, c2v, cdoq, array, false, reco);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -712,7 +712,7 @@ cs_reco_vector_v2c_full(const cs_adjacency_t        *c2v,
                         const double                *array,
                         cs_real_t                   *reco)
 {
-  cs_reco_vector_v2c(cdoq->n_cells, NULL, c2v, cdoq, array, false, reco);
+  cs_reco_vector_v2c(cdoq->n_cells, nullptr, c2v, cdoq, array, false, reco);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -735,7 +735,7 @@ cs_reco_scalar_vbyc2c_full(const cs_adjacency_t        *c2v,
                            const double                *array,
                            cs_real_t                   *reco)
 {
-  cs_reco_scalar_vbyc2c(cdoq->n_cells, NULL, c2v, cdoq, array, false, reco);
+  cs_reco_scalar_vbyc2c(cdoq->n_cells, nullptr, c2v, cdoq, array, false, reco);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -758,7 +758,7 @@ cs_reco_scalar_ebyc2c_full(const cs_adjacency_t        *c2e,
                            const double                *array,
                            cs_real_t                   *reco)
 {
-  cs_reco_scalar_ebyc2c(cdoq->n_cells, NULL, c2e, cdoq, array, false, reco);
+  cs_reco_scalar_ebyc2c(cdoq->n_cells, nullptr, c2e, cdoq, array, false, reco);
 }
 
 #endif /* CS_RECO_H */

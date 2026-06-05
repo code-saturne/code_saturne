@@ -29,12 +29,15 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_xdef.h"
-#include "mesh/cs_mesh.h"
+#include "base/cs_defs.h"
+#include "base/cs_math.h"
+#include "base/cs_param_types.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_flag.h"
 
 /*=============================================================================
  * Local macro definition (unset at the end of file)
@@ -334,11 +337,11 @@ cs_xdef_cw_eval_scalar_face_avg_by_value(const cs_cell_mesh_t     *cm,
   CS_UNUSED(f);
   CS_UNUSED(qtype);
 
-  if (eval == NULL)
+  if (eval == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
-  assert(input != NULL);
+  assert(input != nullptr);
 
   eval[0] = ((const cs_real_t *)input)[0];
 }
@@ -369,14 +372,14 @@ cs_xdef_cw_eval_scalar_face_avg_by_array(const cs_cell_mesh_t       *cm,
   CS_UNUSED(t_eval);
   CS_UNUSED(qtype);
 
-  if (eval == NULL)
+  if (eval == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
   const cs_xdef_array_context_t *cx = (const cs_xdef_array_context_t *)input;
 
-  assert(input != NULL);
+  assert(input != nullptr);
   assert(cs_flag_test(cx->value_location, cs_flag_primal_face));
 
   eval[0] = cx->values[cm->f_ids[f]];
@@ -410,7 +413,7 @@ cs_xdef_cw_eval_face_drham_by_analytic(const cs_cell_mesh_t       *cm,
   CS_UNUSED(qtype);
   cs_xdef_analytic_context_t *anai = (cs_xdef_analytic_context_t *)input;
 
-  anai->func(t_eval, 1, NULL, cm->face[f].center, false, anai->input, eval);
+  anai->func(t_eval, 1, nullptr, cm->face[f].center, false, anai->input, eval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -441,12 +444,12 @@ cs_xdef_cw_eval_vector_face_avg_by_value(const cs_cell_mesh_t     *cm,
   CS_UNUSED(t_eval);
   CS_UNUSED(qtype);
 
-  if (eval == NULL)
+  if (eval == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  assert(input != NULL);
+  assert(input != nullptr);
 
   std::memcpy(eval, (const cs_real_t *)input, 3 * sizeof(cs_real_t));
 }
@@ -477,14 +480,14 @@ cs_xdef_cw_eval_vector_face_avg_by_array(const cs_cell_mesh_t     *cm,
   CS_UNUSED(t_eval);
   CS_UNUSED(qtype);
 
-  if (eval == NULL)
+  if (eval == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
   const cs_xdef_array_context_t *cx = (const cs_xdef_array_context_t *)input;
 
-  assert(input != NULL);
+  assert(input != nullptr);
   assert(cs_flag_test(cx->value_location, cs_flag_primal_face));
 
   std::memcpy(eval, cx->values + 3 * cm->f_ids[f], 3 * sizeof(cs_real_t));
@@ -518,8 +521,8 @@ cs_xdef_cw_eval_tensor_face_avg_by_value(const cs_cell_mesh_t     *cm,
   CS_UNUSED(t_eval);
   CS_UNUSED(qtype);
 
-  assert(input != NULL);
-  if (eval == NULL)
+  assert(input != nullptr);
+  if (eval == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
@@ -556,14 +559,14 @@ cs_xdef_cw_eval_tensor_face_avg_by_array(const cs_cell_mesh_t     *cm,
   CS_UNUSED(t_eval);
   CS_UNUSED(qtype);
 
-  if (eval == NULL)
+  if (eval == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
   const cs_xdef_array_context_t *cx = (const cs_xdef_array_context_t *)input;
 
-  assert(input != NULL);
+  assert(input != nullptr);
   assert(cs_flag_test(cx->value_location, cs_flag_primal_face));
 
   std::memcpy(eval, cx->values + 9 * cm->f_ids[f], 9 * sizeof(cs_real_t));

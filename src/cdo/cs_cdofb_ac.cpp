@@ -65,6 +65,24 @@
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_param_sles.h"
+#include "base/cs_field.h"
+#include "base/cs_param_types.h"
+#include "base/cs_range_set.h"
+#include "base/cs_time_step.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_cdo_assembly.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_system.h"
+#include "cdo/cs_equation_builder.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_hodge.h"
+#include "cdo/cs_navsto_coupling.h"
+#include "cdo/cs_param_cdo.h"
+#include "cdo/cs_property.h"
+#include "cdo/cs_sdm.h"
 #endif
 
 /*----------------------------------------------------------------------------

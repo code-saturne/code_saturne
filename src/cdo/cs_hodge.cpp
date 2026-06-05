@@ -41,6 +41,12 @@
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "cdo/cs_scheme_geometry.h"
+#include "base/cs_base.h"
+#include "base/cs_param_types.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_param_cdo.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

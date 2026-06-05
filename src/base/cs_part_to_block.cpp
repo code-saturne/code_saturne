@@ -31,16 +31,13 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
 
 #include "base/cs_all_to_all.h"
 #include "base/cs_block_dist.h"

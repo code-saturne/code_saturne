@@ -31,7 +31,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
 #include "base/cs_timer.h"
 #include "base/cs_time_plot.h"
 

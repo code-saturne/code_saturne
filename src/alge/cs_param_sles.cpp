@@ -31,7 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <float.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,6 +50,7 @@
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "cdo/cs_param_cdo.h"
+#include "alge/cs_param_hpddm.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

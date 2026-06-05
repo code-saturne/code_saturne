@@ -30,23 +30,17 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
 #include "base/cs_ale.h"
 #include "base/cs_coupling.h"
 #include "base/cs_fan.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
-#include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_function_default.h"
 #include "base/cs_gas_mix.h"
@@ -73,7 +67,6 @@
 #include "base/cs_wall_condensation.h"
 #include "base/cs_wall_distance.h"
 #include "base/cs_wall_functions.h"
-#include "cdo/cs_domain_setup.h"
 #include "gui/cs_gui.h"
 #include "gui/cs_gui_boundary_conditions.h"
 #include "gui/cs_gui_mobile_mesh.h"
@@ -102,6 +95,18 @@
 #include "ctwr/cs_ctwr_variables.h"
 #include "elec/cs_elec_model.h"
 #include "gwf/cs_gwf.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "base/cs_param_types.h"
+#include "base/cs_restart_default.h"
+#include "base/cs_time_step.h"
+#include "base/cs_volume_zone.h"
+#include "cdo/cs_domain.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_param_cdo.h"
+#include "cfbl/cs_cf_model.h"
+#include "comb/cs_coal.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

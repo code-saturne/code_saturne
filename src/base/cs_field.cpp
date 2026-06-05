@@ -35,7 +35,6 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -48,9 +47,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_profiling.h"
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
 #include "base/cs_log.h"
@@ -59,9 +56,8 @@
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_param_types.h"
-#include "base/cs_parall.h"
-#include "base/cs_porous_model.h"
-#include "base/cs_profiling.h"
+#include "base/cs_base.h"
+#include "base/cs_dispatch.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

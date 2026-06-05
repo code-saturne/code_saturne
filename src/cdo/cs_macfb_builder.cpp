@@ -42,15 +42,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_array.h"
-#include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_time_step.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
-#include "cdo/cs_cdo_bc.h"
-#include "cdo/cs_property.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

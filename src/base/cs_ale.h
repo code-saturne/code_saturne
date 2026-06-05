@@ -39,6 +39,10 @@
 #include "base/cs_base.h"
 #include "cdo/cs_domain.h"
 #include "base/cs_restart.h"
+#include "base/cs_defs.h"
+#include "base/cs_mdspan.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*============================================================================
  * Type definitions

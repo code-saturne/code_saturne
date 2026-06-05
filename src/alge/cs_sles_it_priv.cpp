@@ -32,24 +32,19 @@
 
 #include <chrono>
 
-#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
 #include <math.h>
 
 #if defined(HAVE_MPI)
-#include <mpi.h>
 #endif
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base_accel.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

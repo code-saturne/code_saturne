@@ -37,18 +37,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_boundary_zone.h"
-#include "base/cs_log.h"
 #include "base/cs_mem.h"
-#include "base/cs_parall.h"
-#include "base/cs_parameters.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_macfb_builder.h"
-#include "cdo/cs_xdef_eval.h"
-
-#if defined(DEBUG) && !defined(NDEBUG)
-#include "cdo/cs_dbg.h"
-#endif
+#include "base/cs_interface.h"
+#include "base/cs_param_types.h"
+#include "base/cs_volume_zone.h"
+#include "base/cs_zone.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_param_cdo.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------*/
 

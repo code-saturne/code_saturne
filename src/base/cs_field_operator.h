@@ -34,6 +34,7 @@
 #include "base/cs_defs.h"
 #include "base/cs_field.h"
 #include "alge/cs_gradient.h"
+#include "base/cs_halo.h"
 
 /*=============================================================================
  * Macro definitions

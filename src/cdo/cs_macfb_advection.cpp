@@ -36,18 +36,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_math.h"
-#include "base/cs_mem.h"
-#include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_flag.h"
 #include "cdo/cs_macfb_builder.h"
 #include "cdo/cs_property.h"
-#include "cdo/cs_scheme_geometry.h"
-
-#if defined(DEBUG) && !defined(NDEBUG) /* For debugging purpose */
-#include "base/cs_log.h"
-#include "cdo/cs_dbg.h"
-#endif
+#include "base/cs_param_types.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_advection_field.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

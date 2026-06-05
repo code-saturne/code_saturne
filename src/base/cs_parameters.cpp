@@ -76,6 +76,12 @@
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_vof.h"
 #include "base/cs_wall_functions.h"
+#include "base/cs_halo.h"
+#include "base/cs_param_types.h"
+#include "base/cs_runge_kutta_integrator_priv.h"
+#include "base/cs_time_control.h"
+#include "base/cs_time_step.h"
+#include "cdo/cs_hodge.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

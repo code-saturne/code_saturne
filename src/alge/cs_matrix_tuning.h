@@ -32,10 +32,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "alge/cs_matrix.h"
 
-#include "base/cs_halo.h"
-#include "base/cs_numbering.h"
-#include "base/cs_halo_perio.h"
 
 /*----------------------------------------------------------------------------*/
 

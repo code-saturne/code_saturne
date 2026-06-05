@@ -30,8 +30,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_time_step.h"
 #include "cdo/cs_domain.h"
+#include "base/cs_time_control.h"
 
 /*============================================================================
  * Macro definitions

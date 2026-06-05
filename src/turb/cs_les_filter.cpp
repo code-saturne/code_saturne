@@ -50,6 +50,7 @@
 #include "bft/bft_printf.h"
 
 #include "alge/cs_cell_to_vertex.h"
+#include "base/cs_array.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_ext_neighborhood.h"
 #include "base/cs_mem.h"

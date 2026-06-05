@@ -38,7 +38,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-#include "base/cs_base_accel.h"
 #if defined (__CUDACC__)
 #include "base/cs_array_cuda.h"
 #include "base/cs_base_cuda.h"
@@ -51,6 +50,9 @@
 #include "base/cs_dispatch.h"
 #include "base/cs_mdspan.h"
 #include "base/cs_parall.h"
+#include "base/cs_execution_context.h"
+#include "base/cs_mem.h"
+#include "bft/bft_error.h"
 
 #if defined(__cplusplus)
 #include <limits>

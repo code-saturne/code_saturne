@@ -39,10 +39,14 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_log.h"
 #include "base/cs_mem.h"
-#include "base/cs_time_step.h"
 #include "bft/bft_error.h"
+#include "base/cs_math.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_quadrature.h"
+#include "fvm/fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

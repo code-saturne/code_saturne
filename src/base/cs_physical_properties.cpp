@@ -31,23 +31,21 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_timer.h"
-
+#include "base/cs_volume_zone.h"
+#include "bft/bft_error.h"
 #include "cdo/cs_property.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -59,7 +57,6 @@
 #endif
 
 #if defined(HAVE_COOLPROP)
-#include "cs_coolprop.hxx"
 #endif
 
 /*----------------------------------------------------------------------------*/

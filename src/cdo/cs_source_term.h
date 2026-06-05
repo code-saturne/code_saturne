@@ -31,12 +31,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
 #include "base/cs_param_types.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
-#include "cdo/cs_quadrature.h"
 #include "cdo/cs_xdef.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_flag.h"
 
 /*============================================================================
  * Macro definitions

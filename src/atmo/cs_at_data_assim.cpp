@@ -47,15 +47,16 @@
 #include "base/cs_ext_neighborhood.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_math.h"
 #include "base/cs_measures_util.h"
 #include "base/cs_mem.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
-#include "base/cs_math.h"
-#include "base/cs_time_step.h"
 #include "base/cs_restart_default.h"
+#include "base/cs_time_step.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

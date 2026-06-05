@@ -24,7 +24,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -38,11 +37,14 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_array.h"
-#include "base/cs_defs.h"
 #include "base/cs_field.h"
-#include "base/cs_mem.h"
 #include "cdo/cs_reco.h"
 #include "mesh/cs_mesh_location.h"
+#include "base/cs_math.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_xdef.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

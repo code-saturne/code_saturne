@@ -38,9 +38,11 @@
 #include "cdo/cs_enforcement.h"
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_iter_algo.h"
-#include "cdo/cs_param_cdo.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_xdef.h"
+#include "base/cs_defs.h"
+#include "base/cs_param_types.h"
+#include "cdo/cs_quadrature.h"
 
 /*============================================================================
  * Macro definitions
@@ -697,7 +699,8 @@ typedef struct {
    * \var stab_scaling_coef
    * Value of the scaling coefficient in front of the stabilization term when a
    * SOLU or CIP scheme is used (cf. \ref CS_PARAM_ADVECTION_SCHEME_SOLU,
-   * \ref CS_PARAM_ADVECTION_SCHEME_SOLU_SYM, \ref CS_PARAM_ADVECTION_SCHEME_CIP or
+   * \ref CS_PARAM_ADVECTION_SCHEME_SOLU_SYM, \ref CS_PARAM_ADVECTION_SCHEME_CIP
+   * or
    * \ref CS_PARAM_ADVECTION_SCHEME_CIP_CW). By default, this is set to -1.0
    * and later modified automatically to 1.0 if not modified by a user. Should
    * be > 0.
@@ -707,7 +710,7 @@ typedef struct {
    * term
    *
    * \var adv_scaling_property
-   * May be set to NULL even if the advection term is activated. The value of
+   * May be set to nullptr even if the advection term is activated. The value of
    * this property in each cell is a multiplicative coefficient in front of the
    * advection term (boundary terms are also considered) This is useful to treat
    * the thermal module using the variable temperature instead of the enthalpy
@@ -1308,7 +1311,7 @@ static inline void
 cs_equation_param_set_flag(cs_equation_param_t *eqp,
                            cs_flag_t            flag)
 {
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
   eqp->flag |= flag;
 }
 
@@ -1325,7 +1328,7 @@ cs_equation_param_set_flag(cs_equation_param_t *eqp,
 static inline bool
 cs_equation_param_has_diffusion(const cs_equation_param_t *eqp)
 {
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
   if (eqp->flag & CS_EQUATION_DIFFUSION)
     return true;
   else
@@ -1345,7 +1348,7 @@ cs_equation_param_has_diffusion(const cs_equation_param_t *eqp)
 static inline bool
 cs_equation_param_has_curlcurl(const cs_equation_param_t *eqp)
 {
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
   if (eqp->flag & CS_EQUATION_CURLCURL)
     return true;
   else
@@ -1365,7 +1368,7 @@ cs_equation_param_has_curlcurl(const cs_equation_param_t *eqp)
 static inline bool
 cs_equation_param_has_graddiv(const cs_equation_param_t *eqp)
 {
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
   if (eqp->flag & CS_EQUATION_GRADDIV)
     return true;
   else
@@ -1385,7 +1388,7 @@ cs_equation_param_has_graddiv(const cs_equation_param_t *eqp)
 static inline bool
 cs_equation_param_has_convection(const cs_equation_param_t *eqp)
 {
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
   if (eqp->flag & CS_EQUATION_CONVECTION)
     return true;
   else
@@ -1405,7 +1408,7 @@ cs_equation_param_has_convection(const cs_equation_param_t *eqp)
 static inline bool
 cs_equation_param_has_reaction(const cs_equation_param_t *eqp)
 {
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
   if (eqp->flag & CS_EQUATION_REACTION)
     return true;
   else
@@ -1425,7 +1428,7 @@ cs_equation_param_has_reaction(const cs_equation_param_t *eqp)
 static inline bool
 cs_equation_param_has_time(const cs_equation_param_t *eqp)
 {
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
   if (eqp->flag & CS_EQUATION_UNSTEADY)
     return true;
   else
@@ -1445,7 +1448,7 @@ cs_equation_param_has_time(const cs_equation_param_t *eqp)
 static inline bool
 cs_equation_param_has_sourceterm(const cs_equation_param_t *eqp)
 {
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
   if (eqp->n_source_terms > 0)
     return true;
   else
@@ -1466,7 +1469,7 @@ cs_equation_param_has_sourceterm(const cs_equation_param_t *eqp)
 static inline bool
 cs_equation_param_has_internal_enforcement(const cs_equation_param_t *eqp)
 {
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
   if (eqp->flag & CS_EQUATION_FORCE_VALUES)
     return true;
   else
@@ -1487,7 +1490,7 @@ cs_equation_param_has_internal_enforcement(const cs_equation_param_t *eqp)
 static inline bool
 cs_equation_param_has_implicit_advection(const cs_equation_param_t *eqp)
 {
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
   if (eqp->flag & CS_EQUATION_CONVECTION) {
     if (eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_FULL ||
         eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED)
@@ -1513,7 +1516,7 @@ cs_equation_param_has_implicit_advection(const cs_equation_param_t *eqp)
 static inline bool
 cs_equation_param_has_user_hook(const cs_equation_param_t *eqp)
 {
-  assert(eqp != NULL);
+  assert(eqp != nullptr);
   if (eqp->flag & CS_EQUATION_BUILD_HOOK)
     return true;
   else
@@ -1537,9 +1540,9 @@ static inline bool
 cs_equation_param_has_name(cs_equation_param_t *eqp,
                            const char          *name)
 {
-  if (eqp == NULL)
+  if (eqp == nullptr)
     return false;
-  if (eqp->name == NULL)
+  if (eqp->name == nullptr)
     return false;
   if (strcmp(eqp->name, name) == 0)
     return true;

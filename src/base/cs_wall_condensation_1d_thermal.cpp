@@ -24,19 +24,14 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
-
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cmath>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -45,18 +40,13 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "base/cs_defs.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
-#include "base/cs_map.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
-#include "base/cs_parameters.h"
 #include "base/cs_time_step.h"
-#include "base/cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -64,10 +54,9 @@
 
 #include "base/cs_array.h"
 #include "base/cs_base.h"
-#include "base/cs_log_iteration.h"
-#include "base/cs_math.h"
 #include "base/cs_wall_condensation.h" // not great...
 #include "base/cs_wall_condensation_1d_thermal.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 

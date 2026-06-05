@@ -39,21 +39,16 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "alge/cs_blas.h"
 #include "base/cs_array.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
-#include "base/cs_parall.h"
 #include "base/cs_post.h"
 #include "base/cs_timer.h"
 #include "cdo/cs_cdo_bc.h"
-#include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdocb_scaleq_sles.h"
-#include "cdo/cs_domain.h"
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_builder.h"
-#include "cdo/cs_equation_priv.h"
 #include "cdo/cs_evaluate.h"
 #include "cdo/cs_sdm.h"
 #include "cdo/cs_source_term.h"
@@ -67,6 +62,25 @@
  *----------------------------------------------------------------------------*/
 
 #include "cdo/cs_cdocb_priv.h"
+#include "alge/cs_matrix_assembler.h"
+#include "alge/cs_param_saddle.h"
+#include "alge/cs_param_sles.h"
+#include "alge/cs_saddle_solver.h"
+#include "base/cs_boundary_zone.h"
+#include "base/cs_field.h"
+#include "base/cs_param_types.h"
+#include "base/cs_range_set.h"
+#include "base/cs_time_step.h"
+#include "base/cs_zone.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_cdo_assembly.h"
+#include "cdo/cs_cdo_system.h"
+#include "cdo/cs_enforcement.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_param_cdo.h"
+#include "cdo/cs_xdef.h"
+#include "cdo/cs_xdef_eval.h"
+#include "mesh/cs_mesh_adjacencies.h"
 #include "cdo/cs_cdocb_scaleq.h"
 
 /*=============================================================================

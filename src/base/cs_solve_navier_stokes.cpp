@@ -105,6 +105,16 @@
 #include "base/cs_volume_mass_injection.h"
 #include "base/cs_wall_condensation.h"
 #include "base/cs_wall_functions.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_sles.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
+#include "base/cs_halo.h"
+#include "base/cs_log.h"
+#include "base/cs_param_types.h"
+#include "base/cs_runge_kutta_integrator_priv.h"
+#include "base/cs_timer.h"
+#include "base/cs_volume_zone.h"
+#include "cdo/cs_domain.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

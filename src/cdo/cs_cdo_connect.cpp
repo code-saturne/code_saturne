@@ -43,13 +43,14 @@
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
-#include "base/cs_param_types.h"
-#include "base/cs_sort.h"
 #include "base/cs_volume_zone.h"
 #include "cdo/cs_flag.h"
 #include "cdo/cs_param_cdo.h"
 #include "fvm/fvm_io_num.h"
 #include "mesh/cs_mesh_adjacencies.h"
+#include "base/cs_timer.h"
+#include "base/cs_zone.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

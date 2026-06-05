@@ -33,31 +33,20 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <float.h>
-#include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <assert.h>
 #include <math.h>
 
 #if defined(HAVE_MPI)
-#include <mpi.h>
 #endif
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "atmo/cs_at_data_assim.h"
-#include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
-#include "atmo/cs_atmo_imbrication.h"
-#include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo_ground_model.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_ale.h"
-#include "base/cs_array.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_control.h"
@@ -91,10 +80,8 @@
 #include "base/cs_time_step.h"
 #include "base/cs_timer_stats.h"
 #include "base/cs_turbomachinery.h"
-#include "base/cs_vof.h"
 #include "base/cs_volume_mass_injection.h"
 #include "base/cs_wall_condensation.h"
-#include "base/cs_wall_condensation_1d_thermal.h"
 #include "cdo/cs_cdo_main.h"
 #include "cdo/cs_domain_op.h"
 #include "cdo/cs_domain_setup.h"
@@ -115,6 +102,16 @@
 #include "turb/cs_turbulence_bc.h"
 #include "turb/cs_turbulence_htles.h"
 #include "turb/cs_turbulence_model.h"
+#include "base/cs_field.h"
+#include "base/cs_log.h"
+#include "base/cs_mdspan.h"
+#include "base/cs_time_control.h"
+#include "base/cs_timer.h"
+#include "base/cs_volume_zone.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_domain.h"
+#include "cdo/cs_param_cdo.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

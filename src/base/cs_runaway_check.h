@@ -35,9 +35,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
-#include "mesh/cs_mesh_location.h"
-#include "base/cs_time_step.h"
+#include "base/cs_defs.h"
 
 /*============================================================================
  * Macro definitions

@@ -33,6 +33,8 @@
 #include "alge/cs_param_sles.h"
 #include "alge/cs_sles.h"
 #include "base/cs_range_set.h"
+#include "base/cs_defs.h"
+#include "base/cs_param_types.h"
 
 /*============================================================================
  * Macro definitions

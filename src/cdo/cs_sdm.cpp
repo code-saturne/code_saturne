@@ -35,12 +35,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "alge/cs_blas.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_parall.h"
-#include "base/cs_sort.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

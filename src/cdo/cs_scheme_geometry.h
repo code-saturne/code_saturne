@@ -36,8 +36,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_math.h"
 #include "cdo/cs_cdo_local.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_flag.h"
 
 /*============================================================================
  * Macro definitions

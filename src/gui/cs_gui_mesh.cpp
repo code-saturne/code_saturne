@@ -61,6 +61,8 @@
 #include "base/cs_preprocessor_data.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_map.h"
+#include "base/cs_selector.h"
+#include "base/cs_tree.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

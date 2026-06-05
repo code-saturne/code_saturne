@@ -34,6 +34,7 @@
 #include "base/cs_defs.h"
 
 #include "cdo/cs_equation.h"
+#include "cdo/cs_domain.h"
 
 /*============================================================================
  * Type definitions

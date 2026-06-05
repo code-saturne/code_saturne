@@ -41,22 +41,22 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-
 #include "base/cs_boundary.h"
 #include "base/cs_boundary_conditions.h"
-#include "cogz/cs_combustion_boundary_conditions.h"
-#include "cogz/cs_combustion_gas.h"
+#include "base/cs_boundary_zone.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_prototypes.h"
+#include "bft/bft_error.h"
+#include "cogz/cs_combustion_boundary_conditions.h"
+#include "cogz/cs_combustion_gas.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
-#include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
-#include "base/cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

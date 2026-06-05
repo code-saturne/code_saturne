@@ -74,6 +74,13 @@
 #include "base/cs_thermal_model.h"
 #include "base/cs_turbomachinery.h"
 #include "base/cs_volume_zone.h"
+#include "base/cs_field.h"
+#include "base/cs_interface.h"
+#include "base/cs_internal_coupling.h"
+#include "base/cs_range_set.h"
+#include "base/cs_time_step.h"
+#include "cdo/cs_equation_param.h"
+#include "mesh/cs_mesh.h"
 
 /*=============================================================================
  * Additional doxygen documentation

@@ -34,7 +34,6 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -42,26 +41,34 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
-#include "fvm/fvm_writer.h"
-
-#include "base/cs_array.h"
 #include "alge/cs_cell_to_vertex.h"
+#include "alge/cs_vertex_to_cell.h"
+#include "base/cs_array.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
-#include "base/cs_mem.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
 #include "base/cs_medcoupling_intersector.h"
-#include "meg/cs_meg_prototypes.h"
-#include "mesh/cs_mesh_adjacencies.h"
+#include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "base/cs_post.h"
-#include "base/cs_prototypes.h"
-#include "mesh/cs_stl.h"
 #include "base/cs_turbomachinery.h"
 #include "base/cs_velocity_pressure.h"
-#include "alge/cs_vertex_to_cell.h"
 #include "base/cs_zone.h"
+#include "fvm/fvm_writer.h"
+#include "meg/cs_meg_prototypes.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_stl.h"
+#include "base/cs_field.h"
+#include "base/cs_math.h"
+#include "base/cs_parall.h"
+#include "base/cs_restart.h"
+#include "base/cs_time_control.h"
+#include "base/cs_time_step.h"
+#include "base/cs_tree.h"
+#include "base/cs_volume_zone.h"
+#include "cdo/cs_flag.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -37,6 +37,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "cdo/cs_quadrature.h"
+#include "base/cs_math.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_cdo_connect.h"
+#include "fvm/fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

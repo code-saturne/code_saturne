@@ -28,37 +28,24 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
 #include <math.h>
 #include <float.h>
 
 #if defined(HAVE_MPI)
-#include <mpi.h>
 #endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "alge/cs_blas.h"
 #include "base/cs_algorithm.h"
 #include "base/cs_dispatch.h"
-#include "base/cs_ext_neighborhood.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
-#include "alge/cs_gradient.h"
 #include "base/cs_halo.h"
-#include "base/cs_halo_perio.h"
-#include "base/cs_internal_coupling.h"
-#include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
@@ -68,8 +55,8 @@
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_porous_model.h"
-#include "base/cs_timer.h"
 #include "turb/cs_turbulence_model.h"
+#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

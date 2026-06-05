@@ -34,6 +34,7 @@
 #include "base/cs_base.h"
 #include "base/cs_mobile_structures.h"
 #include "cdo/cs_domain.h"
+#include "base/cs_defs.h"
 
 /*============================================================================
  * Type definitions

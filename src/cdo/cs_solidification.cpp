@@ -45,6 +45,23 @@
 #include "cdo/cs_navsto_system.h"
 #include "cdo/cs_solid_selection.h"
 #include "pprt/cs_physical_model.h"
+#include "alge/cs_sles.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "base/cs_time_step.h"
+#include "base/cs_volume_zone.h"
+#include "base/cs_zone.h"
+#include "cdo/cs_cdo_blas.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_toolbox.h"
+#include "cdo/cs_equation_builder.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_hodge.h"
+#include "cdo/cs_sdm.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

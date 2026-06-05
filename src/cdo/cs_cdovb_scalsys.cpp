@@ -47,10 +47,19 @@
 #include "cdo/cs_cdo_system.h"
 #include "cdo/cs_cdovb_priv.h"
 #include "cdo/cs_cdovb_scaleq.h"
-
-#if defined(DEBUG) && !defined(NDEBUG)
-#include "cdo/cs_dbg.h"
-#endif
+#include "base/cs_field.h"
+#include "base/cs_interface.h"
+#include "base/cs_log.h"
+#include "base/cs_param_types.h"
+#include "base/cs_range_set.h"
+#include "base/cs_time_step.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_equation_builder.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_param_cdo.h"
+#include "cdo/cs_property.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -84,6 +84,15 @@
 #include "pprt/cs_physical_model.h"
 #include "base/cs_vof.h"
 #include "base/cs_wall_functions.h"
+#include "base/cs_function.h"
+#include "base/cs_math.h"
+#include "base/cs_param_types.h"
+#include "cdo/cs_domain.h"
+#include "cdo/cs_equation.h"
+#include "cdo/cs_flag.h"
+#include "comb/cs_coal.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

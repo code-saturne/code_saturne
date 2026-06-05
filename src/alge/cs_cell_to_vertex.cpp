@@ -30,37 +30,25 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
 #include <math.h>
 #include <float.h>
 
 #if defined(HAVE_MPI)
-#include <mpi.h>
 #endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
-#include "alge/cs_blas.h"
 #include "base/cs_array.h"
 #include "base/cs_dispatch.h"
-#include "base/cs_halo.h"
-#include "base/cs_halo_perio.h"
-#include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_timer.h"
+#include "base/cs_interface.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

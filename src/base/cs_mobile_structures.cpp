@@ -33,9 +33,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -66,8 +64,11 @@
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
 
-#include "base/cs_boundary_conditions.h"
-#include "base/cs_parameters.h"
+#include "base/cs_math.h"
+#include "cdo/cs_domain.h"
+#include "cdo/cs_equation_param.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

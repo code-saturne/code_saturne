@@ -38,10 +38,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "alge/cs_blas.h"
 #include "base/cs_boundary.h"
 #include "base/cs_field.h"
-#include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_post.h"
@@ -50,6 +48,13 @@
 #include "cdo/cs_reco.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
+#include "base/cs_base.h"
+#include "base/cs_interface.h"
+#include "base/cs_param_types.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_property.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

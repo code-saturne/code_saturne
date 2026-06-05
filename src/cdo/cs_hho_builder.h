@@ -31,12 +31,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
 #include "cdo/cs_basis_func.h"
-#include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_sdm.h"
 #include "cdo/cs_xdef.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_cdo_local.h"
 
 /*============================================================================
  * Macro definitions
@@ -131,11 +131,11 @@ cs_hho_builder_cellbasis_setup(const cs_cell_mesh_t    *cm,
                                cs_cell_builder_t       *cb,
                                cs_hho_builder_t        *hhob)
 {
-  if (hhob == NULL)
+  if (hhob == nullptr)
     return;
 
   /* Sanity checks */
-  assert(cm != NULL);
+  assert(cm != nullptr);
 
   /* Setup cell basis functions */
   hhob->cell_basis->setup(hhob->cell_basis, cm, 0, cm->xc, cb);

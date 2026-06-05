@@ -30,15 +30,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #if defined(HAVE_MPI)
-#include <mpi.h>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -46,18 +39,15 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
-#include "base/cs_base.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_field.h"
-#include "gui/cs_gui_util.h"
-#include "base/cs_mem.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_connect.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_parameters.h"
 #include "base/cs_volume_zone.h"
+#include "base/cs_zone.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_xdef_eval.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

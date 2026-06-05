@@ -63,6 +63,12 @@
 
 #include "cdo/cs_xdef.h"
 #include "cfbl/cs_cf_model.h"
+#include "base/cs_halo.h"
+#include "base/cs_math.h"
+#include "cdo/cs_equation_param.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

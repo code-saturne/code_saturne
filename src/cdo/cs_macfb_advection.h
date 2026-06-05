@@ -38,6 +38,8 @@
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_macfb_builder.h"
 #include "cdo/cs_property.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_sdm.h"
 
 /*============================================================================
  * Macro definitions

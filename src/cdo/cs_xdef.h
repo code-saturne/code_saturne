@@ -31,17 +31,14 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <cstring>
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
-#include "base/cs_boundary_zone.h"
+#include "base/cs_defs.h"
 #include "base/cs_field.h"
+#include "base/cs_log.h"
 #include "base/cs_param_types.h"
-#include "base/cs_volume_zone.h"
 #include "cdo/cs_quadrature.h"
 #include "mesh/cs_mesh_adjacencies.h"
 
@@ -408,7 +405,7 @@ typedef struct {
 static inline cs_real_t
 cs_xdef_get_scalar_value(const cs_xdef_t *def)
 {
-  assert(def != NULL);
+  assert(def != nullptr);
   assert(def->dim == 1);
   assert(def->type == CS_XDEF_BY_VALUE);
 
@@ -432,7 +429,7 @@ static inline void
 cs_xdef_set_scalar_value(cs_xdef_t *def,
                          cs_real_t  val)
 {
-  assert(def != NULL);
+  assert(def != nullptr);
   assert(def->dim == 1);
   assert(def->type == CS_XDEF_BY_VALUE);
 
@@ -455,8 +452,8 @@ cs_xdef_set_scalar_value(cs_xdef_t *def,
 static inline cs_real_t *
 cs_xdef_array_get_values(const cs_xdef_t     *def)
 {
-  if (def == NULL)
-    return NULL;
+  if (def == nullptr)
+    return nullptr;
 
   assert(def->type == CS_XDEF_BY_ARRAY);
 
@@ -479,8 +476,8 @@ cs_xdef_array_get_values(const cs_xdef_t     *def)
 static inline cs_field_t *
 cs_xdef_field_get(const cs_xdef_t *def)
 {
-  if (def == NULL)
-    return NULL;
+  if (def == nullptr)
+    return nullptr;
 
   assert(def->type == CS_XDEF_BY_FIELD);
 
@@ -806,6 +803,5 @@ cs_real_t *
 cs_xdef_field_get_values(cs_xdef_t     *def);
 
 /*----------------------------------------------------------------------------*/
-
 
 #endif /* CS_XDEF_H */

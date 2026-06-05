@@ -33,6 +33,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "cdo/cs_cdo_local.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_flag.h"
 
 /*============================================================================
  * Macro definitions
@@ -107,7 +110,7 @@ cs_reco_cw_scalar_v2f_fw(const cs_face_mesh_t    *fm,
 {
   cs_real_t  p_f = 0.;
 
-  if (p_v == NULL)
+  if (p_v == nullptr)
     return p_f;
 
   const cs_quant_t  pfq = fm->face;
@@ -139,7 +142,7 @@ cs_reco_cw_scalar_v2f_loc(const short int          f,
 {
   cs_real_t  p_f = 0.;
 
-  if (p_v == NULL)
+  if (p_v == nullptr)
     return p_f;
 
   assert(cs_eflag_test(cm->flag,
@@ -174,7 +177,7 @@ cs_reco_cw_scalar_v2c_loc(const cs_cell_mesh_t     *cm,
 {
   cs_real_t  p_c = 0.;
 
-  if (p_v == NULL || cm == NULL)
+  if (p_v == nullptr || cm == nullptr)
     return p_c;
 
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ)); /* Sanity check */
@@ -207,7 +210,7 @@ cs_reco_cw_scalar_v2c(const cs_cell_mesh_t      *cm,
 
   cs_real_t  val_c = 0;
 
-  if (array == NULL)
+  if (array == nullptr)
     return val_c;
 
   for (short int v = 0; v < cm->n_vc; v++)
@@ -238,7 +241,7 @@ cs_reco_cw_scalar_vbyc2c(const cs_cell_mesh_t      *cm,
 
   cs_real_t  val_c = 0;
 
-  if (array == NULL)
+  if (array == nullptr)
     return val_c;
 
   for (short int v = 0; v < cm->n_vc; v++)
@@ -269,7 +272,7 @@ cs_reco_cw_scalar_ebyc2c(const cs_cell_mesh_t      *cm,
 
   cs_real_t  val_c = 0;
 
-  if (array == NULL)
+  if (array == nullptr)
     return val_c;
 
   for (short int e = 0; e < cm->n_ec; e++)

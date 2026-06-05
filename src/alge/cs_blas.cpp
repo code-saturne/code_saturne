@@ -31,7 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <math.h>
-#include <stdio.h>
 
 #if defined(HAVE_MKL)
 #include "mkl.h"
@@ -41,7 +40,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
 #include "base/cs_log.h"
 #include "base/cs_parall.h"
 

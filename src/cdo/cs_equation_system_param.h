@@ -32,8 +32,8 @@
 
 #include "alge/cs_param_sles.h"
 #include "base/cs_param_types.h"
-#include "cdo/cs_equation_param.h"
-#include "cdo/cs_iter_algo.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_property.h"
 
 /*============================================================================
  * Macro definitions

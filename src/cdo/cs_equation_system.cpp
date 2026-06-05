@@ -24,7 +24,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -41,6 +40,9 @@
 #include "base/cs_timer_stats.h"
 #include "cdo/cs_cdovb_scalsys.h"
 #include "cdo/cs_equation_param.h"
+#include "base/cs_log.h"
+#include "base/cs_param_types.h"
+#include "bft/bft_error.h"
 #include "cdo/cs_equation_system_sles.h"
 
 /*----------------------------------------------------------------------------

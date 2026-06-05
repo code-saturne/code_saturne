@@ -46,19 +46,12 @@
 #include <stdlib.h>
 #include <time.h>
 
-#if defined (HAVE_GETTIMEOFDAY)
+#if defined(HAVE_GETTIMEOFDAY)
 #include <sys/time.h>
 #endif
 
-#if defined (HAVE_GETRUSAGE)
-#include <sys/time.h>
+#if defined(HAVE_GETRUSAGE)
 #include <sys/resource.h>
-#include <unistd.h>
-#endif
-
-#if defined(_POSIX_SOURCE)
-#include <sys/times.h>
-#include <unistd.h>
 #endif
 
 /* Disable automatically-defined HAVE_CLOCK_GETTIME on Cygwin */

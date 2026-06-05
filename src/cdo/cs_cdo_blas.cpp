@@ -29,7 +29,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -39,6 +38,8 @@
 #include "base/cs_math.h"
 #include "base/cs_parall.h"
 #include "cdo/cs_param_cdo.h"
+#include "bft/bft_error.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

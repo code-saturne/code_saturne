@@ -45,6 +45,9 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
+#include "base/cs_base.h"
+#include "base/cs_zone.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

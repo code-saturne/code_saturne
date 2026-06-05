@@ -62,6 +62,9 @@
 #include "base/cs_thermal_model.h"
 #include "base/cs_velocity_pressure.h"
 #include "cfbl/cs_cf_model.h"
+#include "base/cs_time_step.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

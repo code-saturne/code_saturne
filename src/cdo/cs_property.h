@@ -31,12 +31,16 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_field.h"
 #include "base/cs_param_types.h"
 #include "cdo/cs_flag.h"
 #include "cdo/cs_xdef.h"
 #include "cdo/cs_xdef_cw_eval.h"
 #include "cdo/cs_xdef_eval.h"
+#include "base/cs_defs.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions
@@ -259,7 +263,7 @@ typedef struct {
 static inline bool
 cs_property_is_constant(const cs_property_t   *pty)
 {
-  if (pty == NULL)
+  if (pty == nullptr)
     return true; /* Treated as the "unity" property */
 
   if (pty->state_flag & CS_FLAG_STATE_STEADY) {
@@ -285,7 +289,7 @@ cs_property_is_constant(const cs_property_t   *pty)
 static inline bool
 cs_property_is_steady(const cs_property_t   *pty)
 {
-  if (pty == NULL)
+  if (pty == nullptr)
     return true; /* Treated as the "unity" property */
 
   if (pty->state_flag & CS_FLAG_STATE_STEADY)
@@ -307,7 +311,7 @@ cs_property_is_steady(const cs_property_t   *pty)
 static inline bool
 cs_property_is_uniform(const cs_property_t   *pty)
 {
-  if (pty == NULL)
+  if (pty == nullptr)
     return true; /* Treated as the "unity" property */
 
   if (pty->state_flag & CS_FLAG_STATE_UNIFORM)
@@ -329,7 +333,7 @@ cs_property_is_uniform(const cs_property_t   *pty)
 static inline bool
 cs_property_is_isotropic(const cs_property_t   *pty)
 {
-  if (pty == NULL)
+  if (pty == nullptr)
     return false;
 
   if (pty->type & CS_PROPERTY_ISO)
@@ -352,7 +356,7 @@ cs_property_is_isotropic(const cs_property_t   *pty)
 static inline bool
 cs_property_is_subcell(const cs_property_t   *pty)
 {
-  if (pty == NULL)
+  if (pty == nullptr)
     return false;
 
   if (pty->type & CS_PROPERTY_SUBCELL_DEFINITION)
@@ -374,8 +378,8 @@ cs_property_is_subcell(const cs_property_t   *pty)
 static inline const char *
 cs_property_get_name(const cs_property_t   *pty)
 {
-  if (pty == NULL)
-    return NULL;
+  if (pty == nullptr)
+    return nullptr;
 
   return pty->name;
 }
@@ -393,7 +397,7 @@ cs_property_get_name(const cs_property_t   *pty)
 static inline cs_property_type_t
 cs_property_get_type(const cs_property_t   *pty)
 {
-  if (pty == NULL)
+  if (pty == nullptr)
     return 0; /* means undefined */
 
   return pty->type;
@@ -412,7 +416,7 @@ cs_property_get_type(const cs_property_t   *pty)
 static inline int
 cs_property_get_dim(const cs_property_t   *pty)
 {
-  if (pty == NULL)
+  if (pty == nullptr)
     return 0; /* means undefined */
 
   if (pty->type & CS_PROPERTY_ISO)

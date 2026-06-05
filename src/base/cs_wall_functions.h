@@ -32,9 +32,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_printf.h"
-#include "base/cs_base.h"
 #include "base/cs_math.h"
 #include "turb/cs_turbulence_model.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 

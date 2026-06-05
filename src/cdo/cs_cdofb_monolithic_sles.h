@@ -40,6 +40,10 @@
 
 #include "alge/cs_saddle_solver.h"
 #include "cdo/cs_navsto_param.h"
+#include "alge/cs_param_saddle.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions

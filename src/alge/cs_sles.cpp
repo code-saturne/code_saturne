@@ -30,15 +30,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
 
 #if defined(HAVE_MPI)
-#include <mpi.h>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -49,19 +44,16 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
-#include "base/cs_base.h"
 #include "alge/cs_blas.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_log.h"
-#include "base/cs_halo.h"
 #include "base/cs_map.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "alge/cs_matrix.h"
-#include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_util.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"

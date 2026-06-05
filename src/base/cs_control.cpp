@@ -71,6 +71,9 @@
 #include "base/cs_time_plot.h"
 #include "base/cs_time_stepping.h"
 #include "base/cs_timer.h"
+#include "base/cs_base.h"
+#include "base/cs_time_step.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

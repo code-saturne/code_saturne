@@ -76,6 +76,8 @@
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_param_types.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

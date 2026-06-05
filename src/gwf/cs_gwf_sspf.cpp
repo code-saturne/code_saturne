@@ -54,6 +54,15 @@
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"
+#include "base/cs_time_step.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_advection_field.h"
+#include "cdo/cs_equation.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_xdef.h"
+#include "gwf/cs_gwf_param.h"
+#include "mesh/cs_mesh_location.h"
 #endif
 
 /*----------------------------------------------------------------------------

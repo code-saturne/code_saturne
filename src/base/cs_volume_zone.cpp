@@ -33,13 +33,10 @@
 #include <assert.h>
 #include <float.h>
 #include <math.h>
-#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #if defined(HAVE_MPI)
-#include <mpi.h>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -49,11 +46,9 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "base/cs_base.h"
 #include "base/cs_flag_check.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
-#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"

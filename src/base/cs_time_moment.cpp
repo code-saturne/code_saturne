@@ -31,10 +31,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <stdarg.h>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -46,14 +44,11 @@
 
 #include "base/cs_array.h"
 #include "base/cs_array_reduce.h"
-#include "base/cs_base.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_field.h"
-#include "base/cs_field_pointer.h"
 #include "base/cs_file.h"
 #include "base/cs_log.h"
 #include "base/cs_halo.h"
-#include "base/cs_halo_perio.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"

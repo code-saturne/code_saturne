@@ -41,6 +41,7 @@
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_source_term.h"
 #include "mesh/cs_mesh.h"
+#include "base/cs_defs.h"
 
 /*============================================================================
  * Macro definitions

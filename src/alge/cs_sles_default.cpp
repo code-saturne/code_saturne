@@ -30,15 +30,11 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
 
 #if defined(HAVE_MPI)
-#include <mpi.h>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -48,12 +44,9 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "base/cs_base.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
-#include "alge/cs_grid.h"
 #include "base/cs_halo.h"
-#include "base/cs_internal_coupling.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
@@ -61,13 +54,14 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
-#include "alge/cs_matrix_util.h"
 #include "alge/cs_multigrid.h"
-#include "base/cs_parameters.h"
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_it.h"
 #include "alge/cs_sles_pc.h"
-#include "base/cs_timer.h"
+#include "base/cs_assert.h"
+#include "base/cs_base_accel.h"
+#include "base/cs_dispatch.h"
+#include "cdo/cs_equation_param.h"
 
 #if defined(HAVE_HYPRE)
 #include "alge/cs_sles_hypre.h"

@@ -26,8 +26,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -39,10 +37,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_param_types.h"
+#include "bft/bft_error.h"
 #include "bft/bft_printf.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

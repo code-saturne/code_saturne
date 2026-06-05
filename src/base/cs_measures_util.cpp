@@ -32,10 +32,7 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 #include <float.h>
 
 #if defined(HAVE_MPI)
@@ -52,20 +49,14 @@
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_point_location.h"
 
-#include "base/cs_base.h"
-#include "base/cs_field.h"
-#include "base/cs_log.h"
 #include "base/cs_map.h"
 #include "base/cs_measures_util.h"
 #include "base/cs_mem.h"
-#include "base/cs_selector.h"
 #include "mesh/cs_mesh_connect.h"
 #include "base/cs_parall.h"
-#include "base/cs_post.h"
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------*/
 

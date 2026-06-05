@@ -58,6 +58,11 @@
 #include "base/cs_physical_constants.h"
 #include "turb/cs_turbulence_bc.h"
 #include "turb/cs_turbulence_model.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_field.h"
+#include "base/cs_math.h"
+#include "base/cs_param_types.h"
+#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

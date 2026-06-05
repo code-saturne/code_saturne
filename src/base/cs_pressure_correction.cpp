@@ -39,13 +39,10 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "alge/cs_blas.h"
 
 #include "base/cs_ale.h"
 #include "base/cs_array.h"
-#include "base/cs_base_accel.h"
 #include "base/cs_boundary_conditions.h"
-#include "base/cs_equation_iterative_solve.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
@@ -69,7 +66,6 @@
 #include "base/cs_volume_mass_injection.h"
 #include "base/cs_wall_condensation.h"
 
-#include "alge/cs_balance.h"
 #include "alge/cs_convection_diffusion.h"
 #include "alge/cs_divergence.h"
 #include "alge/cs_face_viscosity.h"
@@ -77,21 +73,38 @@
 #include "alge/cs_matrix_building.h"
 #include "alge/cs_sles_default.h"
 
-#include "cdo/cs_cdo_headers.h"
 #include "mesh/cs_mesh_location.h"
 #include "lagr/cs_lagr.h"
 
 #include "pprt/cs_physical_model.h"
-#include "atmo/cs_air_props.h"
 #include "atmo/cs_atmo.h"
 #include "cfbl/cs_cf_compute.h"
 #include "cfbl/cs_cf_thermo.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
-#include "cdo/cs_dbg.h"
 #endif
 
-#include "alge/cs_bad_cells_regularisation.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_sles.h"
+#include "base/cs_boundary.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
+#include "base/cs_boundary_zone.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_math.h"
+#include "base/cs_param_types.h"
+#include "base/cs_restart.h"
+#include "base/cs_runge_kutta_integrator_priv.h"
+#include "base/cs_zone.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_param_cdo.h"
+#include "cdo/cs_property.h"
+#include "cfbl/cs_cf_model.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

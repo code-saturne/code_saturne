@@ -31,8 +31,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
-#include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_halo.h"
 #include "mesh/cs_mesh.h"

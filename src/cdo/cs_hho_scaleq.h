@@ -44,6 +44,7 @@
 #include "cdo/cs_hho_builder.h"
 #include "cdo/cs_source_term.h"
 #include "mesh/cs_mesh.h"
+#include "base/cs_defs.h"
 
 /*============================================================================
  * Macro definitions

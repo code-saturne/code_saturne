@@ -33,15 +33,17 @@
 
 #include <string>
 
+#include "base/cs_defs.h"
 #include "base/cs_field.h"
 #include "base/cs_param_types.h"
+#include "bft/bft_error.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_flag.h"
 #include "cdo/cs_macfb_builder.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_xdef.h"
-#include "cdo/cs_xdef_eval.h"
 #include "mesh/cs_mesh_location.h"
 
 /*============================================================================
@@ -240,7 +242,7 @@ static inline void
 cs_advection_field_set_status(cs_adv_field_t               *adv,
                               cs_advection_field_status_t   status)
 {
-  if (adv == NULL)
+  if (adv == nullptr)
     return;
 
   adv->status = status;
@@ -259,7 +261,7 @@ cs_advection_field_set_status(cs_adv_field_t               *adv,
 static inline bool
 cs_advection_field_is_uniform(const cs_adv_field_t   *adv)
 {
-  if (adv == NULL)
+  if (adv == nullptr)
     return false;
 
   if (adv->definition->state & CS_FLAG_STATE_UNIFORM)
@@ -282,7 +284,7 @@ cs_advection_field_is_uniform(const cs_adv_field_t   *adv)
 static inline bool
 cs_advection_field_is_cellwise(const cs_adv_field_t   *adv)
 {
-  if (adv == NULL)
+  if (adv == nullptr)
     return false;
 
   cs_flag_t  state = adv->definition->state;
@@ -328,7 +330,7 @@ cs_advection_field_get_name(const cs_adv_field_t *adv)
 static inline cs_xdef_type_t
 cs_advection_field_get_deftype(const cs_adv_field_t   *adv)
 {
-  if (adv == NULL)
+  if (adv == nullptr)
     return CS_N_XDEF_TYPES;
 
   return cs_xdef_get_type(adv->definition);
@@ -350,8 +352,8 @@ static inline cs_field_t *
 cs_advection_field_get_field(const cs_adv_field_t       *adv,
                              cs_mesh_location_type_t     ml_type)
 {
-  cs_field_t  *f = NULL;
-  if (adv == NULL)
+  cs_field_t *f = nullptr;
+  if (adv == nullptr)
     return f;
 
   switch (ml_type) {
@@ -360,28 +362,28 @@ cs_advection_field_get_field(const cs_adv_field_t       *adv,
     if (adv->cell_field_id > -1)
       f = cs_field_by_id(adv->cell_field_id);
     else
-      f = NULL;
+      f = nullptr;
     break;
 
   case CS_MESH_LOCATION_INTERIOR_FACES:
     if (adv->int_field_id > -1)
       f = cs_field_by_id(adv->int_field_id);
     else
-      f = NULL;
+      f = nullptr;
     break;
 
   case CS_MESH_LOCATION_BOUNDARY_FACES:
     if (adv->bdy_field_id > -1)
       f = cs_field_by_id(adv->bdy_field_id);
     else
-      f = NULL;
+      f = nullptr;
     break;
 
   case CS_MESH_LOCATION_VERTICES:
     if (adv->vtx_field_id > -1)
       f = cs_field_by_id(adv->vtx_field_id);
     else
-      f = NULL;
+      f = nullptr;
     break;
 
   default:

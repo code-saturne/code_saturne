@@ -210,12 +210,10 @@ extern "C" {
  */
 
 #if defined(HAVE_SYS_TYPES_H)
-#include <sys/types.h>
 #endif
 
 /* C++ assert necessary for template */
 #if defined(__cplusplus)
-#include <typeinfo>
 #include "assert.h"
 #endif
 

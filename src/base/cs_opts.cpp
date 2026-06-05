@@ -34,21 +34,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #if defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
 
 #if defined(HAVE_MPI)
-#include <mpi.h>
 #endif
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_ext_library_info.h"

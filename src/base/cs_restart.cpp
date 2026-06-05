@@ -33,7 +33,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #if defined(HAVE_FCNTL_H)
@@ -65,12 +64,12 @@
 #include "base/cs_io.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_save.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_part_to_block.h"
 #include "base/cs_parall.h"
 #include "base/cs_timer.h"
 #include "base/cs_time_step.h"
+#include "base/cs_log.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

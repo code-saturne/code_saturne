@@ -45,8 +45,6 @@
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_point_location.h"
 
-#include "base/cs_base.h"
-#include "base/cs_map.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
@@ -57,7 +55,7 @@
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_selector.h"
-#include "base/cs_timer.h"
+#include "fvm/fvm_io_num.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

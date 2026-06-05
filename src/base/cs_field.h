@@ -39,6 +39,8 @@
 
 #include "base/cs_defs.h"
 #include "base/cs_array.h"
+#include "base/cs_mdspan.h"
+#include "base/cs_mem.h"
 
 /*=============================================================================
  * Macro definitions

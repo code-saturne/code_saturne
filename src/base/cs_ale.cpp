@@ -73,6 +73,17 @@
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
 #include "base/cs_time_step.h"
+#include "alge/cs_gradient.h"
+#include "base/cs_halo.h"
+#include "base/cs_param_types.h"
+#include "base/cs_parameters.h"
+#include "base/cs_zone.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_param_cdo.h"
+#include "cdo/cs_property.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

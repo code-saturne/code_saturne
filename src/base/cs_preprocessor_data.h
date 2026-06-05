@@ -35,10 +35,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm/fvm_io_num.h"
 
-#include "base/cs_base.h"
 #include "mesh/cs_mesh.h"
+#include "base/cs_defs.h"
+#include "mesh/cs_mesh_builder.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -166,4 +166,3 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
 END_C_DECLS
 
 #endif /* CS_PRE_PROCESSOR_DATA_H */
-

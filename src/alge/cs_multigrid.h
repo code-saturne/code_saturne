@@ -31,12 +31,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
 #include "alge/cs_grid.h"
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_it.h"
 #include "alge/cs_sles_pc.h"
-#include "base/cs_time_plot.h"
 
 /*----------------------------------------------------------------------------*/
 

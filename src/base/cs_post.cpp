@@ -71,6 +71,14 @@
 #include "base/cs_timer.h"
 #include "base/cs_timer_stats.h"
 #include "base/cs_volume_zone.h"
+#include "base/cs_halo.h"
+#include "base/cs_probe.h"
+#include "base/cs_time_step.h"
+#include "base/cs_zone.h"
+#include "bft/bft_error.h"
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_io_num.h"
+#include "lagr/cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

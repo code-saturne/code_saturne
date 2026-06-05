@@ -92,6 +92,13 @@
 #include "cogz/cs_combustion_slfm.h"
 #include "cogz/cs_combustion_physical_properties.h"
 #include "comb/cs_coal_physical_properties.h"
+#include "base/cs_log.h"
+#include "base/cs_mdspan.h"
+#include "base/cs_param_types.h"
+#include "base/cs_restart_default.h"
+#include "base/cs_time_step.h"
+#include "cdo/cs_equation_param.h"
+#include "mesh/cs_mesh_location.h"
 #include "ctwr/cs_ctwr_physical_properties.h"
 
 /*----------------------------------------------------------------------------

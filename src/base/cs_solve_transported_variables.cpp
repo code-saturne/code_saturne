@@ -33,31 +33,22 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
-#include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
-#include "base/cs_base.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "cfbl/cs_cf_energy.h"
 #include "cfbl/cs_cf_model.h"
-#include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_mem.h"
 #include "cfbl/cs_hgn_source_terms_step.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_physical_constants.h"
 #include "base/cs_restart.h"
 #include "base/cs_solve_equation.h"
 #include "base/cs_time_step.h"
@@ -68,6 +59,8 @@
 #include "comb/cs_coal.h"
 #include "cogz/cs_combustion_slfm.h"
 #include "elec/cs_elec_model.h"
+#include "base/cs_field.h"
+#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -31,14 +31,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <float.h>
 
 #if defined(HAVE_MPI)
-#include <mpi.h>
 #endif
 
 /*----------------------------------------------------------------------------

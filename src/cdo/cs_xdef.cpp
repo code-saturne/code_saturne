@@ -29,8 +29,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cstdio>
-#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -42,6 +40,11 @@
 #include "base/cs_mem.h"
 #include "cdo/cs_flag.h"
 #include "mesh/cs_mesh_location.h"
+#include "base/cs_base.h"
+#include "base/cs_boundary_zone.h"
+#include "base/cs_volume_zone.h"
+#include "base/cs_zone.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -38,16 +38,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
-#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
-#include "cdo/cs_equation.h"
 #include "cdo/cs_navsto_context.h"
-#include "cdo/cs_navsto_coupling.h"
 #include "cdo/cs_navsto_param.h"
-#include "cdo/cs_source_term.h"
 #include "mesh/cs_mesh.h"
+#include "base/cs_boundary.h"
+#include "cdo/cs_advection_field.h"
 
 /*============================================================================
  * Macro definitions

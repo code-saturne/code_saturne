@@ -41,6 +41,7 @@
 #include "base/cs_math.h"
 #include "base/cs_profiling.h"
 #include "cdo/cs_equation_param.h"
+#include "base/cs_mem.h"
 
 /*=============================================================================
  * Public function prototypes

@@ -31,17 +31,12 @@
 
 #include <assert.h>
 #include <math.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
 #include "base/cs_math.h"
-#include "base/cs_mem.h"
-#include "base/cs_time_step.h"
-#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

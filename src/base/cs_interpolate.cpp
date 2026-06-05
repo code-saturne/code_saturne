@@ -33,16 +33,12 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
 #include "base/cs_field_default.h"
@@ -50,9 +46,9 @@
 #include "base/cs_halo.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_parall.h"
+#include "base/cs_field.h"
+#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -32,7 +32,6 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #if defined(HAVE_MPI)
@@ -54,7 +53,6 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "base/cs_base.h"
 #include "base/cs_file.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"

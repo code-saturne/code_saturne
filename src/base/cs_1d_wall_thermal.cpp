@@ -31,9 +31,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -59,8 +56,12 @@
 #include "base/cs_post.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
-#include "base/cs_wall_condensation.h"
 #include "rayt/cs_rad_transfer.h"
+#include "base/cs_array.h"
+#include "base/cs_log.h"
+#include "base/cs_mdspan.h"
+#include "base/cs_time_step.h"
+#include "fvm/fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

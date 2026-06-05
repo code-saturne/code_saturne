@@ -106,6 +106,12 @@
 #include "ctwr/cs_ctwr_boundary_conditions.h"
 #include "cogz/cs_combustion_boundary_conditions.h"
 #include "comb/cs_coal_boundary_conditions.h"
+#include "alge/cs_gradient.h"
+#include "base/cs_halo.h"
+#include "base/cs_mdspan.h"
+#include "base/cs_param_types.h"
+#include "base/cs_time_control.h"
+#include "cdo/cs_domain.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

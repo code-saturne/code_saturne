@@ -37,7 +37,6 @@
 
 #include "base/cs_block_dist.h"
 #include "base/cs_defs.h"
-#include "base/cs_parall.h"
 #include "base/cs_rank_neighbors.h"
 
 /*=============================================================================

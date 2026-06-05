@@ -29,11 +29,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
 #include "base/cs_param_types.h"
-#include "base/cs_time_step.h"
-#include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_xdef.h"
+#include "base/cs_defs.h"
+#include "bft/bft_error.h"
 
 /*============================================================================
  * Macro definitions

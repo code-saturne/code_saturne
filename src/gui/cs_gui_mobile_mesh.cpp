@@ -63,6 +63,13 @@
 #include "base/cs_timer.h"
 #include "base/cs_time_step.h"
 #include "base/cs_volume_zone.h"
+#include "base/cs_field.h"
+#include "base/cs_param_types.h"
+#include "base/cs_tree.h"
+#include "base/cs_zone.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_flag.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

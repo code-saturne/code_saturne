@@ -37,34 +37,37 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "alge/cs_blas.h"
 #include "base/cs_array.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_post.h"
 #include "base/cs_timer.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_solve.h"
 #include "cdo/cs_cdofb_navsto.h"
-#include "cdo/cs_cdofb_priv.h"
-#include "cdo/cs_cdofb_scaleq.h"
 #include "cdo/cs_cdofb_vecteq.h"
-#include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_priv.h"
-#include "cdo/cs_evaluate.h"
-#include "cdo/cs_reco.h"
-#include "cdo/cs_source_term.h"
 #include "cdo/cs_static_condensation.h"
-
-#if defined(HAVE_PETSC)
-#include "alge/cs_sles_petsc.h"
-#endif
-
-#if defined(DEBUG) && !defined(NDEBUG)
-#include "cdo/cs_dbg.h"
-#endif
+#include "alge/cs_matrix.h"
+#include "alge/cs_param_sles.h"
+#include "alge/cs_sles.h"
+#include "base/cs_field.h"
+#include "base/cs_interface.h"
+#include "base/cs_param_types.h"
+#include "base/cs_range_set.h"
+#include "base/cs_time_step.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_system.h"
+#include "cdo/cs_equation.h"
+#include "cdo/cs_equation_builder.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_flag.h"
+#include "cdo/cs_hodge.h"
+#include "cdo/cs_navsto_coupling.h"
+#include "cdo/cs_param_cdo.h"
+#include "cdo/cs_property.h"
+#include "cdo/cs_sdm.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

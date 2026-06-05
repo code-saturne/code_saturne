@@ -31,19 +31,15 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "alge/cs_matrix.h"
-#include "base/cs_base.h"
-#include "base/cs_field.h"
 #include "base/cs_restart.h"
-#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_cdoeb_priv.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_param.h"
-#include "cdo/cs_source_term.h"
 #include "mesh/cs_mesh.h"
+#include "base/cs_defs.h"
 
 /*============================================================================
  * Macro definitions

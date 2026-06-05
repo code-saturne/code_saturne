@@ -24,7 +24,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -32,27 +31,19 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-#include "bft/bft_mem_usage.h"
 
-#include "base/cs_defs.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_rank_neighbors.h"
 #include "base/cs_sort.h"
-#include "base/cs_timer.h"
 
-#include "alge/cs_matrix.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

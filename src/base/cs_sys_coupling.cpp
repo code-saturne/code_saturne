@@ -66,6 +66,7 @@
 #include "base/cs_prototypes.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_zone.h"
+#include "base/cs_field.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

@@ -30,8 +30,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_flag.h"
 #include "cdo/cs_xdef.h"
+#include "base/cs_defs.h"
 
 /*============================================================================
  * Macro definitions

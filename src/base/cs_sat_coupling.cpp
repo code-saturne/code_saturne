@@ -72,6 +72,14 @@
 #include "base/cs_selector.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_turbomachinery.h"
+#include "base/cs_field.h"
+#include "base/cs_math.h"
+#include "base/cs_parall.h"
+#include "base/cs_param_types.h"
+#include "base/cs_parameters.h"
+#include "base/cs_time_step.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

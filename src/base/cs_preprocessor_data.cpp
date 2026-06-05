@@ -32,7 +32,6 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -50,10 +49,8 @@
 
 #include "fvm/fvm_periodicity.h"
 
-#include "base/cs_base.h"
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
-#include "base/cs_interface.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_cartesian.h"
