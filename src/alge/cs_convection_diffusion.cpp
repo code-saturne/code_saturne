@@ -4257,9 +4257,6 @@ _convection_diffusion_unsteady_strided
           const rgrad_t &gradi = grad[c_id0];
           const rgrad_t &gradj = grad[c_id1];
 
-          const rgrad_t &grad_up_i = gradup[c_id0];
-          const rgrad_t &grad_up_j = gradup[c_id1];
-
           cs_slope_test_strided<stride>(_pi, _pj,
                                         i_dist[face_id],
                                         i_face_u_normal[face_id],
@@ -4268,13 +4265,11 @@ _convection_diffusion_unsteady_strided
                                         i_massflux[face_id],
                                         &testij, &tesqck);
 
-          for (cs_lnum_t isou = 0; isou < stride; isou++) {
+          /* Second order (legacy SOLU)
+             --------------------------*/
 
-            if (ischcp == 0) {
-
-              /* Second order (legacy SOLU)
-                 --------------------------*/
-
+          if (ischcp == 0) {
+            for (cs_lnum_t isou = 0; isou < stride; isou++) {
               cs_solu_f_val(cell_ceni,
                             i_face_cog[face_id],
                             gradi[isou],
@@ -4285,13 +4280,14 @@ _convection_diffusion_unsteady_strided
                             gradj[isou],
                             _pj[isou],
                             &pjf[isou]);
-
             }
-            else if (ischcp == 1) {
+          }
 
-              /* Centered
-                 --------*/
+          /* Centered
+             --------*/
 
+          else if (ischcp == 1) {
+            for (cs_lnum_t isou = 0; isou < stride; isou++) {
               cs_centered_f_val(w_f,
                                 pip[isou], pjp[isou],
                                 &pif[isou]);
@@ -4300,11 +4296,16 @@ _convection_diffusion_unsteady_strided
                                 &pjf[isou]);
 
             }
-            else if (ischcp == 2) {
+          }
 
-              /* Original SOLU
-                 ------------- */
+          /* Original SOLU
+             ------------- */
 
+          else if (ischcp == 2) {
+            const rgrad_t &grad_up_i = gradup[c_id0];
+            const rgrad_t &grad_up_j = gradup[c_id1];
+
+            for (cs_lnum_t isou = 0; isou < stride; isou++) {
               cs_solu_f_val(cell_ceni,
                             i_face_cog[face_id],
                             grad_up_i[isou],
@@ -4315,9 +4316,7 @@ _convection_diffusion_unsteady_strided
                             grad_up_j[isou],
                             _pj[isou],
                             &pjf[isou]);
-
             }
-
           }
 
           /* Slope test activated: percentage of upwind */
