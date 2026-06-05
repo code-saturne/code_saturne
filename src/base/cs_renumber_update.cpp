@@ -339,6 +339,11 @@ cs_renumber_update(void)
                             vtx_n2o);
 
   cs_renumber_update_bc_types(b_face_n2o);
+
+  CS_FREE(cell_n2o);
+  CS_FREE(i_face_n2o);
+  CS_FREE(b_face_n2o);
+  CS_FREE(vtx_n2o);
 }
 
 /*----------------------------------------------------------------------------*/
