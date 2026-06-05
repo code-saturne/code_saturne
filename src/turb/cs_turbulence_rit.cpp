@@ -210,20 +210,9 @@ _turb_flux_st(const char          *name,
     cvar_al = cs_field_by_composite_name_try(f->name, "alpha")->val;
 
   const cs_real_t rhebdfm = 0.5;
-  const cs_real_t *grav = cs_glob_physical_constants->gravity;
-#if defined(HAVE_ACCEL)
-  cs_real_t *_grav = nullptr;
-  if (cs_get_device_id() > -1) {
-    CS_MALLOC_HD(_grav, 3, cs_real_t, cs_alloc_mode);
-    for (int i = 0; i < 3; i++) {
-      _grav[i] = cs_glob_physical_constants->gravity[i];
-    }
-
-    cs_mem_advise_set_read_mostly(_grav);
-
-    grav = _grav;
-  }
-#endif
+  const cs_real_t grav[3] = {cs_glob_physical_constants->gravity[0],
+                             cs_glob_physical_constants->gravity[1],
+                             cs_glob_physical_constants->gravity[2]};
 
   cs_field_t * f_beta2 = cs_field_try("algo:rij_beta2");
   cs_real_t * v_beta2 = nullptr;

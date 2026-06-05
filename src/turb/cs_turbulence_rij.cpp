@@ -2936,20 +2936,9 @@ cs_turbulence_rij(int phase_id)
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
-  const cs_real_t *grav = cs_glob_physical_constants->gravity;
-#if defined(HAVE_ACCEL)
-  cs_real_t *_grav = nullptr;
-  if (cs_get_device_id() > -1) {
-    CS_MALLOC_HD(_grav, 3, cs_real_t, cs_alloc_mode);
-    for (int i = 0; i < 3; i++) {
-      _grav[i] = cs_glob_physical_constants->gravity[i];
-    }
-
-    cs_mem_advise_set_read_mostly(_grav);
-
-    grav = _grav;
-  }
-#endif
+  const cs_real_t grav[3] = {cs_glob_physical_constants->gravity[0],
+                             cs_glob_physical_constants->gravity[1],
+                             cs_glob_physical_constants->gravity[2]};
 
   const cs_real_t *cell_f_vol = fvq->cell_vol;
 
@@ -3512,12 +3501,6 @@ cs_turbulence_rij(int phase_id)
    * -------- */
 
   cs_turbulence_rij_clip(phase_id, n_cells);
-
-  /* Free memory */
-
-#if defined(HAVE_ACCEL)
-  CS_FREE(_grav);
-#endif
 
   if (cs_glob_timer_kernels_flag > 0) {
     ctx.wait();
