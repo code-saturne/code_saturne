@@ -1022,7 +1022,7 @@ cs_sles_solve_ccc_fv(cs_sles_t           *sc,
 
     cs_dispatch_context ctx;
     if (amode >= CS_ALLOC_HOST_DEVICE_SHARED) {
-      amode = cs_alloc_mode_device;
+      amode = CS_ALLOC_HOST_DEVICE_SHARED;
       ctx.set_use_gpu(true);
     }
 
