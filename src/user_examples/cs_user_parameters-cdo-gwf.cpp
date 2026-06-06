@@ -484,7 +484,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
       cs_equation_param_t  *tr_eqp =
         cs_gwf_tracer_decay_chain_get_equation_param(tdc, it);
 
-      cs_equation_set_param(tr_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+      cs_equation_param_set(tr_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
 
     }
 

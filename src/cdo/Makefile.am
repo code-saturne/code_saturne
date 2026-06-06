@@ -70,19 +70,14 @@ cs_cdo_toolbox.h \
 cs_cdo_turbulence.h \
 cs_cdocb_scaleq.h \
 cs_cdocb_scaleq_sles.h \
-cs_cdocb_priv.h \
-cs_cdoeb_priv.h \
 cs_cdoeb_vecteq.h \
 cs_cdofb_ac.h \
 cs_cdofb_monolithic.h \
-cs_cdofb_monolithic_priv.h \
 cs_cdofb_monolithic_sles.h \
 cs_cdofb_navsto.h \
 cs_cdofb_predco.h \
-cs_cdofb_priv.h \
 cs_cdofb_scaleq.h \
 cs_cdofb_vecteq.h \
-cs_cdovb_priv.h \
 cs_cdovb_scaleq.h \
 cs_cdovb_scalsys.h \
 cs_cdovb_vecteq.h \
@@ -96,7 +91,6 @@ cs_equation.h \
 cs_equation_bc.h \
 cs_equation_builder.h \
 cs_equation_param.h \
-cs_equation_priv.h \
 cs_equation_system.h \
 cs_equation_system_param.h \
 cs_equation_system_sles.h \
@@ -111,10 +105,8 @@ cs_iter_algo.h \
 cs_macfb_advection.h \
 cs_macfb_builder.h \
 cs_macfb_monolithic.h \
-cs_macfb_monolithic_priv.h \
 cs_macfb_monolithic_sles.h \
 cs_macfb_navsto.h \
-cs_macfb_priv.h \
 cs_macfb_vecteq.h \
 cs_maxwell.h \
 cs_mesh_deform.h \
@@ -140,6 +132,18 @@ cs_xdef.h \
 cs_xdef_cw_eval.h \
 cs_xdef_eval.h \
 cs_cdo_headers.h
+
+# Private header files
+
+noinst_HEADERS = \
+cs_cdocb_priv.h \
+cs_cdoeb_priv.h \
+cs_cdofb_monolithic_priv.h \
+cs_cdofb_priv.h \
+cs_cdovb_priv.h \
+cs_equation_priv.h \
+cs_macfb_monolithic_priv.h \
+cs_macfb_priv.h
 
 # Library source files
 

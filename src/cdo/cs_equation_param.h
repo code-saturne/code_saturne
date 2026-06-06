@@ -32,7 +32,7 @@
 
 #include "alge/cs_param_saddle.h"
 #include "alge/cs_param_sles.h"
-#include "base/cs_runge_kutta_integrator_priv.h"
+#include "base/cs_runge_kutta_integrator_param.h"
 #include "base/cs_time_control.h"
 #include "cdo/cs_advection_field.h"
 #include "cdo/cs_enforcement.h"

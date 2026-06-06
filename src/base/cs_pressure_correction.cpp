@@ -77,7 +77,7 @@
 #include "alge/cs_matrix_building.h"
 #include "alge/cs_sles_default.h"
 
-#include "cdo/cs_cdo_headers.h"
+#include "cdo/cs_equation_priv.h"
 #include "mesh/cs_mesh_location.h"
 #include "lagr/cs_lagr.h"
 

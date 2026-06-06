@@ -52,9 +52,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_runge_kutta_integrator.h"
-#include "base/cs_runge_kutta_integrator_priv.h"
-
-/*----------------------------------------------------------------------------*/
+#include "base/cs_runge_kutta_integrator_param.h"
 
 /*============================================================================
  * Global variables

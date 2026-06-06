@@ -43,17 +43,20 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 #include "base/cs_array.h"
-#include "pprt/cs_combustion_model.h"
-#include "cogz/cs_cogz_headers.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
+
+#include "cogz/cs_combustion_gas.h"
+
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_parall.h"
+
+#include "pprt/cs_combustion_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

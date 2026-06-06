@@ -53,6 +53,7 @@
 #include "base/cs_post.h"
 #include "base/cs_time_plot.h"
 #include "cdo/cs_cdovb_priv.h"
+#include "cdo/cs_equation_priv.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_reco.h"
 #include "gwf/cs_gwf_priv.h"

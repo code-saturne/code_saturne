@@ -52,6 +52,7 @@
 #include "cdo/cs_cdo_toolbox.h"
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_evaluate.h"
+#include "cdo/cs_cdofb_priv.h"
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_reco.h"

@@ -32,7 +32,6 @@
 
 #include "base/cs_param_types.h"
 #include "cdo/cs_equation.h"
-#include "cdo/cs_equation_priv.h"
 #include "cdo/cs_equation_system_param.h"
 
 /*============================================================================

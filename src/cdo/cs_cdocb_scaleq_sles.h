@@ -38,7 +38,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cdo/cs_cdocb_priv.h"
+#include "alge/cs_saddle_solver.h"
+
+#include "cdo/cs_cdocb_scaleq.h"
 
 /*============================================================================
  * Macro definitions

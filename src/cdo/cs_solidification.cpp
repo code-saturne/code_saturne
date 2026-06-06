@@ -42,6 +42,7 @@
 #include "base/cs_post.h"
 #include "bft/bft_error.h"
 #include "cdo/cs_cdofb_scaleq.h"
+#include "cdo/cs_cdofb_priv.h"
 #include "cdo/cs_navsto_system.h"
 #include "cdo/cs_solid_selection.h"
 #include "pprt/cs_physical_model.h"

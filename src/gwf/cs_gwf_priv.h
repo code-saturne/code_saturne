@@ -33,6 +33,8 @@
 #include "cdo/cs_equation.h"
 #include "gwf/cs_gwf_param.h"
 
+#include "gwf/cs_gwf.h"
+
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -40,29 +42,6 @@
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-typedef struct _gwf_darcy_flux_t  cs_gwf_darcy_flux_t;
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Update the advection field/arrays related to the Darcy flux.
- *        The context associated to a \ref cs_gwf_darcy_flux_t have pointers
- *        to the fields used to define the Darcy flux update
- *
- * \param[in]      connect  pointer to a cs_cdo_connect_t structure
- * \param[in]      cdoq     pointer to a cs_cdo_quantities_t structure
- * \param[in]      t_eval   time at which one performs the evaluation
- * \param[in]      cur2prev true or false
- * \param[in, out] darcy    pointer to the darcy flux structure
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_gwf_darcy_update_t)(const cs_cdo_connect_t    *connect,
-                        const cs_cdo_quantities_t *cdoq,
-                        cs_real_t                  t_eval,
-                        bool                       cur2prev,
-                        cs_gwf_darcy_flux_t       *darcy);
 
 /*! \struct cs_gwf_darcy_flux_t
  *

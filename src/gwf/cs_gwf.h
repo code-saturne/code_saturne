@@ -34,7 +34,7 @@
 #include "base/cs_base.h"
 #include "cdo/cs_equation.h"
 #include "gwf/cs_gwf_param.h"
-#include "gwf/cs_gwf_priv.h"
+#include "gwf/cs_gwf_hydraulic_model.h"
 #include "gwf/cs_gwf_soil.h"
 #include "gwf/cs_gwf_tracer.h"
 

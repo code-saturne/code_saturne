@@ -1,5 +1,5 @@
-#ifndef RK_INTEGRATOR_PRIV_H
-#define RK_INTEGRATOR_PRIV_H
+#ifndef RK_INTEGRATOR_PARAM_H
+#define RK_INTEGRATOR_PARAM_H
 
 /*============================================================================
  * Explicit Runge-Kutta integrator utilities.
@@ -92,4 +92,4 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* RK_INTEGRATOR_PRIV_H */
+#endif /* RK_INTEGRATOR_PARAM_H */

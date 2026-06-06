@@ -56,6 +56,10 @@ cs_gwf_tracer.h \
 cs_gwf_uspf.h \
 cs_gwf_headers.h
 
+# Private header files
+
+noinst_HEADERS = cs_gwf_priv.h
+
 # Library source files
 
 noinst_LIBRARIES = libcsgwf.a

@@ -52,6 +52,7 @@
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_evaluate.h"
 #include "cdo/cs_hodge.h"
+#include "cdo/cs_macfb_priv.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_reco.h"
 #include "mesh/cs_mesh_location.h"
