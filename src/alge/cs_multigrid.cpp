@@ -55,6 +55,7 @@
 #include "base/cs_dispatch.h"
 #include "base/cs_file.h"
 #include "alge/cs_grid.h"
+#include "alge/cs_grid_priv.h"
 #include "base/cs_halo.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
@@ -6099,42 +6100,6 @@ cs_multigrid_set_merge_bottom_options(cs_multigrid_t  *mg,
   mg->merge_bottom_n_max_ranks = cs::min(n_max_ranks, cs_glob_n_ranks);
   mg->merge_bottom_max_row_factor = max_row_factor;
 #endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return a pointer to a grid associated with a given multigrid
- *        setup and level.
- *
- * If the multigrid hierarchy is not set up, or a level coarser than the
- * coarsest level is requested, nullptr is returned.
-
- * \param[in]  mg     pointer to multigrid info and context
- * \param[in]  level  level of the requested grid (or -1 for coarsest)
- *
- * \return  pointer to grid of requested level (nullptr id not present)
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_grid_t *
-cs_multigrid_get_grid(const cs_multigrid_t  *mg,
-                      int                    level)
-{
-  const cs_grid_t *g = nullptr;
-
-  cs_multigrid_setup_data_t *mgd = mg->setup_data;
-
-  if (mgd != nullptr) {
-
-    if (level < 0)
-      level = mgd->n_levels - 1;
-
-    if ((unsigned)level < mgd->n_levels)
-      g = mgd->grid_hierarchy[level];
-
-  }
-
-  return g;
 }
 
 /*----------------------------------------------------------------------------*/

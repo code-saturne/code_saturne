@@ -72,7 +72,18 @@ libcsalge_hypre_a_CPPFLAGS =\
 $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
 
 noinst_HEADERS = \
-cs_convection_diffusion_priv.h
+cs_convection_diffusion_priv.h \
+cs_gradient_priv.h \
+cs_grid_priv.h \
+cs_matrix_assembler_priv.h \
+cs_matrix_hypre_priv.h \
+cs_matrix_petsc_priv.h \
+cs_matrix_priv.h \
+cs_matrix_spmv_cuda.h \
+cs_matrix_spmv_hip.h \
+cs_sles_it_priv.h \
+cs_sles_pc_priv.h
+
 
 # Public header files (to be installed)
 
@@ -92,14 +103,11 @@ cs_divergence.h \
 cs_face_viscosity.h \
 cs_gradient.h \
 cs_gradient_boundary.h \
-cs_gradient_priv.h \
 cs_grid.h \
 cs_matrix.h \
 cs_matrix_assembler.h \
-cs_matrix_assembler_priv.h \
 cs_matrix_building.h \
 cs_matrix_default.h \
-cs_matrix_priv.h \
 cs_matrix_spmv.h \
 cs_matrix_tuning.h \
 cs_matrix_util.h \
@@ -116,16 +124,13 @@ cs_saddle_solver_setup.h \
 cs_sles.h \
 cs_sles_default.h \
 cs_sles_it.h \
-cs_sles_it_priv.h \
 cs_sles_pc.h \
-cs_sles_pc_priv.h \
 cs_vertex_to_cell.h
 
 if HAVE_CUDA
 csalge_include_HEADERS += \
 cs_benchmark_cuda.h \
 cs_blas_cuda.h \
-cs_matrix_spmv_cuda.h \
 cs_sles_it_cuda.h
 endif
 
@@ -133,14 +138,12 @@ if HAVE_HIP
 csalge_include_HEADERS += \
 cs_benchmark_hip.h \
 cs_blas_hip.h \
-cs_matrix_spmv_hip.h \
 cs_sles_it_hip.h
 endif
 
 if HAVE_PETSC
 csalge_include_HEADERS += \
 cs_matrix_petsc.h \
-cs_matrix_petsc_priv.h \
 cs_sles_petsc.h
 endif
 
@@ -151,7 +154,6 @@ endif
 if HAVE_HYPRE
 csalge_include_HEADERS += \
 cs_matrix_hypre.h \
-cs_matrix_hypre_priv.h \
 cs_sles_hypre.h
 endif
 
@@ -184,6 +186,7 @@ cs_face_viscosity.cpp \
 cs_gradient.cpp \
 cs_gradient_boundary.cpp \
 cs_grid.cpp \
+cs_grid_rank_merge.cpp \
 cs_matrix.cpp \
 cs_matrix_assembler.cpp \
 cs_matrix_building.cpp \
