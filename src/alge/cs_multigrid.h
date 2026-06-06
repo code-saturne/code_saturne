@@ -37,6 +37,7 @@
 #include "alge/cs_sles_it.h"
 #include "alge/cs_sles_pc.h"
 #include "base/cs_time_plot.h"
+#include "base/cs_tree.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -138,13 +139,15 @@ cs_multigrid_define(int                   f_id,
  * The multigrid variant is an ACM (Additive Corrective Multigrid) method.
  *
  * \param[in]  mg_type  type of multigrid algorithm to use
+ * \param[in]  config   configuration dictionary node, or null
  *
  * \return  pointer to new multigrid info and context
  */
 /*----------------------------------------------------------------------------*/
 
 cs_multigrid_t *
-cs_multigrid_create(cs_multigrid_type_t  mg_type);
+cs_multigrid_create(cs_multigrid_type_t   mg_type,
+                    cs_tree_node_t       *config);
 
 /*----------------------------------------------------------------------------
  * Destroy multigrid linear system solver info and context.
@@ -161,6 +164,9 @@ cs_multigrid_destroy(void  **context);
  * Create multigrid sparse linear system solver info and context
  * based on existing info and context.
  *
+ * Note that the configuration dictionnary remains shared with the
+ * copied context.
+ *
  * parameters:
  *   context <-- pointer to reference info and context
  *               (actual type: cs_multigrid_t  *)
@@ -172,6 +178,19 @@ cs_multigrid_destroy(void  **context);
 
 void *
 cs_multigrid_copy(const void  *context);
+
+/*----------------------------------------------------------------------------
+ * Access multigrid solver configuration dictionnary.
+ *
+ * parameters:
+ *   mg <->  pointer to multigrid info and context
+ *
+ * returns:
+ *   pointer to configuration dictionnary node
+ *----------------------------------------------------------------------------*/
+
+cs_tree_node_t *
+cs_multigrid_get_config(cs_multigrid_t  *mg);
 
 /*----------------------------------------------------------------------------
  * Set multigrid coarsening parameters.

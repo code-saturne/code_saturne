@@ -74,6 +74,7 @@
 #include "base/cs_timer_stats.h"
 #include "base/cs_time_plot.h"
 #include "base/cs_time_step.h"
+#include "base/cs_tree.h"
 
 #if defined(HAVE_CUDA) && defined(__CUDACC__)
 #include "alge/cs_blas_cuda.h"
@@ -285,6 +286,9 @@ struct _cs_multigrid_t {
 
   /* Settings */
 
+  cs_tree_node_t         *config;   /* Configuration settings */
+  cs_tree_node_t         *_config;  /* Configuration settings (owner) */
+
   cs_multigrid_type_t     type;     /* Multigrid type */
   cs_multigrid_subtype_t  subtype;  /* Multigrid subtype */
   bool                    conv_diff;   /* Convection-diffusion mode */
@@ -382,6 +386,9 @@ const char *cs_multigrid_type_name[]
      N_("K-cycle, HPC variant"),
      N_("K-cycle, HPC coarse level")};
 
+static const char *_multigrid_type_kname[]
+  = {"v_cycle", "k_cycle", "k_cycle_hpc", "k_cycle_hpc_coarse"};
+
 /* Tunable settings */
 
 static int _k_cycle_hpc_merge_stride = 512;
@@ -415,6 +422,29 @@ _setup_k_cycle_hpc_sub(cs_multigrid_t     *mg,
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine mumtigrid type from string
+ *
+ * \param[in]  value  type name string
+ *
+ * \return  multigrid type.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_multigrid_type_t
+_multigrid_type(const char *value)
+{
+  cs_multigrid_type_t  mg_type = CS_MULTIGRID_N_TYPES;
+  for (int i = 0; i < 4; i++) {
+    if (strcmp(_multigrid_type_kname[i], value) == 0) {
+      mg_type = static_cast<cs_multigrid_type_t>(i);
+      break;
+    }
+  }
+  return mg_type;
+}
 
 /*----------------------------------------------------------------------------
  * Initialize multigrid info structure.
@@ -1575,15 +1605,17 @@ _multigrid_pc_apply(void                *context,
  *
  * parameters:
  *   mg_type  <-- type of multigrid algorithm to use
+ *   config   <-- configuration dictionary node, or null
  *
  * returns:
  *   pointer to newly created preconditioner object.
  *----------------------------------------------------------------------------*/
 
 static cs_multigrid_t *
-_multigrid_pc_create(cs_multigrid_type_t  mg_type)
+_multigrid_pc_create(cs_multigrid_type_t   mg_type,
+                     cs_tree_node_t       *config)
 {
-  cs_multigrid_t *mg = cs_multigrid_create(mg_type);
+  cs_multigrid_t *mg = cs_multigrid_create(mg_type, config);
 
   switch(mg_type) {
   case CS_MULTIGRID_V_CYCLE:
@@ -1649,7 +1681,7 @@ _multigrid_pc_create(cs_multigrid_type_t  mg_type)
 static cs_multigrid_t *
 _multigrid_create_k_cycle_bottom_smoother(cs_multigrid_t  *parent)
 {
-  cs_multigrid_t *mg = _multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
+  cs_multigrid_t *mg = _multigrid_pc_create(CS_MULTIGRID_K_CYCLE, nullptr);
 
   mg->subtype = CS_MULTIGRID_BOTTOM_SMOOTHE;
   mg->info.is_pc = true;
@@ -1741,11 +1773,13 @@ _multigrid_create_k_cycle_bottom_coarsest(cs_multigrid_t  *parent)
       MPI_Comm_size(parent->comm, &size);
 
     if (size >= _k_cycle_hpc_merge_stride) {
-      if (size > _k_cycle_hpc_merge_stride)
-        mg = _multigrid_pc_create(CS_MULTIGRID_K_CYCLE_HPC); /* recursive */
+      if (size > _k_cycle_hpc_merge_stride) {
+        /* recursive */
+        mg = _multigrid_pc_create(CS_MULTIGRID_K_CYCLE_HPC, nullptr);
+      }
       else {
         if (size > _k_cycle_hpc_recurse_threshold) {
-          mg = _multigrid_pc_create(CS_MULTIGRID_K_CYCLE);
+          mg = _multigrid_pc_create(CS_MULTIGRID_K_CYCLE, nullptr);
           mg->f_settings_threshold = -1;
           mg->aggregation_limit[1] = 8;
           mg->k_cycle_threshold = -1;
@@ -1779,7 +1813,7 @@ _multigrid_create_k_cycle_bottom_coarsest(cs_multigrid_t  *parent)
 static cs_multigrid_t *
 _multigrid_create_k_cycle_bottom(cs_multigrid_t  *parent)
 {
-  cs_multigrid_t *mg = cs_multigrid_create(CS_MULTIGRID_V_CYCLE);
+  cs_multigrid_t *mg = cs_multigrid_create(CS_MULTIGRID_V_CYCLE, nullptr);
 
   mg->subtype = CS_MULTIGRID_BOTTOM;
   mg->p_mg = parent;
@@ -4573,8 +4607,7 @@ cs_multigrid_define(int                   f_id,
                     const char           *name,
                     cs_multigrid_type_t   mg_type)
 {
-  cs_multigrid_t *
-    mg = cs_multigrid_create(mg_type);
+  cs_multigrid_t *mg = cs_multigrid_create(mg_type, nullptr);
 
   cs_sles_t *sc = cs_sles_define(f_id,
                                  name,
@@ -4600,13 +4633,15 @@ cs_multigrid_define(int                   f_id,
  * The multigrid variant is an ACM (Additive Corrective Multigrid) method.
  *
  * \param[in]  mg_type  type of multigrid algorithm to use
+ * \param[in]  config   configuration dictionary node, or null
  *
  * \return  pointer to new multigrid info and context
  */
 /*----------------------------------------------------------------------------*/
 
 cs_multigrid_t *
-cs_multigrid_create(cs_multigrid_type_t  mg_type)
+cs_multigrid_create(cs_multigrid_type_t   mg_type,
+                    cs_tree_node_t       *config)
 {
   if (_mg_setup_stat_id < 0) {
     int stats_root = cs_timer_stats_id_by_name("operations");
@@ -4627,6 +4662,14 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
 
   cs_multigrid_t *mg;
   CS_MALLOC(mg, 1, cs_multigrid_t);
+
+  if (config == nullptr) {
+    mg->_config = cs_tree_node_create("type");
+    cs_tree_node_set_value_str(mg->config, _multigrid_type_kname[mg_type]);
+    mg->config = mg->_config;
+  }
+  else
+    mg->config = config;
 
   mg->type = mg_type;
   mg->subtype = CS_MULTIGRID_MAIN;
@@ -4781,6 +4824,8 @@ cs_multigrid_destroy(void  **context)
       cs_multigrid_destroy((void **)(&(mg->lv_mg[i])));
   }
 
+  cs_tree_node_free(&(mg->_config));
+
   CS_FREE(mg);
   *context = (void *)mg;
 }
@@ -4789,6 +4834,9 @@ cs_multigrid_destroy(void  **context)
 /*!
  * \brief Create multigrid sparse linear system solver info and context
  *        based on existing info and context.
+ *
+ * Note that the configuration dictionnary remains shared with the
+ * copied context.
  *
  * \param[in]  context  pointer to reference info and context
  *                      (actual type: cs_multigrid_t  *)
@@ -4806,7 +4854,9 @@ cs_multigrid_copy(const void  *context)
   if (context != nullptr) {
 
     const cs_multigrid_t *c = (const cs_multigrid_t *)context;
-    d = cs_multigrid_create(c->type);
+
+    cs_tree_node_t *config = c->config;
+    d = cs_multigrid_create(c->type, config);
 
     /* Beginning of cs_multigrid_info_t contains settings, the rest logging */
     memcpy(&(d->info), &(c->info),
@@ -4819,6 +4869,19 @@ cs_multigrid_copy(const void  *context)
 
   return d;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Access multigrid solver configuration dictionnary.
+ *
+ * \param[in, out]  mg   pointer to multigrid info and context
+ *
+ * \return  pointer to configuration dictionnary node
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_tree_node_t *
+cs_multigrid_get_config(cs_multigrid_t  *mg);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -5617,7 +5680,40 @@ cs_multigrid_free(void  *context)
 cs_sles_pc_t *
 cs_multigrid_pc_create(cs_multigrid_type_t  mg_type)
 {
-  cs_multigrid_t *mg = _multigrid_pc_create(mg_type);
+  cs_multigrid_t *mg = _multigrid_pc_create(mg_type, nullptr);
+
+  mg->info.is_pc = true;
+
+  cs_sles_pc_t *pc = cs_sles_pc_define(mg,
+                                       _multigrid_pc_get_type,
+                                       _multigrid_pc_setup,
+                                       _multigrid_pc_tolerance_t,
+                                       _multigrid_pc_apply,
+                                       cs_multigrid_free,
+                                       cs_multigrid_log,
+                                       cs_multigrid_copy,
+                                       cs_multigrid_destroy);
+
+  return pc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a multigrid preconditioner.
+ *
+ * \param[in]  config  configuration dictionary node
+ *
+ * \return  pointer to newly created preconditioner object.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_pc_t *
+cs_multigrid_pc_create(cs_tree_node_t  *config)
+{
+  cs_multigrid_type_t  mg_type
+    = _multigrid_type(cs_tree_node_get_value_str(config));
+
+  cs_multigrid_t *mg = _multigrid_pc_create(mg_type, config);
 
   mg->info.is_pc = true;
 
