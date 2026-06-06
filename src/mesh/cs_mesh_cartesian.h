@@ -31,6 +31,7 @@
 
 #include "base/cs_defs.h"
 
+BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -373,5 +374,9 @@ cs_mesh_cartesian_params_destroy(void);
 
 void
 cs_mesh_cartesian_set_max_number_of_blocks(int  n_blocks);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_MESH_CARTESIAN_H */

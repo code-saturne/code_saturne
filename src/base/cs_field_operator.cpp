@@ -64,8 +64,6 @@
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_internal_coupling.h"
-#include "base/cs_interface.h"
-#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

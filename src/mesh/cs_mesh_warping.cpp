@@ -39,11 +39,13 @@
 
 #include "bft/bft_printf.h"
 
+#include "fvm/fvm_defs.h"
 #include "fvm/fvm_io_num.h"
 #include "fvm/fvm_triangulate.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_writer.h"
 
+#include "base/cs_halo.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -52,7 +54,6 @@
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
-#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

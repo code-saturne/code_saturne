@@ -61,20 +61,6 @@
 #include "base/cs_thermal_model.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
-#include "base/cs_array.h"
-#include "base/cs_boundary_zone.h"
-#include "base/cs_field.h"
-#include "base/cs_math.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_measures_util.h"
-#include "base/cs_mem.h"
-#include "base/cs_parameters.h"
-#include "base/cs_time_step.h"
-#include "base/cs_zone.h"
-#include "cdo/cs_equation_param.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_location.h"
-#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

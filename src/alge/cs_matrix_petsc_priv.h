@@ -42,6 +42,10 @@
 
 #include "alge/cs_matrix_petsc.h"
 
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -58,19 +62,20 @@
 /* Adapter coefficients stucture for PETSc */
 
 typedef struct _cs_matrix_coeffs_petsc_t {
-  PetscInt l_range[2]; /* Local rows range
-                          (block range if block size > 1) */
 
-  Mat hm; /* PETSc matrix */
-  Vec hx; /* x (input) vector */
-  Vec hy; /* y (output) vector */
+  PetscInt   l_range[2];                   /* Local rows range
+                                              (block range if block size > 1) */
 
-  int matrix_state; /* Matrix state:
-                       0: not created
-                       1: created and assembled */
+  Mat  hm;                                 /* PETSc matrix */
+  Vec  hx;                                 /* x (input) vector */
+  Vec  hy;                                 /* y (output) vector */
 
-  char   *matype_r; /* requested PETSc matrix type */
-  MatType matype;   /* actual PETSc matrix type */
+  int  matrix_state;                       /* Matrix state:
+                                              0: not created
+                                              1: created and assembled */
+
+  char     *matype_r;                      /* requested PETSc matrix type */
+  MatType   matype;                        /* actual PETSc matrix type */
 
 } cs_matrix_coeffs_petsc_t;
 
@@ -89,8 +94,12 @@ typedef struct _cs_matrix_coeffs_petsc_t {
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_coeffs_petsc_t *
-cs_matrix_petsc_get_coeffs(const cs_matrix_t *matrix);
+cs_matrix_petsc_get_coeffs(const cs_matrix_t  *matrix);
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_MATRIX_PETSC_PRIV_H */

@@ -33,10 +33,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_halo.h"
+#include "base/cs_math.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "cdo/cs_equation_param.h"
-#include "mesh/cs_mesh.h"
 
 /*=============================================================================
  * Macro definitions

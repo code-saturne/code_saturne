@@ -50,7 +50,6 @@
 #include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "base/cs_tree.h"
-#include "base/cs_log.h"
 #include "gui/cs_tree_xml.h"
 
 /*----------------------------------------------------------------------------

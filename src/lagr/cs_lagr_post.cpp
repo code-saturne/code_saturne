@@ -30,15 +30,26 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stddef.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 
+#include "base/cs_base.h"
 #include "base/cs_mem.h"
+#include "mesh/cs_mesh_location.h"
 
+#include "base/cs_parameters.h"
 #include "base/cs_time_step.h"
+#include "base/cs_parall.h"
 #include "base/cs_post.h"
 
 #include "lagr/cs_lagr.h"

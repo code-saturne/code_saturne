@@ -30,37 +30,43 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <float.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <math.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
 #include "fvm/fvm_io_num.h"
 
-#include "base/cs_boundary_zone.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_volume_zone.h"
+#include "base/cs_boundary_zone.h"
 
-#include "base/cs_parall.h"
-#include "base/cs_sort.h"
 #include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_adaptive_refinement.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_builder.h"
-#include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_adaptive_refinement.h"
 #include "mesh/cs_mesh_to_builder.h"
+#include "base/cs_order.h"
+#include "base/cs_sort.h"
+#include "base/cs_parall.h"
 #include "mesh/cs_redistribute.h"
-#include "base/cs_halo.h"
-#include "base/cs_interface.h"
-#include "base/cs_log.h"
-#include "base/cs_range_set.h"
-#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -29,8 +29,16 @@
 
 #include "base/cs_defs.h"
 
+#include "assert.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
 
+#include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_particle.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -82,5 +90,9 @@ cs_lagr_post_get_attr(cs_lagr_attribute_t  attr_id);
 void
 cs_lagr_post_set_attr(cs_lagr_attribute_t  attr_id,
                       bool                 active);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_LAGR_POST_H */

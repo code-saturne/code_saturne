@@ -54,8 +54,6 @@
 #include "lagr/cs_lagr_tracking.h"
 
 #include "base/cs_parameters.h"
-#include "base/cs_tree.h"
-#include "lagr/cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

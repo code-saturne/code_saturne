@@ -30,7 +30,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cstdio>
 #include <cstring>
 
 /*----------------------------------------------------------------------------
@@ -405,7 +404,7 @@ cs_sdm_dot(int               n,
 {
   cs_real_t  dp = 0;
 
-  if (x == nullptr || y == nullptr)
+  if (x == NULL || y == NULL)
     return dp;
 
   for (int i = 0; i < n; i++)
@@ -433,7 +432,7 @@ cs_sdm_scalvect(int              n,
                 const cs_real_t  x[],
                 cs_real_t        y[])
 {
-  if (x == nullptr || y == nullptr)
+  if (x == NULL || y == NULL)
     return;
 
   for (int i = 0; i < n; i++)
@@ -459,7 +458,7 @@ cs_sdm_add_scalvect(int              n,
                     const cs_real_t  x[],
                     cs_real_t        y[])
 {
-  if (x == nullptr || y == nullptr)
+  if (x == NULL || y == NULL)
     return;
 
   for (int i = 0; i < n; i++)
@@ -689,7 +688,7 @@ cs_sdm_copy_block(const cs_sdm_t       *m,
                   cs_sdm_t             *b)
 {
   /* Sanity checks */
-  assert(m != nullptr && b != nullptr);
+  assert(m != NULL && b != NULL);
   assert(r_id >= 0 && c_id >= 0);
   assert((r_id + nr) <= m->n_rows);
   assert((c_id + nc) <= m->n_cols);
@@ -715,7 +714,7 @@ static inline void
 cs_sdm_transpose_and_update(const cs_sdm_t   *m,
                             cs_sdm_t         *mt)
 {
-  assert(m != nullptr && mt != nullptr);
+  assert(m != NULL && mt != NULL);
   assert(m->n_rows == mt->n_cols && m->n_cols == mt->n_rows);
 
   for (short int i = 0; i < m->n_rows; i++) {
@@ -762,7 +761,7 @@ cs_sdm_multiply_r1c3_rowrow(const cs_sdm_t   *a,
                             cs_sdm_t         *c)
 {
   /* Sanity check */
-  assert(a != nullptr && b != nullptr && c != nullptr);
+  assert(a != NULL && b != NULL && c != NULL);
   assert(a->n_cols == 3 && b->n_cols == 3 &&
          a->n_rows == 1 && c->n_rows == 1 &&
          c->n_cols == 1 && b->n_rows == 1);

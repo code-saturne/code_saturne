@@ -108,11 +108,6 @@
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_vof.h"
 #include "base/cs_volume_zone.h"
-#include "alge/cs_sles_pc.h"
-#include "base/cs_param_types.h"
-#include "base/cs_tree.h"
-#include "cdo/cs_domain.h"
-#include "cdo/cs_param_cdo.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

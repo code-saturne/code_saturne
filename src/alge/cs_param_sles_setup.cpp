@@ -31,7 +31,9 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <string>
+#include <stdlib.h>
+#include <string.h>
+#include <float.h>
 
 /* Avoid warnings due to previous values */
 #undef PACKAGE_BUGREPORT
@@ -42,8 +44,8 @@
 #undef PACKAGE_VERSION
 
 #if defined(HAVE_PETSC)
+#include <petsc.h>
 #include <petscconf.h> /* Useful to know if HYPRE is accessible through PETSc */
-#include <petscksp.h>
 #include <petscversion.h>
 #endif
 
@@ -58,19 +60,12 @@
 
 #include "bft/bft_error.h"
 
-#include "alge/cs_grid.h"
-#include "alge/cs_multigrid.h"
-#include "alge/cs_param_amg.h"
-#include "alge/cs_param_hpddm.h"
-#include "alge/cs_param_mumps.h"
-#include "alge/cs_sles.h"
-#include "alge/cs_sles_it.h"
-#include "alge/cs_sles_pc.h"
-#include "base/cs_base.h"
 #include "base/cs_fp_exception.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_param_types.h"
+#include "alge/cs_multigrid.h"
+#include "alge/cs_sles.h"
 
 #if defined(HAVE_MUMPS)
 #include "alge/cs_sles_mumps.h"

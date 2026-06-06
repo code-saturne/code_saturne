@@ -31,9 +31,15 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
 #include "base/cs_log.h"
+#include "base/cs_halo_perio.h"
 #include "alge/cs_matrix.h"
-#include "base/cs_defs.h"
+#include "alge/cs_matrix.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -881,5 +887,9 @@ cs_sles_base_name(int          f_id,
 const char *
 cs_sles_name(int          f_id,
              const char  *name);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_SLES_H */

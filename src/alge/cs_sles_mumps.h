@@ -31,12 +31,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
+#include "base/cs_halo_perio.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_param_sles.h"
+#include "base/cs_time_plot.h"
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_pc.h"
-#include "base/cs_defs.h"
-#include "base/cs_log.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -339,5 +344,9 @@ cs_sles_mumps_log(const void  *context,
 
 void
 cs_sles_mumps_library_info(cs_log_t  log_type);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_SLES_MUMPS_H */

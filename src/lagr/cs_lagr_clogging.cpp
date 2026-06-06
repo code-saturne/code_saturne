@@ -34,19 +34,34 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
+#include <float.h>
+#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
 
+#include "fvm/fvm_periodicity.h"
 
+#include "base/cs_base.h"
+#include "base/cs_interface.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
 #include "base/cs_random.h"
+#include "base/cs_search.h"
+#include "base/cs_halo.h"
 
+#include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_dlvo.h"
+#include "lagr/cs_lagr_roughness.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

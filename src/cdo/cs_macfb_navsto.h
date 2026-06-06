@@ -38,7 +38,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_matrix.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_math.h"
 #include "base/cs_time_plot.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_cdofb_navsto.h"
@@ -46,15 +51,6 @@
 #include "cdo/cs_navsto_param.h"
 #include "cdo/cs_sdm.h"
 #include "mesh/cs_mesh.h"
-#include "alge/cs_sles.h"
-#include "base/cs_boundary.h"
-#include "cdo/cs_advection_field.h"
-#include "cdo/cs_cdo_bc.h"
-#include "cdo/cs_cdo_local.h"
-#include "cdo/cs_equation_param.h"
-#include "cdo/cs_macfb_builder.h"
-#include "cdo/cs_property.h"
-#include "mesh/cs_mesh_adjacencies.h"
 
 /*============================================================================
  * Macro definitions

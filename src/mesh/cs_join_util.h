@@ -37,8 +37,11 @@
  * Local headers
  *---------------------------------------------------------------------------*/
 
+#include "fvm/fvm_defs.h"
 #include "fvm/fvm_periodicity.h"
 
+#include "base/cs_base.h"
+#include "base/cs_selector.h"
 #include "base/cs_timer.h"
 
 /*---------------------------------------------------------------------------*/

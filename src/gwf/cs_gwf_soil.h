@@ -40,8 +40,6 @@
 #include "mesh/cs_mesh.h"
 #include "cdo/cs_property.h"
 #include "base/cs_volume_zone.h"
-#include "base/cs_defs.h"
-#include "base/cs_zone.h"
 
 /*============================================================================
  * Macro definitions

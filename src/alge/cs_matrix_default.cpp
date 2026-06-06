@@ -86,7 +86,6 @@
 
 #include "alge/cs_matrix_priv.h"
 #include "alge/cs_matrix_tuning.h"
-#include "alge/cs_matrix_assembler.h"
 
 #include "alge/cs_matrix_default.h"
 

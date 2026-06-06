@@ -32,16 +32,21 @@
 
 #include <algorithm>
 
+#include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
 #include "alge/cs_blas.h"
+#include "base/cs_boundary_conditions.h"
 #include "comb/cs_coal.h"
 #include "comb/cs_coal_boundary_conditions.h"
 #include "comb/cs_coal_ht_convert.h"
@@ -51,6 +56,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_halo.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parameters.h"

@@ -27,15 +27,13 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include <cstdarg>
-#include <cstddef>
-#include <cstdint>
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
 #include "base/cs_timer.h"
+#include "stdarg.h"
 
 /*============================================================================
  * Public types
@@ -102,8 +100,8 @@ cs_log_default_is_active(void);
  *   printable length of character string
  *----------------------------------------------------------------------------*/
 
-std::size_t
-cs_log_strlen(const char *s);
+size_t
+cs_log_strlen(const char  *s);
 
 /*----------------------------------------------------------------------------
  * Pad a string so that its printable length is the required length.
@@ -123,10 +121,10 @@ cs_log_strlen(const char *s);
  *----------------------------------------------------------------------------*/
 
 void
-cs_log_strpad(char       *dest,
-              const char *src,
-              std::size_t width,
-              std::size_t destsize);
+cs_log_strpad(char        *dest,
+              const char  *src,
+              size_t       width,
+              size_t       destsize);
 
 /*----------------------------------------------------------------------------
  * Pad a string on the left so that its printable length is
@@ -147,10 +145,10 @@ cs_log_strpad(char       *dest,
  *----------------------------------------------------------------------------*/
 
 void
-cs_log_strpadl(char       *dest,
-               const char *src,
-               std::size_t width,
-               std::size_t destsize);
+cs_log_strpadl(char        *dest,
+               const char  *src,
+               size_t       width,
+               size_t       destsize);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -184,7 +182,9 @@ cs_log_binary_pp_int32(int32_t     code,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_log_vprintf(cs_log_t log, const char *format, std::va_list arg_ptr);
+cs_log_vprintf(cs_log_t     log,
+               const char  *format,
+               va_list      arg_ptr);
 
 /*----------------------------------------------------------------------------
  * Print log info to a given log type.

@@ -30,16 +30,37 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 #include <math.h>
+#include <stdlib.h>
+#include <float.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
+#include "base/cs_log.h"
+#include "base/cs_mem.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "turb/cs_turbulence_model.h"
+#include "cdo/cs_domain.h"
+#include "base/cs_field.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_field_pointer.h"
+#include "base/cs_field_default.h"
 #include "pprt/cs_physical_model.h"
 #include "atmo/cs_atmo.h"
-#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

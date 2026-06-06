@@ -35,44 +35,42 @@
 #include <cassert>
 
 #if defined(HAVE_OPENMP)
+#include <omp.h>
 #endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_blas.h"
 #include "base/cs_array.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
 #include "base/cs_timer.h"
 #include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_cdo_blas.h"
+#include "cdo/cs_cdofb_monolithic.h"
+#include "cdo/cs_cdofb_monolithic_sles.h"
 #include "cdo/cs_cdofb_navsto.h"
+#include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_priv.h"
+#include "cdo/cs_evaluate.h"
 #include "cdo/cs_macfb_builder.h"
 #include "cdo/cs_macfb_monolithic_sles.h"
 #include "cdo/cs_macfb_navsto.h"
+#include "cdo/cs_macfb_priv.h"
 #include "cdo/cs_macfb_vecteq.h"
 #include "cdo/cs_navsto_coupling.h"
+#include "cdo/cs_sdm.h"
 #include "cdo/cs_solid_selection.h"
-#include "alge/cs_param_saddle.h"
-#include "alge/cs_param_sles.h"
-#include "alge/cs_saddle_solver.h"
-#include "alge/cs_sles.h"
-#include "base/cs_field.h"
-#include "base/cs_param_types.h"
-#include "base/cs_time_step.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_cdo_assembly.h"
-#include "cdo/cs_cdo_local.h"
-#include "cdo/cs_cdo_system.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_hodge.h"
-#include "cdo/cs_iter_algo.h"
-#include "cdo/cs_param_cdo.h"
-#include "cdo/cs_property.h"
-#include "mesh/cs_mesh_adjacencies.h"
+#include "cdo/cs_source_term.h"
 
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cdo/cs_dbg.h"
+#endif
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/

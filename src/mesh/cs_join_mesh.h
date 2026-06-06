@@ -37,9 +37,10 @@
  * Local library headers
  *---------------------------------------------------------------------------*/
 
+#include "fvm/fvm_defs.h"
 
+#include "base/cs_base.h"
 #include "mesh/cs_join_util.h"
-#include "base/cs_defs.h"
 
 /*---------------------------------------------------------------------------*/
 

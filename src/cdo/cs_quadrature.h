@@ -29,7 +29,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
 #include "base/cs_defs.h"
+#include "base/cs_math.h"
 #include "base/cs_param_types.h"
 #include "bft/bft_error.h"
 #include "cdo/cs_flag.h"
@@ -647,7 +649,7 @@ cs_quadrature_edge_1pt_scal(double                 tcur,
   xg[2] = .5 * (v1[2] + v2[2]);
 
   /* Evaluate the function at the Gauss points */
-  ana(tcur, 1, nullptr, xg, false, input, &feval);
+  ana(tcur, 1, NULL, xg, false, input, &feval);
 
   /* Update the result with the quadrature rule */
   *results += len * feval;
@@ -685,7 +687,7 @@ cs_quadrature_edge_2pts_scal(double                tcur,
   cs_quadrature_edge_2pts(v1, v2, len, gauss_pts, weights);
 
   /* Evaluate the function at the Gauss points */
-  ana(tcur, 2, nullptr, (const cs_real_t *)gauss_pts, false, input, feval);
+  ana(tcur, 2, NULL, (const cs_real_t *)gauss_pts, false, input, feval);
 
   /* Update the result with the quadrature rule */
   *results += weights[0] * feval[0] + weights[1] * feval[1];
@@ -723,7 +725,7 @@ cs_quadrature_edge_3pts_scal(double                tcur,
   cs_quadrature_edge_3pts(v1, v2, len, gauss_pts, weights);
 
   /* Evaluate the function at the Gauss points */
-  ana(tcur, 3, nullptr, (const cs_real_t *)gauss_pts, false, input, feval);
+  ana(tcur, 3, NULL, (const cs_real_t *)gauss_pts, false, input, feval);
 
   /* Update the result with the quadrature rule */
   *results += weights[0]*feval[0] + weights[1]*feval[1] + weights[2]*feval[2];
@@ -763,7 +765,7 @@ cs_quadrature_edge_1pt_vect(double                 tcur,
   xg[2] = .5 * (v1[2] + v2[2]);
 
   /* Evaluate the function at the Gauss points */
-  ana(tcur, 1, nullptr, xg, false, input, feval);
+  ana(tcur, 1, NULL, xg, false, input, feval);
 
   /* Update the result with the quadrature rule */
   results[0] += len * feval[0];
@@ -803,7 +805,7 @@ cs_quadrature_edge_2pts_vect(double                 tcur,
   cs_quadrature_edge_2pts(v1, v2, len, gauss_pts, weights);
 
   /* Evaluate the function at the Gauss points */
-  ana(tcur, 2, nullptr, (const cs_real_t *)gauss_pts, false, input, feval);
+  ana(tcur, 2, NULL, (const cs_real_t *)gauss_pts, false, input, feval);
 
   /* Update the result with the quadrature rule */
   results[0] += weights[0] * feval[0] + weights[1] * feval[3];
@@ -843,7 +845,7 @@ cs_quadrature_edge_3pts_vect(double                tcur,
   cs_quadrature_edge_3pts(v1, v2, len, gauss_pts, weights);
 
   /* Evaluate the function at the Gauss points */
-  ana(tcur, 3, nullptr, (const cs_real_t *)gauss_pts, false, input, feval);
+  ana(tcur, 3, NULL, (const cs_real_t *)gauss_pts, false, input, feval);
 
   /* Update the result with the quadrature rule */
   for (int p = 0; p < 3; p++) {
@@ -890,7 +892,7 @@ cs_quadrature_tria_1pt_scal(double                 tcur,
   xg[1] = c_1ov3 * (v1[1] + v2[1] + v3[1]);
   xg[2] = c_1ov3 * (v1[2] + v2[2] + v3[2]);
 
-  ana(tcur, 1, nullptr, xg, false, input, &evaluation);
+  ana(tcur, 1, NULL, xg, false, input, &evaluation);
 
   *results += area * evaluation;
 }
@@ -928,7 +930,7 @@ cs_quadrature_tria_3pts_scal(double                tcur,
   /* Compute Gauss points and its unique weight */
   cs_quadrature_tria_3pts(v1, v2, v3, area, gauss_pts, weights);
 
-  ana(tcur, 3, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 3, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   /* Return results */
   *results += weights[0] * evaluation[0] + weights[1] * evaluation[1] +
@@ -968,7 +970,7 @@ cs_quadrature_tria_4pts_scal(double                tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_tria_4pts(v1, v2, v3, area, gauss_pts, weights);
 
-  ana(tcur, 4, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   *results += weights[0] * evaluation[0] + weights[1] * evaluation[1] +
               weights[2] * evaluation[2] + weights[3] * evaluation[3];
@@ -1007,7 +1009,7 @@ cs_quadrature_tria_7pts_scal(double                tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_tria_7pts(v1, v2, v3, area, gauss_pts, weights);
 
-  ana(tcur, 7, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 7, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   *results += weights[0] * evaluation[0] + weights[1] * evaluation[1] +
               weights[2] * evaluation[2] + weights[3] * evaluation[3] +
@@ -1052,7 +1054,7 @@ cs_quadrature_tria_1pt_vect(double                 tcur,
   xg[1] = c_1ov3 * (v1[1] + v2[1] + v3[1]);
   xg[2] = c_1ov3 * (v1[2] + v2[2] + v3[2]);
 
-  ana(tcur, 1, nullptr, xg, false, input, evaluation);
+  ana(tcur, 1, NULL, xg, false, input, evaluation);
 
   results[0] += area * evaluation[0];
   results[1] += area * evaluation[1];
@@ -1092,7 +1094,7 @@ cs_quadrature_tria_3pts_vect(double                tcur,
   /* Compute Gauss points and its unique weight */
   cs_quadrature_tria_3pts(v1, v2, v3, area, gauss_pts, weights);
 
-  ana(tcur, 3, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 3, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 3; p++) {
     results[0] += weights[p] * evaluation[3*p  ];
@@ -1134,7 +1136,7 @@ cs_quadrature_tria_4pts_vect(double                tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_tria_4pts(v1, v2, v3, area, gauss_pts, weights);
 
-  ana(tcur, 4, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 4; p++) {
     results[0] += weights[p] * evaluation[3*p  ];
@@ -1176,7 +1178,7 @@ cs_quadrature_tria_7pts_vect(double                tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_tria_7pts(v1, v2, v3, area, gauss_pts, weights);
 
-  ana(tcur, 7, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 7, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 7; p++) {
     results[0] += weights[p] * evaluation[3*p  ];
@@ -1222,7 +1224,7 @@ cs_quadrature_tria_1pt_tens(double                 tcur,
   xg[1] = c_1ov3 * (v1[1] + v2[1] + v3[1]);
   xg[2] = c_1ov3 * (v1[2] + v2[2] + v3[2]);
 
-  ana(tcur, 1, nullptr, xg, false, input, evaluation);
+  ana(tcur, 1, NULL, xg, false, input, evaluation);
 
   for (short int ij = 0; ij < 9; ij++)
     results[ij] += area * evaluation[ij];
@@ -1261,7 +1263,7 @@ cs_quadrature_tria_3pts_tens(double                tcur,
   /* Compute Gauss points and its unique weight */
   cs_quadrature_tria_3pts(v1, v2, v3, area, gauss_pts, weights);
 
-  ana(tcur, 3, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 3, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 3; p++) {
     const double wp = weights[p];
@@ -1304,7 +1306,7 @@ cs_quadrature_tria_4pts_tens(double                tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_tria_4pts(v1, v2, v3, area, gauss_pts, weights);
 
-  ana(tcur, 4, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 4; p++) {
     const double wp = weights[p];
@@ -1347,7 +1349,7 @@ cs_quadrature_tria_7pts_tens(double                tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_tria_7pts(v1, v2, v3, area, gauss_pts, weights);
 
-  ana(tcur, 7, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 7, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 7; p++) {
     const  double wp = weights[p];
@@ -1394,7 +1396,7 @@ cs_quadrature_tet_1pt_scal(double                 tcur,
   xg[1] = 0.25 * (v1[1] + v2[1] + v3[1] + v4[1]);
   xg[2] = 0.25 * (v1[2] + v2[2] + v3[2] + v4[2]);
 
-  ana(tcur, 1, nullptr, xg, false, input, &evaluation);
+  ana(tcur, 1, NULL, xg, false, input, &evaluation);
 
   *results += vol * evaluation;
 }
@@ -1434,7 +1436,7 @@ cs_quadrature_tet_4pts_scal(double                tcur,
   /* Compute Gauss points and its unique weight */
   cs_quadrature_tet_4pts(v1, v2, v3, v4, vol, gauss_pts, weights);
 
-  ana(tcur, 4, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   /* Return results */
   *results += weights[0] * evaluation[0] + weights[1] * evaluation[1] +
@@ -1476,7 +1478,7 @@ cs_quadrature_tet_5pts_scal(double                tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_tet_5pts(v1, v2, v3, v4, vol, gauss_pts, weights);
 
-  ana(tcur, 5, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 5, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   *results += weights[0] * evaluation[0] + weights[1] * evaluation[1] +
               weights[2] * evaluation[2] + weights[3] * evaluation[3] +
@@ -1520,7 +1522,7 @@ cs_quadrature_tet_1pt_vect(double                 tcur,
   xg[1] = 0.25 * (v1[1] + v2[1] + v3[1] + v4[1]);
   xg[2] = 0.25 * (v1[2] + v2[2] + v3[2] + v4[2]);
 
-  ana(tcur, 1, nullptr, xg, false, input, evaluation);
+  ana(tcur, 1, NULL, xg, false, input, evaluation);
 
   results[0] += vol * evaluation[0];
   results[1] += vol * evaluation[1];
@@ -1562,7 +1564,7 @@ cs_quadrature_tet_4pts_vect(double                tcur,
   /* Compute Gauss points and its unique weight */
   cs_quadrature_tet_4pts(v1, v2, v3, v4, vol, gauss_pts, weights);
 
-  ana(tcur, 4, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 4; p++) {
     results[0] += weights[p] * evaluation[3*p  ];
@@ -1606,7 +1608,7 @@ cs_quadrature_tet_5pts_vect(double                tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_tet_5pts(v1, v2, v3, v4, vol, gauss_pts, weights);
 
-  ana(tcur, 5, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 5, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 5; p++) {
     results[0] += weights[p] * evaluation[3*p  ];
@@ -1652,7 +1654,7 @@ cs_quadrature_tet_1pt_tens(double                 tcur,
   xg[1] = 0.25 * (v1[1] + v2[1] + v3[1] + v4[1]);
   xg[2] = 0.25 * (v1[2] + v2[2] + v3[2] + v4[2]);
 
-  ana(tcur, 1, nullptr, xg, false, input, evaluation);
+  ana(tcur, 1, NULL, xg, false, input, evaluation);
 
   for (short int ij = 0; ij < 9; ij++)
     results[ij] += vol * evaluation[ij];
@@ -1693,7 +1695,7 @@ cs_quadrature_tet_4pts_tens(double                tcur,
   /* Compute Gauss points and its unique weight */
   cs_quadrature_tet_4pts(v1, v2, v3, v4, vol, gauss_pts, weights);
 
-  ana(tcur, 4, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 4, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 4; p++) {
     const double wp = weights[p];
@@ -1738,7 +1740,7 @@ cs_quadrature_tet_5pts_tens(double                tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_tet_5pts(v1, v2, v3, v4, vol, gauss_pts, weights);
 
-  ana(tcur, 5, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 5, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 5; p++) {
     const double wp = weights[p];
@@ -1781,7 +1783,7 @@ cs_quadrature_hex_1pt_vect(double              tcur,
   /* Copied from cs_quadrature_hew_1pt */
   cs_quadrature_hex_1pt(vb, hx, hy, hz, xg, weight);
 
-  ana(tcur, 1, nullptr, (const cs_real_t *)xg, false, input, evaluation);
+  ana(tcur, 1, NULL, (const cs_real_t *)xg, false, input, evaluation);
 
   results[0] += weight[0] * evaluation[0];
   results[1] += weight[0] * evaluation[1];
@@ -1821,7 +1823,7 @@ cs_quadrature_hex_8pts_vect(double              tcur,
   /* Compute Gauss points and its unique weight */
   cs_quadrature_hex_8pts(vb, hx, hy, hz, gauss_pts, weights);
 
-  ana(tcur, 8, nullptr, (const cs_real_t *)gauss_pts, false, input, evaluation);
+  ana(tcur, 8, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 8; p++) {
     results[0] += weights[p] * evaluation[3 * p];
@@ -1863,13 +1865,7 @@ cs_quadrature_hex_27pts_vect(double              tcur,
   /* Compute Gauss points and its weights */
   cs_quadrature_hex_27pts(vb, hx, hy, hz, gauss_pts, weights);
 
-  ana(tcur,
-      27,
-      nullptr,
-      (const cs_real_t *)gauss_pts,
-      false,
-      input,
-      evaluation);
+  ana(tcur, 27, NULL, (const cs_real_t *)gauss_pts, false, input, evaluation);
 
   for (int p = 0; p < 27; p++) {
     results[0] += weights[p] * evaluation[3 * p];
@@ -1940,7 +1936,7 @@ cs_quadrature_get_edge_integral(int                   dim,
 
   } /* switch on dim */
 
-  return nullptr; /* Should not go to this stage */
+  return NULL; /* Should not go to this stage */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2022,7 +2018,7 @@ cs_quadrature_get_tria_integral(int                   dim,
 
   } /* switch on dim */
 
-  return nullptr; /* Should not go to this stage */
+  return NULL; /* Should not go to this stage */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2105,7 +2101,7 @@ cs_quadrature_get_tetra_integral(int                   dim,
   } /* Switch on dim */
 
   /* Avoid no return warning */
-  return nullptr;
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2154,7 +2150,7 @@ cs_quadrature_get_hexa_integral(int dim, cs_quadrature_type_t qtype)
   } /* Switch on dim */
 
   /* Avoid no return warning */
-  return nullptr;
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------*/

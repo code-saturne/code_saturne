@@ -40,25 +40,19 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
 #include "base/cs_array.h"
 #include "base/cs_base.h"
+#include "cdo/cs_equation_param.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_parall.h"
-#include "base/cs_time_step.h"
-#include "base/cs_volume_zone.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_equation_param.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_zone.h"
-#include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_quantities.h"
-#include "cdo/cs_xdef.h"
-#include "cdo/cs_xdef_eval.h"
+#include "base/cs_parall.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -30,9 +30,12 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 #include <float.h>
 
 #if defined(HAVE_MPI)
@@ -44,20 +47,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_dispatch.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_profiling.h"
 #include "base/cs_reducers.h"
-#include "alge/cs_blas.h"
-#include "alge/cs_matrix_util.h"
-#include "base/cs_base_accel.h"
-#include "base/cs_file.h"
-#include "base/cs_halo.h"
-#include "base/cs_post.h"
-#include "base/cs_time_plot.h"
-#include "base/cs_timer.h"
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 
 #if defined(HAVE_CUDA) && defined(__CUDACC__)
 #include "base/cs_base_cuda.h"

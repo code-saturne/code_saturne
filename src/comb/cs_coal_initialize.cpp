@@ -30,18 +30,31 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
+
 #include "base/cs_array.h"
 #include "base/cs_field.h"
+#include "base/cs_math.h"
+#include "base/cs_mem.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_restart.h"
 #include "base/cs_thermal_model.h"
-#include "base/cs_time_step.h"
+
 #include "comb/cs_coal.h"
 #include "comb/cs_coal_ht_convert.h"
-#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

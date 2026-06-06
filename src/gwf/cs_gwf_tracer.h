@@ -36,13 +36,6 @@
 #include "base/cs_base.h"
 #include "cdo/cs_equation.h"
 #include "gwf/cs_gwf_param.h"
-#include "base/cs_defs.h"
-#include "base/cs_zone.h"
-#include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_quantities.h"
-#include "cdo/cs_equation_param.h"
-#include "cdo/cs_xdef.h"
-#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Typedef definition

@@ -38,7 +38,6 @@
 #include "base/cs_defs.h"
 #include "comb/cs_coal.h"
 #include "base/cs_zone.h"
-#include "base/cs_function.h"
 
 /*============================================================================
  * Macro definitions

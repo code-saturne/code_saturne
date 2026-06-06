@@ -33,13 +33,11 @@
 
 #include <string>
 
-#include "base/cs_defs.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_flag.h"
 #include "cdo/cs_param_cdo.h"
 #include "cdo/cs_sdm.h"
-#include "fvm/fvm_defs.h"
 
 /*============================================================================
  * Macro definitions

@@ -37,6 +37,10 @@
 
 #include "assert.h"
 
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -299,6 +303,9 @@ cs_lagr_events_attr_const(const cs_lagr_event_set_t  *event_set,
 }
 
 /*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #if defined(__cplusplus)
 template <typename T>
@@ -354,6 +361,8 @@ cs_lagr_events_attr_set_val(cs_lagr_event_set_t *event_set,
                   + event_set->e_am->displ[attr])) = value;
 }
 #endif
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -503,5 +512,9 @@ cs_lagr_event_init_from_particle(cs_lagr_event_set_t     *events,
 
 cs_lagr_event_set_t  *
 cs_lagr_event_set_boundary_interaction(void);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_LAGR_EVENT_H */

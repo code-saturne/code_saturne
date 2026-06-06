@@ -30,7 +30,12 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
 #include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -38,16 +43,15 @@
 
 #include "bft/bft_printf.h"
 
+#include "base/cs_base.h"
 #include "base/cs_field.h"
+#include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_profiling.h"
 #include "base/cs_reducers.h"
-#include "base/cs_dispatch.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_time_step.h"
-#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

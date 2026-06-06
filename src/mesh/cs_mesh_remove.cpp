@@ -52,14 +52,13 @@
 #include "base/cs_interface.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
-#include "base/cs_parall.h"
-#include "base/cs_selector.h"
-#include "base/cs_timer.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_boundary.h"
-#include "mesh/cs_mesh_group.h"
 #include "mesh/cs_mesh_halo.h"
+#include "mesh/cs_mesh_group.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

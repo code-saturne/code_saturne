@@ -29,18 +29,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
-#include "base/cs_param_types.h"
-#include "base/cs_range_set.h"
+#include "base/cs_field.h"
 #include "base/cs_restart.h"
-#include "cdo/cs_advection_field.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdo_toolbox.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_param.h"
-#include "cdo/cs_equation_priv.h"
-#include "cdo/cs_property.h"
 #include "mesh/cs_mesh.h"
 
 /*============================================================================

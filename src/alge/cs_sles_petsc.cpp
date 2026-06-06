@@ -72,17 +72,16 @@
 
 #include "bft/bft_error.h"
 
+#include "base/cs_base.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_log.h"
+#include "base/cs_fp_exception.h"
+#include "base/cs_halo.h"
+#include "base/cs_mem.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_petsc.h"
 #include "alge/cs_matrix_petsc_priv.h"
-#include "alge/cs_param_hpddm.h"
-#include "base/cs_base.h"
-#include "base/cs_dispatch.h"
-#include "base/cs_fp_exception.h"
-#include "base/cs_halo.h"
-#include "base/cs_log.h"
-#include "base/cs_mem.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------

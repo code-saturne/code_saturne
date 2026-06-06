@@ -40,17 +40,28 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 #include "bft/bft_error.h"
 
+#include "base/cs_base.h"
 
 #include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
 
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parameters.h"
+#include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_prototypes.h"
 #include "base/cs_random.h"
 #include "turb/cs_turbulence_model.h"
 
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_particle.h"
+#include "lagr/cs_lagr_event.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -841,3 +852,4 @@ cs_lagr_orientation_dyn_jeffery(cs_lnum_t        p_id,
 }
 
 /*----------------------------------------------------------------------------*/
+

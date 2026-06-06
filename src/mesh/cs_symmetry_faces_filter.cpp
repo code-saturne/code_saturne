@@ -30,9 +30,24 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <math.h>
+#include <float.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
+
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
 #include "base/cs_math.h"
 #include "base/cs_mem.h"

@@ -45,6 +45,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_nodal_priv.h"
@@ -65,6 +66,7 @@
 
 /* Headers for available writers (could be replaced by plugin system) */
 
+#include "fvm/fvm_to_ccm.h"
 #include "fvm/fvm_to_cgns.h"
 #include "fvm/fvm_to_med.h"
 #include "fvm/fvm_to_ensight.h"

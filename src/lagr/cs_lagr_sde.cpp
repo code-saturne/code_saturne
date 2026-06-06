@@ -29,6 +29,7 @@
  *============================================================================*/
 
 #include "base/cs_defs.h"
+#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -40,24 +41,27 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_field.h"
+#include "bft/bft_printf.h"
+
 #include "base/cs_math.h"
-#include "base/cs_mdspan.h"
 #include "base/cs_mem.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
+#include "base/cs_prototypes.h"
 #include "base/cs_random.h"
+#include "base/cs_rotation.h"
 #include "base/cs_thermal_model.h"
-#include "base/cs_time_step.h"
-#include "bft/bft_error.h"
+#include "turb/cs_turbulence_model.h"
+
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_adh.h"
 #include "lagr/cs_lagr_deposition_model.h"
 #include "lagr/cs_lagr_event.h"
+#include "lagr/cs_lagr_roughness.h"
+#include "lagr/cs_lagr_tracking.h"
 #include "lagr/cs_lagr_prototypes.h"
-#include "lagr/cs_lagr_stat.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_quantities.h"
-#include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

@@ -31,9 +31,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_defs.h"
 
 /*=============================================================================
  * Local Macro definitions
@@ -68,7 +68,7 @@ typedef enum {
 
 /* Short names for extended neighborhood types */
 
-extern "C" const char *cs_ext_neighborhood_type_name[];
+extern const char *cs_ext_neighborhood_type_name[];
 
 /*============================================================================
  * Public function prototypes

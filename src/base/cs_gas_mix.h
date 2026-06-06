@@ -33,6 +33,10 @@
 
 #include "base/cs_defs.h"
 
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -100,7 +104,7 @@ typedef struct {
 
 /* Pointer to main physical constants structure */
 
-extern "C" const cs_gas_mix_t  *cs_glob_gas_mix;
+extern const cs_gas_mix_t  *cs_glob_gas_mix;
 
 /*=============================================================================
  * Public function prototypes
@@ -215,5 +219,9 @@ cs_gas_mix_initialization(void);
 
 void
 cs_gas_mix_physical_properties(void);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_GAS_MIX_H */

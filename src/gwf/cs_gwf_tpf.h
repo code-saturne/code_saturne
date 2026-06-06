@@ -34,14 +34,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "gwf/cs_gwf_hydraulic_model.h"
-#include "base/cs_defs.h"
-#include "base/cs_param_types.h"
-#include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_quantities.h"
-#include "cdo/cs_property.h"
-#include "cdo/cs_xdef.h"
-#include "gwf/cs_gwf_param.h"
-#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions

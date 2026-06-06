@@ -35,19 +35,16 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_volume_zone.h"
 #include "cdo/cs_basis_func.h"
+#include "cdo/cs_evaluate.h"
 #include "cdo/cs_hho_builder.h"
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_macfb_builder.h"
-#include "base/cs_zone.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_quadrature.h"
-#include "cdo/cs_sdm.h"
-#include "fvm/fvm_defs.h"
-#include "mesh/cs_mesh_adjacencies.h"
+#include "cdo/cs_scheme_geometry.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

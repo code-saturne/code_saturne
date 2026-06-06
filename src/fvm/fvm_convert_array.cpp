@@ -43,6 +43,9 @@
 
 #include "bft/bft_error.h"
 
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_writer.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -2157,7 +2160,7 @@ fvm_convert_array(const int                     src_dim,
                                      parent_id_shift,
                                      parent_id,
                                      (const int32_t *const *)src_data,
-                                     (uint32_t *)dest_data);
+                                     (u_int32_t *)dest_data);
       break;
 
     case CS_UINT64:
@@ -2167,7 +2170,7 @@ fvm_convert_array(const int                     src_dim,
                                      parent_id_shift,
                                      parent_id,
                                      (const int32_t *const *)src_data,
-                                     (uint64_t *)dest_data);
+                                     (u_int64_t *)dest_data);
       break;
 
     default:
@@ -2234,7 +2237,7 @@ fvm_convert_array(const int                     src_dim,
                                      parent_id_shift,
                                      parent_id,
                                      (const int64_t *const *)src_data,
-                                     (uint32_t *)dest_data);
+                                     (u_int32_t *)dest_data);
       break;
 
     case CS_UINT64:
@@ -2244,7 +2247,7 @@ fvm_convert_array(const int                     src_dim,
                                      parent_id_shift,
                                      parent_id,
                                      (const int64_t *const *)src_data,
-                                     (uint64_t *)dest_data);
+                                     (u_int64_t *)dest_data);
       break;
 
     default:
@@ -2311,7 +2314,7 @@ fvm_convert_array(const int                     src_dim,
                                       parent_id_shift,
                                       parent_id,
                                       (const uint32_t *const *)src_data,
-                                      (uint32_t *)dest_data);
+                                      (u_int32_t *)dest_data);
       break;
 
     case CS_UINT64:
@@ -2321,7 +2324,7 @@ fvm_convert_array(const int                     src_dim,
                                       parent_id_shift,
                                       parent_id,
                                       (const uint32_t *const *)src_data,
-                                      (uint64_t *)dest_data);
+                                      (u_int64_t *)dest_data);
       break;
 
     default:
@@ -2388,7 +2391,7 @@ fvm_convert_array(const int                     src_dim,
                                       parent_id_shift,
                                       parent_id,
                                       (const uint64_t *const *)src_data,
-                                      (uint32_t *)dest_data);
+                                      (u_int32_t *)dest_data);
       break;
 
     case CS_UINT64:
@@ -2398,7 +2401,7 @@ fvm_convert_array(const int                     src_dim,
                                       parent_id_shift,
                                       parent_id,
                                       (const uint64_t *const *)src_data,
-                                      (uint64_t *)dest_data);
+                                      (u_int64_t *)dest_data);
       break;
 
     default:

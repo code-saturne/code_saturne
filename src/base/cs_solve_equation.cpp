@@ -109,12 +109,6 @@
 #include "ctwr/cs_ctwr.h"
 #include "ctwr/cs_ctwr_source_terms.h"
 #include "elec/cs_elec_model.h"
-#include "base/cs_halo.h"
-#include "base/cs_parameters.h"
-#include "base/cs_runge_kutta_integrator_priv.h"
-#include "base/cs_timer.h"
-#include "cdo/cs_domain.h"
-#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

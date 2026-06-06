@@ -31,7 +31,11 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <cmath>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -39,19 +43,18 @@
 
 #include "bft/bft_printf.h"
 
-#include "base/cs_array.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_parall.h"
-#include "base/cs_physical_constants.h"
-#include "cdo/cs_equation_param.h"
-#include "cfbl/cs_cf_model.h"
-#include "cfbl/cs_hgn_thermo.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "base/cs_thermal_model.h"
+#include "cfbl/cs_cf_model.h"
+#include "cfbl/cs_hgn_thermo.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

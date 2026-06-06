@@ -33,49 +33,53 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 #include "bft/bft_error.h"
 
-#include "alge/cs_convection_diffusion.h"
-#include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_1d_rad.h"
+#include "atmo/cs_atmo.h"
+#include "atmo/cs_atmo_chemistry.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_ale.h"
+#include "base/cs_base.h"
+#include "cfbl/cs_cf_model.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_ibm.h"
+#include "lagr/cs_lagr.h"
+#include "turb/cs_les_balance.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_mobile_structures.h"
-#include "base/cs_parall.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parameters.h"
+#include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
-#include "base/cs_porosity_from_scan.h"
+#include "pprt/cs_physical_model.h"
 #include "base/cs_porous_model.h"
+#include "base/cs_porosity_from_scan.h"
+#include "rayt/cs_rad_transfer.h"
 #include "base/cs_restart_default.h"
-#include "base/cs_syr_coupling.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_time_step.h"
 #include "base/cs_turbomachinery.h"
-#include "base/cs_velocity_pressure.h"
-#include "base/cs_vof.h"
-#include "base/cs_wall_distance.h"
-#include "base/cs_wall_functions.h"
-#include "cdo/cs_equation_param.h"
-#include "cdo/cs_param_cdo.h"
-#include "cfbl/cs_cf_model.h"
-#include "lagr/cs_lagr.h"
-#include "mesh/cs_mesh.h"
-#include "pprt/cs_physical_model.h"
-#include "rayt/cs_rad_transfer.h"
-#include "turb/cs_les_balance.h"
 #include "turb/cs_turbulence_model.h"
+#include "base/cs_syr_coupling.h"
+#include "base/cs_wall_functions.h"
+#include "alge/cs_convection_diffusion.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_wall_distance.h"
+#include "base/cs_vof.h"
+#include "base/cs_mobile_structures.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

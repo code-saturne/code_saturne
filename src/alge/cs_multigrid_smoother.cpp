@@ -30,7 +30,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <math.h>
 
@@ -63,12 +66,6 @@
 
 #include "alge/cs_sles_it.h"
 #include "alge/cs_sles_it_priv.h"
-#include "alge/cs_matrix_util.h"
-#include "alge/cs_sles_pc.h"
-#include "base/cs_halo.h"
-#include "base/cs_timer.h"
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 #include "alge/cs_multigrid_smoother.h"
 
 #if (HAVE_CUDA)

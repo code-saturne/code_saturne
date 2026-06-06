@@ -37,6 +37,7 @@
 #include "fvm/fvm_selector.h"
 #include "fvm/fvm_periodicity.h"
 
+#include "base/cs_base.h"
 #include "base/cs_halo.h"
 #include "base/cs_interface.h"
 #include "base/cs_numbering.h"
@@ -44,6 +45,10 @@
 #include "base/cs_range_set.h"
 
 #include "mesh/cs_mesh_builder.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -709,5 +714,9 @@ cs_mesh_i_faces_thread_block_range(const cs_mesh_t     *m,
                                    int                  block_size,
                                    cs_lnum_t           *s_id,
                                    cs_lnum_t           *e_id);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_MESH_H */

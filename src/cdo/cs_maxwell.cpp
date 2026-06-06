@@ -41,16 +41,6 @@
 #include "base/cs_post.h"
 #include "bft/bft_error.h"
 #include "cdo/cs_hodge.h"
-#include "base/cs_field.h"
-#include "base/cs_log.h"
-#include "base/cs_param_types.h"
-#include "base/cs_time_step.h"
-#include "cdo/cs_equation.h"
-#include "cdo/cs_equation_param.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_property.h"
-#include "mesh/cs_mesh_adjacencies.h"
-#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -32,6 +32,7 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <math.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -42,8 +43,6 @@
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_box_priv.h"
-#include "bft/bft_error.h"
-#include "fvm/fvm_morton.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

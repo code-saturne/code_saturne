@@ -28,17 +28,23 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <math.h>
 
+#include "bft/bft_mem_usage.h"
+#include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "fvm/fvm_selector.h"
 
 #include "base/cs_halo.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_base.h"
-#include "fvm/fvm_group.h"
 
 #include "base/cs_selector.h"
 

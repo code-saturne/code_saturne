@@ -32,9 +32,12 @@
 
 #include <chrono>
 
-#include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+#include <math.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -51,13 +54,17 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "base/cs_base_accel.h"
+#include "base/cs_base.h"
+#include "alge/cs_blas.h"
 #include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_numbering.h"
 #include "base/cs_parall.h"
 #include "base/cs_profiling.h"
+
 #include "mesh/cs_mesh.h"
 
 #if defined(HAVE_HYPRE)
@@ -1272,7 +1279,7 @@ _matrix_time_test(int                          n_time_runs,
 
   } /* end of loop on variants */
 
-  if (std::isnan(test_sum))
+  if (isnan(test_sum))
     bft_error(__FILE__, __LINE__, 0,
               "Test sum for matrix-vector products is a NaN,\n"
               "so at least one product was incorrect.");

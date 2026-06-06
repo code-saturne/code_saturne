@@ -48,7 +48,6 @@
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
-#include "base/cs_halo.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

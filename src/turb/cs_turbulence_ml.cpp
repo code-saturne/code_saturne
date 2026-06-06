@@ -30,20 +30,26 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_array.h"
+#include "base/cs_base.h"
 #include "base/cs_field.h"
+#include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "turb/cs_turbulence_model.h"
-#include "base/cs_mdspan.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

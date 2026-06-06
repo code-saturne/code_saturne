@@ -49,11 +49,6 @@
 #include "rayt/cs_rad_transfer.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_wall_condensation.h"
-#include "base/cs_field.h"
-#include "base/cs_math.h"
-#include "base/cs_param_types.h"
-#include "base/cs_physical_constants.h"
-#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

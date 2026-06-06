@@ -31,6 +31,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
 #include "base/cs_field.h"
 
 /*=============================================================================
@@ -253,7 +254,7 @@ struct cs_field_pointer_array_t {
 
 /* Pointers */
 
-extern "C" struct cs_field_pointer_array_t  *cs_glob_field_pointers;
+extern struct cs_field_pointer_array_t  *cs_glob_field_pointers;
 
 /*=============================================================================
  * Public function prototypes

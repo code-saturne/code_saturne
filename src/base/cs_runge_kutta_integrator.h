@@ -34,6 +34,9 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -41,13 +44,13 @@
  *----------------------------------------------------------------------------*/
 
 #include "alge/cs_balance.h"
+#include "alge/cs_blas.h"
 
 #include "base/cs_array.h"
+#include "base/cs_base_accel.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_dispatch.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_mem.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_equation_param.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

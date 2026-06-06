@@ -24,31 +24,42 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <string.h>
+#include <time.h>
 
 #if defined(__linux__)
+#include <stdio.h>
 #endif
 
 #if defined(HAVE_UNISTD_H)
+#include <unistd.h>
 #endif
 
 #if defined HAVE_SYS_UTSNAME_H
+#include <sys/utsname.h>
 #endif
 
 #if defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
+#include <sys/sysinfo.h>
 #endif
 
 #if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
+#include <pwd.h>
 #endif
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
+#include "alge/cs_blas.h"
 #include "base/cs_log.h"
 
 #if defined(HAVE_CUDA)

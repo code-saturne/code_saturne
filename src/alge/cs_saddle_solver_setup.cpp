@@ -31,9 +31,13 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <float.h>
 
 #if defined(HAVE_PETSC)
-#include <petscksp.h>
+#include <petsc.h>
+#include <petscconf.h> /* Useful to know if HYPRE is accessible through PETSc */
 #include <petscversion.h>
 #endif
 
@@ -46,6 +50,8 @@
 #undef PACKAGE_VERSION
 
 #if defined(HAVE_HYPRE)
+#include <HYPRE_krylov.h>
+#include <HYPRE_parcsr_ls.h>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -54,20 +60,18 @@
 
 #include "bft/bft_error.h"
 
-#include "alge/cs_param_saddle.h"
-#include "alge/cs_param_sles.h"
+#include "alge/cs_multigrid.h"
 #include "alge/cs_param_sles_setup.h"
 #include "alge/cs_saddle_solver.h"
-#include "base/cs_base.h"
+#include "alge/cs_sles.h"
 #include "base/cs_fp_exception.h"
 #include "base/cs_log.h"
-#include "base/cs_param_types.h"
-#include "base/cs_range_set.h"
-#include "cdo/cs_cdo_system.h"
+#include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "cdo/cs_equation.h"
-#include "cdo/cs_equation_param.h"
 
 #if defined(HAVE_MUMPS)
+#include "alge/cs_sles_mumps.h"
 #endif
 
 #if defined(HAVE_PETSC)
@@ -75,6 +79,7 @@
 #endif
 
 #if defined(HAVE_HYPRE)
+#include "alge/cs_sles_hypre.h"
 #endif
 
 /*----------------------------------------------------------------------------

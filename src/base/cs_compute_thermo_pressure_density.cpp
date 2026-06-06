@@ -30,7 +30,14 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
 #include <math.h>
+#include <float.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -39,26 +46,27 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
+#include "base/cs_boundary_conditions.h"
 #include "base/cs_dispatch.h"
+#include "cdo/cs_domain.h"
+#include "cdo/cs_equation.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
+#include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_reducers.h"
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_volume_mass_injection.h"
 #include "base/cs_wall_condensation.h"
 #include "base/cs_wall_condensation_1d_thermal.h"
-#include "base/cs_halo.h"
-#include "base/cs_log.h"
-#include "base/cs_restart.h"
-#include "base/cs_time_step.h"
-#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

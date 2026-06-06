@@ -31,18 +31,14 @@
 
 #include "alge/cs_matrix.h"
 #include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_cdo_system.h"
+#include "cdo/cs_enforcement.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_flag.h"
 #include "cdo/cs_source_term.h"
-#include "base/cs_defs.h"
-#include "base/cs_range_set.h"
-#include "base/cs_timer.h"
-#include "cdo/cs_hodge.h"
-#include "cdo/cs_iter_algo.h"
-#include "cdo/cs_param_cdo.h"
-#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions

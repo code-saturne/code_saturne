@@ -31,12 +31,17 @@
  *----------------------------------------------------------------------------*/
 
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
+#include <float.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_halo.h"

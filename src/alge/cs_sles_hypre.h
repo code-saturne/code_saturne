@@ -35,10 +35,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_sles.h"
-#include "base/cs_defs.h"
-#include "base/cs_log.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -365,5 +368,9 @@ cs_sles_hypre_get_host_device(const cs_sles_hypre_t   *context);
 
 void
 cs_sles_hypre_library_info(cs_log_t  log_type);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_SLES_HYPRE_H */

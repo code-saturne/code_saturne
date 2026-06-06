@@ -76,7 +76,6 @@
 
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
-#include "base/cs_time_step.h"
 #include "atmo/cs_atmo_aerosol_ssh.h"
 
 /*----------------------------------------------------------------------------*/

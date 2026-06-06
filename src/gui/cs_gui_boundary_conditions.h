@@ -34,7 +34,6 @@
 #include "base/cs_base.h"
 #include "base/cs_boundary.h"
 #include "base/cs_zone.h"
-#include "base/cs_defs.h"
 
 /*============================================================================
  * Type definitions

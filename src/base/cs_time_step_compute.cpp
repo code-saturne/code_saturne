@@ -67,17 +67,6 @@
 #include "pprt/cs_physical_model.h"
 #include "cfbl/cs_cf_model.h"
 #include "cfbl/cs_cf_compute.h"
-#include "alge/cs_gradient.h"
-#include "base/cs_dispatch.h"
-#include "base/cs_field.h"
-#include "base/cs_halo.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_parall.h"
-#include "base/cs_time_step.h"
-#include "cdo/cs_equation_param.h"
-#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

@@ -25,11 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_assert.h"
 #include "base/cs_defs.h"
-#include "base/cs_rank_neighbors.h"
-#include "base/cs_timer.h"
-#include "fvm/fvm_periodicity.h"
 
 /*----------------------------------------------------------------------------
  * Standard C and C++ library headers
@@ -37,18 +33,21 @@
 
 #include <chrono>
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <math.h>
-#include <stdio.h>
-#include <string.h>
 
-#if defined(__STDC_VERSION__) /* size_t */
+#if defined(__STDC_VERSION__)      /* size_t */
 #if (__STDC_VERSION__ == 199901L)
-#include <stddef.h>
+#    include <stddef.h>
+#  else
+#    include <stdlib.h>
+#  endif
 #else
 #include <stdlib.h>
-#endif
-#else
 #endif
 
 #if defined(HAVE_MPI)
@@ -62,10 +61,6 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "alge/cs_matrix.h"
-#include "alge/cs_matrix_default.h"
-#include "alge/cs_matrix_tuning.h"
-#include "alge/cs_matrix_util.h"
 #include "base/cs_base.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_halo.h"
@@ -73,10 +68,18 @@
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "base/cs_reducers.h"
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_matrix_tuning.h"
+#include "alge/cs_matrix_util.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_reducers.h"
+#include "alge/cs_sles.h"
 #include "base/cs_sort.h"
+
+#include "fvm/fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

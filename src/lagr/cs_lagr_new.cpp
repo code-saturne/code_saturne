@@ -34,20 +34,28 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <limits.h>
+#include <stdio.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
+#include <float.h>
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 #include "bft/bft_error.h"
 
 #include "atmo/cs_atmo.h"
+#include "base/cs_base.h"
 #include "comb/cs_coal.h"
 #include "base/cs_ht_convert.h"
+#include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
@@ -60,8 +68,13 @@
 #include "base/cs_thermal_model.h"
 
 #include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
 
+#include "lagr/cs_lagr_clogging.h"
 #include "lagr/cs_lagr_deposition_model.h"
+#include "lagr/cs_lagr_roughness.h"
+#include "lagr/cs_lagr_dlvo.h"
+#include "lagr/cs_lagr_stat.h"
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_tracking.h"
 

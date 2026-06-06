@@ -32,11 +32,9 @@
 #include "alge/cs_saddle_solver.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_equation_bc.h"
+#include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_hodge.h"
-#include "base/cs_defs.h"
-#include "cdo/cs_cdo_local.h"
-#include "cdo/cs_cdo_system.h"
 
 /*============================================================================
  * Macro definitions

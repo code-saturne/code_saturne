@@ -31,6 +31,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -42,11 +44,12 @@
 
 #include "fvm/fvm_selector.h"
 
-#include "base/cs_base.h"
 #include "base/cs_halo.h"
 #include "base/cs_mem.h"
-#include "base/cs_sort.h"
+#include "base/cs_parall.h"
+
 #include "mesh/cs_mesh.h"
+#include "base/cs_sort.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

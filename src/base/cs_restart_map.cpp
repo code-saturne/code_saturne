@@ -32,7 +32,12 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -40,9 +45,13 @@
 
 #include "ple_locator.h"
 
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 #include "base/cs_array.h"
 #include "base/cs_assert.h"
+#include "base/cs_base.h"
 #include "base/cs_coupling.h"
+#include "base/cs_io.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
@@ -50,6 +59,7 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_preprocessor_data.h"
+#include "base/cs_timer.h"
 #include "base/cs_timer_stats.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_interpolate.h"
@@ -59,8 +69,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_restart.h"
-#include "base/cs_log.h"
-#include "mesh/cs_mesh_builder.h"
 #include "base/cs_restart_map.h"
 
 /*----------------------------------------------------------------------------*/

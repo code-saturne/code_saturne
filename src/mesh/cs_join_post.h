@@ -35,11 +35,16 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_writer.h"
 
 #include "mesh/cs_join_mesh.h"
 #include "mesh/cs_join_util.h"
 #include "mesh/cs_mesh.h"
-#include "base/cs_defs.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro and type definitions
@@ -148,5 +153,9 @@ void
 cs_join_post_dump_mesh(const char            *basename,
                        const cs_join_mesh_t  *mesh,
                        cs_join_param_t        param);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_JOIN_POST_H */

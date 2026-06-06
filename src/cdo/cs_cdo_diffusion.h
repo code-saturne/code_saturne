@@ -30,13 +30,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_macfb_builder.h"
-#include "base/cs_defs.h"
-#include "cdo/cs_property.h"
-#include "cdo/cs_sdm.h"
 
 /*============================================================================
  * Macro definitions

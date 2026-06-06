@@ -31,8 +31,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
 
+#include "base/cs_halo.h"
 #include "alge/cs_matrix.h"
+#include "alge/cs_matrix_assembler.h"
 
 /*============================================================================
  * Macro definitions

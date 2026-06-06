@@ -55,16 +55,6 @@
 #include "base/cs_time_step.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
-#include "alge/cs_gradient.h"
-#include "base/cs_field.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
-#include "base/cs_param_types.h"
-#include "base/cs_time_control.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_equation_param.h"
-#include "cdo/cs_param_cdo.h"
-#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

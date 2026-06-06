@@ -31,11 +31,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_pc.h"
-#include "base/cs_defs.h"
-#include "base/cs_log.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -594,5 +597,9 @@ cs_sles_it_convergence_test(cs_sles_it_t              *c,
                             unsigned                   n_iter,
                             double                     residual,
                             cs_sles_it_convergence_t  *convergence);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_SLES_IT_H */

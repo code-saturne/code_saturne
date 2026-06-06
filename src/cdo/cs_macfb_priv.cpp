@@ -25,6 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -36,14 +37,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 
 #include "cdo/cs_macfb_advection.h"
 #include "cdo/cs_xdef.h"
-#include "base/cs_param_types.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_advection_field.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_quadrature.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

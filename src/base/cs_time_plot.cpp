@@ -33,6 +33,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -42,8 +43,10 @@
 
 #include "bft/bft_error.h"
 
+#include "base/cs_base.h"
 #include "base/cs_mem.h"
 #include "base/cs_timer.h"
+#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

@@ -33,18 +33,24 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_boundary_zone.h"
 #include "base/cs_ext_neighborhood.h"
 #include "base/cs_internal_coupling.h"
 #include "base/cs_log.h"
+#include "base/cs_map.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
 #include "mesh/cs_partition.h"
 #include "base/cs_porosity_from_scan.h"
 #include "base/cs_porous_model.h"
@@ -68,12 +74,6 @@
 #include "mesh/cs_mesh_to_builder.h"
 #include "mesh/cs_mesh_warping.h"
 #include "mesh/cs_join.h"
-#include "base/cs_timer.h"
-#include "fvm/fvm_periodicity.h"
-#include "mesh/cs_join_util.h"
-#include "mesh/cs_mesh_adjacencies.h"
-#include "mesh/cs_mesh_bad_cells.h"
-#include "mesh/cs_mesh_builder.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

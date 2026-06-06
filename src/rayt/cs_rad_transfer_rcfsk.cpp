@@ -48,17 +48,17 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "alge/cs_sles.h"
-#include "alge/cs_sles_it.h"
-#include "base/cs_base.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
-#include "base/cs_parall.h"
-#include "base/cs_parameters.h"
-#include "base/cs_time_step.h"
-#include "base/cs_timer.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_parameters.h"
+#include "alge/cs_sles.h"
+#include "alge/cs_sles_it.h"
+#include "base/cs_time_step.h"
+#include "base/cs_timer.h"
+
 #include "rayt/cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------

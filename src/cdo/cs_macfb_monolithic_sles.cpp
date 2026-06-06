@@ -34,36 +34,31 @@
 #include <cassert>
 
 #if defined(HAVE_OPENMP)
+#include <omp.h>
 #endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_blas.h"
 #include "alge/cs_matrix_default.h"
+#include "alge/cs_param_sles_setup.h"
+#include "alge/cs_saddle_solver_setup.h"
 #include "base/cs_array.h"
+#include "base/cs_fp_exception.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_timer.h"
 #include "cdo/cs_cdo_blas.h"
+#include "cdo/cs_cdo_solve.h"
 #include "cdo/cs_cdofb_monolithic_sles.h"
+#include "cdo/cs_equation.h"
 #include "cdo/cs_saddle_system.h"
-#include "alge/cs_matrix.h"
-#include "alge/cs_matrix_assembler.h"
-#include "alge/cs_param_sles.h"
-#include "alge/cs_sles.h"
-#include "base/cs_interface.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
-#include "base/cs_param_types.h"
-#include "base/cs_range_set.h"
-#include "base/cs_time_step.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_cdo_system.h"
-#include "cdo/cs_cdo_turbulence.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_iter_algo.h"
-#include "cdo/cs_property.h"
-#include "mesh/cs_mesh_adjacencies.h"
-#include "turb/cs_turbulence_model.h"
+
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cdo/cs_dbg.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

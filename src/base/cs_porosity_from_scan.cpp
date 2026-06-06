@@ -48,43 +48,42 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
+
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_extract.h"
+#include "fvm/fvm_point_location.h"
+
 #include "base/cs_base.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_coupling.h"
 #include "base/cs_equation_iterative_solve.h"
 #include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
-#include "base/cs_field_pointer.h"
 #include "base/cs_file_csv_parser.h"
 #include "base/cs_halo.h"
-#include "base/cs_halo_perio.h"
 #include "base/cs_io.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
-#include "base/cs_physical_constants.h"
 #include "base/cs_porous_model.h"
+#include "base/cs_physical_constants.h"
 #include "base/cs_post.h"
 #include "base/cs_timer.h"
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
+
 #include "cdo/cs_domain.h"
-#include "fvm/fvm_nodal.h"
-#include "fvm/fvm_nodal_extract.h"
-#include "fvm/fvm_point_location.h"
+
 #include "mesh/cs_geom.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_remove.h"
-#include "base/cs_file.h"
-#include "base/cs_restart_default.h"
-#include "cdo/cs_equation_param.h"
-#include "fvm/fvm_writer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

@@ -43,10 +43,6 @@
 #include "cdo/cs_thermal_system.h"
 #include "cdo/cs_xdef.h"
 #include "mesh/cs_mesh.h"
-#include "base/cs_boundary.h"
-#include "base/cs_defs.h"
-#include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_quantities.h"
 
 /*============================================================================
  * Macro definitions

@@ -30,14 +30,23 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
 #include <math.h>
+#include <string.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_array.h"
+#include "base/cs_base.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "alge/cs_convection_diffusion.h"
@@ -51,17 +60,18 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
+#include "base/cs_log.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
+#include "base/cs_post.h"
 #include "base/cs_time_step.h"
+#include "base/cs_turbomachinery.h"
 #include "base/cs_selector.h"
 #include "alge/cs_face_viscosity.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_volume_mass_injection.h"
-#include "alge/cs_gradient.h"
-#include "base/cs_dispatch.h"
-#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

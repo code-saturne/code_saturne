@@ -30,6 +30,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
 
 /*----------------------------------------------------------------------------
  * PLE library headers
@@ -48,11 +49,10 @@
 
 #include "bft/bft_printf.h"
 
+#include "base/cs_mem.h"
+#include "base/cs_time_step.h"
 #include "fvm/fvm_nodal_extract.h"
 #include "fvm/fvm_point_location.h"
-#include "base/cs_base.h"
-#include "bft/bft_error.h"
-#include "fvm/fvm_nodal.h"
 
 #include "base/cs_coupling.h"
 

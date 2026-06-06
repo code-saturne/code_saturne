@@ -31,6 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -39,8 +40,6 @@
 #include "base/cs_array.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
-#include "base/cs_interface.h"
-#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

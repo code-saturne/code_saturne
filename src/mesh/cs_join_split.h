@@ -31,10 +31,10 @@
  * Local headers
  *---------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
 #include "mesh/cs_join_mesh.h"
 #include "mesh/cs_join_set.h"
 #include "mesh/cs_join_util.h"
-#include "base/cs_defs.h"
 
 /*---------------------------------------------------------------------------*/
 

@@ -32,7 +32,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -49,11 +52,15 @@
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
+#include "comb/cs_coal.h"
+#include "cogz/cs_combustion_bsh.h"
+#include "cogz/cs_combustion_gas.h"
 
 #include "pprt/cs_combustion_model.h"
 

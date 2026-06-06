@@ -39,16 +39,13 @@
 
 #include "base/cs_defs.h"
 
-#include "alge/cs_matrix_assembler.h"
 #include "base/cs_base.h"
-#include "base/cs_boundary_zone.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_field.h"
-#include "base/cs_parameters.h"
+#include "alge/cs_matrix_assembler.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_halo.h"
-#include "base/cs_zone.h"
+#include "base/cs_parameters.h"
 
 /*=============================================================================
  * Macro definitions

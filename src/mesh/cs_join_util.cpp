@@ -31,9 +31,10 @@
  *---------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <math.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -41,18 +42,23 @@
 
 #include "bft/bft_printf.h"
 
+#include "fvm/fvm_defs.h"
+#include "fvm/fvm_io_num.h"
+
 #include "base/cs_file.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_search.h"
-#include "base/cs_selector.h"
 #include "base/cs_sort.h"
+
 #include "mesh/cs_join_util.h"
 #include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *---------------------------------------------------------------------------*/
+
+#include "mesh/cs_join_set.h"
 
 /*---------------------------------------------------------------------------*/
 

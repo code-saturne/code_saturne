@@ -30,7 +30,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stdio.h>
 #include <float.h>
+#include <assert.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -45,6 +47,7 @@
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

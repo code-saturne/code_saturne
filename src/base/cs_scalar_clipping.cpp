@@ -47,7 +47,6 @@
 #include "base/cs_log_iteration.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

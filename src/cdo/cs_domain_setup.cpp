@@ -36,15 +36,22 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
+
 #include "base/cs_ale.h"
+#include "base/cs_boundary_zone.h"
 #include "base/cs_log.h"
+#include "base/cs_log_iteration.h"
+#include "base/cs_parall.h"
 #include "base/cs_pressure_correction.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_time_step.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_system.h"
 #include "cdo/cs_equation.h"
+#include "cdo/cs_equation_param.h"
 #include "cdo/cs_evaluate.h"
+#include "cdo/cs_hodge.h"
 #include "cdo/cs_maxwell.h"
 #include "cdo/cs_mesh_deform.h"
 #include "cdo/cs_navsto_system.h"
@@ -54,20 +61,7 @@
 #include "cdo/cs_walldistance.h"
 #include "gui/cs_gui.h"
 #include "gwf/cs_gwf.h"
-#include "base/cs_field.h"
-#include "base/cs_restart.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_advection_field.h"
-#include "cdo/cs_cdo_assembly.h"
-#include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_quantities.h"
-#include "cdo/cs_cdo_toolbox.h"
-#include "cdo/cs_equation_system.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_navsto_param.h"
-#include "cdo/cs_param_cdo.h"
-#include "cdo/cs_property.h"
-#include "turb/cs_turbulence_model.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

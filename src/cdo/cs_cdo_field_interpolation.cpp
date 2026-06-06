@@ -32,10 +32,15 @@
 
 #include <cassert>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_timer_stats.h"
@@ -43,11 +48,6 @@
 #include "cdo/cs_cdovcb_scaleq.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_equation_priv.h"
-#include "base/cs_field.h"
-#include "base/cs_param_types.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_equation_param.h"
-#include "cdo/cs_property.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

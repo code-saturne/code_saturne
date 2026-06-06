@@ -26,7 +26,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <math.h>
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 
@@ -37,9 +39,9 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_base.h"
 #include "base/cs_file.h"
 #include "base/cs_mem.h"
-#include "base/cs_defs.h"
 
 #include "base/cs_file_csv_parser.h"
 

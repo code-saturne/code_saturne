@@ -66,12 +66,6 @@
 #include "pprt/cs_physical_model.h"
 #include "rayt/cs_rad_transfer.h"
 #include "turb/cs_turbulence_model.h"
-#include "base/cs_halo.h"
-#include "base/cs_math.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_parameters.h"
-#include "base/cs_time_step.h"
-#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

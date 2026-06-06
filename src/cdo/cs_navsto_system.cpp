@@ -31,6 +31,11 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
+#include <cstring>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -40,28 +45,20 @@
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_post.h"
+#include "base/cs_volume_zone.h"
+#include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdofb_ac.h"
 #include "cdo/cs_cdofb_monolithic.h"
+#include "cdo/cs_cdofb_monolithic_sles.h"
 #include "cdo/cs_cdofb_navsto.h"
 #include "cdo/cs_cdofb_predco.h"
+#include "cdo/cs_evaluate.h"
 #include "cdo/cs_flag.h"
+#include "cdo/cs_hho_stokes.h"
 #include "cdo/cs_macfb_monolithic.h"
+#include "cdo/cs_macfb_monolithic_sles.h"
 #include "cdo/cs_macfb_navsto.h"
 #include "cdo/cs_navsto_coupling.h"
-#include "alge/cs_param_saddle.h"
-#include "base/cs_field.h"
-#include "base/cs_halo.h"
-#include "base/cs_math.h"
-#include "base/cs_param_types.h"
-#include "base/cs_time_step.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_cdofb_monolithic_priv.h"
-#include "cdo/cs_equation_param.h"
-#include "cdo/cs_equation_priv.h"
-#include "cdo/cs_macfb_monolithic_priv.h"
-#include "cdo/cs_property.h"
-#include "cdo/cs_thermal_system.h"
-#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

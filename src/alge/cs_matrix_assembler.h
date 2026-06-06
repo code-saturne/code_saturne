@@ -36,6 +36,10 @@
 #include "base/cs_halo.h"
 #include "base/cs_log.h"
 
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -668,5 +672,9 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
 void
 cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_MATRIX_ASSEMBLER_H */

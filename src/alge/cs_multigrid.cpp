@@ -30,10 +30,13 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+#include <math.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -46,28 +49,31 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
 #include "alge/cs_blas.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_file.h"
 #include "alge/cs_grid.h"
+#include "base/cs_halo.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "alge/cs_matrix.h"
+#include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_util.h"
+#include "base/cs_mem.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "alge/cs_multigrid_smoother.h"
+#include "base/cs_post.h"
+#include "base/cs_profiling.h"
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_it.h"
 #include "alge/cs_sles_pc.h"
-#include "base/cs_base_accel.h"
-#include "base/cs_dispatch.h"
-#include "base/cs_file.h"
-#include "base/cs_log.h"
-#include "base/cs_mem.h"
-#include "base/cs_post.h"
-#include "base/cs_profiling.h"
-#include "base/cs_range_set.h"
-#include "base/cs_time_plot.h"
-#include "base/cs_time_step.h"
 #include "base/cs_timer.h"
 #include "base/cs_timer_stats.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_location.h"
+#include "base/cs_time_plot.h"
+#include "base/cs_time_step.h"
 
 #if defined(HAVE_CUDA) && defined(__CUDACC__)
 #include "alge/cs_blas_cuda.h"
@@ -2984,7 +2990,7 @@ _convergence_test(cs_multigrid_t        *mg,
 
   }
 
-  if (diverges || std::isnan(*residual) || std::isinf(*residual)) {
+  if (diverges || isnan(*residual) || isinf(*residual)) {
     if (verbosity > 2)
       bft_printf(_(cycle_fmt), cycle_id, n_iters, *residual/r_norm);
     return CS_SLES_DIVERGED;

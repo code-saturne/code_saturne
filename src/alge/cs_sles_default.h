@@ -31,8 +31,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
+#include "base/cs_halo_perio.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_sles.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -252,5 +258,9 @@ cs_sles_default_error(cs_sles_t                    *sles,
                       const cs_matrix_t            *a,
                       const cs_real_t               rhs[],
                       cs_real_t                     vx[]);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_SLES_DEFAULT_H */

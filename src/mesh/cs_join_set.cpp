@@ -38,14 +38,15 @@
  *  Local headers
  *---------------------------------------------------------------------------*/
 
+#include "fvm/fvm_io_num.h"
 
 #include "base/cs_all_to_all.h"
 #include "base/cs_block_dist.h"
+#include "mesh/cs_join_util.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_search.h"
 #include "base/cs_sort.h"
-#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

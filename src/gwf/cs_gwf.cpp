@@ -60,14 +60,6 @@
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"
-#include "base/cs_base.h"
-#include "base/cs_time_step.h"
-#include "base/cs_volume_zone.h"
-#include "base/cs_zone.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_property.h"
-#include "cdo/cs_xdef.h"
 #endif
 
 /*----------------------------------------------------------------------------

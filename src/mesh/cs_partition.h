@@ -31,7 +31,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
 
+#include "base/cs_base.h"
 #include "base/cs_log.h"
 
 #include "mesh/cs_mesh.h"

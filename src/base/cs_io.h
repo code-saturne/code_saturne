@@ -33,6 +33,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
 #include "base/cs_file.h"
 
 /*=============================================================================
@@ -83,7 +84,7 @@ typedef struct {
 
 /* Default hints for files using this API (for MPI-IO) */
 
-extern "C"  int cs_glob_io_hints;
+extern int       cs_glob_io_hints;
 
 /*============================================================================
  * Public function prototypes

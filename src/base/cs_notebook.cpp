@@ -32,6 +32,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,11 +45,11 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "gui/cs_gui_util.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
 #include "base/cs_mem.h"
 #include "base/cs_parameters.h"
-#include "base/cs_tree.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

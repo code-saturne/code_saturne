@@ -35,7 +35,6 @@
 #include "cdo/cs_equation_param.h"
 #include "base/cs_field.h"
 #include "base/cs_zone.h"
-#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 

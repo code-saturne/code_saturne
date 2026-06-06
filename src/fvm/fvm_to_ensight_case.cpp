@@ -34,6 +34,7 @@
 #include <ctype.h>  /* toupper() */
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -1138,3 +1139,4 @@ fvm_to_ensight_case_write_case(fvm_to_ensight_case_t  *this_case,
 }
 
 /*----------------------------------------------------------------------------*/
+

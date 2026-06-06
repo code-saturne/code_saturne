@@ -32,6 +32,10 @@
 
 #include <cassert>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -45,6 +49,7 @@
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "base/cs_post.h"
+#include "base/cs_prototypes.h"
 #include "base/cs_range_set.h"
 #include "base/cs_timer_stats.h"
 #include "cdo/cs_cdo_toolbox.h"
@@ -55,22 +60,16 @@
 #include "cdo/cs_cdovb_scaleq.h"
 #include "cdo/cs_cdovb_vecteq.h"
 #include "cdo/cs_cdovcb_scaleq.h"
+#include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_priv.h"
+#include "cdo/cs_evaluate.h"
 #include "cdo/cs_hho_scaleq.h"
 #include "cdo/cs_hho_vecteq.h"
 #include "cdo/cs_macfb_vecteq.h"
-#include "alge/cs_matrix.h"
-#include "alge/cs_param_sles.h"
-#include "base/cs_field.h"
-#include "base/cs_interface.h"
-#include "base/cs_time_step.h"
-#include "base/cs_timer.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_cdo_system.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_param_cdo.h"
-#include "mesh/cs_mesh_adjacencies.h"
-#include "mesh/cs_mesh_location.h"
+
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cdo/cs_dbg.h"
+#endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file

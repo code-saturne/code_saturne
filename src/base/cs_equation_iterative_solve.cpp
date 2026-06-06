@@ -84,10 +84,6 @@
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_default.h"
-#include "alge/cs_matrix.h"
-#include "base/cs_param_types.h"
-#include "base/cs_time_control.h"
-#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

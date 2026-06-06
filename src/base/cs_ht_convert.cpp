@@ -41,23 +41,20 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_boundary_zone.h"
+#include "bft/bft_error.h"
+
+#include "comb/cs_coal_ht_convert.h"
+#include "cogz/cs_combustion_ht_convert.h"
+#include "elec/cs_elec_model.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
+#include "mesh/cs_mesh_location.h"
 #include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_volume_zone.h"
-#include "bft/bft_error.h"
-#include "cogz/cs_combustion_ht_convert.h"
-#include "comb/cs_coal_ht_convert.h"
-#include "elec/cs_elec_model.h"
-#include "mesh/cs_mesh_location.h"
-#include "pprt/cs_physical_model.h"
-#include "cdo/cs_domain.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -28,27 +28,37 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <math.h>
+#include <float.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
-#include "base/cs_array.h"
-#include "base/cs_field.h"
-#include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
-#include "base/cs_math.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_parameters_check.h"
+#include "base/cs_field.h"
+#include "base/cs_mem.h"
+#include "base/cs_field_pointer.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
 #include "base/cs_thermal_model.h"
-#include "base/cs_time_step.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_location.h"
+#include "base/cs_parameters_check.h"
+
 #include "rayt/cs_rad_transfer.h"
 
 /*----------------------------------------------------------------------------

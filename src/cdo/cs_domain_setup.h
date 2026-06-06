@@ -31,9 +31,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
+
 #include "base/cs_param_types.h"
 #include "cdo/cs_domain.h"
-#include "cdo/cs_xdef.h"
 
 /*============================================================================
  * Macro definitions

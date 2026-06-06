@@ -29,12 +29,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_field.h"
+#include "base/cs_time_step.h"
+#include "cdo/cs_advection_field.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_property.h"
+#include "cdo/cs_source_term.h"
+#include "cdo/cs_xdef.h"
 #include "mesh/cs_mesh.h"
-#include "base/cs_defs.h"
-#include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_quantities.h"
 
 /*============================================================================
  * Macro definitions

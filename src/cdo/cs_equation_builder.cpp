@@ -39,12 +39,11 @@
 
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
-#include "base/cs_param_types.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_enforcement.h"
-#include "cdo/cs_property.h"
-#include "cdo/cs_sdm.h"
-#include "cdo/cs_xdef.h"
+#include "base/cs_parall.h"
+
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cdo/cs_dbg.h"
+#endif
 
 /*----------------------------------------------------------------------------*/
 

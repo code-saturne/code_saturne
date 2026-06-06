@@ -29,11 +29,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_param_sles.h"
 #include "alge/cs_sles.h"
+#include "base/cs_math.h"
 #include "base/cs_param_types.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_sdm.h"
-#include "base/cs_defs.h"
 
 /*============================================================================
  * Macro definitions

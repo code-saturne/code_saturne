@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "base/cs_base.h"
 #include "base/cs_log.h"
 
 /*============================================================================
@@ -117,7 +118,7 @@ typedef struct {
 
 /* Names for numbering types */
 
-extern "C" const char  *cs_numbering_type_name[];
+extern const char  *cs_numbering_type_name[];
 
 /*=============================================================================
  * Public function prototypes

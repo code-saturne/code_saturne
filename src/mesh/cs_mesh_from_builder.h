@@ -33,10 +33,18 @@
 
 #include "base/cs_defs.h"
 
+#include "fvm/fvm_group.h"
+#include "fvm/fvm_selector.h"
+#include "fvm/fvm_periodicity.h"
 
+#include "base/cs_base.h"
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_builder.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -65,5 +73,9 @@
 void
 cs_mesh_from_builder(cs_mesh_t          *mesh,
                      cs_mesh_builder_t  *mesh_builder);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_MESH_FROM_BUILDER_H */

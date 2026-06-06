@@ -35,8 +35,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
-#include "mesh/cs_mesh.h"
+#include "base/cs_base.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_zone.h"
 
 /*============================================================================
  * Macro definitions

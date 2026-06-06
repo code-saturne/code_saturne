@@ -28,7 +28,14 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -37,31 +44,34 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "alge/cs_divergence.h"
-#include "alge/cs_face_viscosity.h"
 #include "base/cs_array.h"
+#include "base/cs_base.h"
 #include "base/cs_dispatch.h"
+#include "alge/cs_divergence.h"
 #include "base/cs_equation_iterative_solve.h"
+#include "cdo/cs_equation_param.h"
+#include "alge/cs_face_viscosity.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_log_iteration.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_thermal_model.h"
 #include "base/cs_solid_zone.h"
 #include "base/cs_time_step.h"
-#include "base/cs_velocity_pressure.h"
-#include "cdo/cs_equation_param.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_quantities.h"
+#include "turb/cs_turbulence_bc.h"
 #include "turb/cs_turbulence_model.h"
-#include "alge/cs_gradient.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_param_types.h"
-#include "base/cs_parameters.h"
-#include "cdo/cs_domain.h"
+#include "base/cs_velocity_pressure.h"
+
+#include "turb/cs_turbulence_rij.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

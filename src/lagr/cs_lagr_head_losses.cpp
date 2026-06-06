@@ -35,15 +35,25 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <limits.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
+#include <ctype.h>
+#include <float.h>
+#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 
 #include "base/cs_field.h"
 #include "base/cs_field_operator.h"
+#include "alge/cs_gradient.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_math.h"
@@ -53,11 +63,11 @@
 #include "base/cs_parameters.h"
 #include "base/cs_parameters_check.h"
 #include "base/cs_parall.h"
+#include "base/cs_prototypes.h"
 
 #include "lagr/cs_lagr.h"
-#include "base/cs_array.h"
-#include "base/cs_mdspan.h"
-#include "bft/bft_error.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "lagr/cs_lagr_stat.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

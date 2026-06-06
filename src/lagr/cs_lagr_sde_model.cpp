@@ -32,26 +32,43 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <float.h>
+#include <ctype.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 #include "bft/bft_error.h"
 
-#include "base/cs_math.h"
-#include "base/cs_physical_constants.h"
-#include "base/cs_thermal_model.h"
+#include "base/cs_base.h"
+#include "base/cs_mem.h"
 #include "comb/cs_coal.h"
 #include "comb/cs_coal_ht_convert.h"
-#include "lagr/cs_lagr.h"
-#include "lagr/cs_lagr_sde.h"
-#include "mesh/cs_mesh_quantities.h"
+#include "base/cs_math.h"
+#include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
+
+#include "mesh/cs_mesh.h"
+#include "base/cs_thermal_model.h"
 #include "turb/cs_turbulence_model.h"
+
+#include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_tracking.h"
+#include "lagr/cs_lagr_prototypes.h"
+
+#include "lagr/cs_lagr_sde.h"
+
+#include "base/cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1547,7 +1564,8 @@ _sde_i_ct(cs_lagr_particle_set_t  &p_set,
 
   /* User defined air properties of the cooling tower model*/
   cs_air_fluid_props_t *air_prop = cs_glob_air_props;
-  cs_real_t             lambda_h             = air_prop->lambda_h;
+  cs_real_t lambda_h             = air_prop->lambda_h;
+  cs_real_t hv0                  = air_prop->hv0;
   cs_real_t rho_l                = air_prop->rho_l;
 
   /* General fluid properties*/
@@ -1585,6 +1603,7 @@ _sde_i_ct(cs_lagr_particle_set_t  &p_set,
   cs_real_t temp_h
     = p_set.attr_n_real(p_id, 1, CS_LAGR_TEMPERATURE_SEEN);
   cs_real_t x_s_tl = cs_air_x_sat(t_l_p, p0);
+  cs_real_t x_s_th = cs_air_x_sat(temp_h, p0);
   cs_real_t xlew   = _lewis_factor(evap_model, molmassrat,
                                    x[cell_id], x_s_tl);
 

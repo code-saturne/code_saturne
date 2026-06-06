@@ -33,7 +33,9 @@
 #include <assert.h>
 #include <float.h>
 #include <math.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -44,7 +46,6 @@
 #include "base/cs_mem.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_reducers.h"
-#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1615,3 +1616,4 @@ fvm_morton_dump(int                dim,
 }
 
 /*----------------------------------------------------------------------------*/
+

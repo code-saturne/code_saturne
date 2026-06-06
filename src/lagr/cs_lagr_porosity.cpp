@@ -34,17 +34,27 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
+#include "bft/bft_error.h"
 
+#include "base/cs_base.h"
 #include "base/cs_halo.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
+#include "base/cs_porous_model.h"
 
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_particle.h"

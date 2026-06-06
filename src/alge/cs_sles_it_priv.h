@@ -52,8 +52,20 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
+#include "base/cs_base.h"
+#include "alge/cs_blas.h"
+#include "base/cs_file.h"
+#include "base/cs_log.h"
+#include "base/cs_halo.h"
+#include "base/cs_mem.h"
+#include "mesh/cs_mesh.h"
 #include "alge/cs_matrix.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_matrix_util.h"
+#include "base/cs_post.h"
 #include "base/cs_timer.h"
 #include "base/cs_time_plot.h"
 
@@ -64,7 +76,6 @@
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_it.h"
 #include "alge/cs_sles_pc.h"
-#include "base/cs_base_accel.h"
 
 /*----------------------------------------------------------------------------*/
 

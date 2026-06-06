@@ -30,15 +30,23 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
 #include "base/cs_ale.h"
 #include "base/cs_array.h"
 #include "base/cs_array_reduce.h"
+#include "base/cs_assert.h"
 #include "cfbl/cs_cf_model.h"
 #include "cfbl/cs_cf_thermo.h"
 #include "base/cs_dispatch.h"
@@ -50,6 +58,7 @@
 #include "gui/cs_gui_mobile_mesh.h"
 #include "base/cs_ibm.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parameters.h"
@@ -75,12 +84,6 @@
 #include "comb/cs_coal_initialize.h"
 #include "ctwr/cs_ctwr_initialize.h"
 #include "elec/cs_elec_model.h"
-#include "base/cs_log.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_param_types.h"
-#include "base/cs_restart.h"
-#include "cdo/cs_domain.h"
-#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

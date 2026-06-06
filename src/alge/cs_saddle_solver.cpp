@@ -56,11 +56,6 @@
 #include "base/cs_parameters.h"
 #include "cdo/cs_cdo_solve.h"
 #include "cdo/cs_saddle_system.h"
-#include "alge/cs_param_sles.h"
-#include "base/cs_field.h"
-#include "base/cs_interface.h"
-#include "base/cs_param_types.h"
-#include "bft/bft_error.h"
 
 #if 0  /* Set to 1 if systems have to be exported into a binary file */
 #include "cdo/cs_dbg.h"

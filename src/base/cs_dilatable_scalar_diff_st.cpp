@@ -59,14 +59,6 @@
 #include "mesh/cs_mesh.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_time_step.h"
-#include "base/cs_dispatch.h"
-#include "base/cs_field.h"
-#include "base/cs_halo.h"
-#include "base/cs_math.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_param_types.h"
-#include "cdo/cs_equation_param.h"
-#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

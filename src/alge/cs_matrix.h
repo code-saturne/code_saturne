@@ -130,11 +130,11 @@ typedef struct {
 
 /*! Fill type names for matrices */
 
-extern "C" const char  *cs_matrix_fill_type_name[];
+extern const char  *cs_matrix_fill_type_name[];
 
 /*! Operation type type names for partial SpMV functions */
 
-extern "C" const char  *cs_matrix_spmv_type_name[];
+extern const char  *cs_matrix_spmv_type_name[];
 
 /*=============================================================================
  * Public C++ function prototypes

@@ -79,15 +79,6 @@
 #include "base/cs_xdef_eval_at_zone.h"
 
 #include "fvm/fvm_nodal.h"
-#include "base/cs_boundary_zone.h"
-#include "base/cs_dispatch.h"
-#include "base/cs_field.h"
-#include "base/cs_param_types.h"
-#include "base/cs_time_step.h"
-#include "cdo/cs_equation_param.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_param_cdo.h"
-#include "cdo/cs_xdef.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

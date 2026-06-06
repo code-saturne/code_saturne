@@ -33,8 +33,12 @@
 
 #include "fvm/fvm_nodal.h"
 
+#include "base/cs_base.h"
 #include "mesh/cs_mesh.h"
-#include "base/cs_defs.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -150,5 +154,9 @@ cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
                                   const char    v_flag[],
                                   cs_lnum_t   **v2c_idx,
                                   cs_lnum_t   **v2c);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_MESH_CONNECT_H */

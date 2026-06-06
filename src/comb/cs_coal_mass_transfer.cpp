@@ -30,12 +30,19 @@
  * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
 
+#include <algorithm>
 
+#include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
 #include "comb/cs_coal.h"
@@ -43,15 +50,19 @@
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "mesh/cs_mesh_location.h"
 #include "base/cs_physical_constants.h"
+#include "pprt/cs_physical_model.h"
 #include "base/cs_thermal_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
+#include "comb/cs_coal_physical_properties.h"
 
 /*=============================================================================
  * Additional Doxygen documentation

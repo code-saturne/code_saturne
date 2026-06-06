@@ -31,9 +31,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
+#include "base/cs_halo.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_defs.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro definitions
@@ -176,5 +181,9 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
                                      cs_real_t                     *weighb,
                                      cs_real_t                     *i_visc,
                                      cs_real_t                     *b_visc);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_FACE_VISCOSITY_H */

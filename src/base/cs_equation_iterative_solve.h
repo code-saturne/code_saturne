@@ -34,7 +34,6 @@
 #include "base/cs_defs.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_parameters.h"
-#include "cdo/cs_equation_param.h"
 
 /*=============================================================================
  * Public function prototypes

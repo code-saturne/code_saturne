@@ -45,13 +45,24 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
+#include "base/cs_base.h"
+#include "fvm/fvm_defs.h"
 
+#include "fvm/fvm_convert_array.h"
+#include "fvm/fvm_io_num.h"
 #include "fvm/fvm_nodal.h"
+#include "fvm/fvm_nodal_priv.h"
 #include "fvm/fvm_writer_helper.h"
+#include "fvm/fvm_writer_priv.h"
 
+#include "base/cs_block_dist.h"
+#include "base/cs_file.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_part_to_block.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

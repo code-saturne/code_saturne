@@ -32,7 +32,6 @@
 
 #include <array>
 #include <cassert>
-#include <cmath>
 #include <cstring>
 #include <limits>
 
@@ -41,15 +40,14 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_array.h"
-#include "base/cs_base.h"
+#include "base/cs_array_reduce.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
-#include "base/cs_interface.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
+#include "base/cs_order.h"
 #include "base/cs_parall.h"
-#include "base/cs_timer.h"
-#include "bft/bft_error.h"
+#include "base/cs_prototypes.h"
 #include "bft/bft_printf.h"
 #include "cdo/cs_param_cdo.h"
 

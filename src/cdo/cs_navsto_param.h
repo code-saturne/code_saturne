@@ -29,18 +29,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_param_sles.h"
 #include "base/cs_boundary.h"
+#include "base/cs_math.h"
 #include "base/cs_physical_constants.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_turbulence.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_iter_algo.h"
-#include "base/cs_defs.h"
-#include "base/cs_param_types.h"
-#include "cdo/cs_advection_field.h"
-#include "cdo/cs_property.h"
-#include "cdo/cs_quadrature.h"
-#include "cdo/cs_xdef.h"
 
 /*============================================================================
  * Macro definitions
@@ -702,7 +698,7 @@ typedef enum {
 static inline bool
 cs_navsto_param_is_steady(const cs_navsto_param_t       *nsp)
 {
-  if (nsp == nullptr)
+  if (nsp == NULL)
     return true;
 
   if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)

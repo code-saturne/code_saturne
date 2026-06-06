@@ -59,7 +59,6 @@
 #include "base/cs_turbomachinery.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
-#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

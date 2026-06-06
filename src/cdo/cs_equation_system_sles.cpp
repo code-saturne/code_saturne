@@ -25,6 +25,7 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -36,15 +37,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_mem.h"
 
 #include "alge/cs_param_sles.h"
+#include "base/cs_fp_exception.h"
 #include "cdo/cs_equation_param.h"
 
 #if defined(HAVE_MUMPS)
 #include "alge/cs_sles_mumps.h"
-#include "alge/cs_param_mumps.h"
-#include "alge/cs_sles.h"
-#include "bft/bft_error.h"
+#endif
+
+#if defined(HAVE_PETSC)
+#include "alge/cs_sles_petsc.h"
 #endif
 
 /*----------------------------------------------------------------------------

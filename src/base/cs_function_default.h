@@ -33,7 +33,6 @@
 
 #include "base/cs_defs.h"
 #include "base/cs_function.h"
-#include "mesh/cs_mesh_location.h"
 
 /*=============================================================================
  * Macro definitions

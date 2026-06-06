@@ -24,6 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -35,13 +36,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
 #include "base/cs_field.h"
+#include "base/cs_mem.h"
 #include "cdo/cs_reco.h"
 #include "cdo/cs_reco_cw.h"
 #include "mesh/cs_mesh_location.h"
-#include "cdo/cs_cdo_connect.h"
-#include "fvm/fvm_defs.h"
-#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

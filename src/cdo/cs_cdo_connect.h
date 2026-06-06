@@ -33,11 +33,12 @@
 
 #include "fvm/fvm_defs.h"
 
+#include "base/cs_base.h"
+#include "base/cs_param_types.h"
 #include "base/cs_range_set.h"
+#include "cdo/cs_flag.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
-#include "base/cs_defs.h"
-#include "base/cs_interface.h"
 
 /*============================================================================
  * Macro definitions

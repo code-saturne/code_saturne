@@ -32,8 +32,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "alge/cs_param_sles.h"
-#include "base/cs_defs.h"
-#include "base/cs_param_types.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*!
  * \file cs_param_saddle.h
@@ -867,5 +869,9 @@ cs_param_saddle_copy(const cs_param_saddle_t  *ref,
 
 void
 cs_param_saddle_log(const cs_param_saddle_t  *saddlep);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_PARAM_SADDLE_H */

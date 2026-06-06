@@ -40,10 +40,6 @@
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "bft/bft_error.h"
-#include "alge/cs_matrix.h"
-#include "base/cs_interface.h"
-#include "base/cs_range_set.h"
-#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

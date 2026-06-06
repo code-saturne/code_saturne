@@ -33,6 +33,10 @@
 #include <cassert>
 #include <cstring>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -44,21 +48,6 @@
 #include "base/cs_wall_functions.h"
 #include "cdo/cs_reco.h"
 #include "turb/cs_turbulence_model.h"
-#include "base/cs_dispatch.h"
-#include "base/cs_field.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
-#include "base/cs_parall.h"
-#include "base/cs_reducers.h"
-#include "base/cs_time_step.h"
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
-#include "cdo/cs_advection_field.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_param_cdo.h"
-#include "cdo/cs_xdef.h"
-#include "mesh/cs_mesh_location.h"
-#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

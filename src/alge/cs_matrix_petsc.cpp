@@ -30,8 +30,12 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -51,26 +55,33 @@
 
 #include <petscmat.h>
 #include <petscvec.h>
+#include <petscversion.h>
+#include <petscviewer.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_halo.h"
+#include "base/cs_log.h"
 #include "base/cs_numbering.h"
+#include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "alge/cs_matrix.h"
+#include "base/cs_base_accel.h"
 #include "base/cs_mem.h"
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_petsc.h"
 #include "alge/cs_matrix_petsc_priv.h"
 #include "alge/cs_matrix_priv.h"
-#include "alge/cs_matrix_assembler.h"
 
 /*----------------------------------------------------------------------------*/
 /*! \file cs_matrix_petsc.cpp

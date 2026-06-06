@@ -34,6 +34,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
@@ -48,13 +49,14 @@
 #include "fvm/fvm_nodal_priv.h"
 #include "fvm/fvm_to_ensight_case.h"
 #include "fvm/fvm_writer_helper.h"
+#include "fvm/fvm_writer_priv.h"
 
 #include "base/cs_block_dist.h"
 #include "base/cs_file.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_part_to_block.h"
-#include "fvm/fvm_tesselation.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

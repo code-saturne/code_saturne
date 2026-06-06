@@ -33,6 +33,10 @@
 
 #include "alge/cs_param_sles.h"
 
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
 /*!
   \file cs_param_sles_setup.h
 
@@ -139,5 +143,9 @@ cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
                                  cs_param_sles_t  *slesp,
                                  void             *p_pc);
 #endif
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_PARAM_SLES_SETUP_H */

@@ -28,6 +28,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -35,6 +39,7 @@
 
 #include "bft/bft_error.h"
 #include "base/cs_base.h"
+#include "base/cs_log.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -39,12 +39,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cdo/cs_cdocb_priv.h"
-#include "alge/cs_param_saddle.h"
-#include "alge/cs_saddle_solver.h"
-#include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_quantities.h"
-#include "cdo/cs_equation_param.h"
-#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions

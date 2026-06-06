@@ -35,6 +35,7 @@
 
 #include "base/cs_halo.h"
 #include "base/cs_numbering.h"
+#include "base/cs_halo_perio.h"
 
 /*============================================================================
  * Macro definitions

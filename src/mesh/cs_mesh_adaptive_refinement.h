@@ -31,6 +31,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
 #include "base/cs_time_control.h"
 #include "mesh/cs_mesh.h"
 

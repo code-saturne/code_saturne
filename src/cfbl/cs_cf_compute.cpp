@@ -30,47 +30,48 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 #include <math.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
+
+#include "base/cs_array.h"
 #include "alge/cs_balance.h"
 #include "alge/cs_blas.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
+#include "cfbl/cs_cf_boundary_conditions.h"
+#include "cfbl/cs_cf_thermo.h"
 #include "alge/cs_convection_diffusion.h"
 #include "alge/cs_divergence.h"
-#include "alge/cs_face_viscosity.h"
-#include "alge/cs_gradient.h"
-#include "alge/cs_matrix_building.h"
-#include "base/cs_array.h"
-#include "base/cs_dispatch.h"
 #include "base/cs_equation_iterative_solve.h"
-#include "base/cs_field.h"
+#include "alge/cs_face_viscosity.h"
 #include "base/cs_field_default.h"
+#include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
-#include "base/cs_halo.h"
-#include "base/cs_log.h"
-#include "base/cs_mass_source_terms.h"
-#include "base/cs_math.h"
-#include "base/cs_mdspan.h"
 #include "base/cs_mem.h"
-#include "base/cs_param_types.h"
-#include "base/cs_physical_constants.h"
-#include "base/cs_porous_model.h"
-#include "base/cs_prototypes.h"
-#include "base/cs_time_step.h"
-#include "base/cs_velocity_pressure.h"
 #include "base/cs_volume_mass_injection.h"
-#include "cdo/cs_domain.h"
-#include "cdo/cs_equation_param.h"
-#include "cfbl/cs_cf_boundary_conditions.h"
-#include "cfbl/cs_cf_model.h"
-#include "cfbl/cs_cf_thermo.h"
+#include "base/cs_mass_source_terms.h"
+#include "alge/cs_matrix_building.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parall.h"
 #include "pprt/cs_physical_model.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_prototypes.h"
 #include "turb/cs_turbulence_model.h"
+#include "base/cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1207,5 +1208,4 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
     cs_field_bc_coeffs_clear(&bc_coeffs_loc);
 }
 
-/*----------------------------------------------------------------------------
- */
+/*---------------------------------------------------------------------------- */

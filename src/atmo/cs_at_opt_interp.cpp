@@ -54,8 +54,6 @@
 #include "base/cs_parall.h"
 #include "base/cs_math.h"
 #include "base/cs_time_step.h"
-#include "base/cs_halo.h"
-#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -31,8 +31,15 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <math.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -50,9 +57,6 @@
 #include "mesh/cs_mesh_group.h"
 #include "base/cs_parall.h"
 #include "base/cs_sort.h"
-#include "base/cs_halo.h"
-#include "base/cs_interface.h"
-#include "fvm/fvm_periodicity.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

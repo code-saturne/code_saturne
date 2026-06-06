@@ -39,6 +39,7 @@
 #  define _GNU_SOURCE
 #endif
 
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -46,6 +47,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <errno.h>
+#include <locale.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -57,6 +61,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

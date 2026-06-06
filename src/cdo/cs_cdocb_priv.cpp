@@ -35,8 +35,6 @@
 #include "alge/cs_param_saddle.h"
 #include "alge/cs_param_sles.h"
 #include "base/cs_mem.h"
-#include "alge/cs_param_mumps.h"
-#include "base/cs_param_types.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

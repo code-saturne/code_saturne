@@ -35,6 +35,11 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
+#include <cstring>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -42,18 +47,6 @@
 
 #include "base/cs_array.h"
 #include "base/cs_mem.h"
-#include "alge/cs_param_saddle.h"
-#include "alge/cs_param_sles.h"
-#include "base/cs_base.h"
-#include "base/cs_boundary_zone.h"
-#include "base/cs_field.h"
-#include "base/cs_log.h"
-#include "base/cs_zone.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_cdo_bc.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_xdef.h"
-#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

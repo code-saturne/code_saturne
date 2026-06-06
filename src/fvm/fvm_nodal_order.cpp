@@ -32,12 +32,14 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 
 #include "fvm/fvm_defs.h"
 #include "fvm/fvm_nodal.h"

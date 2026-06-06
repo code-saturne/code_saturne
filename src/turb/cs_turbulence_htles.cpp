@@ -30,23 +30,49 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
 #include <math.h>
+#include <float.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_array.h"
+#include "alge/cs_balance.h"
+#include "alge/cs_blas.h"
+#include "base/cs_halo.h"
+#include "base/cs_base.h"
+#include "cdo/cs_equation.h"
+#include "base/cs_equation_iterative_solve.h"
+#include "alge/cs_face_viscosity.h"
 #include "base/cs_field.h"
+#include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_field_operator.h"
+#include "alge/cs_gradient.h"
+#include "lagr/cs_lagr.h"
+#include "base/cs_log.h"
+#include "base/cs_log_iteration.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_rotation.h"
+#include "base/cs_thermal_model.h"
 #include "base/cs_time_step.h"
 #include "turb/cs_turbulence_model.h"
+#include "turb/cs_turbulence_rotation.h"
+#include "base/cs_velocity_pressure.h"
 
 #include "bft/bft_printf.h"
-#include "base/cs_mdspan.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -32,7 +32,14 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-#include "alge/cs_matrix.h"
+
+#include "base/cs_halo.h"
+#include "base/cs_numbering.h"
+#include "base/cs_halo_perio.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -72,5 +79,9 @@ cs_matrix_variant_t *
 cs_matrix_variant_tuned(const cs_matrix_t  *m,
                         int                 verbosity,
                         int                 n_measure);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_MATRIX_TUNING_H */

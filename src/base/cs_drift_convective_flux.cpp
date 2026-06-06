@@ -64,15 +64,6 @@
 #include "base/cs_physical_constants.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_volume_mass_injection.h"
-#include "alge/cs_gradient.h"
-#include "base/cs_field.h"
-#include "base/cs_halo.h"
-#include "base/cs_math.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_parameters.h"
-#include "base/cs_time_step.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_equation_param.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

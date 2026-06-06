@@ -26,10 +26,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <math.h>
+#include <string.h>
+#include <stdlib.h>
 
 /*----------------------------------------------------------------------------
  * Local headers

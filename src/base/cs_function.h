@@ -36,6 +36,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "mesh/cs_mesh_location.h"
 #include "base/cs_param_types.h"
 #include "base/cs_restart_default.h"
 

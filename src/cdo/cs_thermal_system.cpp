@@ -31,23 +31,19 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
+#include <cstring>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 #include "base/cs_array.h"
+#include "base/cs_field_default.h"
 #include "base/cs_mem.h"
 #include "base/cs_syr_coupling.h"
 #include "bft/bft_printf.h"
 #include "cdo/cs_reco.h"
 #include "pprt/cs_physical_model.h"
-#include "base/cs_boundary_zone.h"
-#include "base/cs_field.h"
-#include "base/cs_log.h"
-#include "base/cs_param_types.h"
-#include "base/cs_zone.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_advection_field.h"
-#include "cdo/cs_equation_param.h"
-#include "cdo/cs_flag.h"
-#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -30,8 +30,14 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
 #include <math.h>
+#include <float.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -41,7 +47,9 @@
 #include "alge/cs_balance.h"
 #include "alge/cs_blas.h"
 #include "base/cs_halo.h"
+#include "base/cs_base.h"
 #include "base/cs_dispatch.h"
+#include "cdo/cs_equation.h"
 #include "base/cs_equation_iterative_solve.h"
 #include "alge/cs_face_viscosity.h"
 #include "base/cs_field.h"
@@ -58,19 +66,17 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_physical_constants.h"
+#include "base/cs_porous_model.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_reducers.h"
+#include "base/cs_rotation.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_time_step.h"
 #include "turb/cs_turbulence_model.h"
 #include "turb/cs_turbulence_rotation.h"
 #include "base/cs_volume_mass_injection.h"
 #include "base/cs_velocity_pressure.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_param_types.h"
-#include "base/cs_parameters.h"
-#include "cdo/cs_domain.h"
-#include "cdo/cs_equation_param.h"
+#include "base/cs_wall_functions.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

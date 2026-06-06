@@ -32,19 +32,39 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <limits.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
+#include <ctype.h>
+#include <float.h>
+#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 #include "bft/bft_error.h"
 
+#include "fvm/fvm_periodicity.h"
 
 #include "atmo/cs_atmo.h"
+#include "base/cs_base.h"
 #include "base/cs_defs.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_halo.h"
+#include "base/cs_interface.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
+#include "base/cs_order.h"
+#include "base/cs_parall.h"
+#include "base/cs_random.h"
 #include "base/cs_rotation.h"
+#include "base/cs_search.h"
+#include "base/cs_timer_stats.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_velocity_pressure.h"
 #include "turb/cs_turbulence_model.h"
@@ -55,11 +75,11 @@
 #include "pprt/cs_physical_model.h"
 
 #include "lagr/cs_lagr.h"
+#include "lagr/cs_lagr_new.h"
 #include "lagr/cs_lagr_particle.h"
 #include "lagr/cs_lagr_stat.h"
+#include "lagr/cs_lagr_precipitation_model.h"
 #include "lagr/cs_lagr_prototypes.h"
-#include "base/cs_time_step.h"
-#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

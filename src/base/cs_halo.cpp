@@ -42,9 +42,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_profiling.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
 #if defined(HAVE_CUDA)
 #include "base/cs_base_cuda.h"
 #elif defined(HAVE_HIP)
@@ -55,6 +58,7 @@
 #include "base/cs_order.h"
 #include "base/cs_profiling.h"
 #include "base/cs_rank_neighbors.h"
+
 #include "fvm/fvm_periodicity.h"
 
 /*----------------------------------------------------------------------------

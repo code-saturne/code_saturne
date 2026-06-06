@@ -28,8 +28,17 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <math.h>
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <math.h>
+#include <float.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -38,48 +47,42 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "alge/cs_blas.h"
-#include "alge/cs_gradient.h"
-#include "alge/cs_sles.h"
-#include "alge/cs_sles_it.h"
 #include "atmo/cs_atmo.h"
+#include "alge/cs_blas.h"
 #include "base/cs_array.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_zone.h"
-#include "base/cs_equation_iterative_solve.h"
+#include "comb/cs_coal.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
+#include "gui/cs_gui_util.h"
 #include "base/cs_ht_convert.h"
 #include "base/cs_internal_coupling.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "mesh/cs_mesh.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "base/cs_parameters_check.h"
-#include "base/cs_physical_constants.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_reducers.h"
 #include "base/cs_thermal_model.h"
-#include "base/cs_time_step.h"
-#include "comb/cs_coal.h"
-#include "mesh/cs_mesh.h"
+#include "base/cs_equation_iterative_solve.h"
+#include "alge/cs_gradient.h"
+#include "alge/cs_face_viscosity.h"
+#include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
+#include "base/cs_prototypes.h"
+#include "alge/cs_sles.h"
+#include "alge/cs_sles_it.h"
+#include "base/cs_time_step.h"
 
-#include "base/cs_dispatch.h"
-#include "base/cs_halo.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_time_control.h"
-#include "base/cs_volume_zone.h"
-#include "base/cs_zone.h"
-#include "cdo/cs_equation_param.h"
 #include "gui/cs_gui_radiative_transfer.h"
-#include "mesh/cs_mesh_quantities.h"
 #include "rayt/cs_rad_transfer.h"
 #include "rayt/cs_rad_transfer_absorption.h"
-#include "rayt/cs_rad_transfer_bcs.h"
 #include "rayt/cs_rad_transfer_pun.h"
+#include "rayt/cs_rad_transfer_bcs.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

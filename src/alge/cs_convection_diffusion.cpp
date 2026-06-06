@@ -30,12 +30,20 @@
  * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
 
+#include <cmath>
 #include <chrono>
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -51,6 +59,8 @@
 #include "base/cs_dispatch.h"
 #include "cdo/cs_equation_param.h"
 #include "base/cs_halo.h"
+#include "base/cs_log.h"
+#include "base/cs_internal_coupling.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
@@ -66,11 +76,11 @@
 #include "base/cs_timer.h"
 #include "base/cs_velocity_pressure.h"
 
+#include "alge/cs_blas.h"
 #include "alge/cs_bad_cells_regularisation.h"
 #include "alge/cs_gradient.h"
+#include "alge/cs_gradient_boundary.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_halo_perio.h"
-#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

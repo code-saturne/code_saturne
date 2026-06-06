@@ -31,8 +31,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -92,5 +97,9 @@ cs_mesh_quality_compute_b_face_warping(const cs_mesh_t     *mesh,
 void
 cs_mesh_quality(const cs_mesh_t             *mesh,
                 const cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_MESH_QUALITY_H */

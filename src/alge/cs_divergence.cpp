@@ -54,9 +54,6 @@
 #include "base/cs_porous_model.h"
 #include "base/cs_profiling.h"
 #include "base/cs_timer.h"
-#include "base/cs_field.h"
-#include "base/cs_halo.h"
-#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

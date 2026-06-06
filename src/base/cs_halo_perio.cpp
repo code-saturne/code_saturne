@@ -31,6 +31,10 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -38,6 +42,7 @@
 
 #include "fvm/fvm_periodicity.h"
 
+#include "base/cs_base.h"
 #include "base/cs_halo.h"
 
 /*----------------------------------------------------------------------------

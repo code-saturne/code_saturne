@@ -53,11 +53,6 @@
 #include "base/cs_post.h"
 #include "cdo/cs_reco.h"
 #include "base/cs_volume_zone.h"
-#include "base/cs_base.h"
-#include "base/cs_interface.h"
-#include "bft/bft_error.h"
-#include "gwf/cs_gwf_hydraulic_model.h"
-#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

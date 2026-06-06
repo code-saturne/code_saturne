@@ -30,6 +30,12 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -38,6 +44,7 @@
 #include "base/cs_ale.h"
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
+#include "base/cs_base.h"
 #include "base/cs_boundary.h"
 #include "base/cs_boundary_zone.h"
 #include "cfbl/cs_cf_model.h"
@@ -56,6 +63,7 @@
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_restart.h"
+#include "alge/cs_sles.h"
 #include "alge/cs_sles_default.h"
 #include "base/cs_syr_coupling.h"
 #include "base/cs_thermal_model.h"
@@ -69,7 +77,6 @@
 #include "base/cs_vof.h"
 #include "base/cs_volume_zone.h"
 #include "base/cs_wall_distance.h"
-#include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -31,6 +31,8 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <math.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,8 +41,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 
 #include "base/cs_array_reduce.h"
+#include "base/cs_base.h"
+#include "alge/cs_blas.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_fan.h"
 #include "base/cs_field.h"
@@ -64,10 +69,6 @@
 #include "lagr/cs_lagr_stat.h"
 #include "lagr/cs_lagr_log.h"
 #include "fvm/fvm_convert_array.h"
-#include "base/cs_math.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_param_cdo.h"
-#include "mesh/cs_mesh_quantities.h"
 
 #include "ctwr/cs_ctwr.h"
 

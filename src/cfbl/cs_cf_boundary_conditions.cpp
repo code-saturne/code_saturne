@@ -30,28 +30,28 @@
  * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
 
-#include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <cmath>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_array.h"
-#include "base/cs_base.h"
+#include "base/cs_mem.h"
+#include "cfbl/cs_cf_model.h"
+#include "cfbl/cs_cf_boundary_flux.h"
+#include "cfbl/cs_cf_thermo.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
-#include "base/cs_mem.h"
-#include "base/cs_parameters.h"
-#include "base/cs_physical_constants.h"
-#include "cfbl/cs_cf_boundary_flux.h"
-#include "cfbl/cs_cf_model.h"
-#include "cfbl/cs_cf_thermo.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parameters.h"
+#include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 
 /*----------------------------------------------------------------------------

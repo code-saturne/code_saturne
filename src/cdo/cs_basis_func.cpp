@@ -29,22 +29,15 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
-#include <cmath>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_log.h"
-#include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_quantities.h"
-#include "cdo/cs_flag.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_scheme_geometry.h"
-#include "fvm/fvm_defs.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

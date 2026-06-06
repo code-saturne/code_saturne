@@ -34,17 +34,43 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include <float.h>
+#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
+
+#include "base/cs_base.h"
+
+#include "base/cs_field.h"
+#include "base/cs_field_pointer.h"
+
+#include "base/cs_math.h"
+#include "base/cs_mem.h"
+#include "mesh/cs_mesh_location.h"
+#include "base/cs_prototypes.h"
+
+#include "base/cs_parameters.h"
+#include "base/cs_time_step.h"
+#include "base/cs_physical_constants.h"
+#include "base/cs_parall.h"
+
+#include "lagr/cs_lagr.h"
+
+#include "lagr/cs_lagr_agglo.h"
+#include "lagr/cs_lagr_clogging.h"
+#include "lagr/cs_lagr_injection.h"
+#include "lagr/cs_lagr_particle.h"
+#include "lagr/cs_lagr_stat.h"
+
 #include "base/cs_random.h"
 #include "lagr/cs_lagr.h"
-#include "lagr/cs_lagr_agglo.h"
-#include "lagr/cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

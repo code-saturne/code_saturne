@@ -30,12 +30,12 @@
  *----------------------------------------------------------------------------*/
 
 #include "alge/cs_matrix.h"
+#include "base/cs_base.h"
 #include "base/cs_defs.h"
 #include "base/cs_math.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_equation_param.h"
-#include "bft/bft_error.h"
 
 /*============================================================================
  * Macro definitions

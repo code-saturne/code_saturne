@@ -29,18 +29,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_base.h"
 #include "base/cs_boundary.h"
 #include "base/cs_time_plot.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_iter_algo.h"
 #include "cdo/cs_navsto_param.h"
-#include "base/cs_defs.h"
-#include "base/cs_param_types.h"
-#include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_quantities.h"
-#include "cdo/cs_property.h"
-#include "cdo/cs_thermal_system.h"
-#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions

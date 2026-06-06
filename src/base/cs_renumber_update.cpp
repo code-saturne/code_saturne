@@ -30,26 +30,25 @@
  * Standard library headers
  *----------------------------------------------------------------------------*/
 
+#include <ctime>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "alge/cs_cell_to_vertex.h"
-#include "alge/cs_gradient.h"
-#include "alge/cs_matrix_default.h"
 #include "base/cs_assert.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_ext_neighborhood.h"
 #include "base/cs_field.h"
 #include "base/cs_mem.h"
 #include "base/cs_renumber.h"
-#include "base/cs_volume_zone.h"
+
 #include "mesh/cs_mesh.h"
-#include "base/cs_boundary_zone.h"
-#include "mesh/cs_mesh_adjacencies.h"
-#include "mesh/cs_mesh_location.h"
-#include "mesh/cs_mesh_quantities.h"
+#include "mesh/cs_mesh_coherency.h"
+
+#include "alge/cs_cell_to_vertex.h"
+#include "alge/cs_gradient.h"
+#include "alge/cs_matrix_default.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

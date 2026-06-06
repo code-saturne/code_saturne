@@ -35,9 +35,16 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_writer.h"
 
+#include "base/cs_base.h"
 #include "lagr/cs_lagr_particle.h"
-#include "base/cs_defs.h"
+#include "base/cs_time_step.h"
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -152,5 +159,9 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
                               cs_lnum_t                      n_particles,
                               const cs_lnum_t                particle_list[],
                               void                          *segment_values);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
 
 #endif /* CS_LAGR_EXTRACT_H */

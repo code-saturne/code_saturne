@@ -45,8 +45,10 @@
 #include "base/cs_array_reduce.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_log.h"
+#include "base/cs_log_iteration.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
+#include "base/cs_prototypes.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
 #include "cdo/cs_advection_field.h"
@@ -59,15 +61,6 @@
 #include "cdo/cs_solidification.h"
 #include "cdo/cs_walldistance.h"
 #include "gwf/cs_gwf.h"
-#include "base/cs_field.h"
-#include "base/cs_map.h"
-#include "base/cs_time_step.h"
-#include "base/cs_timer.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_cdo_toolbox.h"
-#include "cdo/cs_param_cdo.h"
-#include "cdo/cs_thermal_system.h"
-#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

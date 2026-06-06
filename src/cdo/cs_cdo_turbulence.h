@@ -29,15 +29,16 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_field.h"
 #include "base/cs_param_types.h"
+#include "base/cs_reducers.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_property.h"
 #include "mesh/cs_mesh.h"
 #include "turb/cs_turbulence_model.h"
-#include "base/cs_defs.h"
-#include "cdo/cs_equation_param.h"
 
 /*============================================================================
  * Macro definitions

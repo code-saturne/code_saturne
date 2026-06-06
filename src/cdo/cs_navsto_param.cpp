@@ -33,6 +33,10 @@
 #include <cassert>
 #include <cstring>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -40,14 +44,8 @@
 #include "base/cs_base.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
+#include "bft/bft_printf.h"
 #include "cdo/cs_equation.h"
-#include "base/cs_boundary_zone.h"
-#include "base/cs_volume_zone.h"
-#include "base/cs_zone.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_cdo_bc.h"
-#include "cdo/cs_flag.h"
-#include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

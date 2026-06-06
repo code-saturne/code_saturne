@@ -69,12 +69,6 @@
 #include "cdo/cs_thermal_system.h"
 #include "base/cs_time_moment.h"
 #include "base/cs_volume_zone.h"
-#include "base/cs_function.h"
-#include "base/cs_probe.h"
-#include "base/cs_tree.h"
-#include "base/cs_zone.h"
-#include "fvm/fvm_writer.h"
-#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

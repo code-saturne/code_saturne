@@ -52,9 +52,6 @@
 #include "base/cs_parall.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_prototypes.h"
-#include "base/cs_field.h"
-#include "base/cs_volume_zone.h"
-#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

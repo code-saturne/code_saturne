@@ -35,11 +35,16 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_array.h"
+#include "base/cs_base.h"
+#include "alge/cs_blas.h"
 #include "base/cs_boundary_conditions.h"
+#include "alge/cs_convection_diffusion.h"
 #include "alge/cs_convection_diffusion_priv.h"
 #include "base/cs_dispatch.h"
 #include "alge/cs_divergence.h"
+#include "cdo/cs_equation.h"
 #include "base/cs_equation_iterative_solve.h"
+#include "alge/cs_face_viscosity.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
@@ -58,16 +63,6 @@
 #include "alge/cs_sles_default.h"
 #include "base/cs_turbomachinery.h"
 #include "turb/cs_turbulence_model.h"
-#include "alge/cs_gradient.h"
-#include "alge/cs_matrix.h"
-#include "alge/cs_sles.h"
-#include "base/cs_halo.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_parameters.h"
-#include "base/cs_time_step.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_equation_param.h"
-#include "mesh/cs_mesh_adjacencies.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

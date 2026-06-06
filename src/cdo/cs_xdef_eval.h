@@ -34,8 +34,8 @@
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_quadrature.h"
+#include "cdo/cs_xdef.h"
 #include "mesh/cs_mesh.h"
-#include "base/cs_defs.h"
 
 /*============================================================================
  * Function pointer type definitions

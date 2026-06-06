@@ -45,7 +45,9 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "fvm/fvm_defs.h"
 
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_notebook.h"
 
@@ -3440,4 +3442,5 @@ fvm_selector_postfix_dump(const fvm_selector_postfix_t  *pf,
 }
 
 /*----------------------------------------------------------------------------*/
+
 

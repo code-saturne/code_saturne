@@ -32,26 +32,29 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+#include <math.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 #include "base/cs_ale.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_profiling.h"
 #include "turb/cs_turbulence_model.h"
-#include "base/cs_boundary.h"
-#include "base/cs_field.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
-#include "base/cs_parall.h"
-#include "base/cs_param_types.h"
-#include "bft/bft_error.h"
-#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

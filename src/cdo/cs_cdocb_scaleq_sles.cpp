@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  BFT headers
@@ -43,26 +44,30 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_blas.h"
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_saddle_solver.h"
 #include "base/cs_array.h"
+#include "base/cs_fp_exception.h"
+#include "base/cs_parall.h"
+#include "base/cs_timer.h"
 #include "cdo/cs_cdo_blas.h"
+#include "cdo/cs_cdo_solve.h"
+#include "cdo/cs_cdocb_scaleq.h"
+#include "cdo/cs_equation.h"
 #include "cdo/cs_saddle_system.h"
-#include "alge/cs_matrix.h"
-#include "alge/cs_matrix_assembler.h"
-#include "alge/cs_param_sles.h"
-#include "alge/cs_sles.h"
-#include "base/cs_interface.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
-#include "base/cs_param_types.h"
-#include "base/cs_range_set.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_cdo_system.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_iter_algo.h"
-#include "cdo/cs_property.h"
-#include "mesh/cs_mesh_adjacencies.h"
+
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cdo/cs_dbg.h"
+#endif
+
+#if defined(HAVE_MUMPS)
+#include "alge/cs_sles_mumps.h"
+#endif
+
+#if defined(HAVE_PETSC)
+#include "alge/cs_sles_petsc.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

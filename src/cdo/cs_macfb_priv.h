@@ -33,8 +33,6 @@
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_macfb_advection.h"
-#include "base/cs_defs.h"
-#include "cdo/cs_equation_param.h"
 
 /*============================================================================
  * Macro definitions

@@ -42,11 +42,11 @@
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
-#include "base/cs_field.h"
-#include "base/cs_halo.h"
-#include "base/cs_interface.h"
-#include "base/cs_log.h"
-#include "bft/bft_error.h"
+
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "bft/bft_printf.h"
+#include "cdo/cs_dbg.h"
+#endif
 
 /*----------------------------------------------------------------------------*/
 

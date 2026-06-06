@@ -40,9 +40,12 @@
 
 #include "base/cs_array.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "base/cs_post.h"
+#include "base/cs_search.h"
+#include "cdo/cs_cdo_advection.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_diffusion.h"
 #include "cdo/cs_cdo_solve.h"
@@ -51,25 +54,12 @@
 #include "cdo/cs_evaluate.h"
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_quadrature.h"
+#include "cdo/cs_reco.h"
 #include "cdo/cs_static_condensation.h"
 #include "mesh/cs_mesh_location.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"
-#include "alge/cs_matrix.h"
-#include "alge/cs_param_sles.h"
-#include "alge/cs_sles.h"
-#include "base/cs_field.h"
-#include "base/cs_param_types.h"
-#include "base/cs_range_set.h"
-#include "base/cs_time_step.h"
-#include "bft/bft_error.h"
-#include "cdo/cs_enforcement.h"
-#include "cdo/cs_flag.h"
-#include "cdo/cs_param_cdo.h"
-#include "cdo/cs_property.h"
-#include "cdo/cs_sdm.h"
-#include "mesh/cs_mesh_adjacencies.h"
 #endif
 
 /*----------------------------------------------------------------------------

@@ -35,6 +35,7 @@
 
 #include "base/cs_halo.h"
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
 
 /*=============================================================================

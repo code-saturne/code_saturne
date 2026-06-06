@@ -28,6 +28,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <cassert>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -36,6 +37,7 @@
 #include "alge/cs_matrix_util.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
+#include "bft/bft_error.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

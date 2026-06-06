@@ -32,12 +32,13 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "base/cs_array.h"
+#include "base/cs_base.h"
+#include "base/cs_base_accel.h"
 #include "base/cs_interface.h"
 #include "base/cs_rank_neighbors.h"
 
 #include "fvm/fvm_periodicity.h"
-#include "base/cs_mdspan.h"
-#include "base/cs_mem.h"
 
 /*============================================================================
  * Macro definitions

@@ -31,15 +31,22 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 
+#include "base/cs_block_dist.h"
 #include "base/cs_crystal_router.h"
+#include "base/cs_log.h"
 #include "base/cs_mem.h"
+#include "base/cs_order.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------

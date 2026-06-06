@@ -50,8 +50,6 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "pprt/cs_physical_model.h"
 #include "rayt/cs_rad_transfer.h"
-#include "base/cs_time_step.h"
-#include "base/cs_zone.h"
 
 /*----------------------------------------------------------------------------
 *  Header for the current file
