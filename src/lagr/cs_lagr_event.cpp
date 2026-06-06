@@ -551,15 +551,15 @@ cs_lagr_event_get_attr_map(void)
 const char *
 cs_lagr_event_get_attr_name(cs_lagr_event_attribute_t   attr)
 {
-  const char *retval = _event_attribute_name[  CS_LAGR_N_E_ATTRIBUTES
-                                             - CS_LAGR_N_ATTRIBUTES];
+  const char *retval = _event_attribute_name[  (int)CS_LAGR_N_E_ATTRIBUTES
+                                             - (int)CS_LAGR_N_ATTRIBUTES];
 
   if (attr >= 0) {
     if ((int)attr < CS_LAGR_N_ATTRIBUTES)
       retval = cs_lagr_attribute_name[attr];
     else {
       if (attr < CS_LAGR_N_E_ATTRIBUTES)
-        retval = _event_attribute_name[attr - CS_LAGR_N_ATTRIBUTES];
+        retval = _event_attribute_name[(int)attr - (int)CS_LAGR_N_ATTRIBUTES];
     }
   }
 
