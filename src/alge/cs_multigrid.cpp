@@ -4666,7 +4666,7 @@ cs_multigrid_create(cs_multigrid_type_t   mg_type,
 
   if (config == nullptr) {
     mg->_config = cs_tree_node_create("type");
-    cs_tree_node_set_value_str(mg->config, _multigrid_type_kname[mg_type]);
+    cs_tree_node_set_value_str(mg->_config, _multigrid_type_kname[mg_type]);
     mg->config = mg->_config;
   }
   else
