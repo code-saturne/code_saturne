@@ -264,7 +264,7 @@ cs_gwf_darcy_flux_log(cs_gwf_darcy_flux_t *darcy)
 
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Darcy name: %s with flux location: %s\n",
-                darcy->adv_field->name.c_str(),
+                darcy->adv_field->name,
                 cs_flag_str_location(darcy->flux_location));
 }
 
@@ -507,14 +507,14 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t    *connect,
 
   /* Parallel synchronizations */
 
-  cs::parall::max(display_flag);
+  cs_parall_max(1, CS_INT_TYPE, &display_flag);
   cs_parall_sum(eqp->n_bc_defs + 1, CS_REAL_TYPE, balances);
 
   /* Output into the default log file */
 
   cs_log_printf(CS_LOG_DEFAULT,
                 "-b- Balance of %s across the boundary zones:\n",
-                adv->name.c_str());
+                adv->name);
 
   for (int ibc = 0; ibc < eqp->n_bc_defs; ibc++) {
     const cs_zone_t *z = cs_boundary_zone_by_id((eqp->bc_defs[ibc])->z_id);

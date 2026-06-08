@@ -104,36 +104,36 @@ cs_quadrature_setup(void)
 {
   /* Quadrature on edge with 2 points */
 
-  _edge_quad2c1 = 0.5 * (1 + _quad_over3 * std::sqrt(3.));
-  _edge_quad2c2 = 0.5 * (1 - _quad_over3 * std::sqrt(3.));
+  _edge_quad2c1 = 0.5*(1 + _quad_over3*sqrt(3.));
+  _edge_quad2c2 = 0.5*(1 - _quad_over3*sqrt(3.));
 
   /* Quadrature on edge with 3 points */
 
-  _edge_quad3c1 = 0.5 * (1 + std::sqrt(0.6));
-  _edge_quad3c2 = 0.5 * (1 - std::sqrt(0.6));
+  _edge_quad3c1 = 0.5*(1 + sqrt(0.6));
+  _edge_quad3c2 = 0.5*(1 - sqrt(0.6));
 
   /* Quadrature on triangles with 7 points */
 
-  _tria_quad7c1 = (6. - std::sqrt(15.)) / 21.;
-  _tria_quad7c2 = (6. + std::sqrt(15.)) / 21.;
-  _tria_quad7c3 = _quad_31ov240 - std::sqrt(15.) / 1200.;
-  _tria_quad7c4 = _quad_31ov240 + std::sqrt(15.) / 1200.;
+  _tria_quad7c1 = (6. - sqrt(15.))/21.;
+  _tria_quad7c2 = (6. + sqrt(15.))/21.;
+  _tria_quad7c3 = _quad_31ov240 - sqrt(15.)/1200.;
+  _tria_quad7c4 = _quad_31ov240 + sqrt(15.)/1200.;
 
   /* Quadrature on tetrahedron with 4 points */
 
-  _tetr_quad4c1 = 0.05 * (5. - std::sqrt(5));
+  _tetr_quad4c1 = 0.05*(5. - sqrt(5));
   _tetr_quad4c2 = 1. -3.*_tetr_quad4c1;
 
   /* Quadrature on tetrahedron with 15 points */
 
-  _tetr_quad15g1  = (7. - std::sqrt(15.)) / 34.;
+  _tetr_quad15g1  = (7. - sqrt(15.) ) / 34.;
   _tetr_quad15g11 = 1. - 3. * _tetr_quad15g1;
   _tetr_quad15g2  = 7./17. - _tetr_quad15g1;
   _tetr_quad15g21 = 1. - 3. * _tetr_quad15g2;
-  _tetr_quad15g3  = (5. - std::sqrt(15.)) / 20.;
-  _tetr_quad15g31 = (5. + std::sqrt(15.)) / 20.;
-  _tetr_quad15w1  = (2665. + 14. * std::sqrt(15.)) / 37800.;
-  _tetr_quad15w2  = (2665. - 14. * std::sqrt(15.)) / 37800.;
+  _tetr_quad15g3  = (5. - sqrt(15.)) / 20.;
+  _tetr_quad15g31 = (5. + sqrt(15.)) / 20.;
+  _tetr_quad15w1  = (2665. + 14. * sqrt(15.) ) / 37800.;
+  _tetr_quad15w2  = (2665. - 14. * sqrt(15.) ) / 37800.;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -376,7 +376,7 @@ _set_key(cs_equation_param_t *eqp,
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
     }
     else if (strcmp(keyval, "sushi") == 0) {
-      eqp->diffusion_hodgep.coef = 1. / std::sqrt(3.);
+      eqp->diffusion_hodgep.coef = 1./sqrt(3.);
       eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
     }
     else if (strcmp(keyval, "gcr") == 0) {
@@ -1968,10 +1968,8 @@ cs_equation_param_log(const cs_equation_param_t *eqp)
   if (convection) {
 
     cs_log_printf(CS_LOG_SETUP, "\n### %s | Advection term settings\n", eqname);
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * %s | Advection.Field: \"%s\"\n",
-                  eqname,
-                  cs_advection_field_get_name(eqp->adv_field).c_str());
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Field: \"%s\"\n",
+                  eqname, cs_advection_field_get_name(eqp->adv_field));
     if (eqp->adv_scaling_property != nullptr)
       cs_log_printf(CS_LOG_SETUP, "  * %s | Scaling.Property: %s\n",
                     eqname, cs_property_get_name(eqp->adv_scaling_property));

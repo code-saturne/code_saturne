@@ -395,7 +395,7 @@ cs_mesh_deform_force_displacements(cs_lnum_t          n_vertices,
   _n_fixed_vertices = n_vertices;
 
   cs_gnum_t n_g_v = n_vertices;
-  cs::parall::sum(n_g_v);
+  cs_parall_counter(&n_g_v, 1);
   _fixed_vertices = (n_g_v > 0) ? true : false;
 
   if (vertex_ids != nullptr) {

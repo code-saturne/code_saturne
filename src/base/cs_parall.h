@@ -31,12 +31,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <array>
-#include <vector>
-
 #include "base/cs_defs.h"
 #include "base/cs_execution_context.h"
 
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * General types and macros used throughout code_saturne
@@ -676,6 +676,9 @@ cs_parall_block_count(size_t  n,
 
 /*----------------------------------------------------------------------------*/
 
+END_C_DECLS
+
+#if defined(__cplusplus)
 
 /*=============================================================================
  * Public C++ functions
@@ -1075,72 +1078,6 @@ sum(const cs_mpi_wrapper& mpi_w, T (&first)[N], Vals &&...values)
   sum<N>(mpi_w, first, std::forward<Vals>(values)...);
 }
 
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Sum values of a std::array over default communicator.
- *
- * \tparam T : datatype
- * \tparam N : array size
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T, size_t N, typename... Vals>
-static void
-sum(std::array<T, N> &first, Vals &&...values)
-{
-  sum<N>(first.data(), std::forward<Vals>(values)...);
-}
-
-/*----------------------------------------------------------------------------*/
-
-template <typename T, size_t N, typename... Vals>
-static void
-sum(const cs_mpi_wrapper &mpi_w, std::array<T, N> &first, Vals &&...values)
-{
-  sum<N>(mpi_w, first.data(), std::forward<Vals>(values)...);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Sum values of a std::vector over default communicator.
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T>
-static void
-sum(std::vector<T> &v)
-{
-#if defined(HAVE_MPI)
-  const auto &mpi_w = cs::execution::default_mpi();
-
-  if (!mpi_w.active())
-    return;
-
-  cs_datatype_t datatype = cs_datatype_from_type<T>();
-
-  cs_parall_sum(mpi_w, v.size(), datatype, v.data());
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-
-template <typename T>
-static void
-sum(const cs_mpi_wrapper &mpi_w, std::vector<T> &v)
-{
-#if defined(HAVE_MPI)
-
-  if (!mpi_w.active())
-    return;
-
-  cs_datatype_t datatype = cs_datatype_from_type<T>();
-
-  cs_parall_sum(mpi_w, v.size(), datatype, v.data());
-
-#endif
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Maximum values of a given datatype on a given
@@ -1299,111 +1236,6 @@ max
   return;
 #endif
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Maximum values of a fixed-size C array over the default communicator.
- *
- * This overload detects the size of fixed-array.
- *
- * \tparam T : datatype
- * \tparam N : dimension of the array
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T, int N, typename... Vals>
-static void
-max(T (&first)[N], Vals &&...values)
-{
-  max<N>(first, std::forward<Vals>(values)...);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Maximum values of a fixed-size C array over a communicator.
- *
- * This overload detects the size of fixed-array.
- *
- * \tparam T : datatype
- * \tparam N : dimension of the array
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T, int N, typename... Vals>
-static void
-max(const cs_mpi_wrapper &mpi_w, T (&first)[N], Vals &&...values)
-{
-  max<N>(mpi_w, first, std::forward<Vals>(values)...);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Maximum values of a std::array over default communicator.
- *
- * \tparam T : datatype
- * \tparam N : array size
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T, size_t N, typename... Vals>
-static void
-max(std::array<T, N> &first, Vals &&...values)
-{
-  max<N>(first.data(), std::forward<Vals>(values)...);
-}
-
-/*----------------------------------------------------------------------------*/
-
-template <typename T, size_t N, typename... Vals>
-static void
-max(const cs_mpi_wrapper &mpi_w, std::array<T, N> &first, Vals &&...values)
-{
-  max<N>(mpi_w, first.data(), std::forward<Vals>(values)...);
-}
-
-
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Maximum values of a std::vector over default communicator.
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T>
-static void
-max(std::vector<T>& v)
-{
-#if defined(HAVE_MPI)
-  const auto& mpi_w = cs::execution::default_mpi();
-
-  if (!mpi_w.active())
-    return;
-
-  cs_datatype_t datatype = cs_datatype_from_type<T>();
-
-  cs_parall_max(mpi_w, v.size(), datatype, v.data());
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-
-template <typename T>
-static void
-max(const cs_mpi_wrapper& mpi_w,
-    std::vector<T>& v)
-{
-#if defined(HAVE_MPI)
-
-  if (!mpi_w.active())
-    return;
-
-  cs_datatype_t datatype = cs_datatype_from_type<T>();
-
-  cs_parall_max(mpi_w, v.size(), datatype, v.data());
-
-#endif
-}
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1566,107 +1398,6 @@ min
   min<Stride>(mpi_w, first, values...);
 #else
   return;
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Minimum values of a fixed-size C array over the default communicator.
- *
- * This overload detects the size of fixed-array.
- *
- * \tparam T : datatype
- * \tparam N : dimension of the array
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T, int N, typename... Vals>
-static void
-min(T (&first)[N], Vals &&...values)
-{
-  min<N>(first, std::forward<Vals>(values)...);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Maximum values of a fixed-size C array over a communicator.
- *
- * This overload detects the size of fixed-array.
- *
- * \tparam T : datatype
- * \tparam N : dimension of the array
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T, int N, typename... Vals>
-static void
-min(const cs_mpi_wrapper &mpi_w, T (&first)[N], Vals &&...values)
-{
-  min<N>(mpi_w, first, std::forward<Vals>(values)...);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Maximum values of a std::array over default communicator.
- *
- * \tparam T : datatype
- * \tparam N : array size
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T, size_t N, typename... Vals>
-static void
-min(std::array<T, N> &first, Vals &&...values)
-{
-  min<N>(first.data(), std::forward<Vals>(values)...);
-}
-
-/*----------------------------------------------------------------------------*/
-
-template <typename T, size_t N, typename... Vals>
-static void
-min(const cs_mpi_wrapper &mpi_w, std::array<T, N> &first, Vals &&...values)
-{
-  min<N>(mpi_w, first.data(), std::forward<Vals>(values)...);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Minimum values of a std::vector over default communicator.
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T>
-static void
-min(std::vector<T> &v)
-{
-#if defined(HAVE_MPI)
-  const auto &mpi_w = cs::execution::default_mpi();
-
-  if (!mpi_w.active())
-    return;
-
-  cs_datatype_t datatype = cs_datatype_from_type<T>();
-
-  cs_parall_min(mpi_w, v.size(), datatype, v.data());
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-
-template <typename T>
-static void
-min(const cs_mpi_wrapper &mpi_w, std::vector<T> &v)
-{
-#if defined(HAVE_MPI)
-
-  if (!mpi_w.active())
-    return;
-
-  cs_datatype_t datatype = cs_datatype_from_type<T>();
-
-  cs_parall_min(mpi_w, v.size(), datatype, v.data());
-
 #endif
 }
 
@@ -2318,6 +2049,8 @@ cs_parall_min_strided
   }
 #endif // defined(HAVE_MPI)
 }
+
+#endif //__cplusplus
 
 /*----------------------------------------------------------------------------*/
 

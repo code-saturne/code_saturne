@@ -157,7 +157,7 @@ _sbloc_sizes(cs_lnum_t  n,
              cs_lnum_t *blocks_in_sblocks)
 {
   cs_lnum_t n_blocks = (n + block_size - 1) / block_size;
-  *n_sblocks         = (n_blocks > 3) ? std::sqrt(n_blocks) : 1;
+  *n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
 
   cs_lnum_t n_b = block_size * (*n_sblocks);
   *blocks_in_sblocks = (n + n_b - 1) / n_b;
@@ -1296,7 +1296,7 @@ cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t *a,
     const cs_real_t  *_w = w_c2v + s_id;
     const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
     const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
-    const cs_lnum_t   n_sblocks  = (n_blocks > 3) ? std::sqrt(n_blocks) : 1;
+    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
     const cs_lnum_t  blocks_in_sblocks =
       (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
 

@@ -2781,7 +2781,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t         *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  double normalization = std::sqrt(nsp->square_norm(sc->mass_flux_array));
+  double normalization = sqrt(nsp->square_norm(sc->mass_flux_array));
 
   cs_iter_algo_set_normalization(nl_algo, normalization);
 
@@ -3088,7 +3088,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t         *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  double normalization = std::sqrt(nsp->square_norm(sc->mass_flux_array));
+  double normalization = sqrt(nsp->square_norm(sc->mass_flux_array));
 
   cs_iter_algo_set_normalization(nl_algo, normalization);
 

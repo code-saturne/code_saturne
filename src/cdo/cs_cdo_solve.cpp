@@ -175,7 +175,7 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
     if (*normalization < 100 * cs_dbl_min)
       *normalization = 1.0;
     else
-      *normalization = std::sqrt((*normalization));
+      *normalization = sqrt((*normalization));
     break;
 
   case CS_PARAM_RESNORM_FILTERED_RHS:
@@ -183,7 +183,7 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
     if (*normalization < 100 * cs_dbl_min)
       *normalization = 1.0;
     else
-      *normalization = std::sqrt((*normalization));
+      *normalization = sqrt((*normalization));
     break;
 
   case CS_PARAM_RESNORM_WEIGHTED_RHS:
@@ -191,7 +191,7 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
     if (*normalization < 100 * cs_dbl_min)
       *normalization = 1.0;
     else
-      *normalization = std::sqrt((*normalization) / vol_tot);
+      *normalization = sqrt((*normalization)/vol_tot);
     break;
 
   default:

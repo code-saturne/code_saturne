@@ -174,7 +174,7 @@ static inline void
 cs_cdo_bc_get_desc(cs_flag_t   bc_flag,
                    char       *desc)
 {
-  if (desc == nullptr)
+  if (desc == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Empty desciption buffer.", __func__);
 

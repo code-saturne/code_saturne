@@ -224,8 +224,7 @@ _qrdelete(int          m,
     cs_real_t  *R_i = R->val + i*n_cols;
     cs_real_t  *R_ip1 = R->val + (i+1)*n_cols;
 
-    double tempR =
-      std::sqrt(R_i[i + 1] * R_i[i + 1] + R_ip1[i + 1] * R_ip1[i + 1]);
+    double  tempR = sqrt(R_i[i+1]*R_i[i+1] + R_ip1[i+1]*R_ip1[i+1]);
     const double  c = R_i[i+1]/tempR;
     const double  s = R_ip1[i+1]/tempR;
 
@@ -1097,7 +1096,8 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
   cs_real_t  *Rval = c->R->val;
 
   if (c->n_dir == 1) {
-    const double df_norm = std::sqrt(sqnorm(c->df));
+
+    const double  df_norm = sqrt(sqnorm(c->df));
 
     Rval[0] = df_norm; /* R(0,0) = |df|_L2 */
 
@@ -1146,7 +1146,7 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
 
     }
 
-    const double     df_norm = std::sqrt(sqnorm(c->df));
+    const double  df_norm = sqrt(sqnorm(c->df));
     const cs_real_t  coef = 1.0/df_norm;
 
     /* R(n_dir,n_dir) = |df|_L2 */

@@ -425,11 +425,11 @@ cs_cell_sys_free(cs_cell_sys_t **p_csys)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_sys_t::dump(const std::string &msg) const
+cs_cell_sys_t::dump(const char msg[]) const
 {
 #pragma omp critical
   {
-    bft_printf("[rank:%d] %s\n", cs_glob_rank_id, msg.c_str());
+    bft_printf("[rank:%d] %s\n", cs_glob_rank_id, msg);
 
     if (this->has_dirichlet || this->has_nhmg_neumann || this->has_robin ||
         this->has_sliding) {

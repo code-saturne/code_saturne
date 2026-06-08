@@ -1322,7 +1322,7 @@ cs_cdo_connect_log_summary(const cs_cdo_connect_t *connect,
   for (cs_lnum_t i = 0; i < connect->n_cells; i++)
     n_type_cells[connect->cell_type[i]] += 1;
 
-  cs::parall::sum(n_type_cells);
+  cs_parall_sum(FVM_N_ELEMENT_TYPES, CS_GNUM_TYPE, n_type_cells);
 
   cs_log_printf(CS_LOG_DEFAULT, "\n Connectivity information:\n");
   cs_log_printf(CS_LOG_DEFAULT,
@@ -1347,7 +1347,7 @@ cs_cdo_connect_log_summary(const cs_cdo_connect_t *connect,
                                 connect->v_max_cell_range,
                                 connect->e_max_cell_range };
 
-  cs::parall::max(n_max_entbyc);
+  cs_parall_max(5, CS_LNUM_TYPE, n_max_entbyc);
 
   /* Output */
 
@@ -1380,7 +1380,7 @@ cs_cdo_connect_log_summary(const cs_cdo_connect_t *connect,
     }
 
     cs_gnum_t v_counter = v_count;
-    cs::parall::sum(v_counter);
+    cs_parall_counter(&v_counter, 1);
 
     cs_log_printf(CS_LOG_DEFAULT,
                   " --dim-- number of boundary cells through a vertex only"
@@ -1402,7 +1402,7 @@ cs_cdo_connect_log_summary(const cs_cdo_connect_t *connect,
     }
 
     cs_gnum_t e_counter = e_count;
-    cs::parall::sum(e_counter);
+    cs_parall_counter(&e_counter, 1);
 
     cs_log_printf(CS_LOG_DEFAULT,
                   " --dim-- number of boundary cells through an edge only"

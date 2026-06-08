@@ -146,7 +146,7 @@ _synchronize_reduction(int              dim,
     /* Min/Max */
 
     cs_real_t  minmax[2] = {-min[0], max[0]};
-    cs::parall::max(minmax);
+    cs_parall_max(2, CS_REAL_TYPE, minmax);
 
     min[0] = -minmax[0];
     max[0] = minmax[1];
@@ -169,7 +169,7 @@ _synchronize_reduction(int              dim,
     for (int i = 0; i < 4; i++)
       minmax[i] = -min[i], minmax[4+i] = max[i];
 
-    cs::parall::max(minmax);
+    cs_parall_max(8, CS_REAL_TYPE, minmax);
 
     for (int i = 0; i < 4; i++)
       min[i] = -minmax[i], max[i] = minmax[4+i];

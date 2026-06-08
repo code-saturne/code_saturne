@@ -185,9 +185,9 @@ _get_sg_weight(double  criterion)
   double  weight = 1.0;
 
   if (criterion < 0)
-    weight = 0.5 * std::exp(criterion);
+    weight = 0.5*exp(criterion);
   else
-    weight = 1 - 0.5 * std::exp(-criterion);
+    weight = 1 - 0.5*exp(-criterion);
 
   return weight;
 }
@@ -272,7 +272,7 @@ _cdofb_stab_func(const cs_param_advection_scheme_t scheme,
       const cs_real_t pe_2_abs        = 0.5 * cs::abs(pe);
       cs_real_t       upwind_ratio_pe = 1.0;
 
-      /* Sharfetter-Gummel function: 1-std::exp(-x/2) = 1 for x > 10 */
+      /* Sharfetter-Gummel function: 1-exp(-x/2) = 1 for x > 10 */
       if (pe_2_abs < 10.) {
         upwind_ratio_pe = 1 - std::exp(-pe_2_abs);
       }

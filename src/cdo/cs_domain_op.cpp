@@ -151,7 +151,7 @@ _analyze_cell_array(const cs_cdo_quantities_t   *cdoq,
 
     cs_real_t  minmax[2] = {-_min, _max};
 
-    cs::parall::max(minmax);
+    cs_parall_max(2, CS_REAL_TYPE, minmax);
     min = -minmax[0], max = minmax[1];
 
     sum = _sum;
@@ -184,7 +184,10 @@ _post_courant_number(const cs_adv_field_t       *adv,
   if (!(adv->post_flag & CS_ADVECTION_FIELD_POST_COURANT))
     return;
 
-  std::string label = adv->name + "Courant";
+  int  len = strlen(adv->name) + 8 + 1;
+  char *label = nullptr;
+  CS_MALLOC(label, len, char);
+  sprintf(label, "%s.Courant", adv->name);
 
   cs_real_t  *courant = cs_cdo_toolbox_get_tmpbuf();
 
@@ -192,13 +195,13 @@ _post_courant_number(const cs_adv_field_t       *adv,
 
   /* Brief output for the log */
 
-  _analyze_cell_array(cdoq, label.c_str(), courant);
+  _analyze_cell_array(cdoq, label, courant);
 
   /* Postprocessing */
 
   cs_post_write_var(CS_POST_MESH_VOLUME,
                     CS_POST_WRITER_ALL_ASSOCIATED,
-                    label.c_str(),
+                    label,
                     1,
                     true, /* interlaced? */
                     true, /* true = original mesh */
@@ -207,6 +210,8 @@ _post_courant_number(const cs_adv_field_t       *adv,
                     nullptr,
                     nullptr,    /* values at internal,border faces */
                     time_step); /* time step management struct. */
+
+  CS_FREE(label);
 }
 
 /*----------------------------------------------------------------------------*/

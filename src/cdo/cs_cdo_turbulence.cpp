@@ -227,8 +227,8 @@ _prepare_ke(const cs_mesh_t            *mesh,
         cs::pow2(grd_uc[0][2] + grd_uc[2][0]) +
         cs::pow2(grd_uc[1][2] + grd_uc[2][1]);
 
-      cs_real_t       strain = std::sqrt(strain_sq);
-      const cs_real_t sqrcmu = std::sqrt(cs_turb_cmu);
+      cs_real_t strain = sqrt(strain_sq);
+      const cs_real_t sqrcmu = sqrt(cs_turb_cmu);
       cs_real_t       cmueta =
         cs::min(cs_turb_cmu * tke_cell[c_id] / eps_cell[c_id] * strain, sqrcmu);
 
@@ -306,18 +306,16 @@ _wall_function_1scale_log(const double    pena_bc_coeff,
 
     ustarwer = pow(cs::abs(uct) / cs_turb_apow / pow(y_over_nu, cs_turb_bpow),
                    cs_turb_dpow);
-    ustarmin = std::exp(-cs_turb_cstlog * cs_turb_xkappa) / y_over_nu;
+    ustarmin = exp(-cs_turb_cstlog*cs_turb_xkappa)/y_over_nu;
     ustaro = cs::max(ustarwer, ustarmin);
-    ustar =
-      (cs_turb_xkappa * uct + ustaro) /
-      (std::log(y_over_nu * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
+    ustar = (cs_turb_xkappa * uct + ustaro)
+           / (log(y_over_nu * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
 
     int iter = 0;
     while (cs::abs(ustar - ustaro) >= eps * ustaro && iter < n_max_iter) {
       ustaro = ustar;
-      ustar =
-        (cs_turb_xkappa * uct + ustaro) /
-        (std::log(y_over_nu * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
+      ustar = (cs_turb_xkappa * uct + ustaro)
+            / (log(y_over_nu * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
       iter ++;
     }
 
@@ -357,14 +355,13 @@ _wall_function_2scales_log(const double    pena_bc_coeff,
                            cs_real_t      *res)
 {
   const double ypluli = cs_get_glob_wall_functions()->ypluli;
-  const double re     = std::sqrt(k) * hfc / nu;
-  const double g      = std::exp(-re / 11.);
-  const double uk =
-    std::sqrt((1. - g) * std::sqrt(cs_turb_cmu) * k + g * nu * uct / hfc);
+  const double re = sqrt(k)*hfc/nu;
+  const double g = exp(-re/11.);
+  const double uk = sqrt((1.-g)*sqrt(cs_turb_cmu)*k + g*nu*uct/hfc);
   const double yplus = hfc * uk / nu;
 
   if (yplus > ypluli) { /* In the logarithm zone */
-    double ustar = uct / (std::log(yplus) / cs_turb_xkappa + cs_turb_cstlog);
+    double ustar = uct / (log(yplus)/cs_turb_xkappa + cs_turb_cstlog);
     // FIXME: I set res[0] = 0 if uft = 0.0 but I am not sure
     if (cs::abs(uft) > 0.0) {
       double h_t = uk * ustar / uft;
@@ -1345,8 +1342,7 @@ _cs_turbulence_t::check_convergence(const cs_cdo_quantities_t *quant,
     cs::parall::sum(rd.r[0], rd.r[1]);
 
     // Simulate temporal derivative
-    const cs_real_t norm2_k_diff = std::sqrt(rd.r[0]) / dt,
-                    norm2_k      = std::sqrt(rd.r[1]);
+    const cs_real_t norm2_k_diff = sqrt(rd.r[0]) / dt, norm2_k = sqrt(rd.r[1]);
 
     if (norm2_k_diff < psp.rtol * cs::max(1.0, norm2_k)) {
       cvg = true;

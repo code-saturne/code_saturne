@@ -1227,8 +1227,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t         *mesh,
      mass flux norm */
 
   cs_iter_algo_set_normalization(nl_algo,
-                                 std::sqrt(
-                                   nsp->square_norm(sc->mass_flux_array)));
+                                 sqrt(nsp->square_norm(sc->mass_flux_array)));
 
   /* Check the convergence status and update the nl_algo structure related
    * to the convergence monitoring */

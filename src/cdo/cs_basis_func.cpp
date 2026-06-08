@@ -598,7 +598,7 @@ _iner_face_basis_setup(void                    *pbf,
 
   /* Advanced parameters for controlling the algorithm */
   const double  tolerance = 1e-6;
-  const cs_real_t cov_score = cs::abs(cov[1]) / std::sqrt(cov[0] * cov[2]);
+  const cs_real_t cov_score = cs::abs(cov[1]) / sqrt(cov[0] * cov[2]);
 
   if (cov_score < tolerance)
     /* axis is already an approximation of the inertial axes, that's ok
@@ -608,12 +608,12 @@ _iner_face_basis_setup(void                    *pbf,
   /* Characteristic polynomial: l^2 - tr(A) l + det(A) */
   const cs_real_t  tr  = cov[0] + cov[2];
   const cs_real_t  det = cov[0]*cov[2] - cov[1]*cov[1];
-  const cs_real_t  discrim = std::sqrt(tr * tr - 4. * det);
+  const cs_real_t  discrim = sqrt( tr*tr - 4.*det );
 
   /* First eigenvalue */
   const cs_real_t lambda = ( tr + discrim)*0.5;
   const cs_real_t mu0 = cov[0] - lambda, mu1 = cov[1];
-  const double    nrm2d = 1. / std::sqrt(mu0 * mu0 + mu1 * mu1);
+  const double nrm2d = 1. / sqrt(mu0*mu0 + mu1*mu1);
   const double c0 = mu0 * nrm2d, c1 = mu1 * nrm2d;
 
   /* Assign axis */
