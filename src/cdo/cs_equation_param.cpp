@@ -1971,7 +1971,7 @@ cs_equation_param_log(const cs_equation_param_t *eqp)
     cs_log_printf(CS_LOG_SETUP,
                   "  * %s | Advection.Field: \"%s\"\n",
                   eqname,
-                  eqp->adv_field->get_name().c_str());
+                  cs_advection_field_get_name(eqp->adv_field).c_str());
     if (eqp->adv_scaling_property != nullptr)
       cs_log_printf(CS_LOG_SETUP, "  * %s | Scaling.Property: %s\n",
                     eqname, cs_property_get_name(eqp->adv_scaling_property));

@@ -149,7 +149,7 @@ _uspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
   /* Update the velocity field at cell centers induced by the Darcy flux.
    * This field is always defined when the definition relies on a flux. */
 
-  cs_field_t *vel = adv->get_field(CS_MESH_LOCATION_CELLS);
+  cs_field_t *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
   assert(vel != nullptr);
   if (cur2prev)
     cs_field_current_to_previous(vel);
@@ -166,7 +166,8 @@ _uspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
                                        t_eval,
                                        adv);
 
-  cs_field_t *bdy_nflx = adv->get_field(CS_MESH_LOCATION_BOUNDARY_FACES);
+  cs_field_t *bdy_nflx =
+    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
 
   if (bdy_nflx != nullptr) { // Values of the Darcy flux at boundary face exist
 
@@ -615,7 +616,8 @@ cs_gwf_uspf_update(const cs_mesh_t           *mesh,
                              darcy->flux_val,
                              8);
   else if (cs_flag_test(darcy->flux_location, cs_flag_primal_cell)) {
-    cs_field_t *vel = darcy->adv_field->get_field(CS_MESH_LOCATION_CELLS);
+    cs_field_t *vel =
+      cs_advection_field_get_field(darcy->adv_field, CS_MESH_LOCATION_CELLS);
     cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL",
                              3 * cdoq->n_cells,
                              vel->val,

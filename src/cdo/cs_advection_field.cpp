@@ -473,7 +473,47 @@ cs_advection_field_add(const char                  *name,
   CS_REALLOC(_adv_fields, _n_adv_fields, cs_adv_field_t *);
   _adv_fields[new_id] = nullptr;
 
-  adv = new cs_adv_field_t(name, new_id, status);
+  CS_MALLOC(adv, 1, cs_adv_field_t);
+
+  /* Copy name */
+
+  adv->name = std::string(name);
+
+  adv->id        = new_id;
+  adv->status    = status;
+  adv->post_flag = 0;
+
+  /* Default initialization */
+
+  adv->definition = nullptr;
+
+  adv->n_bdy_flux_defs = 0;
+  adv->bdy_flux_defs   = nullptr;
+  adv->bdy_def_ids     = nullptr;
+
+  adv->cell_field_id = CS_ADVECTION_FIELD_ID_NOT_SET;
+  adv->int_field_id  = CS_ADVECTION_FIELD_ID_NOT_SET;
+
+  adv->vtx_field_id = CS_ADVECTION_FIELD_ID_NOT_SET;
+  if (adv->status & CS_ADVECTION_FIELD_DEFINE_AT_VERTICES)
+    adv->vtx_field_id = CS_ADVECTION_FIELD_ID_TO_BE_SET;
+
+  adv->bdy_field_id = CS_ADVECTION_FIELD_ID_NOT_SET;
+  if (adv->status & CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES)
+    adv->bdy_field_id = CS_ADVECTION_FIELD_ID_TO_BE_SET;
+
+  /* Update the status to a scalar flux in case of an advection field coming
+     from the legacy FV part */
+
+  if ((status & CS_ADVECTION_FIELD_NAVSTO) &&
+      (status & CS_ADVECTION_FIELD_LEGACY_FV))
+    adv->status |= CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+
+  /* If no type is set, set vector-valued by default */
+
+  if (!(status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX) &&
+      !(status & CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR))
+    adv->status |= CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR;
 
   /* Store the new advection field */
 
@@ -498,7 +538,17 @@ cs_advection_field_destroy_all(void)
 
     cs_adv_field_t *adv = _adv_fields[i];
 
-    delete adv;
+    adv->definition = cs_xdef_free(adv->definition);
+
+    for (int id = 0; id < adv->n_bdy_flux_defs; id++)
+      adv->bdy_flux_defs[id] = cs_xdef_free(adv->bdy_flux_defs[id]);
+
+    if (adv->n_bdy_flux_defs > 0)
+      CS_FREE(adv->bdy_flux_defs);
+    if (adv->bdy_def_ids != nullptr)
+      CS_FREE(adv->bdy_def_ids);
+
+    CS_FREE(adv);
 
     /* All other pointers are shared */
 
@@ -543,7 +593,7 @@ cs_advection_field_log_setup(void)
 
   char prefix[256];
 
-  cs_log_printf(CS_LOG_SETUP, "\nSummary of the advection fields\n");
+  cs_log_printf(CS_LOG_SETUP, "\nSummary of the advection field\n");
   cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
 
   for (int i = 0; i < _n_adv_fields; i++) {
@@ -553,7 +603,88 @@ cs_advection_field_log_setup(void)
     if (adv == nullptr)
       continue;
 
-    adv->log_setup();
+    /* Category of advection field */
+
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Category: ", adv->name.c_str());
+    if (adv->status & CS_ADVECTION_FIELD_NAVSTO)
+      cs_log_printf(CS_LOG_SETUP, "Related to Navier-Stokes\n");
+    else if (adv->status & CS_ADVECTION_FIELD_GWF)
+      cs_log_printf(CS_LOG_SETUP,
+                    "Related to the \"Groundwater Flow\" module\n");
+    else if (adv->status & CS_ADVECTION_FIELD_USER)
+      cs_log_printf(CS_LOG_SETUP, "User-defined\n");
+
+    /* Type of advection field */
+
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Type: ", adv->name.c_str());
+    if (adv->status & CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR)
+      cs_log_printf(CS_LOG_SETUP, "Velocity vector\n");
+    else if (adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX)
+      cs_log_printf(CS_LOG_SETUP, "Scalar flux\n");
+
+    /* Additional information */
+
+    if (adv->status & CS_ADVECTION_FIELD_LEGACY_FV)
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | %s\n",
+                    adv->name.c_str(),
+                    "Related to Legacy FV schemes\n");
+    if (adv->status & CS_ADVECTION_FIELD_STEADY)
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | Time status: Steady-state\n",
+                    adv->name.c_str());
+    else
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | Time status: Unsteady\n",
+                    adv->name.c_str());
+
+    if (adv->post_flag & CS_ADVECTION_FIELD_POST_NONE)
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | No postprocessing of the adv. field\n",
+                    adv->name.c_str());
+    if (adv->post_flag & CS_ADVECTION_FIELD_POST_COURANT)
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | Postprocess the Courant number\n",
+                    adv->name.c_str());
+
+    /* Where fields are defined */
+
+    bool at_cells
+      = (adv->cell_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
+    bool at_vertices
+      = (adv->vtx_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
+    bool at_bfaces
+      = (adv->bdy_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
+    bool at_ifaces
+      = (adv->int_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
+
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Fields defined at cells: %s; at vertices: %s\n",
+                  adv->name.c_str(),
+                  cs_base_strtf(at_cells),
+                  cs_base_strtf(at_vertices));
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Fields defined at boundary faces: %s;"
+                  " at interior faces: %s\n\n",
+                  adv->name.c_str(),
+                  cs_base_strtf(at_bfaces),
+                  cs_base_strtf(at_ifaces));
+
+    sprintf(prefix, "        Definition");
+    cs_xdef_log_setup(prefix, adv->definition);
+
+    /* Boundary flux definition */
+
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Number of boundary flux definitions: %d\n",
+                  adv->name.c_str(),
+                  adv->n_bdy_flux_defs);
+    if (adv->n_bdy_flux_defs > 0)
+      cs_log_printf(CS_LOG_SETUP, "\n");
+    for (int ib = 0; ib < adv->n_bdy_flux_defs; ib++) {
+      sprintf(prefix, "        Definition %2d", ib);
+      cs_xdef_log_setup(prefix, adv->bdy_flux_defs[ib]);
+    }
 
   } /* Loop on advection fields */
 }
@@ -562,14 +693,19 @@ cs_advection_field_log_setup(void)
 /*!
  * \brief  Set optional post-processings
  *
+ * \param[in, out]  adv         pointer to a cs_adv_field_t structure
  * \param[in]       post_flag   flag to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_adv_field_t::set_postprocess(cs_flag_t post_flag_)
+cs_advection_field_set_postprocess(cs_adv_field_t *adv,
+                                   cs_flag_t       post_flag)
 {
-  this->post_flag |= post_flag_;
+  if (adv == nullptr)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
+
+  adv->post_flag |= post_flag;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1236,7 +1372,7 @@ cs_advection_field_get_cell_vector(cs_lnum_t             c_id,
   if (adv == nullptr)
     return;
 
-  cs_field_t *f = adv->get_field(CS_MESH_LOCATION_CELLS);
+  cs_field_t *f = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
 
   cs_nvec3(f->val + 3 * c_id, vect);
 }
@@ -3346,7 +3482,8 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t *adv,
 
     /* Handle the boundary flux */
 
-    const cs_field_t *bflx = adv->get_field(CS_MESH_LOCATION_BOUNDARY_FACES);
+    const cs_field_t  *bflx =
+      cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
 
     for (cs_lnum_t bf_id = 0; bf_id < cdoq->n_b_faces; bf_id++) {
 
@@ -3384,165 +3521,6 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t *adv,
                          divergence);
 
   return divergence;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Constructor
- *
- * \param[in]      name        name
- * \param[in]      id          id
- * \param[in]      status      status
- *
- */
-/*----------------------------------------------------------------------------*/
-
-cs_adv_field_t::cs_adv_field_t(std::string                 name_,
-                               int                         id_,
-                               cs_advection_field_status_t status_)
-  : name(name_), id(id_), status(status_)
-{
-  /* Default initialization */
-
-  this->definition = nullptr;
-
-  this->n_bdy_flux_defs = 0;
-  this->bdy_flux_defs   = nullptr;
-  this->bdy_def_ids     = nullptr;
-
-  this->cell_field_id = CS_ADVECTION_FIELD_ID_NOT_SET;
-  this->int_field_id  = CS_ADVECTION_FIELD_ID_NOT_SET;
-
-  this->vtx_field_id = CS_ADVECTION_FIELD_ID_NOT_SET;
-  if (this->status & CS_ADVECTION_FIELD_DEFINE_AT_VERTICES)
-    this->vtx_field_id = CS_ADVECTION_FIELD_ID_TO_BE_SET;
-
-  this->bdy_field_id = CS_ADVECTION_FIELD_ID_NOT_SET;
-  if (this->status & CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES)
-    this->bdy_field_id = CS_ADVECTION_FIELD_ID_TO_BE_SET;
-
-  /* Update the status to a scalar flux in case of an advection field coming
-     from the legacy FV part */
-
-  if ((status_ & CS_ADVECTION_FIELD_NAVSTO) &&
-      (status_ & CS_ADVECTION_FIELD_LEGACY_FV))
-    this->status |= CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
-
-  /* If no type is set, set vector-valued by default */
-
-  if (!(status_ & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX) &&
-      !(status_ & CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR))
-    this->status |= CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR;
-};
-
-cs_adv_field_t::~cs_adv_field_t()
-{
-  this->definition = cs_xdef_free(this->definition);
-
-  for (int id_ = 0; id_ < this->n_bdy_flux_defs; id_++)
-    this->bdy_flux_defs[id_] = cs_xdef_free(this->bdy_flux_defs[id_]);
-
-  if (this->n_bdy_flux_defs > 0)
-    CS_FREE(this->bdy_flux_defs);
-  if (this->bdy_def_ids != nullptr)
-    CS_FREE(this->bdy_def_ids);
-};
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print all setup information related to cs_adv_field_t structures
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_adv_field_t::log_setup() const
-{
-  char prefix[256];
-
-  cs_log_printf(CS_LOG_SETUP, "\nSummary of the advection field\n");
-  cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
-
-  /* Category of advection field */
-
-  cs_log_printf(CS_LOG_SETUP, "  * %s | Category: ", this->name.c_str());
-  if (this->status & CS_ADVECTION_FIELD_NAVSTO)
-    cs_log_printf(CS_LOG_SETUP, "Related to Navier-Stokes\n");
-  else if (this->status & CS_ADVECTION_FIELD_GWF)
-    cs_log_printf(CS_LOG_SETUP, "Related to the \"Groundwater Flow\" module\n");
-  else if (this->status & CS_ADVECTION_FIELD_USER)
-    cs_log_printf(CS_LOG_SETUP, "User-defined\n");
-
-  /* Type of advection field */
-
-  cs_log_printf(CS_LOG_SETUP, "  * %s | Type: ", this->name.c_str());
-  if (this->status & CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR)
-    cs_log_printf(CS_LOG_SETUP, "Velocity vector\n");
-  else if (this->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX)
-    cs_log_printf(CS_LOG_SETUP, "Scalar flux\n");
-
-  /* Additional information */
-
-  if (this->status & CS_ADVECTION_FIELD_LEGACY_FV)
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * %s | %s\n",
-                  this->name.c_str(),
-                  "Related to Legacy FV schemes\n");
-  if (this->status & CS_ADVECTION_FIELD_STEADY)
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * %s | Time status: Steady-state\n",
-                  this->name.c_str());
-  else
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * %s | Time status: Unsteady\n",
-                  this->name.c_str());
-
-  if (this->post_flag & CS_ADVECTION_FIELD_POST_NONE)
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * %s | No postprocessing of the adv. field\n",
-                  this->name.c_str());
-  if (this->post_flag & CS_ADVECTION_FIELD_POST_COURANT)
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * %s | Postprocess the Courant number\n",
-                  this->name.c_str());
-
-  /* Where fields are defined */
-
-  bool at_cells =
-    (this->cell_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
-  bool at_vertices =
-    (this->vtx_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
-  bool at_bfaces =
-    (this->bdy_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
-  bool at_ifaces =
-    (this->int_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
-
-  cs_log_printf(CS_LOG_SETUP,
-                "  * %s | Fields defined at cells: %s; at vertices: %s\n",
-                this->name.c_str(),
-                cs_base_strtf(at_cells),
-                cs_base_strtf(at_vertices));
-  cs_log_printf(CS_LOG_SETUP,
-                "  * %s | Fields defined at boundary faces: %s;"
-                " at interior faces: %s\n\n",
-                this->name.c_str(),
-                cs_base_strtf(at_bfaces),
-                cs_base_strtf(at_ifaces));
-
-  sprintf(prefix, "        Definition");
-  cs_xdef_log_setup(prefix, this->definition);
-
-  /* Boundary flux definition */
-
-  cs_log_printf(CS_LOG_SETUP,
-                "  * %s | Number of boundary flux definitions: %d\n",
-                this->name.c_str(),
-                this->n_bdy_flux_defs);
-  if (this->n_bdy_flux_defs > 0)
-    cs_log_printf(CS_LOG_SETUP, "\n");
-  for (int ib = 0; ib < this->n_bdy_flux_defs; ib++) {
-    sprintf(prefix, "        Definition %2d", ib);
-    cs_xdef_log_setup(prefix, this->bdy_flux_defs[ib]);
-  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1105,7 +1105,7 @@ cs_cdovcb_scaleq_init_context(cs_equation_param_t    *eqp,
       _set_cip_coef(eqp);
       eqc->add_advection_bc = cs_cdo_advection_vcb_bc;
 
-      if (eqp->adv_field->is_cellwise())
+      if (cs_advection_field_is_cellwise(eqp->adv_field))
         eqc->get_advection_matrix = cs_cdo_advection_vcb_cw_cst;
       else
         eqc->get_advection_matrix = cs_cdo_advection_vcb;

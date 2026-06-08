@@ -354,7 +354,7 @@ cs_user_model(void)
 
     /* Compute the Courant number (if unsteady simulation) */
 
-    adv->set_postprocess(CS_ADVECTION_FIELD_POST_COURANT);
+    cs_advection_field_set_postprocess(adv, CS_ADVECTION_FIELD_POST_COURANT);
   }
   /*! [param_cdo_add_user_adv_field_post] */
 

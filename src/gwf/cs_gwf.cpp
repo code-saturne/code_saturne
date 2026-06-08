@@ -1658,7 +1658,8 @@ cs_gwf_extra_post(void                   *input,
 
       /* Only case avalaible up to now */
 
-      if (adv->get_deftype() == CS_XDEF_BY_ARRAY) {
+      if (cs_advection_field_get_deftype(adv) == CS_XDEF_BY_ARRAY) {
+
         cs_real_t  *divergence =
           cs_advection_field_divergence_at_vertices(adv, time_step->t_cur);
 
@@ -1673,6 +1674,7 @@ cs_gwf_extra_post(void                   *input,
                                  time_step);
 
         CS_FREE(divergence);
+
       }
 
     } /* Post-processing of the divergence is requested */
