@@ -76,6 +76,177 @@ public:
   /* Make array class friend */
   template<class _T_, int _N_, layout _L_> friend class array;
 
+  /* types */
+  using element_type    = T;
+  using value_type      = std::remove_cv_t<T>;
+  using pointer         = T*;
+  using const_pointer   = const T*;
+  using const_value     = const T;
+  using const_reference = const T&;
+  using difference_type = ptrdiff_t;
+  using iterator_type   = typename std::conditional<N==1,
+                                                    value_type,
+                                                    mdspan<T,N-1,L>>::type;
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Iterator for the mdspan class
+   */
+  /*--------------------------------------------------------------------------*/
+
+  struct Iterator
+  {
+    /* Types */
+    using non_cv_type      = std::remove_cv_t<T>;
+    using difference_type  = std::ptrdiff_t;
+    using value_type       = typename std::conditional<N==1,
+                                                       non_cv_type,
+                                                       mdspan<non_cv_type,N-1,L>>::type;
+    using pointer          = value_type*;
+    using reference        = value_type&;
+
+    /*--------------------------------------------------------------------------*/
+    /*!
+     * \brief Iterator constructor
+     *
+     * \return Iterator object
+     */
+    /*--------------------------------------------------------------------------*/
+
+    Iterator
+    (
+      T             *ptr,    /*!<[in] Data pointer */
+      cs_lnum_t      offset, /*!<[in] Data offset */
+      iterator_type  iter    /*!<[in] iterator object (internal)*/
+    ): _ptr(ptr), _offset(offset)
+    {
+      _it = iter;
+    }
+
+    /*--------------------------------------------------------------------------*/
+    /*!
+     * \brief Reference operator for the iterator
+     *
+     * \return reference to data from iterator.
+     */
+    /*--------------------------------------------------------------------------*/
+
+    CS_F_HOST_DEVICE
+    reference
+    operator*() const
+    {
+      return _it;
+    }
+
+    /*--------------------------------------------------------------------------*/
+    /*!
+     * \brief Pointer operator for the iterator
+     *
+     * \return pointer to data from iterator
+     */
+    /*--------------------------------------------------------------------------*/
+
+    CS_F_HOST_DEVICE
+    pointer
+    operator->() const
+    {
+      return &(_it);
+    }
+
+    /*--------------------------------------------------------------------------*/
+    /*!
+     * \brief Prefix increment operator
+     */
+    /*--------------------------------------------------------------------------*/
+
+    Iterator&
+    operator++()
+    {
+      _increment_ptr<N>();
+      return *this;
+    }
+
+    /*--------------------------------------------------------------------------*/
+    /*!
+     * \brief Postfix increment operator
+     */
+    /*--------------------------------------------------------------------------*/
+
+    Iterator
+    operator++(int)
+    {
+      Iterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+
+    /*--------------------------------------------------------------------------*/
+    /*!
+     * \brief == operator
+     *
+     * \return true iterators are equal, false otherwise
+     */
+    /*--------------------------------------------------------------------------*/
+
+    friend bool operator== (const Iterator& a, const Iterator& b)
+    {
+      return (a._ptr == b._ptr);
+    }
+
+    /*--------------------------------------------------------------------------*/
+    /*!
+     * \brief != operator
+     *
+     * \return false iterators are equal, true otherwise
+     */
+    /*--------------------------------------------------------------------------*/
+
+    friend bool operator!= (const Iterator& a, const Iterator& b)
+    {
+      return (a._ptr != b._ptr);
+    }
+
+    private:
+
+    /*--------------------------------------------------------------------------*/
+    /*!
+     * \brief Pointer increment function, needed for pre and post-fix increment
+     * operators. Should be replaced by an "if constexpr" when c++17 is available.
+     */
+    /*--------------------------------------------------------------------------*/
+
+    template<int _N_>
+    CS_F_HOST_DEVICE
+    std::enable_if_t<_N_==1, void>
+    _increment_ptr()
+    {
+      _ptr = _ptr + _offset;
+      _it = *_ptr;
+    }
+
+    /*--------------------------------------------------------------------------*/
+    /*!
+     * \brief Pointer increment function, needed for pre and post-fix increment
+     * operators. Should be replaced by an "if constexpr" when c++17 is available.
+     */
+    /*--------------------------------------------------------------------------*/
+
+    template<int _N_>
+    CS_F_HOST_DEVICE
+    std::enable_if_t<_N_!=1, void>
+    _increment_ptr()
+    {
+      _ptr = _ptr + _offset;
+      _it.set_data_ptr(_ptr);
+    }
+
+    /* Private members */
+    pointer            _ptr;    /*!< raw data pointer */
+    cs_lnum_t          _offset; /*!< offset for data access iteration */
+    mutable value_type _it;     /*!< value type exposed outside of iterator */
+
+  };
+
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Default constructor method leading to "empty container".
@@ -439,8 +610,47 @@ public:
   }
 
   /*===========================================================================
+   * Iterators
+   *==========================================================================*/
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Begin operator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  Iterator
+  begin() const
+  {
+    constexpr bool multi_dim = (N>1);
+    return _get_iter<multi_dim>(0);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief End operator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  Iterator
+  end() const
+  {
+    constexpr bool multi_dim = (N>1);
+    return _get_iter<multi_dim>(1);
+  }
+
+  /*===========================================================================
    * Getters / Setters
    *==========================================================================*/
+
+  CS_F_HOST_DEVICE
+  bool
+  empty() const
+  {
+    return (_size == 0);
+  }
 
   /*--------------------------------------------------------------------------*/
   /*!
@@ -1158,6 +1368,51 @@ protected:
 #endif
     }
     return out_of_bounds;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get iterator object based on mdspan number of dimensions
+   *
+   * \tparam[] is_multi_dim
+   *
+   * \return Iterator object.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<bool is_multi_dim>
+  CS_F_HOST_DEVICE
+  std::enable_if_t<is_multi_dim==false, Iterator>
+  _get_iter
+  (
+    int idx /*!<[in] 0 begin, 1 end */
+  ) const
+  {
+    cs_lnum_t idx_offset = (idx == 0) ? 0 : _size;
+    cs_lnum_t idx_val = (idx == 0) ? 0 : _size - 1;
+    return Iterator(_data + idx_offset, 1, _data[idx_val]);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get iterator object based on mdspan number of dimensions
+   *
+   * \tparam[] is_multi_dim
+   *
+   * \return Iterator object.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<bool is_multi_dim>
+  CS_F_HOST_DEVICE
+  std::enable_if_t<is_multi_dim==true, Iterator>
+  _get_iter
+  (
+    int idx /*!<[in] 0 begin, 1 end */
+  ) const
+  {
+    cs_lnum_t idx_offset = (idx == 0) ? 0 : _size;
+    return Iterator(_data + idx_offset, _offset[0], this->sub_view(0));
   }
 
   /*===========================================================================
