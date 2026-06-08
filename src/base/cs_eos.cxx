@@ -244,6 +244,14 @@ cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
                 _("bad choice: speed of sound not available yet"));
       eos_o = nullptr;
       break;
+    case CS_PHYS_PROP_DRHO_DP_H:
+      eos_o = new NEPTUNE::EOS_Field("DroDpDerivative", "d_rho_d_p_h",
+                                     n_vals, val);
+      break;
+    case CS_PHYS_PROP_DRHO_DH_P:
+      eos_o = new NEPTUNE::EOS_Field("DroDhDerivative", "d_rho_d_h_p",
+                                     n_vals, val);
+      break;
   }
 
   output[0] = *eos_o;
