@@ -150,8 +150,7 @@ typedef enum {
  *  \brief Main structure to handle an advection field
  */
 
-typedef struct {
-
+struct cs_adv_field_t {
   /*!
    * \var id
    * identification number
@@ -196,203 +195,221 @@ typedef struct {
    * Array of pointers to the definitions of the normal flux at the boundary
    */
 
-  int                           id;
-  std::string                   name;
-  cs_advection_field_status_t   status;
-  cs_flag_t                     post_flag;
+  int                         id;
+  std::string                 name;
+  cs_advection_field_status_t status;
+  cs_flag_t                   post_flag;
 
-  int                           vtx_field_id;
-  int                           cell_field_id;
-  int                           bdy_field_id;
-  int                           int_field_id;
+  int vtx_field_id;
+  int cell_field_id;
+  int bdy_field_id;
+  int int_field_id;
 
   /* We assume that there is only one definition associated to an advection
      field inside the computational domain */
 
-  cs_xdef_t                    *definition;
+  cs_xdef_t *definition;
 
   /* Optional: Definition(s) for the boundary flux */
 
-  int                           n_bdy_flux_defs;
-  cs_xdef_t                   **bdy_flux_defs;
-  short int                    *bdy_def_ids;
+  int         n_bdy_flux_defs;
+  cs_xdef_t **bdy_flux_defs;
+  short int  *bdy_def_ids;
 
-} cs_adv_field_t;
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Constructor
+   *
+   * \param[in]      name        name
+   * \param[in]      id          id
+   * \param[in]      status      status
+   *
+   */
+  /*----------------------------------------------------------------------------*/
 
-/*============================================================================
- * Global variables
- *============================================================================*/
+  cs_adv_field_t(std::string                 name_,
+                 int                         id_,
+                 cs_advection_field_status_t status_);
 
-/*============================================================================
- * Inline public function prototypes
- *============================================================================*/
+  ~cs_adv_field_t();
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set a new status for the given advection field structure
- *
- * \param[in, out] adv      pointer to an advection field structure
- * \param[in]      status   status flag to add to the current status
- */
-/*----------------------------------------------------------------------------*/
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Set a new status for the given advection field structure
+   *
+   * \param[in]      status   status flag to add to the current status
+   */
+  /*----------------------------------------------------------------------------*/
 
-static inline void
-cs_advection_field_set_status(cs_adv_field_t               *adv,
-                              cs_advection_field_status_t   status)
-{
-  if (adv == NULL)
-    return;
+  inline void
+  set_status(cs_advection_field_status_t status_)
+  {
+    this->status = status_;
+  };
 
-  adv->status = status;
-}
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  returns true if the advection field is uniform, otherwise false
+   *
+   *
+   * \return  true or false
+   */
+  /*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  returns true if the advection field is uniform, otherwise false
- *
- * \param[in]    adv    pointer to an advection field to test
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
+  inline bool
+  is_uniform() const
+  {
+    if (this == nullptr)
+      return false;
 
-static inline bool
-cs_advection_field_is_uniform(const cs_adv_field_t   *adv)
-{
-  if (adv == NULL)
-    return false;
-
-  if (adv->definition->state & CS_FLAG_STATE_UNIFORM)
-    return true;
-  else
-    return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  returns true if the advection field is uniform in each cell
- *         otherwise false
- *
- * \param[in]    adv    pointer to an advection field to test
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-static inline bool
-cs_advection_field_is_cellwise(const cs_adv_field_t   *adv)
-{
-  if (adv == NULL)
-    return false;
-
-  cs_flag_t  state = adv->definition->state;
-
-  if (state & CS_FLAG_STATE_UNIFORM)
-    return true;
-  if (state & CS_FLAG_STATE_CELLWISE)
-    return true;
-  else
-    return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the name of an advection field
- *
- * \param[in]    adv    pointer to an advection field structure
- *
- * \return  the name of the related advection field
- */
-/*----------------------------------------------------------------------------*/
-
-static inline std::string
-cs_advection_field_get_name(const cs_adv_field_t *adv)
-{
-  if (adv == nullptr)
-    return std::string("");
-
-  return adv->name;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the type of definition used to set the current advection
- *         field structure
- *
- * \param[in]    adv    pointer to an advection field structure
- *
- * \return  the type of definition
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_xdef_type_t
-cs_advection_field_get_deftype(const cs_adv_field_t   *adv)
-{
-  if (adv == NULL)
-    return CS_N_XDEF_TYPES;
-
-  return cs_xdef_get_type(adv->definition);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get a cs_field_t structure related to an advection field and a mesh
- *         location
- *
- * \param[in]  adv         pointer to a cs_adv_field_t structure
- * \param[in]  ml_type     type of mesh location (cells or vertices)
- *
- * \return a pointer to a cs_field_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_field_t *
-cs_advection_field_get_field(const cs_adv_field_t       *adv,
-                             cs_mesh_location_type_t     ml_type)
-{
-  cs_field_t  *f = NULL;
-  if (adv == NULL)
-    return f;
-
-  switch (ml_type) {
-
-  case CS_MESH_LOCATION_CELLS:
-    if (adv->cell_field_id > -1)
-      f = cs_field_by_id(adv->cell_field_id);
+    if (this->definition->state & CS_FLAG_STATE_UNIFORM)
+      return true;
     else
-      f = NULL;
-    break;
+      return false;
+  };
 
-  case CS_MESH_LOCATION_INTERIOR_FACES:
-    if (adv->int_field_id > -1)
-      f = cs_field_by_id(adv->int_field_id);
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  returns true if the advection field is uniform in each cell
+   *         otherwise false
+   *
+   * \return  true or false
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline bool
+  is_cellwise() const
+  {
+    if (this == nullptr)
+      return false;
+
+    const cs_flag_t state = this->definition->state;
+
+    if (state & CS_FLAG_STATE_UNIFORM)
+      return true;
+    if (state & CS_FLAG_STATE_CELLWISE)
+      return true;
     else
-      f = NULL;
-    break;
+      return false;
+  };
 
-  case CS_MESH_LOCATION_BOUNDARY_FACES:
-    if (adv->bdy_field_id > -1)
-      f = cs_field_by_id(adv->bdy_field_id);
-    else
-      f = NULL;
-    break;
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Retrieve the name of an advection field
+   *
+   * \return  the name of the related advection field
+   */
+  /*----------------------------------------------------------------------------*/
 
-  case CS_MESH_LOCATION_VERTICES:
-    if (adv->vtx_field_id > -1)
-      f = cs_field_by_id(adv->vtx_field_id);
-    else
-      f = NULL;
-    break;
+  inline std::string
+  get_name() const
+  {
+    if (this == nullptr)
+      return std::string("");
 
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid mesh location type %d.\n"
-              " Stop retrieving the advection field.\n",
-              __func__, ml_type);
+    return this->name;
   }
 
-  return f;
-}
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Retrieve the type of definition used to set the current advection
+   *         field structure
+   *
+   * \param[in]    adv    pointer to an advection field structure
+   *
+   * \return  the type of definition
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline cs_xdef_type_t
+  get_deftype() const
+  {
+    if (this == nullptr)
+      return CS_N_XDEF_TYPES;
+
+    return cs_xdef_get_type(this->definition);
+  }
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Get a cs_field_t structure related to an advection field and a mesh
+   *         location
+   *
+   * \param[in]  ml_type     type of mesh location (cells or vertices)
+   *
+   * \return a pointer to a cs_field_t structure
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline cs_field_t *
+  get_field(cs_mesh_location_type_t ml_type) const
+  {
+    cs_field_t *f = nullptr;
+    if (this == nullptr)
+      return f;
+
+    switch (ml_type) {
+      case CS_MESH_LOCATION_CELLS:
+        if (this->cell_field_id > -1)
+          f = cs_field_by_id(this->cell_field_id);
+        else
+          f = nullptr;
+        break;
+
+      case CS_MESH_LOCATION_INTERIOR_FACES:
+        if (this->int_field_id > -1)
+          f = cs_field_by_id(this->int_field_id);
+        else
+          f = nullptr;
+        break;
+
+      case CS_MESH_LOCATION_BOUNDARY_FACES:
+        if (this->bdy_field_id > -1)
+          f = cs_field_by_id(this->bdy_field_id);
+        else
+          f = nullptr;
+        break;
+
+      case CS_MESH_LOCATION_VERTICES:
+        if (this->vtx_field_id > -1)
+          f = cs_field_by_id(this->vtx_field_id);
+        else
+          f = nullptr;
+        break;
+
+      default:
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  " %s: Invalid mesh location type %d.\n"
+                  " Stop retrieving the advection field.\n",
+                  __func__,
+                  ml_type);
+    }
+
+    return f;
+  }
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Set optional post-processings
+   *
+   * \param[in]       post_flag   flag to set
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  set_postprocess(cs_flag_t post_flag);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Print all setup information related to cs_adv_field_t structures
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  log_setup() const;
+};
 
 /*============================================================================
  * Public function prototypes
@@ -510,19 +527,6 @@ cs_advection_field_check_name(const cs_adv_field_t *adv,
 
 void
 cs_advection_field_log_setup(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set optional post-processings
- *
- * \param[in, out]  adv         pointer to a cs_adv_field_t structure
- * \param[in]       post_flag   flag to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_advection_field_set_postprocess(cs_adv_field_t            *adv,
-                                   cs_flag_t                  post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

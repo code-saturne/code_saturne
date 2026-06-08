@@ -1660,9 +1660,7 @@ cs_cdovb_scaleq_init_context(cs_equation_param_t    *eqp,
   eqc->add_advection_bc     = nullptr;
 
   if (cs_equation_param_has_convection(eqp)) {
-
-    cs_xdef_type_t  adv_deftype =
-      cs_advection_field_get_deftype(eqp->adv_field);
+    cs_xdef_type_t adv_deftype = eqp->adv_field->get_deftype();
 
     switch (adv_deftype) {
 

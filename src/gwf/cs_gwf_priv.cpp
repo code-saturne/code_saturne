@@ -361,9 +361,7 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t    *connect,
       adv->status |= CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
     }
     else if (cs_flag_test(darcy->flux_location, cs_flag_primal_cell)) {
-
-      cs_field_t *cell_adv_field
-        = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
+      cs_field_t *cell_adv_field = adv->get_field(CS_MESH_LOCATION_CELLS);
       assert(cell_adv_field != nullptr);
 
       cs_advection_field_def_by_field(adv, cell_adv_field);
@@ -421,8 +419,7 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t    *connect,
 
   /* Try to retrieve the boundary flux values */
 
-  const cs_field_t *nflx
-    = cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+  const cs_field_t *nflx = adv->get_field(CS_MESH_LOCATION_BOUNDARY_FACES);
   cs_real_t *flux_val
     = (nflx == nullptr) ? darcy->boundary_flux_val : nflx->val;
 

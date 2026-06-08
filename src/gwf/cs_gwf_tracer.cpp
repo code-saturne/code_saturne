@@ -2828,8 +2828,7 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t    *connect,
 
   /* Set additional (predefined) fields */
 
-  tc->darcy_velocity_field =
-    cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
+  tc->darcy_velocity_field = adv->get_field(CS_MESH_LOCATION_CELLS);
 
   /* We assume that the unsteady term is always activated */
 
@@ -2962,8 +2961,7 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t    *connect,
 
   /* Set additional (pre-defined) fields */
 
-  tc->darcy_velocity_field =
-    cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
+  tc->darcy_velocity_field = adv->get_field(CS_MESH_LOCATION_CELLS);
 
   /* We assume that the unsteady term is always activated */
 
