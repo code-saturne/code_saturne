@@ -674,7 +674,7 @@ _rij_echo(int              phase_id,
  *
  * \param[in]   f_rij     pointer to Rij field
  * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
- * \param[in]   grav      gravity
+ * \param[in]   gravity   gravity
  * \param[in]   st_prv_id id of the previous source term in case of
  *                        time extrapolation
  * \param[in]   c_st_prv  pointer to the previous source term id
@@ -686,7 +686,7 @@ _rij_echo(int              phase_id,
 static void
 _gravity_st_rij(const cs_field_t  *f_rij,
                 const cs_real_t    up_rhop[][3],
-                const cs_real_t    grav[],
+                const cs_real_t    gravity[],
                 int                st_prv_id,
                 cs_real_6_t       *c_st_prv,
                 cs_real_66_t      *fimp,
@@ -701,6 +701,7 @@ _gravity_st_rij(const cs_field_t  *f_rij,
 
   const int coupled_components = cs_glob_turb_rans_model->irijco;
 
+  const cs_real_t grav[3] = {gravity[0], gravity[1], gravity[2]};
   const cs_real_t g = cs_math_3_norm(grav);
   const cs_real_t o_m_crij3 = (1. - cs_turb_crij3);
   const cs_real_t crij3 = cs_turb_crij3;
@@ -850,7 +851,7 @@ _gravity_st_rij(const cs_field_t  *f_rij,
  * \param[in]       phase_id    turbulent phase id (-1 for single phase flow)
  * \param[in]       up_rhop     work array for \f$ \vect{u}'\rho' \f$
  * \param[in]       cell_f_vol  cell fluid volume
- * \param[in]       grav        gravity
+ * \param[in]       gravity     gravity
  * \param[in, out]  fimp        work array for implicite contribution
  * \param[in, out]  rhs         work array for right-hand side
  */
@@ -860,13 +861,15 @@ static void
 _gravity_st_epsilon(int              phase_id,
                     const cs_real_t  up_rhop[][3],
                     const cs_real_t  cell_f_vol[],
-                    const cs_real_t  grav[],
+                    const cs_real_t  gravity[],
                     cs_real_t        fimp[],
                     cs_real_t        rhs[])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const int kturt = cs_field_key_id("turbulent_flux_model");
   const int krvarfl = cs_field_key_id("variance_dissipation");
+
+  const cs_real_t grav[3] = {gravity[0], gravity[1], gravity[2]};
 
   cs_dispatch_context ctx;
 
@@ -2936,9 +2939,7 @@ cs_turbulence_rij(int phase_id)
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
-  const cs_real_t grav[3] = {cs_glob_physical_constants->gravity[0],
-                             cs_glob_physical_constants->gravity[1],
-                             cs_glob_physical_constants->gravity[2]};
+  const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
   const cs_real_t *cell_f_vol = fvq->cell_vol;
 
