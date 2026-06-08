@@ -47,6 +47,7 @@
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdofb_priv.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_source_term.h"

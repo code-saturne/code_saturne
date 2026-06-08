@@ -43,6 +43,7 @@
 #include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdocb_priv.h"
 #include "cdo/cs_domain.h"
 #include "cdo/cs_equation.h"
 #include "mesh/cs_mesh.h"
@@ -54,8 +55,6 @@
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-typedef struct _cs_cdocb_t  cs_cdocb_scaleq_t;
 
 /*============================================================================
  * Static inline public function prototypes
@@ -350,7 +349,5 @@ void
 cs_cdocb_scaleq_extra_post(const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
                            void                       *context);
-
-/*----------------------------------------------------------------------------*/
 
 #endif /* CS_CDOCB_SCALEQ_H */

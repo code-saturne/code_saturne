@@ -43,8 +43,8 @@
 #include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdofb_monolithic_priv.h"
 #include "cdo/cs_equation.h"
-#include "cdo/cs_navsto_context.h"
 #include "cdo/cs_navsto_param.h"
 #include "mesh/cs_mesh.h"
 
@@ -55,8 +55,6 @@
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-typedef struct _cs_cdofb_monolithic_t cs_cdofb_monolithic_t;
 
 /*============================================================================
  * Static inline public function prototypes
@@ -217,7 +215,5 @@ void
 cs_cdofb_monolithic_nl(const cs_mesh_t         *mesh,
                        const cs_navsto_param_t *nsp,
                        cs_cdofb_monolithic_t   *sc);
-
-/*----------------------------------------------------------------------------*/
 
 #endif /* CS_CDOFB_MONOLITHIC_H */

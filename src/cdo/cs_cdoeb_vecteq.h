@@ -39,6 +39,7 @@
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_cdoeb_priv.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_source_term.h"
@@ -287,7 +288,5 @@ void
 cs_cdoeb_vecteq_write_restart(cs_restart_t    *restart,
                               const char      *eqname,
                               void            *scheme_context);
-
-/*----------------------------------------------------------------------------*/
 
 #endif /* CS_CDOEB_VECTEQ_H */

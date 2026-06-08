@@ -48,7 +48,6 @@
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_toolbox.h"
-#include "cdo/cs_cdofb_priv.h"
 #include "cdo/cs_cdofb_vecteq.h"
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_priv.h"

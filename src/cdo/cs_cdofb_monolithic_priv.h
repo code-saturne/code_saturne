@@ -70,6 +70,8 @@
  *        monolithic approach
  */
 
+typedef struct _cs_cdofb_monolithic_t cs_cdofb_monolithic_t;
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================

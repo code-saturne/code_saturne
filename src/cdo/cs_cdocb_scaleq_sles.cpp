@@ -54,7 +54,6 @@
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_solve.h"
 #include "cdo/cs_cdocb_scaleq.h"
-#include "cdo/cs_cdocb_priv.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_saddle_system.h"
 

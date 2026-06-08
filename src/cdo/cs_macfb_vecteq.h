@@ -49,6 +49,7 @@
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_param.h"
+#include "cdo/cs_macfb_priv.h"
 #include "cdo/cs_source_term.h"
 #include "mesh/cs_mesh.h"
 
