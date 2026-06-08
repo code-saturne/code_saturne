@@ -1459,8 +1459,7 @@ _pressure_correction_fv(int                   iterns,
 
   if (vp_param->iphydr == 1 && vp_param->icalhy == 1) {
 
-    int ifcsor = isostd[n_b_faces];
-    cs_parall_max(1, CS_INT_TYPE, &ifcsor);
+    int ifcsor = fluid_props->p0_face_id;
 
     /* This computation is needed only if there are outlet faces */
 
@@ -1481,17 +1480,23 @@ _pressure_correction_fv(int                   iterns,
   if (vp_param->iphydr == 1 || vp_param->iifren == 1) {
 
     cs_real_t phydr0 = 0.;
+    cs_lnum_t f_id_0 = fluid_props->p0_face_id;
+    cs_lnum_t r_id_0 = fluid_props->p0_rank_id;
 
     if (f_hp != nullptr && indhyd == 1) {
 
-      /* Use parallel reducer with a single value per rank,
+      /* Use parallel reducer with a single value,
          so as to be able to access device-only arrays on GPU. */
-      ctx.parallel_for_reduce_sum
-        (1, phydr0, [=] CS_F_HOST_DEVICE(cs_lnum_t i,
-         CS_DISPATCH_REDUCER_TYPE(double) &sum) {
 
-        cs_lnum_t f_id_0 = isostd[n_b_faces];
-        if (f_id_0 > -1 && i == 0) {
+      if (f_id_0 > -1 && r_id_0 == cs_glob_rank_id) {
+
+        ctx.parallel_for_reduce_sum
+          (1, phydr0, [=] CS_F_HOST_DEVICE(cs_lnum_t i,
+           CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+
+          if (i != 0)
+            return;
+
           cs_lnum_t c_id_0 = b_face_cells[f_id_0];
           cs_real_t d[3] = {b_face_cog[f_id_0][0] - cell_cen[c_id_0][0],
                             b_face_cog[f_id_0][1] - cell_cen[c_id_0][1],
@@ -1500,10 +1505,11 @@ _pressure_correction_fv(int                   iterns,
                  + d[0] * (dfrcxt[c_id_0][0] + frcxt[c_id_0][0])
                  + d[1] * (dfrcxt[c_id_0][1] + frcxt[c_id_0][1])
                  + d[2] * (dfrcxt[c_id_0][2] + frcxt[c_id_0][2]);
-        }
-      });
+          });
+        ctx.wait();
 
-      ctx.wait();
+      }
+
       cs_parall_sum(1, CS_REAL_TYPE, &phydr0);  /* > 0 only on one rank */
 
       /* Rescale cvar_hydro_pres so that it is 0 on the reference face */
@@ -1664,7 +1670,6 @@ _pressure_correction_fv(int                   iterns,
 
   } /* if (vp_param->iphydr == 1 && vp_param->iifren == 1) */
 
-
   if (vp_param->staggered == 1) {
 
     const cs_time_step_t *ts = cs_glob_time_step;
@@ -1684,7 +1689,6 @@ _pressure_correction_fv(int                   iterns,
       ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
         bmasfla[f_id] = bmasfl[f_id];
       });
-
     }
 
     if (cs_glob_porous_model >= 1) {

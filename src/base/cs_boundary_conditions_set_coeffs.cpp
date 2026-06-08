@@ -734,7 +734,6 @@ _boundary_condition_wall_condensation_1d_thermal(void)
  * \param[in]       ineefl      for ALE
  * \param[in]       itrfup      Update after velocity-pressure sub-iterations
  * \param[in, out]  isostd      indicator for standard outlet
- *                              and reference face index
  * \param[in]       dt          time step (per cell)
  * \param[in, out]  visvdr      dynamic viscosity after V. Driest damping in
  *                              boundary cells
@@ -3845,7 +3844,7 @@ cs_boundary_conditions_set_coeffs_init(void)
     _specific_physical_model_bc_types(true, bc_type);
 
   int *isostd;
-  CS_MALLOC_HD(isostd, n_b_faces+1, int, cs_alloc_mode);
+  CS_MALLOC_HD(isostd, n_b_faces, int, cs_alloc_mode);
 
   cs_boundary_conditions_type(true,
                               bc_type,

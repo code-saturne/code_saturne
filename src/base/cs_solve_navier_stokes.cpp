@@ -3673,7 +3673,6 @@ cs_solve_navier_stokes_update_total_pressure
  * \param[in]       icvrge     convergence indicator
  * \param[in]       itrale     number of the current ALE iteration
  * \param[in]       isostd     indicator of standard outlet
- *                           + index of the reference face
  * \param[in]       ckupdc     head loss coefficients, if present
  * \param[in, out]  trava      work array for velocity-pressure coupling
  */

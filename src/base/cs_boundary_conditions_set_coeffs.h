@@ -101,7 +101,6 @@
  * \param[in]       ineefl      for ALE
  * \param[in]       itrfup      Update after velocity-pressure sub-iterations
  * \param[in, out]  isostd      indicator for standard outlet
- *                              and reference face index
  * \param[in]       dt          time step (per cell)
  * \param[in, out]  visvdr      dynamic viscosity after V. Driest damping in
  *                              boundary cells

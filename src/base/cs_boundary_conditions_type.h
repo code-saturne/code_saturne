@@ -51,7 +51,7 @@ BEGIN_C_DECLS
  *
  * \param[in]      init      partial treatment (before time loop) if true
  * \param[in,out]  bc_type   type per boundary face
- * \param[out]     isostd    standard output indicator + reference face number
+ * \param[out]     isostd    standard output indicator
  */
 /*----------------------------------------------------------------------------*/
 

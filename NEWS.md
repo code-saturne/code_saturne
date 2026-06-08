@@ -17,6 +17,12 @@ Master (not on release branches yet)
 
 ### Numerics:
 
+- Update to pressure reference face: it was previously stored in the isostd
+  array, it is now stored in cs_glob_fluid_properties under two new attributes:
+  p0_face_id contains the face id, while p0_rank_id contains the rank id. It
+  can therefore now be accessed by the user or any other place in the code. The
+  array isostd now has a size of n_b_faces (previously n_b_faces+1).
+
 - Update in pressure bc is now done between prediction and correction
   to avoid taking p^(n+1) bc and p^(n) field in prediction, thus
   creating spurious pressure gradient in case of time dependent

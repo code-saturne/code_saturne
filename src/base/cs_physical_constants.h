@@ -79,6 +79,8 @@ typedef struct {
   double        pred0;        /* reference value for the reduced pressure */
   double        xyzp0[3];     /* reference point coordinates for the total
                                  pressure */
+  int           p0_face_id;   /* face id of the pressure reference */
+  int           p0_rank_id;   /* rank id of the pressure reference */
   double        t0;           /* reference temperature */
   double        cp0;          /* reference specific heat at constant pressure */
   double        cv0;          /* reference specific heat at constant volume */

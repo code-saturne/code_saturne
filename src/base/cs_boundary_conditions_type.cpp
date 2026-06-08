@@ -68,16 +68,6 @@
 
 static bool _initialized = false;
 
-/* Closest free standard outlet face to xyzp0 (icodcl not modified)
-   (or closest free inlet) */
-static cs_lnum_t _ifrslb = -1;
-
-/* Max of _ifrslb on all ranks, standard outlet face presence indicator */
-static cs_lnum_t _itbslb = -1;
-
-/* Rank associated with _itbslb */
-static int _irangd = 0;
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -112,7 +102,7 @@ _n_bc_faces(int        bc_type,
  *
  * \param[in]      init      partial treatment (before time loop) if true
  * \param[in,out]  bc_type   type per boundary face
- * \param[out]     isostd    standard output indicator + reference face number
+ * \param[out]     isostd    standard output indicator
  */
 /*----------------------------------------------------------------------------*/
 
@@ -516,6 +506,8 @@ cs_boundary_conditions_type(bool  init,
      origin), we choose the face whose center is closest to it, so
      as to be mesh numbering (and partitioning) independent. */
 
+  int local_face_id = -1;
+
   if (nt_cur == nt_prev) {
 
     cs_real_t d0min = cs_math_infinite_r;
@@ -532,7 +524,7 @@ cs_boundary_conditions_type(bool  init,
           const cs_real_t d0 = cs_math_3_square_distance(xyzp0,
                                                          b_face_cog[f_id]);
           if (d0 < d0min) {
-            _ifrslb = f_id;
+            local_face_id = f_id;
             d0min = d0;
           }
         }
@@ -546,10 +538,11 @@ cs_boundary_conditions_type(bool  init,
        If we do not have free outlet faces, than itbslb = 0
        (as it was initialized that way on all ranks). */
 
-    _itbslb = _ifrslb;
-    _irangd = cs_glob_rank_id;
+    fluid_props->p0_face_id = local_face_id;
+    fluid_props->p0_rank_id = cs_glob_rank_id;
 
-    cs_parall_min_id_rank_r(&_itbslb, &_irangd, d0min);
+    cs_parall_min_id_rank_r(&fluid_props->p0_face_id,
+                            &fluid_props->p0_rank_id, d0min);
   }
 
   if (vp_param->iphydr == 1 || vp_param->iifren == 1) {
@@ -558,11 +551,8 @@ cs_boundary_conditions_type(bool  init,
        we fill the isostd array.
        0 -> not a standard outlet face (i.e. not outlet or outlet with
             modified pressure BC)
-       1 -> free outlet face with automatic pressure BC.
-       the reference face number is stored in isostd[]
-       which is first initialized to -1 (i.e. no standard output face) */
+       1 -> free outlet face with automatic pressure BC. */
 
-    isostd[n_b_faces] = -1;
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
       isostd[f_id] = 0;
       if (   (bc_type[f_id] == CS_OUTLET || bc_type[f_id] == CS_FREE_INLET)
@@ -584,23 +574,21 @@ cs_boundary_conditions_type(bool  init,
 
   cs_real_t xyzref[3] = {0., 0., 0.};
 
-  if (_itbslb > -1) {
+  if (fluid_props->p0_face_id > -1) {
 
     /* If irangd is the local rank, we assign PI' to xyzref(4)
        (this is always the case in serial mode) */
 
-    if (cs_glob_rank_id == _irangd) {
-      xyzref[0] = b_face_cog[_ifrslb][0];
-      xyzref[1] = b_face_cog[_ifrslb][1];
-      xyzref[2] = b_face_cog[_ifrslb][2];
-      if (vp_param->iphydr == 1 || vp_param->iifren == 1)
-        isostd[n_b_faces] = _ifrslb;
+    if (cs_glob_rank_id == fluid_props->p0_rank_id) {
+      xyzref[0] = b_face_cog[fluid_props->p0_face_id][0];
+      xyzref[1] = b_face_cog[fluid_props->p0_face_id][1];
+      xyzref[2] = b_face_cog[fluid_props->p0_face_id][2];
     }
 
     /* Broadcast PI' and pressure reference
        from irangd to all other ranks. */
 
-    cs_parall_bcast(_irangd, 3, CS_REAL_TYPE, xyzref);
+    cs_parall_bcast(fluid_props->p0_rank_id, 3, CS_REAL_TYPE, xyzref);
 
     /* If the user has not specified anything, we set ixyzp0 to 2 so as
        to update the reference point. */
@@ -630,14 +618,14 @@ cs_boundary_conditions_type(bool  init,
       }
     }
 
-    _irangd = cs_glob_rank_id;
-    cs_parall_min_id_rank_r(&ifadir, &_irangd, d0min);
+    fluid_props->p0_rank_id = cs_glob_rank_id;
+    cs_parall_min_id_rank_r(&ifadir, &fluid_props->p0_rank_id, d0min);
 
     if (ifadir > -1) {
       /* We set ixyzp0 to 2 to update the reference point */
       fluid_props->ixyzp0 = 2;
 
-      if (cs_glob_rank_id == _irangd) {
+      if (cs_glob_rank_id == fluid_props->p0_rank_id) {
         xyzref[0] = b_face_cog[ifadir][0];
         xyzref[1] = b_face_cog[ifadir][1];
         xyzref[2] = b_face_cog[ifadir][2];
@@ -645,7 +633,7 @@ cs_boundary_conditions_type(bool  init,
     }
 
     /* Broadcast xyzref from irangd to all other ranks. */
-    cs_parall_bcast(_irangd, 3, CS_REAL_TYPE, xyzref);
+    cs_parall_bcast(fluid_props->p0_rank_id, 3, CS_REAL_TYPE, xyzref);
   }
 
   /* If the reference point has not been specified by the user,
@@ -674,7 +662,7 @@ cs_boundary_conditions_type(bool  init,
     xyzp0[1] = xyzref[1];
     xyzp0[2] = xyzref[2];
 
-    if (_itbslb > -1)
+    if (fluid_props->p0_face_id > -1)
       cs_log_printf
         (CS_LOG_DEFAULT,
          _("\n"
@@ -707,7 +695,7 @@ cs_boundary_conditions_type(bool  init,
   cs_time_control_t *vp_tc = &(vp_param->time_control);
   bool active_dyn = cs_time_control_is_active(vp_tc, cs_glob_time_step);
 
-  if (_itbslb > -1 && active_dyn) {
+  if (fluid_props->p0_face_id > -1 && active_dyn) {
 
     cs_real_3_t *frcxt = nullptr;
     {
@@ -823,10 +811,10 @@ cs_boundary_conditions_type(bool  init,
     CS_FREE(vel_dir_profile);
     CS_FREE(grad);
 
-    if (cs_glob_rank_id == _irangd)
-      pref = pripb[_ifrslb];
+    if (cs_glob_rank_id == fluid_props->p0_rank_id)
+      pref = pripb[fluid_props->p0_face_id];
 
-    cs_parall_bcast(_irangd, 1, CS_REAL_TYPE, &pref);
+    cs_parall_bcast(fluid_props->p0_rank_id, 1, CS_REAL_TYPE, &pref);
   }
 
   /* Convert to rcodcl and icodcl
