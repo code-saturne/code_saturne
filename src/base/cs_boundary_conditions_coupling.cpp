@@ -137,7 +137,7 @@ cs_boundary_conditions_coupling_t_in(void)
     th_f->bc_coeffs->rcodcl3[face_id] = 0.0;
   }
 
-  if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_ENTHALPY)
+  if (cs_glob_thermal_model->thermal_variable != CS_THERMAL_MODEL_ENTHALPY)
     return;
 
   for (cs_lnum_t ii = 0; ii < nfpt1d; ii++) {
@@ -172,7 +172,7 @@ cs_boundary_conditions_coupling_t_out(cs_real_t  hbord[],
    *                or Phi = (lambda/(d Cp)) Delta H
    *  recall      hbord = lambda/d. */
 
-  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+  if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
 
     cs_real_t *wa = nullptr;
 
@@ -187,7 +187,8 @@ cs_boundary_conditions_coupling_t_out(cs_real_t  hbord[],
     CS_FREE(wa);
 
   }
-  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TOTAL_ENERGY) {
+  else if (   cs_glob_thermal_model->thermal_variable
+           == CS_THERMAL_MODEL_TOTAL_ENERGY) {
 
     const cs_real_t cv0 = cs_glob_fluid_properties->cv0;
     cs_real_t *wa = nullptr, *cpro_cv = nullptr;

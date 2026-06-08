@@ -2382,7 +2382,8 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
   /* Wall temperature */
   cs_real_t xptk;
-  if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+  if (   cs_glob_thermal_model->temperature_scale
+      == CS_TEMPERATURE_SCALE_CELSIUS)
     xptk = tkelvi;
   else
     xptk = 0.0;

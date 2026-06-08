@@ -497,7 +497,8 @@ cs_lagr_car(int                         iprev,
         temp_ref = cs_glob_atmo_option->meteo_t0 *
           pow(pref/ cs_glob_atmo_option->meteo_psea, rscp) - _tkelvi;
       }
-      else if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_KELVIN)
+      else if (   cs_glob_thermal_model->temperature_scale
+               == CS_TEMPERATURE_SCALE_KELVIN)
         temp_ref -= _tkelvi;
 
       cs_real_t buoyancy_fac = - expansion_coef * (temp_s - temp_ref);

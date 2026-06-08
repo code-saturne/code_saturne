@@ -71,17 +71,10 @@ typedef enum {
 
 typedef struct {
 
-  union {
-    cs_thermal_model_variable_t  thermal_variable;   /* Thermal variable */
-    int                          itherm;
-  };
+  cs_thermal_model_variable_t  thermal_variable;   /* Thermal variable */
+  cs_temperature_scale_t       temperature_scale;  /* Temperature scale */
 
-  union {
-    cs_temperature_scale_t       temperature_scale;  /* Temperature scale */
-    int                          itpscl;
-  };
-
-  /* Has kinetic source terme correction */
+  /* Has kinetic source term correction */
   int           has_kinetic_st;
   int           cflt;           /* compute the thermal cfl condition */
   int           cflp;           /* compute the pressure cfl condition */
