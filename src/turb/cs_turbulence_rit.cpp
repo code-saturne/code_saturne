@@ -107,7 +107,6 @@
  * \param[in]     f_ut       scalar turbulent flux field
  * \param[in]     f_tv       variance of the thermal scalar field, or nullptr
  * \param[in]     n_cells    number of cells
- * \param[in]     l_viscls   0 uniform viscls values, 1 for local values
  * \param[in]     xcpp       \f$ C_p \f$
  * \param[in]     viscl      Molecular viscosity
  * \param[in]     viscls     variable diffusivity field
@@ -127,7 +126,6 @@ _turb_flux_st(const char          *name,
               const cs_field_t    *f_ut,
               const cs_field_t    *f_tv,
               const cs_lnum_t      n_cells,
-              const cs_lnum_t      l_viscls,
               const cs_real_t      xcpp[],
               const cs_real_t      viscl[],
               const cs_real_t      viscls[],
@@ -227,6 +225,10 @@ _turb_flux_st(const char          *name,
 
   const int has_buoyant_term = rans_mdl->has_buoyant_term;
 
+  cs_real_t _visls_0 = -1;
+  if (viscls == nullptr)
+    _visls_0 = f->get_key_double("diffusivity_ref");
+
   cs_dispatch_context ctx;
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -242,7 +244,11 @@ _turb_flux_st(const char          *name,
     xrij[2][1] = cvar_rij[c_id][4];
     xrij[2][2] = cvar_rij[c_id][2];
 
-    cs_real_t prdtl = viscl[c_id]*xcpp[c_id]/viscls[l_viscls*c_id];
+    cs_real_t prdtl = viscl[c_id]*xcpp[c_id];
+    if (viscls != nullptr)
+      prdtl /= viscls[c_id];
+    else
+      prdtl /= _visls_0;
 
     const cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
 
@@ -514,19 +520,15 @@ _thermal_flux_and_diff(cs_field_t         *f,
   if (f_tv != nullptr)
     cvara_tt = f_tv->val_pre;
 
-  cs_lnum_t l_viscls = 0; /* stride for uniform/local viscosity access */
   cs_real_t _visls_0 = -1;
   const cs_real_t *viscls = nullptr;
   {
     int ifcvsl = f->get_key_int("diffusivity_id");
     if (ifcvsl > -1) {
       viscls = cs_field(ifcvsl)->val;
-      l_viscls = 1;
     }
     else {
       _visls_0 = f->get_key_double("diffusivity_ref");
-      viscls = &_visls_0;
-      l_viscls = 0;
     }
   }
 
@@ -594,7 +596,12 @@ _thermal_flux_and_diff(cs_field_t         *f,
         xgk = -cpro_beta[c_id] * cs_math_3_dot_product(xut[c_id], grav);
 
       /* Thermo-mecanical scales ratio R */
-      cs_real_t prdtl = viscl[c_id] * xcpp[c_id] / viscls[l_viscls*c_id];
+      cs_real_t prdtl = viscl[c_id] * xcpp[c_id];
+      if (viscls != nullptr)
+        prdtl /= viscls[c_id];
+      else
+        prdtl /= _visls_0;
+
       cs_real_t xr_h = 0.5;
       cs_real_t xr = (1.0-alpha_theta)*prdtl + alpha_theta*xr_h;
 
@@ -890,19 +897,15 @@ _solve_rit(const cs_field_t     *f,
   if (st_prv_id > -1)
     c_st_prv = (cs_real_3_t *)cs_field(st_prv_id)->val;
 
-  cs_lnum_t l_viscls = 0; /* stride for uniform/local viscosity access */
   cs_real_t _visls_0 = -1;
   const cs_real_t *viscls = nullptr;
   {
     int ifcvsl = f->get_key_int("diffusivity_id");
     if (ifcvsl > -1) {
       viscls = cs_field(ifcvsl)->val;
-      l_viscls = 1;
     }
     else {
       _visls_0 = f->get_key_double("diffusivity_ref");
-      viscls = &_visls_0;
-      l_viscls = 0;
     }
   }
 
@@ -982,7 +985,7 @@ _solve_rit(const cs_field_t     *f,
    *     rho*(Pit + Git + Phi*_it - eps_it)
    * -------------------------------------- */
 
-  _turb_flux_st(f->name, f_ut, f_tv, n_cells, l_viscls,
+  _turb_flux_st(f->name, f_ut, f_tv, n_cells,
                 xcpp, viscl, viscls, gradv,
                 gradt, grad_al,
                 fimp.data<cs_real_33_t>(),
@@ -1008,7 +1011,11 @@ _solve_rit(const cs_field_t     *f,
       const cs_real_t a = mdifft * ctheta / cs_turb_csrij;
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cs_real_t prdtl = viscl[c_id]*xcpp[c_id]/viscls[l_viscls*c_id];
+        cs_real_t prdtl = viscl[c_id]*xcpp[c_id];
+        if (viscls != nullptr)
+          prdtl /= viscls[c_id];
+        else
+          prdtl /= _visls_0;
 
         for (cs_lnum_t i = 0; i < 3; i++)
           viscce(c_id, i) =   0.5*(viscl[c_id]*(1.+1./prdtl))

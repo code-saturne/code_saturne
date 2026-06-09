@@ -925,7 +925,6 @@ _gravity_st_epsilon(int              phase_id,
   cs_real_t rvarfl = 0.0;
   int turb_flux_model =  -1;
 
-  cs_lnum_t l_viscls = 0; /* stride for uniform/local viscosity access */
   cs_real_t _visls_0 = -1;
   cs_real_t *viscls = nullptr;
 
@@ -940,12 +939,9 @@ _gravity_st_epsilon(int              phase_id,
     int ifcvsl = f_t->get_key_int("diffusivity_id");
     if (ifcvsl > -1) {
       viscls = cs_field(ifcvsl)->val;
-      l_viscls = 1;
     }
     else {
       _visls_0 = f_t->get_key_double("diffusivity_ref");
-      viscls = &_visls_0;
-      l_viscls = 0;
     }
 
     f_alpha_theta = cs_field_by_composite_name_try(f_t->name, "alpha");
@@ -985,7 +981,12 @@ _gravity_st_epsilon(int              phase_id,
          || (turb_flux_model == 21)  /* EB-AFM */
          || (turb_flux_model == 31)) /* EB-DFM */ {
 
-        cs_real_t prdtl = viscl[c_id]*xcp/viscls[l_viscls*c_id];
+        cs_real_t prdtl = viscl[c_id]*xcp;
+        if (viscls != nullptr)
+          prdtl /= viscls[c_id];
+        else
+          prdtl /= _visls_0;
+
         cs_real_t xr
           = (1.0 - alpha_theta[c_id])*prdtl + alpha_theta[c_id]*rvarfl;
 
