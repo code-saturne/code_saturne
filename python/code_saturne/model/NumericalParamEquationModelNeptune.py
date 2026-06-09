@@ -187,7 +187,7 @@ class NumericalParamEquatModel(Variables, Model):
         Put value of order scheme for variable or scalar labelled label
         only if it 's different of default value
         """
-        self.isInList(value, ('upwind', 'centered', 'solu'))
+        self.isInList(value, ('upwind', 'centered', 'solu', 'tolu'))
         node = self._getSchemeLabelNode(label)
         defval = self.defaultValues()['order_scheme']
         if (self._isTurbulenceVariable(node)) :

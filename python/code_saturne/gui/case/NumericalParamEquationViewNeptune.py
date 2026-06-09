@@ -86,10 +86,11 @@ class SchemeDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        self.modelCombo = ComboModel(editor, 3, 1)
+        self.modelCombo = ComboModel(editor, 4, 1)
         self.modelCombo.addItem(self.tr(self.dicoM2V["centered"]), 'centered')
         self.modelCombo.addItem(self.tr(self.dicoM2V["upwind"]), 'upwind')
         self.modelCombo.addItem(self.tr(self.dicoM2V["solu"]), 'solu')
+        self.modelCombo.addItem(self.tr(self.dicoM2V["tolu"]), 'tolu')
 
         editor.installEventFilter(self)
         return editor
@@ -501,7 +502,8 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquation):
                         "pcr3_saturne"                           : 'PCR3 (code_saturne)',
                         "centered"                               : 'Centered',
                         "upwind"                                 : 'Upwind',
-                        "solu"                                   : 'SOLU'}
+                        "solu"                                   : '2nd Order Linear Upwind',
+                        "tolu"                                   : '3rd Order Linear Upwind'}
         self.dicoV2M = {"Automatic"                                    : 'automatic',
                         "Jacobi (neptune_cfd)"                         : 'jacobi',
                         "PCG (neptune_cfd)"                            : 'pcg',
@@ -516,7 +518,8 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquation):
                         "PCR3 (code_saturne)"                          : 'pcr3_saturne',
                         "Centered"                                     : 'centered',
                         "Upwind"                                       : 'upwind',
-                        "SOLU"                                         : 'solu'}
+                        "2nd Order Linear Upwind"                      : 'solu',
+                        "3rd Order Linear Upwind"                      : 'tolu'}
 
         # Scheme
         self.modelScheme = StandardItemModelScheme(self.mdl, self.dicoM2V, self.dicoV2M)
