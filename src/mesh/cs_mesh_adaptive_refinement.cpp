@@ -67,6 +67,7 @@
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_renumber.h"
+#include "base/cs_physical_constants.h"
 #include "base/cs_renumber_update.h"
 #include "base/cs_timer_stats.h"
 
@@ -1227,6 +1228,11 @@ _update_amr_mesh_data(cs_mesh_t  *mesh)
      in interpolation of refined fields) */
 
   _update_boundary_conditions();
+
+  /* Boundary face numbering and partitioning have changed; invalidate
+   * the cached pressure reference face so cs_boundary_conditions_type()
+   * recomputes it on the updated mesh geometry. */
+  cs_get_glob_fluid_properties()->p0_face_id = -1;
 }
 
 /*----------------------------------------------------------------------------

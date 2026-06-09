@@ -508,7 +508,7 @@ cs_boundary_conditions_type(bool  init,
 
   int local_face_id = -1;
 
-  if (nt_cur == nt_prev) {
+  if (nt_cur == nt_prev || fluid_props->p0_face_id < 0) {
 
     cs_real_t d0min = cs_math_infinite_r;
 
