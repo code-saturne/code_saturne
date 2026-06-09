@@ -1428,13 +1428,15 @@ cs_gwf_soil_update(cs_real_t                  time_eval,
 
     case CS_GWF_SOIL_VGM_SINGLE_PHASE:
     case CS_GWF_SOIL_VGM_TWO_PHASE:
-    case CS_GWF_SOIL_USER: {
-      assert(soil->update_properties != nullptr);
+    case CS_GWF_SOIL_USER:
+      {
+        assert(soil->update_properties != nullptr);
 
-      const cs_zone_t *zone = cs_volume_zone_by_id(soil->zone_id);
+        const cs_zone_t *zone = cs_volume_zone_by_id(soil->zone_id);
 
-      soil->update_properties(time_eval, mesh, connect, cdoq, zone, soil);
-    } break;
+        soil->update_properties(time_eval, mesh, connect, cdoq, zone, soil);
+      }
+      break;
 
     default:
       break; /* Do nothing (for instance in the case of a saturated soil which
