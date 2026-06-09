@@ -541,7 +541,7 @@ _writer_info(void)
       else
         fmt_name = fvm_writer_version_string(fmt_id, 0, 0);
 
-      cs_time_control_get_description(&(writer->tc), interval_s, 128);
+      writer->tc.get_description(interval_s, 128);
 
       cs_log_printf(log,
                     _("  %2d: name: %s\n"
@@ -4229,19 +4229,17 @@ cs_post_define_writer(int                     writer_id,
   w->active = 0;
 
   if (interval_t >= 0)
-    cs_time_control_init_by_time(&(w->tc),
-                                 -1,
-                                 -1,
-                                 interval_t,
-                                 output_at_start,
-                                 output_at_end);
+    w->tc = cs_time_control_t(-1.,
+                              -1.,
+                              interval_t,
+                              output_at_start,
+                              output_at_end);
   else
-    cs_time_control_init_by_time_step(&(w->tc),
-                                      -1,
-                                      -1,
-                                      interval_n,
-                                      output_at_start,
-                                      output_at_end);
+    w->tc = cs_time_control_t(-1,
+                              -1,
+                              interval_n,
+                              output_at_start,
+                              output_at_end);
 
   w->tc.last_nt = -2;
   w->tc.last_t = cs_glob_time_step->t_prev;
@@ -5872,7 +5870,7 @@ cs_post_activate_by_time_step(const cs_time_step_t  *ts)
       continue;
     }
 
-    writer->active = cs_time_control_is_active(&(writer->tc), ts);
+    writer->active = writer->tc.is_active(ts);
 
   }
 

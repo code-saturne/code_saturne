@@ -102,8 +102,7 @@
 static cs_amr_info_t _amr_info = {
   false,
   0,
-  {CS_TIME_CONTROL_TIME_STEP, false, false, false, {-1}, {-1}, {-1},
-   nullptr, nullptr, false, -1, -1, -1},
+  cs_time_control_t(-1, -1, -1, false, false, false),
   nullptr,
   nullptr,
   nullptr,
@@ -1358,9 +1357,8 @@ cs_adaptive_refinement_define(int                     n_layers,
 
   _amr_info.is_set = true;
   _amr_info.n_layers = n_layers;
-  cs_time_control_init_by_time_step(&_amr_info.time_control,
-                                    -1, -1, nt_interval,
-                                    false, false);
+  _amr_info.time_control = cs_time_control_t(-1, -1, nt_interval,
+                                             false, false);
 
   _amr_info.indic_func = indic_func;
   _amr_info.indic_input = indic_input;

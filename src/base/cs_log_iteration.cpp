@@ -164,19 +164,10 @@ static cs_time_plot_t  *_l2_residual_plot = nullptr;
 static int _log_interval_base = 10;
 
 static cs_time_control_t  _log_time_control
-  = {.type = CS_TIME_CONTROL_FUNCTION,
-     .at_start = true,
-     .at_first = true,
-     .at_end = true,
-     .start_nt = 0,
-     .end_nt = 0,
-     .interval_nt = 0,
-     .control_func = _log_time_control_automatic,
-     .control_input = nullptr,
-     .current_state = true,
-     .current_time_step = -1,
-     .last_nt = -1,
-     .last_t = -1};
+  = cs_time_control_t(_log_time_control_automatic,
+                      nullptr,
+                      true,
+                      true);
 
 cs_time_control_t  *cs_glob_log_iteration_time_control = &_log_time_control;
 
@@ -1927,11 +1918,9 @@ cs_log_iteration_set_automatic(int  n)
 {
   _log_interval_base = n;
 
-  cs_time_control_init_by_func(cs_glob_log_iteration_time_control,
-                               _log_time_control_automatic,
-                               &_log_interval_base,
-                               true,
-                               true);
+  *cs_glob_log_iteration_time_control
+    = cs_time_control_t(_log_time_control_automatic, &_log_interval_base,
+                        true, true, true);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1949,11 +1938,9 @@ cs_log_iteration_set_interval(int  n)
 {
   _log_interval_base = n;
 
-  cs_time_control_init_by_func(cs_glob_log_iteration_time_control,
-                               _log_time_control_interval,
-                               &_log_interval_base,
-                               true,
-                               true);
+  *cs_glob_log_iteration_time_control
+    = cs_time_control_t(_log_time_control_interval, &_log_interval_base,
+                        true, true, true);
 }
 
 /*----------------------------------------------------------------------------*/

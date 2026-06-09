@@ -159,12 +159,11 @@ _mobile_structures_create(void)
 
   ms->plot = 2;
 
-  cs_time_control_init_by_time_step(&(ms->plot_time_control),
-                                    -1,
-                                    -1,
-                                    1,       /* nt_interval */
-                                    true,    /* at_start */
-                                    false);  /* at end */
+  ms->plot_time_control = cs_time_control_t(-1,
+                                            -1,
+                                            1,       /* nt_interval */
+                                            true,    /* at_start */
+                                            false);  /* at end */
 
   ms->xmstru = nullptr;
   ms->xcstru = nullptr;

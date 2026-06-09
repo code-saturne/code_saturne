@@ -257,21 +257,7 @@ cs_rad_transfer_params_t _rt_params = {
   .dispersion = false,
   .dispersion_coeff = 1.,
   .save_radiance_dir = false,
-  .time_control = {
-    .type = CS_TIME_CONTROL_TIME_STEP,
-    .at_start = true,
-    .at_first = true,
-    .at_end = false,
-    .start_nt = -1,
-    .end_nt = -1,
-    .interval_nt = 1,
-    .control_func = nullptr,
-    .control_input = nullptr,
-    .current_state = false,
-    .current_time_step = -1,
-    .last_nt = -2,
-    .last_t = -HUGE_VAL
-  }
+  .time_control = cs_time_control_t(-1, -1, 1, true, true)
 };
 
 cs_rad_transfer_params_t *cs_glob_rad_transfer_params = &_rt_params;

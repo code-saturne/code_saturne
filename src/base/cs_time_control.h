@@ -41,10 +41,6 @@
 
 #include "base/cs_time_step.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -93,7 +89,54 @@ typedef enum {
  * Time control structure
  *----------------------------------------------------------------------------*/
 
-typedef struct {
+class cs_time_control_t {
+
+public:
+
+  /* Constructors */
+
+  cs_time_control_t();
+
+  cs_time_control_t
+  (
+    int    nt_start,
+    int    nt_end,
+    int    nt_interval,
+    bool   at_start_ = true,
+    bool   at_end_ = true,
+    bool   at_first_ = false
+  );
+
+  cs_time_control_t
+  (
+    double  t_start,
+    double  t_end,
+    double  t_interval,
+    bool    at_start_ = true,
+    bool    at_end_ = true,
+    bool    at_first_ = false
+  );
+
+  cs_time_control_t
+  (
+    cs_time_control_func_t  *control_func_,
+    void                    *input_,
+    bool                     at_start_ = true,
+    bool                     at_end_ = true,
+    bool                     at_first_ = false
+  );
+
+  /* Public functions */
+
+  bool
+  is_active(const cs_time_step_t  *ts);
+
+  void
+  get_description
+  (
+    char    *desc,
+    size_t   desc_size
+  ) const;
 
   /* Type and control parameters */
 
@@ -129,7 +172,7 @@ typedef struct {
   int     last_nt;                /* last active time step */
   double  last_t;                 /* last active physical time */
 
-}  cs_time_control_t;
+};
 
 /*============================================================================
  * Global variables
@@ -169,58 +212,13 @@ cs_time_control_is_active(cs_time_control_t     *tc,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+[[deprecated("Use cs_time_control_t constructor instead")]] void
 cs_time_control_init_by_time_step(cs_time_control_t  *tc,
                                   int                 nt_start,
                                   int                 nt_end,
                                   int                 nt_interval,
                                   bool                at_start,
                                   bool                at_end);
-
-/*----------------------------------------------------------------------------
- *!
- * \brief Simple time control initialization based on physical time options.
- *
- * \param[in]  tc          pointer to time control structure.
- * \param[in]  t_start     start time (or < 0 for unlimited)
- * \param[in]  t_end       end time (or < 0 for unlimited)
- * \param[in]  t_interval  time interval (< 0 if no periodic output)
- * \param[in]  at_start    always active at start ?
- * \param[in]  at_start    always active at end ?
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_time_control_init_by_time(cs_time_control_t  *tc,
-                             double              t_start,
-                             double              t_end,
-                             double              t_interval,
-                             bool                at_start,
-                             bool                at_end);
-
-/*----------------------------------------------------------------------------
- *!
- * \brief Simple time control initialization based on external function.
- *
- * \remark: if the input pointer is non-null, it must point to valid data
- *          when the control function is called, so that value or structure
- *          should not be temporary (i.e. local);
- *
- * \param[in]  tc             pointer to time control structure.
- * \param[in]  control_func   pointer to time control funcction.
- * \param[in]  control_input  pointer to optional (untyped) value or structure,
- *                            or NULL.
- * \param[in]  at_start       always active at start ?
- * \param[in]  at_start       always active at end ?
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_time_control_init_by_func(cs_time_control_t       *tc,
-                             cs_time_control_func_t  *control_func,
-                             void                    *control_input,
-                             bool                     at_start,
-                             bool                     at_end);
 
 /*----------------------------------------------------------------------------
  *!
@@ -257,7 +255,5 @@ void
 cs_time_control_copy_from_default(cs_time_control_t *tc);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_TIME_CONTROL_H */

@@ -1578,16 +1578,9 @@ cs_boundary_conditions_open_find_or_add(const  cs_zone_t   *zone)
 
   /* Now initialize structure */
 
-  memset(c, 0, sizeof(cs_boundary_conditions_open_t));
-
   c->zone = zone;
 
-  cs_time_control_init_by_time_step(&(c->tc),
-                                    -1,
-                                    -1,
-                                    1,
-                                    true,
-                                    false);
+  c->tc = cs_time_control_t(-1, -1, 1, true, false);
 
   /* Set some default values */
 
