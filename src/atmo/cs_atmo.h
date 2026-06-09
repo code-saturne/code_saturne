@@ -178,26 +178,20 @@ typedef struct {
   cs_atmo_projection_t projection_type;
   int utm_zone; // If using utm, a zone needs to be specified
 
-  union {
-    int met_1d_nlevels_d;
-    [[deprecated]] int nbmetd;
-  };
+  int met_1d_nlevels_d;
+  [[deprecated]] int& nbmetd() {return met_1d_nlevels_d;};
+
   /*! numbers of altitudes for the temperature and specific humidity */
-  union {
-    int met_1d_nlevels_t;
-    [[deprecated]] int nbmett;
-  };
+  int met_1d_nlevels_t;
+  [[deprecated]] int& nbmett() {return met_1d_nlevels_t;};
+
   /*! numbers of time steps for the meteo profiles */
-  union {
-    int met_1d_ntimes;
-    [[deprecated]] int nbmetm;
-  };
+  int met_1d_ntimes;
+  [[deprecated]] int& nbmetm() {return met_1d_ntimes;};
 
   /*! Number of vertical levels */
-  union {
-    int met_1d_nlevels_max_t;
-    [[deprecated]] int nbmaxt;
-  };
+  int met_1d_nlevels_max_t;
+  [[deprecated]] int& nbmaxt() {return met_1d_ntimes;};
 
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */

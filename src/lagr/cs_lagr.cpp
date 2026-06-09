@@ -1165,7 +1165,7 @@ cs_lagr_map_specific_physics(void)
     bft_error(__FILE__, __LINE__, 0,
         "%s: Turbulence modelling is not set.", __func__);
 
-  _lagr_extra_module[0].iturb  = turb_model->iturb;
+  _lagr_extra_module[0].iturb  = turb_model->model;
   _lagr_extra_module[0].itytur = turb_model->itytur;
   _lagr_extra_module[0].icp    = cs_glob_fluid_properties->icp;
 

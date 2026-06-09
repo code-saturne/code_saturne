@@ -442,26 +442,23 @@ typedef struct {
       Useful if \ref physical_model=1 and if there is a thermal scalar
       associated with the continuous phase.
   */
-  union {
-    int   solve_temperature;
-    [[deprecated]] int   itpvar;
-  };
+  int   solve_temperature;
+  [[deprecated("renamed to solve_temperature")]] \
+  int&  itpvar() {return solve_temperature;};
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
       diameter. Useful if \ref physical_model = 1.
   */
-  union {
-    int   solve_diameter;
-    [[deprecated]] int   idpvar;
-  };
+  int   solve_diameter;
+  [[deprecated("renamed to solve_diameter")]] \
+  int&   idpvar() {return solve_diameter;};
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle mass
       Useful if \ref physical_model = 1
   */
-  union {
-    int   solve_mass;
-    [[deprecated]] int   impvar;
-  };
+  int   solve_mass;
+  [[deprecated("renamed to solve_mass")]] \
+  int&   impvar() {return solve_mass;};
 
   /*  initialization temperature (in degree Celsius) for the particles already
       present in the calculation domain when an evolution equation on

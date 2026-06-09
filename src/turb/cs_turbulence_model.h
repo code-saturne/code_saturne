@@ -125,8 +125,7 @@ enum {
 
 typedef struct {
 
-  union {
-    int           model;/*! turbulence model
+  int           model;  /*! turbulence model
                           - CS_TURB_NONE: no turbulence model (laminar flow)
                           - CS_TURB_MIXING_LENGTH: mixing length model
                           - CS_TURB_K_EPSILON: standard k-epsilon model
@@ -148,10 +147,11 @@ typedef struct {
                           - CS_TURB_V2F_BL_V2K: v2f BL-v2-k
                           - CS_TURB_K_OMEGA: k-omega SST
                           - CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model */
-    int           iturb;  /*! Deprecated */
-  };
+
+  [[deprecated]] int& iturb() {return model;};
+
   int           itytur;       /* class of turbulence model (integer value
-                                 iturb/10) */
+                                 model/10) */
   int           hybrid_turb;  /*! Type of Hybrid Turbulence Model
                                    - CS_HYBRID_NONE:  No model
                                    - CS_HYBRID_DES:   Detached Eddy Simulation
