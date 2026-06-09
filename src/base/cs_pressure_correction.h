@@ -192,8 +192,7 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain);
  * \param[in]       ifbpcd        index of faces with condensation source term
  * \param[in]       ltmast        list of cells with condensation source terms
  *                                (1 to n numbering)
- * \param[in]       isostd        indicator of standard outlet and index
- *                                of the reference outlet face
+ * \param[in]       isostd        indicator of standard outlet
  * \param[in]       vel           velocity
  * \param[in, out]  da_uu         velocity matrix
  * \param[in]       bc_coeffs_v   boundary condition structure for the variable
