@@ -62,6 +62,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_algorithm.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
@@ -2598,184 +2599,87 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
 /*!
  * \brief Compute coarse to fine grid adjacency.
  *
- * If n_f_threads > 1, it must be consistent with the value used for
- * coarsening, because in that case we assume that each coarse row is
- * assigned to a single thread. This restriction could be removed
- * using atomic operations.
+ * This serial version is faster than the general one for single-thread runs,
+ * as is does not require atomics or synchronoization.
  *
- * \param[in]   f_level        fine grid level
- * \param[in]   f_n_rows       number of rows in fine grid
- * \param[in]   c_n_rows       number of rows in fine grid
- * \param[in]   alloc_mode     allocation mode for cf_row_index and cs_row_ids
- * \param[in]   n_f_threads    number of threads for fine rows
- * \param[in]   f_c_row        fine to coarse row map
- * \param[in]   f_row_index    MSR row index for fine grid (to count columns)
- * \param[out]  c_f_row_index  coarse to fine rows index
- * \param[out]  c_f_row_ids    coarse to fine row ids
- * \param[out]  c_row_index_0  index based on maximum column per coarse row,
- *                             or nullptr
+ * \param[in]       f_level        fine grid level
+ * \param[in]       f_n_rows       number of rows in fine grid
+ * \param[in]       c_n_rows       number of rows in fine grid
+ * \param[in]       alloc_mode     allocation mode for cf_row_index and
+ *                                 cs_row_ids
+ * \param[in]       f_c_row        fine to coarse row map
+ * \param[in]       f_row_index    MSR row index for fine grid (to count columns)
+ * \param[out]      c_f_row_index  coarse to fine rows index
+ * \param[out]      c_f_row_ids    coarse to fine row ids
+ * \param[out]      c_row_index_0  index based on maximum column per coarse
+ *                                 row, or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_coarse_to_fine_adjacency_msr(int               f_level,
-                              cs_lnum_t         f_n_rows,
-                              cs_lnum_t         c_n_rows,
-                              cs_alloc_mode_t   alloc_mode,
-                              int               n_f_threads,
-                              const cs_lnum_t  *restrict f_c_row,
-                              const cs_lnum_t  *restrict f_row_index,
-                              cs_lnum_t        **c_f_row_index,
-                              cs_lnum_t        **c_f_row_ids,
-                              cs_lnum_t        **c_row_index_0)
+_coarse_to_fine_adjacency_msr_serial
+(
+  int                   f_level,
+  cs_lnum_t             f_n_rows,
+  cs_lnum_t             c_n_rows,
+  cs_alloc_mode_t       alloc_mode,
+  const cs_lnum_t      *restrict f_c_row,
+  const cs_lnum_t      *restrict f_row_index,
+  cs_lnum_t           *&c_f_row_index,
+  cs_lnum_t           *&c_f_row_ids,
+  cs_lnum_t           **c_row_index_0
+)
 {
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
-  int n_c_threads = cs_parall_n_threads(c_n_rows, CS_THR_MIN);
-
-  cs_lnum_t *cf_r_idx, *c_r_idx_0, *cf_r_shift;
-  CS_MALLOC_HD(cf_r_idx, c_n_rows+1, cs_lnum_t, alloc_mode);
+  cs_lnum_t *c_r_idx_0, *cf_r_shift;
+  CS_MALLOC_HD(c_f_row_index, c_n_rows+1, cs_lnum_t, alloc_mode);
   CS_MALLOC(c_r_idx_0, c_n_rows+1, cs_lnum_t);
   CS_MALLOC(cf_r_shift, c_n_rows, cs_lnum_t);
 
-# pragma omp parallel for  num_threads(n_c_threads)
   for (cs_lnum_t i = 0; i < c_n_rows; i++) {
-    cf_r_idx[i] = 0;
+    c_f_row_index[i] = 0;
     cf_r_shift[i] = 0;
     c_r_idx_0[i] = 0;
   }
-  cf_r_idx[c_n_rows] = 0;
+  c_f_row_index[c_n_rows] = 0;
   c_r_idx_0[c_n_rows] = 0;
 
   /* First loop for counting */
 
-  cs_lnum_t  c_nnz_0 = 0;
-
-  #pragma omp parallel shared(c_nnz_0) num_threads(n_f_threads)
-  {
-    cs_lnum_t t_s_id, t_e_id;
-    cs_parall_thread_range(f_n_rows, sizeof(cs_real_t), &t_s_id, &t_e_id);
-
-    cs_lnum_t *restrict cf_count = cf_r_idx+1;
-    cs_lnum_t *restrict c_r_count = c_r_idx_0+1;
-
-    for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
-      cs_lnum_t jj = f_c_row[ii];
-      if (jj > -1) {
-        cf_count[jj] += 1;
-        c_r_count[jj] += f_row_index[ii+1] - f_row_index[ii];
-      }
+  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+    cs_lnum_t jj = f_c_row[ii];
+    if (jj > -1) {
+      c_f_row_index[jj] += 1;
+      c_r_idx_0[jj] += f_row_index[ii+1] - f_row_index[ii];
     }
   }
 
-  /* Pre-scan for coarse rows */
+  /* Count to index */
 
-  cs_lnum_t *t_c_scan = nullptr;
-  if (n_c_threads > 1) {
-    CS_MALLOC(t_c_scan, n_f_threads*2, cs_lnum_t);
-    for (int i = 0; i < n_f_threads; i++) {
-      t_c_scan[i*2] = 0;
-      t_c_scan[i*2+1] = 0;
-    }
-  }
+  cs_dispatch_context  ctx;
+  ctx.set_use_gpu(false);
+  ctx.set_n_cpu_threads(1);
 
-  #pragma omp parallel shared(c_nnz_0) num_threads(n_c_threads)
-  {
-    cs_lnum_t t_s_id, t_e_id;
-    cs_parall_thread_range(c_n_rows, sizeof(cs_real_t), &t_s_id, &t_e_id);
-    t_s_id += 1;  /* Shift by 1 as we are dealing with an index */
-    t_e_id += 1;
-
-    cs_lnum_t t_c_n_rows = 0;
-    cs_lnum_t t_c_nnz_0 = 0;
-
-    for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
-      t_c_n_rows += cf_r_idx[ii];
-      cf_r_idx[ii] = t_c_n_rows;
-
-      t_c_nnz_0 += c_r_idx_0[ii];
-      c_r_idx_0[ii] = t_c_nnz_0;
-    }
-
-#if defined(HAVE_OPENMP)
-    if (t_c_scan != nullptr) {
-      int t_id = omp_get_thread_num();
-      t_c_scan[t_id*2] = t_c_n_rows;
-      t_c_scan[t_id*2+1] = t_c_nnz_0;
-    }
-#endif
-  }
-
-#if defined(HAVE_OPENMP)
-
-  /* Scan operation for threads */
-
-  if (t_c_scan != nullptr) {
-
-    c_nnz_0 = 0;
-    cs_lnum_t cf_count = 0;
-    for (int i = 0; i < n_c_threads; i++) {
-      cf_count += t_c_scan[i*2];
-      c_nnz_0 += t_c_scan[i*2+1];
-      t_c_scan[i*2] = cf_count;
-      t_c_scan[i*2+1] = c_nnz_0;
-    }
-
-    /* Now call post-scan */
-
-    #pragma omp parallel shared(c_nnz_0) num_threads(n_c_threads)
-    {
-      int t_id = omp_get_thread_num();
-
-      if (t_id > 0) {
-        cs_lnum_t t_s_id, t_e_id;
-        cs_parall_thread_range(c_n_rows, sizeof(cs_real_t), &t_s_id, &t_e_id);
-        t_s_id += 1;  /* Shift by 1 as we are dealing with an index */
-        t_e_id += 1;
-
-        cs_lnum_t n_rows_shift = t_c_scan[(t_id-1)*2];
-        cs_lnum_t nnz_0_shift = t_c_scan[(t_id-1)*2 + 1];
-
-        for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
-          cf_r_idx[ii] += n_rows_shift;
-          c_r_idx_0[ii] += nnz_0_shift;
-        }
-      }
-    }
-
-  }
-
-#endif /* defined(HAVE_OPENMP) */
-
-  CS_FREE(t_c_scan);
+  cs::algorithm::count_to_index(ctx, c_n_rows, c_f_row_index);
+  cs::algorithm::count_to_index(ctx, c_n_rows, c_r_idx_0);
 
   /* Now assign rows */
 
-  cs_lnum_t *cf_r_ids;
-  CS_MALLOC_HD(cf_r_ids, cf_r_idx[c_n_rows], cs_lnum_t, alloc_mode);
+  CS_MALLOC_HD(c_f_row_ids, c_f_row_index[c_n_rows], cs_lnum_t, alloc_mode);
 
-  #pragma omp parallel num_threads(n_f_threads)
-  {
-    cs_lnum_t t_s_id, t_e_id;
-    cs_parall_thread_range(f_n_rows, sizeof(cs_real_t), &t_s_id, &t_e_id);
-
-    for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
-      cs_lnum_t jj = f_c_row[ii];
-      if (jj > -1) {
-        cs_lnum_t kk = cf_r_idx[jj] + cf_r_shift[jj];
-        cf_r_shift[jj] += 1;
-        cf_r_ids[kk] = ii;
-      }
+  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+    cs_lnum_t jj = f_c_row[ii];
+    if (jj > -1) {
+      cs_lnum_t kk = c_f_row_index[jj] + cf_r_shift[jj];
+      cf_r_shift[jj] += 1;
+      c_f_row_ids[kk] = ii;
     }
   }
 
   CS_FREE(cf_r_shift);
-  CS_FREE(t_c_scan);
-
-  *c_f_row_index = cf_r_idx;
-  *c_f_row_ids = cf_r_ids;
 
   if (c_row_index_0 != nullptr)
     *c_row_index_0 = c_r_idx_0;
@@ -2792,6 +2696,156 @@ _coarse_to_fine_adjacency_msr(int               f_level,
            cs_glob_rank_id, __func__,
            f_level, f_level+1, elapsed.count());
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute coarse to fine grid adjacency.
+ *
+ * \param[in]   f_level        fine grid level
+ * \param[in]   f_n_rows       number of rows in fine grid
+ * \param[in]   c_n_rows       number of rows in fine grid
+ * \param[in]   alloc_mode     allocation mode for cf_row_index and cs_row_ids
+ * \param[in]   n_f_threads    number of threads for fine rows
+ * \param[in]   f_c_row        fine to coarse row map
+ * \param[in]   f_row_index    MSR row index for fine grid (to count columns)
+ * \param[out]  c_f_row_index  coarse to fine rows index
+ * \param[out]  c_f_row_ids    coarse to fine row ids
+ * \param[out]  c_row_index_0  index based on maximum column per coarse row,
+ *                             or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_coarse_to_fine_adjacency_msr(int                f_level,
+                              cs_lnum_t          f_n_rows,
+                              cs_lnum_t          c_n_rows,
+                              cs_alloc_mode_t    alloc_mode,
+                              int                n_f_threads,
+                              const cs_lnum_t   *restrict f_c_row,
+                              const cs_lnum_t   *restrict f_row_index,
+                              cs_lnum_t        *&c_f_row_index,
+                              cs_lnum_t        *&c_f_row_ids,
+                              cs_lnum_t        **c_row_index_0)
+{
+  /* Due to the overhead of atomics, the threaded version of this
+     function has an observed overhead in the range of 5x over
+     the the single-threaded version, so call the single-threaded
+     version for small thread counts. */
+
+  if (n_f_threads <= 4) {
+    _coarse_to_fine_adjacency_msr_serial(f_level,
+                                         f_n_rows,
+                                         c_n_rows,
+                                         alloc_mode,
+                                         f_c_row,
+                                         f_row_index,
+                                         c_f_row_index,
+                                         c_f_row_ids,
+                                         c_row_index_0);
+    return;
+  }
+
+#if defined(HAVE_OPENMP)
+
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  int n_c_threads = cs_parall_n_threads(c_n_rows, CS_THR_MIN);
+
+  cs_lnum_t *c_r_idx_0 = nullptr, *cf_r_shift = nullptr;
+  CS_MALLOC_HD(c_f_row_index, c_n_rows+1, cs_lnum_t, alloc_mode);
+  if (c_row_index_0 != nullptr)
+    CS_MALLOC(c_r_idx_0, c_n_rows+1, cs_lnum_t);
+  CS_MALLOC(cf_r_shift, c_n_rows, cs_lnum_t);
+
+# pragma omp parallel for  num_threads(n_c_threads)
+  for (cs_lnum_t i = 0; i < c_n_rows; i++) {
+    c_f_row_index[i] = 0;
+    cf_r_shift[i] = 0;
+  }
+
+  /* First loop for counting */
+
+# pragma omp parallel for  num_threads(n_f_threads)
+  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+    cs_lnum_t jj = f_c_row[ii];
+    if (jj > -1) {
+#     pragma omp atomic
+      c_f_row_index[jj] += 1;
+    }
+  }
+
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);
+
+  cs::algorithm::count_to_index(ctx, c_n_rows, c_f_row_index);
+
+  /* Now assign rows */
+
+  CS_MALLOC_HD(c_f_row_ids, c_f_row_index[c_n_rows], cs_lnum_t, alloc_mode);
+
+  # pragma omp parallel for  num_threads(n_f_threads)
+  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+
+    cs_lnum_t jj = f_c_row[ii];
+    if (jj > -1) {
+      cs_lnum_t kk;
+      /* Atomic fetch and add (kk = value of cf_r_shift[jj] before increment)
+         We could write this as :{kk = *r_shift; (*r_shift++);} but use the syntax
+         below in case this helps the compiler. C++ std::atomic_ref would be
+         nice here, but requires C++20 support.
+         An alternative in many cases would be tu use gcc or clang
+         `__atomic_fetch_add` builtins, also available in older versions. */
+#if 1
+      cs_lnum_t &r_shift = cf_r_shift[jj];
+      #pragma omp atomic capture
+      kk = r_shift++;
+#else
+      cs_lnum_t *r_shift = &(cf_r_shift[jj]);
+      kk = __atomic_fetch_add(r_shift, (cs_lnum_t)1, __ATOMIC_RELAXED);
+#endif
+      kk += c_f_row_index[jj];
+      c_f_row_ids[kk] = ii;
+    }
+  }
+
+  CS_FREE(cf_r_shift);
+
+  if (c_r_idx_0 != nullptr) {
+
+#   pragma omp parallel for  num_threads(n_f_threads)
+    for (cs_lnum_t c_idx = 0; c_idx < c_n_rows; c_idx++) {
+      cs_lnum_t c_count = 0;
+      cs_lnum_t r_s_id = c_f_row_index[c_idx];
+      cs_lnum_t r_e_id = c_f_row_index[c_idx+1];
+      for (cs_lnum_t r_idx = r_s_id; r_idx < r_e_id; r_idx++) {
+        cs_lnum_t ii = c_f_row_ids[r_idx];
+        c_count += f_row_index[ii+1] - f_row_index[ii];
+      }
+      c_r_idx_0[c_idx] = c_count;
+    }
+
+  }
+
+  if (c_r_idx_0 != nullptr) {
+    cs::algorithm::count_to_index(ctx, c_n_rows, c_r_idx_0);
+    *c_row_index_0 = c_r_idx_0;
+  }
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d:     %s (level %d -> %d) = %ld\n",
+           cs_glob_rank_id, __func__,
+           f_level, f_level+1, elapsed.count());
+  }
+
+#endif // defined(HAVE_OPENMP)
 }
 
 /*----------------------------------------------------------------------------
@@ -5182,8 +5236,8 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
                                 n_f_threads,
                                 f_c_row,
                                 f_row_index,
-                                &c_f_row_index,
-                                &c_f_row_ids,
+                                c_f_row_index,
+                                c_f_row_ids,
                                 &c_row_index_0);
 
   /* Coarse matrix elements in the MSR format */
@@ -5794,8 +5848,8 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
                                 n_f_threads,
                                 f_c_row,
                                 f_row_index,
-                                &c_f_row_index,
-                                &c_f_row_ids,
+                                c_f_row_index,
+                                c_f_row_ids,
                                 &c_row_index_0);
 
   /* Coarse matrix elements in the MSR format */
