@@ -164,7 +164,7 @@ _count_to_index_inplace_omp(int        n_threads,
 
     for (cs_lnum_t i = t_s_id; i < t_e_id; i++) {
       cs_lnum_t c = a[i];
-      a[i] += s;
+      a[i] = s;
       s += c;
     }
 
