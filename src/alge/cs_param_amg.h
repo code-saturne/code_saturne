@@ -273,17 +273,21 @@ typedef struct {
 
  typedef enum {
 
-   CS_PARAM_AMG_INHOUSE_FORWARD_GS = 1,   /* smoother only */
-   CS_PARAM_AMG_INHOUSE_BACKWARD_GS = 2,  /* smoother only */
+   CS_PARAM_AMG_INHOUSE_FORWARD_GS  = 1,   /* smoother only */
+   CS_PARAM_AMG_INHOUSE_BACKWARD_GS = 2,   /* smoother only */
+   CS_PARAM_AMG_INHOUSE_L1_JACOBI   = 11,  /* smoother only */
+   CS_PARAM_AMG_INHOUSE_R_JACOBI    = 12,  /* smoother only */
+   CS_PARAM_AMG_INHOUSE_RJ2         = 13,  /* smoother only */
+   CS_PARAM_AMG_INHOUSE_RJ3         = 14,  /* smoother only */
 
-   CS_PARAM_AMG_INHOUSE_JACOBI = 3,
-   CS_PARAM_AMG_INHOUSE_PROCESS_GS = 4,
+   CS_PARAM_AMG_INHOUSE_JACOBI      = 3,
+   CS_PARAM_AMG_INHOUSE_PROCESS_GS  = 4,
    CS_PARAM_AMG_INHOUSE_PROCESS_SGS = 5,
 
-   CS_PARAM_AMG_INHOUSE_CG = 6,
-   CS_PARAM_AMG_INHOUSE_CR3 = 7,
-   CS_PARAM_AMG_INHOUSE_GCR = 8,
-   CS_PARAM_AMG_INHOUSE_GMRES = 9,
+   CS_PARAM_AMG_INHOUSE_CG          = 6,
+   CS_PARAM_AMG_INHOUSE_CR3         = 7,
+   CS_PARAM_AMG_INHOUSE_GCR         = 8,
+   CS_PARAM_AMG_INHOUSE_GMRES       = 9,
 
    CS_PARAM_AMG_INHOUSE_N_SOLVERS
 

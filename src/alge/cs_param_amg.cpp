@@ -865,6 +865,14 @@ cs_param_amg_get_inhouse_solver_name(cs_param_amg_inhouse_solver_t  solver)
     return "Forward Gauss-Seidel smoother";
   case CS_PARAM_AMG_INHOUSE_BACKWARD_GS:
     return "Backward Gauss-Seidel smoother";
+  case CS_PARAM_AMG_INHOUSE_L1_JACOBI:
+    return "L1-Jacobi smoother";
+  case CS_PARAM_AMG_INHOUSE_R_JACOBI:
+    return "Weighted relaxed Jacobi smoother";
+  case CS_PARAM_AMG_INHOUSE_RJ2:
+    return "Scheduled relaxed Jacobi smoother with M=2";
+  case CS_PARAM_AMG_INHOUSE_RJ3:
+    return "Scheduled relaxed Jacobi smoother with M=3";
   case CS_PARAM_AMG_INHOUSE_JACOBI:
     return "Jacobi";
   case CS_PARAM_AMG_INHOUSE_PROCESS_GS:
