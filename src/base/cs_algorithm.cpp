@@ -119,7 +119,7 @@ _count_to_index_inplace_omp(int        n_threads,
 
   // Space partial counts by stride to try to avoid false sharing.
   constexpr cs_lnum_t stride = (cl_size_max / sizeof(cs_lnum_t))
-                               + (cl_size_max % sizeof(cs_lnum_t) == 0) ? 0 : 1;
+                               + ((cl_size_max % sizeof(cs_lnum_t) == 0) ? 0 : 1);
   cs_lnum_t partial_sum_[cl_size_max * n_t_noalloc];
   cs_lnum_t *partial_sum = partial_sum_;
   if (n_threads > n_t_noalloc)
@@ -160,11 +160,11 @@ _count_to_index_inplace_omp(int        n_threads,
     cs_parall_thread_range(n, sizeof(cs_lnum_t), t_id, n_threads,
                            &t_s_id, &t_e_id);
 
-    cs_lnum_t s = (t_id == 0) ? 0 : partial_sum[t_id-1];
+    cs_lnum_t s = (t_id == 0) ? 0 : partial_sum[(t_id-1)*stride];
 
     for (cs_lnum_t i = t_s_id; i < t_e_id; i++) {
       cs_lnum_t c = a[i];
-      a[i] = s;
+      a[i] += s;
       s += c;
     }
 
