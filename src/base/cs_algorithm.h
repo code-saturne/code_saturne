@@ -100,21 +100,29 @@ l_binary_search(cs_lnum_t        l_id_array_size,
 
 /*--------------------------------------------------------------------------*/
 /*
- * \brief Transform a count to an index in-place.
+ * Transform a count to an index in-place.
  *
  * For n input elements, the array size should be size n+1, to account
  * for the past-the-end count.
  *
- * \param[in]       ctx  associated dispatch context
- * \param[in]       n    number of elements
- * \param[in, out]  a    count in, index out (size: n+1)
+ * If temporary storage is provided by the caller, it will be used
+ * it its size is sufficient, avoiding the overhead of local
+ * memory allocation. This is useful only for device code.
+ *
+ * \param[in]       ctx          associated dispatch context
+ * \param[in]       n            number of elements
+ * \param[in, out]  a            count in, index out (size: n+1)
+ * \param           tmp_size     optional temporary memory size
+ * \param           tmp_storage  optional temporary memory
  */
 /*--------------------------------------------------------------------------*/
 
 void
 count_to_index(cs_dispatch_context  &ctx,
                cs_lnum_t             n,
-               cs_lnum_t             a[]);
+               cs_lnum_t             a[],
+               size_t                tmp_size = 0,
+               void                 *tmp_storage = nullptr);
 
 /*--------------------------------------------------------------------------*/
 /*!

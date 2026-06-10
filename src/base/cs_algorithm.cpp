@@ -187,35 +187,47 @@ _count_to_index_inplace_omp(int        n_threads,
  * For n input elements, the array size should be size n+1, to account
  * for the past-the-end count.
  *
- * \param[in]       n     number of elements
- * \param[in, out]  a <-> count in, index out (size: n+1)
+ * If temporary storage is provided by the caller, it will be used
+ * it its size is sufficient, avoiding the overhead of local
+ * memory allocation.
+ *
+ * \param[in]       stream  number of elements
+ * \param[in]       n       number of elements
+ * \param[in, out]  a      count in, index out (size: n+1)
+ * \param           tmp_size_caller     size of storage provided by caller
+ * \param           tmp_storage_caller  storage provided by caller
  */
 /*--------------------------------------------------------------------------*/
 
 static void
 _count_to_index_inplace_cuda(cudaStream_t  stream,
                              cs_lnum_t     n,
-                             cs_lnum_t     a[])
+                             cs_lnum_t     a[],
+                             size_t        tmp_size_caller,
+                             void         *tmp_storage_caller)
 {
   // Ensure past-the-end value is initialized.
   cudaMemsetAsync(&(a[n]), 0, sizeof(cs_lnum_t), stream);
 
   assert(a != nullptr && n > 0);
 
-  unsigned char *tmp_storage = nullptr;
+  unsigned char *tmp_storage
+    = reinterpret_cast<unsigned char *>(tmp_storage_caller);
   size_t tmp_storage_size = 0;
 
-  cub::DeviceScan::ExclusiveSum(tmp_storage, tmp_storage_size,
+  cub::DeviceScan::ExclusiveSum(nullptr, tmp_storage_size,
                                 a, a, n+1, stream);
 
-  CS_MALLOC_HD(tmp_storage, tmp_storage_size, unsigned char, CS_ALLOC_DEVICE);
+  if (tmp_storage_size > tmp_size_caller)
+    CS_MALLOC_HD(tmp_storage, tmp_storage_size, unsigned char, CS_ALLOC_DEVICE);
 
   cub::DeviceScan::ExclusiveSum(tmp_storage, tmp_storage_size,
                                 a, a, n+1, stream);
 
   cub::SyncStream(stream);
 
-  CS_FREE(tmp_storage);
+  if (tmp_storage != tmp_storage_caller)
+    CS_FREE(tmp_storage);
 }
 
 #endif
@@ -307,20 +319,29 @@ namespace algorithm {
  * For n input elements, the array size should be size n+1, to account
  * for the past-the-end count.
  *
- * \param[in]       ctx  associated dispatch context
- * \param[in]       n    number of elements
- * \param[in, out]  a    count in, index out (size: n+1)
+ * If temporary storage is provided by the caller, it will be used
+ * it its size is sufficient, avoiding the overhead of local
+ * memory allocation. This is useful only for device code.
+ *
+ * \param[in]       ctx          associated dispatch context
+ * \param[in]       n            number of elements
+ * \param[in, out]  a            count in, index out (size: n+1)
+ * \param           tmp_size     optional temporary memory size
+ * \param           tmp_storage  optional temporary memory
  */
 /*--------------------------------------------------------------------------*/
 
 void
-count_to_index(cs_dispatch_context  &ctx,
-               cs_lnum_t             n,
-               cs_lnum_t             a[])
+count_to_index(cs_dispatch_context       &ctx,
+               cs_lnum_t                  n,
+               cs_lnum_t                  a[],
+               [[maybe_unused]]  size_t   tmp_size,
+               [[maybe_unused]]  void    *tmp_storage)
 {
 #if defined(HAVE_CUDA)
   if (ctx.use_gpu()) {
-    _count_to_index_inplace_cuda(ctx.stream(), n, a);
+    _count_to_index_inplace_cuda(ctx.stream(), n, a,
+                                 tmp_size, tmp_storage);
     return;
   }
 #endif
