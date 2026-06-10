@@ -833,6 +833,8 @@ _compute_merge_stride_and_ranks(cs_grid_t  *g,
   }
 }
 
+#endif // defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Build coarse grid matrix in the MSR format given the 4 necessary arrays.
  *
@@ -1337,6 +1339,8 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
  * (cs_multigrid.c), not directly by the user, so they are no more
  * documented than private static functions)
  *============================================================================*/
+
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Merge grids on several ranks to a grid on a single rank

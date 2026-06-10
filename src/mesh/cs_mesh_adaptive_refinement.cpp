@@ -1536,6 +1536,7 @@ cs_adaptive_refinement_step(void)
   /* We could use a more advanced test to perform load balancing only
      if imbalance reaches a certain threshold. */
 
+#if defined(HAVE_MPI)
   if (cs_glob_amr_info->load_balance) {
     _load_balance(true);
 
@@ -1543,6 +1544,7 @@ cs_adaptive_refinement_step(void)
     cs_timer_counter_add_diff(&_amr_t_load_balance, &t1, &t2);
     t1 = t2;
   }
+#endif // defined(HAVE_MPI)
 
   cs_renumber_update();
   t2 = cs_timer_time();
