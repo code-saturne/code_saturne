@@ -2498,7 +2498,7 @@ cs_preprocessor_data_read_mesh(cs_mesh_t          *mesh,
   /* Partition data */
 
   if (! pre_partitioned)
-    cs_partition(mesh, mesh_builder, partition_stage);
+    cs_partition(mesh, mesh_builder, partition_stage, nullptr);
 
   bft_printf("\n");
 

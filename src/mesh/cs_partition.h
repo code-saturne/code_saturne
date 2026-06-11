@@ -80,7 +80,10 @@
 typedef enum {
 
   CS_PARTITION_FOR_PREPROCESS,  /* Partitioning for preprocessing stage */
-  CS_PARTITION_MAIN             /* Partitioning for computation stage */
+  CS_PARTITION_MAIN,            /* Partitioning for computation stage */
+  CS_PARTITION_P2P,             /* Part-to-part partitioning */
+
+  CS_PARTITION_STAGE_COUNT
 
 } cs_partition_stage_t;
 
@@ -224,19 +227,27 @@ void
 cs_partition_add_partitions(int  n_extra_partitions,
                             int  extra_partitions_list[]);
 
-/*----------------------------------------------------------------------------
- * Compute partitioning for a given mesh.
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Partition mesh based on current options.
  *
- * parameters:
- *   mesh         <-- pointer to mesh structure
- *   mesh_builder <-> pointer to mesh builder structure
- *   stage        <-- associated partitioning stage
- *----------------------------------------------------------------------------*/
+ * If a mesh builder structure mb is provided, the computed partitioning
+ * is stored in mb->cell_rank.
+ * Else, the computed partitioning is copied to cell_part, which must be
+ * preallocated.
+ *
+ * \param[in]       mesh       pointer to mesh structure
+ * \param[in, out]  mb         pointer to mesh builder structure
+ * \param[in]       stage      associated partitioning stage
+ * \param[out]      cell_part  pointer to partitioning array
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_partition(cs_mesh_t             *mesh,
              cs_mesh_builder_t     *mesh_builder,
-             cs_partition_stage_t   stage);
+             cs_partition_stage_t   stage,
+             int                    cell_part[]);
 
 /*----------------------------------------------------------------------------*/
 

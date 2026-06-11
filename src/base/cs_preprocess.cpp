@@ -347,7 +347,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
     else
       cs_mesh_to_builder(m, cs_glob_mesh_builder, true, nullptr);
 
-    cs_partition(m, cs_glob_mesh_builder, CS_PARTITION_MAIN);
+    cs_partition(m, cs_glob_mesh_builder, CS_PARTITION_MAIN, nullptr);
     cs_mesh_from_builder(m, cs_glob_mesh_builder);
     cs_mesh_init_halo(m, cs_glob_mesh_builder, halo_type, m->verbosity, true);
     cs_mesh_update_auxiliary(m);

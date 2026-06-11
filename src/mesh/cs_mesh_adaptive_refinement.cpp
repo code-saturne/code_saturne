@@ -79,6 +79,7 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_refine.h"
 #include "mesh/cs_redistribute.h"
+#include "mesh/cs_partition.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1036,132 +1037,30 @@ _build_coarsen_refine_buffer_zone(cs_mesh_t *mesh, int indic[])
     cs_halo_sync(mesh->halo, CS_HALO_STANDARD, sizeof(int), indic);
 }
 
-/*----------------------------------------------------------------------------
- * Write in a CSV file the load imbalance of all ranks.
- *----------------------------------------------------------------------------*/
-
 #if defined(HAVE_MPI)
-
-static void
-_write_load_balance_stats(void)
-{
-  cs_mesh_t *mesh = cs_glob_mesh;
-  int tag = 0;
-  int rank = cs_glob_rank_id;
-  int n_ranks = cs_glob_n_ranks;
-  MPI_Comm comm = cs_glob_mpi_comm;
-
-  if (rank == 0) {
-    float *imbalance;
-    CS_MALLOC(imbalance, n_ranks, float);
-
-    imbalance[0] = mesh->n_cells;
-    for (int i = 1; i < n_ranks; i++) {
-      MPI_Recv(&imbalance[i], 1, MPI_FLOAT, i, tag, comm, MPI_STATUS_IGNORE);
-    }
-
-    float balance = mesh->n_g_cells / cs_glob_n_ranks;
-
-    for (int i = 0; i < n_ranks; i++)
-      imbalance[i] = fabsf(imbalance[i] - balance) / balance * 100;
-
-    char fname[256] = "load_balance_stats.csv";
-    FILE *fh;
-    static int balance_iter = 0;
-    balance_iter++;
-    if (balance_iter == 1) {
-      fh = fopen(fname, "w");
-      fprintf(fh, "time ");
-      for (int i = 0; i < n_ranks; i++)
-        fprintf(fh, "P%d ", i);
-      fprintf(fh, "\n");
-    }
-    else {
-      fh = fopen(fname, "a");
-    }
-
-    fprintf(fh, "%d ", balance_iter);
-
-    for (int i = 0; i < n_ranks; i++)
-      fprintf(fh, "%f ", imbalance[i]);
-    fprintf(fh, "\n");
-
-    fclose(fh);
-
-    CS_FREE(imbalance);
-  }
-  else {
-    float to_send = (float)mesh->n_cells;
-    MPI_Send(&to_send, 1, MPI_FLOAT, 0, tag, comm);
-  }
-}
 
 /*----------------------------------------------------------------------------
  * Redistribute the mesh so as to ensure a balanced load of cells between
  * all the procs.
  *
- * For now, a cell distribution map is computed based on a Morton space-filling
- * curve.
- *
- * TODO: redistribute using the algorithm initially used to read-in the mesh
- * in cs_partition.
- *
  * parameters:
- *   write_stats <-- switch to write load imbalance stats
+ *   mesh <-> pointer to the mesh
  *----------------------------------------------------------------------------*/
 
 static void
-_load_balance(bool write_stats)
+_load_balance(cs_mesh_t *mesh)
 {
-  cs_mesh_t *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  int *cell_dest = nullptr;
 
-  cs_coord_t *cell_center = (cs_coord_t *)mq->cell_cen;
-  int dim = 3;
-  fvm_io_num_sfc_t sfc_type = FVM_IO_NUM_SFC_MORTON_CUBE;
+  CS_MALLOC(cell_dest, mesh->n_cells_with_ghosts, int);
 
-  fvm_io_num_t *cell_io_num = fvm_io_num_create_from_sfc(cell_center,
-                                                         dim,
-                                                         mesh->n_cells,
-                                                         sfc_type);
+  cs_partition(mesh, nullptr, CS_PARTITION_P2P, cell_dest);
 
-  const cs_gnum_t *cell_num = fvm_io_num_get_global_num(cell_io_num);
+  cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), cell_dest);
 
-  int n_ranks = cs_glob_n_ranks;
+  cs_redistribute(cell_dest, nullptr);
 
-  int *cell_rank = nullptr;
-  CS_MALLOC(cell_rank, mesh->n_cells_with_ghosts, int);
-
-  // Non-uniform block size.
-
-  cs_gnum_t cells_per_rank = mesh->n_g_cells / n_ranks;
-  cs_lnum_t rmdr = mesh->n_g_cells - cells_per_rank * (cs_gnum_t)n_ranks;
-  if (rmdr == 0) {
-    for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
-      cell_rank[i] = (cell_num[i] - 1) / cells_per_rank;
-  }
-  else {
-    cs_gnum_t n_ranks_rmdr = n_ranks - rmdr;
-    cs_gnum_t n_ranks_cells_per_rank = n_ranks_rmdr * cells_per_rank;
-    for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
-      if ((cell_num[i] - 1) < n_ranks_cells_per_rank)
-        cell_rank[i] = (cell_num[i] - 1) / cells_per_rank;
-      else
-        cell_rank[i] = (cell_num[i] + n_ranks_rmdr - 1) / (cells_per_rank + 1);
-    }
-  }
-
-  if (mesh->halo != nullptr)
-    cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), cell_rank);
-
-  fvm_io_num_destroy(cell_io_num);
-
-  cs_redistribute(cell_rank, nullptr);
-
-  CS_FREE(cell_rank);
-
-  if (write_stats)
-    _write_load_balance_stats();
+  CS_FREE(cell_dest);
 }
 
 #endif // defined(HAVE_MPI)
@@ -1538,7 +1437,7 @@ cs_adaptive_refinement_step(void)
 
 #if defined(HAVE_MPI)
   if (cs_glob_amr_info->load_balance) {
-    _load_balance(true);
+    _load_balance(mesh);
 
     t2 = cs_timer_time();
     cs_timer_counter_add_diff(&_amr_t_load_balance, &t1, &t2);

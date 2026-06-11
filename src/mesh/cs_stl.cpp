@@ -2513,7 +2513,7 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
       cs_glob_mesh_builder = cs_mesh_builder_create();
       cs_mesh_to_builder(m, cs_glob_mesh_builder, true, nullptr);
 
-      cs_partition(m, cs_glob_mesh_builder, CS_PARTITION_MAIN);
+      cs_partition(m, cs_glob_mesh_builder, CS_PARTITION_MAIN, nullptr);
 
       cs_mesh_from_builder(m, cs_glob_mesh_builder);
       cs_mesh_init_halo(m, cs_glob_mesh_builder, m->halo_type, -1, true);

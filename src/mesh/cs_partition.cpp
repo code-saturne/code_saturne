@@ -91,11 +91,13 @@ extern "C" {
 #include "base/cs_io.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_builder.h"
 #include "base/cs_order.h"
 #include "base/cs_part_to_block.h"
 #include "base/cs_timer.h"
+
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_builder.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -186,10 +188,14 @@ typedef double  _vtx_coords_t[3];
  * Static global variables
  *============================================================================*/
 
-static cs_partition_algorithm_t   _part_algorithm[2] = {CS_PARTITION_DEFAULT,
-                                                        CS_PARTITION_DEFAULT};
-static int                        _part_rank_step[2] = {1, 1};
-static bool                       _part_ignore_perio[2] = {false, false};
+static cs_partition_algorithm_t   _part_algorithm[CS_PARTITION_STAGE_COUNT] =
+                                    {CS_PARTITION_DEFAULT,
+                                     CS_PARTITION_DEFAULT,
+                                     CS_PARTITION_DEFAULT};
+static int                        _part_rank_step[CS_PARTITION_STAGE_COUNT] =
+                                    {1, 1, 1};
+static bool                       _part_ignore_perio[CS_PARTITION_STAGE_COUNT] =
+                                    {false, false, true};
 
 static int                        _part_compute_join_hint = false;
 static int                        _part_compute_perio_hint = false;
@@ -929,6 +935,7 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
  *   mb          <-- pointer to mesh builder helper structure
  *   sfc_type    <-- type of space-filling curve
  *   cell_rank   --> cell rank (1 to n numbering)
+ *   stage       --> partitioning stage
  *   comm        <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
 
@@ -940,6 +947,8 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
                   const cs_mesh_builder_t  *mb,
                   fvm_io_num_sfc_t          sfc_type,
                   int                       cell_rank[],
+                  cs_lnum_t                 n_cells,
+                  cs_coord_t               *cell_center,
                   MPI_Comm                  comm)
 
 #else
@@ -949,7 +958,9 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
                   int                       n_ranks,
                   const cs_mesh_builder_t  *mb,
                   fvm_io_num_sfc_t          sfc_type,
-                  int                       cell_rank[])
+                  int                       cell_rank[],
+                  cs_lnum_t                 n_cells,
+                  const cs_coord_t         *cell_center)
 
 #endif
 {
@@ -957,9 +968,6 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
   cs_timer_t  start_time, end_time;
   cs_timer_counter_t dt;
 
-  cs_lnum_t n_cells = 0, block_size = 0;
-
-  cs_coord_t *cell_center = nullptr;
   fvm_io_num_t *cell_io_num = nullptr;
   const cs_gnum_t *cell_num = nullptr;
 
@@ -968,38 +976,38 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
 
   start_time = cs_timer_time();
 
-  n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
-  block_size = mb->cell_bi.block_size;
+  cs_coord_t *_cell_center = cell_center;
 
-  CS_MALLOC(cell_center, n_cells*3, cs_coord_t);
+  if (!_cell_center) {
+
+    CS_MALLOC(_cell_center, n_cells * 3, cs_coord_t);
 
 #if defined(HAVE_MPI)
-  if (n_ranks > 1)
-    _precompute_cell_center_g(mb, cell_center, comm);
+    if (n_ranks > 1)
+      _precompute_cell_center_g(mb, _cell_center, comm);
 #endif
-  if (n_ranks == 1)
-    _precompute_cell_center_l(mb, cell_center);
+    if (n_ranks == 1)
+      _precompute_cell_center_l(mb, _cell_center);
 
-  end_time = cs_timer_time();
-  dt = cs_timer_diff(&start_time, &end_time);
-  start_time = end_time;
+    end_time = cs_timer_time();
+    dt = cs_timer_diff(&start_time, &end_time);
+    start_time = end_time;
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  precompute cell centers:    %.3g s\n"),
-                (double)(dt.nsec)/1.e9);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  precompute cell centers:    %.3g s\n"),
+                  (double)(dt.nsec)/1.e9);
+  }
 
-  cell_io_num = fvm_io_num_create_from_sfc(cell_center,
+  cell_io_num = fvm_io_num_create_from_sfc(_cell_center,
                                            3,
                                            n_cells,
                                            sfc_type);
 
-  CS_FREE(cell_center);
+  if (_cell_center != cell_center)
+    CS_FREE(_cell_center);
 
   cell_num = fvm_io_num_get_global_num(cell_io_num);
 
-  block_size = n_g_cells / n_ranks;
-  if (n_g_cells % n_ranks)
-    block_size += 1;
 
   /* Determine rank based on global numbering with SFC ordering; */
 
@@ -1032,6 +1040,11 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
        This may not work at high process counts, where the last
        ranks will have no data (a solution to this would be
        to build a slightly smaller MPI communicator). */
+
+    cs_lnum_t block_size = n_g_cells / n_ranks;
+    if (n_g_cells % n_ranks)
+      block_size += 1;
+
 
     for (i = 0; i < n_cells; i++) {
       cell_rank[i] = ((cell_num[i] - 1) / block_size);
@@ -1702,13 +1715,13 @@ SCOTCH_errorPrintW (const char *errstr,
 }
 
 /*----------------------------------------------------------------------------
- * Build cell -> cell connectivity
+ * Build cell -> cell connectivity using block info.
  *
  * parameters:
- *   n_cells        <-- number of cells in mesh
- *   n_faces        <-- number of cells in mesh
- *   start_cell     <-- number of first cell for the curent rank
- *   face_cells     <-- face->cells connectivity
+ *   n_cells        <-- number of cells in block
+ *   n_faces        <-- number of faces in block
+ *   start_cell     <-- global id of first cell for the current block
+ *   face_cells     <-- global face->cells connectivity
  *   cell_idx       --> cell->cells index
  *   cell_neighbors --> cell->cells connectivity
  *----------------------------------------------------------------------------*/
@@ -1833,6 +1846,131 @@ _scotch_cell_cells(size_t        n_cells,
 }
 
 /*----------------------------------------------------------------------------
+ * Build cell -> cell connectivity for part-to-part partitioning.
+ *
+ * parameters:
+ *   n_cells        <-- number of cells in mesh
+ *   n_i_faces      <-- number of internal faces in mesh
+ *   cell_gnum      <-- global ids of local + halo cells
+ *   face_cells     <-- local internal face->cells connectivity
+ *   cell_idx       --> cell->cells index
+ *   cell_neighbors --> cell->cells connectivity
+ *----------------------------------------------------------------------------*/
+
+static void
+_scotch_cell_cells_p2p(cs_lnum_t             n_cells,
+                       cs_lnum_t             n_i_faces,
+                       const cs_gnum_t      *cell_gnum,
+                       const cs_lnum_2_t    *i_face_cells,
+                       SCOTCH_Num          **cell_idx,
+                       SCOTCH_Num          **cell_neighbors)
+{
+  SCOTCH_Num  *n_neighbors;
+  SCOTCH_Num  *_cell_idx;
+  SCOTCH_Num  *_cell_neighbors;
+
+  /* Count and allocate arrays */
+
+  CS_MALLOC(n_neighbors, n_cells, SCOTCH_Num);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    n_neighbors[c_id] = 0;
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+    cs_lnum_t c_id0 = i_face_cells[f_id][0];
+    cs_lnum_t c_id1 = i_face_cells[f_id][1];
+
+    if (c_id0 == -1 || c_id1 == -1 || c_id0 == c_id1)
+      continue;
+
+    if (c_id0 < n_cells)
+      n_neighbors[c_id0] += 1;
+    if (c_id1 < n_cells)
+      n_neighbors[c_id1] += 1;
+  }
+
+  CS_MALLOC(_cell_idx, n_cells + 1, SCOTCH_Num);
+
+  _cell_idx[0] = 0;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    _cell_idx[c_id + 1] = _cell_idx[c_id] + n_neighbors[c_id];
+
+  CS_MALLOC(_cell_neighbors, _cell_idx[n_cells], SCOTCH_Num);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    n_neighbors[c_id] = 0;
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+    cs_lnum_t c_id0 = i_face_cells[f_id][0];
+    cs_lnum_t c_id1 = i_face_cells[f_id][1];
+
+    if (c_id0 == -1 || c_id1 == -1 || c_id0 == c_id1)
+      continue;
+
+    if (c_id0 < n_cells) {
+      cs_gnum_t id1 = cell_gnum[c_id1];
+      _cell_neighbors[_cell_idx[c_id0] + n_neighbors[c_id0]] = id1 - 1;
+      n_neighbors[c_id0] += 1;
+    }
+
+    if (c_id1 < n_cells) {
+      cs_gnum_t id0 = cell_gnum[c_id0];
+      _cell_neighbors[_cell_idx[c_id1] + n_neighbors[c_id1]] = id0 - 1;
+      n_neighbors[c_id1] += 1;
+    }
+  }
+
+  CS_FREE(n_neighbors);
+
+  /* Clean graph */
+
+  SCOTCH_Num c_id = 0;
+  SCOTCH_Num start_id = _cell_idx[0]; /* also = 0 */
+  SCOTCH_Num end_id = 0;
+
+  if (_cell_neighbors != nullptr) {
+
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+      SCOTCH_Num j, n_prev;
+
+      end_id = _cell_idx[i+1];
+
+      _scotch_sort_shell(start_id, end_id, _cell_neighbors);
+
+      n_prev = _cell_neighbors[start_id];
+      _cell_neighbors[c_id] = n_prev;
+      c_id += 1;
+
+      for (j = start_id + 1; j < end_id; j++) {
+        if (_cell_neighbors[j] != n_prev) {
+          n_prev = _cell_neighbors[j];
+          _cell_neighbors[c_id] = n_prev;
+          c_id += 1;
+        }
+      }
+
+      start_id = end_id;
+      _cell_idx[i+1] = c_id;
+
+    }
+
+    if (c_id < end_id)
+      CS_REALLOC(_cell_neighbors, c_id, SCOTCH_Num);
+
+  }
+
+  /* Set return values */
+
+  *cell_idx = _cell_idx;
+  *cell_neighbors = _cell_neighbors;
+}
+
+
+/*----------------------------------------------------------------------------
  * Compute partition using SCOTCH
  *
  * parameters:
@@ -1848,6 +1986,7 @@ _part_scotch(SCOTCH_Num   n_cells,
              int          n_parts,
              SCOTCH_Num  *cell_idx,
              SCOTCH_Num  *cell_neighbors,
+             SCOTCH_Num  *cell_ids,
              int         *cell_part)
 {
   SCOTCH_Num  i;
@@ -1886,7 +2025,7 @@ _part_scotch(SCOTCH_Num   n_cells,
                         cell_idx,           /* verttab */
                         nullptr,               /* vendtab: verttab + 1 or nullptr */
                         nullptr,               /* velotab: vertex weights */
-                        nullptr,               /* vlbltab; vertex labels */
+                        cell_ids,               /* vlbltab; vertex labels */
                         cell_idx[n_cells],  /* edgenbr */
                         cell_neighbors,     /* edgetab */
                         nullptr);              /* edlotab */
@@ -1967,11 +2106,12 @@ _part_scotch(SCOTCH_Num   n_cells,
 
 static void
 _part_ptscotch(cs_gnum_t    n_g_cells,
-               cs_gnum_t    cell_range[2],
+               SCOTCH_Num   n_cells,
                int          n_parts,
                SCOTCH_Num  *cell_idx,
                SCOTCH_Num  *cell_neighbors,
                int         *cell_part,
+               SCOTCH_Num  *cell_ids,
                MPI_Comm     comm)
 {
   int  n_ranks;
@@ -1982,7 +2122,6 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
 
   int     retval = 0;
 
-  SCOTCH_Num    n_cells = cell_range[1] - cell_range[0];
   SCOTCH_Num  *_cell_part = nullptr;
 
   /* Initialization */
@@ -2014,7 +2153,7 @@ _part_ptscotch(cs_gnum_t    n_g_cells,
                 cell_idx,           /* vertloctab */
                 nullptr,               /* vendloctab: vertloctab + 1 or nullptr */
                 nullptr,               /* veloloctab: vertex weights */
-                nullptr,               /* vlblloctab; vertex labels */
+                cell_ids,               /* vlblloctab; vertex labels */
                 cell_idx[n_cells],  /* edgelocnbr */
                 cell_idx[n_cells],  /* edgelocsiz */
                 cell_neighbors,     /* edgeloctab */
@@ -2671,9 +2810,9 @@ _read_cell_rank(cs_mesh_t            *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_block_partititioning(const cs_mesh_t          *mesh,
-                      const cs_mesh_builder_t  *mb,
-                      int                      *cell_part)
+_block_partitioning(const cs_mesh_t          *mesh,
+                    const cs_mesh_builder_t  *mb,
+                    int                      *cell_part)
 {
   cs_lnum_t i;
 
@@ -2803,24 +2942,43 @@ _select_algorithm(cs_partition_stage_t  stage)
     if (n_part_ranks == 1 && retval == CS_PARTITION_DEFAULT)
       retval = CS_PARTITION_METIS;
 #endif
+
     if (retval == CS_PARTITION_DEFAULT)
       retval = CS_PARTITION_SFC_MORTON_BOX;
 
-    /* 1st stage of 2:
-       If 2nd stage uses a space-filling curve, use same curve by default;
-       otherwise, use default space-filling curve. */
+    /* If the main partitioning uses a space-filling curve, enforce it
+       on the preprocessor and part-to-part partitionners. */
+
+    bool main_sfc =
+          (_part_algorithm[CS_PARTITION_MAIN] >= CS_PARTITION_SFC_MORTON_BOX)
+       && (_part_algorithm[CS_PARTITION_MAIN] <= CS_PARTITION_SFC_HILBERT_CUBE);
+
 
     if (stage == CS_PARTITION_FOR_PREPROCESS) {
-
-      if (   _part_algorithm[CS_PARTITION_MAIN] >= CS_PARTITION_SFC_MORTON_BOX
-          && _part_algorithm[CS_PARTITION_MAIN] <= CS_PARTITION_SFC_HILBERT_CUBE)
+      if (main_sfc)
         retval = _part_algorithm[CS_PARTITION_MAIN];
       else
         retval = CS_PARTITION_SFC_MORTON_BOX;
+    }
+
+    else if (stage == CS_PARTITION_P2P) {
+
+      if (main_sfc)
+        retval = _part_algorithm[CS_PARTITION_MAIN];
+
+#if defined(HAVE_SCOTCH) && !defined(HAVE_PTSCOTCH)
+
+      // Part-to-part partitioning must use PTSCOTCH or an SFC.
+
+      else
+        retval = CS_PARTITION_SFC_MORTON_CUBE;
+
+#endif
 
     }
 
   }
+
 
   return retval;
 }
@@ -2952,6 +3110,14 @@ cs_partition_set_algorithm(cs_partition_stage_t      stage,
 #endif
   }
 #endif /* defined(HAVE_PARMETIS) */
+
+
+  if (stage == CS_PARTITION_P2P && algorithm == CS_PARTITION_BLOCK) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(
+      _("Block partitioning is not supported for part-to-part partitioning,\n"
+        "so Morton space-filling curve in bounding cube will be used."));
+  }
 
   /* Set options */
 
@@ -3092,16 +3258,23 @@ cs_partition_add_partitions(int  n_extra_partitions,
 /*!
  * \brief Partition mesh based on current options.
  *
- * \param[in]       mesh   pointer to mesh structure
- * \param[in, out]  mb     pointer to mesh builder structure
- * \param[in]       stage  associated partitioning stage
+ * If a mesh builder structure mb is provided, the computed partitioning
+ * is stored in mb->cell_rank.
+ * Else, the computed partitioning is copied to cell_part, which must be
+ * preallocated.
+ *
+ * \param[in]       mesh       pointer to mesh structure
+ * \param[in, out]  mb         pointer to mesh builder structure
+ * \param[in]       stage      associated partitioning stage
+ * \param[out]      cell_part  pointer to partitioning array
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_partition(cs_mesh_t             *mesh,
              cs_mesh_builder_t     *mb,
-             cs_partition_stage_t   stage)
+             cs_partition_stage_t   stage,
+             int                    cell_dest[])
 {
   cs_timer_t t0, t1;
   cs_timer_counter_t dt;
@@ -3123,8 +3296,8 @@ cs_partition(cs_mesh_t             *mesh,
   int  *cell_part = nullptr;
 
   cs_gnum_t  cell_range[2] = {0, 0};
-  cs_lnum_t  n_cells = 0;
-  cs_lnum_t  n_faces = 0;
+  cs_lnum_t  n_cells = mesh->n_cells;
+  cs_lnum_t  n_faces = mesh->n_i_faces;
   cs_gnum_t  *face_cells = nullptr;
 
   /* Initialize local options */
@@ -3144,21 +3317,25 @@ cs_partition(cs_mesh_t             *mesh,
 
   /* Free previous cell rank info if present */
 
-  if (mb->cell_rank != nullptr)
-    CS_FREE(mb->cell_rank);
+  if (stage != CS_PARTITION_P2P) {
+    if (mb->cell_rank != nullptr)
+      CS_FREE(mb->cell_rank);
+  }
 
   /* Read cell rank data if available */
 
-  if (cs_glob_n_ranks > 1) {
-    _read_cell_rank(mesh, mb, stage, CS_IO_ECHO_OPEN_CLOSE);
-    if (mb->have_cell_rank) {
-      cs_partition_set_preprocess(false);
-      return;
+  if (stage != CS_PARTITION_P2P) {
+    if (cs_glob_n_ranks > 1) {
+      _read_cell_rank(mesh, mb, stage, CS_IO_ECHO_OPEN_CLOSE);
+      if (mb->have_cell_rank) {
+        cs_partition_set_preprocess(false);
+        return;
+      }
     }
-  }
-  else { /* if (cs_glob_n_ranks == 1) */
-    if (stage != CS_PARTITION_MAIN || n_extra_partitions < 1)
-      return;
+    else { /* if (cs_glob_n_ranks == 1) */
+      if (stage != CS_PARTITION_MAIN || n_extra_partitions < 1)
+        return;
+    }
   }
 
   (void)cs_timer_wtime();
@@ -3175,26 +3352,29 @@ cs_partition(cs_mesh_t             *mesh,
 
   t0 = cs_timer_time();
 
-  /* Adapt builder data for partitioning */
+  if (stage != CS_PARTITION_P2P) {
 
-  if (_algorithm == CS_PARTITION_METIS || _algorithm == CS_PARTITION_SCOTCH) {
+    /* Adapt builder data for partitioning */
 
-    _prepare_input(mesh,
-                   mb,
-                   _part_rank_step[stage],
-                   _part_ignore_perio[stage],
-                   cell_range,
-                   &n_faces,
-                   &face_cells);
+    if (_algorithm == CS_PARTITION_METIS || _algorithm == CS_PARTITION_SCOTCH) {
 
-    n_cells = cell_range[1] - cell_range[0];
+      _prepare_input(mesh,
+                     mb,
+                     _part_rank_step[stage],
+                     _part_ignore_perio[stage],
+                     cell_range,
+                     &n_faces,
+                     &face_cells);
 
-  }
-  else {
+      n_cells = cell_range[1] - cell_range[0];
 
-    n_part_ranks = cs_glob_n_ranks;
-    n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
+    }
+    else {
 
+      n_part_ranks = cs_glob_n_ranks;
+      n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
+
+    }
   }
 
   /* Build and partition graph */
@@ -3334,16 +3514,37 @@ cs_partition(cs_mesh_t             *mesh,
     int  i;
     cs_timer_t  t2;
     SCOTCH_Num  *cell_idx = nullptr, *cell_neighbors = nullptr;
+    SCOTCH_Num  *cell_ids = nullptr;
 
-    _scotch_cell_cells(n_cells,
-                       n_faces,
-                       cell_range[0],
-                       face_cells,
-                       &cell_idx,
-                       &cell_neighbors);
+    if (stage != CS_PARTITION_P2P) {
+      _scotch_cell_cells(n_cells,
+                         n_faces,
+                         cell_range[0],
+                         face_cells,
+                         &cell_idx,
+                         &cell_neighbors);
 
-    if (face_cells != mb->face_cells)
-      CS_FREE(face_cells);
+      if (face_cells != mb->face_cells)
+        CS_FREE(face_cells);
+    }
+    else {
+
+      cs_gnum_t *cell_gnum = cs_mesh_get_cell_gnum(mesh, 1);
+
+      _scotch_cell_cells_p2p(n_cells,
+                             n_faces,
+                             cell_gnum,
+                             mesh->i_face_cells,
+                             &cell_idx,
+                             &cell_neighbors);
+
+
+      CS_MALLOC(cell_ids, n_cells, SCOTCH_Num);
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        cell_ids[c_id] = cell_gnum[c_id] - 1;
+
+      CS_FREE(cell_gnum);
+    }
 
     t2 = cs_timer_time();
     dt = cs_timer_diff(&t0, &t2);
@@ -3378,27 +3579,39 @@ cs_partition(cs_mesh_t             *mesh,
 
         CS_REALLOC(cell_part, n_cells, int);
 
-        if (cs_glob_rank_id % _part_rank_step[stage] == 0)
+        if (cs_glob_rank_id % _part_rank_step[stage] == 0) {
+
+          SCOTCH_Num _n_cells;
+
+          if (stage == CS_PARTITION_P2P)
+            _n_cells = n_cells;
+          else
+            _n_cells = cell_range[1] - cell_range[0];
+
           _part_ptscotch(mesh->n_g_cells,
-                         cell_range,
+                         _n_cells,
                          n_ranks,
                          cell_idx,
                          cell_neighbors,
                          cell_part,
+                         cell_ids,
                          part_comm);
+        }
 
-        _distribute_output(mb,
-                           _part_rank_step[stage],
-                           cell_range,
-                           &cell_part);
+        if (stage != CS_PARTITION_P2P) {
+          _distribute_output(mb,
+                             _part_rank_step[stage],
+                             cell_range,
+                             &cell_part);
 
-        _cell_part_histogram(mb->cell_bi.gnum_range, n_ranks, cell_part);
+          _cell_part_histogram(mb->cell_bi.gnum_range, n_ranks, cell_part);
 
-        if (write_output || i < n_extra_partitions)
-          _write_output(mesh->n_g_cells,
-                        mb->cell_bi.gnum_range,
-                        n_ranks,
-                        cell_part);
+          if (write_output || i < n_extra_partitions)
+            _write_output(mesh->n_g_cells,
+                          mb->cell_bi.gnum_range,
+                          n_ranks,
+                          cell_part);
+        }
       }
 
       if (part_comm != cs_glob_mpi_comm && part_comm != MPI_COMM_NULL)
@@ -3432,26 +3645,31 @@ cs_partition(cs_mesh_t             *mesh,
                        n_ranks,
                        cell_idx,
                        cell_neighbors,
+                       cell_ids,
                        cell_part);
 
-        _distribute_output(mb,
-                           _part_rank_step[stage],
-                           cell_range,
-                           &cell_part);
+        if (stage != CS_PARTITION_P2P) {
+          _distribute_output(mb,
+                             _part_rank_step[stage],
+                             cell_range,
+                             &cell_part);
 
-        _cell_part_histogram(mb->cell_bi.gnum_range, n_ranks, cell_part);
+          _cell_part_histogram(mb->cell_bi.gnum_range, n_ranks, cell_part);
 
-        if (write_output || i < n_extra_partitions)
-          _write_output(mesh->n_g_cells,
-                        mb->cell_bi.gnum_range,
-                        n_ranks,
-                        cell_part);
+          if (write_output || i < n_extra_partitions)
+            _write_output(mesh->n_g_cells,
+                          mb->cell_bi.gnum_range,
+                          n_ranks,
+                          cell_part);
+        }
       }
     }
 
+    CS_FREE(cell_ids);
     CS_FREE(cell_idx);
     CS_FREE(cell_neighbors);
   }
+
 
 #endif /* defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH) */
 
@@ -3463,6 +3681,10 @@ cs_partition(cs_mesh_t             *mesh,
       static_cast<fvm_io_num_sfc_t>(_algorithm - CS_PARTITION_SFC_MORTON_BOX);
 
     CS_MALLOC(cell_part, n_cells, int);
+
+    cs_coord_t *cell_center = nullptr;
+    if (stage == CS_PARTITION_P2P)
+      cell_center = (cs_coord_t *)cs_glob_mesh_quantities->cell_cen;
 
     for (i = 0; i < n_extra_partitions + 1; i++) {
 
@@ -3485,18 +3707,29 @@ cs_partition(cs_mesh_t             *mesh,
                         mb,
                         sfc_type,
                         cell_part,
+                        n_cells,
+                        cell_center,
                         cs_glob_mpi_comm);
 #else
-      _cell_rank_by_sfc(mesh->n_g_cells, n_ranks, mb, sfc_type, cell_part);
+      _cell_rank_by_sfc(mesh->n_g_cells,
+                        n_ranks,
+                        mb,
+                        sfc_type,
+                        cell_part,
+                        n_cells,
+                        cell_center);
 #endif
 
-      _cell_part_histogram(mb->cell_bi.gnum_range, n_ranks, cell_part);
+      if (stage != CS_PARTITION_P2P) {
 
-      if (write_output || i < n_extra_partitions)
-        _write_output(mesh->n_g_cells,
-                      mb->cell_bi.gnum_range,
-                      n_ranks,
-                      cell_part);
+        _cell_part_histogram(mb->cell_bi.gnum_range, n_ranks, cell_part);
+
+        if (write_output || i < n_extra_partitions)
+          _write_output(mesh->n_g_cells,
+                        mb->cell_bi.gnum_range,
+                        n_ranks,
+                        cell_part);
+      }
     }
 
   }
@@ -3507,7 +3740,7 @@ cs_partition(cs_mesh_t             *mesh,
 
     CS_MALLOC(cell_part, n_cells, int);
 
-    _block_partititioning(mesh, mb, cell_part);
+    _block_partitioning(mesh, mb, cell_part);
 
   }
 
@@ -3520,10 +3753,14 @@ cs_partition(cs_mesh_t             *mesh,
 
   /* Copy to mesh builder */
 
-  mb->have_cell_rank = true;
-  mb->cell_rank = cell_part;
-
-  n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
+  if (stage != CS_PARTITION_P2P) {
+    mb->have_cell_rank = true;
+    mb->cell_rank = cell_part;
+  }
+  else if (cell_dest) {
+    memcpy(cell_dest, cell_part, n_cells * sizeof(int));
+    CS_FREE(cell_part);
+  }
 
   /* End of this section for log file */
 
