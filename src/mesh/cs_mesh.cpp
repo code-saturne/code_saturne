@@ -2716,8 +2716,9 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
   const cs_lnum_t  n_vertices = mesh->n_vertices;
 
+  /* Locally change mesh verbosity option */
   int s_verbosity = mesh->verbosity;
-  s_verbosity = verbosity;
+  mesh->verbosity = verbosity;
 
   /* Build halo */
 
