@@ -561,18 +561,15 @@ _gkb_init_context(cs_saddle_solver_t              *solver,
 /*!
  * \brief Initialize the context structure associated to an ALU algorithm
  *
- * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
  * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
  * \param[in, out] ctx     additional memebers specific to ALU algo.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_alu_init_context(const cs_navsto_param_t         *nsp,
-                  cs_saddle_solver_t              *solver,
+_alu_init_context(cs_saddle_solver_t              *solver,
                   cs_saddle_solver_context_alu_t  *ctx)
 {
-  CS_NO_WARN_IF_UNUSED(nsp);
   assert(ctx != nullptr);
 
   if (solver->do_setup == false)
@@ -1146,7 +1143,7 @@ cs_cdofb_monolithic_sles_alu(const cs_navsto_param_t  *nsp,
     = (cs_saddle_solver_context_alu_t *)solver->context;
   assert(ctx != nullptr);
 
-  _alu_init_context(nsp, solver, ctx);
+  _alu_init_context(solver, ctx);
 
   /* 2. Solve the saddle-point problem */
   /* --------------------------------- */

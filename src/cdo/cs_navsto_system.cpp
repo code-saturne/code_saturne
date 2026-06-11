@@ -714,11 +714,8 @@ cs_navsto_system_init_setup(void)
     break; /* Face-based scheme family */
 
   default:
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              "%s: Invalid space discretization scheme.",
-              __func__);
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid space discretization scheme.", __func__);
   }
 
   /* Create if needed velocity and pressure fields */

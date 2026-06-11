@@ -127,6 +127,7 @@ typedef enum {
  */
 
 typedef enum {
+
   CS_NAVSTO_MODEL_STEADY                          = 1<<0, /* =   1 */
   CS_NAVSTO_MODEL_GRAVITY_EFFECTS                 = 1<<1, /* =   2 */
   CS_NAVSTO_MODEL_CORIOLIS_EFFECTS                = 1<<2, /* =   4 */
@@ -213,7 +214,9 @@ typedef enum {
  */
 
 typedef enum {
+
   CS_NAVSTO_NUM_PSEUDO_STEADY = 1 << 0, /* =   1 */
+
 } cs_navsto_param_num_bit_t;
 
 /*! \enum cs_navsto_param_coupling_t
