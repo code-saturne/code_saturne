@@ -1828,6 +1828,21 @@ cs_navsto_system_compute(const cs_mesh_t           *mesh,
 
   const cs_navsto_param_t *nsp = ns->param;
 
+  if (nsp->num_flag & CS_NAVSTO_NUM_PSEUDO_STEADY) {
+    if (nsp->psteady_cvg_param.n_time_step_solve > 1) {
+      const int nt_cur = time_step->nt_cur + 1;
+      if (nt_cur > 1 &&
+          nt_cur % nsp->psteady_cvg_param.n_time_step_solve != 0) {
+        if (cs_log_default_is_active()) {
+          cs_log_printf(
+            CS_LOG_DEFAULT,
+            "\n>> Pseudo-steady algotirhm: no solving for this step.\n");
+        }
+        return;
+      }
+    }
+  }
+
   cs_turbulence_t *tbs = ns->turbulence;
 
   /* Update variable, properties according to the new computed variables */

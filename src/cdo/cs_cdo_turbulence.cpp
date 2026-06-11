@@ -1352,12 +1352,14 @@ _cs_turbulence_t::check_convergence(const cs_cdo_quantities_t *quant,
       cvg = true;
     }
 
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "- turbulence k: residual %5.3g (with "
-                  "tolerence relative %5.3g and absolute %5.3g)\n",
-                  norm2_k_diff,
-                  psp.rtol * cs::max(1.0, norm2_k),
-                  psp.atol);
+    if (cs_log_default_is_active()) {
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "- turbulence k: residual %5.3g (with "
+                    "tolerence relative %5.3g and absolute %5.3g)\n",
+                    norm2_k_diff,
+                    psp.rtol * cs::max(1.0, norm2_k),
+                    psp.atol);
+    }
   }
 
   return cvg;

@@ -642,6 +642,9 @@ typedef struct {
    *
    * \var n_cvg_iter_curr
    * Number of iterations which have converged consecutively
+   *
+   * \var n_time_step_solve
+   * Solve Navier-Stokes equations every n_time_step_solve time step
    */
 
   double atol;
@@ -649,6 +652,8 @@ typedef struct {
 
   int n_cvg_iter;
   int n_cvg_iter_curr;
+
+  int n_time_step_solve;
 
 } cs_param_psteady_t;
 

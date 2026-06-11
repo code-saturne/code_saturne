@@ -244,6 +244,7 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
   nsp->psteady_cvg_param.atol            = 1e-5;
   nsp->psteady_cvg_param.n_cvg_iter      = 2;
   nsp->psteady_cvg_param.n_cvg_iter_curr = 0;
+  nsp->psteady_cvg_param.n_time_step_solve = 1;
 
   nsp->anderson_param.n_max_dir = 6;
   nsp->anderson_param.starting_iter = 3;
@@ -545,6 +546,17 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
         " %s: Invalid value for the number of converged iterations of the"
         " pseudo-steady algorithm\n",
         __func__);
+    break;
+
+  case CS_NSKEY_PSTEADY_ALGO_N_STEP_SOLVE:
+    nsp->psteady_cvg_param.n_time_step_solve = atoi(val);
+    if (nsp->psteady_cvg_param.n_time_step_solve < 0)
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                " %s: Invalid value for the number of resolution of the"
+                " pseudo-steady algorithm\n",
+                __func__);
     break;
 
   case CS_NSKEY_NORM_TYPE:

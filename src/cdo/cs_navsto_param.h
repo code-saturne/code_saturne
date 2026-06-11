@@ -643,6 +643,10 @@ typedef struct {
  *  Number of consecutively converged iterations before stopping the
  * pseudo-steady algorithm process
  *
+ * \var CS_NSKEY_PSTEADY_ALGO_N_STEP_SOLVE
+ *  Solve the Navier-Stokes equation every n interatios for the pseudo-steady
+ * algorithm
+ *
  * \var CS_NSKEY_NORM_TYPE
  * Type of norm (and dot product) to consider to compute the normalization and
  * quantities when performing the non-linear algorithm.
@@ -671,6 +675,7 @@ typedef enum {
   CS_NSKEY_PSTEADY_ALGO_ATOL,
   CS_NSKEY_PSTEADY_ALGO_RTOL,
   CS_NSKEY_PSTEADY_ALGO_N_CVG_ITER,
+  CS_NSKEY_PSTEADY_ALGO_N_STEP_SOLVE,
   CS_NSKEY_NORM_TYPE,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_THERMAL_TOLERANCE,

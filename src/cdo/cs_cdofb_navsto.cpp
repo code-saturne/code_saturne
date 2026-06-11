@@ -2878,15 +2878,17 @@ cs_cdofb_navsto_check_convergence(cs_navsto_param_t          *nsp,
     cvg_iter = true;
   }
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\nResiduals of the pseudo-steady algorithm:\n");
+  if (cs_log_default_is_active()) {
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "\nResiduals of the pseudo-steady algorithm:\n");
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                "- mass flux: residual %5.3g (with "
-                "tolerence relative %5.3g and absolute %5.3g )\n",
-                norm2_diff,
-                nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux),
-                nsp->psteady_cvg_param.atol);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "- mass flux: residual %5.3g (with "
+                  "tolerence relative %5.3g and absolute %5.3g )\n",
+                  norm2_diff,
+                  nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux),
+                  nsp->psteady_cvg_param.atol);
+  }
 
   // Test convergence on turbulence
   if (tbs != nullptr) {
@@ -2901,9 +2903,11 @@ cs_cdofb_navsto_check_convergence(cs_navsto_param_t          *nsp,
     nsp->psteady_cvg_param.n_cvg_iter_curr = 0;
   }
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                "- number of iteration consecutively converged: %d\n",
-                nsp->psteady_cvg_param.n_cvg_iter_curr);
+  if (cs_log_default_is_active()) {
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "- number of iteration consecutively converged: %d\n",
+                  nsp->psteady_cvg_param.n_cvg_iter_curr);
+  }
 
   return nsp->psteady_cvg_param.n_cvg_iter_curr >=
          nsp->psteady_cvg_param.n_cvg_iter;
