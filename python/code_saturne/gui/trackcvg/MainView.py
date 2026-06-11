@@ -1262,6 +1262,12 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         QMainWindow.__init__(self)
         Ui_MainForm.__init__(self)
 
+        self.setDockNestingEnabled(True)
+        if QT_API in ("PYQT5"):
+            self.setDockOptions(QMainWindow.AllowNestedDocks|QMainWindow.AllowTabbedDocks|QMainWindow.AnimatedDocks)
+        else:
+            self.setDockOptions(QMainWindow.DockOption.AllowNestedDocks|QMainWindow.DockOption.AllowTabbedDocks|QMainWindow.DockOption.AnimatedDocks)
+
         self.setupUi(self)
 
         # create some instance variables

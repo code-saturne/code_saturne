@@ -14,8 +14,8 @@
   <property name="windowTitle">
    <string>Interface code_saturne</string>
   </property>
-  <property name="dockOptions">
-   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks</set>
+  <property name="dockNestingEnabled">
+    <bool>true</bool>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_4">
