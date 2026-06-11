@@ -674,9 +674,10 @@ _locator_initialize(cs_mesh_t               *m,
 
   cpl->locator = _create_locator(cpl);
   cpl->n_distant = ple_locator_get_n_dist_points(cpl->locator);
-  CS_MALLOC(cpl->faces_distant,
-            cpl->n_distant,
-            cs_lnum_t);
+  CS_MALLOC_HD(cpl->faces_distant,
+              cpl->n_distant,
+              cs_lnum_t,
+              cs_alloc_mode);
   const cs_lnum_t *faces_distant_num
     = ple_locator_get_dist_locations(cpl->locator);
 
