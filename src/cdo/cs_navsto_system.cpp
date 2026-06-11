@@ -1045,12 +1045,9 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
         __FILE__,
         __LINE__,
         0,
-        "%s: Steady simulation with pseudo-steady algorithm is forbidden"
-        " algorithm",
+        "%s: Steady simulation with pseudo-steady algorithm is forbidden",
         __func__);
     }
-
-    mom_eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED;
   }
 
   /* Remaining boundary conditions:
@@ -2321,7 +2318,19 @@ cs_navsto_system_set_num_flag(cs_navsto_param_num_flag_t num_flag)
     return;
   }
 
-  ns->param->num_flag = num_flag;
+  cs_navsto_param_t *nsp = ns->param;
+
+  nsp->num_flag = num_flag;
+
+  /* Handle the default settings for pseudo-steady algo */
+  /* Can be modified latter by the user */
+  if (nsp->num_flag & CS_NAVSTO_NUM_PSEUDO_STEADY) {
+    cs_equation_t *mom_eq = cs_navsto_system_get_momentum_eq();
+    assert(mom_eq != nullptr);
+
+    mom_eq->param->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED;
+    nsp->nl_algo_type           = CS_PARAM_NL_ALGO_NONE;
+  }
 };
 
 /*----------------------------------------------------------------------------*/
