@@ -349,7 +349,11 @@
 
 static cs_turb_model_t  _turb_model =
 {
+#if __cplusplus > 201402L
   .model  = -999,
+#else
+  {.model = -999},
+#endif
   .itytur = -999,
   .hybrid_turb = 0,
   .type = -1,
