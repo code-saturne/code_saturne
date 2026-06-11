@@ -191,7 +191,7 @@ typedef struct {
 
   /*! Number of vertical levels */
   int met_1d_nlevels_max_t;
-  [[deprecated]] int& nbmaxt() {return met_1d_ntimes;};
+  [[deprecated]] int& nbmaxt() {return met_1d_nlevels_max_t;};
 
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */
