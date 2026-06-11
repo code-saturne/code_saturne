@@ -390,7 +390,6 @@ cs_field_map_and_init_bcs(void)
      ------------------- */
 
   cs_field_t *f_th = cs_thermal_model_field();
-  cs_equation_param_t *eqp_th = cs_field_get_equation_param(f_th);
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
@@ -417,8 +416,11 @@ cs_field_map_and_init_bcs(void)
     bc_flags[f_id * n_bc_flags + 3] = true;
 
     /* Radiative coefficient for thermal scalar when internal coupling */
-    if (f_id == f_th->id && eqp_th->icoupl > 0)
-      bc_flags[f_id * n_bc_flags + 3] = true;
+    if (f == f_th) {
+      cs_equation_param_t *eqp_th = cs_field_get_equation_param(f_th);
+      if (eqp_th->icoupl > 0)
+        bc_flags[f_id * n_bc_flags + 3] = true;
+    }
 
     if (f->dim == 6) {
       if (strcmp(f->name, "rij") == 0)
