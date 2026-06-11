@@ -766,8 +766,8 @@ cs_navsto_system_init_setup(void)
 
   /* Set default value for keys related to log and post-processing */
 
-  ns->pressure->set_key_int(log_key, 1);
-  ns->pressure->set_key_int(post_key, field_post_flag);
+  ns->velocity_divergence->set_key_int(log_key, 1);
+  ns->velocity_divergence->set_key_int(post_key, field_post_flag);
 
   if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY) {
 
