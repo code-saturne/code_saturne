@@ -358,6 +358,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
   cs_real_t *hint, *yptp;
   cs_real_t *h_int_tot = f_sc->bc_coeffs->h_int_tot;
+  cs_real_t *h_rad   = f_sc->bc_coeffs->h_rad;
+  cs_real_t *phi_rad = f_sc->bc_coeffs->flux_rad;
   CS_MALLOC(hint, n_b_faces, cs_real_t);
   CS_MALLOC(yptp, n_b_faces, cs_real_t);
 

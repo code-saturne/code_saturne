@@ -118,6 +118,14 @@ public:
                                       (used for internal coupling and
                                       coupling) */
 
+  cs_real_t         *h_rad;       /* Exchange coef for radiative transfer
+                                     (used for internal coupling and
+                                      coupling) */
+
+  cs_real_t         *flux_rad;    /* Exchange coef for radiative transfer
+                                     (used for internal coupling and
+                                      coupling) */
+
   cs_real_t         *val_f;       /* face value for gradient */
   cs_real_t         *val_f_pre;   /* previous face value for gradient */
 
@@ -151,6 +159,9 @@ public:
     rcodcl1 = nullptr;
     rcodcl2 = nullptr;
     rcodcl3 = nullptr;
+
+    h_rad = nullptr;
+    flux_rad = nullptr;
 
     h_int_tot = nullptr;
 
@@ -842,6 +853,8 @@ cs_field_map_values(cs_field_t   *f,
  *   have_conv_bc <-- if true, convection BC coefficients (ac and bc) are added
  *   have_exch_bc <-- if true, exchange boundary coefficients (hint and hext)
  *                    are added
+ *   have_rad_bc  <-- if true, radiative boundary coefficients (h_rad and
+ *                    flux_rad) are added
  *----------------------------------------------------------------------------*/
 
 void
@@ -849,7 +862,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
                             bool         have_flux_bc,
                             bool         have_mom_bc,
                             bool         have_conv_bc,
-                            bool         have_exch_bc);
+                            bool         have_exch_bc,
+                            bool         have_rad_bc);
 
 /*----------------------------------------------------------------------------*/
 /* Initialize boundary condition coefficients arrays.

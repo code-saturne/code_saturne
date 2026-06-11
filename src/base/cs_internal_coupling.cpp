@@ -936,8 +936,8 @@ cs_internal_coupling_by_id(int coupling_id)
  *
  * \param[in]  cpl     pointer to coupling entity
  * \param[in]  stride  stride (e.g. 1 for double, 3 for interleaved coordinates)
- * \param[in]  distant distant values, size coupling->n_distant
- * \param[out] local   local values, size coupling->n_local
+ * \param[in]  distant distant values (to send), size coupling->n_distant
+ * \param[out] local   local values (to receive), size coupling->n_local
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1095,7 +1095,8 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)cs_glob_mesh->b_face_cells;
 
-  int coupling_id = f->get_key_int("coupling_entity");
+  int coupling_id = cs_field_get_key_int(f,
+                                         cs_field_key_id("coupling_entity"));
   const cs_internal_coupling_t *cpl
     = cs_internal_coupling_by_id(coupling_id);
 
@@ -1124,24 +1125,50 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
 
   cs_real_t *hintp = f->bc_coeffs->h_int_tot;
   cs_real_t *hextp = f->bc_coeffs->rcodcl2;
+  /* Opitonal additional "resistance" for radiative transfer */
+  cs_real_t *h_rad = f->bc_coeffs->h_rad;
+  cs_real_t *flux_rad = f->bc_coeffs->flux_rad;
 
   if (f->dim == 1) {
-    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-      face_id = faces_local[ii];
-      cell_id = b_face_cells[face_id];
-      cs_real_t surf = b_face_surf[face_id];
+    if (h_rad == nullptr) {
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        face_id = faces_local[ii];
+        cell_id = b_face_cells[face_id];
+        cs_real_t surf = b_face_surf[face_id];
 
-      cs_real_t pi = exclude_diag ?
-        0. : x[cell_id]; /* If exclude_diag, no diagonal term */
-      cs_real_t pj = x_j[ii];
+        cs_real_t pi = exclude_diag ?
+          0. : x[cell_id]; /* If exclude_diag, no diagonal term */
+        cs_real_t pj = x_j[ii];
 
-      cs_real_t hint = hintp[face_id];
-      cs_real_t hext = hextp[face_id];
-      cs_real_t heq = _calc_heq(hint, hext)*surf;
+        cs_real_t hint = hintp[face_id];
+        cs_real_t hext = hextp[face_id];
+        cs_real_t heq = _calc_heq(hint, hext)*surf;
 
-      y[cell_id] += thetap * idiffp * heq * (pi - pj);
+        y[cell_id] += thetap * idiffp * heq * (pi - pj);
+      }
     }
 
+    /* Additional contributions for radiative transfer */
+    else {
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        face_id = faces_local[ii];
+        cell_id = b_face_cells[face_id];
+        cs_real_t surf = b_face_surf[face_id];
+
+        cs_real_t pi = exclude_diag ?
+          0. : x[cell_id]; /* If exclude_diag, no diagonal term */
+        cs_real_t pj = x_j[ii];
+
+        cs_real_t hint = hintp[face_id];
+        cs_real_t hext = hextp[face_id];
+        cs_real_t hrad = h_rad[face_id];
+        cs_real_t dhsum = 1. / (hint + hext + hrad);
+        cs_real_t heqi = hint * hext * dhsum;
+        cs_real_t heqj = (hint + hrad) * hext * dhsum;
+
+        y[cell_id] += thetap * idiffp * surf * (heqi * pi - heqj * pj);
+      }
+    }
   } else if (f->dim == 3) {
 
     cs_real_3_t *_y = (cs_real_3_t *)y;
@@ -1290,6 +1317,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
 
   cs_real_t *hintp = f->bc_coeffs->h_int_tot;
   cs_real_t *hextp = f->bc_coeffs->rcodcl2;
+  cs_real_t *h_rad = f->bc_coeffs->h_rad;
 
   /* local to global preparation and exchange */
 
@@ -1334,46 +1362,100 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   assert(block_size > db_stride && block_size > eb_size);
 
   cs_lnum_t jj = 0, kk = 0, db_fill = 0, eb_fill = 0;
-  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    cs_lnum_t face_id = cpl->faces_local[ii];
+  if (h_rad == nullptr ) {
+    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+      cs_lnum_t face_id = cpl->faces_local[ii];
 
-    cs_real_t surf = b_face_surf[face_id];
-    cs_real_t hint = hintp[face_id];
-    cs_real_t hext = hextp[face_id];
-    //TODO simply this with new BC coeffs
-    cs_real_t heq = _calc_heq(hint, hext) * surf;
-    cs_real_t c = thetap * idiffp * heq;
+      cs_real_t surf = b_face_surf[face_id];
+      cs_real_t hint = hintp[face_id];
+      cs_real_t hext = hextp[face_id];
+      //TODO simply this with new BC coeffs
+      //
+      //TODO is it already taken into account with
+      // cs_internal_coupling_spmv_contribution
+      cs_real_t heq = _calc_heq(hint, hext) * surf;
+      cs_real_t c = thetap * idiffp * heq;
 
-    d_g_row_id[jj] = g_id_l[ii];
-    e_g_row_id[kk] = g_id_l[ii]; e_g_col_id[kk] = g_id_d[ii];
+      d_g_row_id[jj] = g_id_l[ii];
+      e_g_row_id[kk] = g_id_l[ii]; e_g_col_id[kk] = g_id_d[ii];
 
-    for (cs_lnum_t ib = 0; ib < db_stride; ib++)
-      d_aij[db_fill + ib] = 0;
-    /* Note that the diagonal part is taken into account by standard BC coefs */
-    for (cs_lnum_t ib = 0; ib < db_size; ib++)
-      d_aij[db_fill + ib*(db_size + 1)] = 0;
+      for (cs_lnum_t ib = 0; ib < db_stride; ib++)
+        d_aij[db_fill + ib] = 0;
+      /* Note that the diagonal part is taken into account by standard BC coefs */
+      for (cs_lnum_t ib = 0; ib < db_size; ib++)
+        d_aij[db_fill + ib*(db_size + 1)] = 0;
 
-    for (cs_lnum_t ib = 0; ib < eb_stride; ib++)
-      e_aij[eb_fill + ib] = 0;
-    for (cs_lnum_t ib = 0; ib < eb_size; ib++)
-      e_aij[eb_fill + ib*(eb_size + 1)] = -c;
+      for (cs_lnum_t ib = 0; ib < eb_stride; ib++)
+        e_aij[eb_fill + ib] = 0;
+      for (cs_lnum_t ib = 0; ib < eb_size; ib++)
+        e_aij[eb_fill + ib*(eb_size + 1)] = -c;
 
-    jj += 1;
-    kk += 1;
-    db_fill += db_stride;
-    eb_fill += eb_stride;
+      jj += 1;
+      kk += 1;
+      db_fill += db_stride;
+      eb_fill += eb_stride;
 
-    if (db_fill >= block_size - 1) {
-      cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_row_id, d_aij);
-      jj = 0;
-      db_fill = 0;
+      if (db_fill >= block_size - 1) {
+        cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_row_id, d_aij);
+        jj = 0;
+        db_fill = 0;
+      }
+
+      if (eb_fill >= block_size - 1) {
+        cs_matrix_assembler_values_add_g(mav, kk, e_g_row_id, e_g_col_id, e_aij);
+        kk = 0;
+        eb_fill = 0;
+      }
+    }
+  }
+  /* Contribution additional for radiative transfer */
+  else {
+    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+      cs_lnum_t face_id = cpl->faces_local[ii];
+
+      cs_real_t surf = b_face_surf[face_id];
+      cs_real_t hint = hintp[face_id];
+      cs_real_t hext = hextp[face_id];
+      cs_real_t hrad = h_rad[face_id];
+      //TODO is it already taken into account with
+      // cs_internal_coupling_spmv_contribution
+
+      cs_real_t dhsum = 1. / (hint + hext + hrad);
+      cs_real_t heqj = (hint + hrad) * hext * dhsum;
+      cs_real_t c = thetap * idiffp * heqj * surf;
+
+      d_g_row_id[jj] = g_id_l[ii];
+      e_g_row_id[kk] = g_id_l[ii]; e_g_col_id[kk] = g_id_d[ii];
+
+      for (cs_lnum_t ib = 0; ib < db_stride; ib++)
+        d_aij[db_fill + ib] = 0;
+      /* Note that the diagonal part is taken into account by standard BC coefs */
+      for (cs_lnum_t ib = 0; ib < db_size; ib++)
+        d_aij[db_fill + ib*(db_size + 1)] = 0;
+
+      for (cs_lnum_t ib = 0; ib < eb_stride; ib++)
+        e_aij[eb_fill + ib] = 0;
+      for (cs_lnum_t ib = 0; ib < eb_size; ib++)
+        e_aij[eb_fill + ib*(eb_size + 1)] = -c;
+
+      jj += 1;
+      kk += 1;
+      db_fill += db_stride;
+      eb_fill += eb_stride;
+
+      if (db_fill >= block_size - 1) {
+        cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_row_id, d_aij);
+        jj = 0;
+        db_fill = 0;
+      }
+
+      if (eb_fill >= block_size - 1) {
+        cs_matrix_assembler_values_add_g(mav, kk, e_g_row_id, e_g_col_id, e_aij);
+        kk = 0;
+        eb_fill = 0;
+      }
     }
 
-    if (eb_fill >= block_size - 1) {
-      cs_matrix_assembler_values_add_g(mav, kk, e_g_row_id, e_g_col_id, e_aij);
-      kk = 0;
-      eb_fill = 0;
-    }
   }
 
   cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_row_id, d_aij);
@@ -1727,9 +1809,9 @@ cs_internal_coupling_update_bc_coeffs_s
   const cs_lnum_t *faces_local = cpl->faces_local;
 
   cs_real_t *var_ext = nullptr, *var_ext_d = nullptr;
-  cs_real_t *var_distant = nullptr, *var_distant_d = nullptr;
+  cs_real_t *var_tosend = nullptr, *var_distant_d = nullptr;
   CS_MALLOC_HD(var_ext, n_local, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(var_distant, n_distant, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(var_tosend, n_distant, cs_real_t, cs_alloc_mode);
 
   if (compute_diffusion_coeffs && df_limiter != nullptr) {
     CS_MALLOC_HD(var_ext_d, n_local, cs_real_t, cs_alloc_mode);
@@ -1771,7 +1853,7 @@ cs_internal_coupling_update_bc_coeffs_s
                                           bc_coeffs,
                                           c_weight,
                                           var,
-                                          var_distant,
+                                          var_tosend,
                                           var_distant_d);
       else {
         assert(w_stride == 6);
@@ -1788,7 +1870,7 @@ cs_internal_coupling_update_bc_coeffs_s
                                               (const cs_real_6_t *)c_weight,
                                               weighb,
                                               var,
-                                              var_distant,
+                                              var_tosend,
                                               var_distant_d);
       }
     }
@@ -1796,18 +1878,18 @@ cs_internal_coupling_update_bc_coeffs_s
       for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
         cs_lnum_t face_id = faces_distant[ii];
         cs_lnum_t cell_id = b_face_cells[face_id];
-        var_distant[ii] = var[cell_id];
+        var_tosend[ii] = var[cell_id];
         if (var_ext_d != nullptr)
           var_distant_d[ii] = var[cell_id];
       }
     }
 
-    /* Wait for var_distant computed in cs_gradient_boundary_iprime_lsq_s */
+    /* Wait for var_tosend computed in cs_gradient_boundary_iprime_lsq_s */
     ctx.wait();
 
     cs_internal_coupling_exchange_var(cpl,
                                       1,
-                                      (cs_real_t *)var_distant,
+                                      (cs_real_t *)var_tosend,
                                       (cs_real_t *)var_ext);
 
     if (var_ext_d != nullptr)
@@ -1821,39 +1903,117 @@ cs_internal_coupling_update_bc_coeffs_s
     cs_real_t *bc_coeff_af = bc_coeffs->af;
     cs_real_t *bc_coeff_bf = bc_coeffs->bf;
 
-    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-      cs_lnum_t face_id = faces_local[ii];
-      cs_lnum_t cell_id = b_face_cells[face_id];
+    cs_real_t *h_rad = bc_coeffs->h_rad;
+    cs_real_t *flux_rad = bc_coeffs->flux_rad;
 
-      cs_real_t hint = hintp[face_id];
-      cs_real_t hext = hextp[face_id];
+    if (h_rad == nullptr) {
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        cs_lnum_t face_id = faces_local[ii];
+        cs_lnum_t cell_id = b_face_cells[face_id];
 
-      cs_real_t m_a = hext / (hint + hext);
-      cs_real_t m_b = hint / (hint + hext);
+        cs_real_t hint = hintp[face_id];
+        cs_real_t hext = hextp[face_id];
 
-      cs_real_t heq = hext * m_b;
+        cs_real_t m_a = hext / (hint + hext);
+        cs_real_t m_b = hint / (hint + hext);
 
-      // FIXME: this should be var_ip limited instead of var[cell_id].
-      bc_coeff_a[face_id] =   m_a * var_ext[ii]
-                            + m_b * var[cell_id];
+        cs_real_t heq = hext * m_b;
 
-      //TODO: it is not correct with wall functions.
-      // cofimp should be used.
-      bc_coeff_b[face_id] = 0.;
+        // FIXME: this should be var_ip limited instead of var[cell_id].
+        bc_coeff_a[face_id] =   m_a * var_ext[ii]
+                              + m_b * var[cell_id];
 
-      if (compute_diffusion_coeffs) {
-        if (var_ext_d != nullptr) {
-          // limited value var_ext_d at iprime position
-          bc_coeff_af[face_id] = - heq * var_ext_d[ii];
-          bc_coeff_bf[face_id] = heq;
+        //TODO: it is not correct with wall functions.
+        // cofimp should be used.
+        bc_coeff_b[face_id] = 0.;
+
+        if (compute_diffusion_coeffs) {
+          if (var_ext_d != nullptr) {
+            // limited value var_ext_d at iprime position
+            bc_coeff_af[face_id] = - heq * var_ext_d[ii];
+            bc_coeff_bf[face_id] = heq;
+          }
+          else {
+            bc_coeff_af[face_id] = - heq * var_ext[ii];
+            bc_coeff_bf[face_id] = heq;
+          }
         }
-        else {
-          bc_coeff_af[face_id] = - heq * var_ext[ii];
-          bc_coeff_bf[face_id] = heq;
+
+      }
+    }
+    /* Consider additional terms dur to radiative transfert */
+    else {
+      assert(flux_rad != nullptr);
+
+      /* Take phi_rad and h_rad from other side */
+      cs_real_t *h_rad_ext= nullptr;
+      cs_real_t *phi_rad_ext= nullptr;
+      CS_MALLOC_HD(h_rad_ext, n_local, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(phi_rad_ext, n_local, cs_real_t, cs_alloc_mode);
+
+      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+        cs_lnum_t face_id = faces_distant[ii];
+        var_tosend[ii] = h_rad[face_id];
+      }
+      cs_internal_coupling_exchange_var(cpl, 1, var_tosend, h_rad_ext);
+
+      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+        cs_lnum_t face_id = faces_distant[ii];
+        var_tosend[ii] = flux_rad[face_id];
+      }
+      cs_internal_coupling_exchange_var(cpl, 1, var_tosend, phi_rad_ext);
+
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        cs_lnum_t face_id = faces_local[ii];
+        cs_lnum_t cell_id = b_face_cells[face_id];
+
+        cs_real_t hint = hintp[face_id];
+        cs_real_t hext = hextp[face_id];
+        cs_real_t hrad = h_rad[face_id];
+        cs_real_t hradext = h_rad_ext[ii];
+        cs_real_t phi_rad = flux_rad[face_id];
+        cs_real_t phi_radext = phi_rad_ext[ii];
+        // TODO check /0
+        cs_real_t dhsum = 1. / (hint + hext + hrad + hradext);
+
+        cs_real_t heqi = (hext + hradext) * hint * dhsum;
+        cs_real_t heqj = hext * (hint + hrad) * dhsum;
+
+        // FIXME: this should be var_ip limited instead of var[cell_id].
+        //
+        // Ts = (ha Ta + hl Tl + Phi_rad)/(ha + hl + hrad)
+        bc_coeff_a[face_id] =  ( hext * var_ext[ii]
+                               + hint * var[cell_id]
+                               + phi_rad
+                               ) * dhsum;
+
+        //TODO: it is not correct with wall functions.
+        // cofimp should be used.
+        bc_coeff_b[face_id] = 0.;
+
+        if (compute_diffusion_coeffs) {
+          if (var_ext_d != nullptr) {
+            // limited value var_ext_d at iprime position
+            bc_coeff_af[face_id] = (- heqj * var_ext_d[ii]
+                                 + (hext * phi_rad - hint * phi_radext)* dhsum
+            ); // ;
+            bc_coeff_bf[face_id] = heqi;
+          }
+          else {
+            bc_coeff_af[face_id] = (- heqj * var_ext[ii]
+                                 + (hext * phi_rad - hint * phi_radext)* dhsum
+                                   );// ;
+            bc_coeff_bf[face_id] = heqi;
+          }
         }
+
       }
 
+      CS_FREE(h_rad_ext);
+      CS_FREE(phi_rad_ext);
+
     }
+
   }
 
   /* Last pass to ensure face values are identical on each side:
@@ -1861,10 +2021,10 @@ cs_internal_coupling_update_bc_coeffs_s
 
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     cs_lnum_t face_id = faces_distant[ii];
-    var_distant[ii] = bc_coeff_a[face_id];
+    var_tosend[ii] = bc_coeff_a[face_id];
   }
 
-  cs_internal_coupling_exchange_var(cpl, 1, var_distant, var_ext);
+  cs_internal_coupling_exchange_var(cpl, 1, var_tosend, var_ext);
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
     cs_lnum_t face_id = faces_local[ii];
@@ -1872,7 +2032,7 @@ cs_internal_coupling_update_bc_coeffs_s
   }
 
   CS_FREE(var_ext);
-  CS_FREE(var_distant);
+  CS_FREE(var_tosend);
   CS_FREE(var_ext_d);
   CS_FREE(var_distant_d);
 }
@@ -1928,9 +2088,9 @@ cs_internal_coupling_update_bc_coeffs_strided
   const cs_lnum_t *faces_local = cpl->faces_local;
 
   var_t *var_ext = nullptr, *var_ext_lim = nullptr;
-  var_t *var_distant = nullptr, *var_distant_lim = nullptr;
+  var_t *var_tosend = nullptr, *var_distant_lim = nullptr;
   CS_MALLOC(var_ext, n_local, var_t);
-  CS_MALLOC(var_distant, n_distant, var_t);
+  CS_MALLOC(var_tosend, n_distant, var_t);
 
   if (df_limiter != nullptr) {
     CS_MALLOC(var_ext_lim, n_local, var_t);
@@ -1968,7 +2128,7 @@ cs_internal_coupling_update_bc_coeffs_strided
                                                       bc_coeffs,
                                                       c_weight,
                                                       var,
-                                                      var_distant,
+                                                      var_tosend,
                                                       var_distant_lim);
     }
     else {
@@ -1976,7 +2136,7 @@ cs_internal_coupling_update_bc_coeffs_strided
         cs_lnum_t face_id = faces_distant[ii];
         cs_lnum_t cell_id = b_face_cells[face_id];
         for (cs_lnum_t k = 0; k < stride; k++) {
-          var_distant[ii][k] = var[cell_id][k];
+          var_tosend[ii][k] = var[cell_id][k];
           if (df_limiter != nullptr)
             var_distant_lim[ii][k] = var[cell_id][k];
         }
@@ -1985,7 +2145,7 @@ cs_internal_coupling_update_bc_coeffs_strided
 
     cs_internal_coupling_exchange_var(cpl,
                                       stride,
-                                      (cs_real_t *)var_distant,
+                                      (cs_real_t *)var_tosend,
                                       (cs_real_t *)var_ext);
 
     if (df_limiter != nullptr)
@@ -2036,12 +2196,12 @@ cs_internal_coupling_update_bc_coeffs_strided
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     cs_lnum_t face_id = faces_distant[ii];
     for (cs_lnum_t k = 0; k < stride; k++)
-      var_distant[ii][k] = coefa[face_id][k];
+      var_tosend[ii][k] = coefa[face_id][k];
   }
 
   cs_internal_coupling_exchange_var(cpl,
                                     stride,
-                                    (cs_real_t *)var_distant,
+                                    (cs_real_t *)var_tosend,
                                     (cs_real_t *)var_ext);
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
@@ -2053,7 +2213,7 @@ cs_internal_coupling_update_bc_coeffs_strided
   }
 
   CS_FREE(var_ext);
-  CS_FREE(var_distant);
+  CS_FREE(var_tosend);
   CS_FREE(var_ext_lim);
   CS_FREE(var_distant_lim);
 }

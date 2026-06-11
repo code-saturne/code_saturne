@@ -49,6 +49,7 @@
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_post.h"
+#include "base/cs_thermal_model.h"
 #include "mesh/cs_mesh_location.h"
 #include "pprt/cs_physical_model.h"
 #include "turb/cs_turbulence_bc.h"
@@ -354,20 +355,22 @@ cs_field_map_and_init_bcs(void)
   const int k_turb_flux_model = cs_field_key_id("turbulent_flux_model");
   const int n_fields = cs_field_n_fields();
 
-  /* Some fields may require BC coefficients; use 4 flags per field:
+  /* Some fields may require BC coefficients; use 5 flags per field:
      - 0: have_flux_bc
      - 1: have_mom_bc
      - 2: have_conv_bc
-     - 3: have_exch_bc */
+     - 3: have_exch_bc
+     - 4: have_rad_bc */
 
   bool *bc_flags;
-  CS_MALLOC(bc_flags, n_fields*4, bool);
-  for (int i = 0; i < n_fields*4; i++)
+  int n_bc_flags = 5;
+  CS_MALLOC(bc_flags, n_fields * n_bc_flags, bool);
+  for (int i = 0; i < n_fields * n_bc_flags; i++)
     bc_flags[i] = false;
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
-    bc_flags[cs_field_by_name("velocity")->id * 4 + 2] = true;
-    bc_flags[cs_field_by_name("total_energy")->id * 4 + 2] = true;
+    bc_flags[cs_field_by_name("velocity")->id * n_bc_flags + 2] = true;
+    bc_flags[cs_field_by_name("total_energy")->id * n_bc_flags + 2] = true;
   }
 
   /* BC coeffs also used for some fields which are not directly
@@ -379,12 +382,15 @@ cs_field_map_and_init_bcs(void)
     const cs_field_t *f = cs_field_by_name_try(sp_names[i]);
     if (f != nullptr) {
       if (! (f->type & CS_FIELD_USER))
-        bc_flags[f->id * 4] = true;
+        bc_flags[f->id * n_bc_flags] = true;
     }
   }
 
   /* Loop over variables
      ------------------- */
+
+  cs_field_t *f_th = cs_thermal_model_field();
+  cs_equation_param_t *eqp_th = cs_field_get_equation_param(f_th);
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
@@ -405,14 +411,18 @@ cs_field_map_and_init_bcs(void)
         continue;
     }
 
-    bc_flags[f->id * 4] = true;
+    bc_flags[f->id * n_bc_flags] = true;
 
     /* Internal exchange coefficient are always needed */
-    bc_flags[f_id*4 + 3] = true;
+    bc_flags[f_id * n_bc_flags + 3] = true;
+
+    /* Radiative coefficient for thermal scalar when internal coupling */
+    if (f_id == f_th->id && eqp_th->icoupl > 0)
+      bc_flags[f_id * n_bc_flags + 3] = true;
 
     if (f->dim == 6) {
       if (strcmp(f->name, "rij") == 0)
-        bc_flags[f_id*4 + 1] = true;
+        bc_flags[f_id * n_bc_flags + 1] = true;
     }
 
     int turb_flux_model_type = f->get_key_int(k_turb_flux_model) / 10;
@@ -421,7 +431,7 @@ cs_field_map_and_init_bcs(void)
     if (turb_flux_model_type == 3) {
       cs_field_t  *f_ut = cs_field_by_composite_name_try(f->name,
                                                          "turbulent_flux");
-      bc_flags[f_ut->id*4 + 1] = true;
+      bc_flags[f_ut->id * n_bc_flags + 1] = true;
     }
   }
 
@@ -431,16 +441,21 @@ cs_field_map_and_init_bcs(void)
 
     /* have flux_bc always true if other coefficients are used */
 
-    if (bc_flags[f_id*4] == false)
+    if (bc_flags[f_id * n_bc_flags] == false)
       continue;
 
     cs_field_t  *f = cs_field_by_id(f_id);
 
-    bool has_mom_bc  = bc_flags[f_id*4 + 1];
-    bool has_conv_bc = bc_flags[f_id*4 + 2];
-    bool has_exch_bc = bc_flags[f_id*4 + 3];
+    bool has_mom_bc  = bc_flags[f_id * n_bc_flags + 1];
+    bool has_conv_bc = bc_flags[f_id * n_bc_flags + 2];
+    bool has_exch_bc = bc_flags[f_id * n_bc_flags + 3];
+    bool has_rad_bc  = bc_flags[f_id * n_bc_flags + 4];
 
-    cs_field_allocate_bc_coeffs(f, true, has_mom_bc, has_conv_bc, has_exch_bc);
+    cs_field_allocate_bc_coeffs(f, true,
+                                has_mom_bc,
+                                has_conv_bc,
+                                has_exch_bc,
+                                has_rad_bc);
     cs_field_init_bc_coeffs(f);
 
   }
