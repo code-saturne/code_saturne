@@ -1298,8 +1298,6 @@ cs_redistribute(const int                cell_dest_rank[],
   CS_FREE(builder->vertex_coords);
 
   if (mesh->have_r_gen) {
-    assert(builder->vtx_r_gen);
-    assert(mesh->vtx_r_gen);
     CS_FREE(mesh->vtx_r_gen);
     mesh->vtx_r_gen = cs_all_to_all_copy_array(vd,
                                                1,
