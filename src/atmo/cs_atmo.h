@@ -149,9 +149,19 @@ typedef enum {
 
 struct cs_atmo_option_t {
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Default constructor with suppression of deprecated declarations,
+   *        needed to hide warnings simply induced by including this header
+   *        file.
+   */
+  /*--------------------------------------------------------------------------*/
+
   DISABLE_WARNING_PUSH
   DISABLE_WARNING(-Wdeprecated-declarations)
+
   cs_atmo_option_t(){}
+
   DISABLE_WARNING_POP
 
   /* Space and time reference of the run */
