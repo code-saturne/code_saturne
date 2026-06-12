@@ -123,59 +123,60 @@ enum {
 /* turbulence model general options descriptor */
 /*---------------------------------------------*/
 
-typedef struct {
+struct cs_turb_model_t {
 
-  union {
-    int           model;/*! turbulence model
-                          - CS_TURB_NONE: no turbulence model (laminar flow)
-                          - CS_TURB_MIXING_LENGTH: mixing length model
-                          - CS_TURB_K_EPSILON: standard k-epsilon model
-                          - CS_TURB_K_EPSILON_LIN_PROD: k-epsilon model with
-                              Linear Production (LP) correction
-                          - CS_TURB_K_EPSILON_LS: Launder-Sharma low Re
-                              k-epsilon model
-                          - CS_TURB_K_EPSILON_QUAD: Baglietto et al. low Re
-                              k epsilon model
-                          - CS_TURB_RIJ_EPSILON_LRR: Rij-epsilon (LRR)
-                          - CS_TURB_RIJ_EPSILON_SSG: Rij-epsilon (SSG)
-                          - CS_TURB_RIJ_EPSILON_EBRSM: Rij-epsilon (EBRSM)
-                          - CS_TURB_LES_SMAGO_CONST: LES
-                              (constant Smagorinsky model)
-                          - CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic
-                              Smagorisky model)
-                          - CS_TURB_LES_WALE: LES (WALE)
-                          - CS_TURB_V2F_PHI: v2f phi-model
-                          - CS_TURB_V2F_BL_V2K: v2f BL-v2-k
-                          - CS_TURB_K_OMEGA: k-omega SST
-                          - CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model */
-    [[deprecated]] int iturb;
-  };
-  int           itytur;       /* class of turbulence model (integer value
-                                 model/10) */
-  int           hybrid_turb;  /*! Type of Hybrid Turbulence Model
-                                   - CS_HYBRID_NONE:  No model
-                                   - CS_HYBRID_DES:   Detached Eddy Simulation
-                                   - CS_HYBRID_DDES:  Delayed Detached Eddy
-                                                      Simulation
-                                   - CS_HYBRID_SAS:   Scale Adaptive Model
-                                   - CS_HYBRID_HTLES: Hybrid Temporal Large
-                                                      Eddy Simulation */
-  int           type;  /*! Type of turbulence modelling:
-                          - CS_TURB_NONE: No model
-                          - CS_TURB_RANS: RANS modelling
-                          - CS_TURB_LES: LES modelling
-                          - CS_TURB_HYBRID: RANS -- LES modelling */
-  int           order; /*! Order of the turbulence model:
-                          - CS_TURB_ALGEBRAIC: 0th order algebraik model
-                          - CS_TURB_FIRST_ORDER: 1st order Eddy Viscosity
-                                                 type models
-                          - CS_TURB_SECOND_ORDER: 2nd order Differential
-                                                  Reynolds Stress type models */
-  int           high_low_re; /*! High or Low Reynolds number model:
-                               - CS_TURB_HIGH_RE
-                               - CS_TURB_LOW_RE
-                               - CS_TURB_HIGH_LOW_RE */
-} cs_turb_model_t;
+  int  model{-999};/*! turbulence model
+                     - CS_TURB_NONE: no turbulence model (laminar flow)
+                     - CS_TURB_MIXING_LENGTH: mixing length model
+                     - CS_TURB_K_EPSILON: standard k-epsilon model
+                     - CS_TURB_K_EPSILON_LIN_PROD: k-epsilon model with
+                         Linear Production (LP) correction
+                     - CS_TURB_K_EPSILON_LS: Launder-Sharma low Re
+                         k-epsilon model
+                     - CS_TURB_K_EPSILON_QUAD: Baglietto et al. low Re
+                         k epsilon model
+                     - CS_TURB_RIJ_EPSILON_LRR: Rij-epsilon (LRR)
+                     - CS_TURB_RIJ_EPSILON_SSG: Rij-epsilon (SSG)
+                     - CS_TURB_RIJ_EPSILON_EBRSM: Rij-epsilon (EBRSM)
+                     - CS_TURB_LES_SMAGO_CONST: LES
+                         (constant Smagorinsky model)
+                     - CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic
+                         Smagorisky model)
+                     - CS_TURB_LES_WALE: LES (WALE)
+                     - CS_TURB_V2F_PHI: v2f phi-model
+                     - CS_TURB_V2F_BL_V2K: v2f BL-v2-k
+                     - CS_TURB_K_OMEGA: k-omega SST
+                     - CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model */
+
+  [[deprecated("Use model instead")]]
+  int& iturb{model};
+
+  int  itytur{-999};    /* class of turbulence model (integer value
+                        model/10) */
+  int  hybrid_turb{0};  /*! Type of Hybrid Turbulence Model
+                            - CS_HYBRID_NONE:  No model
+                            - CS_HYBRID_DES:   Detached Eddy Simulation
+                            - CS_HYBRID_DDES:  Delayed Detached Eddy
+                                               Simulation
+                            - CS_HYBRID_SAS:   Scale Adaptive Model
+                            - CS_HYBRID_HTLES: Hybrid Temporal Large
+                                               Eddy Simulation */
+  int  type{-1};  /*! Type of turbulence modelling:
+                     - CS_TURB_NONE: No model
+                     - CS_TURB_RANS: RANS modelling
+                     - CS_TURB_LES: LES modelling
+                     - CS_TURB_HYBRID: RANS -- LES modelling */
+  int  order{-1}; /*! Order of the turbulence model:
+                     - CS_TURB_ALGEBRAIC: 0th order algebraik model
+                     - CS_TURB_FIRST_ORDER: 1st order Eddy Viscosity
+                                            type models
+                     - CS_TURB_SECOND_ORDER: 2nd order Differential
+                                             Reynolds Stress type models */
+  int  high_low_re{-1}; /*! High or Low Reynolds number model:
+                          - CS_TURB_HIGH_RE
+                          - CS_TURB_LOW_RE
+                          - CS_TURB_HIGH_LOW_RE */
+};
 
 /* Reference values for turbulence structure and associated pointer */
 /*------------------------------------------------------------------*/
