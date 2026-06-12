@@ -100,6 +100,9 @@ Release 9.0.3 (unreleased)
 
 ### User changes:
 
+- Backported `cs_probe_get_labels` function for use by advanced
+  user-defined functions.
+
 - Increase maximum number of scalars (nscamx) to 1500.
 
 Release 9.0.2 (2026-01-30)
