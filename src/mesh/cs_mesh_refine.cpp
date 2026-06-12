@@ -707,7 +707,9 @@ public:
   void
   filter_high_refinement_level_edges(const char  vtx_r_gen[])
   {
-    char r_threshold = f_r_range[0];
+    /* Threshold = the children's refinement level, i.e. the generation of the
+       central vertex (cell level + 1) */
+    char r_threshold = vtx_r_gen[c_vtx_id];
 
     for (cs_lnum_t i = 0; i < n_edges; i++) {
       _mrh_edge_t *e = edges + i;
@@ -727,7 +729,9 @@ public:
   void
   filter_corner_edges(const char  vtx_r_gen[])
   {
-    char r_threshold = f_r_range[0];
+    /* Threshold = the children's refinement level, i.e. the generation of the
+       central vertex (cell level + 1) */
+    char r_threshold = vtx_r_gen[c_vtx_id];
 
     for (cs_lnum_t i = 0; i < n_edges; i++) {
       _mrh_edge_t *e = edges + i;
@@ -765,6 +769,10 @@ public:
     [[maybe_unused]] cs_lnum_t c_n_s_cells_max = c_n_s_cells;
     [[maybe_unused]] cs_lnum_t c_n_i_faces_max = c_n_i_faces;
     [[maybe_unused]] cs_lnum_t c_i_faces_size_max = c_i_faces_size;
+
+    /* The whole scheme (edge filters and interior faces) is built around a
+       valid central vertex; it is set by set_center_vtx() for every cell. */
+    assert(c_vtx_id >= 0);
 
     c_n_s_cells = 0;
     c_n_i_faces = 0;
