@@ -265,7 +265,6 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
     cs_mesh_location_get_n_elts(bc_map->bc_location_id)[0];
   const cs_lnum_t *bfaces =
     cs_mesh_location_get_elt_ids_try(bc_map->bc_location_id);
-  assert(bfaces != nullptr);
 
   const int          dim         = val_c->dim;
   const ple_lnum_t   n_dist      = ple_locator_get_n_dist_points(locator);
