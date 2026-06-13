@@ -4745,11 +4745,10 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   cs_param_saddle_context_simple_t *ctxp =
     static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
 
-  const cs_param_sles_t  *init_slesp = ctxp->init_sles_param;
+  const cs_param_sles_t *b11_slesp = saddlep->block11_sles_param;
 
   assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_SIMPLE);
   assert(ctx != nullptr);
-  assert(init_slesp != nullptr);
 
   /* ------------------ */
   /* --- ALGO BEGIN --- */
@@ -4815,17 +4814,13 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   /* Compute the first velocity guess
    * Modify the tolerance in order to be more accurate on this step */
 
-  cs_sles_t  *init_sles =
-    (ctxp->dedicated_init_sles) ? ctx->init_sles : solver->main_sles;
-  assert(init_sles != nullptr);
-
   int  n_iter = cs_cdo_solve_scalar_system(n1_dofs,
-                                           init_slesp,
+                                           b11_slesp,
                                            m11,
                                            rset,
                                            normalization,
                                            false, /* rhs_redux */
-                                           init_sles,
+                                           solver->main_sles,
                                            dx1,
                                            ctx->rhs);
 
@@ -4947,17 +4942,13 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
     /* Compute the first velocity guess
      * Modify the tolerance in order to be more accurate on this step */
 
-    init_sles = (ctxp->dedicated_init_sles) ?
-      ctx->init_sles : solver->main_sles;
-    assert(init_sles != nullptr);
-
     n_iter = cs_cdo_solve_scalar_system(n1_dofs,
-                                        init_slesp,
+                                        b11_slesp,
                                         m11,
                                         rset,
                                         normalization,
                                         false, /* rhs_redux */
-                                        init_sles,
+                                        solver->main_sles,
                                         dx1,
                                         ctx->rhs);
 
