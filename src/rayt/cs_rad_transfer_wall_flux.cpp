@@ -453,7 +453,7 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
       /* Determination of counters */
 
       if (cs_glob_rank_id >= 0) {
-        cs_parall_max(1, CS_REAL_TYPE, &rapmax);
+        cs::parall::max(rapmax);
 
         inttm2[0] = nmoins;
         inttm2[1] = nplus;

@@ -496,19 +496,20 @@ cs_rad_transfer_absorption_check_p1(const cs_real_t  cpro_cak[])
 
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
-  cs_real_t s[2] = {0, 0};
 
   /* Compute the characteristic length of the computational domain */
 
+  cs_real_t surf_tot = 0.;
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-    s[0] += b_face_surf[face_id];
+    surf_tot += b_face_surf[face_id];
 
+  cs_real_t vol_tot = 0.;
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-    s[1] += cell_vol[cell_id];
+    vol_tot += cell_vol[cell_id];
 
-  cs_parall_sum(2, CS_REAL_TYPE, s);
+  cs::parall::sum(surf_tot, vol_tot);
 
-  cs_real_t xlc = 3.6 * s[1] / s[0];
+  cs_real_t xlc = 3.6 * vol_tot / surf_tot;
 
   /* Clipping on ck  */
 
@@ -519,7 +520,7 @@ cs_rad_transfer_absorption_check_p1(const cs_real_t  cpro_cak[])
       iok++;
   }
 
-  cs_parall_sum(1, CS_GNUM_TYPE, &iok);
+  cs::parall::sum(iok);
 
   /* Warning if the optical thickness is too big   */
 

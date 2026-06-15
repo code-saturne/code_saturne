@@ -1139,10 +1139,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
   }
 
   if (cs_glob_rank_id >= 0) {
-    cs_parall_sum(1, CS_DOUBLE, &pco2ref);
-    cs_parall_sum(1, CS_DOUBLE, &ph2oref);
-    cs_parall_sum(1, CS_DOUBLE, &sum1);
-    cs_parall_sum(1, CS_DOUBLE, &sum2);
+    cs::parall::sum(pco2ref, ph2oref, sum1, sum2);
   }
 
   pco2ref /= cs_glob_mesh_quantities->tot_vol;

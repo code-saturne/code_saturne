@@ -193,11 +193,10 @@ _sync_rad_bc_err(cs_gnum_t  nerloc[],
     if (*nerloc > 0)
       irkerr  = cs_glob_rank_id;
 
-    cs_parall_sum(1, CS_GNUM_TYPE, nerloc);
+    cs::parall::sum(*nerloc);
 
     if (*nerloc != 0) {
-      cs_parall_max(1, CS_INT_TYPE, &irkerr);
-
+      cs::parall::max(irkerr);
 
       if (rvferr != nullptr) {
         cs_parall_bcast(irkerr, nerrcd, CS_DOUBLE, rvferr);
@@ -626,7 +625,7 @@ cs_rad_transfer_bcs(int bc_type[])
   }
 
   if (cs_glob_rank_id >= 0)
-    cs_parall_max(1, CS_INT_TYPE, &iok);
+    cs::parall::max(iok);
 
   if (iok != 0) {
 

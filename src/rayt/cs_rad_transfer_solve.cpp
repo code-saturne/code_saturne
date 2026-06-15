@@ -598,12 +598,12 @@ _cs_rad_transfer_sol(int                        gg_id,
       for (int jj = -1; jj <= 1 && !finished; jj+=2) {
 
         for (int dir_id = 0;
-             dir_id < rt_params->ndirs && !finished;
+             dir_id < rt_n_dirs && !finished;
              dir_id++, kdir++) {
 
           char sles_name[80];
 
-          int n_dirs = 8 * rt_params->ndirs;
+          int n_dirs = 8 * rt_n_dirs;
           if (one_dir) {
             snprintf(sles_name, 79, "%s", "direct_radiation");
             finished = true;
@@ -671,9 +671,9 @@ _cs_rad_transfer_sol(int                        gg_id,
             if (diffuse_solar_ir_or_uv) {
               /* Delta function for the moment: take the opposite direction */
               /* Opposite direction */
-              int kdir2 = kdir -     jj * rt_params->ndirs
-                               - 2 * ii * rt_params->ndirs
-                               - 4 * kk * rt_params->ndirs;
+              int kdir2 = kdir -     jj * rt_n_dirs
+                               - 2 * ii * rt_n_dirs
+                               - 4 * kk * rt_n_dirs;
               int rad_id2 = n_dirs * gg_id + kdir2;
               radiance_op = CS_FI_(radiance, rad_id2)->val;
             }
@@ -1506,7 +1506,7 @@ _rad_transfer_solve(int bc_type[])
 
     }
 
-    cs_parall_min(1, CS_REAL_TYPE, &ckmin);
+    cs::parall::min(ckmin);
 
     if (ckmin < 0.0)
       bft_error
@@ -1572,7 +1572,7 @@ _rad_transfer_solve(int bc_type[])
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         ckmax = cs::max(ckmax, ckg[cell_id]);
 
-      cs_parall_max(1, CS_REAL_TYPE, &ckmax);
+      cs::parall::max(ckmax);
 
       if (ckmax <= cs_math_epzero) {
         if (verbosity > 0)
@@ -2112,7 +2112,7 @@ _rad_transfer_solve(int bc_type[])
   /* -> Integrate net flux density at boundaries */
   if (verbosity > 0) {
     cs_real_t aa = cs_dot(n_b_faces, f_fnet->val, b_face_surf);
-    cs_parall_sum(1, CS_REAL_TYPE, &aa);
+    cs::parall::sum(aa);
 
     cs_log_printf
       (CS_LOG_DEFAULT,
@@ -2261,7 +2261,7 @@ _rad_transfer_solve(int bc_type[])
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       balance += rad_estm[cell_id] * cell_vol[cell_id];
 
-    cs_parall_sum(1, CS_REAL_TYPE, &balance);
+    cs::parall::sum(balance);
 
     cs_log_printf
       (CS_LOG_DEFAULT,
