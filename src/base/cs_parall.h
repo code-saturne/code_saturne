@@ -891,9 +891,9 @@ template <typename T,
 static void
 sum
 (
-  const cs_mpi_wrapper& mpi_w,    /*!<[in] Parallel execution context */
-  T&                    first, /*!< [in, out] First scalar to update */
-  Vals&...              values /*!< [in, out] Scalar values to update */
+  const cs_mpi_wrapper& mpi_w, /*!<[in] Parallel execution context */
+  T&                    first, /*!<[in,out] First scalar to update */
+  Vals&...              values /*!<[in,out] Scalar values to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -942,8 +942,8 @@ template <typename T,
           typename... Vals,
           typename std::enable_if<!std::is_array<T>::value, int>::type = 0>
 static void
-sum(T &first,       /*!< [in, out] First scalar to update */
-    Vals &...values /*!< [in, out] Scalar values to update */
+sum(T &first,       /*!<[in,out] First scalar to update */
+    Vals &...values /*!<[in,out] Scalar values to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -967,8 +967,8 @@ template <int Stride, typename T, typename... Vals>
 static void
 sum
 (
-  const cs_mpi_wrapper& mpi_w,      /*!<[in] Parallel execution context */
-  T                     first[], /*!< [in, out]  First scalar to update */
+  const cs_mpi_wrapper& mpi_w,   /*!<[in] Parallel execution context */
+  T                     first[], /*!<[in,out]  First scalar to update */
   Vals&&...             values   /*!<[in,out] Values to update */
 )
 {
@@ -1020,8 +1020,8 @@ sum
  * \brief Sum strided-values of a given datatype on all default communicator
  *        processes.
  *
- * \tparam T      : datatype
  * \tparam stride : stride/dimension of values
+ * \tparam T      : datatype
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1029,8 +1029,8 @@ template <int Stride, typename T, typename... Vals>
 static void
 sum
 (
-  T         first[],
-  Vals&&... values /*!<[in,out] Values to update */
+  T         first[], /*!<[in, out]  First scalar to update */
+  Vals&&... values   /*!<[in,out] Values to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1054,7 +1054,11 @@ sum
 
 template <typename T, int N, typename... Vals>
 static void
-sum(T (&first)[N], Vals &&...values)
+sum
+(
+  T (&first)[N],   /*!<[in,out] First array to update */
+  Vals &&...values /*!<[in,out] Additional arrays to update */
+)
 {
   // Appel à la version existante avec Stride = N
   sum<N>(first, std::forward<Vals>(values)...);
@@ -1073,7 +1077,12 @@ sum(T (&first)[N], Vals &&...values)
 
 template <typename T, int N, typename... Vals>
 static void
-sum(const cs_mpi_wrapper& mpi_w, T (&first)[N], Vals &&...values)
+sum
+(
+  const cs_mpi_wrapper& mpi_w,       /*!<[in] Parallel execution context */
+  T                     (&first)[N], /*!<[in,out] First array to update */
+  Vals &&...            values       /*!<[in,out] Additional arrays to update */
+)
 {
   sum<N>(mpi_w, first, std::forward<Vals>(values)...);
 }
@@ -1091,9 +1100,9 @@ template <typename T, typename... Vals>
 static void
 max
 (
-  const cs_mpi_wrapper& mpi_w,    /*!< [in] Parallel execution context */
-  T&                    first, /*!< [in, out] First scalar to update */
-  Vals&...              values /*!< [in, out] Additional scalars to update */
+  const cs_mpi_wrapper& mpi_w, /*!<[in] Parallel execution context */
+  T&                    first, /*!<[in,out] First scalar to update */
+  Vals&...              values /*!<[in,out] Additional scalars to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1140,8 +1149,8 @@ template <typename T, typename... Vals>
 static void
 max
 (
-  T&                     first, /*!< [in, out]  First scalar to update */
-  Vals&...               values /*!< [in, out]  Additional scalars to update */
+  T&       first, /*!<[in,out] First scalar to update */
+  Vals&... values /*!<[in,out] Additional scalars to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1166,9 +1175,9 @@ template <int Stride, typename T, typename... Vals>
 static void
 max
 (
-  const cs_mpi_wrapper& mpi_w,      /*!< [in] Parallel execution context */
-  T                     first[], /*!< [in, out] First scalar to update */
-  Vals&&...             values   /*!< [in, out] Additional scalars to update */
+  const cs_mpi_wrapper& mpi_w,   /*!<[in] Parallel execution context */
+  T                     first[], /*!<[in,out] First scalar to update */
+  Vals&&...             values   /*!<[in,out] Additional scalars to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1225,8 +1234,8 @@ template <int Stride, typename T, typename... Vals>
 static void
 max
 (
-  T          first[], /*!< [in, out]  First scalar to update */
-  Vals&&...  values   /*!< [in, out]  Additional scalars to update */
+  T          first[], /*!<[in,out] First scalar to update */
+  Vals&&...  values   /*!<[in,out] Additional scalars to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1250,9 +1259,9 @@ template <typename T, typename... Vals>
 static void
 min
 (
-  const cs_mpi_wrapper& mpi_w,    /*!< [in] Parallel execution context */
-  T&                    first, /*!< [in, out] First scalar to update */
-  Vals&...              values /*!< [in, out] Additional scalars to update */
+  const cs_mpi_wrapper& mpi_w, /*!<[in] Parallel execution context */
+  T&                    first, /*!<[in,out] First scalar to update */
+  Vals&...              values /*!<[in,out] Additional scalars to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1303,8 +1312,8 @@ template <typename T, typename... Vals>
 static void
 min
 (
-  T&       first, /*!< [in, out] First scalar to update */
-  Vals&... values /*!< [in, out] Additional scalars to update */
+  T&       first, /*!<[in,out] First scalar to update */
+  Vals&... values /*!<[in,out] Additional scalars to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1329,9 +1338,9 @@ template <int Stride, typename T, typename... Vals>
 static void
 min
 (
-  const cs_mpi_wrapper& mpi_w,      /*!< [in] Parallel execution context */
-  T                     first[], /*!< [in, out] First value to update */
-  Vals&&...             values   /*!< [in, out] Additional values to update */
+  const cs_mpi_wrapper& mpi_w,   /*!<[in] Parallel execution context */
+  T                     first[], /*!<[in,out] First value to update */
+  Vals&&...             values   /*!<[in,out] Additional values to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1389,8 +1398,8 @@ template <int Stride, typename T, typename... Vals>
 static void
 min
 (
-  T         first[],  /*!< [in, out] First value to update */
-  Vals&&... values    /*!< [in, out] Additional values to update */
+  T         first[], /*!<[in,out] First value to update */
+  Vals&&... values   /*!<[in,out] Additional values to update */
 )
 {
 #if defined(HAVE_MPI)
