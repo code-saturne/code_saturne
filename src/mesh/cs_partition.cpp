@@ -931,11 +931,12 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
  *
  * parameters:
  *   n_g_cells   <-- global number of cells
+ *   n_cells     --> number of local cells
  *   n_ranks     <-- number of ranks in partition
  *   mb          <-- pointer to mesh builder helper structure
  *   sfc_type    <-- type of space-filling curve
  *   cell_rank   --> cell rank (1 to n numbering)
- *   stage       --> partitioning stage
+ *   cell_center --> cell centers
  *   comm        <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
 
@@ -943,23 +944,23 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
 
 static void
 _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
+                  cs_lnum_t                 n_cells,
                   int                       n_ranks,
                   const cs_mesh_builder_t  *mb,
                   fvm_io_num_sfc_t          sfc_type,
                   int                       cell_rank[],
-                  cs_lnum_t                 n_cells,
-                  cs_coord_t               *cell_center,
+                  const                    *cell_center,
                   MPI_Comm                  comm)
 
 #else
 
 static void
 _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
+                  cs_lnum_t                 n_cells,
                   int                       n_ranks,
                   const cs_mesh_builder_t  *mb,
                   fvm_io_num_sfc_t          sfc_type,
                   int                       cell_rank[],
-                  cs_lnum_t                 n_cells,
                   const cs_coord_t         *cell_center)
 
 #endif
@@ -976,9 +977,9 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
 
   start_time = cs_timer_time();
 
-  cs_coord_t *_cell_center = cell_center;
+  cs_coord_t *_cell_center = nullptr;
 
-  if (!_cell_center) {
+  if (cell_center == nullptr) {
 
     CS_MALLOC(_cell_center, n_cells * 3, cs_coord_t);
 
@@ -996,6 +997,9 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
     cs_log_printf(CS_LOG_PERFORMANCE,
                   _("  precompute cell centers:    %.3g s\n"),
                   (double)(dt.nsec)/1.e9);
+
+    cell_center = _cell_center;
+
   }
 
   cell_io_num = fvm_io_num_create_from_sfc(_cell_center,
@@ -1044,7 +1048,6 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
     cs_lnum_t block_size = n_g_cells / n_ranks;
     if (n_g_cells % n_ranks)
       block_size += 1;
-
 
     for (i = 0; i < n_cells; i++) {
       cell_rank[i] = ((cell_num[i] - 1) / block_size);
@@ -3703,20 +3706,20 @@ cs_partition(cs_mesh_t             *mesh,
 
 #if defined(HAVE_MPI)
       _cell_rank_by_sfc(mesh->n_g_cells,
+                        n_cells,
                         n_ranks,
                         mb,
                         sfc_type,
                         cell_part,
-                        n_cells,
                         cell_center,
                         cs_glob_mpi_comm);
 #else
       _cell_rank_by_sfc(mesh->n_g_cells,
+                        n_cells,
                         n_ranks,
                         mb,
                         sfc_type,
                         cell_part,
-                        n_cells,
                         cell_center);
 #endif
 
