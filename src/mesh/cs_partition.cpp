@@ -949,7 +949,7 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
                   const cs_mesh_builder_t  *mb,
                   fvm_io_num_sfc_t          sfc_type,
                   int                       cell_rank[],
-                  const                    *cell_center,
+                  const cs_coord_t         *cell_center,
                   MPI_Comm                  comm)
 
 #else
