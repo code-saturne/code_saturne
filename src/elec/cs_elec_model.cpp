@@ -1360,7 +1360,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     /* compute grad(potR) */
 
     /* Get the calculation option from the field */
-    cs_real_3_t *cpro_elefl = (cs_real_3_t *)(CS_F_(elefl)->val);
+    auto cpro_elefl = CS_F_(elefl)->get_val_v();
 
     cs_field_gradient_scalar(CS_F_(potr),
                              false, /* use_previous_t */
@@ -1369,9 +1369,9 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
     /* compute electric field E = - grad (potR) */
     for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      cpro_elefl[iel][0] = grad(iel, 0);
-      cpro_elefl[iel][1] = grad(iel, 1);
-      cpro_elefl[iel][2] = grad(iel, 2);
+      cpro_elefl(iel, 0) = grad(iel, 0);
+      cpro_elefl(iel, 1) = grad(iel, 1);
+      cpro_elefl(iel, 2) = grad(iel, 2);
     }
 
     /* compute current density j = sig E */
@@ -1381,11 +1381,11 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       c_prop = cs_field_by_id(diff_id);
 
     if (ieljou > 0 || ielarc > 0) {
-      cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
+      auto cpro_curre = CS_F_(curre)->get_val_v();
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        cpro_curre[iel][0] = -c_prop->val[iel] * grad(iel, 0);
-        cpro_curre[iel][1] = -c_prop->val[iel] * grad(iel, 1);
-        cpro_curre[iel][2] = -c_prop->val[iel] * grad(iel, 2);
+        cpro_curre(iel, 0) = -c_prop->val[iel] * grad(iel, 0);
+        cpro_curre(iel, 1) = -c_prop->val[iel] * grad(iel, 1);
+        cpro_curre(iel, 2) = -c_prop->val[iel] * grad(iel, 2);
       }
     }
 
@@ -1468,11 +1468,11 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
         c_propi = cs_field_by_id(diff_id_i);
 
       if (ieljou == 4) {
-        cs_real_3_t *cpro_curim = (cs_real_3_t *)(CS_F_(curim)->val);
+        auto cpro_curim = CS_F_(curim)->get_val_v();
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          cpro_curim[iel][0] = -c_propi->val[iel] * grad(iel, 0);
-          cpro_curim[iel][1] = -c_propi->val[iel] * grad(iel, 1);
-          cpro_curim[iel][2] = -c_propi->val[iel] * grad(iel, 2);
+          cpro_curim(iel, 0) = -c_propi->val[iel] * grad(iel, 0);
+          cpro_curim(iel, 1) = -c_propi->val[iel] * grad(iel, 1);
+          cpro_curim(iel, 2) = -c_propi->val[iel] * grad(iel, 2);
         }
       }
 
@@ -1542,7 +1542,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
   else if (call_id == 2) {
 
-    cs_real_3_t *cpro_magfl = (cs_real_3_t *)(CS_F_(magfl)->val);
+    auto cpro_magfl = CS_F_(magfl)->get_val_v();
 
     if (ielarc == 2) {
       /* compute magnetic field component B */
@@ -1556,9 +1556,9 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
                                gradv.data<cs_real_33_t>());
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        cpro_magfl[iel][0] = -gradv(iel, 1, 2)+gradv(iel, 2, 1);
-        cpro_magfl[iel][1] =  gradv(iel, 0, 2)-gradv(iel, 2, 0);
-        cpro_magfl[iel][2] = -gradv(iel, 0, 1)+gradv(iel, 1, 0);
+        cpro_magfl(iel, 0) = -gradv(iel, 1, 2) + gradv(iel, 2, 1);
+        cpro_magfl(iel, 1) =  gradv(iel, 0, 2) - gradv(iel, 2, 0);
+        cpro_magfl(iel, 2) = -gradv(iel, 0, 1) + gradv(iel, 1, 0);
       }
 
     }
@@ -1567,15 +1567,15 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
                 _("Error electric arc with ampere theorem not available\n"));
 
     /* compute laplace effect j x B */
-    cs_real_3_t *cpro_laplf = (cs_real_3_t *)(CS_F_(laplf)->val);
-    cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
+    auto cpro_laplf = CS_F_(laplf)->get_val_v();
+    auto cpro_curre = CS_F_(curre)->get_val_v();
     for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      cpro_laplf[iel][0] =    cpro_curre[iel][1] * cpro_magfl[iel][2]
-                            - cpro_curre[iel][2] * cpro_magfl[iel][1];
-      cpro_laplf[iel][1] =    cpro_curre[iel][2] * cpro_magfl[iel][0]
-                            - cpro_curre[iel][0] * cpro_magfl[iel][2];
-      cpro_laplf[iel][2] =    cpro_curre[iel][0] * cpro_magfl[iel][1]
-                            - cpro_curre[iel][1] * cpro_magfl[iel][0];
+      cpro_laplf(iel, 0) =    cpro_curre(iel, 1) * cpro_magfl(iel, 2)
+                            - cpro_curre(iel, 2) * cpro_magfl(iel, 1);
+      cpro_laplf(iel, 1) =    cpro_curre(iel, 2) * cpro_magfl(iel, 0)
+                            - cpro_curre(iel, 0) * cpro_magfl(iel, 2);
+      cpro_laplf(iel, 2) =    cpro_curre(iel, 0) * cpro_magfl(iel, 1)
+                            - cpro_curre(iel, 1) * cpro_magfl(iel, 0);
     }
 
     /* compute min max for B */
@@ -1590,8 +1590,8 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (int i = 0; i < 3; i++) {
-          vrmin[i] = cs::min(vrmin[i], cpro_magfl[iel][i]);
-          vrmax[i] = cs::max(vrmax[i], cpro_magfl[iel][i]);
+          vrmin[i] = cs::min(vrmin[i], cpro_magfl(iel, i));
+          vrmax[i] = cs::max(vrmax[i], cpro_magfl(iel, i));
         }
       }
 
@@ -1687,14 +1687,14 @@ cs_elec_source_terms_v(const cs_mesh_t             *mesh,
   /* source term for potential vector */
 
   if (ielarc >= 2 && f_id == (CS_F_(potva)->id)) {
-    cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
+    auto cpro_curre = CS_F_(curre)->get_val_v();
 
     if (eqp->verbosity > 0)
       bft_printf("compute source terms for variable: %s\n", f->name);
 
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       for (int isou = 0; isou < 3; isou++)
-        smbrv[iel][isou] += cs_elec_permvi * cpro_curre[iel][isou] * volume[iel];
+        smbrv[iel][isou] += cs_elec_permvi * cpro_curre(iel, isou) * volume[iel];
   }
 }
 
@@ -2004,10 +2004,10 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
       /* restrike model */
       cs_gui_elec_model_rec();
       double elcou = 0.;
-      cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
+      auto cpro_curre = CS_F_(curre)->get_val_v();
       if (mesh->halo != nullptr)
-        cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD,
-                                 (cs_real_t *)cpro_curre, 3);
+        cs_halo_sync(mesh->halo, CS_HALO_STANDARD, cpro_curre);
+
       cs_lnum_t idreca_idx = cs_glob_elec_option->idreca - 1;
       for (cs_lnum_t ifac = 0; ifac < nfac; ifac++) {
         if (cs_glob_elec_option->izreca[ifac] > 0) {
@@ -2019,7 +2019,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
           if (ok) {
             cs_lnum_t iel = mesh->i_face_cells[ifac][0];
             if (iel < mesh->n_cells)
-              elcou +=   cpro_curre[iel][idreca_idx]
+              elcou +=   cpro_curre(iel, idreca_idx)
                        * surf[ifac] * u_normal[ifac][idreca_idx];
           }
         }
@@ -2083,10 +2083,10 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
 
       /* current density */
       if (ielarc > 0) {
-        cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
+        auto cpro_curre = CS_F_(curre)->get_val_v();
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           for (cs_lnum_t i = 0; i < 3; i++)
-            cpro_curre[iel][i] *= coepot;
+            cpro_curre(iel, i) *= coepot;
         }
       }
 
