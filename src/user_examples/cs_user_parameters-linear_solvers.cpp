@@ -361,7 +361,7 @@ cs_user_linear_solvers(void)
   /*---------------------------------------------------------*/
 
   /*! [sles_user_1] */
-  cs_field_t *cvar_user_1 = cs_field_by_name_try("user_1");
+  cs_field_t *cvar_user_1 = cs_field_try("user_1");
   if (cvar_user_1 != nullptr) {
     cs_sles_it_define(cvar_user_1->id,
                       nullptr,   /* name passed is null if field_id > -1 */

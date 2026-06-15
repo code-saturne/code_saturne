@@ -420,7 +420,7 @@ cs_user_time_moments(void)
   /*! [tmom_all_variables] */
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
 
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
 
       int moment_f_id[] = {f_id};

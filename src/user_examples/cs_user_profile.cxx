@@ -217,8 +217,8 @@ _create_1d_sample_(user_profile_t  *profile,
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   /* Get physical fields */
-  const cs_field_t *f       = cs_field_by_name_try(field);
-  const cs_field_t *density = cs_field_by_name_try("density");
+  const cs_field_t *f       = cs_field_try(field);
+  const cs_field_t *density = cs_field_try("density");
   double            ro0     = cs_glob_fluid_properties->ro0;
 
   /* Reset n_elts_sample */

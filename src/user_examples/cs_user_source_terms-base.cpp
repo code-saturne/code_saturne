@@ -72,7 +72,7 @@ cs_user_source_terms
 {
   /*! [st_meta] */
   /* field structure */
-  const cs_field_t  *f = cs_field_by_id(f_id);
+  const cs_field_t  *f = cs_field(f_id);
 
   /* mesh quantities */
   const cs_lnum_t  n_cells = domain->mesh->n_cells;

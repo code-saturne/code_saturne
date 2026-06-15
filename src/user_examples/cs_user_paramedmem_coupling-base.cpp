@@ -202,9 +202,10 @@ cs_user_paramedmem_define_fields(void)
      *        CS_MEDCPL_ONE_TIME
      *        CS_MEDCPL_LINEAR_TIME
      */
-    cs_field_t *f = cs_field_by_name("coupling_field1");
-    int         f_id2 =
-      c->add_field(f, CS_MEDCPL_FIELD_INT_CONSERVATION, CS_MEDCPL_NO_TIME);
+    cs_field_t *f = cs_field("coupling_field1");
+    int         f_id2 = c->add_field(f,
+                                     CS_MEDCPL_FIELD_INT_CONSERVATION,
+                                     CS_MEDCPL_NO_TIME);
   }
   /*! [paramedmem_coupling_define_field1] */
 }

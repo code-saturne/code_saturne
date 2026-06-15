@@ -75,7 +75,7 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
     return;
 
   /* Initialize "scalar1" field to 25 only if it exists  */
-  cs_field_t *fld = cs_field_by_name_try("scalar1");
+  cs_field_t *fld = cs_field_try("scalar1");
 
   if (fld != nullptr) {
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)

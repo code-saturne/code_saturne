@@ -74,7 +74,7 @@ _injection_profile([[maybe_unused]] int          zone_id,
      ---------------- */
 
   cs_real_t *lagr_injection_profile =
-    cs_field_by_name_try("lagr_injection_profile")->val;
+    cs_field_try("lagr_injection_profile")->val;
 
   for (cs_lnum_t ei = 0; ei < n_elts; ei++) {
 
@@ -240,7 +240,7 @@ cs_user_lagr_volume_conditions(void)
     cs_real_t flow_rate = 0;
 
     cs_real_t *lagr_injection_profile =
-      cs_field_by_name_try("lagr_injection_profile")->val;
+      cs_field_try("lagr_injection_profile")->val;
 
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
       flow_rate += lagr_injection_profile[cell_id];

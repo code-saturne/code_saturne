@@ -188,7 +188,7 @@ cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
   int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     int scalar_id = (f->type & CS_FIELD_VARIABLE) ?
       f->get_key_int("scalar_id") : -1;
 

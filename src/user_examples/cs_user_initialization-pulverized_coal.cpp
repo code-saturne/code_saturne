@@ -128,7 +128,7 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
      Variables not present here are initialized to 0. */
 
   if (cm->ieqco2 >= 1) {
-    cs_real_t *cvar_yco2 = cs_field_by_name("x_c_co2")->val;
+    cs_real_t *cvar_yco2 = cs_field("x_c_co2")->val;
 
     cs_real_t xco2 = cm->oxyco2[ioxy] * cm->wmole[ico2] / dmas;
 
@@ -137,7 +137,7 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
   }
 
   if (cm->ieqnox == 1) {
-    cs_real_t *cvar_nox = cs_field_by_name("x_c_h_ox")->val;
+    cs_real_t *cvar_nox = cs_field("x_c_h_ox")->val;
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       cvar_nox[cell_id] = h1init;

@@ -81,7 +81,7 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 
   const cs_lnum_t n_cells = domain->mesh->n_cells;
 
-  cs_field_t *f = cs_field_by_name("dt");
+  cs_field_t *f = cs_field("dt");
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     f->val[cell_id] *= 10.;

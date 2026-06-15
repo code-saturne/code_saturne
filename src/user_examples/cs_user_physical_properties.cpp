@@ -280,8 +280,7 @@ cs_user_physical_properties_turb_viscosity
   const cs_real_t *cell_vol = domain->mesh_quantities->cell_vol;
 
   /* Overwrite Smagorinsky constant */
-  cs_real_t *cpro_smago
-    = cs_field_by_name("smagorinsky_constant^2")->val;
+  cs_real_t *cpro_smago = cs_field("smagorinsky_constant^2")->val;
 
   cs_real_t mijmijmoy = 0, mijlijmoy = 0;
 

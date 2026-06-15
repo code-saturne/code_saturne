@@ -72,7 +72,7 @@ cs_user_source_terms
 {
   /*! [st_meta] */
   /* field structure */
-  const cs_field_t  *f = cs_field_by_id(f_id);
+  const cs_field_t  *f = cs_field(f_id);
 
   /* local number of mesh cells */
   const cs_lnum_t  n_cells = cs_glob_mesh->n_cells;

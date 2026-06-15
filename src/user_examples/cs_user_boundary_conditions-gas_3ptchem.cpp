@@ -130,7 +130,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   const int iflmab =  CS_F_(vel)->get_key_int(kbmasf);
-  const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+  const cs_real_t *bmasfl = cs_field(iflmab)->val;
 
   /* Oxydant temperature needed by the combustion model
      when there is no oxydant inlet */

@@ -73,7 +73,7 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 
   cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_t *cvar_temp = cs_thermal_model_field()->val;
-  cs_real_t *cpro_humid = cs_field_by_name("humidity")->val;
+  cs_real_t *cpro_humid = cs_field("humidity")->val;
 
   /* Initialize temperature of humid air at 11 deg Celsius
    * and of humidity at 0.0063 */

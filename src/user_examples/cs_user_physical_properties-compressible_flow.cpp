@@ -75,15 +75,15 @@ cs_user_physical_properties
   cs_real_t *cpro_vtmpk = nullptr;
   cs_real_t *cpro_viscl = CS_F_(mu)->val;
   cs_real_t *cvar_t = CS_F_(t_kelvin)->val;
-  cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
+  cs_real_t *mix_mol_mas = cs_field("mix_mol_mas")->val;
 
   /* Molecular volumetric viscosity */
-  cs_real_t *cpro_viscv = cs_field_by_name_try("volume_viscosity")->val;
+  cs_real_t *cpro_viscv = cs_field_try("volume_viscosity")->val;
 
   const int kivisl = cs_field_key_id("diffusivity_id");
   int ifcvsl = CS_F_(t_kelvin)->get_key_int(kivisl);
   if (ifcvsl > -1)
-    cpro_vtmpk = cs_field_by_id(ifcvsl)->val;
+    cpro_vtmpk = cs_field(ifcvsl)->val;
 
   if (CS_F_(cp) != nullptr)
     cpro_cp = CS_F_(cp)->val;
@@ -251,7 +251,7 @@ cs_user_physical_properties
 
     /* Loop on the scalars fields */
     for (int f_id = 0; f_id < n_fields; f_id++) {
-      cs_field_t *fld = cs_field_by_id(f_id);
+      cs_field_t *fld = cs_field(f_id);
 
       /* If the scalar is the temperature, it will be skipped. */
       if (fld == CS_F_(t_kelvin))
@@ -272,7 +272,7 @@ cs_user_physical_properties
       if (variance_id > -1 || diffusivity_id < 0)
         continue;
 
-      cs_real_t *cpro_vscal = cs_field_by_id(diffusivity_id)->val;
+      cs_real_t *cpro_vscal = cs_field(diffusivity_id)->val;
 
       /* User-defined coefficients for the selected law.
        * The values provided hereafter are provided as a mere example.

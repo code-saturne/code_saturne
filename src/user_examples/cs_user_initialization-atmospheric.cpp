@@ -96,7 +96,7 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
     const cs_zone_t *z
       = cs_boundary_zone_by_id(cs_glob_atmo_option->ground_zone_id);
 
-    cs_field_t *f = cs_field_by_name("atmo_ground_percentages");
+    cs_field_t *f = cs_field("atmo_ground_percentages");
 
     for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
       for (cs_lnum_t ground_id = 0; ground_id < f->dim; ground_id++)

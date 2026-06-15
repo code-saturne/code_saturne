@@ -88,7 +88,7 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
   cs_array_real_fill_zero(3*n_cells, (cs_real_t*)cvar_vel);
 
   /* User defined scalars */
-  cs_real_t * cvar_scal = cs_field_by_name("user_name")->val;
+  cs_real_t * cvar_scal = cs_field("user_name")->val;
 
   /* Initialize each cell value */
   cs_array_real_fill_zero(n_cells, cvar_scal);

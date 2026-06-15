@@ -99,7 +99,7 @@ cs_user_source_terms
 
     cs_real_t len = 0.;
     /* To visualize selected cells */
-    cs_field_t *length = cs_field_by_name_try("line_length_per_cell");
+    cs_field_t *length = cs_field_try("line_length_per_cell");
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       len += seg_c_len[i];
       cs_lnum_t cell_id = elt_ids[i];
@@ -121,7 +121,7 @@ cs_user_source_terms
 
   /* Source term, proportional to the length of the segment in each cell
    * for scalar1 */
-  cs_field_t *fld = cs_field_by_name_try("scalar1");
+  cs_field_t *fld = cs_field_try("scalar1");
   if (fld->id == f_id) {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t cell_id = elt_ids[i];

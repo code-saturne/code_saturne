@@ -103,7 +103,7 @@ cs_user_physical_properties
 
   for (int iflid = 0; iflid < nfld; iflid++) {
 
-    cs_field_t  *f = cs_field_by_id(iflid);
+    cs_field_t  *f = cs_field(iflid);
 
     /*! We only handle here scalars with a drift */
 
@@ -124,7 +124,7 @@ cs_user_physical_properties
 
       int ifcvsl = f->get_key_int(kivisl);
       if (ifcvsl > -1)
-        cpro_viscls = cs_field_by_id(ifcvsl)->val;
+        cpro_viscls = cs_field(ifcvsl)->val;
 
       /* Coefficients of drift scalar CHOSEN BY THE USER
          Values given here are fictitious */

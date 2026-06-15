@@ -223,7 +223,7 @@ cs_user_syrthes_coupling_volume_h
   const int viscl_id = fth->get_key_int("diffusivity_id");
 
   if (viscl_id > -1) {
-    cpro_viscls = (const cs_real_t *)cs_field_by_id(viscl_id)->val;
+    cpro_viscls = (const cs_real_t *)cs_field(viscl_id)->val;
     viscls_step = 1;
   }
   else {

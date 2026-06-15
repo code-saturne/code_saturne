@@ -82,7 +82,7 @@ cs_user_porosity([[maybe_unused]] cs_domain_t   *domain)
 
   /* Get the cell porosity field value */
   /*!< [init_poro_pro] */
-  cs_real_t *cpro_porosi = cs_field_by_name("porosity")->val;
+  cs_real_t *cpro_porosi = cs_field("porosity")->val;
   /*!< [init_poro_pro] */
 
   /* First, set cell porosity value; the fluid cell volume will be
@@ -101,7 +101,7 @@ cs_user_porosity([[maybe_unused]] cs_domain_t   *domain)
 
   /* synchronize for use in fluid face factor calculation below */
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_field_synchronize(cs_field_by_name("porosity"),
+  cs_field_synchronize(cs_field("porosity"),
                        halo_type);
 
   /*!< [set_poro_cells_1] */

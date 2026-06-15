@@ -79,7 +79,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
   /* loop over all fields */
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
 
     /* filter fields of type variable (i.e. the solved ones) */
     if (f->type & CS_FIELD_VARIABLE) {

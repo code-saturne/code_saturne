@@ -1162,7 +1162,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
     /* For thermal scalar */
     cs_field_t *f_th = cs_thermal_model_field();
     if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
-      f_th = cs_field_by_name("temperature");
+      f_th = cs_field("temperature");
     f_th->set_key_int(kivisl, -1);
 
     /* For user-defined scalars */
@@ -1171,7 +1171,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
     const int kscavr = cs_field_key_id("first_moment_id");
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
-      cs_field_t *f = cs_field_by_id(f_id);
+      cs_field_t *f = cs_field(f_id);
       if (f->type & (CS_FIELD_VARIABLE | CS_FIELD_USER)) {
         int s_num = f->get_key_int(k_scal);
         int iscavr = f->get_key_int(kscavr);
@@ -1185,7 +1185,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
   /*! [param_density_id] */
   {
     /* Example user-defined scalar */
-    cs_field_t *f = cs_field_by_name("scalar1");
+    cs_field_t *f = cs_field("scalar1");
     f->set_key_int("density_id", 0);
   }
   /*! [param_density_id] */
@@ -1207,7 +1207,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
   {
     const int kscacp = cs_field_key_id("is_temperature");
 
-    cs_field_by_name("t_1")->set_key_int(kscacp, 0);
+    cs_field("t_1")->set_key_int(kscacp, 0);
   }
   /*! [param_kscacp] */
 
@@ -1284,7 +1284,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
-      cs_field_t  *f = cs_field_by_id(f_id);
+      cs_field_t  *f = cs_field(f_id);
 
       if (f->type & CS_FIELD_VARIABLE) {
         cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -1304,7 +1304,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
-      cs_field_t  *f = cs_field_by_id(f_id);
+      cs_field_t  *f = cs_field(f_id);
 
       if (f->type & CS_FIELD_VARIABLE) {
         cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -1388,7 +1388,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
     const int kscavr = cs_field_key_id("first_moment_id");
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
-      cs_field_t *f = cs_field_by_id(f_id);
+      cs_field_t *f = cs_field(f_id);
       if (f->type & (CS_FIELD_VARIABLE | CS_FIELD_USER)) {
         int s_num = f->get_key_int(k_scal);
         int iscavr = f->get_key_int(kscavr);
@@ -1415,7 +1415,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
-      cs_field_t *f = cs_field_by_id(f_id);
+      cs_field_t *f = cs_field(f_id);
 
       if (f->type & CS_FIELD_VARIABLE) {
         cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -1429,7 +1429,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
   /*! [param_var_limiter_choice] */
   {
     /* retrieve scalar field by its name */
-    cs_field_t *sca1 = cs_field_by_name("scalar1");
+    cs_field_t *sca1 = cs_field("scalar1");
 
     /* ischcv is the type of convective scheme:
        0: second order linear upwind
@@ -1506,7 +1506,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
   /*! [param_var_blend_st] */
   {
     /* retrieve scalar field by its name */
-    cs_field_t *sca1 = cs_field_by_name("scalar1");
+    cs_field_t *sca1 = cs_field("scalar1");
 
     /* blend_st (can be between 0 and 1):
       0: full upwind (default)
@@ -1524,7 +1524,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
   /*! [param_var_coupled_with_vel_p] */
   {
     /* retrieve scalar field by its name */
-    cs_field_t *sca1 = cs_field_by_name("scalar1");
+    cs_field_t *sca1 = cs_field("scalar1");
 
     int key_coupled_with_vel_p = cs_field_key_id("coupled_with_vel_p");
 
@@ -1554,7 +1554,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
   /*! [param_var_drift] */
   {
     /* retrieve scalar field by its name */
-    cs_field_t *sca1 = cs_field_by_name("scalar1");
+    cs_field_t *sca1 = cs_field("scalar1");
 
     /* Key id for drift scalar */
     int key_drift = cs_field_key_id("drift_scalar_model");
@@ -1616,19 +1616,19 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
   {
     cs_field_t *f;
 
-    f = cs_field_by_name_try("yplus");
+    f = cs_field_try("yplus");
     if (f != nullptr)
       cs_parameters_add_property("yplus",
                                  1,
                                  CS_MESH_LOCATION_BOUNDARY_FACES);
 
-    f = cs_field_by_name_try("tplus");
+    f = cs_field_try("tplus");
     if (f != nullptr)
       cs_parameters_add_property("tplus",
                                  1,
                                  CS_MESH_LOCATION_BOUNDARY_FACES);
 
-    f = cs_field_by_name_try("tstar");
+    f = cs_field_try("tstar");
     if (f != nullptr)
       cs_parameters_add_property("tstar",
                                  1,
@@ -1693,7 +1693,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
-      cs_field_t  *f = cs_field_by_id(f_id);
+      cs_field_t  *f = cs_field(f_id);
 
       if (f->type & CS_FIELD_VARIABLE)
         cs_parameters_add_boundary_values(f);
@@ -1721,7 +1721,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
-      cs_field_t  *f = cs_field_by_id(f_id);
+      cs_field_t  *f = cs_field(f_id);
 
       if (f->type & CS_FIELD_VARIABLE)
         f->set_key_int("slope_test_upwind_id", 0);
@@ -1976,12 +1976,12 @@ cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
 
   /*! [setup_post_lum] */
   {
-    cs_field_t *f = cs_field_by_name_try("rad_energy");
+    cs_field_t *f = cs_field_try("rad_energy");
     if (f != nullptr)
       f->set_key_int_bits("post_vis",
                           CS_POST_ON_LOCATION | CS_POST_MONITOR);
 
-    f = cs_field_by_name_try("radiative_flux");
+    f = cs_field_try("radiative_flux");
     if (f != nullptr)
       f->set_key_int_bits("post_vis",
                           CS_POST_ON_LOCATION | CS_POST_MONITOR);

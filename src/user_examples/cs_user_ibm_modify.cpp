@@ -196,7 +196,7 @@ cs_user_ibm_modify
 
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   cs_real_t *restrict b_massflux =
-    cs_field_by_id(CS_F_(vel)->get_key_int(kbmasf))->val;
+    cs_field(CS_F_(vel)->get_key_int(kbmasf))->val;
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
     cs_lnum_t c_id = b_face_cells[f_id];

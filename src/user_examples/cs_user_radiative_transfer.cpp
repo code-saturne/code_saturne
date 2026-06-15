@@ -132,8 +132,8 @@ cs_user_rad_transfer_absorption
       }
       fclose(f);
 
-      cs_field_t *f_ck_u = cs_field_by_name("rad_absorption_coeff_up");
-      cs_field_t *f_ck_d = cs_field_by_name("rad_absorption_coeff_down");
+      cs_field_t *f_ck_u = cs_field("rad_absorption_coeff_up");
+      cs_field_t *f_ck_d = cs_field("rad_absorption_coeff_down");
 
       for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
 

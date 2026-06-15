@@ -193,7 +193,7 @@ _he_fraction_05_select([[maybe_unused]] void    *input,
 
   const cs_mesh_t *m = cs_glob_mesh;
 
-  cs_field_t *f = cs_field_by_name_try("He_fraction"); /* Get access to field */
+  cs_field_t *f = cs_field_try("He_fraction"); /* Get access to field */
 
   if (f == nullptr)
     bft_error(__FILE__, __LINE__, 0,
@@ -784,7 +784,7 @@ cs_user_postprocess_values
   if (   cat_id == CS_POST_MESH_VOLUME
       || cat_id == CS_POST_MESH_PROBES) {
 
-    const cs_field_t *f = cs_field_by_name_try("my_field");
+    const cs_field_t *f = cs_field_try("my_field");
 
     if (f != nullptr)
       cs_post_write_var(mesh_id,
@@ -807,7 +807,7 @@ cs_user_postprocess_values
   /*< [postprocess_values_ex_4] */
   if (cat_id == CS_POST_MESH_VOLUME) {
 
-    const cs_field_t *f = cs_field_by_name_try("my_const_field");
+    const cs_field_t *f = cs_field_try("my_const_field");
 
     if (f != nullptr) {
       if (ts->nt_cur == ts->nt_prev + 1) { /* before time loop */

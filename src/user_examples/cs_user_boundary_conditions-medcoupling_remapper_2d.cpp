@@ -168,7 +168,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   /*! [dirichlet_condition] */
   const cs_zone_t *z = cs_boundary_zone_by_name("inlet");
 
-  cs_field_t *scalar = cs_field_by_name_try("scalar1");
+  cs_field_t *scalar = cs_field_try("scalar1");
   int       *icodcl  = scalar->bc_coeffs->icodcl;
   cs_real_t *rcodcl1 = scalar->bc_coeffs->rcodcl1;
 

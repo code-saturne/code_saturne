@@ -342,7 +342,7 @@ cs_user_wall_condensation(int  iappel)
 
       // Source term for scalars
       for (int f_id = 0; f_id < n_fields; f_id++) {
-        f = cs_field_by_id(f_id);
+        f = cs_field(f_id);
         if (f->type & CS_FIELD_VARIABLE) {
           int iscal = f->get_key_int( keysca);
           if (iscal > 0) {
@@ -372,12 +372,12 @@ cs_user_wall_condensation(int  iappel)
 
     cs_gas_mix_species_prop_t s_h2o_g;
     const int key_mix = cs_field_key_id("gas_mix_species_prop");
-    cs_field_get_key_struct(cs_field_by_name_try("y_h2o_g"),
+    cs_field_get_key_struct(cs_field_try("y_h2o_g"),
                             key_mix, &s_h2o_g);
 
     // Source term for scalars
     for (int f_id = 0; f_id < n_fields; f_id++) {
-      f = cs_field_by_id(f_id);
+      f = cs_field(f_id);
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
       int iscal = f->get_key_int(keysca);

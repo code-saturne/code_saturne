@@ -76,7 +76,7 @@ cs_user_porosity([[maybe_unused]] cs_domain_t   *domain)
 
   /* Temporary arrays for face porosity */
 
-  cs_real_t  *cell_porosity = cs_field_by_name("porosity")->val;
+  cs_real_t  *cell_porosity = cs_field("porosity")->val;
 
   cs_real_t  *i_face_porosity, *b_face_porosity;
 

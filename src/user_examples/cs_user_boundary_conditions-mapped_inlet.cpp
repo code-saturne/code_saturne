@@ -148,7 +148,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
                                     viscl0);
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
-      cs_field_t *f = cs_field_by_id(f_id);
+      cs_field_t *f = cs_field(f_id);
 
       /* Here we only handle user scalar */
      if (f->get_key_int(keysca) > 1)
@@ -196,7 +196,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
-      cs_field_t *f = cs_field_by_id(f_id);
+      cs_field_t *f = cs_field(f_id);
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;

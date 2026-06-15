@@ -99,7 +99,7 @@ cs_user_postprocess_values
 
     for (int i = 0; i < n_p_fields; i++) {
 
-      cs_field_t *f = cs_field_by_name_try(p_field_names[i]);
+      cs_field_t *f = cs_field_try(p_field_names[i]);
 
       if (f != nullptr) {
 

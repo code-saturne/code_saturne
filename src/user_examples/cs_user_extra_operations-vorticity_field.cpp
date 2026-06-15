@@ -82,7 +82,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /* ! [vorticity_g] */
 
   /* ! [vorticity_f] */
-  cs_field_t *vort = cs_field_by_name_try("vorticity");
+  cs_field_t *vort = cs_field_try("vorticity");
   /* ! [vorticity_f] */
 
   /* ! [vorticity_cv] */
