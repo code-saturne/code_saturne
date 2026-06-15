@@ -250,6 +250,32 @@ cs_user_time_moments(void)
   }
   /*! [tmom_u] */
 
+  /*! [tmom_ewa_u] */
+  {
+    /* Exponentially weighted moving average <U> with a memory time scale
+       T = 10 s, started from time step 1000.
+       Unlike a cumulative mean, an EWA progressively forgets old samples,
+       so it tracks slowly drifting statistics in a statistically unsteady
+       flow. The trailing argument is the EWA time scale T (s): it must be
+       strictly positive for an EWA moment (and left unset, i.e. defaulted,
+       for mean or variance moments). The resulting field is a vector. */
+
+    int moment_f_id[] = {CS_F_(vel)->id};
+    int moment_c_id[] = {-1};
+    int n_fields = 1;
+    cs_time_moment_define_by_field_ids("u_ewa",
+                                       n_fields,
+                                       moment_f_id,
+                                       moment_c_id,
+                                       CS_TIME_MOMENT_EWA,
+                                       1000, /* nt_start */
+                                       -1,   /* t_start */
+                                       CS_TIME_MOMENT_RESTART_AUTO,
+                                       nullptr,
+                                       10.0); /* EWA time scale T (s) */
+  }
+  /*! [tmom_ewa_u] */
+
   /*! [tmom_variance_u] */
   {
     /* Second order moment <UU>-<U><U> calculated starting from time step 1000. */

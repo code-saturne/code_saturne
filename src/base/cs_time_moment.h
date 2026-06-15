@@ -53,8 +53,9 @@
 /*! Temporal moments management. */
 typedef enum {
 
-  CS_TIME_MOMENT_MEAN,    /*!< Moment is a mean */
-  CS_TIME_MOMENT_VARIANCE /*!< Moment is a variance */
+  CS_TIME_MOMENT_MEAN,     /*!< Moment is a mean */
+  CS_TIME_MOMENT_VARIANCE, /*!< Moment is a variance */
+  CS_TIME_MOMENT_EWA       /*!< Exponentially weighted average with time scale T */
 
 } cs_time_moment_type_t;
 
@@ -160,15 +161,18 @@ cs_time_moment_is_active(int moment_id);
  * If of dimension > 1, the moment array is always interleaved.
  *
  * parameters:
- *   name         <-- name of associated moment
- *   n_fields     <-- number of associated fields
- *   field_id     <-- ids of associated fields
- *   component_id <-- ids of matching field components (-1 for all)
- *   type         <-- moment type
- *   nt_start     <-- starting time step (or -1 to use t_start)
- *   t_start      <-- starting time
- *   restart_mode <-- behavior in case of restart (reset, auto, or strict)
- *   restart_name <-- if non-null, previous name in case of restart
+ *   name            <-- name of associated moment
+ *   n_fields        <-- number of associated fields
+ *   field_id        <-- ids of associated fields
+ *   component_id    <-- ids of matching field components (-1 for all)
+ *   type            <-- moment type
+ *   nt_start        <-- starting time step (or -1 to use t_start)
+ *   t_start         <-- starting time
+ *   restart_mode    <-- behavior in case of restart (reset, auto, or strict)
+ *   restart_name    <-- if non-null, previous name in case of restart
+ *   ewa_time_scale  <-- EWA time scale T (s); required (> 0) when type is
+ *                       CS_TIME_MOMENT_EWA, must be left unset (default -1)
+ *                       otherwise
  *
  * returns:
  *   id of new moment in case of success, -1 in case of error.
@@ -183,7 +187,8 @@ cs_time_moment_define_by_field_ids(const char                *name,
                                    int                        nt_start,
                                    double                     t_start,
                                    cs_time_moment_restart_t   restart_mode,
-                                   const char                *restart_name);
+                                   const char                *restart_name,
+                                   cs_real_t                  ewa_time_scale = -1.);
 
 /*----------------------------------------------------------------------------
  * Define a time moment of an existing field.
@@ -195,13 +200,16 @@ cs_time_moment_define_by_field_ids(const char                *name,
  * (i.e. variance) may only involve a scalar or vector.
  *
  * parameters:
- *   name         <-- name of associated moment
- *   f            <-- pointer to associated field
- *   type         <-- moment type
- *   nt_start     <-- starting time step (or -1 to use t_start)
- *   t_start      <-- starting time
- *   restart_mode <-- behavior in case of restart (reset, auto, or strict)
- *   restart_name <-- if non-null, previous name in case of restart
+ *   name            <-- name of associated moment
+ *   f               <-- pointer to associated field
+ *   type            <-- moment type
+ *   nt_start        <-- starting time step (or -1 to use t_start)
+ *   t_start         <-- starting time
+ *   restart_mode    <-- behavior in case of restart (reset, auto, or strict)
+ *   restart_name    <-- if non-null, previous name in case of restart
+ *   ewa_time_scale  <-- EWA time scale T (s); required (> 0) when type is
+ *                       CS_TIME_MOMENT_EWA, must be left unset (default -1)
+ *                       otherwise
  *
  * returns:
  *   id of new moment in case of success, -1 in case of error.
@@ -214,7 +222,8 @@ cs_time_moment_define_by_field(const char                *name,
                                int                        nt_start,
                                double                     t_start,
                                cs_time_moment_restart_t   restart_mode,
-                               const char                *restart_name);
+                               const char                *restart_name,
+                               cs_real_t                  ewa_time_scale = -1.);
 
 /*----------------------------------------------------------------------------
  * Define a time moment based on an evaluation function.
@@ -226,13 +235,16 @@ cs_time_moment_define_by_field(const char                *name,
  * (i.e. variance) may only involve a scalar or vector.
  *
  * parameters:
- *   name         <-- name of associated moment
- *   f            <-- pointer to function object
- *   type         <-- moment type
- *   nt_start     <-- starting time step (or -1 to use t_start)
- *   t_start      <-- starting time
- *   restart_mode <-- behavior in case of restart (reset, auto, or strict)
- *   restart_name <-- if non-null, previous name in case of restart
+ *   name            <-- name of associated moment
+ *   f               <-- pointer to function object
+ *   type            <-- moment type
+ *   nt_start        <-- starting time step (or -1 to use t_start)
+ *   t_start         <-- starting time
+ *   restart_mode    <-- behavior in case of restart (reset, auto, or strict)
+ *   restart_name    <-- if non-null, previous name in case of restart
+ *   ewa_time_scale  <-- EWA time scale T (s); required (> 0) when type is
+ *                       CS_TIME_MOMENT_EWA, must be left unset (default -1)
+ *                       otherwise
  *
  * returns:
  *   id of new moment in case of success, -1 in case of error.
@@ -245,7 +257,8 @@ cs_time_moment_define_by_function(const char                *name,
                                   int                        nt_start,
                                   double                     t_start,
                                   cs_time_moment_restart_t   restart_mode,
-                                  const char                *restart_name);
+                                  const char                *restart_name,
+                                  cs_real_t                  ewa_time_scale = -1.);
 
 /*----------------------------------------------------------------------------
  * Define a moment whose data values will be computed using a
@@ -254,21 +267,24 @@ cs_time_moment_define_by_function(const char                *name,
  * If of dimension > 1, the moment array is always interleaved.
  *
  * parameters:
- *   name         <-- name of associated moment
- *   location_id  <-- id of associated mesh location
- *   dim          <-- dimension associated with element data
- *   is_intensive <-- is the time moment intensive?
- *   data_func    <-- function used to define data values
- *   data_input   <-- pointer to optional (untyped) value or structure
- *                    to be used by data_func
- *   weight_func  <-- function used to define weight values
- *   weight_input <-- pointer to optional (untyped) value or structure
- *                    to be used by weight_func
- *   type         <-- moment type
- *   nt_start     <-- starting time step (or -1 to use t_start)
- *   t_start      <-- starting time
- *   restart_mode <-- behavior in case of restart (reset, auto, or strict)
- *   restart_name <-- if non-null, previous name in case of restart
+ *   name            <-- name of associated moment
+ *   location_id     <-- id of associated mesh location
+ *   dim             <-- dimension associated with element data
+ *   is_intensive    <-- is the time moment intensive?
+ *   data_func       <-- function used to define data values
+ *   data_input      <-- pointer to optional (untyped) value or structure
+ *                       to be used by data_func
+ *   weight_func     <-- function used to define weight values
+ *   weight_input    <-- pointer to optional (untyped) value or structure
+ *                       to be used by weight_func
+ *   type            <-- moment type
+ *   nt_start        <-- starting time step (or -1 to use t_start)
+ *   t_start         <-- starting time
+ *   restart_mode    <-- behavior in case of restart (reset, auto, or strict)
+ *   restart_name    <-- if non-null, previous name in case of restart
+ *   ewa_time_scale  <-- EWA time scale T (s); required (> 0) when type is
+ *                       CS_TIME_MOMENT_EWA, must be left unset (default -1)
+ *                       otherwise
  *
  * returns:
  *   id of new moment in case of success, -1 in case of error.
@@ -287,7 +303,8 @@ cs_time_moment_define_by_func(const char                *name,
                               int                        nt_start,
                               double                     t_start,
                               cs_time_moment_restart_t   restart_mode,
-                              const char                *restart_name);
+                              const char                *restart_name,
+                              cs_real_t                  ewa_time_scale = -1.);
 
 /*----------------------------------------------------------------------------
  * Return the number of defined time moments.

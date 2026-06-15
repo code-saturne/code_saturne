@@ -3,6 +3,13 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Introduces an exponentially weighted average (EWA) accumulator type with a
+  user-specified time scale T. The EWA is selected by passing
+  CS_TIME_MOMENT_EWA to any existing cs_time_moment_define_by_* function,
+  with the time scale T given via an optional "trailing" ewa_time_scale
+  argument. It defaults to -1 (unset), so all existing call sites remain
+  unchanged and only EWA moments need to pass T.
+
 - 1D wall thermal module: Users can now use `cs_user_1d_wall_thermal_setup` to
   define a 1D wall thermal condition using high-level API based on boundary
   zones.

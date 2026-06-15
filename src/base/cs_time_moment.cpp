@@ -145,6 +145,9 @@ typedef struct {
   int                     l_id;         /* Associated id of lower order moment
                                            (mean for variance), or -1 */
 
+  cs_real_t               ewa_time_scale; /* EWA time scale T (s); only used
+                                             when type == CS_TIME_MOMENT_EWA */
+
   char                   *name;         /* Associated name, if f_id < 0 */
   double                 *val;          /* Associated value, if f_id < 0 */
 
@@ -215,7 +218,8 @@ static const cs_real_t *_p_dt = nullptr; /* Mapped reference time step */
 /* Names associated with moment types */
 
 const char  *cs_time_moment_type_name[] = {N_("mean"),
-                                           N_("variance")};
+                                           N_("variance"),
+                                           N_("ewa")};
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -607,7 +611,7 @@ _check_restart(const char                     *name,
   if (prev_id > -1) {
 
     for (int m_type = (cs_time_moment_type_t)type;
-         m_type > CS_TIME_MOMENT_MEAN;
+         m_type > CS_TIME_MOMENT_MEAN && type != CS_TIME_MOMENT_EWA;
          m_type--) {
 
       cs_time_moment_type_t s_type = (cs_time_moment_type_t)(m_type -1);
@@ -1191,6 +1195,8 @@ _find_or_add_moment(int                     location_id,
 
   mt->l_id = -1;
 
+  mt->ewa_time_scale = 0.;
+
   mt->name = nullptr;
   mt->val = nullptr;
 
@@ -1395,10 +1401,28 @@ _time_moment_define_by_func(const char                *name,
                             int                        nt_start,
                             double                     t_start,
                             cs_time_moment_restart_t   restart_mode,
-                            const char                *restart_name)
+                            const char                *restart_name,
+                            cs_real_t                  ewa_time_scale)
 {
   int i;
   cs_field_t  *f;
+
+  /* Validate EWA time scale consistency with moment type */
+
+  if (type == CS_TIME_MOMENT_EWA) {
+    if (ewa_time_scale <= 0.)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Time moment definition for \"%s\" is inconsistent:\n"
+                  " an EWA moment requires a strictly positive time scale,\n"
+                  " but ewa_time_scale = %g was given."),
+                name, (double)ewa_time_scale);
+  }
+  else if (ewa_time_scale > 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Time moment definition for \"%s\" is inconsistent:\n"
+                " a time scale (ewa_time_scale = %g) was given for a\n"
+                " non-EWA (%s) moment; it is only meaningful for an EWA moment."),
+              name, (double)ewa_time_scale, _(cs_time_moment_type_name[type]));
 
   int wa_location_id = 0; // > 0 only if restarted from older checkpoint.
 
@@ -1498,12 +1522,13 @@ _time_moment_define_by_func(const char                *name,
   mt = _moment + moment_id;
 
   mt->f_id = f->id;
+  mt->ewa_time_scale = ewa_time_scale;
   CS_FREE(mt->name); /* in case previously defined as sub-moment */
 
-  /* Define sub moments */
+  /* Define sub moments (mean sub-moment for variance; not applicable to EWA) */
 
   for (int m_type = type;
-       m_type > CS_TIME_MOMENT_MEAN;
+       m_type > CS_TIME_MOMENT_MEAN && type != CS_TIME_MOMENT_EWA;
        m_type--) {
 
     const cs_time_moment_restart_info_t  *ri = _restart_info;
@@ -1675,7 +1700,8 @@ cs_time_moment_define_by_field_ids(const char                *name,
                                    int                        nt_start,
                                    double                     t_start,
                                    cs_time_moment_restart_t   restart_mode,
-                                   const char                *restart_name)
+                                   const char                *restart_name,
+                                   cs_real_t                  ewa_time_scale)
 {
   int m_id = -1;
   bool is_intensive = true;
@@ -1697,7 +1723,8 @@ cs_time_moment_define_by_field_ids(const char                *name,
                                      nt_start,
                                      t_start,
                                      restart_mode,
-                                     restart_name);
+                                     restart_name,
+                                     ewa_time_scale);
 
   return m_id;
 }
@@ -1732,7 +1759,8 @@ cs_time_moment_define_by_field(const char                *name,
                                int                        nt_start,
                                double                     t_start,
                                cs_time_moment_restart_t   restart_mode,
-                               const char                *restart_name)
+                               const char                *restart_name,
+                               cs_real_t                  ewa_time_scale)
 {
   int m_id = -1;
   bool is_intensive = true;
@@ -1756,7 +1784,8 @@ cs_time_moment_define_by_field(const char                *name,
                                      nt_start,
                                      t_start,
                                      restart_mode,
-                                     restart_name);
+                                     restart_name,
+                                     ewa_time_scale);
 
   return m_id;
 }
@@ -1791,7 +1820,8 @@ cs_time_moment_define_by_function(const char                *name,
                                   int                        nt_start,
                                   double                     t_start,
                                   cs_time_moment_restart_t   restart_mode,
-                                  const char                *restart_name)
+                                  const char                *restart_name,
+                                  cs_real_t                  ewa_time_scale)
 {
   bool is_intensive = f->type & CS_FUNCTION_INTENSIVE;
 
@@ -1808,7 +1838,8 @@ cs_time_moment_define_by_function(const char                *name,
                                          nt_start,
                                          t_start,
                                          restart_mode,
-                                         restart_name);
+                                         restart_name,
+                                         ewa_time_scale);
 
   return m_id;
 }
@@ -1852,7 +1883,8 @@ cs_time_moment_define_by_func(const char                *name,
                               int                        nt_start,
                               double                     t_start,
                               cs_time_moment_restart_t   restart_mode,
-                              const char                *restart_name)
+                              const char                *restart_name,
+                              cs_real_t                  ewa_time_scale)
 {
   int moment_id = _time_moment_define_by_func(name,
                                               location_id,
@@ -1867,7 +1899,8 @@ cs_time_moment_define_by_func(const char                *name,
                                               nt_start,
                                               t_start,
                                               restart_mode,
-                                              restart_name);
+                                              restart_name,
+                                              ewa_time_scale);
 
   return moment_id;
 }
@@ -2218,9 +2251,9 @@ cs_time_moment_update_all(void)
       wa_cur_data[i] = nullptr;
   }
 
-  /* Loop on variances first */
+  /* Loop from highest-order moment type down to mean */
 
-  for (int m_type = CS_TIME_MOMENT_VARIANCE;
+  for (int m_type = CS_TIME_MOMENT_EWA;
        m_type >= (int)CS_TIME_MOMENT_MEAN;
        m_type --) {
 
@@ -2351,6 +2384,21 @@ cs_time_moment_update_all(void)
           ctx.parallel_for(nd, [=] CS_F_HOST_DEVICE (cs_lnum_t j) {
             const cs_lnum_t k = j*k_stride;
             val[j] += (x[j] - val[j]) * (w[k] / (w[k] + wa_sum[k]));
+          });
+
+        }
+
+        else if (mt->type == CS_TIME_MOMENT_EWA) {
+
+          /* w_eff = wa_sum while warming up (< T), then capped at T.
+             This gives the same update as MEAN during start-up and an
+             exponential forgetting factor of dt/T at steady state. */
+          const cs_real_t T = mt->ewa_time_scale;
+          cs_lnum_t k_stride = wa_stride / mt->dim;
+          ctx.parallel_for(nd, [=] CS_F_HOST_DEVICE (cs_lnum_t j) {
+            const cs_lnum_t k = j*k_stride;
+            const cs_real_t w_eff = (wa_sum[k] < T) ? wa_sum[k] : T;
+            val[j] += (x[j] - val[j]) * (w[k] / (w[k] + w_eff));
           });
 
         }

@@ -730,6 +730,18 @@
 
   \snippet cs_user_parameters-time_moments.cpp tmom_variance_u
 
+  In the next example, we define an exponentially weighted moving average
+  (EWA) of the velocity. Contrary to a cumulative mean, an EWA progressively
+  forgets old samples over a user-defined memory time scale \f$T\f$, which is
+  useful to track slowly drifting statistics in a statistically unsteady flow.
+  Note that this type of average is not a true moving average.
+
+  The EWA mode is selected with \ref CS_TIME_MOMENT_EWA, and the time scale
+  \f$T\f$ (s) is passed as the trailing argument (it must be strictly positive
+  for an EWA moment, and left unset for mean or variance moments).
+
+  \snippet cs_user_parameters-time_moments.cpp tmom_ewa_u
+
   \subsection cs_user_parameters_h_example_2 Example 2
 
   In the next example, we multiply the expression by the density.
