@@ -1548,21 +1548,19 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       /* compute magnetic field component B */
       cs_field_t  *fp = cs_field_by_name_try("vec_potential");
 
-      cs_real_33_t *gradv = nullptr;
-      CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+      cs_array_3d<cs_real_t> gradv(n_cells_ext, 3, 3, cs_alloc_mode);
 
       cs_field_gradient_vector(fp,
                                false, /* use_previous_t */
                                1,    /* inc */
-                               gradv);
+                               gradv.data<cs_real_33_t>());
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        cpro_magfl[iel][0] = -gradv[iel][1][2]+gradv[iel][2][1];
-        cpro_magfl[iel][1] =  gradv[iel][0][2]-gradv[iel][2][0];
-        cpro_magfl[iel][2] = -gradv[iel][0][1]+gradv[iel][1][0];
+        cpro_magfl[iel][0] = -gradv(iel, 1, 2)+gradv(iel, 2, 1);
+        cpro_magfl[iel][1] =  gradv(iel, 0, 2)-gradv(iel, 2, 0);
+        cpro_magfl[iel][2] = -gradv(iel, 0, 1)+gradv(iel, 1, 0);
       }
 
-      CS_FREE(gradv);
     }
     else if (ielarc == 1)
       bft_error(__FILE__, __LINE__, 0,
