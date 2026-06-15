@@ -209,7 +209,7 @@ _count_to_index_inplace_cuda(cudaStream_t  stream,
   // Ensure past-the-end value is initialized.
   cudaMemsetAsync(&(a[n]), 0, sizeof(cs_lnum_t), stream);
 
-  assert(a != nullptr && n > 0);
+  assert(a != nullptr);
 
   unsigned char *tmp_storage
     = reinterpret_cast<unsigned char *>(tmp_storage_caller);
@@ -292,7 +292,7 @@ static void
 _count_to_index_inplace_serial(cs_lnum_t  n,
                                cs_lnum_t  a[])
 {
-  assert(a != nullptr && n > 0);
+  assert(a != nullptr);
 
   cs_lnum_t s = 0;
 
