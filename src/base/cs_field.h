@@ -376,6 +376,20 @@ public:
   const char *
   get_key_str(const char  *key) const;
 
+  const void *
+  get_key_struct
+  (
+    const int  key_id,
+    void      *s
+  ) const;
+
+  const void *
+  get_key_struct
+  (
+    const char *key,
+    void       *s
+  ) const;
+
   cs_span_2d<cs_real_t>
   view
   (

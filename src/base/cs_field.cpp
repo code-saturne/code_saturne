@@ -3438,50 +3438,7 @@ cs_field_get_key_struct(const cs_field_t  *f,
     return nullptr;
   assert(f->id >= 0 && f->id < _n_fields);
 
-  int errcode = CS_FIELD_OK;
-
-  if (key_id > -1 && key_id < _n_keys) {
-    cs_field_key_def_t *kd = _key_defs + key_id;
-    assert(key_id < _n_keys);
-    if (kd->type_flag != 0 && !(f->type & kd->type_flag))
-      errcode = CS_FIELD_INVALID_CATEGORY;
-    else if (kd->type_id != 't')
-      errcode = CS_FIELD_INVALID_TYPE;
-    else {
-      cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
-      const void *p = nullptr;
-      if (kv->is_set)
-        p = kv->val.v_p;
-      else if (kd->is_sub)
-        p = cs_field_get_key_struct(f, kd->def_val.v_int, s);
-      else
-        p = kd->def_val.v_p;
-      memcpy(s, p, kd->type_size);
-      return s;
-    }
-  }
-  else
-    errcode = CS_FIELD_INVALID_KEY_ID;
-
-  if (errcode != CS_FIELD_OK) {
-    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
-    if (errcode == CS_FIELD_INVALID_CATEGORY)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field \"%s\" with type flag %d\n"
-                  "has no value associated with key %d (\"%s\")."),
-                f->name, f->type, key_id, key);
-    else if (errcode == CS_FIELD_INVALID_TYPE)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field \"%s\" has keyword %d (\"%s\")\n"
-                  "of type \"%c\" and not \"%c\"."),
-                f->name, key_id, key, (_key_defs + key_id)->type_id, 'i');
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _("Field keyword with id %d is not defined."),
-                key_id);
-  }
-
-  return nullptr;
+  return f->get_key_struct(key_id, s);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4995,6 +4952,95 @@ cs_field_t::get_key_str
   int key_id = cs_field_key_id(key);
 
   return this->get_key_str(key_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a structure for a given key associated with a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * \return  pointer to structure associated with
+ *          the key id for this field (same as s)
+ */
+/*----------------------------------------------------------------------------*/
+
+const void *
+cs_field_t::get_key_struct
+(
+  const int  key_id, /*!<[in]  id of associated key */
+  void      *s       /*!<[out] structure associated with key */
+) const
+{
+  int errcode = CS_FIELD_OK;
+
+  if (key_id > -1 && key_id < _n_keys) {
+    cs_field_key_def_t *kd = _key_defs + key_id;
+    assert(key_id < _n_keys);
+    if (kd->type_flag != 0 && !(this->type & kd->type_flag))
+      errcode = CS_FIELD_INVALID_CATEGORY;
+    else if (kd->type_id != 't')
+      errcode = CS_FIELD_INVALID_TYPE;
+    else {
+      cs_field_key_val_t *kv = _key_vals + (this->id*_n_keys_max + key_id);
+      const void *p = nullptr;
+      if (kv->is_set)
+        p = kv->val.v_p;
+      else if (kd->is_sub)
+        p = this->get_key_struct(kd->def_val.v_int, s);
+      else
+        p = kd->def_val.v_p;
+      memcpy(s, p, kd->type_size);
+      return s;
+    }
+  }
+  else
+    errcode = CS_FIELD_INVALID_KEY_ID;
+
+  if (errcode != CS_FIELD_OK) {
+    const char *key = cs_map_name_to_id_reverse(_key_map, key_id);
+    if (errcode == CS_FIELD_INVALID_CATEGORY)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" with type flag %d\n"
+                  "has no value associated with key %d (\"%s\")."),
+                this->name, this->type, key_id, key);
+    else if (errcode == CS_FIELD_INVALID_TYPE)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field \"%s\" has keyword %d (\"%s\")\n"
+                  "of type \"%c\" and not \"%c\"."),
+                this->name, key_id, key, (_key_defs + key_id)->type_id, 'i');
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field keyword with id %d is not defined."),
+                key_id);
+  }
+
+  return nullptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a structure for a given key associated with a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * \return  pointer to structure associated with
+ *          the key id for this field (same as s)
+ */
+/*----------------------------------------------------------------------------*/
+
+const void *
+cs_field_t::get_key_struct
+(
+  const char *key, /*!<[in]  Key string */
+  void       *s    /*!<[out] structure associated with key */
+) const
+{
+  int key_id = cs_field_key_id(key);
+
+  return this->get_key_struct(key_id, s);
 }
 
 ///@}
