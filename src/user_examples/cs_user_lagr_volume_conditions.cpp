@@ -245,7 +245,7 @@ cs_user_lagr_volume_conditions(void)
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
       flow_rate += lagr_injection_profile[cell_id];
 
-    cs_parall_sum(1, CS_REAL_TYPE, &flow_rate);
+    cs::parall::sum(flow_rate);
 
     zis->flow_rate = flow_rate;
 

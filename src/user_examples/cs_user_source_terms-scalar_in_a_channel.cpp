@@ -97,7 +97,7 @@ cs_user_source_terms
   for (cs_lnum_t i = 0; i < n_cells; i++)
     ubulk += cvar_vel[i][0] * cell_f_vol[i];
 
-  cs_parall_sum(1, CS_REAL_TYPE, &ubulk);  /* sum across processes if needed */
+  cs::parall::sum(ubulk);  /* sum across processes if needed */
 
   ubulk /= cs_glob_mesh_quantities->tot_vol;
   /*! [bulk_mean_velocity] */

@@ -570,8 +570,7 @@ _cad_intersect(const cs_mesh_t        *m,
 
   /* Extract cell->faces index for selected subset */
 
-  cs_lnum_t  *c_restrict_id;
-  CS_MALLOC(c_restrict_id, n_cells_ext, cs_lnum_t);
+  cs_array<cs_lnum_t> c_restrict_id(n_cells_ext);
   if (cell_ids != nullptr) {
     for (cs_lnum_t i = 0; i < n_cells_ext; i++)
       c_restrict_id[i] = -1;
@@ -750,7 +749,6 @@ _cad_intersect(const cs_mesh_t        *m,
   if (triangulate_state != nullptr)
     triangulate_state = fvm_triangulate_state_destroy(triangulate_state);
 
-  CS_FREE(c_restrict_id);
 }
 
 /*----------------------------------------------------------------------------*/

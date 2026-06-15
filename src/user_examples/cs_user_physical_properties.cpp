@@ -290,8 +290,7 @@ cs_user_physical_properties_turb_viscosity
     mijmijmoy += mijmij[c_id]*cell_vol[c_id];
   }
 
-  cs_parall_sum(1, CS_REAL_TYPE, &mijlijmoy);
-  cs_parall_sum(1, CS_REAL_TYPE, &mijmijmoy);
+  cs::parall::sum(mijlijmoy, mijmijmoy);
 
   mijmijmoy /= tot_vol;
   mijlijmoy /= tot_vol;

@@ -113,8 +113,7 @@ cs_user_scaling_elec
       amex = cs::min(amex, w1[iel]);
       aiex = cs::max(amex, w1[iel]);
     }
-    cs_parall_min(1, CS_DOUBLE, &amex);
-    cs_parall_max(1, CS_DOUBLE, &aiex);
+    cs::parall::min(amex, aiex);
 
     bft_printf("min and max for E : %14.5E %15.4E\n", amex, aiex);
 
@@ -186,7 +185,7 @@ cs_user_scaling_elec
       somje += CS_F_(joulp)->val[iel] * volume[iel];
     }
 
-    cs_parall_sum(1, CS_DOUBLE, &somje);
+    cs::parall::sum(somje);
 
     if (fabs(somje) > 1.-20)
       coepot = cs_glob_elec_option->couimp * cs_glob_elec_option->pot_diff
@@ -206,7 +205,7 @@ cs_user_scaling_elec
       }
     }
 
-    cs_parall_sum(1, CS_DOUBLE, &elcou);
+    cs::parall::sum(elcou);
 
     if (fabs(elcou) > 1.e-6)
       elcou = fabs(elcou);
@@ -235,7 +234,7 @@ cs_user_scaling_elec
       dtjm = fabs(dtjm);
       dtj = cs::min(dtj, dtjm);
     }
-    cs_parall_min(1, CS_DOUBLE, &dtj);
+    cs::parall::min(dtj);
 
     double cpmx = pow(cdtj * dtj, 0.5);
     coepot = cpmx;

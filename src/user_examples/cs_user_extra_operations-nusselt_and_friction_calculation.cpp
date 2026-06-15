@@ -115,7 +115,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
     /* Get the total number of faces shared on all ranks */
     n_selected_faces_g = n_selected_faces;
-    cs_parall_sum(1 , CS_GNUM_TYPE, &n_selected_faces_g);
+    cs::parall::sum(n_selected_faces_g);
 
     /*Allocate local and global arrays to store the desired data */
     cs_array<cs_real_t> loc_nusselt(n_selected_faces);

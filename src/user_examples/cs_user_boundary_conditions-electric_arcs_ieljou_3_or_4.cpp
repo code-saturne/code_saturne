@@ -79,23 +79,20 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   cs_data_joule_effect_t *transfo = cs_get_glob_transformer();
 
-  cs_real_t *sir, *sii, *sirt, *siit;
-  cs_real_6_t *sirb, *siib, *ur, *ui;
-  int *nborne;
   char name[8];
 
-  CS_MALLOC(sir, nbelec, cs_real_t);
-  CS_MALLOC(sii, nbelec, cs_real_t);
+  cs_array<cs_real_t> sir(nbelec);
+  cs_array<cs_real_t> sii(nbelec);
 
-  CS_MALLOC(sirt, nbtrf, cs_real_t);
-  CS_MALLOC(siit, nbtrf, cs_real_t);
+  cs_array<cs_real_t> sirt(nbtrf);
+  cs_array<cs_real_t> siit(nbtrf);
 
-  CS_MALLOC(siib, nbtrf, cs_real_6_t);
-  CS_MALLOC(sirb, nbtrf, cs_real_6_t);
-  CS_MALLOC(ui, nbtrf, cs_real_6_t);
-  CS_MALLOC(ur, nbtrf, cs_real_6_t);
+  cs_array_2d<cs_real_t> siib(nbtrf, 6);
+  cs_array_2d<cs_real_t> sirb(nbtrf, 6);
+  cs_array_2d<cs_real_t> ui(nbtrf, 6);
+  cs_array_2d<cs_real_t> ur(nbtrf, 6);
 
-  CS_MALLOC(nborne, nbtrf, int);
+  cs_array<int> nborne(nbtrf);
   /*! [init] */
 
   /* 1 - Computation of intensity (A/m2) for each electrode */
@@ -160,16 +157,16 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   /*! [step_2_1] */
   for (int i = 0; i < nbelec; i++) {
-    sirb[transfo->ielect[i]][transfo->ielecb[i]] = 0.;
+    sirb(transfo->ielect[i], transfo->ielecb[i]) = 0.;
     if (ieljou == 4)
-      siib[transfo->ielect[i]][transfo->ielecb[i]] = 0.;
+      siib(transfo->ielect[i], transfo->ielecb[i]) = 0.;
   }
 
   for (int i = 0; i < nbelec; i++) {
     if (transfo->ielect[i] != 0) {
-      sirb[transfo->ielect[i]][transfo->ielecb[i]] += sir[i];
+      sirb(transfo->ielect[i], transfo->ielecb[i]) += sir[i];
       if (ieljou == 4)
-        siib[transfo->ielect[i]][transfo->ielecb[i]] += sii[i];
+        siib(transfo->ielect[i], transfo->ielecb[i]) += sii[i];
     }
   }
   /*! [step_2_1] */
@@ -184,25 +181,25 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       nborne[ntf] = 3;
       cs_real_t rnbs2 = 3. * transfo->rnbs[ntf]
                            * transfo->rnbs[ntf];
-      ur[ntf][0] = 1.154675 * transfo->tenspr[ntf]
+      ur(ntf, 0) = 1.154675 * transfo->tenspr[ntf]
                             / transfo->rnbs[ntf]
-                 + (transfo->zr[ntf] * sirb[ntf][0]
-                 -  transfo->zi[ntf] * siib[ntf][0]) / rnbs2;
-      ur[ntf][1] = -0.5773 * transfo->tenspr[ntf]
+                 + (transfo->zr[ntf] * sirb(ntf, 0)
+                 -  transfo->zi[ntf] * siib(ntf, 0)) / rnbs2;
+      ur(ntf, 1) = -0.5773 * transfo->tenspr[ntf]
                            / transfo->rnbs[ntf]
-                 + (transfo->zr[ntf] * sirb[ntf][1]
-                 -  transfo->zi[ntf] * siib[ntf][1]) / rnbs2;
-      ur[ntf][2] =-0.5773 * transfo->tenspr[ntf]
+                 + (transfo->zr[ntf] * sirb(ntf, 1)
+                 -  transfo->zi[ntf] * siib(ntf, 1)) / rnbs2;
+      ur(ntf, 2) =-0.5773 * transfo->tenspr[ntf]
                            / transfo->rnbs[ntf]
-                 + (transfo->zr[ntf] * sirb[ntf][2]
-                 -  transfo->zi[ntf] * siib[ntf][2]) / rnbs2;
+                 + (transfo->zr[ntf] * sirb(ntf, 2)
+                 -  transfo->zi[ntf] * siib(ntf, 2)) / rnbs2;
 
-      ui[ntf][0] = (transfo->zi[ntf] * sirb[ntf][0]
-                 -  transfo->zr[ntf] * siib[ntf][0]) / rnbs2;
-      ui[ntf][1] = (transfo->zi[ntf] * sirb[ntf][1]
-                 -  transfo->zr[ntf] * siib[ntf][1]) / rnbs2;
-      ui[ntf][2] = (transfo->zi[ntf] * sirb[ntf][2]
-                 -  transfo->zr[ntf] * siib[ntf][2]) / rnbs2;
+      ui(ntf, 0) = (transfo->zi[ntf] * sirb(ntf, 0)
+                 -  transfo->zr[ntf] * siib(ntf, 0)) / rnbs2;
+      ui(ntf, 1) = (transfo->zi[ntf] * sirb(ntf, 1)
+                 -  transfo->zr[ntf] * siib(ntf, 1)) / rnbs2;
+      ui(ntf, 2) = (transfo->zi[ntf] * sirb(ntf, 2)
+                 -  transfo->zr[ntf] * siib(ntf, 2)) / rnbs2;
     }
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -249,9 +246,9 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   for (int ntf = 0; ntf < nbtrf; ntf++) {
     for (int nb = 0; nb < nborne[ntf]; nb++) {
-      ur[ntf][nb] += transfo->uroff[ntf];
+      ur(ntf, nb) += transfo->uroff[ntf];
       if (ieljou == 4)
-        ui[ntf][nb] += transfo->uioff[ntf];
+        ui(ntf, nb) += transfo->uioff[ntf];
     }
   }
 
@@ -298,11 +295,11 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
       if (transfo->ielect[i] != 0) {
         potr_icodcl[face_id] = CS_BC_DIRICHLET;
-        potr_rcodcl1[face_id] = ur[transfo->ielect[i]][transfo->ielecb[i]];
+        potr_rcodcl1[face_id] = ur(transfo->ielect[i], transfo->ielecb[i]);
 
         if (ieljou == 4) {
           poti_icodcl[face_id] = CS_BC_DIRICHLET;
-          poti_rcodcl1[face_id] = ur[transfo->ielect[i]][transfo->ielecb[i]];
+          poti_rcodcl1[face_id] = ur(transfo->ielect[i], transfo->ielecb[i]);
         }
       }
       else {
@@ -347,17 +344,6 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   }
   /*! [step_2_5] */
 
-  /*! [step_3] */
-  CS_FREE(sir);
-  CS_FREE(sii);
-  CS_FREE(sirb);
-  CS_FREE(siib);
-  CS_FREE(ur);
-  CS_FREE(ui);
-  CS_FREE(sirt);
-  CS_FREE(siit);
-  CS_FREE(nborne);
-  /*! [step_3] */
 }
 
 /*----------------------------------------------------------------------------*/

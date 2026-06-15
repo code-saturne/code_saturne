@@ -77,12 +77,12 @@ cs_user_source_terms
 
   /* x, y, z of origin, and x, y, z of destination */
   /* From North to South at the middle of the first elevation*/
-  cs_real_3_t *point_coords;
   cs_lnum_t n_points = 2;
-  CS_MALLOC(point_coords, n_points, cs_real_3_t); /* Segment: 2 points */
 
-  point_coords[0][0] = 0.; point_coords[0][1] = 15.; point_coords[0][2] = 0.5;
-  point_coords[1][0] = 0.; point_coords[1][1] = 0.;  point_coords[1][2] = 0.5;
+  cs_array_2d<cs_real_t> point_coords(n_points, 3); /* Segment: 2 points */
+
+  point_coords(0, 0) = 0.; point_coords(0, 1) = 15.; point_coords(0, 2) = 0.5;
+  point_coords(1, 0) = 0.; point_coords(1, 1) = 0.;  point_coords(1, 2) = 0.5;
 
   /* Initialize on first pass */
   if (n_elts < 0) {
@@ -90,7 +90,7 @@ cs_user_source_terms
     /* Select cells and count length
      * Note: elt_ids and seg_c_len are allocated here, and
      * should be deallocated at the end of the calculation */
-    cs_mesh_intersect_polyline_cell_select(point_coords,
+    cs_mesh_intersect_polyline_cell_select(point_coords.data<cs_real_3_t>(),
                                            n_points,
                                            &n_elts,
                                            &elt_ids,
@@ -109,12 +109,13 @@ cs_user_source_terms
 
     cs_gnum_t n_g_elts = n_elts;
 
-    cs_parall_sum(1, CS_REAL_TYPE, &len);
-    cs_parall_sum(1, CS_GNUM_TYPE, &n_g_elts);
+    // Two different sums since different datatypes for len and n_g_elts
+    cs::parall::sum(len);
+    cs::parall::sum(n_g_elts);
 
     bft_printf("BRIN [%f, %f, %f] -> [%f, %f, %f] n_cells=%ld, length=%f\n",
-               point_coords[0][0], point_coords[0][1], point_coords[0][2],
-               point_coords[1][0], point_coords[1][1], point_coords[1][2],
+               point_coords(0, 0), point_coords(0, 1), point_coords(0, 2),
+               point_coords(1, 0), point_coords(1, 1), point_coords(1, 2),
                n_g_elts, len);
   }
 

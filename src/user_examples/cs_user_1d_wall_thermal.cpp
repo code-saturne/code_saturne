@@ -180,8 +180,7 @@ cs_user_1d_wall_thermal([[maybe_unused]] int iappel)
     /* Get the list of boundary faces that will be coupled */
 
     cs_lnum_t nlelt = 0;
-    cs_lnum_t *lstelt = nullptr;
-    CS_MALLOC(lstelt, cs_glob_mesh->n_b_faces, cs_lnum_t);
+    cs_array<cs_lnum_t> lstelt(cs_glob_mesh->n_b_faces);
 
     cs_selector_get_b_face_list("2 or 3 or 5 or 6 or 7 or 8 or 9 or 10",
                                 &nlelt, lstelt);
@@ -199,7 +198,6 @@ cs_user_1d_wall_thermal([[maybe_unused]] int iappel)
       }
     }
 
-    CS_FREE(lstelt);
   }
 
   /*! [iappel_12] */

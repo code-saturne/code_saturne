@@ -233,10 +233,9 @@ _create_1d_sample_(user_profile_t  *profile,
 
   // Define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
-  cs_lnum_t *selected_cells   = nullptr;
 
   // Allocate memory for the cells list which will be populated by cs_selector
-  CS_MALLOC(selected_cells, n_cells, cs_lnum_t);
+  cs_array<cs_lnum_t> selected_cells(n_cells);
 
   cs_selector_get_cell_list(profile->criteria,
                             &n_selected_cells,
@@ -288,10 +287,9 @@ _create_1d_sample_(user_profile_t  *profile,
   /*Total selected cells weigth could be calculated once and not for each layer
    * but keep as this because of current code structure (avoid de create a
    * dedicated function and re compute each cell weight*/
-  cs_parall_sum(1, CS_REAL_TYPE, &sel_cells_weight);
+  cs::parall::sum(sel_cells_weight);
   profile->sel_cells_weigth = sel_cells_weight;
 
-  CS_FREE(selected_cells);
 }
 
 /*----------------------------------------------------------------------------
@@ -322,16 +320,15 @@ _compute_sample_moment(cs_real_t *sample,
   cs_real_t variance = 0.0;
 
   /* Normalize weight */
-  cs_real_t *w_n;
   cs_real_t  w_tot = 0.0;
 
-  CS_MALLOC(w_n, n_elts_sample, cs_real_t);
+  cs_array<cs_real_t> w_n(n_elts_sample);
 
   for (cs_lnum_t iel = 0; iel < n_elts_sample; iel++)
     w_tot += weights[iel];
 
   /* Sum over all MPI ranks */
-  cs_parall_sum(1, CS_REAL_TYPE, &w_tot);
+  cs::parall::sum(w_tot);
 
   /* Normalized weights and update provided weights */
   for (cs_lnum_t iel = 0; iel < n_elts_sample; iel++) {
@@ -344,14 +341,14 @@ _compute_sample_moment(cs_real_t *sample,
     mu += w_n[iel] * sample[iel];
 
   /* Sum over all MPI ranks */
-  cs_parall_sum(1, CS_REAL_TYPE, &mu);
+  cs::parall::sum(mu);
 
   /* Compute sample variance */
   for (cs_lnum_t iel = 0; iel < n_elts_sample; iel++)
     variance += w_n[iel] * pow(sample[iel] - mu, 2.0);
 
   /* Sum over all MPI ranks */
-  cs_parall_sum(1, CS_REAL_TYPE, &variance);
+  cs::parall::sum(variance);
 
   sigma = pow(variance, 1.0 / 2.0);
 
@@ -368,7 +365,6 @@ _compute_sample_moment(cs_real_t *sample,
   min_max[0] = min_sample;
   min_max[1] = max_sample;
 
-  CS_FREE(w_n);
 }
 
 /*----------------------------------------------------------------------------
@@ -525,7 +521,7 @@ _compute_histogram(user_histogram_t  *histogram,
   cs_lnum_t n_gelts_sample = n_elts_sample;
 
   /* Get the total number of elements in sample over mpi ranks */
-  cs_parall_sum(1, CS_INT_TYPE, &n_gelts_sample);
+  cs::parall::sum(n_gelts_sample);
 
   /* Compute optimal bandwidth assuming gaussian distribution of sample
      - Scott rule */
@@ -735,19 +731,17 @@ _calculate_min_max_dir(user_profile_t  *profile)
 
   // Define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
-  cs_lnum_t *selected_cells   = nullptr;
 
   // Allocate memory for the cells list which will be populated by cs_selector
-  CS_MALLOC(selected_cells, m->n_cells, cs_lnum_t);
+  cs_array<cs_lnum_t> selected_cells(m->n_cells);
 
   cs_selector_get_cell_list(profile->criteria,
                             &n_selected_cells,
                             selected_cells);
 
   cs_lnum_t  n_selected_vertices = 0;
-  cs_lnum_t *selected_vertices   = nullptr;
 
-  CS_MALLOC(selected_vertices, n_vertices, cs_lnum_t);
+  cs_array<cs_lnum_t> selected_vertices(n_vertices);
   cs_selector_get_cell_vertices_list_by_ids(n_selected_cells,
                                             selected_cells,
                                             &n_selected_vertices,
@@ -799,19 +793,15 @@ _calculate_min_max_dir(user_profile_t  *profile)
   cs_real_t min_mesh_ijn[3] = { 0.0, 0.0, 0.0 };
   cs_real_t max_mesh_ijn[3] = { 0.0, 0.0, 0.0 };
 
-  cs_real_t **vtx_dist = nullptr;
-
-  CS_MALLOC(vtx_dist, 3, cs_real_t *);
-  for (int k = 0; k < 3; k++)
-    CS_MALLOC(vtx_dist[k], n_selected_vertices, cs_real_t);
+  cs_array_2d<cs_real_t> vtx_dist(3, n_selected_vertices);
 
   for (cs_lnum_t ii = 0; ii < n_selected_vertices; ii++) {
     cs_lnum_t vtx_id = selected_vertices[ii];
     for (int v_id = 0; v_id < 3;
          v_id++) { /* Loop on the 3 vector of the new base */
-      vtx_dist[v_id][ii] = 0.0;
+      vtx_dist(v_id, ii) = 0.0;
       for (int jj = 0; jj < 3; jj++) /* Loop on x y z initial direction */
-        vtx_dist[v_id][ii]
+        vtx_dist(v_id, ii)
           += vtx_coord[3 * vtx_id + jj]
              * base_orth[v_id][jj]; /* Project each point in the new base */
     }
@@ -819,7 +809,7 @@ _calculate_min_max_dir(user_profile_t  *profile)
 
   for (int k = 0; k < 3; k++) { /* Find min max in the new base*/
     _compute_min_max(
-      n_selected_vertices, vtx_dist[k], &min_mesh_ijn[k], &max_mesh_ijn[k]);
+      n_selected_vertices, vtx_dist.sub_array(k), &min_mesh_ijn[k], &max_mesh_ijn[k]);
   }
 
   /* Update i_v and j_v vector in structure */
@@ -837,11 +827,6 @@ _calculate_min_max_dir(user_profile_t  *profile)
   profile->min_dir = min_mesh_ijn[2];
   profile->max_dir = max_mesh_ijn[2];
 
-  CS_FREE(selected_cells);
-  CS_FREE(selected_vertices);
-  for (int k = 0; k < 3; k++)
-    CS_FREE(vtx_dist[k]);
-  CS_FREE(vtx_dist);
 }
 
 /*----------------------------------------------------------------------------
@@ -1042,9 +1027,8 @@ _set_stl_layers_seeds(user_profile_t  *profile,
 
   // define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
-  cs_lnum_t *selected_cells   = nullptr;
   // Allocate memory for the cells list which will be populated by cs_selector
-  CS_MALLOC(selected_cells, cs_glob_mesh->n_cells_with_ghosts, cs_lnum_t);
+  cs_array<cs_lnum_t> selected_cells(cs_glob_mesh->n_cells_with_ghosts);
 
   cs_selector_get_cell_list(
     profile->criteria, &n_selected_cells, selected_cells);
@@ -1075,13 +1059,12 @@ _set_stl_layers_seeds(user_profile_t  *profile,
             / 2.0;
 
   /* Set an array of selected cell center coordinates */
-  cs_real_t *point_coord;
-  CS_MALLOC(point_coord, 3 * n_selected_cells, cs_real_t);
+  cs_array_2d<cs_real_t> point_coord(n_selected_cells, 3);
 
   for (int ii = 0; ii < n_selected_cells; ii++) {
     cs_lnum_t c_id = selected_cells[ii];
     for (int k = 0; k < 3; k++)
-      point_coord[3 * ii + k] = cell_cen[c_id][k];
+      point_coord(ii, k) = cell_cen[c_id][k];
   }
 
   cs_lnum_t   point_id[2];
@@ -1098,13 +1081,13 @@ _set_stl_layers_seeds(user_profile_t  *profile,
      all ranks Doing so, the seeds are in the fluid domain */
   for (int jj = 0; jj < 2; jj++) {
     cs_geom_closest_point(n_selected_cells,
-                          (const cs_real_3_t *)point_coord,
+                          point_coord.data<cs_real_3_t>(),
                           target_point[jj],
                           &point_id[jj],
                           &rank_id[jj]);
     if (point_id[jj] > -1) {
       for (int k = 0; k < 3; k++)
-        closest_point_coord[jj][k] = point_coord[3 * point_id[jj] + k];
+        closest_point_coord[jj][k] = point_coord(point_id[jj], k);
     }
 
     cs_parall_max(3, CS_REAL_TYPE, closest_point_coord[jj]);
@@ -1139,9 +1122,6 @@ _set_stl_layers_seeds(user_profile_t  *profile,
 
   stl_mesh->n_seeds = n_seeds;
 
-  CS_FREE(selected_cells);
-
-  CS_FREE(point_coord);
 }
 
 /*----------------------------------------------------------------------------
@@ -1378,10 +1358,9 @@ _set_med_layer_mesh([[maybe_unused]]user_profile_t  *profile,
   z_min = -layer_thickness / 2.0;
   z_max = layer_thickness / 2.0;
 
-  double *x_coords, *y_coords, *z_coords;
-  CS_MALLOC(x_coords, n_x, double);
-  CS_MALLOC(y_coords, n_y, double);
-  CS_MALLOC(z_coords, n_z, double);
+  cs_array<double> x_coords(n_x);
+  cs_array<double> y_coords(n_y);
+  cs_array<double> z_coords(n_z);
 
   for (int x_id = 0; x_id < n_x; x_id++)
     x_coords[x_id] = (x_max - x_min) * x_id / (n_x - 1) + x_min;
@@ -1395,15 +1374,15 @@ _set_med_layer_mesh([[maybe_unused]]user_profile_t  *profile,
   /* Generate a cartesian mesh in the main base */
   MEDCoupling::DataArrayDouble *arrX = MEDCoupling::DataArrayDouble::New();
   arrX->alloc(n_x, 1);
-  std::copy(x_coords, x_coords + n_x, arrX->getPointer());
+  std::copy(x_coords.data(), x_coords.data() + n_x, arrX->getPointer());
   arrX->setInfoOnComponent(0, "X [m]");
   MEDCoupling::DataArrayDouble *arrY = MEDCoupling::DataArrayDouble::New();
   arrY->alloc(n_y, 1);
-  std::copy(y_coords, y_coords + n_y, arrY->getPointer());
+  std::copy(y_coords.data(), y_coords.data() + n_y, arrY->getPointer());
   arrY->setInfoOnComponent(0, "Y [m]");
   MEDCoupling::DataArrayDouble *arrZ = MEDCoupling::DataArrayDouble::New();
   arrZ->alloc(n_z, 1);
-  std::copy(z_coords, z_coords + n_z, arrZ->getPointer());
+  std::copy(z_coords.data(), z_coords.data() + n_z, arrZ->getPointer());
   arrZ->setInfoOnComponent(0, "Z [m]");
 
   /* Retrieve Umesh preallocated */
@@ -1585,10 +1564,6 @@ _set_med_layer_mesh([[maybe_unused]]user_profile_t  *profile,
   arrZ->decrRef();
   Cmesh->decrRef();
 
-  CS_FREE(x_coords);
-  CS_FREE(y_coords);
-  CS_FREE(z_coords);
-
 #endif
 }
 
@@ -1627,9 +1602,8 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile)
 
   // Define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
-  cs_lnum_t *selected_cells   = nullptr;
   // Allocate memory for the cells list which will be populated by cs_selector
-  CS_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
+  cs_array<cs_lnum_t> selected_cells(n_cells_with_ghosts);
 
   cs_selector_get_cell_list(profile->criteria,
                             &n_selected_cells,
@@ -1672,7 +1646,6 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile)
 
   } // end of for loop for layer cell vol / weigth calculation
 
-  CS_FREE(selected_cells);
 }
 
 /*----------------------------------------------------------------------------
@@ -1696,14 +1669,12 @@ _compute_cell_volume_per_layer_stl(user_profile_t  *profile)
   // Profile shorter variables
   cs_lnum_t n_layers = profile->n_layers;
 
-  cs_real_t *cells_l_id_vol = nullptr;
-  CS_MALLOC(cells_l_id_vol, n_cells_with_ghosts, cs_real_t);
+  cs_array<cs_real_t> cells_l_id_vol(n_cells_with_ghosts);
 
   // Define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
-  cs_lnum_t *selected_cells   = nullptr;
   // Allocate memory for the cells list which will be populated by cs_selector
-  CS_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
+  cs_array<cs_lnum_t> selected_cells(n_cells_with_ghosts);
 
   cs_selector_get_cell_list(
     profile->criteria, &n_selected_cells, selected_cells);
@@ -1731,8 +1702,6 @@ _compute_cell_volume_per_layer_stl(user_profile_t  *profile)
     }
   }
 
-  CS_FREE(cells_l_id_vol);
-  CS_FREE(selected_cells);
 }
 
 /*----------------------------------------------------------------------------
@@ -1824,14 +1793,12 @@ _compute_cell_vol_per_layer_med([[maybe_unused]] user_profile_t *profile)
   // profile shorter variables
   cs_lnum_t n_layers = profile->n_layers;
 
-  cs_real_t *cells_l_id_vol = nullptr;
-  CS_MALLOC(cells_l_id_vol, n_cells_with_ghosts, cs_real_t);
+  cs_array<cs_real_t> cells_l_id_vol(n_cells_with_ghosts);
 
   // define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
-  cs_lnum_t *selected_cells   = nullptr;
   // Allocate memory for the cells list which will be populated by cs_selector
-  CS_MALLOC(selected_cells, n_cells_with_ghosts, cs_lnum_t);
+  cs_array<cs_lnum_t> selected_cells(n_cells_with_ghosts);
 
   cs_selector_get_cell_list(
     profile->criteria, &n_selected_cells, selected_cells);
@@ -1859,9 +1826,6 @@ _compute_cell_vol_per_layer_med([[maybe_unused]] user_profile_t *profile)
         = cells_l_id_vol[c_id] / cell_vol[c_id];
     }
   }
-
-  CS_FREE(cells_l_id_vol);
-  CS_FREE(selected_cells);
 
 #endif
 }
@@ -2615,13 +2579,12 @@ user_profile_compute(user_profile_t  *profile)
   /*Histogram: part to be be merged with upstream to avoid double computation*/
 
   /*generate sample and weights*/
-  cs_real_t *sample, *weights;
 
   cs_real_t min_field = DBL_MAX;
   cs_real_t max_field = DBL_MIN;
 
-  CS_MALLOC(sample, n_cells, cs_real_t);
-  CS_MALLOC(weights, n_cells, cs_real_t);
+  cs_array<cs_real_t> sample(n_cells);
+  cs_array<cs_real_t> weights(n_cells);
   cs_lnum_t n_elts_sample = 0;
 
   for (int l_id = 0; l_id < n_layers; l_id++) {
@@ -2637,7 +2600,7 @@ user_profile_compute(user_profile_t  *profile)
     for (cs_lnum_t iel = 0; iel < n_elts_sample; iel++)
       profile->weigth[l_id] += weights[iel];
 
-    cs_parall_sum(1, CS_REAL_TYPE, &profile->weigth[l_id]);
+    cs::parall::sum(profile->weigth[l_id]);
 
     user_histogram_compute(histogram, sample, weights, n_elts_sample);
 
@@ -2650,8 +2613,8 @@ user_profile_compute(user_profile_t  *profile)
   }
 
   /*update min and max field over all layer and all MPI ranks*/
-  cs_parall_min(1, CS_REAL_TYPE, &min_field);
-  cs_parall_max(1, CS_REAL_TYPE, &max_field);
+  cs::parall::min(min_field);
+  cs::parall::max(max_field);
 
   profile->min_field = min_field;
   profile->max_field = max_field;
@@ -2680,8 +2643,6 @@ user_profile_compute(user_profile_t  *profile)
     }
   }
 
-  CS_FREE(sample);
-  CS_FREE(weights);
 }
 
 /*----------------------------------------------------------------------------

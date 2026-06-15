@@ -117,11 +117,11 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
      * The loop below assumes wall conditions have been defined first
      * (in the GUI, or in this file, before the current test). */
 
-    int *mrkcel = nullptr;
+    cs_array<int> mrkcel;
     if ((cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) ||
         (cs_glob_turb_model->itytur == 5)){
 
-      CS_MALLOC(mrkcel, n_cells_ext, int);
+      mrkcel.reshape(n_cells_ext);
       for (cs_lnum_t i = 0; i < n_cells_ext; i++)
         mrkcel[i] = 0;
 
@@ -181,8 +181,6 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
                                       b_rho,
                                       viscl0);
     }
-
-    CS_FREE(mrkcel);
 
     /* Initialize user scalars inlet */
 

@@ -729,10 +729,6 @@
   Take in account of Boundary Conditions
   \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp step_2_5
 
-  \section elec2_step3 Finalization step
-
-  Test, if not any reference transformer a piece of wall may be at ground:
-  \snippet cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.cpp step_3
 */
 
 /*-----------------------------------------------------------------------------*/
