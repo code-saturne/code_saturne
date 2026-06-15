@@ -2091,7 +2091,7 @@ cs_turb_constants_log_setup(void)
   bool has_dfm = false;
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     if (!(f->type & CS_FIELD_VARIABLE))
       continue;
 
@@ -2154,11 +2154,11 @@ cs_clip_turbulent_fluxes(int  flux_id,
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   const cs_real_6_t *cvar_rij = (const cs_real_6_t *)CS_F_(rij)->val;
-  const cs_real_t *cvar_tt = cs_field_by_id(variance_id)->val;
-  cs_real_3_t *cvar_rit = (cs_real_3_t *) cs_field_by_id(flux_id)->val;
+  const cs_real_t *cvar_tt = cs_field(variance_id)->val;
+  cs_real_3_t *cvar_rit = (cs_real_3_t *) cs_field(flux_id)->val;
   cs_real_3_t *cvar_clip_rit = nullptr;
 
-  cs_field_t *field_rit = cs_field_by_id(flux_id);
+  cs_field_t *field_rit = cs_field(flux_id);
 
   /* Local variables */
   const cs_real_t tol_jacobi = 1.0e-12;
@@ -2176,7 +2176,7 @@ cs_clip_turbulent_fluxes(int  flux_id,
   kclipp = cs_field_key_id("clipping_id");
   clip_rit_id = field_rit->get_key_int(kclipp);
   if (clip_rit_id >= 0) {
-    cvar_clip_rit = (cs_real_3_t *) cs_field_by_id(clip_rit_id)->val;
+    cvar_clip_rit = (cs_real_3_t *) cs_field(clip_rit_id)->val;
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cvar_clip_rit[cell_id][0] = 0;
       cvar_clip_rit[cell_id][1] = 0;

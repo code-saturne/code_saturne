@@ -129,7 +129,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
   /* Empty field at the first iteration */
 
   cs_real_6_t *cpro_straio
-    = (cs_real_6_t *)cs_field_by_name("strain_rate_tensor")->val;
+    = (cs_real_6_t *)cs_field("strain_rate_tensor")->val;
 
   /* Map field arrays */
 

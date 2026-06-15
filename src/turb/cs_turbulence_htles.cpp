@@ -145,7 +145,7 @@ cs_turbulence_htles(void)
     cvar_eps = (cs_real_t *)CS_F_(eps)->val;
   }
 
-  const cs_real_t *w_dist =  cs_field_by_name("wall_distance")->val;
+  const cs_real_t *w_dist =  cs_field("wall_distance")->val;
 
   const double d2s3 = 2./3.;
 
@@ -153,31 +153,31 @@ cs_turbulence_htles(void)
   cs_real_t *kwsst_f1 = nullptr;
 
   // TODO use standard time moments...
-  cs_real_t *mean_u   = cs_field_by_name("vel_mag_mean")->val;
-  cs_real_t *mean_k   = cs_field_by_name("k_tot")->val;
-  cs_real_t *mean_km  = cs_field_by_name("k_mod")->val;
-  cs_real_t *mean_kr  = cs_field_by_name("k_res")->val;
-  cs_real_t *mean_eps = cs_field_by_name("eps_mod")->val;
+  cs_real_t *mean_u   = cs_field("vel_mag_mean")->val;
+  cs_real_t *mean_k   = cs_field("k_tot")->val;
+  cs_real_t *mean_km  = cs_field("k_mod")->val;
+  cs_real_t *mean_kr  = cs_field("k_res")->val;
+  cs_real_t *mean_eps = cs_field("eps_mod")->val;
   if (turb_model->model == CS_TURB_K_OMEGA) {
-    mean_omg = cs_field_by_name("omg_mod")->val;
-    kwsst_f1 = cs_field_by_name("f1_kwsst")->val;
+    mean_omg = cs_field("omg_mod")->val;
+    kwsst_f1 = cs_field("f1_kwsst")->val;
   }
 
-  cs_real_t *hyb_psi = cs_field_by_name("htles_psi")->val;
-  cs_real_t *hyb_r   = cs_field_by_name("htles_r")->val;
-  cs_real_t *hyb_t   = cs_field_by_name("htles_t")->val;
-  cs_real_t *hyb_icc = cs_field_by_name("htles_icc")->val;
-  cs_real_t *hyb_fs  = cs_field_by_name("htles_fs")->val;
-  cs_real_t *dlt_max = cs_field_by_name("Delta_max")->val;
-  cs_real_t *hybrid_fd_coeff = cs_field_by_name("hybrid_blend")->val;
+  cs_real_t *hyb_psi = cs_field("htles_psi")->val;
+  cs_real_t *hyb_r   = cs_field("htles_r")->val;
+  cs_real_t *hyb_t   = cs_field("htles_t")->val;
+  cs_real_t *hyb_icc = cs_field("htles_icc")->val;
+  cs_real_t *hyb_fs  = cs_field("htles_fs")->val;
+  cs_real_t *dlt_max = cs_field("Delta_max")->val;
+  cs_real_t *hybrid_fd_coeff = cs_field("hybrid_blend")->val;
 
   /* TEMP - TIME AVERAGED */
   cs_real_t time_mean = cs::max(cs_glob_turb_hybrid_model->n_iter_mean
                                 * cs_glob_time_step->dt_ref,
                                 cs_glob_turb_hybrid_model->time_mean);
 
-  cs_real_3_t *mean_vel = (cs_real_3_t *)cs_field_by_name("velocity_mean")->val;
-  cs_real_3_t *mean_ui2 = (cs_real_3_t *)cs_field_by_name("ui2_mean")->val;
+  cs_real_3_t *mean_vel = (cs_real_3_t *)cs_field("velocity_mean")->val;
+  cs_real_3_t *mean_ui2 = (cs_real_3_t *)cs_field("ui2_mean")->val;
 
 # pragma omp for nowait
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -335,30 +335,30 @@ cs_htles_initialization(void) {
 
   cs_real_t xcmu  = cs_turb_cmu;
 
-  cs_real_t *mean_u   = cs_field_by_name("vel_mag_mean")->val;
-  cs_real_t *mean_k   = cs_field_by_name("k_tot")->val;
-  cs_real_t *mean_km  = cs_field_by_name("k_mod")->val;
-  cs_real_t *mean_kr  = cs_field_by_name("k_res")->val;
-  cs_real_t *mean_eps = cs_field_by_name("eps_mod")->val;
+  cs_real_t *mean_u   = cs_field("vel_mag_mean")->val;
+  cs_real_t *mean_k   = cs_field("k_tot")->val;
+  cs_real_t *mean_km  = cs_field("k_mod")->val;
+  cs_real_t *mean_kr  = cs_field("k_res")->val;
+  cs_real_t *mean_eps = cs_field("eps_mod")->val;
 
   cs_real_t *mean_omg = nullptr;
   cs_real_t *kwsst_f1 = nullptr;
 
   if (turb_model->model == CS_TURB_K_OMEGA) {
-    mean_omg = cs_field_by_name("omg_mod")->val;
-    kwsst_f1 = cs_field_by_name("f1_kwsst")->val;
+    mean_omg = cs_field("omg_mod")->val;
+    kwsst_f1 = cs_field("f1_kwsst")->val;
   }
 
-  cs_real_t *hyb_psi = cs_field_by_name("htles_psi")->val;
-  cs_real_t *hyb_r   = cs_field_by_name("htles_r")->val;
-  cs_real_t *hyb_t   = cs_field_by_name("htles_t")->val;
-  cs_real_t *hyb_icc = cs_field_by_name("htles_icc")->val;
-  cs_real_t *hyb_fs  = cs_field_by_name("htles_fs")->val;
-  cs_real_t *dlt_max = cs_field_by_name("Delta_max")->val;
+  cs_real_t *hyb_psi = cs_field("htles_psi")->val;
+  cs_real_t *hyb_r   = cs_field("htles_r")->val;
+  cs_real_t *hyb_t   = cs_field("htles_t")->val;
+  cs_real_t *hyb_icc = cs_field("htles_icc")->val;
+  cs_real_t *hyb_fs  = cs_field("htles_fs")->val;
+  cs_real_t *dlt_max = cs_field("Delta_max")->val;
 
   /* Time averaged */
-  cs_real_3_t *mean_vel = (cs_real_3_t *)cs_field_by_name("velocity_mean")->val;
-  cs_real_3_t *mean_ui2 = (cs_real_3_t *)cs_field_by_name("ui2_mean")->val;
+  cs_real_3_t *mean_vel = (cs_real_3_t *)cs_field("velocity_mean")->val;
+  cs_real_3_t *mean_ui2 = (cs_real_3_t *)cs_field("ui2_mean")->val;
 
   /**************************************/
   /* Initialization of the HTLES fields */

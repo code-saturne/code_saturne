@@ -277,7 +277,7 @@ cs_les_balance_t  *cs_glob_les_balance = &_les_balance;
 static cs_field_t *
 _les_balance_get_tm_by_name(const char *name)
 {
-  cs_field_t *f = cs_field_by_name_try(name);
+  cs_field_t *f = cs_field_try(name);
   if (! (f->type & CS_FIELD_ACCUMULATOR))
     f = nullptr;
 
@@ -664,7 +664,7 @@ _les_balance_compute_gradients(void)
     int iii = 0;
 
     for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
-      cs_field_t *f = cs_field_by_id(f_id);
+      cs_field_t *f = cs_field(f_id);
       int isca = f->get_key_int(keysca);
       if (isca > 0) {
         const cs_equation_param_t *eqps
@@ -742,7 +742,7 @@ _les_balance_compute_smag(const void   *input,
 
   cs_dispatch_context ctx;
 
-  cs_real_t *cpro_smago = cs_field_by_name("smagorinsky_constant^2")->val;
+  cs_real_t *cpro_smago = cs_field("smagorinsky_constant^2")->val;
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     vals[c_id] = cs_math_sq(cpro_smago[c_id]);
@@ -1183,7 +1183,7 @@ _les_balance_compute_tdjtauij(const void   *input,
   cs_dispatch_context ctx;
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     if (f->get_key_int(keysca) > 0) {
       if (f_id == sca->id)
         break;
@@ -1237,7 +1237,7 @@ _les_balance_compute_uidivturflux(const void   *input,
   cs_dispatch_context ctx;
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     if (f->get_key_int(keysca) > 0) {
       if (f_id == sca->id)
         break;
@@ -1966,7 +1966,7 @@ _les_balance_time_moment_tui(void)
 
   /* Define time moments for T.ui balance */
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     int iscal = f->get_key_int(keysca)-1;
     if (iscal > -1) {
       {
@@ -2621,7 +2621,7 @@ _les_balance_initialize_tui(void)
   int iscal = 0;
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     if (f->get_key_int(keysca) > 0) {
       _les_balance.btui[iscal]->f_id = f_id;
       iscal++;
@@ -2867,7 +2867,7 @@ cs_les_balance_create_fields(void)
     int n_scal = 0;
 
     for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
-      cs_field_t *f_sca = cs_field_by_id(f_id);
+      cs_field_t *f_sca = cs_field(f_id);
       int i_sca = f_sca->get_key_int(k_sca);
       if (i_sca > 0) n_scal ++;
     }
@@ -2875,7 +2875,7 @@ cs_les_balance_create_fields(void)
     CS_MALLOC(_gradt, n_scal, cs_field_t*);
 
     for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
-      cs_field_t *f_sca = cs_field_by_id(f_id);
+      cs_field_t *f_sca = cs_field(f_id);
 
       int i_sca = f_sca->get_key_int(k_sca)-1;
       if (i_sca > -1) {
@@ -2933,7 +2933,7 @@ cs_les_balance_create(void)
   const int keysca = cs_field_key_id("scalar_id");
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     int isca = f->get_key_int(keysca);
     if (isca > 0) nscal++;
   }
@@ -3059,16 +3059,16 @@ cs_les_balance_compute_rij(void)
   cs_real_t **uiujuk;
   CS_MALLOC(uiujuk, 10, cs_real_t*);
 
-  uiujuk[0] = cs_field_by_name("u1u1u1_m")->val;
-  uiujuk[1] = cs_field_by_name("u2u2u2_m")->val;
-  uiujuk[2] = cs_field_by_name("u3u3u3_m")->val;
-  uiujuk[3] = cs_field_by_name("u1u1u2_m")->val;
-  uiujuk[4] = cs_field_by_name("u1u2u2_m")->val;
-  uiujuk[5] = cs_field_by_name("u2u2u3_m")->val;
-  uiujuk[6] = cs_field_by_name("u2u3u3_m")->val;
-  uiujuk[7] = cs_field_by_name("u1u1u3_m")->val;
-  uiujuk[8] = cs_field_by_name("u1u3u3_m")->val;
-  uiujuk[9] = cs_field_by_name("u1u2u3_m")->val;
+  uiujuk[0] = cs_field("u1u1u1_m")->val;
+  uiujuk[1] = cs_field("u2u2u2_m")->val;
+  uiujuk[2] = cs_field("u3u3u3_m")->val;
+  uiujuk[3] = cs_field("u1u1u2_m")->val;
+  uiujuk[4] = cs_field("u1u2u2_m")->val;
+  uiujuk[5] = cs_field("u2u2u3_m")->val;
+  uiujuk[6] = cs_field("u2u3u3_m")->val;
+  uiujuk[7] = cs_field("u1u1u3_m")->val;
+  uiujuk[8] = cs_field("u1u3u3_m")->val;
+  uiujuk[9] = cs_field("u1u2u3_m")->val;
 
   /* Get additional averaged fields */
   cs_real_6_t  **nutdkuiuj;
@@ -3077,13 +3077,13 @@ cs_les_balance_compute_rij(void)
   CS_MALLOC(uidujdxk, 3, cs_real_33_t*);
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL) {
-    nutdkuiuj[0] = (cs_real_6_t *)cs_field_by_name("nutd1uiuj_m")->val;
-    nutdkuiuj[1] = (cs_real_6_t *)cs_field_by_name("nutd2uiuj_m")->val;
-    nutdkuiuj[2] = (cs_real_6_t *)cs_field_by_name("nutd3uiuj_m")->val;
+    nutdkuiuj[0] = (cs_real_6_t *)cs_field("nutd1uiuj_m")->val;
+    nutdkuiuj[1] = (cs_real_6_t *)cs_field("nutd2uiuj_m")->val;
+    nutdkuiuj[2] = (cs_real_6_t *)cs_field("nutd3uiuj_m")->val;
 
-    uidujdxk[0] = (cs_real_33_t *)cs_field_by_name("u1dkuj_m")->val;
-    uidujdxk[1] = (cs_real_33_t *)cs_field_by_name("u2dkuj_m")->val;
-    uidujdxk[2] = (cs_real_33_t *)cs_field_by_name("u3dkuj_m")->val;
+    uidujdxk[0] = (cs_real_33_t *)cs_field("u1dkuj_m")->val;
+    uidujdxk[1] = (cs_real_33_t *)cs_field("u2dkuj_m")->val;
+    uidujdxk[2] = (cs_real_33_t *)cs_field("u3dkuj_m")->val;
   }
 
   cs_field_bc_coeffs_t bc_coeffs(1);
@@ -3528,7 +3528,7 @@ cs_les_balance_compute_tui(void)
 
     cs_les_balance_tui_t *b_sca = _les_balance.btui[isca];
 
-    cs_field_t *sca = cs_field_by_id(b_sca->f_id);
+    cs_field_t *sca = cs_field(b_sca->f_id);
     cs_real_t sigmas = sca->get_key_double(ksigmas);
     cs_real_t visls0 = sca->get_key_double(kvisls0);
     cs_real_t xvistot = visls0 + viscl0;

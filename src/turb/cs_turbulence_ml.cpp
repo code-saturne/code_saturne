@@ -77,7 +77,7 @@ cs_turbulence_ml_mu_t(void)
   cs_real_t *visct =  CS_F_(mu_t)->val;
   const cs_real_t *crom = CS_F_(rho)->val;
 
-  cs_field_t *f_lm = cs_field_by_name_try("mixing_length");
+  cs_field_t *f_lm = cs_field_try("mixing_length");
 
   const cs_real_t xlomlg = cs_glob_turb_rans_model->xlomlg;
   cs_real_t coef = cs_math_pow2(cs_turb_xkappa*xlomlg)*sqrt(2.0);

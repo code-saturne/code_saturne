@@ -366,7 +366,7 @@ _compute_up_rhop(int                 phase_id,
 
     /* Using thermal fluxes
      * (only for thermal scalar for the moment) */
-    cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
+    cs_field_t *f_beta = cs_field_try("thermal_expansion");
 
     if (f_beta != nullptr) {
       /* Value of the corresponding turbulent flux */
@@ -412,7 +412,7 @@ _compute_up_rhop(int                 phase_id,
 
         /* Using thermal fluxes
          * (only for thermal scalar for the moment) */
-        cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
+        cs_field_t *f_beta = cs_field_try("thermal_expansion");
 
         if (f_beta != nullptr) {
 
@@ -569,12 +569,12 @@ _rij_echo(int              phase_id,
   /* Calculation in the orthogonal straight cells in corresponding walls
    * ------------------------------------------------------------------- */
 
-  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
+  const cs_real_t *w_dist = cs_field("wall_distance")->val;
 
   cs_array_2d<cs_real_t> grad(n_cells_ext, 3, cs_alloc_mode);
 
   /* Current gradient */
-  cs_field_gradient_scalar(cs_field_by_name("wall_distance"),
+  cs_field_gradient_scalar(cs_field("wall_distance"),
                            false,  /* use_previous_t */
                            1,      /* inc */
                            grad.data<cs_real_3_t>());
@@ -708,7 +708,7 @@ _gravity_st_rij(const cs_field_t  *f_rij,
 
   const int t2v[3][3] = _T2V;
 
-  cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
+  cs_field_t *f_buo = cs_field_try("algo:rij_buoyancy");
   cs_array_2d<cs_real_t> cpro_buoyancy;
 
   if (f_buo != nullptr) {
@@ -888,7 +888,7 @@ _gravity_st_epsilon(int              phase_id,
   cs_real_t cp0 = fp->cp0;
 
   /* Specific heat for Prandtl calculation */
-  const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
+  const cs_field_t *f_cp = cs_field_try("specific_heat");
   cs_real_t *cpro_cp = nullptr;
   if (f_cp != nullptr)
     cpro_cp = f_cp->val;
@@ -1089,8 +1089,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   cs_real_6_t *cpro_press_correl = nullptr;
   {
-    cs_field_t *f_psc = cs_field_by_name_try
-                          ("algo:rij_pressure_strain_correlation");
+    cs_field_t *f_psc = cs_field_try("algo:rij_pressure_strain_correlation");
     if (f_psc != nullptr) {
       assert(f_psc->dim == 6);
       cpro_press_correl = (cs_real_6_t *)f_psc->val;
@@ -1370,7 +1369,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   if (eqp->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
 
     const cs_field_t *f_a_t_visc
-      = cs_field_by_name("anisotropic_turbulent_viscosity");
+      = cs_field("anisotropic_turbulent_viscosity");
     const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1509,8 +1508,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
   cs_real_6_t *cpro_press_correl = nullptr;
   {
-    cs_field_t *f_psc = cs_field_by_name_try
-                          ("algo:rij_pressure_strain_correlation");
+    cs_field_t *f_psc = cs_field_try("algo:rij_pressure_strain_correlation");
     if (f_psc != nullptr) {
       assert(f_psc->dim == 6);
       cpro_press_correl = (cs_real_6_t *)f_psc->val;
@@ -1989,7 +1987,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   if (eqp->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
 
     const cs_field_t *f_a_t_visc
-      = cs_field_by_name("anisotropic_turbulent_viscosity");
+      = cs_field("anisotropic_turbulent_viscosity");
     const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -2124,15 +2122,14 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
 
   cs_real_6_t *cpro_press_correl = nullptr;
   {
-    cs_field_t *f_psc = cs_field_by_name_try
-                          ("algo:rij_pressure_strain_correlation");
+    cs_field_t *f_psc = cs_field_try("algo:rij_pressure_strain_correlation");
     if (f_psc != nullptr) {
       assert(f_psc->dim == 6);
       cpro_press_correl = (cs_real_6_t *)f_psc->val;
     }
   }
 
-  cs_field_t *f_beta2 = cs_field_by_name_try("algo:rij_beta2");
+  cs_field_t *f_beta2 = cs_field_try("algo:rij_beta2");
   /* coefficient of the "Coriolis-type" term */
   const int icorio = cs_glob_physical_constants->icorio;
   cs_turbomachinery_model_t tm_model = cs_turbomachinery_get_model();
@@ -2398,7 +2395,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
   if (eqp->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
 
     const cs_field_t *f_a_t_visc
-      = cs_field_by_name("anisotropic_turbulent_viscosity");
+      = cs_field("anisotropic_turbulent_viscosity");
     const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -2620,7 +2617,7 @@ _solve_epsilon(int              phase_id,
     const cs_real_t zero_threshold = cs_math_zero_threshold;
 
     const cs_real_6_t *lagr_st_rij
-      = (const cs_real_6_t *)cs_field_by_name("lagr_st_rij")->val;
+      = (const cs_real_6_t *)cs_field("lagr_st_rij")->val;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       /* Source terms with epsilon */
@@ -2796,7 +2793,7 @@ _solve_epsilon(int              phase_id,
   if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {
 
     const cs_field_t *f_a_t_visc
-      = cs_field_by_name("anisotropic_turbulent_viscosity");
+      = cs_field("anisotropic_turbulent_viscosity");
     const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -3082,8 +3079,7 @@ cs_turbulence_rij(int phase_id)
 
   cs_array_2d<cs_real_t> prod;
   {
-    cs_field_t *f_rij_p = cs_field_by_name_try
-                             ("algo:rij_production");
+    cs_field_t *f_rij_p = cs_field_try("algo:rij_production");
     if (f_rij_p != nullptr) {
       assert(f_rij_p->dim == 6);
       prod = cs_array_2d<cs_real_t>(f_rij_p->val, n_cells_ext, 6);
@@ -3098,7 +3094,7 @@ cs_turbulence_rij(int phase_id)
 
   cs_array_3d<cs_real_t> gradv;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
+    cs_field_t *f_vg = cs_field_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
       gradv = cs_array_3d<cs_real_t>(f_vel->grad, n_cells_ext, 3, 3);
@@ -3256,9 +3252,9 @@ cs_turbulence_rij(int phase_id)
   if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
       && cs_glob_lagr_source_terms->ltsdyn == 1) {
     const cs_real_6_t *lagr_st_rij
-      = (const cs_real_6_t *)cs_field_by_name_try("lagr_st_rij")->val;
+      = (const cs_real_6_t *)cs_field_try("lagr_st_rij")->val;
 
-    cs_real_t *lag_st_i = cs_field_by_name("lagr_st_imp_velocity")->val;
+    cs_real_t *lag_st_i = cs_field("lagr_st_imp_velocity")->val;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t st_i = cell_f_vol[c_id] * lag_st_i[c_id];
@@ -3374,14 +3370,14 @@ cs_turbulence_rij(int phase_id)
 
   /* Add Rusanov fluxes */
   if (cs_glob_turb_rans_model->irijnu == 2) {
-    cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
+    cs_real_t *ipro_rusanov = cs_field("i_rusanov_diff")->val;
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       viscf[face_id] = cs::max(0.5 * ipro_rusanov[face_id],
                                viscf[face_id]);
     });
 
     const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-    cs_real_t *b_lam = cs_field_by_name("b_rusanov_diff")->val;
+    cs_real_t *b_lam = cs_field("b_rusanov_diff")->val;
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       const cs_nreal_t *n = b_face_u_normal[face_id];
@@ -3480,7 +3476,7 @@ cs_turbulence_rij(int phase_id)
     const cs_real_t xkappa = cs_turb_xkappa;
 
     const cs_real_t *cell_vol = fvq->cell_vol;
-    const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
+    const cs_real_t *w_dist = cs_field("wall_distance")->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       /* Calculation of epsilon */
 
@@ -4265,7 +4261,7 @@ cs_turbulence_rij_anisotropic_mu_t
   }
 
   cs_real_6_t *visten
-    = (cs_real_6_t *)cs_field_by_name
+    = (cs_real_6_t *)cs_field
                        ("anisotropic_turbulent_viscosity")->val;
 
   cs_real_6_t *vistes = nullptr;
@@ -4288,7 +4284,7 @@ cs_turbulence_rij_anisotropic_mu_t
 
     if (iebdfm || iggafm) {
       vistes
-        = (cs_real_6_t *)cs_field_by_name
+        = (cs_real_6_t *)cs_field
                            ("anisotropic_turbulent_viscosity_scalar")->val;
     }
 
@@ -4413,8 +4409,8 @@ cs_turbulence_rij_compute_rusanov(void)
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
-  cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
+  cs_real_t *ipro_rusanov = cs_field("i_rusanov_diff")->val;
+  cs_real_t *bpro_rusanov = cs_field("b_rusanov_diff")->val;
   cs_real_6_t *cvar_rij = (cs_real_6_t *)(CS_F_(rij)->val);
   cs_real_t *cvar_rho = CS_F_(rho)->val;
 
