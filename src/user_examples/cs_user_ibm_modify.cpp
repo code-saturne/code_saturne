@@ -62,9 +62,8 @@ _smoothe(const cs_mesh_t            *mesh,
   const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   cs_real_t *cell_vol  = mesh_quantities->cell_vol;
 
-  cs_real_t *den, *val2;
-  CS_MALLOC(val2, n_cells_ext, cs_real_t);
-  CS_MALLOC(den, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> val2(n_cells_ext);
+  cs_array<cs_real_t> den(n_cells_ext);
 
   cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, val);
 
@@ -95,8 +94,6 @@ _smoothe(const cs_mesh_t            *mesh,
     cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, val);
   }
 
-  CS_FREE(val2);
-  CS_FREE(den);
 }
 
 /*============================================================================
@@ -151,16 +148,13 @@ cs_user_ibm_modify
     if (cell_cen[c_id][0] > 10. && cell_cen[c_id][0] < 16.)
       CS_F_(poro)->val[c_id] = CS_F_(poro)->val_pre[c_id];
 
-  cs_real_t *source_term, *por_init;
-  cs_real_3_t *convective_term;
-
-  CS_MALLOC(source_term, n_cells_ext, cs_real_t);
-  CS_MALLOC(por_init, n_cells_ext, cs_real_t);
-  CS_MALLOC(convective_term, n_cells_ext, cs_real_3_t);
+  cs_array<cs_real_t> source_term(n_cells_ext);
+  cs_array<cs_real_t> por_init(n_cells_ext);
+  cs_array_2d<cs_real_t> convective_term(n_cells_ext, 3);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
     for (int i = 0; i < 3; i++)
-      convective_term[c_id][i] = 0.;
+      convective_term(c_id, i) = 0.;
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     cs_lnum_t c_id0 = i_face_cells[f_id][0];
@@ -195,8 +189,8 @@ cs_user_ibm_modify
       flux[idim] += alpij * fluij * uij[idim];
 
     for (int idim = 0; idim < 3; idim++) {
-      convective_term[c_id0][idim] += flux[idim];
-      convective_term[c_id1][idim] -= flux[idim];
+      convective_term(c_id0, idim) += flux[idim];
+      convective_term(c_id1, idim) -= flux[idim];
     }
   }
 
@@ -218,7 +212,7 @@ cs_user_ibm_modify
       flux[idim] += alpij * fluij * CS_F_(vel)->val_pre[3 * c_id + idim];
 
     for (int idim = 0; idim < 3; idim++)
-      convective_term[c_id][idim] += flux[idim];
+      convective_term(c_id, idim) += flux[idim];
   }
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -232,7 +226,8 @@ cs_user_ibm_modify
     for (int idim = 0; idim < 3; idim++)
       np[idim] /= nn;
 
-    cs_real_t cc = cs::abs(cs_math_3_dot_product(convective_term[c_id], np));
+    cs_real_t cc
+      = cs::abs(cs_math_3_dot_product(convective_term.sub_array(c_id), np));
     source_term[c_id] = cc;
   }
 
@@ -243,7 +238,7 @@ cs_user_ibm_modify
     if (cell_cen[c_id][0] < 11 || cell_cen[c_id][0] > 16)
       source_term[c_id] = 0.;
 
-  cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, source_term);
+  cs_halo_sync(mesh->halo, CS_HALO_STANDARD, source_term);
 
   /* Mass transfer term in kg/m^2/s */
   /* Solid density */
@@ -257,7 +252,7 @@ cs_user_ibm_modify
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     por_init[c_id] = CS_F_(poro)->val[c_id];
 
-  cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, por_init);
+  cs_halo_sync(mesh->halo, CS_HALO_STANDARD, por_init);
 
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     cs_lnum_t c_id0 = i_face_cells[f_id][0];
@@ -297,10 +292,6 @@ cs_user_ibm_modify
   }
 
   cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, CS_F_(poro)->val);
-
-  CS_FREE(por_init);
-  CS_FREE(convective_term);
-  CS_FREE(source_term);
 
   /*!< [example_1] */
 }

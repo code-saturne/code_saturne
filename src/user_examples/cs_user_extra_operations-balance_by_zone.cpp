@@ -83,11 +83,10 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     const char criteria[] = "zone_group";
 
     cs_lnum_t   n_selected_cells = 0;
-    cs_lnum_t  *selected_cells = nullptr;
 
     cs_real_t balance[CS_BALANCE_N_TERMS];
 
-    CS_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
+    cs_array<cs_lnum_t> selected_cells(domain->mesh->n_cells);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_cells,
@@ -97,8 +96,6 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
                                n_selected_cells,
                                selected_cells,
                                balance);
-
-    CS_FREE(selected_cells);
 
     cs_balance_term_t  mass_in_idx = CS_BALANCE_MASS_IN;
     cs_balance_term_t  mass_out_idx = CS_BALANCE_MASS_OUT;
@@ -121,11 +118,10 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     const char criteria[] = "zone_group";
 
     cs_lnum_t   n_selected_cells = 0;
-    cs_lnum_t  *selected_cells = nullptr;
 
     cs_real_t balance[CS_BALANCE_P_N_TERMS];
 
-    CS_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
+    cs_array<cs_lnum_t> selected_cells(domain->mesh->n_cells);
 
     cs_selector_get_cell_list(criteria,
                               &n_selected_cells,
@@ -134,8 +130,6 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     cs_pressure_drop_by_zone_compute(n_selected_cells,
                                      selected_cells,
                                      balance);
-
-    CS_FREE(selected_cells);
 
     cs_balance_p_term_t  rhou_in_idx = CS_BALANCE_P_RHOU_IN;
     cs_balance_p_term_t  rhou_out_idx = CS_BALANCE_P_RHOU_OUT;
