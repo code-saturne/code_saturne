@@ -220,9 +220,9 @@ _d3phst(cs_lnum_t  n_cells,
 
   if (log_active) {
 
-    cs_parall_sum_scalars(n1, n2);
-    cs_parall_max_scalars(hsmax);
-    cs_parall_min_scalars(hsmin);
+    cs::parall::sum(n1, n2);
+    cs::parall::max(hsmax);
+    cs::parall::min(hsmin);
 
     if (n1 > 0) {
       cs_log_printf(CS_LOG_DEFAULT,

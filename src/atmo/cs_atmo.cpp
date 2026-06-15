@@ -437,7 +437,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     }
   }
 
-  cs_parall_max(1, CS_INT_TYPE, &(eqp_p->ndircl));
+  cs::parall::max((eqp_p->ndircl));
   cs_array<cs_real_t> rovsdt(m->n_cells_with_ghosts, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
@@ -3592,9 +3592,7 @@ cs_atmo_compute_meteo_profiles(void)
     }
   }
 
-  cs_parall_min(1, CS_REAL_TYPE, &z_lim);
-  cs_parall_min(1, CS_REAL_TYPE, &u_met_min);
-  cs_parall_min(1, CS_REAL_TYPE, &theta_met_min);
+  cs::parall::min(z_lim, u_met_min, theta_met_min);
   if (f_met_qw != nullptr) {
     cs_real_t scht = 1.;
     cs_field_t *f_qw = cs_field_try("ym_water");
@@ -3868,13 +3866,12 @@ cs_atmo_z_ground_compute(void)
     } /* loop on cells */
   }
 
-  cs_parall_max(1, CS_INT_TYPE, &(eqp_p->ndircl));
+  cs::parall::max((eqp_p->ndircl));
 
   /* Norm
    * ==== */
 
-  cs_parall_sum(1, CS_REAL_TYPE, &norm);
-  cs_parall_sum(1, CS_REAL_TYPE, &ground_surf);
+  cs::parall::sum(norm, ground_surf);
 
   if (ground_surf > 0.)
     norm = sqrt(norm / ground_surf) * mq->tot_vol;
@@ -3934,7 +3931,7 @@ cs_atmo_z_ground_compute(void)
       f->val_pre[cell_id] = f->val[cell_id];
     }
 
-    cs_parall_max(1, CS_REAL_TYPE, &inf_norm);
+    cs::parall::max(inf_norm);
   }
 
 }
@@ -4001,7 +3998,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
       z_min = b_face_cog[face_id][2];
   }
 
-  cs_parall_min(1, CS_REAL_TYPE, &z_min);
+  cs::parall::min(z_min);
 
   /* p_ground is pressure at the lowest level */
 
@@ -4166,7 +4163,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
     }
 
     if (cs_log_default_is_active()) {
-      cs_parall_max(1, CS_REAL_TYPE, &inf_norm);
+      cs::parall::max(inf_norm);
       bft_printf
         (_("Meteo profiles: iterative process to compute hydrostatic pressure\n"
            "  sweep %d, L infinity norm (delta p) / ps =%e\n"), sweep, inf_norm);

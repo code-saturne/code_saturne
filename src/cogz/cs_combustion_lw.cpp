@@ -1915,12 +1915,12 @@ _pdfpp4(const cs_lnum_t   n_cells,
   if (cs_log_default_is_active() == false)
     return;
 
-  cs_parall_sum_scalars(clfp2m, clyf21, clcyf1, clcyf2, cly2p1, cly2p3,
-                        cly2p2, cly2p4, icpt1, icpt2);
-  cs_parall_max_scalars(mxcfp, maxfp2, mxcyfp, mxyfp2, mxccyf, mxcoyf,
-                        mnccyf, mcy2p1, my2p1, mcy2p3, mcy2p2, my2p2,
-                        mcy2p4, o2max, tetmax, wmax);
-  cs_parall_min_scalars(mncoyf, my2p3, my2p4, o2min, tetmin, wmin);
+  cs::parall::sum(clfp2m, clyf21, clcyf1, clcyf2, cly2p1, cly2p3,
+                  cly2p2, cly2p4, icpt1, icpt2);
+  cs::parall::max(mxcfp, maxfp2, mxcyfp, mxyfp2, mxccyf, mxcoyf,
+                  mnccyf, mcy2p1, my2p1, mcy2p3, mcy2p2, my2p2,
+                  mcy2p4, o2max, tetmax, wmax);
+  cs::parall::min(mncoyf, my2p3, my2p4, o2min, tetmin, wmin);
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _(" clips to high on variance at f = %lu\n"

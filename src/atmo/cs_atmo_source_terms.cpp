@@ -216,7 +216,7 @@ _compute_radius_volumic_droplets(const cs_lnum_t  n_cells,
     r3max = fmax(r3[c_id], r3max);
   }
 
-  cs_parall_max(1, CS_REAL_TYPE, &r3max);
+  cs::parall::max(r3max);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -707,7 +707,7 @@ cs_atmo_scalar_source_term(int              f_id,
     qliqmax = 0.0;
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       qliqmax = fmax(cpro_liqwt[c_id], qliqmax);
-    cs_parall_max(1, CS_REAL_TYPE, &qliqmax);
+    cs::parall::max(qliqmax);
 
     if (!r3_is_defined) {
       const cs_real_t *cvar_ntdrp = cs_field_by_name("number_of_droplets")->val;

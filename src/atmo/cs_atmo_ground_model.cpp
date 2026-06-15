@@ -452,7 +452,7 @@ cs_ground_compute_mean(void)
     cs_parall_sum(10, CS_DOUBLE, groundmean);
     cs_parall_min(10, CS_DOUBLE, groundmin);
     cs_parall_max(10, CS_DOUBLE, groundmax);
-    cs_parall_sum(1, CS_DOUBLE, &surf_zone);
+    cs::parall::sum(surf_zone);
 
     for (cs_lnum_t n = 0; n < 10; n++) {
       groundmean[n] = groundmean[n] / surf_zone;
@@ -1671,7 +1671,7 @@ cs_atmo_ground_initialize(void)
   /* Get the number of elements in the ground zone */
   const cs_atmo_option_t *at_opt = cs_glob_atmo_option;
 
-  cs_parall_sum(1, CS_INT_TYPE,&n_elts);
+  cs::parall::sum(n_elts);
 
   /* There are some ground faces on some ranks */
   /* Note: we can use ground categories without ground model */

@@ -587,7 +587,7 @@ cs_combustion_dirac_pdf(cs_lnum_t         n_cells,
       }
     }
 
-    cs_parall_sum_scalars(n1, n2, n3, n4, n5, n6);
+    cs::parall::sum(n1, n2, n3, n4, n5, n6);
 
     cs_log_printf
       (CS_LOG_DEFAULT,
