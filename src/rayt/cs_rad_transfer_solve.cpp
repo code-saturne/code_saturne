@@ -2728,7 +2728,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   /* -> Integrate net flux density at boundaries */
   if (verbosity > 0) {
     cs_real_t aa = cs_dot(n_b_faces, f_fnet->val, b_face_surf);
-    cs_parall_sum(1, CS_REAL_TYPE, &aa);
+    cs::parall::sum(aa);
 
     cs_log_printf(
       CS_LOG_DEFAULT,

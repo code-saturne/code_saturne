@@ -1537,8 +1537,8 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
                          (cs_gnum_t)nbpass};
       cs_parall_counter(cpt, 3);
 
-      cs_parall_max(1, CS_INT_TYPE, &nbimax);
-      cs_parall_max(1, CS_REAL_TYPE, &err1mx);
+      cs::parall::max(nbimax);
+      cs::parall::max(err1mx);
 
       cs_log_printf(CS_LOG_DEFAULT,
                     _(" Max Error = %g\n"

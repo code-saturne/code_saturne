@@ -727,10 +727,10 @@ cs_coal_mass_transfer(void)
 
         cs_gnum_t npoint = (cs_gnum_t)n_cells;
 
-        cs_parall_sum_scalars(npoint, npoin1, npoin2, npoin3, npoin4,
-                              npoin63, npyv);
-        cs_parall_min_scalars(tmin, yvmin);
-        cs_parall_max_scalars(tmax, yvmax, yymax);
+        cs::parall::sum(npoint, npoin1, npoin2,
+                        npoin3, npoin4, npoin63, npyv);
+        cs::parall::min(tmin, yvmin);
+        cs::parall::max(tmax, yvmax, yymax);
 
         cs_log_printf(CS_LOG_DEFAULT,
                       _("\n For the class %d, n_points = %lu\n"

@@ -609,8 +609,8 @@ _gas_comb(cs_lnum_t        n_cells,
 
   }
 
-  cs_parall_sum_scalars(n1, n2, n3, n4, n5, n6, n7, n8, n9,
-                        n10, n11, n12, n13, n14, n15);
+  cs::parall::sum(n1, n2, n3, n4, n5, n6, n7, n8, n9,
+                  n10, n11, n12, n13, n14, n15);
 
   cs_log_printf
     (CS_LOG_DEFAULT,
@@ -641,8 +641,8 @@ _gas_comb(cs_lnum_t        n_cells,
      (unsigned long long)n13, (unsigned long long)n14,
      (unsigned long long)n15);
 
-  cs_parall_min(1, CS_REAL_TYPE, &sommin);
-  cs_parall_max(1, CS_REAL_TYPE, &sommax);
+  cs::parall::min(sommin);
+  cs::parall::max(sommax);
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _(" Sum Min Max : %g %g\n"),
@@ -1332,9 +1332,9 @@ _physprop2(cs_lnum_t  n_cells)
 
     if (log_is_active) {
 
-      cs_parall_sum_scalars(n1, n2, n3, n4, n5, n6, n7, n8);
-      cs_parall_max_scalars(x2max, dchmax, dckmax, romax);
-      cs_parall_min_scalars(x2min, dchmin, dckmin, romin);
+      cs::parall::sum(n1, n2, n3, n4, n5, n6, n7, n8);
+      cs::parall::max(x2max, dchmax, dckmax, romax);
+      cs::parall::min(x2min, dchmin, dckmin, romin);
 
       if (n1 > 0)
         cs_log_printf(CS_LOG_DEFAULT,
