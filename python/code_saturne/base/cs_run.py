@@ -492,7 +492,7 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
         r_c['run_id'] = run_conf.get('run', 'id')
 
     if not r_c['force_id']:
-        r_c['force_id'] = run_conf.get_bool('run', 'force_id')
+        r_c['force_id'] = run_conf.get_bool('run', 'force')
 
     # Compute stages
 
