@@ -359,16 +359,16 @@ _field_pointer_map_electric_arcs(int  n_gasses)
   char s[64];
 
   cs_field_pointer_map(CS_ENUMF_(h),
-                       cs_field_by_name_try("enthalpy"));
+                       cs_field_try("enthalpy"));
 
-  cs_field_pointer_map(CS_ENUMF_(potr), cs_field_by_name_try("elec_pot_r"));
-  cs_field_pointer_map(CS_ENUMF_(poti), cs_field_by_name_try("elec_pot_i"));
+  cs_field_pointer_map(CS_ENUMF_(potr), cs_field_try("elec_pot_r"));
+  cs_field_pointer_map(CS_ENUMF_(poti), cs_field_try("elec_pot_i"));
 
-  cs_field_pointer_map(CS_ENUMF_(potva), cs_field_by_name_try("vec_potential"));
+  cs_field_pointer_map(CS_ENUMF_(potva), cs_field_try("vec_potential"));
 
   for (int i = 0; i < n_gasses - 1; i++) {
     snprintf(s, 63, "esl_fraction_%02d", i+1); s[63] = '\0';
-    cs_field_pointer_map_indexed(CS_ENUMF_(ycoel), i, cs_field_by_name_try(s));
+    cs_field_pointer_map_indexed(CS_ENUMF_(ycoel), i, cs_field_try(s));
   }
 }
 
@@ -382,25 +382,25 @@ static void
 _field_pointer_properties_map_electric_arcs(void)
 {
   cs_field_pointer_map(CS_ENUMF_(t),
-                       cs_field_by_name_try("temperature"));
+                       cs_field_try("temperature"));
 
   cs_field_pointer_map(CS_ENUMF_(joulp),
-                       cs_field_by_name_try("joule_power"));
+                       cs_field_try("joule_power"));
   cs_field_pointer_map(CS_ENUMF_(radsc),
-                       cs_field_by_name_try("radiation_source"));
+                       cs_field_try("radiation_source"));
   cs_field_pointer_map(CS_ENUMF_(elech),
-                       cs_field_by_name_try("elec_charge"));
+                       cs_field_try("elec_charge"));
 
   cs_field_pointer_map(CS_ENUMF_(curre),
-                       cs_field_by_name_try("current_re"));
+                       cs_field_try("current_re"));
   cs_field_pointer_map(CS_ENUMF_(curim),
-                       cs_field_by_name_try("current_im"));
+                       cs_field_try("current_im"));
   cs_field_pointer_map(CS_ENUMF_(laplf),
-                       cs_field_by_name_try("laplace_force"));
+                       cs_field_try("laplace_force"));
   cs_field_pointer_map(CS_ENUMF_(magfl),
-                       cs_field_by_name_try("magnetic_field"));
+                       cs_field_try("magnetic_field"));
   cs_field_pointer_map(CS_ENUMF_(elefl),
-                       cs_field_by_name_try("electric_field"));
+                       cs_field_try("electric_field"));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -432,7 +432,7 @@ _pot_gradient_im_f(int               location_id,
   cs_real_3_t *v = (cs_real_3_t *)vals;
 
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_field_t *f = cs_field_by_name("elec_pot_i");
+  const cs_field_t *f = cs_field("elec_pot_i");
 
   cs_array_2d<cs_real_t> grad(m->n_cells_with_ghosts, 3);
 
@@ -483,7 +483,7 @@ _current_im_f(int               location_id,
   cs_real_3_t *v = (cs_real_3_t *)vals;
 
   const cs_mesh_t *m = cs_glob_mesh;
-  const cs_field_t *f = cs_field_by_name("elec_pot_i");
+  const cs_field_t *f = cs_field("elec_pot_i");
 
   cs_array_2d<cs_real_t> grad(m->n_cells_with_ghosts, 3);
 
@@ -492,7 +492,7 @@ _current_im_f(int               location_id,
   const int diff_id = f->get_key_int("diffusivity_id");
 
   if (diff_id > -1) {
-    const cs_real_t *cvisii = cs_field_by_id(diff_id)->val;
+    const cs_real_t *cvisii = cs_field(diff_id)->val;
 
     if (elt_ids != nullptr) {
       for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
@@ -559,8 +559,8 @@ _pot_module_f(int               location_id,
 
   cs_real_t *v = (cs_real_t *)vals;
 
-  const cs_real_t *cpotr = cs_field_by_name("elec_pot_r")->val;
-  const cs_real_t *cpoti = cs_field_by_name("elec_pot_i")->val;
+  const cs_real_t *cpotr = cs_field("elec_pot_r")->val;
+  const cs_real_t *cpoti = cs_field("elec_pot_i")->val;
 
   if (elt_ids != nullptr) {
     for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
@@ -604,8 +604,8 @@ _pot_arg_f(int               location_id,
 
   cs_real_t *v = (cs_real_t *)vals;
 
-  const cs_real_t *cpotr = cs_field_by_name("elec_pot_r")->val;
-  const cs_real_t *cpoti = cs_field_by_name("elec_pot_i")->val;
+  const cs_real_t *cpotr = cs_field("elec_pot_r")->val;
+  const cs_real_t *cpoti = cs_field("elec_pot_i")->val;
 
   cs_real_t pi_ov_4 = atan(1.);
 
@@ -770,7 +770,7 @@ cs_electrical_model_specific_initialization(void)
   }
 
   if (ielarc > 1) {
-    f = cs_field_by_name_try("vec_potential");
+    f = cs_field_try("vec_potential");
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->iconv  = 0;
     eqp->istat  = 0;
@@ -804,7 +804,7 @@ cs_electrical_model_specific_initialization(void)
   }
 
   if (ielarc > 1) {
-    f = cs_field_by_name_try("vec_potential");
+    f = cs_field_try("vec_potential");
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->blencv = 1.;
     if (f != nullptr)
@@ -1034,9 +1034,8 @@ cs_elec_physical_properties(cs_domain_t  *domain)
   const cs_lnum_t  n_cells = domain->mesh->n_cells;
   const int kivisl = cs_field_key_id("diffusivity_id");
   int diff_id = CS_F_(potr)->get_key_int(kivisl);
-  cs_field_t *c_prop = nullptr;
-  if (diff_id > -1)
-    c_prop = cs_field_by_id(diff_id);
+  cs_field_t *c_prop = cs_field_try(diff_id);
+
   ipass++;
 
   const cs_data_elec_t  *e_props = cs_glob_elec_properties; /* local name */
@@ -1047,9 +1046,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
   /* Joule effect (law must be specified by user) */
 
   int ifcvsl = CS_F_(h)->get_key_int(kivisl);
-  cs_field_t *diff_th = nullptr;
-  if (ifcvsl >= 0)
-    diff_th = cs_field_by_id(ifcvsl);
+  cs_field_t *diff_th = cs_field_try(ifcvsl); // try method returns nullptr if id < 0
 
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
@@ -1376,9 +1373,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
     /* compute current density j = sig E */
     int diff_id = CS_F_(potr)->get_key_int(kivisl);
-    cs_field_t *c_prop = nullptr;
-    if (diff_id > -1)
-      c_prop = cs_field_by_id(diff_id);
+    cs_field_t *c_prop = cs_field_try(diff_id);
 
     if (ieljou > 0 || ielarc > 0) {
       auto cpro_curre = CS_F_(curre)->get_val_v();
@@ -1463,9 +1458,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
       /* compute current density j = sig E */
       int diff_id_i = CS_F_(poti)->get_key_int(kivisl);
-      cs_field_t *c_propi = nullptr;
-      if (diff_id_i > -1)
-        c_propi = cs_field_by_id(diff_id_i);
+      cs_field_t *c_propi = cs_field_try(diff_id_i);
 
       if (ieljou == 4) {
         auto cpro_curim = CS_F_(curim)->get_val_v();
@@ -1546,7 +1539,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
     if (ielarc == 2) {
       /* compute magnetic field component B */
-      cs_field_t  *fp = cs_field_by_name_try("vec_potential");
+      cs_field_t  *fp = cs_field_try("vec_potential");
 
       cs_array_3d<cs_real_t> gradv(n_cells_ext, 3, 3, cs_alloc_mode);
 
@@ -1617,7 +1610,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
                      int                          f_id,
                      cs_real_t                   *smbrs)
 {
-  const cs_field_t  *f    = cs_field_by_id(f_id);
+  const cs_field_t  *f    = cs_field(f_id);
   const char        *name = f->name;
   cs_lnum_t          n_cells     = mesh->n_cells;
   cs_lnum_t          n_cells_ext = mesh->n_cells_with_ghosts;
@@ -1676,7 +1669,7 @@ cs_elec_source_terms_v(const cs_mesh_t             *mesh,
                        int                          f_id,
                        cs_real_3_t                 *smbrv)
 {
-  const cs_field_t  *f    = cs_field_by_id(f_id);
+  const cs_field_t  *f    = cs_field(f_id);
   cs_lnum_t          n_cells     = mesh->n_cells;
   const cs_real_t   *volume = mesh_quantities->cell_vol;
 
@@ -1719,7 +1712,7 @@ cs_elec_add_variable_fields(void)
   {
     int f_id = cs_variable_field_create("enthalpy", "Enthalpy",
                                         CS_MESH_LOCATION_CELLS, 1);
-    f = cs_field_by_id(f_id);
+    f = cs_field(f_id);
     f->set_key_double(kscmin, -cs_math_big_r);
     f->set_key_int(kivisl, 0);
     cs_add_model_field_indexes(f);
@@ -1732,7 +1725,7 @@ cs_elec_add_variable_fields(void)
   {
     int f_id = cs_variable_field_create("elec_pot_r", "POT_EL_R",
                                         CS_MESH_LOCATION_CELLS, 1);
-    f = cs_field_by_id(f_id);
+    f = cs_field(f_id);
     f->set_key_double(kscmin, -cs_math_big_r);
     f->set_key_double(kscmax,  cs_math_big_r);
     f->set_key_int(kivisl, 0);
@@ -1742,7 +1735,7 @@ cs_elec_add_variable_fields(void)
   if (ieljou == 2 || ieljou == 4) {
     int f_id = cs_variable_field_create("elec_pot_i", "POT_EL_I",
                                         CS_MESH_LOCATION_CELLS, 1);
-    f = cs_field_by_id(f_id);
+    f = cs_field(f_id);
     f->set_key_double(kscmin, -cs_math_big_r);
     f->set_key_double(kscmax,  cs_math_big_r);
     f->set_key_int(kivisl, 0);
@@ -1752,7 +1745,7 @@ cs_elec_add_variable_fields(void)
   if (ielarc > 1) {
     int f_id = cs_variable_field_create("vec_potential", "POT_VEC",
                                         CS_MESH_LOCATION_CELLS, 3);
-    f = cs_field_by_id(f_id);
+    f = cs_field(f_id);
     //f->set_key_double(kscmin, -cs_math_big_r);
     //f->set_key_double(kscmax,  cs_math_big_r);
     f->set_key_int(kivisl, -1);
@@ -1775,7 +1768,7 @@ cs_elec_add_variable_fields(void)
 
       int f_id = cs_variable_field_create(name, label,
                                           CS_MESH_LOCATION_CELLS, 1);
-      f = cs_field_by_id(f_id);
+      f = cs_field(f_id);
 
       f->set_key_double(kscmin, 0.);
       f->set_key_double(kscmax, 1.);
