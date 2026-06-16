@@ -3,6 +3,9 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix postprocessing of distance to fluid face centers for CHT when coupled with
+  the CDO HTSolver.
+
 - Fix Ustar definition in lagrangian module when used with NCFD.
 
 - Various extended boundary gradient and gradient limiter fixes.
