@@ -132,6 +132,7 @@
 #include "base/cs_medcoupling_postprocess.h"
 #include "base/cs_paramedmem_remapper.h"
 #include "base/cs_paramedmem_coupling.h"
+#include "base/cs_paramedmem_coupling_utils.h"
 
 /*----------------------------------------------------------------------------*/
 
