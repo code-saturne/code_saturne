@@ -68,9 +68,9 @@ cs_user_physical_properties
   if (CS_F_(cp) == nullptr)
     bft_error(__FILE__, __LINE__, 0,_("error cp not variable\n"));
 
-  cs_real_t *cpro_lambda = CS_F_(lambda)->val;
-  cs_real_t *cpro_rho = CS_F_(rho)->val;
-  cs_real_t *cpro_cp = CS_F_(cp)->val;
+  auto cpro_lambda = CS_F_(lambda)->get_val_s();
+  auto cpro_rho = CS_F_(rho)->get_val_s();
+  auto cpro_cp = CS_F_(cp)->get_val_s();
 
   /* Impose thermal conductivity, density and specific heat for solid zones */
   {
@@ -280,7 +280,7 @@ cs_user_physical_properties_turb_viscosity
   const cs_real_t *cell_vol = domain->mesh_quantities->cell_vol;
 
   /* Overwrite Smagorinsky constant */
-  cs_real_t *cpro_smago = cs_field("smagorinsky_constant^2")->val;
+  auto cpro_smago = cs_field("smagorinsky_constant^2")->get_val_s();
 
   cs_real_t mijmijmoy = 0, mijlijmoy = 0;
 
@@ -300,7 +300,7 @@ cs_user_physical_properties_turb_viscosity
   /* Calculation of (dynamic) viscosity
    * ================================== */
 
-  cs_real_t *visct = CS_F_(mu_t)->val;
+  auto visct = CS_F_(mu_t)->get_val_s();
   const cs_real_t *crom  = CS_F_(rho)->val;
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     const cs_real_t coef = cpro_smago[c_id];

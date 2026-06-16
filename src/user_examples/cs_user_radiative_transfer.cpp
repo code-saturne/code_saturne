@@ -132,8 +132,8 @@ cs_user_rad_transfer_absorption
       }
       fclose(f);
 
-      cs_field_t *f_ck_u = cs_field("rad_absorption_coeff_up");
-      cs_field_t *f_ck_d = cs_field("rad_absorption_coeff_down");
+      auto cvar_ck_u = cs_field("rad_absorption_coeff_up")->get_val_s();
+      auto cvar_ck_d = cs_field("rad_absorption_coeff_down")->get_val_s();
 
       for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
 
@@ -146,8 +146,8 @@ cs_user_rad_transfer_absorption
         /* Search loop */
         for (; iz < n_v_segs && z > (zray2[iz+1]-tol); iz++);
 
-        f_ck_u->val[cell_id] = fabs(k_up[iz+1]);
-        f_ck_d->val[cell_id] = fabs(k_down[iz+1]);
+        cvar_ck_u[cell_id] = fabs(k_up[iz+1]);
+        cvar_ck_d[cell_id] = fabs(k_down[iz+1]);
 
       }
     }

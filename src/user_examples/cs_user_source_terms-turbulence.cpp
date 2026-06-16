@@ -78,7 +78,7 @@ cs_user_source_terms
 
   /* Define a cpro_rom pointer to the density */
   /*! [dens_array_3] */
-  const cs_real_t  *cpro_rom = CS_F_(rho)->val;
+  const auto cpro_rom = CS_F_(rho)->get_val_s();
   /*! [dens_array_3] */
 
   /*! [current_turb_3] */

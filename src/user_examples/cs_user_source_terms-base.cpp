@@ -89,7 +89,7 @@ cs_user_source_terms
   /* Density */
 
   /*! [density_2] */
-  const cs_real_t  *cpro_rom = CS_F_(rho)->val;
+  const auto cpro_rom = CS_F_(rho)->get_val_s();
   /*! [density_2] */
 
   /* Example of arbitrary source term for the scalar f, name "scalar_2"

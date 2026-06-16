@@ -84,8 +84,8 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
 
-  const cs_real_t *bpro_rho = CS_F_(rho_b)->val;
-  const cs_real_3_t *cvar_vel = (const cs_real_3_t *)CS_F_(vel)->val;
+  const auto bpro_rho = CS_F_(rho_b)->get_val_s();
+  const auto cvar_vel = CS_F_(vel)->get_val_v();
 
   const cs_zone_t  *zn = nullptr;
   /*! [init] */
@@ -280,7 +280,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       const cs_lnum_t face_id = zn->elt_ids[e_idx];
       const cs_lnum_t c_id = b_face_cells[face_id];
 
-      const cs_real_t vnrm = cs_math_3_norm(cvar_vel[c_id]);
+      const cs_real_t vnrm = cs_math_3_norm(cvar_vel.sub_array(c_id));
 
       acc[0] += vnrm*b_face_surf[face_id];
       acc[1] += b_face_surf[face_id];
@@ -297,7 +297,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       const cs_lnum_t face_id = zn->elt_ids[e_idx];
       const cs_lnum_t c_id = b_face_cells[face_id];
 
-      const cs_real_t vnrm = cs_math_3_norm(cvar_vel[c_id]);
+      const cs_real_t vnrm = cs_math_3_norm(cvar_vel.sub_array(c_id));
 
       assert(bc_type[face_id] == CS_INLET);
 

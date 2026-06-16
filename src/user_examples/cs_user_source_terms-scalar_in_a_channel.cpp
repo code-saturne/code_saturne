@@ -88,14 +88,14 @@ cs_user_source_terms
 
   /*! [map_fields] */
   /* velocity */
-  const cs_real_3_t  *cvar_vel = (const cs_real_3_t *)(CS_F_(vel)->val);
+  const auto cvar_vel = CS_F_(vel)->get_val_v();
   /*! [map_fields] */
 
   /*! [bulk_mean_velocity] */
   /* bulk mean velocity (x component) */
   cs_real_t  ubulk = 0;
   for (cs_lnum_t i = 0; i < n_cells; i++)
-    ubulk += cvar_vel[i][0] * cell_f_vol[i];
+    ubulk += cvar_vel(i, 0) * cell_f_vol[i];
 
   cs::parall::sum(ubulk);  /* sum across processes if needed */
 
@@ -108,7 +108,7 @@ cs_user_source_terms
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     st_imp[i] = 0.;
-    st_exp[i] = cell_f_vol[i] * cvar_vel[i][0] * tot_flux / ubulk;
+    st_exp[i] = cell_f_vol[i] * cvar_vel(i, 0) * tot_flux / ubulk;
   }
   /*! [scalar_st] */
 }

@@ -79,7 +79,7 @@ cs_user_source_terms
   const cs_real_t  *cell_f_vol = domain->mesh_quantities->cell_vol;
 
   /* density */
-  const cs_real_t  *cpro_rom = CS_F_(rho)->val;
+  const auto cpro_rom = CS_F_(rho)->get_val_s();
   /*! [st_meta] */
 
   /* Example of arbitrary source term for component u:
@@ -136,7 +136,7 @@ cs_user_source_terms
 
     /* get temperature */
 
-    const cs_real_t *cvar_temperature = CS_F_(t)->val;
+    const auto cvar_temperature = CS_F_(t)->get_val_s();
 
     /* source term (in z direction here) */
 

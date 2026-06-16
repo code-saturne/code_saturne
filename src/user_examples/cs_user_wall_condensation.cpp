@@ -278,8 +278,8 @@ cs_user_wall_condensation(int  iappel)
       bft_error(__FILE__, __LINE__, 0,
                 _("%s: Enthalpy field not found...\n"), __func__);
 
-    cs_real_t *cpro_cp = CS_F_(cp)->val;
-    cs_real_t *cvar_h= CS_F_(h)->val;
+    auto cpro_cp = CS_F_(cp)->get_val_s();
+    auto cvar_h= CS_F_(h)->get_val_s();
 
     // Get specific heat of steam
     int k_id = cs_gas_mix_get_field_key();

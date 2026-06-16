@@ -75,7 +75,7 @@ cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
 
   const int nt_cur = domain->time_step->nt_cur;
 
-  const cs_real_t *dt = CS_F_(dt)->val;
+  const auto dt = CS_F_(dt)->get_val_s();
 
   /* nodes displacement */
   auto disale = cs_field("mesh_displacement")->get_val_v();
