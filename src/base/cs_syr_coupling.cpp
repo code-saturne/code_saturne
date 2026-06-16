@@ -747,7 +747,8 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
   if (coupling_ent->n_elts > 0) {
 
-    if (syr_coupling->visualization != 0)
+    if (syr_coupling->visualization != 0 ||
+        (_is_cdo_thermal == 1 && elt_dim == syr_coupling->dim - 1) )
       CS_MALLOC(cs_to_syr_dist, coupling_ent->n_elts, float);
 
     CS_MALLOC(elt_centers,
@@ -893,11 +894,13 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
       // Solid (CDO)
       ple_locator_exchange_point_var(coupling_ent->locator,
                                      nullptr,
-                                     syr_to_cs_dist,
+                                     cs_to_syr_dist,
                                      nullptr,
                                      sizeof(float),
                                      1,
                                      1);
+
+      CS_FREE(cs_to_syr_dist);
     }
     else {
       // Fluid (legacy)
