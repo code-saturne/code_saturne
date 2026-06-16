@@ -1007,11 +1007,9 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
                                            n_cells,
                                            sfc_type);
 
-  if (_cell_center != cell_center)
-    CS_FREE(_cell_center);
+  CS_FREE(_cell_center);
 
   cell_num = fvm_io_num_get_global_num(cell_io_num);
-
 
   /* Determine rank based on global numbering with SFC ordering; */
 
