@@ -720,7 +720,7 @@ _log_fields_and_functions(void)
     cs_lnum_t have_weight = 0;
     double total_weight = -1;
     cs_gnum_t n_g_elts = 0;
-    cs_real_t *gather_array = nullptr; /* only if CS_MESH_LOCATION_VERTICES */
+    cs_array<cs_real_t>gather_array; /* only if CS_MESH_LOCATION_VERTICES */
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(loc_id);
     const cs_lnum_t _n_elts = n_elts[0];
     const cs_lnum_t *elt_ids = nullptr;
@@ -741,7 +741,7 @@ _log_fields_and_functions(void)
         n_g_elts = m->n_g_i_faces;
         weight = mq->i_face_surf;
         cs_array_reduce_sum_l<1>(ctx, _n_elts, nullptr, weight, &total_weight);
-        cs_parall_sum(1, CS_DOUBLE, &total_weight);
+        cs::parall::sum(total_weight);
         have_weight = 1;
         break;
 
@@ -749,14 +749,14 @@ _log_fields_and_functions(void)
         n_g_elts = m->n_g_b_faces;
         weight = mq->b_face_surf;
         cs_array_reduce_sum_l<1>(ctx, _n_elts, nullptr, weight, &total_weight);
-        cs_parall_sum(1, CS_DOUBLE, &total_weight);
+        cs::parall::sum(total_weight);
         have_weight = 1;
         break;
 
       case CS_MESH_LOCATION_VERTICES:
         n_g_elts = m->n_g_vertices;
         have_weight = 0;
-        CS_MALLOC(gather_array, m->n_vertices, cs_real_t);
+        gather_array.reshape(m->n_vertices);
         break;
 
       default:
@@ -790,7 +790,7 @@ _log_fields_and_functions(void)
 
           if (have_weight) {
             cs_array_reduce_sum_l<1>(ctx, _n_elts, elt_ids, weight, &total_weight);
-            cs_parall_sum(1, CS_DOUBLE, &total_weight);
+            cs::parall::sum(total_weight);
           }
         }
         break;
@@ -935,14 +935,14 @@ _log_fields_and_functions(void)
                                                    0); /* g_id_base */
 
           if (f_dim > 1)
-            CS_REALLOC(gather_array, (f_dim * m->n_vertices), cs_real_t);
+            gather_array.reshape(f_dim * m->n_vertices);
 
           cs_range_set_gather(m->vtx_range_set,
                               CS_REAL_TYPE,
                               f_dim,
                               f_val,
-                              gather_array);
-          field_val = gather_array;
+                              gather_array.data());
+          field_val = gather_array.data();
           _n_cur_elts = m->vtx_range_set->n_elts[0];
         }
 
@@ -966,9 +966,6 @@ _log_fields_and_functions(void)
       log_count += _dim;
 
     } /* End of first loop on fields */
-
-    if (gather_array != nullptr)
-      CS_FREE(gather_array);
 
     if (log_count < 1)
       continue;

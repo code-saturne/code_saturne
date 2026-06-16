@@ -1910,8 +1910,8 @@ cs_ale_allocate(void)
     return;
 
   cs_mesh_t *m = cs_glob_mesh;
-  CS_MALLOC(cs_glob_ale_data->impale, m->n_vertices, int);
-  CS_MALLOC(cs_glob_ale_data->bc_type, m->n_b_faces, int);
+  CS_MALLOC_HD(cs_glob_ale_data->impale, m->n_vertices, int, cs_alloc_mode);
+  CS_MALLOC_HD(cs_glob_ale_data->bc_type, m->n_b_faces, int, cs_alloc_mode);
 
   cs_arrays_set_value<int, 1>(m->n_b_faces,
                               0,
