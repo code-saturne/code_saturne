@@ -80,7 +80,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
 
-  const cs_real_t *bpro_rho = CS_F_(rho_b)->val;
+  const auto bpro_rho = CS_F_(rho_b)->get_val_s();
 
   const cs_zone_t  *zn = nullptr;
 

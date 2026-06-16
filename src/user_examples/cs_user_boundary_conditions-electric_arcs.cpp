@@ -100,7 +100,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   {
     const cs_zone_t *zone = cs_boundary_zone_by_name("1");
     cs_field_t *th_f = cs_thermal_model_field();
-    const cs_real_t *bfpro_rom =  CS_F_(rho_b)->val;
+    const auto bfpro_rom =  CS_F_(rho_b)->get_val_s();
 
     cs_real_t *rcodcl1_vel = CS_F_(vel)->bc_coeffs->rcodcl1;
 

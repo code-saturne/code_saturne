@@ -266,6 +266,7 @@ cs_user_1d_wall_thermal([[maybe_unused]] int iappel)
     const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
     const cs_real_3_t *cdgfbo = cs_glob_mesh_quantities->b_face_cog;
 
+    const auto cpro_dt = CS_F_(dt)->get_val_s();
     for (cs_lnum_t ii = 0 ; ii < wall_thermal->nfpt1d ; ii++) {
       wall_thermal->local_models[ii].iclt1d = 1;
       wall_thermal->local_models[ii].tept1d = cs_glob_fluid_properties->t0;
@@ -282,7 +283,7 @@ cs_user_1d_wall_thermal([[maybe_unused]] int iappel)
         wall_thermal->local_models[ii].rcpt1d = 670.*778.;
       }
       cs_lnum_t c_id = b_face_cells[face_id];
-      wall_thermal->local_models[ii].dtpt1d = CS_F_(dt)->val[c_id];
+      wall_thermal->local_models[ii].dtpt1d = cpro_dt[c_id];
     }
 
   }

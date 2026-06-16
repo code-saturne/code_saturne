@@ -76,7 +76,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   const cs_zone_t  *zn = nullptr;
   const int n_fields = cs_field_n_fields();
-  const cs_real_t *cpro_rho = CS_F_(rho)->val;
+  const auto cpro_rho = CS_F_(rho)->get_val_s();
   const int keysca = cs_field_key_id("scalar_id");
 
   const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;

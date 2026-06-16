@@ -67,6 +67,8 @@ _smoothe(const cs_mesh_t            *mesh,
 
   cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, val);
 
+  auto cvar_poro = CS_F_(poro)->get_val_s();
+
   for (int iloop = 1; iloop <= nloop; iloop++) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       val2[c_id] = val[c_id] * cell_vol[c_id];
@@ -82,10 +84,10 @@ _smoothe(const cs_mesh_t            *mesh,
       cs_lnum_t c_id0 = i_face_cells[f_id][0];
       cs_lnum_t c_id1 = i_face_cells[f_id][1];
 
-      val2[c_id0] += val[c_id1] * cell_vol[c_id1] * CS_F_(poro)->val[c_id1];
-      val2[c_id1] += val[c_id0] * cell_vol[c_id0] * CS_F_(poro)->val[c_id0];
-      den[c_id0] += cell_vol[c_id1] * CS_F_(poro)->val[c_id1];
-      den[c_id1] += cell_vol[c_id0] * CS_F_(poro)->val[c_id0];
+      val2[c_id0] += val[c_id1] * cell_vol[c_id1] * cvar_poro[c_id1];
+      val2[c_id1] += val[c_id0] * cell_vol[c_id0] * cvar_poro[c_id0];
+      den[c_id0] += cell_vol[c_id1] * cvar_poro[c_id1];
+      den[c_id1] += cell_vol[c_id0] * cvar_poro[c_id0];
     }
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -144,9 +146,14 @@ cs_user_ibm_modify
   /* Initialize porosity to previous time-step porosity in
    * a defined region (here 11 < x < 16) */
 
+  auto cvar_poro = CS_F_(poro)->get_val_s();
+  auto cvara_poro = CS_F_(poro)->get_val_s(1);
+  auto cvara_vel = CS_F_(vel)->get_val_v(1);
+  auto cvar_rho = CS_F_(rho)->get_val_s();
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     if (cell_cen[c_id][0] > 10. && cell_cen[c_id][0] < 16.)
-      CS_F_(poro)->val[c_id] = CS_F_(poro)->val_pre[c_id];
+      cvar_poro[c_id] = cvara_poro[c_id];
 
   cs_array<cs_real_t> source_term(n_cells_ext);
   cs_array<cs_real_t> por_init(n_cells_ext);
@@ -164,14 +171,14 @@ cs_user_ibm_modify
     for (int idim = 0; idim < 3; idim++)
       flux[idim] = 0.;
 
-    cs_real_t roij = 0.5 * (CS_F_(rho)->val[c_id0] + CS_F_(rho)->val[c_id1]);
+    cs_real_t roij = 0.5 * (cvar_rho[c_id0] + cvar_rho[c_id1]);
     cs_real_t alpi = 1.;
     cs_real_t alpj = 1.;
 
     cs_real_t fluij = 0.;
     for (int idim = 0; idim < 3; idim++)
-      fluij += 0.5 * (  alpi * CS_F_(vel)->val_pre[3 * c_id0 + idim]
-                      + alpj * CS_F_(vel)->val_pre[3 * c_id1 + idim])
+      fluij += 0.5 * (  alpi * cvara_vel(c_id0, idim)
+                      + alpj * cvara_vel(c_id1, idim) )
                    * i_face_normal[f_id][idim];
     fluij *= roij;
 
@@ -179,11 +186,11 @@ cs_user_ibm_modify
 
     cs_real_t uij[3];
     for (int idim = 0; idim < 3; idim++)
-      uij[idim] = CS_F_(vel)->val_pre[3 * c_id0 + idim];
+      uij[idim] = cvara_vel(c_id0, idim);
 
     if (fluij < 0.)
       for (int idim = 0; idim < 3; idim++)
-        uij[idim] = CS_F_(vel)->val_pre[3 * c_id1 + idim];
+        uij[idim] = cvara_vel(c_id1, idim);
 
     for (int idim = 0; idim < 3; idim++)
       flux[idim] += alpij * fluij * uij[idim];
@@ -195,8 +202,7 @@ cs_user_ibm_modify
   }
 
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  cs_real_t *restrict b_massflux =
-    cs_field(CS_F_(vel)->get_key_int(kbmasf))->val;
+  auto b_massflux = cs_field(CS_F_(vel)->get_key_int(kbmasf))->get_val_s();
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
     cs_lnum_t c_id = b_face_cells[f_id];
@@ -209,7 +215,7 @@ cs_user_ibm_modify
     cs_real_t alpij = 1.;
 
     for (int idim = 0; idim < 3; idim++)
-      flux[idim] += alpij * fluij * CS_F_(vel)->val_pre[3 * c_id + idim];
+      flux[idim] += alpij * fluij * cvara_vel(c_id, idim);
 
     for (int idim = 0; idim < 3; idim++)
       convective_term(c_id, idim) += flux[idim];
@@ -250,7 +256,7 @@ cs_user_ibm_modify
   cs_real_t dt = cs_glob_time_step->dt[0];
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    por_init[c_id] = CS_F_(poro)->val[c_id];
+    por_init[c_id] = cvar_poro[c_id];
 
   cs_halo_sync(mesh->halo, CS_HALO_STANDARD, por_init);
 
@@ -264,12 +270,12 @@ cs_user_ibm_modify
       cs_real_t surfi = c_w_face_surf[c_id0];
       cs_real_t ci = source_term[c_id0];
       cs_real_t gama = coeff * ci / cs::max(porj, 0.5);
-      CS_F_(poro)->val[c_id1] += gama * surfi / (ros * cell_vol[c_id1]) * dt;
+      cvar_poro[c_id1] += gama * surfi / (ros * cell_vol[c_id1]) * dt;
     } else if (porj > 0.9999 && pori < 0.0001) {
       cs_real_t surfj = c_w_face_surf[c_id1];
       cs_real_t cj = source_term[c_id1];
       cs_real_t gama = coeff * cj / cs::max(pori, 0.5);
-      CS_F_(poro)->val[c_id0] += gama * surfj / (ros * cell_vol[c_id0]) * dt;
+      cvar_poro[c_id0] += gama * surfj / (ros * cell_vol[c_id0]) * dt;
     }
   }
 
@@ -278,20 +284,20 @@ cs_user_ibm_modify
     cs_real_t cc = source_term[c_id];
     cs_real_t por = por_init[c_id];
     cs_real_t gama = coeff * cc / cs::max(por, 0.5);
-    CS_F_(poro)->val[c_id] += gama * surf / (ros * cell_vol[c_id]) * dt;
+    cvar_poro[c_id] += gama * surf / (ros * cell_vol[c_id]) * dt;
   }
 
   /* Clipping of the porosity */
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    cs_real_t porosi = CS_F_(poro)->val[c_id];
+    cs_real_t porosi = cvar_poro[c_id];
     if (porosi > 1.) {
-      CS_F_(poro)->val[c_id] = 1.;
+      cvar_poro[c_id] = 1.;
     } else if (porosi < 1.e-5) {
-      CS_F_(poro)->val[c_id] = 0.;
+      cvar_poro[c_id] = 0.;
     }
   }
 
-  cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, CS_F_(poro)->val);
+  cs_halo_sync(mesh->halo, CS_HALO_STANDARD, cvar_poro);
 
   /*!< [example_1] */
 }

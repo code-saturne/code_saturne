@@ -191,7 +191,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     if (cs_field_try("boundary_roughness") != nullptr) {
 
-      cs_real_t *bpro_roughness = cs_field("boundary_roughness")->val;
+      auto bpro_roughness = cs_field("boundary_roughness")->get_val_s();
 
       for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
 

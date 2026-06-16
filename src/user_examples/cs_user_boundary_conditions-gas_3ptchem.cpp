@@ -122,15 +122,13 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   /*! [loc_var_dec] */
 
   const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
-  const cs_real_3_t *cdgfbo = domain->mesh_quantities->b_face_cog;
-  const cs_real_t *gxyz = cs_glob_physical_constants->gravity;
 
   const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
   cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
 
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   const int iflmab =  CS_F_(vel)->get_key_int(kbmasf);
-  const cs_real_t *bmasfl = cs_field(iflmab)->val;
+  const auto bmasfl = cs_field(iflmab)->get_val_s();
 
   /* Oxydant temperature needed by the combustion model
      when there is no oxydant inlet */
@@ -167,9 +165,9 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   /*! [open] */
   {
-    const cs_real_3_t *cvar_vel = (const cs_real_3_t *)CS_F_(vel)->val;
+    const auto cvar_vel = CS_F_(vel)->get_val_v();
 
-    cs_real_t *brom = CS_F_(rho_b)->val;
+    auto brom = CS_F_(rho_b)->get_val_s();
 
     int *p_icodcl = CS_F_(p)->bc_coeffs->icodcl;
     cs_real_t *p_rcodcl1 = CS_F_(p)->bc_coeffs->rcodcl1;
@@ -212,7 +210,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
       const cs_lnum_t c_id = b_face_cells[face_id];
 
-      cs_real_t uref2 = cs_math_3_square_norm(cvar_vel[c_id]);
+      cs_real_t uref2 = cs_math_3_square_norm(cvar_vel.sub_array(c_id));
       uref2 = cs::max(uref2, cs_math_epzero);
 
       cs_turbulence_bc_inlet_turb_intensity(face_id, uref2, xitur, xdh);

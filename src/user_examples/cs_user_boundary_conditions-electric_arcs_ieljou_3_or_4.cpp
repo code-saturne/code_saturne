@@ -126,10 +126,10 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     const cs_zone_t *z = cs_boundary_zone_by_name(name);
 
-    cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
-    cs_real_3_t *cpro_curim = nullptr;
+    cs_span_2d<cs_real_t> cpro_curre = CS_F_(curre)->get_val_v();
+    cs_span_2d<cs_real_t> cpro_curim;
     if (ieljou == 4)
-      cpro_curim = (cs_real_3_t *)(CS_F_(curim)->val);
+      cpro_curim = CS_F_(curim)->get_val_v();
 
     for (cs_lnum_t ilelt = 0; ilelt < z->n_elts; ilelt++) {
 
@@ -137,13 +137,13 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       cs_lnum_t cell_id = b_face_cells[face_id];
 
       for (cs_lnum_t id = 0; id < 3; id++) {
-        sir[i] +=   cpro_curre[cell_id][id]
+        sir[i] +=   cpro_curre(cell_id, id)
                   * b_face_u_normal[face_id][id] * b_face_surf[face_id];
       }
 
       if (ieljou == 4) {
         for (cs_lnum_t id = 0; id < 3; id++) {
-          sii[i] +=   cpro_curim[cell_id][id]
+          sii[i] +=   cpro_curim(cell_id, id)
                     * b_face_u_normal[face_id][id] * b_face_surf[face_id];
         }
       }

@@ -221,56 +221,56 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
     cs_span<cs_real_t> omg_val_ext;
     cs_span<cs_real_t> nusa_val_ext;
 
-    const cs_real_t *cvar_k = nullptr;
-    const cs_real_t *cvar_eps = nullptr;
-    const cs_real_6_t *cvar_rij = nullptr;
-    const cs_real_t *cvar_alp_bl = nullptr;
-    const cs_real_t *cvar_phi = nullptr;
-    const cs_real_t *cvar_f_bar = nullptr;
-    const cs_real_t *cvar_omg = nullptr;
-    const cs_real_t *cvar_nusa = nullptr;
+    cs_span<cs_real_t> cvar_k;
+    cs_span<cs_real_t> cvar_eps;
+    cs_span_2d<cs_real_t> cvar_rij;
+    cs_span<cs_real_t> cvar_alp_bl;
+    cs_span<cs_real_t> cvar_phi;
+    cs_span<cs_real_t> cvar_f_bar;
+    cs_span<cs_real_t> cvar_omg;
+    cs_span<cs_real_t> cvar_nusa;
 
     if (cs_glob_turb_model->itytur == 2) {
       k_val_ext = CS_F_(k)->bc_coeffs->get_val_ext();
       eps_val_ext = CS_F_(eps)->bc_coeffs->get_val_ext();
-      cvar_k = CS_F_(k)->val;
-      cvar_eps = CS_F_(eps)->val;
+      cvar_k = CS_F_(k)->get_val_s();
+      cvar_eps = CS_F_(eps)->get_val_s();
     }
     else if (cs_glob_turb_model->itytur == 3) {
       rij_val_ext = CS_F_(rij)->bc_coeffs->get_val_ext_t();
       eps_val_ext = CS_F_(eps)->bc_coeffs->get_val_ext();
-      cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
-      cvar_eps = CS_F_(eps)->val;
+      cvar_rij = CS_F_(rij)->get_val_t();
+      cvar_eps = CS_F_(eps)->get_val_s();
       if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
         alp_bl_val_ext = CS_F_(alp_bl)->bc_coeffs->get_val_ext();
-        cvar_alp_bl= CS_F_(alp_bl)->val;
+        cvar_alp_bl= CS_F_(alp_bl)->get_val_s();
       }
     }
     if (cs_glob_turb_model->itytur == 5) {
       k_val_ext = CS_F_(k)->bc_coeffs->get_val_ext();
       eps_val_ext = CS_F_(eps)->bc_coeffs->get_val_ext();
       phi_val_ext = CS_F_(phi)->bc_coeffs->get_val_ext();
-      cvar_k = CS_F_(k)->val;
-      cvar_eps = CS_F_(eps)->val;
-      cvar_phi = CS_F_(phi)->val;
+      cvar_k = CS_F_(k)->get_val_s();
+      cvar_eps = CS_F_(eps)->get_val_s();
+      cvar_phi = CS_F_(phi)->get_val_s();
       if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
         f_bar_val_ext = CS_F_(f_bar)->bc_coeffs->get_val_ext();
-        cvar_f_bar = CS_F_(f_bar)->val;
+        cvar_f_bar = CS_F_(f_bar)->get_val_s();
       }
       else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
         alp_bl_val_ext = CS_F_(alp_bl)->bc_coeffs->get_val_ext();
-        cvar_alp_bl= CS_F_(alp_bl)->val;
+        cvar_alp_bl= CS_F_(alp_bl)->get_val_s();
       }
     }
     else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
       k_val_ext = CS_F_(k)->bc_coeffs->get_val_ext();
       omg_val_ext = CS_F_(omg)->bc_coeffs->get_val_ext();
-      cvar_k = CS_F_(k)->val;
-      cvar_omg = CS_F_(omg)->val;
+      cvar_k = CS_F_(k)->get_val_s();
+      cvar_omg = CS_F_(omg)->get_val_s();
     }
     else if (cs_glob_turb_model->model ==  CS_TURB_SPALART_ALLMARAS) {
       nusa_val_ext = CS_F_(nusa)->bc_coeffs->get_val_ext();
-      cvar_nusa = CS_F_(nusa)->val;
+      cvar_nusa = CS_F_(nusa)->get_val_s();
     }
 
     /* Estimate multiplier */
@@ -311,7 +311,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
       else if (cs_glob_turb_model->itytur == 3) {
         for (cs_lnum_t ii = 0; ii< 6; ii++)
-          rij_val_ext(face_id, ii) = cvar_rij[c_id][ii];
+          rij_val_ext(face_id, ii) = cvar_rij(c_id, ii);
         eps_val_ext[face_id] = cvar_eps[c_id];
         if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
           alp_bl_val_ext[face_id] = cvar_alp_bl[c_id];
@@ -346,7 +346,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
         continue;
 
       auto val_ext = fld->bc_coeffs->get_val_ext();
-      cs_real_t *cvar = fld->val;
+      auto cvar = fld->get_val_s();
 
       for (cs_lnum_t e_idx = 0; e_idx < zn->n_elts; e_idx++) {
         const cs_lnum_t face_id = zn->elt_ids[e_idx];
