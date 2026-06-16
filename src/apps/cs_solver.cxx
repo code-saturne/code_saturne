@@ -707,6 +707,9 @@ main(int    argc,
   cs_base_mpi_init(&argc, &argv);
 #endif
 
+  /* Initialize execution context */
+  cs_execution_default_env_init();
+
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
   {
     int t_id;
