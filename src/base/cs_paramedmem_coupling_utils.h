@@ -1,5 +1,5 @@
-#ifndef CS_PARAMEDMEM_PRIV_HXX
-#define CS_PARAMEDMEM_PRIV_HXX
+#ifndef CS_PARAMEDMEM_UTILS_HXX
+#define CS_PARAMEDMEM_UTILS_HXX
 
 /*============================================================================
  * MEDCoupling ParaMESH/ParaFIELD wrapper functions.
@@ -502,4 +502,4 @@ public:
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* CS_PARAMEDMEM_PRIV_HXX */
+#endif /* CS_PARAMEDMEM_UTILS_HXX */
