@@ -935,7 +935,7 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
  *   n_ranks     <-- number of ranks in partition
  *   mb          <-- pointer to mesh builder helper structure
  *   sfc_type    <-- type of space-filling curve
- *   cell_rank   --> cell rank (1 to n numbering)
+ *   cell_rank   --> cell rank
  *   cell_center --> cell centers
  *   comm        <-- associated MPI communicator
  *----------------------------------------------------------------------------*/
@@ -1002,7 +1002,7 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
 
   }
 
-  cell_io_num = fvm_io_num_create_from_sfc(_cell_center,
+  cell_io_num = fvm_io_num_create_from_sfc(cell_center,
                                            3,
                                            n_cells,
                                            sfc_type);
@@ -3261,13 +3261,13 @@ cs_partition_add_partitions(int  n_extra_partitions,
  *
  * If a mesh builder structure mb is provided, the computed partitioning
  * is stored in mb->cell_rank.
- * Else, the computed partitioning is copied to cell_part, which must be
+ * Else, the computed partitioning is copied to cell_dest, which must be
  * preallocated.
  *
  * \param[in]       mesh       pointer to mesh structure
  * \param[in, out]  mb         pointer to mesh builder structure
  * \param[in]       stage      associated partitioning stage
- * \param[out]      cell_part  pointer to partitioning array
+ * \param[out]      cell_dest  pointer to partitioning array
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3670,7 +3670,6 @@ cs_partition(cs_mesh_t             *mesh,
     CS_FREE(cell_idx);
     CS_FREE(cell_neighbors);
   }
-
 
 #endif /* defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH) */
 

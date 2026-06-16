@@ -233,21 +233,21 @@ cs_partition_add_partitions(int  n_extra_partitions,
  *
  * If a mesh builder structure mb is provided, the computed partitioning
  * is stored in mb->cell_rank.
- * Else, the computed partitioning is copied to cell_part, which must be
+ * Else, the computed partitioning is copied to cell_dest, which must be
  * preallocated.
  *
  * \param[in]       mesh       pointer to mesh structure
  * \param[in, out]  mb         pointer to mesh builder structure
  * \param[in]       stage      associated partitioning stage
- * \param[out]      cell_part  pointer to partitioning array
+ * \param[out]      cell_dest  pointer to partitioning array
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_partition(cs_mesh_t             *mesh,
-             cs_mesh_builder_t     *mesh_builder,
+             cs_mesh_builder_t     *mb,
              cs_partition_stage_t   stage,
-             int                    cell_part[]);
+             int                    cell_dest[]);
 
 /*----------------------------------------------------------------------------*/
 
