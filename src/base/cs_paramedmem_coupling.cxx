@@ -76,7 +76,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_paramedmem_coupling_priv.h"
+#include "base/cs_paramedmem_coupling_utils.h"
 
 /*=============================================================================
  * Local Structure Definitions

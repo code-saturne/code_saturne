@@ -214,8 +214,7 @@ cs_base_headers.h
 noinst_HEADERS = \
 cs_boundary_conditions_priv.h \
 cs_mem_cuda_priv.h \
-cs_mem_hip_priv.h \
-cs_paramedmem_coupling_priv.h
+cs_mem_hip_priv.h
 
 if HAVE_CUDA
 csbase_include_HEADERS += \
@@ -451,6 +450,7 @@ cs_medcoupling_remapper.h \
 cs_medcoupling_intersector.h \
 cs_medcoupling_postprocess.h \
 cs_paramedmem_coupling.h \
+cs_paramedmem_coupling_utils.h \
 cs_paramedmem_remapper.h
 
 libcs_medcoupling_a_CPPFLAGS = \

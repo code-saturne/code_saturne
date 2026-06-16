@@ -46,7 +46,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_paramedmem_coupling_priv.h"
+#include "base/cs_paramedmem_coupling_utils.h"
 
 /*============================================================================
  * User function definitions

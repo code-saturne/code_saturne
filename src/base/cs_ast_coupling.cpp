@@ -68,7 +68,7 @@
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
-#include "base/cs_paramedmem_coupling_priv.h"
+#include "base/cs_paramedmem_coupling_utils.h"
 #include "base/cs_part_to_block.h"
 #include "base/cs_post.h"
 #include "mesh/cs_mesh.h"
