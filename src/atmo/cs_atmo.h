@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "base/cs_math.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -146,72 +147,78 @@ typedef enum {
  * Atmospheric model options descriptor
  *----------------------------------------------------------------------------*/
 
-typedef struct {
+struct cs_atmo_option_t {
+
+  DISABLE_WARNING_PUSH
+  DISABLE_WARNING(-Wdeprecated-declarations)
+  cs_atmo_option_t(){}
+  DISABLE_WARNING_POP
+
   /* Space and time reference of the run */
   /*! Starting year */
-  int syear;
+  int syear{-1};
   /*! Starting quantile */
-  int squant;
+  int squant{-1};
   /*! Starting hour */
-  int shour;
+  int shour{-1};
   /*! Starting minute */
-  int smin;
+  int smin{-1};
   /*! Starting second */
-  cs_real_t ssec;
+  cs_real_t ssec{-1.};
   /*! longitude of the domain origin */
-  cs_real_t longitude;
+  cs_real_t longitude{1e12};
   /*! latitude of the domain origin */
-  cs_real_t latitude;
+  cs_real_t latitude{1e12};
   /*! altitude of the domain origin */
-  cs_real_t altitude;
+  cs_real_t altitude{0.};
   /*! x coordinate of the domain origin in Lambert-93 */
-  cs_real_t x_l93; // conserved for retrocompatibility
+  cs_real_t x_l93{1e12}; // conserved for retrocompatibility
   /*! y coordinate of the domain origin in Lambert-93 */
-  cs_real_t y_l93; //
+  cs_real_t y_l93{1e12}; //
   /*! numbers of altitudes for the dynamics */
 
   /*! XY  coordinates of the domain origin in current projection system */
-  cs_real_t x_origin; // similar to l93 but more general
-  cs_real_t y_origin; //
+  cs_real_t x_origin{1e12}; // similar to l93 but more general
+  cs_real_t y_origin{1e12}; //
 
   /*! Projection system used in computation */
-  cs_atmo_projection_t projection_type;
-  int utm_zone; // If using utm, a zone needs to be specified
+  cs_atmo_projection_t projection_type{CS_ATMO_PROJ_UNDEF};
+  int utm_zone{0}; // If using utm, a zone needs to be specified
 
-  int met_1d_nlevels_d;
+  int met_1d_nlevels_d{0};
   [[deprecated("Use met_1d_nlevels_d instead")]]
   int& nbmetd{met_1d_nlevels_d};
 
   /*! numbers of altitudes for the temperature and specific humidity */
-  int met_1d_nlevels_t;
+  int met_1d_nlevels_t{0};
   [[deprecated("Use met_1d_nlevels_t instead")]]
   int& nbmett{met_1d_nlevels_t};
 
   /*! numbers of time steps for the meteo profiles */
-  int met_1d_ntimes;
+  int met_1d_ntimes{0};
   [[deprecated("Use met_1d_ntimes instead")]]
   int& nbmetm{met_1d_ntimes};
 
   /*! Number of vertical levels */
-  int met_1d_nlevels_max_t;
+  int met_1d_nlevels_max_t{0};
   [[deprecated("Use met_1d_nlevels_max_t instead")]]
   int& nbmaxt{met_1d_nlevels_max_t};
 
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */
-  cs_real_t domain_orientation;
+  cs_real_t domain_orientation{0.};
 
   /*! Option to compute ground elevation in the domain */
-  bool compute_z_ground;
+  bool compute_z_ground{false};
 
-  int open_bcs_treatment;
-  int theo_interp;
+  int open_bcs_treatment{0};
+  int theo_interp{0};
 
   /* Model options */
   /*! Sedimentation flag */
-  int sedimentation_model;
+  int sedimentation_model{0};
   /*! Deposition flag */
-  int deposition_model;
+  int deposition_model{0};
   /*!
    * Option for nucleation
    *  0: without nucleation
@@ -221,7 +228,7 @@ typedef struct {
    *  logaritmic standard deviation of the log-normal law of the
    *  droplet spectrum
    */
-  int nucleation_model;
+  int nucleation_model{0};
   /*!  Option for subgrid models
    *   0: the simplest parameterization (for numerical verifications)
    *   1: Bechtold et al. 1995 (Luc Musson-Genon)
@@ -229,106 +236,106 @@ typedef struct {
    *   3: Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
    *      Deardorff 1977
    */
-  int subgrid_model;
+  int subgrid_model{0};
   /*! Option for liquid water content distribution models
    *  1: all or nothing
    *  2: Gaussian distribution
    */
-  int distribution_model;
+  int distribution_model{1};
   /*! Use meteo profile:
    *  - 0: not use
    *  - 1: use a meteo file
    *  - 2: directly enter values large scale values
    *  - 3: fill directly meteo_* fields
    *  */
-  int meteo_profile;
+  int meteo_profile{0};
 
   /*! Meteo file */
-  char *meteo_file_name;
+  char *meteo_file_name{nullptr};
 
   /*! Meteo Monin obukhov inverse length */
-  cs_real_t meteo_dlmo;
+  cs_real_t meteo_dlmo{0.};
   /*! Meteo reference roughness */
-  cs_real_t meteo_z0;
+  cs_real_t meteo_z0{-1.};
   /*! Meteo reference elevation for reference velocity */
-  cs_real_t meteo_zref;
+  cs_real_t meteo_zref{-1.};
   /*! Meteo Boundary layer elevation */
-  cs_real_t meteo_zi;
+  cs_real_t meteo_zi{-1.};
   /*! Meteo reference elevation for reference velocity 1 */
-  cs_real_t meteo_zu1;
+  cs_real_t meteo_zu1{-1.};
   /*! Meteo reference elevation for reference velocity 2 */
-  cs_real_t meteo_zu2;
+  cs_real_t meteo_zu2{-1.};
   /*! Meteo reference elevation for reference temperature 1 */
-  cs_real_t meteo_zt1;
+  cs_real_t meteo_zt1{-1.};
   /*! Meteo reference elevation for reference temperature 2 */
-  cs_real_t meteo_zt2;
+  cs_real_t meteo_zt2{-1.};
   /*! Meteo reference velocity */
-  cs_real_t meteo_uref;
+  cs_real_t meteo_uref{-1.};
   /*! Meteo reference velocity 1 */
-  cs_real_t meteo_u1;
+  cs_real_t meteo_u1{-1.};
   /*! Meteo reference velocity 2 */
-  cs_real_t meteo_u2;
+  cs_real_t meteo_u2{-1.};
   /*! Meteo reference ground friction velocity */
-  cs_real_t meteo_ustar0;
+  cs_real_t meteo_ustar0{-1.};
   /*! Meteo reference convective velocity */
-  cs_real_t meteo_wstar0;
+  cs_real_t meteo_wstar0{-1.};
   /*! Meteo wind direction */
-  cs_real_t meteo_angle;
+  cs_real_t meteo_angle{-1.};
   /*! Meteo reference temperature (ground temperature) */
-  cs_real_t meteo_t0;
+  cs_real_t meteo_t0{284.15}; /* 11 deg C */
   /*! Meteo reference temperature 1 */
-  cs_real_t meteo_t1;
+  cs_real_t meteo_t1{0.};
   /*! Meteo reference temperature 2 */
-  cs_real_t meteo_t2;
+  cs_real_t meteo_t2{0.};
   /*! Meteo reference ground friction temperature */
-  cs_real_t meteo_tstar;
+  cs_real_t meteo_tstar{0.};
   /*! Meteo pressure at sea level */
-  cs_real_t meteo_psea;
+  cs_real_t meteo_psea{101325.};
 
   /*! Meteo reference mass fraction at 2m */
-  cs_real_t meteo_qw0;
+  cs_real_t meteo_qw0{0.};
   /*! Meteo reference ground friction mass fraction */
-  cs_real_t meteo_qwstar;
+  cs_real_t meteo_qwstar{cs_dbl_max};
   /*! Meteo reference mass fraction 1 */
-  cs_real_t meteo_qw1;
+  cs_real_t meteo_qw1{cs_dbl_max};
   /*! Meteo reference mass fraction 2 */
-  cs_real_t meteo_qw2;
+  cs_real_t meteo_qw2{cs_dbl_max};
   /*! Meteo reference mass fraction at 2m */
-  cs_real_t meteo_ql0;
+  cs_real_t meteo_ql0{0.};
   /*! Meteo reference evaporation  */
-  cs_real_t meteo_evapor;
+  cs_real_t meteo_evapor{cs_dbl_max};
   /*! Meteo reference sensible heat */
-  cs_real_t meteo_sensi;
+  cs_real_t meteo_sensi{cs_dbl_max};
   /*! Universal function Phi_m for stable condition */
-  int meteo_phim_s;
+  int meteo_phim_s{0};
   /*! Universal function Phi_h for stable condition */
-  int meteo_phih_s;
+  int meteo_phih_s{0};
   /*! Universal function Phi_m for unstable condition */
-  int meteo_phim_u;
+  int meteo_phim_u{1};
   /*! Universal function Phi_h for unstable condition */
-  int meteo_phih_u;
+  int meteo_phih_u{1};
 
   /* 1D meteo profiles */
   /*! meteo x, y, p at sea levels */
-  cs_real_t *xyp_met;
+  cs_real_t *xyp_met{nullptr};
   /*! meteo u profiles */
-  cs_real_t *u_met;
+  cs_real_t *u_met{nullptr};
   /*! meteo v profiles */
-  cs_real_t *v_met;
+  cs_real_t *v_met{nullptr};
   /*! meteo w profiles */
-  cs_real_t *w_met;
+  cs_real_t *w_met{nullptr};
   /*! meteo turbulent kinetic energy profile */
-  cs_real_t *ek_met;
+  cs_real_t *ek_met{nullptr};
   /*! meteo turbulent dissipation profile */
-  cs_real_t *ep_met;
+  cs_real_t *ep_met{nullptr};
   /*! meteo temperature profile */
-  cs_real_t *temp_met;
+  cs_real_t *temp_met{nullptr};
   /*! meteo density profile */
-  cs_real_t *rho_met;
+  cs_real_t *rho_met{nullptr};
   /*! meteo water mass fraction profile */
-  cs_real_t *qw_met;
+  cs_real_t *qw_met{nullptr};
   /*! meteo number of droplets profile */
-  cs_real_t *ndrop_met;
+  cs_real_t *ndrop_met{nullptr};
   /*! flag to compute the hydrostatic pressure by Laplace integration
    *  in the meteo profiles
    *  0: based on P (sea level) value by default
@@ -336,99 +343,99 @@ typedef struct {
    */
 
   /*! Altitudes of the dynamic profiles */
-  cs_real_t *z_dyn_met;
+  cs_real_t *z_dyn_met{nullptr};
   /*! Altitudes of the temperature profile */
-  cs_real_t *z_temp_met;
+  cs_real_t *z_temp_met{nullptr};
   /*! Time (in seconds) of the meteo profile */
-  cs_real_t *time_met;
+  cs_real_t *time_met{nullptr};
   /*! Hydrostatic pressure from Laplace integration */
-  cs_real_t *hyd_p_met;
+  cs_real_t *hyd_p_met{nullptr};
   /*! potential temperature profile */
-  cs_real_t *pot_t_met;
+  cs_real_t *pot_t_met{nullptr};
   /*! Pressure drop integrated over a time step
      (used for automatic open boundaries) profile */
-  cs_real_t *dpdt_met;
+  cs_real_t *dpdt_met{nullptr};
   /*! Momentum for each level (used for automatic open boundaries) */
-  cs_real_3_t *mom_met;
+  cs_real_3_t *mom_met{nullptr};
   /*! code_saturne momentum for each level */
-  cs_real_3_t *mom_cs;
-  int hydrostatic_pressure_model;
+  cs_real_3_t *mom_cs{nullptr};
+  int hydrostatic_pressure_model{0};
   /*! flag for the standard atmo humidity profile
    *  qv_profile = 0 (default)
    *  qv_profile = 1 decreasing exponential */
-  int qv_profile;
+  int qv_profile{0};
 
   /*! Ground model (1: on, 0: off) */
-  int ground_model;
+  int ground_model{0}; /* off or user defined */
   /*! Ground categories:
    * - CS_ATMO_GROUND_5_CAT
    * - CS_ATMO_GROUND_7_CAT
    * - CS_ATMO_GROUND_23_CAT */
-  cs_atmo_ground_cat_t ground_cat;
+  cs_atmo_ground_cat_t ground_cat{(cs_atmo_ground_cat_t) 0}; /* CS_ATMO_GROUND_5_CAT */
   /*! Ground zone id (or -1 if inactive) */
-  int ground_zone_id;
+  int ground_zone_id{-1};
   /*! Solve supplementary heat budget equation (multi energy budget):
    * - CS_ATMO_GROUND_GENUINE
    * - CS_ATMO_GROUND_PHOTOVOLTAICS
    * - CS_ATMO_GROUND_VEGETATION */
-  cs_atmo_ground_meb_model_t ground_meb_model;
+  cs_atmo_ground_meb_model_t ground_meb_model{(cs_atmo_ground_meb_model_t) 0};
 
-  bool rain;
-  int cloud_type;
-  bool accretion;
-  bool autoconversion;
-  bool autocollection_cloud;
-  bool autocollection_rain;
-  bool precipitation;
-  bool evaporation;
-  bool rupture;
+  bool rain{false};
+  int cloud_type{0}; /* 0 Continental, 1 Maritime */
+  bool accretion{false};
+  bool autoconversion{false};
+  bool autocollection_cloud{false};
+  bool autocollection_rain{false};
+  bool precipitation{false};
+  bool evaporation{false};
+  bool rupture{false};
 
   /*! initial ground surface temperature
    *  for Sea, it is also the surface temperature */
-  cs_real_t ground_surf_temp;
+  cs_real_t ground_surf_temp{20.0};
   /*! initial deep ground temperature */
-  cs_real_t ground_temperature;
+  cs_real_t ground_temperature{20.0};
   /*! initial ground specific humidity */
-  cs_real_t ground_humidity;
+  cs_real_t ground_humidity{0.0};
   /*! initial water content of the first reservoir */
-  cs_real_t ground_w1_ini;
+  cs_real_t ground_w1_ini{0.0};
   /*! initial water content of the second reservoir */
-  cs_real_t ground_w2_ini;
+  cs_real_t ground_w2_ini{0.0};
   /*! Thermal inertia of the ground */
-  cs_real_t *ground_cat_thermal_inertia;
+  cs_real_t *ground_cat_thermal_inertia{nullptr};
   /*! Dynamic roughness length */
-  cs_real_t *ground_cat_roughness;
+  cs_real_t *ground_cat_roughness{nullptr};
   /*! Thermal roughness length*/
-  cs_real_t *ground_cat_thermal_roughness;
+  cs_real_t *ground_cat_thermal_roughness{nullptr};
   /*! Albedo per ground category */
-  cs_real_t *ground_cat_albedo;
+  cs_real_t *ground_cat_albedo{nullptr};
   /*! emissivity per ground category */
-  cs_real_t *ground_cat_emissi;
+  cs_real_t *ground_cat_emissi{nullptr};
   /*! Vegetation index per ground category */
-  cs_real_t *ground_cat_vegeta;
+  cs_real_t *ground_cat_vegeta{nullptr};
   /*! maximum water capacity of shallow reservoir*/
-  cs_real_t *ground_cat_w1;
+  cs_real_t *ground_cat_w1{nullptr};
   /*! ratio of the maximum water capacity of the shallow
    *  reservoir to the deep reservoir [0,1]*/
-  cs_real_t *ground_cat_w2;
+  cs_real_t *ground_cat_w2{nullptr};
   /*! Rij value for Rij1*/
-  cs_real_t *ground_cat_r1;
+  cs_real_t *ground_cat_r1{nullptr};
   /*! Rij value for Rij2*/
-  cs_real_t *ground_cat_r2;
+  cs_real_t *ground_cat_r2{nullptr};
  /*! adimensional : sigc=0.53 other referenced values are 0.28, 0.15 */
-  cs_real_t sigc;
+  cs_real_t sigc{0.53};
   /*! 1D infrared profile id */
-  int infrared_1D_profile;
+  int infrared_1D_profile{-1};
   /*! 1D solar profile id */
-  int solar_1D_profile;
+  int solar_1D_profile{-1};
   /*! id of grid formed by 1D profiles */
-  int profiles_grid_id;
+  int profiles_grid_id{-1};
 
-  cs_real_t aod_o3_tot;
+  cs_real_t aod_o3_tot{0.2};
 
-  cs_real_t aod_h2o_tot;
+  cs_real_t aod_h2o_tot{0.1};
 
-} cs_atmo_option_t;
+};// cs_atmo_option_t;
 
 /*----------------------------------------------------------------------------
  * Atmospheric model constants descriptor
