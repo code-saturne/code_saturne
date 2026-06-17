@@ -46,7 +46,12 @@
 
 #if defined(HAVE_MEDCOUPLING)
 
+// Disable warnings introduced by including this header file, which
+// result from usage of deprecated objects in MEDCouplingUMesh
+DISABLE_WARNING_PUSH
+DISABLE_WARNING(-Wdeprecated-declarations)
 #include "MEDCouplingUMesh.hxx"
+DISABLE_WARNING_POP
 
 using namespace MEDCoupling;
 
