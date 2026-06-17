@@ -640,7 +640,7 @@ cs_param_saddle_set_notay_scaling(cs_param_saddle_t  *saddlep,
 
 void
 cs_param_saddle_set_simple_relaxation_scaling(cs_param_saddle_t  *saddlep,
-                                              double              scaling_coef);
+                                              const double        scaling_coef);
 
 /*----------------------------------------------------------------------------*/
 /*!

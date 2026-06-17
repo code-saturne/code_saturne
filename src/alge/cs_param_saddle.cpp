@@ -512,7 +512,7 @@ cs_param_saddle_set_notay_scaling(cs_param_saddle_t  *saddlep,
 
 void
 cs_param_saddle_set_simple_relaxation_scaling(cs_param_saddle_t  *saddlep,
-                                              double              scaling_coef)
+                                              const double        scaling_coef)
 {
   if (saddlep == nullptr)
     return;
@@ -523,6 +523,17 @@ cs_param_saddle_set_simple_relaxation_scaling(cs_param_saddle_t  *saddlep,
 
   cs_param_saddle_context_simple_t *ctx =
     static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
+
+  if (scaling_coef <= 0.0) {
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "%s: relaxation coef. not taken into account.\n"
+                  "%s: Default relaxation (scaling = 1.0) applied.\n",
+                  __func__, __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
+
+    return;
+  }
 
   ctx->scaling_coef = scaling_coef;
 }
@@ -1597,7 +1608,7 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
       cs_log_printf(CS_LOG_SETUP, "%s AFS - dedicated_init_sles: %s\n",
                     prefix, cs_base_strtf(ctxp->dedicated_init_sles));
       cs_log_printf(CS_LOG_SETUP,
-                    "%s Pressure scaling coefficient: alpha=%5.3e\n",
+                    "%s Pressure scaling coefficient: alpha = %5.3e\n",
                     prefix, ctxp->scaling_coef);
     }
     break;
@@ -1714,7 +1725,7 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
       cs_log_printf(CS_LOG_SETUP, "%s SIMPLE - dedicated_init_sles: %s\n",
                     prefix, cs_base_strtf(ctxp->dedicated_init_sles));
       cs_log_printf(CS_LOG_SETUP,
-                    "%s Pressure scaling coefficient: alpha=%5.3e\n",
+                    "%s Pressure scaling coefficient: alpha = %5.3e\n",
                     prefix, ctxp->scaling_coef);
     }
     break;
