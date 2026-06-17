@@ -73,13 +73,13 @@ cs_user_physical_properties
 
   const int *iym1 = cs_glob_coal_model->iym1;
 
-  cs_real_t *cpro_ym1_3 = cs_field(iym1[2])->val;
-  cs_real_t *cpro_ym1_5 = cs_field(iym1[4])->val;
-  cs_real_t *cpro_ym1_7 = cs_field(iym1[6])->val;
-  cs_real_t *cpro_ym1_8 = cs_field(iym1[7])->val;
-  cs_real_t *cpro_ym1_9 = cs_field(iym1[8])->val;
-  cs_real_t *cpro_ym1_11 = cs_field(iym1[10])->val;
-  cs_real_t *cpro_ym1_12 = cs_field(iym1[11])->val;
+  auto cpro_ym1_3 = cs_field(iym1[2])->get_val_s();
+  auto cpro_ym1_5 = cs_field(iym1[4])->get_val_s();
+  auto cpro_ym1_7 = cs_field(iym1[6])->get_val_s();
+  auto cpro_ym1_8 = cs_field(iym1[7])->get_val_s();
+  auto cpro_ym1_9 = cs_field(iym1[8])->get_val_s();
+  auto cpro_ym1_11 = cs_field(iym1[10])->get_val_s();
+  auto cpro_ym1_12 = cs_field(iym1[11])->get_val_s();
 
   cs_array<cs_real_t> visco(n_cells_ext);
   /*![init]*/
@@ -93,7 +93,7 @@ cs_user_physical_properties
   /*![example_1]*/
 
   /* Temperature */
-  const cs_real_t *cpro_temp = CS_F_(t)->val;
+  const auto cpro_temp = CS_F_(t)->get_val_s();
 
   /* Gas density */
   auto cpro_rom1 = cs_field("rho_gas")->get_val_s();
@@ -116,8 +116,8 @@ cs_user_physical_properties
       snprintf(rho_name, 63, "rho_p_%02d", icla+1);
       snprintf(diam_name, 63, "diam_p_%02d", icla+1);
 
-      cs_real_t *cpro_rom2 = cs_field(rho_name)->val;
-      cs_real_t *cpro_diam2 = cs_field(diam_name)->val;
+      auto cpro_rom2 = cs_field(rho_name)->get_val_s();
+      auto cpro_diam2 = cs_field(diam_name)->get_val_s();
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cpro_rom2[c_id] = rho20[icla];
@@ -190,7 +190,7 @@ cs_user_physical_properties
   }
 
   /* get x1 = 1 - sum cpro_x2 */
-  cs_real_t *cpro_x1 = cs_field("x_c")->val;
+  auto cpro_x1 = cs_field("x_c")->get_val_s();
 
   /* All gas scalars have the same drift as if1m(1)
    *-----------------------------------------------*/
@@ -207,8 +207,8 @@ cs_user_physical_properties
     if ((icla < 0) && (iscdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX)) {
 
       /* Name of the drift scalar */
-      cs_real_t *cpro_taupg
-        = cs_field_by_composite_name(fld->name, "drift_tau")->val;
+      auto cpro_taupg
+        = cs_field_by_composite_name(fld->name, "drift_tau")->get_val_s();
 
       /* Initialize to 0 */
       cs_array_real_fill_zero(n_cells, cpro_taupg);
@@ -235,13 +235,13 @@ cs_user_physical_properties
       snprintf(diam_name, 63, "diam_p_%02d", icla+1);
       snprintf(x2_name, 63, "x_p_%02d", icla+1);
 
-      cs_real_t *cpro_x2 = cs_field(x2_name)->val;
-      cs_real_t *cpro_rom2 = cs_field(rho_name)->val;
-      cs_real_t *cpro_diam2 = cs_field(diam_name)->val;
+      auto cpro_x2 = cs_field(x2_name)->get_val_s();
+      auto cpro_rom2 = cs_field(rho_name)->get_val_s();
+      auto cpro_diam2 = cs_field(diam_name)->get_val_s();
 
       /* Name of the drift scalar */
-      cs_real_t *cpro_taup
-        = cs_field_by_composite_name(fld->name, "drift_tau")->val;
+      auto cpro_taup
+        = cs_field_by_composite_name(fld->name, "drift_tau")->get_val_s();
 
       /* Computation of the relaxation time of the particles
        * the drift is therefore v_g = tau_p * g

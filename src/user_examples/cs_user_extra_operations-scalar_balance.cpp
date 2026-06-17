@@ -88,8 +88,8 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /*! [physical_fields] */
 
   /* Get physical fields */
-  const cs_real_t *dt = CS_F_(dt)->val;
-  const cs_real_t *rho = CS_F_(rho)->val;
+  const auto dt = CS_F_(dt)->get_val_s();
+  const auto rho = CS_F_(rho)->get_val_s();
   const cs_field_t *h = cs_field_try("enthalpy");
 
   /*! [physical_fields] */
@@ -153,13 +153,16 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
   /* Convective mass fluxes for inner and boundary faces */
   int iflmas = h->get_key_int("inner_mass_flux_id");
-  const cs_real_t *i_mass_flux = cs_field(iflmas)->val;
+  const auto i_mass_flux = cs_field(iflmas)->get_val_s();
 
   int iflmab = h->get_key_int("boundary_mass_flux_id");
-  const cs_real_t *b_mass_flux = cs_field(iflmab)->val;
+  const auto b_mass_flux = cs_field(iflmab)->get_val_s();
 
   /* Allocate temporary array */
   cs_array<cs_real_t> h_reconstructed(n_b_faces);
+
+  auto cvar_h = h->get_val_s();
+  auto cvara_h = h->get_val_s(1);
 
   /* Reconstructed value */
   if (false) {
@@ -172,7 +175,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
     for (face_id = 0; face_id < n_b_faces; face_id++) {
       cell_id = b_face_cells[face_id]; // associated boundary cell
-      h_reconstructed[face_id] = h->val[cell_id]
+      h_reconstructed[face_id] = cvar_h[cell_id]
                                + grad(cell_id, 0)*diipb[face_id][0]
                                + grad(cell_id, 1)*diipb[face_id][1]
                                + grad(cell_id, 2)*diipb[face_id][2];
@@ -182,7 +185,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   } else {
     for (face_id = 0; face_id < n_b_faces; face_id++) {
       cell_id = b_face_cells[face_id]; // associated boundary cell
-      h_reconstructed[face_id] = h->val[cell_id];
+      h_reconstructed[face_id] = cvar_h[cell_id];
     }
   }
 
@@ -201,7 +204,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
     vol_balance += cell_vol[cell_id] * rho[cell_id]
-                 * (h->val_pre[cell_id] - h->val[cell_id]);
+                 * (cvara_h[cell_id] - cvar_h[cell_id]);
   }
 
   /*
@@ -219,10 +222,10 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
        the cell_id is not in the halo) */
 
     if (cell_id1 < n_cells)
-      div_balance += i_mass_flux[face_id] * dt[cell_id1] * h->val[cell_id1];
+      div_balance += i_mass_flux[face_id] * dt[cell_id1] * cvar_h[cell_id1];
 
     if (cell_id2 < n_cells)
-      div_balance -= i_mass_flux[face_id] * dt[cell_id2] * h->val[cell_id2];
+      div_balance -= i_mass_flux[face_id] * dt[cell_id2] * cvar_h[cell_id2];
   }
 
   for (face_id = 0; face_id < n_b_faces; face_id++) {
@@ -230,7 +233,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face */
-    div_balance += b_mass_flux[face_id] * dt[cell_id] * h->val[cell_id];
+    div_balance += b_mass_flux[face_id] * dt[cell_id] * cvar_h[cell_id];
 
   }
 

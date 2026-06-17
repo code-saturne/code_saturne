@@ -88,14 +88,15 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
     FILE *file = nullptr;
 
-    cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+    auto cvar_vel = CS_F_(vel)->get_val_v();
     const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
 
     /* Parameters, case dependant */
     const cs_real_t prandtl = 0.71, height = 1., qwall = 1.;
 
     const cs_field_t *f = CS_F_(t);
-    const cs_field_t *mu = CS_F_(mu);
+    auto cvar_f = f->get_val_s();
+    auto cvar_mu = CS_F_(mu)->get_val_s();
 
     cs_lnum_t nlelt;
     cs_array<cs_lnum_t> lstelt(n_b_faces);
@@ -131,7 +132,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
       for (cs_lnum_t ielt = 0; ielt < nlelt; ielt++) {
         cs_lnum_t face_id = lstelt[ielt];
         cs_lnum_t c_id = b_face_cells[face_id];
-        treloc[ielt] = coefap[face_id] + coefbp[face_id] * f->val[c_id];
+        treloc[ielt] = coefap[face_id] + coefbp[face_id] * cvar_f[c_id];
       }
       /*! [else_nusselt] */
     }
@@ -190,11 +191,11 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
           c_id_prev = c_id;
           irang1 = irangv;
           if (cs_glob_rank_id == irangv) {
-            cs_real_t xtb = volume[c_id]*f->val[c_id]*vel[c_id][0];
-            cs_real_t xub = volume[c_id]*vel[c_id][0];
+            cs_real_t xtb = volume[c_id]*cvar_f[c_id]*cvar_vel(c_id, 0);
+            cs_real_t xub = volume[c_id]*cvar_vel(c_id, 0);
             xtbulk += xtb;
             xubulk += xub;
-            lambda = phys_pro->cp0*mu->val[c_id] / prandtl;
+            lambda = phys_pro->cp0*cvar_mu[c_id] / prandtl;
           }
         }
 

@@ -102,12 +102,19 @@ cs_user_scaling_elec
     double emax = 0.;
     cs_array<cs_real_t> w1(ncelet);
     int diff_id = CS_FI_(curre, 0)->get_key_int(kivisl);
-    cs_field_t *c_prop = cs_field(diff_id);
+    auto cvar_prop = cs_field(diff_id)->get_val_s();
+
+    auto cvar_curre0 = CS_FI_(curre, 0)->get_val_s();
+    auto cvar_curre1 = CS_FI_(curre, 1)->get_val_s();
+    auto cvar_curre2 = CS_FI_(curre, 2)->get_val_s();
+
+    auto cvar_h = CS_F_(h)->get_val_s();
+    auto cvar_rho = CS_F_(rho)->get_val_s();
 
     for (int iel = 0; iel < ncel; iel++) {
-      double xelec = CS_FI_(curre, 0)->val[iel] / c_prop->val[iel];
-      double yelec = CS_FI_(curre, 1)->val[iel] / c_prop->val[iel];
-      double zelec = CS_FI_(curre, 2)->val[iel] / c_prop->val[iel];
+      double xelec = cvar_curre0[iel] / cvar_prop[iel];
+      double yelec = cvar_curre1[iel] / cvar_prop[iel];
+      double zelec = cvar_curre2[iel] / cvar_prop[iel];
 
       w1[iel] = pow(xelec * xelec + yelec * yelec + zelec * zelec, 0.5);
       amex = cs::min(amex, w1[iel]);
@@ -173,7 +180,7 @@ cs_user_scaling_elec
           double posi = elec_opt->restrike_point[0] * xyzcen[iel][0];
 
           if (rayo < 5.e-4 && posi <= 0.)
-            CS_F_(h)->val[iel] = 8.e7;
+            cvar_h[iel] = 8.e7;
         }
       }
     }
@@ -181,8 +188,10 @@ cs_user_scaling_elec
       elec_opt->irestrike = 0;
     }
     double somje = 0.;
+
+    auto cvar_joulp = CS_F_(joulp)->get_val_s();
     for (int iel = 0; iel < ncel; iel++) {
-      somje += CS_F_(joulp)->val[iel] * volume[iel];
+      somje += cvar_joulp[iel] * volume[iel];
     }
 
     cs::parall::sum(somje);
@@ -201,7 +210,7 @@ cs_user_scaling_elec
       if (fabs(u_normal[ifac][0]) < 1.e-2 && fabs(u_normal[ifac][1]) < 1.e-2 &&
           cdgfac[ifac][2] > 0.05e-2 &&  cdgfac[ifac][2] < 0.08e-2) {
         int iel = mesh->i_face_cells[ifac][0];
-        elcou += CS_FI_(curre, 2)->val[iel] * u_normal[ifac][2] * surfac[ifac];
+        elcou += cvar_curre2[iel] * u_normal[ifac][2] * surfac[ifac];
       }
     }
 
@@ -223,12 +232,12 @@ cs_user_scaling_elec
     double cdtj = 20.;
 
     for (int iel = 0; iel < ncel; iel++) {
-      if (fabs(CS_F_(rho)->val[iel]) > 1.e-20)
-        delhsh = CS_F_(joulp)->val[iel] * dt[iel]
-               / CS_F_(rho)->val[iel];
+      if (fabs(cvar_rho[iel]) > 1.e-20)
+        delhsh = cvar_joulp[iel] * dt[iel]
+               / cvar_rho[iel];
 
       if (fabs(delhsh) > 1.e-20)
-        dtjm = CS_F_(h)->val[iel] / delhsh;
+        dtjm = cvar_h[iel] / delhsh;
       else
         dtjm = dtj;
       dtjm = fabs(dtjm);
@@ -256,18 +265,22 @@ cs_user_scaling_elec
     elec_opt->pot_diff *= coepot;
 
     /* electric potential (for post treatment) */
+    auto cvar_potr = CS_F_(potr)->get_val_s();
     for (int iel = 0; iel < ncel; iel++)
-      CS_F_(potr)->val[iel] *= coepot;
+      cvar_potr[iel] *= coepot;
 
     /* current density */
-    if (ielarc > 0)
-      for (int i = 0; i < 3 ; i++)
-        for (int iel = 0; iel < 3 ; iel++)
-          CS_FI_(curre, i)->val[iel] *= coepot;
+    if (ielarc > 0) {
+      for (int iel = 0; iel < 3 ; iel++) {
+        cvar_curre0[iel] *= coepot;
+        cvar_curre1[iel] *= coepot;
+        cvar_curre2[iel] *= coepot;
+      }
+    }
 
     /* joule effect */
     for (int iel = 0; iel < 3 ; iel++)
-      CS_F_(joulp)->val[iel] *= coepot * coepot;
+      cvar_joulp[iel] *= coepot * coepot;
   }
   /*! [electric_scaling] */
 }

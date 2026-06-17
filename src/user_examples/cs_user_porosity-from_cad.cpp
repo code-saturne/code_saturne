@@ -76,7 +76,7 @@ cs_user_porosity([[maybe_unused]] cs_domain_t   *domain)
 
   /* Temporary arrays for face porosity */
 
-  cs_real_t  *cell_porosity = cs_field("porosity")->val;
+  auto cell_porosity = cs_field("porosity")->get_val_s();
 
   cs_real_t  *i_face_porosity, *b_face_porosity;
 
@@ -109,7 +109,7 @@ cs_user_porosity([[maybe_unused]] cs_domain_t   *domain)
   /* synchronize ghost cells */
 
   if (m->halo != nullptr)
-    cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, cell_porosity);
+    cs_halo_sync(m->halo, CS_HALO_EXTENDED, cell_porosity);
 
   /* Set interior and boundary face values */
 

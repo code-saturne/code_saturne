@@ -66,7 +66,7 @@ cs_user_physical_properties
   /*! [init] */
   const cs_lnum_t n_cells = domain->mesh->n_cells;
 
-  cs_real_t *cpro_viscl = CS_F_(mu)->val;
+  auto cpro_viscl = CS_F_(mu)->get_val_s();
 
   /* Key id for drift scalar */
   const int keydri = cs_field_key_id("drift_scalar_model");
@@ -117,14 +117,15 @@ cs_user_physical_properties
       /* Position of variables, coefficients
        * ----------------------------------- */
 
-      cs_real_t *cpro_taup = nullptr, *cpro_taufpt = nullptr;
-      cs_real_t *cpro_viscls = nullptr;
+      cs_span<cs_real_t> cpro_taup;
+      cs_span<cs_real_t> cpro_taufpt;
+      cs_span<cs_real_t> cpro_viscls;
 
       /* Scalar's diffusivity (Brownian motion) */
 
       int ifcvsl = f->get_key_int(kivisl);
       if (ifcvsl > -1)
-        cpro_viscls = cs_field(ifcvsl)->val;
+        cpro_viscls = cs_field(ifcvsl)->get_val_s();
 
       /* Coefficients of drift scalar CHOSEN BY THE USER
          Values given here are fictitious */
@@ -134,12 +135,12 @@ cs_user_physical_properties
       const cs_real_t rhop = 1.e4;     /* particle density */
 
       /* Get corresponding relaxation time (cpro_taup) */
-      cpro_taup = cs_field_by_composite_name(f->name, "drift_tau")->val;
+      cpro_taup = cs_field_by_composite_name(f->name, "drift_tau")->get_val_s();
 
       /* Corresponding interaction time particle--eddies */
 
       if (drift_flag & CS_DRIFT_SCALAR_TURBOPHORESIS) {
-        cpro_taufpt = cs_field_by_composite_name(f->name, "drift_turb_tau")->val;
+        cpro_taufpt = cs_field_by_composite_name(f->name, "drift_turb_tau")->get_val_s();
       }
 
       /* Computation of the relaxation time of the particles
@@ -169,8 +170,8 @@ cs_user_physical_properties
 
         /* k-epsilon or v2-f models */
         if (t_mdl->itytur == 2 || t_mdl->itytur == 5) {
-          const cs_real_t *cvar_k = CS_F_(k)->val;
-          const cs_real_t *cvar_eps = CS_F_(eps)->val;
+          const auto cvar_k = CS_F_(k)->get_val_s();
+          const auto cvar_eps = CS_F_(eps)->get_val_s();
           const cs_real_t turb_schmidt = f->get_key_double(ksigmas);
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
             cs_real_t xk = cvar_k[c_id];
@@ -181,13 +182,13 @@ cs_user_physical_properties
 
         /* Rij-epsilon models */
         else if (t_mdl->itytur == 3) {
-          const cs_real_6_t *cvar_rij = (const cs_real_6_t *)(CS_F_(rij)->val);
-          const cs_real_t *cvar_eps = CS_F_(eps)->val;
+          const auto cvar_rij = CS_F_(rij)->get_val_t();
+          const auto cvar_eps = CS_F_(eps)->get_val_s();
           cs_real_t beta1 = 0.5 + 3.0/(4.*cs_turb_xkappa);
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-            cs_real_t xk = 0.5 * (  cvar_rij[c_id][0]
-                                  + cvar_rij[c_id][1]
-                                  + cvar_rij[c_id][2]);
+            cs_real_t xk = 0.5 * (  cvar_rij(c_id, 0)
+                                  + cvar_rij(c_id, 1)
+                                  + cvar_rij(c_id, 2));
             cs_real_t xeps = cvar_eps[c_id];
             cpro_taufpt[c_id] = xk/xeps/beta1;
           }
@@ -195,7 +196,7 @@ cs_user_physical_properties
 
         /* k-omega models */
         if (t_mdl->itytur == 6) {
-          const cs_real_t *cvar_omg = CS_F_(omg)->val;
+          const auto cvar_omg = CS_F_(omg)->get_val_s();
           const cs_real_t turb_schmidt = f->get_key_double(ksigmas);
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
             cs_real_t xomg = cvar_omg[c_id];
@@ -220,8 +221,8 @@ cs_user_physical_properties
                   "The temperature field on which physical properties depend\n"
                   "does not seem to be present.");
 
-      const cs_real_t *cvar_t = CS_F_(t)->val;
-      const cs_real_t *cpro_rom = CS_F_(rho)->val;
+      const auto cvar_t = CS_F_(t)->get_val_s();
+      const auto cpro_rom = CS_F_(rho)->get_val_s();
 
       /* Homogeneous to a dynamic viscosity */
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {

@@ -82,7 +82,7 @@ cs_user_porosity([[maybe_unused]] cs_domain_t   *domain)
 
   /* Get the cell porosity field value */
   /*!< [init_poro_pro] */
-  cs_real_t *cpro_porosi = cs_field("porosity")->val;
+  auto cpro_porosi = cs_field("porosity")->get_val_s();
   /*!< [init_poro_pro] */
 
   /* First, set cell porosity value; the fluid cell volume will be

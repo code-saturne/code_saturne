@@ -68,7 +68,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     if (b_forces != nullptr) {
       cs_real_3_t total_b_forces = {0., 0., 0.};
       const cs_real_t *b_face_surf = domain->mesh_quantities->b_face_surf;
-      const cs_real_3_t *bpro_forces = (cs_real_3_t *)b_forces->val;
+      const auto bpro_forces = b_forces->get_val_v();
 
       /* get zone from its name, here "selected_wall" */
       const cs_zone_t *zn = cs_boundary_zone_by_name("selected_wall");
@@ -76,7 +76,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
       for (cs_lnum_t e_id = 0; e_id < zn->n_elts; e_id++) {
         cs_lnum_t face_id = zn->elt_ids[e_id];
         for (cs_lnum_t i = 0; i < 3; i++)
-          total_b_forces[i] += bpro_forces[face_id][i] * b_face_surf[face_id];
+          total_b_forces[i] += bpro_forces(face_id, i) * b_face_surf[face_id];
       }
 
       /* parallel sum */

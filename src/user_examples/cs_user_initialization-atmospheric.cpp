@@ -111,15 +111,15 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 
   /* Example to initialize variables using 1-D meteo data */
 
-  cs_real_t *cvar_k = nullptr;
-  cs_real_t *cvar_ep = nullptr;
-  cs_real_t *cvar_fb = nullptr;
-  cs_real_t *cvar_omg = nullptr;
-  cs_real_t *cvar_phi = nullptr;
-  cs_real_t *cvar_nusa = nullptr;
-  cs_real_6_t *cvar_rij = nullptr;
+  cs_span<cs_real_t> cvar_k;
+  cs_span<cs_real_t> cvar_ep;
+  cs_span<cs_real_t> cvar_fb;
+  cs_span<cs_real_t> cvar_omg;
+  cs_span<cs_real_t> cvar_phi;
+  cs_span<cs_real_t> cvar_nusa;
+  cs_span_2d<cs_real_t> cvar_rij;
 
-  cs_real_3_t *cvar_vel = (cs_real_3_t *)CS_F_(vel)->val;
+  auto cvar_vel = CS_F_(vel)->get_val_v();
 
   cs_field_t *th_f = cs_thermal_model_field();
 
@@ -127,25 +127,25 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
    *   (only if we are not doing a restart */
 
   if (cs_glob_turb_model->itytur == 2) {
-    cvar_k = CS_F_(k)->val;
-    cvar_ep = CS_F_(eps)->val;
+    cvar_k = CS_F_(k)->get_val_s();
+    cvar_ep = CS_F_(eps)->get_val_s();
   }
   else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
-    cvar_ep = CS_F_(eps)->val;
-    cvar_rij = (cs_real_6_t *)(CS_F_(rij)->val);
+    cvar_ep = CS_F_(eps)->get_val_s();
+    cvar_rij = CS_F_(rij)->get_val_t();
   }
   else if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
-    cvar_k = CS_F_(k)->val;
-    cvar_ep = CS_F_(eps)->val;
-    cvar_phi = CS_F_(phi)->val;
-    cvar_fb = CS_F_(f_bar)->val;
+    cvar_k = CS_F_(k)->get_val_s();
+    cvar_ep = CS_F_(eps)->get_val_s();
+    cvar_phi = CS_F_(phi)->get_val_s();
+    cvar_fb = CS_F_(f_bar)->get_val_s();
   }
   else if (cs_glob_turb_model->model ==  CS_TURB_K_OMEGA) {
-    cvar_k = CS_F_(k)->val;
-    cvar_omg = CS_F_(omg)->val;
+    cvar_k = CS_F_(k)->get_val_s();
+    cvar_omg = CS_F_(omg)->get_val_s();
   }
   else if (cs_glob_turb_model->model ==  CS_TURB_SPALART_ALLMARAS) {
-    cvar_nusa = CS_F_(nusa)->val;
+    cvar_nusa = CS_F_(nusa)->get_val_s();
   }
 
   const cs_real_t d2s3 = 2.0/3.0;
@@ -184,9 +184,9 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
                                       cell_cen[c_id][2],
                                       cs_glob_time_step->t_cur);
 
-    cvar_vel[c_id][0] = xuent;
-    cvar_vel[c_id][1] = xvent;
-    cvar_vel[c_id][2] = 0.;
+    cvar_vel(c_id, 0) = xuent;
+    cvar_vel(c_id, 1) = xvent;
+    cvar_vel(c_id, 2) = 0.;
 
     if (cs_glob_turb_model->itytur == 2) {
       cvar_k[c_id] = xkent;
@@ -195,9 +195,9 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
     else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
       cvar_ep[c_id] = xeent;
       for (int ii = 0; ii < 3; ii++)
-        cvar_rij[c_id][ii] = d2s3*xkent;
+        cvar_rij(c_id, ii) = d2s3*xkent;
       for (int ii = 3; ii < 6; ii++)
-        cvar_rij[c_id][ii] = 0;
+        cvar_rij(c_id, ii) = 0;
     }
     else if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
       cvar_fb[c_id] = 0;

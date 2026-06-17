@@ -70,26 +70,26 @@ cs_user_physical_properties
   /*! [compressible_properties_init] */
   const cs_lnum_t n_cells = domain->mesh->n_cells;
 
-  cs_real_t *cpro_cp = nullptr;
-  cs_real_t *cpro_cv = nullptr;
-  cs_real_t *cpro_vtmpk = nullptr;
-  cs_real_t *cpro_viscl = CS_F_(mu)->val;
-  cs_real_t *cvar_t = CS_F_(t_kelvin)->val;
-  cs_real_t *mix_mol_mas = cs_field("mix_mol_mas")->val;
+  cs_span<cs_real_t> cpro_cp;
+  cs_span<cs_real_t> cpro_cv;
+  cs_span<cs_real_t> cpro_vtmpk;
+  cs_span<cs_real_t> cpro_viscl = CS_F_(mu)->get_val_s();
+  cs_span<cs_real_t> cvar_t = CS_F_(t_kelvin)->get_val_s();
+  cs_span<cs_real_t> mix_mol_mas = cs_field("mix_mol_mas")->get_val_s();
 
   /* Molecular volumetric viscosity */
-  cs_real_t *cpro_viscv = cs_field_try("volume_viscosity")->val;
+  auto cpro_viscv = cs_field_try("volume_viscosity")->get_val_s();
 
   const int kivisl = cs_field_key_id("diffusivity_id");
   int ifcvsl = CS_F_(t_kelvin)->get_key_int(kivisl);
   if (ifcvsl > -1)
-    cpro_vtmpk = cs_field(ifcvsl)->val;
+    cpro_vtmpk = cs_field(ifcvsl)->get_val_s();
 
   if (CS_F_(cp) != nullptr)
-    cpro_cp = CS_F_(cp)->val;
+    cpro_cp = CS_F_(cp)->get_val_s();
 
   if (CS_F_(cv) != nullptr)
-      cpro_cv = CS_F_(cv)->val;
+      cpro_cv = CS_F_(cv)->get_val_s();
   /*! [compressible_properties_init] */
 
   /* Ex. 1: molecular viscosity varying with temperature
@@ -272,7 +272,7 @@ cs_user_physical_properties
       if (variance_id > -1 || diffusivity_id < 0)
         continue;
 
-      cs_real_t *cpro_vscal = cs_field(diffusivity_id)->val;
+      auto cpro_vscal = cs_field(diffusivity_id)->get_val_s();
 
       /* User-defined coefficients for the selected law.
        * The values provided hereafter are provided as a mere example.
