@@ -178,6 +178,19 @@ extern "C" {
 
 #endif /* __cplusplus */
 
+/* Macros for locally suppressing warnings from external libraries */
+#if defined(__GNUC__) || defined(__clang__)
+#  define DO_PRAGMA(x) _Pragma (#x)
+#  define DISABLE_WARNING_PUSH _Pragma("GCC diagnostic push")
+#  define DISABLE_WARNING(warningName) \
+     DO_PRAGMA(GCC diagnostic ignored #warningName)
+#  define DISABLE_WARNING_POP _Pragma("GCC diagnostic pop")
+#else
+#  define DISABLE_WARNING_PUSH
+#  define DISABLE_WARNING(warningName)
+#  define DISABLE_WARNING_POP
+#endif
+
 /*============================================================================
  * Definitions that may not always be provided directly by the system
  *============================================================================*/
