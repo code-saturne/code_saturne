@@ -35,7 +35,11 @@
 #if defined(HAVE_PARAMEDMEM)
 
 #include <MEDCouplingField.hxx>
+
+DISABLE_WARNING_PUSH
+DISABLE_WARNING(-Winconsistent-missing-override)
 #include <MEDCouplingFieldDouble.hxx>
+DISABLE_WARNING_POP
 
 #include <InterpKernelDEC.hxx>
 #include <ParaFIELD.hxx>
