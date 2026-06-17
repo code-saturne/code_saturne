@@ -578,6 +578,14 @@ typedef struct {
 
   cs_param_sles_t  *xtra_sles_param;
 
+  /*! \var scaling_coef
+   *  The scaling_coef used in the lumped inversion if (1,1)-block matrix
+   *  such as to solve the A.x = 1/scaling_coef. By default the value is 1.0.
+   *  scaling_coef < 1 corresponds to an under-relaxation on the pressure.
+   */
+
+  double  scaling_coef;
+
 } cs_param_saddle_context_simple_t;
 
 /*============================================================================
@@ -617,6 +625,22 @@ cs_param_saddle_set_restart_range(cs_param_saddle_t  *saddlep,
 void
 cs_param_saddle_set_notay_scaling(cs_param_saddle_t  *saddlep,
                                   double              scaling_coef);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the scaling coefficient used in the AFS/SIMPLE-like method
+ *        devised in "SIMPLE-like preconditioners for saddle point problems from
+ *        the steady Navier–Stokes equations", J. Comput. Appl. Vol. 302,2016,
+ *        In this article, this scaling is denoted by alpha
+ *
+ * \param[in, out] saddlep       set of parameters for solving a saddle-point
+ * \param[in]      scaling_coef  value of the scaling coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_saddle_set_simple_relaxation_scaling(cs_param_saddle_t  *saddlep,
+                                              double              scaling_coef);
 
 /*----------------------------------------------------------------------------*/
 /*!

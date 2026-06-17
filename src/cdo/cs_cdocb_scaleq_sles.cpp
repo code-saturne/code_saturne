@@ -1000,6 +1000,7 @@ cs_cdocb_scaleq_sles_block_krylov(cs_saddle_solver_t  *solver,
     {
       cs_real_t  *m11_inv_lumped =
         cs_saddle_solver_m11_inv_lumped(solver,
+                                        1.0,   /* scaling coefficient */
                                         ctx->m11,
                                         ctx->b11_range_set,
                                         ctx->xtra_sles,
@@ -1036,6 +1037,7 @@ cs_cdocb_scaleq_sles_block_krylov(cs_saddle_solver_t  *solver,
     {
       cs_real_t  *m11_inv_lumped =
         cs_saddle_solver_m11_inv_lumped(solver,
+                                        1.0,   /* scaling coefficient */
                                         ctx->m11,
                                         ctx->b11_range_set,
                                         ctx->xtra_sles,

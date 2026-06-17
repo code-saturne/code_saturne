@@ -500,6 +500,35 @@ cs_param_saddle_set_notay_scaling(cs_param_saddle_t  *saddlep,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the scaling coefficient used in the AFS/SIMPLE-like method
+ *        devised in "SIMPLE-like preconditioners for saddle point problems from
+ *        the steady Navier–Stokes equations", J. Comput. Appl. Vol. 302,2016,
+ *        In this article, this scaling is denoted by alpha
+ *
+ * \param[in, out] saddlep       set of parameters for solving a saddle-point
+ * \param[in]      scaling_coef  value of the scaling coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_saddle_set_simple_relaxation_scaling(cs_param_saddle_t  *saddlep,
+                                              double              scaling_coef)
+{
+  if (saddlep == nullptr)
+    return;
+
+  if (   saddlep->solver != CS_PARAM_SADDLE_SOLVER_AFS
+      && saddlep->solver != CS_PARAM_SADDLE_SOLVER_SIMPLE)
+    return;
+
+  cs_param_saddle_context_simple_t *ctx =
+    static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
+
+  ctx->scaling_coef = scaling_coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set the scaling in front of the augmentation term when an ALU or a
  *        GKB algorithm is considered
  *
@@ -1159,6 +1188,10 @@ cs_param_saddle_set_solver(const char          *keyval,
 
     ctxp->init_sles_param = _init_init_slesp(saddlep);
 
+    /* Default value of scaling_coef for pressure scaling */
+
+    ctxp->scaling_coef = 1.0;
+
     cs_sles_set_epzero(1e-15);  /* Avoid a too early exit */
 
     saddlep->context = ctxp;
@@ -1329,6 +1362,10 @@ cs_param_saddle_set_solver(const char          *keyval,
        different settings w.r.t. the stopping convergence criteria. */
 
     ctxp->init_sles_param = _init_init_slesp(saddlep);
+
+    /* Default value of scaling_coef for pressure scaling */
+
+    ctxp->scaling_coef = 1.0;
 
     cs_sles_set_epzero(1e-15);  /* Avoid a too early exit */
 
@@ -1559,6 +1596,9 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
                     prefix);
       cs_log_printf(CS_LOG_SETUP, "%s AFS - dedicated_init_sles: %s\n",
                     prefix, cs_base_strtf(ctxp->dedicated_init_sles));
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s Pressure scaling coefficient: alpha=%5.3e\n",
+                    prefix, ctxp->scaling_coef);
     }
     break;
 
@@ -1673,6 +1713,9 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
       cs_log_printf(CS_LOG_SETUP, "%s Solver: SIMPLE\n", prefix);
       cs_log_printf(CS_LOG_SETUP, "%s SIMPLE - dedicated_init_sles: %s\n",
                     prefix, cs_base_strtf(ctxp->dedicated_init_sles));
+      cs_log_printf(CS_LOG_SETUP,
+                    "%s Pressure scaling coefficient: alpha=%5.3e\n",
+                    prefix, ctxp->scaling_coef);
     }
     break;
 

@@ -1468,7 +1468,7 @@ cs_macfb_monolithic_sles_uzawa_cg(const cs_navsto_param_t *nsp,
 
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE: {
     cs_real_t *m11_inv_lumped = cs_saddle_solver_m11_inv_lumped(
-      solver, ctx->m11, ctx->b11_range_set, ctx->xtra_sles, &n_xtra_iters);
+      solver, 1.0, ctx->m11, ctx->b11_range_set, ctx->xtra_sles, &n_xtra_iters);
 
     algo_ctx->n_inner_iter += n_xtra_iters;
 
@@ -1491,7 +1491,7 @@ cs_macfb_monolithic_sles_uzawa_cg(const cs_navsto_param_t *nsp,
 
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE: {
     cs_real_t *m11_inv_lumped = cs_saddle_solver_m11_inv_lumped(
-      solver, ctx->m11, ctx->b11_range_set, ctx->xtra_sles, &n_xtra_iters);
+      solver, 1.0, ctx->m11, ctx->b11_range_set, ctx->xtra_sles, &n_xtra_iters);
 
     algo_ctx->n_inner_iter += n_xtra_iters;
 

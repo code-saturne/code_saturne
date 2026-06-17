@@ -545,11 +545,12 @@ cs_saddle_solver_log_monitoring(void);
  *        (1,1)-block matrix. The storage of a matrix is in a gather view and
  *        the resulting array is in scatter view.
  *
- * \param[in]      solver     solver for saddle-point problems
- * \param[in]      m11        matrix related to the (1,1) block
- * \param[in]      b11_rset   range set structure for the (1,1) block
- * \param[in, out] xtra_sles  pointer to an extra SLES structure
- * \param[out]     n_iter     number of iterations for this operation
+ * \param[in]      solver       solver for saddle-point problems
+ * \param[in]      scaling_coef scaling coefficient of relaxation purpose
+ * \param[in]      m11          matrix related to the (1,1) block
+ * \param[in]      b11_rset     range set structure for the (1,1) block
+ * \param[in, out] xtra_sles    pointer to an extra SLES structure
+ * \param[out]     n_iter       number of iterations for this operation
  *
  * \return a pointer to the computed array (scatter view)
  */
@@ -557,6 +558,7 @@ cs_saddle_solver_log_monitoring(void);
 
 cs_real_t *
 cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
+                                const cs_real_t         scaling_coef,
                                 const cs_matrix_t      *m11,
                                 const cs_range_set_t   *b11_rset,
                                 cs_sles_t              *xtra_sles,

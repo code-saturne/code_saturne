@@ -2216,11 +2216,12 @@ cs_saddle_solver_log_monitoring(void)
  *        (1,1)-block matrix. The storage of a matrix is in a gather view and
  *        the resulting array is in scatter view.
  *
- * \param[in]      solver     solver for saddle-point problems
- * \param[in]      m11        matrix related to the (1,1) block
- * \param[in]      b11_rset   range set structure for the (1,1) block
- * \param[in, out] xtra_sles  pointer to an extra SLES structure
- * \param[out]     n_iter     number of iterations for this operation
+ * \param[in]      solver       solver for saddle-point problems
+ * \param[in]      scaling_coef scaling coefficient of relaxation purpose
+ * \param[in]      m11          matrix related to the (1,1) block
+ * \param[in]      b11_rset     range set structure for the (1,1) block
+ * \param[in, out] xtra_sles    pointer to an extra SLES structure
+ * \param[out]     n_iter       number of iterations for this operation
  *
  * \return a pointer to the computed array (scatter view)
  */
@@ -2228,6 +2229,7 @@ cs_saddle_solver_log_monitoring(void)
 
 cs_real_t *
 cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
+                                const cs_real_t         scaling_coef,
                                 const cs_matrix_t      *m11,
                                 const cs_range_set_t   *b11_rset,
                                 cs_sles_t              *xtra_sles,
@@ -2241,7 +2243,7 @@ cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
 
   cs_real_t  *rhs = nullptr;
   CS_MALLOC(rhs, b11_size, cs_real_t);
-  cs_array_real_set_scalar(b11_size, 1, rhs);
+  cs_array_real_set_scalar(b11_size, 1.0/scaling_coef, rhs);
 
   cs_param_sles_t  *slesp = cs_param_saddle_get_xtra_sles_param(solver->param);
   assert(slesp != nullptr);
@@ -2250,9 +2252,9 @@ cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
 
   cs_gnum_t b11_gsize = static_cast<cs_gnum_t>(b11_size);
   cs::parall::sum(b11_gsize);
-  const double normalization = sqrt(1.0*b11_gsize);
+  const double normalization = sqrt(b11_gsize/scaling_coef);
 
-  /* Solve m11.x = 1 */
+  /* Solve m11.x = 1/scaling_coef */
 
   *n_iter = cs_cdo_solve_scalar_system(b11_size,
                                        slesp,
@@ -3160,12 +3162,6 @@ cs_saddle_solver_context_simple_create(cs_lnum_t            b22_max_size,
      preconditioner */
 
   const cs_param_saddle_t  *saddlep = solver->param;
-  const cs_param_saddle_context_simple_t *ctxp =
-    static_cast<const cs_param_saddle_context_simple_t *>(saddlep->context);
-
-  ctx->init_sles = nullptr;
-  if (ctxp->dedicated_init_sles)
-    ctx->init_sles = cs_sles_find_or_add(-1, ctxp->init_sles_param->name);
 
   switch (saddlep->schur_approx) {
 
@@ -4742,8 +4738,6 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   cs_cdo_system_helper_t  *sh = solver->system_helper;
   cs_saddle_solver_context_simple_t *ctx =
     static_cast<cs_saddle_solver_context_simple_t *>(solver->context);
-  cs_param_saddle_context_simple_t *ctxp =
-    static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
 
   const cs_param_sles_t *b11_slesp = saddlep->block11_sles_param;
 

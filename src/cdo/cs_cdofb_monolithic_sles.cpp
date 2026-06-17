@@ -1283,6 +1283,7 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
     ctx->m11_inv_diag
       = cs_saddle_solver_m11_inv_lumped(solver,
+                                        1.0,  /* scaling coefficient */
                                         ctx->m11,
                                         ctx->b11_range_set,
                                         ctx->xtra_sles,
@@ -1318,6 +1319,7 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
   case CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE:
     ctx->m11_inv_diag
       = cs_saddle_solver_m11_inv_lumped(solver,
+                                        1.0,  /* scaling coefficient */
                                         ctx->m11,
                                         ctx->b11_range_set,
                                         ctx->xtra_sles,
@@ -1743,6 +1745,7 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
     {
       ctx->m11_inv_diag =
         cs_saddle_solver_m11_inv_lumped(solver,
+                                        1.0,  /* scaling coefficient */
                                         ctx->m11,
                                         ctx->b11_range_set,
                                         ctx->xtra_sles,
@@ -1775,6 +1778,7 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
     {
       ctx->m11_inv_diag =
         cs_saddle_solver_m11_inv_lumped(solver,
+                                        1.0,  /* scaling coefficient */
                                         ctx->m11,
                                         ctx->b11_range_set,
                                         ctx->xtra_sles,
@@ -1934,8 +1938,13 @@ cs_cdofb_monolithic_sles_afs([[maybe_unused]] const cs_navsto_param_t  *nsp,
 
   case CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE:
     {
+
+      const cs_param_saddle_context_simple_t *ctxp
+        = (const cs_param_saddle_context_simple_t *)saddlep->context;
+
       ctx->m11_inv_diag =
         cs_saddle_solver_m11_inv_lumped(solver,
+                                        ctxp->scaling_coef,
                                         ctx->m11,
                                         ctx->b11_range_set,
                                         ctx->xtra_sles,
