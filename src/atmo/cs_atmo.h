@@ -179,19 +179,23 @@ typedef struct {
   int utm_zone; // If using utm, a zone needs to be specified
 
   int met_1d_nlevels_d;
-  [[deprecated]] int& nbmetd() {return met_1d_nlevels_d;};
+  [[deprecated("Use met_1d_nlevels_d instead")]]
+  int& nbmetd{met_1d_nlevels_d};
 
   /*! numbers of altitudes for the temperature and specific humidity */
   int met_1d_nlevels_t;
-  [[deprecated]] int& nbmett() {return met_1d_nlevels_t;};
+  [[deprecated("Use met_1d_nlevels_t instead")]]
+  int& nbmett{met_1d_nlevels_t};
 
   /*! numbers of time steps for the meteo profiles */
   int met_1d_ntimes;
-  [[deprecated]] int& nbmetm() {return met_1d_ntimes;};
+  [[deprecated("Use met_1d_ntimes instead")]]
+  int& nbmetm{met_1d_ntimes};
 
   /*! Number of vertical levels */
   int met_1d_nlevels_max_t;
-  [[deprecated]] int& nbmaxt() {return met_1d_nlevels_max_t;};
+  [[deprecated("Use met_1d_nlevels_max_t instead")]]
+  int& nbmaxt{met_1d_nlevels_max_t};
 
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */
