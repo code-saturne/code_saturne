@@ -1786,6 +1786,14 @@ cs_1d_wall_thermal_finalize(void)
 {
   CS_FREE(_1d_wall_thermal.izft1d);
   cs_glob_1d_wall_thermal = nullptr;
+
+  if (_zones != nullptr) {
+    for (int i = 0; i < _n_zones; i++) {
+      CS_FREE(_zones[i].mesh_defs);
+      CS_FREE(_zones[i].properties);
+    }
+    CS_FREE(_zones);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
