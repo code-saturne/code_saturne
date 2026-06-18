@@ -50,6 +50,7 @@
 // result from usage of deprecated objects in MEDCouplingUMesh
 DISABLE_WARNING_PUSH
 DISABLE_WARNING(-Wdeprecated-declarations)
+DISABLE_WARNING(-Wunused-parameter)
 // Disable this warning on LLVM based compilers
 #if defined(__llvm__)
 DISABLE_WARNING(-Winconsistent-missing-override)
