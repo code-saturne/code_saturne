@@ -428,37 +428,53 @@ typedef struct {
 /*! Specific physical model options for the Lagrangian module */
 /* ---------------------------------------------------------- */
 
-typedef struct {
+struct cs_lagr_specific_physics_t {
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Default constructor with suppression of deprecated declarations,
+   *        needed to hide warnings simply induced by including this header
+   *        file.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  DISABLE_WARNING_PUSH
+  DISABLE_WARNING(-Wdeprecated-declarations)
+
+  cs_lagr_specific_physics_t(){}
+
+  DISABLE_WARNING_POP
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
       temperature seen (in degrees Celsius).
       Useful if \ref physical_model=1 and if there is a thermal scalar
       associated with the continuous phase.
   */
-  int   solve_temperature_seen;
+  int   solve_temperature_seen{0};
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
       temperature (in degrees Celsius).
       Useful if \ref physical_model=1 and if there is a thermal scalar
       associated with the continuous phase.
   */
-  int   solve_temperature;
+  int   solve_temperature{0};
+
   [[deprecated("renamed to solve_temperature")]] \
-  int&  itpvar() {return solve_temperature;};
+  int&  itpvar{solve_temperature};
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
       diameter. Useful if \ref physical_model = 1.
   */
-  int   solve_diameter;
+  int   solve_diameter{0};
   [[deprecated("renamed to solve_diameter")]] \
-  int&   idpvar() {return solve_diameter;};
+  int&   idpvar{solve_diameter};
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle mass
       Useful if \ref physical_model = 1
   */
-  int   solve_mass;
+  int   solve_mass{0};
   [[deprecated("renamed to solve_mass")]] \
-  int&   impvar() {return solve_mass;};
+  int&   impvar{solve_mass};
 
   /*  initialization temperature (in degree Celsius) for the particles already
       present in the calculation domain when an evolution equation on
@@ -467,7 +483,7 @@ typedef struct {
       Useful if \ref isuila = 1 and \ref solve_temperature = 0 in the previous
       calculation.
   */
-  cs_real_t          tpart;
+  cs_real_t          tpart{-999.};
 
   /* initialization value for the specific heat (\f$ J.kg^{-1}.K^{-1} \f$)
      of the particles already present
@@ -477,9 +493,9 @@ typedef struct {
      Useful if \ref isuila = 1 and \ref solve_temperature = 0 in the previous
      calculation
   */
-  cs_real_t          cppart;
+  cs_real_t          cppart{-999.};
 
-} cs_lagr_specific_physics_t;
+};
 
 /*! Parameters of the reentrainment model */
 /* -------------------------------------- */

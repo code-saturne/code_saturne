@@ -216,14 +216,7 @@ static cs_lagr_particle_counter_t _lagr_particle_counter
      .w_resuspended = 0.};
 
 /* lagr specific physics structure and associated pointer */
-static cs_lagr_specific_physics_t _cs_glob_lagr_specific_physics
-  = {
-    .solve_temperature_seen = 0,
-    .solve_temperature = 0,
-    .solve_diameter = 0,
-    .solve_mass = 0,
-    .tpart = -999.,
-    .cppart = -999.};
+static cs_lagr_specific_physics_t _cs_glob_lagr_specific_physics;
 
 cs_lagr_specific_physics_t *cs_glob_lagr_specific_physics
   = &_cs_glob_lagr_specific_physics;
