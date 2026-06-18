@@ -67,7 +67,7 @@ void
 cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 {
   /*! [loc_var_dec] */
-  const cs_lnum_t n_cells = domain->mesh-> n_cells;
+  const cs_lnum_t n_cells = domain->mesh->n_cells;
   const cs_real_3_t *cell_cen
     = (const cs_real_3_t *)domain->mesh_quantities->cell_cen;
 
@@ -85,11 +85,13 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 
   if (n_gasses > 1) {
 
-    cs_array_real_set_scalar(n_cells, 1.0, CS_FI_(ycoel, 0)->val);
-
-    for (int sp_id = 1; sp_id < n_gasses-1; sp_id++)
-      cs_array_real_fill_zero(n_cells, CS_FI_(ycoel, sp_id)->val);
-
+    for (int sp_id = 0; sp_id < n_gasses-1; sp_id++) {
+      auto cvar_ycoel = CS_FI_(ycoel, sp_id)->get_val_s();
+      if (sp_id == 0)
+        cvar_ycoel.set_to_val(1.0, n_cells);
+      else
+        cvar_ycoel.set_to_val(0.0, n_cells);
+    }
   }
 
   /* Enthalpy = H(T0) or 0
@@ -105,8 +107,8 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 
   /* Enthaly reinitialization */
 
-  cs_real_t  *cpro_t = CS_F_(t)->val;
-  cs_real_t  *cvar_h = CS_F_(h)->val;
+  auto cpro_t = CS_F_(t)->get_val_s();
+  auto cvar_h = CS_F_(h)->get_val_s();
 
   if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 1) {
     cs_elec_convert_t_to_h_cells(cpro_t, cvar_h);
@@ -131,15 +133,20 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
   /* Set electric potential to 0 (real component and imaginary component -- for
      Joule heating by direct conduction) */
 
-  cs_array_real_fill_zero(n_cells, CS_F_(potr)->val);
+  auto cvar_potr = CS_F_(potr)->get_val_s();
+  cvar_potr.set_to_val(0.0, n_cells);
 
-  if (CS_F_(poti) != nullptr)
-    cs_array_real_fill_zero(n_cells, CS_F_(poti)->val);
+  if (CS_F_(poti) != nullptr) {
+    auto cvar_poti = CS_F_(poti)->get_val_s();
+    cvar_poti.set_to_val(0.0, n_cells);
+  }
 
   /* Vector potential (electric arcs, 3d) */
 
-  if (CS_F_(potva) != nullptr)
-    cs_array_real_fill_zero(3*n_cells, CS_F_(potva)->val);
+  if (CS_F_(potva) != nullptr) {
+    auto cvar_potva = CS_F_(potva)->get_val_v();
+    cvar_potva.set_to_val(0.0, 3*n_cells);
+  }
   /*! [init2] */
 }
 
