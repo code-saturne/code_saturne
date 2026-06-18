@@ -34,13 +34,12 @@
 
 #if defined(HAVE_PARAMEDMEM)
 
-#include <MEDCouplingField.hxx>
-
 DISABLE_WARNING_PUSH
 // Disable this warning on LLVM based compilers
 #if defined(__llvm__)
 DISABLE_WARNING(-Winconsistent-missing-override)
 #endif
+#include <MEDCouplingField.hxx>
 #include <MEDCouplingFieldDouble.hxx>
 DISABLE_WARNING_POP
 

@@ -49,7 +49,10 @@
 // Disable warnings introduced by including this header file, which
 // result from usage of deprecated objects in MEDCouplingUMesh
 DISABLE_WARNING_PUSH
-DISABLE_WARNING(-Wdeprecated-declarations)
+// Disable this warning on LLVM based compilers
+#if defined(__llvm__)
+DISABLE_WARNING(-Winconsistent-missing-override)
+#endif
 #include "MEDCouplingUMesh.hxx"
 DISABLE_WARNING_POP
 
