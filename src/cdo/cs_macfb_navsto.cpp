@@ -1015,22 +1015,17 @@ cs_macfb_block_dirichlet_alge(short int                  f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_block_dirichlet_pena(short int                  f,
-                              const cs_equation_param_t *eqp,
-                              const cs_cell_mesh_t      *cm,
-                              const cs_property_data_t  *pty,
-                              cs_cell_builder_t         *cb,
-                              cs_cell_sys_t             *csys)
+cs_macfb_block_dirichlet_pena
+(
+ [[maybe_unused]] short int                  f,
+ [[maybe_unused]] const cs_equation_param_t *eqp,
+ [[maybe_unused]] const cs_cell_mesh_t      *cm,
+ [[maybe_unused]] const cs_property_data_t  *pty,
+ [[maybe_unused]] cs_cell_builder_t         *cb,
+ [[maybe_unused]] cs_cell_sys_t             *csys
+)
 {
   bft_error(__FILE__, __LINE__, 0, _(" %s: Not implemented\n"), __func__);
-
-  CS_UNUSED(f);
-  CS_UNUSED(eqp);
-  CS_UNUSED(cb);
-  CS_UNUSED(cm);
-  CS_UNUSED(pty);
-
-  assert(csys != nullptr);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1053,20 +1048,20 @@ cs_macfb_block_dirichlet_pena(short int                  f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_block_dirichlet_weak(short int                  fb,
-                              const cs_equation_param_t *eqp,
-                              const cs_cell_mesh_t      *cm,
-                              const cs_property_data_t  *pty,
-                              cs_cell_builder_t         *cb,
-                              cs_cell_sys_t             *csys)
+cs_macfb_block_dirichlet_weak
+(
+ [[maybe_unused]] short int                  fb,
+ [[maybe_unused]] const cs_equation_param_t *eqp,
+ [[maybe_unused]] const cs_cell_mesh_t      *cm,
+ [[maybe_unused]] const cs_property_data_t  *pty,
+ [[maybe_unused]] cs_cell_builder_t         *cb,
+ [[maybe_unused]] cs_cell_sys_t             *csys
+)
 {
   bft_error(__FILE__, __LINE__, 0, _(" %s: Not implemented\n"), __func__);
 
   assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
   assert(pty->is_iso == true);
-
-  CS_UNUSED(fb);
-  CS_UNUSED(eqp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1089,20 +1084,21 @@ cs_macfb_block_dirichlet_weak(short int                  fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_block_dirichlet_wsym(short int                  fb,
-                              const cs_equation_param_t *eqp,
-                              const cs_cell_mesh_t      *cm,
-                              const cs_property_data_t  *pty,
-                              cs_cell_builder_t         *cb,
-                              cs_cell_sys_t             *csys)
+cs_macfb_block_dirichlet_wsym
+(
+ [[maybe_unused]] short int                  fb,
+ [[maybe_unused]] const cs_equation_param_t *eqp,
+ [[maybe_unused]] const cs_cell_mesh_t      *cm,
+ [[maybe_unused]] const cs_property_data_t  *pty,
+ [[maybe_unused]] cs_cell_builder_t         *cb,
+ [[maybe_unused]] cs_cell_sys_t             *csys
+)
 {
   bft_error(__FILE__, __LINE__, 0, _(" %s: Not implemented\n"), __func__);
 
   assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
   assert(cs_equation_param_has_diffusion(eqp));
   assert(pty->is_iso == true);
-
-  CS_UNUSED(fb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1122,20 +1118,21 @@ cs_macfb_block_dirichlet_wsym(short int                  fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_symmetry(short int                  fb,
-                  const cs_equation_param_t *eqp,
-                  const cs_cell_mesh_t      *cm,
-                  const cs_property_data_t  *pty,
-                  cs_cell_builder_t         *cb,
-                  cs_cell_sys_t             *csys)
+cs_macfb_symmetry
+(
+ [[maybe_unused]] short int                  fb,
+ [[maybe_unused]] const cs_equation_param_t *eqp,
+ [[maybe_unused]] const cs_cell_mesh_t      *cm,
+ [[maybe_unused]] const cs_property_data_t  *pty,
+ [[maybe_unused]] cs_cell_builder_t         *cb,
+ [[maybe_unused]] cs_cell_sys_t             *csys
+)
 {
   bft_error(__FILE__, __LINE__, 0, _(" %s: Not implemented\n"), __func__);
 
   assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
   assert(cs_equation_param_has_diffusion(eqp));
-
-  CS_UNUSED(fb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1154,19 +1151,17 @@ cs_macfb_symmetry(short int                  fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_fixed_wall(short int                  fb,
-                    const cs_equation_param_t *eqp,
-                    const cs_cell_mesh_t      *cm,
-                    const cs_property_data_t  *pty,
-                    cs_cell_builder_t         *cb,
-                    cs_cell_sys_t             *csys)
+cs_macfb_fixed_wall
+(
+ [[maybe_unused]] short int                  fb,
+ [[maybe_unused]] const cs_equation_param_t *eqp,
+ [[maybe_unused]] const cs_cell_mesh_t      *cm,
+ [[maybe_unused]] const cs_property_data_t  *pty,
+ [[maybe_unused]] cs_cell_builder_t         *cb,
+ [[maybe_unused]] cs_cell_sys_t             *csys
+)
 {
   bft_error(__FILE__, __LINE__, 0, _(" %s: Not implemented\n"), __func__);
-
-  CS_UNUSED(cb);
-  CS_UNUSED(pty);
-  CS_UNUSED(fb);
-  CS_UNUSED(eqp);
 
   assert(cm != nullptr && csys != nullptr); /* Sanity checks */
 }
@@ -1253,18 +1248,16 @@ cs_macfb_navsto_set_gravity_func(const cs_navsto_param_t   *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_navsto_gravity_term(const cs_navsto_param_t         *nsp,
-                             const cs_cell_mesh_t            *cm,
-                             const cs_macfb_navsto_builder_t *nsb,
-                             cs_cell_sys_t                   *csys)
+cs_macfb_navsto_gravity_term
+(
+ [[maybe_unused]] const cs_navsto_param_t         *nsp,
+ [[maybe_unused]] const cs_cell_mesh_t            *cm,
+ [[maybe_unused]] const cs_macfb_navsto_builder_t *nsb,
+ [[maybe_unused]] cs_cell_sys_t                   *csys)
 {
   bft_error(__FILE__, __LINE__, 0, _(" %s: Not implemented\n"), __func__);
 
   assert(nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS);
-
-  CS_UNUSED(nsb);
-  CS_UNUSED(cm);
-  CS_UNUSED(csys);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1283,16 +1276,16 @@ cs_macfb_navsto_gravity_term(const cs_navsto_param_t         *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_navsto_boussinesq_at_cell(const cs_navsto_param_t         *nsp,
-                                   const cs_cell_mesh_t            *cm,
-                                   const cs_macfb_navsto_builder_t *nsb,
-                                   cs_cell_sys_t                   *csys)
+cs_macfb_navsto_boussinesq_at_cell
+(
+ [[maybe_unused]] const cs_navsto_param_t         *nsp,
+ [[maybe_unused]] const cs_cell_mesh_t            *cm,
+ [[maybe_unused]] const cs_macfb_navsto_builder_t *nsb,
+ [[maybe_unused]] cs_cell_sys_t                   *csys
+)
 {
   bft_error(__FILE__, __LINE__, 0, _(" %s: Not implemented\n"), __func__);
 
-  CS_UNUSED(nsb);
-  CS_UNUSED(cm);
-  CS_UNUSED(csys);
   assert(nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ);
 }
 
@@ -1312,16 +1305,15 @@ cs_macfb_navsto_boussinesq_at_cell(const cs_navsto_param_t         *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_navsto_boussinesq_at_face(const cs_navsto_param_t         *nsp,
-                                   const cs_cell_mesh_t            *cm,
-                                   const cs_macfb_navsto_builder_t *nsb,
-                                   cs_cell_sys_t                   *csys)
+cs_macfb_navsto_boussinesq_at_face
+(
+ [[maybe_unused]] const cs_navsto_param_t         *nsp,
+ [[maybe_unused]] const cs_cell_mesh_t            *cm,
+ [[maybe_unused]] const cs_macfb_navsto_builder_t *nsb,
+ [[maybe_unused]] cs_cell_sys_t                   *csys
+)
 {
   bft_error(__FILE__, __LINE__, 0, _(" %s: Not implemented\n"), __func__);
-
-  CS_UNUSED(nsb);
-  CS_UNUSED(cm);
-  CS_UNUSED(csys);
   assert(nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ);
 }
 

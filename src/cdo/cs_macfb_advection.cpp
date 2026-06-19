@@ -238,12 +238,15 @@ cs_macfb_advection_close_exp_none_vect(const cs_cell_mesh_t     *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_advection_no_diffusion(const cs_equation_param_t *eqp,
-                                const cs_cell_mesh_t      *cm,
-                                const cs_macfb_builder_t  *macb,
-                                cs_macfb_adv_scheme_t     *scheme_func,
-                                cs_cell_sys_t             *csys,
-                                cs_cell_builder_t         *cb)
+cs_macfb_advection_no_diffusion
+(
+ [[maybe_unused]] const cs_equation_param_t *eqp,
+ const cs_cell_mesh_t                       *cm,
+ const cs_macfb_builder_t                   *macb,
+ cs_macfb_adv_scheme_t                      *scheme_func,
+ cs_cell_sys_t                              *csys,
+ cs_cell_builder_t                          *cb
+)
 {
   assert(eqp->space_scheme == CS_SPACE_SCHEME_MACFB);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ));
@@ -308,12 +311,12 @@ cs_macfb_advection_no_diffusion(const cs_equation_param_t *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_macfb_advection(const cs_equation_param_t *eqp,
-                   const cs_cell_mesh_t      *cm,
-                   const cs_macfb_builder_t  *macb,
-                   cs_macfb_adv_scheme_t     *scheme_func,
-                   cs_cell_sys_t             *csys,
-                   cs_cell_builder_t         *cb)
+cs_macfb_advection([[maybe_unused]] const cs_equation_param_t *eqp,
+                   const cs_cell_mesh_t                       *cm,
+                   const cs_macfb_builder_t                   *macb,
+                   cs_macfb_adv_scheme_t                      *scheme_func,
+                   cs_cell_sys_t                              *csys,
+                   cs_cell_builder_t                          *cb)
 {
   assert(eqp->space_scheme == CS_SPACE_SCHEME_MACFB);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ));
