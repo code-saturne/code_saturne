@@ -75,13 +75,22 @@
 
 #include <MEDCoupling_version.h>
 
+DISABLE_WARNING_PUSH
+DISABLE_WARNING(-Wunused-parameter)
+DISABLE_WARNING(-Wignored-qualifiers)
 #include <MEDFileMesh.hxx>
+DISABLE_WARNING_POP
 
 #include <MEDLoader.hxx>
 
 #include <MEDCouplingNormalizedUnstructuredMesh.txx>
 #include "Interpolation3D.hxx"
+// Suppress header induced warnings from medcoupling
+DISABLE_WARNING_PUSH
+DISABLE_WARNING(-Wfloat-equal)
+DISABLE_WARNING(-Wunused-parameter)
 #include "Interpolation3DSurf.hxx"
+DISABLE_WARNING_POP
 #include "Interpolation2D3D.hxx"
 
 using namespace MEDCoupling;

@@ -41,7 +41,11 @@
  * EOS library headers
  *----------------------------------------------------------------------------*/
 
+// Suppress warnings of EOS header file
+DISABLE_WARNING_PUSH
+DISABLE_WARNING(-Wcast-qual)
 #include <EOS/API/EOS.hxx>
+DISABLE_WARNING_POP
 #include <EOS/API/EOS_Field.hxx>
 #include <EOS/API/EOS_Fields.hxx>
 #include <EOS/API/EOS_Error_Field.hxx>

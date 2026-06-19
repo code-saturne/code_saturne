@@ -75,7 +75,12 @@
 
 #include <MEDLoader.hxx>
 #include <MEDCoupling_version.h>
+// Suppress header warnings
+DISABLE_WARNING_PUSH
+DISABLE_WARNING(-Wunused-parameter)
+DISABLE_WARNING(-Wignored-qualifiers)
 #include <MEDFileField.hxx>
+DISABLE_WARNING_POP
 #include <MEDFileFieldMultiTS.hxx>
 
 #include <MEDFileMesh.hxx>

@@ -74,7 +74,11 @@
 
 // Medloader
 #if defined(HAVE_MEDCOUPLING_LOADER)
+DISABLE_WARNING_PUSH
+DISABLE_WARNING(-Wunused-parameter)
+DISABLE_WARNING(-Wignored-qualifiers)
 #include <MEDFileMesh.hxx>
+DISABLE_WARNING_POP
 #include <MEDLoader.hxx>
 #endif
 
