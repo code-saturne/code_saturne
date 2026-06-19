@@ -182,7 +182,7 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
     eqb->src_flag = cs_source_term_init(eqp->space_scheme,
                                         eqp->n_source_terms,
                     (cs_xdef_t *const *)eqp->source_terms,
-                                        eqb->compute_source,
+                                        &(eqb->compute_source),
                                         &(eqb->sys_flag),
                                         &(eqb->source_mask));
 
@@ -340,6 +340,8 @@ cs_equation_builder_free(cs_equation_builder_t  **p_builder)
 
   if (eqb->source_mask != nullptr)
     CS_FREE(eqb->source_mask);
+  if (eqb->compute_source != nullptr)
+    CS_FREE(eqb->compute_source);
 
   cs_cdo_system_helper_free(&eqb->system_helper);
 

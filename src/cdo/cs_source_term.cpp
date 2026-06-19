@@ -615,15 +615,15 @@ cs_source_term_get_flag(const cs_xdef_t  *st)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize data to build the source terms
+ * \brief Initialize data to build the source terms
  *
- * \param[in]      space_scheme    scheme used to discretize in space
- * \param[in]      n_source_terms  number of source terms
- * \param[in]      source_terms    pointer to the definitions of source terms
- * \param[in, out] compute_source  array of function pointers
- * \param[in, out] sys_flag        metadata about the algebraic system
- * \param[in, out] source_mask     pointer to an array storing in a compact way
- *                                 which source term is defined in a given cell
+ * \param[in]      space_scheme     scheme used to discretize in space
+ * \param[in]      n_source_terms   number of source terms
+ * \param[in]      source_terms     pointer to the definitions of source terms
+ * \param[in, out] p_compute_source pointer to an array of function pointers
+ * \param[in, out] sys_flag         metadata about the algebraic system
+ * \param[in, out] source_mask      pointer to an array storing in a compact way
+ *                                  which source term is defined in a given cell
  *
  * \return a flag which indicates what to build in a cell mesh structure
  */
@@ -633,28 +633,33 @@ cs_eflag_t
 cs_source_term_init(cs_param_space_scheme_t       space_scheme,
                     const int                     n_source_terms,
                     cs_xdef_t             *const *source_terms,
-                    cs_source_term_cellwise_t    *compute_source[],
+                    cs_source_term_cellwise_t   **p_compute_source[],
                     cs_flag_t                    *sys_flag,
                     cs_mask_t                    *source_mask[])
 {
-  if (n_source_terms > CS_N_MAX_SOURCE_TERMS)
-    bft_error(__FILE__, __LINE__, 0,
-              " Limitation to %d source terms has been reached!",
-              CS_N_MAX_SOURCE_TERMS);
-
   cs_eflag_t  msh_flag = 0;
-  *source_mask         = nullptr;
-  for (short int i = 0; i < CS_N_MAX_SOURCE_TERMS; i++)
-    compute_source[i] = nullptr;
+  *source_mask   = nullptr;
+  *p_compute_source = nullptr;
 
   if (n_source_terms == 0)
     return msh_flag;
+
+  // Initialize the array of function pointers
+
+  cs_source_term_cellwise_t **compute_source = nullptr;
+  CS_MALLOC(compute_source, n_source_terms, cs_source_term_cellwise_t *);
+  for (int i = 0; i < n_source_terms; i++)
+    compute_source[i] = nullptr;
+
+  *p_compute_source = compute_source;
+
+  // Set each function pointer
 
   bool  need_mask = false;
 
   for (int st_id = 0; st_id < n_source_terms; st_id++) {
 
-    const cs_xdef_t  *st_def = source_terms[st_id];
+    const cs_xdef_t *st_def = source_terms[st_id];
 
     if (st_def->meta & CS_FLAG_PRIMAL) {
       if (space_scheme == CS_SPACE_SCHEME_CDOVB ||
@@ -924,8 +929,10 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
         else { /* Scalar-valued case */
 
           bft_error(__FILE__, __LINE__, 0,
-                    "%s: Invalid type of definition for a scalar source term in MACFB",
+                    "%s: Invalid type of definition for a scalar source term"
+                    " in MACFB",
                     __func__);
+
         }
         break;
 

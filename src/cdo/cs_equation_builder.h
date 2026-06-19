@@ -131,7 +131,7 @@ struct _equation_builder_t {
    * Pointer to functions which compute the value of the source term
    */
 
-  cs_source_term_cellwise_t  *compute_source[CS_N_MAX_SOURCE_TERMS];
+  cs_source_term_cellwise_t  **compute_source;
 
   /*!
    * @}

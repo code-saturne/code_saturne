@@ -42,8 +42,6 @@
  * Macro definitions
  *============================================================================*/
 
-#define CS_N_MAX_SOURCE_TERMS   8 // Max number of source terms in an equation
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -133,15 +131,15 @@ cs_source_term_get_flag(const cs_xdef_t  *st);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize data to build the source terms
+ * \brief Initialize data to build the source terms
  *
- * \param[in]      space_scheme    scheme used to discretize in space
- * \param[in]      n_source_terms  number of source terms
- * \param[in]      source_terms    pointer to the definitions of source terms
- * \param[in, out] compute_source  array of function pointers
- * \param[in, out] sys_flag        metadata about the algebraic system
- * \param[in, out] source_mask     pointer to an array storing in a compact way
- *                                 which source term is defined in a given cell
+ * \param[in]      space_scheme     scheme used to discretize in space
+ * \param[in]      n_source_terms   number of source terms
+ * \param[in]      source_terms     pointer to the definitions of source terms
+ * \param[in, out] p_compute_source pointer to an array of function pointers
+ * \param[in, out] sys_flag         metadata about the algebraic system
+ * \param[in, out] source_mask      pointer to an array storing in a compact way
+ *                                  which source term is defined in a given cell
  *
  * \return a flag which indicates what to build in a cell mesh structure
  */
@@ -151,7 +149,7 @@ cs_eflag_t
 cs_source_term_init(cs_param_space_scheme_t      space_scheme,
                     const int                    n_source_terms,
                     cs_xdef_t            *const *source_terms,
-                    cs_source_term_cellwise_t   *compute_source[],
+                    cs_source_term_cellwise_t  **p_compute_source[],
                     cs_flag_t                   *sys_flag,
                     cs_mask_t                   *source_mask[]);
 
