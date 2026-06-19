@@ -886,6 +886,10 @@ cs_domain_write_restart(const cs_domain_t  *domain)
   int  t_id_flag = 0; /* Only current values */
   cs_restart_write_variables(restart, t_id_flag, nullptr);
 
+  /* Write notebook variables */
+
+  cs_restart_write_notebook_variables(restart);
+
   /* Write fields related to the main restart file */
 
   cs_restart_write_fields(restart, CS_RESTART_MAIN);
