@@ -1100,10 +1100,10 @@ cs_cdofb_monolithic_sles_init_solver(const cs_navsto_param_t  *nsp,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdofb_monolithic_sles_alu(const cs_navsto_param_t  *nsp,
-                             cs_saddle_solver_t       *solver,
-                             cs_real_t                *u_f,
-                             cs_real_t                *p_c)
+cs_cdofb_monolithic_sles_alu([[maybe_unused]] const cs_navsto_param_t  *nsp,
+                             cs_saddle_solver_t                        *solver,
+                             cs_real_t                                 *u_f,
+                             cs_real_t                                 *p_c)
 {
   if (solver == nullptr)
     return 0;
