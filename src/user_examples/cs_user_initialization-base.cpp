@@ -78,8 +78,9 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
   cs_field_t *fld = cs_field_try("scalar1");
 
   if (fld != nullptr) {
+    auto cvar_fld = fld->get_val_s();
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-      fld->val[cell_id] = 25;
+      cvar_fld[cell_id] = 25;
   }
 
   /* In the case of the EBU pre-mixed flame module the user can initialize
@@ -88,9 +89,9 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
    * the fresh gas mass fraction
    * the mixture enthalpy */
 
-  cs_real_t *cvar_fm = CS_F_(fm)->val;
-  cs_real_t *cvar_ygfm = CS_F_(ygfm)->val;
-  cs_real_t *cvar_scalt = cs_thermal_model_field()->val;
+  auto cvar_fm = CS_F_(fm)->get_val_s();
+  auto cvar_ygfm = CS_F_(ygfm)->get_val_s();
+  auto cvar_scalt = cs_thermal_model_field()->get_val_s();
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     cvar_fm[c_id] = 25;

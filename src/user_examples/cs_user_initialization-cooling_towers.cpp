@@ -71,15 +71,15 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 
   /* Map field arrays */
 
-  cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
-  cs_real_t *cvar_temp = cs_thermal_model_field()->val;
-  cs_real_t *cpro_humid = cs_field("humidity")->val;
+  auto cvar_vel = CS_F_(vel)->get_val_v();
+  auto cvar_temp = cs_thermal_model_field()->get_val_s();
+  auto cpro_humid = cs_field("humidity")->get_val_s();
 
   /* Initialize temperature of humid air at 11 deg Celsius
    * and of humidity at 0.0063 */
 
-   cs_array_real_set_scalar(n_cells, 11.0, cvar_temp);
-   cs_array_real_set_scalar(n_cells, 0.0063, cpro_humid);
+  cvar_temp.set_to_val(11.0, n_cells);
+  cpro_humid.set_to_val(0.0063, n_cells);
 
    /* Initialize temperature of humid air at 20 deg Celsius
     * and of humidity at 0.012
@@ -92,7 +92,7 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 
       const cs_lnum_t c_id = zn->elt_ids[ii];
 
-      vel[c_id][0] = 0.5;
+      cvar_vel(c_id, 0) = 0.5;
       cvar_temp[c_id] = 20.;
       cpro_humid[c_id] = 0.012;
    }

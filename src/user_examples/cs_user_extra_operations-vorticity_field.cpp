@@ -64,12 +64,10 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /* ! [vorticity_d] */
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-
-  cs_real_33_t *gradv;
   /* ! [vorticity_d] */
 
   /* ! [vorticity_a] */
-  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  cs_array_3d<cs_real_t> gradv(n_cells_ext, 3, 3);
   /* ! [vorticity_a] */
 
   /* ! [vorticity_g] */
@@ -78,7 +76,11 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   cs_field_gradient_vector(CS_F_(vel),
                            use_previous_t,
                            inc,
-                           gradv);
+                           gradv.data<cs_real_33_t>()); // currently, function
+                                                        // is waiting for a
+                                                        // cs_real_33_t *.
+                                                        // Will be changed in
+                                                        // the future
   /* ! [vorticity_g] */
 
   /* ! [vorticity_f] */
@@ -87,15 +89,13 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
   /* ! [vorticity_cv] */
   if (vort != nullptr) {
+    auto cvar_vort = vort->get_val_s();
     for (cs_lnum_t i = 0; i < n_cells; i++) {
-      vort->val[i] = gradv[i][1][0] - gradv[i][0][1];
+      cvar_vort[i] = gradv(i, 1, 0) - gradv(i, 0, 1);
     }
   }
   /* ! [vorticity_cv] */
 
-  /* ! [vorticity_da] */
-  CS_FREE(gradv);
-  /* ! [vorticity_da] */
 }
 
 /*----------------------------------------------------------------------------*/

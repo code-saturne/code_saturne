@@ -301,7 +301,7 @@ cs_user_physical_properties_turb_viscosity
    * ================================== */
 
   auto visct = CS_F_(mu_t)->get_val_s();
-  const cs_real_t *crom  = CS_F_(rho)->val;
+  const auto crom  = CS_F_(rho)->get_val_s();
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     const cs_real_t coef = cpro_smago[c_id];
     const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],

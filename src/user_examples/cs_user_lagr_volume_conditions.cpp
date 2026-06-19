@@ -73,21 +73,28 @@ _injection_profile([[maybe_unused]] int          zone_id,
   /* Loop on elements
      ---------------- */
 
-  cs_real_t *lagr_injection_profile =
-    cs_field_try("lagr_injection_profile")->val;
+  cs_field_t *f = cs_field_try("lagr_injection_profile");
 
-  for (cs_lnum_t ei = 0; ei < n_elts; ei++) {
+  if (f != nullptr) {
+    auto lagr_injection_profile = f->get_val_s();
 
-    const cs_lnum_t cell_id = elt_ids[ei];
+    for (cs_lnum_t ei = 0; ei < n_elts; ei++) {
 
-    /* number of particles in the cell proportional to
-     * the lagr_injection_profile */
+      const cs_lnum_t cell_id = elt_ids[ei];
 
-    profile[ei] = lagr_injection_profile[cell_id];
+      /* number of particles in the cell proportional to
+       * the lagr_injection_profile */
 
-    assert(profile[ei] >= 0.);
+      profile[ei] = lagr_injection_profile[cell_id];
 
+      assert(profile[ei] >= 0.);
+
+    }
   }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Called while field \"lagr_injection_profile\" doesn't exist.\n",
+              __func__);
 }
 /*! [lagr_vol_define_injection_fun] */
 
@@ -239,11 +246,18 @@ cs_user_lagr_volume_conditions(void)
     zis->injection_profile_func = _injection_profile;
     cs_real_t flow_rate = 0;
 
-    cs_real_t *lagr_injection_profile =
-      cs_field_try("lagr_injection_profile")->val;
+    cs_field_t *f_lagr_injection_profile = cs_field_try("lagr_injection_profile");
 
-    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
-      flow_rate += lagr_injection_profile[cell_id];
+    if (f_lagr_injection_profile != nullptr) {
+      auto lagr_injection_profile = f_lagr_injection_profile->get_val_s();
+
+      for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
+        flow_rate += lagr_injection_profile[cell_id];
+    }
+    else
+      cs_log_warning(_("%s: Trying to compute lagrangian injetion flowrate "
+                       "while field \"lagr_injection_profile\" does not "
+                       "exist.\n"), __func__);
 
     cs::parall::sum(flow_rate);
 
