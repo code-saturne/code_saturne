@@ -175,6 +175,8 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
   /* Handle source terms */
 
   eqb->source_mask = nullptr;
+  eqb->compute_source = nullptr;
+
   if (cs_equation_param_has_sourceterm(eqp)) {
 
     /* Default initialization */
