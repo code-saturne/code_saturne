@@ -117,27 +117,28 @@ static void
 _clip_v2f(cs_lnum_t  n_cells,
           int        verbosity)
 {
-  cs_real_t *cvar_phi = CS_F_(phi)->val;
+  auto cvar_phi = CS_F_(phi)->get_val_s();
 
   int kclipp = cs_field_key_id("clipping_id");
 
   cs_lnum_t nclp[2] =  {0, 0};  /* Min and max clipping values respectively */
 
   /* Postprocess clippings ? */
-  cs_real_t *cpro_phi_clipped = nullptr;
+  cs_span<cs_real_t> cpro_phi_clipped;
   int clip_phi_id = CS_F_(phi)->get_key_int(kclipp);
   if (clip_phi_id > -1) {
-    cpro_phi_clipped = cs_field(clip_phi_id)->val;
-    cs_array_real_fill_zero(n_cells, cpro_phi_clipped);
+    cpro_phi_clipped = cs_field(clip_phi_id)->get_val_s();
+    cpro_phi_clipped.set_to_val(0.0, n_cells);
   }
 
-  cs_real_t *cvar_al = nullptr, *cpro_a_clipped = nullptr;
+  cs_span<cs_real_t> cvar_al;
+  cs_span<cs_real_t> cpro_a_clipped;
   if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
-    cvar_al = CS_F_(alp_bl)->val;
+    cvar_al = CS_F_(alp_bl)->get_val_s();
     int  clip_a_id = CS_F_(alp_bl)->get_key_int(kclipp);
     if (clip_a_id > -1) {
-      cpro_a_clipped = cs_field(clip_a_id)->val;
-      cs_array_real_fill_zero(n_cells, cpro_a_clipped);
+      cpro_a_clipped = cs_field(clip_a_id)->get_val_s();
+      cpro_a_clipped.set_to_val(0.0, n_cells);
     }
   }
 
@@ -329,8 +330,8 @@ _solve_eq_fbr_al(const int         istprv,
     f = CS_F_(alp_bl);
   }
 
-  cs_real_t *cvar_var = f->val;
-  const cs_real_t *cvara_var = f->val_pre;
+  auto cvar_var = f->get_val_s();
+  const auto cvara_var = f->get_val_s(1);
 
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
@@ -350,11 +351,11 @@ _solve_eq_fbr_al(const int         istprv,
   }
 
   /* Initialization of work arrays in case of HTLES */
-  cs_real_t *htles_psi = nullptr;
-  cs_real_t *htles_r   = nullptr;
+  cs_span<cs_real_t> htles_psi;
+  cs_span<cs_real_t> htles_r  ;
   if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
-    htles_psi = cs_field("htles_psi")->val;
-    htles_r   = cs_field("htles_r")->val;
+    htles_psi = cs_field("htles_psi")->get_val_s();
+    htles_r   = cs_field("htles_r")->get_val_s();
   }
 
   /* User source terms
@@ -457,9 +458,9 @@ _solve_eq_fbr_al(const int         istprv,
      w2 is already multiplied by the volume which already contains
      a mark "-" (coming from cs_diffusion_potential) */
 
-  const cs_real_t *cvara_k = CS_F_(k)->val_pre;
-  const cs_real_t *cvara_ep = CS_F_(eps)->val_pre;
-  const cs_real_t *cvara_phi = CS_F_(phi)->val_pre;
+  const auto cvara_k   = CS_F_(k)->get_val_s(1);
+  const auto cvara_ep  = CS_F_(eps)->get_val_s(1);
+  const auto cvara_phi = CS_F_(phi)->get_val_s(1);
 
   const cs_real_t *cell_f_vol = fvq->cell_vol;
 
@@ -652,7 +653,7 @@ _solve_eq_phi(const int           istprv,
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_real_t *cell_f_vol = fvq->cell_vol;
 
-  const cs_real_t *dt = CS_F_(dt)->val;
+  const auto dt = CS_F_(dt)->get_val_s();
 
   /* Allocate temporary arrays */
   cs_array<cs_real_t> w2(n_cells_ext, cs_alloc_mode);
@@ -669,17 +670,17 @@ _solve_eq_phi(const int           istprv,
                   _("           Solving variable %s\n\n"), label);
   }
 
-  cs_real_t *cvar_phi = f_phi->val;
-  cs_real_t *cvara_phi = f_phi->val_pre;
-  const cs_real_t *cvara_k = CS_F_(k)->val_pre;
-  const cs_real_t *cvara_ep = CS_F_(eps)->val_pre;
+  auto cvar_phi = f_phi->get_val_s();
+  auto cvara_phi = f_phi->get_val_s(1);
+  const auto cvara_k = CS_F_(k)->get_val_s(1);
+  const auto cvara_ep = CS_F_(eps)->get_val_s(1);
 
-  cs_real_t *visct = CS_F_(mu_t)->val;
-  cs_real_t *cpro_pcvto = CS_F_(mu_t)->val;
+  auto visct = CS_F_(mu_t)->get_val_s();
+  auto cpro_pcvto = CS_F_(mu_t)->get_val_s();
   if (istprv >= 0) {
     int iviext = CS_F_(mu_t)->get_key_int("time_extrapolated");
     if (iviext > 0) {
-      cpro_pcvto = CS_F_(mu_t)->val_pre;
+      cpro_pcvto = CS_F_(mu_t)->get_val_s(1);
     }
   }
 
@@ -693,9 +694,9 @@ _solve_eq_phi(const int           istprv,
   }
 
   /* Initialization of work arrays in case of HTLES */
-  cs_real_t *htles_psi = nullptr;
+  cs_span<cs_real_t> htles_psi;
   if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
-    htles_psi = cs_field("htles_psi")->val;
+    htles_psi = cs_field("htles_psi")->get_val_s();
   }
 
   /* User source terms
@@ -792,7 +793,7 @@ _solve_eq_phi(const int           istprv,
   cs_real_t sigmak = CS_F_(k)->get_key_double("turbulent_schmidt");
 
   if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
-    const cs_real_t *cvar_fb = CS_F_(f_bar)->val;
+    const auto cvar_fb = CS_F_(f_bar)->get_val_s();
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       const cs_real_t x_k = cvara_k[i];
@@ -808,7 +809,7 @@ _solve_eq_phi(const int           istprv,
     }
   }
   else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
-    const cs_real_t *cvara_al = CS_F_(alp_bl)->val_pre;
+    const auto cvara_al = CS_F_(alp_bl)->get_val_s(1);
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       const cs_real_t x_k = cvara_k[i];
@@ -874,7 +875,7 @@ _solve_eq_phi(const int           istprv,
   }
 
   else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
-    const cs_real_t *cvara_al = CS_F_(alp_bl)->val_pre;
+    const auto cvara_al = CS_F_(alp_bl)->get_val_s(1);
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
 
@@ -1046,8 +1047,8 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
   const cs_equation_param_t *eqp_phi
     = cs_field_get_equation_param_const(f_phi);
 
-  cs_real_t *c_st_a_p = nullptr;
-  cs_real_t *c_st_phi_p = nullptr;
+  cs_span<cs_real_t> c_st_a_p;
+  cs_span<cs_real_t> c_st_phi_p;
 
   cs_array<cs_real_t> rhs(n_cells_ext, cs_alloc_mode);
   cs_array<cs_real_t> rovsdt(n_cells_ext, cs_alloc_mode);
@@ -1062,41 +1063,42 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
   int iflmas =  f_phi->get_key_int(kimasf);
   int iflmab =  f_phi->get_key_int(kbmasf);
 
-  const cs_real_t *imasfl =  cs_field(iflmas)->val;
-  const cs_real_t *bmasfl =  cs_field(iflmab)->val;
+  const auto imasfl =  cs_field(iflmas)->get_val_s();
+  const auto bmasfl =  cs_field(iflmab)->get_val_s();
 
-  const cs_real_t *crom = CS_F_(rho)->val;
-  const cs_real_t *cromo = CS_F_(rho)->val;
-  const cs_real_t *viscl = CS_F_(mu)->val;
-  const cs_real_t *cpro_pcvlo = CS_F_(mu)->val;
+  const auto crom = CS_F_(rho)->get_val_s();
+  auto cromo = CS_F_(rho)->get_val_s();
+
+  const auto viscl = CS_F_(mu)->get_val_s();
+  auto cpro_pcvlo = CS_F_(mu)->get_val_s();
 
   if (istprv >= 0) {
     int key_t_ext_id = cs_field_key_id("time_extrapolated");
     int iroext = CS_F_(rho)->get_key_int(key_t_ext_id);
     if (iroext > 0) {
-      cromo = CS_F_(rho)->val_pre;
+      cromo = CS_F_(rho)->get_val_s(1);
     }
 
     int iviext = CS_F_(mu)->get_key_int(key_t_ext_id);
     if (iviext > 0) {
-      cpro_pcvlo = CS_F_(mu)->val_pre;
+      cpro_pcvlo = CS_F_(mu)->get_val_s(1);
     }
   }
 
   /* 2nd-order previous source terms */
 
   if (istprv >= 0) {
-    c_st_phi_p = cs_field(istprv)->val;
+    c_st_phi_p = cs_field(istprv)->get_val_s();
     if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
       istprv = CS_F_(f_bar)->get_key_int(kstprv);
       if (istprv >= 0)
-        c_st_a_p = cs_field(istprv)->val;
+        c_st_a_p = cs_field(istprv)->get_val_s();
     }
   }
   else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
     istprv = CS_F_(alp_bl)->get_key_int(kstprv);
     if (istprv >= 0)
-      c_st_a_p = cs_field(istprv)->val;
+      c_st_a_p = cs_field(istprv)->get_val_s();
   }
 
   if (eqp_phi->verbosity >= 1) {
@@ -1157,13 +1159,13 @@ cs_turbulence_v2f_phi_mu_t(void)
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  cs_real_t *visct =  CS_F_(mu_t)->val;
+  auto visct =  CS_F_(mu_t)->get_val_s();
 
-  const cs_real_t *viscl = CS_F_(mu)->val;
-  const cs_real_t *crom = CS_F_(rho)->val;
-  const cs_real_t *cvar_k = CS_F_(k)->val;
-  const cs_real_t *cvar_ep = CS_F_(eps)->val;
-  const cs_real_t *cvar_phi = CS_F_(phi)->val;
+  const auto viscl = CS_F_(mu)->get_val_s();
+  const auto crom = CS_F_(rho)->get_val_s();
+  const auto cvar_k = CS_F_(k)->get_val_s();
+  const auto cvar_ep = CS_F_(eps)->get_val_s();
+  const auto cvar_phi = CS_F_(phi)->get_val_s();
 
   /* HTLES method */
   if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
@@ -1208,13 +1210,13 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
 
   /* Map field arrays */
 
-  cs_real_t *visct =  CS_F_(mu_t)->val;
-  const cs_real_t *viscl  =  (const cs_real_t *)CS_F_(mu)->val;
-  const cs_real_t *crom  = CS_F_(rho)->val;
+  auto visct =  CS_F_(mu_t)->get_val_s();
+  const auto viscl =  CS_F_(mu)->get_val_s();
+  const auto crom  = CS_F_(rho)->get_val_s();
 
-  const cs_real_t *cvar_k = CS_F_(k)->val;
-  const cs_real_t *cvar_ep = CS_F_(eps)->val;
-  const cs_real_t *cvar_phi = CS_F_(phi)->val;
+  const auto cvar_k = CS_F_(k)->get_val_s();
+  const auto cvar_ep = CS_F_(eps)->get_val_s();
+  const auto cvar_phi = CS_F_(phi)->get_val_s();
 
   /* Calculation of velocity gradient and of
    *       S2 = S11^2+S22^2+S33^2+2*(S12^2+S13^2+S23^2)
@@ -1272,8 +1274,8 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
   /* HTLES method */
   if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
 
-    cs_real_t *psi = cs_field("htles_psi")->val;
-    cs_real_t *blend = cs_field("hybrid_blend")->val;
+    auto psi = cs_field("htles_psi")->get_val_s();
+    auto blend = cs_field("hybrid_blend")->get_val_s();
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       const cs_real_t xk   = cvar_k[c_id];
