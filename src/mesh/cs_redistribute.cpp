@@ -38,10 +38,10 @@
 
 #include "base/cs_all_to_all.h"
 #include "base/cs_order.h"
-#include "base/cs_part_to_block.h"
 #include "base/cs_renumber_update.h"
 #include "base/cs_field.h"
 #include "base/cs_boundary_conditions.h"
+#include "base/cs_sort.h"
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -62,6 +62,16 @@
 /*============================================================================
  * Local structure definitions
  *============================================================================*/
+
+struct _distributor_t {
+  cs_all_to_all_t *d;
+  cs_lnum_t n_send;
+  cs_lnum_t n_recv;
+  cs_lnum_t n_uniq;
+  cs_lnum_t *send_list;
+  cs_lnum_t *recv_order;
+  cs_lnum_t *recv_to_local;
+};
 
 /*============================================================================
  * Local Macro definitions
@@ -718,145 +728,354 @@ _random_dest_rank(const cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
- * Distribute mesh vertices.
+ * Build mesh elements distributor.
  *
- * The face-to-vertices connectivities are global, and correspond to the
- * part post-redistribution of internal and boundary faces.
+ * This structure aims to distribute cells, internal/boundary faces and
+ * vertices in a unified way, while minimizing duplicates in the send_list.
+ *
+ * The ownership of send_list and dest_ranks arrays are transferred to the
+ * distributor structure after calling this function. Therefore, they must not
+ * be freed during the distributor's lifetime.
+ *
+ * The gnum array corresponds to the elements' global ids, such that the
+ * global id of the ith element in send_list corresponds to gnum[send_list[i]].
  *
  * parameters:
- *   n_g_vertices         <-- global number of vertices
- *   i_face_vtx_size      <-- size of internal face-vertices connectivity
- *   i_face_vtx_lst       <-- internal face-vertices connectivity
- *   b_face_vtx_size      <-- size of boundary face-vertices connectivity
- *   b_face_vtx_lst       <-- boundary face-vertices connectivity
- *   have_r_gen           <-- indicates if mesh refinement data exists
- *   part_n_vertices      <-> number of vertices in new part
- *   part_gnum            <-> pointer to array of vertex global numbers
- *   part_coords          <-> pointer to array of vertex coordinates
- *   part_r_gen           <-> pointer to array of vertex refinement generations
+ *   n_send          <-- number of elements to distribute
+ *   send_list       <-- array of ids of the elements to send, of size n_send.
+ *   dest_ranks      <-- array of destination ranks of sent elements, of size
+ *                       n_send.
+ *   comm            <-- MPI communicator.
+ *   gnum            <-- global ids the elements.
+ *
+ * returns:
+ *   the built distributor, which can be needed for further data redistribution.
+ *----------------------------------------------------------------------------*/
+
+static _distributor_t *
+_distributor_create(cs_lnum_t         n_send,
+                    cs_lnum_t        *send_list[],
+                    int              *dest_ranks[],
+                    const MPI_Comm    comm,
+                    const cs_gnum_t   gnum[])
+{
+  cs_all_to_all_t *d = cs_all_to_all_create(n_send,
+                                            0,
+                                            nullptr,
+                                            *dest_ranks,
+                                            comm);
+
+  cs_all_to_all_transfer_dest_rank(d, dest_ranks);
+
+  cs_lnum_t *_send_list = *send_list;
+
+  cs_gnum_t *gnum_s = nullptr;
+  CS_MALLOC(gnum_s, n_send, cs_gnum_t);
+
+  for (cs_lnum_t i = 0; i < n_send; i++) {
+    cs_lnum_t id = _send_list[i];
+    gnum_s[i] = gnum[id];
+  }
+
+  cs_gnum_t *gnum_r = cs_all_to_all_copy_array(d,
+                                               1,
+                                               false,
+                                               gnum_s);
+
+  CS_FREE(gnum_s);
+
+  cs_lnum_t n_recv = cs_all_to_all_n_elts_dest(d);
+
+  cs_lnum_t *recv_order = cs_order_gnum(nullptr, gnum_r, n_recv);
+
+  cs_lnum_t *recv_to_local = nullptr;
+  CS_MALLOC(recv_to_local, n_recv, cs_lnum_t);
+  memset(recv_to_local, -1, n_recv * sizeof(cs_lnum_t));
+
+  cs_lnum_t n_uniq = 0;
+  cs_gnum_t first = 0;
+
+  for (cs_lnum_t i = 0; i < n_recv; i++) {
+    cs_lnum_t ordered = recv_order[i];
+    cs_gnum_t cur_gnum = gnum_r[ordered];
+    assert(cur_gnum >= first);
+    if (first != cur_gnum) {
+      recv_to_local[ordered] = n_uniq++;
+      first = cur_gnum;
+    }
+  }
+
+  CS_FREE(gnum_r);
+
+  _distributor_t *db = nullptr;
+  CS_MALLOC(db, 1, _distributor_t);
+
+  db->d = d;
+  db->n_send = n_send;
+  db->n_recv = n_recv;
+  db->n_uniq = n_uniq;
+  db->send_list = _send_list;
+  db->recv_order = recv_order;
+  db->recv_to_local = recv_to_local;
+
+  return db;
+}
+
+/*----------------------------------------------------------------------------
+ * Distribute and reorder a data buffer using the distributor structure.
+ *
+ * This function guarantees the uniqueness of the elements post-redistribution.
+ *
+ * parameters:
+ *   db          <-- pointer to the distributor.
+ *   stride      <-- stride of the array to distribute.
+ *   buffer      <-- pointer to the array to redistribute.
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+static void
+_distribute_buffer(const _distributor_t *db, int stride, T *buffer[])
+{
+  if (buffer == nullptr || stride == 0 || db == nullptr)
+    return;
+
+  T *send_data = nullptr;
+  CS_MALLOC(send_data, stride * db->n_send, T);
+
+  T *_buffer = *buffer;
+
+  for (cs_lnum_t i = 0; i < db->n_send; i++) {
+    cs_lnum_t id = db->send_list[i];
+    for (int j = 0; j < stride; j++)
+      send_data[stride*i+j] = _buffer[stride*id+j];
+  }
+
+  CS_FREE(*buffer);
+
+  T *recv_data = cs_all_to_all_copy_array(db->d,
+                                          stride,
+                                          false,
+                                          send_data);
+
+  CS_FREE(send_data);
+
+  CS_MALLOC(*buffer, db->n_uniq * stride, T);
+  _buffer = *buffer;
+
+  for (cs_lnum_t i = 0; i < db->n_recv; i++) {
+    cs_lnum_t ordered = db->recv_order[i];
+    cs_lnum_t local = db->recv_to_local[ordered];
+    if (local != -1) {
+      for (int j = 0; j < stride; j++)
+        _buffer[stride*local+j] = recv_data[stride*ordered+j];
+    }
+  }
+
+  CS_FREE(recv_data);
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a distributor structure.
+ *
+ * parameters:
+ *   db          <-> pointer to the distributor.
  *----------------------------------------------------------------------------*/
 
 static void
-_distribute_vertices(const cs_gnum_t    n_g_vertices,
-                     const cs_lnum_t    i_face_vtx_size,
-                     const cs_gnum_t    i_face_vtx_lst[],
-                     const cs_lnum_t    b_face_vtx_size,
-                     const cs_gnum_t    b_face_vtx_lst[],
-                     const bool         have_r_gen,
-                     cs_lnum_t         *part_n_vertices,
-                     cs_gnum_t         *part_gnum[],
-                     cs_real_t         *part_coords[],
-                     char              *part_r_gen[])
+_distributor_destroy(_distributor_t **db)
 {
-  // Old parts build block data.
+  if (db == nullptr)
+    return;
 
-  int rank_id = cs_glob_rank_id;
-  int n_ranks = cs_glob_n_ranks;
-  int min_rank_step = 1;
-  int min_block_size = 0;
+  _distributor_t *_db = *db;
 
-  cs_block_dist_info_t vertex_bi;
-  cs_all_to_all_t *d;
-  cs_part_to_block_t *pb;
+  if (_db == nullptr)
+    return;
 
-  vertex_bi = cs_block_dist_compute_sizes(rank_id,
-                                          n_ranks,
-                                          min_rank_step,
-                                          min_block_size,
-                                          n_g_vertices);
+  cs_all_to_all_destroy(&_db->d);
+  CS_FREE(_db->send_list);
+  CS_FREE(_db->recv_order);
+  CS_FREE(_db->recv_to_local);
+  _db->n_send = -1;
+  _db->n_recv = -1;
+  _db->n_uniq = -1;
 
-  MPI_Comm comm = cs_glob_mpi_comm;
+  CS_FREE(_db);
+}
 
-  pb = cs_part_to_block_create_by_gnum(comm,
-                                       vertex_bi,
-                                       *part_n_vertices,
-                                       *part_gnum);
+/*----------------------------------------------------------------------------
+ * Create vertex distributor.
+ *
+ * parameters:
+ *   mesh              <-> pointer to the mesh
+ *   cell_dest         <-- destination ranks of the cells.
+ *   comm              <-- MPI communicator.
+ *
+ * returns:
+ *   the built distributor, which can be needed for further data redistribution.
+ *----------------------------------------------------------------------------*/
 
-  cs_lnum_t block_size = vertex_bi.gnum_range[1] - vertex_bi.gnum_range[0];
+_distributor_t *
+_create_vertex_distributor(cs_mesh_t              *mesh,
+                           const int               cell_dest[],
+                           const MPI_Comm          comm)
+{
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_lnum_t n_vertices = mesh->n_vertices;
 
-  cs_real_t *block_coords = nullptr;
+  // TODO(Imad): update and use the global cell-vertices connectivity.
+  int boundary_order = 0;
+  cs_adjacency_t *c2f = cs_mesh_adjacency_c2f(mesh, boundary_order);
 
-  CS_MALLOC(block_coords, block_size * 3, cs_real_t);
+  cs_lnum_t *v_idx = nullptr;
+  CS_MALLOC(v_idx, n_vertices+1, cs_lnum_t);
+  memset(v_idx, 0, (n_vertices+1) * sizeof(cs_lnum_t));
 
-  const cs_datatype_t real_type =
-    (sizeof(cs_real_t) == 8) ? CS_DOUBLE : CS_FLOAT;
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+      cs_lnum_t f_id = c2f->ids[i];
+      const cs_lnum_t *f_idx = mesh->b_face_vtx_idx;
+      const cs_lnum_t *f_ids = mesh->b_face_vtx_lst;
+      if (f_id >= n_b_faces) {
+        f_id -= n_b_faces;
+        f_idx = mesh->i_face_vtx_idx;
+        f_ids = mesh->i_face_vtx_lst;
+      }
 
-  cs_part_to_block_copy_array(pb,
-                              real_type,
-                              3,
-                              *part_coords,
-                              block_coords);
-
-  CS_FREE(*part_coords);
-
-  char *block_r_gen = nullptr;
-
-  if (have_r_gen) {
-    CS_MALLOC(block_r_gen, block_size, char);
-
-    cs_part_to_block_copy_array(pb,
-                                CS_CHAR,
-                                1,
-                                *part_r_gen,
-                                block_r_gen);
-
-    CS_FREE(*part_r_gen);
+      for (cs_lnum_t j = f_idx[f_id]; j < f_idx[f_id+1]; j++) {
+        cs_lnum_t v_id = f_ids[j];
+        v_idx[v_id+1]++;
+      }
+    }
   }
 
-  cs_part_to_block_destroy(&pb);
+  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+    v_idx[v_id+1] += v_idx[v_id];
 
-  // New parts request data from blocks.
+  int *_v_dests = nullptr;
+  CS_MALLOC(_v_dests, v_idx[n_vertices], int);
+  memset(_v_dests, -1, v_idx[n_vertices] * sizeof(int));
 
-  CS_FREE(*part_gnum);
-  *part_n_vertices = 0;
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+      cs_lnum_t f_id = c2f->ids[i];
+      const cs_lnum_t *f_idx = mesh->b_face_vtx_idx;
+      const cs_lnum_t *f_ids = mesh->b_face_vtx_lst;
+      if (f_id >= n_b_faces) {
+        f_id -= n_b_faces;
+        f_idx = mesh->i_face_vtx_idx;
+        f_ids = mesh->i_face_vtx_lst;
+      }
 
-  cs_gnum_t *all_vtx = nullptr;
-
-  CS_MALLOC(all_vtx, i_face_vtx_size + b_face_vtx_size, cs_gnum_t);
-
-  memcpy(all_vtx,
-         i_face_vtx_lst,
-         i_face_vtx_size * sizeof(cs_gnum_t));
-
-  memcpy(all_vtx + i_face_vtx_size,
-         b_face_vtx_lst,
-         b_face_vtx_size * sizeof(cs_gnum_t));
-
-  size_t _part_n_vertices = 0;
-
-  cs_order_single_gnum(i_face_vtx_size + b_face_vtx_size,
-                       1,
-                       all_vtx,
-                       &_part_n_vertices,
-                       part_gnum);
-
-  CS_FREE(all_vtx);
-
-  *part_n_vertices = _part_n_vertices;
-
-  d = cs_all_to_all_create_from_block(*part_n_vertices,
-                                      CS_ALL_TO_ALL_USE_DEST_ID,
-                                      *part_gnum,
-                                      vertex_bi,
-                                      comm);
-
-  *part_coords = cs_all_to_all_copy_array(d,
-                                          3,
-                                          true,
-                                          block_coords);
-
-  CS_FREE(block_coords);
-
-  if (have_r_gen) {
-    *part_r_gen = cs_all_to_all_copy_array(d,
-                                           1,
-                                           true,
-                                           block_r_gen);
-
-    CS_FREE(block_r_gen);
+      for (cs_lnum_t j = f_idx[f_id]; j < f_idx[f_id+1]; j++) {
+        cs_lnum_t v_id = f_ids[j];
+        cs_lnum_t *ptr = _v_dests + v_idx[v_id];
+        cs_lnum_t stride = v_idx[v_id+1] - v_idx[v_id];
+        for (cs_lnum_t k = 0; k < stride; k++) {
+          if (ptr[k] == -1) {
+            ptr[k] = cell_dest[c_id];
+            break;
+          }
+        }
+      }
+    }
   }
 
-  cs_all_to_all_destroy(&d);
+  cs_adjacency_destroy(&c2f);
+
+  cs_sort_indexed(n_vertices, v_idx, _v_dests);
+
+  cs_lnum_t n_elem = 0;
+
+  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+    int prev_dest = -1;
+    for (cs_lnum_t i = v_idx[v_id]; i < v_idx[v_id+1]; i++) {
+      int dest = _v_dests[i];
+      assert(prev_dest <= dest);
+      if (dest != prev_dest) {
+        n_elem++;
+        prev_dest = dest;
+      }
+    }
+  }
+
+  cs_lnum_t *v_list = nullptr;
+  int *v_dests = nullptr;
+  CS_MALLOC(v_list, n_elem, cs_lnum_t);
+  CS_MALLOC(v_dests, n_elem, int);
+
+  n_elem = 0;
+
+  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+    int prev_dest = -1;
+    for (cs_lnum_t i = v_idx[v_id]; i < v_idx[v_id+1]; i++) {
+      int dest = _v_dests[i];
+      if (dest != prev_dest) {
+        v_list[n_elem] = v_id;
+        v_dests[n_elem] = dest;
+        n_elem++;
+        prev_dest = dest;
+      }
+    }
+  }
+
+  CS_FREE(_v_dests);
+  CS_FREE(v_idx);
+
+  _distributor_t *db = _distributor_create(n_elem,
+                                           &v_list,
+                                           &v_dests,
+                                           comm,
+                                           mesh->global_vtx_num);
+
+  return db;
+}
+
+/*----------------------------------------------------------------------------
+ * Distribute vertices and their associated data.
+ *
+ * parameters:
+ *   db                <-- pointer to the vertex distributor.
+ *   mesh              <-> pointer to the mesh.
+ *----------------------------------------------------------------------------*/
+
+static void
+_distribute_vertices(const _distributor_t    *db,
+                     cs_mesh_t               *mesh)
+{
+
+  _distribute_buffer(db, 1, &mesh->global_vtx_num);
+
+  _distribute_buffer(db, 3, &mesh->vtx_coord);
+
+  {
+    cs_lnum_t n_vertices = mesh->n_vertices;
+
+    int have_r_gen = mesh->have_r_gen && (mesh->vtx_r_gen != nullptr);
+    cs_parall_max(1, CS_INT32, &have_r_gen);
+
+    if (have_r_gen) {
+      int *vtx_r_gen = nullptr;
+      CS_MALLOC(vtx_r_gen, n_vertices, int);
+
+      for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+        vtx_r_gen[v_id] = mesh->vtx_r_gen[v_id];
+
+      CS_FREE(mesh->vtx_r_gen);
+
+      _distribute_buffer(db, 1, &vtx_r_gen);
+
+      CS_MALLOC(mesh->vtx_r_gen, db->n_uniq, char);
+
+      for (cs_lnum_t v_id = 0; v_id < db->n_uniq; v_id++)
+        mesh->vtx_r_gen[v_id] = vtx_r_gen[v_id];
+
+      CS_FREE(vtx_r_gen);
+    }
+  }
+
+  mesh->n_vertices = db->n_uniq;
 }
 
 #endif // defined(HAVE_MPI)
@@ -888,10 +1107,10 @@ cs_redistribute(const int                cell_dest_rank[],
 {
 #if defined(HAVE_MPI)
 
-  cs_mesh_t *mesh = cs_glob_mesh;
-
   if (cs_glob_n_ranks == 1)
     return;
+
+  cs_mesh_t *mesh = cs_glob_mesh;
 
   /* Generate random destination rank if none is provided. */
 
@@ -912,7 +1131,7 @@ cs_redistribute(const int                cell_dest_rank[],
   /* Free some elements which will need to be rebuilt when/if used.
      Halos are needed at some interior steps so destroyed later. */
 
-  cs_mesh_free_rebuildable(cs_glob_mesh, false);
+  cs_mesh_free_rebuildable(mesh, false);
   cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
 
   _free_field_gradients();
@@ -923,6 +1142,15 @@ cs_redistribute(const int                cell_dest_rank[],
 
   const cs_lnum_t n_cells_ini = mesh->n_cells;
   const cs_lnum_t n_b_faces_ini = mesh->n_b_faces;
+  //const cs_lnum_t n_vertices_ini = mesh->n_vertices;
+
+  /* Even though cells, boundary faces and internal faces are redistributed
+     first, we can already create the vertex distributor based on the original
+     mesh connectivities and the cell destination ranks. */
+
+  _distributor_t *vd = _create_vertex_distributor(mesh,
+                                                  cell_dest_rank,
+                                                  comm);
 
   /* Cells
      ----- */
@@ -1113,6 +1341,7 @@ cs_redistribute(const int                cell_dest_rank[],
   CS_MALLOC(g_b_face_vtx_lst_s, mesh->b_face_vtx_connect_size, cs_gnum_t);
   for (cs_lnum_t i = 0; i < mesh->b_face_vtx_connect_size; i++)
     g_b_face_vtx_lst_s[i] = mesh->global_vtx_num[mesh->b_face_vtx_lst[i]];
+
   CS_FREE(mesh->b_face_vtx_lst);
 
   cs_gnum_t *g_b_face_vtx_lst_r;
@@ -1122,8 +1351,8 @@ cs_redistribute(const int                cell_dest_rank[],
                                                   g_b_face_vtx_lst_s,
                                                   b_face_vtx_idx_r);
 
-  CS_FREE(mesh->b_face_vtx_idx);
   CS_FREE(g_b_face_vtx_lst_s);
+  CS_FREE(mesh->b_face_vtx_idx);
 
   /* Interior faces
      -------------- */
@@ -1334,6 +1563,8 @@ cs_redistribute(const int                cell_dest_rank[],
       *ptr++ = mesh->global_vtx_num[mesh->i_face_vtx_lst[j]];
     }
   }
+
+  CS_FREE(mesh->i_face_vtx_idx);
   CS_FREE(mesh->i_face_vtx_lst);
 
   cs_gnum_t *g_i_face_vtx_lst_r = cs_all_to_all_copy_indexed(ifd,
@@ -1344,21 +1575,12 @@ cs_redistribute(const int                cell_dest_rank[],
 
   CS_FREE(i_face_vtx_idx_s);
   CS_FREE(g_i_face_vtx_lst_s);
-  CS_FREE(mesh->i_face_vtx_idx);
 
   /* Vertices
      -------- */
 
-  _distribute_vertices(mesh->n_g_vertices,
-                       i_face_vtx_idx_r[n_i_faces],
-                       g_i_face_vtx_lst_r,
-                       b_face_vtx_idx_r[n_b_faces],
-                       g_b_face_vtx_lst_r,
-                       mesh->have_r_gen,
-                       &mesh->n_vertices,
-                       &mesh->global_vtx_num,
-                       &mesh->vtx_coord,
-                       &mesh->vtx_r_gen);
+  _distribute_vertices(vd,
+                       mesh);
 
   // Apply face order on the received face-vtx connectivities.
 
@@ -1458,12 +1680,13 @@ cs_redistribute(const int                cell_dest_rank[],
                      i_face_lst,
                      i_face_order);
 
-
   CS_FREE(i_face_lst);
   CS_FREE(i_face_order);
   CS_FREE(b_face_order);
   cs_all_to_all_destroy(&bfd);
   cs_all_to_all_destroy(&ifd);
+
+  _distributor_destroy(&vd);
 
   _distribute_data(cd, cell_order, data);
 
