@@ -1,5 +1,5 @@
-#ifndef __CS_FACE_TO_VERTEX_H__
-#define __CS_FACE_TO_VERTEX_H__
+#ifndef CS_FACE_TO_VERTEX_H
+#define CS_FACE_TO_VERTEX_H
 
 /*============================================================================
  * Face to vertex interpolation.
@@ -94,13 +94,13 @@ cs_face_to_vertex_free(void);
 
 template <cs_lnum_t stride>
 void
-cs_bface_to_vertex(cs_face_to_vertex_type_t method,
-                   int                      verbosity,
-                   bool                     ignore_rot_perio,
-                   const cs_real_t *restrict b_weight,
-                   const cs_real_t *restrict b_var,
-                   cs_real_t v_var[]);
+cs_b_face_to_vertex(cs_face_to_vertex_type_t method,
+                    int                      verbosity,
+                    bool                     ignore_rot_perio,
+                    const cs_real_t *restrict b_weight,
+                    const cs_real_t *restrict b_var,
+                    cs_real_t v_var[]);
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_FACE_TO_VERTEX__ */
+#endif /* CS_FACE_TO_VERTEX */

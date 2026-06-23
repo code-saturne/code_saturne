@@ -1233,12 +1233,12 @@ cs_aster_coupling_send_bstress(void)
                        face_ids,
                        (const cs_real_3_t *)cpl->bstress_pred,
                        (cs_real_3_t *)cpl->bstress_bface);
-    cs_bface_to_vertex<3>(CS_FACE_TO_VERTEX_SURFACE,
-                          0,
-                          true,
-                          cpl->bstress_bcoeff,
-                          cpl->bstress_bface,
-                          cpl->bstress_bvtx);
+    cs_b_face_to_vertex<3>(CS_FACE_TO_VERTEX_SURFACE,
+                           0,
+                           true,
+                           cpl->bstress_bcoeff,
+                           cpl->bstress_bface,
+                           cpl->bstress_bvtx);
     if (vtx_ids != nullptr) {
       for (cs_lnum_t v_id = 0; v_id < cpl->n_vertices; ++v_id) {
         const cs_lnum_t vg_id = vtx_ids[v_id];

@@ -128,7 +128,7 @@ const char *cs_face_to_vertex_type_name[] = {
 /*----------------------------------------------------------------------------*/
 
 static void
-_bface_to_vertex_w_unweighted(int tr_ignore)
+_b_face_to_vertex_w_unweighted(int tr_ignore)
 {
   const cs_mesh_t *m = cs_glob_mesh;
 
@@ -188,7 +188,7 @@ _bface_to_vertex_w_unweighted(int tr_ignore)
 /*----------------------------------------------------------------------------*/
 
 static void
-_bface_to_vertex_w_inv_distance(int tr_ignore)
+_b_face_to_vertex_w_inv_distance(int tr_ignore)
 {
   const cs_mesh_t            *m  = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -281,12 +281,12 @@ _bface_to_vertex_w_inv_distance(int tr_ignore)
 
 template <cs_lnum_t stride>
 static void
-_bface_to_vertex_strided(cs_face_to_vertex_type_t method,
-                         [[maybe_unused]] int     verbosity,
-                         int                      tr_ignore,
-                         const cs_real_t *restrict b_weight,
-                         const cs_real_t *restrict b_var,
-                         cs_real_t *restrict v_var)
+_b_face_to_vertex_strided(cs_face_to_vertex_type_t method,
+                          [[maybe_unused]] int     verbosity,
+                          int                      tr_ignore,
+                          const cs_real_t *restrict b_weight,
+                          const cs_real_t *restrict b_var,
+                          cs_real_t *restrict v_var)
 {
   const cs_mesh_t            *m  = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -331,7 +331,7 @@ _bface_to_vertex_strided(cs_face_to_vertex_type_t method,
                                   v_var);
 
         if (!_set_bface[CS_FACE_TO_VERTEX_UNWEIGHTED])
-          _bface_to_vertex_w_unweighted(tr_ignore);
+          _b_face_to_vertex_w_unweighted(tr_ignore);
 
         const cs_weight_t *wb = _weights_bface[CS_FACE_TO_VERTEX_UNWEIGHTED];
         ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
@@ -464,7 +464,7 @@ _bface_to_vertex_strided(cs_face_to_vertex_type_t method,
 
     case CS_FACE_TO_VERTEX_SHEPARD: {
       if (!_set_bface[CS_FACE_TO_VERTEX_SHEPARD])
-        _bface_to_vertex_w_inv_distance(tr_ignore);
+        _b_face_to_vertex_w_inv_distance(tr_ignore);
 
       const cs_weight_t *wb = _weights_bface[CS_FACE_TO_VERTEX_SHEPARD];
 
@@ -587,16 +587,16 @@ cs_face_to_vertex_free(void)
 
 template <cs_lnum_t stride>
 void
-cs_bface_to_vertex(cs_face_to_vertex_type_t method,
-                   int                      verbosity,
-                   bool                     ignore_rot_perio,
-                   const cs_real_t *restrict b_weight,
-                   const cs_real_t *restrict b_var,
-                   cs_real_t *restrict v_var)
+cs_b_face_to_vertex(cs_face_to_vertex_type_t method,
+                    int                      verbosity,
+                    bool                     ignore_rot_perio,
+                    const cs_real_t *restrict b_weight,
+                    const cs_real_t *restrict b_var,
+                    cs_real_t *restrict v_var)
 {
   int tr_ignore = (ignore_rot_perio) ? 1 : 0;
 
-  _bface_to_vertex_strided<stride>(method,
+  _b_face_to_vertex_strided<stride>(method,
                                    verbosity,
                                    tr_ignore,
                                    b_weight,
@@ -607,27 +607,27 @@ cs_bface_to_vertex(cs_face_to_vertex_type_t method,
 // Force instanciation
 
 template void
-cs_bface_to_vertex<1>(cs_face_to_vertex_type_t method,
-                      int                      verbosity,
-                      bool                     ignore_rot_perio,
-                      const cs_real_t *restrict b_weight,
-                      const cs_real_t *restrict b_var,
-                      cs_real_t *restrict v_var);
+cs_b_face_to_vertex<1>(cs_face_to_vertex_type_t method,
+                       int                      verbosity,
+                       bool                     ignore_rot_perio,
+                       const cs_real_t *restrict b_weight,
+                       const cs_real_t *restrict b_var,
+                       cs_real_t *restrict v_var);
 
 template void
-cs_bface_to_vertex<3>(cs_face_to_vertex_type_t method,
-                      int                      verbosity,
-                      bool                     ignore_rot_perio,
-                      const cs_real_t *restrict b_weight,
-                      const cs_real_t *restrict b_var,
-                      cs_real_t *restrict v_var);
+cs_b_face_to_vertex<3>(cs_face_to_vertex_type_t method,
+                       int                      verbosity,
+                       bool                     ignore_rot_perio,
+                       const cs_real_t *restrict b_weight,
+                       const cs_real_t *restrict b_var,
+                       cs_real_t *restrict v_var);
 
 template void
-cs_bface_to_vertex<6>(cs_face_to_vertex_type_t method,
-                      int                      verbosity,
-                      bool                     ignore_rot_perio,
-                      const cs_real_t *restrict b_weight,
-                      const cs_real_t *restrict b_var,
-                      cs_real_t *restrict v_var);
+cs_b_face_to_vertex<6>(cs_face_to_vertex_type_t method,
+                       int                      verbosity,
+                       bool                     ignore_rot_perio,
+                       const cs_real_t *restrict b_weight,
+                       const cs_real_t *restrict b_var,
+                       cs_real_t *restrict v_var);
 
 /*----------------------------------------------------------------------------*/
