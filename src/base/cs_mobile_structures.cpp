@@ -47,15 +47,13 @@
 
 #include "base/cs_ale.h"
 #include "base/cs_array.h"
-#include "base/cs_ast_coupling.h"
+#include "base/cs_aster_coupling.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_file.h"
-#include "gui/cs_gui_mobile_mesh.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
-#include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
@@ -63,8 +61,10 @@
 #include "base/cs_time_plot.h"
 #include "base/cs_time_step.h"
 #include "base/cs_timer_stats.h"
-#include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
+#include "gui/cs_gui_mobile_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "turb/cs_turbulence_model.h"
 
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_parameters.h"
@@ -829,14 +829,14 @@ cs_mobile_structures_initialize(void)
     const cs_real_t almax = cs_glob_turb_ref_values->almax;
 
     /* Exchange code_aster coupling parameters */
-    cs_ast_coupling_initialize(cs_glob_mobile_structures_n_iter_max,
-                               cs_glob_mobile_structures_i_eps);
+    cs_aster_coupling_initialize(cs_glob_mobile_structures_n_iter_max,
+                                 cs_glob_mobile_structures_i_eps);
 
     /* Set coefficient for prediction */
-    cs_ast_coupling_set_coefficients(ms->aexxst, ms->bexxst, ms->cfopre);
+    cs_aster_coupling_set_coefficients(ms->aexxst, ms->bexxst, ms->cfopre);
 
     /* Send geometric information to code_aster */
-    cs_ast_coupling_geometry(n_ast_faces, face_ids, almax);
+    cs_aster_coupling_geometry(n_ast_faces, face_ids, almax);
 
     CS_FREE(face_ids);
 
@@ -1457,7 +1457,7 @@ cs_mobile_structures_prediction(cs_field_bc_coeffs_t *bc_coeffs_vel,
       disale              = (cs_real_3_t *)(f_displ->val);
 
       if (n_ast_structs > 0) {
-        cs_ast_coupling_compute_displacement(disale);
+        cs_aster_coupling_compute_displacement(disale);
       }
       else if (n_ext_structs > 0) {
         const cs_field_t *f_b_stress = cs_field_by_name("boundary_stress");
@@ -1576,9 +1576,9 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     }
   }
 
-  cs_real_3_t *pres_ast = nullptr;
+  cs_real_3_t *bstress_ast = nullptr;
   if (n_ast_structs > 0)
-    pres_ast = cs_ast_coupling_get_fluid_pressure_pointer();
+    bstress_ast = cs_aster_coupling_get_bstress_pointer();
 
   const int *idfstr  = ms->idfstr;
   const cs_mobile_structure_type_t *idftype = ms->idftype;
@@ -1592,9 +1592,9 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
         ms->forstr[i][j] += b_stress[face_id][j] * b_face_surf[face_id];
     }
     else if (str_type == CS_STRUCTURE_EXTERNAL_CODE_ASTER) {
-      /* code_aster needs a surfacic force in Pa = N.m-2 */
+      /* code_aster needs a surfacic force or stress in Pa = N.m-2 */
       for (cs_lnum_t j = 0; j < 3; j++)
-        pres_ast[indast][j] = b_stress[face_id][j];
+        bstress_ast[indast][j] = b_stress[face_id][j];
       indast += 1;
     }
   }
@@ -1670,8 +1670,8 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   /* Send effort applied to external structures */
 
   if (n_ast_structs > 0) {
-    cs_ast_coupling_send_fluid_pressure();
-    cs_ast_coupling_evaluate_cvg();
+    cs_aster_coupling_send_bstress();
+    cs_aster_coupling_evaluate_cvg();
   }
 
   /* If the fluid is initializing, we do not read structures */
@@ -1713,8 +1713,8 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   }
 
   if (n_ast_structs > 0) {
-    delta  = cs_ast_coupling_get_current_residual();
-    icvast = cs_ast_coupling_get_current_cvg();
+    delta  = cs_aster_coupling_get_current_residual();
+    icvast = cs_aster_coupling_get_current_cvg();
   }
 
   if (n_ext_structs > 0) {
@@ -1772,8 +1772,8 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   /* Return the final convergence indicator to code_aster
    * and received displacement */
   if (n_ast_structs > 0) {
-    cs_ast_coupling_set_final_cvg(icved);
-    cs_ast_coupling_recv_displacement();
+    cs_aster_coupling_set_final_cvg(icved);
+    cs_aster_coupling_recv_displacement();
   }
 
 #if _DEBUG_

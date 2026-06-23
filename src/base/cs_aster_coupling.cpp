@@ -79,7 +79,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_ast_coupling.h"
+#include "base/cs_aster_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -110,7 +110,7 @@ typedef enum {
 
 /* Main code_aster coupling structure */
 
-struct _cs_ast_coupling_t {
+struct _cs_aster_coupling_t {
   ple_coupling_mpi_set_info_t aci; /* code_aster coupling info */
 
   cs_lnum_t n_faces;    /* Local number of coupled faces */
@@ -154,9 +154,10 @@ struct _cs_ast_coupling_t {
   cs_real_t *vast_prev;    /* Mesh velocity at previous time step n-1 */
   cs_real_t *vast_pprev;   /* Mesh velocity at previous time step n-2 */
 
-  cs_real_t *pres_curr; /* Fluid pressure at current sub-iteration */
-  cs_real_t *pres_prev; /* Fluid pressure at previous time step */
-  cs_real_t *pres_pred; /* Predicted fluid pressure at current sub-iteration */
+  cs_real_t *bstress_curr; /* Boundary stress at current sub-iteration */
+  cs_real_t *bstress_prev; /* Boundary stress at previous time step */
+  cs_real_t
+    *bstress_pred; /* Predicted boundary stress at current sub-iteration */
 
   cs_real_t aexxst; /*!< coefficient for the predicted displacement */
   cs_real_t bexxst; /*!< coefficient for the predicted displacement */
@@ -164,22 +165,22 @@ struct _cs_ast_coupling_t {
 
   cs_acceleration_t pred_disp;
 
-  cs_real_t cfopre; /*!< coefficient for the predicted pressure */
+  cs_real_t cfopre; /*!< coefficient for the predicted boundary stress */
 
   cs_real_t *tmp[3]; /* Temporary array */
 
   // For conversion in case of interpolation FACE->VTX
-  cs_real_t *pres_bface;  /* Fluid pressure at boundary faces */
-  cs_real_t *pres_bcoeff; /* Interpolation at boundary faces */
-  cs_real_t *pres_bvtx;   /* Fluid pressure at boundary vertex */
-  cs_real_t *pres_vtx;    /* Fluid pressure at interface vertex */
+  cs_real_t *bstress_bface;  /* Boundary stress at boundary faces */
+  cs_real_t *bstress_bcoeff; /* Interpolation at boundary faces */
+  cs_real_t *bstress_bvtx;   /* Boundary stress at boundary vertex */
+  cs_real_t *bstress_vtx;    /* Boundary stress at interface vertex */
 };
 
 /*============================================================================
  * Static global variables
  *============================================================================*/
 
-static const char _name_f_p[] = "fluid_pressure";
+static const char _name_b_s[] = "boundary_stress";
 static const char _name_m_d[] = "mesh_displacement";
 static const char _name_m_v[] = "mesh_velocity";
 
@@ -196,7 +197,7 @@ static int _visualization = 1;
  * Global variables
  *============================================================================*/
 
-cs_ast_coupling_t *cs_glob_ast_coupling = nullptr;
+cs_aster_coupling_t *cs_glob_ast_coupling = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -315,13 +316,13 @@ _cs_ast_sync_send_value(int         rank_id,
  *----------------------------------------------------------------------------*/
 
 static int
-_get_current_verbosity(const cs_ast_coupling_t *ast_cpl)
+_get_current_verbosity(const cs_aster_coupling_t *ast_cpl)
 {
   return (cs_log_default_is_active()) ? ast_cpl->verbosity : 0;
 }
 
 static void
-_allocate_arrays(cs_ast_coupling_t *ast_cpl)
+_allocate_arrays(cs_aster_coupling_t *ast_cpl)
 {
   const cs_lnum_t n_vertices = ast_cpl->n_vertices;
   const cs_lnum_t n_faces    = ast_cpl->n_faces;
@@ -345,15 +346,15 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
                                     ast_cpl->vast_prev,
                                     ast_cpl->vast_pprev);
 
-  CS_MALLOC(ast_cpl->pres_curr, 3 * n_faces, cs_real_t);
-  CS_MALLOC(ast_cpl->pres_prev, 3 * n_faces, cs_real_t);
-  CS_MALLOC(ast_cpl->pres_pred, 3 * n_faces, cs_real_t);
+  CS_MALLOC(ast_cpl->bstress_curr, 3 * n_faces, cs_real_t);
+  CS_MALLOC(ast_cpl->bstress_prev, 3 * n_faces, cs_real_t);
+  CS_MALLOC(ast_cpl->bstress_pred, 3 * n_faces, cs_real_t);
 
   cs_arrays_set_value<cs_real_t, 1>(3 * n_faces,
                                     0.,
-                                    ast_cpl->pres_curr,
-                                    ast_cpl->pres_prev,
-                                    ast_cpl->pres_pred);
+                                    ast_cpl->bstress_curr,
+                                    ast_cpl->bstress_prev,
+                                    ast_cpl->bstress_pred);
 
   for (int i = 0; i < 3; i++) {
     CS_MALLOC(ast_cpl->tmp[i], 3 * cs::max(n_vertices, n_faces), cs_real_t);
@@ -364,15 +365,15 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
     const cs_lnum_t  n_m_bfaces   = m->n_b_faces;
     const cs_lnum_t  n_m_vertices = m->n_vertices;
 
-    CS_MALLOC(ast_cpl->pres_bface, 3 * n_m_bfaces, cs_real_t);
-    CS_MALLOC(ast_cpl->pres_bcoeff, 3 * n_m_bfaces, cs_real_t);
-    CS_MALLOC(ast_cpl->pres_bvtx, 3 * n_m_vertices, cs_real_t);
-    CS_MALLOC(ast_cpl->pres_vtx, 3 * n_vertices, cs_real_t);
+    CS_MALLOC(ast_cpl->bstress_bface, 3 * n_m_bfaces, cs_real_t);
+    CS_MALLOC(ast_cpl->bstress_bcoeff, 3 * n_m_bfaces, cs_real_t);
+    CS_MALLOC(ast_cpl->bstress_bvtx, 3 * n_m_vertices, cs_real_t);
+    CS_MALLOC(ast_cpl->bstress_vtx, 3 * n_vertices, cs_real_t);
 
     cs_arrays_set_value<cs_real_t, 1>(3 * n_m_bfaces,
                                       0.,
-                                      ast_cpl->pres_bface,
-                                      ast_cpl->pres_bcoeff);
+                                      ast_cpl->bstress_bface,
+                                      ast_cpl->bstress_bcoeff);
   }
 }
 
@@ -413,7 +414,7 @@ _scatter_values_r3(cs_lnum_t         n_elts,
 }
 
 /*----------------------------------------------------------------------------
- * Predict displacement or pressure based on values of the current and
+ * Predict displacement or bstress based on values of the current and
  * previous time step(s)
  *
  * valpre = c1 * val1 + c2 * val2 + c3 * val3
@@ -460,7 +461,7 @@ _pred(cs_real_t       *valpre,
 static cs_real_t
 _dinorm(cs_real_t *vect1, cs_real_t *vect2, cs_lnum_t nbpts)
 {
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   /* Compute the norm of the difference */
   cs_array_difference(3 * nbpts, vect1, vect2, cpl->tmp[0]);
@@ -498,7 +499,7 @@ _aitken(const cs_real_t *dp_k,
         const cs_real_t *d_kp,
         const cs_real_t *d_k)
 {
-  cs_ast_coupling_t *cpl  = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl  = cs_glob_ast_coupling;
   const cs_lnum_t    size = 3 * cpl->n_vertices;
 
   cs_real_t *tmp0 = cpl->tmp[0], *tmp1 = cpl->tmp[1], *tmp2 = cpl->tmp[2];
@@ -532,9 +533,9 @@ _aitken(const cs_real_t *dp_k,
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
+_cs_aster_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 {
-  auto cpl = static_cast<const cs_ast_coupling_t *>(coupling);
+  auto cpl = static_cast<const cs_aster_coupling_t *>(coupling);
 
   if (cpl->post_mesh == nullptr)
     return;
@@ -584,7 +585,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 
   _scatter_values_r3(cpl->n_faces,
                      face_ids,
-                     (const cs_real_3_t *)cpl->pres_curr,
+                     (const cs_real_3_t *)cpl->bstress_curr,
                      (cs_real_3_t *)values);
 
   cs_post_write_var(cpl->post_mesh_id,
@@ -617,7 +618,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_ast_coupling_n_couplings(void)
+cs_aster_coupling_n_couplings(void)
 {
   int retval = 0;
 
@@ -639,7 +640,7 @@ cs_ast_coupling_n_couplings(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
+cs_aster_coupling_initialize(int nalimx, cs_real_t epalim)
 {
   const cs_time_step_t *ts = cs_glob_time_step;
 
@@ -653,9 +654,9 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
   /* Allocate global coupling structure */
 
-  cs_ast_coupling_t *cpl;
+  cs_aster_coupling_t *cpl;
 
-  CS_MALLOC(cpl, 1, cs_ast_coupling_t);
+  CS_MALLOC(cpl, 1, cs_aster_coupling_t);
 
   memset(&(cpl->aci), 0, sizeof(ple_coupling_mpi_set_info_t));
   cpl->aci.root_rank = -1;
@@ -707,18 +708,18 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
   cpl->vast_prev  = nullptr;
   cpl->vast_pprev = nullptr;
 
-  cpl->pres_curr = nullptr;
-  cpl->pres_prev = nullptr;
-  cpl->pres_pred = nullptr;
+  cpl->bstress_curr = nullptr;
+  cpl->bstress_prev = nullptr;
+  cpl->bstress_pred = nullptr;
 
   for (int i = 0; i < 3; i++) {
     cpl->tmp[i] = nullptr;
   }
 
-  cpl->pres_bface  = nullptr;
-  cpl->pres_bcoeff = nullptr;
-  cpl->pres_bvtx   = nullptr;
-  cpl->pres_vtx    = nullptr;
+  cpl->bstress_bface  = nullptr;
+  cpl->bstress_bcoeff = nullptr;
+  cpl->bstress_bvtx   = nullptr;
+  cpl->bstress_vtx    = nullptr;
 
   cs_glob_ast_coupling = cpl;
 
@@ -811,9 +812,9 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_finalize(void)
+cs_aster_coupling_finalize(void)
 {
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl == nullptr)
     return;
@@ -827,18 +828,18 @@ cs_ast_coupling_finalize(void)
   CS_FREE(cpl->vast_prev);
   CS_FREE(cpl->vast_pprev);
 
-  CS_FREE(cpl->pres_curr);
-  CS_FREE(cpl->pres_prev);
-  CS_FREE(cpl->pres_pred);
+  CS_FREE(cpl->bstress_curr);
+  CS_FREE(cpl->bstress_prev);
+  CS_FREE(cpl->bstress_pred);
 
   for (int i = 0; i < 3; i++) {
     CS_FREE(cpl->tmp[i]);
   }
 
-  CS_FREE(cpl->pres_bface);
-  CS_FREE(cpl->pres_bcoeff);
-  CS_FREE(cpl->pres_bvtx);
-  CS_FREE(cpl->pres_vtx);
+  CS_FREE(cpl->bstress_bface);
+  CS_FREE(cpl->bstress_bcoeff);
+  CS_FREE(cpl->bstress_bvtx);
+  CS_FREE(cpl->bstress_vtx);
 
   if (cpl->post_mesh != nullptr)
     cpl->post_mesh = fvm_nodal_destroy(cpl->post_mesh);
@@ -861,11 +862,11 @@ cs_ast_coupling_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_set_coefficients(cs_real_t aexxst,
-                                 cs_real_t bexxst,
-                                 cs_real_t cfopre)
+cs_aster_coupling_set_coefficients(cs_real_t aexxst,
+                                   cs_real_t bexxst,
+                                   cs_real_t cfopre)
 {
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl == nullptr)
     return;
@@ -887,11 +888,11 @@ cs_ast_coupling_set_coefficients(cs_real_t aexxst,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_geometry(cs_lnum_t        n_faces,
-                         const cs_lnum_t *face_ids,
-                         cs_real_t        almax)
+cs_aster_coupling_geometry(cs_lnum_t        n_faces,
+                           const cs_lnum_t *face_ids,
+                           cs_real_t        almax)
 {
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->aci.root_rank > -1) {
     if (!USE_CFEMDEC_FFORCES) {
@@ -994,7 +995,7 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
                               CS_MEDCPL_ONE_TIME);
 
   if (USE_CFEMDEC_FFORCES) {
-    cpl->mc_vertices->add_field(_name_f_p,
+    cpl->mc_vertices->add_field(_name_b_s,
                                 3,
                                 CS_MEDCPL_FIELD_INT_MAXIMUM,
                                 CS_MEDCPL_ON_NODES_FE,
@@ -1003,11 +1004,11 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
     /* Set coefficient to one only for faces on the interface */
     const cs_lnum_t *v_face_ids = cpl->mc_vertices->get_elt_list();
     for (cs_lnum_t f_id = 0; f_id < n_faces; ++f_id) {
-      cpl->pres_bcoeff[v_face_ids[f_id]] = 1.0;
+      cpl->bstress_bcoeff[v_face_ids[f_id]] = 1.0;
     }
   }
   else {
-    cpl->mc_faces->add_field(_name_f_p,
+    cpl->mc_faces->add_field(_name_b_s,
                              3,
                              CS_MEDCPL_FIELD_INT_CONSERVATION,
                              CS_MEDCPL_ON_CELLS,
@@ -1029,7 +1030,7 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
                                  1,     /* number of associated writers */
                                  writer_ids);
 
-    cs_post_add_time_dep_output(_cs_ast_coupling_post_function, (void *)cpl);
+    cs_post_add_time_dep_output(_cs_aster_coupling_post_function, (void *)cpl);
   }
   else
     cpl->post_mesh_id = 0;
@@ -1044,14 +1045,14 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
+cs_aster_coupling_exchange_time_step(cs_real_t c_dt[])
 {
   if (DEBUG_LEVEL_CPL > 0) {
-    bft_printf(_("cs_ast_coupling_exchange_time_step function\n"));
+    bft_printf(_("cs_aster_coupling_exchange_time_step function\n"));
     bft_printf_flush();
   }
 
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->iteration < 0)
     return;
@@ -1137,24 +1138,24 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return pointer to array of fluid pressure at faces coupled with
+ * \brief Return pointer to array of boundary stress at faces coupled with
  *        code_aster.
  *
- * \return  array of pressure from fluid at coupled faces
+ * \return  array of boundary stress from fluid at coupled faces
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_3_t *
-cs_ast_coupling_get_fluid_pressure_pointer(void)
+cs_aster_coupling_get_bstress_pointer(void)
 {
-  cs_real_3_t *f_pressure = nullptr;
+  cs_real_3_t *f_bstress = nullptr;
 
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl != nullptr)
-    f_pressure = (cs_real_3_t *)cpl->pres_curr;
+    f_bstress = (cs_real_3_t *)cpl->bstress_curr;
 
-  return f_pressure;
+  return f_bstress;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1164,14 +1165,14 @@ cs_ast_coupling_get_fluid_pressure_pointer(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_send_fluid_pressure(void)
+cs_aster_coupling_send_bstress(void)
 {
   if (DEBUG_LEVEL_CPL > 0) {
-    bft_printf(_("cs_ast_coupling_send_fluid_pressure function\n"));
+    bft_printf(_("cs_aster_coupling_send_bstress function\n"));
     bft_printf_flush();
   }
 
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->iteration < 0)
     return;
@@ -1186,9 +1187,9 @@ cs_ast_coupling_send_fluid_pressure(void)
     /* Explicit synchrone prediction */
     c1 = cpl->cfopre;
     c2 = 1.0 - cpl->cfopre;
-    _pred(cpl->pres_pred,
-          cpl->pres_curr,
-          cpl->pres_prev,
+    _pred(cpl->bstress_pred,
+          cpl->bstress_curr,
+          cpl->bstress_prev,
           nullptr,
           c1,
           c2,
@@ -1199,19 +1200,19 @@ cs_ast_coupling_send_fluid_pressure(void)
     /* None prediction */
     c1 = 1.0;
     c2 = 0.0;
-    cs_array_copy(3 * n_faces, cpl->pres_curr, cpl->pres_pred);
+    cs_array_copy(3 * n_faces, cpl->bstress_curr, cpl->bstress_pred);
   }
 
   if (verbosity > 0)
     bft_printf("--------------------------------------\n"
-               "pressure prediction coefficients\n"
+               "Boundary stress prediction coefficients\n"
                " C1: %4.2le\n"
                " C2: %4.2le\n"
                "--------------------------------------\n\n",
                c1,
                c2);
 
-  /* Send pressure */
+  /* Send boundary stress */
 
   if (verbosity > 1) {
     bft_printf(_("code_aster: starting MEDCoupling send of values "
@@ -1224,37 +1225,39 @@ cs_ast_coupling_send_fluid_pressure(void)
     const cs_lnum_t *face_ids = cpl->mc_vertices->get_elt_list();
     const cs_lnum_t *vtx_ids  = cpl->mc_vertices->get_vertex_list();
 
-    cs_arrays_set_value<cs_real_t, 1>(3 * cpl->n_vertices, 0., cpl->pres_vtx);
+    cs_arrays_set_value<cs_real_t, 1>(3 * cpl->n_vertices,
+                                      0.,
+                                      cpl->bstress_vtx);
 
     _scatter_values_r3(cpl->n_faces,
                        face_ids,
-                       (const cs_real_3_t *)cpl->pres_pred,
-                       (cs_real_3_t *)cpl->pres_bface);
+                       (const cs_real_3_t *)cpl->bstress_pred,
+                       (cs_real_3_t *)cpl->bstress_bface);
     cs_bface_to_vertex<3>(CS_FACE_TO_VERTEX_SURFACE,
                           0,
                           true,
-                          cpl->pres_bcoeff,
-                          cpl->pres_bface,
-                          cpl->pres_bvtx);
+                          cpl->bstress_bcoeff,
+                          cpl->bstress_bface,
+                          cpl->bstress_bvtx);
     if (vtx_ids != nullptr) {
       for (cs_lnum_t v_id = 0; v_id < cpl->n_vertices; ++v_id) {
         const cs_lnum_t vg_id = vtx_ids[v_id];
         for (cs_lnum_t j = 0; j < 3; ++j) {
-          cpl->pres_vtx[3 * v_id + j] = cpl->pres_bvtx[3 * vg_id + j];
+          cpl->bstress_vtx[3 * v_id + j] = cpl->bstress_bvtx[3 * vg_id + j];
         }
       }
     }
     else {
       for (cs_lnum_t v_id = 0; v_id < cpl->n_vertices; ++v_id) {
         for (cs_lnum_t j = 0; j < 3; ++j) {
-          cpl->pres_vtx[3 * v_id + j] = cpl->pres_bvtx[3 * v_id + j];
+          cpl->bstress_vtx[3 * v_id + j] = cpl->bstress_bvtx[3 * v_id + j];
         }
       }
     }
-    cpl->mc_vertices->send_data(_name_f_p, cpl->pres_vtx, false);
+    cpl->mc_vertices->send_data(_name_b_s, cpl->bstress_vtx, false);
   }
   else {
-    cpl->mc_faces->send_data(_name_f_p, cpl->pres_pred, false);
+    cpl->mc_faces->send_data(_name_b_s, cpl->bstress_pred, false);
   }
 
   if (verbosity > 1) {
@@ -1270,14 +1273,14 @@ cs_ast_coupling_send_fluid_pressure(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_evaluate_cvg(void)
+cs_aster_coupling_evaluate_cvg(void)
 {
   if (DEBUG_LEVEL_CPL > 0) {
-    bft_printf(_("cs_ast_coupling_evaluate_cvg function\n"));
+    bft_printf(_("cs_aster_coupling_evaluate_cvg function\n"));
     bft_printf_flush();
   }
 
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   int verbosity = _get_current_verbosity(cpl);
 
@@ -1329,9 +1332,9 @@ cs_ast_coupling_evaluate_cvg(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_recv_displacement(void)
+cs_aster_coupling_recv_displacement(void)
 {
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   int verbosity = _get_current_verbosity(cpl);
 
@@ -1373,15 +1376,15 @@ cs_ast_coupling_recv_displacement(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_save_values(void)
+cs_aster_coupling_save_values(void)
 {
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   const cs_lnum_t n_vertices = cpl->n_vertices;
   const cs_lnum_t nb_faces   = cpl->n_faces;
 
   /* record efforts */
-  cs_array_copy(3 * nb_faces, cpl->pres_pred, cpl->pres_prev);
+  cs_array_copy(3 * nb_faces, cpl->bstress_pred, cpl->bstress_prev);
 
   /* record dynamic data */
   cs_array_copy(3 * n_vertices, cpl->vast_prev, cpl->vast_pprev);
@@ -1404,16 +1407,16 @@ cs_ast_coupling_save_values(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
+cs_aster_coupling_compute_displacement(cs_real_t disp[][3])
 {
   if (DEBUG_LEVEL_CPL > 0) {
-    bft_printf(_("cs_ast_coupling_compute_displacement function\n"));
+    bft_printf(_("cs_aster_coupling_compute_displacement function\n"));
     bft_printf_flush();
   }
 
   assert(disp != nullptr);
 
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->iteration < 0)
     return;
@@ -1521,9 +1524,9 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 /*----------------------------------------------------------------------------*/
 
 int
-cs_ast_coupling_get_current_cvg(void)
+cs_aster_coupling_get_current_cvg(void)
 {
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   return cpl->icv1;
 }
@@ -1537,9 +1540,9 @@ cs_ast_coupling_get_current_cvg(void)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_ast_coupling_get_current_residual(void)
+cs_aster_coupling_get_current_residual(void)
 {
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   return cs::max(cpl->rcv1, cpl->rcv2);
 }
@@ -1553,9 +1556,9 @@ cs_ast_coupling_get_current_residual(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_set_final_cvg(int icved)
+cs_aster_coupling_set_final_cvg(int icved)
 {
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   cpl->icv2 = icved;
 
@@ -1577,7 +1580,7 @@ cs_ast_coupling_set_final_cvg(int icved)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_ast_coupling_get_verbosity(void)
+cs_aster_coupling_get_verbosity(void)
 {
   return _verbosity;
 }
@@ -1591,11 +1594,11 @@ cs_ast_coupling_get_verbosity(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_set_verbosity(int verbosity)
+cs_aster_coupling_set_verbosity(int verbosity)
 {
   _verbosity = verbosity;
 
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
   if (cpl != nullptr) {
     cpl->verbosity = verbosity;
   }
@@ -1610,7 +1613,7 @@ cs_ast_coupling_set_verbosity(int verbosity)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_ast_coupling_get_visualization(void)
+cs_aster_coupling_get_visualization(void)
 {
   return _visualization;
 }
@@ -1623,11 +1626,11 @@ cs_ast_coupling_get_visualization(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_set_visualization(int visualization)
+cs_aster_coupling_set_visualization(int visualization)
 {
   _visualization = visualization;
 
-  cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
   if (cpl != nullptr) {
     cpl->visualization = visualization;
   }

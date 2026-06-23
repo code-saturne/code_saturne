@@ -46,23 +46,23 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_ale.h"
-#include "base/cs_ast_coupling.h"
+#include "base/cs_aster_coupling.h"
 #include "base/cs_base.h"
 #include "base/cs_boundary.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_mem.h"
-#include "gui/cs_gui.h"
-#include "gui/cs_gui_util.h"
-#include "gui/cs_gui_boundary_conditions.h"
-#include "meg/cs_meg_prototypes.h"
-#include "mesh/cs_mesh.h"
 #include "base/cs_mobile_structures.h"
 #include "base/cs_parameters.h"
-#include "base/cs_timer.h"
 #include "base/cs_time_step.h"
+#include "base/cs_timer.h"
 #include "base/cs_volume_zone.h"
+#include "gui/cs_gui.h"
+#include "gui/cs_gui_boundary_conditions.h"
+#include "gui/cs_gui_util.h"
+#include "meg/cs_meg_prototypes.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -538,12 +538,12 @@ cs_gui_ale_params(void)
 
     tn = cs_tree_get_node(tn, "code_aster_coupling");
     if (tn != nullptr) {
-      int verbosity = cs_ast_coupling_get_verbosity();
-      int visualization = cs_ast_coupling_get_visualization();
+      int verbosity     = cs_aster_coupling_get_verbosity();
+      int visualization = cs_aster_coupling_get_visualization();
       cs_gui_node_get_child_int(tn, "verbosity", &verbosity);
       cs_gui_node_get_child_int(tn, "visualization", &visualization);
-      cs_ast_coupling_set_verbosity(verbosity);
-      cs_ast_coupling_set_visualization(visualization);
+      cs_aster_coupling_set_verbosity(verbosity);
+      cs_aster_coupling_set_visualization(visualization);
     }
   }
 
