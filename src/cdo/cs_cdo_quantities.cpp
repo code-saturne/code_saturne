@@ -1112,7 +1112,7 @@ _update_subdiv_cell_quantities(const cs_mesh_t            *mesh,
         const cs_real_t *xf              = cdoq->get_face_center(f_id);
 
         if (n_face_vertices == 3) {
-          // Volume of the tetrathedron: 1/3 * base * height
+          // Volume of the tetrahedron: 1/3 * base * height
 
           const cs_real_t *nf = cdoq->get_face_vector_area(f_id);
 
@@ -1448,7 +1448,7 @@ _subdiv_algorithm(const cs_mesh_t            *mesh,
 
   // Update the cell volume and the cell center. It relies on the subdivision
   // into triangles of each face and on the cell subdivision into tetrahedra
-  // hinging on the face sudvision
+  // hinging on the face subdivision
 
   _update_subdiv_cell_quantities(mesh, fvq, topo, cdoq);
 }

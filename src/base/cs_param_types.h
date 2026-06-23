@@ -229,7 +229,7 @@ typedef enum {
 
 } cs_param_space_scheme_t;
 
-/*! \enum cs_param_space_scheme_t
+/*! \enum cs_param_dof_reduction_t
  *  \brief How is defined the degree of freedom
  *
  * \var CS_PARAM_REDUCTION_DERHAM

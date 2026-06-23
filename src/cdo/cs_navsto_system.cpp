@@ -402,6 +402,7 @@ cs_navsto_system_activate(const cs_boundary_t          *boundaries,
     cs_navsto_param_create(boundaries, model, 0, algo_coupling, 0);
 
   /* Set flags */
+
   cs_navsto_system_set_post_flag(post_flag);
   cs_navsto_system_set_model_flag(model_flag);
 
