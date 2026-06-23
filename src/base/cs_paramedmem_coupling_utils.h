@@ -43,8 +43,14 @@ DISABLE_WARNING(-Winconsistent-missing-override)
 #include <MEDCouplingFieldDouble.hxx>
 DISABLE_WARNING_POP
 
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
 #include <CFEMDEC.hxx>
+#endif
+#if defined(HAVE_PARAMEDMEM_IKDECWO)
 #include <InterpKernelDECWithOverlap.hxx>
+#else
+#include <InterpKernelDEC.hxx>
+#endif
 #include <ParaFIELD.hxx>
 #include <ParaMESH.hxx>
 
@@ -76,8 +82,14 @@ struct _cs_paramedmem_coupling_t {
 
   ParaMESH *para_mesh; /* Associated ParaMESH structure. */
 
-  InterpKernelDECWithOverlap *dec; /* Data Exchange Channel */
+#if defined(HAVE_PARAMEDMEM_IKDECWO)
+  InterpKernelDECWithOverlap *dec; /* Data Exchange Channel with Overlap */
+#else
+  InterpKernelDEC *dec; /* Data Exchange Channel */
+#endif
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
   CFEMDEC *cdec; /* Data Exchange Channel with FE interpolation*/
+#endif
 
   std::vector<ParaFIELD *> fields;
 

@@ -42,6 +42,7 @@
 #endif
 
 #if defined(HAVE_PARAMEDMEM)
+#include "ProcessorGroup.hxx"
 #include <string>
 #include <vector>
 #endif
@@ -185,13 +186,26 @@ _add_paramedmem_coupling(const std::string           cpl_name,
 
   switch (type_dec) {
     case CS_MEDCPL_INTERPKERNELDEC:
-      c->dec  = new InterpKernelDECWithOverlap(grp1_ids, grp2_ids, c->comm);
+#if defined(HAVE_PARAMEDMEM_IKDECWO)
+      c->dec = new InterpKernelDECWithOverlap(grp1_ids, grp2_ids, c->comm);
+#else
+      c->dec = new InterpKernelDEC(grp1_ids, grp2_ids, c->comm);
+#endif
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
       c->cdec = nullptr;
+#endif
       break;
 
     case CS_MEDCPL_CFEMDEC:
-      c->dec  = nullptr;
+      c->dec = nullptr;
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
       c->cdec = new CFEMDEC(grp1_ids, grp2_ids, c->comm);
+#else
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                _("Error: CFEMDEC is not available in medcoupling \n"));
+#endif
       break;
 
     default:
@@ -234,7 +248,14 @@ _add_paramedmem_coupling_dry_run(const std::string cpl_name)
   c->mesh = nullptr;
 
   c->dec = nullptr;
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
   c->cdec = nullptr;
+#else
+  bft_error(__FILE__,
+            __LINE__,
+            0,
+            _("Error: CFEMDEC is not available in medcoupling \n"));
+#endif
 
   _paramed_couplers.push_back(c);
 
@@ -505,9 +526,16 @@ cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t  *c)
     if (c->dec != nullptr) {
       delete c->dec;
     }
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
     if (c->cdec != nullptr) {
       delete c->cdec;
     }
+#else
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("Error: CFEMDEC is not available in medcoupling \n"));
+#endif
 
     delete c;
 
@@ -654,7 +682,8 @@ cs_paramedmem_coupling_define_mesh_fields(void)
 /*----------------------------------------------------------------------------*/
 
 void
-_cs_paramedmem_coupling_t::_creare_paraMesh(const cs_mesh_t *parent_mesh)
+_cs_paramedmem_coupling_t::_creare_paraMesh(
+  [[maybe_unused]] const cs_mesh_t *parent_mesh)
 {
   assert(this->mesh != nullptr);
 
@@ -664,10 +693,12 @@ _cs_paramedmem_coupling_t::_creare_paraMesh(const cs_mesh_t *parent_mesh)
     grp = this->dec->isInSourceSide() ? this->dec->getSourceGrp()
                                       : this->dec->getTargetGrp();
   }
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
   else if (this->cdec != nullptr) {
     grp = this->cdec->isInSourceSide() ? this->cdec->getSourceGrp()
                                        : this->cdec->getTargetGrp();
   }
+#endif
   else {
     bft_error(__FILE__, __LINE__, 0, _("No DEC are initialized.\n"));
   }
@@ -679,12 +710,19 @@ _cs_paramedmem_coupling_t::_creare_paraMesh(const cs_mesh_t *parent_mesh)
   // deals with overlap. Not the case in code_saturne for the moment
   // If needed use: setCellGlobal
 
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
   if (this->cdec != nullptr) {
     DataArrayIdType *global_node_ids = this->_computeGlobalNodeIds(parent_mesh);
     this->cdec->attachLocalMesh(this->mesh->med_mesh, global_node_ids);
     this->para_mesh->setNodeGlobal(global_node_ids);
     global_node_ids->decrRef();
   }
+#else
+  bft_error(__FILE__,
+            __LINE__,
+            0,
+            _("Error: CFEMDEC is not available in medcoupling \n"));
+#endif
 
   this->dec_synced = false;
 };
@@ -1046,6 +1084,7 @@ _cs_paramedmem_coupling_t::add_field(const char              *name,
   switch (space_discr) {
     case CS_MEDCPL_ON_CELLS:
       type = ON_CELLS;
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
       if (this->cdec != nullptr) {
         bft_error(__FILE__,
                   __LINE__,
@@ -1053,10 +1092,12 @@ _cs_paramedmem_coupling_t::add_field(const char              *name,
                   _("%s: Field ON_CELLS is not supported by CFEMDEC"),
                   __func__);
       }
+#endif
       break;
 
     case CS_MEDCPL_ON_NODES:
       type = ON_NODES;
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
       if (this->cdec != nullptr) {
         bft_error(__FILE__,
                   __LINE__,
@@ -1064,6 +1105,7 @@ _cs_paramedmem_coupling_t::add_field(const char              *name,
                   _("%s: Field ON_NODES is not supported by CFEMDEC"),
                   __func__);
       }
+#endif
       break;
 
     case CS_MEDCPL_ON_NODES_FE:
@@ -1377,12 +1419,18 @@ _cs_paramedmem_coupling_t::sync_dec()
   if (!this->dec_synced) {
     if (this->dec != nullptr) {
       if (CS_PARAMEDMEM_DBG) {
+#if defined(HAVE_PARAMEDMEM_IKDECWO)
         bft_printf("%s: synchronize InterpKernelDECWithOverlap \n", __func__);
+#else
+        bft_printf("%s: synchronize InterpKernelDEC \n", __func__);
+#endif
         bft_printf_flush();
       }
 
       this->dec->synchronize();
     }
+
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
     if (this->cdec != nullptr) {
       if (CS_PARAMEDMEM_DBG) {
         bft_printf("%s: synchronize CFEMDEC \n", __func__);
@@ -1391,6 +1439,12 @@ _cs_paramedmem_coupling_t::sync_dec()
 
       this->cdec->synchronize();
     }
+#else
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("Error: CFEMDEC is not available in medcoupling \n"));
+#endif
     this->dec_synced = true;
   }
 
@@ -1423,6 +1477,7 @@ _cs_paramedmem_coupling_t::send_data() const
   if (this->dec != nullptr) {
     this->dec->sendData();
   }
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
   if (this->cdec != nullptr && this->_curr_field != nullptr) {
     if (this->cdec->isInSourceSide()) {
       this->cdec->sendToTarget(this->_curr_field->getField());
@@ -1431,6 +1486,12 @@ _cs_paramedmem_coupling_t::send_data() const
       this->cdec->sendToSource(this->_curr_field->getField());
     }
   }
+#else
+  bft_error(__FILE__,
+            __LINE__,
+            0,
+            _("Error: CFEMDEC is not available in medcoupling \n"));
+#endif
 
   if (CS_PARAMEDMEM_DBG) {
     bft_printf(" [ok]\n");
@@ -1509,6 +1570,7 @@ _cs_paramedmem_coupling_t::recv_data()
   if (this->dec != nullptr) {
     this->dec->recvData();
   }
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
   if (this->cdec != nullptr && this->_curr_field != nullptr) {
     MCAuto<MEDCouplingFieldDouble> field = nullptr;
 
@@ -1523,7 +1585,12 @@ _cs_paramedmem_coupling_t::recv_data()
 
     this->_curr_field->getField()->setArray(field->getArray());
   }
-
+#else
+  bft_error(__FILE__,
+            __LINE__,
+            0,
+            _("Error: CFEMDEC is not available in medcoupling \n"));
+#endif
   if (CS_PARAMEDMEM_DBG) {
     bft_printf(" [ok]\n");
     bft_printf_flush();
