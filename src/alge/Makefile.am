@@ -100,6 +100,7 @@ cs_bw_time_diff.h \
 cs_cell_to_vertex.h \
 cs_convection_diffusion.h \
 cs_divergence.h \
+cs_face_to_vertex.h \
 cs_face_viscosity.h \
 cs_gradient.h \
 cs_gradient_boundary.h \
@@ -182,6 +183,7 @@ cs_convection_diffusion.cpp \
 cs_convection_diffusion_v9.cpp \
 cs_convection_diffusion_steady.cpp \
 cs_divergence.cpp \
+cs_face_to_vertex.cpp \
 cs_face_viscosity.cpp \
 cs_gradient.cpp \
 cs_gradient_boundary.cpp \

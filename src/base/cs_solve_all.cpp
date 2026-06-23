@@ -40,14 +40,14 @@
 
 #include "bft/bft_printf.h"
 
-#include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_atmo.h"
+#include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_atmo_ground_model.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_ale.h"
 #include "base/cs_array.h"
 #include "base/cs_assert.h"
-#include "base/cs_ast_coupling.h"
+#include "base/cs_aster_coupling.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_coupling.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
@@ -1190,7 +1190,7 @@ cs_solve_all()
   const int n_init_f_ale  = cs_glob_ale_n_ini_f;
   const int nb_ast_structs = cs_mobile_structures_get_n_ast_structures();
   if (nb_ast_structs > 0 && cs_glob_ale_data->ale_iteration > n_init_f_ale)
-    cs_ast_coupling_exchange_time_step(CS_F_(dt)->val);
+    cs_aster_coupling_exchange_time_step(CS_F_(dt)->val);
 
   if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
     _compute_tensorial_time_step(m,
@@ -1310,7 +1310,7 @@ cs_solve_all()
           need_new_solve = true;
         }
         else if (nb_ast_structs > 0) {
-          cs_ast_coupling_save_values();
+          cs_aster_coupling_save_values();
         }
       }
     }

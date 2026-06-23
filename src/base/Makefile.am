@@ -72,7 +72,7 @@ cs_all_to_all.h \
 cs_array.h \
 cs_array_reduce.h \
 cs_assert.h \
-cs_ast_coupling.h \
+cs_aster_coupling.h \
 cs_base.h \
 cs_base_accel.h \
 cs_block_dist.h \
@@ -86,7 +86,6 @@ cs_boundary_conditions_set_coeffs_symmetry.h \
 cs_boundary_conditions_set_coeffs_turb.h \
 cs_boundary_conditions_type.h \
 cs_boundary_zone.h \
-cs_calcium.h \
 cs_compute_thermo_pressure_density.h \
 cs_time_step_compute.h \
 cs_control.h \
@@ -329,7 +328,6 @@ cs_boundary_conditions_set_coeffs.cpp \
 cs_boundary_conditions_type.cpp \
 cs_boundary_conditions.cpp \
 cs_boundary_zone.cpp \
-cs_calcium.cpp \
 cs_compute_thermo_pressure_density.cpp \
 cs_control.cpp \
 cs_coupling.cpp \
@@ -469,7 +467,7 @@ cs_medcoupling_intersector.cxx \
 cs_medcoupling_postprocess.cxx \
 cs_paramedmem_coupling.cxx \
 cs_paramedmem_remapper.cxx \
-cs_ast_coupling.cpp
+cs_aster_coupling.cpp
 
 noinst_LIBRARIES += libcs_medcoupling.a
 
@@ -497,7 +495,7 @@ libcs_medcoupling_a-cs_medcoupling_remapper.$(OBJEXT) \
 libcs_medcoupling_a-cs_medcoupling_utils.$(OBJEXT) \
 libcs_medcoupling_a-cs_paramedmem_coupling.$(OBJEXT) \
 libcs_medcoupling_a-cs_paramedmem_remapper.$(OBJEXT) \
-libcs_medcoupling_a-cs_ast_coupling.$(OBJEXT)
+libcs_medcoupling_a-cs_aster_coupling.$(OBJEXT)
 
 endif
 
