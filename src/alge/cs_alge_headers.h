@@ -38,6 +38,9 @@
 #include "alge/cs_cell_to_vertex.h"
 #include "alge/cs_convection_diffusion.h"
 #include "alge/cs_divergence.h"
+#ifdef __cplusplus
+#include "alge/cs_face_to_vertex.h"
+#endif
 #include "alge/cs_face_viscosity.h"
 #include "alge/cs_gradient.h"
 #include "alge/cs_gradient_boundary.h"

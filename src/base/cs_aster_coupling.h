@@ -1,5 +1,5 @@
-#ifndef CS_AST_COUPLING_H
-#define CS_AST_COUPLING_H
+#ifndef CS_ASTER_COUPLING_H
+#define CS_ASTER_COUPLING_H
 
 /*============================================================================
  * code_aster coupling
@@ -45,7 +45,7 @@
  * Structure definition
  *============================================================================*/
 
-typedef struct _cs_ast_coupling_t  cs_ast_coupling_t;
+typedef struct _cs_aster_coupling_t cs_aster_coupling_t;
 
 /*============================================================================
  * Global variable definitions
@@ -64,7 +64,7 @@ typedef struct _cs_ast_coupling_t  cs_ast_coupling_t;
 /*----------------------------------------------------------------------------*/
 
 int
-cs_ast_coupling_n_couplings(void);
+cs_aster_coupling_n_couplings(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -78,8 +78,7 @@ cs_ast_coupling_n_couplings(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_initialize(int        nalimx,
-                           cs_real_t  epalim);
+cs_aster_coupling_initialize(int nalimx, cs_real_t epalim);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -88,7 +87,7 @@ cs_ast_coupling_initialize(int        nalimx,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_finalize(void);
+cs_aster_coupling_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -97,9 +96,9 @@ cs_ast_coupling_finalize(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_set_coefficients(cs_real_t aexxst,
-                                 cs_real_t bexxst,
-                                 cs_real_t cfopre);
+cs_aster_coupling_set_coefficients(cs_real_t aexxst,
+                                   cs_real_t bexxst,
+                                   cs_real_t cfopre);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -113,9 +112,9 @@ cs_ast_coupling_set_coefficients(cs_real_t aexxst,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_geometry(cs_lnum_t        n_faces,
-                         const cs_lnum_t *face_ids,
-                         cs_real_t        almax);
+cs_aster_coupling_geometry(cs_lnum_t        n_faces,
+                           const cs_lnum_t *face_ids,
+                           cs_real_t        almax);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -126,28 +125,28 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_exchange_time_step(cs_real_t  c_dt[]);
+cs_aster_coupling_exchange_time_step(cs_real_t c_dt[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return pointer to array of fluid forces at faces coupled with
+ * \brief Return pointer to array of boundary stress at faces coupled with
  *        code_aster.
  *
- * \return  array of forces from fluid at coupled faces
+ * \return  array of boundary stress from fluid at coupled faces
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_3_t *
-cs_ast_coupling_get_fluid_forces_pointer(void);
+cs_aster_coupling_get_bstress_pointer(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Send stresses acting on the fluid/structure interface.
+ * \brief Send boundary stresse acting on the fluid/structure interface.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_send_fluid_forces(void);
+cs_aster_coupling_send_bstress(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -156,7 +155,7 @@ cs_ast_coupling_send_fluid_forces(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_recv_displacement(void);
+cs_aster_coupling_recv_displacement(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -165,7 +164,7 @@ cs_ast_coupling_recv_displacement(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_evaluate_cvg(void);
+cs_aster_coupling_evaluate_cvg(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -174,7 +173,7 @@ cs_ast_coupling_evaluate_cvg(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_save_values(void);
+cs_aster_coupling_save_values(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -186,7 +185,7 @@ cs_ast_coupling_save_values(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_compute_displacement(cs_real_t  disp[][3]);
+cs_aster_coupling_compute_displacement(cs_real_t disp[][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -198,7 +197,7 @@ cs_ast_coupling_compute_displacement(cs_real_t  disp[][3]);
 /*----------------------------------------------------------------------------*/
 
 int
-cs_ast_coupling_get_current_cvg(void);
+cs_aster_coupling_get_current_cvg(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -209,7 +208,7 @@ cs_ast_coupling_get_current_cvg(void);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_ast_coupling_get_current_residual(void);
+cs_aster_coupling_get_current_residual(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -220,7 +219,7 @@ cs_ast_coupling_get_current_residual(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_set_final_cvg(int icved);
+cs_aster_coupling_set_final_cvg(int icved);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -231,7 +230,7 @@ cs_ast_coupling_set_final_cvg(int icved);
 /*----------------------------------------------------------------------------*/
 
 int
-cs_ast_coupling_get_verbosity(void);
+cs_aster_coupling_get_verbosity(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -242,7 +241,7 @@ cs_ast_coupling_get_verbosity(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_set_verbosity(int  verbosity);
+cs_aster_coupling_set_verbosity(int verbosity);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -253,7 +252,7 @@ cs_ast_coupling_set_verbosity(int  verbosity);
 /*----------------------------------------------------------------------------*/
 
 int
-cs_ast_coupling_get_visualization(void);
+cs_aster_coupling_get_visualization(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -264,8 +263,8 @@ cs_ast_coupling_get_visualization(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_set_visualization(int  visualization);
+cs_aster_coupling_set_visualization(int visualization);
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* CS_AST_COUPLING_H */
+#endif /* CS_ASTER_COUPLING_H */

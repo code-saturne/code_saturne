@@ -54,7 +54,7 @@
 #include "atmo/cs_atmo_1d_rad.h"
 #include "base/cs_ale.h"
 #include "base/cs_all_to_all.h"
-#include "base/cs_ast_coupling.h"
+#include "base/cs_aster_coupling.h"
 #include "base/cs_base.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_zone.h"
@@ -571,7 +571,7 @@ _run(void)
   /* Free coupling-related data */
 
 #if defined(HAVE_MPI)
-  cs_ast_coupling_finalize();
+  cs_aster_coupling_finalize();
   cs_syr_coupling_all_finalize();
   cs_sat_coupling_all_finalize();
   cs_sys_coupling_all_finalize();

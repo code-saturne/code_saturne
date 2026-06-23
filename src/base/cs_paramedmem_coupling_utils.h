@@ -43,16 +43,21 @@ DISABLE_WARNING(-Winconsistent-missing-override)
 #include <MEDCouplingFieldDouble.hxx>
 DISABLE_WARNING_POP
 
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
+#include <CFEMDEC.hxx>
+#endif
+#if defined(HAVE_PARAMEDMEM_IKDECWO)
+#include <InterpKernelDECWithOverlap.hxx>
+#else
 #include <InterpKernelDEC.hxx>
+#endif
 #include <ParaFIELD.hxx>
 #include <ParaMESH.hxx>
 
 using namespace MEDCoupling;
 #endif
 
-#define USE_PARAFIELD 1
-/* 1 to use <ParaFIELD> fields,                                            \
- 0 to directly use          MEDCouplingFieldDouble */
+/*----------------------------------------------------------------------------*/
 
 /*============================================================================
  * Structure definitions
@@ -77,20 +82,19 @@ struct _cs_paramedmem_coupling_t {
 
   ParaMESH *para_mesh; /* Associated ParaMESH structure. */
 
-  InterpKernelDEC *dec; /* Data Exchange Channel */
-
-#if USE_PARAFIELD == 1
-  std::vector<ParaFIELD *> fields;
+#if defined(HAVE_PARAMEDMEM_IKDECWO)
+  InterpKernelDECWithOverlap *dec; /* Data Exchange Channel with Overlap */
 #else
-  std::vector<MEDCouplingFieldDouble *> fields;
+  InterpKernelDEC *dec; /* Data Exchange Channel */
 #endif
+#if defined(HAVE_PARAMEDMEM_CFEMDEC)
+  CFEMDEC *cdec; /* Data Exchange Channel with FE interpolation*/
+#endif
+
+  std::vector<ParaFIELD *> fields;
 
   /* Current attached local field id */
-#if USE_PARAFIELD == 1
   const ParaFIELD *_curr_field;
-#else
-  const MEDCouplingFieldDouble *_curr_field;
-#endif
 
 #else
 
@@ -129,17 +133,33 @@ private:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Compute global vertex numbering
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  DataArrayIdType *
+  _computeGlobalNodeIds(const cs_mesh_t *parent_mesh) const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Create ParaMESH object
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  _creare_paraMesh(const cs_mesh_t *parent_mesh);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
    * \brief Attach a local field
    *
    */
   /*--------------------------------------------------------------------------*/
 
   void
-#if USE_PARAFIELD == 1
   _attachLocalField(const ParaFIELD *field);
-#else
-  _attachLocalField(const MEDCouplingFieldDouble *field);
-#endif
 
   /*--------------------------------------------------------------------------*/
   /*!
@@ -503,7 +523,6 @@ public:
 
   void
   log() const;
-
 };
 
 /*----------------------------------------------------------------------------*/

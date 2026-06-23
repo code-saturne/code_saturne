@@ -1449,6 +1449,11 @@ echo " MEDCoupling support: "$cs_have_medcoupling""
 if test x$cs_have_medcoupling = xyes ; then
   echo "   MEDLoader support: "$cs_have_medcoupling_loader""
   echo "   ParaMEDMEM support: "$cs_have_paramedmem""
+  if test x$cs_have_paramedmem = xyes ; then
+    echo "      - with InterpKernelDEC: "$cs_have_paramedmem""
+    echo "      - with InterpKernelDECWithOverlap: "$cs_have_paramedmem_ikdecwo""
+    echo "      - with CFEMDEC: "$cs_have_paramedmem_cfemdec""
+  fi
   echo "   MEDCoupling as plugin: "$cs_have_plugin_medcoupling""
 fi
 echo " Catalyst2 (co-processing) support: "$cs_have_catalyst2""

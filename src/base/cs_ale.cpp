@@ -991,11 +991,12 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
   cs_lnum_t need_solve = 0;
   for (cs_lnum_t v = 0; v < n_vertices; v++) {
     if (impale[v] == 0) {
-      need_solve += 1;
+      need_solve = 1;
+      break;
     }
   }
 
-  cs_parall_sum(1, CS_LNUM_TYPE, &need_solve);
+  cs::parall::sum(need_solve);
 
   if (need_solve == 0) {
     bft_printf("Mesh velocity is not computed as the displacement "

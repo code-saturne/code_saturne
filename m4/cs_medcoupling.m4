@@ -30,6 +30,8 @@ AC_DEFUN([CS_AC_TEST_MEDCOUPLING], [
 cs_have_medcoupling=no
 cs_have_medcoupling_loader=no
 cs_have_paramedmem=no
+cs_have_paramedmem_cfemdec=no
+cs_have_paramedmem_ikdecwo=no
 
 AC_ARG_VAR([MEDCOUPLING_ROOT_DIR], [MEDCOUPLING root directory (superseded by --with-medcoupling=PATH)])
 
@@ -230,6 +232,40 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
 
         if test "x$cs_have_paramedmem" = "xyes"; then
           MEDCOUPLING_LIBS="${cs_paramedmem_libs} ${MEDCOUPLING_LIBS}"
+
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+[[#include <CFEMDEC.hxx>
+#include <ProcessorGroup.hxx>
+#include <set>]],
+[[using namespace MEDCoupling;
+int procs_source_c[1]={0};
+std::set<int> procs_source(procs_source_c, procs_source_c+1);
+int procs_target_c[1]={1};
+std::set<int> procs_target(procs_target_c, procs_target_c+1);
+CFEMDEC *dec = new CFEMDEC(procs_source, procs_target);]])
+                       ],
+                       [ AC_DEFINE([HAVE_PARAMEDMEM_CFEMDEC], 1, [ParaMEDMEM with CFEMDEC support])
+                         cs_have_paramedmem_cfemdec=yes
+                       ],
+                       [ ],
+                      )
+
+
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+[[#include <InterpKernelDECWithOverlap.hxx>
+#include <set>]],
+[[using namespace MEDCoupling;
+int procs_source_c[1]={0};
+std::set<int> procs_source(procs_source_c, procs_source_c+1);
+int procs_target_c[1]={1};
+std::set<int> procs_target(procs_target_c, procs_target_c+1);
+InterpKernelDECWithOverlap *dec = new InterpKernelDECWithOverlap(procs_source, procs_target);]])
+                       ],
+                       [ AC_DEFINE([HAVE_PARAMEDMEM_IKDECWO], 1, [ParaMEDMEM with InterpKernelDECWithOverlap support])
+                         cs_have_paramedmem_ikdecwo=yes
+                       ],
+                       [ ],
+                      )
         fi
 
         LDFLAGS="$saved_LDFLAGS"

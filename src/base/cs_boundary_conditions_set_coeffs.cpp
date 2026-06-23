@@ -875,8 +875,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
                                     ale_bc_type,
                                     impale);
 
-    /* In case the user has modified disale whthout setting impale=1, we restore
-       the initial displacement. */
+    /* In case the user has modified disale whithout setting impale=1, we
+       restore the initial displacement. */
 
     ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
       if (impale[v_id] == 0) {
