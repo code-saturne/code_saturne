@@ -421,6 +421,11 @@ _read_main_checkpoint(void)
       cs_atmo_chemistry_initialization_deactivate();
   }
 
+  /* Notebook variables
+     ------------------ */
+
+  cs_restart_read_notebook_variables(r);
+
   /* Close file
      ---------- */
 
