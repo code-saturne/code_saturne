@@ -2360,15 +2360,31 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
       case CS_TURB_K_EPSILON_LS:
       case CS_TURB_K_EPSILON_QUAD:
       case CS_TURB_K_OMEGA:
-        sc->apply_sliding_wall = cs_cdofb_prescribed_smooth_wall;
-        sc->apply_fixed_wall   = cs_cdofb_prescribed_smooth_wall;
+        switch (mom_eqp->default_enforcement) {
+          case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+            sc->apply_sliding_wall = cs_cdofb_prescribed_smooth_wall_alge;
+            sc->apply_fixed_wall   = cs_cdofb_prescribed_smooth_wall_alge;
+            break;
+
+          case CS_PARAM_BC_ENFORCE_PENALIZED:
+            sc->apply_sliding_wall = cs_cdofb_prescribed_smooth_wall_pena;
+            sc->apply_fixed_wall   = cs_cdofb_prescribed_smooth_wall_pena;
+            break;
+
+          default:
+            bft_error(__FILE__,
+                __LINE__,
+                0,
+                " %s: Invalid type of algorithm to enforce Wall BC.",
+                __func__);
+        }
         break;
 
       default:
         bft_error(__FILE__,
                   __LINE__,
                   0,
-                  " %s: Invalid type of wall boundary treatment.",
+                  " %s: Invalid type of wall turbulent boundary treatment.",
                   __func__);
     }
   }

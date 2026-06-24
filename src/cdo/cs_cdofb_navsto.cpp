@@ -2016,8 +2016,8 @@ cs_cdofb_symmetry(short int                  fb,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Take into account a wall BCs by a weak enforcement using Nitsche
- *        technique.
+ * \brief Take into account a wall BCs by Robin mix BC on vectors'tangential
+ *        component, and strong penalization on normal component.
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
  * \param[in]      fb    face id in the cell mesh numbering
@@ -2030,23 +2030,21 @@ cs_cdofb_symmetry(short int                  fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_prescribed_smooth_wall(short int                  fb,
-                                const cs_equation_param_t *eqp,
-                                const cs_cell_mesh_t      *cm,
-                                const cs_property_data_t  *pty,
-                                cs_cell_builder_t         *cb,
-                                cs_cell_sys_t             *csys)
+cs_cdofb_prescribed_smooth_wall_pena(short int                  fb,
+                                     const cs_equation_param_t *eqp,
+                                     const cs_cell_mesh_t      *cm,
+                                     const cs_property_data_t  *pty,
+                                     cs_cell_builder_t         *cb,
+                                     cs_cell_sys_t             *csys)
 {
   CS_UNUSED(cb);
   CS_UNUSED(pty);
 
   assert(cm != nullptr && csys != nullptr);
 
-  /* Initialize the matrix related this flux reconstruction operator */
-
-  /* wall BC expression: -K du/dn = h_t (I - (n x n))(u - u_w)
+  /* wall BC expression: -K du/dx = h_t (I - (n x n))(u - u_w)
    *                              + h_n (n x n)(u - u_w)
-   * h_n uses penalization approach to weakly impose dirichlet
+   * h_n uses penalization approach to strongly impose dirichlet
    * condition to normal components*/
   /* ----------------------------------------------------- */
 
@@ -2094,6 +2092,130 @@ cs_cdofb_prescribed_smooth_wall(short int                  fb,
     bff->val[6] += (-h_t + h_n)*ni_ni[6]*f_meas;
     bff->val[7] += (-h_t + h_n)*ni_ni[7]*f_meas;
     bff->val[8] += (h_t + (-h_t + h_n)*ni_ni[8])*f_meas;
+  }  /* wall face */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    csys->dump(">> Cell %d, scalar Fb: After smooth wall");
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Take into account a wall BCs by a algebraic enforcement.
+ *        This prototype matches the function pointer cs_cdo_apply_boundary_t
+ *
+ * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
+ * \param[in]      cm    pointer to a cellwise mesh structure
+ * \param[in]      pty   pointer to a \ref cs_property_data_t structure
+ * \param[in, out] cb    pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out] csys  structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_prescribed_smooth_wall_alge(short int                  fb,
+                                     const cs_equation_param_t *eqp,
+                                     const cs_cell_mesh_t      *cm,
+                                     const cs_property_data_t  *pty,
+                                     cs_cell_builder_t         *cb,
+                                     cs_cell_sys_t             *csys)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(pty);
+
+  assert(cm != nullptr && csys != nullptr);
+
+  /* wall BC expression: -K du/dx.tau = h_t (I - (n x n))(u - u_w)
+   *                      u.n = 0
+   * ----------------------------------------------------- */
+
+  if (csys->bf_flag[fb] & CS_CDO_BC_WALL_PRESCRIBED) {
+
+    const cs_real_t  f_meas = cm->face[fb].meas;
+    const double  *u0 = &(csys->rob_values[9*fb]);
+    const double  h_t = csys->rob_values[9*fb + 3];
+
+    const cs_quant_t  pfq = cm->face[fb];
+    const cs_real_t  *ni = pfq.unitv;
+
+    /* nn :  n x n^t, projection onto normal axis
+     * p_t : I - n x n^t, projection onto tangential plane */
+
+    cs_sdm_t p_t{3}, nn{3}, buffer{3};
+
+    nn(0,0) = ni[0]*ni[0], nn(0,1) = ni[0]*ni[1], nn(0,2) = ni[0]*ni[2];
+    nn(1,0) = ni[1]*ni[0], nn(1,1) = ni[1]*ni[1], nn(1,2) = ni[1]*ni[2];
+    nn(2,0) = ni[2]*ni[0], nn(2,1) = ni[2]*ni[1], nn(2,2) = ni[2]*ni[2];
+
+    p_t(0,0) = 1.0 - nn(0,0);
+    p_t(0,1) =     - nn(0,1);
+    p_t(0,2) =     - nn(0,2);
+
+    p_t(1,0) =     - nn(1,0);
+    p_t(1,1) = 1.0 - nn(1,1);
+    p_t(1,2) =     - nn(1,2);
+
+    p_t(2,0) =     - nn(2,0);
+    p_t(2,1) =     - nn(2,1);
+    p_t(2,2) = 1.0 - nn(2,2);
+
+  /* ============================================
+   *  Apply the Dirichlet for Normal component
+   *  =========================================== */
+
+    cs_sdm_t *m = csys->mat;
+    cs_sdm_block_t *bd = m->block_desc;
+    cs_sdm_t *mFF = m->get_block(fb, fb);
+    assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
+
+    for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+      if (bi != fb) {
+
+        /* Right project block (I,F) which is a 3x3 block
+         * mIF = mIF p_t */
+
+        buffer *= 0.0;
+        cs_sdm_t *mIF = m->get_block(bi, fb);
+        cs_sdm_multiply(mIF, &p_t, &buffer);
+        cs_sdm_copy(mIF, &buffer);
+      }
+      else { /* bi == f */
+
+      //  /* Left project block (I==F,J) which is a 3x3 block */
+
+        for (int bj = 0; bj < bd->n_col_blocks; bj++) {
+          buffer *= 0.0;
+          cs_sdm_t *mFJ = m->get_block(fb, bj);
+          cs_sdm_multiply(&p_t, mFJ, &buffer);
+          cs_sdm_copy(mFJ, &buffer);
+        }
+
+        /* mFF = n x n^t + p_t mFF p_t; */
+        buffer *= 0.0;
+        cs_sdm_multiply(mFF, &p_t, &buffer);
+        cs_sdm_copy(mFF, &buffer);
+
+        *mFF += nn;
+      }
+    } /* Block bi */
+
+   /* Update the RHS and the local system */
+
+    cs_real_t u0_t[3] = {0., 0., 0.};
+
+    p_t.dot(u0, u0_t);
+
+    csys->rhs[3*fb + 0] += h_t*f_meas*u0_t[0];
+    csys->rhs[3*fb + 1] += h_t*f_meas*u0_t[1];
+    csys->rhs[3*fb + 2] += h_t*f_meas*u0_t[2];
+
+    /* Update the local system matrix */
+
+    cs_sdm_add_mult(mFF, h_t*f_meas, &p_t);
+
   }  /* wall face */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
