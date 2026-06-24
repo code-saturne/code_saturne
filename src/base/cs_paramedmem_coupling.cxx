@@ -250,11 +250,6 @@ _add_paramedmem_coupling_dry_run(const std::string cpl_name)
   c->dec = nullptr;
 #if defined(HAVE_PARAMEDMEM_CFEMDEC)
   c->cdec = nullptr;
-#else
-  bft_error(__FILE__,
-            __LINE__,
-            0,
-            _("Error: CFEMDEC is not available in medcoupling \n"));
 #endif
 
   _paramed_couplers.push_back(c);
@@ -530,11 +525,6 @@ cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t  *c)
     if (c->cdec != nullptr) {
       delete c->cdec;
     }
-#else
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              _("Error: CFEMDEC is not available in medcoupling \n"));
 #endif
 
     delete c;
@@ -717,11 +707,6 @@ _cs_paramedmem_coupling_t::_creare_paraMesh(
     this->para_mesh->setNodeGlobal(global_node_ids);
     global_node_ids->decrRef();
   }
-#else
-  bft_error(__FILE__,
-            __LINE__,
-            0,
-            _("Error: CFEMDEC is not available in medcoupling \n"));
 #endif
 
   this->dec_synced = false;
@@ -1439,12 +1424,8 @@ _cs_paramedmem_coupling_t::sync_dec()
 
       this->cdec->synchronize();
     }
-#else
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              _("Error: CFEMDEC is not available in medcoupling \n"));
 #endif
+
     this->dec_synced = true;
   }
 
@@ -1486,11 +1467,6 @@ _cs_paramedmem_coupling_t::send_data() const
       this->cdec->sendToSource(this->_curr_field->getField());
     }
   }
-#else
-  bft_error(__FILE__,
-            __LINE__,
-            0,
-            _("Error: CFEMDEC is not available in medcoupling \n"));
 #endif
 
   if (CS_PARAMEDMEM_DBG) {
@@ -1585,12 +1561,8 @@ _cs_paramedmem_coupling_t::recv_data()
 
     this->_curr_field->getField()->setArray(field->getArray());
   }
-#else
-  bft_error(__FILE__,
-            __LINE__,
-            0,
-            _("Error: CFEMDEC is not available in medcoupling \n"));
 #endif
+
   if (CS_PARAMEDMEM_DBG) {
     bft_printf(" [ok]\n");
     bft_printf_flush();
