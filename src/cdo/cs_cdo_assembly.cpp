@@ -1380,6 +1380,9 @@ cs_cdo_assembly_init(int ddim, int edim, int n_cw_dofs)
 void
 cs_cdo_assembly_finalize(void)
 {
+  if (cs_cdo_assembly == nullptr)
+    return;
+
   /* Free shared buffers related to the assembly process */
 
   for (int t_id = 0; t_id < cs_glob_n_threads; t_id++)
