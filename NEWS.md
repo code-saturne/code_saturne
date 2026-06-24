@@ -67,6 +67,11 @@ Master (not on release branches yet)
   when the the stationary solution is found with respect to convergence
   parameters.
 
+- A new algorithm for projection of nodal field using CFEMDEC from ParaMEDMEM
+  is implemented. This is fully distributed in memory and CPU. This new projection
+  is now used for coupling with code_aster to receive mesh displacement and optionally
+  to send boundary stress.
+
 ### User changes:
 
 - Expand use of optional `CATALYST_IMPLEMENTATION_NAME` environment variable
