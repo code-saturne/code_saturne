@@ -3,30 +3,28 @@ Master (not on release branches yet)
 
 ### User changes:
 
-- Introduces an exponentially weighted average (EWA) accumulator type with a
+- Introduce an exponentially weighted average (EWA) accumulator type with a
   user-specified time scale T. The EWA is selected by passing
-  CS_TIME_MOMENT_EWA to any existing cs_time_moment_define_by_* function,
-  with the time scale T given via an optional "trailing" ewa_time_scale
+  `CS_TIME_MOMENT_EWA` to any existing `cs_time_moment_define_by_*` function,
+  with the time scale T given via an optional "trailing" `ewa_time_scale`
   argument. It defaults to -1 (unset), so all existing call sites remain
   unchanged and only EWA moments need to pass T.
 
-- 1D wall thermal module: Users can now use `cs_user_1d_wall_thermal_setup` to
-  define a 1D wall thermal condition using high-level API based on boundary
-  zones.
+- 1D wall thermal module:
+  * Users can now use `cs_user_1d_wall_thermal_setup` to define a 1D wall
+    thermal condition using high-level API based on boundary zones.
+    - Allow postprocessing of the thermal field. Currently, the output
+      is linked to the default writer, but future work will provide access
+      through the GUI for these parameters.
+    - This is part of an ongoing modernization work of the module.
   This update now sets `cs_user_1d_wall_thermal` as deprecated.
   The function is not yet removed to allow update by users.
-
-- 1D wall thermal module: allow postprocessing of the thermal field using
-  a user function (cs_user_1d_wall_thermal_setup). Currently, the output
-  is linked to the default writer, but future work will provide access
-  through the GUI for these parameters.
-  This is part of an ongoing modernization work of the module.
 
 ### Numerics:
 
 - Update to pressure reference face: it was previously stored in the isostd
-  array, it is now stored in cs_glob_fluid_properties under two new attributes:
-  p0_face_id contains the face id, while p0_rank_id contains the rank id. It
+  array, it is now stored in `cs_glob_fluid_properties` under two new attributes:
+  `p0_face_id` contains the face id, while `p0_rank_id` contains the rank id. It
   can therefore now be accessed by the user or any other place in the code. The
   array isostd now has a size of n_b_faces (previously n_b_faces+1).
 
@@ -68,9 +66,9 @@ Master (not on release branches yet)
   parameters.
 
 - A new algorithm for projection of nodal field using CFEMDEC from ParaMEDMEM
-  is implemented. This is fully distributed in memory and CPU. This new projection
-  is now used for coupling with code_aster to receive mesh displacement and optionally
-  to send boundary stress.
+  is implemented. This is fully distributed in memory and CPU. This new
+  projection is now used for coupling with code_aster to receive mesh
+  displacement and optionally to send boundary stress.
 
 ### User changes:
 
@@ -83,8 +81,8 @@ Master (not on release branches yet)
 - Add high level API which is GPU compatible for users. This allows not having
   to specify a context directly. This modification also now defines a
   default context which is reachable in all routines.
-  As en example, users can now simply write :
-  cs::parallel_for(n_values, CS_LAMBDA (cs_lnum_t e_id) {...});
+  As an example, users can now simply write:
+  `cs::parallel_for(n_values, CS_LAMBDA (cs_lnum_t e_id) {...});`
 
 - Restart: selection of further mesh preprocessing behavior and/or
   restarting from another mesh is now more explicit and consistent.
@@ -115,12 +113,12 @@ Master (not on release branches yet)
     with a specific error message.
 
 - Add multi-dimensional arrays for "linked" fields.
-  * It is now possible to define, for a `cs_field_t` object, that it is a part of
-    a series. By doing so, one of the linked fields is defined as the owner of
-    the series, and handles the data allocation. The other fields then
+  * It is now possible to define, for a `cs_field_t` object, that it is a part
+    of a series. By doing so, one of the linked fields is defined as the owner
+    of the series, and handles the data allocation. The other fields then
     only use a view of the data (non owners).
   * This new mechanism uses `cs_array_3d` objects which are owned and managed
-    by the series' owner. The other fields have their `_vals` (cs_array_2d)
+    by the series' owner. The other fields have their `_vals` (`cs_array_2d`)
     objects pointing to sub_arrays of the `cs_array_3d` owner.
 
 - Mesh refinement: restuctured handling of polyhedral cells refinement,
@@ -165,22 +163,22 @@ Release 9.1.0 (2025-12-30)
     average, but as an "ensemble" mean.
   * Compatibility with older checkpoints is maintained.
 
-- Add a "FOR_RANGE" operator to the mathematical equations editor of the GUI.
+- Add a `FOR_RANGE` operator to the mathematical equations editor of the GUI.
   Users can now define "for" loops in the formulae in the GUI using the
-  following syntax : "FOR_RANGE(var_name, var_start, var_stop)".
-  For example, "FOR_RANGE(i, 0, 5)" will be translated in to
-  "for (int i = 0; i < 5; i++)"
+  following syntax: `FOR_RANGE(var_name, var_start, var_stop)`.
+  For example, `FOR_RANGE(i, 0, 5)` will be translated in to
+  `for (int i = 0; i < 5; i++)`.
 
 - Removed last remaining Fortran user-defined functions
-  (cs_f_user_boundary_conditions, cs_f_user_extra_operations,
-  cs_user_f_initialization, usppmo, usipsu, and usipes).
+  (`cs_f_user_boundary_conditions`, `cs_f_user_extra_operations`,
+  `cs_user_f_initialization`, `usppmo`, `usipsu`, and `usipes`).
   * Also removed Fortran-based `findpt` function.
 
 - Fluid structure interaction: allows the possibility to use external solver
   by using user functions.
-  * cs_user_fsi_external_displacement: compute inside the displacement to impose.
-  * cs_user_fsi_external_cvg: compute convergence status of external solver.
-  * cs_user_fsi_structure_num has changed of API.
+  * `cs_user_fsi_external_displacement`: compute the displacement to impose.
+  * `cs_user_fsi_external_cvg`: compute convergence status of external solver.
+  * `cs_user_fsi_structure_num` API has been modified.
 
 ### Numerics:
 
@@ -229,11 +227,11 @@ Release 9.1.0 (2025-12-30)
 
 ### Architectural changes:
 
-- Add cs::array, cs::span and cs::mdspan data classes to handle data storage,
-  in owner and non-owner modes, compatible with multi-dimensional getters and
-  with the dispatch mechanism.
+- Add `cs::array`, `cs::span` and `cs::mdspan` data classes to handle data
+  storage, in owner and non-owner modes, compatible with multi-dimensional
+  getters and with the dispatch mechanism.
 
-- Use templated C++ functions instead of CS_MIN, CS_MAX, and CS_ABS
+- Use templated C++ functions instead of `CS_MIN`, `CS_MAX`, and `CS_ABS`
   macros, for better safety and performance.
 
 ### Bug fixes:
@@ -261,7 +259,7 @@ Release 9.0.0 (2025-06-27)
 ### User changes:
 
 - Add a predefined function to compute vorticity based on a velocity
-  field (cs_function_define_vorticity).
+  field (`cs_function_define_vorticity`).
 
 - Replace use of "boundary_forces" field (which is extensive), with
   "boundary_stress" (which is intensive).
@@ -278,7 +276,7 @@ Release 9.0.0 (2025-06-27)
 - Time moments:
   * Add `cs_time_moment_define_by_function` and `cs_time_moment_define_by_field`
     time moment definitions based on evaluation of cs_function_t objects
-    or existing cs_field_t values.
+    or existing `cs_field_t` values.
   * Add `time_moment_start_time_step` and `time_moment_start_time_value`
     options to `control_file` syntax to dynamically change time step at
     which time moment accumulation is started.
@@ -1192,7 +1190,7 @@ User changes:
     generated during runtime.
   * Needed parameters are minimal and maximal values for X,Y and Z
     coordinates, and number of cells per direction.
-  * User can define the progression law for cells' size :
+  * User can define the progression law for cells' size:
     - Constant step
     - Geometric step
     - Parabolic step (Geometric step with a symmetry w.r.t center-coordinate
@@ -2438,7 +2436,7 @@ Architectural changes:
   * irom, iviscl, etc.. are now directly field indices (hence starting from 0)
   * test on variability of specific heat (icp), isochoric specific heat (icv)
     and volumetric viscosity (iviscv) are consequently shifted of 1
-    (-1 : uniform field, >=0: non uniform)
+    (-1: uniform field, >=0: non uniform)
   * renamed _owner utility subroutines
   * renamed most used add_property_field into add_property_field_1d
   * mesh viscosity now a 3-dimensional field when strictly orthotropic
