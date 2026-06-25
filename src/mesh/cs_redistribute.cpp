@@ -125,7 +125,7 @@ _distribute_bc_coeff(const cs_distributor_t   *db,
  *----------------------------------------------------------------------------*/
 
 static void
-_distribute_bc_info_and_types(const cs_distributor_t *db)
+_distribute_bc_info_and_types(const cs_distributor_t   *db)
 {
   cs_boundary_condition_pm_info_t *pm = cs_glob_bc_pm_info;
 
@@ -155,14 +155,14 @@ _distribute_bc_info_and_types(const cs_distributor_t *db)
  *----------------------------------------------------------------------------*/
 
 static void
-_distribute_fields(const cs_distributor_t *cd,
-                   const cs_distributor_t *ifd,
-                   const cs_distributor_t *bfd,
-                   const cs_distributor_t *vd,
-                   const cs_lnum_t n_cells_ini,
-                   const cs_lnum_t n_i_faces_ini,
-                   const cs_lnum_t n_b_faces_ini,
-                   const cs_lnum_t n_vertices_ini)
+_distribute_fields(const cs_distributor_t    *cd,
+                   const cs_distributor_t    *ifd,
+                   const cs_distributor_t    *bfd,
+                   const cs_distributor_t    *vd,
+                   const cs_lnum_t            n_cells_ini,
+                   const cs_lnum_t            n_i_faces_ini,
+                   const cs_lnum_t            n_b_faces_ini,
+                   const cs_lnum_t            n_vertices_ini)
 {
   cs_mesh_t *mesh = cs_glob_mesh;
 
@@ -417,11 +417,11 @@ _random_dest_rank(const cs_mesh_t  *mesh)
  *----------------------------------------------------------------------------*/
 
 static cs_distributor_t *
-_distributor_create(cs_lnum_t         n_send,
-                    cs_lnum_t        *send_list[],
-                    const int         dest_ranks[],
-                    const MPI_Comm    comm,
-                    const cs_gnum_t   gnum[])
+_distributor_create(cs_lnum_t           n_send,
+                    cs_lnum_t          *send_list[],
+                    const int           dest_ranks[],
+                    const MPI_Comm      comm,
+                    const cs_gnum_t     gnum[])
 {
   cs_all_to_all_t *d = cs_all_to_all_create(n_send,
                                             0,
@@ -505,9 +505,9 @@ _distributor_create(cs_lnum_t         n_send,
  *----------------------------------------------------------------------------*/
 
 static cs_distributor_t *
-_create_vertex_distributor(cs_mesh_t       *mesh,
-                           const int        cell_dest[],
-                           const MPI_Comm   comm)
+_create_vertex_distributor(cs_mesh_t         *mesh,
+                           const int          cell_dest[],
+                           const MPI_Comm     comm)
 {
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -762,7 +762,7 @@ _create_cell_distributor(const cs_mesh_t   *mesh,
 
 #endif // defined(HAVE_MPI)
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions
@@ -1144,7 +1144,6 @@ cs_redistribute(const int           cell_dest_rank[],
     cs_distributor_destroy(&cd);
 
   CS_FREE(_dest_rank);
-
 }
 
 #endif // defined(HAVE_MPI)

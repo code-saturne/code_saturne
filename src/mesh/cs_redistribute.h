@@ -41,13 +41,13 @@
 #if defined(HAVE_MPI)
 
 struct cs_distributor_t {
-  cs_all_to_all_t *d;
-  cs_lnum_t n_send;
-  cs_lnum_t n_recv;
-  cs_lnum_t n_uniq;
-  cs_lnum_t *send_list;
-  cs_lnum_t *recv_order;
-  cs_lnum_t *ordered_to_local;
+  cs_all_to_all_t   *d;
+  cs_lnum_t          n_send;
+  cs_lnum_t          n_recv;
+  cs_lnum_t          n_uniq;
+  cs_lnum_t         *send_list;
+  cs_lnum_t         *recv_order;
+  cs_lnum_t         *ordered_to_local;
 };
 
 #endif
@@ -138,9 +138,9 @@ cs_distribute_buffer(const cs_distributor_t   *db,
 template <typename T>
 void
 cs_distribute_buffer_allocated(const cs_distributor_t   *db,
-                               const int               stride,
-                               const T                 send_buf[],
-                               T                       recv_buf[])
+                               const int                 stride,
+                               const T                   send_buf[],
+                               T                         recv_buf[])
 {
   if (recv_buf == nullptr || db == nullptr)
     return;
@@ -195,9 +195,9 @@ cs_distribute_buffer_allocated(const cs_distributor_t   *db,
 
 template <typename T>
 void
-cs_distribute_buffer_indexed(const cs_distributor_t *db,
-                             cs_lnum_t            *idx[],
-                             T                    *buffer[])
+cs_distribute_buffer_indexed(const cs_distributor_t    *db,
+                             cs_lnum_t                 *idx[],
+                             T                         *buffer[])
 {
   T *_buffer = nullptr;
 
