@@ -2307,6 +2307,7 @@ PREDEFINED             = HAVE_CONFIG_H=1 \
                          CS_ENUMF_(e)=e \
                          BEGIN_C_DECLS= \
                          END_C_DECLS= \
+                         HAVE_MPI \
                          __cplusplus
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
