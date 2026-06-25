@@ -32,10 +32,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "base/cs_field.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Local Macro definitions
@@ -99,9 +98,23 @@ cs_atmo_scalar_source_term(int              f_id,
 void
 cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[]);
 
-
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute aerosol cloud droplets nucleation when using the atmospheric
+ * humid model using a microphysical model.
+ *
+ * It is taken into account as an additional step split from advection-diffusion
+ * equation, hence the droplet number is first clipped if necessary.
+ *
+ * \param[out]  f_ntdrp droplet number field in 1/cm**3
+ * \param[in]   rom     density of air in kg/m**3
+ */
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+void
+cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
+                       const cs_real_t   *rom);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_ATMO_SOURCE_TERMS_H */

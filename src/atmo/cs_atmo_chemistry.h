@@ -194,29 +194,6 @@ cs_atmo_aerosol_time_advance(void);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Compute aerosol cloud droplets nucleation when using the atmospheric
- * humid model using a microphysical model.
- *
- * It is taken into account as an additional step split from advection-diffusion
- * equation, hence the droplet number is first clipped if necessary.
- *
- * \param[out]  nc      droplet number (scalar) in 1/cm**3
- * \param[in]   rom     density of air in kg/m**3
- * \param[in]   qldia   mass fraction of liquid water in kg/kg
- * \param[in]   pphy    true pressure in pascals
- * \param[in]   refrad  radiative cooling
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_atmo_aerosol_nuclea(cs_real_t         *nc,
-                       const cs_real_t   *rom,
-                       const cs_real_t   *qldia,
-                       const cs_real_t   *pphy,
-                       const cs_real_t   *refrad);
-
-/*----------------------------------------------------------------------------*/
-/*
  * \brief Deactivate chemistry initialization procedure
  */
 /*----------------------------------------------------------------------------*/

@@ -96,8 +96,6 @@
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_atmo_source_terms.h"
-#include "atmo/cs_atmo_profile_std.h"
-#include "atmo/cs_intprf.h"
 #include "cfbl/cs_cf_model.h"
 #include "cogz/cs_combustion_gas.h"
 #include "cogz/cs_combustion_ebu.h"
@@ -982,7 +980,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   const cs_real_t *volume = mq_g->cell_vol;
   const cs_real_t *cell_f_vol = fvq->cell_vol;
-  const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
 
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
   const cs_wall_condensation_t *wall_condensation = cs_glob_wall_condensation;
@@ -1898,95 +1895,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Atmospheric module:
    * finalize number of droplets due to nucleation for humid atmosphere */
 
-  if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID
-      && cs_glob_atmo_option->sedimentation_model == 1
-      && strcmp(f->name, "number_of_droplets") == 0
-      && cs_glob_atmo_option->nucleation_model > 0) {
-
-    const cs_real_t *cpro_liqwt = cs_field_by_name("liquid_water")->val;
-
-    /* Test minimum liquid water to carry out nucleation */
-    cs_real_t qliqmax;
-    struct cs_reduce_max1r reducer;
-
-    ctx.parallel_for_reduce
-      (n_cells, qliqmax, reducer,
-       [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_real_t &res) {
-         res = cpro_liqwt[c_id];
-    });
-    ctx.wait();
-    cs_parall_max(1, CS_REAL_TYPE, &qliqmax);
-
-    if (qliqmax > 1.e-8) {
-      /* Force execution on host, as some functions called are not
-         available yet on GPU */
-      cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
-
-      /* First : diagnose the droplet number
-       * nucleation : when liquid water present calculate the
-       * number of condensation nucleii (ncc) and if the droplet number (nc)
-       * is smaller than ncc set it to ncc. */
-      cs_real_t *pphy;
-      CS_MALLOC_HD(pphy, n_cells_ext, cs_real_t, cs_alloc_mode);
-
-      if (cs_glob_atmo_option->meteo_profile == 0) {
-        const cs_real_t p0 = fluid_props->p0;
-        const cs_real_t t0 = fluid_props->t0;
-
-        /* cs_atmo_profile_std is HOST only, and we are using a host_context.
-         * Once atmo is migrated to GPU aware code, CS_HOST_LAMBDA
-         * should be changed to CS_LAMBDA which is __host__ __device__ */
-        h_ctx.parallel_for(n_cells, CS_HOST_LAMBDA (cs_lnum_t c_id) {
-          cs_real_t _pphy, dum;
-          cs_atmo_profile_std(0., /* z_ref */
-                              p0,
-                              t0,
-                              cell_cen[c_id][2], &_pphy, &dum, &dum);
-          pphy[c_id] = _pphy;
-        });
-      }
-      /* calculate pressure from meteo file */
-      else if (cs_glob_atmo_option->meteo_profile == 1) {
-        int nbmett = cs_glob_atmo_option->met_1d_nlevels_t;
-        int nbmetm = cs_glob_atmo_option->met_1d_ntimes;
-        const cs_real_t *z_temp_met = cs_glob_atmo_option->z_temp_met;
-        const cs_real_t *time_met = cs_glob_atmo_option->time_met;
-        const cs_real_t *hyd_p_met = cs_glob_atmo_option->hyd_p_met;
-
-        /* cs_intprf is HOST only, and we are using a host_context.
-         * Once atmo is migrated to GPU aware code, CS_HOST_LAMBDA
-         * should be changed to CS_LAMBDA which is __host__ __device__ */
-        h_ctx.parallel_for(n_cells, CS_HOST_LAMBDA (cs_lnum_t c_id) {
-          pphy[c_id] = cs_intprf(nbmett,
-                                 nbmetm,
-                                 z_temp_met,
-                                 time_met,
-                                 hyd_p_met,
-                                 cell_cen[c_id][2],
-                                 ts->t_cur);
-        });
-      }
-      else {
-        cs_real_t *meteo_pressure = cs_field_by_name("meteo_pressure")->val;
-        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-          pphy[c_id] = meteo_pressure[c_id];
-        });
-      }
-
-      ctx.wait();
-
-      cs_real_t *cvar_ntdrp = cs_field_by_name_try("number_of_droplets")->val;
-      const cs_real_t *cpro_rad_cool = cs_field_by_name("radiative_cooling")->val;
-
-      cs_atmo_aerosol_nuclea(cvar_ntdrp,
-                             crom,
-                             cpro_liqwt,
-                             pphy,
-                             cpro_rad_cool);
-      CS_FREE(pphy);
-
-    } // qliqmax > 1.e-8
-  } // for humid atmosphere physics only
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
+      cs_atmo_aerosol_nuclea(cs_field_by_name("number_of_droplets"),
+                             crom);
 
   /* Explicit balance
    * (See cs_equation_iterative_solve_scalar: remove the increment)
