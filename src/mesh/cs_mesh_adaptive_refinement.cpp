@@ -1058,7 +1058,7 @@ _load_balance(cs_mesh_t *mesh)
 
   cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), cell_dest);
 
-  cs_redistribute(cell_dest, nullptr);
+  cs_redistribute(cell_dest, nullptr, nullptr, nullptr, nullptr);
 
   CS_FREE(cell_dest);
 }

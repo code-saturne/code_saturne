@@ -1,5 +1,5 @@
 /*============================================================================
- * Repartitioning and redistribution mesh data and fields.
+ * Redistribution of mesh and field data.
  *============================================================================*/
 
 /*
@@ -60,40 +60,10 @@
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Local structure definitions
- *============================================================================*/
-
-struct _distributor_t {
-  cs_all_to_all_t *d;
-  cs_lnum_t n_send;
-  cs_lnum_t n_recv;
-  cs_lnum_t n_uniq;
-  cs_lnum_t *send_list;
-  cs_lnum_t *recv_order;
-  cs_lnum_t *ordered_to_local;
-};
-
-/*============================================================================
- * Local Macro definitions
- *============================================================================*/
-
-/*============================================================================
- * Static global variables
- *============================================================================*/
-
-static cs_redistribute_data_t _redistribute_data = {
-  .c_r_level = nullptr,
-  .c_r_flag = nullptr,
-  .indic = nullptr
-};
-
-cs_redistribute_data_t *cs_glob_redistribute_data = &_redistribute_data;
-
-#if defined(HAVE_MPI)
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
+
+#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Compare cs_gnum_t (bsearch function).
@@ -118,126 +88,6 @@ _cmp_gnum(const void  *a,
 }
 
 /*----------------------------------------------------------------------------
- * Distribute and reorder a data buffer using the distributor structure.
- *
- * This function guarantees the uniqueness of the elements post-redistribution.
- *
- * parameters:
- *   db          <-- pointer to the distributor.
- *   stride      <-- stride of the array to distribute.
- *   buffer      <-> pointer to the array to redistribute.
- *----------------------------------------------------------------------------*/
-
-template <typename T>
-static void
-_distribute_buffer(const _distributor_t   *db,
-                   const int               stride,
-                   T                      *buffer[])
-{
-  if (buffer == nullptr || db == nullptr)
-    return;
-
-  T *_buffer = nullptr;
-
-  if (db->send_list) {
-
-    T *send_data = nullptr;
-    CS_MALLOC(send_data, stride * db->n_send, T);
-
-    _buffer = *buffer;
-
-    for (cs_lnum_t i = 0; i < db->n_send; i++) {
-      cs_lnum_t id = db->send_list[i];
-      for (int j = 0; j < stride; j++)
-        send_data[stride*i+j] = _buffer[stride*id+j];
-    }
-
-    CS_FREE(*buffer);
-    *buffer = send_data;
-
-  }
-
-  T *recv_data = cs_all_to_all_copy_array(db->d,
-                                          stride,
-                                          false,
-                                          *buffer);
-
-  CS_REALLOC(*buffer, db->n_uniq * stride, T);
-  _buffer = *buffer;
-
-  for (cs_lnum_t i = 0; i < db->n_recv; i++) {
-    cs_lnum_t ordered = db->recv_order[i];
-    cs_lnum_t local = db->ordered_to_local[ordered];
-    if (local == -1) continue;
-
-    for (int j = 0; j < stride; j++)
-      _buffer[stride*local+j] = recv_data[stride*ordered+j];
-  }
-
-  CS_FREE(recv_data);
-}
-
-/*----------------------------------------------------------------------------
- * Distribute and reorder a data buffer using the distributor structure.
- *
- * Unlike _distribute_buffer, the distribution is not in-place, and the
- * recv_buf array must be allocated to the correct size by the caller.
- *
- * This function guarantees the uniqueness of the elements post-redistribution.
- *
- * parameters:
- *   db          <-- pointer to the distributor.
- *   stride      <-- stride of the array to distribute.
- *   send_buf    <-- pointer to the array to redistribute.
- *   recv_buf    --> pointer to the redistributed array.
- *----------------------------------------------------------------------------*/
-
-template <typename T>
-static void
-_distribute_buffer_allocated(const _distributor_t   *db,
-                             const int               stride,
-                             const T                 send_buf[],
-                             T                       recv_buf[])
-{
-  if (recv_buf == nullptr || db == nullptr)
-    return;
-
-  T *_send_buf = nullptr;
-
-  if (db->send_list) {
-
-    CS_MALLOC(_send_buf, stride * db->n_send, T);
-
-    for (cs_lnum_t i = 0; i < db->n_send; i++) {
-      cs_lnum_t id = db->send_list[i];
-      for (int j = 0; j < stride; j++)
-        _send_buf[stride*i+j] = send_buf[stride*id+j];
-    }
-
-    send_buf = _send_buf;
-
-  }
-
-  T *_recv_buf = cs_all_to_all_copy_array(db->d,
-                                          stride,
-                                          false,
-                                          send_buf);
-
-  CS_FREE(_send_buf);
-
-  for (cs_lnum_t i = 0; i < db->n_recv; i++) {
-    cs_lnum_t ordered = db->recv_order[i];
-    cs_lnum_t local = db->ordered_to_local[ordered];
-    if (local == -1) continue;
-
-    for (int j = 0; j < stride; j++)
-      recv_buf[stride*local+j] = _recv_buf[stride*ordered+j];
-  }
-
-  CS_FREE(_recv_buf);
-}
-
-/*----------------------------------------------------------------------------
  * Distribute a coefficient array related to boundary conditions.
  *
  * This function first tests the existence of the array globally, as some
@@ -246,15 +96,14 @@ _distribute_buffer_allocated(const _distributor_t   *db,
  * parameters:
  *   db          <-- pointer to the distributor.
  *   stride      <-- stride of the array to distribute.
- *   send_buf    <-- pointer to the array to redistribute.
- *   recv_buf    <-> pointer to the redistributed array.
+ *   buf         <-> pointer to the array to redistribute.
  *----------------------------------------------------------------------------*/
 
 template <typename T>
 static void
-_distribute_bc_coeff(const _distributor_t *db,
-                     int stride,
-                     T *buf[])
+_distribute_bc_coeff(const cs_distributor_t   *db,
+                     int                       stride,
+                     T                        *buf[])
 {
   if (!buf)
     return;
@@ -265,7 +114,7 @@ _distribute_bc_coeff(const _distributor_t *db,
   if (!coeff_exists)
     return;
 
-  _distribute_buffer(db, stride, buf);
+  cs_distribute_buffer(db, stride, buf);
 }
 
 /*----------------------------------------------------------------------------
@@ -276,17 +125,17 @@ _distribute_bc_coeff(const _distributor_t *db,
  *----------------------------------------------------------------------------*/
 
 static void
-_distribute_bc_info_and_types(const _distributor_t *db)
+_distribute_bc_info_and_types(const cs_distributor_t *db)
 {
   cs_boundary_condition_pm_info_t *pm = cs_glob_bc_pm_info;
 
-  _distribute_buffer(db, 1, &pm->izfppp);
+  cs_distribute_buffer(db, 1, &pm->izfppp);
 
   _distribute_bc_coeff(db, 1, &pm->iautom);
 
   int **bc_type = cs_boundary_conditions_get_bc_type_addr();
 
-  _distribute_buffer(db, 1, bc_type);
+  cs_distribute_buffer(db, 1, bc_type);
 
   cs_glob_bc_type = *bc_type;
 }
@@ -306,10 +155,10 @@ _distribute_bc_info_and_types(const _distributor_t *db)
  *----------------------------------------------------------------------------*/
 
 static void
-_distribute_fields(const _distributor_t *cd,
-                   const _distributor_t *ifd,
-                   const _distributor_t *bfd,
-                   const _distributor_t *vd,
+_distribute_fields(const cs_distributor_t *cd,
+                   const cs_distributor_t *ifd,
+                   const cs_distributor_t *bfd,
+                   const cs_distributor_t *vd,
                    const cs_lnum_t n_cells_ini,
                    const cs_lnum_t n_i_faces_ini,
                    const cs_lnum_t n_b_faces_ini,
@@ -323,7 +172,7 @@ _distribute_fields(const _distributor_t *cd,
 
     cs_field_t *field = cs_field_by_id(i);
 
-    const _distributor_t *db = nullptr;
+    const cs_distributor_t *db = nullptr;
 
     cs_mesh_location_type_t mlt = cs_mesh_location_get_type(field->location_id);
     cs_lnum_t n_elts_ini = 0;
@@ -371,7 +220,7 @@ _distribute_fields(const _distributor_t *cd,
       field->_vals[j]->reshape(n_elts, field->dim);
       field->vals[j] = field->_vals[j]->data();
 
-      _distribute_buffer_allocated(db, field->dim, copy, field->vals[j]);
+      cs_distribute_buffer_allocated(db, field->dim, copy, field->vals[j]);
     }
 
     CS_FREE(copy);
@@ -388,7 +237,7 @@ _distribute_fields(const _distributor_t *cd,
     cs_lnum_t i_mult = 1, a_mult = 1, b_mult = 1;
     cs_field_get_bc_coeff_mult(field, &i_mult, &a_mult, &b_mult);
 
-    _distribute_buffer(bfd, i_mult, &bcc->icodcl);
+    cs_distribute_buffer(bfd, i_mult, &bcc->icodcl);
 
     // Note: the rcodcl family of buffers is non-interleaved.
     cs_real_t *rcod;
@@ -398,7 +247,7 @@ _distribute_fields(const _distributor_t *cd,
     CS_REALLOC(bcc->rcodcl1, mesh->n_b_faces*a_mult, cs_real_t);
     for (int dim = 0; dim < field->dim; dim++) {
       cs_real_t *dst = bcc->rcodcl1 + dim*mesh->n_b_faces;
-      _distribute_buffer_allocated(bfd,
+      cs_distribute_buffer_allocated(bfd,
                                    1,
                                    rcod + dim*n_b_faces_ini,
                                    dst);
@@ -408,7 +257,7 @@ _distribute_fields(const _distributor_t *cd,
     CS_REALLOC(bcc->rcodcl2, mesh->n_b_faces*a_mult, cs_real_t);
     for (int dim = 0; dim < field->dim; dim++) {
       cs_real_t *dst = bcc->rcodcl2 + dim*mesh->n_b_faces;
-      _distribute_buffer_allocated(bfd,
+      cs_distribute_buffer_allocated(bfd,
                                    1,
                                    rcod + dim*n_b_faces_ini,
                                    dst);
@@ -418,7 +267,7 @@ _distribute_fields(const _distributor_t *cd,
     CS_REALLOC(bcc->rcodcl3, mesh->n_b_faces*a_mult, cs_real_t);
     for (int dim = 0; dim < field->dim; dim++) {
       cs_real_t *dst = bcc->rcodcl3 + dim*mesh->n_b_faces;
-      _distribute_buffer_allocated(bfd,
+      cs_distribute_buffer_allocated(bfd,
                                    1,
                                    rcod + dim*n_b_faces_ini,
                                    dst);
@@ -464,61 +313,6 @@ _free_field_gradients(void)
     cs_field_t *f = cs_field_by_id(f_id);
     if (f->grad)
       CS_FREE(f->grad);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Distribute additional data.
- *
- * The correct numbering is applied to the buffers.
- *
- * If a data buffer is not null, this function will try to redistribute it.
- *
- * parameters:
- *   cd             <-- pointer to cells distributor
- *   n_cells_ini    <-- number of cells to send
- *   cell_order     <-- cells ordering by associated global number
- *   data           <-> pointer to data to be redistributed
- *----------------------------------------------------------------------------*/
-
-void
-_distribute_data(cs_all_to_all_t *cd,
-                 const int cell_order[],
-                 cs_redistribute_data_t *data)
-{
-  if (!data)
-    return;
-
-  cs_mesh_t *mesh = cs_glob_mesh;
-
-  if (data->c_r_level) {
-    int *c_r_level = cs_all_to_all_copy_array(cd, 1, false, data->c_r_level);
-    CS_REALLOC(data->c_r_level, mesh->n_cells_with_ghosts, int);
-    for (cs_lnum_t new_id = 0; new_id < mesh->n_cells; new_id++) {
-      int pre_id = cell_order ? cell_order[new_id] : new_id;
-      data->c_r_level[new_id] = c_r_level[pre_id];
-    }
-    CS_FREE(c_r_level);
-  }
-
-  if (data->c_r_flag) {
-    int *c_r_flag = cs_all_to_all_copy_array(cd, 1, false, data->c_r_flag);
-    CS_REALLOC(data->c_r_flag, mesh->n_cells_with_ghosts, int);
-    for (cs_lnum_t new_id = 0; new_id < mesh->n_cells; new_id++) {
-      int pre_id = cell_order ? cell_order[new_id] : new_id;
-      data->c_r_flag[new_id] = c_r_flag[pre_id];
-    }
-    CS_FREE(c_r_flag);
-  }
-
-  if (data->indic) {
-    int *indic = cs_all_to_all_copy_array(cd, 1, false, data->indic);
-    CS_REALLOC(data->indic, mesh->n_cells_with_ghosts, int);
-    for (cs_lnum_t new_id = 0; new_id < mesh->n_cells; new_id++) {
-      int pre_id = cell_order ? cell_order[new_id] : new_id;
-      data->indic[new_id] = indic[pre_id];
-    }
-    CS_FREE(indic);
   }
 }
 
@@ -622,7 +416,7 @@ _random_dest_rank(const cs_mesh_t  *mesh)
  *   a part-to-part distributor.
  *----------------------------------------------------------------------------*/
 
-static _distributor_t *
+static cs_distributor_t *
 _distributor_create(cs_lnum_t         n_send,
                     cs_lnum_t        *send_list[],
                     const int         dest_ranks[],
@@ -678,8 +472,8 @@ _distributor_create(cs_lnum_t         n_send,
 
   CS_FREE(gnum_r);
 
-  _distributor_t *db = nullptr;
-  CS_MALLOC(db, 1, _distributor_t);
+  cs_distributor_t *db = nullptr;
+  CS_MALLOC(db, 1, cs_distributor_t);
 
   db->d = d;
   db->n_send = n_send;
@@ -690,164 +484,6 @@ _distributor_create(cs_lnum_t         n_send,
   db->ordered_to_local = ordered_to_local;
 
   return db;
-}
-
-/*----------------------------------------------------------------------------
- * Transform a count array to an index array.
- *
- * parameters:
- *   n_elem      <-- buffer size.
- *   buffer      <-> buffer to transfrom.
- *----------------------------------------------------------------------------*/
-
-static void
-_count_to_index(const cs_lnum_t   n_elem,
-                cs_lnum_t         buffer[])
-{
-  buffer[0] = 0;
-  for (cs_lnum_t i = 0; i < n_elem; i++)
-    buffer[i+1] += buffer[i];
-}
-
-/*----------------------------------------------------------------------------
- * Distribute an indexed array and its corresponding index array using the
- * distributor structure.
- *
- * This function guarantees the uniqueness of the elements post-redistribution.
- *
- * parameters:
- *   db          <-- pointer to the distributor.
- *   idx         <-> pointer to the index array to redistribute.
- *   buffer      <-> pointer to the indexed array to redistribute.
- *----------------------------------------------------------------------------*/
-
-template <typename T>
-static void
-_distribute_buffer_indexed(const _distributor_t *db,
-                           cs_lnum_t            *idx[],
-                           T                    *buffer[])
-{
-  T *_buffer = nullptr;
-
-  cs_lnum_t *idx_s = nullptr;
-  CS_MALLOC(idx_s, db->n_send+1, cs_lnum_t);
-
-  cs_lnum_t *_idx = *idx;
-
-  for (cs_lnum_t i = 0; i < db->n_send; i++) {
-    cs_lnum_t id = db->send_list ? db->send_list[i] : i;
-    idx_s[i+1] = _idx[id+1] - _idx[id];
-  }
-
-  cs_lnum_t *idx_r = nullptr;
-  CS_MALLOC(idx_r, db->n_recv+1, cs_lnum_t);
-
-  cs_all_to_all_copy_array(db->d,
-                           1,
-                           false,
-                           idx_s+1,
-                           idx_r+1);
-
-  // Build the buffer to send.
-
-  _count_to_index(db->n_send, idx_s);
-
-  if (db->send_list) {
-
-    T* send_data = nullptr;
-    CS_MALLOC(send_data, idx_s[db->n_send], T);
-
-    T* _send_data = send_data;
-    _buffer = *buffer;
-
-    for (cs_lnum_t i = 0; i < db->n_send; i++) {
-      cs_lnum_t id = db->send_list ? db->send_list[i] : i;
-      for (cs_lnum_t j = _idx[id]; j < _idx[id+1]; j++)
-        *_send_data++ = _buffer[j];
-    }
-
-    assert(_send_data - send_data == idx_s[db->n_send]);
-
-    CS_FREE(*buffer);
-    CS_FREE(*idx);
-
-    *buffer = send_data;
-  }
-
-  // Build the correct idx.
-
-  CS_REALLOC(*idx, db->n_uniq+1, cs_lnum_t);
-  _idx = *idx;
-
-  for (cs_lnum_t i = 0; i < db->n_recv; i++) {
-    cs_lnum_t ordered = db->recv_order[i];
-    cs_lnum_t local = db->ordered_to_local[ordered];
-    if (local == -1) continue;
-
-    _idx[local+1] = idx_r[ordered+1];
-  }
-
-  _count_to_index(db->n_uniq, _idx);
-
-  // Exchange buffer.
-
-  _count_to_index(db->n_recv, idx_r);
-
-  T *_recv_data = cs_all_to_all_copy_indexed(db->d,
-                                             false,
-                                             idx_s,
-                                             *buffer,
-                                             idx_r);
-
-  CS_FREE(idx_s);
-
-  // Build the unique buffer.
-
-  CS_REALLOC(*buffer, _idx[db->n_uniq], T);
-  _buffer = *buffer;
-
-  for (cs_lnum_t i = 0; i < db->n_recv; i++) {
-    cs_lnum_t ordered = db->recv_order[i];
-    cs_lnum_t local = db->ordered_to_local[ordered];
-    if (local == -1) continue;
-
-    T *dst = _buffer + _idx[local];
-
-    for (cs_lnum_t j = idx_r[ordered]; j < idx_r[ordered+1]; j++)
-      *dst++ = _recv_data[j];
-  }
-
-  CS_FREE(_recv_data);
-  CS_FREE(idx_r);
-}
-
-/*----------------------------------------------------------------------------
- * Destroy a distributor structure.
- *
- * parameters:
- *   db          <-> pointer to the distributor.
- *----------------------------------------------------------------------------*/
-
-static void
-_distributor_destroy(_distributor_t  **db)
-{
-  if (db == nullptr)
-    return;
-
-  _distributor_t *_db = *db;
-
-  if (_db == nullptr)
-    return;
-
-  cs_all_to_all_destroy(&_db->d);
-  CS_FREE(_db->send_list);
-  CS_FREE(_db->recv_order);
-  CS_FREE(_db->ordered_to_local);
-  _db->n_send = -1;
-  _db->n_recv = -1;
-  _db->n_uniq = -1;
-
-  CS_FREE(_db);
 }
 
 /*----------------------------------------------------------------------------
@@ -868,7 +504,7 @@ _distributor_destroy(_distributor_t  **db)
  *   a vertex distributor.
  *----------------------------------------------------------------------------*/
 
-_distributor_t *
+static cs_distributor_t *
 _create_vertex_distributor(cs_mesh_t       *mesh,
                            const int        cell_dest[],
                            const MPI_Comm   comm)
@@ -976,7 +612,7 @@ _create_vertex_distributor(cs_mesh_t       *mesh,
   CS_FREE(_v_dests);
   CS_FREE(v_idx);
 
-  _distributor_t *db = _distributor_create(n_elem,
+  cs_distributor_t *db = _distributor_create(n_elem,
                                            &v_list,
                                            v_dests,
                                            comm,
@@ -999,7 +635,7 @@ _create_vertex_distributor(cs_mesh_t       *mesh,
  *   a boundary face distributor.
  *----------------------------------------------------------------------------*/
 
-static _distributor_t *
+static cs_distributor_t *
 _create_b_face_distributor(const cs_mesh_t   *mesh,
                            const int          cell_dest_rank[],
                            const MPI_Comm     comm)
@@ -1009,7 +645,7 @@ _create_b_face_distributor(const cs_mesh_t   *mesh,
   for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++)
     dest_ranks[f_id] = cell_dest_rank[mesh->b_face_cells[f_id]];
 
-  _distributor_t *db = _distributor_create(mesh->n_b_faces,
+  cs_distributor_t *db = _distributor_create(mesh->n_b_faces,
                                            nullptr,
                                            dest_ranks,
                                            comm,
@@ -1035,7 +671,7 @@ _create_b_face_distributor(const cs_mesh_t   *mesh,
  *   an interior face distributor.
  *----------------------------------------------------------------------------*/
 
-static _distributor_t *
+static cs_distributor_t *
 _create_i_face_distributor(const cs_mesh_t   *mesh,
                            const int          cell_dest_rank[],
                            const MPI_Comm     comm)
@@ -1077,7 +713,7 @@ _create_i_face_distributor(const cs_mesh_t   *mesh,
   CS_REALLOC(i_face_list, n_send, cs_lnum_t);
   CS_REALLOC(i_face_dest, n_send, int);
 
-  _distributor_t *ifd = _distributor_create(n_send,
+  cs_distributor_t *ifd = _distributor_create(n_send,
                                             &i_face_list,
                                             i_face_dest,
                                             comm,
@@ -1103,16 +739,23 @@ _create_i_face_distributor(const cs_mesh_t   *mesh,
  *   a cell distributor.
  *----------------------------------------------------------------------------*/
 
-static _distributor_t *
+static cs_distributor_t *
 _create_cell_distributor(const cs_mesh_t   *mesh,
                          const int          cell_dest_rank[],
                          const MPI_Comm     comm)
 {
-  _distributor_t *cd = _distributor_create(mesh->n_cells,
-                                           nullptr,
-                                           cell_dest_rank,
-                                           comm,
-                                           mesh->global_cell_num);
+  int *_cell_dest = nullptr;
+  CS_MALLOC(_cell_dest, mesh->n_cells, int);
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++)
+    _cell_dest[c_id] = cell_dest_rank[c_id];
+
+  cs_distributor_t *cd = _distributor_create(mesh->n_cells,
+                                             nullptr,
+                                             _cell_dest,
+                                             comm,
+                                             mesh->global_cell_num);
+
+  cs_all_to_all_transfer_dest_rank(cd->d, &_cell_dest);
 
   return cd;
 }
@@ -1127,25 +770,62 @@ _create_cell_distributor(const cs_mesh_t   *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Redistribute mesh, fields and data based on a cell destination rank
+ * \brief Destroy a distributor structure.
+ *
+ * \param[in,out]  db       pointer of pointer to a cs_distributor_structure
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined (HAVE_MPI)
+
+void
+cs_distributor_destroy(cs_distributor_t  **db)
+{
+  if (db == nullptr)
+    return;
+
+  cs_distributor_t *_db = *db;
+
+  if (_db == nullptr)
+    return;
+
+  cs_all_to_all_destroy(&_db->d);
+  CS_FREE(_db->send_list);
+  CS_FREE(_db->recv_order);
+  CS_FREE(_db->ordered_to_local);
+  _db->n_send = -1;
+  _db->n_recv = -1;
+  _db->n_uniq = -1;
+
+  CS_FREE(_db);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Redistribute mesh and field data based on a cell destination rank
  * map.
  *
- * If no cell map is given, a random one is created.
+ * If no cell map is given, a random one is created internally.
  *
- * If pointer to data is not null, this function will try to redistribute all
- * its non-null internal buffers.
+ * The different distributors are returned if any of the pointers are
+ * not null. In this case, it is up to the caller to free them whenever
+ * they are no longer needed.
  *
- * \param[in]     cell_dest_rank  destination rank for each cell
- * \param[inout]  data            pointer to redistribution data structure
+ * \param[in]  cell_dest_rank  destination rank for each cell
+ * \param[out] cell_db         pointer of pointer to cell redistributor
+ * \param[out] i_face_db       pointer of pointer to interior face redistributor
+ * \param[out] b_face_db       pointer of pointer to boundary face redistributor
+ * \param[out] vertex_db       pointer of pointer to vertex redistributor
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_redistribute(const int               cell_dest_rank[],
-                cs_redistribute_data_t *data)
+cs_redistribute(const int           cell_dest_rank[],
+                cs_distributor_t  **cell_db,
+                cs_distributor_t  **i_face_db,
+                cs_distributor_t  **b_face_db,
+                cs_distributor_t  **vertex_db)
 {
-#if defined (HAVE_MPI)
-
   if (cs_glob_n_ranks == 1)
     return;
 
@@ -1178,19 +858,19 @@ cs_redistribute(const int               cell_dest_rank[],
 
   /* Create the vertex distributor before the mesh changes. */
 
-  _distributor_t *vd = _create_vertex_distributor(mesh,
+  cs_distributor_t *vd = _create_vertex_distributor(mesh,
                                                   cell_dest_rank,
                                                   comm);
 
   /* Boundary faces */
 
-  _distributor_t *bfd = _create_b_face_distributor(mesh,
+  cs_distributor_t *bfd = _create_b_face_distributor(mesh,
                                                    cell_dest_rank,
                                                    comm);
 
   const cs_lnum_t n_b_faces = bfd->n_uniq;
 
-  _distribute_buffer(bfd, 1, &mesh->global_b_face_num);
+  cs_distribute_buffer(bfd, 1, &mesh->global_b_face_num);
 
   {
     cs_lnum_t r_c_idx_exists = (mesh->b_face_r_c_idx != nullptr);
@@ -1207,7 +887,7 @@ cs_redistribute(const int               cell_dest_rank[],
 
       CS_FREE(mesh->b_face_r_c_idx);
 
-      _distribute_buffer(bfd, 1, &b_face_r_c_idx);
+      cs_distribute_buffer(bfd, 1, &b_face_r_c_idx);
 
       CS_MALLOC(mesh->b_face_r_c_idx, n_b_faces, char);
 
@@ -1219,7 +899,7 @@ cs_redistribute(const int               cell_dest_rank[],
     }
   }
 
-  _distribute_buffer(bfd, 1, &mesh->b_face_family);
+  cs_distribute_buffer(bfd, 1, &mesh->b_face_family);
 
   cs_gnum_t *g_b_face_cells = nullptr;
   CS_MALLOC(g_b_face_cells, n_b_faces_ini, cs_gnum_t);
@@ -1228,7 +908,7 @@ cs_redistribute(const int               cell_dest_rank[],
 
   CS_FREE(mesh->b_face_cells);
 
-  _distribute_buffer(bfd, 1, &g_b_face_cells);
+  cs_distribute_buffer(bfd, 1, &g_b_face_cells);
 
   cs_gnum_t *g_b_face_vtx_lst = nullptr;
   CS_MALLOC(g_b_face_vtx_lst, mesh->b_face_vtx_connect_size, cs_gnum_t);
@@ -1237,7 +917,7 @@ cs_redistribute(const int               cell_dest_rank[],
 
   CS_FREE(mesh->b_face_vtx_lst);
 
-  _distribute_buffer_indexed(bfd,
+  cs_distribute_buffer_indexed(bfd,
                              &mesh->b_face_vtx_idx,
                              &g_b_face_vtx_lst);
 
@@ -1245,15 +925,15 @@ cs_redistribute(const int               cell_dest_rank[],
 
   /* Interior faces */
 
-  _distributor_t *ifd = _create_i_face_distributor(mesh,
+  cs_distributor_t *ifd = _create_i_face_distributor(mesh,
                                                    cell_dest_rank,
                                                    comm);
 
   cs_lnum_t n_i_faces = ifd->n_uniq;
 
-  _distribute_buffer(ifd, 1, &mesh->global_i_face_num);
+  cs_distribute_buffer(ifd, 1, &mesh->global_i_face_num);
 
-  _distribute_buffer(ifd, 1, &mesh->i_face_family);
+  cs_distribute_buffer(ifd, 1, &mesh->i_face_family);
 
   {
     cs_lnum_t r_gen_exists = (mesh->i_face_r_gen != nullptr);
@@ -1270,7 +950,7 @@ cs_redistribute(const int               cell_dest_rank[],
 
       CS_FREE(mesh->i_face_r_gen);
 
-      _distribute_buffer(ifd, 1, &r_gen);
+      cs_distribute_buffer(ifd, 1, &r_gen);
 
       CS_MALLOC(mesh->i_face_r_gen, n_i_faces, char);
 
@@ -1295,7 +975,7 @@ cs_redistribute(const int               cell_dest_rank[],
   CS_FREE(mesh->i_face_cells);
   CS_FREE(cell_gnum);
 
-  _distribute_buffer(ifd, 2, &g_i_face_cells);
+  cs_distribute_buffer(ifd, 2, &g_i_face_cells);
 
   cs_gnum_t *g_i_face_vtx_lst = nullptr;
   CS_MALLOC(g_i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_gnum_t);
@@ -1304,7 +984,7 @@ cs_redistribute(const int               cell_dest_rank[],
 
   CS_FREE(mesh->i_face_vtx_lst);
 
-  _distribute_buffer_indexed(ifd,
+  cs_distribute_buffer_indexed(ifd,
                              &mesh->i_face_vtx_idx,
                              &g_i_face_vtx_lst);
 
@@ -1314,9 +994,9 @@ cs_redistribute(const int               cell_dest_rank[],
 
   mesh->n_vertices = vd->n_uniq;
 
-  _distribute_buffer(vd, 1, &mesh->global_vtx_num);
+  cs_distribute_buffer(vd, 1, &mesh->global_vtx_num);
 
-  _distribute_buffer(vd, 3, &mesh->vtx_coord);
+  cs_distribute_buffer(vd, 3, &mesh->vtx_coord);
 
   {
     cs_lnum_t have_r_gen = (mesh->vtx_r_gen != nullptr);
@@ -1331,7 +1011,7 @@ cs_redistribute(const int               cell_dest_rank[],
 
       CS_FREE(mesh->vtx_r_gen);
 
-      _distribute_buffer(vd, 1, &vtx_r_gen);
+      cs_distribute_buffer(vd, 1, &vtx_r_gen);
 
       CS_MALLOC(mesh->vtx_r_gen, mesh->n_vertices, char);
 
@@ -1379,13 +1059,13 @@ cs_redistribute(const int               cell_dest_rank[],
 
   /* Cells */
 
-  _distributor_t *cd = _create_cell_distributor(mesh,
-                                                cell_dest_rank,
-                                                comm);
+  cs_distributor_t *cd = _create_cell_distributor(mesh,
+                                                  cell_dest_rank,
+                                                  comm);
 
-  _distribute_buffer(cd, 1, &mesh->global_cell_num);
+  cs_distribute_buffer(cd, 1, &mesh->global_cell_num);
 
-  _distribute_buffer(cd, 1, &mesh->cell_family);
+  cs_distribute_buffer(cd, 1, &mesh->cell_family);
 
   mesh->n_cells = cd->n_uniq;
 
@@ -1443,16 +1123,30 @@ cs_redistribute(const int               cell_dest_rank[],
                      n_b_faces_ini,
                      n_vertices_ini);
 
-  _distributor_destroy(&ifd);
-  _distributor_destroy(&bfd);
-  _distributor_destroy(&vd);
+  if (i_face_db)
+    *i_face_db = ifd;
+  else
+    cs_distributor_destroy(&ifd);
 
-  _distribute_data(cd->d, cd->recv_order, data);
+  if (b_face_db)
+    *b_face_db = bfd;
+  else
+    cs_distributor_destroy(&bfd);
 
-  _distributor_destroy(&cd);
+  if (vertex_db)
+    *vertex_db = vd;
+  else
+    cs_distributor_destroy(&vd);
+
+  if (cell_db)
+    *cell_db = cd;
+  else
+    cs_distributor_destroy(&cd);
+
   CS_FREE(_dest_rank);
 
-#endif // defined(HAVE_MPI)
 }
+
+#endif // defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------*/

@@ -279,6 +279,8 @@ _cell_equiv(cs_mesh_t  *mesh,
   // At this stage the correct c_r_flag is set for all cells.
   // Transfer all the siblings to the lowest rank to enable coarsening.
 
+#if defined(HAVE_MPI)
+
   int *dest_rank;
   CS_MALLOC(dest_rank, n_cells_ext, int);
   for (int i = 0; i < n_cells; i++)
@@ -340,27 +342,23 @@ _cell_equiv(cs_mesh_t  *mesh,
   // All siblings tagged for coarsening should reside within the same proc.
 
   {
-    cs_redistribute_data_t *data = cs_glob_redistribute_data;
-    data->c_r_flag = c_r_flag;
-    data->c_r_level = c_r_level;
-    data->indic = cs_glob_amr_info->indic_cells;
-
-    cs_redistribute(dest_rank, data);
+    cs_distributor_t *cd = nullptr;
+    cs_redistribute(dest_rank, &cd, nullptr, nullptr, nullptr);
 
     CS_FREE(dest_rank);
 
-    c_r_flag = data->c_r_flag;
-    c_r_level = data->c_r_level;
-    cs_glob_amr_info->indic_cells = data->indic;
+    cs_distribute_buffer(cd, 1, &c_r_flag);
+    cs_distribute_buffer(cd, 1, &c_r_level);
+    cs_distribute_buffer(cd, 1, &cs_glob_amr_info->indic_cells);
 
-    data->c_r_flag = nullptr;
-    data->c_r_level = nullptr;
-    data->indic = nullptr;
+    cs_distributor_destroy(&cd);
   }
 
   n_i_faces = mesh->n_i_faces;
   n_cells_ext = mesh->n_cells_with_ghosts;
   n_cells = mesh->n_cells;
+
+#endif // defined(HAVE_MPI)
 
   // Determine the local old-to-new cell numbering.
   // This step doesn't need halo exchanges.
