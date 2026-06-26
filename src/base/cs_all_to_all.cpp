@@ -951,7 +951,8 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
                             const int                  dest_rank[],
                             void                      *dest_data)
 {
-  size_t elt_size = cs_datatype_size[dc->datatype]*dc->stride;
+  size_t datatype_size = cs_datatype_size[dc->datatype];
+  size_t elt_size = datatype_size*dc->stride;
   unsigned char *_dest_data = static_cast<unsigned char *>(dest_data);
   unsigned char *_recv_data = static_cast<unsigned char *>(dest_data);
 
@@ -961,8 +962,10 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
     CS_MALLOC(_dest_data, dc->recv_size*elt_size, unsigned char);
 
   /* Data buffer for MPI exchange (may merge data and metadata) */
-  if (   dc->dest_id_datatype == CS_LNUM_TYPE || d->recv_id != nullptr
-      || reverse)
+  if (dc->dest_id_datatype == CS_LNUM_TYPE ||
+      d->recv_id != nullptr                ||
+      reverse                              ||
+      dc->comp_size > datatype_size)
     CS_MALLOC(_recv_data, dc->recv_size*dc->comp_size, unsigned char);
   else
     _recv_data = _dest_data;

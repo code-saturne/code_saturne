@@ -88,10 +88,10 @@ _cmp_gnum(const void  *a,
 }
 
 /*----------------------------------------------------------------------------
- * Distribute a coefficient array related to boundary conditions.
+ * Check for the existence of an array globally, then distribute it accordingly.
  *
- * This function first tests the existence of the array globally, as some
- * initial parts might not have any boundary faces.
+ * For example, this is useful for boundary/AMR data that might not exist on
+ * all procs.
  *
  * parameters:
  *   db          <-- pointer to the distributor.
@@ -101,9 +101,9 @@ _cmp_gnum(const void  *a,
 
 template <typename T>
 static void
-_distribute_bc_coeff(const cs_distributor_t   *db,
-                     int                       stride,
-                     T                        *buf[])
+_check_and_distribute_buffer(const cs_distributor_t   *db,
+                             int                       stride,
+                             T                        *buf[])
 {
   if (!buf)
     return;
@@ -131,7 +131,7 @@ _distribute_bc_info_and_types(const cs_distributor_t   *db)
 
   cs_distribute_buffer(db, 1, &pm->izfppp);
 
-  _distribute_bc_coeff(db, 1, &pm->iautom);
+  _check_and_distribute_buffer(db, 1, &pm->iautom);
 
   int **bc_type = cs_boundary_conditions_get_bc_type_addr();
 
@@ -275,24 +275,24 @@ _distribute_fields(const cs_distributor_t    *cd,
 
     CS_FREE(rcod);
 
-    _distribute_bc_coeff(bfd, a_mult, &bcc->a);
-    _distribute_bc_coeff(bfd, b_mult, &bcc->b);
+    _check_and_distribute_buffer(bfd, a_mult, &bcc->a);
+    _check_and_distribute_buffer(bfd, b_mult, &bcc->b);
 
-    _distribute_bc_coeff(bfd, a_mult, &bcc->af);
-    _distribute_bc_coeff(bfd, b_mult, &bcc->bf);
+    _check_and_distribute_buffer(bfd, a_mult, &bcc->af);
+    _check_and_distribute_buffer(bfd, b_mult, &bcc->bf);
 
-    _distribute_bc_coeff(bfd, a_mult, &bcc->ad);
-    _distribute_bc_coeff(bfd, b_mult, &bcc->bd);
+    _check_and_distribute_buffer(bfd, a_mult, &bcc->ad);
+    _check_and_distribute_buffer(bfd, b_mult, &bcc->bd);
 
-    _distribute_bc_coeff(bfd, a_mult, &bcc->ac);
-    _distribute_bc_coeff(bfd, b_mult, &bcc->bc);
+    _check_and_distribute_buffer(bfd, a_mult, &bcc->ac);
+    _check_and_distribute_buffer(bfd, b_mult, &bcc->bc);
 
-    _distribute_bc_coeff(bfd, 1, &bcc->h_int_tot);
+    _check_and_distribute_buffer(bfd, 1, &bcc->h_int_tot);
 
-    _distribute_bc_coeff(bfd, field->dim, &bcc->val_f);
-    _distribute_bc_coeff(bfd, field->dim, &bcc->val_f_pre);
+    _check_and_distribute_buffer(bfd, field->dim, &bcc->val_f);
+    _check_and_distribute_buffer(bfd, field->dim, &bcc->val_f_pre);
 
-    _distribute_bc_coeff(bfd, field->dim, &bcc->flux_diff);
+    _check_and_distribute_buffer(bfd, field->dim, &bcc->flux_diff);
   }
 
   _distribute_bc_info_and_types(bfd);
@@ -820,32 +820,7 @@ cs_redistribute(const int           cell_dest_rank[],
 
   cs_distribute_buffer(bfd, 1, &mesh->global_b_face_num);
 
-  {
-    cs_lnum_t r_c_idx_exists = (mesh->b_face_r_c_idx != nullptr);
-    cs_parall_max(1, CS_INT_TYPE, &r_c_idx_exists);
-
-    // TODO: fix cs_all_to_all_copy_array for char
-
-    if (r_c_idx_exists) {
-
-      int *b_face_r_c_idx = nullptr;
-      CS_MALLOC(b_face_r_c_idx, n_b_faces_ini, int);
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces_ini; f_id++)
-        b_face_r_c_idx[f_id] = mesh->b_face_r_c_idx[f_id];
-
-      CS_FREE(mesh->b_face_r_c_idx);
-
-      cs_distribute_buffer(bfd, 1, &b_face_r_c_idx);
-
-      CS_MALLOC(mesh->b_face_r_c_idx, n_b_faces, char);
-
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
-        mesh->b_face_r_c_idx[f_id] = b_face_r_c_idx[f_id];
-
-      CS_FREE(b_face_r_c_idx);
-
-    }
-  }
+  _check_and_distribute_buffer(bfd, 1, &mesh->b_face_r_c_idx);
 
   cs_distribute_buffer(bfd, 1, &mesh->b_face_family);
 
@@ -866,49 +841,24 @@ cs_redistribute(const int           cell_dest_rank[],
   CS_FREE(mesh->b_face_vtx_lst);
 
   cs_distribute_buffer_indexed(bfd,
-                             &mesh->b_face_vtx_idx,
-                             &g_b_face_vtx_lst);
+                               &mesh->b_face_vtx_idx,
+                               &g_b_face_vtx_lst);
 
   mesh->b_face_vtx_connect_size = mesh->b_face_vtx_idx[n_b_faces];
 
   /* Interior faces */
 
   cs_distributor_t *ifd = _create_i_face_distributor(mesh,
-                                                   cell_dest_rank,
-                                                   comm);
+                                                     cell_dest_rank,
+                                                     comm);
 
   cs_lnum_t n_i_faces = ifd->n_uniq;
+
+  _check_and_distribute_buffer(ifd, 1, &mesh->i_face_r_gen);
 
   cs_distribute_buffer(ifd, 1, &mesh->global_i_face_num);
 
   cs_distribute_buffer(ifd, 1, &mesh->i_face_family);
-
-  {
-    cs_lnum_t r_gen_exists = (mesh->i_face_r_gen != nullptr);
-    cs_parall_max(1, CS_INT_TYPE, &r_gen_exists);
-
-    if (r_gen_exists) {
-
-      int *r_gen = nullptr;
-      CS_MALLOC(r_gen, n_i_faces_ini, int);
-
-      for (cs_lnum_t f_id = 0; f_id < n_i_faces_ini; f_id++) {
-        r_gen[f_id] = mesh->i_face_r_gen[f_id];
-      }
-
-      CS_FREE(mesh->i_face_r_gen);
-
-      cs_distribute_buffer(ifd, 1, &r_gen);
-
-      CS_MALLOC(mesh->i_face_r_gen, n_i_faces, char);
-
-      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
-        mesh->i_face_r_gen[f_id] = r_gen[f_id];
-
-      CS_FREE(r_gen);
-
-    }
-  }
 
   cs_gnum_t *cell_gnum = cs_mesh_get_cell_gnum(mesh, 1);
 
@@ -933,8 +883,8 @@ cs_redistribute(const int           cell_dest_rank[],
   CS_FREE(mesh->i_face_vtx_lst);
 
   cs_distribute_buffer_indexed(ifd,
-                             &mesh->i_face_vtx_idx,
-                             &g_i_face_vtx_lst);
+                               &mesh->i_face_vtx_idx,
+                               &g_i_face_vtx_lst);
 
   mesh->i_face_vtx_connect_size = mesh->i_face_vtx_idx[n_i_faces];
 
@@ -946,29 +896,7 @@ cs_redistribute(const int           cell_dest_rank[],
 
   cs_distribute_buffer(vd, 3, &mesh->vtx_coord);
 
-  {
-    cs_lnum_t have_r_gen = (mesh->vtx_r_gen != nullptr);
-    cs_parall_max(1, CS_INT_TYPE, &have_r_gen);
-
-    if (have_r_gen) {
-      int *vtx_r_gen = nullptr;
-      CS_MALLOC(vtx_r_gen, n_vertices_ini, int);
-
-      for (cs_lnum_t v_id = 0; v_id < n_vertices_ini; v_id++)
-        vtx_r_gen[v_id] = mesh->vtx_r_gen[v_id];
-
-      CS_FREE(mesh->vtx_r_gen);
-
-      cs_distribute_buffer(vd, 1, &vtx_r_gen);
-
-      CS_MALLOC(mesh->vtx_r_gen, mesh->n_vertices, char);
-
-      for (cs_lnum_t v_id = 0; v_id < mesh->n_vertices; v_id++)
-        mesh->vtx_r_gen[v_id] = vtx_r_gen[v_id];
-
-      CS_FREE(vtx_r_gen);
-    }
-  }
+  _check_and_distribute_buffer(vd, 1, &mesh->vtx_r_gen);
 
   /* Transform global to local face-vertices */
 
