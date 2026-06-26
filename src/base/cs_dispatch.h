@@ -789,10 +789,20 @@ public:
       l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
     }
 
-    if (n > 0)
+    if (n > 0) {
       cs_cuda_kernel_parallel_for<<<l_grid_size, block_size_, 0, stream_>>>
         (n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 
+#if defined(DEBUG) || !defined(NDEBUG)
+      cudaError_t retcode = cudaGetLastError();
+      if (retcode != cudaSuccess)
+        bft_error(__FILE__, __LINE__, 0,
+                  "[CUDA error] %d: %s\n"
+                  "with grid size %ld, block size %ld.",
+                  retcode, ::cudaGetErrorString(retcode),
+                  l_grid_size, block_size_);
+#endif
+    }
     return true;
   }
 
