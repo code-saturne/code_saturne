@@ -1095,8 +1095,7 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *)cs_glob_mesh->b_face_cells;
 
-  int coupling_id = cs_field_get_key_int(f,
-                                         cs_field_key_id("coupling_entity"));
+  int coupling_id = f->get_key_int("coupling_entity");
   const cs_internal_coupling_t *cpl
     = cs_internal_coupling_by_id(coupling_id);
 
