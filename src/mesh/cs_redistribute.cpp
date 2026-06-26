@@ -105,8 +105,7 @@ _check_and_distribute_buffer(const cs_distributor_t   *db,
                              int                       stride,
                              T                        *buf[])
 {
-  if (!buf)
-    return;
+  assert(buf != nullptr);
 
   cs_lnum_t coeff_exists = (*buf != nullptr);
   cs_parall_max(1, CS_INT_TYPE, &coeff_exists);
@@ -248,9 +247,9 @@ _distribute_fields(const cs_distributor_t    *cd,
     for (int dim = 0; dim < field->dim; dim++) {
       cs_real_t *dst = bcc->rcodcl1 + dim*mesh->n_b_faces;
       cs_distribute_buffer_allocated(bfd,
-                                   1,
-                                   rcod + dim*n_b_faces_ini,
-                                   dst);
+                                     1,
+                                     rcod + dim*n_b_faces_ini,
+                                     dst);
     }
 
     memcpy(rcod, bcc->rcodcl2, n_b_faces_ini*a_mult*sizeof(cs_real_t));
@@ -258,9 +257,9 @@ _distribute_fields(const cs_distributor_t    *cd,
     for (int dim = 0; dim < field->dim; dim++) {
       cs_real_t *dst = bcc->rcodcl2 + dim*mesh->n_b_faces;
       cs_distribute_buffer_allocated(bfd,
-                                   1,
-                                   rcod + dim*n_b_faces_ini,
-                                   dst);
+                                     1,
+                                     rcod + dim*n_b_faces_ini,
+                                     dst);
     }
 
     memcpy(rcod, bcc->rcodcl3, n_b_faces_ini*a_mult*sizeof(cs_real_t));
@@ -268,9 +267,9 @@ _distribute_fields(const cs_distributor_t    *cd,
     for (int dim = 0; dim < field->dim; dim++) {
       cs_real_t *dst = bcc->rcodcl3 + dim*mesh->n_b_faces;
       cs_distribute_buffer_allocated(bfd,
-                                   1,
-                                   rcod + dim*n_b_faces_ini,
-                                   dst);
+                                     1,
+                                     rcod + dim*n_b_faces_ini,
+                                     dst);
     }
 
     CS_FREE(rcod);
