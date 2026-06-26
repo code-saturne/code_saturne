@@ -35,21 +35,14 @@
 #  include "base/cs_config.h"
 #endif
 
-#ifdef __cplusplus
 #include <type_traits>
 #include <utility>
-#endif
 
 /*============================================================================
  * Internationalization
  *============================================================================*/
 
-#ifdef __cplusplus
 extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
 
 #if defined(ENABLE_NLS) && defined(HAVE_GETTEXT)
 
@@ -78,9 +71,7 @@ extern "C" {
 
 #endif /* ENABLE_NLS && HAVE_GETTEXT */
 
-#ifdef __cplusplus
 }
-#endif /* __cplusplus */
 
 /*============================================================================
  * Parallelism
@@ -135,36 +126,21 @@ extern "C" {
 #define HAVE_ACCEL 1
 #endif
 
+/*----------------------------------------------------------------------------
+ * Accelerator stream definitions
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_CUDA) && defined(__CUDACC__)
+using cs_stream_t = cudaStream_t;
+#elif defined(HAVE_HIP) && defined(__HIPCC__)
+using cs_stream_t = hipStream_t;
+#else
+using cs_stream_t = void *;
+#endif
+
 /*============================================================================
- * C99 Qualifiers
+ * Qualifiers and macros
  *============================================================================*/
-
-#ifndef __cplusplus /* C */
-
-/* inline provided by cs_config.h if necessary */
-
-#if !defined(__STDC_VERSION__)
-#  define __STDC_VERSION__ 1989
-#endif
-
-/*
- * Redefinition of "inline" et "restrict" qualifiers incompatible with
- * some C89 compilers (standard in C99)
- */
-
-#if (__STDC_VERSION__ < 199901L)
-
-#  if defined(__GNUC__)
-#    define inline __inline__
-#    define restrict __restrict__
-#  else
-#    define inline
-#    define restrict
-#  endif
-
-#endif
-
-#else /* C++ */
 
 #  if defined(__GNUC__) || defined(__clang__) || defined (__NVCC__)
 #    define restrict __restrict__
@@ -175,8 +151,6 @@ extern "C" {
 #      define restrict
 #    endif
 #  endif
-
-#endif /* __cplusplus */
 
 /* Macros for locally suppressing warnings from external libraries */
 #if defined(__GNUC__) || defined(__clang__)
@@ -227,10 +201,8 @@ extern "C" {
 #endif
 
 /* C++ assert necessary for template */
-#if defined(__cplusplus)
 #include <typeinfo>
 #include "assert.h"
-#endif
 
 /* int32_t type */
 
@@ -303,12 +275,7 @@ typedef unsigned long long uint64_t;
  * General types and macros used throughout code_saturne
  *============================================================================*/
 
-#ifdef __cplusplus
 extern "C" {
-#if 0
-} /* Fake brace to force Emacs auto-indentation back to column 0 */
-#endif
-#endif /* __cplusplus */
 
 /*----------------------------------------------------------------------------
  * Variable value type.
@@ -552,13 +519,8 @@ typedef enum {
 #undef BEGIN_C_DECLS
 #undef   END_C_DECLS
 
-#if defined(__cplusplus)
-#  define BEGIN_C_DECLS  extern "C" {
-#  define   END_C_DECLS  }
-#else
-#  define BEGIN_C_DECLS
-#  define   END_C_DECLS
-#endif
+#define BEGIN_C_DECLS  extern "C" {
+#define   END_C_DECLS  }
 
 /*----------------------------------------------------------------------------
  * Macro to check if we are compiling for device
@@ -695,11 +657,7 @@ cs_get_thread_id(void)
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
-#ifdef __cplusplus
+}  // extern "C"
 
 /*=============================================================================
  * Public C++ templates
@@ -1068,12 +1026,6 @@ cs_datatype_from_type<int64_t>()
 {
   return CS_INT64;
 }
-
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-
-#endif /* __cplusplus */
 
 /*----------------------------------------------------------------------------*/
 

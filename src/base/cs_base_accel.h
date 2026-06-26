@@ -54,18 +54,6 @@
  * Type definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Accelerator stream definitions
- *----------------------------------------------------------------------------*/
-
-#if defined(HAVE_CUDA) && defined(__CUDACC__)
-using cs_stream_t = cudaStream_t;
-#elif defined(HAVE_HIP) && defined(__HIPCC__)
-using cs_stream_t = hipStream_t;
-#else
-using cs_stream_t = void *;
-#endif
-
 /*=============================================================================
  * Global variable definitions
  *============================================================================*/
