@@ -338,14 +338,11 @@ _cell_equiv(cs_mesh_t  *mesh,
 
   } while (reloop);
 
-  // Redistribute the mesh.
   // All siblings tagged for coarsening should reside within the same proc.
 
-  {
+  if (pass > 1) {
     cs_distributor_t *cd = nullptr;
     cs_redistribute(dest_rank, &cd, nullptr, nullptr, nullptr);
-
-    CS_FREE(dest_rank);
 
     cs_distribute_buffer(cd, 1, &c_r_flag);
     cs_distribute_buffer(cd, 1, &c_r_level);
@@ -353,6 +350,8 @@ _cell_equiv(cs_mesh_t  *mesh,
 
     cs_distributor_destroy(&cd);
   }
+
+  CS_FREE(dest_rank);
 
   n_i_faces = mesh->n_i_faces;
   n_cells_ext = mesh->n_cells_with_ghosts;
