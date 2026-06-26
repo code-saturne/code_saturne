@@ -463,8 +463,10 @@ _update_cell_vertices(cs_mesh_adjacencies_t  *ma,
 
   cs_adjacency_t *c2v = ma->_c2v;
 
-  if (c2v->n_elts != m->n_cells)
+  if (c2v->n_elts != m->n_cells) {
     CS_REALLOC_HD(c2v->idx, m->n_cells+1, cs_lnum_t, cs_alloc_mode);
+    c2v->n_elts = m->n_cells;
+  }
   CS_FREE(c2v->ids);
 
   const cs_lnum_t n_cells = m->n_cells;
