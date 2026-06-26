@@ -543,7 +543,8 @@ cs_turb_update_shared_legacy(const cs_mesh_t           *mesh,
  * \param[in]      hfc  distance from cell center to the wall
  * \param[in]      uct  norm of tangential components of cell velocity
  * \param[in]      uft  norm of tangential components of face velocity
- * \param[in, out] res  value of the resulting exchange coefficients
+ * \param[in, out] ht   value of the resulting exchange coefficients
+ * \param[in, out] f_w  value of the resulting friction flux
  */
 /*----------------------------------------------------------------------------*/
 
@@ -554,7 +555,8 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                const double                hfc,
                                const double                uct,
                                const double                uft,
-                               cs_real_t                  *res);
+                               cs_real_t                  *ht,
+                               cs_real_t                  *f_w);
 
 /*----------------------------------------------------------------------------*/
 /*

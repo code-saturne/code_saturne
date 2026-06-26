@@ -2499,7 +2499,9 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
 
     cs_real_t ucrt_norm = cs_math_3_norm(ucrt);
     cs_real_t ufrt_norm = cs_math_3_norm(ufrt);
-    cs_real_t ht = 0.;
+
+    cs_real_t ht = 0.0;
+    cs_real_t f_w[3] = {0.0, 0.0, 0.0};
 
     cs_turb_compute_wall_bc_coeffs(eqp,
                                    nu,
@@ -2507,7 +2509,8 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
                                    hfc,
                                    ucrt_norm,
                                    ufrt_norm,
-                                   &ht);
+                                   &ht,
+                                   f_w);
 
     /* u0_x, u0_y, u0_z */
     // rob_values[9 * f]     = set before
@@ -2519,10 +2522,16 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
     rob_values[9 * f + 4] = ht;
     rob_values[9 * f + 5] = ht;
 
+    if (ufrt_norm  < cs_math_zero_threshold)
+      ufrt_norm = 1.0;
+    if (f_w[0] < -0.5*eqp->strong_pena_bc_coeff)
+      f_w[0] = 0.;
+
     /* beta_x, beta_y, beta_z*/
-    rob_values[9 * f + 6] = 0.0;
-    rob_values[9 * f + 7] = 0.0;
-    rob_values[9 * f + 8] = 0.0;
+
+    rob_values[9 * f + 6] = - f_w[0]*ufrt[0]/ufrt_norm;
+    rob_values[9 * f + 7] = - f_w[0]*ufrt[1]/ufrt_norm;
+    rob_values[9 * f + 8] = - f_w[0]*ufrt[2]/ufrt_norm;
 
   } /* Definition based on User set U_wall BC */
 }

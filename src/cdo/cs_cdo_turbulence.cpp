@@ -269,7 +269,8 @@ _prepare_ke(const cs_mesh_t            *mesh,
  * \param[in]      hfc            distance from cell center to the wall
  * \param[in]      uct            norm of tangential components of cell velocity
  * \param[in]      uft            norm of tangential components of face velocity
- * \param[in, out] res            value of the resulting exchange coefficients
+ * \param[in, out] ht             value of the resulting exchange coefficients
+ * \param[in, out] f_w            value of the resulting friction flux
  */
 /*----------------------------------------------------------------------------*/
 
@@ -280,7 +281,8 @@ _wall_function_1scale_log(const double    pena_bc_coeff,
                           const double    hfc,
                           const double    uct,
                           const double    uft,
-                          cs_real_t      *res)
+                          cs_real_t      *ht,
+                          cs_real_t      *f_w)
 {
   CS_UNUSED(k);
 
@@ -297,7 +299,8 @@ _wall_function_1scale_log(const double    pena_bc_coeff,
   if (re <= ypluli * ypluli) {
 
     /* In the viscous sub-layer: U+ = y+ */
-    res[0] = pena_bc_coeff;
+    ht[0] = pena_bc_coeff;
+    f_w[0] = - pena_bc_coeff;
   }
   else {
     /* In the logaritim laye */
@@ -325,8 +328,10 @@ _wall_function_1scale_log(const double    pena_bc_coeff,
                    "friction vel: %f \n" ), ustar);
     }
 
-    double h_t = ustar*ustar/uft;
-    res[0] = cs::max(h_t, 0.0);
+    f_w[0] = ustar*ustar;
+
+    ht[0] = f_w[0]/(uft + 1.0/pena_bc_coeff);
+    ht[0] = cs::min(cs::max(ht[0], 0.0), pena_bc_coeff);
   }
 }
 
@@ -341,7 +346,8 @@ _wall_function_1scale_log(const double    pena_bc_coeff,
  * \param[in]      hfc            distance from cell center to the wall
  * \param[in]      uct            norm of tangential components of cell velocity
  * \param[in]      uft            norm of tangential components of face velocity
- * \param[in, out] res            value of the resulting exchange coefficients
+ * \param[in, out] ht             value of the resulting exchange coefficients
+ * \param[in, out] f_w            value of the resulting friction flux
  */
 /*----------------------------------------------------------------------------*/
 
@@ -352,7 +358,8 @@ _wall_function_2scales_log(const double    pena_bc_coeff,
                            const double    hfc,
                            const double    uct,
                            const double    uft,
-                           cs_real_t      *res)
+                           cs_real_t      *ht,
+                           cs_real_t      *f_w)
 {
   const double ypluli = cs_get_glob_wall_functions()->ypluli;
   const double re = sqrt(k)*hfc/nu;
@@ -363,17 +370,14 @@ _wall_function_2scales_log(const double    pena_bc_coeff,
   if (yplus > ypluli) { /* In the logarithm zone */
     double ustar = uct / (log(yplus)/cs_turb_xkappa + cs_turb_cstlog);
     // FIXME: I set res[0] = 0 if uft = 0.0 but I am not sure
-    if (cs::abs(uft) > 0.0) {
-      double h_t = uk * ustar / uft;
-
-      res[0] = cs::max(h_t, 0.0);
-    }
-    else {
-      res[0] = 0.0;
-    }
+    f_w[0] = uk*ustar;
+    ht[0] = f_w[0] / (uft + 1.0/pena_bc_coeff);
+    ht[0] = cs::min(cs::max(ht[0], 0.0), pena_bc_coeff);
   }
-  else /* In the linear zone */
-    res[0] = pena_bc_coeff;
+  else { /* In the linear zone */
+    f_w[0] = - pena_bc_coeff;
+    ht[0] = pena_bc_coeff;
+  }
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1127,7 +1131,8 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
  * \param[in]      hfc  distance from cell center to the wall
  * \param[in]      uct  norm of tangential components of cell velocity
  * \param[in]      uft  norm of tangential components of face velocity
- * \param[in, out] res  value of the resulting exchange coefficients
+ * \param[in, out] ht   value of the resulting exchange coefficients
+ * \param[in, out] f_w  value of the resulting friction flux
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1138,14 +1143,16 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                const double                hfc,
                                const double                uct,
                                const double                uft,
-                               cs_real_t                  *res)
+                               cs_real_t                  *ht,
+                               cs_real_t                  *f_w)
 {
   const cs_wall_functions_t *glob_wf = cs_get_glob_wall_functions();
   const cs_wall_f_type_t iwallf = glob_wf->iwallf;
 
   switch (iwallf) {
     case CS_WALL_F_DISABLED:
-      res[0] = eqp->strong_pena_bc_coeff;
+      ht[0] = eqp->strong_pena_bc_coeff;
+      f_w[0] = - eqp->strong_pena_bc_coeff;
       break;
     case CS_WALL_F_1SCALE_LOG:
       _wall_function_1scale_log(eqp->strong_pena_bc_coeff,
@@ -1154,7 +1161,8 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                 hfc,
                                 uct,
                                 uft,
-                                res);
+                                ht,
+                                f_w);
       break;
     case CS_WALL_F_SCALABLE_2SCALES_LOG:
     case CS_WALL_F_2SCALES_LOG:
@@ -1164,7 +1172,8 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                  hfc,
                                  uct,
                                  uft,
-                                 res);
+                                 ht,
+                                 f_w);
       break;
     default:
       bft_error(__FILE__, __LINE__, 0, " %s: Invalid wall function type.\n"

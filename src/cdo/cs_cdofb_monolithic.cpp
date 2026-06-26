@@ -2362,13 +2362,17 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
       case CS_TURB_K_OMEGA:
         switch (mom_eqp->default_enforcement) {
           case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
-            sc->apply_sliding_wall = cs_cdofb_prescribed_smooth_wall_alge;
-            sc->apply_fixed_wall   = cs_cdofb_prescribed_smooth_wall_alge;
+            sc->apply_sliding_wall =
+              cs_cdofb_prescribed_smooth_wall_n_alge_t_robin;
+            sc->apply_fixed_wall   =
+              cs_cdofb_prescribed_smooth_wall_n_alge_t_robin;
             break;
 
           case CS_PARAM_BC_ENFORCE_PENALIZED:
-            sc->apply_sliding_wall = cs_cdofb_prescribed_smooth_wall_pena;
-            sc->apply_fixed_wall   = cs_cdofb_prescribed_smooth_wall_pena;
+            sc->apply_sliding_wall =
+              cs_cdofb_prescribed_smooth_wall_n_pena_t_robin;
+            sc->apply_fixed_wall   =
+              cs_cdofb_prescribed_smooth_wall_n_pena_t_robin;
             break;
 
           default:
