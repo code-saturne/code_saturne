@@ -641,8 +641,8 @@ cs_navsto_system_init_values(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
-                                 cs_lnum_t          solid_cell_ids[]);
+cs_navsto_system_set_solid_cells(cs_lnum_t       n_solid_cells,
+                                 const cs_lnum_t solid_cell_ids[]);
 
 /*----------------------------------------------------------------------------*/
 /*
