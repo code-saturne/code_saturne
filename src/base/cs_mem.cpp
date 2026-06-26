@@ -2740,13 +2740,32 @@ cs_check_device_ptr(const void  *ptr)
 bool
 cs_mem_is_device_ptr(const void  *ptr)
 {
+  if (ptr == nullptr)
+    return true;
+
 #if defined(HAVE_CUDA)
 
-  return cs_mem_cuda_is_device_ptr(ptr);
+  cudaPointerAttributes attributes;
+  int retcode = cudaPointerGetAttributes(&attributes, ptr);
+
+  if (retcode == cudaSuccess) {
+    if (ptr == attributes.devicePointer)
+      return true;
+  }
+
+  return false;
 
 #elif defined(HAVE_HIP)
 
-  return cs_mem_hip_is_device_ptr(ptr);
+  hipPointerAttribute_t attributes;
+  int retcode = hipPointerGetAttributes(&attributes, ptr);
+
+  if (retcode == hipSuccess) {
+    if (ptr == attributes.devicePointer)
+      return true;
+  }
+
+  return false;
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 

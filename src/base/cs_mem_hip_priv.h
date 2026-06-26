@@ -119,9 +119,6 @@ cs_mem_hip_copy_d2d(void        *dst,
 void *
 cs_mem_hip_get_host_ptr(const void  *ptr);
 
-bool
-cs_mem_hip_is_device_ptr(const void  *ptr);
-
 void
 cs_mem_hip_set_advise_read_mostly(const void  *ptr,
                                   size_t       size);
@@ -129,9 +126,6 @@ cs_mem_hip_set_advise_read_mostly(const void  *ptr,
 void
 cs_mem_hip_unset_advise_read_mostly(const void  *ptr,
                                     size_t       size);
-
-bool
-cs_mem_hip_is_device_ptr(const void  *ptr);
 
 size_t
 cs_mem_hip_get_device_memory_usage(void);
