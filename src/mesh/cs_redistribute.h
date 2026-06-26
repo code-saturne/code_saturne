@@ -236,7 +236,7 @@ cs_distribute_buffer_indexed(const cs_distributor_t    *db,
     _buffer = *buffer;
 
     for (cs_lnum_t i = 0; i < db->n_send; i++) {
-      cs_lnum_t id = db->send_list ? db->send_list[i] : i;
+      cs_lnum_t id = db->send_list[i];
       for (cs_lnum_t j = _idx[id]; j < _idx[id+1]; j++)
         *_send_data++ = _buffer[j];
     }

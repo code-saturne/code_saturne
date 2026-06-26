@@ -505,82 +505,31 @@ _distributor_create(cs_lnum_t           n_send,
  *----------------------------------------------------------------------------*/
 
 static cs_distributor_t *
-_create_vertex_distributor(cs_mesh_t         *mesh,
+_create_vertex_distributor(const cs_mesh_t   *mesh,
                            const int          cell_dest[],
                            const MPI_Comm     comm)
 {
-  const cs_lnum_t n_cells = mesh->n_cells;
-  const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t n_vertices = mesh->n_vertices;
 
-  // TODO: update and use the global cell-vertices connectivity.
-  int boundary_order = 0;
-  cs_adjacency_t *c2f = cs_mesh_adjacency_c2f(mesh, boundary_order);
+  const cs_adjacency_t *c2v = cs_mesh_adjacencies_cell_vertices();
+  assert(c2v->n_elts == mesh->n_cells);
 
-  cs_lnum_t *v_idx = nullptr;
-  CS_MALLOC(v_idx, n_vertices+1, cs_lnum_t);
-  memset(v_idx, 0, (n_vertices+1) * sizeof(cs_lnum_t));
+  cs_adjacency_t *v2c = cs_adjacency_transpose(n_vertices, c2v);
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
-      cs_lnum_t f_id = c2f->ids[i];
-      const cs_lnum_t *f_idx = mesh->b_face_vtx_idx;
-      const cs_lnum_t *f_ids = mesh->b_face_vtx_lst;
-      if (f_id >= n_b_faces) {
-        f_id -= n_b_faces;
-        f_idx = mesh->i_face_vtx_idx;
-        f_ids = mesh->i_face_vtx_lst;
-      }
-
-      for (cs_lnum_t j = f_idx[f_id]; j < f_idx[f_id+1]; j++) {
-        cs_lnum_t v_id = f_ids[j];
-        v_idx[v_id+1]++;
-      }
+  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+    for (cs_lnum_t i = v2c->idx[v_id]; i < v2c->idx[v_id+1]; i++) {
+      v2c->ids[i] = cell_dest[v2c->ids[i]];
     }
   }
 
-  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
-    v_idx[v_id+1] += v_idx[v_id];
-
-  int *_v_dests = nullptr;
-  CS_MALLOC(_v_dests, v_idx[n_vertices], int);
-  memset(_v_dests, -1, v_idx[n_vertices] * sizeof(int));
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
-      cs_lnum_t f_id = c2f->ids[i];
-      const cs_lnum_t *f_idx = mesh->b_face_vtx_idx;
-      const cs_lnum_t *f_ids = mesh->b_face_vtx_lst;
-      if (f_id >= n_b_faces) {
-        f_id -= n_b_faces;
-        f_idx = mesh->i_face_vtx_idx;
-        f_ids = mesh->i_face_vtx_lst;
-      }
-
-      for (cs_lnum_t j = f_idx[f_id]; j < f_idx[f_id+1]; j++) {
-        cs_lnum_t v_id = f_ids[j];
-        cs_lnum_t *ptr = _v_dests + v_idx[v_id];
-        cs_lnum_t stride = v_idx[v_id+1] - v_idx[v_id];
-        for (cs_lnum_t k = 0; k < stride; k++) {
-          if (ptr[k] == -1) {
-            ptr[k] = cell_dest[c_id];
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  cs_adjacency_destroy(&c2f);
-
-  cs_sort_indexed(n_vertices, v_idx, _v_dests);
+  cs_sort_indexed(n_vertices, v2c->idx, v2c->ids);
 
   cs_lnum_t n_elem = 0;
 
   for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
     int prev_dest = -1;
-    for (cs_lnum_t i = v_idx[v_id]; i < v_idx[v_id+1]; i++) {
-      int dest = _v_dests[i];
+    for (cs_lnum_t i = v2c->idx[v_id]; i < v2c->idx[v_id+1]; i++) {
+      int dest = v2c->ids[i];
       assert(prev_dest <= dest);
       if (dest != prev_dest) {
         n_elem++;
@@ -598,8 +547,8 @@ _create_vertex_distributor(cs_mesh_t         *mesh,
 
   for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
     int prev_dest = -1;
-    for (cs_lnum_t i = v_idx[v_id]; i < v_idx[v_id+1]; i++) {
-      int dest = _v_dests[i];
+    for (cs_lnum_t i = v2c->idx[v_id]; i < v2c->idx[v_id+1]; i++) {
+      int dest = v2c->ids[i];
       if (dest != prev_dest) {
         v_list[n_elem] = v_id;
         v_dests[n_elem] = dest;
@@ -609,14 +558,13 @@ _create_vertex_distributor(cs_mesh_t         *mesh,
     }
   }
 
-  CS_FREE(_v_dests);
-  CS_FREE(v_idx);
+  cs_adjacency_destroy(&v2c);
 
   cs_distributor_t *db = _distributor_create(n_elem,
-                                           &v_list,
-                                           v_dests,
-                                           comm,
-                                           mesh->global_vtx_num);
+                                             &v_list,
+                                             v_dests,
+                                             comm,
+                                             mesh->global_vtx_num);
 
   cs_all_to_all_transfer_dest_rank(db->d, &v_dests);
 
@@ -859,14 +807,14 @@ cs_redistribute(const int           cell_dest_rank[],
   /* Create the vertex distributor before the mesh changes. */
 
   cs_distributor_t *vd = _create_vertex_distributor(mesh,
-                                                  cell_dest_rank,
-                                                  comm);
+                                                    cell_dest_rank,
+                                                    comm);
 
   /* Boundary faces */
 
   cs_distributor_t *bfd = _create_b_face_distributor(mesh,
-                                                   cell_dest_rank,
-                                                   comm);
+                                                     cell_dest_rank,
+                                                     comm);
 
   const cs_lnum_t n_b_faces = bfd->n_uniq;
 
