@@ -207,7 +207,8 @@ _count_to_index_inplace_cuda(cudaStream_t  stream,
                              void         *tmp_storage_caller)
 {
   // Ensure past-the-end value is initialized.
-  cudaMemsetAsync(&(a[n]), 0, sizeof(cs_lnum_t), stream);
+  CS_CUDA_CHECK(cudaMemsetAsync(&(a[n]), 0, sizeof(cs_lnum_t), stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   assert(a != nullptr);
 
@@ -215,16 +216,19 @@ _count_to_index_inplace_cuda(cudaStream_t  stream,
     = reinterpret_cast<unsigned char *>(tmp_storage_caller);
   size_t tmp_storage_size = 0;
 
-  cub::DeviceScan::ExclusiveSum(nullptr, tmp_storage_size,
-                                a, a, n+1, stream);
+  CS_CUDA_CHECK(cub::DeviceScan::ExclusiveSum(nullptr, tmp_storage_size,
+                                              a, a, n+1, stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   if (tmp_storage_size > tmp_size_caller)
     CS_MALLOC_HD(tmp_storage, tmp_storage_size, unsigned char, CS_ALLOC_DEVICE);
 
-  cub::DeviceScan::ExclusiveSum(tmp_storage, tmp_storage_size,
-                                a, a, n+1, stream);
+  CS_CUDA_CHECK(cub::DeviceScan::ExclusiveSum(tmp_storage, tmp_storage_size,
+                                              a, a, n+1, stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
-  cub::SyncStream(stream);
+  CS_CUDA_CHECK(cub::SyncStream(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
 
   if (tmp_storage != tmp_storage_caller)
     CS_FREE(tmp_storage);
