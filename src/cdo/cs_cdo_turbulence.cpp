@@ -369,7 +369,6 @@ _wall_function_2scales_log(const double    pena_bc_coeff,
 
   if (yplus > ypluli) { /* In the logarithm zone */
     double ustar = uct / (log(yplus)/cs_turb_xkappa + cs_turb_cstlog);
-    // FIXME: I set res[0] = 0 if uft = 0.0 but I am not sure
     f_w[0] = uk*ustar;
     ht[0] = f_w[0] / (uft + 1.0/pena_bc_coeff);
     ht[0] = cs::min(cs::max(ht[0], 0.0), pena_bc_coeff);

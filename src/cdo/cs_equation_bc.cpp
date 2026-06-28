@@ -2522,7 +2522,7 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
     rob_values[9 * f + 4] = ht;
     rob_values[9 * f + 5] = ht;
 
-    if (ufrt_norm  < cs_math_zero_threshold)
+    if (ufrt_norm  <= 10.0*cs_math_zero_threshold)
       ufrt_norm = 1.0;
     if (f_w[0] < -0.5*eqp->strong_pena_bc_coeff)
       f_w[0] = 0.;

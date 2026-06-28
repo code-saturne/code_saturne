@@ -2119,16 +2119,19 @@ cs_cdofb_prescribed_smooth_wall_n_pena_t_robin(
 void
 cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
   short int                  fb,
-  const cs_equation_param_t *eqp,
+  [[maybe_unused]] const cs_equation_param_t *eqp,
   const cs_cell_mesh_t      *cm,
-  const cs_property_data_t  *pty,
+  [[maybe_unused]] const cs_property_data_t  *pty,
   cs_cell_builder_t         *cb,
   cs_cell_sys_t             *csys)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(pty);
-
   assert(cm != nullptr && csys != nullptr);
+  double         *x_dir  = cb->values;
+  double         *ax_dir = cb->values + 3;
+  cs_sdm_t *m = csys->mat;
+  cs_sdm_block_t *bd = m->block_desc;
+  cs_sdm_t *mFF = m->get_block(fb, fb);
+  std::memset(cb->values, 0, 6 * sizeof(double));
 
   /* wall BC expression: -K du/dx.tau = h_t (I - (n x n))(u - u_w)
    *                      u.n = 0
@@ -2140,85 +2143,148 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
     const double  *u0 = &(csys->rob_values[9*fb]);
     const double  h_t = csys->rob_values[9*fb + 3];
 
-    const cs_quant_t  pfq = cm->face[fb];
-    const cs_real_t  *ni = pfq.unitv;
+    /* In case of the laminar wall treatment :
+     * classic Dirichlet BC on ux, uy, uz*/
 
-    /* nn :  n x n^t, projection onto normal axis
-     * p_t : I - n x n^t, projection onto tangential plane */
+    if (h_t > 0.5*eqp->strong_pena_bc_coeff) {
 
-    cs_sdm_t p_t{3}, nn{3}, buffer{3};
+      const double u0_norm = cs_math_3_norm(u0);
 
-    nn(0,0) = ni[0]*ni[0], nn(0,1) = ni[0]*ni[1], nn(0,2) = ni[0]*ni[2];
-    nn(1,0) = ni[1]*ni[0], nn(1,1) = ni[1]*ni[1], nn(1,2) = ni[1]*ni[2];
-    nn(2,0) = ni[2]*ni[0], nn(2,1) = ni[2]*ni[1], nn(2,2) = ni[2]*ni[2];
+      if (u0_norm > cs_math_zero_threshold) {
 
-    p_t(0,0) = 1.0 - nn(0,0);
-    p_t(0,1) =     - nn(0,1);
-    p_t(0,2) =     - nn(0,2);
+        for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-    p_t(1,0) =     - nn(1,0);
-    p_t(1,1) = 1.0 - nn(1,1);
-    p_t(1,2) =     - nn(1,2);
+          if (bi == fb)
+            continue;
 
-    p_t(2,0) =     - nn(2,0);
-    p_t(2,1) =     - nn(2,1);
-    p_t(2,2) = 1.0 - nn(2,2);
+          cs_real_t *_rhs = csys->rhs + 3 * bi;
+          cs_sdm_t  *mIF  = m->get_block(bi, fb);
 
-  /* ============================================
-   *  Apply the Dirichlet for Normal component
-   *  =========================================== */
+          mIF->dot(u0, ax_dir);
 
-    cs_sdm_t *m = csys->mat;
-    cs_sdm_block_t *bd = m->block_desc;
-    cs_sdm_t *mFF = m->get_block(fb, fb);
-    assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
-
-    for (int bi = 0; bi < bd->n_row_blocks; bi++) {
-
-      if (bi != fb) {
-
-        /* Right project block (I,F) which is a 3x3 block
-         * mIF = mIF p_t */
-
-        buffer *= 0.0;
-        cs_sdm_t *mIF = m->get_block(bi, fb);
-        cs_sdm_multiply(mIF, &p_t, &buffer);
-        cs_sdm_copy(mIF, &buffer);
-      }
-      else { /* bi == f */
-
-      //  /* Left project block (I==F,J) which is a 3x3 block */
-
-        for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-          buffer *= 0.0;
-          cs_sdm_t *mFJ = m->get_block(fb, bj);
-          cs_sdm_multiply(&p_t, mFJ, &buffer);
-          cs_sdm_copy(mFJ, &buffer);
+          for (int k = 0; k < 3; k++)
+            _rhs[k] -= ax_dir[k];
         }
+      } /* Non-homogeneous Dirichlet BC */
 
-        /* mFF = n x n^t + p_t mFF p_t; */
-        buffer *= 0.0;
-        cs_sdm_multiply(mFF, &p_t, &buffer);
-        cs_sdm_copy(mFF, &buffer);
+      for (short int k = 0; k < 3; k++)
+        csys->rhs[3*fb + k] = u0[k];
 
-        *mFF += nn;
-      }
-    } /* Block bi */
+      for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-   /* Update the RHS and the local system */
+        if (bi != fb) {
 
-    cs_real_t u0_t[3] = {0., 0., 0.};
+          cs_sdm_t *mIF = m->get_block(bi, fb);
+          *mIF *= 0.0;
+        }
+        else { /* bi == f */
 
-    p_t.dot(u0, u0_t);
+          for (int bj = 0; bj < bd->n_col_blocks; bj++) {
+            cs_sdm_t *mFJ = m->get_block(fb, bj);
+            *mFJ *= 0.0;
+          }
 
-    csys->rhs[3*fb + 0] += h_t*f_meas*u0_t[0];
-    csys->rhs[3*fb + 1] += h_t*f_meas*u0_t[1];
-    csys->rhs[3*fb + 2] += h_t*f_meas*u0_t[2];
+          *mFF *= 0.0;
+          (*mFF)(0,0) = 1., (*mFF)(1,1) = 1., (*mFF)(2,2) = 1.;
+        }
+      } /* Block bi */
+    } /* In case of applying the turbulent wall treatment on u_t, u.n = u0n */
+    else {
 
-    /* Update the local system matrix */
+      const cs_quant_t  pfq = cm->face[fb];
+      const cs_real_t  *ni = pfq.unitv;
 
-    cs_sdm_add_mult(mFF, h_t*f_meas, &p_t);
+      /* nn :  n x n^t, projection onto normal axis
+       * p_t : I - n x n^t, projection onto tangential plane */
 
+      cs_sdm_t p_t{3}, nn{3}, buffer{3};
+
+      nn(0,0) = ni[0]*ni[0], nn(0,1) = ni[0]*ni[1], nn(0,2) = ni[0]*ni[2];
+      nn(1,0) = ni[1]*ni[0], nn(1,1) = ni[1]*ni[1], nn(1,2) = ni[1]*ni[2];
+      nn(2,0) = ni[2]*ni[0], nn(2,1) = ni[2]*ni[1], nn(2,2) = ni[2]*ni[2];
+
+      p_t(0,0) = 1.0 - nn(0,0);
+      p_t(0,1) =     - nn(0,1);
+      p_t(0,2) =     - nn(0,2);
+
+      p_t(1,0) =     - nn(1,0);
+      p_t(1,1) = 1.0 - nn(1,1);
+      p_t(1,2) =     - nn(1,2);
+
+      p_t(2,0) =     - nn(2,0);
+      p_t(2,1) =     - nn(2,1);
+      p_t(2,2) = 1.0 - nn(2,2);
+
+      /* ============================================
+       *  Apply the Dirichlet for Normal component
+       *  =========================================== */
+
+      nn.dot(u0, x_dir);
+      const double u0n_norm = cs_math_3_norm(x_dir);
+
+      if (u0n_norm > cs_math_zero_threshold) {
+
+        for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+          if (bi == fb)
+            continue;
+
+          cs_real_t *_rhs = csys->rhs + 3 * bi;
+          cs_sdm_t  *mIF  = m->get_block(bi, fb);
+
+          mIF->dot(x_dir, ax_dir);
+
+          for (int k = 0; k < 3; k++)
+            _rhs[k] -= ax_dir[k];
+        }
+      } /* Non-homogeneous Dirichlet BC */
+
+      for (short int k = 0; k < 3; k++)
+        csys->rhs[3 * fb + k] = x_dir[k];
+
+      for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+        if (bi != fb) {
+
+          /* Right project block (I,F) which is a 3x3 block
+           * mIF = mIF p_t */
+
+          buffer *= 0.0;
+          cs_sdm_t *mIF = m->get_block(bi, fb);
+          cs_sdm_multiply(mIF, &p_t, &buffer);
+          cs_sdm_copy(mIF, &buffer);
+        }
+        else { /* bi == f */
+
+          for (int bj = 0; bj < bd->n_col_blocks; bj++) {
+            buffer *= 0.0;
+            cs_sdm_t *mFJ = m->get_block(fb, bj);
+            cs_sdm_multiply(&p_t, mFJ, &buffer);
+            cs_sdm_copy(mFJ, &buffer);
+          }
+
+          buffer *= 0.0;
+          cs_sdm_multiply(mFF, &p_t, &buffer);
+          cs_sdm_copy(mFF, &buffer);
+
+          *mFF += nn;
+        }
+      } /* Block bi */
+
+      /* Update the RHS and the local system */
+
+      cs_real_t u0_t[3] = {0., 0., 0.};
+
+      p_t.dot(u0, u0_t);
+
+      csys->rhs[3*fb + 0] += h_t*f_meas*u0_t[0];
+      csys->rhs[3*fb + 1] += h_t*f_meas*u0_t[1];
+      csys->rhs[3*fb + 2] += h_t*f_meas*u0_t[2];
+
+      /* Update the local system matrix */
+
+      cs_sdm_add_mult(mFF, h_t*f_meas, &p_t);
+    }
   }  /* wall face */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
@@ -2245,16 +2311,21 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
 void
 cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
   short int                  fb,
-  const cs_equation_param_t *eqp,
+  [[maybe_unused]] const cs_equation_param_t *eqp,
   const cs_cell_mesh_t      *cm,
-  const cs_property_data_t  *pty,
+  [[maybe_unused]] const cs_property_data_t  *pty,
   cs_cell_builder_t         *cb,
   cs_cell_sys_t             *csys)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(pty);
-
   assert(cm != nullptr && csys != nullptr);
+  double         *x_dir  = cb->values;
+  double         *ax_dir = cb->values + 3;
+  cs_sdm_t *m = csys->mat;
+  cs_sdm_block_t *bd = m->block_desc;
+  cs_sdm_t *mFF = m->get_block(fb, fb);
+  assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
+
+  std::memset(cb->values, 0, 6 * sizeof(double));
 
   /* wall BC expression: -K du/dx.tau = h_t (I - (n x n))(u - u_w)
    *                      u.n = 0
@@ -2266,77 +2337,147 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
     const double  *u0 = &(csys->rob_values[9*fb]);
     const double  *f_w = &(csys->rob_values[9*fb + 6]);
 
-    const cs_quant_t  pfq = cm->face[fb];
-    const cs_real_t  *ni = pfq.unitv;
+    const cs_real_t f_w_norm = cs_math_3_norm(f_w);
 
-    /* nn :  n x n^t, projection onto normal axis
-     * p_t : I - n x n^t, projection onto tangential plane */
+    /* In case of the laminar wall treatment :
+     * classic Dirichlet BC on ux, uy, uz*/
+    if (f_w_norm <= 10.0*cs_math_zero_threshold) {
+      const double u0_norm = cs_math_3_norm(u0);
 
-    cs_sdm_t p_t{3}, nn{3}, buffer{3};
+      if (u0_norm > cs_math_zero_threshold) {
 
-    nn(0,0) = ni[0]*ni[0], nn(0,1) = ni[0]*ni[1], nn(0,2) = ni[0]*ni[2];
-    nn(1,0) = ni[1]*ni[0], nn(1,1) = ni[1]*ni[1], nn(1,2) = ni[1]*ni[2];
-    nn(2,0) = ni[2]*ni[0], nn(2,1) = ni[2]*ni[1], nn(2,2) = ni[2]*ni[2];
+        for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-    p_t(0,0) = 1.0 - nn(0,0);
-    p_t(0,1) =     - nn(0,1);
-    p_t(0,2) =     - nn(0,2);
+          if (bi == fb)
+            continue;
 
-    p_t(1,0) =     - nn(1,0);
-    p_t(1,1) = 1.0 - nn(1,1);
-    p_t(1,2) =     - nn(1,2);
+          cs_real_t *_rhs = csys->rhs + 3 * bi;
+          cs_sdm_t  *mIF  = m->get_block(bi, fb);
 
-    p_t(2,0) =     - nn(2,0);
-    p_t(2,1) =     - nn(2,1);
-    p_t(2,2) = 1.0 - nn(2,2);
+          mIF->dot(u0, ax_dir);
 
-  /* ============================================
-   *  Apply the Dirichlet for Normal component
-   *  =========================================== */
-
-    cs_sdm_t *m = csys->mat;
-    cs_sdm_block_t *bd = m->block_desc;
-    cs_sdm_t *mFF = m->get_block(fb, fb);
-    assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
-
-    for (int bi = 0; bi < bd->n_row_blocks; bi++) {
-
-      if (bi != fb) {
-
-        /* Right project block (I,F) which is a 3x3 block
-         * mIF = mIF p_t */
-
-        buffer *= 0.0;
-        cs_sdm_t *mIF = m->get_block(bi, fb);
-        cs_sdm_multiply(mIF, &p_t, &buffer);
-        cs_sdm_copy(mIF, &buffer);
-      }
-      else { /* bi == f */
-
-      //  /* Left project block (I==F,J) which is a 3x3 block */
-
-        for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-          buffer *= 0.0;
-          cs_sdm_t *mFJ = m->get_block(fb, bj);
-          cs_sdm_multiply(&p_t, mFJ, &buffer);
-          cs_sdm_copy(mFJ, &buffer);
+          for (int k = 0; k < 3; k++)
+            _rhs[k] -= ax_dir[k];
         }
+      } /* Non-homogeneous Dirichlet BC */
 
-        /* mFF = n x n^t + p_t mFF p_t; */
-        buffer *= 0.0;
-        cs_sdm_multiply(mFF, &p_t, &buffer);
-        cs_sdm_copy(mFF, &buffer);
+      for (short int k = 0; k < 3; k++)
+        csys->rhs[3*fb + k] = u0[k];
 
-        *mFF += nn;
-      }
-    } /* Block bi */
+      for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-   /* Update the RHS and the local system */
+        if (bi != fb) {
 
-    csys->rhs[3*fb + 0] += f_w[0]*f_meas;
-    csys->rhs[3*fb + 1] += f_w[1]*f_meas;
-    csys->rhs[3*fb + 2] += f_w[2]*f_meas;
+          cs_sdm_t *mIF = m->get_block(bi, fb);
+          *mIF *= 0.0;
+        }
+        else { /* bi == f */
 
+          for (int bj = 0; bj < bd->n_col_blocks; bj++) {
+            cs_sdm_t *mFJ = m->get_block(fb, bj);
+            *mFJ *= 0.0;
+          }
+
+          *mFF *= 0.0;
+          (*mFF)(0,0) = 1., (*mFF)(1,1) = 1., (*mFF)(2,2) = 1.;
+        }
+      } /* Block bi */
+    } /* In case of applying the turbulent wall treatment on u_t, u.n = u0n */
+    else {
+      const cs_quant_t  pfq = cm->face[fb];
+      const cs_real_t  *ni = pfq.unitv;
+
+      /* nn :  n x n^t, projection onto normal axis
+       * p_t : I - n x n^t, projection onto tangential plane */
+
+      cs_sdm_t p_t{3}, nn{3}, buffer{3};
+
+      nn(0,0) = ni[0]*ni[0], nn(0,1) = ni[0]*ni[1], nn(0,2) = ni[0]*ni[2];
+      nn(1,0) = ni[1]*ni[0], nn(1,1) = ni[1]*ni[1], nn(1,2) = ni[1]*ni[2];
+      nn(2,0) = ni[2]*ni[0], nn(2,1) = ni[2]*ni[1], nn(2,2) = ni[2]*ni[2];
+
+      p_t(0,0) = 1.0 - nn(0,0);
+      p_t(0,1) =     - nn(0,1);
+      p_t(0,2) =     - nn(0,2);
+
+      p_t(1,0) =     - nn(1,0);
+      p_t(1,1) = 1.0 - nn(1,1);
+      p_t(1,2) =     - nn(1,2);
+
+      p_t(2,0) =     - nn(2,0);
+      p_t(2,1) =     - nn(2,1);
+      p_t(2,2) = 1.0 - nn(2,2);
+
+      /* ============================================
+       *  Apply the Dirichlet for Normal component
+       *  =========================================== */
+
+      nn.dot(u0, x_dir);
+      const double u0n_norm = cs_math_3_norm(x_dir);
+
+      if (u0n_norm > cs_math_zero_threshold) {
+
+        for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+          if (bi == fb)
+            continue;
+
+          cs_real_t *_rhs = csys->rhs + 3 * bi;
+          cs_sdm_t  *mIF  = m->get_block(bi, fb);
+
+          mIF->dot(x_dir, ax_dir);
+
+          for (int k = 0; k < 3; k++)
+            _rhs[k] -= ax_dir[k];
+        }
+      } /* Non-homogeneous Dirichlet BC */
+
+      for (short int k = 0; k < 3; k++)
+        csys->rhs[3*fb + k] = x_dir[k];
+
+      for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+        if (bi != fb) {
+
+          /* Right project block (I,F) which is a 3x3 block
+           * mIF = mIF p_t */
+
+          buffer *= 0.0;
+          cs_sdm_t *mIF = m->get_block(bi, fb);
+          cs_sdm_multiply(mIF, &p_t, &buffer);
+          cs_sdm_copy(mIF, &buffer);
+        }
+        else { /* bi == f */
+
+          /* Left project block (I==F,J) which is a 3x3 block */
+
+          for (int bj = 0; bj < bd->n_col_blocks; bj++) {
+            buffer *= 0.0;
+            cs_sdm_t *mFJ = m->get_block(fb, bj);
+            cs_sdm_multiply(&p_t, mFJ, &buffer);
+            cs_sdm_copy(mFJ, &buffer);
+          }
+
+          /* mFF = n x n^t + p_t mFF p_t; */
+          buffer *= 0.0;
+          cs_sdm_multiply(mFF, &p_t, &buffer);
+          cs_sdm_copy(mFF, &buffer);
+
+          *mFF += nn;
+        }
+      } /* Block bi */
+
+      /* Update the RHS and the local system */
+
+      /* After the cs_equation_bc_cw_turb_smooth_wall function
+       * f_w will be either
+       *  0 in case of sub-viscous layer
+       *  ustar*uk in the tangent direction in case of log layer
+       */
+      csys->rhs[3*fb + 0] += f_w[0]*f_meas;
+      csys->rhs[3*fb + 1] += f_w[1]*f_meas;
+      csys->rhs[3*fb + 2] += f_w[2]*f_meas;
+    }
   }  /* wall face */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
