@@ -407,7 +407,7 @@ cs_domain_def_time_step_by_function(cs_domain_t    *domain,
                                                 func_input);
 
   /* Default initialization.
-     To be changed at first call to cs_domain_time_step_increment() */
+     To be changed at first call to cs_time_step_increment() */
 
   domain->time_step->dt[0] = domain->time_step->t_max;
   domain->time_step->dt[1] = domain->time_step->t_max;
