@@ -36,9 +36,7 @@
 
 DISABLE_WARNING_PUSH
 // Disable this warning on LLVM based compilers
-#if defined(__llvm__)
-DISABLE_WARNING(-Winconsistent-missing-override)
-#endif
+DISABLE_WARNING_LLVM(-Winconsistent-missing-override)
 #include <MEDCouplingField.hxx>
 #include <MEDCouplingFieldDouble.hxx>
 DISABLE_WARNING_POP

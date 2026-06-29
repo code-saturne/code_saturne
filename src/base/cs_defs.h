@@ -153,16 +153,25 @@ using cs_stream_t = void *;
 #  endif
 
 /* Macros for locally suppressing warnings from external libraries */
-#if defined(__GNUC__) || defined(__clang__)
+#if (defined(__GNUC__) || defined(__clang__)) \
+  && !defined(CS_DONT_SUPPRESS_EXTERNAL_WARNINGS)
 #  define DO_PRAGMA(x) _Pragma (#x)
 #  define DISABLE_WARNING_PUSH _Pragma("GCC diagnostic push")
 #  define DISABLE_WARNING(warningName) \
      DO_PRAGMA(GCC diagnostic ignored #warningName)
 #  define DISABLE_WARNING_POP _Pragma("GCC diagnostic pop")
+// Define LLVM only warnings suppression (needed for clang/oneapi compilers
+#  if defined(__llvm__)
+#     define DISABLE_WARNING_LLVM(warningName) \
+        DISABLE_WARNING(warningName)
+#  else
+#     define DISABLE_WARNING_LLVM(warningName)
+#  endif
 #else
 #  define DISABLE_WARNING_PUSH
 #  define DISABLE_WARNING(warningName)
 #  define DISABLE_WARNING_POP
+#  define DISABLE_WARNING_LLVM(warningName)
 #endif
 
 /*============================================================================
