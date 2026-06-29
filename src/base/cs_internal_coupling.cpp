@@ -311,9 +311,12 @@ _initialize_coupled_faces(cs_internal_coupling_t *cpl)
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
   const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  CS_REALLOC(cpl->coupled_faces, n_b_faces, bool);
   bool *coupled_faces = cpl->coupled_faces;
 
-  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     coupled_faces[face_id] = false;
   }
 
@@ -350,7 +353,6 @@ _cpl_initialize(cs_internal_coupling_t *cpl)
   cpl->faces_distant = nullptr;
 
   cpl->coupled_faces = nullptr;
-
   cpl->ci_cj_vect = nullptr;
 }
 
@@ -688,10 +690,7 @@ _locator_initialize(cs_mesh_t               *m,
   /* Geometric quantities */
 
   CS_MALLOC(cpl->ci_cj_vect, cpl->n_local, cs_real_3_t);
-
   _compute_ci_cj_vect(cpl);
-
-  CS_MALLOC(cpl->coupled_faces, m->n_b_faces, bool);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
