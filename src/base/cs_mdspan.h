@@ -480,6 +480,22 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Check if object is empty or not
+   *
+   * \return true if size = 0 and false otherwise
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline
+  bool
+  empty() const
+  {
+    return (_size == 0);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Getter for total size.
    *
    * \return total size.
@@ -1153,8 +1169,8 @@ protected:
     !defined(__HIP_DEVICE_COMPILE__)
       bft_error(__FILE__,__LINE__,0,"%s\n", err);
 #else
-      const char *empty = " ";
-      __assert_fail(err, empty, 0, empty);
+      const char *empty_str = " ";
+      __assert_fail(err, empty_str, 0, empty_str);
 #endif
     }
     return out_of_bounds;
