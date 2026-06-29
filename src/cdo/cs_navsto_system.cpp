@@ -912,6 +912,10 @@ cs_navsto_system_init_setup(void)
      post-processing */
 
   if (cs_glob_rank_id < 1) {
+    if (nsp->num_flag & CS_NAVSTO_NUM_PSEUDO_STEADY) {
+      // plot stationnary residual
+      n_plotter_outputs += 2;
+    }
 
     assert(n_plotter_outputs > 0);
     CS_MALLOC(labels, n_plotter_outputs, const char *);
@@ -928,6 +932,11 @@ cs_navsto_system_init_setup(void)
       labels[n_cols++] = "enstrophy";
     if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
       labels[n_cols++] = "helicity";
+    if (nsp->num_flag & CS_NAVSTO_NUM_PSEUDO_STEADY) {
+      // plot stationnary residual
+      labels[n_cols++] = "norm2_mass_flux_stat";
+      labels[n_cols++] = "norm2_turb_k_stat";
+    }
 
     ns->plot_writer = cs_time_plot_init_probe("navsto_monitor",
                                               "",
@@ -1925,13 +1934,14 @@ cs_navsto_system_compute(const cs_mesh_t           *mesh,
 
   // Stop computation for PSEUDO_STEADY algorithm
   if (ns->check_convergence != nullptr) {
-    const bool cvg = ns->check_convergence(ns->param,
-                                           quant,
-                                           time_step,
-                                           ns->scheme_context,
-                                           tbs);
+    ns->check_convergence(ns->param,
+                          quant,
+                          time_step,
+                          ns->scheme_context,
+                          tbs,
+                          ns->psteady_cvg);
 
-    if (!is_last_iter && cvg) {
+    if (!is_last_iter && ns->psteady_cvg.cvg_steady) {
       is_last_iter = true;
 
       cs_log_printf(CS_LOG_DEFAULT,
@@ -2002,7 +2012,8 @@ cs_navsto_system_extra_op(const cs_mesh_t           *mesh,
                              mass_flux,
                              p_cell,
                              u_cell,
-                             u_face);
+                             u_face,
+                             navsto->psteady_cvg);
   } break;
   case CS_SPACE_SCHEME_MACFB: {
     /* Get the current values not the previous one */

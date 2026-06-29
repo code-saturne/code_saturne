@@ -449,22 +449,25 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  * \param[in]      p_cell        scalar-valued pressure in each cell
  * \param[in]      u_cell        vector-valued velocity in each cell
  * \param[in]      u_face        vector-valued velocity on each face
+ * \param[in]  ps_cvg            pointer to a \ref cs_cdo_navsto_psteady_cvg_t
+ *                               struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_extra_op(const cs_navsto_param_t   *nsp,
-                         const cs_mesh_t           *mesh,
-                         const cs_cdo_quantities_t *quant,
-                         const cs_cdo_connect_t    *connect,
-                         const cs_time_step_t      *ts,
-                         cs_time_plot_t            *time_plotter,
-                         const cs_turbulence_t     *turb,
-                         const cs_adv_field_t      *adv_field,
-                         const cs_real_t           *mass_flux,
-                         const cs_real_t           *p_cell,
-                         const cs_real_t           *u_cell,
-                         const cs_real_t           *u_face);
+cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
+                         const cs_mesh_t                   *mesh,
+                         const cs_cdo_quantities_t         *quant,
+                         const cs_cdo_connect_t            *connect,
+                         const cs_time_step_t              *ts,
+                         cs_time_plot_t                    *time_plotter,
+                         const cs_turbulence_t             *turb,
+                         const cs_adv_field_t              *adv_field,
+                         const cs_real_t                   *mass_flux,
+                         const cs_real_t                   *p_cell,
+                         const cs_real_t                   *u_cell,
+                         const cs_real_t                   *u_face,
+                         const cs_cdo_navsto_psteady_cvg_t &ps_cvg);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -843,22 +846,22 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
  *        when the unsteady Navier-Stokes system with a CDO face-based scheme
  *        is used.
  *
- * \param[in,out]  nsp       set of parameters to handle the Navier-Stokes
+ * \param[in]  nsp       set of parameters to handle the Navier-Stokes
  *                           system
  * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
  * \param[in]  sc            pointer to a \ref cs::cdo_navsto_ctx_t structure
  * \param[in]  tbs           pointer to a \ref cs_turbulence_t struct.
- *
- * \return returns true if the pseudo-steady algorithm has converged else false
- *
+ * \param[in]  ps_cvg        pointer to a \ref cs_cdo_navsto_psteady_cvg_t
+ *                           struct.
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_cdofb_navsto_check_convergence(cs_navsto_param_t          *nsp,
-                                  const cs_cdo_quantities_t  *quant,
-                                  const cs_time_step_t       *ts,
-                                  const cs::cdo_navsto_ctx_t *sc,
-                                  const cs_turbulence_t      *tbs);
+void
+cs_cdofb_navsto_check_convergence(const cs_navsto_param_t     *nsp,
+                                  const cs_cdo_quantities_t   *quant,
+                                  const cs_time_step_t        *ts,
+                                  const cs::cdo_navsto_ctx_t  *sc,
+                                  const cs_turbulence_t       *tbs,
+                                  cs_cdo_navsto_psteady_cvg_t &ps_cvg);
 
 #endif /* CS_CDOFB_NAVSTO_H */

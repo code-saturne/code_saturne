@@ -1297,19 +1297,19 @@ _cs_turbulence_t::add_boundary_stress(const cs_mesh_t *m,
  * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
  * \param[in]  ts            pointer to a \ref cs_time_step_t structure
  * \param[in]  psp           pointer to a \ref cs_param_psteady_t struct.
- *
- * \return returns true if the pseudo-steady algorithm has converged else
- * false
+ * \param[in]  ps_cvg        pointer to a \ref cs_cdo_navsto_psteady_cvg_t
+ *                           struct.
  *
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-_cs_turbulence_t::check_convergence(const cs_cdo_quantities_t *quant,
-                                    const cs_time_step_t      *ts,
-                                    const cs_param_psteady_t  &psp) const
+void
+_cs_turbulence_t::check_convergence(const cs_cdo_quantities_t   *quant,
+                                    const cs_time_step_t        *ts,
+                                    const cs_param_psteady_t    &psp,
+                                    cs_cdo_navsto_psteady_cvg_t &ps_cvg) const
 {
-  bool cvg = false;
+  ps_cvg.cvg_iter_turb_k = false;
 
   if (cs_glob_turb_model->order == CS_TURB_FIRST_ORDER &&
       cs_glob_turb_model->type == CS_TURB_RANS) {
@@ -1323,7 +1323,7 @@ _cs_turbulence_t::check_convergence(const cs_cdo_quantities_t *quant,
     const cs_real_t *k_prev = f_k->val_pre;
 
     if (k_curr == nullptr || k_prev == nullptr) {
-      return false;
+      return;
     }
 
     const auto cell_vol = quant->cell_vol;
@@ -1351,13 +1351,14 @@ _cs_turbulence_t::check_convergence(const cs_cdo_quantities_t *quant,
 
     // Simulate temporal derivative
     const cs_real_t norm2_k_diff = sqrt(rd.r[0]) / dt, norm2_k = sqrt(rd.r[1]);
+    ps_cvg.norm2_turb_k_stat = norm2_k_diff;
 
     if (norm2_k_diff < psp.rtol * cs::max(1.0, norm2_k)) {
-      cvg = true;
+      ps_cvg.cvg_iter_turb_k = true;
     }
 
     if (norm2_k_diff < psp.atol) {
-      cvg = true;
+      ps_cvg.cvg_iter_turb_k = true;
     }
 
     if (cs_log_default_is_active()) {
@@ -1369,8 +1370,6 @@ _cs_turbulence_t::check_convergence(const cs_cdo_quantities_t *quant,
                     psp.atol);
     }
   }
-
-  return cvg;
 };
 
 /*----------------------------------------------------------------------------*/

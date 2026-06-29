@@ -327,17 +327,17 @@ struct _cs_turbulence_t {
    * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
    * \param[in]  ts            pointer to a \ref cs_time_step_t structure
    * \param[in]  psp           pointer to a \ref cs_param_psteady_t struct.
-   *
-   * \return returns true if the pseudo-steady algorithm has converged else
-   * false
+   * \param[in]  ps_cvg        pointer to a \ref cs_cdo_navsto_psteady_cvg_t
+   *                           struct.
    *
    */
   /*----------------------------------------------------------------------------*/
 
-  bool
-  check_convergence(const cs_cdo_quantities_t *quant,
-                    const cs_time_step_t      *ts,
-                    const cs_param_psteady_t  &psp) const;
+  void
+  check_convergence(const cs_cdo_quantities_t   *quant,
+                    const cs_time_step_t        *ts,
+                    const cs_param_psteady_t    &psp,
+                    cs_cdo_navsto_psteady_cvg_t &ps_cvg) const;
 };
 
 /*============================================================================

@@ -158,23 +158,27 @@ typedef void(cs_navsto_check_init_t)(const cs_navsto_param_t   *nsp,
  *         Navier-Stokes system. This means that equations are built and then
  *         solved.
  *
- * \param[in,out]  nsp       set of parameters to handle the Navier-Stokes
+ * \param[in]  nsp           set of parameters to handle the Navier-Stokes
  *                           system
  * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
  * \param[in]  ts            pointer to a \ref cs_time_step_t structure
  * \param[in]  sc            pointer to a \ref cs::cdo_navsto_ctx_t structure
  * \param[in]  tbs           pointer to a \ref cs_turbulence_t struct.
+ * \param[in]  ps_cvg        pointer to a \ref cs_cdo_navsto_psteady_cvg_t
+ *                           struct.
  *
  * \return returns true if the pseudo-steady algorithm has converged else false
  *
  */
 /*----------------------------------------------------------------------------*/
 
-typedef bool(cs_navsto_check_convergence_t)(cs_navsto_param_t          *nsp,
-                                            const cs_cdo_quantities_t  *quant,
-                                            const cs_time_step_t       *ts,
-                                            const cs::cdo_navsto_ctx_t *sc,
-                                            const cs_turbulence_t      *tbs);
+typedef void(cs_navsto_check_convergence_t)(
+  const cs_navsto_param_t     *nsp,
+  const cs_cdo_quantities_t   *quant,
+  const cs_time_step_t        *ts,
+  const cs::cdo_navsto_ctx_t  *sc,
+  const cs_turbulence_t       *tbs,
+  cs_cdo_navsto_psteady_cvg_t &ps_cvg);
 
 /*=============================================================================
  * Structure definitions
@@ -374,6 +378,13 @@ typedef struct {
    */
 
   cs::cdo_navsto_ctx_t *scheme_context;
+
+  /*! \var psteady_cvg
+   *       Pointer to an additional \ref cs_cdo_navsto_psteady_cvg_t structure
+   *       storing information about convergence of the pseudo-steady algo.
+   */
+
+  cs_cdo_navsto_psteady_cvg_t psteady_cvg;
 
   /*!
    * @}

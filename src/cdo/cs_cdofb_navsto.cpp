@@ -1044,22 +1044,25 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  * \param[in]      p_cell        scalar-valued pressure in each cell
  * \param[in]      u_cell        vector-valued velocity in each cell
  * \param[in]      u_face        vector-valued velocity on each face
+ * \param[in]      ps_cvg        pointer to a \ref cs_cdo_navsto_psteady_cvg_t
+ *                               struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_extra_op(const cs_navsto_param_t   *nsp,
-                         const cs_mesh_t           *mesh,
-                         const cs_cdo_quantities_t *quant,
-                         const cs_cdo_connect_t    *connect,
-                         const cs_time_step_t      *ts,
-                         cs_time_plot_t            *time_plotter,
-                         const cs_turbulence_t     *turb,
-                         const cs_adv_field_t      *adv_field,
-                         const cs_real_t           *mass_flux,
-                         const cs_real_t           *p_cell,
-                         const cs_real_t           *u_cell,
-                         const cs_real_t           *u_face)
+cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
+                         const cs_mesh_t                   *mesh,
+                         const cs_cdo_quantities_t         *quant,
+                         const cs_cdo_connect_t            *connect,
+                         const cs_time_step_t              *ts,
+                         cs_time_plot_t                    *time_plotter,
+                         const cs_turbulence_t             *turb,
+                         const cs_adv_field_t              *adv_field,
+                         const cs_real_t                   *mass_flux,
+                         const cs_real_t                   *p_cell,
+                         const cs_real_t                   *u_cell,
+                         const cs_real_t                   *u_face,
+                         const cs_cdo_navsto_psteady_cvg_t &ps_cvg)
 {
   CS_UNUSED(adv_field);
 
@@ -1148,7 +1151,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t   *nsp,
   /* There are five values if all flags are activated for the monitoring plot */
 
   int  n_cols = 0;
-  cs_real_t  col_vals[5] = {0, 0, 0, 0, 0};
+  cs_real_t col_vals[7] = { 0, 0, 0, 0, 0, 0, 0 };
 
   if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_DIVERGENCE) {
 
@@ -1500,6 +1503,12 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t   *nsp,
     }
 
   } /* vorticity, helicity or enstrophy computations */
+
+  if (nsp->num_flag & CS_NAVSTO_NUM_PSEUDO_STEADY) {
+    /* Log residual for pseudo-steady algo */
+    col_vals[n_cols++] = ps_cvg.norm2_mass_flux_stat;
+    col_vals[n_cols++] = ps_cvg.norm2_turb_k_stat;
+  }
 
   if (cs_glob_rank_id < 1 && time_plotter != nullptr)
     cs_time_plot_vals_write(
@@ -3211,37 +3220,42 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
  *        when the unsteady Navier-Stokes system with a CDO face-based scheme
  *        is used.
  *
- * \param[in,out]  nsp       set of parameters to handle the Navier-Stokes
+ * \param[in]  nsp           set of parameters to handle the Navier-Stokes
  *                           system
  * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
  * \param[in]  sc            pointer to a \ref cs::cdo_navsto_ctx_t structure
  * \param[in]  tbs           pointer to a \ref cs_turbulence_t struct.
- *
- * \return returns true if the pseudo-steady algorithm has converged else false
- *
+ * \param[in]  ps_cvg        pointer to a \ref cs_cdo_navsto_psteady_cvg_t
+ *                           struct.
  */
 /*----------------------------------------------------------------------------*/
 
-bool
-cs_cdofb_navsto_check_convergence(cs_navsto_param_t          *nsp,
-                                  const cs_cdo_quantities_t  *quant,
-                                  const cs_time_step_t       *ts,
-                                  const cs::cdo_navsto_ctx_t *sc,
-                                  const cs_turbulence_t      *tbs)
+void
+cs_cdofb_navsto_check_convergence(const cs_navsto_param_t     *nsp,
+                                  const cs_cdo_quantities_t   *quant,
+                                  const cs_time_step_t        *ts,
+                                  const cs::cdo_navsto_ctx_t  *sc,
+                                  const cs_turbulence_t       *tbs,
+                                  cs_cdo_navsto_psteady_cvg_t &ps_cvg)
 {
   const cs_real_t *mass_flux_pre = sc->get_mass_flux(true);
   const cs_real_t *mass_flux     = sc->get_mass_flux(false);
 
-  if (mass_flux == nullptr || mass_flux_pre == nullptr)
-    return false;
+  ps_cvg.cvg_iter_mass_flux = false;
+  ps_cvg.cvg_iter_turb_k    = false;
+  ps_cvg.cvg_steady         = false;
+
+  if (mass_flux == nullptr || mass_flux_pre == nullptr) {
+    ps_cvg.n_cvg_iter_curr = 0;
+    return;
+  }
 
   if (!(nsp->num_flag & CS_NAVSTO_NUM_PSEUDO_STEADY)) {
-    return false;
+    ps_cvg.n_cvg_iter_curr = 0;
+    return;
   }
 
   assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
-
-  bool cvg_iter = false;
 
   // Test convergence on mass fluxes
   const cs_real_t square_norm2_flux = nsp->square_norm(mass_flux);
@@ -3252,14 +3266,15 @@ cs_cdofb_navsto_check_convergence(cs_navsto_param_t          *nsp,
 
   const cs_real_t norm2_flux = sqrt(square_norm2_flux);
   // Simulate temporal derivative
-  const cs_real_t norm2_diff = sqrt(square_norm2_diff) / dt;
+  ps_cvg.norm2_mass_flux_stat = sqrt(square_norm2_diff) / dt;
 
-  if (norm2_diff < nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux)) {
-    cvg_iter = true;
+  if (ps_cvg.norm2_mass_flux_stat <
+      nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux)) {
+    ps_cvg.cvg_iter_mass_flux = true;
   }
 
-  if (norm2_diff < nsp->psteady_cvg_param.atol) {
-    cvg_iter = true;
+  if (ps_cvg.norm2_mass_flux_stat < nsp->psteady_cvg_param.atol) {
+    ps_cvg.cvg_iter_mass_flux = true;
   }
 
   if (cs_log_default_is_active()) {
@@ -3269,32 +3284,33 @@ cs_cdofb_navsto_check_convergence(cs_navsto_param_t          *nsp,
     cs_log_printf(CS_LOG_DEFAULT,
                   "- mass flux: residual %5.3g (with "
                   "tolerence relative %5.3g and absolute %5.3g )\n",
-                  norm2_diff,
+                  ps_cvg.norm2_mass_flux_stat,
                   nsp->psteady_cvg_param.rtol * cs::max(1.0, norm2_flux),
                   nsp->psteady_cvg_param.atol);
   }
 
   // Test convergence on turbulence
   if (tbs != nullptr) {
-    cvg_iter =
-      cvg_iter && tbs->check_convergence(quant, ts, nsp->psteady_cvg_param);
+    tbs->check_convergence(quant, ts, nsp->psteady_cvg_param, ps_cvg);
   }
 
+  const bool cvg_iter = ps_cvg.cvg_iter_mass_flux && ps_cvg.cvg_iter_turb_k;
+
   if (cvg_iter) {
-    nsp->psteady_cvg_param.n_cvg_iter_curr++;
+    ps_cvg.n_cvg_iter_curr++;
   }
   else {
-    nsp->psteady_cvg_param.n_cvg_iter_curr = 0;
+    ps_cvg.n_cvg_iter_curr = 0;
   }
 
   if (cs_log_default_is_active()) {
     cs_log_printf(CS_LOG_DEFAULT,
                   "- number of iteration consecutively converged: %d\n",
-                  nsp->psteady_cvg_param.n_cvg_iter_curr);
+                  ps_cvg.n_cvg_iter_curr);
   }
 
-  return nsp->psteady_cvg_param.n_cvg_iter_curr >=
-         nsp->psteady_cvg_param.n_cvg_iter;
+  ps_cvg.cvg_steady =
+    ps_cvg.n_cvg_iter_curr >= nsp->psteady_cvg_param.n_cvg_iter;
 }
 
 /*----------------------------------------------------------------------------*/

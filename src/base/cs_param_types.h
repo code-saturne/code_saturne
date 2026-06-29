@@ -640,9 +640,6 @@ typedef struct {
    * Number of consecutively converged iterations before stopping the iterative
    * process
    *
-   * \var n_cvg_iter_curr
-   * Number of iterations which have converged consecutively
-   *
    * \var n_time_step_solve
    * Solve Navier-Stokes equations every n_time_step_solve time step
    */
@@ -651,11 +648,45 @@ typedef struct {
   double rtol;
 
   int n_cvg_iter;
-  int n_cvg_iter_curr;
 
   int n_time_step_solve;
 
 } cs_param_psteady_t;
+
+/*! \struct psteady_cvg
+ *  \brief  Convergence values of the pseudo-steady algo.
+ */
+
+typedef struct {
+  /*!
+   * \var atol
+   * Absolute tolerance under which the iterative process is stopped
+   *
+   * \var rtol
+   * Relative tolerance under which the iterative process is stopped
+   *
+   * \var n_cvg_iter
+   * Number of consecutively converged iterations before stopping the iterative
+   * process
+   *
+   * \var n_cvg_iter_curr
+   * Number of iterations which have converged consecutively
+   *
+   * \var n_time_step_solve
+   * Solve Navier-Stokes equations every n_time_step_solve time step
+   */
+
+  int n_cvg_iter_curr{ 0 };
+
+  double norm2_mass_flux_stat{ 0.0 };
+  double norm2_turb_k_stat{ 0.0 };
+
+  bool cvg_iter_mass_flux{ false };
+  bool cvg_iter_turb_k{ false };
+
+  bool cvg_steady{ false };
+
+} cs_cdo_navsto_psteady_cvg_t;
 
 /*!
  * @}
