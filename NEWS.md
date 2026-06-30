@@ -1,5 +1,12 @@
-Master (not on release branches yet)
-------------------------------------
+Release 9.2.0 (unreleased)
+--------------------------
+
+### Know issues:
+
+The `cs_glob_velocity_pressure_model->idilat = 1` option is broken by a
+recent change (updating the pressure BCs between prediction and correction),
+and this is under investigation. The fix will be applied in a future
+patch release when available.
 
 ### Numerics:
 
@@ -9,7 +16,7 @@ Master (not on release branches yet)
   can therefore now be accessed by the user or any other place in the code. The
   array isostd now has a size of n_b_faces (previously n_b_faces+1).
 
-- Update in pressure bc is now done between prediction and correction
+- Update in pressure BCs is now done between prediction and correction
   to avoid taking p^(n+1) bc and p^(n) field in prediction, thus
   creating spurious pressure gradient in case of time dependent
   pressure BC.
