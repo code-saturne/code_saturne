@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 9.2.0 (unreleased)
+--------------------------
+
 ### Numerics:
 
 - Update to pressure reference face: it was previously stored in the isostd
@@ -9,7 +12,7 @@ Master (not on release branches yet)
   can therefore now be accessed by the user or any other place in the code. The
   array isostd now has a size of n_b_faces (previously n_b_faces+1).
 
-- Update in pressure bc is now done between prediction and correction
+- Update in pressure BCs is now done between prediction and correction
   to avoid taking p^(n+1) bc and p^(n) field in prediction, thus
   creating spurious pressure gradient in case of time dependent
   pressure BC.
