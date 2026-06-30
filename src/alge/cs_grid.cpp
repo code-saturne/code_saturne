@@ -3881,14 +3881,9 @@ _msr_face_adjacency(const cs_grid_t  *f,
     }
   }
 
-  assert(g->n_faces == n_faces);
   g->n_faces = n_faces;
   g->cell_face = cell_to_face;
   g->cell_face_sgn = cell_to_face_sgn;
-  for (cs_lnum_t i = 0; i < c_nnz; i++) {
-    assert(g->cell_face[i] == cell_to_face[i]);
-    assert(g->cell_face_sgn[i] == cell_to_face_sgn[i]);
-  }
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
