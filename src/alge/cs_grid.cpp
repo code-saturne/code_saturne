@@ -3478,10 +3478,15 @@ _coarse_msr_struct_cuda(cs_dispatch_context  &ctx,
                                    keys_0, keys_1, f_nnz,
                                    begin_bit, end_bit, stream);
   else
+#if CUDART_VERSION >= 12000
     cub::DeviceMergeSort::SortKeys(nullptr, tmp_storage_size,
                                    keys_1, f_nnz,
                                    cuda::std::less<uint64_t>{},
                                    stream);
+#else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: DeviceMergeSort::SortKeys requires Cuda 12.", __func__);
+#endif
 
   tmp_storage_size_cur = tmp_storage_size;
   CS_MALLOC_HD(tmp_storage, tmp_storage_size_cur, uint64_t,
@@ -3495,10 +3500,15 @@ _coarse_msr_struct_cuda(cs_dispatch_context  &ctx,
                                    keys_0, keys_1, f_nnz,
                                    begin_bit, end_bit, stream);
   else
+#if CUDART_VERSION >= 12000
     cub::DeviceMergeSort::SortKeys(tmp_storage, tmp_storage_size,
                                    keys_1, f_nnz,
                                    cuda::std::less<uint64_t>{},
                                    stream);
+#else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: DeviceMergeSort requires Cuda 12.", __func__);
+#endif
 
   /* Remove duplicates */
 
