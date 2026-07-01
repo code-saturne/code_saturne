@@ -1556,7 +1556,7 @@ _rad_transfer_solve(int bc_type[])
     if (f_abs != nullptr) {
       int_abso = cs_array<cs_real_t>(f_abs->val, n_cells_ext);
     }
-    else if (int_abso.size() == 0)
+    else if (int_abso.empty())
       int_abso.reshape(n_cells_ext);
 
     if (rt_params->imoadf >= 1 || rt_params->imfsck == 1) {
@@ -2526,7 +2526,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     if (f_abs != nullptr) {
       int_abso = cs_array<cs_real_t>(f_abs->val, n_cells_ext);
     }
-    else if (int_abso.size() == 0)
+    else if (int_abso.empty())
       int_abso.reshape(n_cells_ext);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)

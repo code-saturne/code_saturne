@@ -355,7 +355,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
      Do not use with ADF model !!! */
 
   if (rt_params->type == CS_RAD_TRANSFER_P1 && rt_params->imoadf == 0) {
-    if (w3.size() == 0)
+    if (w3.empty())
       w3.reshape(n_cells_ext);
     else
       w3.zero();

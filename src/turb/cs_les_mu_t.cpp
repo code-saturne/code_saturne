@@ -898,7 +898,7 @@ cs_les_mu_t_wale(void)
     if (sinv > 0)
       con = sqrt(2.) * pow(sd, 1.5)/sinv;
 
-    if (s_eq.size() != 0)
+    if (!s_eq.empty())
       s_eq[c_id] = con;
 
     cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id], bles);
