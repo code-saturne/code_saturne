@@ -244,6 +244,7 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
   nsp->psteady_cvg_param.atol              = 1e-8;
   nsp->psteady_cvg_param.n_cvg_iter        = 2;
   nsp->psteady_cvg_param.n_time_step_solve = 1;
+  nsp->psteady_cvg_param.tol_pred_adam     = 1e-2;
 
   nsp->anderson_param.n_max_dir = 6;
   nsp->anderson_param.starting_iter = 3;
@@ -556,6 +557,10 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
                 " %s: Invalid value for the number of resolution of the"
                 " pseudo-steady algorithm\n",
                 __func__);
+    break;
+
+  case CS_NSKEY_PSTEADY_ALGO_TOLE_PRED_ADAM:
+    nsp->psteady_cvg_param.tol_pred_adam = atof(val);
     break;
 
   case CS_NSKEY_NORM_TYPE:

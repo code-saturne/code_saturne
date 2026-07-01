@@ -642,14 +642,20 @@ typedef struct {
    *
    * \var n_time_step_solve
    * Solve Navier-Stokes equations every n_time_step_solve time step
+   *
+   * \var tol_pred_adam
+   * Use Adam-Bashford velocity prediction if residual is lower than the given
+   * value. Negative value means this option is diable.
    */
 
-  double atol;
-  double rtol;
+  double atol{ 1e-5 };
+  double rtol{ 1e-8 };
 
-  int n_cvg_iter;
+  int n_cvg_iter{ 2 };
 
-  int n_time_step_solve;
+  int n_time_step_solve{ 1 };
+
+  double tol_pred_adam{ 1e-2 };
 
 } cs_param_psteady_t;
 

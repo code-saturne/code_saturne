@@ -1950,6 +1950,15 @@ cs_navsto_system_compute(const cs_mesh_t           *mesh,
 
       // Always do a log for this iteration
       cs_log_default_activate(true);
+
+      if (ns->param->psteady_cvg_param.tol_pred_adam > 0. &&
+          ns->param->psteady_cvg_param.tol_pred_adam <=
+            ns->psteady_cvg.norm2_mass_flux_stat) {
+        // Use Adam-Bashford extrapolation for advection
+        cs_equation_t *mom_eq = cs_navsto_system_get_momentum_eq();
+        mom_eq->param->adv_extrapol =
+          CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2;
+      }
     }
   }
 }
