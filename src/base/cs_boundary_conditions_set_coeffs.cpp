@@ -1585,7 +1585,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
     {
       const cs_velocity_pressure_param_t *vp_param
         = cs_glob_velocity_pressure_param;
-      if (!vp_param->update_p_bc_after_prediction || vp_param->staggered == 1)
+      if (  !vp_param->update_p_bc_after_prediction
+          || vp_param->staggered == 1)
         cs_boundary_conditions_set_coeffs_pressure(ctx, CS_F_(p));
     }
 
@@ -3861,6 +3862,11 @@ cs_boundary_conditions_set_coeffs_init(void)
     cs_boundary_conditions_check(bc_type,
                                  ale_bc_type);
   }
+
+  /* Init of bc coeffs before first time step, necessary in some user defined
+     bc cases */
+  cs_boundary_conditions_set_coeffs_pressure(ctx, CS_F_(p));
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3944,6 +3950,11 @@ cs_boundary_conditions_set_coeffs_pressure(cs_dispatch_context   &ctx,
               + dttens[c_id][2] * cs_math_pow2(n[2]))
              / distbf;
 
+      /* dttens is zero when not computed yet (before the time loop),
+         so fall back to an isotropic estimate. */
+      if (hint <= 0)
+        hint = dt[c_id]/distbf;
+
       if (vof_model > 0)
         hint = hint / crom[c_id];
     }
@@ -3988,7 +3999,13 @@ cs_boundary_conditions_set_coeffs_pressure(cs_dispatch_context   &ctx,
          with `cs_face_anisotropic_viscosity_scalar`. */
       fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distbf);
 
-      hint = viscis / fikis;
+      /* dttens is zero when not computed yet (before the time loop);
+         fall back to an isotropic estimate to avoid a 0/0 division. */
+      if (viscis > 0)
+        hint = viscis / fikis;
+      else
+        hint = dt[c_id]/distbf;
+
       if (vof_model > 0)
         hint = hint / crom[c_id];
     }

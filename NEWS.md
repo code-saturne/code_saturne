@@ -1,13 +1,6 @@
 Release 9.2.0 (unreleased)
 --------------------------
 
-### Know issues:
-
-The `cs_glob_velocity_pressure_model->idilat = 1` option is broken by a
-recent change (updating the pressure BCs between prediction and correction),
-and this is under investigation. The fix will be applied in a future
-patch release when available.
-
 ### Numerics:
 
 - Update to pressure reference face: it was previously stored in the isostd
