@@ -1585,7 +1585,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
     {
       const cs_velocity_pressure_param_t *vp_param
         = cs_glob_velocity_pressure_param;
-      if (!vp_param->update_p_bc_after_prediction || vp_param->staggered == 1)
+      if (  !vp_param->update_p_bc_after_prediction
+          || vp_param->staggered == 1)
         cs_boundary_conditions_set_coeffs_pressure(ctx, CS_F_(p));
     }
 
@@ -3861,6 +3862,7 @@ cs_boundary_conditions_set_coeffs_init(void)
     cs_boundary_conditions_check(bc_type,
                                  ale_bc_type);
   }
+  cs_boundary_conditions_set_coeffs_pressure(ctx, CS_F_(p));
 }
 
 /*----------------------------------------------------------------------------*/
