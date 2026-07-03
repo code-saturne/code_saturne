@@ -2228,10 +2228,18 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
        *  Apply the Dirichlet for Normal component
        *  =========================================== */
 
+      p_t.dot(csys->rhs + 3*fb, x_dir);
+
+      for (short int k = 0; k < 3; k++)
+        csys->rhs[3 * fb + k] = x_dir[k];
+
       nn.dot(u0, x_dir);
       const double u0n_norm = cs_math_3_norm(x_dir);
 
       if (u0n_norm > cs_math_zero_threshold) {
+
+        for (short int k = 0; k < 3; k++)
+          csys->rhs[3 * fb + k] += x_dir[k];
 
         for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
@@ -2247,9 +2255,6 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
             _rhs[k] -= ax_dir[k];
         }
       } /* Non-homogeneous Dirichlet BC */
-
-      for (short int k = 0; k < 3; k++)
-        csys->rhs[3 * fb + k] = x_dir[k];
 
       for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
@@ -2421,10 +2426,18 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
        *  Apply the Dirichlet for Normal component
        *  =========================================== */
 
+      p_t.dot(csys->rhs + 3*fb, x_dir);
+
+      for (short int k = 0; k < 3; k++)
+        csys->rhs[3 * fb + k] = x_dir[k];
+
       nn.dot(u0, x_dir);
       const double u0n_norm = cs_math_3_norm(x_dir);
 
       if (u0n_norm > cs_math_zero_threshold) {
+
+        for (short int k = 0; k < 3; k++)
+          csys->rhs[3*fb + k] += x_dir[k];
 
         for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
@@ -2440,9 +2453,6 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
             _rhs[k] -= ax_dir[k];
         }
       } /* Non-homogeneous Dirichlet BC */
-
-      for (short int k = 0; k < 3; k++)
-        csys->rhs[3*fb + k] = x_dir[k];
 
       for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 

@@ -294,22 +294,18 @@ _mono_apply_bc_mostly(const cs_cdofb_monolithic_t     *sc,
       else if (bf_type[i] & CS_BOUNDARY_WALL) {
         //                  =================
 
-        if (mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-            mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-            mom_eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
-          if (bf_type[i] & CS_BOUNDARY_SLIDING_WALL)
-            sc->apply_sliding_wall(f, mom_eqp, cm, diff_pty, cb, csys);
-          else
-            sc->apply_fixed_wall(f, mom_eqp, cm, diff_pty, cb, csys);
+        if (bf_type[i] & CS_BOUNDARY_SLIDING_WALL)
+          sc->apply_sliding_wall(f, mom_eqp, cm, diff_pty, cb, csys);
+        else
+          sc->apply_fixed_wall(f, mom_eqp, cm, diff_pty, cb, csys);
 
-          /* Strong enforcement of u.n on the divergence. No flux accross a
-             wall in any case. This improves the convergence in case of
-             augmentation of the linear system. */
+        /* Strong enforcement of u.n on the divergence. No flux accross a
+           wall in any case. This improves the convergence in case of
+           augmentation of the linear system. */
 
-          cs_real_t *div_op = nsb->div_op;
-          for (int k = 0; k < 3; k++)
-            div_op[3 * f + k] = 0;
-        }
+        cs_real_t *div_op = nsb->div_op;
+        for (int k = 0; k < 3; k++)
+          div_op[3 * f + k] = 0;
       }
       else if (bf_type[i] & CS_BOUNDARY_IMPOSED_P) {
         //                  =====================
@@ -456,22 +452,6 @@ _mono_algebraic_enforcement(const cs_equation_param_t   *eqp,
            * step (before the static condensation) */
 
           sc->apply_velocity_inlet(f, eqp, cm, diff_pty, cb, csys);
-        }
-        else if (bf_type[i] & CS_BOUNDARY_WALL) {
-          /* No need to update the mass RHS since there is no mass flux */
-
-          /* Strong enforcement of u.n on the divergence */
-
-          for (int k = 0; k < 3; k++)
-            div_op[3 * f + k] = 0;
-
-          /* Enforcement of the velocity for the velocity-block
-           * Dirichlet on the three components of the velocity field */
-
-          if (bf_type[i] & CS_BOUNDARY_SLIDING_WALL)
-            sc->apply_sliding_wall(f, eqp, cm, diff_pty, cb, csys);
-          else
-            sc->apply_fixed_wall(f, eqp, cm, diff_pty, cb, csys);
         }
         else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
           /* No need to update the mass RHS since there is no mass flux.
