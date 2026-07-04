@@ -349,6 +349,34 @@ cs_matrix_structure_release_msr_arrays(cs_matrix_structure_t   *ms,
                                        cs_lnum_t              **row_index,
                                        cs_lnum_t              **col_id);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Query matrix structure allocation mode.
+ *
+ * \param[in]  ms  pointer to matrix structure
+ *
+ * \return  host/device allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_alloc_mode_t
+cs_matrix_structure_get_alloc_mode(const cs_matrix_structure_t  *ms);
+
+/*----------------------------------------------------------------------------*/
+/*
+ *\brief Set matrix structure allocation mode.
+ *
+ * The allocation mode will be changed only for arrays owned by the structure.
+ *
+ * \param[in, out]  ms          pointer to matrix structure
+ * \param[in]       alloc_mode  host/device allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_structure_set_alloc_mode(cs_matrix_structure_t  *ms,
+                                   cs_alloc_mode_t         alloc_mode);
+
 /*----------------------------------------------------------------------------
  * Create a matrix container using a given structure.
  *

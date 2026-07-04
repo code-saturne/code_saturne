@@ -2576,15 +2576,11 @@ _compute_unit_normals(const cs_mesh_t       *m,
 
   /* If this is not an update, allocate members of the structure */
 
-  if (mq->i_face_u_normal == nullptr) {
+  if (mq->i_face_u_normal == nullptr)
     CS_MALLOC_HD(mq->i_face_u_normal, n_i_faces, cs_nreal_3_t, amode);
-    cs_mem_advise_set_read_mostly(mq->i_face_u_normal);
-  }
 
-  if (mq->b_face_u_normal == nullptr) {
+  if (mq->b_face_u_normal == nullptr)
     CS_MALLOC_HD(mq->b_face_u_normal, n_b_faces, cs_nreal_3_t, amode);
-    cs_mem_advise_set_read_mostly(mq->b_face_u_normal);
-  }
 
 # pragma omp parallel for  if (n_i_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_i_faces; i++) {
@@ -2595,6 +2591,9 @@ _compute_unit_normals(const cs_mesh_t       *m,
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
     cs_math_3_normalize(b_face_normal[i], mq->b_face_u_normal[i]);
   }
+
+  cs_mem_advise_set_read_mostly(mq->i_face_u_normal);
+  cs_mem_advise_set_read_mostly(mq->b_face_u_normal);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

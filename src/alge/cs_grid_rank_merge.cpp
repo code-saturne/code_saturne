@@ -938,6 +938,14 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
   cs_matrix_t *matrix = g->_matrix;
   cs_alloc_mode_t alloc_mode = cs_matrix_get_alloc_mode(matrix);
 
+  if (alloc_mode == CS_ALLOC_DEVICE) {
+    alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+    cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(g->_matrix),
+                             alloc_mode);
+    if (g->matrix_struct != nullptr)
+      cs_matrix_structure_set_alloc_mode(g->matrix_struct, alloc_mode);
+  }
+
   cs_assert(cs_matrix_get_diag_block_size(matrix) == 1);
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(matrix);

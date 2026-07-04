@@ -620,6 +620,8 @@ _compact_struct_csr(cs_matrix_struct_csr_t  *ms,
 
   ms->row_index = ms->_row_index;
   ms->col_id = ms->_col_id;
+
+  ms->nnz = ms->row_index[ms->n_rows];
 }
 
 /*----------------------------------------------------------------------------
@@ -663,6 +665,8 @@ _create_struct_csr(cs_alloc_mode_t     alloc_mode,
 
   CS_MALLOC_HD(ms->_row_index, ms->n_rows + 1, cs_lnum_t, alloc_mode);
   ms->row_index = nullptr;
+
+  ms->nnz = -1;
 
   /* Count number of nonzero elements per row */
 
@@ -722,6 +726,7 @@ _create_struct_csr(cs_alloc_mode_t     alloc_mode,
   /* Compact and finalize indexes */
 
   _compact_struct_csr(ms, alloc_mode);
+  ms->nnz = ms->row_index[ms->n_rows];
 
   return ms;
 }
@@ -742,6 +747,7 @@ _init_struct_csr(cs_matrix_struct_csr_t  *ms,
 {
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
+  ms->nnz = 0;
 
   ms->direct_assembly = true;
   ms->have_diag = false;
@@ -817,6 +823,8 @@ _init_struct_csr_from_csr(cs_matrix_struct_csr_t  *ms,
                       ms->_col_id);
 
   }
+
+  ms->nnz = cs_get_host_value(&(ms->row_index[ms->n_rows]));
 }
 
 /*----------------------------------------------------------------------------
@@ -904,6 +912,8 @@ _create_struct_csr_from_shared(bool              have_diag,
   ms->_row_index = nullptr;
   ms->_col_id = nullptr;
 
+  ms->nnz = cs_get_host_value(&(ms->row_index[ms->n_rows]));
+
   return ms;
 }
 
@@ -965,7 +975,34 @@ _create_struct_csr_from_restrict_local(const cs_matrix_struct_csr_t  *src)
   ms->row_index = ms->_row_index;
   ms->col_id = ms->_col_id;
 
+  ms->nnz = cs_get_host_value(&(ms->row_index[ms->n_rows]));
+
   return ms;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *\brief Set CSR matrix structure allocation mode.
+ *
+ * The allocation mode will be changed only for arrays owned by the structure.
+ *
+ * \param[in, out]  ms          pointer to matrix structure
+ * \param[in]       alloc_mode  host/device allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_alloc_mode_csr(cs_matrix_struct_csr_t  *ms,
+                    cs_alloc_mode_t          alloc_mode)
+{
+  if (ms->_row_index != nullptr) {
+    cs_set_alloc_mode_r(ms->_row_index, alloc_mode);
+    ms->row_index = ms->_row_index;
+  }
+  if (ms->_col_id != nullptr) {
+    cs_set_alloc_mode_r(ms->_col_id, alloc_mode);
+    ms->col_id = ms->_col_id;
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3173,6 +3210,7 @@ _create_struct_msr_from_shared(bool              direct_assembly,
 
   ms->e.row_index = row_index;
   ms->e.col_id = col_id;
+  ms->e.nnz = cs_get_host_value(&(ms->e.row_index[ms->e.n_rows]));
 
   ms->e._row_index = nullptr;
   ms->e._col_id = nullptr;
@@ -4667,6 +4705,65 @@ cs_matrix_structure_release_msr_arrays(cs_matrix_structure_t   *ms,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Query matrix structure allocation mode.
+ *
+ * \param[in]  ms  pointer to matrix structure
+ *
+ * \return  host/device allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_alloc_mode_t
+cs_matrix_structure_get_alloc_mode(const cs_matrix_structure_t  *ms)
+{
+  return ms->alloc_mode;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *\brief Set matrix structure allocation mode.
+ *
+ * The allocation mode will be changed only for arrays owned by the structure.
+ *
+ * \param[in, out]  ms          pointer to matrix structure
+ * \param[in]       alloc_mode  host/device allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_structure_set_alloc_mode(cs_matrix_structure_t  *ms,
+                                   cs_alloc_mode_t         alloc_mode)
+{
+  switch(ms->type) {
+  case CS_MATRIX_NATIVE:
+    {
+      auto *_ms = static_cast<cs_matrix_struct_native_t  *>(ms->structure);
+      if (_ms->edges != nullptr) {
+      }
+    }
+    break;
+  case CS_MATRIX_CSR:
+    {
+      auto *_ms = static_cast<cs_matrix_struct_csr_t  *>(ms->structure);
+      _set_alloc_mode_csr(_ms, alloc_mode);
+    }
+    break;
+  case CS_MATRIX_MSR:
+    [[fallthrough]];
+  case CS_MATRIX_DIST:
+    {
+      auto *_ms = static_cast<cs_matrix_struct_dist_t  *>(ms->structure);
+      _set_alloc_mode_csr(&_ms->e, alloc_mode);
+      _set_alloc_mode_csr(&_ms->h, alloc_mode);
+    }
+    break;
+  default:
+    break;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create a matrix container using a given structure.
  *
  * Note that the matrix container maps to the assigned structure,
@@ -5006,27 +5103,27 @@ cs_matrix_get_n_entries(const cs_matrix_t  *matrix)
   case CS_MATRIX_NATIVE:
     {
     auto ms = static_cast<const cs_matrix_struct_native_t *>(matrix->structure);
-    retval  = ms->n_edges * 2 + ms->n_rows;
+    retval = ms->n_edges * 2 + ms->n_rows;
     }
     break;
   case CS_MATRIX_CSR:
     {
     auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
-    retval  = ms->row_index[ms->n_rows];
+    retval = cs_get_host_value(&(ms->row_index[ms->n_rows]));
     }
     break;
   case CS_MATRIX_MSR:
     {
     auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
-    retval  = ms->e.row_index[ms->n_rows] + ms->n_rows;
+    retval = cs_get_host_value(&(ms->e.row_index[ms->n_rows])) + ms->n_rows;
     }
     break;
   case CS_MATRIX_DIST:
     {
     auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
-    retval += ms->e.row_index[ms->e.n_rows];
+    retval += cs_get_host_value(&(ms->e.row_index[ms->e.n_rows]));
     if (ms->h.n_rows > 0)
-      retval += ms->h.row_index[ms->h.n_rows];
+      retval += cs_get_host_value(&(ms->h.row_index[ms->h.n_rows]));
     retval += ms->n_rows;
     }
     break;

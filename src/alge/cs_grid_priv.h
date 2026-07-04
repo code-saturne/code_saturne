@@ -427,7 +427,7 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
  *----------------------------------------------------------------------------*/
 
 cs_grid_t *
-cs_grid_coarsen(const cs_grid_t      *f,
+cs_grid_coarsen(cs_grid_t            *f,
                 cs_alloc_mode_t       alloc_mode,
                 cs_grid_coarsening_t  coarsening_type,
                 int                   aggregation_limit,

@@ -1386,6 +1386,8 @@ _coarse_row_count_and_halo(const cs_grid_t   *f,
 
   c->n_elts_r[0] = c->n_rows;
   c->n_elts_r[1] = c->n_cols_ext;
+
+  cs_mem_advise_set_read_mostly(c->coarse_row);
 }
 
 /*----------------------------------------------------------------------------
@@ -2761,7 +2763,7 @@ _coarse_to_fine_adjacency_msr_serial
 
   cs_lnum_t *c_r_idx_0 = nullptr, *cf_r_shift = nullptr;
   CS_MALLOC_HD(c_f_row_index, c_n_rows+1, cs_lnum_t, alloc_mode);
-  CS_MALLOC_HD(cf_r_shift, c_n_rows, cs_lnum_t, alloc_mode_local);
+  CS_MALLOC(cf_r_shift, c_n_rows, cs_lnum_t);
 
   if (c_row_index_0 != nullptr) {
     CS_MALLOC_HD(c_r_idx_0, c_n_rows+1, cs_lnum_t, alloc_mode_local);
@@ -2869,7 +2871,7 @@ _coarse_to_fine_adjacency_msr(cs_dispatch_context  &ctx,
                               cs_lnum_t           *&c_f_row_ids,
                               cs_lnum_t           **c_row_index_0)
 {
-  // CS_PROFILE_FUNC_RANGE();
+  CS_PROFILE_FUNC_RANGE();
 
   /* Due to the overhead of atomics, the threaded version of this
      function has an observed overhead in the range of 5x over
@@ -2896,12 +2898,11 @@ _coarse_to_fine_adjacency_msr(cs_dispatch_context  &ctx,
 
   int n_c_threads = cs_parall_n_threads(c_n_rows, CS_THR_MIN);
 
-  cs_alloc_mode_t  alloc_mode_local = alloc_mode;
-  if (ctx.use_gpu() == false)
-    alloc_mode_local = CS_ALLOC_HOST;
+  cs_alloc_mode_t  alloc_mode_local = ctx.use_gpu() ?
+    CS_ALLOC_DEVICE : CS_ALLOC_HOST;
 
   cs_lnum_t *c_r_idx_0 = nullptr, *cf_r_shift = nullptr;
-  CS_MALLOC_HD(c_f_row_index, c_n_rows+1, cs_lnum_t, alloc_mode);
+  CS_MALLOC_HD(c_f_row_index, c_n_rows+1, cs_lnum_t, alloc_mode_local);
   if (c_row_index_0 != nullptr)
     CS_MALLOC_HD(c_r_idx_0, c_n_rows+1, cs_lnum_t, alloc_mode_local);
   CS_MALLOC_HD(cf_r_shift, c_n_rows, cs_lnum_t, alloc_mode_local);
@@ -3031,7 +3032,7 @@ _coarse_msr_struct(int                f_level,
                    cs_lnum_t        **c_row_index,
                    cs_lnum_t        **c_col_ids)
 {
-  // CS_PROFILE_FUNC_RANGE();
+  CS_PROFILE_FUNC_RANGE();
 
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
@@ -3231,7 +3232,7 @@ _coarse_msr_struct_hd(cs_dispatch_context  &ctx,
                       cs_lnum_t            **c_face_id_stage_0,
                       short int            **c_cell_to_face_sgn)
 {
-  // CS_PROFILE_FUNC_RANGE();
+  CS_PROFILE_FUNC_RANGE();
 
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
@@ -3248,10 +3249,10 @@ _coarse_msr_struct_hd(cs_dispatch_context  &ctx,
      array for each thread is large enough and data from each thread
      is independent. Data will then need to be combined */
 
-  const cs_lnum_t c_nnz_0 = c_row_index_0[c_n_rows];
+  const cs_lnum_t c_nnz_0 = _get_host_value(ctx, c_row_index_0+c_n_rows);
 
   cs_lnum_t *c_col_id_0;
-  CS_MALLOC_HD(c_col_id_0, c_nnz_0, cs_lnum_t, cs_alloc_mode_device);
+  CS_MALLOC_HD(c_col_id_0, c_nnz_0, cs_lnum_t, alloc_mode);
 
   /* Loop on coarse rows */
 
@@ -3392,7 +3393,7 @@ _coarse_msr_struct_cuda(cs_dispatch_context  &ctx,
                         cs_lnum_t           **c_face_id_stage_0,
                         short int           **c_cell_to_face_sgn)
 {
-  // CS_PROFILE_FUNC_RANGE();
+  CS_PROFILE_FUNC_RANGE();
 
   cudaStream_t stream = ctx.stream();
 
@@ -3753,7 +3754,7 @@ _msr_face_adjacency(const cs_grid_t  *f,
                     const cs_lnum_t  *restrict row_index,
                     const cs_lnum_t  *restrict col_id)
 {
-  // CS_PROFILE_FUNC_RANGE();
+  CS_PROFILE_FUNC_RANGE();
 
   std::chrono::high_resolution_clock::time_point tm_start;
   if (cs_glob_timer_kernels_flag > 0)
@@ -3924,7 +3925,7 @@ _msr_face_adjacency_hd(cs_dispatch_context  &ctx,
                        const cs_lnum_t      *restrict col_id,
                        cs_lnum_t           **face_id_stage_0)
 {
-  // CS_PROFILE_FUNC_RANGE();
+  CS_PROFILE_FUNC_RANGE();
 
   std::chrono::high_resolution_clock::time_point tm_start;
   if (cs_glob_timer_kernels_flag > 0)
@@ -5131,6 +5132,80 @@ _warn_neg_diag(const cs_grid_t  *g,
   }
 }
 
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Change allocation mode of geometric ggrid quantities.
+ *
+ * \param[in, out]  g      grid structure
+ * \param[in]       amode  new allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_quantities_alloc_mode(cs_grid_t        *g,
+                              cs_alloc_mode_t   amode)
+{
+  CS_PROFILE_FUNC_RANGE();
+
+  std::chrono::high_resolution_clock::time_point t_0;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_0 = std::chrono::high_resolution_clock::now();
+
+  cs_set_alloc_mode_r(g->cell_face, amode);
+  cs_set_alloc_mode_r(g->cell_face_sgn, amode);
+
+  if (g->_face_cell != nullptr) {
+    cs_set_alloc_mode_r(g->_face_cell, amode);
+    g->face_cell = g->face_cell;
+  }
+  if (g->_cell_cen != nullptr) {
+    cs_set_alloc_mode_r(g->_cell_cen, amode);
+    g->cell_cen = g->_cell_cen;
+  }
+  if (g->_cell_vol != nullptr) {
+    cs_set_alloc_mode_r(g->_cell_vol, amode);
+    g->cell_vol = g->_cell_vol;
+  }
+  cs_set_alloc_mode_r(g->face_normal, amode);
+
+  if (g->use_faces && g->_matrix != nullptr)
+    cs_matrix_set_mesh_association(g->_matrix,
+                                   nullptr,
+                                   g->cell_face,
+                                   g->cell_face_sgn,
+                                   g->cell_cen,
+                                   g->cell_vol,
+                                   nullptr,
+                                   nullptr);
+
+  if (g->_xa != nullptr) {
+    cs_set_alloc_mode_r(g->_xa, amode);
+    g->xa = g->_xa;
+  }
+  cs_set_alloc_mode_r(g->xa_conv, amode);
+  cs_set_alloc_mode_r(g->xa_diff, amode);
+  if (g->_xa0 != nullptr) {
+    cs_set_alloc_mode_r(g->_xa0, amode);
+    g->xa0 = g->_xa0;
+  }
+  cs_set_alloc_mode_r(g->xa0_diff, amode);
+  cs_set_alloc_mode_r(g->xa0ij, amode);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_1 = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_1 - t_0);
+    printf("%d:     %s (level %d) = %ld\n", cs_glob_rank_id, __func__,
+           g->level, elapsed.count());
+  }
+}
+
+#endif // defined(HAVE_ACCEL)
+
 /*----------------------------------------------------------------------------
  * Build a coarse level from a finer level using face->cells connectivity
  *
@@ -6045,8 +6120,12 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   /* Assign values
      ------------- */
 
-  cs_mem_advise_set_read_mostly(c_row_index);
-  cs_mem_advise_set_read_mostly(c_col_id);
+  {  // Useful with unifedi memory only.
+    cs_mem_advise_set_read_mostly(c_row_index);
+    cs_mem_advise_set_read_mostly(c_col_id);
+    cs_prefetch_h2d(c_row_index, (c_n_rows+1)*sizeof(cs_lnum_t));
+    cs_prefetch_h2d(c_col_id, c_nnz*sizeof(cs_lnum_t));
+  }
 
   cs_real_t *restrict c_d_val, *restrict c_x_val;
   CS_MALLOC_HD(c_d_val, c_n_rows*db_stride, cs_real_t, coarse_grid->alloc_mode);
@@ -6251,7 +6330,7 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
 
   const cs_lnum_t *f_c_row = c->coarse_row;
 
-  const cs_alloc_mode_t alloc_mode = f->alloc_mode;
+  cs_alloc_mode_t alloc_mode = c->alloc_mode;
 
   const cs_lnum_t    *f_cell_idx;
   const cs_lnum_t    *f_cell_face;
@@ -6277,6 +6356,16 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
 
   const cs_lnum_t eb_stride = f->eb_size*f->eb_size;
 
+#if defined(HAVE_ACCEL)
+  if (cs_check_device_ptr(f_cell_cen) == CS_ALLOC_HOST_DEVICE_SHARED) {
+    cs_stream_t stream = ctx.stream();
+    cs_prefetch_h2d(f_cell_cen, f->n_rows*3*sizeof(cs_real_t), stream);
+    cs_prefetch_h2d(f_cell_vol, f->n_rows*sizeof(cs_real_t), stream);
+    cs_prefetch_h2d(f_face_u_normal, f->n_faces*3*sizeof(cs_nreal_t), stream);
+    cs_prefetch_h2d(f_face_surf, f->n_faces*sizeof(cs_real_t), stream);
+  }
+#endif
+
   int n_loc_threads = cs_parall_n_threads(f_n_rows, CS_THR_MIN);
 
   if (ctx.use_gpu() == false)
@@ -6290,6 +6379,7 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
 
   CS_MALLOC_HD(c_cell_cen, c_n_cols, cs_real_3_t, alloc_mode);
   CS_MALLOC_HD(c_cell_vol, c_n_cols, cs_real_t, alloc_mode);
+
   CS_MALLOC_HD(c_xa0, c_n_faces*eb_stride, cs_real_t, alloc_mode);
   CS_MALLOC_HD(c_xa0ij, c_n_faces, cs_real_3_t, alloc_mode);
 
@@ -6349,11 +6439,8 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
       const cs_lnum_t c_s_idx = c_row_index[ii_c];
       const cs_lnum_t n_c_cols = c_row_index[ii_c+1] - c_s_idx;
 
-      cs_real_t *restrict _c_cell_cen = c_cell_cen[ii_c];
-
-      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
-        _c_cell_cen[coo_id] = 0.;
-      c_cell_vol[ii_c] = 0;
+      cs_real_t _c_cell_vol = 0;
+      cs_real_t _c_cell_cen[3] = {0, 0, 0};
 
       for (cs_lnum_t jj = 0; jj < db_stride; jj++)
         c_d_val[ii_c*db_stride + jj] = 0;
@@ -6367,7 +6454,7 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
         /* Cell quantities */
         for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
           _c_cell_cen[coo_id] += f_cell_cen[ii][coo_id]*f_cell_vol[ii];
-        c_cell_vol[ii_c] += f_cell_vol[ii];
+        _c_cell_vol += f_cell_vol[ii];
 
         /* Contribution from matrix diagonal */
         for (cs_lnum_t kk = 0; kk < db_stride; kk++)
@@ -6397,8 +6484,6 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
             cs_lnum_t c_idx = c_s_idx + k;
 
             if (jj_c > ii_c) {
-              int sgn = f_cell_face_sgn[f_idx];
-
               /* Note: coarse face id is handled by a single
                  thread, since it is associated with the coarse
                  upper diagonal matrix. */
@@ -6407,7 +6492,8 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
               cs_lnum_t c_face_id = c_cell_face[c_idx];
 
               if (f_face_u_normal != nullptr) {
-                cs_real_t sgn_surf = sgn * f_face_surf[f_face_id];
+                cs_real_t sgn_surf =   f_cell_face_sgn[f_idx]
+                                     * f_face_surf[f_face_id];
                 for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
                   c_face_normal[c_face_id][coo_id]
                     += sgn_surf * f_face_u_normal[f_face_id][coo_id];
@@ -6430,7 +6516,8 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
       } /* Loop on fine rows associated to current coarse row */
 
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
-      _c_cell_cen[coo_id] /= c_cell_vol[ii_c];
+        c_cell_cen[ii_c][coo_id] = _c_cell_cen[coo_id] / _c_cell_vol;
+      c_cell_vol[ii_c] = _c_cell_vol;
 
     }); /* Loop on coarse rows */
 
@@ -6531,6 +6618,7 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
 
   }
   ctx.wait();
+  CS_PROFILE_MARK_LINE();
 
   /* Add to coarse grid */
 
@@ -6575,9 +6663,8 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
                       nullptr, nullptr);
     cs_halo_sync_start(c->halo, cell_cen, nullptr);
     cs_halo_sync_wait(c->halo, cell_cen, nullptr);
-    //cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, cell_cen, 3);
     if (c->halo->n_transforms > 0)
-      cs_halo_perio_sync_coords(c->halo, CS_HALO_STANDARD, cell_cen);
+      cs_halo_perio_sync_coords(c->halo, ctx, CS_HALO_STANDARD, cell_cen);
     cs_halo_sync(c->halo, ctx.use_gpu(), c->_cell_vol);
   }
 
@@ -6597,14 +6684,16 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
  * Build a coarse level from a finer level with an MSR matrix.
  *
  * parameters:
- *   f          <-- Fine grid structure
- *   c          <-> Coarse grid structure
- *   verbosity  <-- verbosity level
+ *   f                   <-- Fine grid structure
+ *   c                   <-> Coarse grid structure
+ *   coarse_struct_v_id  <-- coarse structure algorithm choice
+ *   verbosity           <-- verbosity level
  *----------------------------------------------------------------------------*/
 
 static void
 _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
                                           cs_grid_t        *c,
+                                          int               coarse_struct_v_id,
                                           int               verbosity)
 {
   CS_PROFILE_FUNC_RANGE();
@@ -6635,28 +6724,8 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
                            &f_x_val);
 
   cs_dispatch_context ctx;
-  if (f->alloc_mode == CS_ALLOC_HOST)
+  if (c->alloc_mode == CS_ALLOC_HOST)
     ctx.set_use_gpu(false);
-
-  /* Allow choice of coarsening structure constructions.
-   *
-   * CS_MG_COARSE = 0 - default
-   *                1 - host-device algorithm (default on GPU)
-   *                2 - CUDA algorithm with cub and radix sort
-   *                3 - CUDA algorithm with cub and merge sort
-   */
-
-  int v_id = 0;
-  const char *s_variant = getenv("CS_MG_COARSE");
-  if (s_variant != nullptr) {
-    v_id = atoi(s_variant);
-  }
-  cs_assert(v_id > -1);
-#if defined(HAVE_CUDA)
-  cs_assert(v_id < 4);
-#else
-  cs_assert(v_id < 2);
-#endif
 
   /* Determine reverse coarse to fine adjacency */
 
@@ -6664,14 +6733,14 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
   cs_lnum_t *c_row_index_0 = nullptr;
 
   cs_lnum_t **c_row_index_0_p = &c_row_index_0;
-  if (v_id > 1)
+  if (coarse_struct_v_id > 1)
     c_row_index_0_p = nullptr;
 
   _coarse_to_fine_adjacency_msr(ctx,
                                 f->level,
                                 f_n_rows,
                                 c_n_rows,
-                                f->alloc_mode,
+                                c->alloc_mode,
                                 n_f_threads,
                                 f_c_row,
                                 f_row_index,
@@ -6688,7 +6757,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
   cs_lnum_t *c_row_index = nullptr,  *c_col_id = nullptr;
   cs_lnum_t *face_id_stage_0 = nullptr;
 
-  if (v_id == 0)
+  if (coarse_struct_v_id == 0)
     _coarse_msr_struct(f->level,
                        f_n_rows,
                        c_n_rows,
@@ -6703,7 +6772,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
                        &c_row_index,
                        &c_col_id);
 
-  if (v_id == 1) {
+  if (coarse_struct_v_id == 1) {
     _coarse_msr_struct_hd(ctx,
                           f->level,
                           c_n_rows, // c->n_cols_ext,
@@ -6721,10 +6790,10 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
                           &c->cell_face_sgn);
   }
 
-  if (v_id == 2 || v_id == 3) {
+  if (coarse_struct_v_id == 2 || coarse_struct_v_id == 3) {
 #if defined(HAVE_CUDA)
     _coarse_msr_struct_cuda(ctx,
-                            v_id - 2,
+                            coarse_struct_v_id - 2,
                             f->level,
                             f_n_rows,
                             c_n_rows,
@@ -6758,7 +6827,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
   /* Compute face adjacency
      ---------------------- */
 
-  if (v_id == 0)
+  if (coarse_struct_v_id == 0)
     _msr_face_adjacency(f,
                         c,
                         c_row_index,
@@ -6775,23 +6844,6 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
   const cs_lnum_t *_c_col_id = c_col_id;
   cs_real_t *restrict _c_d_val = c_d_val;
   cs_real_t *restrict _c_x_val = c_x_val;
-
-  if (   f->alloc_mode > CS_ALLOC_HOST
-      && c->alloc_mode == CS_ALLOC_HOST) {
-    CS_REALLOC_HD(c_row_index, c_n_rows+1, cs_lnum_t, CS_ALLOC_HOST_DEVICE);
-    cs_sync_h2d(c_row_index);
-    _c_row_index = (const cs_lnum_t *)cs_get_device_ptr(c_row_index);
-
-    CS_REALLOC_HD(c_col_id, c_nnz, cs_lnum_t, CS_ALLOC_HOST_DEVICE);
-    cs_sync_h2d(c_col_id);
-    _c_col_id = (const cs_lnum_t *)cs_get_device_ptr(c_col_id);
-
-    CS_REALLOC_HD(c_d_val, c_n_rows*db_stride, cs_real_t, CS_ALLOC_HOST_DEVICE);
-    _c_d_val = (cs_real_t *)cs_get_device_ptr(c_d_val);
-
-    CS_REALLOC_HD(c_x_val, c_nnz, cs_real_t, CS_ALLOC_HOST_DEVICE);
-    _c_x_val = (cs_real_t *)cs_get_device_ptr(c_x_val);
-  }
 
   /* Compute coarse quantities, first pass */
 
@@ -7436,8 +7488,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   g = _create_grid();
 
   g->alloc_mode = cs_matrix_get_alloc_mode(a);
-  if (g->alloc_mode == CS_ALLOC_DEVICE)
-    g->alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+  //if (g->alloc_mode == CS_ALLOC_DEVICE)
+  //  g->alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
   g->level = 0;
   g->conv_diff = conv_diff;
   g->symmetric = cs_matrix_is_symmetric(a);
@@ -7977,7 +8029,7 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
  *----------------------------------------------------------------------------*/
 
 cs_grid_t *
-cs_grid_coarsen(const cs_grid_t      *f,
+cs_grid_coarsen(cs_grid_t            *f,
                 cs_alloc_mode_t       alloc_mode,
                 cs_grid_coarsening_t  coarsening_type,
                 int                   aggregation_limit,
@@ -7992,14 +8044,10 @@ cs_grid_coarsen(const cs_grid_t      *f,
   sprintf(nvtx_name, "cs_grid_coarsen_%d", f->level);
   nvtxRangePushA(nvtx_name);
 #endif
-  CS_PROFILE_START();
 
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
-
-  if (alloc_mode == CS_ALLOC_DEVICE)
-    alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
 
   assert(f != nullptr);
 
@@ -8036,8 +8084,8 @@ cs_grid_coarsen(const cs_grid_t      *f,
      relax allocation mode requirements. */
 
 #if defined(HAVE_ACCEL)
-  if (alloc_mode == CS_ALLOC_DEVICE)
-    alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+  // if (alloc_mode == CS_ALLOC_DEVICE)
+  //  alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
 #endif
 
   /* Initialization */
@@ -8086,14 +8134,46 @@ cs_grid_coarsen(const cs_grid_t      *f,
       coarsening_type = CS_GRID_COARSENING_SPD_MX;
   }
 
+  /* Allow choice of coarsening structure constructions.
+   *
+   * CS_MG_COARSE = 0 - default
+   *                1 - host-device algorithm (default on GPU)
+   *                2 - CUDA algorithm with cub and radix sort
+   *                3 - CUDA algorithm with cub and merge sort
+   */
+
+  int coarse_struct_v_id = -1;
+  const char *s_variant = getenv("CS_MG_COARSE");
+  if (s_variant != nullptr) {
+    coarse_struct_v_id = atoi(s_variant);
+    cs_assert(coarse_struct_v_id > -1);
+#if defined(HAVE_CUDA)
+    cs_assert(coarse_struct_v_id < 4);
+#else
+    cs_assert(coarse_struct_v_id < 2);
+#endif
+  }
+
   /* On device, ensure fine matrix values are accessible from CPU for
      coarsening steps. */
 
 #if defined(HAVE_ACCEL)
   cs_alloc_mode_t amode_prev = cs_matrix_get_alloc_mode(f->matrix);
-  if (amode_prev == CS_ALLOC_DEVICE)
+  cs_alloc_mode_t amode_coarsen = amode_prev;
+
+  if (amode_prev == CS_ALLOC_DEVICE) {
+    if (   fine_matrix_type == CS_MATRIX_MSR
+        && c->relaxation > 0 && msr_gather
+        && c->alloc_mode > CS_ALLOC_HOST)
+      amode_coarsen = CS_ALLOC_HOST_DEVICE_PINNED;
+    else
+      amode_coarsen = CS_ALLOC_HOST_DEVICE_SHARED;
+
     cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(f->matrix),
-                             CS_ALLOC_HOST_DEVICE);
+                             amode_coarsen);
+    if (f->matrix_struct != nullptr) // Where owner (levels > 0)
+      cs_matrix_structure_set_alloc_mode(f->matrix_struct, amode_coarsen);
+  }
 #endif
 
   /* Determine fine->coarse cell connectivity (aggregation) */
@@ -8160,9 +8240,21 @@ cs_grid_coarsen(const cs_grid_t      *f,
   }
 
 #if defined(HAVE_ACCEL)
-  if (amode_prev == CS_ALLOC_DEVICE)
+  /* Where implemented algorithms allow it, use device-only allocation. */
+  if (   amode_prev == CS_ALLOC_DEVICE
+      && amode_coarsen == CS_ALLOC_HOST_DEVICE_PINNED) {
     cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(f->matrix), amode_prev);
+    if (f->matrix_struct != nullptr)
+      cs_matrix_structure_set_alloc_mode(f->matrix_struct, amode_prev);
+  }
 #endif
+
+  if (coarse_struct_v_id == -1) {
+    if (c->alloc_mode >= CS_ALLOC_HOST)
+      coarse_struct_v_id = 1;
+    else
+      coarse_struct_v_id = 0;
+  }
 
   _coarse_row_count_and_halo(f, c);
 
@@ -8251,7 +8343,14 @@ cs_grid_coarsen(const cs_grid_t      *f,
     assert(   fine_matrix_type == CS_MATRIX_MSR
            && coarse_matrix_type == CS_MATRIX_MSR);
 
-    _compute_coarse_quantities_msr_with_faces(f, c, verbosity);
+#if defined(HAVE_ACCEL)
+    if (   f->alloc_mode == CS_ALLOC_DEVICE
+        && c->alloc_mode == CS_ALLOC_HOST)
+      _update_quantities_alloc_mode(f, CS_ALLOC_HOST);
+#endif
+
+    _compute_coarse_quantities_msr_with_faces(f, c, coarse_struct_v_id,
+                                              verbosity);
 
   }
 
@@ -8405,7 +8504,6 @@ cs_grid_coarsen(const cs_grid_t      *f,
 #if CS_PROFILING == CS_PROFILING_NVTX
     nvtxRangePop();
 #endif
-  CS_PROFILE_STOP();
 
   /* Return new (coarse) grid */
 

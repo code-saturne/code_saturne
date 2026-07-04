@@ -2995,7 +2995,7 @@ cs_set_alloc_mode(void             **host_ptr,
       }
 
       else if (mode == CS_ALLOC_HOST_DEVICE_PINNED) {
-        me.host_ptr = _malloc_host_pinned(me.size, var_name, nullptr, 0);
+        me_new.host_ptr = _malloc_host_pinned(me.size, var_name, nullptr, 0);
       }
 
       ret_ptr = me_new.host_ptr;
@@ -3004,7 +3004,7 @@ cs_set_alloc_mode(void             **host_ptr,
 
       if (mode == CS_ALLOC_HOST) {
         cs_mem_free(_ptr, var_name, __FILE__, __LINE__);
-        me.host_ptr = cs_mem_malloc(1, me.size, var_name, nullptr, 0);
+        me_new.device_ptr = nullptr;
       }
 
       _update_block_info(var_name, __FILE__, __LINE__, &me, &me_new);
@@ -3438,6 +3438,60 @@ cs_prefetch_h2d(const void  *ptr,
 #elif defined(HAVE_HIP)
 
   cs_mem_hip_prefetch_h2d(ptr, size);
+
+#elif defined(SYCL_LANGUAGE_VERSION)
+
+  cs_glob_sycl_queue.prefetch(ptr, size);
+
+#elif defined(HAVE_OPENMP_TARGET)
+
+  char *host_ptr = (char *)ptr;
+  #pragma omp target enter data map(to:host_ptr[:size]) \
+    nowait device(_omp_target_device_id)
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prefetch data from host to device.
+ *
+ * This function should only be used on arrays using shared host and device
+ * memory, shuch as those allocated using CS_ALLOC_HOST_DEVICE_SHARED.
+ * It should be usable on a subset of such an array.
+ *
+ * \param [in]  ptr     pointer to data to prefetch
+ * \param [in]  size    number of bytes to prefetch
+ * \param [in]  stream  stream used for prefetching
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_prefetch_h2d(const void                   *ptr,
+                [[maybe_unused]] size_t       size,
+                [[maybe_unused]] cs_stream_t  stream)
+{
+  if (ptr == nullptr)
+    return;
+
+#if defined(HAVE_CUDA)
+
+  int device_id;
+  cudaGetDevice(&device_id);
+  if (device_id > -1)
+#if CUDART_VERSION >= 13'00'0
+    CS_CUDA_CHECK(cudaMemPrefetchAsync(ptr, size,
+                                       {.type = cudaMemLocationTypeDevice,
+                                        .id = device}, 0, stream));
+#else
+  CS_CUDA_CHECK(cudaMemPrefetchAsync(ptr, size, device_id, stream));
+#endif
+
+#elif defined(HAVE_HIP)
+
+  int device_id;
+  CS_HIP_CHECK(hipGetDevice(&device_id));
+  CS_HIP_CHECK(hipMemPrefetchAsync(ptr, size, device_id, stream));
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 

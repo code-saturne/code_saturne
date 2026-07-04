@@ -84,43 +84,38 @@ static const int _symt[3][3] = {{0, 3, 5},
  * parameters:
  *   matrix[3][4] --> matrix of the transformation in homogeneous coord.
  *                    last line = [0; 0; 0; 1] (Not used here)
- *   in_cell_id   --> cell_id of the parent cell.
- *   out_cell_id  --> cell_id of the generated cell.
+ *   cell_id      --> cell_id of the parent cell.
  *   xyz          <-> array of coordinates
  *----------------------------------------------------------------------------*/
 
-static void
-_apply_vector_transfo(cs_real_t    matrix[3][4],
-                      cs_lnum_t    in_cell_id,
-                      cs_lnum_t    out_cell_id,
-                      cs_real_t   *xyz)
+CS_F_HOST_DEVICE static inline void
+_apply_vector_transfo(const cs_real_t    matrix[3][4],
+                      cs_lnum_t          cell_id,
+                      cs_real_t         *xyz)
 {
-  cs_lnum_t  i, j;
-
-  cs_real_t  xyz_a[3 + 1];
+  cs_real_t  xyz_a[4];
   cs_real_t  xyz_b[3];
 
-  /* Define the cell center in homogeneous coordinates before
-     transformation */
+  /* Copy to homogeneous coordinates before transformation */
 
-  for (j = 0; j < 3; j++)
-    xyz_a[j] = xyz[in_cell_id*3 + j];
+  for (cs_lnum_t j = 0; j < 3; j++)
+    xyz_a[j] = xyz[cell_id*3 + j];
   xyz_a[3] = 1;
 
   /* Initialize output */
 
-  for (i = 0; i < 3; i++)
+  for (cs_lnum_t i = 0; i < 3; i++)
     xyz_b[i] = 0.;
 
-  for (i = 0; i < 3; i++)
-    for (j = 0; j < 4; j++)
+  for (cs_lnum_t i = 0; i < 3; i++) {
+    for (cs_lnum_t j = 0; j < 4; j++)
       xyz_b[i] += matrix[i][j]*xyz_a[j];
+  }
 
   /* Store updated cell center */
 
-  for (j = 0; j < 3; j++)
-    xyz[out_cell_id*3 + j] = xyz_b[j];
-
+  for (cs_lnum_t j = 0; j < 3; j++)
+    xyz[cell_id*3 + j] = xyz_b[j];
 }
 
 /*----------------------------------------------------------------------------
@@ -138,17 +133,14 @@ static void
 _apply_vector_rotation(cs_real_t    matrix[3][4],
                        T           *xyz)
 {
-  cs_lnum_t  i;
-
   cs_real_t  t[3];
-  for (i = 0; i < 3; i++)
+  for (cs_lnum_t i = 0; i < 3; i++)
     t[i] = xyz[i];
 
   /* Initialize output */
 
-  for (i = 0; i < 3; i++)
+  for (cs_lnum_t i = 0; i < 3; i++)
     xyz[i] = matrix[i][0]*t[0] + matrix[i][1]*t[1] + matrix[i][2]*t[2];
-
 }
 
 /*----------------------------------------------------------------------------
@@ -324,10 +316,57 @@ cs_halo_perio_sync_coords(const cs_halo_t  *halo,
       || sync_mode == CS_HALO_N_TYPES)
     return;
 
-  int  rank_id, t_id;
-  cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
+  const fvm_periodicity_t  *periodicity = halo->periodicity;
+  const int  n_transforms = halo->n_transforms;
+  const cs_lnum_t  n_elts = halo->n_local_elts;
+  const int n_h = (sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
 
-  cs_real_t  matrix[3][4];
+  assert(halo != nullptr);
+
+  /* Compute the new cell centers through periodicity */
+
+  for (int t_id = 0; t_id < n_transforms; t_id++) {
+
+    cs_lnum_t shift = 4 * halo->n_c_domains * t_id;
+
+    cs_real_t  matrix[3][4];
+    fvm_periodicity_get_matrix(periodicity, t_id, matrix);
+
+    for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+      for (int h_idx = 0; h_idx < n_h; h_idx++) {
+
+        int h_shift = h_idx*2;
+        cs_lnum_t start_std = halo->perio_lst[shift + 4*rank_id + h_shift];
+        cs_lnum_t end_std = start_std
+          + halo->perio_lst[shift + 4*rank_id + h_shift + 1];
+
+        for (cs_lnum_t i = start_std; i < end_std; i++)
+          _apply_vector_transfo(matrix, n_elts+i, coords);
+
+      }  /* End of loop on halo type */
+    } /* End of loop on ranks */
+
+  } /* End of loop on transformation */
+}
+
+/*----------------------------------------------------------------------------
+ * Apply transformation on coordinates.
+ *
+ * parameters:
+ *   halo      <-> halo associated with coordinates to synchronize
+ *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   coords    <-- coordinates on which transformation have to be done.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_perio_sync_coords(const cs_halo_t      *halo,
+                          cs_dispatch_context  &ctx,
+                          cs_halo_type_t        sync_mode,
+                          cs_real_t            *coords)
+{
+  if (   halo == nullptr
+      || sync_mode == CS_HALO_N_TYPES)
+    return;
 
   const fvm_periodicity_t  *periodicity = halo->periodicity;
   const int  n_transforms = halo->n_transforms;
@@ -337,35 +376,67 @@ cs_halo_perio_sync_coords(const cs_halo_t  *halo,
 
   /* Compute the new cell centers through periodicity */
 
-  for (t_id = 0; t_id < n_transforms; t_id++) {
+  for (int t_id = 0; t_id < n_transforms; t_id++) {
 
-    shift = 4 * halo->n_c_domains * t_id;
+    cs_lnum_t shift = 4 * halo->n_c_domains * t_id;
 
+    // Allow for grouping calls for n_bounds_max non-empty exchanges.
+    // We want to use lambda-capture to pass these bounds to the device,
+    // Without requiring an additional CPU/GPU memory exchange, and avoiding
+    // the overhead of an additional exchange, while still minimizing the
+    // number of kernel launches, as they have their own overhead.
+
+    constexpr int n_bounds_max = 8;
+    const int n_h = (sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
+    cs_lnum_t  bounds[2][n_bounds_max];
+
+    cs_real_t  matrix[3][4];
     fvm_periodicity_get_matrix(periodicity, t_id, matrix);
 
-    for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+    int idx = 0;
+    int idx_e = halo->n_c_domains*n_h;
+
+    while (idx < idx_e) {
+
+      int n_bounds = 0;
+      cs_lnum_t n = 0;
+
+      while (idx < idx_e && n_bounds < n_bounds_max) {
+        int rank_id = idx/n_h;
+        int h_shift = (idx%n_h)*2;
+
+        cs_lnum_t start_std = halo->perio_lst[shift + 4*rank_id + h_shift];
+        cs_lnum_t end_std = start_std
+          + halo->perio_lst[shift + 4*rank_id + h_shift + 1];
+        cs_lnum_t n0 = end_std - start_std;
+        if (n0 > 0) {
+          bounds[0][n_bounds] = start_std;
+          bounds[1][n_bounds] = n0;
+          n += n0;
+          n_bounds++;
+        }
+        idx += 1;
+      }
 
       /* apply transformation for standard halo */
+      ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t idxb) {
+        // Determine matching ghost element id from index and shifs.
+        cs_lnum_t i = idxb;
+        int k = 0;
+        while (i >= bounds[1][k]) {
+          i -= bounds[1][k];
+          k++;
+        }
+        assert(k < n_bounds);
+        i += bounds[0][k];
 
-      start_std = halo->perio_lst[shift + 4*rank_id];
-      end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
+        // Now apply transformation
+        _apply_vector_transfo(matrix, n_elts+i, coords);
+      });
 
-      for (i = start_std; i < end_std; i++)
-        _apply_vector_transfo(matrix, n_elts+i, n_elts+i, coords);
+      n_bounds = 0;  // reset for next block
 
-      /* apply transformation for extended halo */
-
-      if (sync_mode == CS_HALO_EXTENDED) {
-
-        start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-        end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
-
-        for (i = start_ext; i < end_ext; i++)
-          _apply_vector_transfo(matrix, n_elts+i, n_elts+i, coords);
-
-      } /* End if extended halo */
-
-    } /* End of loop on ranks */
+    } /* End of loop on ranks and halo types */
 
   } /* End of loop on transformation */
 }

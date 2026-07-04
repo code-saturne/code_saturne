@@ -863,7 +863,7 @@ _set_cusparse_map(cs_matrix_t  *matrix)
       = (const cs_matrix_struct_csr_t  *)matrix->structure;
     const cs_matrix_coeff_t *mc
       = (const cs_matrix_coeff_t *)matrix->coeffs;
-    nnz = ms->row_index[matrix->n_rows];
+    nnz = ms->nnz;
     row_index = cs_get_device_ptr_const
                   (const_cast<cs_lnum_t *>(ms->row_index));
     col_id = cs_get_device_ptr_const
@@ -876,7 +876,7 @@ _set_cusparse_map(cs_matrix_t  *matrix)
       = (const cs_matrix_struct_dist_t *)matrix->structure;
     const cs_matrix_coeff_t *mc
       = (const cs_matrix_coeff_t *)matrix->coeffs;
-    nnz = ms->e.row_index[matrix->n_rows];
+    nnz = ms->e.nnz;
     row_index = cs_get_device_ptr_const
                   (const_cast<cs_lnum_t *>(ms->e.row_index));
     col_id = cs_get_device_ptr_const

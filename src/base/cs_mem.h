@@ -1123,9 +1123,41 @@ cs_prefetch_h2d(const void  *ptr,
 
 #else
 
-extern "C" inline void
+inline void
 cs_prefetch_h2d([[maybe_unused]] const void  *ptr,
                 [[maybe_unused]] size_t       size)
+{
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prefetch data from host to device.
+ *
+ * This function should only be used on arrays using shared host and device
+ * memory, shuch as those allocated using CS_ALLOC_HOST_DEVICE_SHARED.
+ * It should be usable on a subset of such an array.
+ *
+ * \param [in]  ptr     pointer to data to prefetch
+ * \param [in]  size    number of bytes to prefetch
+ * \param [in]  stream  stream used for prefetching
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_prefetch_h2d(const void                   *ptr,
+                [[maybe_unused]] size_t       size,
+                [[maybe_unused]] cs_stream_t  stream);
+
+#else
+
+inline void
+cs_prefetch_h2d([[maybe_unused]] const void  *ptr,
+                [[maybe_unused]] size_t       size,
+                [[maybe_unused]] cs_stream_t  stream)
 {
 }
 

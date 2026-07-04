@@ -35,6 +35,7 @@
 
 #include "base/cs_base.h"
 #include "base/cs_halo.h"
+#include "base/cs_dispatch.h"
 
 /*============================================================================
  * Type definitions
@@ -57,6 +58,21 @@ void
 cs_halo_perio_sync_coords(const cs_halo_t  *halo,
                           cs_halo_type_t    sync_mode,
                           cs_real_t        *coords);
+
+/*----------------------------------------------------------------------------
+ * Apply transformation on coordinates.
+ *
+ * parameters:
+ *   halo      <-> halo associated with coordinates to synchronize
+ *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   coords    <-- coordinates on which transformation have to be done.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_perio_sync_coords(const cs_halo_t      *halo,
+                          cs_dispatch_context  &ctx,
+                          cs_halo_type_t        sync_mode,
+                          cs_real_t            *coords);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real tensor (symmetric interleaved) between

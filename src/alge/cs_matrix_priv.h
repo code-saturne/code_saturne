@@ -144,6 +144,7 @@ typedef struct _cs_matrix_struct_csr_t {
 
   cs_lnum_t         n_rows;           /* Local number of rows */
   cs_lnum_t         n_cols_ext;       /* Local number of columns + ghosts */
+  cs_lnum_t         nnz;              /* Size of col_id array */
 
   /* Pointers to structure arrays and info (row_index, col_id) */
 

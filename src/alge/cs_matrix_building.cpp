@@ -359,6 +359,11 @@ _sym_coeffs_msr(const cs_mesh_t            *m,
   }
 
   ctx.wait();
+
+#if defined(HAVE_ACCEL)
+  cs_mem_advise_set_read_mostly(da);
+  cs_mem_advise_set_read_mostly(ea);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
