@@ -2579,12 +2579,6 @@ cs_mem_realloc_hd(void            *ptr,
   return ret_ptr;
 }
 
-#endif /* defined(HAVE_ACCEL) */
-
-/*----------------------------------------------------------------------------*/
-
-#if defined(HAVE_ACCEL)
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return matching device pointer for a given pointer.
@@ -3653,6 +3647,76 @@ cs_mem_hd_async_wait(void)
   }
   _n_async_copies_in_progress = 0;
 }
+
+#endif /* defined(HAVE_ACCEL) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy single value to host.
+ *
+ * If the value resides on a device, it is copied to host. If it resides
+ * on the host, the pointer is simply dereferenced.
+ *
+ * \param [in]  src  pointer to source data on device
+ *
+ * \return  value on host
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+T
+cs_get_host_value(const T  *src)
+{
+  assert(src != nullptr);
+
+#if defined(HAVE_CUDA)
+
+  if (cs_mem_is_device_ptr(src)) {
+    T retval;
+    CS_CUDA_CHECK(cudaMemcpy(&retval, src, sizeof(T), cudaMemcpyDeviceToHost));
+    return retval;
+  }
+
+#elif defined(HAVE_HIP)
+
+  if (cs_mem_is_device_ptr(src)) {
+    T retval;
+    cs_stream_t stream = ctx.stream();
+    CS_HIP_CHECK(hipMemcpyAsync(&retval, src, sizeof(T), hipMemcpyDeviceToHost));
+    return retval;
+  }
+
+#elif defined(SYCL_LANGUAGE_VERSION)
+
+  if (cs_mem_is_device_ptr(src)) {
+    T retval;
+    extern sycl::queue  cs_glob_sycl_queue;
+    cs_glob_sycl_queue.memcpy(&retval, src, sizeof(T));
+    cs_glob_sycl_queue.wait();
+    return retval;
+  }
+
+#elif defined(HAVE_OPENMP_TARGET)
+
+  if (cs_mem_is_device_ptr(src)) {
+    T retval;
+    cs_copy_d2h(&retval, src);
+    ctx.wait();
+    return retval;
+  }
+
+#endif
+
+  // Host copy otherwise
+  return *src;
+}
+
+// Force instanciation
+
+template cs_lnum_t
+cs_get_host_value(const cs_lnum_t  *src);
+
+#if defined(HAVE_ACCEL)
 
 /*----------------------------------------------------------------------------*/
 /*!

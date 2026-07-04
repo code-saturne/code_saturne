@@ -1181,6 +1181,23 @@ cs_mem_hd_async_wait(void)
 
 #endif
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Copy single value to host.
+ *
+ * If the value resides on a device, it is copied to host. If it resides
+ * on the host, the pointer is simply dereferenced.
+ *
+ * \param [in]  src  pointer to source data on device
+ *
+ * \return  value on host
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+T
+cs_get_host_value(const T  *src);
+
 #if defined(HAVE_ACCEL)
 
 /*----------------------------------------------------------------------------*/
