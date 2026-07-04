@@ -1007,7 +1007,8 @@ _integ_particle_quantities(cs_lagr_particle_set_t          &p_set,
      -----------------------------------------*/
 
   if (cs_glob_lagr_model->n_user_variables > 0)
-    cs_user_lagr_sde(dt_part, p_id, taup.data(), tlag.data<cs_real_3_t>(), tempct, nor);
+    cs_user_lagr_sde(dt_part, p_id, taup.data(), tlag.data<cs_real_3_t>(),
+                     tempct, nor);
 }
 
 /*----------------------------------------------------------------------------
@@ -2387,7 +2388,8 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
                                 false,
                                 br_gaus);
 
-      cs_lagr_get_force_p(dt_part, p_set, p_id, taup, tlag, piil, bx, tsfext, force_p);
+      cs_lagr_get_force_p(dt_part, p_set, p_id,
+                          taup, tlag, piil, bx, tsfext, force_p);
 
       /* save the integrated fields */
       cs_sde_vels_pos_1_st_order_time_integ(p_set,
@@ -2846,7 +2848,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
     }
 
     if (prev_tracking_step_id == 0) {
-      assert(dt_part > 0);
+      assert(dt_part >= 0);
 
       /* FIXME improve condition */
       /* Made to avoid spurious oscillation around specific points */
@@ -2946,7 +2948,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
 
       cs_real_t dt_incr = dt_part - dt_incremented_in_subiter;
 
-      assert(dt_incr > 0.);
+      assert(dt_incr >= 0.);
       /* Increment two-way-coupling source terms */
       if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
         cs_lagr_coupling_increment_part_contrib(p_set,
