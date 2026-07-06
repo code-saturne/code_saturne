@@ -948,10 +948,10 @@ concatenate_char
  */
 /*--------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE
 template<class T,
          class... Ts,
          class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
+CS_F_HOST_DEVICE
 inline
 bool
 if_any
@@ -971,10 +971,10 @@ if_any
  */
 /*--------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE
 template<class T,
          class... Ts,
          class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
+CS_F_HOST_DEVICE
 inline
 bool
 if_all
@@ -994,10 +994,10 @@ if_all
  */
 /*--------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE
 template<class T,
          class... Ts,
          class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
+CS_F_HOST_DEVICE
 inline
 bool
 if_none
