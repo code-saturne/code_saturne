@@ -1,6 +1,10 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### Architectural changes:
+
+- Switch to C++17 by default for code_saturne
+
 Release 9.2.0 (unreleased)
 --------------------------
 
