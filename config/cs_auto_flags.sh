@@ -772,7 +772,7 @@ else
       cs_cxx_compiler_known=yes
 
       # Default compiler flags
-      cxxflags_default=""
+      cxxflags_default="-std=c++17"
       cxxflags_default_dbg="-g -Mbounds"
       cxxflags_default_opt="-O2"
       cxxflags_default_hot="-fast"
@@ -1221,7 +1221,7 @@ if test "x$NVCC" != "x" ; then
 
   # Default compiler flags
 
-  nvccflags_default="--expt-extended-lambda "
+  nvccflags_default="-std=c++17 --expt-extended-lambda "
   nvccflags_default_dbg="-g -G"
   nvccflags_default_opt="-O2"
   nvccflags_default_prf="-O2 -g -lineinfo"
@@ -1230,11 +1230,11 @@ if test "x$NVCC" != "x" ; then
 
   case "$cs_nvcc_hc" in
     gcc)
-      nvccflags_default="--expt-extended-lambda -Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wcast-qual,-Wcast-align,-Wwrite-strings,-Wunused,-Wfloat-equal"
+      nvccflags_default="-std=c++17 --expt-extended-lambda -Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wcast-qual,-Wcast-align,-Wwrite-strings,-Wunused,-Wfloat-equal"
       nvccflags_default_cpp_omp="-fopenmp"
       ;;
     clang)
-      nvccflags_default="--expt-extended-lambda -Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wmissing-prototypes,-Wuninitialized -Wunused"
+      nvccflags_default="-std=c++17 --expt-extended-lambda -Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wmissing-prototypes,-Wuninitialized -Wunused"
       nvccflags_default_cpp_omp="-fopenmp=libomp"
       ;;
     nvc)
