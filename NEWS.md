@@ -1,4 +1,4 @@
-Release 9.2.0 (unreleased)
+Release 9.2.0 (2026-07-06)
 --------------------------
 
 ### Numerics:
