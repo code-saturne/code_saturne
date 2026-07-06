@@ -211,18 +211,56 @@ cs_atmo_get_ground_zone(cs_lnum_t         *n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Initialize fluid properties p0_face_id and p0_rank_id.
+ *
+ * This function is needed because fluid_props->xyzp0 is currently filled in
+ * cs_boundary_counditions_type(), which is called for the first time
+ * AFTER cs_atmo_init().
+ *
+ * TODO: This behaviour can be simplified.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_atmo_init_pressure_face(void)
+{
+  const cs_mesh_t *m = cs_glob_domain->mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_domain->mesh_quantities;
+  cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
+  cs_lnum_t n_b_faces = m->n_b_faces;
+  cs_real_3_t *b_face_cog = mq->b_face_cog;
+
+  cs_real_t d0_min = cs_math_infinite_r;
+  cs_lnum_t face_id = -1;
+  int rank_id = cs_glob_rank_id;
+
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    const cs_real_t d0 = cs_math_3_square_distance(fluid_props->xyzp0,
+                                                   b_face_cog[f_id]);
+    if (d0 < d0_min) {
+      face_id = f_id;
+      d0_min = d0;
+    }
+  }
+
+  cs_parall_min_id_rank_r(&face_id, &rank_id, d0_min);
+  fluid_props->p0_face_id = face_id;
+  fluid_props->p0_rank_id = rank_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This auxiliary function solve a Poisson equation for hydrostatic
  *  pressure :
  *  \f$ \divs ( \grad P ) = \divs ( f ) \f$
  * \param[in]      f_ext       external forcing
  * \param[in]      dfext       external forcing increment
+ * \param[in,out]  pvar        solved pressure variable
  * \param[in]      name        field name
- * \param[in]      min_z       Minimum altitude of the domain
- * \param[in]      p_ground    Pressure at the minimum altitude
  * \param[in,out]  i_massflux  Internal mass flux
  * \param[in,out]  b_massflux  Boundary mass flux
  * \param[in,out]  i_viscm     Internal face viscosity
- * \param[in,out]  i_viscm     Boundary face viscosity
+ * \param[in,out]  b_viscm     Boundary face viscosity
  * \param[in,out]  dam         Working array
  * \param[in,out]  xam         Working array
  * \param[in,out]  dpvar       Pressure increment
@@ -235,8 +273,6 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                               cs_real_3_t  dfext[],
                               cs_real_t    pvar[],
                               const char  *name,
-                              cs_real_t    min_z,
-                              cs_real_t    p_ground,
                               cs_real_t    i_massflux[],
                               cs_real_t    b_massflux[],
                               cs_real_t    i_viscm[],
@@ -251,7 +287,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_domain_t *domain = cs_glob_domain;
   cs_mesh_t *m = domain->mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
+  cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
   cs_field_t *f = cs_field(name);
   cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);
   int f_id = f->id;
@@ -298,12 +334,13 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   eqp_p->ndircl = 0;
 
   /* To solve hydrostatic pressure:
-   * p_ground on the lowest face, homogeneous Neumann everywhere else */
+   * 0 on the pressure reference face, homogeneous Neumann everywhere else */
   for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
     cs_real_t hint = 1. / mq->b_dist[face_id];
     cs_real_t qimp = 0.;
-    if ((b_face_cog[face_id][2] - min_z) < 0.005) {//FIXME dimensionless value
-      cs_real_t pimp = p_ground;
+    if (   face_id         == fluid_props->p0_face_id
+        && cs_glob_rank_id == fluid_props->p0_rank_id) {
+      cs_real_t pimp = 0.;
       cs_boundary_conditions_set_dirichlet_scalar(coefa[face_id],
                                                   cofaf[face_id],
                                                   coefb[face_id],
@@ -3558,7 +3595,7 @@ cs_atmo_compute_meteo_profiles(void)
       }
     }
   }
-
+  _atmo_init_pressure_face();
   cs_atmo_hydrostatic_profiles_compute();
 }
 
@@ -3834,9 +3871,13 @@ cs_atmo_z_ground_compute(void)
  *  where \f$ \vect{g} \f$ is the gravity field and \f$ \theta \f$
  *  is the potential temperature.
  *
+ *  The solved variable is the pressure deviation from the reference
+ *  hydrostatic pressure (based on the reference density \f$ \rho_0 \f$):
+ *  \f$ \varia = P - p_0 - \rho_0 \vect{g} \cdot (\vect{x}-\vect{x}_0) \f$.
+ *
  *  The boundary conditions on \f$ \varia \f$ read:
  *  \f[
- *   \varia = \left(\dfrac{P_{sea}}{p_s}\right)^{R/C_p} \textrm{on the ground}
+ *   \varia = 0 \textrm{on the reference pressure face}
  *  \f]
  *  and Neumann elsewhere.
  */
@@ -3851,57 +3892,58 @@ cs_atmo_hydrostatic_profiles_compute(void)
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
   const cs_real_3_t *restrict cell_cen = mq->cell_cen;
 
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
-  cs_field_t *f = cs_field("meteo_pressure");
+  cs_field_t *meteo_p_hyd = cs_field("algo:meteo_pressure_corrected");
+  cs_field_t *meteo_pressure = cs_field("meteo_pressure");
   cs_field_t *potemp = cs_field("meteo_pot_temperature");
   cs_field_t *density = cs_field("meteo_density");
   cs_field_t *temp = cs_field("meteo_temperature");
-  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);
+  cs_equation_param_t *eqp_p = cs_field_get_equation_param(meteo_p_hyd);
   cs_atmo_option_t *aopt = &_atmo_option;
-  cs_real_t g = cs_math_3_norm(phys_cst->gravity);
+  cs_real_t *g_vec = phys_cst->gravity;
+  cs_real_t g = cs_math_3_norm(g_vec);
 
-  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+  const cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
   /* potential temp at ref */
-  cs_real_t ps = cs_glob_atmo_constants->ps;
-  cs_real_t rair = phys_pro->r_pg_cnst;
-  cs_real_t cp0 = phys_pro->cp0;
+  cs_real_t ps   = cs_glob_atmo_constants->ps;
+  cs_real_t rair = fluid_props->r_pg_cnst;
+  cs_real_t cp0  = fluid_props->cp0;
+  cs_real_t ro0  = fluid_props->ro0;
   cs_real_t rscp = rair/cp0; /* Around 2/7 */
+  cs_real_t tropopause_height = 11000.; /* in meters */
 
   const cs_velocity_pressure_model_t  *vp_model
     = cs_glob_velocity_pressure_model;
   const int idilat = vp_model->idilat;
 
-  /* Get the lowest altitude (should also be minimum of z_ground)
-   * ============================================================ */
+  /* Reference pressure, applied at the reference point xyzp0 */
 
-  cs_real_t z_min = cs_math_big_r;
+  cs_real_t p_ground = fluid_props->p0;
 
-  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id ++) {
-    if (b_face_cog[face_id][2] < z_min)
-      z_min = b_face_cog[face_id][2];
-  }
-
-  cs::parall::min(z_min);
-
-  /* p_ground is pressure at the lowest level */
-
-  cs_real_t p_ground = aopt->meteo_psea;
-
-  /* Check if restart is read and if meteo_pressure is present
-   * at the first (local) time step. */
   int has_restart = cs_restart_present();
   int nt_loc = cs_glob_time_step->nt_cur - cs_glob_time_step->nt_prev;
+
+  /* Indicate whether the pressure deviation field could be read;
+     older checkpoints only hold the total meteo pressure. */
+  int p_hyd_read = 0;
+
   if (has_restart == 1 &&  nt_loc <= 1) {
     cs_restart_t *rp = cs_restart_create("main.csc",
                                          nullptr,
                                          CS_RESTART_MODE_READ);
 
     int retval = cs_restart_read_field_vals(rp,
-                                            f->id, /* meteo_pressure */
+                                            meteo_p_hyd->id,
                                             0);    /* current value */
+
+    if (retval == CS_RESTART_SUCCESS)
+      p_hyd_read = 1;
+    else
+      retval = cs_restart_read_field_vals(rp,
+                                          meteo_pressure->id,
+                                          0);    /* current value */
 
     cs_restart_destroy(&rp);
     if (retval != CS_RESTART_SUCCESS)
@@ -3916,26 +3958,46 @@ cs_atmo_hydrostatic_profiles_compute(void)
    *=====================================================================*/
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-    cs_real_t z  = cell_cen[cell_id][2] - z_min;
-    cs_real_t zt = fmin(z, 11000.);
+
+    cs_real_t g_dot_x = cs_math_3_distance_dot_product(fluid_props->xyzp0,
+                                                       cell_cen[cell_id],
+                                                       g_vec);
+    cs_real_t height = - g_dot_x / g;
+    cs_real_t zt = fmin(height, tropopause_height);
     cs_real_t factor = fmax(1. - g * zt / (cp0 * aopt->meteo_t0), 0.);
     temp->val[cell_id] = aopt->meteo_t0 * factor;
 
     /* Do not overwrite pressure in case of restart */
-    if (has_restart == 0 && nt_loc <= 1)
-      f->val[cell_id] =   p_ground * pow(factor, 1./rscp)
+    if (has_restart == 0) {
+      meteo_pressure->val[cell_id] = p_ground * pow(factor, 1./rscp)
                           /* correction factor for z > 11000m */
-                        * exp(- g/(rair*temp->val[cell_id]) * (z - zt));
+                        * exp(- g/(rair*temp->val[cell_id]) * (height - zt));
+
+      meteo_p_hyd->val[cell_id] =   meteo_pressure->val[cell_id]
+                                  - p_ground - ro0 * g_dot_x;
+    }
+    else if (p_hyd_read == 1) {
+      /* meteo_p_hyd has been read from the checkpoint:
+         rebuild the meteo pressure from it */
+      meteo_pressure->val[cell_id] =   p_ground + meteo_p_hyd->val[cell_id]
+                                     + ro0 * g_dot_x;
+    }
+    else {
+      /* Legacy checkpoint: only the total meteo pressure was read */
+      meteo_p_hyd->val[cell_id] =   meteo_pressure->val[cell_id]
+                                  - p_ground - ro0 * g_dot_x;
+    }
 
     if (idilat > 0)
       temp->val[cell_id] =   potemp->val[cell_id]
-                           * pow((f->val[cell_id]/ps), rscp);
+                           * pow((meteo_pressure->val[cell_id]/ps), rscp);
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC]
         != CS_ATMO_CONSTANT_DENSITY)
-      density->val[cell_id] = f->val[cell_id] / (rair * temp->val[cell_id]);
+      density->val[cell_id] =   meteo_pressure->val[cell_id]
+                              / (rair * temp->val[cell_id]);
     else
-      density->val[cell_id] = phys_pro->ro0;
-  }
+      density->val[cell_id] = ro0;
+  } // end init loop
 
   if (   (has_restart == 1 && nt_loc <= 1)
       || (cs_glob_physical_model_flag[CS_ATMOSPHERIC]
@@ -3972,16 +4034,20 @@ cs_atmo_hydrostatic_profiles_compute(void)
   cs_array_2d<cs_real_t> f_ext(m->n_cells_with_ghosts, 3, cs_alloc_mode);
   cs_array_2d<cs_real_t> dfext(m->n_cells_with_ghosts, 3, cs_alloc_mode);
 
-  /* dfext is actually a dummy used to copy _hydrostatic_pressure_compute */
-  /* f_ext is initialized with an initial density */
+  /* The forcing is the deviation from the reference hydrostatic
+     equilibrium: dfext = (rho - rho0) * g, and f_ext is kept at 0
+     (_hydrostatic_pressure_compute uses f_ext + dfext). */
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-    f_ext(cell_id, 0) = density->val[cell_id] * phys_cst->gravity[0];
-    dfext(cell_id, 0) = 0.;
-    f_ext(cell_id, 1) = density->val[cell_id] * phys_cst->gravity[1];
-    dfext(cell_id, 1) = 0.;
-    f_ext(cell_id, 2) = density->val[cell_id] * phys_cst->gravity[2];
-    dfext(cell_id, 2) = 0;
+    f_ext(cell_id, 0) = 0.;
+    dfext(cell_id, 0) = (density->val[cell_id] - ro0)
+                           * phys_cst->gravity[0];
+    f_ext(cell_id, 1) = 0.;
+    dfext(cell_id, 1) = (density->val[cell_id] - ro0)
+                           * phys_cst->gravity[1];
+    f_ext(cell_id, 2) = 0.;
+    dfext(cell_id, 2) = (density->val[cell_id] - ro0)
+                           * phys_cst->gravity[2];
   }
 
   /* Solving
@@ -4010,14 +4076,12 @@ cs_atmo_hydrostatic_profiles_compute(void)
     //FIXME 100 or nswrsm
 
     /* Update previous values of pressure for the convergence test */
-    cs_field_current_to_previous(f);
+    cs_field_current_to_previous(meteo_p_hyd);
 
     _hydrostatic_pressure_compute(f_ext.data<cs_real_3_t>(),
                                   dfext.data<cs_real_3_t>(),
-                                  f->val,
-                                  f->name,
-                                  z_min,
-                                  p_ground,
+                                  meteo_p_hyd->val,
+                                  meteo_p_hyd->name,
                                   i_massflux,
                                   b_massflux,
                                   i_viscm,
@@ -4030,22 +4094,31 @@ cs_atmo_hydrostatic_profiles_compute(void)
     /* L infinity residual computation and forcing update */
     inf_norm = 0.;
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-      inf_norm = fmax(fabs(f->val[cell_id] - f->val_pre[cell_id])/ps, inf_norm);
+      inf_norm = fmax(fabs(  meteo_p_hyd->val[cell_id]
+                           - meteo_p_hyd->val_pre[cell_id])/ps,
+                      inf_norm);
+
+      meteo_pressure->val[cell_id] =   p_ground + meteo_p_hyd->val[cell_id]
+                                     + ro0 * cs_math_3_distance_dot_product
+                                              (fluid_props->xyzp0,
+                                               cell_cen[cell_id],
+                                               g_vec);
 
       /* Boussinesq hypothesis: do not update adiabatic temperature profile */
       if (idilat > 0) {
         //TODO call cs_rho_humidair() instead, to be coherent in humid atmosphere
         temp->val[cell_id] =   potemp->val[cell_id]
-                             * pow((f->val[cell_id]/ps), rscp);
+                             * pow((meteo_pressure->val[cell_id]/ps), rscp);
       }
 
-      /* f_ext = rho^k * g */
-      cs_real_t rho_k = f->val[cell_id] / (rair * temp->val[cell_id]);
+      /* dfext = (rho^k - rho0) * g */
+      cs_real_t rho_k =   meteo_pressure->val[cell_id]
+                        / (rair * temp->val[cell_id]);
       density->val[cell_id] = rho_k;
 
-      f_ext(cell_id, 0) = rho_k * phys_cst->gravity[0];
-      f_ext(cell_id, 1) = rho_k * phys_cst->gravity[1];
-      f_ext(cell_id, 2) = rho_k * phys_cst->gravity[2];
+      dfext(cell_id, 0) = (rho_k - ro0) * g_vec[0];
+      dfext(cell_id, 1) = (rho_k - ro0) * g_vec[1];
+      dfext(cell_id, 2) = (rho_k - ro0) * g_vec[2];
     }
 
     if (cs_log_default_is_active()) {
@@ -4054,7 +4127,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
         (_("Meteo profiles: iterative process to compute hydrostatic pressure\n"
            "  sweep %d, L infinity norm (delta p) / ps =%e\n"), sweep, inf_norm);
     }
-  }
+  } // end sweep loop
 
 }
 
