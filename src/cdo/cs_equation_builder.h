@@ -69,15 +69,18 @@ typedef struct _equation_builder_t  cs_equation_builder_t;
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_build_hook_t)(const cs_equation_param_t     *eqp,
-                           const cs_equation_builder_t   *eqb,
-                           const void                    *eqc,
-                           const cs_cell_mesh_t          *cm,
-                           void                          *context,
-                           cs_hodge_t                    *mass_hodge,
-                           cs_hodge_t                    *diff_hodge,
-                           cs_cell_sys_t                 *csys,
-                           cs_cell_builder_t             *cb);
+(cs_equation_build_hook_t)
+(
+ [[maybe_unused]] const cs_equation_param_t   *eqp,
+ [[maybe_unused]] const cs_equation_builder_t *eqb,
+ [[maybe_unused]] const void                  *eqc,
+ [[maybe_unused]] const cs_cell_mesh_t        *cm,
+ [[maybe_unused]] void                        *context,
+ [[maybe_unused]] cs_hodge_t                  *mass_hodge,
+ [[maybe_unused]] cs_hodge_t                  *diff_hodge,
+ [[maybe_unused]] cs_cell_sys_t               *csys,
+ [[maybe_unused]] cs_cell_builder_t           *cb
+);
 
 /*! \struct cs_equation_builder_t
  *  \brief Store common elements used when building an algebraic system

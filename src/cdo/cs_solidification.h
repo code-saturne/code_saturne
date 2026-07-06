@@ -287,7 +287,7 @@ typedef void
  * Stefan model
  *----------------------------------------------------------------------------
  *
- * Neither advection nor segregation is taken into account.
+ * Neither advection nor segregation is taken into account in this case.
  * The liquid fraction is a step function w.r.t. the temperature.
  */
 
@@ -514,12 +514,13 @@ struct cs_solidification_binary_alloy_t {
 
 struct cs_solidification_t {
 
-  cs_flag_t        model;       /* Modelling for the solidification module */
-  cs_flag_t        options;     /* Flag dedicated to general options to handle
-                                 * the solidification module*/
-  cs_flag_t        post_flag;   /* Flag dedicated to the post-processing
-                                 * of the solidification module */
-  int              verbosity;   /* Level of verbosity */
+  cs_flag_t        model;          // Kind of solidification model
+  cs_flag_t        options;        // Flag dedicated to general options to
+                                   // handle the solidification module
+  cs_flag_t        post_flag;      // Flag dedicated to the post-processing
+                                   // of the solidification module
+  int              verbosity;      // Level of verbosity
+  bool             compute_navsto; // true or false
 
   /* Physical properties common to all models */
   /* ---------------------------------------- */
@@ -539,7 +540,7 @@ struct cs_solidification_t {
 
   cs_property_t   *viscosity;
 
-  /* Physical parameter for computing the source term in the energy equation
+  /* Physical parameter used to compute the source term in the energy equation
    * Latent heat between the liquid and solid phase
    */
 
@@ -555,16 +556,16 @@ struct cs_solidification_t {
 
   /* array storing the state (solid, mushy, liquid) for each cell */
 
-  cs_solidification_state_t     *cell_state;
+  cs_solidification_state_t  *cell_state;
 
-  /* Plot evolution of the solidification process */
-
-  cs_time_plot_t                *plot_state;
-
-  /* Monitoring related to this module */
+  /* Monitoring quantities related to this module */
 
   cs_real_t        state_ratio[CS_SOLIDIFICATION_N_STATES];
   cs_gnum_t        n_g_cells[CS_SOLIDIFICATION_N_STATES];
+
+  /* Plot evolution of the solidification process */
+
+  cs_time_plot_t             *plot_state;
 
   /* Quantities related to the energy equation */
   /* ----------------------------------------- */
@@ -579,7 +580,6 @@ struct cs_solidification_t {
      the liquid fraction) */
 
   cs_field_t      *enthalpy;
-
 
   /* A reaction term and source term are introduced in the thermal model */
 
@@ -646,7 +646,7 @@ struct cs_solidification_t {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Test if solidification module is activated
  */
 /*----------------------------------------------------------------------------*/
@@ -655,7 +655,7 @@ bool
 cs_solidification_is_activated(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Retrieve the main structure to deal with solidification process
  *
  * \return a pointer to a new allocated solidification structure
@@ -666,7 +666,7 @@ cs_solidification_t *
 cs_solidification_get_structure(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set the level of verbosity for the solidification module
  *
  * \param[in]   verbosity     level of verbosity to set
@@ -677,7 +677,7 @@ void
 cs_solidification_set_verbosity(int   verbosity);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set the value of the epsilon parameter used in the forcing term
  *         of the momentum equation
  *
@@ -690,8 +690,8 @@ void
 cs_solidification_set_forcing_eps(cs_real_t    forcing_eps);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Activate the solidification module
+/*
+ * \brief Activate the solidification module
  *
  * \param[in]  model            type of modelling
  * \param[in]  options          flag to handle optional parameters
@@ -717,7 +717,7 @@ cs_solidification_activate(cs_solidification_model_t      model,
                            cs_navsto_param_post_flag_t    ns_post_flag);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the parameters involved in the computation of the permeability
  *        coefficient of the Kozeny-Carman relation.
  *
@@ -734,7 +734,7 @@ cs_solidification_set_kozeny_carman_parameters(double kozeny_constant,
                                                double s_das);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Get the structure defining the Stefan model
  *
  * \return a pointer to the structure
@@ -745,7 +745,7 @@ cs_solidification_stefan_t *
 cs_solidification_get_stefan_struct(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Sanity checks on the consistency of the Stefan's model settings
  *
  * \return a pointer to the structure
@@ -756,7 +756,7 @@ cs_solidification_stefan_t *
 cs_solidification_check_stefan_model(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set the main physical parameters which describe the Stefan model
  *
  * \param[in] t_change     liquidus/solidus temperature (in K)
@@ -769,7 +769,7 @@ cs_solidification_set_stefan_model(cs_real_t    t_change,
                                    cs_real_t    latent_heat);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Get the structure defining the Voller model
  *
  * \return a pointer to the structure
@@ -780,7 +780,7 @@ cs_solidification_voller_t *
 cs_solidification_get_voller_struct(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Sanity checks on the consistency of the Voller's model settings
  *
  * \return a pointer to the structure
@@ -791,7 +791,7 @@ cs_solidification_voller_t *
 cs_solidification_check_voller_model(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the main physical parameters which describe the Voller and
  *        Prakash modelling
  *
@@ -811,7 +811,7 @@ cs_solidification_set_voller_model(cs_real_t beta,
                                    cs_real_t latent_heat);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the main physical parameters which describe the Voller and
  *        Prakash modelling
  *
@@ -827,7 +827,7 @@ cs_solidification_set_voller_model_no_velocity(cs_real_t t_solidus,
                                                cs_real_t latent_heat);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Get the structure defining the binary alloy model
  *
  * \return a pointer to the structure
@@ -838,7 +838,7 @@ cs_solidification_binary_alloy_t *
 cs_solidification_get_binary_alloy_struct(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Sanity checks on the consistency of the settings of the binary alloy
  *         model
  *
@@ -850,7 +850,7 @@ cs_solidification_binary_alloy_t *
 cs_solidification_check_binary_alloy_model(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the main physical parameters which describe a solidification
  *        process with a binary alloy (with components A and B)
  *        Add a transport equation for the solute concentration to simulate
@@ -887,7 +887,7 @@ cs_solidification_set_binary_alloy_model(const char *name,
                                          cs_real_t   latent_heat);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set the strategy to update quantitiess (liquid fraction and
  *         the thermal source term for the two main quantities)
  *
@@ -899,7 +899,7 @@ void
 cs_solidification_set_strategy(cs_solidification_strategy_t  strategy);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set the functions to perform the update of physical properties
  *         and/or the computation of the thermal source term or quantities
  *         and/or the way to perform the coupling between the thermal equation
@@ -924,7 +924,7 @@ cs_solidification_set_segr_functions(cs_solidification_func_t  *vel_forcing,
                                      cs_solidification_func_t  *thm_st_update);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Free the main structure related to the solidification module
  *
  * \return a null pointer
@@ -935,7 +935,7 @@ cs_solidification_t *
 cs_solidification_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Setup equations/properties related to the solidification module
  */
 /*----------------------------------------------------------------------------*/
@@ -944,7 +944,7 @@ void
 cs_solidification_init_setup(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Finalize the setup stage for equations related to the solidification
  *         module
  *
@@ -958,7 +958,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                                  const cs_cdo_quantities_t    *quant);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Summarize the solidification module in the log file dedicated to
  *         the setup
  */
@@ -968,7 +968,7 @@ void
 cs_solidification_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set an initial values for all quantities related to this module
  *         This is done after the setup step.
  *
@@ -986,7 +986,7 @@ cs_solidification_init_values(const cs_mesh_t              *mesh,
                               const cs_time_step_t         *time_step);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Solve equations related to the solidification module
  *
  * \param[in] mesh       pointer to a cs_mesh_t structure
@@ -1005,7 +1005,7 @@ cs_solidification_compute(const cs_mesh_t           *mesh,
                           bool                      &is_last_iter);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Predefined extra-operations for the solidification module
  *
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
@@ -1020,7 +1020,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
                            const cs_time_step_t        *ts);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Predefined post-processing output for the solidification module.
  *         Prototype of this function is fixed since it is a function pointer
  *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
@@ -1055,5 +1055,7 @@ cs_solidification_extra_post(void                      *input,
                              const cs_lnum_t            i_face_ids[],
                              const cs_lnum_t            b_face_ids[],
                              const cs_time_step_t      *time_step);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_SOLIDIFICATION_H */
