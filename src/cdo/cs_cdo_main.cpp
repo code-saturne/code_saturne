@@ -536,9 +536,17 @@ _solve_domain(cs_domain_t  *domain)
 
   cs_domain_set_stage(domain, CS_DOMAIN_STAGE_TIME_STEP_BEGIN);
 
-  /* User-defined update/settings of physical properties */
+  if (cs_param_cdo_has_cdo_only()) { // Avoid multiple calls
 
-  cs_user_physical_properties(domain);
+    // User-defined update/settings of physical properties
+
+    cs_user_physical_properties(domain);
+
+    // User-defined boundary conditions (bc_types is not used in CDO)
+
+    cs_user_boundary_conditions(domain, nullptr);
+
+  }
 
   /* Solve predefined systems */
 
@@ -588,9 +596,13 @@ _solve_domain(cs_domain_t  *domain)
 
   cs_domain_set_stage(domain, CS_DOMAIN_STAGE_TIME_STEP_END);
 
-  /* User-defined update/settings of physical properties */
+  if (cs_param_cdo_has_cdo_only()) { // Avoid multiple calls
 
-  cs_user_physical_properties(domain);
+    // User-defined update/settings of physical properties
+
+    cs_user_physical_properties(domain);
+
+  }
 
   /* User-defined equations */
 
