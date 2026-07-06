@@ -154,10 +154,10 @@ first:
   - PySide6 or PyQt5 (optional, required for the GUI)
   - Zlib (optional)
 
-Using the `setup` file
-----------------------
+Using the setup file
+--------------------
 
-As already mentioned, this file is generated the first time the script is
+As already mentioned, a `setup` file is generated the first time the script is
 run in a given directory.
 
 The C, Fortran, and C++ compilers to be used can be specified next
@@ -1479,7 +1479,7 @@ Compiling with GPU support
 code_saturne has not yet been ported to AMD GPUs, and its port to Intel
 GPUS is still very limited. On NVIDIA GPUs.
 
-### Using the NVIDIA SDK (24.9) and local compilers:
+### Using the NVIDIA SDK and local compilers:
 
 Note that using the NVIDIA HPC SDK often requires providing paths
 to some of the bundled libraries, as its layout is different
@@ -1583,36 +1583,6 @@ either for the front-end, for the compute nodes, or both:
   as serial partitioning of large meshes requires a lot of memory.
 * PT-Scotch or ParMETIS may be used by the main solver on the compute nodes.
 
-Compiling for Cray X series
----------------------------
-
-For Cray X series, when using the GNU compilers, installation should
-be similar to that on standard clusters. Using The Cray compilers,
-options such as in the following example are recommended:
-
-```
-${SRC_PATH}/configure \
---prefix=${INSTALL_PATH}/arch/xc30 \
---with-hdf5=${CS_OPT}/hdf5-1.12/arch/xc30 \
---with-med=${CS_OPT}/med-5.0/arch/xc30 \
---with-cgns=${CS_OPT}/cgns-4.4/arch/xc30 \
---with-scotch=${CS_OPT}/scotch-7.0/arch/xc30 \
---disable-sockets \
---disable-shared \
---host=x86_64-unknown-linux-gnu \
-CC=craycc CXX=crayc++ FC=crayftn
-```
-
-In case the automated environment modules handling causes issues,
-adding the `--without-modules` option may be necessary.
-In that case, caution must be exercised so that the user will load
-the same modules as those used for installation. This is not an issue
-if modules for code_saturne is also built, and the right dependencies
-handled at that level.
-
-Note that to build without OpenMP with the Cray compilers,
-`CFLAGS=-h noomp` and `FCFLAGS=-h noomp` need to be added.
-
 Caveats
 =======
 
@@ -1652,8 +1622,8 @@ directory, and rebuild and install.
 Dynamic linking and path issues on some systems
 -----------------------------------------------
 
-On Linux and Unix-like systems, there are several ways for a library or executable
-to find dynamic libraries, listed here in decreasing priority:
+On Linux and Unix-like systems, there are several ways for a library or
+executable to find dynamic libraries, listed here in decreasing priority:
 
 * the `LD_PRELOAD` environment variable explicitly lists
   libraries to be loaded with maximum priority, before the libraries
