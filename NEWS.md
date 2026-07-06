@@ -5,7 +5,7 @@ Master (not on release branches yet)
 
 - Switch to C++17 by default for code_saturne
 
-Release 9.2.0 (unreleased)
+Release 9.2.0 (2026-07-06)
 --------------------------
 
 ### Numerics:
