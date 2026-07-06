@@ -3482,7 +3482,7 @@ cs_prefetch_h2d(const void                   *ptr,
 #if CUDART_VERSION >= 13'00'0
     CS_CUDA_CHECK(cudaMemPrefetchAsync(ptr, size,
                                        {.type = cudaMemLocationTypeDevice,
-                                        .id = device}, 0, stream));
+                                        .id = device_id}, 0, stream));
 #else
   CS_CUDA_CHECK(cudaMemPrefetchAsync(ptr, size, device_id, stream));
 #endif
