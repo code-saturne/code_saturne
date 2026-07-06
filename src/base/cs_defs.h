@@ -939,6 +939,76 @@ concatenate_char
   }
 }
 
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Check if at least one variable is equal to a reference value
+ *
+ * \return True if at least one is equal, false otherwise
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+template<class T,
+         class... Ts,
+         class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
+inline
+bool
+if_any
+(
+  const T     ref_val, /*!<[in] Reference value to compare to */
+  const Ts... vals     /*!<[in] Parameter pack to compare to ref_val */
+)
+{
+  return ((ref_val == vals) || ...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Check if all variables are equal to a reference value
+ *
+ * \return True if at least one is equal, false otherwise
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+template<class T,
+         class... Ts,
+         class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
+inline
+bool
+if_all
+(
+  const T     ref_val, /*!<[in] Reference value to compare to */
+  const Ts... vals     /*!<[in] Parameter pack to compare to ref_val */
+)
+{
+  return ((ref_val == vals) && ...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Check if all variables are different than a reference value
+ *
+ * \return True if at least one is equal, false otherwise
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+template<class T,
+         class... Ts,
+         class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
+inline
+bool
+if_none
+(
+  const T     ref_val, /*!<[in] Reference value to compare to */
+  const Ts... vals     /*!<[in] Parameter pack to compare to ref_val */
+)
+{
+  return ((ref_val != vals) && ...);
+}
+
 /*----------------------------------------------------------------------------*/
 
 } // namespace cs
