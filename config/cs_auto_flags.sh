@@ -627,7 +627,7 @@ if test "x$cs_gxx" = "xg++"; then
     g++-4.[012345678]*)
       cxxflags_default="$cxxflags_default -std=c++1y"
       ;;
-    g++-[567]*)
+    g++-[56789]*|g++-10*)
       cxxflags_default="$cxxflags_default -std=c++17"
       ;;
   esac
