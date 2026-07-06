@@ -265,6 +265,7 @@ _prepare_ke(const cs_mesh_t            *mesh,
  *
  * \param[in]      pena_bc_coeff  pena coefficient used as Dirichlet BC
  * \param[in]      nu             laminar kinematic viscosity
+ * \param[in]      rho            density at the boundary face
  * \param[in]      k              turbulent kinetic energy
  * \param[in]      hfc            distance from cell center to the wall
  * \param[in]      uct            norm of tangential components of cell velocity
@@ -277,6 +278,7 @@ _prepare_ke(const cs_mesh_t            *mesh,
 static void
 _wall_function_1scale_log(const double    pena_bc_coeff,
                           const double    nu,
+                          const double    rho,
                           const double    k,
                           const double    hfc,
                           const double    uct,
@@ -328,7 +330,7 @@ _wall_function_1scale_log(const double    pena_bc_coeff,
                    "friction vel: %f \n" ), ustar);
     }
 
-    f_w[0] = ustar*ustar;
+    f_w[0] = rho*ustar*ustar;
 
     ht[0] = f_w[0]/(uft + 1.0/pena_bc_coeff);
     ht[0] = cs::min(cs::max(ht[0], 0.0), pena_bc_coeff);
@@ -342,6 +344,7 @@ _wall_function_1scale_log(const double    pena_bc_coeff,
  *
  * \param[in]      pena_bc_coeff  pena coefficient used as Dirichlet BC
  * \param[in]      nu             laminar kinematic viscosity
+ * \param[in]      rho            density at the boundary face
  * \param[in]      k              turbulent kinetic energy
  * \param[in]      hfc            distance from cell center to the wall
  * \param[in]      uct            norm of tangential components of cell velocity
@@ -354,6 +357,7 @@ _wall_function_1scale_log(const double    pena_bc_coeff,
 static void
 _wall_function_2scales_log(const double    pena_bc_coeff,
                            const double    nu,
+                           const double    rho,
                            const double    k,
                            const double    hfc,
                            const double    uct,
@@ -369,7 +373,7 @@ _wall_function_2scales_log(const double    pena_bc_coeff,
 
   if (yplus > ypluli) { /* In the logarithm zone */
     double ustar = uct / (log(yplus)/cs_turb_xkappa + cs_turb_cstlog);
-    f_w[0] = uk*ustar;
+    f_w[0] = rho*uk*ustar;
     ht[0] = f_w[0] / (uft + 1.0/pena_bc_coeff);
     ht[0] = cs::min(cs::max(ht[0], 0.0), pena_bc_coeff);
   }
@@ -1126,6 +1130,7 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
  *
  * \param[in]      eqp  pointer to a cs_equation_param_t
  * \param[in]      nu   laminar kinematic viscosity
+ * \param[in]      rho  density at the boundary face
  * \param[in]      k    turbulent kinetic energy
  * \param[in]      hfc  distance from cell center to the wall
  * \param[in]      uct  norm of tangential components of cell velocity
@@ -1138,6 +1143,7 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
 void
 cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                const double                nu,
+                               const double                rho,
                                const double                k,
                                const double                hfc,
                                const double                uct,
@@ -1156,6 +1162,7 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
     case CS_WALL_F_1SCALE_LOG:
       _wall_function_1scale_log(eqp->strong_pena_bc_coeff,
                                 nu,
+                                rho,
                                 k,
                                 hfc,
                                 uct,
@@ -1167,6 +1174,7 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
     case CS_WALL_F_2SCALES_LOG:
       _wall_function_2scales_log(eqp->strong_pena_bc_coeff,
                                  nu,
+                                 rho,
                                  k,
                                  hfc,
                                  uct,

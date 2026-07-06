@@ -539,6 +539,7 @@ cs_turb_update_shared_legacy(const cs_mesh_t           *mesh,
  *
  * \param[in]      eqp  pointer to a cs_equation_param_t
  * \param[in]      nu   laminar kinematic viscosity
+ * \param[in]      rho  density at the boundary face
  * \param[in]      k    turbulent kinetic energy
  * \param[in]      hfc  distance from cell center to the wall
  * \param[in]      uct  norm of tangential components of cell velocity
@@ -551,6 +552,7 @@ cs_turb_update_shared_legacy(const cs_mesh_t           *mesh,
 void
 cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                const double                nu,
+                               const double                rho,
                                const double                k,
                                const double                hfc,
                                const double                uct,
