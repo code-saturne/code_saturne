@@ -60,6 +60,11 @@
 ### (similar to .profile or .bashrc, specific to code_saturne).
 # rcfile =
 
+### Optional path to sourcable shell environment initialization file
+### for a run's compute stage (similar to .profile or .bashrc, sourced
+### just before a run.cfg's optional "compute_prologue").
+# rcfile_compute =
+
 ### Information about remote installations.
 ### ---------------------------------------
 

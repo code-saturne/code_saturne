@@ -933,17 +933,22 @@ def source_shell_script(path):
 
 #-------------------------------------------------------------------------------
 
-def get_rcfile(pkg):
+def get_rcfile(pkg, stage=None):
     """
     Get path to file rcfile in preferences file if present.
+    If a stage is specified, the "rcfile_<stage>" configuration entry
+    is read instead of "rcfile".
     """
-
 
     config = configparser.ConfigParser()
     config.read(pkg.get_configfiles())
 
-    if config.has_option('install', 'rcfile'):
-        rcfile = config.get('install', 'rcfile')
+    k = 'rcfile'
+    if stage != None:
+        k = 'rcfile_' + stage
+
+    if config.has_option('install', k):
+        rcfile = config.get('install', k)
         if not os.path.isabs(rcfile):
             rcfile = '~/.' + rcfile
         return rcfile

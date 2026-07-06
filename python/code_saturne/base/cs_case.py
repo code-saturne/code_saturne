@@ -1570,6 +1570,15 @@ class case:
                 s.write('  source ' + rcfile + '\n')
             s.write('fi\n\n')
 
+        # Handle rcfile_compute if defined
+        rcfile_compute = cs_exec_environment.get_rcfile(self.package_compute,
+                                                        "compute")
+
+        if rcfile_compute and rcfile_compute != "no":
+            cs_exec_environment.write_script_comment(s, \
+               'Source additional compute-stage environement.\n')
+            s.write('source ' + rcfile_compute + '\n\n')
+
         if mpi_env.gen_hostsfile != None:
             cs_exec_environment.write_script_comment(s, 'Generate hostsfile.\n')
             s.write(mpi_env.gen_hostsfile + ' || exit $?\n\n')
