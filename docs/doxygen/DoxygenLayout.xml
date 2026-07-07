@@ -1,42 +1,73 @@
 <doxygenlayout version="1.0">
   <!-- Navigation index tabs for HTML output -->
   <navindex>
-    <tab type="mainpage" visible="yes" title=""/>
-    <tab type="usergroup" visible="yes" url="@ref cs_ug_user_basics" title="Running a computation">
+    <!-- Section 1: General information -->
+    <tab type="usergroup" visible="yes" title="General information">
+      <tab type="mainpage" visible="yes" title="Introduction"/>
       <tab type="user" visible="yes" url="@ref cs_ug_quick_start" title="Quick start"/>
-      <tab type="user" visible="yes" url="@ref cs_ug_user_settings" title="Global user settings"/>
+      <tab type="user" visible="yes" url="@ref autotoc_md0" title="Installation"/>
+    </tab>
+
+    <!-- Section 2: General principles -->
+    <tab type="usergroup" visible="yes" title="General principles">
       <tab type="user" visible="yes" url="@ref cs_ug_case_structure" title="Case directory structure"/>
-      <tab type="user" visible="yes" url="@ref cs_ug_run_computation" title="Running a calculation"/>
       <tab type="user" visible="yes" url="@ref cs_ug_file_formats" title="Supported file formats"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_parallel" title="Parallelism and periodicity"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_udf" title="User-defined functions"/>
+      <tab type="user" visible="yes" url="@ref cs_var_dico" title="Variables and structures reference"/>
+    </tab>
+
+    <!-- Section 3: Setting up a computation -->
+    <tab type="usergroup" visible="yes" title="Setting up a computation">
+      <tab type="user" visible="yes" url="@ref cs_ug_user_settings" title="Global user settings"/>
       <tab type="usergroup" visible="yes" url="@ref cs_ug_mesh_prepare" title="Mesh import and preprocessing"/>
       <tab type="user" visible="yes" url="@ref cs_ug_mesh_select_c" title="Mesh element set selection"/>
-      <tab type="user" visible="yes" url="@ref cs_ug_parallel" title="Parallelism and periodicity"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_base_setup" title="Basic modeling setup"/>
+      <tab type="usergroup" visible="yes" url="@ref cs_ug_advanced_setup" title="Calculation features">
+        <tab type="user" visible="yes" url="@ref low_level_boundary_condition_definitions" title="Low-level finite-volume boundary-condition definitions"/>
+        <tab type="user" visible="yes" url="@ref advanced_specific_physics" title="Specific physical models"/>
+        <tab type="user" visible="yes" url="@ref advanced_coal_and_gas_combution" title="Pulverized coal and gas combustion module"/>
+        <tab type="user" visible="yes" url="@ref advanced_radiative_thermal" title="Radiative thermal transfers in semi-transparent gray media"/>
+        <tab type="user" visible="yes" url="@ref advanced_conjugate_heat_transfer" title="Conjugate heat transfer"/>
+        <tab type="user" visible="yes" url="@ref advanced_particle_tracking" title="Particle-tracking (Lagrangian) module"/>
+        <tab type="user" visible="yes" url="@ref advanced_compressible" title="Compressible module"/>
+        <tab type="user" visible="yes" url="@ref advanced_electric_arcs" title="Electric arcs module"/>
+        <tab type="user" visible="yes" url="@ref advanced_coupling" title="Coupling with other domains"/>
+        <tab type="user" visible="yes" url="@ref advanced_ale" title="ALE (Arbitrary Lagrangian Eulerian) module"/>
+        <tab type="user" visible="yes" url="@ref advanced_atmospheric" title="Atmospheric flows module"/>
+        <tab type="user" visible="yes" url="@ref advanced_turbomachinery" title="Turbomachinery module"/>
+        <tab type="user" visible="yes" url="@ref advanced_cavitation" title="Cavitation module"/>
+        <tab type="user" visible="yes" url="@ref cs_ug_cdo_gwf" title="Groundwater flows module"/>
+        <tab type="user" visible="yes" url="@ref advanced_solidification" title="Solidification module"/>
+      </tab>
+      <tab type="user" visible="yes" url="@ref cs_user_examples" title="User examples"/>
+    </tab>
+
+    <!-- Section 4: Running computations -->
+    <tab type="usergroup" visible="yes" title="Running computations">
+      <tab type="user" visible="yes" url="@ref cs_ug_run_computation" title="Running a calculation"/>
       <tab type="user" visible="yes" url="@ref cs_ug_output" title="Managing and analyzing the output"/>
-      <tab type="user" visible="yes" url="@ref cs_ug_udf" title="User-defined functions"/>
       <tab type="user" visible="yes" url="@ref cs_ug_troubleshooting" title="What if a calculation fails ?"/>
+      <tab type="usergroup" visible="yes" url="@ref cs_ug_studymanager" title="The STUDYMANAGER tool">
+        <tab type="user" visible="yes" url="@ref cs_ug_smgr_slurm" title="How to submit cases on cluster"/>
+      </tab>
     </tab>
-    <tab type="user" visible="yes" url="@ref cs_ug_base_setup" title="Basic modeling setup">
-    <tab type="usergroup" visible="yes" url="@ref cs_ug_advanced_setup" title="Advanced modeling setup">
-      <tab type="user" visible="yes" url="@ref low_level_boundary_condition_definitions" title="Low-level finite-volume boundary-condition definitions"/>
-      <tab type="user" visible="yes" url="@ref advanced_specific_physics" title="Specific physical models"/>
-      <tab type="user" visible="yes" url="@ref advanced_coal_and_gas_combution" title="Pulverized coal and gas combustion module"/>
-      <tab type="user" visible="yes" url="@ref advanced_radiative_thermal" title="Radiative thermal transfers in semi-transparent gray media"/>
-      <tab type="user" visible="yes" url="@ref advanced_conjugate_heat_transfer" title="Conjugate heat transfer"/>
-      <tab type="user" visible="yes" url="@ref advanced_particle_tracking" title="Particle-tracking (Lagrangian) module"/>
-      <tab type="user" visible="yes" url="@ref advanced_compressible" title="Compressible module"/>
-      <tab type="user" visible="yes" url="@ref advanced_electric_arcs" title="Electric arcs module"/>
-      <tab type="user" visible="yes" url="@ref advanced_coupling" title="Coupling with other domains"/>
-      <tab type="user" visible="yes" url="@ref advanced_ale" title="ALE (Arbitrary Lagrangian Eulerian) module"/>
-      <tab type="user" visible="yes" url="@ref advanced_atmospheric" title="Atmospheric flows module"/>
-      <tab type="user" visible="yes" url="@ref advanced_turbomachinery" title="Turbomachinery module"/>
-      <tab type="user" visible="yes" url="@ref advanced_cavitation" title="Cavitation module"/>
-      <tab type="user" visible="yes" url="@ref cs_ug_cdo_gwf" title="Groundwater flows module"/>
-      <tab type="user" visible="yes" url="@ref advanced_solidification" title="Solidification module"/>
+
+    <!-- Section 5: Best Practice Guides (BPG) -->
+    <tab type="usergroup" visible="yes" title="Best Practice Guides">
+      <!-- Placeholders for future Markdown best practice guides -->
+      <tab type="user" visible="yes" url="[none]" title="Basic phenomena"/>
+      <tab type="user" visible="yes" url="[none]" title="Mesh generation"/> -->
+      <tab type="user" visible="yes" url="[none]" title="Cell size at the wall"/> -->
+      <tab type="user" visible="yes" url="[none]" title="Numerical Parameters"/> -->
+      <tab type="user" visible="yes" url="@ref cs_ug_troubleshooting" title="What if a calculation fails ?"/>
+      <tab type="user" visible="yes" url="[none]" title="Analysis of the results"/> -->
     </tab>
-    </tab>
-    <tab type="usergroup" visible="yes" url="@ref cs_ug_studymanager" title="The STUDYMANAGER tool">
-      <tab type="user" visible="yes" url="@ref cs_ug_smgr_slurm" title="How to submit cases on cluster"/>
-    </tab>
+
+    <!-- Section 6: Installation -->
+    <tab type="user" visible="yes" url="@ref autotoc_md0" title="Installation"/>
+
+    <!-- Section 7: Developer guide -->
     <tab type="usergroup" visible="yes" url="@ref cs_dg_developer_guide" title="Developer guide">
       <tab type="user" visible="yes" url="@ref cs_dg_programming_languages" title="Programming languages"/>
       <tab type="user" visible="yes" url="@ref cs_dg_coding_style" title="Coding style guidelines"/>
@@ -48,25 +79,28 @@
       <tab type="user" visible="yes" url="@ref cs_dg_debugging" title="Debugging"/>
       <tab type="user" visible="yes" url="@ref cs_dg_profiling" title="Profiling"/>
     </tab>
+
+    <!-- Section 8: Source code documentation -->
+    <tab type="usergroup" visible="yes" title="Source code documentation">
+      <tab type="modules" visible="yes" title="Modules"/>
+      <tab type="namespaces" visible="yes" title="Namespaces">
+        <tab type="namespacelist" visible="yes" title="" intro=""/>
+        <tab type="namespacemembers" visible="yes" title="" intro=""/>
+      </tab>
+      <tab type="classes" visible="yes" title="Classes">
+        <tab type="classlist" visible="yes" title="" intro=""/>
+        <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/>
+        <tab type="hierarchy" visible="yes" title="" intro=""/>
+        <tab type="classmembers" visible="yes" title="" intro=""/>
+      </tab>
+      <tab type="files" visible="yes" title="Files">
+        <tab type="filelist" visible="yes" title="" intro=""/>
+        <tab type="globals" visible="yes" title="" intro=""/>
+      </tab>
+      <tab type="examples" visible="yes" title="Examples" intro=""/>
+    </tab>
+
     <tab type="pages" visible="no" title=""/>
-    <tab type="modules" visible="yes" title=""/>
-    <tab type="namespaces" visible="yes" title="">
-      <tab type="namespacelist" visible="yes" title="" intro=""/>
-      <tab type="namespacemembers" visible="yes" title="" intro=""/>
-    </tab>
-    <tab type="classes" visible="yes" title="">
-      <tab type="classlist" visible="yes" title="" intro=""/>
-      <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/>
-      <tab type="hierarchy" visible="yes" title="" intro=""/>
-      <tab type="classmembers" visible="yes" title="" intro=""/>
-    </tab>
-    <tab type="files" visible="yes" title="">
-      <tab type="filelist" visible="yes" title="" intro=""/>
-      <tab type="globals" visible="yes" title="" intro=""/>
-    </tab>
-    <tab type="examples" visible="yes" title="" intro=""/>
-    <tab type="user" visible="yes" url="@ref cs_user_examples" title="User examples"/>
-    <tab type="user" visible="yes" url="@ref cs_var_dico" title="Variables and structures reference"/>
     <tab type="user" visible="yes" url="@ref cs_external_links" title="Related Pages"/>
   </navindex>
 
