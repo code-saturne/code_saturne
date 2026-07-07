@@ -168,19 +168,21 @@ struct cs_adv_field_t {
    * id to retrieve the related cs_field_t structure (-1 if not used)
    *
    * \var cell_field_id
-   * id to retrieve the related cs_field_t structure. It's always
-   * defined since it's used during the building of the advection scheme
+   * id to retrieve the related cs_field_t structure. It's always defined since
+   * it can be used during the building of the advection scheme
    *
    * \var bdy_field_id
-   * id to retrieve the related cs_field_t structure corresponding to
-   * the value of the normal flux across boundary faces. It's always
-   * defined since it's used for dealing with the boundary conditions.
+   * id to retrieve the related cs_field_t structure corresponding to the value
+   * of the normal flux across boundary faces. It's always defined since it's
+   * used for dealing with the boundary conditions. It also cooresponds to the
+   * mass flux at the boundary when Navier-Stokes is solved using the legacy FV
+   * solver.
    *
    * \var int_field_id
-   * id to retrieve the related cs_field_t structure corresponding to
-   * the value of the normal flux across interior faces. It's always
-   * defined when the advection field arise from the resolution of the
-   * Navier-Stokes system with the legacy FV solver.
+   * id to retrieve the related cs_field_t structure corresponding to the value
+   * of the normal flux across interior faces. It's always defined when the
+   * advection field arise from the resolution of the Navier-Stokes system with
+   * the legacy FV solver since it corresponds to the mass flux.
    *
    * \var definition
    * pointer to the generic structure used to define the advection field. We
@@ -397,7 +399,7 @@ cs_advection_field_get_field(const cs_adv_field_t       *adv,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set shared pointers to main domain members
  *
  * \param[in]  quant       additional mesh quantities struct.
@@ -410,7 +412,7 @@ cs_advection_field_init_sharing(const cs_cdo_quantities_t  *quant,
                                 const cs_cdo_connect_t     *connect);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Get the number of allocated cs_adv_field_t structures
  *
  * \return the number of advection fields
@@ -421,7 +423,7 @@ int
 cs_advection_field_get_n_fields(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Search in the array of advection field structures which one has
  *         the name given in argument
  *
@@ -435,7 +437,7 @@ cs_adv_field_t *
 cs_advection_field_by_name(const char   *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Search in the array of advection field structures which one has
  *         the id given in argument
  *
@@ -449,7 +451,7 @@ cs_adv_field_t *
 cs_advection_field_by_id(int      id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Add and initialize a new user-defined advection field structure
  *
  * \param[in]  name        name of the advection field
@@ -462,7 +464,7 @@ cs_adv_field_t *
 cs_advection_field_add_user(const char  *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Add and initialize a new advection field structure
  *
  * \param[in]  name        name of the advection field
@@ -477,7 +479,7 @@ cs_advection_field_add(const char                    *name,
                        cs_advection_field_status_t    status);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free all alllocated cs_adv_field_t structures and its related array
  */
 /*----------------------------------------------------------------------------*/
@@ -486,7 +488,7 @@ void
 cs_advection_field_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Check if the given advection field has the name ref_name
  *
  * \param[in]  adv         pointer to a cs_adv_field_t structure to test
@@ -501,7 +503,7 @@ cs_advection_field_check_name(const cs_adv_field_t   *adv,
                               const char             *ref_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Print all setup information related to cs_adv_field_t structures
  */
 /*----------------------------------------------------------------------------*/
@@ -510,7 +512,7 @@ void
 cs_advection_field_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set optional post-processings
  *
  * \param[in, out]  adv         pointer to a cs_adv_field_t structure
@@ -523,7 +525,7 @@ cs_advection_field_set_postprocess(cs_adv_field_t            *adv,
                                    cs_flag_t                  post_flag);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the value of a cs_adv_field_t structure
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
@@ -536,7 +538,7 @@ cs_advection_field_def_by_value(cs_adv_field_t    *adv,
                                 cs_real_t          vector[3]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define a cs_adv_field_t structure thanks to an analytic function
  *
  * \param[in, out]  adv     pointer to a cs_adv_field_t structure
@@ -551,7 +553,7 @@ cs_advection_field_def_by_analytic(cs_adv_field_t        *adv,
                                    void                  *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define a cs_adv_field_t structure using a cs_dof_func_t
  *
  * \param[in, out] adv           pointer to a cs_adv_field_t structure
@@ -568,7 +570,7 @@ cs_advection_field_def_by_dof_func(cs_adv_field_t    *adv,
                                    void              *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define a cs_adv_field_t structure thanks to an array of values. If
  *        an advanced usage of the definition by array is needed, then call
  *        \ref cs_xdef_array_set_sublist or \ref cs_xdef_array_set_adjacency
@@ -590,7 +592,7 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                 bool               is_owner);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define a cs_adv_field_t structure thanks to a field structure
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
@@ -603,7 +605,7 @@ cs_advection_field_def_by_field(cs_adv_field_t    *adv,
                                 cs_field_t        *field);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the value of the boundary normal flux for the given
  *         cs_adv_field_t structure
  *
@@ -619,7 +621,7 @@ cs_advection_field_def_boundary_flux_by_value(cs_adv_field_t    *adv,
                                               cs_real_t          normal_flux);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the value of the boundary normal flux for the given
  *         cs_adv_field_t structure using an analytic function
  *
@@ -637,7 +639,7 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
                                                  void                  *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the value of the boundary normal flux for the given
  *         cs_adv_field_t structure using an array of values
  *
@@ -666,7 +668,7 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                               bool               full_length);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the value of the boundary normal flux for the given
  *         cs_adv_field_t structure using a field structure
  *
@@ -680,7 +682,7 @@ cs_advection_field_def_boundary_flux_by_field(cs_adv_field_t    *adv,
                                               cs_field_t        *field);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Create all needed cs_field_t structures related to an advection
  *         field
  */
@@ -690,7 +692,7 @@ void
 cs_advection_field_create_fields(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Last stage of the definition of an advection field based on several
  *         definitions (i.e. definition by subdomains on the boundary)
  */
@@ -700,7 +702,7 @@ void
 cs_advection_field_finalize_setup(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the value of the advection field at the cell center
  *
  * \param[in]      c_id    id of the current cell
@@ -715,7 +717,7 @@ cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
                                    cs_nvec3_t             *vect);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the vector-valued interpolation of the advection field at
  *         a given location inside a cell
  *
@@ -735,7 +737,7 @@ cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
                                   cs_nvec3_t            *eval);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the mean-value of the vector-valued field related to the
  *         advection field inside each cell
  *
@@ -751,7 +753,7 @@ cs_advection_field_in_cells(const cs_adv_field_t  *adv,
                             cs_real_t             *cell_values);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the value of the advection field at vertices
  *
  * \param[in]      adv          pointer to a cs_adv_field_t structure
@@ -766,7 +768,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
                                cs_real_t             *vtx_values);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the value of the normal flux of the advection field
  *         across the boundary faces
  *
@@ -782,7 +784,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
                                    cs_real_t             *flx_values);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the value of the normal flux of the advection field across
  *         the closure of the dual cell related to each vertex belonging to the
  *         boundary face f
@@ -803,7 +805,7 @@ cs_advection_field_cw_boundary_f2v_flux(const cs_cell_mesh_t   *cm,
                                         cs_real_t              *fluxes);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the value of the normal flux of the advection field across
  *         a boundary face f (cellwise version)
  *
@@ -823,7 +825,7 @@ cs_advection_field_cw_boundary_face_flux(const cs_real_t          time_eval,
                                          const cs_adv_field_t    *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the value of the flux of the advection field across the
  *         the (primal) faces of a cell
  *
@@ -841,7 +843,7 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
                                 cs_real_t                  *fluxes);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the value of the flux of the advection field across the
  *         the dual faces of a cell
  *
@@ -859,7 +861,7 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
                                  cs_real_t                *fluxes);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the value of the flux of the advection field across the
  *         the dual faces of a cell
  *         MAC face-based scheme
@@ -878,7 +880,7 @@ cs_advection_field_macb_dface_flux(const cs_macfb_builder_t *macb,
                                    cs_real_t                *fluxes);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   For each cs_adv_field_t structures, update the values of the
  *          related field(s)
  *
@@ -892,7 +894,7 @@ cs_advection_field_update(cs_real_t    t_eval,
                           bool         cur2prev);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the Peclet number in each cell
  *
  * \param[in]      adv        pointer to the advection field struct.
@@ -909,7 +911,7 @@ cs_advection_get_peclet(const cs_adv_field_t     *adv,
                         cs_real_t                 peclet[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the Courant number in each cell
  *
  * \param[in]      adv        pointer to the advection field struct.
@@ -924,7 +926,7 @@ cs_advection_get_courant(const cs_adv_field_t     *adv,
                          cs_real_t                 courant[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the divergence of the advection field at vertices
  *          Useful for CDO Vertex-based schemes
  *
@@ -938,5 +940,7 @@ cs_advection_get_courant(const cs_adv_field_t     *adv,
 cs_real_t *
 cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
                                           cs_real_t                 t_eval);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_ADVECTION_FIELD_H */
