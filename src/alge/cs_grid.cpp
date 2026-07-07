@@ -82,7 +82,6 @@
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_tuning.h"
 #include "alge/cs_matrix_util.h"
-#include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_profiling.h"
 #include "base/cs_reducers.h"
@@ -3545,21 +3544,22 @@ _coarse_msr_struct_cuda(cs_dispatch_context  &ctx,
   CS_MALLOC_HD(c_row_index, c_n_rows+1, cs_lnum_t, cs_alloc_mode);
   CS_MALLOC_HD(c_col_id, c_nnz, cs_lnum_t, cs_alloc_mode);
 
+  // Need to allocate c_nnz+1 to allow later scan
+  cs_lnum_t *c_face_flag = nullptr;
+  short int *c_face_sgn = nullptr;
+  if (c_face_id_stage_0 != nullptr) {
+    CS_MALLOC_HD(c_face_flag, c_nnz+1, cs_lnum_t, alloc_mode);
+    *c_face_id_stage_0 = c_face_flag;
+    CS_MALLOC_HD(c_face_sgn, c_nnz, short int, alloc_mode);
+    *c_cell_to_face_sgn = c_face_sgn;
+  }
+
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(ev[7], stream));
 
   cs_lnum_t *c_row_id = reinterpret_cast<cs_lnum_t *>(keys_1);
 
   if (c_face_id_stage_0 != nullptr) {
-    cs_lnum_t *c_face_flag;
-    // Need to allocate c_nnz+1 to allow later scan
-    CS_MALLOC_HD(c_face_flag, c_nnz+1, cs_lnum_t, alloc_mode);
-    *c_face_id_stage_0 = c_face_flag;
-
-    short int *c_face_sgn;
-    CS_MALLOC_HD(c_face_sgn, c_nnz, short int, alloc_mode);
-    *c_cell_to_face_sgn = c_face_sgn;
-
     ctx.parallel_for(c_nnz, [=] CS_F_HOST_DEVICE (uint64_t i) {
       uint64_t k = keys_0[i];
       cs_lnum_t r_id = k / c_n_cols_64;
