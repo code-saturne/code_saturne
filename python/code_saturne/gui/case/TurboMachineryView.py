@@ -268,7 +268,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
 
         # Connections
         self.rotorModel.dataChanged.connect(self.dataChanged)
-        self.tableViewTurboMachinery.clicked[QModelIndex].connect(self.slotChangeSelection)
+        self.tableViewTurboMachinery.clicked.connect(self.slotChangeSelection)
 
         self.pushButtonAdd.clicked.connect(self.slotAddRotor)
         self.pushButtonDelete.clicked.connect(self.slotDeleteRotor)
@@ -354,8 +354,8 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.updateView()
 
 
-    @Slot(str)
-    def slotChangeSelection(self, text=None):
+    @Slot()
+    def slotChangeSelection(self):
         """
         detect change selection to update constant properties
         """
