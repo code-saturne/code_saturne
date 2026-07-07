@@ -264,15 +264,15 @@ struct cs_cdo_quantities_t { /* Specific mesh quantities */
 
   cs_real_t        *dual_vol;
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Get the face surface for a primal face (interior or border)
    *
-   * \param[in]  f_id    id related to the face (f_id > n_i_face -> border face)
+   * \param[in] f_id  id related to the face (f_id > n_i_face -> border face)
    *
    * \return the value of the face surface
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   inline cs_real_t
   get_face_surf(const cs_lnum_t f_id) const
@@ -281,15 +281,15 @@ struct cs_cdo_quantities_t { /* Specific mesh quantities */
                                     : this->b_face_surf[f_id - this->n_i_faces];
   };
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Get the face surface for a border primal face
    *
-   * \param[in]  bf_id    id related to the border face
+   * \param[in] bf_id  id related to the border face
    *
    * \return the value of the border face surface
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   inline cs_real_t
   get_bface_surf(const cs_lnum_t bf_id) const
@@ -298,15 +298,15 @@ struct cs_cdo_quantities_t { /* Specific mesh quantities */
     return this->b_face_surf[bf_id];
   };
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Get the unit normal for a border primal face
    *
-   * \param[in]  bf_id    id related to the border face
+   * \param[in] bf_id  id related to the border face
    *
    * \return a pointer to the face normal
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   inline const cs_nreal_t *
   get_bface_normal(cs_lnum_t bf_id) const
@@ -315,17 +315,16 @@ struct cs_cdo_quantities_t { /* Specific mesh quantities */
     return this->b_face_u_normal[bf_id];
   };
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Get the face vector which the face_area * face_normal for a
    *        primal face (interior or border)
    *
-   * \param[in]  f_id     id related to the face (f_id > n_i_face -> border
-   *                      face)
+   * \param[in] f_id  id related to the face (f_id > n_i_face -> border face)
    *
    * \return a pointer to the face vector
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   inline const cs_real_t *
   get_face_vector_area(cs_lnum_t f_id) const
@@ -336,16 +335,15 @@ struct cs_cdo_quantities_t { /* Specific mesh quantities */
       return this->b_face_normal + 3 * (f_id - this->n_i_faces);
   };
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Get the face center for a primal face (interior or border)
    *
-   * \param[in]  f_id     id related to the face (f_id > n_i_face -> border
-   *                      face)
+   * \param[in] f_id  id related to the face (f_id > n_i_face -> border face)
    *
    * \return a pointer to the face center coordinates
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   inline const cs_real_t *
   get_face_center(cs_lnum_t f_id) const
@@ -356,93 +354,92 @@ struct cs_cdo_quantities_t { /* Specific mesh quantities */
       return this->b_face_center[f_id - this->n_i_faces];
   }
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Get a cs_quant_t structure for a primal face (interior or border)
    *
-   * \param[in]  f_id     id related to the face (f_id > n_i_face -> border
-   * face)
+   * \param[in] f_id  id related to the face (f_id > n_i_face -> border face)
    *
    * \return a initialize structure
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   cs_quant_t
   get_face(cs_lnum_t f_id) const;
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Get the face surface and its unit normal vector for a primal
    *        face (interior or border)
    *
-   * \param[in]  f_id     id related to the face (f_id > n_i_face -> border
+   * \param[in] f_id  id related to the face (f_id > n_i_face -> border
    *
    * \return a pointer to the face normalized vector
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   cs_nvec3_t
   get_face_nvec(cs_lnum_t f_id) const;
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Retrieve the edge center for a primal edge (interior or border)
    *
-   * \param[in]  e_id     id related to the edfe
-   * \param[in]  topo     pointer to a cs_cdo_connect_t structure
+   * \param[in] e_id  id related to the edfe
+   * \param[in] topo  pointer to a cs_cdo_connect_t structure
    *
    * \return a pointer to the edge center coordinates
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   cs_quant_t
   get_edge_center(cs_lnum_t e_id, const cs_cdo_connect_t *topo) const;
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
-   * \brief  Get the normalized vector associated to a primal edge
+   * \brief Get the normalized vector associated to a primal edge
    *
-   * \param[in]  e_id     id related to an edge
+   * \param[in] e_id  id related to an edge
    *
-   * \return  a pointer to the edge normalized vector
+   * \return a pointer to the edge normalized vector
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   cs_nvec3_t
   get_edge_nvec(cs_lnum_t e_id) const;
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
-   * \brief  Get the two normalized vector associated to a dual edge
+   * \brief Get the two normalized vector associated to a dual edge
    *
-   * \param[in]  shift    position in c2f_idx
+   * \param[in] shift  position in c2f_idx
    *
-   * \return  a pointer to the dual edge normalized vector
+   * \return a pointer to the dual edge normalized vector
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   cs_nvec3_t
   get_dedge_nvec(cs_lnum_t shift) const;
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Summarize generic information about the cdo mesh quantities
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   void
   log_summary() const;
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Dump a cs_cdo_quantities_t structure (for debugging purpose)
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   void
   dump() const;
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Check that global quantities are consistently computed
    *
@@ -450,7 +447,7 @@ struct cs_cdo_quantities_t { /* Specific mesh quantities */
    * \param[in] mq    pointer to a cs_mesh_quantities_t structure
    * \param[in] topo  pointer to a cs_cdo_connect_t structure
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   void
   check(int                         verb,
@@ -774,5 +771,7 @@ cs_cdo_quantities_compute_b_wvf(const cs_cdo_connect_t       *connect,
 
 void
 cs_quant_dump(FILE *f, cs_lnum_t num, const cs_quant_t q);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_CDO_QUANTITIES_H */
