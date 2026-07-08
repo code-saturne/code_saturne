@@ -185,6 +185,10 @@
  *      to be at a given temperature meaning that the liquid fraction is a step
  *      function w.r.t. the temperature.
  *
+ * \var CS_SOLIDIFICATION_MODEL_VELOCITY_GIVEN
+ *      Modelling based on \ref CS_SOLIDIFICATION_MODEL_VOLLER_NL but only
+ *      the thermal equation is solved using a user-defined advection field
+ *
  * \var CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
  *      Modelling introduced in Voller and Prakash entitled: "A fixed grid
  *      numerical modelling methodology for convection-diffusion mushy region
@@ -206,6 +210,7 @@
 enum cs_solidification_model_t {
 
   CS_SOLIDIFICATION_MODEL_STEFAN,
+  CS_SOLIDIFICATION_MODEL_VELOCITY_GIVEN,
   CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87,
   CS_SOLIDIFICATION_MODEL_VOLLER_NL,
   CS_SOLIDIFICATION_MODEL_BINARY_ALLOY,
@@ -645,66 +650,17 @@ struct cs_solidification_t {
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Test if solidification module is activated
- */
-/*----------------------------------------------------------------------------*/
-
 bool
 cs_solidification_is_activated(void);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Retrieve the main structure to deal with solidification process
- *
- * \return a pointer to a new allocated solidification structure
- */
-/*----------------------------------------------------------------------------*/
 
 cs_solidification_t *
 cs_solidification_get_structure(void);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Set the level of verbosity for the solidification module
- *
- * \param[in]   verbosity     level of verbosity to set
- */
-/*----------------------------------------------------------------------------*/
-
 void
 cs_solidification_set_verbosity(int   verbosity);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Set the value of the epsilon parameter used in the forcing term
- *         of the momentum equation
- *
- * \param[in]  forcing_eps    epsilon used in the penalization term to avoid a
- *                            division by zero
- */
-/*----------------------------------------------------------------------------*/
-
 void
 cs_solidification_set_forcing_eps(cs_real_t    forcing_eps);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Activate the solidification module
- *
- * \param[in]  model            type of modelling
- * \param[in]  options          flag to handle optional parameters
- * \param[in]  post_flag        predefined post-processings
- * \param[in]  boundaries       pointer to the domain boundaries
- * \param[in]  ns_model         model equations for the NavSto system
- * \param[in]  ns_model_flag    option flag for the Navier-Stokes system
- * \param[in]  algo_coupling    algorithm used for solving the NavSto system
- * \param[in]  ns_post_flag     predefined post-processings for Navier-Stokes
- *
- * \return a pointer to a new allocated solidification structure
- */
-/*----------------------------------------------------------------------------*/
 
 cs_solidification_t *
 cs_solidification_activate(cs_solidification_model_t      model,
@@ -716,92 +672,31 @@ cs_solidification_activate(cs_solidification_model_t      model,
                            cs_navsto_param_coupling_t     algo_coupling,
                            cs_navsto_param_post_flag_t    ns_post_flag);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Set the parameters involved in the computation of the permeability
- *        coefficient of the Kozeny-Carman relation.
- *
- * \param[in] kozeny_constant  value of the Kozeny constant (default = 5.0)
- * \param[in] tortuosity       value of the tortuosity (default = 2.0)
- * \param[in] s_das            value of the secondary dendrite arm spacing
- *                             (default = 0.00085 [m])
- */
-/*----------------------------------------------------------------------------*/
+cs_solidification_t *
+cs_solidification_activate(cs_solidification_model_t model,
+                           cs_flag_t                 options,
+                           cs_flag_t                 post_flag);
 
 void
 cs_solidification_set_kozeny_carman_parameters(double kozeny_constant,
                                                double tortuosity,
                                                double s_das);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Get the structure defining the Stefan model
- *
- * \return a pointer to the structure
- */
-/*----------------------------------------------------------------------------*/
-
 cs_solidification_stefan_t *
 cs_solidification_get_stefan_struct(void);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Sanity checks on the consistency of the Stefan's model settings
- *
- * \return a pointer to the structure
- */
-/*----------------------------------------------------------------------------*/
-
 cs_solidification_stefan_t *
 cs_solidification_check_stefan_model(void);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Set the main physical parameters which describe the Stefan model
- *
- * \param[in] t_change     liquidus/solidus temperature (in K)
- * \param[in] latent_heat  latent heat
- */
-/*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_set_stefan_model(cs_real_t    t_change,
                                    cs_real_t    latent_heat);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Get the structure defining the Voller model
- *
- * \return a pointer to the structure
- */
-/*----------------------------------------------------------------------------*/
-
 cs_solidification_voller_t *
 cs_solidification_get_voller_struct(void);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Sanity checks on the consistency of the Voller's model settings
- *
- * \return a pointer to the structure
- */
-/*----------------------------------------------------------------------------*/
-
 cs_solidification_voller_t *
 cs_solidification_check_voller_model(void);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Set the main physical parameters which describe the Voller and
- *        Prakash modelling
- *
- * \param[in] beta         thermal dilatation coefficient
- * \param[in] t_ref        reference temperature (for the Boussinesq approx)
- * \param[in] t_solidus    solidus temperature (in K)
- * \param[in] t_liquidus   liquidus temperature (in K)
- * \param[in] latent_heat  latent heat
- */
-/*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_set_voller_model(cs_real_t beta,
@@ -810,67 +705,16 @@ cs_solidification_set_voller_model(cs_real_t beta,
                                    cs_real_t t_liquidus,
                                    cs_real_t latent_heat);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Set the main physical parameters which describe the Voller and
- *        Prakash modelling
- *
- * \param[in] t_solidus    solidus temperature (in K)
- * \param[in] t_liquidus   liquidus temperature (in K)
- * \param[in] latent_heat  latent heat
- */
-/*----------------------------------------------------------------------------*/
-
 void
-cs_solidification_set_voller_model_no_velocity(cs_real_t t_solidus,
-                                               cs_real_t t_liquidus,
-                                               cs_real_t latent_heat);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Get the structure defining the binary alloy model
- *
- * \return a pointer to the structure
- */
-/*----------------------------------------------------------------------------*/
+cs_solidification_set_voller_model(cs_real_t t_solidus,
+                                   cs_real_t t_liquidus,
+                                   cs_real_t latent_heat);
 
 cs_solidification_binary_alloy_t *
 cs_solidification_get_binary_alloy_struct(void);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Sanity checks on the consistency of the settings of the binary alloy
- *         model
- *
- * \return a pointer to the structure
- */
-/*----------------------------------------------------------------------------*/
-
 cs_solidification_binary_alloy_t *
 cs_solidification_check_binary_alloy_model(void);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Set the main physical parameters which describe a solidification
- *        process with a binary alloy (with components A and B)
- *        Add a transport equation for the solute concentration to simulate
- *        the conv/diffusion of the alloy ratio between the two components of
- *        the alloy
- *
- * \param[in] name         name of the binary alloy
- * \param[in] varname      name of the unknown related to the tracer eq.
- * \param[in] beta_t       thermal dilatation coefficient
- * \param[in] temp0        reference temperature (Boussinesq term)
- * \param[in] beta_c       solutal dilatation coefficient
- * \param[in] conc0        reference mixture concentration (Boussinesq term)
- * \param[in] kp           value of the distribution coefficient
- * \param[in] mliq         liquidus slope for the solute concentration
- * \param[in] t_eutec      temperature at the eutectic point
- * \param[in] t_melt       phase-change temperature for the pure material (A)
- * \param[in] solute_diff  solutal diffusion coefficient in the liquid
- * \param[in] latent_heat  latent heat
- */
-/*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_set_binary_alloy_model(const char *name,
@@ -886,36 +730,8 @@ cs_solidification_set_binary_alloy_model(const char *name,
                                          cs_real_t   solute_diff,
                                          cs_real_t   latent_heat);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Set the strategy to update quantitiess (liquid fraction and
- *         the thermal source term for the two main quantities)
- *
- * \param[in]  strategy     strategy to perform the update of quantities
- */
-/*----------------------------------------------------------------------------*/
-
 void
 cs_solidification_set_strategy(cs_solidification_strategy_t  strategy);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Set the functions to perform the update of physical properties
- *         and/or the computation of the thermal source term or quantities
- *         and/or the way to perform the coupling between the thermal equation
- *         and the bulk concentration computation. All this setting defines
- *         the way to compute the solidification process of a binary alloy.
- *         If a function is set to null then the automatic settings are kept.
- *
- *         --Advanced usage-- This enables to finely control the numerical or
- *         physical modelling aspects.
- *
- * \param[in] vel_forcing        pointer to update the velocity forcing
- * \param[in] cliq_update        pointer to update the liquid concentration
- * \param[in] gliq_update        pointer to update the liquid fraction
- * \param[in] thm_st_update      pointer to update thermal source terms
- */
-/*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_set_segr_functions(cs_solidification_func_t  *vel_forcing,
@@ -923,125 +739,36 @@ cs_solidification_set_segr_functions(cs_solidification_func_t  *vel_forcing,
                                      cs_solidification_func_t  *gliq_update,
                                      cs_solidification_func_t  *thm_st_update);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Free the main structure related to the solidification module
- *
- * \return a null pointer
- */
-/*----------------------------------------------------------------------------*/
-
 cs_solidification_t *
 cs_solidification_destroy_all(void);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Setup equations/properties related to the solidification module
- */
-/*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_init_setup(void);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Finalize the setup stage for equations related to the solidification
- *         module
- *
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- */
-/*----------------------------------------------------------------------------*/
-
 void
 cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
-                                 const cs_cdo_quantities_t    *quant);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Summarize the solidification module in the log file dedicated to
- *         the setup
- */
-/*----------------------------------------------------------------------------*/
+                                 const cs_cdo_quantities_t    *cdoq);
 
 void
 cs_solidification_log_setup(void);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Set an initial values for all quantities related to this module
- *         This is done after the setup step.
- *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]      time_step  pointer to a cs_time_step_t structure
- */
-/*----------------------------------------------------------------------------*/
-
 void
 cs_solidification_init_values(const cs_mesh_t              *mesh,
                               const cs_cdo_connect_t       *connect,
-                              const cs_cdo_quantities_t    *quant,
+                              const cs_cdo_quantities_t    *cdoq,
                               const cs_time_step_t         *time_step);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Solve equations related to the solidification module
- *
- * \param[in] mesh       pointer to a cs_mesh_t structure
- * \param[in] connect    pointer to a cs_cdo_connect_t structure
- * \param[in] quant      pointer to a cs_cdo_quantities_t structure
- * \param[in] time_step  pointer to a cs_time_step_t structure
- * \param[in, out] is_last_iter  update if is the last iteration
- */
-/*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_compute(const cs_mesh_t           *mesh,
                           const cs_cdo_connect_t    *connect,
-                          const cs_cdo_quantities_t *quant,
+                          const cs_cdo_quantities_t *cdoq,
                           const cs_time_step_t      *time_step,
                           bool                      &is_last_iter);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Predefined extra-operations for the solidification module
- *
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts         pointer to a cs_time_step_t structure
- */
-/*----------------------------------------------------------------------------*/
-
 void
 cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
-                           const cs_cdo_quantities_t   *quant,
+                           const cs_cdo_quantities_t   *cdoq,
                            const cs_time_step_t        *ts);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief  Predefined post-processing output for the solidification module.
- *         Prototype of this function is fixed since it is a function pointer
- *         defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
- *
- * \param[in, out] input        pointer to an optional structure (here a
- *                              cs_gwf_t structure)
- * \param[in]      mesh_id      id of the output mesh for the current call
- * \param[in]      cat_id       category id of the output mesh for this call
- * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),
- *                              interior faces (ent_flag[1]), boundary faces
- *                              (ent_flag[2]), particles (ent_flag[3]) or probes
- *                              (ent_flag[4])
- * \param[in]      n_cells      local number of cells of post_mesh
- * \param[in]      n_i_faces    local number of interior faces of post_mesh
- * \param[in]      n_b_faces    local number of boundary faces of post_mesh
- * \param[in]      cell_ids     list of cells (0 to n-1)
- * \param[in]      i_face_ids   list of interior faces (0 to n-1)
- * \param[in]      b_face_ids   list of boundary faces (0 to n-1)
- * \param[in]      time_step    pointer to a cs_time_step_t struct.
- */
-/*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_extra_post(void                      *input,

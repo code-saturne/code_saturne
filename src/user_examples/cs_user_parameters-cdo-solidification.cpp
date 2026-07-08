@@ -245,24 +245,16 @@ cs_user_model(void)
   {
     cs_flag_t  solid_option_flag = CS_SOLIDIFICATION_NO_VELOCITY_FIELD;
     cs_flag_t  solid_post_flag = CS_SOLIDIFICATION_POST_ENTHALPY;
-    cs_flag_t  navsto_model_flag = 0;
-    cs_flag_t  navsto_post_flag = 0;
 
-    /* Activate the solidification module with a binary alloy model (the
-       Navier-Stokes and the thermal modules are also activated in back-end) */
+    /* Activate the solidification module with a Voller & Prakash model without
+       solving the Navier-Stokes equations (same name but less parameters) */
 
     cs_solidification_activate(/* Main solidification model */
                                CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87,
                                /* Solidification options */
                                solid_option_flag,
                                /* Solidification automatic post options */
-                               solid_post_flag,
-                               /* NavSto parameters */
-                               domain->boundaries,
-                               CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES,
-                               navsto_model_flag,
-                               CS_NAVSTO_COUPLING_MONOLITHIC,
-                               navsto_post_flag);
+                               solid_post_flag);
   }
   /*! [param_cdo_activate_solidification_voller_no_vel] */
 
@@ -280,11 +272,11 @@ cs_user_model(void)
     /* Set the parameters for the Voller & Prakash model when there is no
        resolution of the velocity */
 
-    cs_solidification_set_voller_model_no_velocity(/* Phase diagram settings*/
-                                                   t_solidus,
-                                                   t_liquidus,
-                                                   /* Physical constants */
-                                                   latent_heat);
+    cs_solidification_set_voller_model(// Phase diagram settings
+                                       t_solidus,
+                                       t_liquidus,
+                                       // Physical constants
+                                       latent_heat);
   }
   /*! [param_cdo_solidification_set_voller_no_vel] */
 }

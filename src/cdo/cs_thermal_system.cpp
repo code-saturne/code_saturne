@@ -131,7 +131,7 @@ _is_solved_with_temperature(void)
 /*----------------------------------------------------------------------------*/
 
 static cs_thermal_system_t *
-_init_thermal_system(void)
+_allocate_thermal_system(void)
 {
   cs_thermal_system_t *thm = nullptr;
 
@@ -295,7 +295,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t model,
     // Free the previous settings before applying the new one
     cs_thermal_system_destroy();
 
-  cs_thermal_system_t *thm = _init_thermal_system();
+  cs_thermal_system_t *thm = _allocate_thermal_system();
 
   /* Set the physical model type */
 
@@ -315,20 +315,17 @@ cs_thermal_system_activate(cs_thermal_model_type_t model,
   /* Define or retrieve properties related to this module */
   /* ---------------------------------------------------- */
 
-  /* Mass density */
-
+  // Mass density
   thm->rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
   if (thm->rho == nullptr)
     thm->rho = cs_property_add(CS_PROPERTY_MASS_DENSITY, CS_PROPERTY_ISO);
 
-  /* Thermal capacity */
-
+  // Thermal capacity
   thm->cp = cs_property_by_name(CS_THERMAL_CP_NAME);
   if (thm->cp == nullptr)
     thm->cp = cs_property_add(CS_THERMAL_CP_NAME, CS_PROPERTY_ISO);
 
-  /* Thermal conductivity */
-
+  // Thermal conductivity
   cs_property_type_t pty_type = CS_PROPERTY_ISO;
   if (model & CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY)
     pty_type = CS_PROPERTY_ANISO;
