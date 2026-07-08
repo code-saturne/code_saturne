@@ -789,7 +789,8 @@ _log_fields_and_functions(void)
           }
 
           if (have_weight) {
-            cs_array_reduce_sum_l<1>(ctx, _n_elts, elt_ids, weight, &total_weight);
+            cs_array_reduce_sum_l<1>(ctx, _n_elts, elt_ids, weight,
+                                     &total_weight);
             cs::parall::sum(total_weight);
           }
         }
