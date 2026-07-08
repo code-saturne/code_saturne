@@ -299,7 +299,42 @@ _l_id_binary_search(cs_lnum_t        l_id_array_size,
 }
 
 /*----------------------------------------------------------------------------
- * Order an array of local numbers.
+ * Descend binary tree for the ordering of a cs_lnum_t (integer) array.
+ *
+ * parameters:
+ *   number    <-> pointer to elements that should be ordered
+ *   level     <-- level of the binary tree to descend
+ *   n_elts    <-- number of elements in the binary tree to descend
+ *----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline void
+_sort_descend_tree(cs_lnum_t  number[],
+                   size_t     level,
+                   size_t     n_elts)
+{
+  cs_lnum_t num_save = number[level];
+
+  while (level <= (n_elts/2)) {
+
+    size_t lv_cur = (2*level) + 1;
+
+    if (lv_cur < n_elts - 1)
+      if (number[lv_cur+1] > number[lv_cur]) lv_cur++;
+
+    if (lv_cur >= n_elts) break;
+
+    if (num_save >= number[lv_cur]) break;
+
+    number[level] = number[lv_cur];
+    level = lv_cur;
+
+  }
+
+  number[level] = num_save;
+}
+
+/*----------------------------------------------------------------------------
+ * Sort an array of local numbers.
  *
  * parameters:
  *   number   <-> array of numbers to sort
@@ -307,31 +342,54 @@ _l_id_binary_search(cs_lnum_t        l_id_array_size,
  *----------------------------------------------------------------------------*/
 
 CS_F_HOST_DEVICE inline void
-_shell_sort_lnum(cs_lnum_t  number[],
-                 size_t     n_elts)
+_sort_lnum(cs_lnum_t  number[],
+           size_t     n_elts)
 {
   if (n_elts < 2)
     return;
 
   /* Use shell sort for short arrays */
 
-  size_t inc;
+  if (n_elts < 50) {
 
-  /* Compute increment */
-  for (inc = 1; inc <= n_elts/9; inc = 3*inc+1);
+    size_t inc;
 
-  /* Sort array */
-  while (inc > 0) {
-    for (size_t i = inc; i < n_elts; i++) {
-      cs_lnum_t num_save = number[i];
-      size_t j = i;
-      while (j >= inc && number[j-inc] > num_save) {
-        number[j] = number[j-inc];
-        j -= inc;
+    /* Compute increment */
+    for (inc = 1; inc <= n_elts/9; inc = 3*inc+1);
+
+    /* Sort array */
+    while (inc > 0) {
+      for (size_t i = inc; i < n_elts; i++) {
+        cs_lnum_t num_save = number[i];
+        size_t j = i;
+        while (j >= inc && number[j-inc] > num_save) {
+          number[j] = number[j-inc];
+          j -= inc;
+        }
+        number[j] = num_save;
       }
-      number[j] = num_save;
+      inc = inc / 3;
     }
-    inc = inc / 3;
+  }
+
+  else {
+
+    /* Create binary tree */
+
+    size_t i = (n_elts / 2);
+    do {
+      i--;
+      _sort_descend_tree(number, i, n_elts);
+    } while (i > 0);
+
+    /* Sort binary tree */
+
+    for (size_t j = n_elts - 1; j > 0; j--) {
+      cs_lnum_t num_save   = number[0];
+      number[0] = number[j];
+      number[j] = num_save;
+      _sort_descend_tree(number, 0, j);
+    }
   }
 }
 
@@ -3269,7 +3327,7 @@ _coarse_msr_struct_hd(cs_dispatch_context  &ctx,
         }
       }
     }
-    _shell_sort_lnum(l_buf, b_e);
+    _sort_lnum(l_buf, b_e);
     cs_lnum_t r_count = 0;
     if (b_e > 0) {
       r_count = 1;
@@ -3407,7 +3465,7 @@ _coarse_msr_struct_cuda(cs_dispatch_context  &ctx,
   uint64_t f_n_rows_64 = f_n_rows;
   uint64_t c_n_rows_64 = c_n_rows;
   uint64_t c_n_cols_64 = c_n_cols_ext;
-  uint64_t f_nnz = f_row_index[f_n_rows];
+  uint64_t f_nnz = _get_host_value(ctx, f_row_index + f_n_rows);
   uint64_t *keys_0 = nullptr, *keys_1 = nullptr, *keys_in = nullptr;
   cs_lnum_t *unique_ids;
   CS_MALLOC_HD(keys_0, f_nnz, uint64_t, CS_ALLOC_DEVICE);
@@ -3539,8 +3597,8 @@ _coarse_msr_struct_cuda(cs_dispatch_context  &ctx,
   uint64_t c_nnz64 = *r_host;
   c_nnz = (cs_lnum_t)c_nnz64;
 
-  CS_MALLOC_HD(c_row_index, c_n_rows+1, cs_lnum_t, cs_alloc_mode);
-  CS_MALLOC_HD(c_col_id, c_nnz, cs_lnum_t, cs_alloc_mode);
+  CS_MALLOC_HD(c_row_index, c_n_rows+1, cs_lnum_t, alloc_mode);
+  CS_MALLOC_HD(c_col_id, c_nnz, cs_lnum_t, alloc_mode);
 
   // Need to allocate c_nnz+1 to allow later scan
   cs_lnum_t *c_face_flag = nullptr;
@@ -6440,10 +6498,11 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
       const cs_lnum_t c_s_idx = c_row_index[ii_c];
       const cs_lnum_t n_c_cols = c_row_index[ii_c+1] - c_s_idx;
 
+      cs_real_t _c_d_val_0 = 0;
       cs_real_t _c_cell_vol = 0;
       cs_real_t _c_cell_cen[3] = {0, 0, 0};
 
-      for (cs_lnum_t jj = 0; jj < db_stride; jj++)
+      for (cs_lnum_t jj = 1; jj < db_stride; jj++)
         c_d_val[ii_c*db_stride + jj] = 0;
 
       /* Loop on matching fine rows */
@@ -6458,7 +6517,8 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
         _c_cell_vol += f_cell_vol[ii];
 
         /* Contribution from matrix diagonal */
-        for (cs_lnum_t kk = 0; kk < db_stride; kk++)
+        _c_d_val_0 += f_d_val[ii*db_stride];
+        for (cs_lnum_t kk = 1; kk < db_stride; kk++)
           c_d_val[ii_c*db_stride + kk] += f_d_val[ii*db_stride + kk];
 
         cs_lnum_t f_s_idx = f_row_index[ii];
@@ -6471,51 +6531,51 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
              (initialization of diagonal with sum of extra-diagonal
              terms; relaxed terms will be subtracted in later stage) */
 
-          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          _c_d_val_0 += f_x_val[f_idx];
+          for (cs_lnum_t kk = 1; kk < db_size; kk++)
             c_d_val[ii_c*db_stride + db_size*kk + kk] += f_x_val[f_idx];
 
           /* Contributions to face-based quantities
-             (face normal, xa0ij, xa0) */
+             (face normal, xa0ij, xa0).
 
-          if (jj_c > -1 && jj_c != ii_c) {
+             Note: coarse face id is handled by a single
+             thread, since it is associated with the coarse
+             upper diagonal matrix. */
+
+          if (jj_c > -1 && jj_c > ii_c) {
             cs_lnum_t k = _l_id_binary_search(n_c_cols,
                                               jj_c,
                                               c_col_id + c_s_idx);
             assert(k > -1);
             cs_lnum_t c_idx = c_s_idx + k;
 
-            if (jj_c > ii_c) {
-              /* Note: coarse face id is handled by a single
-                 thread, since it is associated with the coarse
-                 upper diagonal matrix. */
+            cs_lnum_t f_face_id = f_cell_face[f_idx];
+            cs_lnum_t c_face_id = c_cell_face[c_idx];
 
-              cs_lnum_t f_face_id = f_cell_face[f_idx];
-              cs_lnum_t c_face_id = c_cell_face[c_idx];
-
-              if (f_face_u_normal != nullptr) {
-                cs_real_t sgn_surf =   f_cell_face_sgn[f_idx]
-                                     * f_face_surf[f_face_id];
-                for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
-                  c_face_normal[c_face_id][coo_id]
-                    += sgn_surf * f_face_u_normal[f_face_id][coo_id];
-                }
-              }
-              const cs_real_t f_xa0_f
-                = f_x_val_0_s[f_idx*l0_nnz_m + f_face_id*l0_face_m];
-
-              c_xa0[c_face_id] += f_xa0_f;
-
+            if (f_face_u_normal != nullptr) {
+              cs_real_t sgn_surf =   f_cell_face_sgn[f_idx]
+                                   * f_face_surf[f_face_id];
               for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
-                c_xa0ij[c_face_id][coo_id]
-                  += f_xa0_f * (  f_cell_cen[jj][coo_id]
-                                - f_cell_cen[ii][coo_id]);
+                c_face_normal[c_face_id][coo_id]
+                  += sgn_surf * f_face_u_normal[f_face_id][coo_id];
               }
+            }
+            const cs_real_t f_xa0_f
+              = f_x_val_0_s[f_idx*l0_nnz_m + f_face_id*l0_face_m];
+
+            c_xa0[c_face_id] += f_xa0_f;
+
+            for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
+              c_xa0ij[c_face_id][coo_id]
+                += f_xa0_f * (  f_cell_cen[jj][coo_id]
+                              - f_cell_cen[ii][coo_id]);
             }
           }
         } /* Loop on fine columns */
 
       } /* Loop on fine rows associated to current coarse row */
 
+      c_d_val[ii_c*db_stride] = _c_d_val_0;
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++)
         c_cell_cen[ii_c][coo_id] = _c_cell_cen[coo_id] / _c_cell_vol;
       c_cell_vol[ii_c] = _c_cell_vol;
@@ -6574,38 +6634,36 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
             c_d_val[ii_c*db_stride + db_size*kk + kk] += f_x_val[f_idx];
 
           /* Contributions to face-based quantities
-             (face normal, xa0ij, xa0) */
+             (face normal, xa0ij, xa0)
 
-          if (jj_c > -1 && jj_c != ii_c) {
+             Note: coarse face id is handled by a single
+             thread, since it is associated with the coarse
+             upper diagonal matrix. */
+
+          if (jj_c > -1 && jj_c > ii_c) {
             cs_lnum_t k = _l_id_binary_search(n_c_cols,
                                               jj_c,
                                               c_col_id + c_s_idx);
             assert(k > -1);
             cs_lnum_t c_idx = c_s_idx + k;
 
-            if (jj_c > ii_c) {
-              int sgn = f_cell_face_sgn[f_idx];
+            int sgn = f_cell_face_sgn[f_idx];
 
-              /* Note: coarse face id is handled by a single
-                 thread, since it is associated with the coarse
-                 upper diagonal matrix. */
+            cs_lnum_t f_face_id = f_cell_face[f_idx];
+            cs_lnum_t c_face_id = c_cell_face[c_idx];
 
-              cs_lnum_t f_face_id = f_cell_face[f_idx];
-              cs_lnum_t c_face_id = c_cell_face[c_idx];
-
-              if (f_face_normal != nullptr) {
-                for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
-                  c_face_normal[c_face_id][coo_id]
-                    += sgn * f_face_normal[f_face_id][coo_id];
-                }
-              }
-
-              c_xa0[c_face_id] += f_xa0[f_face_id];
-
+            if (f_face_normal != nullptr) {
               for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
-                c_xa0ij[c_face_id][coo_id]
-                  += sgn * f_xa0ij[f_face_id][coo_id];
+                c_face_normal[c_face_id][coo_id]
+                  += sgn * f_face_normal[f_face_id][coo_id];
               }
+            }
+
+            c_xa0[c_face_id] += f_xa0[f_face_id];
+
+            for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
+              c_xa0ij[c_face_id][coo_id]
+                += sgn * f_xa0ij[f_face_id][coo_id];
             }
           }
         } /* Loop on fine columns */
