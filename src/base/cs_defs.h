@@ -954,7 +954,7 @@ template<class T,
 CS_F_HOST_DEVICE
 inline
 bool
-if_any
+any_eq
 (
   const T     ref_val, /*!<[in] Reference value to compare to */
   const Ts... vals     /*!<[in] Parameter pack to compare to ref_val */
@@ -977,7 +977,7 @@ template<class T,
 CS_F_HOST_DEVICE
 inline
 bool
-if_all
+all_eq
 (
   const T     ref_val, /*!<[in] Reference value to compare to */
   const Ts... vals     /*!<[in] Parameter pack to compare to ref_val */
@@ -1000,7 +1000,7 @@ template<class T,
 CS_F_HOST_DEVICE
 inline
 bool
-if_none
+none_eq
 (
   const T     ref_val, /*!<[in] Reference value to compare to */
   const Ts... vals     /*!<[in] Parameter pack to compare to ref_val */
