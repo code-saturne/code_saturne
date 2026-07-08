@@ -1365,8 +1365,9 @@ cs_math_66_6_product(const cs_real_t       m[6][6],
                      cs_real_t  *restrict  mv)
 {
   for (int i = 0; i < 6; i++) {
+    mv[i] = 0.0;
     for (int j = 0; j < 6; j++)
-      mv[i] = m[i][j] * v[j];
+      mv[i] += m[i][j] * v[j];
   }
 }
 
