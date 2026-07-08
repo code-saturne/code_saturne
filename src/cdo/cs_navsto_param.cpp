@@ -117,10 +117,10 @@ _dof_reduction_key[CS_PARAM_N_REDUCTIONS][CS_BASE_STRING_LEN] =
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the \ref cs_equation_param_t structure related to the
- *         momentum equation according to the type of coupling
+ * \brief Retrieve the \ref cs_equation_param_t structure related to the
+ *        momentum equation according to the type of coupling
  *
- * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in] nsp  pointer to a \ref cs_navsto_param_t structure
  *
  * \return a pointer to the corresponding \ref cs_equation_param_t structure
  */
@@ -130,19 +130,15 @@ static inline cs_equation_param_t *
 _get_momentum_param(cs_navsto_param_t    *nsp)
 {
   switch (nsp->coupling) {
-
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     return cs_equation_param_by_name("momentum");
-
   case CS_NAVSTO_COUPLING_PROJECTION:
     return cs_equation_param_by_name("velocity_prediction");
     break;
-
   default:
     return nullptr;
-
-  }  /* Switch */
+  }
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -152,7 +148,7 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Create a new structure to store all numerical parameters related
  *        to the resolution of the Navier-Stokes (NS) system
  *
@@ -338,7 +334,7 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Free a \ref cs_navsto_param_t structure
  *
  * \param[in, out] param  pointer to a \ref cs_navsto_param_t structure
@@ -420,13 +416,13 @@ cs_navsto_param_free(cs_navsto_param_t *param)
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Set a parameter attached to a keyname in a \ref cs_navsto_param_t
- *         structure
+/*!
+ * \brief Set a parameter attached to a keyname in a \ref cs_navsto_param_t
+ *        structure
  *
- * \param[in, out] nsp      pointer to a \ref cs_navsto_param_t structure to set
- * \param[in]      key      key related to the member of eq to set
- * \param[in]      keyval   accessor to the value to set
+ * \param[in, out] nsp     pointer to a \ref cs_navsto_param_t structure to set
+ * \param[in]      key     key related to the member of eq to set
+ * \param[in]      keyval  accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
@@ -633,7 +629,7 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Apply the numerical settings defined for the Navier-Stokes system to
  *        an equation related to this system. Be aware that the user-defined
  *        settings can be modified in this function when a different choice is
@@ -641,25 +637,24 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
  *        settings for the momentum equation. The final choice is given by the
  *        settings for the Navier-Stokes system.
  *
- * \param[in]      nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] eqp    pointer to a \ref cs_equation_param_t structure
+ * \param[in]      nsp  pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] eqp  pointer to a \ref cs_equation_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_param_transfer(const cs_navsto_param_t *nsp, cs_equation_param_t *eqp)
+cs_navsto_param_transfer(const cs_navsto_param_t *nsp,
+                         cs_equation_param_t     *eqp)
 {
   assert(nsp != nullptr && eqp != nullptr);
 
-  /*  Set the space discretization scheme */
-
+  // Set the space discretization scheme
   const char *ss_key = _space_scheme_key[nsp->space_scheme];
 
   if (nsp->space_scheme != eqp->space_scheme)
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, ss_key);
 
-  /*  Set the way DoFs are defined */
-
+  // Set the way DoFs are defined
   const char *dof_key = _dof_reduction_key[nsp->dof_reduction_mode];
 
   if (nsp->dof_reduction_mode != eqp->dof_reduction)
@@ -667,10 +662,10 @@ cs_navsto_param_transfer(const cs_navsto_param_t *nsp, cs_equation_param_t *eqp)
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Summary of the main cs_navsto_param_t structure
+/*!
+ * \brief Summary of the main cs_navsto_param_t structure
  *
- * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ * \param[in] nsp  pointer to a cs_navsto_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -834,12 +829,12 @@ cs_navsto_param_log(const cs_navsto_param_t *nsp)
 }
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Add a new Boussinesq term (source term for the momemtum equation)
  *
- * \param[in, out] nsp               pointer to a cs_navsto_param_t struct.
- * \param[in]      dilatation_coef   value of the dilatation coefficient
- * \param[in]      reference_value   reference value of the associated variable
+ * \param[in, out] nsp              pointer to a cs_navsto_param_t struct.
+ * \param[in]      dilatation_coef  value of the dilatation coefficient
+ * \param[in]      reference_value  reference value of the associated variable
  *
  * \return a pointer to the newly added structure
  */
@@ -873,11 +868,11 @@ cs_navsto_param_add_boussinesq_term(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Set the array of values to consider in the Boussinesq term
+/*!
+ * \brief Set the array of values to consider in the Boussinesq term
  *
- * \param[in, out]  bp    pointer to a cs_navsto_param_boussinesq_t structure
- * \param[in]       var   shared pointer to the array of values to consider
+ * \param[in, out] bp   pointer to a cs_navsto_param_boussinesq_t structure
+ * \param[in]      var  shared pointer to the array of values to consider
  */
 /*----------------------------------------------------------------------------*/
 
@@ -893,11 +888,11 @@ cs_navsto_param_set_boussinesq_array(cs_navsto_param_boussinesq_t *bp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Retrieve the \ref cs_equation_param_t structure related to the
- *         velocity equation (momentum equation in most of the cases)
+/*!
+ * \brief Retrieve the \ref cs_equation_param_t structure related to the
+ *        velocity equation (momentum equation in most of the cases)
  *
- * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ * \param[in] nsp  pointer to a cs_navsto_param_t structure
  *
  * \return a pointer to the set of parameters related to the momentum equation
  */
@@ -909,16 +904,13 @@ cs_navsto_param_get_velocity_param(const cs_navsto_param_t *nsp)
   cs_equation_param_t *eqp = nullptr;
 
   switch (nsp->coupling) {
-
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     eqp = cs_equation_param_by_name("momentum");
     break;
-
   case CS_NAVSTO_COUPLING_PROJECTION:
           eqp = cs_equation_param_by_name("velocity_prediction");
     break;
-
   default:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid coupling algorithm", __func__);
@@ -929,12 +921,12 @@ cs_navsto_param_get_velocity_param(const cs_navsto_param_t *nsp)
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Retrieve the name of the model system of equations
+/*!
+ * \brief Retrieve the name of the model system of equations
  *
- * \param[in]   model    a \ref cs_navsto_param_model_t
+ * \param[in] model  model of equations associated with the Navier-Stokes eqs.
  *
- * \return the corresponding name
+ * \return the corresponding model name
  */
 /*----------------------------------------------------------------------------*/
 
@@ -942,12 +934,10 @@ const char *
 cs_navsto_param_get_model_name(cs_navsto_param_model_t   model)
 {
   switch (model) {
-
   case CS_NAVSTO_MODEL_STOKES:
   case CS_NAVSTO_MODEL_OSEEN:
   case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
     return cs_navsto_param_model_name[model];
-
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid model.", __func__);
     break;
@@ -957,12 +947,12 @@ cs_navsto_param_get_model_name(cs_navsto_param_model_t   model)
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Retrieve the name of the coupling algorithm
+/*!
+ * \brief Retrieve the name of the coupling algorithm
  *
- * \param[in]     coupling    a \ref cs_navsto_param_coupling_t
+ * \param[in] coupling  velocity-pressure coupling algorithm
  *
- * \return the name
+ * \return the name of the velocity-pressure coupling algorithm
  */
 /*----------------------------------------------------------------------------*/
 
@@ -970,13 +960,10 @@ const char *
 cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling)
 {
   switch (coupling) {
-
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
   case CS_NAVSTO_COUPLING_MONOLITHIC:
   case CS_NAVSTO_COUPLING_PROJECTION:
-
     return cs_navsto_param_coupling_name[coupling];
-
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid coupling.", __func__);
     break;
@@ -986,31 +973,31 @@ cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling)
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Set the value to consider for the reference pressure
+/*!
+ * \brief Set the value to consider for the reference pressure
  *
- * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]  pref      value of the reference pressure
+ * \param[in] nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in] p_ref  value of the reference pressure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_set_reference_pressure(cs_navsto_param_t    *nsp,
-                                 cs_real_t             pref)
+cs_navsto_set_reference_pressure(cs_navsto_param_t *nsp,
+                                 cs_real_t          p_ref)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
-  nsp->reference_pressure = pref;
+  nsp->reference_pressure = p_ref;
 }
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Apply the given quadrature rule to all existing definitions under
  *        the cs_navsto_param_t structure
  *
- * \param[in, out] nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in]      qtype    type of quadrature to apply
+ * \param[in, out] nsp    pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      qtype  type of quadrature to apply
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1018,68 +1005,49 @@ void
 cs_navsto_param_set_quadrature_to_all(cs_navsto_param_t    *nsp,
                                       cs_quadrature_type_t  qtype)
 {
-  /* Loop on velocity ICs */
-
+  // Loop on velocity initial conditions
   for (int i = 0; i < nsp->n_velocity_ic_defs; i++) {
-
     cs_xdef_t *def = nsp->velocity_ic_defs[i];
-
     if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) /* Otherwise not useful */
       cs_xdef_set_quadrature(def, qtype);
-
   }
 
-  /* Loop on pressure ICs */
-
+  // Loop on pressure initial conditions
   for (int i = 0; i < nsp->n_pressure_ic_defs; i++) {
-
     cs_xdef_t *def = nsp->pressure_ic_defs[i];
-
     if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) /* Otherwise not useful */
       cs_xdef_set_quadrature(def, qtype);
-
   }
 
-  /* Loop on velocity BCs */
-
+  // Loop on velocity boundary conditions
   for (int i = 0; i < nsp->n_velocity_bc_defs; i++) {
-
     cs_xdef_t *def = nsp->velocity_bc_defs[i];
-
     if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) /* Otherwise not useful */
       cs_xdef_set_quadrature(def, qtype);
-
   }
 
-  /* Loop on pressure BCs */
-
+  // Loop on pressure boundary conditions
   for (int i = 0; i < nsp->n_pressure_bc_defs; i++) {
-
     cs_xdef_t *def = nsp->pressure_bc_defs[i];
-
     if (def->type == CS_XDEF_BY_ANALYTIC_FUNCTION) /* Otherwise not useful */
       cs_xdef_set_quadrature(def, qtype);
-
   }
 
-  /* Set this level of quadrature to all terms of the momentum equation */
-
+  // Set this level of quadrature to all terms of the momentum equation
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
-
   cs_equation_param_set_quadrature_to_all(eqp, qtype);
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define the initial condition for the velocity unknowns.
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set to a constant value
+/*!
+ * \brief Define the initial condition for the velocity unknowns.
+ *        This definition can be specified on a zone.
+ *        By default, the unknown is set to zero everywhere.
+ *        Here the initial value is set to a constant value
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if null or "" if
- *                           all cells are considered)
- * \param[in]      val       vector values to set
+ * \param[in] nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name  name of the zone (all cells if nullptr or "")
+ * \param[in] val     vector values to set
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1098,13 +1066,11 @@ cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t *nsp,
 
   cs_real_3_t val_cpy = { val[0], val[1], val[2] };
 
-  if (eqp != nullptr) { /* An equation related to the velocity is defined */
-
+  if (eqp != nullptr) // An equation related to the velocity exists
     d = cs_equation_add_ic_by_value(eqp, z_name, val_cpy);
-  }
+
   else { /* No momentum equation available with the choice of velocity-pressure
             coupling */
-
     nsp->velocity_ic_is_owner = true;
 
     /* Add a new cs_xdef_t structure */
@@ -1134,17 +1100,16 @@ cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define the initial condition for the velocity unknowns.
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set according to an analytical function
+/*!
+ * \brief Define the initial condition for the velocity unknowns.
+ *        This definition can be specified on a zone.
+ *        By default, the unknown is set to zero everywhere.
+ *        Here the initial value is set according to an analytical function
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if null or "" if
- *                           all cells are considered)
- * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input     null or pointer to a structure cast on-the-fly
+ * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name    name of the zone (all cells if nullptr or "")
+ * \param[in] analytic  pointer to an analytic function
+ * \param[in] input     null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1162,10 +1127,9 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t  *nsp,
   cs_xdef_t           *d   = nullptr;
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
 
-  if (eqp != nullptr) { /* An equation related to the velocity is defined */
-
+  if (eqp != nullptr) // An equation related to the velocity exists
     d = cs_equation_add_ic_by_analytic(eqp, z_name, analytic, input);
-  }
+
   else { /* No momentum equation available with the choice of velocity-pressure
             coupling */
 
@@ -1200,16 +1164,15 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t  *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define the initial condition for the pressure unknowns.
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set to a constant value
+/*!
+ * \brief Define the initial condition for the pressure unknowns.
+ *        This definition can be specified on a zone.
+ *        By default, the unknown is set to zero everywhere.
+ *        Here the initial value is set to a constant value
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if null or "" if
- *                           all cells are considered)
- * \param[in]      val       pointer to the value
+ * \param[in] nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name  name of the zone (all cells if nullptr or "")
+ * \param[in] val     pointer to the value
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1249,27 +1212,26 @@ cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define the initial condition for the pressure unknowns.
- *         This definition can be done on a specified mesh location.
- *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set according to an analytical function
+/*!
+ * \brief Define the initial condition for the pressure unknowns.
+ *        This definition can be specified on a zone.
+ *        By default, the unknown is set to zero everywhere.
+ *        Here the initial value is set according to an analytical function.
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if null or "" if
- *                           all cells are considered)
- * \param[in]      analytic  pointer to an analytic function
- * \param[in]      input     null or pointer to a structure cast on-the-fly
+ * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name    name of the zone (all cells if nullptr or "")
+ * \param[in] analytic  pointer to an analytic function
+ * \param[in] input     null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
-                                      const char             *z_name,
-                                      cs_analytic_func_t     *analytic,
-                                      void                   *input)
+cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t  *nsp,
+                                      const char         *z_name,
+                                      cs_analytic_func_t *analytic,
+                                      void               *input)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -1301,7 +1263,7 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Add the definition of boundary conditions related to a fixed wall
  *        into the set of parameters for the management of the Navier-Stokes
  *        system of equations
@@ -1352,12 +1314,12 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp)
 
       /* Homogeneous Neumann on the pressure field --> default BC */
 
-    } /* Fixed wall */
-  } /* Loop on domain boundaries */
+    } // Fixed wall
+  } // Loop on domain boundaries
 }
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Add the definition of boundary conditions related to a symmetry
  *        into the set of parameters for the management of the Navier-Stokes
  *        system of equations
@@ -1408,17 +1370,17 @@ cs_navsto_set_symmetries(cs_navsto_param_t *nsp)
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Add the definition of boundary conditions related to outlets
- *         into the set of parameters for the management of the Navier-Stokes
- *         system of equations
+/*!
+ * \brief Add the definition of boundary conditions related to outlets into the
+ *        set of parameters for the management of the Navier-Stokes system of
+ *        equations
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in] nsp  pointer to a \ref cs_navsto_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
+cs_navsto_set_outlets(cs_navsto_param_t *nsp)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -1455,18 +1417,17 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
          At the end of the day, we end up with a balance between the pressure
          gradient and the viscous term (and advection term in Navier-Stokes) */
 
-    } /* Symmetry */
-  } /* Loop on domain boundaries */
+    } // Symmetry
+  } // Loop on domain boundaries
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Set the pressure field on a boundary using a uniform value.
+/*!
+ * \brief Set the pressure field on a boundary using a uniform value.
  *
- * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in] z_name    name of the associated zone (if null or "" all
- *                      boundary faces are considered)
- * \param[in] values    value to set
+ * \param[in] nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name  name of the zone (all boundary faces if nullptr or "")
+ * \param[in] values  value to set
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1538,14 +1499,13 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define the velocity field for a sliding wall boundary using a
- *         uniform value
+/*!
+ * \brief Define the velocity field for a sliding wall boundary using a uniform
+ *        value
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if null or "" all
- *                           boundary faces are considered)
- * \param[in]      values    array of three real values
+ * \param[in] nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name  name of the zone (all boundary faces if nullptr or "")
+ * \param[in] values  array of three real values
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1586,14 +1546,13 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t *nsp,
 
   cs_real_3_t val_cpy = { values[0], values[1], values[2] };
   cs_xdef_t  *d       = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                         3, /* dim */
-                                         z_id,
-                                         CS_FLAG_STATE_UNIFORM, /* state */
-                                         bc_type,
-                                         (void *)val_cpy);
+                                                3,                     // dim
+                                                z_id,
+                                                CS_FLAG_STATE_UNIFORM, // state
+                                                bc_type,
+                                                (void *)val_cpy);
 
-  int  new_id = nsp->n_velocity_bc_defs;
-
+  int new_id = nsp->n_velocity_bc_defs;
   nsp->n_velocity_bc_defs += 1;
   CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
   nsp->velocity_bc_defs[new_id] = d;
@@ -1606,14 +1565,12 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define the velocity field for an inlet boundary using a uniform
- *         value
+/*!
+ * \brief Define the velocity field for an inlet boundary using a uniform value
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if null or "" all
- *                           boundary faces are considered)
- * \param[in]      values    array of three real values
+ * \param[in] nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name  name of the zone (all boundary faces if nullptr or "")
+ * \param[in] values  array of three real values
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1655,8 +1612,7 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t *nsp,
                                          CS_CDO_BC_DIRICHLET,
                                          (void *)val_cpy);
 
-  int  new_id = nsp->n_velocity_bc_defs;
-
+  int new_id = nsp->n_velocity_bc_defs;
   nsp->n_velocity_bc_defs += 1;
   CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
   nsp->velocity_bc_defs[new_id] = d;
@@ -1669,25 +1625,24 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define the velocity field for an inlet boundary using an analytical
- *         function
+/*!
+ * \brief Define the velocity field for an inlet boundary using an analytical
+ *        function
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if null or "" all
- *                           boundary faces are considered)
- * \param[in]      ana       pointer to an analytical function
- * \param[in]      input     null or pointer to a structure cast on-the-fly
+ * \param[in] nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name  name of the zone (all boundary faces if nullptr or "")
+ * \param[in] ana     pointer to an analytical function
+ * \param[in] input   null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
-                                         const char           *z_name,
-                                         cs_analytic_func_t   *ana,
-                                         void                 *input)
+cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t  *nsp,
+                                         const char         *z_name,
+                                         cs_analytic_func_t *ana,
+                                         void               *input)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -1715,12 +1670,12 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
   cs_xdef_analytic_context_t ac
     = { .z_id = z_id, .func = ana, .input = input, .free_input = nullptr };
 
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                          3,    /* dim */
-                                          z_id,
-                                          0,    /* state */
-                                          CS_CDO_BC_DIRICHLET,
-                                          &ac);
+  cs_xdef_t *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                         3,     // dim
+                                         z_id,
+                                         0,     // state
+                                         CS_CDO_BC_DIRICHLET,
+                                         &ac);
 
   int  new_id = nsp->n_velocity_bc_defs;
   nsp->n_velocity_bc_defs += 1;
@@ -1734,33 +1689,32 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define the velocity field for an inlet boundary using an array
- *         of values
+/*!
+ * \brief Define the velocity field for an inlet boundary using an array of
+ *        values
  *
- * \param[in]  nsp          pointer to a \ref cs_navsto_param_t structure
- * \param[in]  z_name       name of the associated zone (if null or "" all
- *                          boundary faces are considered)
- * \param[in]  loc          information to know where are located values
- * \param[in]  array        pointer to an array
- * \param[in]  is_owner     transfer the lifecycle to the cs_xdef_t structure
- *                          (true or false)
- * \param[in]  full_length  if true, the size of "array" should be allocated
- *                          to the total numbers of entities related to the
- *                          given location. If false, a new list is allocated
- *                          and filled with the related subset indirection.
+ * \param[in] nsp         pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name      name of the zone (all boundary faces if nullptr or "")
+ * \param[in] loc         information to know where are located values
+ * \param[in] array       pointer to an array
+ * \param[in] is_owner    transfer the lifecycle to the cs_xdef_t structure
+ *                        (true or false)
+ * \param[in] full_length  if true, the size of "array" should be allocated
+ *                         to the total numbers of entities related to the
+ *                         given location. If false, a new list is allocated
+ *                         and filled with the related subset indirection.
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
-                                      const char           *z_name,
-                                      cs_flag_t             loc,
-                                      cs_real_t            *array,
-                                      bool                  is_owner,
-                                      bool                  full_length)
+cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t *nsp,
+                                      const char        *z_name,
+                                      cs_flag_t          loc,
+                                      cs_real_t         *array,
+                                      bool               is_owner,
+                                      bool               full_length)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -1795,20 +1749,19 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
                                       .elt_ids     = nullptr,
                                       .adjacency   = nullptr };
 
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
-                                          3,
-                                          z_id,
-                                          CS_FLAG_STATE_FACEWISE,
-                                          CS_CDO_BC_DIRICHLET,
-                                          (void *)&context);
+  cs_xdef_t *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
+                                         3,
+                                         z_id,
+                                         CS_FLAG_STATE_FACEWISE,
+                                         CS_CDO_BC_DIRICHLET,
+                                         (void *)&context);
 
-  /* Build the indirection array if only a subset is used */
+  /* Build the indirection array only if a subset is used */
 
   if (!full_length)
     cs_xdef_array_build_full2subset(d);
 
-  int  new_id = nsp->n_velocity_bc_defs;
-
+  int new_id = nsp->n_velocity_bc_defs;
   nsp->n_velocity_bc_defs += 1;
   CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
   nsp->velocity_bc_defs[new_id] = d;
@@ -1821,26 +1774,25 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define the velocity field for an inlet boundary using a DoF function
+/*!
+ * \brief Define the velocity field for an inlet boundary using a DoF function
  *
- * \param[in]  nsp         pointer to a \ref cs_navsto_param_t structure
- * \param[in]  z_name      name of the associated zone (if null or "" all
- *                         boundary faces are considered)
- * \param[in]  dof_loc     where are located DoFs
- * \param[in]  func        pointer to a cs_dof_function_t
- * \param[in]  func_input  null or pointer to a structure cast on-the-fly
+ * \param[in] nsp         pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name      name of the zone (all boundary faces if nullptr or "")
+ * \param[in] dof_loc     where are located DoFs
+ * \param[in] func        pointer to a cs_dof_function_t
+ * \param[in] func_input  null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t    *nsp,
-                                         const char           *z_name,
-                                         cs_flag_t             dof_loc,
-                                         cs_dof_func_t        *func,
-                                         void                 *func_input)
+cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t *nsp,
+                                         const char        *z_name,
+                                         cs_flag_t          dof_loc,
+                                         cs_dof_func_t     *func,
+                                         void              *func_input)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -1871,14 +1823,14 @@ cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t    *nsp,
                                .input        = func_input,
                                .free_input   = nullptr };
 
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_DOF_FUNCTION,
-                                          3,    /* dim */
-                                          z_id,
-                                          0,    /* state */
-                                          CS_CDO_BC_DIRICHLET,
-                                          &dc);
+  cs_xdef_t *d = cs_xdef_boundary_create(CS_XDEF_BY_DOF_FUNCTION,
+                                         3,    // dim
+                                         z_id,
+                                         0,    // state
+                                         CS_CDO_BC_DIRICHLET,
+                                         &dc);
 
-  int  new_id = nsp->n_velocity_bc_defs;
+  int new_id = nsp->n_velocity_bc_defs;
   nsp->n_velocity_bc_defs += 1;
   CS_REALLOC(nsp->velocity_bc_defs, nsp->n_velocity_bc_defs, cs_xdef_t *);
   nsp->velocity_bc_defs[new_id] = d;
@@ -1890,43 +1842,43 @@ cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t    *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define a new source term structure defined by an analytical function
+/*!
+ * \brief Define a new source term structure defined by an analytical function
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if null or "" all
- *                           cells are considered)
- * \param[in]      ana       pointer to an analytical function
- * \param[in]      input     null or pointer to a structure cast on-the-fly
+ * \param[in] nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name  name of the zone (all cells if nullptr or "")
+ * \param[in] ana     pointer to an analytical function
+ * \param[in] input   null or pointer to a structure cast on-the-fly
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
-                                      const char           *z_name,
-                                      cs_analytic_func_t   *ana,
-                                      void                 *input)
+cs_navsto_add_source_term_by_analytic(cs_navsto_param_t  *nsp,
+                                      const char         *z_name,
+                                      cs_analytic_func_t *ana,
+                                      void               *input)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
-  cs_xdef_t  *d = cs_equation_add_source_term_by_analytic(eqp,
-                                                          z_name, ana, input);
+  cs_xdef_t *d = cs_equation_add_source_term_by_analytic(eqp,
+                                                         z_name,
+                                                         ana,
+                                                         input);
 
   return d;
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define a new source term structure defined by a constant value
+/*!
+ * \brief Define a new source term structure defined by a constant value
  *
- * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]      z_name    name of the associated zone (if null or "" all
- *                           cells are considered)
- * \param[in]      val       vector value to set
+ * \param[in] nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name  name of the zone (all cells if nullptr or "")
+ * \param[in] val     vector value to set
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1947,53 +1899,56 @@ cs_navsto_add_source_term_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Define a new source term structure defined by an array
+/*!
+ * \brief Define a new source term structure defined by an array
  *
- * \param[in] nsp           pointer to a \ref cs_navsto_param_t structure
- * \param[in] z_name        name of the associated zone (if null or "" all
- *                          cells are considered)
- * \param[in] loc           information to know where are located values
- * \param[in] array         pointer to an array
- * \param[in] is_owner      transfer the lifecycle to the cs_xdef_t structure
- *                          (true or false)
- * \param[in] full_length   if true, array size is allocated and filled to
- *                          access the full-length array corresponding to
- *                          all locations where are defined the values
+ * \param[in] nsp          pointer to a \ref cs_navsto_param_t structure
+ * \param[in] z_name       name of the zone (all cells if nullptr or "")
+ * \param[in] loc          information to know where are located values
+ * \param[in] array        pointer to an array
+ * \param[in] is_owner     transfer the lifecycle to the cs_xdef_t structure
+ *                         (true or false)
+ * \param[in] full_length  if true, array size is allocated and filled to access
+ *                         the full-length array corresponding to all locations
+ *                         where are defined the values
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
-                                   const char           *z_name,
-                                   cs_flag_t             loc,
-                                   cs_real_t            *array,
-                                   bool                  is_owner,
-                                   bool                  full_length)
+cs_navsto_add_source_term_by_array(cs_navsto_param_t *nsp,
+                                   const char        *z_name,
+                                   cs_flag_t          loc,
+                                   cs_real_t         *array,
+                                   bool               is_owner,
+                                   bool               full_length)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
 
-  return cs_equation_add_source_term_by_array(eqp, z_name, loc,
-                                              array, is_owner, full_length);
+  return cs_equation_add_source_term_by_array(eqp,
+                                              z_name,
+                                              loc,
+                                              array,
+                                              is_owner,
+                                              full_length);
 }
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief  Add a advection field for the Oseen problem
+/*!
+ * \brief Add an advection field in case of Oseen problem.
  *
- * \param[in, out]    nsp        pointer to a \ref cs_navsto_param_t
- * \param[in, out]    adv_fld    pointer to a \ref cs_adv_field_t
+ * \param[in, out] nsp      pointer to a \ref cs_navsto_param_t
+ * \param[in, out] adv_fld  pointer to a \ref cs_adv_field_t
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_add_oseen_field(cs_navsto_param_t   *nsp,
-                          cs_adv_field_t      *adv_fld)
+cs_navsto_add_oseen_field(cs_navsto_param_t *nsp,
+                          cs_adv_field_t    *adv_fld)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
