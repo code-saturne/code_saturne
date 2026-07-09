@@ -124,84 +124,74 @@ cs_mass_source_terms(int                   iterns,
      * In st_exp, we add the term for the right-hand side, which is
      *   Gamma * Pvar
      *
-     * In gapinj, we place the term Gamma Pinj which will go to the right-hand side.
+     * In gapinj, we place the term Gamma Pinj which will go
+     * to the right-hand side.
      *
      * The distinction between st_exp and w1 (which both go finally to the
-     * right-hand side) is used for the 2nd-order time scheme. */
+     * right-hand side) is needed for the 2nd-order time scheme. */
+
+  /* Remark for implementation/optimization:
+     Since the volume is always > 0, we can compute a local
+     volume * gamma variable ("vol_gamma") and test whether
+     vol_gamma > 0 instead of testing gamma[c_id], so as to
+     avoid multiple reads from global memory for gamma.
+     The "vol_gamma" local variable is the reused in the computation. */
+
+  cs_dispatch_context ctx;
 
   if (iterns == 1) {
 
     if (mst_val != nullptr && gapinj != nullptr) {
-      if (dim == 1) {
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          cs_lnum_t c_id = elt_ids[i];
-          if (gamma[i] > 0. && mst_type[i] == 1) {
-            st_exp[c_id] -= volume[c_id]*gamma[i] * pvara[c_id];
-            gapinj[c_id] += volume[c_id]*gamma[i] * mst_val[i];
+      cs_lnum_t _dim = dim;
+      ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        cs_lnum_t c_id = elt_ids[i];
+        cs_real_t vol_gamma = volume[c_id]*gamma[i];
+        if (vol_gamma > 0. && mst_type[i] == 1) {
+          for (cs_lnum_t j = 0; j < _dim; j++) {
+            cs_lnum_t k = c_id*_dim + j;
+            st_exp[k] -= vol_gamma * pvara[k];
+            st_imp[k] += vol_gamma;
+            gapinj[k] += vol_gamma * mst_val[i*_dim + j];
           }
         }
-      }
-      else {
-        cs_lnum_t _dim = dim;
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          cs_lnum_t c_id = elt_ids[i];
-          if (gamma[i] > 0. && mst_type[i] == 1) {
-            for (cs_lnum_t j = 0; j < _dim; j++) {
-              cs_lnum_t k = c_id*_dim + j;
-              st_exp[k] -= volume[c_id]*gamma[i] * pvara[k];
-              gapinj[k] += volume[c_id]*gamma[i] * mst_val[i*_dim + j];
-            }
-          }
-        }
-      }
+      });
     }
 
     else { /* mst_val == nullptr && gapinj == nullptr */
-      if (dim == 1) {
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          cs_lnum_t c_id = elt_ids[i];
-          if (gamma[i] > 0. && mst_type[i] == 1)
-            st_exp[c_id] -= volume[c_id]*gamma[i] * pvara[c_id];
-        }
-      }
-      else {
-        cs_lnum_t _dim = dim;
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          cs_lnum_t c_id = elt_ids[i];
-          if (gamma[i] > 0. && mst_type[i] == 1) {
-            for (cs_lnum_t j = 0; j < _dim; j++) {
-              cs_lnum_t k = c_id*_dim + j;
-              st_exp[k] -= volume[c_id]*gamma[i] * pvara[k];
-            }
+      cs_lnum_t _dim = dim;
+      ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        cs_lnum_t c_id = elt_ids[i];
+        cs_real_t vol_gamma = volume[c_id]*gamma[i];
+        if (vol_gamma > 0. && mst_type[i] == 1) {
+          for (cs_lnum_t j = 0; j < _dim; j++) {
+            cs_lnum_t k = c_id*_dim + j;
+            st_exp[k] -= vol_gamma * pvara[k];
+            st_imp[k] += vol_gamma;
           }
         }
-      }
+      });
     }
 
   }
 
-  /* On the diagonal */
-
-  if (dim == 1) {
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      cs_lnum_t c_id = elt_ids[i];
-      if (gamma[i] > 0. && mst_type[i] == 1) {
-        st_imp[c_id] += volume[c_id]*gamma[i];
-      }
-    }
-  }
   else {
+
+    /* On the diagonal only */
+
     cs_lnum_t _dim = dim, _dim2 = dim*dim;
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
+    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       cs_lnum_t c_id = elt_ids[i];
-      if (gamma[i] > 0. && mst_type[i] == 1) {
+      cs_real_t vol_gamma = volume[c_id]*gamma[i];
+      if (vol_gamma > 0. && mst_type[i] == 1) {
         for (cs_lnum_t j = 0; j < _dim; j++) {
           cs_lnum_t k = c_id*_dim2 + j*_dim + j;
-          st_imp[k] += volume[c_id]*gamma[i];
+          st_imp[k] += vol_gamma;
         }
       }
-    }
+    });
   }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
