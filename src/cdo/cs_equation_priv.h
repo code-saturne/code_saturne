@@ -62,16 +62,16 @@
 /*----------------------------------------------------------------------------*/
 
 typedef void *
-(cs_equation_init_context_t)(cs_equation_param_t    *eqp,
-                             int                     var_id,
-                             int                     bflux_id,
-                             cs_equation_builder_t  *eqb);
+(cs_equation_init_context_t)(cs_equation_param_t   *eqp,
+                             int                    var_id,
+                             int                    bflux_id,
+                             cs_equation_builder_t *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Destroy a scheme data structure
  *
- * \param[in, out] scheme_context    pointer to a structure cast on-the-fly
+ * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
  *
  * \return a null pointer
  */
@@ -84,64 +84,64 @@ typedef void *
 /*!
  * \brief Initialize the variable field values related to an equation
  *
- * \param[in]      t_eval     time at which one performs the evaluation
- * \param[in]      field_id   id related to the variable field of this equation
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in]      field_id  id related to the variable field of this equation
+ * \param[in]      mesh      pointer to a cs_mesh_t structure
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out] context   pointer to the scheme context (cast on-the-fly)
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_init_values_t)(cs_real_t                     t_eval,
-                            const int                     field_id,
-                            const cs_mesh_t              *mesh,
-                            const cs_equation_param_t    *eqp,
-                            cs_equation_builder_t        *eqb,
-                            void                         *context);
+(cs_equation_init_values_t)(cs_real_t                  t_eval,
+                            const int                  field_id,
+                            const cs_mesh_t           *mesh,
+                            const cs_equation_param_t *eqp,
+                            cs_equation_builder_t     *eqb,
+                            void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Build and solve a linear system within the CDO framework
  *
- * \param[in]      cur2prev   true="current to previous" operation is performed
- * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
- * \param[in]      field_id   id related to the variable field of this equation
- * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
- * \param[in, out] eqc        pointer to a scheme context structure
+ * \param[in]      cur2prev  true="current to previous" operation is performed
+ * \param[in]      mesh      pointer to a \ref cs_mesh_t structure
+ * \param[in]      field_id  id related to the variable field of this equation
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb       pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] eqc       pointer to a scheme context structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_solve_t)(bool                        cur2prev,
-                      const cs_mesh_t            *mesh,
-                      const int                   field_id,
-                      const cs_equation_param_t  *eqp,
-                      cs_equation_builder_t      *eqb,
-                      void                       *eqc);
+(cs_equation_solve_t)(bool                       cur2prev,
+                      const cs_mesh_t           *mesh,
+                      const int                  field_id,
+                      const cs_equation_param_t *eqp,
+                      cs_equation_builder_t     *eqb,
+                      void                      *eqc);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set the Dirichlet boundary stemming from the settings.
  *
- * \param[in]      t_eval      time at which one evaluates BCs
- * \param[in]      mesh        pointer to a cs_mesh_t structure
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
- * \param[in, out] context     pointer to the scheme context (cast on-the-fly)
- * \param[in, out] field_val   pointer to the values of the variable field
+ * \param[in]      t_eval     time at which one evaluates BCs
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to the scheme context (cast on-the-fly)
+ * \param[in, out] field_val  pointer to the values of the variable field
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_set_dir_bc_t)(cs_real_t                     t_eval,
-                           const cs_mesh_t              *mesh,
-                           const cs_equation_param_t    *eqp,
-                           cs_equation_builder_t        *eqb,
-                           void                         *context,
-                           cs_real_t                     field_val[]);
+(cs_equation_set_dir_bc_t)(cs_real_t                  t_eval,
+                           const cs_mesh_t           *mesh,
+                           const cs_equation_param_t *eqp,
+                           cs_equation_builder_t     *eqb,
+                           void                      *context,
+                           cs_real_t                  field_val[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -156,11 +156,11 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_build_system_t)(const cs_mesh_t            *mesh,
-                             const cs_real_t            *field_val,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *context);
+(cs_equation_build_system_t)(const cs_mesh_t           *mesh,
+                             const cs_real_t           *field_val,
+                             const cs_equation_param_t *eqp,
+                             cs_equation_builder_t     *eqb,
+                             void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -206,18 +206,18 @@ typedef void
  * \brief Compute the balance for an equation over the full computational
  *        domain between time t_cur and t_cur + dt_cur
  *
- * \param[in]      eqp             pointer to a \ref cs_equation_param_t
- * \param[in, out] eqb             pointer to a \ref cs_equation_builder_t
- * \param[in, out] context         pointer to a scheme context structure
+ * \param[in]      eqp      pointer to a \ref cs_equation_param_t
+ * \param[in, out] eqb      pointer to a \ref cs_equation_builder_t
+ * \param[in, out] context  pointer to a scheme context structure
  *
  * \return a pointer to a cs_cdo_balance_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef cs_cdo_balance_t *
-(cs_equation_get_balance_t)(const cs_equation_param_t    *eqp,
-                            cs_equation_builder_t        *eqb,
-                            void                         *context);
+(cs_equation_get_balance_t)(const cs_equation_param_t *eqp,
+                            cs_equation_builder_t     *eqb,
+                            void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -236,28 +236,28 @@ typedef cs_cdo_balance_t *
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_apply_sitffness_t)(const cs_equation_param_t     *eqp,
-                                cs_equation_builder_t         *eqb,
-                                void                          *context,
-                                const cs_property_t           *property,
-                                const cs_real_t               *pot,
-                                cs_flag_t                      loc_res,
-                                cs_real_t                     *res);
+(cs_equation_apply_sitffness_t)(const cs_equation_param_t *eqp,
+                                cs_equation_builder_t     *eqb,
+                                void                      *context,
+                                const cs_property_t       *property,
+                                const cs_real_t           *pot,
+                                cs_flag_t                  loc_res,
+                                cs_real_t                 *res);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Generic prototype for extra-operations related to an equation
  *
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to a generic data structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb      pointer to a cs_equation_builder_t structure
+ * \param[in, out] context  pointer to a generic data structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_extra_op_t)(const cs_equation_param_t  *eqp,
-                         cs_equation_builder_t      *eqb,
-                         void                       *context);
+(cs_equation_extra_op_t)(const cs_equation_param_t *eqp,
+                         cs_equation_builder_t     *eqb,
+                         void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -288,8 +288,8 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef cs_real_t *
-(cs_equation_get_values_t)(void      *scheme_context,
-                           bool       previous);
+(cs_equation_get_values_t)(void *scheme_context,
+                           bool  previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -303,9 +303,9 @@ typedef cs_real_t *
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_restart_t)(cs_restart_t    *restart,
-                        const char      *eqname,
-                        void            *scheme_context);
+(cs_equation_restart_t)(cs_restart_t *restart,
+                        const char   *eqname,
+                        void         *scheme_context);
 
 /*----------------------------------------------------------------------------
  * Structure type
@@ -464,5 +464,7 @@ struct _cs_equation_t {
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_EQUATION_PRIV_H */

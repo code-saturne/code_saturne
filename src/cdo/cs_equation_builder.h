@@ -89,22 +89,22 @@ typedef void
 
 struct _equation_builder_t {
 
-  bool         init_step;  /*!< true if this is the initialization step */
+  bool        init_step;  /*!< true if this is the initialization step */
 
   /*!
    * @name Flags to know what to build and how to build such terms
    * @{
    */
 
-  cs_eflag_t   msh_flag;   /*!< Flag storing which quantities to build in a
-                            *   \ref cs_cell_mesh_t structure for all cells */
-  cs_eflag_t   bdy_flag;   /*!< Flag storing which quantities to build in a
-                            *   \ref cs_cell_mesh_t structure for a boundary
-                            *   cell */
-  cs_eflag_t   src_flag;   /*!< Flag storing which quantities to build in a
-                            *   \ref cs_cell_mesh_t structure for the specific
-                            *   computation of source terms */
-  cs_flag_t    sys_flag;   /*!< Metadata related to the sytem */
+  cs_eflag_t  msh_flag;   /*!< Flag storing which quantities to build in a
+                           *   \ref cs_cell_mesh_t structure for all cells */
+  cs_eflag_t  bdy_flag;   /*!< Flag storing which quantities to build in a
+                           *   \ref cs_cell_mesh_t structure for a boundary
+                           *   cell */
+  cs_eflag_t  src_flag;   /*!< Flag storing which quantities to build in a
+                           *   \ref cs_cell_mesh_t structure for the specific
+                           *   computation of source terms */
+  cs_flag_t   sys_flag;   /*!< Metadata related to the sytem */
 
   /*!
    * @}
@@ -238,7 +238,6 @@ struct _equation_builder_t {
                                *   fluxes...) */
 
   /*! @} */
-
 };
 
 /*============================================================================
@@ -253,16 +252,16 @@ struct _equation_builder_t {
 /*!
  * \brief Retrieve the flag to give for building a cs_cell_mesh_t structure
  *
- * \param[in] cell_flag   flag related to the current cell
- * \param[in] eqb         pointer to a cs_equation_builder_t structure
+ * \param[in] cell_flag  flag related to the current cell
+ * \param[in] eqb        pointer to a cs_equation_builder_t structure
  *
  * \return the flag to set for the current cell
  */
 /*----------------------------------------------------------------------------*/
 
 static inline cs_eflag_t
-cs_equation_builder_cell_mesh_flag(cs_flag_t                      cell_flag,
-                                   const cs_equation_builder_t   *eqb)
+cs_equation_builder_cell_mesh_flag(cs_flag_t                     cell_flag,
+                                   const cs_equation_builder_t  *eqb)
 {
   if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)
     return eqb->msh_flag | eqb->src_flag | eqb->bdy_flag;
@@ -274,120 +273,31 @@ cs_equation_builder_cell_mesh_flag(cs_flag_t                      cell_flag,
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Update the default flags used to know which quantities have to be
- *        built by each cs_cell_mesh_t structure before building the linear
- *        system
- *
- * \param[in] msh_flag    flag for all cells
- * \param[in] bdy_flag    flag for all boundary cells
- * \param[in] src_flag    flag for cells with source terms
- */
-/*----------------------------------------------------------------------------*/
-
 void
-cs_equation_builder_update_default_flags(cs_eflag_t    msh_flag,
-                                         cs_eflag_t    bdy_flag,
-                                         cs_eflag_t    src_flag);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate a new structure to handle the building of algebraic system
- *         related to a cs_equation_t structure
- *
- * \param[in] eqp       pointer to a cs_equation_param_t structure
- * \param[in] mesh      pointer to a cs_mesh_t structure
- *
- * \return a pointer to a new allocated cs_equation_builder_t structure
- */
-/*----------------------------------------------------------------------------*/
+cs_equation_builder_update_default_flags(cs_eflag_t msh_flag,
+                                         cs_eflag_t bdy_flag,
+                                         cs_eflag_t src_flag);
 
 cs_equation_builder_t *
-cs_equation_builder_create(const cs_equation_param_t   *eqp,
-                           const cs_mesh_t             *mesh);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Retrieve the matrix structure associated to the given block_id
- *        When there is only one block, this is simply 0.
- *        One relies on the cs_cdo_system_helper_t structure to retrieve this
- *        matrix.  So, the block_id must be consistent with the way to store
- *        the blocks in this structure.
- *
- * \param[in, out]  builder      pointer to a cs_equation_builder_t
- * \param[in]       block_id     id of the block to consider
- *
- * \return a pointer to a cs_matrix_t structure
- */
-/*----------------------------------------------------------------------------*/
+cs_equation_builder_create(const cs_equation_param_t *eqp,
+                           const cs_mesh_t           *mesh);
 
 const cs_matrix_t *
-cs_equation_builder_get_matrix(const cs_equation_builder_t  *builder,
-                               int                           block_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Retrieve the range set structure associated to a builder structure
- *        for the block defined in block_id in the system helper structure
- *
- * \param[in, out]  builder      pointer to a cs_equation_builder_t
- * \param[in]       block_id     id of the block to consider
- *
- * \return a pointer to a cs_range_set structure
- */
-/*----------------------------------------------------------------------------*/
+cs_equation_builder_get_matrix(const cs_equation_builder_t *builder,
+                               int                          block_id);
 
 const cs_range_set_t *
-cs_equation_builder_get_range_set(const cs_equation_builder_t  *builder,
-                                  int                           block_id);
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a cs_equation_builder_t structure
- *
- * \param[in, out]  p_builder  pointer of pointer to the cs_equation_builder_t
- *                             structure to free
- */
-/*----------------------------------------------------------------------------*/
+cs_equation_builder_get_range_set(const cs_equation_builder_t *builder,
+                                  int                          block_id);
 
 void
 cs_equation_builder_free(cs_equation_builder_t  **p_builder);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free some members of a cs_equation_builder_t structure
- *
- * \param[in, out]  eqb   pointer to the cs_equation_builder_t structure
- */
-/*----------------------------------------------------------------------------*/
-
 void
 cs_equation_builder_reset(cs_equation_builder_t  *eqb);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Update the flags with the default flags. These flags are used to know
- *        which quantities have to be built by each cs_cell_mesh_t structure
- *        before building the linear system
- *
- * \param[in] eqb  pointer to an equation builer
- */
-/*----------------------------------------------------------------------------*/
-
 void
 cs_equation_builder_apply_default_flags(cs_equation_builder_t  *eqb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print a message in the performance output file related to the
- *        monitoring of equation
- *
- * \param[in] n_time_steps  number of time steps computed
- * \param[in] n_dofs        number of DoFs
- * \param[in] eqp           pointer to a set of equation parameters
- * \param[in] eqb           pointer to an equation builder  structure
- */
-/*----------------------------------------------------------------------------*/
 
 void
 cs_equation_builder_log_performance(int                          n_time_steps,
@@ -395,43 +305,11 @@ cs_equation_builder_log_performance(int                          n_time_steps,
                                     const cs_equation_param_t   *eqp,
                                     const cs_equation_builder_t *eqb);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize all reaction properties.
- *        This function is shared across all CDO schemes. The cs_cell_builder_t
- *        structure stores the computed property values. If the property is
- *        uniform, a first call to the function
- *        cs_equation_builder_init_properties has to be done before the loop on
- *        cells
- *
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      eqb      pointer to a cs_equation_builder_t structure
- * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
- * \param[in, out] cb       pointer to a \ref cs_cell_builder_t structure
- *
- * \return true if the reaction property is not equal to zero
- */
-/*----------------------------------------------------------------------------*/
-
 bool
 cs_equation_builder_set_reaction_pty_cw(const cs_equation_param_t     *eqp,
                                         const cs_equation_builder_t   *eqb,
                                         const cs_cell_mesh_t          *cm,
                                         cs_cell_builder_t             *cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize all properties potentially useful to build the algebraic
- *         system. This function is shared across all CDO schemes.
- *         The \ref cs_cell_builder_t structure stores property values related
- *         to the reaction term, unsteady term and grad-div term.
- *
- * \param[in]      eqp          pointer to a cs_equation_param_t structure
- * \param[in]      eqb          pointer to a cs_equation_builder_t structure
- * \param[in, out] diff_hodge   pointer to the diffusion hodge structure
- * \param[in, out] cb           pointer to a cs_cell_builder_t structure
- */
-/*----------------------------------------------------------------------------*/
 
 void
 cs_equation_builder_init_properties(const cs_equation_param_t     *eqp,
@@ -439,54 +317,16 @@ cs_equation_builder_init_properties(const cs_equation_param_t     *eqp,
                                     cs_hodge_t                    *diff_hodge,
                                     cs_cell_builder_t             *cb);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Take into account the enforcement of internal DoFs. Apply an
- *          algebraic manipulation. Update members of the cs_cell_sys_t
- *          structure related to the internal enforcement.
- *
- *          |      |     |     |      |     |     |  |     |             |
- *          | Aii  | Aie |     | Aii  |  0  |     |bi|     |bi -Aid.x_enf|
- *          |------------| --> |------------| and |--| --> |-------------|
- *          |      |     |     |      |     |     |  |     |             |
- *          | Aei  | Aee |     |  0   |  Id |     |be|     |   x_enf     |
- *
- * where x_enf is the value of the enforcement for the selected internal DoFs
- *
- * \param[in]       eqb       pointer to a cs_equation_builder_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
- */
-/*----------------------------------------------------------------------------*/
+void
+cs_equation_builder_enforce_dofs(const cs_equation_builder_t *eqb,
+                                 cs_cell_builder_t           *cb,
+                                 cs_cell_sys_t               *csys);
 
 void
-cs_equation_builder_enforce_dofs(const cs_equation_builder_t     *eqb,
-                                 cs_cell_builder_t               *cb,
-                                 cs_cell_sys_t                   *csys);
+cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t *eqb,
+                                       cs_cell_builder_t           *cb,
+                                       cs_cell_sys_t               *csys);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Take into account the enforcement of internal DoFs. Case of matrices
- *        defined by blocks. Apply an algebraic manipulation. Update members
- *        of the cs_cell_sys_t structure related to the internal enforcement.
- *
- *          |      |     |     |      |     |     |  |     |             |
- *          | Aii  | Aie |     | Aii  |  0  |     |bi|     |bi -Aid.x_enf|
- *          |------------| --> |------------| and |--| --> |-------------|
- *          |      |     |     |      |     |     |  |     |             |
- *          | Aei  | Aee |     |  0   |  Id |     |be|     |   x_enf     |
- *
- * where x_enf is the value of the enforcement for the selected internal DoFs
- *
- * \param[in]       eqb       pointer to a cs_equation_builder_t structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t   *eqb,
-                                       cs_cell_builder_t             *cb,
-                                       cs_cell_sys_t                 *csys);
 
 #endif /* CS_EQUATION_BUILDER_H */
