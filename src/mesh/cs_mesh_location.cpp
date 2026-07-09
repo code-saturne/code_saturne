@@ -357,7 +357,8 @@ _build_by_ml_ids(cs_mesh_location_t  *ml)
 
     ml->n_elts[0] = sub_ml->n_elts[0];
     if (sub_ml->elt_list != nullptr) { /* Copy */
-      CS_MALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
+      CS_MALLOC_HD(ml->elt_list, ml->n_elts[0], cs_lnum_t,
+                   cs_alloc_mode_read_mostly);
       memcpy(ml->elt_list, sub_ml->elt_list, ml->n_elts[0]*sizeof(cs_lnum_t));
     }
 
@@ -367,7 +368,7 @@ _build_by_ml_ids(cs_mesh_location_t  *ml)
     bool  *flag = nullptr;
 
     /* Initialize flag */
-    CS_MALLOC(flag, n_elts_max, bool);
+    CS_MALLOC_HD(flag, n_elts_max, bool, cs_alloc_mode);
     for (i = 0; i < n_elts_max; i++)
       flag[i] = false;
 
@@ -405,7 +406,8 @@ _build_by_ml_ids(cs_mesh_location_t  *ml)
 
     /* Build elt_list */
     if (ml->n_elts[0] != 0 && ml->n_elts[0] != n_elts_max) {
-      CS_MALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
+      CS_MALLOC_HD(ml->elt_list, ml->n_elts[0], cs_lnum_t,
+                  cs_alloc_mode_read_mostly);
       count = 0;
       for (i = 0; i < n_elts_max; i++)
         if (flag[i]) ml->elt_list[count++] = i;
@@ -415,6 +417,8 @@ _build_by_ml_ids(cs_mesh_location_t  *ml)
 
   } /* If simple case (n_sub_ids = 1 and no complement) or not */
 
+  if (ml->elt_list != nullptr && cs_alloc_mode_read_mostly > CS_ALLOC_HOST)
+    cs_sync_h2d(ml->elt_list);
 }
 
 /*=============================================================================
@@ -577,7 +581,8 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
 
     if (ml->select_str != nullptr) {
       if (selector != nullptr) {
-        CS_MALLOC(ml->elt_list, n_elts_max, cs_lnum_t);
+        CS_MALLOC_HD(ml->elt_list, n_elts_max, cs_lnum_t,
+                     cs_alloc_mode_read_mostly);
         int c_id = fvm_selector_get_list(selector,
                                          ml->select_str,
                                          0,
@@ -586,7 +591,8 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
         if (ml->n_elts[0] == n_elts_max && ml->elt_list != nullptr)
           CS_FREE(ml->elt_list);
         else
-          CS_REALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
+          CS_REALLOC_HD(ml->elt_list, ml->n_elts[0], cs_lnum_t,
+                        cs_alloc_mode_read_mostly);
         if (fvm_selector_n_missing(selector, c_id) > 0) {
           const char *missing
             = fvm_selector_get_missing(selector, c_id, 0);
@@ -637,9 +643,11 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
     if (id == 0 || explicit_ids_size > _explicit_ids_size) {
       cs_lnum_t s_id = (id == 0) ? 0 : _explicit_ids_size;
       _explicit_ids_size = explicit_ids_size;
-      CS_REALLOC(_explicit_ids, _explicit_ids_size, cs_lnum_t);
+      CS_REALLOC_HD(_explicit_ids, _explicit_ids_size, cs_lnum_t,
+                    cs_alloc_mode_read_mostly);
       for (cs_lnum_t i = s_id; i < _explicit_ids_size; i++)
         _explicit_ids[i] = i;
+
     }
   }
 }
