@@ -300,8 +300,7 @@ void
 cs_equation_builder_apply_default_flags(cs_equation_builder_t  *eqb);
 
 void
-cs_equation_builder_log_performance(int                          n_time_steps,
-                                    cs_gnum_t                    n_g_dofs,
+cs_equation_builder_log_performance(size_t                       compute_amount,
                                     const cs_equation_param_t   *eqp,
                                     const cs_equation_builder_t *eqb);
 

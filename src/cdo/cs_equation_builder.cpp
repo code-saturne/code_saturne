@@ -400,16 +400,14 @@ cs_equation_builder_apply_default_flags(cs_equation_builder_t *eqb)
  * \brief Print a message in the performance output file related to the
  *        monitoring of equation
  *
- * \param[in] n_time_steps  number of time steps computed
- * \param[in] n_dofs        number of DoFs
- * \param[in] eqp           pointer to a set of equation parameters
- * \param[in] eqb           pointer to an equation builder  structure
+ * \param[in] compute_amount  amount of work associated with this computation
+ * \param[in] eqp             pointer to a set of equation parameters
+ * \param[in] eqb             pointer to an equation builder structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_builder_log_performance(int                          n_time_steps,
-                                    cs_gnum_t                    n_g_dofs,
+cs_equation_builder_log_performance(size_t                       compute_amount,
                                     const cs_equation_param_t   *eqp,
                                     const cs_equation_builder_t *eqb)
 {
@@ -420,36 +418,53 @@ cs_equation_builder_log_performance(int                          n_time_steps,
     return;
   if (eqp->flag & CS_EQUATION_INSIDE_SYSTEM)
     return;
-  if (n_time_steps == 0 || n_g_dofs == 0)
+  if (compute_amount == 0)
     return;
 
   double t[3]
     = { double(eqb->tcb.nsec), double(eqb->tcs.nsec), double(eqb->tce.nsec) };
   for (int i = 0; i < 3; i++) t[i] *= 1e-9;
 
-  const double coef = 1.0e6 / (n_time_steps * n_g_dofs);
-  double perf[2] = {t[0] * coef, t[1] * coef};
+  const double tcoef = 1.0e6 / compute_amount;
+  double tperf[2] = {t[0] * tcoef, t[1] * tcoef};
+
+  const int n_compute_cores = cs_glob_n_ranks * cs_glob_n_threads;
+  const double qcoef = compute_amount / n_compute_cores ;
+  double qperf[2] = {qcoef/t[0], qcoef/t[1]};
 
   if (eqp->name == nullptr) {
 
-    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f %9.3f seconds\n",
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  " %-35s | %9.3f | %9.3f | %9.3f | seconds\n",
                   "<CDO/Equation> Runtime   ", t[0], t[1], t[2]);
-    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f   s/iter/Mdofs\n",
-                  "<CDO/Equation> Throughput", perf[0], perf[1]);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  " %-35s | %9.3f | %9.3f | %9s | s/iter/Mdofs\n",
+                  "<CDO/Equation> Tnormalized", tperf[0], tperf[1], " ");
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  " %-35s | %9.2e | %9.2e | %9s | dofs/iter/core/s\n",
+                  "<CDO/Equation> Throughput", qperf[0], qperf[1], " ");
 
   }
   else {
 
     char *msg = nullptr;
-    int len = 1 + strlen("<CDO/> Throughput") + strlen(eqp->name);
+    int len = 1 + strlen("<CDO/> Tnormalized") + strlen(eqp->name);
 
     CS_MALLOC(msg, len, char);
     sprintf(msg, "<CDO/%s> Runtime   ", eqp->name);
-    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f %9.3f seconds\n",
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  " %-35s | %9.3f | %9.3f | %9.3f | seconds\n",
                   msg, t[0], t[1], t[2]);
+
+    sprintf(msg, "<CDO/%s> Tnormalized", eqp->name);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  " %-35s | %9.3f | %9.3f | %9s | s/iter/Mdofs\n",
+                  msg, tperf[0], tperf[1], " ");
+
     sprintf(msg, "<CDO/%s> Throughput", eqp->name);
-    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f   s/iter/Mdofs\n",
-                  msg, perf[0], perf[1]);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  " %-35s | %9.2e | %9.2e | %9s | dofs/iter/core/s\n",
+                  msg, qperf[0], qperf[1], " ");
     CS_FREE(msg);
 
   }

@@ -1807,8 +1807,12 @@ cs_equation_log_monitoring(const cs_time_step_t      *ts,
   if (!output)
     return;
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                "\n%-36s %9s %9s %9s\n", " ", "Build", "Solve", "Extra");
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n%-37s+%11s+%11s+%11s+%14s\n",
+                "-------------------------------------",
+                "-----------", "-----------", "-----------",
+                "--------------");
+  cs_log_printf(CS_LOG_PERFORMANCE, "%-36s | %9s | %9s | %9s | %13s\n",
+                " ", "Build", "Solve", "Extra", "Unit");
 
   for (int i = 0; i < _n_equations; i++) {
 
@@ -1819,22 +1823,32 @@ cs_equation_log_monitoring(const cs_time_step_t      *ts,
       continue;
 
     cs_gnum_t n_g_dofs = eqp->dim * cs_equation_get_global_n_dofs(eq, cdoq);
-
     int n_time_steps = 1; // steady
     if (eqp->flag & CS_EQUATION_UNSTEADY)
       n_time_steps = ts->nt_cur - ts->nt_prev;
+    size_t compute_amount = n_time_steps * n_g_dofs;
 
     /* Display high-level timer counter related to the current equation before
        deleting the structure */
 
-    cs_equation_builder_log_performance(n_time_steps,
-                                        n_g_dofs,
+    cs_log_printf(CS_LOG_PERFORMANCE, "%-37s+%11s+%11s+%11s+%14s\n",
+                  "-------------------------------------",
+                  "-----------", "-----------", "-----------",
+                  "--------------");
+
+    cs_equation_builder_log_performance(compute_amount,
                                         eq->param,
                                         eq->builder);
 
   } /* Loop on equations */
 
-  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_printf(CS_LOG_PERFORMANCE, "%-37s+%11s+%11s+%11s+%14s\n",
+                "-------------------------------------",
+                "-----------", "-----------", "-----------",
+                "--------------");
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "\n NB: Throughput is the number of degrees of freedom"
+                " computed per time step per core per second.\n");
   cs_log_separator(CS_LOG_PERFORMANCE);
 }
 
