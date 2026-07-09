@@ -334,16 +334,16 @@ _sort_descend_tree(cs_lnum_t  number[],
 }
 
 /*----------------------------------------------------------------------------
- * Sort an array of local numbers.
+ * Sort and compact an array of local numbers.
  *
  * parameters:
  *   number   <-> array of numbers to sort
- *   n_elts   <-- number of elements considered
+ *   n_elts   <-> number of elements considered
  *----------------------------------------------------------------------------*/
 
 CS_F_HOST_DEVICE inline void
-_sort_lnum(cs_lnum_t  number[],
-           size_t     n_elts)
+_sort_and_compact_lnum(cs_lnum_t   number[],
+                       size_t     &n_elts)
 {
   if (n_elts < 2)
     return;
@@ -391,6 +391,18 @@ _sort_lnum(cs_lnum_t  number[],
       _sort_descend_tree(number, 0, j);
     }
   }
+
+  /* Compact array */
+
+  size_t count = 1;
+  for (size_t jj = 1; jj < n_elts; jj++) {
+    if (number[jj] > number[count-1]) {
+      number[count] = number[jj];
+      count++;
+    }
+  }
+  n_elts = count;
+
 }
 
 /*----------------------------------------------------------------------------
@@ -3310,10 +3322,13 @@ _coarse_msr_struct_hd(cs_dispatch_context  &ctx,
 
   /* Loop on coarse rows */
 
+  constexpr size_t tmp_size = 50;
+
   ctx.parallel_for(c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t c_idx) {
 
+    cs_lnum_t l_tmp[tmp_size];
     cs_lnum_t *restrict l_buf = c_col_id_0 + c_row_index_0[c_idx];
-    cs_lnum_t b_e = 0;
+    size_t b_e = 0, b_e_t = 0;
     cs_lnum_t r_s_id = c_f_row_index[c_idx];
     cs_lnum_t r_e_id = c_f_row_index[c_idx+1];
     for (cs_lnum_t r_idx = r_s_id; r_idx < r_e_id; r_idx++) {
@@ -3323,22 +3338,27 @@ _coarse_msr_struct_hd(cs_dispatch_context  &ctx,
       for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
         cs_lnum_t kk = f_c_row[f_col_id[jj]];
         if (kk > -1 && kk != c_idx) {
-          l_buf[b_e++] = kk;
+          l_tmp[b_e_t++] = kk;
+          if (b_e_t == tmp_size) {
+            _sort_and_compact_lnum(l_tmp, b_e_t);
+            for (size_t ll = 0; ll < b_e_t; ll++)
+              l_buf[b_e++] = l_tmp[ll];
+            b_e_t = 0;
+          }
         }
       }
     }
-    _sort_lnum(l_buf, b_e);
-    cs_lnum_t r_count = 0;
-    if (b_e > 0) {
-      r_count = 1;
-      for (cs_lnum_t jj = 1; jj < b_e; jj++) {
-        if (l_buf[jj] > l_buf[jj-1]) {
-          l_buf[r_count] = l_buf[jj];
-          r_count++;
-        }
-      }
+    if (b_e == 0) {
+      _sort_and_compact_lnum(l_tmp, b_e_t);
+      for (size_t ll = 0; ll < b_e_t; ll++)
+        l_buf[b_e++] = l_tmp[ll];
     }
-    c_row_index[c_idx] = r_count;
+    else {
+      for (size_t ll = 0; ll < b_e_t; ll++)
+        l_buf[b_e++] = l_tmp[ll];
+      _sort_and_compact_lnum(l_buf, b_e);
+    }
+    c_row_index[c_idx] = b_e;
 
   });
 
