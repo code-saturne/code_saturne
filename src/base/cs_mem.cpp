@@ -2422,7 +2422,7 @@ cs_mem_malloc_hd(cs_alloc_mode_t   mode,
     me.host_ptr = cs_mem_malloc(ni, size, var_name, nullptr, 0);
   }
 
-  // Device allocation will be postponed later thru call to
+  // Device allocation will be postponed later through call to
   // cs_get_device_ptr. This applies for CS_ALLOC_HOST_DEVICE
   // and CS_ALLOC_HOST_DEVICE_PINNED modes
 

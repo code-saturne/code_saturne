@@ -90,6 +90,15 @@ extern int cs_mpi_device_support;
 
 #endif
 
+#if defined(HAVE_ACCEL)
+
+/* GPU: global working array for temporary device to host copies */
+
+extern size_t  cs_glob_pinned_host_work_buffer_size;
+extern void   *cs_glob_pinned_host_work_buffer;
+
+#endif
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

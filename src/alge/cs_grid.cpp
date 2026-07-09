@@ -1789,6 +1789,156 @@ _scan_f_c_row(int          n_threads,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get host pointers to arrays describing a matrix in MSR format.
+ *
+ * This function only works for an MSR matrix (i.e. there is
+ * no automatic conversion from another matrix type).
+ *
+ * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
+ * and cs_matrix_get_extra_diag_block_size().
+ *
+ * \param[in]   matrix     pointer to matrix structure
+ * \param[in]   level      matrix level
+ * \param[out]  row_index  MSR row index
+ * \param[out]  col_id     MSR column id
+ * \param[out]  d_val      diagonal values
+ * \param[out]  x_val      extra-diagonal values
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_matrix_get_msr_arrays_host(const cs_matrix_t   *matrix,
+                            int                  level,
+                            const cs_lnum_t    **row_index,
+                            const cs_lnum_t    **col_id,
+                            const cs_real_t    **d_val,
+                            const cs_real_t    **x_val)
+{
+  /* Access matrix MSR vectors */
+
+  const cs_lnum_t *_row_index;
+
+  cs_matrix_get_msr_arrays(matrix,
+                           &_row_index,
+                           col_id,
+                           d_val,
+                           x_val);
+
+  if (row_index != nullptr)
+    *row_index = _row_index;
+
+#if defined(HAVE_ACCEL)
+
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(matrix);
+  const cs_lnum_t nnz = cs_get_host_value(_row_index + n_rows);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(matrix);
+  const cs_lnum_t eb_size = cs_matrix_get_extra_diag_block_size(matrix);
+
+  if (cs_matrix_get_alloc_mode(matrix) == CS_ALLOC_HOST_DEVICE_SHARED) {
+    if (d_val != nullptr) {
+      cs_real_t  *d_val_p = const_cast<cs_real_t *>(*d_val);
+      cs_prefetch_d2h(d_val_p, n_rows*db_size*db_size*sizeof(cs_real_t));
+    }
+    if (x_val != nullptr) {
+      cs_real_t  *x_val_p = const_cast<cs_real_t *>(*x_val);
+      cs_prefetch_d2h(x_val_p, nnz*sizeof(cs_real_t));
+    }
+    return;
+  }
+
+  size_t shift[4] = {0, 0, 0, 0};
+  size_t count[4] = {0, 0, 0, 0};
+  constexpr cs_lnum_t align_size = 16;
+  if (row_index != nullptr) {
+    if (cs_check_device_ptr(*row_index) == CS_ALLOC_DEVICE)
+      count[0] = n_rows+1;
+  }
+  if (col_id != nullptr) {
+    if (cs_check_device_ptr(*col_id) == CS_ALLOC_DEVICE)
+      count[1] = nnz;
+  }
+  if (d_val != nullptr) {
+    if (cs_check_device_ptr(*d_val) == CS_ALLOC_DEVICE)
+      count[2] = n_rows*db_size*db_size;
+  }
+  if (x_val != nullptr) {
+    if (cs_check_device_ptr(*x_val) == CS_ALLOC_DEVICE)
+      count[3] = nnz*db_size*db_size;
+  }
+
+  for (int i = 0; i < 4; i++)
+    shift[i] = cs_align(count[i], align_size);
+
+  count[0] *= sizeof(cs_lnum_t);
+  count[1] *= sizeof(cs_lnum_t);
+  count[2] *= sizeof(cs_real_t);
+  count[3] *= sizeof(cs_real_t);
+  shift[0] *= sizeof(cs_lnum_t);
+  shift[1] *= sizeof(cs_lnum_t);
+  shift[2] *= sizeof(cs_real_t);
+  shift[3] *= sizeof(cs_real_t);
+
+  size_t b_size = shift[0] + shift[1] + shift[2] + shift[3];
+
+  if (b_size == 0)
+    return;
+
+  /* Now actually copy device to host values and return host pointers
+     ----------------------------------------------------------------*/
+
+  CS_PROFILE_MARK_LINE();
+
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  unsigned char *b = (unsigned char *)cs_glob_pinned_host_work_buffer;
+  if (cs_glob_pinned_host_work_buffer_size < b_size) {
+    cs_glob_pinned_host_work_buffer_size = b_size;
+    b = (unsigned char *)cs_glob_pinned_host_work_buffer;
+    CS_FREE(b);
+    CS_MALLOC_HD(b, b_size, unsigned char, CS_ALLOC_HOST_DEVICE_PINNED);
+    cs_glob_pinned_host_work_buffer = b;
+  }
+
+  if (count[0] > 0) {
+    cs_copy_d2h(b, *row_index, count[0]);
+    *row_index = reinterpret_cast<const cs_lnum_t *>(b);
+    b += shift[0];
+  }
+  if (count[1] > 0) {
+    cs_copy_d2h(b, *col_id, count[1]);
+    *col_id = reinterpret_cast<const cs_lnum_t *>(b);
+    b += shift[1];
+  }
+  if (count[2] > 0) {
+    cs_copy_d2h(b, *d_val, count[2]);
+    *d_val = reinterpret_cast<const cs_real_t *>(b);
+    b += shift[2];
+  }
+  if (count[3] > 0) {
+    cs_copy_d2h(b, *x_val, count[3]);
+    *x_val = reinterpret_cast<const cs_real_t *>(b);
+    b += shift[3];
+  }
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d:   %s (level %d) = %ld\n", cs_glob_rank_id, __func__,
+           level, elapsed.count());
+  }
+
+  CS_PROFILE_MARK_LINE();
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Apply one step of the pairwise aggregation algorithm for a
  *        matrix expected to be an M-matrix.
  *
@@ -2127,11 +2277,12 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
   const cs_real_t  *d_val, *x_val;
   cs_real_t *_d_val = nullptr, *_x_val = nullptr;
 
-  cs_matrix_get_msr_arrays(f->matrix,
-                           &row_index,
-                           &col_id,
-                           &d_val,
-                           &x_val);
+  _matrix_get_msr_arrays_host(f->matrix,
+                              f->level,
+                              &row_index,
+                              &col_id,
+                              &d_val,
+                              &x_val);
 
   const cs_lnum_t db_size = f->db_size;
   const cs_lnum_t eb_size = f->eb_size;
@@ -2447,11 +2598,12 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
   const cs_real_t  *d_val, *x_val;
   cs_real_t *_d_val = nullptr, *_x_val = nullptr;
 
-  cs_matrix_get_msr_arrays(f->matrix,
-                           &row_index,
-                           &col_id,
-                           &d_val,
-                           &x_val);
+  _matrix_get_msr_arrays_host(f->matrix,
+                              f->level,
+                              &row_index,
+                              &col_id,
+                              &d_val,
+                              &x_val);
 
   const cs_lnum_t f_nnz = row_index[f_n_rows];
 
@@ -4081,6 +4233,8 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
                           int                    verbosity,
                           cs_lnum_t             *f_c_cell)
 {
+  CS_PROFILE_MARK_LINE();
+
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
@@ -4366,6 +4520,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
                               int                    verbosity,
                               cs_lnum_t             *f_c_row)
 {
+  CS_PROFILE_MARK_LINE();
+
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
@@ -4392,22 +4548,14 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
   const cs_real_t  *d_val, *x_val;
   cs_real_t *_d_val = nullptr, *_x_val = nullptr;
 
-  cs_matrix_get_msr_arrays(f->matrix,
-                           &row_index,
-                           &col_id,
-                           &d_val,
-                           &x_val);
+  _matrix_get_msr_arrays_host(f->matrix,
+                              f->level,
+                              &row_index,
+                              &col_id,
+                              &d_val,
+                              &x_val);
 
   const cs_lnum_t f_nnz = row_index[f_n_rows];
-
-#if defined(HAVE_ACCEL)
-  if (cs_matrix_get_alloc_mode(f->matrix) == CS_ALLOC_HOST_DEVICE_SHARED) {
-    cs_real_t  *d_val_p = const_cast<cs_real_t *>(d_val);
-    cs_real_t  *x_val_p = const_cast<cs_real_t *>(x_val);
-    cs_prefetch_d2h(d_val_p, f_n_rows*db_size*db_size*sizeof(cs_real_t));
-    cs_prefetch_d2h(x_val_p, f_nnz*sizeof(cs_real_t));
-  }
-#endif
 
   if (db_size > 1) {
     CS_MALLOC(_d_val, f_n_rows, cs_real_t);
@@ -4431,6 +4579,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
       t_c_scan[i] = 0;
   }
 
+  CS_PROFILE_MARK_LINE();
+
   /* Allocate working arrays */
 
   short *c_cardinality, *c_aggr_count;
@@ -4450,6 +4600,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
     CS_MALLOC(log_counts, n_loc_threads*npass_max*2, cs_lnum_t);
     memset(log_counts, 0, n_loc_threads*npass_max*2*sizeof(cs_lnum_t));
   }
+
+  CS_PROFILE_MARK_LINE();
 
   /* Handle a block of rows per thread; aggregation will not be done
      across thread blocks, in a similar manner that it is not done
@@ -4645,6 +4797,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
       }  /* Loop on rows */
     }
 
+    CS_PROFILE_MARK_LINE();
+
     /* Other passes */
 
     for (int npass = 2; npass <= npass_max; npass++) {
@@ -4776,6 +4930,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
       }
     }
 
+    CS_PROFILE_MARK_LINE();
+
     /* We need to wait for all threads if we want to reuse
        the work array, as the portion we use is not the same
        (we could use the same portion if we were absolutely sure that
@@ -4813,6 +4969,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
     CS_FREE(log_counts);
   }
 
+  CS_PROFILE_MARK_LINE();
+
   /* Combine thread results */
 
 #if defined(HAVE_OPENMP)
@@ -4820,6 +4978,8 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
     c_n_rows = _scan_f_c_row(n_loc_threads, f_n_rows, t_c_scan, f_c_row);
   }
 #endif
+
+  CS_PROFILE_MARK_LINE();
 
   /* Free working arrays */
 
@@ -8241,19 +8401,21 @@ cs_grid_coarsen(cs_grid_t            *f,
   cs_alloc_mode_t amode_coarsen = amode_prev;
 
   if (amode_prev == CS_ALLOC_DEVICE) {
-    if (   fine_matrix_type == CS_MATRIX_MSR
-        && c->relaxation > 0 && msr_gather
-        && c->alloc_mode > CS_ALLOC_HOST)
-      amode_coarsen = CS_ALLOC_HOST_DEVICE_PINNED;
-    else
+    if ((   fine_matrix_type == CS_MATRIX_MSR
+         && c->relaxation > 0 && msr_gather
+         && c->alloc_mode > CS_ALLOC_HOST
+         && coarsening_type == CS_GRID_COARSENING_SPD_DX) == false) {
       amode_coarsen = CS_ALLOC_HOST_DEVICE_SHARED;
 
-    cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(f->matrix),
-                             amode_coarsen);
-    if (f->matrix_struct != nullptr) // Where owner (levels > 0)
-      cs_matrix_structure_set_alloc_mode(f->matrix_struct, amode_coarsen);
+      cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(f->matrix),
+                               amode_coarsen);
+      if (f->matrix_struct != nullptr) // Where owner (levels > 0)
+        cs_matrix_structure_set_alloc_mode(f->matrix_struct, amode_coarsen);
+    }
   }
 #endif
+
+  CS_PROFILE_MARK_LINE();
 
   /* Determine fine->coarse cell connectivity (aggregation) */
 
@@ -8318,6 +8480,8 @@ cs_grid_coarsen(cs_grid_t            *f,
     }
   }
 
+  CS_PROFILE_MARK_LINE();
+
 #if defined(HAVE_ACCEL)
   /* Where implemented algorithms allow it, use device-only allocation. */
   if (   amode_prev == CS_ALLOC_DEVICE
@@ -8335,6 +8499,8 @@ cs_grid_coarsen(cs_grid_t            *f,
       coarse_struct_v_id = 0;
   }
 
+  CS_PROFILE_MARK_LINE();
+
   _coarse_row_count_and_halo(f, c);
 
   if (msr_gather == false)
@@ -8342,6 +8508,8 @@ cs_grid_coarsen(cs_grid_t            *f,
 
   if (verbosity > 3)
     _aggregation_stats_log(f, c, verbosity);
+
+  CS_PROFILE_MARK_LINE();
 
   /* When parent grid is in native format */
 
@@ -8432,6 +8600,8 @@ cs_grid_coarsen(cs_grid_t            *f,
                                               verbosity);
 
   }
+
+  CS_PROFILE_MARK_LINE();
 
   /* Apply tuning if needed */
 

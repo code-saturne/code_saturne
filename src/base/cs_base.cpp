@@ -226,6 +226,15 @@ int cs_mpi_device_support = 0;
 
 #endif /* defined(HAVE_ACCEL) */
 
+#if defined(HAVE_ACCEL)
+
+/* GPU: global working array for temporary device to host copies */
+
+size_t  cs_glob_pinned_host_work_buffer_size = 0;
+void   *cs_glob_pinned_host_work_buffer = nullptr;
+
+#endif
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1791,6 +1800,11 @@ cs_base_mem_finalize(void)
                               N_("Theoretical instrumented dynamic memory: "),
                               N_("Virtual memory used:                     "),
                               N_("Shared libraries memory used:            ")};
+
+#if defined(HAVE_ACCEL)
+  CS_FREE(cs_glob_pinned_host_work_buffer);
+  cs_glob_pinned_host_work_buffer_size = 0;
+#endif
 
   /* Memory summary */
 
