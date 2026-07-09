@@ -349,9 +349,9 @@ public:
     check_bounds_(i,j);
 #endif
 
-    if (L == layout::right)
+    if constexpr (L == layout::right)
       return _data[i*_offset[0] + j];
-    else if (L == layout::left)
+    else if constexpr (L == layout::left)
       return _data[i + j*_offset[1]];
     else
       return _data[i*_offset[0] + j*_offset[1]];
@@ -380,9 +380,9 @@ public:
     check_bounds_(i,j);
 #endif
 
-    if (L == layout::right)
+    if constexpr (L == layout::right)
       return _data[i*_offset[0] + j];
-    else if (L == layout::left)
+    else if constexpr (L == layout::left)
       return _data[i + j*_offset[1]];
     else
       return _data[i*_offset[0] + j*_offset[1]];
@@ -618,11 +618,11 @@ public:
 
     cs_lnum_t dims[N - n_idx];
 
-    if (L == layout::right) {
+    if constexpr (L == layout::right) {
       for (int i = 0; i < N - n_idx; i++)
         dims[i] = _extent[i+n_idx];
     }
-    else if (L == layout::left) {
+    else if constexpr (L == layout::left) {
       for (int i = 0; i < N - n_idx; i++)
         dims[i] = _extent[i];
     }
@@ -1039,11 +1039,11 @@ protected:
     cs_lnum_t _indices[n_idx] = {indices...};
 
     cs_lnum_t retval = 0;
-    if (L == layout::right) {
+    if constexpr (L == layout::right) {
       for (int i = 0; i < n_idx; i++)
         retval +=_indices[i] * _offset[i];
     }
-    else if (L == layout::left) {
+    else if constexpr (L == layout::left) {
       for (int i = 0; i < n_idx; i++)
         retval +=_indices[i] * _offset[N-1-i];
     }
@@ -1077,14 +1077,14 @@ protected:
 
     /* Compute offset values for getters */
 
-    if (L == layout::right) {
+    if constexpr (L == layout::right) {
       /* Version for Layout right */
       for (int i = 0; i < N-1; i++) {
         for (int j = i + 1; j < N; j++)
           _offset[i] *= dims[j];
       }
     }
-    else if (L == layout::left) {
+    else if constexpr (L == layout::left) {
       for (int i = N-1; i >= 1; i--) {
         for (int j = i - 1; j >= 0; j--)
           _offset[i] *= dims[j];
