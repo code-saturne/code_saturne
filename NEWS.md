@@ -3,6 +3,8 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix crash with SOLU on vector (e.g. velcoity) and 2nd order in time.
+
 - Fix missing boundary values update in iterative process, which led to
   incorrect Rij results with isotropic diffusion (Shir model).
 
