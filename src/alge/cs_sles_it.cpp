@@ -2338,7 +2338,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
     n_iter += 1;
     res2 = 0.0;
 
-    /* Compute vx <- diag^-1 . (vxx - rhs) and residual. */
+    /* Compute vx <- diag^-1 . (rhs - vxx) and residual. */
 #   pragma omp parallel for reduction(+:res2) if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
       for (cs_lnum_t jj = 0; jj < 3; jj++) {
@@ -2512,7 +2512,7 @@ _block_jacobi(cs_sles_it_t              *c,
     n_iter += 1;
     res2 = 0.0;
 
-    /* Compute Vx <- Vx - (A-diag).Rk and residual. */
+    /* Compute vx <- diag^-1 . (vxx - rhs) and residual. */
 
 #   pragma omp parallel for reduction(+:res2) if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
@@ -2564,12 +2564,13 @@ _block_jacobi(cs_sles_it_t              *c,
 
     n_iter += 1;
 
-    /* Compute Vx <- Vx - (A-diag).Rk and residual. */
+    /* Compute vxx <- (A-diag).vx and residual. */
 
     cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, vx, vxx);
 
     res2 = 0.0;
 
+    /* vx <- diag^-1 (rhs - vxx) */
 #   pragma omp parallel for reduction(+:res2) if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
       for (cs_lnum_t kk = 0; kk < db_size; kk++)
