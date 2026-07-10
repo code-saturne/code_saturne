@@ -3833,7 +3833,7 @@ _convection_diffusion_unsteady_strided
                                  bc_coeffs,
                                  i_massflux,
                                  b_massflux,
-                                 pvar,
+                                 _pvar,
                                  gradup);
     }
   }
