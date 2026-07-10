@@ -44,9 +44,9 @@ if HAVE_LATEX
 
 # Environment variables for LaTeX
 
-TEXINPUTS = $(top_srcdir)/docs/style/$(cs_tex_path_sep)$(top_builddir)/docs/style/$(cs_tex_path_sep)$(srcdir)//$(cs_tex_path_sep)$(builddir)//$(cs_tex_path_end)
-BIBINPUTS = $(top_srcdir)/docs/style/
-BSTINPUTS = $(top_srcdir)/docs/style/
+TEXINPUTS = $(top_srcdir)/doc/style/$(cs_tex_path_sep)$(top_builddir)/doc/style/$(cs_tex_path_sep)$(srcdir)//$(cs_tex_path_sep)$(builddir)//$(cs_tex_path_end)
+BIBINPUTS = $(top_srcdir)/doc/style/
+BSTINPUTS = $(top_srcdir)/doc/style/
 
 # LaTeX commands
 

@@ -33,7 +33,7 @@ user_guide developer_guide
 
 if HAVE_DOXYGEN
 
-DOXYGENCMD = export TEXINPUTS="$(abs_top_srcdir)/docs/style/$(cs_tex_path_end)"; \
+DOXYGENCMD = export TEXINPUTS="$(abs_top_srcdir)/doc/style/$(cs_tex_path_end)"; \
   srcdir="$(top_srcdir)" builddir="$(top_builddir)" ple_docdir="$(ple_docdir)" \
   PLE_DOX_SECTION="$(ple_dox_tag)" NEPTUNE_CFD="$(NEPTUNE_CFD)" \
   package_name="$(PACKAGE_NAME)" package_version="$(cs_version_short)" \
@@ -41,7 +41,7 @@ DOXYGENCMD = export TEXINPUTS="$(abs_top_srcdir)/docs/style/$(cs_tex_path_end)";
   "$(DOXYGEN)"
 
 doxygen-pre:
-	$(DOXYGENCMD) $(top_srcdir)/docs/doxygen/Doxyfile-pre
+	$(DOXYGENCMD) $(top_srcdir)/doc/doxygen/Doxyfile-pre
 
 doxygen-src:
 	if test "$(ple_type)" = "internal" ; then \
@@ -52,10 +52,10 @@ doxygen-src:
 	if test "$(NEPTUNE_CFD)" = "neptune_cfd" ; then \
 	  cp $(top_builddir)/neptune_cfd/docs/doxygen/neptune.tag . ;\
 	fi ;\
-	$(DOXYGENCMD) $(top_srcdir)/docs/doxygen/Doxyfile-src
+	$(DOXYGENCMD) $(top_srcdir)/doc/doxygen/Doxyfile-src
 
 doxygen-ui:
-	$(DOXYGENCMD) $(top_srcdir)/docs/doxygen/Doxyfile-ui
+	$(DOXYGENCMD) $(top_srcdir)/doc/doxygen/Doxyfile-ui
 
 doxygen: doxygen-src
 

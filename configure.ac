@@ -1372,8 +1372,8 @@ AC_CONFIG_FILES([Makefile
                  src/user/Makefile src/user_examples/Makefile
                  src/meg/Makefile
                  python/Makefile
-                 docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
-                 docs/refcard/Makefile docs/theory/Makefile
+                 doc/Makefile doc/doxygen/Makefile doc/style/csvers.tex
+                 doc/refcard/Makefile doc/theory/Makefile
                  tests/Makefile
                  config/code_saturne_build.cfg.in])
 

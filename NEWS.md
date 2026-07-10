@@ -3,6 +3,8 @@ Master (not on release branches yet)
 
 ### Architectural changes:
 
+- Move documentation directory back from `docs` to more standard `doc`.
+
 - Switch to C++17 by default for code_saturne
 
 Release 9.2.0 (2026-07-06)

@@ -35,14 +35,14 @@ endif
 
 if HAVE_FRONTEND
 SUBDIRS += preprocessor
-DOCS = docs
+DOC = doc
 endif
 
 if HAVE_BACKEND
 SUBDIRS += external src
 endif
 
-SUBDIRS +=  python $(NEPTUNE_CFD) $(DOCS) $(TSTS)
+SUBDIRS +=  python $(NEPTUNE_CFD) $(DOC) $(TSTS)
 
 AUX_DIST =
 
@@ -266,7 +266,7 @@ extras/batch/batch_help.SLURM
 # Install man pages
 
 dist_man_MANS = \
-docs/manpages/code_saturne.1
+doc/manpages/code_saturne.1
 
 # Install bash completion script
 
@@ -281,14 +281,16 @@ extras/code_saturne.cfg.template
 
 # Generate and install documentation
 
-doc_dirs = $(PLE) $(NEPTUNE_CFD) docs
+doc_dirs = $(PLE) $(NEPTUNE_CFD) doc
 
+.PHONY: doc
 doc:
 	for p in $(doc_dirs); do \
 	  cd $$p && $(MAKE) $(AM_MAKEFLAGS) doc ;\
 	  cd $(abs_top_builddir) ;\
 	done
 
+.PHONY: install-doc
 install-doc:
 	for p in $(doc_dirs); do \
 	  cd $$p && $(MAKE) $(AM_MAKEFLAGS) install-doc ;\

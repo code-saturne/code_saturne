@@ -60,14 +60,14 @@ PROJECT_BRIEF          = "general documentation"
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = $(srcdir)/docs/doxygen/images/code_saturne_logo.png
+PROJECT_LOGO           = $(srcdir)/doc/doxygen/images/code_saturne_logo.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = $(builddir)/docs/doxygen/src
+OUTPUT_DIRECTORY       = $(builddir)/doc/doxygen/src
 
 # If the CREATE_SUBDIRS tag is set to YES then doxygen will create up to 4096
 # sub-directories (in 2 levels) under the output directory of each output format
@@ -794,7 +794,7 @@ FILE_VERSION_FILTER    =
 # DoxygenLayout.xml, doxygen will parse it automatically even if the LAYOUT_FILE
 # tag is left empty.
 
-LAYOUT_FILE            = $(srcdir)/docs/doxygen/DoxygenLayout.xml
+LAYOUT_FILE            = $(srcdir)/doc/doxygen/DoxygenLayout.xml
 
 # The CITE_BIB_FILES tag can be used to specify one or more bib files containing
 # the reference definitions. This must be a list of .bib files. The .bib
@@ -804,7 +804,7 @@ LAYOUT_FILE            = $(srcdir)/docs/doxygen/DoxygenLayout.xml
 # LATEX_BIB_STYLE. To use this feature you need bibtex and perl available in the
 # search path. See also \cite for info how to create references.
 
-CITE_BIB_FILES         = $(srcdir)/docs/style/csbiblio.bib
+CITE_BIB_FILES         = $(srcdir)/doc/style/csbiblio.bib
 
 #---------------------------------------------------------------------------
 # Configuration options related to warning and progress messages
@@ -909,7 +909,7 @@ WARN_LOGFILE           = doxygen_warn.log
 
 INPUT                  = $(srcdir)/INSTALL.md \
                          $(srcdir)/src \
-                         $(srcdir)/docs/doxygen
+                         $(srcdir)/doc/doxygen
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -967,7 +967,7 @@ EXCLUDE                = .deps \
                          .libs \
                          .git \
                          $(srcdir)/src/user_examples \
-                         $(srcdir)/docs/doxygen/doxypypy.py
+                         $(srcdir)/doc/doxygen/doxypypy.py
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1001,7 +1001,7 @@ EXCLUDE_SYMBOLS        =
 # command).
 
 EXAMPLE_PATH           = $(srcdir)/src/user_examples \
-                         $(srcdir)/docs/doxygen/examples
+                         $(srcdir)/doc/doxygen/examples
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and
@@ -1021,7 +1021,7 @@ EXAMPLE_RECURSIVE      = NO
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             = $(srcdir)/docs/doxygen/images
+IMAGE_PATH             = $(srcdir)/doc/doxygen/images
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -1266,7 +1266,7 @@ HTML_FILE_EXTENSION    = .html
 # of the possible markers and block names see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_HEADER            = $(srcdir)/docs/doxygen/cs_dox_header.html
+HTML_HEADER            = $(srcdir)/doc/doxygen/cs_dox_header.html
 
 # The HTML_FOOTER tag can be used to specify a user-defined HTML footer for each
 # generated HTML page. If the tag is left blank doxygen will generate a standard
@@ -1301,7 +1301,7 @@ HTML_STYLESHEET        =
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = $(srcdir)/docs/doxygen/cs_dox_style.css
+HTML_EXTRA_STYLESHEET  = $(srcdir)/doc/doxygen/cs_dox_style.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -1766,7 +1766,7 @@ MATHJAX_EXTENSIONS     = TeX/AMSmath \
 # example see the documentation.
 # This tag requires that the tag USE_MATHJAX is set to YES.
 
-MATHJAX_CODEFILE       = $(srcdir)/docs/doxygen/cs_mathjax_macros.js
+MATHJAX_CODEFILE       = $(srcdir)/doc/doxygen/cs_mathjax_macros.js
 
 # When the SEARCHENGINE tag is enabled doxygen will generate a search box for
 # the HTML output. The underlying search engine uses javascript and DHTML and
