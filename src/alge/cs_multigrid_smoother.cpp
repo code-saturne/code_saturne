@@ -515,7 +515,7 @@ _block_jacobi(cs_sles_it_t              *c,
               void                      *aux_vectors)
 {
   cs_real_t *_aux_vectors;
-  cs_real_t  *restrict rk, *restrict vxx;
+  cs_real_t *restrict vxx;
 
   unsigned n_iter = 0;
 
@@ -532,7 +532,7 @@ _block_jacobi(cs_sles_it_t              *c,
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-    const size_t n_wa = 2;
+    const size_t n_wa = 1;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
@@ -540,8 +540,7 @@ _block_jacobi(cs_sles_it_t              *c,
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
-    rk  = _aux_vectors;
-    vxx = _aux_vectors + wa_size;
+    vxx = _aux_vectors;
   }
 
   int iter_ini = 0;
@@ -559,7 +558,6 @@ _block_jacobi(cs_sles_it_t              *c,
       cs_real_t _vxx[DB_SIZE_MAX];
 
       for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-        rk[db_size*ii + jj] = 0;
         _vxx[jj] = 0;
       }
 
@@ -578,14 +576,13 @@ _block_jacobi(cs_sles_it_t              *c,
 
   for (n_iter = iter_ini; n_iter < convergence->n_iterations_max; n_iter++) {
 
-    /* Compute Vx <- Vx - (A-diag).Rk */
+    /* Compute vxx <- (A-diag).vx */
 
     cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, vx, vxx);
 
+    /* Compute Vx <- diag^-1 (RHS - Vxx) */
 #   pragma omp parallel for if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        rk[ii*db_size + kk] = vx[ii*db_size + kk];
       _mat_c_m_b(ad_inv + db_size_2*ii,
                  db_size,
                  vx + db_size*ii,
