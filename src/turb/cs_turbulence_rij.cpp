@@ -1612,14 +1612,16 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       return; // return from lambda function == continue in loop
 
     cs_real_t xnal[3] = {0, 0, 0};
+    cs_real_t alpha3 = 1.;
 
-    cs_real_t matrot[3][3];
+    cs_real_t matrot[3][3] = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
     cs_real_t impl_drsm[6][6];
 
     /* EBRSM: compute the magnitude of the Alpha gradient */
 
     if (model == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_math_3_normalize(grad_al.sub_array(c_id), xnal);
+      alpha3 = cs_math_pow3(cvar_al[c_id]);
     }
 
     cs_real_t m_rij[3][3], xprod[3][3];
@@ -1755,13 +1757,13 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                       + d2s3 * tke * cssgr4 * cs::max(aklskl, 0);
 
         /* Linear constant */
-        impl_lin_cst = eigen_max * (crijeps + cssgr4 + cssgr5);
+        impl_lin_cst = eigen_max * (1. + cssgr4 + cssgr5);
 
         cs_real_t implmat2add[3][3];
         for (cs_lnum_t i = 0; i < 3; i++) {
           for (cs_lnum_t j = 0; j < 3; j++) {
             const cs_lnum_t _ij = t2v[i][j];
-            implmat2add[i][j] =   m_omij[i][j]
+            implmat2add[i][j] = gradv[c_id][i][j] - ccorio * matrot[i][j]
                                 + impl_lin_cst * st_deltaij[_ij]
                                 + impl_id_cst * d1s2 * oo_matrn[_ij]
                                 + ceps_impl * oo_matrn[_ij];
@@ -1774,14 +1776,11 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       }
       else { /* model == CS_TURB_RIJ_EPSILON_EBRSM */
 
-        const cs_real_t alpha3 = cs_math_pow3(cvar_al[c_id]);
-
         /* Phi3 constant */
         const cs_real_t cphi3impl = cs::abs(cebmr2 - cebmr3*sqrt(aii));
 
-        /* PhiWall + epsilon_wall constants for EBRSM */
-        const cs_real_t cphiw_impl = 6 * (1 - alpha3)
-          * crijeps * cvara_ep[c_id] / tke;
+        /* PhiWall for EBRSM  implicited afterwards */
+        cs_real_t cphiw_impl = 5. * (1 - alpha3) * cvara_ep[c_id] / tke;
 
         /* The implicit components of Phi (pressure-velocity fluctuations)
          * are split into the linear part (A*R) and Id part (A*Id). */
@@ -1792,18 +1791,20 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                       + 2 * d2s3 * cebmr4 * tke * eigen_max
                       + d2s3 * tke * cebmr4 * cs::max(aklskl, 0));
 
-        /* Linear constant */
+        /* Linear constant, of type -R^(n+1)/tau */
         impl_lin_cst
-          = eigen_max * (1 + cebmr4*alpha3 + cebmr5*alpha3) + cphiw_impl;
+          = eigen_max * (1 + cebmr4*alpha3 + cebmr5*alpha3);
 
         cs_real_t implmat2add[3][3];
         for (cs_lnum_t i = 0; i < 3; i++) {
           for (cs_lnum_t j = 0; j < 3; j++) {
             const cs_lnum_t _ij = t2v[i][j];
-            implmat2add[i][j] =   m_omij[i][j]
+            implmat2add[i][j] = gradv[c_id][i][j] - ccorio * matrot[i][j]
                                 + impl_lin_cst * st_deltaij[_ij]
-                                + impl_id_cst * d1s2 * oo_matrn[_ij]
-                                + alpha3 * ceps_impl * oo_matrn[_ij];
+                                /* 5/tau * (1-alpha3) n x n  */
+                                + xnal[i] * xnal[j] * cphiw_impl
+                                + (  impl_id_cst * d1s2
+                                   + alpha3 * ceps_impl) * oo_matrn[_ij];
           }
         }
         /* Compute the 6x6 matrix A which verifies
@@ -1914,7 +1915,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
         /* Compute \f $\e_{ij}^w \f$ (Rotta model)
          * Rij/k*epsilon */
-        const cs_real_t epsijw = crijeps * m_rij[j][i] / tke * cvara_ep[c_id];
+        const cs_real_t epsijw = crijeps * m_rij[i][j] / tke * cvara_ep[c_id];
 
         /* Compute \e_{ij}^h */
         const cs_real_t epsij = crijeps * d2s3 * cvara_ep[c_id] * st_deltaij[ij];
@@ -1922,7 +1923,6 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         /* Compute explicit ST of the Rij equation
          *  \f[ P_{ij} + (1-\alpha^3)\Phi_{ij}^w + \alpha^3\Phi_{ij}^h
          * - (1-\alpha^3)\e_{ij}^w   - \alpha^3\e_{ij}^h  ]\f$ --> W1 */
-        const cs_real_t  alpha3 = cs_math_pow3(cvar_al[c_id]);
 
         /* save the pressure correlation  term for Rij
          * ----------------------------------------------
@@ -1940,9 +1940,14 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                       - (1-alpha3) * epsijw - alpha3 * epsij);
 
         /* Implicit terms */
-        cs_real_t  epsijw_imp = 0; // FIXME
+        cs_real_t  epsijw_imp = 0;
+
+        /* Tke eps_w and Phi_w */
         if (coupled_components == 0)
-          epsijw_imp = 6. * (1.-alpha3)*crijeps * cvara_ep[c_id] / tke;
+          epsijw_imp = (5. + crijeps) * (1.-alpha3) * cvara_ep[c_id] / tke;
+        /* Only esp_w */
+        else
+          epsijw_imp = crijeps * (1.-alpha3) * cvara_ep[c_id] / tke;
 
         /* The term below corresponds to the implicit part of SSG
          * in the context of elliptical weighting, it is multiplied by
@@ -2522,7 +2527,7 @@ _solve_epsilon(int              phase_id,
 
   const cs_real_t sigmae = f_eps->get_key_double("turbulent_schmidt");
 
-  const cs_equation_param_t *eqp
+  cs_equation_param_t *eqp
     = cs_field_get_equation_param(f_eps);
 
   if (eqp->verbosity >= 1) {
@@ -2598,10 +2603,9 @@ _solve_epsilon(int              phase_id,
     });
   }
   else {
-    const cs_real_t zero_threshold = cs_math_zero_threshold;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       rhs[c_id]  += fimp[c_id]*cvara_ep[c_id];
-      fimp[c_id]  = cs::max(-fimp[c_id], zero_threshold);
+      fimp[c_id]  = cs::max(-fimp[c_id], 0.);
     });
   }
 
@@ -2614,7 +2618,6 @@ _solve_epsilon(int              phase_id,
       && (cs_glob_lagr_source_terms->ltsdyn == 1)) {
 
     const cs_real_t ce4 = cs_turb_ce4;
-    const cs_real_t zero_threshold = cs_math_zero_threshold;
 
     const cs_real_6_t *lagr_st_rij
       = (const cs_real_6_t *)cs_field("lagr_st_rij")->val;
@@ -2637,7 +2640,7 @@ _solve_epsilon(int              phase_id,
 
       /* equiv:                    -cs_turb_ce4 * st_eps * / (k/eps) */
       fimp[c_id] += cs::max(-ce4 * st_eps / k * cvara_ep[c_id],
-                            zero_threshold);
+                            0.);
     });
   }
   ctx.wait();
@@ -2712,14 +2715,18 @@ _solve_epsilon(int              phase_id,
 
       const cs_real_t prdeps = k_prod / cvara_ep[c_id];
       const cs_real_t alpha3 = cs_math_pow3(cvar_al[c_id]);
+      const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
 
       /* Production (explicit) */
       /* Compute of C_eps_1' */
-      w1[c_id] =   cromo[c_id] * cell_f_vol[c_id] * ce1
+      w1[c_id] =   crom_vol * ce1
                  * (1.+xa1*(1-alpha3)*prdeps) * k_prod / xttdrb;
 
+      /* If Pk < 0, implicit it */
+      if (w1[c_id] < 0.)
+        fimp[c_id] -= w1[c_id] / cvara_ep[c_id];
+
       /* Dissipation (implicit) */
-      const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
       rhs[c_id] -= crom_vol * ceps2 * cvara_ep[c_id] / xttdrb;
       fimp[c_id] += ceps2 * crom_vol * thetap / xttdrb;
     });
@@ -2741,12 +2748,13 @@ _solve_epsilon(int              phase_id,
       const cs_real_t xttke = tke / cvara_ep[c_id];
 
       /* Production (explicit, a part might be implicit) */
-      const cs_real_t cromo_vol = cromo[c_id] * cell_f_vol[c_id];
-      fimp[c_id] += cs::max(- cromo_vol * ce1 * k_prod / tke, 0.0);
-      w1[c_id] = cromo_vol * ce1 / xttke * k_prod;
+      const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
+      w1[c_id] = crom_vol * ce1 / xttke * k_prod;
+      /* If Pk < 0, implicit it */
+      if (w1[c_id] < 0.)
+        fimp[c_id] -= w1[c_id] / cvara_ep[c_id];
 
       /* Dissipation (implicit) */
-      const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
       rhs[c_id]  -= crom_vol * ceps2 * cs_math_pow2(cvara_ep[c_id]) / tke;
       fimp[c_id] += ceps2 * crom_vol / xttke * thetap;
     });
@@ -2973,7 +2981,7 @@ cs_turbulence_rij(int phase_id)
 
   /* Source terms for Rij
    * -------------------- */
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (int ij = 0; ij < 6; ij++) {
       rhs(c_id, ij) = 0.;
       for (int kl = 0; kl < 6; kl++) {
@@ -2994,8 +3002,8 @@ cs_turbulence_rij(int phase_id)
   if (st_prv_id > -1)
     c_st_prv = (cs_real_6_t *)cs_field(st_prv_id)->val;
 
-  const cs_equation_param_t *eqp
-    = cs_field_get_equation_param_const(f_rij);
+  cs_equation_param_t *eqp
+    = cs_field_get_equation_param(f_rij);
 
   const cs_time_step_t *time_step = cs_glob_time_step;
   const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
@@ -3030,7 +3038,10 @@ cs_turbulence_rij(int phase_id)
       for (cs_lnum_t ij = 0; ij < 6; ij++) {
         for (cs_lnum_t kl = 0; kl < 6; kl++) {
           rhs(c_id, ij) += fimp(c_id, ij, kl) * cvara_rij[c_id][kl];
-          fimp(c_id, ij, kl) = cs::max(-fimp(c_id, ij, kl), 0.);//FIXME generalized positive part
+          // Read Norddine Ferrand Benhamadouche 2022 to know
+          // which part can be implicit. We take what is given by the user
+          // without check.
+          fimp(c_id, ij, kl) = -fimp(c_id, ij, kl);
         }
       }
     });
@@ -3155,7 +3166,7 @@ cs_turbulence_rij(int phase_id)
       cs_real_t xnoral = cs_math_3_norm(grad.sub_array(c_id));
       if (xnoral <= cs_math_epzero / pow(cell_f_vol[c_id], c_1ov3)) {
         for (int i = 0; i < 3; i++)
-          xnal[i] = 1.0 / sqrt(3.0);
+          xnal[i] = 0.;
       }
       else {
         for (int i = 0; i < 3; i++)
@@ -3585,7 +3596,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   /* Resolving the equation of alpha
      =============================== */
 
-  const cs_equation_param_t *eqp
+  cs_equation_param_t *eqp
     = cs_field_get_equation_param(cs_field(f_id));
 
   if (eqp->verbosity == 1) {
@@ -3911,7 +3922,7 @@ cs_turbulence_rij_clip(int        phase_id,
   /* Clipping (modified to avoid exactly zero values) */
 
   const cs_real_t varrel = 1.1;
-  const cs_real_t eigen_tol = 1.e-4;
+  const cs_real_t eigen_tol = 1.e-8;
   const cs_real_t epz2 = cs_math_pow2(cs_math_epzero);
 
   /* Compute the maximal value of each of the diagonal components over the
