@@ -628,7 +628,7 @@ typedef struct {
  *  \brief Set of parameters to check the convergence of the pseudo-steady algo.
  */
 
-typedef struct {
+struct cs_param_psteady_t {
   /*!
    * \var atol
    * Absolute tolerance under which the iterative process is stopped
@@ -656,8 +656,7 @@ typedef struct {
   int n_time_step_solve{ 1 };
 
   double tol_pred_adam{ 1e-2 };
-
-} cs_param_psteady_t;
+};
 
 /*! \struct psteady_cvg
  *  \brief  Convergence values of the pseudo-steady algo.
