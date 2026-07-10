@@ -59,7 +59,7 @@
  *         structure is to store all parameters in one place.
  */
 
-typedef struct {
+struct cs_turbulence_param_t {
 
   /*! \var model
    * Main set of parameters to handle turbulence modelling. This
@@ -96,7 +96,7 @@ typedef struct {
    */
   bool shared_from_legacy;
 
-} cs_turbulence_param_t;
+};
 
 /*! \struct cs_turbulence_t
  *  \brief Structure storing the parameters related to the resolution of the

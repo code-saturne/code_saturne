@@ -51,7 +51,7 @@
 
 typedef struct _cs_sdm_t cs_sdm_t;
 
-typedef struct {
+struct cs_sdm_block_t {
 
   int    n_max_blocks_by_row;
   int    n_row_blocks;
@@ -63,7 +63,7 @@ typedef struct {
   */
   cs_sdm_t    *blocks;
 
-} cs_sdm_block_t;
+} ;
 
 /* Structure enabling the repeated usage of Small Dense Matrices (SDM) during
    the building of the linear system by a cellwise process */

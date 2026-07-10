@@ -144,7 +144,7 @@ typedef enum {
  *        discrete Hodge operator
  */
 
-typedef struct {
+struct cs_hodge_param_t {
 
   bool              inv_pty;
 
@@ -166,7 +166,7 @@ typedef struct {
    * algorithm is used. Otherwise the value is set to 0 and ignored.
    */
 
-} cs_hodge_param_t;
+};
 
 /* DISCRETE HODGE OPERATORS */
 /* ======================== */
@@ -176,7 +176,7 @@ typedef struct {
  * \brief Structure associated to a discrete Hodge operator *
  */
 
-typedef struct {
+struct cs_hodge_t {
 
   const cs_hodge_param_t  *param;      /*!< Set of parameters (shared) */
 
@@ -190,7 +190,7 @@ typedef struct {
 
   cs_sdm_t                *matrix;    /*!< Matrix storing the operator values */
 
-} cs_hodge_t;
+};
 
 /*----------------------------------------------------------------------------*/
 /*!

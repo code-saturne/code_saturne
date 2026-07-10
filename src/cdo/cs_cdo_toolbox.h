@@ -61,7 +61,7 @@
  * of the balance of each term of an equation
  */
 
-typedef struct {
+struct cs_cdo_balance_t {
 
   /* Where the balance is computed: primal vertices or primal cells */
 
@@ -78,7 +78,7 @@ typedef struct {
   cs_real_t      *source_term;
   cs_real_t      *boundary_term;
 
-} cs_cdo_balance_t;
+};
 
 /*============================================================================
  * Public function prototypes

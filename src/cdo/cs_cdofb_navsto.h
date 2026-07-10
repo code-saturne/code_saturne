@@ -66,7 +66,7 @@
  * \brief Type of algorithm to compute the Boussinesq approximation
  */
 
-typedef enum {
+enum cs_cdofb_navsto_boussinesq_type_t {
 
   /*!
    * \brief Boussinesq approximation relyong on a cell contribution
@@ -90,7 +90,7 @@ typedef enum {
 
   CS_CDOFB_NAVSTO_BOUSSINESQ_FACE_DOF
 
-} cs_cdofb_navsto_boussinesq_type_t;
+};
 
 
 /*! \struct cs_cdofb_navsto_builder_t
@@ -102,7 +102,7 @@ typedef enum {
  * face-based scheme.
  */
 
-typedef struct {
+struct cs_cdofb_navsto_builder_t {
 
   /*!
    * @name Properties
@@ -163,7 +163,7 @@ typedef struct {
    * @}
    */
 
-} cs_cdofb_navsto_builder_t;
+};
 
 /*----------------------------------------------------------------------------*/
 /*!

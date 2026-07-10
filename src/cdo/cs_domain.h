@@ -79,7 +79,7 @@
  * This stage is useful to free memory allocated during the computation.
  */
 
-typedef enum {
+enum cs_domain_stage_t {
 
   CS_DOMAIN_STAGE_BEFORE_STEADY_COMPUTATION,
   CS_DOMAIN_STAGE_BEFORE_TIME_LOOP,
@@ -90,14 +90,14 @@ typedef enum {
 
   CS_DOMAIN_N_STAGES
 
-} cs_domain_stage_t;
+};
 
 
 /*! \struct cs_domain_cdo_context_t
  *  \brief  High-level metadata for handling CDO/HHO schemes
  */
 
-typedef struct {
+struct cs_domain_cdo_context_t {
 
   /* Flag to know if scalar or vector equations are requested and which kind
      of numerical schemes is requested to solve these equations */
@@ -110,14 +110,14 @@ typedef struct {
   cs_flag_t                 hho_scheme_flag;
   cs_flag_t                 mac_scheme_flag;
 
-} cs_domain_cdo_context_t;
+};
 
 /*! \struct cs_domain_t
  *  \brief  Structure storing the main features of the computational domain
  *  and pointers to the main geometrical structures
  */
 
-typedef struct {
+struct cs_domain_t {
 
   /* Working directory names */
 
@@ -173,7 +173,7 @@ typedef struct {
                                 and post-processing */
   cs_timer_counter_t    tca; /* Cumulated elapsed time for all operations */
 
-} cs_domain_t;
+};
 
 /*============================================================================
  * Static global variables

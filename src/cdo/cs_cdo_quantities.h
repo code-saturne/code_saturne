@@ -117,7 +117,7 @@ typedef enum {
 /* Structure storing information about variation of entities across the
    mesh for a given type of entity (cell, face and edge) */
 
-typedef struct {
+struct cs_quant_info_t {
 
   /* Measure is either a volume for cells, a surface for faces or a length
      for edges */
@@ -127,19 +127,19 @@ typedef struct {
   double   h_min;     /* Estimation of the min. value of the diameter */
   double   h_max;     /* Estimation of the max. value of the diameter */
 
-} cs_quant_info_t;
+} ;
 
 /* For primal vector quantities (edge or face) */
 
-typedef struct {
+struct cs_quant_t {
 
   double  meas;       /* length or area */
   double  unitv[3];   /* unitary vector: tangent or normal to the element */
   double  center[3];
 
-} cs_quant_t;
+};
 
-typedef struct cs_cdo_quantities_t { /* Specific mesh quantities */
+struct cs_cdo_quantities_t { /* Specific mesh quantities */
 
   /* Keep the information about the removal of boundary faces in case of 2D
      computations */
@@ -457,7 +457,7 @@ typedef struct cs_cdo_quantities_t { /* Specific mesh quantities */
         const cs_mesh_quantities_t *mq,
         const cs_cdo_connect_t     *topo) const;
 
-} cs_cdo_quantities_t;
+};
 
 /*============================================================================
  * Global variables

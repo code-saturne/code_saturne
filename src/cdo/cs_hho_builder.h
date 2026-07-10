@@ -47,7 +47,7 @@
  *============================================================================*/
 
 /* Cellwise builder for HHO discretization */
-typedef struct {
+struct cs_hho_builder_t {
 
   /* Current and maximal number of face basis allocated. This number is equal
      to the max. number of faces for a cell */
@@ -66,7 +66,7 @@ typedef struct {
   cs_sdm_t   *jstab;         /* Stabilization part related to a face */
   cs_sdm_t   *hdg;           /* Another temporary matrix */
 
-} cs_hho_builder_t;
+};
 
 /*============================================================================
  * Public function prototypes

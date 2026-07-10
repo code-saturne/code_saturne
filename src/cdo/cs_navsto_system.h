@@ -188,7 +188,7 @@ typedef void(cs_navsto_check_convergence_t)(
  *  \brief  Structure managing the Navier-Stokes system
  */
 
-typedef struct {
+struct cs_navsto_system_t {
 
   /*! \var param
    *       Set of parameters to handle the Navier-Stokes system
@@ -448,7 +448,7 @@ typedef struct {
 
   cs_navsto_check_convergence_t *check_convergence;
 
-} cs_navsto_system_t;
+};
 
 /*============================================================================
  * Public function prototypes

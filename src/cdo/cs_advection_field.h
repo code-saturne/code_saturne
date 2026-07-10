@@ -119,7 +119,7 @@ typedef cs_flag_t  cs_advection_field_status_t;
  * @}
  */
 
-typedef enum {
+enum cs_advection_field_status_bit_t {
 
   /* Category of advection field */
   /* --------------------------- */
@@ -142,13 +142,13 @@ typedef enum {
   CS_ADVECTION_FIELD_DEFINE_AT_VERTICES                = 1<<7, /* = 128 */
   CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES          = 1<<8  /* = 256 */
 
-} cs_advection_field_status_bit_t;
+};
 
 /*! \struct cs_advection_field_t
  *  \brief Main structure to handle an advection field
  */
 
-typedef struct {
+struct cs_adv_field_t {
 
   /*!
    * \var id
@@ -215,7 +215,7 @@ typedef struct {
   cs_xdef_t                   **bdy_flux_defs;
   short int                    *bdy_def_ids;
 
-} cs_adv_field_t;
+};
 
 /*============================================================================
  * Global variables

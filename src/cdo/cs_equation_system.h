@@ -118,7 +118,7 @@ typedef void
  *  \brief Main structure to handle a set of coupled equations
  */
 
-typedef struct {
+struct cs_equation_system_t {
 
   /*!
    * @name Metadata
@@ -226,7 +226,7 @@ typedef struct {
    * @}
    */
 
-} cs_equation_system_t;
+};
 
 /*============================================================================
  * Public function prototypes

@@ -137,7 +137,7 @@ typedef enum {
  * Definition for a volumic zone. Zones are attached to a list of cells.
  */
 
-typedef enum {
+enum cs_xdef_support_t {
 
   CS_XDEF_SUPPORT_TIME,      /* support for time step description */
   CS_XDEF_SUPPORT_BOUNDARY,  /* zones attached to boundary faces */
@@ -145,7 +145,7 @@ typedef enum {
 
   CS_N_XDEF_SUPPORTS
 
-} cs_xdef_support_t;
+};
 
 /*!
  * \struct cs_xdef_t
@@ -153,7 +153,7 @@ typedef enum {
  *         way
  */
 
-typedef struct {
+struct cs_xdef_t {
 
   /*! \var dim
    * dimension of the values attached to this description
@@ -199,14 +199,14 @@ typedef struct {
 
   void                  *context;
 
-} cs_xdef_t;
+};
 
 /*!
  * \struct cs_xdef_array_context_t
  * \brief Context structure when an array is used for the definition
  */
 
-typedef struct {
+struct cs_xdef_array_context_t {
 
   /*!
    * \var z_id
@@ -278,14 +278,14 @@ typedef struct {
   const cs_lnum_t        *elt_ids;
   const cs_adjacency_t   *adjacency;
 
-} cs_xdef_array_context_t;
+};
 
 /*!
  * \struct cs_xdef_analytic_context_t
  * \brief Context structure when a definition by analytic function is used
  */
 
-typedef struct {
+struct cs_xdef_analytic_context_t {
 
   /*! \var z_id
    * id related to a zone (volume or boundary) for this definition
@@ -312,14 +312,14 @@ typedef struct {
 
   cs_xdef_free_input_t  *free_input;
 
-} cs_xdef_analytic_context_t;
+};
 
 /*!
  * \struct cs_xdef_dof_context_t
  * \brief Context structure when a definition by DoF function is used
  */
 
-typedef struct {
+struct cs_xdef_dof_context_t {
 
   /*! \var z_id
    * id related to a zone (volume or boundary) for this definition
@@ -353,14 +353,14 @@ typedef struct {
 
   cs_xdef_free_input_t  *free_input;
 
-} cs_xdef_dof_context_t;
+};
 
 /*!
  * \struct cs_xdef_time_func_context_t
  * \brief Context structure when a time step function is used for the definition
  */
 
-typedef struct {
+struct cs_xdef_time_func_context_t {
 
   /*! \var z_id
    * id related to a zone (volume or boundary) for this definition
@@ -387,7 +387,7 @@ typedef struct {
 
   cs_xdef_free_input_t  *free_input;
 
-} cs_xdef_time_func_context_t;
+};
 
 /*============================================================================
  * Public function prototypes

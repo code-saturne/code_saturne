@@ -58,20 +58,20 @@
  * Iterative algorithms using an inner/outer iterative loops
  */
 
-typedef enum {
+enum cs_iter_algo_type_bit_t {
 
   CS_ITER_ALGO_DEFAULT             = 1 << 0, /* =  1 */
   CS_ITER_ALGO_ANDERSON            = 1 << 1, /* =  2 */
   CS_ITER_ALGO_TWO_LEVEL           = 1 << 2, /* =  4 */
 
-} cs_iter_algo_type_bit_t;
+};
 
 typedef cs_flag_t  cs_iter_algo_type_t;
 
 /* Structure used as context for the iterative algorithm considered by
    default */
 
-typedef struct {
+struct cs_iter_algo_default_t {
 
   /*!
    * \var cvg_status
@@ -120,7 +120,7 @@ typedef struct {
   int                              n_inner_iter;
   int                              last_inner_iter;
 
-} cs_iter_algo_default_t;
+};
 
 /* Structures used when an Anderson acceleration is considered */
 /* ----------------------------------------------------------- */
@@ -131,7 +131,7 @@ typedef struct {
  *  Anderson acceleration
  */
 
-typedef struct {
+struct cs_iter_algo_param_aac_t {
 
 /*!
  * \var n_max_dir
@@ -154,7 +154,7 @@ typedef struct {
   double                     max_cond;
   double                     beta;
 
-} cs_iter_algo_param_aac_t;
+};
 
 /*! \struct cs_iter_algo_aac_t
  *  \brief Context structure for the algorithm called Anderson acceleration
@@ -162,7 +162,7 @@ typedef struct {
  *  Set of parameters and arrays to manage the Anderson acceleration
  */
 
-typedef struct {
+struct cs_iter_algo_aac_t {
 
   /*!
    * @name Main parameters
@@ -266,7 +266,7 @@ typedef struct {
 
   cs_real_t      *gamma;
 
-} cs_iter_algo_aac_t;
+};
 
 /* ++++++++++++++ */
 /* Main structure */
@@ -282,7 +282,7 @@ typedef struct {
  *  (information about inner iterations are only for monitoring purposes).
  */
 
-typedef struct {
+struct cs_iter_algo_t {
 
 /*!
  * \var type
@@ -309,7 +309,7 @@ typedef struct {
 
   void                            *context;
 
-} cs_iter_algo_t;
+};
 
 /*============================================================================
  * Public function prototypes

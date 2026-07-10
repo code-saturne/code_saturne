@@ -78,7 +78,7 @@
  * Context stucture for the k-epsilon turbulence modelling
  * -------------------------------------------------------------------------- */
 
-typedef struct {
+struct cs_turb_context_k_eps_t {
 
   /* Equations */
 
@@ -98,13 +98,13 @@ typedef struct {
   cs_xdef_t       *tke_source_term; /* Production + buoyancy if needed for k */
   cs_xdef_t       *eps_source_term; /* Same for epsilon */
 
-} cs_turb_context_k_eps_t;
+};
 
 /* --------------------------------------------------------------------------
  * Context structure for the k-epsilon turbulence modelling
  * -------------------------------------------------------------------------- */
 
-typedef struct {
+struct cs_turb_source_term_t {
 
   /* High level structures */
 
@@ -122,7 +122,7 @@ typedef struct {
   cs_real_t   *u_cell;
   cs_real_t   *u_face;
 
-} cs_turb_source_term_t;
+};
 
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

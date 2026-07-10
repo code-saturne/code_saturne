@@ -75,13 +75,13 @@ typedef struct _cs_equation_t cs_equation_t;
  *      quantities that are specific to the discrization are in this structure.
  */
 
-typedef struct {
+struct cs_equation_core_t {
 
   cs_equation_param_t   *param;
   cs_equation_builder_t *builder;
   void                  *scheme_context;
 
-} cs_equation_core_t;
+};
 
 /*============================================================================
  * Public function prototypes

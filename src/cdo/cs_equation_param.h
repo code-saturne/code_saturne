@@ -166,7 +166,7 @@
  * Resolution is performed after all predefined equations have been solved.
  */
 
-typedef enum {
+enum cs_equation_type_t {
 
   CS_EQUATION_TYPE_GROUNDWATER,
   CS_EQUATION_TYPE_MAXWELL,
@@ -178,7 +178,7 @@ typedef enum {
 
   CS_EQUATION_N_TYPES
 
-} cs_equation_type_t;
+};
 
 /*----------------------------------------------------------------------------*/
 
@@ -187,7 +187,7 @@ typedef enum {
  *         equation with term sources
  */
 
-typedef struct {
+struct cs_equation_param_t {
 
   /*!
    * @name General settings
@@ -854,7 +854,7 @@ typedef struct {
                                                      of the pointer. */
   cs_time_control_t          *time_control; /* Time control for equations */
 
-} cs_equation_param_t;
+};
 
 /*----------------------------------------------------------------------------*/
 
@@ -1231,7 +1231,7 @@ typedef struct {
  *
  */
 
-typedef enum {
+enum cs_equation_key_t {
 
   CS_EQKEY_ADV_STAB_COEF,
   CS_EQKEY_ADV_EXTRAPOL,
@@ -1289,7 +1289,7 @@ typedef enum {
 
   CS_EQKEY_N_KEYS
 
-} cs_equation_key_t;
+};
 
 /*============================================================================
  * Static inline public function prototypes

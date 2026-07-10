@@ -102,7 +102,7 @@
  * possible for vector-valued equations.
  */
 
-typedef struct {
+struct cs_cdo_bc_face_t {
 
   bool         is_steady;    /* Do we need to update BC faces during the
                                 computation */
@@ -151,7 +151,7 @@ typedef struct {
   cs_lnum_t    n_circulation_faces;
   cs_lnum_t   *circulation_ids;
 
-} cs_cdo_bc_face_t;
+};
 
 /*============================================================================
  * Global variables

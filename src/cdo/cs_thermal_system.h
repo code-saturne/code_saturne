@@ -102,7 +102,7 @@ typedef cs_flag_t  cs_thermal_model_type_t;
  *
  */
 
-typedef enum {
+enum cs_thermal_model_type_bit_t {
 
   CS_THERMAL_MODEL_STEADY                     = 1<<0,  /* =  1 */
   CS_THERMAL_MODEL_ADVECTION                  = 1<<1,  /* =  2 */
@@ -128,11 +128,11 @@ typedef enum {
 
   CS_THERMAL_MODEL_IN_CELSIUS                 = 1<<7   /* = 128 */
 
-} cs_thermal_model_type_bit_t;
+};
 
 /* Set of parameters related to the thermal module */
 
-typedef struct {
+struct cs_thermal_system_t {
 
   cs_flag_t   model;                  /* Choice of modelling */
   cs_flag_t   numeric;                /* General numerical options */
@@ -171,7 +171,7 @@ typedef struct {
   /* N.B.: Other reference values for properties are stored within each
    * property structure */
 
-} cs_thermal_system_t;
+};
 
 /*============================================================================
  * Public function prototypes

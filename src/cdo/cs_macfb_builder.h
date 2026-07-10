@@ -47,7 +47,7 @@
  *============================================================================*/
 
 /* Cellwise builder for MAC-fb discretization */
-typedef struct {
+struct cs_macfb_builder_t {
   /* Cell informations */
 
   cs_lnum_t c_id; /*!< cell id  */
@@ -96,7 +96,7 @@ typedef struct {
 
   cs_real_t dir_values[6][4]; /*!< dirichlet values at edges */
 
-} cs_macfb_builder_t;
+};
 
 /*============================================================================
  *  Global variables

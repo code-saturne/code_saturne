@@ -174,7 +174,7 @@ typedef void
  *   1, x, y, xx, xy, yy
  */
 
-typedef struct {
+struct cs_basis_func_t {
 
   cs_flag_t     flag;        // metadata
   short int     poly_order;  // max. polynomial order of the basis
@@ -217,7 +217,7 @@ typedef struct {
   int                                  n_gpts_tetra;
   cs_quadrature_tet_t                 *quadrature_tetra;
 
-} cs_basis_func_t;
+};
 
 /*============================================================================
  * Static inline public function prototypes

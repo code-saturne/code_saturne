@@ -274,7 +274,7 @@ typedef enum {
  *         term in the momentum equation
  */
 
-typedef struct {
+struct cs_navsto_param_boussinesq_t {
 
   cs_real_t    beta;      /* Dilatation coefficient */
   cs_real_t    var0;      /* Reference value of the variable */
@@ -286,14 +286,14 @@ typedef struct {
 
   const cs_real_t   *var;
 
-} cs_navsto_param_boussinesq_t;
+};
 
 /*! \struct cs_navsto_param_t
  *  \brief Structure storing the parameters related to the resolution of the
  *         Navier-Stokes system
  */
 
-typedef struct {
+struct cs_navsto_param_t {
 
   /*!
    * @name Physical modelling
@@ -607,7 +607,7 @@ typedef struct {
 
   /*! @} */
 
-} cs_navsto_param_t;
+};
 
 /*! \enum cs_navsto_key_t
  *  \brief List of available keys for setting the parameters of the
@@ -671,7 +671,7 @@ typedef struct {
  * system
  */
 
-typedef enum {
+enum cs_navsto_key_t {
 
   CS_NSKEY_DOF_REDUCTION,
   CS_NSKEY_NL_ALGO,
@@ -691,7 +691,7 @@ typedef enum {
 
   CS_NSKEY_N_KEYS
 
-} cs_navsto_key_t;
+};
 
 /*============================================================================
  * Inline static public function prototypes

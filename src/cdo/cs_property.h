@@ -216,7 +216,7 @@ struct _cs_property_t {
  *        data
  */
 
-typedef struct {
+struct cs_property_data_t {
 
   const cs_property_t   *property; /* shared pointer */
 
@@ -236,7 +236,7 @@ typedef struct {
   cs_real_t              eigen_max;
   cs_real_t              eigen_ratio;
 
-} cs_property_data_t;
+};
 
 /*============================================================================
  * Global variables

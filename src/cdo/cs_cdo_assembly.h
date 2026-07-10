@@ -79,7 +79,7 @@ typedef void
 
 /* Metadata for the assembly of a row */
 
-typedef struct {
+struct cs_cdo_assembly_row_t {
 
   /* Row numberings */
 
@@ -98,7 +98,7 @@ typedef struct {
   cs_real_t          *expval;    /* Expanded row values (when unrolling non
                                     scalar-valued blocks) */
 
-} cs_cdo_assembly_row_t;
+};
 
 /* Cell-wise structure used for the assembly of local systems */
 

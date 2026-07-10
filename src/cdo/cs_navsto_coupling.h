@@ -55,7 +55,7 @@
  *  All equations are not always created. It depends on the choice of the model
  */
 
-typedef struct {
+struct cs_navsto_ac_t {
 
   cs_equation_t   *momentum; /*!< Momentum balance equation (vector-valued) */
 
@@ -66,7 +66,7 @@ typedef struct {
 
   cs_property_t   *zeta;
 
-} cs_navsto_ac_t;
+};
 
 
 /*! \struct cs_navsto_monolithic_t
@@ -74,11 +74,11 @@ typedef struct {
  *         a fully coupled monolithic algorithm
  */
 
-typedef struct {
+struct cs_navsto_monolithic_t {
 
   cs_equation_t   *momentum;  /*!< Momentum equation (vector-valued) */
 
-} cs_navsto_monolithic_t;
+};
 
 
 /*! \struct cs_navsto_projection_t
@@ -88,7 +88,7 @@ typedef struct {
  *  All equations are not always created. It depends on the choice of the model
  */
 
-typedef struct {
+struct cs_navsto_projection_t {
 
   cs_equation_t  *prediction; /*!< Velocity prediction step related to the
                                    momentum balance equation (vector-valued) */
@@ -127,7 +127,7 @@ typedef struct {
 
   cs_field_t    *pressure_incr_gradient;
 
-} cs_navsto_projection_t;
+};
 
 /*============================================================================
  * Public function prototypes

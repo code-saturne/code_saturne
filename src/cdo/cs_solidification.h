@@ -203,7 +203,7 @@
  *      the name "binary alloy".
  */
 
-typedef enum {
+enum cs_solidification_model_t {
 
   CS_SOLIDIFICATION_MODEL_STEFAN,
   CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87,
@@ -212,7 +212,7 @@ typedef enum {
 
   CS_SOLIDIFICATION_N_MODELS
 
-} cs_solidification_model_t;
+};
 
 /*! \enum cs_solidification_state_t
  *  \brief Kind of state in which a cell or an entity is
@@ -233,7 +233,7 @@ typedef enum {
  *      the mushy and solid state occurs when an eutectic transition happens.
  */
 
-typedef enum {
+enum cs_solidification_state_t {
 
   CS_SOLIDIFICATION_STATE_SOLID    = 0,
   CS_SOLIDIFICATION_STATE_MUSHY    = 1,
@@ -242,7 +242,7 @@ typedef enum {
 
   CS_SOLIDIFICATION_N_STATES       = 4,
 
-} cs_solidification_state_t;
+};
 
 /*! \enum cs_solidification_strategy_t
  *  \brief Kind of strategy to use to model the segregation/solidification
@@ -251,7 +251,7 @@ typedef enum {
  *         related quantities.
  */
 
-typedef enum {
+enum cs_solidification_strategy_t {
 
   CS_SOLIDIFICATION_STRATEGY_LEGACY,
   CS_SOLIDIFICATION_STRATEGY_TAYLOR,
@@ -259,7 +259,7 @@ typedef enum {
 
   CS_SOLIDIFICATION_N_STRATEGIES
 
-} cs_solidification_strategy_t;
+};
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -291,7 +291,7 @@ typedef void
  * The liquid fraction is a step function w.r.t. the temperature.
  */
 
-typedef struct {
+struct cs_solidification_stefan_t {
 
   /* Physical parameters to specify the law of variation of the liquid fraction
    * with respect to the temperature
@@ -320,7 +320,7 @@ typedef struct {
   int                            n_iter_max;
   double                         max_delta_h;
 
-} cs_solidification_stefan_t;
+};
 
 
 /* Voller and Prakash model "A fixed grid numerical modelling methodology for
@@ -334,7 +334,7 @@ typedef struct {
  * Solidification without segregation (Voller & Prakash'87 model)
  *----------------------------------------------------------------------------*/
 
-typedef struct {
+struct cs_solidification_voller_t {
 
   /* Physical parameters to specify the law of variation of the liquid fraction
    * with respect to the temperature
@@ -364,14 +364,14 @@ typedef struct {
   cs_param_nl_algo_t             nl_algo_type;
   cs_iter_algo_t                *nl_algo;
 
-} cs_solidification_voller_t;
+};
 
 
 /*----------------------------------------------------------------------------
  * Solidification of a binary alloy with segregation (Voller & Prakash'89 model)
  *----------------------------------------------------------------------------*/
 
-typedef struct {
+struct cs_solidification_binary_alloy_t {
 
   /* Alloy features */
   /* -------------- */
@@ -506,13 +506,13 @@ typedef struct {
   cs_real_t         *tbulk_minus_tliq;
   cs_real_t         *cliq_minus_cbulk;
 
-} cs_solidification_binary_alloy_t;
+};
 
 /*----------------------------------------------------------------------------
  * Main structure to manage the solidification process
  *----------------------------------------------------------------------------*/
 
-typedef struct  {
+struct cs_solidification_t {
 
   cs_flag_t        model;       /* Modelling for the solidification module */
   cs_flag_t        options;     /* Flag dedicated to general options to handle
@@ -639,7 +639,7 @@ typedef struct  {
 
   cs_lnum_t        first_cell;
 
-} cs_solidification_t;
+};
 
 /*============================================================================
  * Public function prototypes

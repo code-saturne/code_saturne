@@ -124,7 +124,7 @@ typedef enum {
 } cs_cdo_system_matrix_class_t;
 
 
-typedef struct {
+struct cs_cdo_system_block_info_t {
 
   /* If the block is associated to one or several matrices, one keeps
    * the information about the class of the matrix
@@ -155,7 +155,7 @@ typedef struct {
   bool        unrolled;
   bool        interlaced;
 
-} cs_cdo_system_block_info_t;
+};
 
 
 /*! \struct cs_cdo_system_dblock_t
@@ -167,7 +167,7 @@ typedef struct {
  * system.
  */
 
-typedef struct {
+struct cs_cdo_system_dblock_t {
 
   /*
    * \var matrix
@@ -201,7 +201,7 @@ typedef struct {
   cs_matrix_assembler_t          *matrix_assembler;
   cs_matrix_structure_t          *matrix_structure;
 
-} cs_cdo_system_dblock_t;
+} ;
 
 
 /*! \struct cs_cdo_system_nblock_t
@@ -211,7 +211,7 @@ typedef struct {
  * the same pattern (structure and function to perform the assembly)
  */
 
-typedef struct {
+struct cs_cdo_system_nblock_t {
 
   /*
    * \var n_matrices
@@ -249,7 +249,7 @@ typedef struct {
   cs_matrix_assembler_t          *matrix_assembler;
   cs_matrix_structure_t          *matrix_structure;
 
-} cs_cdo_system_nblock_t;
+};
 
 /*! \struct cs_cdo_system_ublock_t
  *  \brief Structure associated to the unassembled type of block
@@ -259,7 +259,7 @@ typedef struct {
  * are stored.
  */
 
-typedef struct {
+struct cs_cdo_system_ublock_t {
 
   /*! \var values
    *       Shared. values of the operator. According to the stride value in the
@@ -290,7 +290,7 @@ typedef struct {
   cs_range_set_t          *range_set;
   cs_interface_set_t      *interface_set;
 
-} cs_cdo_system_ublock_t;
+};
 
 
 /*! \struct cs_cdo_system_xblock_t
@@ -300,7 +300,7 @@ typedef struct {
  * structure in this case and no pointer to a generic assembly function.
  */
 
-typedef struct {
+struct cs_cdo_system_xblock_t {
 
   /*
    * \var matrix
@@ -320,7 +320,7 @@ typedef struct {
   cs_matrix_assembler_t          *matrix_assembler;
   cs_matrix_structure_t          *matrix_structure;
 
-} cs_cdo_system_xblock_t;
+};
 
 
 /*! \struct cs_cdo_system_block_t
@@ -328,7 +328,7 @@ typedef struct {
  *          matrix
  */
 
-typedef struct {
+struct cs_cdo_system_block_t {
 
   /* \var info
    *      Set of metadata to describe the block
@@ -360,7 +360,7 @@ typedef struct {
 
   void                        *block_pointer;
 
-} cs_cdo_system_block_t;
+};
 
 /*! \struct cs_cdo_system_helper_t
  *          Structure to handle linear systems which may be simply described by
@@ -370,7 +370,7 @@ typedef struct {
  *          defined by block or thanks to a full-length array.
  */
 
-typedef struct {
+struct cs_cdo_system_helper_t {
 
   /*!
    * \var type
@@ -421,7 +421,7 @@ typedef struct {
   int                      n_blocks;
   cs_cdo_system_block_t  **blocks;
 
-} cs_cdo_system_helper_t;
+};
 
 /*============================================================================
  * Inline public function prototypes

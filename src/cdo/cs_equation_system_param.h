@@ -53,19 +53,19 @@
  *
  */
 
-typedef enum {
+enum cs_equation_system_sles_strategy_t {
 
   CS_EQUATION_SYSTEM_SLES_MUMPS,
 
   CS_EQUATION_SYSTEM_N_SLES_TYPES
 
-} cs_equation_system_sles_strategy_t;
+};
 
 /*! \struct cs_equation_system_param_t
  *  \brief Main structure storing the parameter settings
  */
 
-typedef struct {
+struct cs_equation_system_param_t {
 
   /*!
    * @name Generic metadata
@@ -121,7 +121,7 @@ typedef struct {
    * @}
    */
 
-} cs_equation_system_param_t;
+};
 
 
 /*! \enum cs_equation_system_key_t
@@ -153,7 +153,7 @@ typedef struct {
  *      cf. CS_SYSKEY_LINEAR_SOLVER_VERBOSITY)
  */
 
-typedef enum {
+enum cs_equation_system_key_t {
 
   CS_SYSKEY_INCR_SOLVE,
   CS_SYSKEY_LINEAR_SOLVER_ATOL,
@@ -165,7 +165,7 @@ typedef enum {
 
   CS_SYSKEY_N_KEYS
 
-} cs_equation_system_key_t;
+};
 
 /*============================================================================
  * Public function prototypes

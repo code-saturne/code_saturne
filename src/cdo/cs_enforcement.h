@@ -56,33 +56,33 @@
  *    of freedom inside
  */
 
-typedef enum {
+enum cs_enforcement_selection_t {
 
   CS_ENFORCEMENT_SELECTION_CELLS,     /*!< List of cell ids */
   CS_ENFORCEMENT_SELECTION_FACES,     /*!< List of face ids */
   CS_ENFORCEMENT_SELECTION_EDGES,     /*!< List of edge ids */
   CS_ENFORCEMENT_SELECTION_VERTICES   /*!< List of vertex ids */
 
-} cs_enforcement_selection_t;
+};
 
 
 /*! \enum cs_enforcement_type_t
  *  \brief Describe the way the values to enforce are defined
  */
 
-typedef enum {
+enum cs_enforcement_type_t {
 
   CS_ENFORCEMENT_BY_CONSTANT,       /*!< The same constant value for each DoF */
   CS_ENFORCEMENT_BY_DOF_VALUES      /*!< A prescribed value for each DoF */
 
-} cs_enforcement_type_t;
+};
 
 
 /*! \struct cs_enforcement_param_t
  *  \brief Set of data defining an enforcement
  */
 
-typedef struct {
+struct cs_enforcement_param_t {
 
   cs_enforcement_selection_t    selection_type;
   cs_enforcement_type_t         type;
@@ -92,7 +92,7 @@ typedef struct {
   int           stride;         /*!< number of values by entity */
   cs_real_t    *values;         /*!< associated values */
 
-} cs_enforcement_param_t;
+};
 
 /*============================================================================
  * Public function prototypes

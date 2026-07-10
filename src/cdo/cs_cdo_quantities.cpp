@@ -99,7 +99,7 @@ struct _cdo_fspec_t {
  * Face sub-quantities
  */
 
-typedef struct {
+struct _cdo_fsubq_t {
 
   double  F1;
   double  Fa;
@@ -109,7 +109,7 @@ typedef struct {
   double  Fb2;
   double  Fc2;
 
-} _cdo_fsubq_t;
+};
 
 /* struct _cdo_projq_t
  *
@@ -117,7 +117,7 @@ typedef struct {
  * (alpha, beta) where the face is projected
  */
 
-typedef struct {
+struct _cdo_projq_t {
 
   double  p1;     /* q = 1 */
   double  pa;     /* q = alpha */
@@ -127,7 +127,7 @@ typedef struct {
   double  pa2;    /* q = alpha^2 */
   double  pb2;    /* q = beta^2 */
 
-} _cdo_projq_t;
+};
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

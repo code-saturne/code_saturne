@@ -40,7 +40,7 @@
  * Structure and type definitions
  *============================================================================*/
 
-typedef struct {
+struct cs_solid_selection_t {
 
   cs_lnum_t     n_cells;        /*!< local number of solid cells */
   cs_gnum_t     n_g_cells;      /*!< global number of solid cells  */
@@ -49,7 +49,7 @@ typedef struct {
   bool         *cell_is_solid;  /*!< true if this is a solid cell */
   bool         *face_is_solid;  /*!< true if the face belongs to a solid cell */
 
-} cs_solid_selection_t;
+};
 
 /*============================================================================
  * Public function prototypes

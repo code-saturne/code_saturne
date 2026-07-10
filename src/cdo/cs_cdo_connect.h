@@ -54,7 +54,7 @@
 
 /* Connectivity structure */
 
-typedef struct {
+struct cs_cdo_connect_t {
 
   /* Periodicity (copy from cs_mesh_t. Stored here to avoid to point to the
      mesh structure in many functions) */
@@ -144,7 +144,7 @@ typedef struct {
                            * for MAC scheme */
   cs_adjacency_t *e2e;    /* edge to edges through cells */
 
-} cs_cdo_connect_t;
+};
 
 /*============================================================================
  * Global variables

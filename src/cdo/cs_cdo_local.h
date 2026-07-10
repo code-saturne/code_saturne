@@ -53,7 +53,7 @@
  *  build the local systems in a multi-threaded environment.
  */
 
-typedef struct cs_cell_builder_t {
+struct cs_cell_builder_t {
 
   /*!
    * @name Evaluation times
@@ -151,7 +151,7 @@ typedef struct cs_cell_builder_t {
       return false;
   };
 
-} cs_cell_builder_t;
+};
 
 /*!
  * \struct cs_cell_sys_t
@@ -160,7 +160,7 @@ typedef struct cs_cell_builder_t {
  *  This structure belongs to one thread and only.
  */
 
-typedef struct cs_cell_sys_t {
+struct cs_cell_sys_t {
 
   cs_lnum_t   c_id;     /*!< cell id  */
 
@@ -225,7 +225,7 @@ typedef struct cs_cell_sys_t {
   void
   dump(const char msg[]) const;
 
-} cs_cell_sys_t;
+};
 
 /*! \struct cs_cell_mesh_t
  *  \brief Set of local quantities and connectivities related to a mesh cell
@@ -239,7 +239,7 @@ typedef struct cs_cell_sys_t {
  *  The cell-wise numbering is based on the c2v, c2e and c2f connectivity.
  */
 
-typedef struct cs_cell_mesh_t {
+struct cs_cell_mesh_t {
 
   cs_eflag_t     flag;    /*!< indicate which quantities have to be computed */
   fvm_element_t  type;    /*!< type of element related to this cell */
@@ -419,7 +419,7 @@ typedef struct cs_cell_mesh_t {
   void
   dump() const;
 
-} cs_cell_mesh_t;
+};
 
 /*! \struct cs_face_mesh_t
     \brief Set of local quantities and connectivities related to a mesh face
@@ -429,7 +429,7 @@ typedef struct cs_cell_mesh_t {
     Face-wise numbering is based on the f2e connectivity.
 */
 
-typedef struct {
+struct cs_face_mesh_t {
   short int n_max_vbyf; /*!< = n_max_ebyf */
 
   cs_lnum_t   c_id; /*!< id of related cell */
@@ -462,7 +462,7 @@ typedef struct {
 
   short int *e2v_ids; /*!< face-wise edge -> vertices connectivity */
 
-} cs_face_mesh_t;
+};
 
 /*
   A cs_face_mesh_light_t structure is close to a cs_face_mesh_t structure
@@ -470,7 +470,7 @@ typedef struct {
   Such structure is always associated to a cs_cell_mesh_t structure
 */
 
-typedef struct {
+struct cs_face_mesh_light_t {
   short int n_max_vbyf; /* Max number of vertices belonging to a face
                            (= n_max_ebyf) */
 
@@ -489,7 +489,7 @@ typedef struct {
   short int *e_ids; /* edge ids in the cellwise numbering */
   double    *tef;   /* area of the triangle of base e and apex xf */
 
-} cs_face_mesh_light_t;
+};
 
 /*============================================================================
  *  Global variables
