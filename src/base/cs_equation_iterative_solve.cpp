@@ -710,33 +710,42 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   /* Compute the L2 norm of the variable */
 
-  struct cs_double_n<stride> rd;
-  struct cs_reduce_sum_nr<stride> reducer;
+  if (eqp->normalization_sub_mean != 0) {
+    struct cs_double_n<stride> rd;
+    struct cs_reduce_sum_nr<stride> reducer;
 
-  CS_PROFILE_MARK_LINE();
-  ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
-                          (cs_lnum_t c_id, cs_double_n<stride> &res) {
-    cs_real_t c_vol = cell_vol[c_id];
-    for (size_t i = 0; i < stride; i++)
-      res.r[i] = pvar[c_id][i] * c_vol;
-  });
-  ctx.wait();
-  CS_PROFILE_MARK_LINE();
+    CS_PROFILE_MARK_LINE();
+    ctx.parallel_for_reduce(n_cells, rd, reducer, [=] CS_F_HOST_DEVICE
+                            (cs_lnum_t c_id, cs_double_n<stride> &res) {
+      cs_real_t c_vol = cell_vol[c_id];
+      for (size_t i = 0; i < stride; i++)
+        res.r[i] = pvar[c_id][i] * c_vol;
+    });
+    ctx.wait();
+    CS_PROFILE_MARK_LINE();
 
-  cs_parall_sum_strided<stride>(rd.r);
+    cs_parall_sum_strided<stride>(rd.r);
 
-  cs_real_t p_mean[stride];
-  for (size_t i = 0; i < stride; i++) {
-    p_mean[i] = rd.r[i] / mq->tot_vol;
-    if (iwarnp >= 2)
-      bft_printf("Spatial average of X_%d^n = %f\n", (int)i, p_mean[i]);
-  }
-
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    for (cs_lnum_t i = 0; i < stride; i++) {
-      w2[c_id][i] = (pvar[c_id][i] - p_mean[i]);
+    cs_real_t p_mean[stride];
+    for (size_t i = 0; i < stride; i++) {
+      p_mean[i] = rd.r[i] / mq->tot_vol;
+      if (iwarnp >= 2)
+        bft_printf("Spatial average of X_%d^n = %f\n", (int)i, p_mean[i]);
     }
-  });
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        w2[c_id][i] = (pvar[c_id][i] - p_mean[i]);
+      }
+    });
+  }
+  else {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        w2[c_id][i] = (pvar[c_id][i]);
+      }
+    });
+  }
 
   CS_PROFILE_MARK_LINE();
   cs_matrix_vector_multiply(ctx,
@@ -1795,14 +1804,21 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     cs_real_t *w2;
     CS_MALLOC_HD(w2, n_cols, cs_real_t, amode);
 
-    double p_mean = cs_gmean(n_cells, cell_vol, pvar);
+    if (eqp->normalization_sub_mean != 0) {
+      double p_mean = cs_gmean(n_cells, cell_vol, pvar);
 
-    if (iwarnp >= 2)
-      bft_printf("Spatial average of X^n = %f\n", p_mean);
+      if (iwarnp >= 2)
+        bft_printf("Spatial average of X^n = %f\n", p_mean);
 
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      w2[cell_id] = (pvar[cell_id]-p_mean);
-    });
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+        w2[cell_id] = (pvar[cell_id] - p_mean);
+      });
+    }
+    else {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+        w2[cell_id] = (pvar[cell_id]);
+      });
+    }
 
     cs_matrix_vector_multiply(ctx, a, w2, w1);
 

@@ -521,6 +521,8 @@ struct cs_equation_param_t {
   double b_rc_clip_factor;
   double relaxv;
 
+  int  normalization_sub_mean;
+
   int  d_gradient_r;
   int  b_rc_gradient;
   int  b_diff_flux_rc;

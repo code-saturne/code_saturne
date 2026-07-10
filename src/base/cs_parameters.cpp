@@ -397,6 +397,7 @@ static cs_equation_param_t _equation_param_default
    .rc_clip_factor = -1.,
    .b_rc_clip_factor = 1.,
    .relaxv = 1.,
+   .normalization_sub_mean = 1,
    .d_gradient_r = 2,
    .b_rc_gradient = 2,
    .b_diff_flux_rc = 1,
@@ -1969,6 +1970,7 @@ cs_parameters_eqp_complete(void)
     cs_field_t *f_eps = CS_F_(eps);
     cs_equation_param_t *eqp_rij = cs_field_get_equation_param(f_rij);
     cs_equation_param_t *eqp_eps = nullptr;
+    eqp_rij->normalization_sub_mean = 0;
     if (f_eps->type & CS_FIELD_VARIABLE)
       eqp_eps = cs_field_get_equation_param(f_eps);
     /* Daly harlow (GGDH) on Rij and epsilon by default */
