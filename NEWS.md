@@ -1,3 +1,11 @@
+Release 9.2.1 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Fix missing boundary values update in iterative process, which led to
+  incorrect Rij results with isotropic diffusion (Shir model).
+
 Release 9.2.0 (2026-07-06)
 --------------------------
 
