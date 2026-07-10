@@ -5999,12 +5999,12 @@ cs_convection_diffusion_tensor(int                          idtvar,
 
      The gradient (grad) is used in the flux reconstruction and the slope test.
      Thus we must compute it:
-         - when we have diffusion and we reconstruct the fluxes,
-         - when the convection scheme is SOLU,
-         - when we have convection, we are not in pure upwind
-           and we reconstruct the fluxes,
-         - when we have convection, we are not in pure upwind
-           and we have not shunted the slope test. */
+     - When we have diffusion and we reconstruct the fluxes,
+     - When the convection scheme is SOLU,
+     - When we have convection, we are not in pure upwind
+       and we reconstruct the fluxes,
+     - When we have convection, we are not in pure upwind
+       and we have not shunted the slope test. */
 
   using grad_t = cs_real_t[6][3];
   grad_t *grad;
@@ -6013,7 +6013,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
   cs_real_t *bounds = nullptr;
 
   const cs_real_6_t  *restrict _pvar
-      = (pvar != nullptr) ? (const cs_real_6_t *)pvar : pvara;
+    = (pvar != nullptr) ? (const cs_real_6_t *)pvar : pvara;
 
   /* Update BC coeffs */
   cs_boundary_conditions_update_bc_coeff_face_values_strided<6>
@@ -6252,7 +6252,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     pvar,
-                                    (cs_real_t *)c_weight, /* Weighted gradient */
+                                    (cs_real_t *)c_weight,
                                     grad,
                                     bounds);
 

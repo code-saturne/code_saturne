@@ -2617,15 +2617,19 @@ cs_convection_diffusion_tensor_v9(int                          idtvar,
 
   cs_real_t *bounds = nullptr;
 
+  const cs_real_6_t  *restrict _pvar
+    = (pvar != nullptr) ? (const cs_real_6_t *)pvar : pvara;
+
+  /* Update BC coeffs */
+  cs_boundary_conditions_update_bc_coeff_face_values_strided<6>
+    (ctx, f, bc_coeffs, inc, &eqp, _pvar);
+
   if (  (eqp.idiff != 0 && eqp.ircflu == 1)
       || (   eqp.iconv != 0 && eqp.blencv > 0.
           && (eqp.ischcv == 0 || eqp.ircflu == 1 || eqp.isstpc == 0))) {
 
     if (eqp.rc_clip_factor >= 0)
       CS_MALLOC_HD(bounds, n_cells_ext, cs_real_t, cs_alloc_mode);
-
-    const cs_real_6_t  *restrict _pvar
-      = (pvar != nullptr) ? (const cs_real_6_t *)pvar : pvara;
 
     cs_gradient_tensor_synced_input(var_name,
                                     gradient_type,
