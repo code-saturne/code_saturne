@@ -217,5 +217,4 @@ Makefile.in
 # /src/rayt/
 
 # /tests/
-/patches/*.patch
 /src/TAGS

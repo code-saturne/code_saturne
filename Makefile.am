@@ -87,8 +87,8 @@ config/code_saturne_build.cfg.in.in
 
 # One adds several sub-directories with a dist-hook.
 # The reason for this trick is that
-# the number of extra files or patches can grow and change a lot.
-EXTRA_DIST += extras m4 patches
+# the number of extra files can grow and change a lot.
+EXTRA_DIST += extras m4
 
 if HAVE_BACKEND
 csbase_includedir=$(pkgincludedir)/base
