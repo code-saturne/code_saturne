@@ -648,21 +648,21 @@ struct cs_param_psteady_t {
    * value. Negative value means this option is diable.
    */
 
-  double atol{ 1e-5 };
-  double rtol{ 1e-8 };
+  double atol {1e-5};
+  double rtol {1e-8};
 
-  int n_cvg_iter{ 2 };
+  int n_cvg_iter {2};
 
-  int n_time_step_solve{ 1 };
+  int n_time_step_solve {1};
 
-  double tol_pred_adam{ 1e-2 };
+  double tol_pred_adam {1e-2};
 };
 
 /*! \struct psteady_cvg
  *  \brief  Convergence values of the pseudo-steady algo.
  */
 
-typedef struct {
+struct cs_cdo_navsto_psteady_cvg_t {
   /*!
    * \var atol
    * Absolute tolerance under which the iterative process is stopped
@@ -681,17 +681,17 @@ typedef struct {
    * Solve Navier-Stokes equations every n_time_step_solve time step
    */
 
-  int n_cvg_iter_curr{ 0 };
+  int n_cvg_iter_curr {0};
 
-  double norm2_mass_flux_stat{ 0.0 };
-  double norm2_turb_k_stat{ 0.0 };
+  double norm2_mass_flux_stat {0.0};
+  double norm2_turb_k_stat {0.0};
 
-  bool cvg_iter_mass_flux{ false };
-  bool cvg_iter_turb_k{ false };
+  bool cvg_iter_mass_flux { false};
+  bool cvg_iter_turb_k {false};
 
-  bool cvg_steady{ false };
+  bool cvg_steady {false};
 
-} cs_cdo_navsto_psteady_cvg_t;
+};
 
 /*!
  * @}

@@ -5883,8 +5883,6 @@ cs_gui_time_tables(void)
 void
 cs_gui_physical_variable(void)
 {
-  double time0 = cs_timer_wtime();
-
   int n_zones_pp
     = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_PHYSICAL_PROPERTIES);
   int n_zones = cs_volume_zone_n_zones();
@@ -5931,7 +5929,7 @@ cs_gui_physical_variable(void)
 
     cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(e_tot)};
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++) {
       if (_th_f[i]) {
         if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
           int k = cs_field_key_id("diffusivity_id");
@@ -5949,6 +5947,7 @@ cs_gui_physical_variable(void)
           break;
         }
       }
+    }
   }
 
   /* law for volumic viscosity (compressible model) */
