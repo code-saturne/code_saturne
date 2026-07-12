@@ -263,12 +263,12 @@ _relaxed_jacobi(cs_sles_it_t              *c,
   // https://dx.doi.org/10.1016/j.jcp.2016.12.010
   // https://doi.org/10.1007/s12046-023-02407-6
 
-  if (c->type == CS_SLES_RJ2) {
+  if (c->type == CS_SLES_SRJ2) {
     w[0] = 1.7319;
     w[1] = 0.5695;
     wk_m = 2;
   }
-  if (c->type == CS_SLES_RJ3) {
+  if (c->type == CS_SLES_SRJ3) {
     w[0] = 2.2473;
     w[1] = 0.8573;
     w[2] = 0.5296;
@@ -643,12 +643,12 @@ _block_relaxed_jacobi(cs_sles_it_t              *c,
   // https://doi.org/10.1007/s12046-023-02407-6
   // Need to check if they are appropriate/relevant here.
 
-  if (c->type == CS_SLES_RJ2) {
+  if (c->type == CS_SLES_SRJ2) {
     w[0] = 1.7319;
     w[1] = 0.5695;
     wk_m = 2;
   }
-  if (c->type == CS_SLES_RJ3) {
+  if (c->type == CS_SLES_SRJ3) {
     w[0] = 2.2473;
     w[1] = 0.8573;
     w[2] = 0.5296;
@@ -1736,9 +1736,9 @@ cs_multigrid_smoother_create(cs_sles_it_type_t      smoother_type,
     [[fallthrough]];
   case CS_SLES_R_JACOBI:
     [[fallthrough]];
-  case CS_SLES_RJ2:
+  case CS_SLES_SRJ2:
     [[fallthrough]];
-  case CS_SLES_RJ3:
+  case CS_SLES_SRJ3:
     [[fallthrough]];
   case CS_SLES_TS_F_GAUSS_SEIDEL:
     [[fallthrough]];
@@ -1881,18 +1881,18 @@ cs_multigrid_smoother_setup(void               *context,
 
   case CS_SLES_R_JACOBI:
     [[fallthrough]];
-  case CS_SLES_RJ2:
+  case CS_SLES_SRJ2:
     [[fallthrough]];
-  case CS_SLES_RJ3:
+  case CS_SLES_SRJ3:
     {
       if (diag_block_size == 1)
         c->solve = _relaxed_jacobi;
       else
         c->solve = _block_relaxed_jacobi;
       unsigned wk_m = 1;
-      if (c->type == CS_SLES_RJ2)
+      if (c->type == CS_SLES_SRJ2)
         wk_m = 2;
-      else if (c->type == CS_SLES_RJ3)
+      else if (c->type == CS_SLES_SRJ3)
         wk_m = 3;
       if (c->n_max_iter % wk_m)
         c->n_max_iter += wk_m - (c->n_max_iter%wk_m);

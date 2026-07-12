@@ -79,8 +79,8 @@ typedef enum {
 
   CS_SLES_L1_JACOBI,           /*!< L1-Jacobi smoother */
   CS_SLES_R_JACOBI,            /*!< Weighted (relaxed) Jacobi smoother */
-  CS_SLES_RJ2,                 /*!< Scheduled relaxed Jacobi smoother, M=2 */
-  CS_SLES_RJ3,                 /*!< Scheduled relaxed Jacobi smoother, M=3 */
+  CS_SLES_SRJ2,                /*!< Scheduled relaxed Jacobi smoother, M=2 */
+  CS_SLES_SRJ3,                /*!< Scheduled relaxed Jacobi smoother, M=3 */
 
   CS_SLES_TS_F_GAUSS_SEIDEL,   /*!< Truncated forward Gauss-Seidel smoother */
   CS_SLES_TS_B_GAUSS_SEIDEL,   /*!< Truncated backward Gauss-Seidel smoother */
@@ -97,6 +97,11 @@ typedef struct _cs_sles_it_t  cs_sles_it_t;
 /* Forward type declarations */
 
 typedef struct _cs_sles_it_convergence_t  cs_sles_it_convergence_t;
+
+/* Names for backwards compatibility */
+
+#define  CS_SLES_RJ2  CS_SLES_SRJ2
+#define  CS_SLES_RJ3  CS_SLES_SRJ3
 
 /*============================================================================
  *  Global variables

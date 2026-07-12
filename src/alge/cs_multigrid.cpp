@@ -5075,14 +5075,14 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
       switch (info->type[i+3]) {
       case CS_SLES_P_GAUSS_SEIDEL:
         if (i < 2 && info->is_pc)
-          info->type[i+3] = CS_SLES_RJ3;
+          info->type[i+3] = CS_SLES_SRJ3;
         else
           info->type[i+3] = CS_SLES_JACOBI;
         info->n_max_iter[i+3] *= 2;
         break;
       case CS_SLES_P_SYM_GAUSS_SEIDEL:
         if (i < 2 && info->is_pc) {
-          info->type[i+3] = CS_SLES_RJ3;
+          info->type[i+3] = CS_SLES_SRJ3;
           info->n_max_iter[i+3] *= 2;
         }
         else {
