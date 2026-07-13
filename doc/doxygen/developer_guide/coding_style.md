@@ -122,8 +122,8 @@ followed:
   /* Section starts here */
   ```
 
-C and C++ coding style
-======================
+C++ coding style
+================
 
 The code_saturne coding style inherits from common conventions, with
 a few specific additions.
@@ -138,9 +138,12 @@ The following presentation rules should be followed:
 - Do not use tabulation characters, do not leave whitespace
   at the end of lines.
 
-- Always use lowercase characters for instructions and identifiers,
-  except for enumerations and macros which should be in uppercase.
-  - A mix of lowercase and uppercase characters (for example CamelCase,
+- Use [snake case](https://en.wikipedia.org/wiki/Snake_case) for
+  class and variable names, with the following special cases:
+  * Enumerations and macros must be in uppercase.
+    - Some macros, such as those used for backwards compatibility
+      may be in lowercase if this cannot be avoided.
+  * A mix of lowercase and uppercase characters (for example CamelCase,
     often encountered in C++ libraries) is allowed in sections
     dealing specifically with external libraries using such coding styles.
 
@@ -174,7 +177,12 @@ The following coding rules are strongly recommended:
   be declared `static`. It it is needed in other files, then it must
   instead  be declared `extern`' in the matching header file.
 
-- A `const` type must not be cast into a non-`const` type.
+- A `const` type should not be cast into a non-`const` type.
+  * Exceptions are allowed when the loss of constedness is done for
+    instrumentation purposes (for example adding performance or call
+    counters to a class), or for synchronization purposes (e.g.
+    updating an array's ghost cell values as a precaution where not
+    changing the local values).
 
 - Every `switch` construct should have a `default`
   clause (which may reduce to `assert(0)` to check code paths in
@@ -211,28 +219,48 @@ Make the code symmetric also: when a blank line follows an opening brace
 When no such line is used after an opening brace, none should be used
 either before the closing brace.
 
-Automatic formatting
---------------------
+Separator lines
+---------------
 
-A `.clang-format` configuration file is available in the top-level
-source directory, so the [clang-format](https://clang.llvm.org/docs/ClangFormat.html)
-tool may be used to obtain an acceptable presentation.
-Automated formatting does not exactly follow the above recommendations,
-but is as close as possible using the available parameters, so can provide
-a good starting point, though it is not activated automatically to allow for
-manual fine-tuning.
+Double (`=====`) separator lines are used to separate main sections
+of a file (e.g. first headers, than structure or class definitions,
+then private, local functions, then public functions and classes).
 
-Language {#sec_prg_lang_c}
+Simple (`-----`) separators are used to separate function definitions.
+
+Separator lines used to separate such sections must always end at column
+79 when temrinated by a `*/` comment end, and column 77 otherwise, so
+that the last `=` or `-` character is always at line 77.
+
+Shorter separator lines (underlining a title) may be used inside
+function bodies.
+
+Separators define an implicit section hierarchy:
+- File section level: full double (`=====`) line.
+- Function or method separator: full single (`-----`) line.
+- Main sections inside a function body: partial double line.
+- Subsections inside a function: partial single line.
+
+So a (`=====`) separated section should never be used
+inside a section delimited by a single (`-----`) separator, as it
+implies a higher-level section.
+
+Language {#sec_prg_lang_cpp}
 --------
 
-ANSI C11 or above is required, so C11-specific constructs are allowed.
- C99 variable-length arrays should be avoided, as it is not
-always clear whether they are allocated on the stack or heap, and are
-an optional feature only (though we could expect that support for those
-constructs will remain available on general-purpose architectures, and
-removed only in the embedded space).
+For C++, the C++17 standard is required.
 
-For C++, at least C++14 is assumed.
+The choice of standard version is based on the availability of up to date
+compilers on a wide range of machines, so upgrading to the C++ standard
+will be considered only when C++20 compilers are available on all "old"
+environments the code must run on (so probably not before 2028).
+Note that building an up-to-date compiler could allow upgrading to a new
+standard sooner, but this is not always easy with some organization's
+IT rules.
+
+For C code (e.g. in the preprocessor or PLE code), C11 or above is required.
+C99 variable-length arrays should be avoided, as they are
+an optional feature only.
 
 Assertions
 ----------
@@ -359,7 +387,7 @@ Standard C function         | code_saturne macro or function | Header
 `realloc`                   | \ref CS_REALLOC                | \ref cs_mem.h
 ` `                         | \ref CS_REALLOC_HD             | \ref cs_base_accel.h
 `free`                      | \ref CS_FREE                   | \ref cs_mem.h
-` `                         | \ref CS_FREE_HD                | \ref cs_base_accel.h
+.h
 
 Internationalization
 --------------------
@@ -387,12 +415,256 @@ function may be used to compute the printable width of a character
 string, while and \ref cs_log_strpad and \ref cs_log_strpadl may be use
 to pad a string.
 
-C++ coding style
-================
+C++ streams
+-----------
 
-Most rules applicable to C apply here also. Note that standard C++ stream output
-(using `std::cout` ) may be practical for temporary debugging code, but
-should not be used instead of `bft_printf` or `cs_log` for production code.
+Note that standard C++ stream output (using `std::cout` ) may be practical
+for temporary debugging code, but should not be used instead of
+`bft_printf` or `cs_log` for production code.
+
+To use streams for production output, the following conditions must
+be met first:
+- Add a stream class whith configurable parallel behavior, similar to
+  `bft_printf` and `cs_log(CS_LOG_DEFAULT, ...` so that output on MPI
+  ranks > 0 can be either dropped or sent to separate files.
+- Although internationalization is not activated since v7.0, the
+  possibility of reactivating it is not currently ruled out. `printf`
+  style functions can be internationalized with mechanisms such as
+  `gettext`, which allows changing the order of some output arguments
+  through the format string if language differences require it.
+  Using streams, this is not possible. This may be possible using
+  `std::format`, but this requires C++20 compatibility.
+
+Defining a C++ style output stream for code_saturne will be possible
+when the code switches to C++ 20 requirements.
+
+C++ file template {#sec_prg_cpp_file_template}
+-----------------
+
+The following template illustrates a typical C++ file's preferred
+organization, and should be followed so as to keep the code consistent.
+
+```
+/*============================================================================
+ * Short description.
+ *============================================================================*/
+
+/*
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-<current_year> EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+#include "base/cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard library headers
+ *----------------------------------------------------------------------------*/
+
+#include <assert.h>  // example
+#include <string>    // example
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+// For example
+#include "base/cs_math.h"
+
+/*----------------------------------------------------------------------------
+ * Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "section/current_file.h"
+
+/*=============================================================================
+ * Additional Doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file <file_name>
+        Brief description.
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*=============================================================================
+ * Local macro definitions
+ *============================================================================*/
+
+/* Example local macro */
+
+#define _CS_EXAMPLE_MACRO  16
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+// Class and structure definitions go here.
+
+/* Field key definitions */
+
+struct example_loca_struct {
+
+  <type>  m1;        /*!< Description */
+  <type>  m2;        /*!< Description */
+  ...
+
+};
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* Static global variables (visible only from this file)
+   go here, with `_` prefix. */
+
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
+// Global variables go here, with `cs_glob_` prefix.
+
+/*=============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*
+ * Private function description, legacy style.
+ *
+ * parameters:
+ *   p1  <-- input parameter
+ *   p2  <-> input/output parameter
+ *   p3  --> output parameter
+ *
+ * returns  description of return output
+ *----------------------------------------------------------------------------*/
+
+static <return type>
+_function_a(<type>  p1,
+            <type>  p2,
+            <type>  p3)
+{
+  ... // function body
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * Private function description, Doxygen style.
+ *
+ * \param[in]       p1  input parameter
+ * \param[in, out]  p2  input/output parameter
+ * \param[ouyt]     p3  output parameter
+ *
+ * \return  description of return output
+ */
+/*----------------------------------------------------------------------------*/
+
+static <return type>
+_function_b(<type>  p1,
+            <type>  p2,
+            <type>  p3)
+{
+  ... // function body
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * Include Doxygen documentation here
+ */
+/*----------------------------------------------------------------------------*/
+
+return_type
+function_a(...  // arguments
+           )
+{
+  // function body
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * Include Doxygen documentation here
+ */
+/*----------------------------------------------------------------------------*/
+
+return_type
+function_b
+(
+  ...  // arguments
+)
+{
+  // function body
+
+  /* First section
+     ============= */
+
+  ...
+
+  /* Subsection a
+     ------------ */
+
+  ...
+
+  /* Second section
+     ============= */
+
+  ...
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * Include Doxygen documentation here
+ */
+/*----------------------------------------------------------------------------*/
+
+return_type
+class::member_function_a
+(
+  ...  // arguments
+)
+{
+  // function body
+}
+
+/*----------------------------------------------------------------------------*/
+```
+
+Automatic formatting
+--------------------
+
+A `.clang-format` configuration file is available in the top-level
+source directory, so the [clang-format](https://clang.llvm.org/docs/ClangFormat.html)
+tool may be used to obtain an acceptable presentation.
+Automated formatting does not exactly follow the above recommendations,
+but is as close as possible using the available parameters, so can provide
+a good starting point, though it is not activated automatically to allow for
+manual fine-tuning.
+
+No automatic formatter tested has been able to match the required
+coding style without breaking consistency, because formatters
+cannot handle the alignment of math expressions.
+LLMs may be much better at following the style recommendations.
 
 Python coding style
 ===================
