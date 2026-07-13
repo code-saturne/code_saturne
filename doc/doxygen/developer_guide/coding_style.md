@@ -143,6 +143,7 @@ The following presentation rules should be followed:
   * Enumerations and macros must be in uppercase.
     - Some macros, such as those used for backwards compatibility
       may be in lowercase if this cannot be avoided.
+    - Template parameters are capitalized.
   * A mix of lowercase and uppercase characters (for example CamelCase,
     often encountered in C++ libraries) is allowed in sections
     dealing specifically with external libraries using such coding styles.
