@@ -648,6 +648,15 @@ _system_info(bool  log)
 
 #if    defined(CS_CC_VERSION_STRING) || defined(CS_CXX_VERSION_STRING) \
     || defined(CS_FC_VERSION_STRING) || defined(CS_NVCC_VERSION_STRING)
+  long int cpp_std = __cplusplus;
+  if (cpp_std == 201703L)
+    cpp_std = 2017;
+  else if (cpp_std == 202002L)
+    cpp_std = 2020;
+  else if (cpp_std == 202302L)
+    cpp_std = 2023;
+  else if (cpp_std == 202603L)
+    cpp_std = 2026;
   for (int log_id = 0; log_id < n_logs; log_id++) {
     cs_log_printf(logs[log_id], "\n  Compilers used for build:\n");
 #   if defined(CS_CC_VERSION_STRING)
@@ -656,7 +665,8 @@ _system_info(bool  log)
 #   endif
 #   if defined(CS_CXX_VERSION_STRING)
     cs_log_printf(logs[log_id],
-                  "    %s%s\n", _("C++ compiler:      "), CS_CXX_VERSION_STRING);
+                  "    %s%s (C++ %ld)\n", _("C++ compiler:      "),
+                  CS_CXX_VERSION_STRING, cpp_std);
 #   endif
 #   if defined(CS_FC_VERSION_STRING)
     cs_log_printf(logs[log_id],
