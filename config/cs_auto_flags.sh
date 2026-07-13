@@ -704,7 +704,7 @@ elif test "x$cs_gxx" = "xoneAPI"; then
 
   cs_cxx_vers_major=`echo $cs_ac_cxx_version | cut -f 5 -d" " | cut -f1 -d.`
   cs_cxx_vers_minor=`echo $cs_ac_cxx_version | cut -f 5 -d" " | cut -f2 -d.`
-  cs_cxx_vers_patch=`echo $cs_ac_cxx_version | cut -f 5 -d" " | cut -f3 -d.`
+  CS_cxx_vers_patch=`echo $cs_ac_cxx_version | cut -f 5 -d" " | cut -f3 -d.`
   test -n "$cs_cxx_vers_major" || cs_cxx_vers_major=0
   test -n "$cs_cxx_vers_minor" || cs_cxx_vers_minor=0
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
@@ -716,6 +716,12 @@ elif test "x$cs_gxx" = "xoneAPI"; then
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-fiopenmp"
   cxxflags_default_omp_ad="-fopenmp-targets=spir64"
+
+  case "$cs_cxx_vers_major" in
+    202[12])
+      cxxflags_default="$cxxflags_default -std=c++17"
+      ;;
+  esac
 
   case "$cs_cxx_vers_major" in
     202[23456789])
@@ -745,6 +751,11 @@ elif test "x$cs_gxx" = "xclang"; then
   cxxflags_default_omp="-fopenmp=libomp"
 
   cs_clangpp_version_number=`echo $cs_ac_cxx_version | sed -e "s/^.*version //"`
+  case "$cs_clangpp_version_number" in
+    14* | 15*)
+      cxxflags_default="$cxxflags_default  -std=c++17"
+      ;;
+  esac
   case "$cs_clangpp_version_number" in
     14* | 15* | 16* | 17* | 18* | 19* | 2*)
       cxxflags_default="$cxxflags_default  -Wno-non-c-typedef-for-linkage"
