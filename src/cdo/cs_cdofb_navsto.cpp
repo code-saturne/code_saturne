@@ -2184,16 +2184,15 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
         if (bi != fb) {
 
           cs_sdm_t *mIF = m->get_block(bi, fb);
-          *mIF *= 0.0;
+          mIF->init(mIF->n_rows);
         }
         else { /* bi == f */
 
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
             cs_sdm_t *mFJ = m->get_block(fb, bj);
-            *mFJ *= 0.0;
+            mFJ->init(mFJ->n_rows);
           }
-
-          *mFF *= 0.0;
+          mFF->init(mFF->n_rows);
           (*mFF)(0,0) = 1., (*mFF)(1,1) = 1., (*mFF)(2,2) = 1.;
         }
       } /* Block bi */
@@ -2263,7 +2262,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
           /* Right project block (I,F) which is a 3x3 block
            * mIF = mIF p_t */
 
-          buffer *= 0.0;
+          buffer.init(buffer.n_rows);
           cs_sdm_t *mIF = m->get_block(bi, fb);
           cs_sdm_multiply(mIF, &p_t, &buffer);
           cs_sdm_copy(mIF, &buffer);
@@ -2271,13 +2270,14 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
         else { /* bi == f */
 
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-            buffer *= 0.0;
+            buffer.init(buffer.n_rows);
+
             cs_sdm_t *mFJ = m->get_block(fb, bj);
             cs_sdm_multiply(&p_t, mFJ, &buffer);
             cs_sdm_copy(mFJ, &buffer);
           }
 
-          buffer *= 0.0;
+          buffer.init(buffer.n_rows);
           cs_sdm_multiply(mFF, &p_t, &buffer);
           cs_sdm_copy(mFF, &buffer);
 
@@ -2383,16 +2383,16 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
         if (bi != fb) {
 
           cs_sdm_t *mIF = m->get_block(bi, fb);
-          *mIF *= 0.0;
+          mIF->init(mIF->n_rows);
         }
         else { /* bi == f */
 
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
             cs_sdm_t *mFJ = m->get_block(fb, bj);
-            *mFJ *= 0.0;
+            mFJ->init(mFJ->n_rows);
           }
 
-          *mFF *= 0.0;
+          mFF->init(mFF->n_rows);
           (*mFF)(0,0) = 1., (*mFF)(1,1) = 1., (*mFF)(2,2) = 1.;
         }
       } /* Block bi */
@@ -2461,7 +2461,8 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
           /* Right project block (I,F) which is a 3x3 block
            * mIF = mIF p_t */
 
-          buffer *= 0.0;
+          buffer.init(buffer.n_rows);
+
           cs_sdm_t *mIF = m->get_block(bi, fb);
           cs_sdm_multiply(mIF, &p_t, &buffer);
           cs_sdm_copy(mIF, &buffer);
@@ -2471,14 +2472,14 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
           /* Left project block (I==F,J) which is a 3x3 block */
 
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-            buffer *= 0.0;
+            buffer.init(buffer.n_rows);
             cs_sdm_t *mFJ = m->get_block(fb, bj);
             cs_sdm_multiply(&p_t, mFJ, &buffer);
             cs_sdm_copy(mFJ, &buffer);
           }
 
           /* mFF = n x n^t + p_t mFF p_t; */
-          buffer *= 0.0;
+          buffer.init(buffer.n_rows);
           cs_sdm_multiply(mFF, &p_t, &buffer);
           cs_sdm_copy(mFF, &buffer);
 
