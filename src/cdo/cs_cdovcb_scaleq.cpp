@@ -2144,7 +2144,7 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
         /* Update rhs with csys->mat*p^n */
 
         double  *time_pn = cb->values;
-        mass_mat->dot(csys->val_n, time_pn);
+        mass_mat->matvec(csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += tpty_coef*time_pn[i];
 
@@ -2477,7 +2477,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
        *           tcoef*adr_pn where adr_pn = csys->mat * p_n */
 
       double  *adr_pn = cb->values;
-      csys->mat->dot(csys->val_n, adr_pn);
+      csys->mat->matvec(csys->val_n, adr_pn);
       for (short int i = 0; i < csys->n_dofs; i++)
         csys->rhs[i] -= tcoef*adr_pn[i];
 
@@ -2539,7 +2539,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
          /* Update rhs with mass_mat*p^n */
 
         double  *time_pn = cb->values;
-        mass_mat->dot(csys->val_n, time_pn);
+        mass_mat->matvec(csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += tpty_coef*time_pn[i];
 

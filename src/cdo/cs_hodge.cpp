@@ -213,7 +213,7 @@ _check_vector_hodge(cs_lnum_t                c_id,
       ref[i] = _dp3(pty_a, res[i]);
     }
 
-    hmat->dot(in, h_in);
+    hmat->matvec(in, h_in);
 
     double  err = 0.;
     for (int i = 0; i < hmat->n_rows; i++)
@@ -4284,7 +4284,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
         /* Local matrix-vector operation */
 
-        hodge->matrix->dot(_in, cb->values);
+        hodge->matrix->matvec(_in, cb->values);
 
         /* Assemble the resulting vector */
 
@@ -4299,7 +4299,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
         /* Local matrix-vector operation */
 
-        hodge->matrix->dot(_in, cb->values);
+        hodge->matrix->matvec(_in, cb->values);
 
         /* Assemble the resulting vector */
 
@@ -4314,7 +4314,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
         /* Local matrix-vector operation */
 
-        hodge->matrix->dot(_in, cb->values);
+        hodge->matrix->matvec(_in, cb->values);
 
         /* Assemble the resulting vector */
 
@@ -4436,7 +4436,7 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
 
       /* Local matrix-vector operation */
 
-      hodge->matrix->dot(_fluxes, _circ);
+      hodge->matrix->matvec(_fluxes, _circ);
 
     } /* Main loop on cells */
 

@@ -1920,7 +1920,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
         /* Update rhs with csys->mat*p^n */
 
         double  *time_pn = cb->values;
-        mass_mat->dot(csys->val_n, time_pn);
+        mass_mat->matvec(csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += tpty_coef*time_pn[i];
 
@@ -2224,7 +2224,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
        *           tcoef*adr_pn where adr_pn = csys->mat * p_n */
 
       double  *adr_pn = cb->values;
-      csys->mat->dot(csys->val_n, adr_pn);
+      csys->mat->matvec(csys->val_n, adr_pn);
       for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
         csys->rhs[i] -= tcoef * adr_pn[i];
 
@@ -2267,7 +2267,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
         /* Update rhs with mass_mat*p^n */
 
         double  *time_pn = cb->values;
-        mass_mat->dot(csys->val_n, time_pn);
+        mass_mat->matvec(csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += tpty_coef*time_pn[i];
 
@@ -2597,7 +2597,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
         cs_real_t  *res = cb->values;
         std::memset(res, 0, (cm->n_fc + 1) * sizeof(cs_real_t));
-        cb->loc->dot(p_theta, res);
+        cb->loc->matvec(p_theta, res);
 
         eb->diffusion_term[cm->c_id] += res[cm->n_fc];
 
@@ -2625,7 +2625,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
         cs_real_t  *res = cb->values;
         std::memset(res, 0, (cm->n_fc + 1) * sizeof(cs_real_t));
-        cb->loc->dot(p_theta, res);
+        cb->loc->matvec(p_theta, res);
 
         eb->advection_term[cm->c_id] += res[cm->n_fc];
 

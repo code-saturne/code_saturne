@@ -1085,7 +1085,7 @@ _update_vcb_system_with_bc(const cs_real_t              beta_nf,
 
     for (short int vfi = 0; vfi < fm->n_vf; vfi++)
       dirf[vfi] = beta_nf * csys->dir_values[fm->v_ids[vfi]];
-    matf->dot(dirf, rhsf);
+    matf->matvec(dirf, rhsf);
 
     /* Update RHS */
 
@@ -1910,7 +1910,7 @@ cs_cdofb_advection_close_exp_none_scal(const cs_equation_param_t   *eqp,
 
   double  *adv_u_n = cb->values;
 
-  adv->dot(csys->val_n, adv_u_n);
+  adv->matvec(csys->val_n, adv_u_n);
 
   /* Update the RHS (interlaced values) */
 
@@ -1958,7 +1958,7 @@ cs_cdofb_advection_close_exp_none_vect(const cs_equation_param_t   *eqp,
     for (int i = 0; i < cm->n_fc + 1; i++)
       u_n[i] = csys->val_n[3*i+k];
 
-    adv->dot(u_n, adv_u_n);
+    adv->matvec(u_n, adv_u_n);
 
     /* Update the RHS (interlaced values) */
 

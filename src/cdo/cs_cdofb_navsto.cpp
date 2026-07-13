@@ -1600,7 +1600,7 @@ cs_cdofb_block_dirichlet_alge(short int                              f,
       cs_real_t *_rhs = csys->rhs + 3 * bi;
       cs_sdm_t  *mIF  = m->get_block(bi, f);
 
-      mIF->dot(x_dir, ax_dir);
+      mIF->matvec(x_dir, ax_dir);
       for (int k = 0; k < 3; k++)
         _rhs[k] -= ax_dir[k];
     }
@@ -2169,7 +2169,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
           cs_real_t *_rhs = csys->rhs + 3 * bi;
           cs_sdm_t  *mIF  = m->get_block(bi, fb);
 
-          mIF->dot(u0, ax_dir);
+          mIF->matvec(u0, ax_dir);
 
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
@@ -2227,12 +2227,12 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
        *  Apply the Dirichlet for Normal component
        *  =========================================== */
 
-      p_t.dot(csys->rhs + 3*fb, x_dir);
+      p_t.matvec(csys->rhs + 3*fb, x_dir);
 
       for (short int k = 0; k < 3; k++)
         csys->rhs[3 * fb + k] = x_dir[k];
 
-      nn.dot(u0, x_dir);
+      nn.matvec(u0, x_dir);
       const double u0n_norm = cs_math_3_norm(x_dir);
 
       if (u0n_norm > cs_math_zero_threshold) {
@@ -2248,7 +2248,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
           cs_real_t *_rhs = csys->rhs + 3 * bi;
           cs_sdm_t  *mIF  = m->get_block(bi, fb);
 
-          mIF->dot(x_dir, ax_dir);
+          mIF->matvec(x_dir, ax_dir);
 
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
@@ -2289,7 +2289,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
 
       cs_real_t u0_t[3] = {0., 0., 0.};
 
-      p_t.dot(u0, u0_t);
+      p_t.matvec(u0, u0_t);
 
       csys->rhs[3*fb + 0] += h_t*f_meas*u0_t[0];
       csys->rhs[3*fb + 1] += h_t*f_meas*u0_t[1];
@@ -2368,7 +2368,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
           cs_real_t *_rhs = csys->rhs + 3 * bi;
           cs_sdm_t  *mIF  = m->get_block(bi, fb);
 
-          mIF->dot(u0, ax_dir);
+          mIF->matvec(u0, ax_dir);
 
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
@@ -2426,12 +2426,12 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
        *  Apply the Dirichlet for Normal component
        *  =========================================== */
 
-      p_t.dot(csys->rhs + 3*fb, x_dir);
+      p_t.matvec(csys->rhs + 3*fb, x_dir);
 
       for (short int k = 0; k < 3; k++)
         csys->rhs[3 * fb + k] = x_dir[k];
 
-      nn.dot(u0, x_dir);
+      nn.matvec(u0, x_dir);
       const double u0n_norm = cs_math_3_norm(x_dir);
 
       if (u0n_norm > cs_math_zero_threshold) {
@@ -2447,7 +2447,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
           cs_real_t *_rhs = csys->rhs + 3 * bi;
           cs_sdm_t  *mIF  = m->get_block(bi, fb);
 
-          mIF->dot(x_dir, ax_dir);
+          mIF->matvec(x_dir, ax_dir);
 
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
@@ -2566,7 +2566,7 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
           cs_real_t *_rhs = csys->rhs + 3 * bi;
           cs_sdm_t  *mIF  = m->get_block(bi, fb);
 
-          mIF->dot(u0, ax_dir);
+          mIF->matvec(u0, ax_dir);
 
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];

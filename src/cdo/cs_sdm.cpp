@@ -61,23 +61,22 @@ static const char _msg_small_p[]
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Generic way to allocate a cs_sdm_t structure
+ * \brief Generic way to allocate a cs_sdm_t structure
  *
- * \param[in]  flag         metadata related to a cs_sdm_t structure
- * \param[in]  n_max_rows   max number of rows
- * \param[in]  n_max_cols   max number of columns
- * \param[in]  n_max_rows   max number of rows
- * \param[in]  n_max_cols   max number of columns
+ * \param[in] flag        metadata related to a cs_sdm_t structure
+ * \param[in] n_max_rows  max number of rows
+ * \param[in] n_max_cols  max number of columns
+ * \param[in] n_max_rows  max number of rows
+ * \param[in] n_max_cols  max number of columns
  *
- *
- * \return  a new allocated cs_sdm_t structure
+ * \return a new allocated cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_sdm_t *
-_create_sdm(cs_flag_t   flag,
-            int         n_max_rows,
-            int         n_max_cols)
+_create_sdm(cs_flag_t flag,
+            int       n_max_rows,
+            int       n_max_cols)
 {
   cs_sdm_t *mat = nullptr;
 
@@ -99,7 +98,7 @@ _create_sdm(cs_flag_t   flag,
     cs_sdm_block_t *bd = nullptr;
 
     CS_MALLOC(bd, 1, cs_sdm_block_t);
-    bd->blocks              = nullptr;
+    bd->blocks = nullptr;
     bd->n_max_blocks_by_row = bd->n_max_blocks_by_col = 0;
     bd->n_row_blocks = bd->n_col_blocks = 0;
     mat->block_desc = bd;
@@ -130,9 +129,9 @@ _create_sdm(cs_flag_t   flag,
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_create(cs_flag_t  flag,
-              int        n_max_rows,
-              int        n_max_cols)
+cs_sdm_create(cs_flag_t flag,
+              int       n_max_rows,
+              int       n_max_cols)
 {
   return _create_sdm(flag, n_max_rows, n_max_cols);
 }
@@ -149,7 +148,7 @@ cs_sdm_create(cs_flag_t  flag,
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_square_create(int  n_max_rows)
+cs_sdm_square_create(int n_max_rows)
 {
   return _create_sdm(0, n_max_rows, n_max_rows);
 }
@@ -166,9 +165,9 @@ cs_sdm_square_create(int  n_max_rows)
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_create_copy(const cs_sdm_t  *m)
+cs_sdm_create_copy(const cs_sdm_t *m)
 {
-  cs_sdm_t  *c = _create_sdm(m->flag, m->n_max_rows, m->n_max_cols);
+  cs_sdm_t *c = _create_sdm(m->flag, m->n_max_rows, m->n_max_cols);
 
   c->n_rows = m->n_rows;
   c->n_cols = m->n_cols;
@@ -188,19 +187,19 @@ cs_sdm_create_copy(const cs_sdm_t  *m)
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_create_transpose(cs_sdm_t  *mat)
+cs_sdm_create_transpose(cs_sdm_t *mat)
 {
   assert(mat != nullptr);
 
-  cs_sdm_t  *tr = _create_sdm(mat->flag, mat->n_max_cols, mat->n_max_rows);
+  cs_sdm_t *tr = _create_sdm(mat->flag, mat->n_max_cols, mat->n_max_rows);
 
   tr->n_rows = mat->n_cols;
   tr->n_cols = mat->n_rows;
 
   for (int i = 0; i < mat->n_rows; i++) {
-    const cs_real_t  *mval_i = mat->val + i*mat->n_cols;
+    const cs_real_t *mval_i = mat->val + i*mat->n_cols;
     for (int j = 0; j < mat->n_cols; j++)
-      tr->val[j * tr->n_cols + i] = mval_i[j];
+      tr->val[j*tr->n_cols+i] = mval_i[j];
   }
 
   return tr;
@@ -208,22 +207,22 @@ cs_sdm_create_transpose(cs_sdm_t  *mat)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate and initialize a cs_sdm_t structure
+ * \brief Allocate and initialize a cs_sdm_t structure
  *
- * \param[in]  n_max_blocks_by_row    max number of blocks in a row
- * \param[in]  n_max_blocks_by_col    max number of blocks in a column
- * \param[in]  max_row_block_sizes    max number of rows by block in a column
- * \param[in]  max_col_block_sizes    max number of columns by block in a row
+ * \param[in] n_max_blocks_by_row  max number of blocks in a row
+ * \param[in] n_max_blocks_by_col  max number of blocks in a column
+ * \param[in] max_row_block_sizes  max number of rows by block in a column
+ * \param[in] max_col_block_sizes  max number of columns by block in a row
  *
- * \return  a new allocated cs_sdm_t structure
+ * \return a new allocated cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_block_create(int          n_max_blocks_by_row,
-                    int          n_max_blocks_by_col,
-                    const int    max_row_block_sizes[],
-                    const int    max_col_block_sizes[])
+cs_sdm_block_create(int       n_max_blocks_by_row,
+                    int       n_max_blocks_by_col,
+                    const int max_row_block_sizes[],
+                    const int max_col_block_sizes[])
 {
   cs_sdm_t *m = nullptr;
 
@@ -248,7 +247,7 @@ cs_sdm_block_create(int          n_max_blocks_by_row,
             n_max_blocks_by_row * n_max_blocks_by_col,
             cs_sdm_t);
 
-  cs_real_t  *p_val = m->val;
+  cs_real_t *p_val = m->val;
   int  shift = 0;
   for (int i = 0; i < n_max_blocks_by_row; i++) {
     const int n_rows_i = max_row_block_sizes[i];
@@ -257,7 +256,7 @@ cs_sdm_block_create(int          n_max_blocks_by_row,
 
       /* Set the block (i,j) */
 
-      cs_sdm_t  *b_ij = m->block_desc->blocks + shift;
+      cs_sdm_t *b_ij = m->block_desc->blocks + shift;
       int  _size = n_rows_i*n_cols_j;
 
       b_ij->map_array(n_rows_i, n_cols_j, p_val);
@@ -272,19 +271,19 @@ cs_sdm_block_create(int          n_max_blocks_by_row,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Allocate and initialize a cs_sdm_t structure by block when the
- *          block size is constant and equal to 3
+ * \brief Allocate and initialize a cs_sdm_t structure by block when the block
+ *        size is constant and equal to 3
  *
- * \param[in]  n_max_blocks_by_row    max number of blocks in a row
- * \param[in]  n_max_blocks_by_col    max number of blocks in a column
+ * \param[in] n_max_blocks_by_row  max number of blocks in a row
+ * \param[in] n_max_blocks_by_col  max number of blocks in a column
  *
- * \return  a new allocated cs_sdm_t structure
+ * \return a new allocated cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_block33_create(int      n_max_blocks_by_row,
-                      int      n_max_blocks_by_col)
+cs_sdm_block33_create(int n_max_blocks_by_row,
+                      int n_max_blocks_by_col)
 {
   cs_sdm_t *m = nullptr;
 
@@ -305,7 +304,7 @@ cs_sdm_block33_create(int      n_max_blocks_by_row,
             n_max_blocks_by_row * n_max_blocks_by_col,
             cs_sdm_t);
 
-  cs_real_t  *p_val = m->val;
+  cs_real_t *p_val = m->val;
   for (int i = 0; i < n_max_blocks_by_row*n_max_blocks_by_col; i++) {
     cs_sdm_t *bi = m->block_desc->blocks + i;
     bi->map_array(3, 3, p_val);
@@ -326,7 +325,7 @@ cs_sdm_block33_create(int      n_max_blocks_by_row,
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_free(cs_sdm_t  *mat)
+cs_sdm_free(cs_sdm_t *mat)
 {
   if (mat == nullptr)
     return mat;
@@ -346,30 +345,30 @@ cs_sdm_free(cs_sdm_t  *mat)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the pattern of cs_sdm_t structure defined by block
- *          The matrix should have been allocated before calling this function
+ * \brief Initialize the pattern of cs_sdm_t structure defined by block
+ *        The matrix should have been allocated before calling this function
  *
  * \param[in, out] m
- * \param[in]      n_row_blocks      number of blocks in a row
- * \param[in]      n_col_blocks      number of blocks in a column
- * \param[in]      row_block_sizes   number of rows by block in a column
- * \param[in]      col_block_sizes   number of columns by block in a row
+ * \param[in]      n_row_blocks     number of blocks in a row
+ * \param[in]      n_col_blocks     number of blocks in a column
+ * \param[in]      row_block_sizes  number of rows by block in a column
+ * \param[in]      col_block_sizes  number of columns by block in a row
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_init(cs_sdm_t      *m,
-                  int            n_row_blocks,
-                  int            n_col_blocks,
-                  const int      row_block_sizes[],
-                  const int      col_block_sizes[])
+cs_sdm_block_init(cs_sdm_t  *m,
+                  int        n_row_blocks,
+                  int        n_col_blocks,
+                  const int  row_block_sizes[],
+                  const int  col_block_sizes[])
 {
   assert(m != nullptr && row_block_sizes != nullptr
          && col_block_sizes != nullptr);
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != nullptr);
 
-  cs_sdm_block_t  *bd = m->block_desc;
+  cs_sdm_block_t *bd = m->block_desc;
 
   assert(n_row_blocks <= bd->n_max_blocks_by_row);
   assert(n_col_blocks <= bd->n_max_blocks_by_col);
@@ -384,7 +383,7 @@ cs_sdm_block_init(cs_sdm_t      *m,
 
   std::memset(m->val, 0, m->n_rows * m->n_cols * sizeof(cs_real_t));
 
-  cs_real_t  *p_val = m->val;
+  cs_real_t *p_val = m->val;
   int  shift = 0;
   for (int i = 0; i < bd->n_row_blocks; i++) {
     const int n_rows_i = row_block_sizes[i];
@@ -393,7 +392,7 @@ cs_sdm_block_init(cs_sdm_t      *m,
 
       /* Set the block (i,j) */
 
-      cs_sdm_t  *b_ij = bd->blocks + shift;
+      cs_sdm_t *b_ij = bd->blocks + shift;
 
       b_ij->map_array(n_rows_i, n_cols_j, p_val);
       p_val += n_rows_i*n_cols_j;
@@ -405,19 +404,19 @@ cs_sdm_block_init(cs_sdm_t      *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the pattern of cs_sdm_t structure defined by 3x3 block
- *          The matrix should have been allocated before calling this function
+ * \brief Initialize the pattern of cs_sdm_t structure defined by 3x3 block
+ *        The matrix should have been allocated before calling this function
  *
- * \param[in, out] m
- * \param[in]      n_row_blocks      number of blocks in a row
- * \param[in]      n_col_blocks      number of blocks in a column
+ * \param[in, out] m             matrix to initialize
+ * \param[in]      n_row_blocks  number of blocks in a row
+ * \param[in]      n_col_blocks  number of blocks in a column
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block33_init(cs_sdm_t     *m,
-                    int           n_row_blocks,
-                    int           n_col_blocks)
+cs_sdm_block33_init(cs_sdm_t *m,
+                    int       n_row_blocks,
+                    int       n_col_blocks)
 {
   assert(m != nullptr);
   assert(m->flag & CS_SDM_BY_BLOCK);
@@ -425,7 +424,7 @@ cs_sdm_block33_init(cs_sdm_t     *m,
   assert(n_row_blocks <= m->block_desc->n_max_blocks_by_row);
   assert(n_col_blocks <= m->block_desc->n_max_blocks_by_col);
 
-  cs_sdm_block_t  *bd = m->block_desc;
+  cs_sdm_block_t *bd = m->block_desc;
 
   bd->n_row_blocks = n_row_blocks;
   bd->n_col_blocks = n_col_blocks;
@@ -434,7 +433,7 @@ cs_sdm_block33_init(cs_sdm_t     *m,
 
   std::memset(m->val, 0, m->n_rows * m->n_cols * sizeof(cs_real_t));
 
-  cs_real_t  *p_val = m->val;
+  cs_real_t *p_val = m->val;
   for (int i = 0; i < bd->n_row_blocks*bd->n_col_blocks; i++) {
     cs_sdm_t *bi = bd->blocks + i;
     bi->map_array(3, 3, p_val);
@@ -444,17 +443,17 @@ cs_sdm_block33_init(cs_sdm_t     *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Convert a matrix with each entry is a 3x3 block into a matrix
- *          with a block for each component x,y,z.
+ * \brief Convert a matrix with each entry is a 3x3 block into a matrix with a
+ *        block for each component x,y,z.
  *
- * \param[in]      mb33        pointer to a matrix
- * \param[in, out] mbxyz       pointer to a matrix to build (but allocated)
+ * \param[in]      mb33   pointer to a matrix
+ * \param[in, out] mbxyz  pointer to a matrix to build (but allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_33_to_xyz(const cs_sdm_t   *mb33,
-                       cs_sdm_t         *mbxyz)
+cs_sdm_block_33_to_xyz(const cs_sdm_t *mb33,
+                       cs_sdm_t       *mbxyz)
 {
   if (mb33 == nullptr)
     return;
@@ -462,7 +461,7 @@ cs_sdm_block_33_to_xyz(const cs_sdm_t   *mb33,
   assert(mb33->flag & CS_SDM_BY_BLOCK);
   assert(mb33->block_desc != nullptr);
 
-  const cs_sdm_block_t  *mb33_desc = mb33->block_desc;
+  const cs_sdm_block_t *mb33_desc = mb33->block_desc;
   const int  n_cols = mb33_desc->n_col_blocks;
   assert(n_cols == mb33_desc->n_row_blocks);
 
@@ -472,7 +471,7 @@ cs_sdm_block_33_to_xyz(const cs_sdm_t   *mb33,
   for (int i = 0; i < 3; i++) block_sizes[i] = n_cols;
   cs_sdm_block_init(mbxyz, 3, 3, block_sizes, block_sizes);
 
-  cs_sdm_t  *mxyz[3][3];
+  cs_sdm_t *mxyz[3][3];
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
       mxyz[i][j] = mbxyz->get_block(i, j);
@@ -501,7 +500,7 @@ cs_sdm_block_33_to_xyz(const cs_sdm_t   *mb33,
 /*----------------------------------------------------------------------------*/
 
 cs_sdm_t *
-cs_sdm_block_create_copy(const cs_sdm_t  *mref)
+cs_sdm_block_create_copy(const cs_sdm_t *mref)
 {
   cs_sdm_t *m = nullptr;
 
@@ -511,7 +510,7 @@ cs_sdm_block_create_copy(const cs_sdm_t  *mref)
   if (mref->n_max_rows < 1 || mref->n_max_cols < 1)
     return m;
 
-  const cs_sdm_block_t  *bd_ref = mref->block_desc;
+  const cs_sdm_block_t *bd_ref = mref->block_desc;
 
   int  row_size = 0, col_size = 0;
   for (int bi = 0; bi < bd_ref->n_row_blocks; bi++) {
@@ -533,7 +532,7 @@ cs_sdm_block_create_copy(const cs_sdm_t  *mref)
 
   /* Define the block description */
 
-  cs_sdm_block_t  *bd = m->block_desc;
+  cs_sdm_block_t *bd = m->block_desc;
 
   bd->n_max_blocks_by_row = bd_ref->n_max_blocks_by_row;
   bd->n_max_blocks_by_col = bd_ref->n_max_blocks_by_col;
@@ -544,7 +543,7 @@ cs_sdm_block_create_copy(const cs_sdm_t  *mref)
             bd_ref->n_max_blocks_by_row * bd_ref->n_max_blocks_by_col,
             cs_sdm_t);
 
-  cs_real_t  *p_val = m->val;
+  cs_real_t *p_val = m->val;
   int  shift = 0;
   for (int bi = 0; bi < bd_ref->n_row_blocks; bi++) {
     for (int bj = 0; bj < bd_ref->n_col_blocks; bj++) {
@@ -552,7 +551,7 @@ cs_sdm_block_create_copy(const cs_sdm_t  *mref)
 
       /* Set the block (i,j) */
 
-      cs_sdm_t  *b_ij = bd->blocks + shift;
+      cs_sdm_t *b_ij = bd->blocks + shift;
       int  _size = ref_IJ->n_rows*ref_IJ->n_cols;
 
       b_ij->map_array(ref_IJ->n_rows, ref_IJ->n_cols, p_val);
@@ -567,20 +566,19 @@ cs_sdm_block_create_copy(const cs_sdm_t  *mref)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute a local dense matrix-product c = a*b
- *          c has been previously allocated
+ * \brief Compute a local dense matrix-product c = a*b
+ *        c has been previously allocated
  *
- * \param[in]      a     local dense matrix to use
- * \param[in]      b     local dense matrix to use
- * \param[in, out] c     result of the local matrix-product
- *                       is updated
+ * \param[in]      a  local dense matrix to use
+ * \param[in]      b  local dense matrix to use
+ * \param[in, out] c  result of the local matrix-product is updated
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_multiply(const cs_sdm_t   *a,
-                const cs_sdm_t   *b,
-                cs_sdm_t         *c)
+cs_sdm_multiply(const cs_sdm_t *a,
+                const cs_sdm_t *b,
+                cs_sdm_t       *c)
 {
   assert(a != nullptr && b != nullptr && c != nullptr);
   assert(a->n_cols == b->n_rows &&
@@ -590,8 +588,8 @@ cs_sdm_multiply(const cs_sdm_t   *a,
   const cs_real_t *bv = b->val;
 
   for (int i = 0; i < a->n_rows; i++) {
-    const cs_real_t *av_i = a->val + i * a->n_cols;
-    cs_real_t       *cv_i = c->val + i * b->n_cols;
+    const cs_real_t *av_i = a->val + i*a->n_cols;
+    cs_real_t *cv_i = c->val + i*b->n_cols;
 
     for (int j = 0; j < b->n_cols; j++) {
       cs_real_t p = 0.0;
@@ -599,28 +597,28 @@ cs_sdm_multiply(const cs_sdm_t   *a,
         p += av_i[k] * bv[k*b->n_cols + j];
       cv_i[j] += p;
 
-    } /* Loop on b columns */
-  } /* Loop on a rows */
+    } // Loop on b columns
+  } // Loop on a rows
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief    Compute a row-row matrix product of a and b. It is basically equal
- *           to the classical a*b^T. It is a fast (matrices are row-major) way
- *           of computing a*b if b is symmetric or if b^T is given.
- *           Generic version: all compatible sizes
+ * \brief Compute a row-row matrix product of a and b. It is basically equal to
+ *        the classical a*b^T. It is a fast (matrices are row-major) way of
+ *        computing a*b if b is symmetric or if b^T is given.
+ *        Generic version: no predefined matrix size
  *
- * \param[in]      a    local matrix to use
- * \param[in]      b    local matrix to use
- * \param[in, out] c    result of the local matrix-product (already allocated)
- *                      is updated.
+ * \param[in]      a  local matrix to use
+ * \param[in]      b  local matrix to use
+ * \param[in, out] c  result of the local matrix-product (already allocated)
+ *                    is updated.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_multiply_rowrow(const cs_sdm_t   *a,
-                       const cs_sdm_t   *b,
-                       cs_sdm_t         *c)
+cs_sdm_multiply_rowrow(const cs_sdm_t *a,
+                       const cs_sdm_t *b,
+                       cs_sdm_t       *c)
 {
   assert(a != nullptr && b != nullptr && c != nullptr);
   assert(a->n_cols == b->n_cols &&
@@ -633,36 +631,36 @@ cs_sdm_multiply_rowrow(const cs_sdm_t   *a,
     cs_real_t *cv_i = c->val + i * b->n_rows;
 
     for (int j = 0; j < b->n_rows; j++) {
-      const cs_real_t  *bv_j = b->val + j * b->n_cols;
+      const cs_real_t *bv_j = b->val + j * b->n_cols;
 
-      cs_real_t  dp = 0;
+      cs_real_t dp = 0;
       for (int k = 0; k < a->n_cols; k++)
         dp += av_i[k] * bv_j[k];
       cv_i[j] += dp;
 
-    } /* Loop on b rows */
-  } /* Loop on a rows */
+    } // Loop on b rows
+  } // Loop on a rows
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief    Compute a row-row matrix product of a and b. It is basically equal
- *           to the classical a*b^T. It is a fast (matrices are row-major) way
- *           of computing a*b if b is symmetric or if b^T is given.
- *           Generic version: all compatible sizes
- *           Result is known to be symmetric.
+ * \brief Compute a row-row matrix product of a and b. It is basically equal to
+ *        the classical a*b^T. It is a fast (matrices are row-major) way of
+ *        computing a*b if b is symmetric or if b^T is given.
+ *        Generic version: all compatible sizes
+ *        Result is known to be symmetric.
  *
- * \param[in]      a    local matrix to use
- * \param[in]      b    local matrix to use
- * \param[in, out] c    result of the local matrix-product (already allocated)
- *                      is updated.
+ * \param[in]      a  local matrix to use
+ * \param[in]      b  local matrix to use
+ * \param[in, out] c  result of the local matrix-product (already allocated) is
+ *                    updated.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_multiply_rowrow_sym(const cs_sdm_t   *a,
-                           const cs_sdm_t   *b,
-                           cs_sdm_t         *c)
+cs_sdm_multiply_rowrow_sym(const cs_sdm_t *a,
+                           const cs_sdm_t *b,
+                           cs_sdm_t       *c)
 {
   assert(a != nullptr && b != nullptr && c != nullptr);
   assert(a->n_cols == b->n_cols &&
@@ -675,9 +673,9 @@ cs_sdm_multiply_rowrow_sym(const cs_sdm_t   *a,
     cs_real_t *cv_i = c->val + i * b->n_rows;
 
     for (int j = i; j < b->n_rows; j++) {
-      const cs_real_t  *bv_j = b->val + j * b->n_cols;
+      const cs_real_t *bv_j = b->val + j * b->n_cols;
 
-      cs_real_t  dp = 0;
+      cs_real_t dp = 0;
       for (int k = 0; k < a->n_cols; k++)
         dp += av_i[k] * bv_j[k];
       cv_i[j] += dp;
@@ -691,22 +689,22 @@ cs_sdm_multiply_rowrow_sym(const cs_sdm_t   *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief    Compute a row-row matrix product of a and b. It is basically equal
- *           to the classical a*b^T. It is a fast (matrices are row-major) way
- *           of computing a*b if b is symmetric or if b^T is given.
- *           Case of matrices defined by block.
+ * \brief Compute a row-row matrix product of a and b. It is basically equal to
+ *        the classical a*b^T. It is a fast (matrices are row-major) way of
+ *        computing a*b if b is symmetric or if b^T is given.
+ *        Case of matrices defined by block.
  *
- * \param[in]      a    local matrix to use
- * \param[in]      b    local matrix to use
- * \param[in, out] c    result of the local matrix-product (already allocated)
- *                      is updated
+ * \param[in]      a  local matrix to use
+ * \param[in]      b  local matrix to use
+ * \param[in, out] c  result of the local matrix-product (already allocated) is
+ *                    updated
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_multiply_rowrow(const cs_sdm_t   *a,
-                             const cs_sdm_t   *b,
-                             cs_sdm_t         *c)
+cs_sdm_block_multiply_rowrow(const cs_sdm_t *a,
+                             const cs_sdm_t *b,
+                             cs_sdm_t       *c)
 {
   assert(a != nullptr && b != nullptr && c != nullptr);
   assert(a->flag & CS_SDM_BY_BLOCK);
@@ -716,9 +714,9 @@ cs_sdm_block_multiply_rowrow(const cs_sdm_t   *a,
          a->n_rows == c->n_rows &&
          c->n_cols == b->n_rows);
 
-  const cs_sdm_block_t  *a_desc = a->block_desc;
-  const cs_sdm_block_t  *b_desc = b->block_desc;
-  const cs_sdm_block_t  *c_desc = c->block_desc;
+  const cs_sdm_block_t *a_desc = a->block_desc;
+  const cs_sdm_block_t *b_desc = b->block_desc;
+  const cs_sdm_block_t *c_desc = c->block_desc;
 
   CS_UNUSED(c_desc);            /* Only in debug mode */
   assert(a_desc->n_col_blocks == b_desc->n_col_blocks &&
@@ -742,23 +740,23 @@ cs_sdm_block_multiply_rowrow(const cs_sdm_t   *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief    Compute a row-row matrix product of a and b. It is basically equal
- *           to the classical a*b^T. It is a fast (matrices are row-major) way
- *           of computing a*b if b is symmetric or if b^T is given.
- *           Case of matrices defined by block.
- *           Results is known to be symmetric.
+ * \brief Compute a row-row matrix product of a and b. It is basically equal to
+ *        the classical a*b^T. It is a fast (matrices are row-major) way of
+ *        computing a*b if b is symmetric or if b^T is given.
+ *        Case of matrices defined by block.
+ *        Results is known to be symmetric.
  *
- * \param[in]      a    local matrix to use
- * \param[in]      b    local matrix to use
- * \param[in, out] c    result of the local matrix-product (already allocated)
- *                      is updated
+ * \param[in]      a  local matrix to use
+ * \param[in]      b  local matrix to use
+ * \param[in, out] c  result of the local matrix-product (already allocated) is
+ *                    updated
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t   *a,
-                                 const cs_sdm_t   *b,
-                                 cs_sdm_t         *c)
+cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t *a,
+                                 const cs_sdm_t *b,
+                                 cs_sdm_t       *c)
 {
   assert(a != nullptr && b != nullptr && c != nullptr);
   assert(a->flag & CS_SDM_BY_BLOCK);
@@ -768,8 +766,8 @@ cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t   *a,
          a->n_rows == c->n_rows &&
          c->n_cols == b->n_rows);
 
-  const cs_sdm_block_t  *a_desc = a->block_desc;
-  const cs_sdm_block_t  *b_desc = b->block_desc;
+  const cs_sdm_block_t *a_desc = a->block_desc;
+  const cs_sdm_block_t *b_desc = b->block_desc;
 
   assert(a_desc->n_col_blocks == b_desc->n_col_blocks &&
          a_desc->n_row_blocks == c->block_desc->n_row_blocks &&
@@ -797,18 +795,20 @@ cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t   *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute a dense matrix-vector product for a rectangular matrix
- *          mv has been previously allocated and initialized
- *          Thus mv is updated inside this function
+ * \brief Compute a dense matrix-vector product for a rectangular matrix
+ *        mv has been previously allocated and initialized
+ *        Thus mv is updated inside this function
  *
- * \param[in]      mat    local matrix to use
- * \param[in]      vec    local vector to use (size = mat->n_cols)
- * \param[in, out] mv     result of the operation (size = mat->n_rows)
+ * \param[in]      mat  local matrix to use
+ * \param[in]      vec  local vector to use (size = mat->n_cols)
+ * \param[in, out] mv   result of the operation (size = mat->n_rows)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_update_matvec(const cs_sdm_t *mat, const cs_real_t *vec, cs_real_t *mv)
+cs_sdm_update_matvec(const cs_sdm_t  *mat,
+                     const cs_real_t *vec,
+                     cs_real_t       *mv)
 {
   assert(mat != nullptr && vec != nullptr && mv != nullptr);
 
@@ -826,14 +826,14 @@ cs_sdm_update_matvec(const cs_sdm_t *mat, const cs_real_t *vec, cs_real_t *mv)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute a dense matrix-vector product for a rectangular matrix
- *          which is transposed.
- *          mv has been previously allocated. mv is updated inside this
- *          function. Don't forget to initialize mv if needed.
+ * \brief Compute a dense matrix-vector product for a rectangular matrix
+ *        which is transposed.
+ *        mv has been previously allocated. mv is updated inside this
+ *        function. Don't forget to initialize mv if needed.
  *
- * \param[in]      mat    local matrix to use
- * \param[in]      vec    local vector to use (size = mat->n_cols)
- * \param[in, out] mv     result of the operation (size = mat->n_rows)
+ * \param[in]      mat  local matrix to use
+ * \param[in]      vec  local vector to use (size = mat->n_cols)
+ * \param[in, out] mv   result of the operation (size = mat->n_rows)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -859,15 +859,16 @@ cs_sdm_matvec_transposed(const cs_sdm_t  *mat,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Add two matrices defined by block: loc += add
+ * \brief Add two matrices defined by block: loc += add
  *
- * \param[in, out] mat   local matrix storing the result
- * \param[in]      add   values to add to mat
+ * \param[in, out] mat  local matrix storing the result
+ * \param[in]      add  values to add to mat
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_add(cs_sdm_t *mat, const cs_sdm_t *add)
+cs_sdm_block_add(cs_sdm_t       *mat,
+                 const cs_sdm_t *add)
 {
   if (mat == nullptr || add == nullptr)
     return;
@@ -891,16 +892,18 @@ cs_sdm_block_add(cs_sdm_t *mat, const cs_sdm_t *add)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Add two matrices defined by block: loc += mult_coef * add
+ * \brief Add two matrices defined by block: loc += mult_coef * add
  *
- * \param[in, out] mat         local matrix storing the result
- * \param[in]      mult_coef   multiplicative coefficient
- * \param[in]      add         values to add to mat
+ * \param[in, out] mat        local matrix storing the result
+ * \param[in]      mult_coef  multiplicative coefficient
+ * \param[in]      add        values to add to mat
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_add_mult(cs_sdm_t *mat, cs_real_t mult_coef, const cs_sdm_t *add)
+cs_sdm_block_add_mult(cs_sdm_t       *mat,
+                      cs_real_t       mult_coef,
+                      const cs_sdm_t *add)
 {
   if (mat == nullptr || add == nullptr)
     return;
@@ -926,18 +929,20 @@ cs_sdm_block_add_mult(cs_sdm_t *mat, cs_real_t mult_coef, const cs_sdm_t *add)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute a dense matrix-vector product for a rectangular matrix
- *          defined by block
- *          mv has been previously allocated
+ * \brief Compute a dense matrix-vector product for a rectangular matrix
+ *        defined by block
+ *        mv has been previously allocated
  *
- * \param[in]      mat    local matrix to use
- * \param[in]      vec    local vector to use (size = mat->n_cols)
- * \param[in, out] mv     result of the operation (size = mat->n_rows)
+ * \param[in]      mat  local matrix to use
+ * \param[in]      vec  local vector to use (size = mat->n_cols)
+ * \param[in, out] mv   result of the operation (size = mat->n_rows)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_matvec(const cs_sdm_t *mat, const cs_real_t *vec, cs_real_t *mv)
+cs_sdm_block_matvec(const cs_sdm_t  *mat,
+                    const cs_real_t *vec,
+                    cs_real_t       *mv)
 {
   assert(mat != nullptr && vec != nullptr && mv != nullptr);
 
@@ -975,11 +980,11 @@ cs_sdm_block_matvec(const cs_sdm_t *mat, const cs_real_t *vec, cs_real_t *mv)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Add two small dense matrices: loc += alpha*add
+ * \brief Add two small dense matrices: loc += alpha*add
  *
- * \param[in, out] mat     local matrix storing the result
- * \param[in]      alpha   multiplicative coefficient
- * \param[in]      add     values to add to mat
+ * \param[in, out] mat    local matrix storing the result
+ * \param[in]      alpha  multiplicative coefficient
+ * \param[in]      add    values to add to mat
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1003,11 +1008,11 @@ cs_sdm_add_mult(cs_sdm_t *mat, cs_real_t alpha, const cs_sdm_t *add)
  *        with a size of nr rows and nc cols
  *
  * \param[in, out] mat   local matrix storing the result
- * \param[in]     r_id  row index
- * \param[in]     c_id  column index
- * \param[in]     nr    number of rows to extract
- * \param[in]     nc    number of column to extract
- * \param[in]     add   values to add to mat
+ * \param[in]      r_id  row index
+ * \param[in]      c_id  column index
+ * \param[in]      nr    number of rows to extract
+ * \param[in]      nc    number of column to extract
+ * \param[in]      add   values to add to mat
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1044,9 +1049,9 @@ cs_sdm_add_block(cs_sdm_t       *mat,
  *        with a size of nr rows and nc cols
  *
  * \param[in, out] mat   local matrix storing the result
- * \param[in]     nr    number of rows to extract
- * \param[in]     nc    number of column to extract
- * \param[in]     add   values to add to mat
+ * \param[in]      nr    number of rows to extract
+ * \param[in]      nc    number of column to extract
+ * \param[in]      add   values to add to mat
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1061,17 +1066,17 @@ cs_sdm_add_block_topleft(cs_sdm_t       *mat,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define a new matrix by adding the given matrix with its transpose.
- *          Keep the transposed matrix for a future use.
+ * \brief Define a new matrix by adding the given matrix with its transpose.
+ *        Keep the transposed matrix for a future use.
  *
- * \param[in, out] mat   local matrix to transpose and add
- * \param[in, out] tr    transposed of the local matrix
+ * \param[in, out] mat  local matrix to transpose and add
+ * \param[in, out] tr   transposed of the local matrix
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_square_add_transpose(cs_sdm_t  *mat,
-                            cs_sdm_t  *tr)
+cs_sdm_square_add_transpose(cs_sdm_t *mat,
+                            cs_sdm_t *tr)
 {
   assert(mat != nullptr && tr != nullptr);
   assert(mat->n_rows <= tr->n_max_cols && mat->n_cols <= tr->n_max_rows);
@@ -1102,15 +1107,15 @@ cs_sdm_square_add_transpose(cs_sdm_t  *mat,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the given matrix to two times its symmetric part
- *          mat --> mat + mat_tr = 2*symm(mat)
+ * \brief Set the given matrix to two times its symmetric part
+ *        mat --> mat + mat_tr = 2*symm(mat)
  *
- * \param[in, out] mat   small dense matrix to transform
+ * \param[in, out] mat  small dense matrix to transform
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_square_2symm(cs_sdm_t   *mat)
+cs_sdm_square_2symm(cs_sdm_t *mat)
 {
   assert(mat != nullptr);
   assert(mat->n_rows == mat->n_cols);
@@ -1131,9 +1136,9 @@ cs_sdm_square_2symm(cs_sdm_t   *mat)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the given matrix into its anti-symmetric part
+ * \brief Set the given matrix into its anti-symmetric part
  *
- * \param[in, out] mat   small dense matrix to transform
+ * \param[in, out] mat  small dense matrix to transform
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1147,7 +1152,7 @@ cs_sdm_square_asymm(cs_sdm_t *mat)
     return;
 
   for (int i = 0; i < mat->n_rows; i++) {
-    cs_real_t  *mi = mat->val + i*mat->n_cols;
+    cs_real_t *mi = mat->val + i*mat->n_cols;
 
     mi[i] = 0;
 
@@ -1162,14 +1167,14 @@ cs_sdm_square_asymm(cs_sdm_t *mat)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Set the given block matrix into its anti-symmetric part
+ * \brief Set the given block matrix into its anti-symmetric part
  *
- * \param[in, out] mat   small dense matrix defined by block to transform
+ * \param[in, out] mat  small dense matrix defined by block to transform
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_square_asymm(cs_sdm_t   *mat)
+cs_sdm_block_square_asymm(cs_sdm_t *mat)
 {
   assert(mat != nullptr);
   assert(mat->flag & CS_SDM_BY_BLOCK);
@@ -1178,7 +1183,7 @@ cs_sdm_block_square_asymm(cs_sdm_t   *mat)
   if (mat->n_rows < 1)
     return;
 
-  const cs_sdm_block_t  *matb = mat->block_desc;
+  const cs_sdm_block_t *matb = mat->block_desc;
   if (matb->n_row_blocks < 1)
     return;
   assert(matb->n_row_blocks == matb->n_col_blocks);
@@ -1187,27 +1192,28 @@ cs_sdm_block_square_asymm(cs_sdm_t   *mat)
 
     /* Diagonal block */
 
-    cs_sdm_t *bII = mat->get_block(bi, bi);
+    cs_sdm_t *b_ii = mat->get_block(bi, bi);
 
-    cs_sdm_square_asymm(bII);
+    cs_sdm_square_asymm(b_ii);
 
     for (int bj = bi+1; bj < matb->n_col_blocks; bj++) {
-      cs_sdm_t *bIJ = mat->get_block(bi, bj);
-      cs_sdm_t *bJI = mat->get_block(bj, bi);
+      cs_sdm_t *b_ij = mat->get_block(bi, bj);
+      cs_sdm_t *b_ji = mat->get_block(bj, bi);
 
-      assert(bIJ->n_rows == bJI->n_cols);
-      assert(bIJ->n_cols == bJI->n_rows);
+      assert(b_ij->n_rows == b_ji->n_cols);
+      assert(b_ij->n_cols == b_ji->n_rows);
 
-      for (int i = 0; i < bIJ->n_rows; i++) {
-        cs_real_t  *bIJ_i = bIJ->val + i*bIJ->n_cols;
-        for (int j = 0; j < bIJ->n_cols; j++) {
-          int ji = j * bIJ->n_rows + i;
+      for (int i = 0; i < b_ij->n_rows; i++) {
+        cs_real_t *bIJ_i = b_ij->val + i*b_ij->n_cols;
+        for (int j = 0; j < b_ij->n_cols; j++) {
 
-          bIJ_i[j]     = 0.5 * (bIJ_i[j] - bJI->val[ji]);
-          bJI->val[ji] = -bIJ_i[j];
+          int  ji = j*b_ij->n_rows + i;
 
-        } /* bIJ columns */
-      } /* bIJ rows */
+          bIJ_i[j] = 0.5*(bIJ_i[j] - b_ji->val[ji]);
+          b_ji->val[ji] = -bIJ_i[j];
+
+        } /* b_ij columns */
+      } /* b_ij rows */
 
     } /* Loop on column blocks */
 
@@ -1216,14 +1222,14 @@ cs_sdm_block_square_asymm(cs_sdm_t   *mat)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Decompose a matrix into the matrix product Q.R
- *         Case of a 3x3 symmetric matrix
+ * \brief Decompose a matrix into the matrix product Q.R
+ *        Case of a 3x3 symmetric matrix
  *
- * \param[in]      m      matrix values
- * \param[in, out] Qt     transposed of matrix Q
- * \param[in, out] R      vector of the coefficient of the decomposition
+ * \param[in]      m        matrix values
+ * \param[in, out] qmat_tr  transposed of matrix Q
+ * \param[in, out] rmat     vector of the coefficient of the decomposition
  *
- * \note: R is an upper triangular matrix. Stored in a compact way.
+ * \note: rmat is an upper triangular matrix. Stored in a compact way.
  *
  *    j= 0, 1, 2
  *  i=0| 0| 1| 2|
@@ -1233,66 +1239,69 @@ cs_sdm_block_square_asymm(cs_sdm_t   *mat)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_33_sym_qr_compute(const cs_real_t m[9], cs_real_t Qt[9], cs_real_t R[6])
+cs_sdm_33_sym_qr_compute(const cs_real_t m[9],
+                         cs_real_t       qmat_tr[9],
+                         cs_real_t       rmat[6])
 {
-  assert(m != nullptr && Qt != nullptr && R != nullptr);
+  assert(m != nullptr && qmat_tr != nullptr && rmat != nullptr);
 
   /* Work as if Q is defined column by column (instead of row). At the end, we
      transpose */
 
-  cs_nvec3_t  tmp;
+  cs_nvec3_t tmp;
   cs_real_3_t qhat;
 
   cs_nvec3(m, &tmp); /* normalize the first row (i.e first column) */
-  R[0] = tmp.meas;   /* R00 */
+  rmat[0] = tmp.meas; /* r[0][0] */
   assert(tmp.meas > cs_math_zero_threshold);
-  cs_real_t *q0 = Qt;
+  cs_real_t *q0 = qmat_tr;
   for (int k = 0; k < 3; k++)
     q0[k] = tmp.unitv[k];
 
-  const cs_real_t *m1 = m + 3;                         /* qhat = m1 */
-  R[1]                = cs_math_3_dot_product(q0, m1); /* R01 */
+  const cs_real_t *m1 = m + 3;    /* qhat = m1 */
+  rmat[1] = cs_math_3_dot_product(q0, m1); /* r01 */
   for (int k = 0; k < 3; k++)
-    qhat[k] = m1[k] - R[1] * q0[k];
+    qhat[k] = m1[k] - rmat[1]*q0[k];
 
   cs_nvec3(qhat, &tmp);
-  R[3] = tmp.meas; /* R11 */
+  rmat[3] = tmp.meas; /* r[1][1] */
   assert(tmp.meas > cs_math_zero_threshold);
-  cs_real_t *q1 = Qt + 3;
+  cs_real_t *q1 = qmat_tr + 3;
   for (int k = 0; k < 3; k++)
     q1[k] = tmp.unitv[k];
 
-  const cs_real_t *m2 = m + 6;                         /* qhat = m2 */
-  R[2]                = cs_math_3_dot_product(q0, m2); /* R02 */
+  const cs_real_t *m2 = m + 6;    /* qhat = m2 */
+  rmat[2] = cs_math_3_dot_product(q0, m2); /* r[0][2] */
   for (int k = 0; k < 3; k++)
-    qhat[k] = m2[k] - R[2] * q0[k];
-  R[4] = cs_math_3_dot_product(q1, qhat); /* R12 */
+    qhat[k] = m2[k] - rmat[2]*q0[k];
+  rmat[4] = cs_math_3_dot_product(q1, qhat); /* r[1][2] */
   for (int k = 0; k < 3; k++)
-    qhat[k] -= R[4] * q1[k];
+    qhat[k] -= rmat[4]*q1[k];
 
   cs_nvec3(qhat, &tmp);
-  R[5] = tmp.meas;
+  rmat[5] = tmp.meas;
   assert(tmp.meas > cs_math_zero_threshold);
-  cs_real_t *q2 = Qt + 6;
+  cs_real_t *q2 = qmat_tr + 6;
   for (int k = 0; k < 3; k++)
     q2[k] = tmp.unitv[k];
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  LU factorization of a small dense 3x3 matrix.
+ * \brief LU factorization of a small dense 3x3 matrix.
  *
- * \param[in]      m        pointer to a cs_sdm_t structure
- * \param[in, out] facto    compact storage of coefficients for the LU
- *                          factorization
+ * \param[in]      m      pointer to a cs_sdm_t structure
+ * \param[in, out] facto  compact storage of coefficients for the LU
+ *                        factorization
  *
- * \note: facto stores L the lower triangular matrix (without its diagonal
+ * \note: facto stores the lower triangular matrix L (without its diagonal
  *        entries assumed to be equal to 1) and U the upper triangular matrix.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_33_lu_compute(const cs_sdm_t *m, cs_real_t facto[9])
+cs_sdm_33_lu_compute(const cs_sdm_t *m,
+                     cs_real_t       facto[9])
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows);
@@ -1302,7 +1311,7 @@ cs_sdm_33_lu_compute(const cs_sdm_t *m, cs_real_t facto[9])
   const cs_real_t d00 = m->val[0];
   if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  const cs_real_t invd00 = 1. / d00;
+  const cs_real_t invd00 = 1./d00;
 
   facto[0] = d00, facto[1] = m->val[1], facto[2] = m->val[2]; /* 1st row */
   facto[3] = m->val[3] * invd00;                              /* L10 */
@@ -1315,21 +1324,22 @@ cs_sdm_33_lu_compute(const cs_sdm_t *m, cs_real_t facto[9])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  LU factorization of a small dense matrix. Small means that the
- *         number m->n_rows is less than 100 for instance.
+ * \brief LU factorization of a small dense matrix. Small means that the
+ *        number m->n_rows is less than 100 for instance.
  *
- * \param[in]      m        pointer to a cs_sdm_t structure
- * \param[in, out] facto    compact storage of coefficients for the LU
- *                          factorization (should be allocated to the right
- *                          size, i.e. m->n_rows*m->n_rows)
+ * \param[in]      m      pointer to a cs_sdm_t structure
+ * \param[in, out] facto  compact storage of coefficients for the LU
+ *                        factorization (should be allocated to the right size,
+ *                        i.e. m->n_rows*m->n_rows)
  *
- * \note: facto stores L the lower triangular matrix (without its diagonal
- *        entries assumed to be equal to 1) and U the upper triangular matrix.
+ * \note: facto stores the lower triangular matrix L (without its diagonal
+ *        entries assumed to be equal to 1) and the upper triangular matrix U.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_lu_compute(const cs_sdm_t *m, cs_real_t facto[])
+cs_sdm_lu_compute(const cs_sdm_t *m,
+                  cs_real_t       facto[])
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows);
@@ -1345,10 +1355,10 @@ cs_sdm_lu_compute(const cs_sdm_t *m, cs_real_t facto[])
   for (cs_lnum_t k = 0; k < n - 1; k++) {
     /* Pivot */
 
-    cs_real_t pivot = facto[k * (n + 1)];
+    cs_real_t pivot = facto[k*(n+1)];
     if (cs::abs(pivot) < cs_math_zero_threshold)
       bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-    const cs_real_t  invp    = 1. / pivot;
+    const cs_real_t invp = 1./pivot;
     const cs_real_t *rk_fact = facto + k * n;
 
     for (cs_lnum_t i = k + 1; i < n; i++) { /* Loop on rows */
@@ -1372,17 +1382,17 @@ cs_sdm_lu_compute(const cs_sdm_t *m, cs_real_t facto[])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a system A.sol = rhs using a LU factorization of A (a small
- *         3x3 dense matrix).
+ * \brief Solve a system A.sol = rhs using a LU factorization of A (a small
+ *        3x3 dense matrix).
  *
- * \param[in]       facto    compact storage of coefficients for the LU
- *                           factorization (should be allocated to the right
- *                           size, i.e. n_rows*n_rows)
- * \param[in]       rhs      right-hand side
- * \param[in, out]  sol      solution
+ * \param[in]      facto  compact storage of coefficients for the LU
+ *                        factorization (should be allocated to the right
+ *                        size, i.e. n_rows*n_rows)
+ * \param[in]      rhs    right-hand side
+ * \param[in, out] sol    solution
  *
- * \note: facto stores L the lower triangular matrix (without its diagonal
- *        entries assumed to be equal to 1) and U the upper triangular matrix.
+ * \note: facto stores the lower triangular matrix L (without its diagonal
+ *        entries assumed to be equal to 1) and the upper triangular matrix U.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1408,18 +1418,18 @@ cs_sdm_33_lu_solve(const cs_real_t facto[9],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a system A.sol = rhs using a LU factorization of A (a small
- *         dense matrix).
+ * \brief Solve a system A.sol = rhs using a LU factorization of A (a small
+ *        dense matrix).
  *
- * \param[in]       n_rows   dimension of the system to solve
- * \param[in]       facto    compact storage of coefficients for the LU
- *                           factorization (should be allocated to the right
- *                           size, i.e. n_rows*n_rows)
- * \param[in]       rhs      right-hand side
- * \param[in, out]  sol      solution
+ * \param[in]      n_rows  dimension of the system to solve
+ * \param[in]      facto   compact storage of coefficients for the LU
+ *                         factorization (should be allocated to the right
+ *                         size, i.e. n_rows*n_rows)
+ * \param[in]      rhs     right-hand side
+ * \param[in, out] sol     solution
  *
- * \note: facto stores L the lower triangular matrix (without its diagonal
- *        entries assumed to be equal to 1) and U the upper triangular matrix.
+ * \note: facto stores the lower triangular matrix L (without its diagonal
+ *        entries assumed to be equal to 1) and the upper triangular matrix U.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1434,8 +1444,8 @@ cs_sdm_lu_solve(cs_lnum_t        n_rows,
   /* Forward pass: L.y = rhs (sol stores the values for y) */
 
   for (cs_lnum_t i = 0; i < n_rows; i++) {
-    sol[i]                 = rhs[i];
-    const cs_real_t *_fact = facto + i * n_rows;
+    sol[i] = rhs[i];
+    const cs_real_t *_fact = facto + i*n_rows;
     for (cs_lnum_t j = 0; j < i; j++) {
       sol[i] -= sol[j] * _fact[j];
     }
@@ -1454,12 +1464,12 @@ cs_sdm_lu_solve(cs_lnum_t        n_rows,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  LDL^T: Modified Cholesky decomposition of a 3x3 SPD matrix.
- *         For more reference, see for instance
- *   http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
+ * \brief LDL^T: Modified Cholesky decomposition of a 3x3 SPD matrix.
+ *        For more reference, see for instance
+ * http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
  *
- * \param[in]      m        pointer to a cs_sdm_t structure
- * \param[in, out] facto    vector of the coefficient of the decomposition
+ * \param[in]      m      pointer to a cs_sdm_t structure
+ * \param[in, out] facto  vector of the coefficient of the decomposition
  *
  * \note: facto is a lower triangular matrix. The first value of the
  *        j-th (zero-based) row is easily accessed: its index is j*(j+1)/2
@@ -1469,7 +1479,8 @@ cs_sdm_lu_solve(cs_lnum_t        n_rows,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_33_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[6])
+cs_sdm_33_ldlt_compute(const cs_sdm_t *m,
+                       cs_real_t       facto[6])
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows && m->n_cols == 3);
@@ -1480,13 +1491,13 @@ cs_sdm_33_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[6])
   if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
-  facto[0]            = 1. / d00;
+  facto[0] = 1. / d00;
   const cs_real_t l10 = facto[1] = m->val[1] * facto[0];
   const cs_real_t l20 = facto[3] = m->val[2] * facto[0];
 
   /* j=1: second row */
 
-  const cs_real_t d11 = m->val[4] - l10 * l10 * d00;
+  const cs_real_t d11 = m->val[4] - l10*l10 * d00;
   if (cs::abs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[2]            = 1. / d11;
@@ -1494,7 +1505,7 @@ cs_sdm_33_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[6])
 
   /* j=2: third row */
 
-  const cs_real_t d22 = m->val[8] - l20 * l20 * d00 - l21 * l21 * d11;
+  const cs_real_t d22 = m->val[8] - l20*l20*d00 - l21*l21*d11;
   if (cs::abs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[5] = 1. / d22;
@@ -1502,22 +1513,23 @@ cs_sdm_33_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[6])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  LDL^T: Modified Cholesky decomposition of a 4x4 SPD matrix.
- *         For more reference, see for instance
- *   http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
+ * \brief LDL^T: Modified Cholesky decomposition of a 4x4 SPD matrix.
+ *        For more reference, see for instance
+ *  http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
  *
- * \param[in]      m        pointer to a cs_sdm_t structure
- * \param[in, out] facto    vector of the coefficient of the decomposition
+ * \param[in]      m      pointer to a cs_sdm_t structure
+ * \param[in, out] facto  vector of the coefficient of the decomposition
  *
- * \note: facto is a lower triangular matrix. The first value of the
- *        j-th (zero-based) row is easily accessed: its index is j*(j+1)/2
- *        (cf sum of the first j natural numbers). Instead of 1 on the diagonal
- *        we store the inverse of D mat in the L.D.L^T decomposition
+ * \note: facto is a lower triangular matrix. The first value of the j-th
+ *        (zero-based) row is easily accessed: its index is j*(j+1)/2 (cf sum
+ *        of the first j natural numbers). Instead of 1 on the diagonal we
+ *        store the inverse of D mat in the L.D.L^T decomposition
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_44_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[10])
+cs_sdm_44_ldlt_compute(const cs_sdm_t *m,
+                       cs_real_t       facto[10])
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows && m->n_cols == 4);
@@ -1528,33 +1540,32 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[10])
   if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
-  facto[0]            = 1. / d00;
+  facto[0] = 1. / d00;
   const cs_real_t l10 = facto[1] = m->val[1] * facto[0];
   const cs_real_t l20 = facto[3] = m->val[2] * facto[0];
   const cs_real_t l30 = facto[6] = m->val[3] * facto[0];
 
   /* j=1: second row */
 
-  const cs_real_t d11 = m->val[5] - l10 * l10 * d00;
+  const cs_real_t d11 = m->val[5] - l10*l10 * d00;
   if (cs::abs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[2]            = 1. / d11;
-  const cs_real_t l21 = facto[4] = (m->val[6] - l20 * d00 * l10) * facto[2];
-  const cs_real_t l31 = facto[7] = (m->val[7] - l30 * d00 * l10) * facto[2];
+  facto[2] = 1. / d11;
+  const cs_real_t l21 = facto[4] = (m->val[6] - l20*d00*l10) * facto[2];
+  const cs_real_t l31 = facto[7] = (m->val[7] - l30*d00*l10) * facto[2];
 
   /* j=2: third row */
 
-  const cs_real_t d22 = m->val[10] - l20 * l20 * d00 - l21 * l21 * d11;
+  const cs_real_t d22 = m->val[10] - l20*l20*d00 - l21*l21*d11;
   if (cs::abs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[5]            = 1. / d22;
+  facto[5] = 1. / d22;
   const cs_real_t l32 = facto[8] =
-    (m->val[11] - l30 * d00 * l20 - l31 * d11 * l21) * facto[5];
+    (m->val[11] - l30*d00*l20 - l31*d11*l21) * facto[5];
 
   /* j=3: row 4 */
 
-  const cs_real_t d33 =
-    m->val[15] - l30 * l30 * d00 - l31 * l31 * d11 - l32 * l32 * d22;
+  const cs_real_t d33 = m->val[15] - l30*l30*d00 - l31*l31*d11 - l32*l32*d22;
   if (cs::abs(d33) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[9] = 1. / d33;
@@ -1562,22 +1573,23 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[10])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  LDL^T: Modified Cholesky decomposition of a 6x6 SPD matrix.
- *         For more reference, see for instance
- *   http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
+ * \brief LDL^T: Modified Cholesky decomposition of a 6x6 SPD matrix.
+ *        For more reference, see for instance
+ * http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
  *
- * \param[in]      m        pointer to a cs_sdm_t structure
- * \param[in, out] facto    vector of the coefficient of the decomposition
+ * \param[in]      m      pointer to a cs_sdm_t structure
+ * \param[in, out] facto  vector of the coefficient of the decomposition
  *
- * \note: facto is a lower triangular matrix. The first value of the
- *        j-th (zero-based) row is easily accessed: its index is j*(j+1)/2
- *        (cf sum of the first j natural numbers). Instead of 1 on the diagonal
- *        we store the inverse of D mat in the L.D.L^T decomposition
+ * \note: facto is a lower triangular matrix. The first value of the j-th
+ *        (zero-based) row is easily accessed: its index is j*(j+1)/2 (cf sum
+ *        of the first j natural numbers). Instead of 1 on the diagonal we
+ *        store the inverse of D mat in the L.D.L^T decomposition
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_66_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[21])
+cs_sdm_66_ldlt_compute(const cs_sdm_t *m,
+                       cs_real_t       facto[21])
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows && m->n_cols == 6);
@@ -1588,67 +1600,65 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[21])
   if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
-  facto[0]            = 1. / d00;
-  const cs_real_t l10 = facto[1] = m->val[1] * facto[0];
-  const cs_real_t l20 = facto[3] = m->val[2] * facto[0];
-  const cs_real_t l30 = facto[6] = m->val[3] * facto[0];
+  facto[0] = 1. / d00;
+  const cs_real_t l10 = facto[ 1] = m->val[1] * facto[0];
+  const cs_real_t l20 = facto[ 3] = m->val[2] * facto[0];
+  const cs_real_t l30 = facto[ 6] = m->val[3] * facto[0];
   const cs_real_t l40 = facto[10] = m->val[4] * facto[0];
   const cs_real_t l50 = facto[15] = m->val[5] * facto[0];
 
   /* j=1: second row */
 
-  const cs_real_t d11 = m->val[7] - l10 * l10 * d00;
+  const cs_real_t d11 = m->val[7] - l10*l10 * d00;
   if (cs::abs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[2]              = 1. / d11;
-  const cs_real_t d0l10 = d00 * l10;
-  const cs_real_t l21 = facto[4] = (m->val[8] - l20 * d0l10) * facto[2];
-  const cs_real_t l31 = facto[7] = (m->val[9] - l30 * d0l10) * facto[2];
-  const cs_real_t l41 = facto[11] = (m->val[10] - l40 * d0l10) * facto[2];
-  const cs_real_t l51 = facto[16] = (m->val[11] - l50 * d0l10) * facto[2];
+  facto[2] = 1. / d11;
+  const cs_real_t d0l10 = d00*l10;
+  const cs_real_t l21 = facto[ 4] = (m->val[ 8] - l20*d0l10) * facto[2];
+  const cs_real_t l31 = facto[ 7] = (m->val[ 9] - l30*d0l10) * facto[2];
+  const cs_real_t l41 = facto[11] = (m->val[10] - l40*d0l10) * facto[2];
+  const cs_real_t l51 = facto[16] = (m->val[11] - l50*d0l10) * facto[2];
 
   /* j=2: third row */
 
-  const cs_real_t d22 = m->val[14] - l20 * l20 * d00 - l21 * l21 * d11;
+  const cs_real_t d22 = m->val[14] - l20*l20*d00 - l21*l21*d11;
   if (cs::abs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[5]              = 1. / d22;
-  const cs_real_t d1l21 = d11 * l21, d0l20 = d00 * l20;
-  const cs_real_t l32 = facto[8] =
-    (m->val[15] - l30 * d0l20 - l31 * d1l21) * facto[5];
+  facto[5] = 1. / d22;
+  const cs_real_t d1l21 = d11*l21, d0l20 = d00*l20;
+  const cs_real_t l32 = facto[ 8] =
+    (m->val[15] - l30*d0l20 - l31*d1l21) * facto[5];
   const cs_real_t l42 = facto[12] =
-    (m->val[16] - l30 * d0l20 - l31 * d1l21) * facto[5];
+    (m->val[16] - l30*d0l20 - l31*d1l21) * facto[5];
   const cs_real_t l52 = facto[17] =
-    (m->val[17] - l30 * d0l20 - l31 * d1l21) * facto[5];
+    (m->val[17] - l30*d0l20 - l31*d1l21) * facto[5];
 
   /* j=3: row 4 */
 
-  const cs_real_t d33 =
-    m->val[21] - l30 * l30 * d00 - l31 * l31 * d11 - l32 * l32 * d22;
+  const cs_real_t d33 = m->val[21] - l30*l30*d00 - l31*l31*d11 - l32*l32*d22;
   if (cs::abs(d33) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[9]              = 1. / d33;
-  const cs_real_t d1l31 = d11 * l31, d0l30 = d00 * l30, d2l32 = d22 * l32;
+  facto[9] = 1. / d33;
+  const cs_real_t d1l31 = d11*l31, d0l30 = d00*l30, d2l32 = d22*l32;
   const cs_real_t l43 = facto[13] =
-    (m->val[22] - l40 * d0l30 - l41 * d1l31 - l42 * d2l32) * facto[9];
+    (m->val[22] - l40*d0l30 - l41*d1l31 - l42*d2l32) * facto[9];
   const cs_real_t l53 = facto[18] =
-    (m->val[23] - l50 * d0l30 - l51 * d1l31 - l52 * d2l32) * facto[9];
+    (m->val[23] - l50*d0l30 - l51*d1l31 - l52*d2l32) * facto[9];
 
   /* j=4: row 5 */
 
-  const cs_real_t d44 = m->val[28] - l40 * l40 * d00 - l41 * l41 * d11 -
-                        l42 * l42 * d22 - l43 * l43 * d33;
+  const cs_real_t d44 =
+    m->val[28] - l40*l40*d00 - l41*l41*d11 - l42*l42*d22 - l43*l43*d33;
   if (cs::abs(d44) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[14]           = 1. / d44;
-  const cs_real_t l54 = facto[19] =
-    facto[14] * (m->val[29] - l50 * d00 * l40 - l51 * d11 * l41 -
-                 l52 * d22 * l42 - l53 * d33 * l43);
+  facto[14] = 1. / d44;
+  const cs_real_t l54 = facto[19] = facto[14] *
+    (m->val[29] - l50*d00*l40 - l51*d11*l41 - l52*d22*l42 - l53*d33*l43);
 
   /* j=5: row 6 */
 
-  const cs_real_t d55 = m->val[35] - l50 * l50 * d00 - l51 * l51 * d11 -
-                        l52 * l52 * d22 - l53 * l53 * d33 - l54 * l54 * d44;
+  const cs_real_t d55 = m->val[35]
+    - l50*l50*d00 - l51*l51*d11 - l52*l52*d22 - l53*l53*d33 - l54*l54*d44;
   if (cs::abs(d55) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[20] = 1. / d55;
@@ -1656,23 +1666,25 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[21])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  LDL^T: Modified Cholesky decomposition of a SPD matrix.
- *         For more reference, see for instance
- *   http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
+ * \brief LDL^T: Modified Cholesky decomposition of a SPD matrix.
+ *        For more reference, see for instance
+ * http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
  *
- * \param[in]      m        pointer to a cs_sdm_t structure
- * \param[in, out] facto    vector of the coefficient of the decomposition
- * \param[in, out] dkk      store temporary the diagonal (size = n_rows)
+ * \param[in]      m      pointer to a cs_sdm_t structure
+ * \param[in, out] facto  vector of the coefficient of the decomposition
+ * \param[in, out] dkk    store temporary the diagonal (size = n_rows)
  *
- * \note: facto is a lower triangular matrix. The first value of the
- *        j-th (zero-based) row is easily accessed: its index is j*(j+1)/2
- *        (cf sum of the first j natural numbers). Instead of 1 on the diagonal
- *        we store the inverse of D mat in the L.D.L^T decomposition
+ * \note: facto is a lower triangular matrix. The first value of the j-th
+ *        (zero-based) row is easily accessed: its index is j*(j+1)/2 (cf sum
+ *        of the first j natural numbers). Instead of 1 on the diagonal we
+ *        store the inverse of D mat in the L.D.L^T decomposition
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_ldlt_compute(const cs_sdm_t *m, cs_real_t *facto, cs_real_t *dkk)
+cs_sdm_ldlt_compute(const cs_sdm_t *m,
+                    cs_real_t      *facto,
+                    cs_real_t      *dkk)
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows);
@@ -1686,7 +1698,7 @@ cs_sdm_ldlt_compute(const cs_sdm_t *m, cs_real_t *facto, cs_real_t *dkk)
 
   int rowj_idx = 0;
 
-  /* Factorization (column-major algorithm) */
+  // Factorization (column-major algorithm)
 
   for (int j = 0; j < n; j++) {
     rowj_idx += j;
@@ -1694,76 +1706,72 @@ cs_sdm_ldlt_compute(const cs_sdm_t *m, cs_real_t *facto, cs_real_t *dkk)
 
     switch (j) {
 
-    case 0:  /* Optimization for the first colum */
+    case 0: // Optimization for the first colum
       {
-        dkk[0] = m->val[0]; /* d00 */
+        dkk[0] = m->val[0]; // d00
 
         if (cs::abs(dkk[0]) < cs_math_zero_threshold)
           bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-        const cs_real_t  inv_d00 = facto[0] = 1. / dkk[0];
+        const cs_real_t inv_d00 = facto[0] = 1. / dkk[0];
 
-        /* l_i0 = a_i0 / d_00 */
-        int               rowi_idx = rowj_idx;
-        const cs_real_t  *a_0 = m->val;  /* a_ij = a_ji */
-        for (int i = j + 1; i < n; i++) {     /* Loop on rows */
+        // l_i0 = a_i0 / d_00
+        int rowi_idx = rowj_idx;
+        const cs_real_t *a_0 = m->val; // a_ij = a_ji
+        for (int i = j + 1; i < n; i++) { // Loop on rows
 
           rowi_idx += i;
-          cs_real_t  *l_i = facto + rowi_idx;
-          l_i[0]          = a_0[i] * inv_d00;
+          cs_real_t *l_i = facto + rowi_idx;
+          l_i[0]         = a_0[i] * inv_d00;
         }
-
       }
       break;
 
-    case 1:  /* Optimization for the second colum */
+    case 1: // Optimization for the second column
       {
-        /* d_11 = a_11 - l_10^2 * d_00 */
-        cs_real_t  *l_1 = facto + rowj_idx;
+        // d_11 = a_11 - l_10^2 * d_00
+        cs_real_t *l_1 = facto + rowj_idx;
 
-        const cs_real_t  d11 = dkk[1] = m->val[n+1] - l_1[0]*l_1[0]*dkk[0];
+        const cs_real_t d11 = dkk[1] = m->val[n+1] - l_1[0]*l_1[0]*dkk[0];
         if (cs::abs(d11) < cs_math_zero_threshold)
           bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
-        const cs_real_t  inv_d11 = facto[djj_idx] = 1. / d11;
+        const cs_real_t inv_d11 = facto[djj_idx] = 1. / d11;
 
-        /* l_i1 = (a_i1 - l_i0 * d_00 * l_10 ) / d_11 */
-
-        int               rowi_idx = rowj_idx;
-        const cs_real_t  *a_1 = m->val + n;  /* a_i1 = a_1i */
-        for (int i = 2; i < n; i++) {             /* Loop on rows */
+        // l_i1 = (a_i1 - l_i0 * d_00 * l_10 ) / d_11
+        int rowi_idx = rowj_idx;
+        const cs_real_t *a_1 = m->val + n;  // a_i1 = a_1i
+        for (int i = 2; i < n; i++) { // Loop on rows
 
           rowi_idx += i;
-          cs_real_t  *l_i = facto + rowi_idx;
-          l_i[1]          = (a_1[i] - l_i[0] * dkk[0] * l_1[0]) * inv_d11;
-        }
+          cs_real_t *l_i = facto + rowi_idx;
+          l_i[1] = (a_1[i] - l_i[0] *  dkk[0] * l_1[0]) * inv_d11;
 
+        }
       }
       break;
 
     default:
       {
-        /* d_jj = a_jj - \sum_{k=0}^{j-1} l_jk^2 * d_kk */
+        // d_jj = a_jj - \sum_{k=0}^{j-1} l_jk^2 * d_kk
+        cs_real_t *l_j = facto + rowj_idx;
 
-        cs_real_t  *l_j = facto + rowj_idx;
-
-        cs_real_t  sum = 0.;
+        cs_real_t sum = 0.;
         for (int k = 0; k < j; k++)
           sum += l_j[k]*l_j[k] * dkk[k];
-        const cs_real_t  djj = dkk[j] = m->val[j*n+j] - sum;
+        const cs_real_t djj = dkk[j] = m->val[j*n+j] - sum;
 
         if (cs::abs(djj) < cs_math_zero_threshold)
           bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
-        const cs_real_t  inv_djj = facto[djj_idx] = 1. / djj;
+        const cs_real_t inv_djj = facto[djj_idx] = 1. / djj;
 
-        /* l_ij = (a_ij - \sum_{k=1}^{j-1} l_ik * d_kk * l_jk ) / d_jj */
-
-        int               rowi_idx = rowj_idx;
-        const cs_real_t  *a_j = m->val + j*n;  /* a_ij = a_ji */
-        for (int i = j + 1; i < n; i++) {           /* Loop on rows */
+        // l_ij = (a_ij - \sum_{k=1}^{j-1} l_ik * d_kk * l_jk ) / d_jj
+        int rowi_idx = rowj_idx;
+        const cs_real_t *a_j = m->val + j*n;  // a_ij = a_ji
+        for (int i = j+1; i < n; i++) { // Loop on rows
 
           rowi_idx += i;
-          cs_real_t  *l_i = facto + rowi_idx;
+          cs_real_t *l_i = facto + rowi_idx;
           sum = 0.;
           for (int k = 0; k < j; k++)
             sum += l_i[k] *  dkk[k] * l_j[k];
@@ -1771,27 +1779,27 @@ cs_sdm_ldlt_compute(const cs_sdm_t *m, cs_real_t *facto, cs_real_t *dkk)
         }
       }
       break;
-    } /* End of switch */
+    } // End of switch
 
-  } /* Loop on column j */
+  } // Loop on column j
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a 3x3 matrix with a modified Cholesky decomposition (L.D.L^T)
- *         The solution should be already allocated
+ * \brief Solve a 3x3 matrix with a modified Cholesky decomposition (L.D.L^T)
+ *        The solution should be already allocated
  * Ref. http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
  *
- * \param[in]      facto   vector of the coefficients of the decomposition
- * \param[in]      rhs     right-hand side
- * \param[in,out]  sol     solution
+ * \param[in]     facto  vector of the coefficients of the decomposition
+ * \param[in]     rhs    right-hand side
+ * \param[in,out] sol    solution
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_33_ldlt_solve(const cs_real_t    facto[6],
-                     const cs_real_t    rhs[3],
-                     cs_real_t          sol[3])
+cs_sdm_33_ldlt_solve(const cs_real_t facto[6],
+                     const cs_real_t rhs[3],
+                     cs_real_t       sol[3])
 {
   assert(facto != nullptr && rhs != nullptr && sol != nullptr);
 
@@ -1805,20 +1813,20 @@ cs_sdm_33_ldlt_solve(const cs_real_t    facto[6],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a 4x4 matrix with a modified Cholesky decomposition (L.D.L^T)
- *         The solution should be already allocated
+ * \brief Solve a 4x4 matrix with a modified Cholesky decomposition (L.D.L^T)
+ *        The solution should be already allocated
  * Ref. http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
  *
- * \param[in]      facto   vector of the coefficients of the decomposition
- * \param[in]      rhs     right-hand side
- * \param[in,out]  x       solution
+ * \param[in]     facto  vector of the coefficients of the decomposition
+ * \param[in]     rhs    right-hand side
+ * \param[in,out] x      solution
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_44_ldlt_solve(const cs_real_t    facto[10],
-                     const cs_real_t    rhs[4],
-                     cs_real_t          x[4])
+cs_sdm_44_ldlt_solve(const cs_real_t facto[10],
+                     const cs_real_t rhs[4],
+                     cs_real_t       x[4])
 {
   assert(facto != nullptr && rhs != nullptr && x != nullptr);
 
@@ -1835,20 +1843,20 @@ cs_sdm_44_ldlt_solve(const cs_real_t    facto[10],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a 6x6 matrix with a modified Cholesky decomposition (L.D.L^T)
- *         The solution should be already allocated
+ * \brief Solve a 6x6 matrix with a modified Cholesky decomposition (L.D.L^T)
+ *        The solution should be already allocated
  * Ref. http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
  *
- * \param[in]      f    vector of the coefficients of the decomposition
- * \param[in]      b    right-hand side
- * \param[in,out]  x    solution
+ * \param[in]     f  vector of the coefficients of the decomposition
+ * \param[in]     b  right-hand side
+ * \param[in,out] x  solution
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_66_ldlt_solve(const cs_real_t    f[21],
-                     const cs_real_t    b[6],
-                     cs_real_t          x[6])
+cs_sdm_66_ldlt_solve(const cs_real_t f[21],
+                     const cs_real_t b[6],
+                     cs_real_t       x[6])
 {
   assert(f != nullptr && b != nullptr && x != nullptr);
 
@@ -1869,23 +1877,23 @@ cs_sdm_66_ldlt_solve(const cs_real_t    f[21],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a SPD matrix with a L.D.L^T (Modified Cholesky decomposition)
- *         The solution should be already allocated
+ * \brief Solve a SPD matrix with a L.D.L^T (Modified Cholesky decomposition)
+ *        The solution should be already allocated
  * Reference:
  * http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
  *
- * \param[in]       n_rows   dimension of the system to solve
- * \param[in]       facto    vector of the coefficients of the decomposition
- * \param[in]       rhs      right-hand side
- * \param[in, out]  sol      solution
+ * \param[in]      n_rows  dimension of the system to solve
+ * \param[in]      facto   vector of the coefficients of the decomposition
+ * \param[in]      rhs     right-hand side
+ * \param[in, out] sol     solution
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_ldlt_solve(int                n_rows,
-                  const cs_real_t   *facto,
-                  const cs_real_t   *rhs,
-                  cs_real_t         *sol)
+cs_sdm_ldlt_solve(int              n_rows,
+                  const cs_real_t *facto,
+                  const cs_real_t *rhs,
+                  cs_real_t       *sol)
 {
   assert(facto != nullptr && rhs != nullptr && sol != nullptr);
 
@@ -1904,54 +1912,54 @@ cs_sdm_ldlt_solve(int                n_rows,
   for (int i = 1; i < n_rows; i++) {
     rowi_idx += i;
 
-    const cs_real_t  *l_i = facto + rowi_idx;
-    cs_real_t  sum = 0.;
+    const cs_real_t *l_i = facto + rowi_idx;
+    cs_real_t sum = 0.;
     for (int k = 0; k < i; k++)
       sum += sol[k] * l_i[k];
     sol[i] = rhs[i] - sum;
 
-  } /* forward substitution */
+  } // forward substitution
 
   /* 2 - Solving Dy = z and facto^Tx=y with backwards substitution
    *     x_i = z_i/d_ii - \sum_{k=i+1}^{n} l_ki * x_k
    */
 
-  const int  last_row_id = n_rows - 1;
-  const int  shift = n_rows*(last_row_id)/2;   /* idx with n_rows - 1 */
-  int  diagi_idx = shift + last_row_id;        /* last entry of the facto. */
-  sol[last_row_id] *= facto[diagi_idx];        /* 1 / d_nn */
+  const int last_row_id = n_rows - 1;
+  const int shift = n_rows*(last_row_id)/2;  // idx with n_rows - 1
+  int diagi_idx = shift + last_row_id;       // last entry of the facto.
+  sol[last_row_id] *= facto[diagi_idx];      // 1/d_nn
 
   for (int i = last_row_id - 1; i >= 0; i--) {
     diagi_idx -= (i + 2);
     sol[i] *= facto[diagi_idx];
 
-    int        rowk_idx = shift;
-    cs_real_t  sum = 0.0;
+    int rowk_idx = shift;
+    cs_real_t sum = 0.0;
     for (int k = last_row_id; k > i; k--) {
-      /*sol[i] -= facto[k*(k+1)/2+i] * sol[k];*/
-      const cs_real_t  *l_k = facto + rowk_idx;
+      // sol[i] -= facto[k*(k+1)/2+i] * sol[k];
+      const cs_real_t *l_k = facto + rowk_idx;
       sum += l_k[i] * sol[k];
       rowk_idx -= k;
     }
     sol[i] -= sum;
 
-  } /* backward substitution */
+  } // backward substitution
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Test if a matrix is symmetric. Return 0. if the extradiagonal
- *          differences are lower thann the machine precision.
+ * \brief Test if a matrix is symmetric. Return 0. if the extradiagonal
+ *        differences are lower thann the machine precision.
  *
- * \param[in]  mat         pointer to the cs_sdm_t structure to test
+ * \param[in] mat  pointer to the cs_sdm_t structure to test
  *
- * \return  0 if the matrix is symmetric at the machine tolerance otherwise
- *          the absolute max. value between two transposed terms
+ * \return 0 if the matrix is symmetric at the machine tolerance otherwise the
+ *          absolute max. value between two transposed terms
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_sdm_test_symmetry(const cs_sdm_t     *mat)
+cs_sdm_test_symmetry(const cs_sdm_t *mat)
 {
   double  sym_eval = 0.;
 
@@ -1960,29 +1968,29 @@ cs_sdm_test_symmetry(const cs_sdm_t     *mat)
 
   if (mat->flag & CS_SDM_BY_BLOCK) {
 
-    cs_sdm_t  *copy = cs_sdm_block_create_copy(mat);
+    cs_sdm_t *copy = cs_sdm_block_create_copy(mat);
 
     cs_sdm_block_square_asymm(copy);
 
-    const cs_sdm_block_t  *bd = copy->block_desc;
+    const cs_sdm_block_t *bd = copy->block_desc;
     for (int bi = 0; bi < bd->n_row_blocks; bi++) {
       for (int bj = bi; bj < bd->n_col_blocks; bj++) {
-        cs_sdm_t *bIJ = copy->get_block(bi, bj);
+        cs_sdm_t *b_ij = copy->get_block(bi, bj);
 
-        for (int i = 0; i < bIJ->n_rows*bIJ->n_cols; i++)
-          if (cs::abs(bIJ->val[i]) > sym_eval)
-            sym_eval = cs::abs(bIJ->val[i]);
+        for (int i = 0; i < b_ij->n_rows*b_ij->n_cols; i++)
+          if (cs::abs(b_ij->val[i]) > sym_eval)
+            sym_eval = cs::abs(b_ij->val[i]);
 
-      } /* Loop on column blocks */
+      } // Loop on column blocks
 
-    } /* Loop on row blocks */
+    } // Loop on row blocks
 
     copy = cs_sdm_free(copy);
 
   }
   else {
 
-    cs_sdm_t  *copy = cs_sdm_create_copy(mat);
+    cs_sdm_t *copy = cs_sdm_create_copy(mat);
 
     cs_sdm_square_asymm(copy);
 
@@ -1999,15 +2007,16 @@ cs_sdm_test_symmetry(const cs_sdm_t     *mat)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Dump a small dense matrix defined by blocks
+ * \brief Dump a small dense matrix defined by blocks
  *
- * \param[in]  parent_id   id of the related parent entity
- * \param[in]  mat         pointer to the cs_sdm_t structure
+ * \param[in] parent_id  id of the related parent entity
+ * \param[in] mat        pointer to the cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_dump(cs_lnum_t parent_id, const cs_sdm_t *mat)
+cs_sdm_block_dump(cs_lnum_t       parent_id,
+                  const cs_sdm_t *mat)
 {
   if (mat == nullptr)
     return;
@@ -2042,37 +2051,37 @@ cs_sdm_block_dump(cs_lnum_t parent_id, const cs_sdm_t *mat)
 
     for (int i = 0; i < n_rows; i++) {
       for (int bj = 0; bj < n_b_cols; bj++) {
-        const cs_sdm_t  *bij    = blocks + bi * n_b_cols + bj;
-        const int        n_cols = bij->n_cols;
-        const cs_real_t *mval_i = bij->val + i * n_cols;
+        const cs_sdm_t *b_ij    = blocks + bi * n_b_cols + bj;
+        const int        n_cols = b_ij->n_cols;
+        const cs_real_t *mval_i = b_ij->val + i * n_cols;
 
         for (int j = 0; j < n_cols; j++)
           cs_log_printf(CS_LOG_DEFAULT, " % -6.3e", mval_i[j]);
         cs_log_printf(CS_LOG_DEFAULT, " |");
 
-      } /* Block j */
+      } // Block j
 
       cs_log_printf(CS_LOG_DEFAULT, "\n");
 
-    } /* Loop on rows */
+    } // Loop on rows
 
     cs_log_printf(CS_LOG_DEFAULT, "%s%s%s\n", _sep, _sep, _sep);
 
-  } /* Block i */
+  } // Block i
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Print a cs_sdm_t structure which is defined by block
- *          Print into the file f if given otherwise open a new file named
- *          fname if given otherwise print into the standard output
- *          The usage of threshold allows one to compare more easier matrices
- *          without taking into account numerical roundoff.
+ * \brief Print a cs_sdm_t structure which is defined by block
+ *        Print into the file f if given otherwise open a new file named
+ *        fname if given otherwise print into the standard output
+ *        The usage of threshold allows one to compare more easier matrices
+ *        without taking into account numerical roundoff.
  *
- * \param[in]  fp         pointer to a file structure or nullptr
- * \param[in]  fname      filename or nullptr
- * \param[in]  thd        threshold (below this value --> set 0)
- * \param[in]  m          pointer to the cs_sdm_t structure
+ * \param[in] fp     pointer to a file structure or nullptr
+ * \param[in] fname  filename or nullptr
+ * \param[in] thd    threshold (below this value --> set 0)
+ * \param[in] m      pointer to the cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2085,9 +2094,8 @@ cs_sdm_block_fprintf(FILE           *fp,
   FILE *fout = stdout;
   if (fp != nullptr)
     fout = fp;
-  else if (fname != nullptr) {
+  else if (fname != nullptr)
     fout = fopen(fname, "w");
-  }
 
   fprintf(fout, "cs_sdm_t %p\n", (const void *)m);
 
@@ -2105,9 +2113,9 @@ cs_sdm_block_fprintf(FILE           *fp,
 
     for (int i = 0; i < n_rows; i++) {
       for (int bj = 0; bj < n_b_cols; bj++) {
-        const cs_sdm_t  *bij    = blocks + bi * n_b_cols + bj;
-        const int        n_cols = bij->n_cols;
-        const cs_real_t *mval_i = bij->val + i * n_cols;
+        const cs_sdm_t *b_ij    = blocks + bi * n_b_cols + bj;
+        const int        n_cols = b_ij->n_cols;
+        const cs_real_t *mval_i = b_ij->val + i * n_cols;
 
         for (int j = 0; j < n_cols; j++) {
           if (cs::abs(mval_i[j]) > thd)
@@ -2116,23 +2124,27 @@ cs_sdm_block_fprintf(FILE           *fp,
             fprintf(fout, " % -9.5e", 0.);
         }
 
-      } /* Block j */
+      } // Block j
       fprintf(fout, "\n");
 
-    } /* Loop on rows */
+    } // Loop on rows
 
-  } /* Block i */
+  } // Block i
 
   if (fout != stdout && fout != fp)
     fclose(fout);
 }
 
+/*=============================================================================
+ * Constructors and destructors
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Destructor
- *
+ * \brief Destructor
  */
 /*----------------------------------------------------------------------------*/
+
 _cs_sdm_t::~_cs_sdm_t()
 {
   if ((flag & CS_SDM_SHARED_VAL) == 0) {
@@ -2143,29 +2155,18 @@ _cs_sdm_t::~_cs_sdm_t()
     CS_FREE(block_desc->blocks);
     CS_FREE(block_desc);
   }
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Constructor for a square matrix.
+ * \brief Constructor for a matrix.
  *
- * \param[in]  n_max_rows   max number of rows
- *
+ * \param[in] flag        metadata related to a cs_sdm_t structure
+ * \param[in] n_max_rows  max number of rows
+ * \param[in] n_max_cols  max number of columns
  */
 /*----------------------------------------------------------------------------*/
-_cs_sdm_t::_cs_sdm_t(const int n_max_rows_)
-  : _cs_sdm_t(0, n_max_rows_, n_max_rows_) {};
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Constructor for a square matrix.
- *
- * \param[in]  flag         metadata related to a cs_sdm_t structure
- * \param[in]  n_max_rows   max number of rows
- * \param[in]  n_max_cols   max number of columns
- *
- */
-/*----------------------------------------------------------------------------*/
 _cs_sdm_t::_cs_sdm_t(const cs_flag_t flag_,
                      const int       n_max_rows_,
                      const int       n_max_cols_)
@@ -2184,19 +2185,29 @@ _cs_sdm_t::_cs_sdm_t(const cs_flag_t flag_,
     bd->n_row_blocks = bd->n_col_blocks = 0;
     block_desc                          = bd;
   }
-  else {
+  else
     block_desc = nullptr;
-  }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Constructor by copy.
+ * \brief Constructor for a square matrix using an empty flag
  *
- * \param[in]  other       a cs_sdm_t structure
- *
+ * \param[in] n_max_rows  max number of rows
  */
 /*----------------------------------------------------------------------------*/
+
+_cs_sdm_t::_cs_sdm_t(const int n_max_rows_)
+  : _cs_sdm_t(0, n_max_rows_, n_max_rows_) {};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Constructor by copy.
+ *
+ * \param[in] other  a cs_sdm_t structure to copy as reference
+ */
+/*----------------------------------------------------------------------------*/
+
 _cs_sdm_t::_cs_sdm_t(const _cs_sdm_t &other)
   : _cs_sdm_t(other.flag, other.n_max_rows, other.n_max_cols)
 {
@@ -2204,58 +2215,132 @@ _cs_sdm_t::_cs_sdm_t(const _cs_sdm_t &other)
   n_cols = other.n_cols;
 
   std::memcpy(val, other.data(), sizeof(cs_real_t) * this->size());
-};
+}
+
+/*============================================================================
+ * Operators
+ *============================================================================*/
+
+/*---------------------------------------------------------------------------*/
+/*!
+ * \brief Fill the matrix with the given value
+ *
+ * \param[in] value  value to set
+ *
+ * \return the pointer to the cs_sdm_t structure
+ */
+/*---------------------------------------------------------------------------*/
+
+_cs_sdm_t &
+_cs_sdm_t::operator=(cs_real_t value)
+{
+  const int nb_val = this->size();
+  for (int i = 0; i < nb_val; i++) {
+    val[i] = value;
+  }
+
+  return *this;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Modifiy the value (i,j) of the matrix
+ * \brief Get the value (i,j) of the matrix for modification
  *
- * \param[in]  i        index of the row
- * \param[in]  j        index of the column
+ * \param[in] i  index of the row
+ * \param[in] j  index of the column
  *
  * \return value
  */
 /*----------------------------------------------------------------------------*/
+
 cs_real_t &
-_cs_sdm_t::operator()(const int i, const int j)
+_cs_sdm_t::operator()(const int i,
+                      const int j)
 {
   assert(0 <= i && i < n_rows);
   assert(0 <= j && j < n_cols);
 
   return val[i * n_cols + j];
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the value (i,j) of the matrix
+ * \brief Get the value (i,j) of the matrix for reading
  *
- * \param[in]  i        index of the row
- * \param[in]  j        index of the column
+ * \param[in] i  index of the row
+ * \param[in] j  index of the column
  *
  * \return value
  */
 /*----------------------------------------------------------------------------*/
+
 const cs_real_t &
-_cs_sdm_t::operator()(const int i, const int j) const
+_cs_sdm_t::operator()(const int i,
+                      const int j) const
 {
   assert(0 <= i && i < n_rows);
   assert(0 <= j && j < n_cols);
 
   return val[i * n_cols + j];
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize matrix.
+ * \brief Multiply a matrix with the scaling factor given as parameter
  *
- * \param[in]  nrows   number of rows
- * \param[in]  ncols   number of columns
+ * \param[in] scaling  value of the scaling coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+_cs_sdm_t &
+_cs_sdm_t::operator*=(cs_real_t scaling)
+{
+  const int nb_val = this->size();
+  for (int i = 0; i < nb_val; i++) {
+    val[i] *= scaling;
+  }
+
+  return *this;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add two small dense matrices: cur += add
  *
+ * \param[in] add  matrix to add to the current matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+_cs_sdm_t &
+_cs_sdm_t::operator+=(const _cs_sdm_t &add)
+{
+  assert(n_rows == add.n_rows);
+  assert(n_cols == add.n_cols);
+
+  const int nb_val = this->size();
+  for (int i = 0; i < nb_val; i++) {
+    val[i] += add.val[i];
+  }
+
+  return *this;
+}
+
+/*=============================================================================
+ * Public methods
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize a matrix.
+ *
+ * \param[in] nrows  number of rows
+ * \param[in] ncols  number of columns
  */
 /*----------------------------------------------------------------------------*/
 
 void
-_cs_sdm_t::init(const int nrows, const int ncols)
+_cs_sdm_t::init(const int nrows,
+                const int ncols)
 {
   assert(nrows <= n_max_rows);
   assert(ncols <= n_max_cols);
@@ -2264,26 +2349,25 @@ _cs_sdm_t::init(const int nrows, const int ncols)
   n_cols = ncols;
 
   this->set_zero();
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize square matrix.
+ * \brief Initialize a square matrix.
  *
- * \param[in]  nrows   number of rows
- *
+ * \param[in] nrows  number of rows
  */
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 
 void
 _cs_sdm_t::init(const int nrows)
 {
   init(nrows, nrows);
-};
+}
 
 /*---------------------------------------------------------------------------*/
 /*!
- * \brief   Set the matrix to zero.
+ * \brief Set the matrix to zero.
  */
 /*---------------------------------------------------------------------------*/
 
@@ -2291,14 +2375,13 @@ void
 _cs_sdm_t::set_zero()
 {
   std::memset(val, 0, n_rows * n_cols * sizeof(cs_real_t));
-};
+}
 
 /*---------------------------------------------------------------------------*/
 /*!
- * \brief   Fill the matrix with the value.
+ * \brief Fill the matrix with the given value.
  *
- * \param[in]  value
- *
+ * \param[in] value  value to set
  */
 /*---------------------------------------------------------------------------*/
 
@@ -2306,11 +2389,11 @@ void
 _cs_sdm_t::fill(cs_real_t value)
 {
   *this = value;
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Transpose a matrix.
+ * \brief Transpose a matrix.
  *
  * \return the transposed matrix
  */
@@ -2334,7 +2417,6 @@ _cs_sdm_t::transpose() const
 /*!
  * \brief Set the lower left according to the upper right part in order to get
  *        a symmetric matrix.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2347,103 +2429,41 @@ _cs_sdm_t::symmetrize_ur()
       m_i[j] = this->operator()(j, i);
     }
   }
-};
-
-/*---------------------------------------------------------------------------*/
-/*!
- * \brief   Fill with the given value
- *
- * \param[in]  value
- */
-/*---------------------------------------------------------------------------*/
-
-_cs_sdm_t &
-_cs_sdm_t::operator=(cs_real_t value)
-{
-  const int nb_val = this->size();
-  for (int i = 0; i < nb_val; i++) {
-    val[i] = value;
-  }
-
-  return *this;
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Multiply a matrix with the scaling factor given as parameter
+ * \brief Compute a dense matrix-vector product for a small square matrix mv
+ *        which has been previously allocated
  *
- * \param[in]      scaling
- */
-/*----------------------------------------------------------------------------*/
-
-_cs_sdm_t &
-_cs_sdm_t::operator*=(cs_real_t scaling)
-{
-  const int nb_val = this->size();
-  for (int i = 0; i < nb_val; i++) {
-    val[i] *= scaling;
-  }
-
-  return *this;
-};
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add two small dense matrices: loc += add
- *
- * \param[in]      add   values to add to mat
- */
-/*----------------------------------------------------------------------------*/
-
-_cs_sdm_t &
-_cs_sdm_t::operator+=(const _cs_sdm_t &add)
-{
-  assert(n_rows == add.n_rows);
-  assert(n_cols == add.n_cols);
-
-  const int nb_val = this->size();
-  for (int i = 0; i < nb_val; i++) {
-    val[i] += add.val[i];
-  }
-
-  return *this;
-};
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute a dense matrix-vector product for a small square matrix
- *          mv has been previously allocated
- *
- * \param[in]      vec    local vector to use
- * \param[in, out] mv     result of the local matrix-vector product
+ * \param[in]      vec  local vector to use
+ * \param[in, out] mv   result of the local matrix-vector product
  */
 /*----------------------------------------------------------------------------*/
 
 void
-_cs_sdm_t::dot(const cs_real_t vec[], cs_real_t mv[]) const
+_cs_sdm_t::matvec(const cs_real_t vec[], cs_real_t mv[]) const
 {
   assert(vec != nullptr && mv != nullptr);
 
-  /* Initialize mv with the first column */
-
+  // Initialize the resulting vector mv with the first column
   const cs_real_t v = vec[0];
   for (int i = 0; i < n_rows; i++) {
     mv[i] = v * val[i * n_cols];
   }
 
-  /* Increment mv */
-
+  // Increment the resulting vector mv
   for (int i = 0; i < n_rows; i++) {
     const cs_real_t *m_i = this->row(i);
     for (int j = 1; j < n_cols; j++) {
       mv[i] += m_i[j] * vec[j];
     }
   }
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Dump a small dense matrix
+ * \brief Dump a small dense matrix (minimalist version)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2461,16 +2481,15 @@ _cs_sdm_t::dump() const
     }
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Dump a small dense matrix
+ * \brief Dump a small dense matrix
  *
- * \param[in]  parent_id   id of the related parent entity
- * \param[in]  row_ids     list of ids related to associated entities (or
- *                         nullptr)
- * \param[in]  col_ids     list of ids related to associated entities
+ * \param[in] parent_id  id of the related parent entity
+ * \param[in] row_ids    nullptr or list of associated entity ids
+ * \param[in] col_ids    nullptr or list of associated entity ids
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2506,13 +2525,13 @@ _cs_sdm_t::dump(cs_lnum_t        parent_id,
       cs_log_printf(CS_LOG_DEFAULT, "\n");
     }
   }
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Dump a small dense matrix
+ * \brief Dump a small dense matrix
  *
- * \param[in]  parent_id   id of the related parent entity
+ * \param[in] parent_id  id of the related parent entity
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2520,24 +2539,26 @@ void
 _cs_sdm_t::dump(cs_lnum_t parent_id) const
 {
   this->dump(parent_id, nullptr, nullptr);
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Print a cs_sdm_t structure not defined by block
- *          Print into the file f if given otherwise open a new file named
- *          fname if given otherwise print into the standard output
- *          The usage of threshold allows one to compare more easier matrices
- *          without taking into account numerical roundoff.
+ * \brief Print a cs_sdm_t structure not defined by block
+ *        Print into the file f if given otherwise open a new file named
+ *        fname if given otherwise print into the standard output
+ *        The usage of threshold allows one to compare more easier matrices
+ *        without taking into account numerical roundoff.
  *
- * \param[in]  fp         pointer to a file structure or null
- * \param[in]  fname      filename or null
- * \param[in]  thd        threshold (below this value --> set 0)
+ * \param[in] fp     pointer to a file structure or nullptr
+ * \param[in] fname  filename or nullptr
+ * \param[in] thd    threshold (one writes "0" below this value)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-_cs_sdm_t::dump(FILE *fp, const char *fname, cs_real_t thd) const
+_cs_sdm_t::dump(FILE       *fp,
+                const char *fname,
+                cs_real_t   thd) const
 {
   FILE *fout = stdout;
   if (fp != nullptr)
@@ -2566,12 +2587,13 @@ _cs_sdm_t::dump(FILE *fp, const char *fname, cs_real_t thd) const
 
   if (fout != stdout && fout != fp)
     fclose(fout);
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Map an array into a predefined cs_sdm_t structure. This array is
  *        shared and the lifecycle of this array is not managed by the
+ *        cs_sdm_t structure. One constructs a view on this array using the
  *        cs_sdm_t structure
  *
  * \param[in]      n_max_rows_  max. number of rows
@@ -2582,7 +2604,9 @@ _cs_sdm_t::dump(FILE *fp, const char *fname, cs_real_t thd) const
 /*----------------------------------------------------------------------------*/
 
 void
-_cs_sdm_t::map_array(int n_max_rows_, int n_max_cols_, cs_real_t *array)
+_cs_sdm_t::map_array(int        n_max_rows_,
+                     int        n_max_cols_,
+                     cs_real_t *array)
 {
   assert(array != nullptr); /* Sanity check */
 

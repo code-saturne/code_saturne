@@ -1093,7 +1093,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
   /* Multiply these values by a cellwise Hodge operator previously computed */
 
   double  *hdg_eval = cb->values + cm->n_vc;
-  mass_hodge->matrix->dot(eval, hdg_eval);
+  mass_hodge->matrix->matvec(eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc; v++)
     values[v] += hdg_eval[v];
@@ -1149,7 +1149,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
   /* Multiply these values by a cellwise Hodge operator previously computed */
 
   double  *hdg_eval = cb->values + cm->n_vc;
-  mass_hodge->matrix->dot(eval, hdg_eval);
+  mass_hodge->matrix->matvec(eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc; v++)
     values[v] += hdg_eval[v];
@@ -1208,7 +1208,7 @@ cs_source_term_pvsp_by_array(const cs_xdef_t      *source,
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
 
-  mass_hodge->matrix->dot(vals, eval);
+  mass_hodge->matrix->matvec(vals, eval);
 
   for (short int v = 0; v < cm->n_vc; v++)
     values[v] += eval[v];
@@ -1262,7 +1262,7 @@ cs_source_term_pvsp_by_c2v_array(const cs_xdef_t      *source,
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
 
-  mass_hodge->matrix->dot(ac->values + ac->adjacency->idx[cm->c_id], eval);
+  mass_hodge->matrix->matvec(ac->values + ac->adjacency->idx[cm->c_id], eval);
 
   for (short int v = 0; v < cm->n_vc; v++)
     values[v] += eval[v];
@@ -2197,7 +2197,7 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
   /* Multiply these values by a cellwise Hodge operator previously computed */
 
   double  *hdg_eval = cb->values + cm->n_vc + 1;
-  mass_hodge->matrix->dot(eval, hdg_eval);
+  mass_hodge->matrix->matvec(eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc + 1; v++)
     values[v] += hdg_eval[v];
@@ -2266,7 +2266,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
   /* Multiply these values by a cellwise Hodge operator previously computed */
 
   double  *hdg_eval = cb->values + cm->n_vc + 1;
-  mass_hodge->matrix->dot(eval, hdg_eval);
+  mass_hodge->matrix->matvec(eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc + 1; v++)
     values[v] += hdg_eval[v];

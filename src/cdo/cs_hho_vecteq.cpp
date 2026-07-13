@@ -523,7 +523,7 @@ _condense_and_store(const cs_adjacency_t    *c2f,
     /* Initial block to update */
     cs_sdm_t *m_fc = m->get_block(fi, n_fc);
 
-    m_fc->dot(eqc->rc_tilda + c_offset, bf_tilda);
+    m_fc->matvec(eqc->rc_tilda + c_offset, bf_tilda);
 
     /* Update RHS: RHS_f = RHS_f - Afc*Acc^-1*s_c */
     for (int k = 0; k < eqc->n_face_dofs; k++)

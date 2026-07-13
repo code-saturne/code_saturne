@@ -880,7 +880,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
 
   /* Contribution of the Dirichlet conditions */
 
-  csys->mat->dot(x_dir, ax_dir);
+  csys->mat->matvec(x_dir, ax_dir);
 
   /* Second pass: Replace the Dirichlet block by a diagonal block */
 
@@ -972,7 +972,7 @@ cs_cdo_diffusion_alge_dirichlet_extra_block(const cs_equation_param_t   *eqp,
 
   /* Contribution of the Dirichlet conditions */
 
-  csys->mat->dot(x_dir, ax_dir);
+  csys->mat->matvec(x_dir, ax_dir);
 
   /* Second pass: Replace the Dirichlet block by a diagonal block */
 
@@ -1063,7 +1063,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
 
   /* Contribution of the Dirichlet conditions */
 
-  csys->mat->dot(x_dir, ax_dir);
+  csys->mat->matvec(x_dir, ax_dir);
 
   /* Second pass: Replace the Dirichlet block by a diagonal block */
 
@@ -1442,7 +1442,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
      plays the role of the flux operator */
 
   cs_sdm_square_add_transpose(bc_op, bc_op_t);
-  bc_op_t->dot(dir_val, u0_trgradv);
+  bc_op_t->matvec(dir_val, u0_trgradv);
 
   /* Second pass: Update the cell system with the bc_op matrix and the
    * Dirichlet values. Avoid a truncation error if the arbitrary coefficient of
@@ -1576,7 +1576,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     for (short int f = 0; f < cm->n_fc; f++)
       dir_val[f] = csys->dir_values[3*f+k];
 
-    bc_op_t->dot(dir_val, u0_trgradv);
+    bc_op_t->matvec(dir_val, u0_trgradv);
 
     for (short int i = 0; i < n_dofs; i++) /* Cell too! */
       csys->rhs[3*i+k] += u0_trgradv[i];
@@ -2358,7 +2358,7 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
      /* Update RHS according to the add of ntrgrd_tr (cb->aux) */
 
-      ntrgrd_tr->dot(csys->dir_values, cb->values);
+      ntrgrd_tr->matvec(csys->dir_values, cb->values);
       for (short int v = 0; v < csys->n_dofs; v++)
         csys->rhs[v] += cb->values[v];
 
@@ -2648,7 +2648,7 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
 
       /* Update RHS according to the add of ntrgrd_tr (cb->aux) */
 
-      ntrgrd_tr->dot(csys->dir_values, cb->values);
+      ntrgrd_tr->matvec(csys->dir_values, cb->values);
       for (short int v = 0; v < csys->n_dofs; v++)
         csys->rhs[v] += cb->values[v];
 
@@ -2833,7 +2833,7 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Update RHS according to the add of ntrgrd_tr (cb->aux) */
 
-      ntrgrd_tr->dot(csys->dir_values, cb->values);
+      ntrgrd_tr->matvec(csys->dir_values, cb->values);
       for (short int v = 0; v < csys->n_dofs; v++)
         csys->rhs[v] += cb->values[v];
 
@@ -2898,7 +2898,7 @@ cs_cdo_diffusion_sfb_get_face_flux(const cs_cell_mesh_t      *cm,
   /* Store the local fluxes. flux = -Hdg * gradient (grd_f = -gradient)
    * hodge->matrix has been computed just before the call to this function */
 
-  hodge->matrix->dot(grd_f, flx);
+  hodge->matrix->matvec(grd_f, flx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2947,7 +2947,7 @@ cs_cdo_diffusion_svb_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
   /* Store the local fluxes. flux = -Hdg * grd_c(pdi_c)
    * hodge->matrix has been computed just before the call to this function */
 
-  hodge->matrix->dot(gec, flx);
+  hodge->matrix->matvec(gec, flx);
 }
 
 /*----------------------------------------------------------------------------*/

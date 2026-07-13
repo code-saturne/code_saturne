@@ -1017,7 +1017,7 @@ _test_hodge_fb(FILE               *out,
   assert(cm->n_fc + 1 <= 7);
   cs_real_t  a[7], res[7];
   for (int i = 0; i < 7; i++) a[i] = 1.;
-  hdg->dot(a, res);
+  hdg->matvec(a, res);
   for (int i = 0; i < cm->n_fc + 1; i++)
     fprintf(out, "a[%d] = % -8.5e --> res[%d] = % -8.5e\n",
             i, a[i], i, res[i]);
