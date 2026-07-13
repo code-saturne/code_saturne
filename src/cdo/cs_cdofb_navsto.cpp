@@ -2508,6 +2508,194 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Take into account a wall BCs by a weak inforcement for the
+ *        normal component, and neumann for the tangent component.
+ *        This prototype matches the function pointer cs_cdo_apply_boundary_t
+ *
+ * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
+ * \param[in]      cm    pointer to a cellwise mesh structure
+ * \param[in]      pty   pointer to a \ref cs_property_data_t structure
+ * \param[in, out] cb    pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out] csys  structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
+  short int                                   fb,
+  [[maybe_unused]] const cs_equation_param_t *eqp,
+  const cs_cell_mesh_t                       *cm,
+  [[maybe_unused]] const cs_property_data_t  *pty,
+  cs_cell_builder_t                          *cb,
+  cs_cell_sys_t                              *csys)
+{
+  assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
+  assert(pty->is_iso == true); /* if not the case something else TODO ? */
+  assert(cs_equation_param_has_diffusion(eqp));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC));
+
+  std::memset(cb->values, 0, 6 * sizeof(double));
+  double         *ax_dir = cb->values + 3;
+  cs_sdm_t *m = csys->mat;
+  cs_sdm_block_t *bd = m->block_desc;
+  cs_sdm_t *mFF = m->get_block(fb, fb);
+  assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
+
+  if (csys->bf_flag[fb] & CS_CDO_BC_WALL_PRESCRIBED) {
+
+    const cs_real_t  f_meas = cm->face[fb].meas;
+    const double  *u0 = &(csys->rob_values[9*fb]);
+    const double  h_t = csys->rob_values[9*fb + 3];
+    const double  *f_w = &(csys->rob_values[9*fb + 6]);
+
+    /* In case of the laminar wall treatment :
+     * classic Dirichlet BC on ux, uy, uz*/
+
+    if (h_t > 0.5*eqp->strong_pena_bc_coeff) {
+
+      const double u0_norm = cs_math_3_norm(u0);
+
+      if (u0_norm > cs_math_zero_threshold) {
+
+        for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+          if (bi == fb)
+            continue;
+
+          cs_real_t *_rhs = csys->rhs + 3 * bi;
+          cs_sdm_t  *mIF  = m->get_block(bi, fb);
+
+          mIF->dot(u0, ax_dir);
+
+          for (int k = 0; k < 3; k++)
+            _rhs[k] -= ax_dir[k];
+        }
+      } /* Non-homogeneous Dirichlet BC */
+
+      for (short int k = 0; k < 3; k++)
+        csys->rhs[3*fb + k] = u0[k];
+
+      for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+        if (bi != fb) {
+
+          cs_sdm_t *mIF = m->get_block(bi, fb);
+          mIF->init(mIF->n_rows);
+        }
+        else { /* bi == f */
+
+          for (int bj = 0; bj < bd->n_col_blocks; bj++) {
+            cs_sdm_t *mFJ = m->get_block(fb, bj);
+            mFJ->init(mFJ->n_rows);
+          }
+
+          mFF->init(mFF->n_rows);
+          (*mFF)(0,0) = 1., (*mFF)(1,1) = 1., (*mFF)(2,2) = 1.;
+        }
+      } /* Block bi */
+    }
+    else {
+
+      /* 0) Pre-compute the product between diffusion property and the
+         face vector areas */
+
+      cs_real_3_t *kappa_f = cb->vectors;
+      for (short int f = 0; f < cm->n_fc; f++) {
+        const double coef = cm->face[f].meas * pty->value;
+        for (int k = 0; k < 3; k++)
+          kappa_f[f][k] = coef * cm->face[f].unitv[k];
+      }
+
+      /* 1) Build the bc_op matrix (scalar-valued version) */
+
+      /* Initialize the matrix related this flux reconstruction operator */
+
+      const short int n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
+
+      cs_sdm_t *bc_op = cb->aux;
+      bc_op->init(n_dofs);
+
+      /* Compute \int_f du/dn v and update the matrix. Only the line associated to
+         fb has non-zero values */
+
+      _normal_flux_reco(
+          fb, eqp->diffusion_hodgep.coef, cm, (const cs_real_t(*)[3])kappa_f, bc_op);
+
+      /* 2) Update the bc_op matrix and nothing is added to the RHS since a sliding
+         means homogeneous Dirichlet values on the normal component and hommogeneous
+         Neumann on the tangential flux */
+
+      const cs_quant_t   pfq = cm->face[fb];
+      const cs_real_t   *nf  = pfq.unitv;
+      const cs_real_33_t nf_nf
+        = { { nf[0] * nf[0], nf[0] * nf[1], nf[0] * nf[2] },
+            { nf[1] * nf[0], nf[1] * nf[1], nf[1] * nf[2] },
+            { nf[2] * nf[0], nf[2] * nf[1], nf[2] * nf[2] } };
+
+      /* 1/h_f \approx |f| / |pvol_fc| */
+
+      const double pcoef
+        = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[fb];
+
+      /* Handle the diagonal block: Retrieve the 3x3 matrix */
+
+      cs_sdm_t *bFF = csys->mat->get_block(fb, fb);
+      assert(bFF->n_rows == bFF->n_cols && bFF->n_rows == 3);
+
+      const cs_real_t _val = pcoef + 2 * bc_op->val[fb * (n_dofs + 1)];
+      for (short int k = 0; k < 3; k++) {
+        bFF->val[3*k    ] += nf_nf[0][k] * _val;
+        bFF->val[3*k + 1] += nf_nf[1][k] * _val;
+        bFF->val[3*k + 2] += nf_nf[2][k] * _val;
+      }
+
+      for (short int xj = 0; xj < n_dofs; xj++) {
+
+        if (xj == fb)
+          continue;
+
+        /* It should be done both for face- and cell-defined DoFs */
+        /* Retrieve the 3x3 matrix */
+
+        cs_sdm_t *bFJ = csys->mat->get_block(fb, xj);
+        assert(bFJ->n_rows == bFJ->n_cols && bFJ->n_rows == 3);
+        cs_sdm_t *bJF = csys->mat->get_block(xj, fb);
+        assert(bJF->n_rows == bJF->n_cols && bJF->n_rows == 3);
+
+        const cs_real_t op_fj      = bc_op->val[n_dofs * fb + xj];
+        const cs_real_t op_jf      = bc_op->val[n_dofs * xj + fb];
+        const cs_real_t _val_fj_jf = op_fj + op_jf;
+
+        for (int k = 0; k < 3; k++) {
+
+          bFJ->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
+          bFJ->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
+          bFJ->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
+
+          /* nf_nf is symmetric */
+
+          bJF->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
+          bJF->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
+          bJF->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
+        }
+
+      } /* Loop on xj */
+
+      csys->rhs[3*fb + 0] += f_w[0]*f_meas;
+      csys->rhs[3*fb + 1] += f_w[1]*f_meas;
+      csys->rhs[3*fb + 2] += f_w[2]*f_meas;
+
+    }
+  }
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    csys->dump(">> Cell %d, scalar Fb: After smooth wall");
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Test if one has to do one more non-linear iteration.
  *        Test if performed on the relative norm on the increment
  *        between two iterations
