@@ -645,6 +645,26 @@ _system_info(bool  log)
                   "\n  Debug build\n");
   }
 #endif
+#if defined(__has_feature)
+  for (int log_id = 0; log_id < n_logs; log_id++) {
+    #if __has_feature(address_sanitizer)
+    cs_log_printf(logs[log_id],
+                  _("  AddressSanitizer (Asan) build.\n"));
+    #endif
+    #if __has_feature(memory_sanitizer)
+    cs_log_printf(logs[log_id],
+                  _("  MemorySanitizer (Msan) build.\n"));
+    #endif
+    #if __has_feature(thread_sanitizer)
+    cs_log_printf(logs[log_id],
+                  _("  ThreadSanitizer (Tsan) build.\n"));
+    #endif
+    #if __has_feature(undefined_sanitizer)
+    cs_log_printf(logs[log_id],
+                  _("  UndefinedBehaviorSanitizer (Ubsan) build.\n"));
+    #endif
+  }
+#endif
 
 #if    defined(CS_CC_VERSION_STRING) || defined(CS_CXX_VERSION_STRING) \
     || defined(CS_FC_VERSION_STRING) || defined(CS_NVCC_VERSION_STRING)
