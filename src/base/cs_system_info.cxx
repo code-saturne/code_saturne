@@ -649,19 +649,23 @@ _system_info(bool  log)
   for (int log_id = 0; log_id < n_logs; log_id++) {
     #if __has_feature(address_sanitizer)
     cs_log_printf(logs[log_id],
-                  _("  AddressSanitizer (Asan) build.\n"));
+                  _("  AddressSanitizer (ASan) build.\n"));
+    #endif
+    #if __has_feature(leak_sanitizer)
+    cs_log_printf(logs[log_id],
+                  _("  LeakSanitizer (MSan) build.\n"));
     #endif
     #if __has_feature(memory_sanitizer)
     cs_log_printf(logs[log_id],
-                  _("  MemorySanitizer (Msan) build.\n"));
+                  _("  MemorySanitizer (MSan) build.\n"));
     #endif
     #if __has_feature(thread_sanitizer)
     cs_log_printf(logs[log_id],
-                  _("  ThreadSanitizer (Tsan) build.\n"));
+                  _("  ThreadSanitizer (TSan) build.\n"));
     #endif
     #if __has_feature(undefined_sanitizer)
     cs_log_printf(logs[log_id],
-                  _("  UndefinedBehaviorSanitizer (Ubsan) build.\n"));
+                  _("  UndefinedBehaviorSanitizer (UBSan) build.\n"));
     #endif
   }
 #endif
