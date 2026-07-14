@@ -1321,6 +1321,11 @@ class case:
 
             s_args = self.domains[0].solver_command()
 
+            # Force timeout if requested
+            timeout = os.getenv('CS_SOLVER_TIMEOUT')
+            if timeout:
+                mpi_cmd = 'timeout -s SIGXCPU ' + str(timeout) + ' ' + mpi_cmd
+
             cs_exec_environment.write_script_comment(s, 'Run solver.\n')
             s.write(mpi_cmd + mpi_cmd_args + tool_args + s_args[1] + s_args[2])
             s.write(' ' + cs_exec_environment.get_script_positional_args() +
