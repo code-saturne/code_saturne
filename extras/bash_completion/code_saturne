@@ -40,7 +40,7 @@ _code_saturne() {
 
     # Readers and guides
     local readers="okular evince kpdf gpdf xpdf acroread"
-    local guides="refcard user theory tutorial developer studymanager Doxygen"
+    local guides="user theory"
 
     # Boolean values
     local isCmd=0

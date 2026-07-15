@@ -1796,17 +1796,14 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.ui_initialize()
 
         # code_saturne doc
-        self.displayCSManualAction.triggered.connect(self.displayCSManual)
-        self.displayCSTutorialAction.triggered.connect(self.displayCSTutorial)
+        self.displayCSHTMLAction.triggered.connect(self.displayCSHTML)
         self.displayCSTheoryAction.triggered.connect(self.displayCSTheory)
-        self.displayCSRefcardAction.triggered.connect(self.displayCSRefcard)
-        self.displayCSDoxygenAction.triggered.connect(self.displayCSDoxygen)
 
         # NCFD doc
-        self.displayNCManualAction.triggered.connect(self.displayNCManual)
-        self.displayNCTutorialAction.triggered.connect(self.displayNCTutorial)
-        self.displayNCTheoryAction.triggered.connect(self.displayNCTheory)
         self.displayNCDoxygenAction.triggered.connect(self.displayNCDoxygen)
+        self.displayNCManualAction.triggered.connect(self.displayNCManual)
+        self.displayNCTheoryAction.triggered.connect(self.displayNCTheory)
+        self.displayNCTutorialAction.triggered.connect(self.displayNCTutorial)
 
         self.actionUndo.triggered.connect(self.slotUndo)
         self.actionRedo.triggered.connect(self.slotRedo)
@@ -1820,14 +1817,10 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         else:
             liste = []
 
-        if 'user.pdf' not in liste:
-            self.displayCSManualAction.setEnabled(False)
+        if 'doxygen' not in liste:
+            self.displayCSHTMLAction.setEnabled(False)
         if 'theory.pdf' not in liste:
             self.displayCSTheoryAction.setEnabled(False)
-        if 'refcard.pdf' not in liste:
-            self.displayCSRefcardAction.setEnabled(False)
-        if 'doxygen' not in liste:
-            self.displayCSDoxygenAction.setEnabled(False)
 
         # NCFD doc
         ddnc = os.path.join(docdir, '../neptune_cfd')
@@ -1877,28 +1870,18 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                    tree=self.Browser)
 
 
-    def displayCSManual(self):
+    def displayCSHTML(self):
         """
         public slot
 
-        open the user manual
+        open the quick doxygen for code_saturne
         """
         if self.package.name == 'code_saturne':
-            self.displayManual(self.package, 'user')
+            self.displayManual(self.package, 'Doxygen')
         else:
             from code_saturne.base.cs_package import package as cs_package
             pkg = cs_package()
-            self.displayManual(pkg, 'user')
-
-
-    def displayCSTutorial(self):
-        """
-        public slot
-
-        open the tutorial for code_saturne
-        """
-        msg = "See " + self.package.url + " web site for tutorials."
-        QMessageBox.about(self, self.package.name, msg)
+            self.displayManual(pkg, 'Doxygen')
 
 
     def displayCSTheory(self):
@@ -1913,48 +1896,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             from code_saturne.base.cs_package import package as cs_package
             pkg = cs_package()
             self.displayManual(pkg, 'theory')
-
-
-    def displayCSSmgr(self):
-        """
-        public slot
-
-        open the studymanager guide
-        """
-        if self.package.name == 'code_saturne':
-            self.displayManual(self.package, 'studymanager')
-        else:
-            from code_saturne.base.cs_package import package as cs_package
-            pkg = cs_package()
-            self.displayManual(pkg, 'studymanager')
-
-
-    def displayCSRefcard(self):
-        """
-        public slot
-
-        open the quick reference card for code_saturne
-        """
-        if self.package.name == 'code_saturne':
-            self.displayManual(self.package, 'refcard')
-        else:
-            from code_saturne.base.cs_package import package as cs_package
-            pkg = cs_package()
-            self.displayManual(pkg, 'refcard')
-
-
-    def displayCSDoxygen(self):
-        """
-        public slot
-
-        open the quick doxygen for code_saturne
-        """
-        if self.package.name == 'code_saturne':
-            self.displayManual(self.package, 'Doxygen')
-        else:
-            from code_saturne.base.cs_package import package as cs_package
-            pkg = cs_package()
-            self.displayManual(pkg, 'Doxygen')
 
 
     def displayNCManual(self):

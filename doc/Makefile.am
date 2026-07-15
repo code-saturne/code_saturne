@@ -22,7 +22,7 @@
 
 #-------------------------------------------------------------------------------
 
-LATEX_SUBDIRS = refcard theory
+LATEX_SUBDIRS = theory
 
 DOXYGEN_SUBDIRS = doxygen
 

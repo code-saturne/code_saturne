@@ -191,7 +191,6 @@
      <addaction name="displayNCManualAction"/>
      <addaction name="displayCSTutorialAction"/>
      <addaction name="displayCSTheoryAction"/>
-     <addaction name="displayCSRefcardAction"/>
      <addaction name="displayCSDoxygenAction"/>
     </widget>
     <addaction name="displayAboutAction"/>
@@ -385,17 +384,6 @@
    </property>
    <property name="shortcut">
     <string>F3</string>
-   </property>
-  </action>
-  <action name="displayCSRefcardAction">
-   <property name="text">
-    <string>&amp;code_saturne reference card</string>
-   </property>
-   <property name="statusTip">
-    <string>code_saturne quick reference card.</string>
-   </property>
-   <property name="shortcut">
-    <string>F5</string>
    </property>
   </action>
   <action name="displayCSDoxygenAction">

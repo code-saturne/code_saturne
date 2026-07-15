@@ -79,11 +79,9 @@
 
   \section additional_doc Additional documentation
 
-  In addition to the Doxygen documentation, code_saturne is provided with several
-  pdf documents:
-    - a <a href="../../user.pdf"><b>user guide</b></a>,
+  In addition to the HTML documentation, code_saturne is provided with a
+  pdf document:
     - a <a href="../../theory.pdf"><b>theory guide</b></a>,
-    - a <a href="../../refcard.pdf"><b>refcard</b></a>.
 
   \section main_components Base architecture
 
@@ -119,7 +117,7 @@
   The main commands are:
 
   - \b info \n
-    Get information on code_saturne. Open the documentation (refcard, theory, ...).\n\n
+    Get information on code_saturne. Open the documentation (theory, ...).\n\n
 
   - \b config \n
     Get information on the configuration and installation of code_saturne.\n\n

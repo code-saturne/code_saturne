@@ -80,11 +80,8 @@
       <iconset>
        <normaloff>:data/icons/22x22/x-office-address-book.png</normaloff>:data/icons/22x22/x-office-address-book.png</iconset>
      </property>
-     <addaction name="displayCSManualAction"/>
-     <addaction name="displayCSTutorialAction"/>
+     <addaction name="displayCSHTMLAction"/>
      <addaction name="displayCSTheoryAction"/>
-     <addaction name="displayCSRefcardAction"/>
-     <addaction name="displayCSDoxygenAction"/>
      <addaction name="displayNCManualAction"/>
      <addaction name="displayNCTutorialAction"/>
      <addaction name="displayNCTheoryAction"/>
@@ -442,26 +439,15 @@
     <string>Licence.</string>
    </property>
   </action>
-  <action name="displayCSManualAction">
+  <action name="displayCSHTMLAction">
    <property name="text">
     <string>&amp;code_saturne</string>
    </property>
    <property name="statusTip">
-    <string>code_saturne user manual.</string>
+    <string>code_saturne HTML manual.</string>
    </property>
    <property name="shortcut">
     <string>F1</string>
-   </property>
-  </action>
-  <action name="displayCSTutorialAction">
-   <property name="text">
-    <string>&amp;code_saturne tutorial</string>
-   </property>
-   <property name="statusTip">
-    <string>code_saturne tutorial.</string>
-   </property>
-   <property name="shortcut">
-    <string>F2</string>
    </property>
   </action>
   <action name="displayCSTheoryAction">
@@ -472,73 +458,51 @@
     <string>code_saturne theory guide.</string>
    </property>
    <property name="shortcut">
-    <string>F3</string>
+    <string>F2</string>
    </property>
   </action>
-  <action name="displayCSRefcardAction">
+  <action name="displayNCManualAction">
    <property name="text">
-    <string>&amp;code_saturne reference card</string>
+    <string>&amp;neptune_cfd</string>
    </property>
    <property name="statusTip">
-    <string>code_saturne quick reference card.</string>
-   </property>
-   <property name="shortcut">
-    <string>F5</string>
-   </property>
-  </action>
-  <action name="displayCSDoxygenAction">
-   <property name="text">
-    <string>&amp;code_saturne doxygen</string>
-   </property>
-   <property name="statusTip">
-    <string>code_saturne quick doxygen.</string>
+    <string>neptune_cfd user manual.</string>
    </property>
    <property name="shortcut">
     <string>F6</string>
    </property>
   </action>
-  <action name="displayNCManualAction">
+  <action name="displayNCTheoryAction">
    <property name="text">
-    <string>&amp;NEPTUNE_CFD</string>
+    <string>&amp;neptune_cfd theory</string>
    </property>
    <property name="statusTip">
-    <string>NEPTUNE_CFD user manual.</string>
+    <string>neptune_cfd user theory guide.</string>
    </property>
    <property name="shortcut">
     <string>F7</string>
    </property>
   </action>
-  <action name="displayNCTutorialAction">
+  <action name="displayNCDoxygenAction">
    <property name="text">
-    <string>&amp;NEPTUNE_CFD tutorial</string>
+    <string>&amp;neptune_cfd HTML</string>
    </property>
    <property name="statusTip">
-    <string>NEPTUNE_CFD tutorial.</string>
+    <string>NEPTUNE_CFD quick HTML.</string>
    </property>
    <property name="shortcut">
     <string>F8</string>
    </property>
   </action>
-  <action name="displayNCTheoryAction">
+  <action name="displayNCTutorialAction">
    <property name="text">
-    <string>&amp;NEPTUNE_CFD theory</string>
+    <string>&amp;neptune_cfd tutorial</string>
    </property>
    <property name="statusTip">
-    <string>NEPTUNE_CFD user theory guide.</string>
+    <string>neptune_cfd tutorial.</string>
    </property>
    <property name="shortcut">
     <string>F9</string>
-   </property>
-  </action>
-  <action name="displayNCDoxygenAction">
-   <property name="text">
-    <string>&amp;NEPTUNE_CFD doxygen</string>
-   </property>
-   <property name="statusTip">
-    <string>NEPTUNE_CFD quick doxygen.</string>
-   </property>
-   <property name="shortcut">
-    <string>F10</string>
    </property>
   </action>
   <action name="BrowserAction">

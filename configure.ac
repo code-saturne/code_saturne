@@ -1373,7 +1373,7 @@ AC_CONFIG_FILES([Makefile
                  src/meg/Makefile
                  python/Makefile
                  doc/Makefile doc/doxygen/Makefile doc/style/csvers.tex
-                 doc/refcard/Makefile doc/theory/Makefile
+                 doc/theory/Makefile
                  tests/Makefile
                  config/code_saturne_build.cfg.in])
 

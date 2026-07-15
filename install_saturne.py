@@ -1212,8 +1212,8 @@ Before using code_saturne, please update your environment with:
   alias code_saturne="$cspath/code_saturne"
 
 The documentation should then be available through the commands:
-  code_saturne info -g refcard
   code_saturne info -g user
+  code_saturne info -g theory
 
 Do not forget the post-installation steps recommended in the
 installation documentation, available using:
