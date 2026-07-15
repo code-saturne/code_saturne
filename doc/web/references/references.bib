@@ -11,8 +11,6 @@ booktitle = {Proceedings of the Platform for Advanced Scientific Computing Confe
 articleno = {24},
 numpages = {11},
 keywords = {CFD, finite volume method, unstructured mesh, GPU, code_saturne},
-location = {
-},
 series = {PASC '26}
 }
 
@@ -100,6 +98,7 @@ keywords = {Soil–Plant–Atmosphere Continuum, Computational fluid dynamics, E
   author = {Lianfa Wang and Yvan Fournier and Jean-François Wald and Youssef Mesri},
   keywords = {Computational Fluid Dynamics (CFD), Vortex identification, Convolutional Neural Network (CNN), Graph Neural Ne  twork (GNN), Unstructured mesh}
 }
+
 @article{balvet2023analysis,
   title={Analysis of wall-modelled particle/mesh PDF methods for turbulent parietal flows},
   author={Balvet, Guilhem and Minier, Jean-Pierre and Roustan, Yelva and Ferrand, Martin},
@@ -108,26 +107,37 @@ keywords = {Soil–Plant–Atmosphere Continuum, Computational fluid dynamics, E
   number={4},
   pages={275--305},
   year={2023},
-  publisher={De Gruyter}
+  publisher={De Gruyter},
+  url = {https://arxiv.org/abs/2402.03836},
+  doi = {10.1515/mcma-2023-2017}
 }
 
-@article{norddine2023realizability,
-  title={Realizability-preserving time-stepping for the differential Reynolds stress turbulence models},
-  author={Norddine, T and Ferrand, M and Benhamadouche, S},
-  journal={Journal of Computational Physics},
-  volume={494},
-  pages={112511},
-  year={2023},
-  publisher={Elsevier}
+@article{NORDDINE2023112511,
+title = {Realizability-preserving time-stepping for the differential Reynolds stress turbulence models},
+journal = {Journal of Computational Physics},
+volume = {494},
+pages = {112511},
+year = {2023},
+issn = {0021-9991},
+doi = {10.1016/j.jcp.2023.112511},
+url = {https://www.sciencedirect.com/science/article/pii/S002199912300606X},
+author = {T. Norddine and M. Ferrand and S. Benhamadouche},
+keywords = {Numerical schemes, Second-order RANS, Turbulence, Realizability},
+abstract = {In the context of incompressible turbulence modelling, differential Reynolds stress models allow a better representation of turbulence anisotropy than classical linear eddy viscosity models and are less expensive than large eddy simulations in terms of computational cost. They rely on a modelled transport equation for the Reynolds stress tensor, which is by definition a covariance tensor and must remain symmetric positive semi-definite. However, the solution of the modelled and discretized transport equation may not preserve these mathematical properties. In the present article, a methodology to time-split Reynolds stress R__ terms in the transport equation is proposed using a decomposition theorem which proves the realizability of R__ provided realizable initial conditions. Realizability-preserving time-steppings are designed for several differential Reynolds stress models. The numerical schemes are presented in a finite volume context but may be used with others space discretization schemes. The realizability, precision and robustness of the numerical scheme is verified through the anisotropy time evolution in homogeneous shear-flow simulations with various initial conditions.}
 }
 
-@inproceedings{ferrand2023scheme,
-  title={A Scheme Using the Wave Structure of Second-Moment Turbulent Models for Incompressible Flows},
-  author={Ferrand, Martin and H{\'e}rard, Jean-Marc and Norddine, Thomas and Ruget, Simon},
-  booktitle={International Conference on Finite Volumes for Complex Applications},
-  pages={111--119},
-  year={2023},
-  organization={Springer}
+@InProceedings{ferrand2023scheme,
+author="Ferrand, Martin and H{\'e}rard, Jean-Marc and Norddine, Thomas and Ruget, Simon",
+editor="Franck, Emmanuel and Fuhrmann, J{\"u}rgen and Michel-Dansac, Victor and Navoret, Laurent",
+title="A Scheme Using the Wave Structure of Second-Moment Turbulent Models for Incompressible Flows",
+booktitle="Finite Volumes for Complex Applications X---Volume 2, Hyperbolic and Related Problems",
+year="2023",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="111--119",
+abstract="We focus on the analysis of the one-dimensional Riemann problem arising from the convective subset of a second-moment turbulent non-conservative model for incompressible flows. The sketch of proof of existence and uniqueness of the solution is given, assuming a set of approximate jump conditions. Some first numerical simulations applying for the Finite Volume method are given and compared with another scheme classically used in CFD codes. This suggests to implement standard projection schemes to cope with the complete model.",
+isbn="978-3-031-40860-1",
+doi={10.1007/978-3-031-40860-1_12}
 }
 
 @inproceedings{narvaez2023automatic,
@@ -136,7 +146,8 @@ keywords = {Soil–Plant–Atmosphere Continuum, Computational fluid dynamics, E
   booktitle={International Conference on Finite Volumes for Complex Applications},
   pages={355--363},
   year={2023},
-  organization={Springer}
+  organization={Springer},
+  doi={10.1007/978-3-031-40864-9_30}
 }
 
 @inproceedings{amiot2023simulation,
@@ -154,15 +165,23 @@ keywords = {Soil–Plant–Atmosphere Continuum, Computational fluid dynamics, E
   number={2},
   pages={95--126},
   year={2023},
-  publisher={De Gruyter}
+  publisher={De Gruyter},
+  doi={10.48550/arXiv.2304.09079},
+  url={https://doi.org/10.1515/mcma-2023-2002}
 }
 
 @inproceedings{amiot2023sheltering,
-  title={Sheltering Effect from Floating Photovoltaics over the Waterbody-atmosphere Interface},
-  author={Amiot, Baptiste and Ferrand, Martin and Vidal Hurtado, Javier and others},
-  booktitle={EGU General Assembly Conference Abstracts},
-  pages={EGU--9231},
-  year={2023}
+  author = {{Amiot}, Baptiste and {Ferrand}, Martin and {Le berre}, R{\'e}mi and {Vidal Hurtado}, Javier and {Giroux--Julien}, St{\'e}phanie},
+  title = "{Sheltering Effect from Floating Photovoltaics over the Waterbody-atmosphere Interface}",
+  booktitle = {EGU General Assembly Conference Abstracts},
+  year = 2023,
+  series = {EGU General Assembly Conference Abstracts},
+  month = may,
+  eid = {EGU-9231},
+  pages = {EGU-9231},
+  doi = {10.5194/egusphere-egu23-9231},
+  adsurl = {https://ui.adsabs.harvard.edu/abs/2023EGUGA..25.9231A},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 
 @article{ferrand2023stable,
@@ -172,7 +191,9 @@ keywords = {Soil–Plant–Atmosphere Continuum, Computational fluid dynamics, E
   volume={351},
   number={G2},
   pages={337--353},
-  year={2023}
+  year={2023},
+  doi={10.5802/crmeca.202},
+  url={https://comptes-rendus.academie-sciences.fr/mecanique/articles/10.5802/crmeca.202/}
 }
 
 @article{amino2022time,
@@ -198,14 +219,6 @@ keywords = {Soil–Plant–Atmosphere Continuum, Computational fluid dynamics, E
   year={2022}
 }
 
-% Duplicate with above
-% inproceedings{amino2022time,
-%  title={A TIME-STAGGERED SECOND ORDER SCHEME FOR MOIST AIR VARIABLE DENSITY FLOW},
-%  author={Amino, Hector and Flageul, C{\'e}dric and Carissimo, Bertrand and Ferrand, Martin and H{\'e}rard, Jean-Marc},
-%  booktitle={European Congress on Computational Methods in Applied Sciences and Engineering},
-%  year={2022}
-%}
-
 @article{al2022modeling,
   title={Modeling the Contribution of Aerosols to Fog Evolution through Their Influence on Solar Radiation},
   author={Al Asmar, Lea and Musson-Genon, Luc and Dupont, Eric and Ferrand, Martin and Sartelet, Karine},
@@ -218,31 +231,39 @@ keywords = {Soil–Plant–Atmosphere Continuum, Computational fluid dynamics, E
 }
 
 @inproceedings{amino2022second,
-  title={A second order conservative time-staggered scheme for all speed flow},
-  author={Amino, Hector and Flageul, C{\'e}dric and Benhamadouche, Sofiane and Tiselj, Iztok and Carissimo, Bertrand and Ferrand, Martin},
-  booktitle={UKHTC},
-  year={2022}
+  title = {A second order conservative time-staggered scheme for all speed flow},
+  author = {Amino, Hector and Flageul, C{\'e}dric and Benhamadouche, Sofiane and Tiselj, Iztok and Carissimo, Bertrand and Ferrand, Martin},
+  booktitle = {{UKHTC}},
+  address = {Manchester, United Kingdom},
+  year = {2022},
+  month = Apr,
+  keywords = {Cfd ; Compressible ; Incompressible},
+  pdf = {http://cfd.mace.manchester.ac.uk/ukhtc21-proc/papers/P-2-5.pdf},
+  hal_id = {hal-04273523},
+  hal_version = {v1},
+  url = {https://hal.science/hal-04273523}
 }
 
 @phdthesis{ferrand2022free,
   title={Free-surface flow simulations with a Lagrangian and an Arbitrary Lagrangian--Eulerian methods},
   author={Ferrand, Martin},
   year={2022},
-  school={{\'E}cole des Ponts ParisTech}
+  school={{\'E}cole des Ponts ParisTech},
+  url={https://theses.fr/2022ENPC0002?domaine=theses}
 }
 
 @article{Zhukovskii:jpd:2021,
-	doi = {10.1088/1361-6463/ac2cec},
-	year = 2021,
-	month = {oct},
-	publisher = {{IOP} Publishing},
-	volume = {55},
-	number = {6},
-	pages = {065202},
-	author = {Rodion Zhukovskii and Christophe Chazelas and Vincent Rat and Armelle Vardelle and Ron Molz},
-	title = {Model of a non-transferred arc cascaded-anode plasma torch: the two-temperature formulation},
-	journal = {Journal of Physics D: Applied Physics},
-	abstract = {This study presents an analysis of a three-dimensional unsteady two-temperature simulation of atmospheric pressure direct current electric arc inside a commercial cascaded-anode plasma spray torch; it coupled the arc model with the torch electrodes and used an open-source computational fluid dynamics software (code_saturne). The previously published models of plasma spray torch either deal with conventional plasma torches or assume local thermodynamic equilibrium in cascaded-anode plasma torches. The paper presents the computation of the two-temperature argon plasma properties, compares two enthalpy formulations that differ in association of the ionization part of enthalpy and finally demonstrates the influence of the radiation heat loss data by comparingthe results for two different literature sources. It is the first to compare different enthalpy formulations in the context of plasma torch and discuss the differences in terms of the enthalpy gains and losses. It also explains why an unphysical simulation artifact of electron temperature lower than the heavy species temperature can occur in simulated plasma flow. The solution, then, consists in associating the ionization part of enthalpy to electrons and selecting the appropriate source of the data of radiation heat loss. However, negligible thermal non-equilibrium persists even in the hot core of electric arc, which ensures that the heavy species are heated up by collisions with electrons. The flexibility of the open-source software allows all the necessary modifications and adjustments to achieve satisfactory simulation results. Thus, the paper could be considered as a manual for development of a plasma spray torch model.}
+doi = {10.1088/1361-6463/ac2cec},
+year = 2021,
+month = {oct},
+publisher = {{IOP} Publishing},
+volume = {55},
+number = {6},
+pages = {065202},
+author = {Rodion Zhukovskii and Christophe Chazelas and Vincent Rat and Armelle Vardelle and Ron Molz},
+title = {Model of a non-transferred arc cascaded-anode plasma torch: the two-temperature formulation},
+journal = {Journal of Physics D: Applied Physics},
+abstract = {This study presents an analysis of a three-dimensional unsteady two-temperature simulation of atmospheric pressure direct current electric arc inside a commercial cascaded-anode plasma spray torch; it coupled the arc model with the torch electrodes and used an open-source computational fluid dynamics software (code_saturne). The previously published models of plasma spray torch either deal with conventional plasma torches or assume local thermodynamic equilibrium in cascaded-anode plasma torches. The paper presents the computation of the two-temperature argon plasma properties, compares two enthalpy formulations that differ in association of the ionization part of enthalpy and finally demonstrates the influence of the radiation heat loss data by comparingthe results for two different literature sources. It is the first to compare different enthalpy formulations in the context of plasma torch and discuss the differences in terms of the enthalpy gains and losses. It also explains why an unphysical simulation artifact of electron temperature lower than the heavy species temperature can occur in simulated plasma flow. The solution, then, consists in associating the ionization part of enthalpy to electrons and selecting the appropriate source of the data of radiation heat loss. However, negligible thermal non-equilibrium persists even in the hot core of electric arc, which ensures that the heavy species are heated up by collisions with electrons. The flexibility of the open-source software allows all the necessary modifications and adjustments to achieve satisfactory simulation results. Thus, the paper could be considered as a manual for development of a plasma spray torch model.}
 }
 
 @article{Zhukovskii:jtst:2021,
@@ -1740,7 +1761,8 @@ the experimental results and for the Reynolds stresses which are overestimated.}
   number = {2},
   pages = {79--115},
   year = {2025},
-  doi = {10.1007/s40314-024-03003-y}
+  doi = {10.1007/s40314-024-03003-y},
+  url = {https://hal.science/hal-04087358}
 }
 
 @inproceedings{Bonelle_Fonty_2023,
@@ -1749,7 +1771,9 @@ the experimental results and for the Reynolds stresses which are overestimated.}
   booktitle = {Finite Volumes for Complex Applications X---Volume 1, Elliptic and Parabolic Problems},
   publisher = {Springer Nature Switzerland AG},
   year = {2023},
-  pages = {187--194}
+  pages = {187--194},
+  doi = {10.1007/978-3-031-40864-9_13},
+  url = {https://hal.science/hal-04028238}
 }
 
 @article{Milani_Bonelle_Ern_2022,
@@ -1759,7 +1783,9 @@ the experimental results and for the Reynolds stresses which are overestimated.}
   volume = {22},
   number = {1},
   pages = {133--154},
-  year = {2022}
+  year = {2022},
+  doi = {10.1515/cmam-2021-0089},
+  url = {https://arxiv.org/abs/2105.00914}
 }
 
 @inproceedings{Bonelle_Ern_Milani_2020,
@@ -1770,5 +1796,8 @@ the experimental results and for the Reynolds stresses which are overestimated.}
   year="2020",
   publisher="Springer International Publishing",
   pages="93--101",
-  isbn="978-3-030-43651-3"
+  isbn="978-3-030-43651-3",
+  doi={10.1007/978-3-030-43651-3_6},
+  pdf={https://hal.science/hal-02417514v2/file/HAL.pdf},
+  url={https://hal.science/hal-02417514/}
 }
