@@ -199,6 +199,8 @@ cs_static_condensation_vector_eq(const cs_adjacency_t    *c2x,
                                  cs_cell_builder_t       *cb,
                                  cs_cell_sys_t           *csys)
 {
+  CS_UNUSED(cb);
+
   cs_sdm_t  *m = csys->mat;
   cs_sdm_block_t  *bd = m->block_desc;
 
@@ -221,44 +223,51 @@ cs_static_condensation_vector_eq(const cs_adjacency_t    *c2x,
 
   /* Compute and store acx_tilda */
 
-  cs_real_t  *acx = acx_tilda + stride*c2x->idx[csys->c_id]; /* Only diagonal */
+  cs_real_t  *acx = acx_tilda
+                  + stride*stride*c2x->idx[csys->c_id];
   for (int ix = 0; ix < n_xc; ix++) {
     const cs_sdm_t *mcx = m->get_block(n_xc, ix);
-    for (int k = 0; k < stride; k++)
-      acx[stride*ix + k] = mcx->val[diag*k]/mcc->val[diag*k];
-  }
-
-  /* Temporary storage of axc (part of the last column) */
-
-  cs_real_t  *axc = cb->values;
-  for (int ix = 0; ix < n_xc; ix++) {
-    const cs_sdm_t *mxc = m->get_block(ix, n_xc);
-    for (int k = 0; k < stride; k++)
-      axc[stride*ix + k] = mxc->val[diag*k];
+    cs_real_t *acx_i = acx + stride*stride*ix;
+    for (int row = 0; row < stride; row++)
+      for (int col = 0; col < stride; col++)
+        acx_i[row*stride + col] =
+          mcx->val[row*stride + col]/mcc->val[diag*row];
   }
 
   /* Update matrix and rhs */
 
   csys->n_dofs = stride*n_xc;
   for (short int bfi = 0; bfi < n_xc; bfi++) {
-
-    const cs_real_t  *axc_i = axc + stride*bfi;
+    const cs_sdm_t *mxc = m->get_block(bfi, n_xc);
     for (short int bfj = 0; bfj < n_xc; bfj++) {
       cs_sdm_t *mxx = m->get_block(bfi, bfj);
+      cs_real_t *acx_j = acx + stride*stride*bfj;
 
       /* Condensate the local block mxx:
          mxx --> mxx - mxc.mcc^-1.mcx */
 
-      for (int k = 0; k < stride; k++)
-        mxx->val[diag*k] -= axc_i[k] * acx[stride*bfj+k];
+      for (int row = 0; row < stride; row++) {
+        cs_real_t *mxx_r = mxx->val + row*stride;
+        cs_real_t *mxc_r = mxc->val + row*stride;
+        for (int col = 0; col < stride; col++) {
+          cs_real_t s = 0.;
+          for (int k = 0; k < stride; k++)
+           s += mxc_r[k]*acx_j[k*stride + col];
 
+          mxx_r[col] -= s;
+        }
+      }
     } /* Loop on blocks for face fj */
 
     /* Update RHS: RHS_x = RHS_x - mxc*mcc^-1*RHS_c */
 
-    for (int k = 0; k < stride; k++)
-      csys->rhs[stride*bfi+k] -= _rc_tilda[k] * axc_i[k];
-
+    for (int row = 0; row < stride; row++) {
+      cs_real_t *mxc_r = mxc->val + row*stride;
+      cs_real_t s = 0.;
+      for (int k = 0; k < stride; k++)
+        s += mxc_r[k]*_rc_tilda[k];
+      csys->rhs[stride*bfi+row] -= s;
+    }
   } /* Loop on blocks for face fi */
 
   /* Reshape matrix */
@@ -313,11 +322,17 @@ cs_static_condensation_recover_vector(const cs_adjacency_t    *c2x,
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     /* Compute acx_px */
-
     cs_real_t  acx_px[3] = {0., 0., 0.}; /* Allocated to stride */
     for (cs_lnum_t i = c2x->idx[c_id]; i < c2x->idx[c_id+1]; i++) {
-      for (int k = 0; k < stride; k++)
-        acx_px[k] += px[stride*c2x->ids[i]+k] * acx_tilda[stride*i+k];
+      const cs_real_t  *acx_i = acx_tilda + stride*stride*i;
+
+      for (int row = 0; row < stride; row++) {
+        cs_real_t s = 0.;
+        for (int k = 0; k < stride; k++)
+          s += acx_i[stride*row + k]*px[stride*c2x->ids[i] + k];
+
+        acx_px[row] += s;
+      }
     }
 
     for (int k = 0; k < stride; k++)

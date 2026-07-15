@@ -124,7 +124,7 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   CS_MALLOC(cb->ids, n_dofs, int);
   std::memset(cb->ids, 0, n_dofs * sizeof(int));
 
-  int  size = cs::max(n_fc*n_dofs, 6*n_dofs);
+  int  size = cs::max(n_fc*n_dofs, 9*n_dofs);
   CS_MALLOC(cb->values, size, double);
   std::memset(cb->values, 0, size * sizeof(double));
 
@@ -2095,8 +2095,8 @@ cs_cdofb_vecteq_init_context(cs_equation_param_t    *eqp,
 
   /* Assume the 3x3 matrix is diagonal */
 
-  CS_MALLOC(eqc->acf_tilda, 3 * connect->c2f->idx[n_cells], cs_real_t);
-  cs_array_real_fill_zero(3*connect->c2f->idx[n_cells], eqc->acf_tilda);
+  CS_MALLOC(eqc->acf_tilda, 9 * connect->c2f->idx[n_cells], cs_real_t);
+  cs_array_real_fill_zero(9*connect->c2f->idx[n_cells], eqc->acf_tilda);
 
   bool  need_eigen =
     (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
