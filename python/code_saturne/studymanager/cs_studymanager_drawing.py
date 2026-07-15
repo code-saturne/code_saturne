@@ -478,65 +478,24 @@ class Figure(object):
         """
         Automatic layout, based on the number of subplots
         Parameters with their defaults:
-        left = 0.125 the left side of the subplots of the ﬁgure
+        left = 0.15 the left side of the subplots of the ﬁgure
         right = 0.9 the right side of the subplots of the ﬁgure
-        bottom = 0.1 the bottom of the subplots of the ﬁgure
-        top = 0.9 the top of the subplots of the ﬁgure
-        wspace = 0.2 the amount of width reserved for blank space between subplots
-        hspace = 0.2 the amount of height reserved for white space between subplots
+        wspace = 0.5 the amount of width reserved for blank space between subplots
+        hspace = 0.35 the amount of height reserved for white space between subplots
         """
         nbr = len(self.subplots)
 
-        ri = 0.9
         le = 0.15
-        rcParams['font.size'] = 6
+        ri = 0.9
+        hs = 0.35
+        ws = 0.5
 
-        if nbr < 3:
-            nbrow = 1
-            nbcol = nbr
-            rcParams['lines.markersize']= 2
-            hs = 0.35
-            ws = 0.5
-        elif nbr > 24:
-            rcParams['font.size'] = 4
-            rcParams['lines.markersize']= 1
-            nbrow = 5
-            nbcol = (nbr-1) // (nbrow+1)
-            hs = 0.5
-            if nbcol > 7:
-                hs = 1.0
-            elif nbcol > 6:
-                hs = 0.85
-            elif nbcol > 5:
-                hs = 0.65
-            ws = 1.25
-        elif nbr > 12:
-            nbrow = 4
-            rcParams['font.size'] = 5
-            rcParams['lines.markersize'] = 2
-            nbcol = (nbr-1) // (nbrow+1)
-            hs = 0.45
-            if nbcol > 5:
-                hs = 0.8
-            elif nbcol > 4:
-                hs = 0.6
-            ws = 0.99
-        elif nbr > 6:
-            nbrow = 3
-            nbcol = (nbr-1) // (nbrow+1)
-            rcParams['lines.markersize'] = 3
-            hs = 0.4
-            if nbcol > 3:
-                hs = 0.5
-            ws = 0.8
-        elif nbr > 2:
-            nbrow = 2
-            nbcol = (nbr-1) // (nbrow+1)
-            hs = 0.3
-            if nbcol > 2:
-                hs = 0.45
-            ws = 0.6
-            rcParams['lines.markersize']= 4
+        rcParams['font.size'] = 6
+        rcParams['lines.markersize']= 2
+
+        # only one column if the information is not provided in smgr xml file
+        nbrow = nbr
+        nbcol = 1
 
         if self.nbrow:
             nbrow = int(self.nbrow)
