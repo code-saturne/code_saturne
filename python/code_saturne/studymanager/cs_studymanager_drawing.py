@@ -675,8 +675,13 @@ class Plotter(object):
         fig = plt.figure()
 
         for figure in self.figures:
+
             # Plot curve
-            self.plot_figure(figure)
+            try:
+                self.plot_figure(figure)
+            except Exception as e:
+                log_draw.write(e.args[0])
+                continue
 
             f = os.path.join(self.parser.getDestination(),
                              study_label,
