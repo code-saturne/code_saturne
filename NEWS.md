@@ -3,6 +3,8 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix usage of `cs_user_scripts.py` with Python 3.13 and above.
+
 - Fix wall distance fallback computation for highly warped meshes,
   broken since v8.2.
 
