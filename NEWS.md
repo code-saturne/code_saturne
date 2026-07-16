@@ -1255,7 +1255,7 @@ User changes:
   Specific user functions are added (cs_user_paramedmem_coupling.c) to allow
   an easier definitions of coupling. Examples are provided in the
   'cs_user_paramedmem_coupling-base.c' user_example file.
-  Send/recieve operations still need to be done by the user, but are simplified
+  Send/receive operations still need to be done by the user, but are simplified
   by allowing send/recv based on a cs_field_t pointer.
 
 - GUI: present volume and boundary conditions using sub-nodes in the
