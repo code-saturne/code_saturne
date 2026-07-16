@@ -171,7 +171,7 @@ class TreeItem(object):
             msg += child.header + " "
         msg += "\n"
 
-        return msg 
+        return msg
 
 
 #-------------------------------------------------------------------------------

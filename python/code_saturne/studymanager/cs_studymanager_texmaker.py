@@ -183,7 +183,7 @@ class TexWriter(object):
         if not error:
             os.remove(log_name)
         else:
-            print("    /!\ ERROR during detailed report generation. See " + 
+            print("    /!\ ERROR during detailed report generation. See " +
                   self.__filename + ".log\n")
 
         return self.__filename + ".pdf"

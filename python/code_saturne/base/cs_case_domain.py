@@ -565,14 +565,14 @@ class domain(base_domain):
 
         user_scripts = os.path.join(self.exec_dir, 'cs_user_scripts.py')
         if os.path.isfile(user_scripts):
+            d = dict(locals())
             try:
                 exec(compile(open(user_scripts).read(), user_scripts, 'exec'),
-                     locals(),
-                     locals())
-                self.user_locals = locals()
+                     d,
+                     d)
             except Exception:
-                execfile(user_scripts, locals(), locals())
-                self.user_locals = locals()
+                execfile(user_scripts, d, d)
+            self.user_locals = d
 
         # We may now parse the optional XML parameter file
         # now that its path may be built and checked.
