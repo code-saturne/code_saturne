@@ -197,12 +197,10 @@ cs_sdm_create_transpose(cs_sdm_t  *mat)
   tr->n_rows = mat->n_cols;
   tr->n_cols = mat->n_rows;
 
-  for (short int i = 0; i < mat->n_rows; i++) {
-
+  for (int i = 0; i < mat->n_rows; i++) {
     const cs_real_t  *mval_i = mat->val + i*mat->n_cols;
-    for (short int j = 0; j < mat->n_cols; j++)
-      tr->val[j*tr->n_cols+i] = mval_i[j];
-
+    for (int j = 0; j < mat->n_cols; j++)
+      tr->val[j * tr->n_cols + i] = mval_i[j];
   }
 
   return tr;
@@ -253,9 +251,9 @@ cs_sdm_block_create(int          n_max_blocks_by_row,
   cs_real_t  *p_val = m->val;
   int  shift = 0;
   for (int i = 0; i < n_max_blocks_by_row; i++) {
-    const short int  n_rows_i = max_row_block_sizes[i];
+    const int n_rows_i = max_row_block_sizes[i];
     for (int j = 0; j < n_max_blocks_by_col; j++) {
-      const short int  n_cols_j = max_col_block_sizes[j];
+      const int n_cols_j = max_col_block_sizes[j];
 
       /* Set the block (i,j) */
 
@@ -389,9 +387,9 @@ cs_sdm_block_init(cs_sdm_t      *m,
   cs_real_t  *p_val = m->val;
   int  shift = 0;
   for (int i = 0; i < bd->n_row_blocks; i++) {
-    const short int  n_rows_i = row_block_sizes[i];
+    const int n_rows_i = row_block_sizes[i];
     for (int j = 0; j < bd->n_col_blocks; j++) {
-      const short int  n_cols_j = col_block_sizes[j];
+      const int n_cols_j = col_block_sizes[j];
 
       /* Set the block (i,j) */
 
@@ -591,14 +589,13 @@ cs_sdm_multiply(const cs_sdm_t   *a,
 
   const cs_real_t *bv = b->val;
 
-  for (short int i = 0; i < a->n_rows; i++) {
+  for (int i = 0; i < a->n_rows; i++) {
+    const cs_real_t *av_i = a->val + i * a->n_cols;
+    cs_real_t       *cv_i = c->val + i * b->n_cols;
 
-    const cs_real_t *av_i = a->val + i*a->n_cols;
-    cs_real_t  *cv_i = c->val + i*b->n_cols;
-
-    for (short int j = 0; j < b->n_cols; j++){
+    for (int j = 0; j < b->n_cols; j++) {
       cs_real_t p = 0.0;
-      for (short int k = 0; k < a->n_cols; k++)
+      for (int k = 0; k < a->n_cols; k++)
         p += av_i[k] * bv[k*b->n_cols + j];
       cv_i[j] += p;
 
@@ -630,18 +627,16 @@ cs_sdm_multiply_rowrow(const cs_sdm_t   *a,
          a->n_rows == c->n_rows &&
          c->n_cols == b->n_rows);
 
-  for (short int i = 0; i < a->n_rows; i++) {
+  for (int i = 0; i < a->n_rows; i++) {
+    const cs_real_t *av_i = a->val + i * a->n_cols;
 
-    const cs_real_t  *av_i = a->val + i*a->n_cols;
+    cs_real_t *cv_i = c->val + i * b->n_rows;
 
-    cs_real_t  *cv_i = c->val + i*b->n_rows;
-
-    for (short int j = 0; j < b->n_rows; j++) {
-
+    for (int j = 0; j < b->n_rows; j++) {
       const cs_real_t  *bv_j = b->val + j * b->n_cols;
 
       cs_real_t  dp = 0;
-      for (short int k = 0; k < a->n_cols; k++)
+      for (int k = 0; k < a->n_cols; k++)
         dp += av_i[k] * bv_j[k];
       cv_i[j] += dp;
 
@@ -674,18 +669,16 @@ cs_sdm_multiply_rowrow_sym(const cs_sdm_t   *a,
          a->n_rows == c->n_rows &&
          c->n_cols == b->n_rows);
 
-  for (short int i = 0; i < a->n_rows; i++) {
+  for (int i = 0; i < a->n_rows; i++) {
+    const cs_real_t *av_i = a->val + i * a->n_cols;
 
-    const cs_real_t  *av_i = a->val + i*a->n_cols;
+    cs_real_t *cv_i = c->val + i * b->n_rows;
 
-    cs_real_t  *cv_i = c->val + i*b->n_rows;
-
-    for (short int j = i; j < b->n_rows; j++) {
-
+    for (int j = i; j < b->n_rows; j++) {
       const cs_real_t  *bv_j = b->val + j * b->n_cols;
 
       cs_real_t  dp = 0;
-      for (short int k = 0; k < a->n_cols; k++)
+      for (int k = 0; k < a->n_cols; k++)
         dp += av_i[k] * bv_j[k];
       cv_i[j] += dp;
 
@@ -732,11 +725,11 @@ cs_sdm_block_multiply_rowrow(const cs_sdm_t   *a,
          a_desc->n_row_blocks == c_desc->n_row_blocks &&
          c_desc->n_col_blocks == b_desc->n_row_blocks);
 
-  for (short int i = 0; i < a_desc->n_row_blocks; i++) {
-    for (short int j = 0; j < b_desc->n_row_blocks; j++) {
+  for (int i = 0; i < a_desc->n_row_blocks; i++) {
+    for (int j = 0; j < b_desc->n_row_blocks; j++) {
       cs_sdm_t *cIJ = c->get_block(i, j);
 
-      for (short int k = 0; k < a_desc->n_col_blocks; k++) {
+      for (int k = 0; k < a_desc->n_col_blocks; k++) {
         cs_sdm_t *aIK = a->get_block(i, k);
         cs_sdm_t *bJK = b->get_block(j, k);
 
@@ -782,12 +775,11 @@ cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t   *a,
          a_desc->n_row_blocks == c->block_desc->n_row_blocks &&
          c->block_desc->n_col_blocks == b_desc->n_row_blocks);
 
-  for (short int i = 0; i < a_desc->n_row_blocks; i++) {
-
-    for (short int j = i; j < b_desc->n_row_blocks; j++) {
+  for (int i = 0; i < a_desc->n_row_blocks; i++) {
+    for (int j = i; j < b_desc->n_row_blocks; j++) {
       cs_sdm_t *cIJ = c->get_block(i, j);
 
-      for (short int k = 0; k < a_desc->n_col_blocks; k++) {
+      for (int k = 0; k < a_desc->n_col_blocks; k++) {
         cs_sdm_t *aIK = a->get_block(i, k);
         cs_sdm_t *bJK = b->get_block(j, k);
 
@@ -798,8 +790,8 @@ cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t   *a,
     } /* Loop on b row blocks */
   } /* Loop on a row blocks */
 
-  for (short int i = 0; i < a_desc->n_row_blocks; i++)
-    for (short int j = i + 1; j < b_desc->n_row_blocks; j++)
+  for (int i = 0; i < a_desc->n_row_blocks; i++)
+    for (int j = i + 1; j < b_desc->n_row_blocks; j++)
       cs_sdm_transpose_and_update(c->get_block(i, j), c->get_block(j, i));
 }
 
@@ -820,14 +812,14 @@ cs_sdm_update_matvec(const cs_sdm_t *mat, const cs_real_t *vec, cs_real_t *mv)
 {
   assert(mat != nullptr && vec != nullptr && mv != nullptr);
 
-  const short int nr = mat->n_rows;
-  const short int nc = mat->n_cols;
+  const int nr = mat->n_rows;
+  const int nc = mat->n_cols;
 
   /* Update mv */
 
-  for (short int i = 0; i < nr; i++) {
+  for (int i = 0; i < nr; i++) {
     cs_real_t *m_i = mat->val + i * nc;
-    for (short int j = 0; j < nc; j++)
+    for (int j = 0; j < nc; j++)
       mv[i] += m_i[j] * vec[j];
   }
 }
@@ -852,15 +844,15 @@ cs_sdm_matvec_transposed(const cs_sdm_t  *mat,
 {
   assert(mat != nullptr && vec != nullptr && mv != nullptr);
 
-  const short int nr = mat->n_rows;
-  const short int nc = mat->n_cols;
+  const int nr = mat->n_rows;
+  const int nc = mat->n_cols;
 
   /* Update mv */
 
-  for (short int i = 0; i < nr; i++) {
+  for (int i = 0; i < nr; i++) {
     const cs_real_t *m_i = mat->val + i * nc;
     const cs_real_t  v   = vec[i];
-    for (short int j = 0; j < nc; j++)
+    for (int j = 0; j < nc; j++)
       mv[j] += m_i[j] * v;
   }
 }
@@ -886,8 +878,8 @@ cs_sdm_block_add(cs_sdm_t *mat, const cs_sdm_t *add)
   assert(add->block_desc->n_row_blocks == mat_desc->n_row_blocks);
   assert(add->block_desc->n_col_blocks == mat_desc->n_col_blocks);
 
-  for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
-    for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
+  for (int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
+    for (int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
       cs_sdm_t       *mat_ij = mat->get_block(bi, bj);
       const cs_sdm_t *add_ij = add->get_block(bi, bj);
 
@@ -921,8 +913,8 @@ cs_sdm_block_add_mult(cs_sdm_t *mat, cs_real_t mult_coef, const cs_sdm_t *add)
   assert(add_desc->n_row_blocks == mat_desc->n_row_blocks);
   assert(add_desc->n_col_blocks == mat_desc->n_col_blocks);
 
-  for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
-    for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
+  for (int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
+    for (int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
       cs_sdm_t       *mat_ij = mat->get_block(bi, bj);
       const cs_sdm_t *add_ij = add->get_block(bi, bj);
 
@@ -959,12 +951,12 @@ cs_sdm_block_matvec(const cs_sdm_t *mat, const cs_real_t *vec, cs_real_t *mv)
 
   int c_shift = 0, r_shift = 0;
 
-  for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
+  for (int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
     cs_real_t *_mv    = mv + r_shift;
     int        n_rows = 0;
 
     c_shift = 0;
-    for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
+    for (int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
       cs_sdm_t *mat_ij = mat->get_block(bi, bj);
 
       cs_sdm_update_matvec(mat_ij, vec + c_shift, _mv);
@@ -992,9 +984,7 @@ cs_sdm_block_matvec(const cs_sdm_t *mat, const cs_real_t *vec, cs_real_t *mv)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_add_mult(cs_sdm_t        *mat,
-                cs_real_t        alpha,
-                const cs_sdm_t  *add)
+cs_sdm_add_mult(cs_sdm_t *mat, cs_real_t alpha, const cs_sdm_t *add)
 {
   assert(mat != nullptr && add != nullptr);
   assert(mat->n_rows == add->n_rows);
@@ -1003,7 +993,7 @@ cs_sdm_add_mult(cs_sdm_t        *mat,
   if (cs::abs(alpha) < cs_math_zero_threshold)
     return;
 
-  for (int i = 0; i < mat->n_rows*mat->n_cols; i++)
+  for (int i = 0; i < mat->n_rows * mat->n_cols; i++)
     mat->val[i] += alpha * add->val[i];
 }
 
@@ -1023,10 +1013,10 @@ cs_sdm_add_mult(cs_sdm_t        *mat,
 
 void
 cs_sdm_add_block(cs_sdm_t       *mat,
-                 const short int r_id,
-                 const short int c_id,
-                 const short int nr,
-                 const short int nc,
+                 const int       r_id,
+                 const int       c_id,
+                 const int       nr,
+                 const int       nc,
                  const cs_sdm_t *add)
 {
   /* Sanity checks */
@@ -1039,8 +1029,8 @@ cs_sdm_add_block(cs_sdm_t       *mat,
 
   cs_real_t *_dest = mat->val + c_id + r_id * mat->n_cols;
   cs_real_t *_padd = add->val;
-  for (short int i = 0; i < nr; i++) {
-    for (short int j = 0; j < nc; j++) {
+  for (int i = 0; i < nr; i++) {
+    for (int j = 0; j < nc; j++) {
       _dest[j] += _padd[j];
     }
     _dest += mat->n_cols;
@@ -1062,8 +1052,8 @@ cs_sdm_add_block(cs_sdm_t       *mat,
 
 void
 cs_sdm_add_block_topleft(cs_sdm_t       *mat,
-                         const short int nr,
-                         const short int nc,
+                         const int       nr,
+                         const int       nc,
                          const cs_sdm_t *add)
 {
   cs_sdm_add_block(mat, 0, 0, nr, nc, add);
@@ -1093,14 +1083,12 @@ cs_sdm_square_add_transpose(cs_sdm_t  *mat,
   tr->n_rows = mat->n_cols;
   tr->n_cols = mat->n_rows;
 
-  for (short int i = 0; i < mat->n_rows; i++) {
-
-    const int  ii = i*mat->n_cols + i;
-    tr->val[ii] = mat->val[ii];
+  for (int i = 0; i < mat->n_rows; i++) {
+    const int ii = i * mat->n_cols + i;
+    tr->val[ii]  = mat->val[ii];
     mat->val[ii] *= 2;
 
-    for (short int j = i+1; j < mat->n_cols; j++) {
-
+    for (int j = i + 1; j < mat->n_cols; j++) {
       const int  ij = i*mat->n_cols + j;
       const int  ji = j*mat->n_cols + i;
 
@@ -1108,7 +1096,6 @@ cs_sdm_square_add_transpose(cs_sdm_t  *mat,
       tr->val[ij] = mat->val[ji];
       mat->val[ij] += tr->val[ij];
       mat->val[ji] += tr->val[ji];
-
     }
   }
 }
@@ -1131,11 +1118,10 @@ cs_sdm_square_2symm(cs_sdm_t   *mat)
   if (mat->n_rows < 1)
     return;
 
-  for (short int i = 0; i < mat->n_rows; i++) {
-
-    cs_real_t  *mi = mat->val + i*mat->n_cols;
-    for (short int j = i; j < mat->n_cols; j++) {
-      int  ji = j*mat->n_rows + i;
+  for (int i = 0; i < mat->n_rows; i++) {
+    cs_real_t *mi = mat->val + i * mat->n_cols;
+    for (int j = i; j < mat->n_cols; j++) {
+      int ji = j * mat->n_rows + i;
       mi[j] += mat->val[ji];
       mat->val[ji] = mi[j];
     } /* col j */
@@ -1152,7 +1138,7 @@ cs_sdm_square_2symm(cs_sdm_t   *mat)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_square_asymm(cs_sdm_t   *mat)
+cs_sdm_square_asymm(cs_sdm_t *mat)
 {
   assert(mat != nullptr);
   assert(mat->n_rows == mat->n_cols);
@@ -1160,19 +1146,16 @@ cs_sdm_square_asymm(cs_sdm_t   *mat)
   if (mat->n_rows < 1)
     return;
 
-  for (short int i = 0; i < mat->n_rows; i++) {
-
+  for (int i = 0; i < mat->n_rows; i++) {
     cs_real_t  *mi = mat->val + i*mat->n_cols;
 
     mi[i] = 0;
 
-    for (short int j = i+1; j < mat->n_cols; j++) {
-
+    for (int j = i + 1; j < mat->n_cols; j++) {
       int  ji = j*mat->n_rows + i;
 
       mi[j] = 0.5*(mi[j] - mat->val[ji]);
       mat->val[ji] = -mi[j];
-
     }
   }
 }
@@ -1215,13 +1198,12 @@ cs_sdm_block_square_asymm(cs_sdm_t   *mat)
       assert(bIJ->n_rows == bJI->n_cols);
       assert(bIJ->n_cols == bJI->n_rows);
 
-      for (short int i = 0; i < bIJ->n_rows; i++) {
+      for (int i = 0; i < bIJ->n_rows; i++) {
         cs_real_t  *bIJ_i = bIJ->val + i*bIJ->n_cols;
-        for (short int j = 0; j < bIJ->n_cols; j++) {
+        for (int j = 0; j < bIJ->n_cols; j++) {
+          int ji = j * bIJ->n_rows + i;
 
-          int  ji = j*bIJ->n_rows + i;
-
-          bIJ_i[j] = 0.5*(bIJ_i[j] - bJI->val[ji]);
+          bIJ_i[j]     = 0.5 * (bIJ_i[j] - bJI->val[ji]);
           bJI->val[ji] = -bIJ_i[j];
 
         } /* bIJ columns */
@@ -1251,9 +1233,7 @@ cs_sdm_block_square_asymm(cs_sdm_t   *mat)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_33_sym_qr_compute(const cs_real_t   m[9],
-                         cs_real_t         Qt[9],
-                         cs_real_t         R[6])
+cs_sdm_33_sym_qr_compute(const cs_real_t m[9], cs_real_t Qt[9], cs_real_t R[6])
 {
   assert(m != nullptr && Qt != nullptr && R != nullptr);
 
@@ -1261,34 +1241,34 @@ cs_sdm_33_sym_qr_compute(const cs_real_t   m[9],
      transpose */
 
   cs_nvec3_t  tmp;
-  cs_real_3_t  qhat;
+  cs_real_3_t qhat;
 
   cs_nvec3(m, &tmp); /* normalize the first row (i.e first column) */
-  R[0] = tmp.meas; /* R00 */
+  R[0] = tmp.meas;   /* R00 */
   assert(tmp.meas > cs_math_zero_threshold);
-  cs_real_t  *q0 = Qt;
+  cs_real_t *q0 = Qt;
   for (int k = 0; k < 3; k++)
     q0[k] = tmp.unitv[k];
 
-  const cs_real_t  *m1 = m + 3;    /* qhat = m1 */
-  R[1] = cs_math_3_dot_product(q0, m1); /* R01 */
+  const cs_real_t *m1 = m + 3;                         /* qhat = m1 */
+  R[1]                = cs_math_3_dot_product(q0, m1); /* R01 */
   for (int k = 0; k < 3; k++)
-    qhat[k] = m1[k] - R[1]*q0[k];
+    qhat[k] = m1[k] - R[1] * q0[k];
 
   cs_nvec3(qhat, &tmp);
   R[3] = tmp.meas; /* R11 */
   assert(tmp.meas > cs_math_zero_threshold);
-  cs_real_t  *q1 = Qt + 3;
+  cs_real_t *q1 = Qt + 3;
   for (int k = 0; k < 3; k++)
     q1[k] = tmp.unitv[k];
 
-  const cs_real_t  *m2 = m + 6;    /* qhat = m2 */
-  R[2] = cs_math_3_dot_product(q0, m2); /* R02 */
+  const cs_real_t *m2 = m + 6;                         /* qhat = m2 */
+  R[2]                = cs_math_3_dot_product(q0, m2); /* R02 */
   for (int k = 0; k < 3; k++)
-    qhat[k] = m2[k] - R[2]*q0[k];
+    qhat[k] = m2[k] - R[2] * q0[k];
   R[4] = cs_math_3_dot_product(q1, qhat); /* R12 */
   for (int k = 0; k < 3; k++)
-    qhat[k] -= R[4]*q1[k];
+    qhat[k] -= R[4] * q1[k];
 
   cs_nvec3(qhat, &tmp);
   R[5] = tmp.meas;
@@ -1312,26 +1292,25 @@ cs_sdm_33_sym_qr_compute(const cs_real_t   m[9],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_33_lu_compute(const cs_sdm_t   *m,
-                     cs_real_t         facto[9])
+cs_sdm_33_lu_compute(const cs_sdm_t *m, cs_real_t facto[9])
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows);
 
   /* j=0: first row */
 
-  const cs_real_t  d00 = m->val[0];
+  const cs_real_t d00 = m->val[0];
   if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  const cs_real_t  invd00 = 1./d00;
+  const cs_real_t invd00 = 1. / d00;
 
-  facto[0] = d00, facto[1] = m->val[1], facto[2] = m->val[2];     /* 1st row */
-  facto[3] =  m->val[3]*invd00;                                   /* L10 */
-  facto[4] =  m->val[4] - facto[3]*facto[1];                      /* U11 */
-  facto[5] =  m->val[5] - facto[3]*facto[2];                      /* U12 */
-  facto[6] =  m->val[6]*invd00;                                   /* L20 */
-  facto[7] = (m->val[7] - facto[6]*m->val[1])/facto[4];           /* L21 */
-  facto[8] =  m->val[8] - facto[6]*m->val[2] - facto[7]*facto[5]; /* U22 */
+  facto[0] = d00, facto[1] = m->val[1], facto[2] = m->val[2]; /* 1st row */
+  facto[3] = m->val[3] * invd00;                              /* L10 */
+  facto[4] = m->val[4] - facto[3] * facto[1];                 /* U11 */
+  facto[5] = m->val[5] - facto[3] * facto[2];                 /* U12 */
+  facto[6] = m->val[6] * invd00;                              /* L20 */
+  facto[7] = (m->val[7] - facto[6] * m->val[1]) / facto[4];   /* L21 */
+  facto[8] = m->val[8] - facto[6] * m->val[2] - facto[7] * facto[5]; /* U22 */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1350,13 +1329,12 @@ cs_sdm_33_lu_compute(const cs_sdm_t   *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_lu_compute(const cs_sdm_t   *m,
-                  cs_real_t         facto[])
+cs_sdm_lu_compute(const cs_sdm_t *m, cs_real_t facto[])
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows);
 
-  const cs_lnum_t  n = m->n_rows;
+  const cs_lnum_t n = m->n_rows;
 
   /* Initialization */
 
@@ -1364,14 +1342,13 @@ cs_sdm_lu_compute(const cs_sdm_t   *m,
 
   /* Each step work on a smaller block */
 
-  for (cs_lnum_t k = 0; k < n-1; k++) {
-
+  for (cs_lnum_t k = 0; k < n - 1; k++) {
     /* Pivot */
 
-    cs_real_t  pivot = facto[k*(n+1)];
+    cs_real_t pivot = facto[k * (n + 1)];
     if (cs::abs(pivot) < cs_math_zero_threshold)
       bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-    const cs_real_t  invp = 1./pivot;
+    const cs_real_t  invp    = 1. / pivot;
     const cs_real_t *rk_fact = facto + k * n;
 
     for (cs_lnum_t i = k + 1; i < n; i++) { /* Loop on rows */
@@ -1410,23 +1387,23 @@ cs_sdm_lu_compute(const cs_sdm_t   *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_33_lu_solve(const cs_real_t    facto[9],
-                   const cs_real_t    rhs[3],
-                   cs_real_t          sol[3])
+cs_sdm_33_lu_solve(const cs_real_t facto[9],
+                   const cs_real_t rhs[3],
+                   cs_real_t       sol[3])
 {
   assert(facto != nullptr && rhs != nullptr && sol != nullptr);
 
   /* Forward pass */
 
   sol[0] = rhs[0];
-  sol[1] = rhs[1] - facto[3]*sol[0];
-  sol[2] = rhs[2] - facto[6]*sol[0] - facto[7]*sol[1];
+  sol[1] = rhs[1] - facto[3] * sol[0];
+  sol[2] = rhs[2] - facto[6] * sol[0] - facto[7] * sol[1];
 
   /* Backward pass */
 
-  sol[2] = sol[2]/facto[8];
-  sol[1] = (sol[1] - facto[5]*sol[2])/facto[4];
-  sol[0] = (sol[0] - facto[2]*sol[2] - facto[1]*sol[1])/facto[0];
+  sol[2] = sol[2] / facto[8];
+  sol[1] = (sol[1] - facto[5] * sol[2]) / facto[4];
+  sol[0] = (sol[0] - facto[2] * sol[2] - facto[1] * sol[1]) / facto[0];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1447,30 +1424,28 @@ cs_sdm_33_lu_solve(const cs_real_t    facto[9],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_lu_solve(cs_lnum_t          n_rows,
-                const cs_real_t    facto[],
-                const cs_real_t   *rhs,
-                cs_real_t         *sol)
+cs_sdm_lu_solve(cs_lnum_t        n_rows,
+                const cs_real_t  facto[],
+                const cs_real_t *rhs,
+                cs_real_t       *sol)
 {
   assert(facto != nullptr && rhs != nullptr && sol != nullptr);
 
   /* Forward pass: L.y = rhs (sol stores the values for y) */
 
-  for (cs_lnum_t  i = 0; i < n_rows; i++) {
-
-    sol[i] = rhs[i];
-    const cs_real_t  *_fact = facto + i*n_rows;
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+    sol[i]                 = rhs[i];
+    const cs_real_t *_fact = facto + i * n_rows;
     for (cs_lnum_t j = 0; j < i; j++) {
-      sol[i] -= sol[j]*_fact[j];
+      sol[i] -= sol[j] * _fact[j];
     }
-
   }
 
   /* Backward pass: U.sol = y */
 
-  for (cs_lnum_t i = n_rows-1; i >= 0; i--) { /* Loop on rows */
+  for (cs_lnum_t i = n_rows - 1; i >= 0; i--) { /* Loop on rows */
     const cs_real_t *ri_fact = facto + i * n_rows;
-    for (cs_lnum_t j = n_rows-1; j > i; j--) { /* Loop on columns */
+    for (cs_lnum_t j = n_rows - 1; j > i; j--) { /* Loop on columns */
       sol[i] -= sol[j] * ri_fact[j];
     }
     sol[i] /= ri_fact[i];
@@ -1494,33 +1469,32 @@ cs_sdm_lu_solve(cs_lnum_t          n_rows,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_33_ldlt_compute(const cs_sdm_t   *m,
-                       cs_real_t         facto[6])
+cs_sdm_33_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[6])
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows && m->n_cols == 3);
 
   /* j=0: first row */
 
-  const cs_real_t  d00 = m->val[0];
+  const cs_real_t d00 = m->val[0];
   if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
-  facto[0] = 1. / d00;
-  const cs_real_t  l10 = facto[1] = m->val[1] * facto[0];
-  const cs_real_t  l20 = facto[3] = m->val[2] * facto[0];
+  facto[0]            = 1. / d00;
+  const cs_real_t l10 = facto[1] = m->val[1] * facto[0];
+  const cs_real_t l20 = facto[3] = m->val[2] * facto[0];
 
   /* j=1: second row */
 
-  const cs_real_t  d11 = m->val[4] - l10*l10 * d00;
+  const cs_real_t d11 = m->val[4] - l10 * l10 * d00;
   if (cs::abs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[2] = 1. / d11;
-  const cs_real_t l21 = facto[4] = (m->val[5] - l20*d00*l10) * facto[2];
+  facto[2]            = 1. / d11;
+  const cs_real_t l21 = facto[4] = (m->val[5] - l20 * d00 * l10) * facto[2];
 
   /* j=2: third row */
 
-  const cs_real_t  d22 = m->val[8] - l20*l20*d00 - l21*l21*d11;
+  const cs_real_t d22 = m->val[8] - l20 * l20 * d00 - l21 * l21 * d11;
   if (cs::abs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[5] = 1. / d22;
@@ -1543,44 +1517,44 @@ cs_sdm_33_ldlt_compute(const cs_sdm_t   *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_44_ldlt_compute(const cs_sdm_t   *m,
-                       cs_real_t         facto[10])
+cs_sdm_44_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[10])
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows && m->n_cols == 4);
 
   /* j=0: first row */
 
-  const cs_real_t  d00 = m->val[0];
+  const cs_real_t d00 = m->val[0];
   if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
-  facto[0] = 1. / d00;
-  const cs_real_t  l10 = facto[1] = m->val[1] * facto[0];
-  const cs_real_t  l20 = facto[3] = m->val[2] * facto[0];
-  const cs_real_t  l30 = facto[6] = m->val[3] * facto[0];
+  facto[0]            = 1. / d00;
+  const cs_real_t l10 = facto[1] = m->val[1] * facto[0];
+  const cs_real_t l20 = facto[3] = m->val[2] * facto[0];
+  const cs_real_t l30 = facto[6] = m->val[3] * facto[0];
 
   /* j=1: second row */
 
-  const cs_real_t  d11 = m->val[5] - l10*l10 * d00;
+  const cs_real_t d11 = m->val[5] - l10 * l10 * d00;
   if (cs::abs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[2] = 1. / d11;
-  const cs_real_t  l21 = facto[4] = (m->val[6] - l20*d00*l10) * facto[2];
-  const cs_real_t  l31 = facto[7] = (m->val[7] - l30*d00*l10) * facto[2];
+  facto[2]            = 1. / d11;
+  const cs_real_t l21 = facto[4] = (m->val[6] - l20 * d00 * l10) * facto[2];
+  const cs_real_t l31 = facto[7] = (m->val[7] - l30 * d00 * l10) * facto[2];
 
   /* j=2: third row */
 
-  const cs_real_t  d22 = m->val[10] - l20*l20*d00 - l21*l21*d11;
+  const cs_real_t d22 = m->val[10] - l20 * l20 * d00 - l21 * l21 * d11;
   if (cs::abs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[5] = 1. / d22;
-  const cs_real_t  l32 = facto[8] =
-    (m->val[11] - l30*d00*l20 - l31*d11*l21) * facto[5];
+  facto[5]            = 1. / d22;
+  const cs_real_t l32 = facto[8] =
+    (m->val[11] - l30 * d00 * l20 - l31 * d11 * l21) * facto[5];
 
   /* j=3: row 4 */
 
-  const cs_real_t  d33 = m->val[15] - l30*l30*d00 - l31*l31*d11 - l32*l32*d22;
+  const cs_real_t d33 =
+    m->val[15] - l30 * l30 * d00 - l31 * l31 * d11 - l32 * l32 * d22;
   if (cs::abs(d33) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[9] = 1. / d33;
@@ -1603,77 +1577,78 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t   *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
-                       cs_real_t         facto[21])
+cs_sdm_66_ldlt_compute(const cs_sdm_t *m, cs_real_t facto[21])
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows && m->n_cols == 6);
 
   /* j=0: first row */
 
-  const cs_real_t  d00 = m->val[0];
+  const cs_real_t d00 = m->val[0];
   if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
-  facto[0] = 1. / d00;
-  const cs_real_t  l10 = facto[ 1] = m->val[1] * facto[0];
-  const cs_real_t  l20 = facto[ 3] = m->val[2] * facto[0];
-  const cs_real_t  l30 = facto[ 6] = m->val[3] * facto[0];
-  const cs_real_t  l40 = facto[10] = m->val[4] * facto[0];
-  const cs_real_t  l50 = facto[15] = m->val[5] * facto[0];
+  facto[0]            = 1. / d00;
+  const cs_real_t l10 = facto[1] = m->val[1] * facto[0];
+  const cs_real_t l20 = facto[3] = m->val[2] * facto[0];
+  const cs_real_t l30 = facto[6] = m->val[3] * facto[0];
+  const cs_real_t l40 = facto[10] = m->val[4] * facto[0];
+  const cs_real_t l50 = facto[15] = m->val[5] * facto[0];
 
   /* j=1: second row */
 
-  const cs_real_t  d11 = m->val[7] - l10*l10 * d00;
+  const cs_real_t d11 = m->val[7] - l10 * l10 * d00;
   if (cs::abs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[2] = 1. / d11;
-  const cs_real_t  d0l10 = d00*l10;
-  const cs_real_t  l21 = facto[ 4] = (m->val[ 8] - l20*d0l10) * facto[2];
-  const cs_real_t  l31 = facto[ 7] = (m->val[ 9] - l30*d0l10) * facto[2];
-  const cs_real_t  l41 = facto[11] = (m->val[10] - l40*d0l10) * facto[2];
-  const cs_real_t  l51 = facto[16] = (m->val[11] - l50*d0l10) * facto[2];
+  facto[2]              = 1. / d11;
+  const cs_real_t d0l10 = d00 * l10;
+  const cs_real_t l21 = facto[4] = (m->val[8] - l20 * d0l10) * facto[2];
+  const cs_real_t l31 = facto[7] = (m->val[9] - l30 * d0l10) * facto[2];
+  const cs_real_t l41 = facto[11] = (m->val[10] - l40 * d0l10) * facto[2];
+  const cs_real_t l51 = facto[16] = (m->val[11] - l50 * d0l10) * facto[2];
 
   /* j=2: third row */
 
-  const cs_real_t  d22 = m->val[14] - l20*l20*d00 - l21*l21*d11;
+  const cs_real_t d22 = m->val[14] - l20 * l20 * d00 - l21 * l21 * d11;
   if (cs::abs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[5] = 1. / d22;
-  const cs_real_t  d1l21 = d11*l21, d0l20 = d00*l20;
-  const cs_real_t  l32 = facto[ 8] =
-    (m->val[15] - l30*d0l20 - l31*d1l21) * facto[5];
-  const cs_real_t  l42 = facto[12] =
-    (m->val[16] - l30*d0l20 - l31*d1l21) * facto[5];
-  const cs_real_t  l52 = facto[17] =
-    (m->val[17] - l30*d0l20 - l31*d1l21) * facto[5];
+  facto[5]              = 1. / d22;
+  const cs_real_t d1l21 = d11 * l21, d0l20 = d00 * l20;
+  const cs_real_t l32 = facto[8] =
+    (m->val[15] - l30 * d0l20 - l31 * d1l21) * facto[5];
+  const cs_real_t l42 = facto[12] =
+    (m->val[16] - l30 * d0l20 - l31 * d1l21) * facto[5];
+  const cs_real_t l52 = facto[17] =
+    (m->val[17] - l30 * d0l20 - l31 * d1l21) * facto[5];
 
   /* j=3: row 4 */
 
-  const cs_real_t  d33 = m->val[21] - l30*l30*d00 - l31*l31*d11 - l32*l32*d22;
+  const cs_real_t d33 =
+    m->val[21] - l30 * l30 * d00 - l31 * l31 * d11 - l32 * l32 * d22;
   if (cs::abs(d33) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[9] = 1. / d33;
-  const cs_real_t  d1l31 = d11*l31, d0l30 = d00*l30, d2l32 = d22*l32;
-  const cs_real_t  l43 = facto[13] =
-    (m->val[22] - l40*d0l30 - l41*d1l31 - l42*d2l32) * facto[9];
-  const cs_real_t  l53 = facto[18] =
-    (m->val[23] - l50*d0l30 - l51*d1l31 - l52*d2l32) * facto[9];
+  facto[9]              = 1. / d33;
+  const cs_real_t d1l31 = d11 * l31, d0l30 = d00 * l30, d2l32 = d22 * l32;
+  const cs_real_t l43 = facto[13] =
+    (m->val[22] - l40 * d0l30 - l41 * d1l31 - l42 * d2l32) * facto[9];
+  const cs_real_t l53 = facto[18] =
+    (m->val[23] - l50 * d0l30 - l51 * d1l31 - l52 * d2l32) * facto[9];
 
   /* j=4: row 5 */
 
-  const cs_real_t  d44 =
-    m->val[28] - l40*l40*d00 - l41*l41*d11 - l42*l42*d22 - l43*l43*d33;
+  const cs_real_t d44 = m->val[28] - l40 * l40 * d00 - l41 * l41 * d11 -
+                        l42 * l42 * d22 - l43 * l43 * d33;
   if (cs::abs(d44) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
-  facto[14] = 1. / d44;
-  const cs_real_t  l54 = facto[19] = facto[14] *
-    (m->val[29] - l50*d00*l40 - l51*d11*l41 - l52*d22*l42 - l53*d33*l43);
+  facto[14]           = 1. / d44;
+  const cs_real_t l54 = facto[19] =
+    facto[14] * (m->val[29] - l50 * d00 * l40 - l51 * d11 * l41 -
+                 l52 * d22 * l42 - l53 * d33 * l43);
 
   /* j=5: row 6 */
 
-  const cs_real_t  d55 = m->val[35]
-    - l50*l50*d00 - l51*l51*d11 - l52*l52*d22 - l53*l53*d33 - l54*l54*d44;
+  const cs_real_t d55 = m->val[35] - l50 * l50 * d00 - l51 * l51 * d11 -
+                        l52 * l52 * d22 - l53 * l53 * d33 - l54 * l54 * d44;
   if (cs::abs(d55) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[20] = 1. / d55;
@@ -1697,26 +1672,23 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_ldlt_compute(const cs_sdm_t     *m,
-                    cs_real_t          *facto,
-                    cs_real_t          *dkk)
+cs_sdm_ldlt_compute(const cs_sdm_t *m, cs_real_t *facto, cs_real_t *dkk)
 {
   assert(m != nullptr && facto != nullptr);
   assert(m->n_cols == m->n_rows);
 
-  const short int n = m->n_cols;
+  const int n = m->n_cols;
 
   if (n == 1) {
     facto[0] = 1. / m->val[0];
     return;
   }
 
-  int  rowj_idx = 0;
+  int rowj_idx = 0;
 
   /* Factorization (column-major algorithm) */
 
-  for (short int j = 0; j < n; j++) {
-
+  for (int j = 0; j < n; j++) {
     rowj_idx += j;
     const int  djj_idx = rowj_idx + j;
 
@@ -1731,14 +1703,13 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
         const cs_real_t  inv_d00 = facto[0] = 1. / dkk[0];
 
         /* l_i0 = a_i0 / d_00 */
-        short int rowi_idx = rowj_idx;
+        int               rowi_idx = rowj_idx;
         const cs_real_t  *a_0 = m->val;  /* a_ij = a_ji */
-        for (short int i = j+1; i < n; i++) { /* Loop on rows */
+        for (int i = j + 1; i < n; i++) {     /* Loop on rows */
 
           rowi_idx += i;
           cs_real_t  *l_i = facto + rowi_idx;
-          l_i[0] = a_0[i] * inv_d00;
-
+          l_i[0]          = a_0[i] * inv_d00;
         }
 
       }
@@ -1757,14 +1728,13 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
 
         /* l_i1 = (a_i1 - l_i0 * d_00 * l_10 ) / d_11 */
 
-        short int rowi_idx = rowj_idx;
+        int               rowi_idx = rowj_idx;
         const cs_real_t  *a_1 = m->val + n;  /* a_i1 = a_1i */
-        for (short int i = 2; i < n; i++) { /* Loop on rows */
+        for (int i = 2; i < n; i++) {             /* Loop on rows */
 
           rowi_idx += i;
           cs_real_t  *l_i = facto + rowi_idx;
-          l_i[1] = (a_1[i] - l_i[0] *  dkk[0] * l_1[0]) * inv_d11;
-
+          l_i[1]          = (a_1[i] - l_i[0] * dkk[0] * l_1[0]) * inv_d11;
         }
 
       }
@@ -1777,7 +1747,7 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
         cs_real_t  *l_j = facto + rowj_idx;
 
         cs_real_t  sum = 0.;
-        for (short int k = 0; k < j; k++)
+        for (int k = 0; k < j; k++)
           sum += l_j[k]*l_j[k] * dkk[k];
         const cs_real_t  djj = dkk[j] = m->val[j*n+j] - sum;
 
@@ -1788,17 +1758,16 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
 
         /* l_ij = (a_ij - \sum_{k=1}^{j-1} l_ik * d_kk * l_jk ) / d_jj */
 
-        short int rowi_idx = rowj_idx;
+        int               rowi_idx = rowj_idx;
         const cs_real_t  *a_j = m->val + j*n;  /* a_ij = a_ji */
-        for (short int i = j+1; i < n; i++) { /* Loop on rows */
+        for (int i = j + 1; i < n; i++) {           /* Loop on rows */
 
           rowi_idx += i;
           cs_real_t  *l_i = facto + rowi_idx;
           sum = 0.;
-          for (short int k = 0; k < j; k++)
+          for (int k = 0; k < j; k++)
             sum += l_i[k] *  dkk[k] * l_j[k];
           l_i[j] = (a_j[i] - sum) * inv_djj;
-
         }
       }
       break;
@@ -1931,14 +1900,13 @@ cs_sdm_ldlt_solve(int                n_rows,
 
   sol[0] = rhs[0]; /* case i = 0 */
 
-  short int rowi_idx = 0;
-  for (short int i = 1; i < n_rows; i++){
-
+  int rowi_idx = 0;
+  for (int i = 1; i < n_rows; i++) {
     rowi_idx += i;
 
     const cs_real_t  *l_i = facto + rowi_idx;
     cs_real_t  sum = 0.;
-    for (short int k = 0; k < i; k++)
+    for (int k = 0; k < i; k++)
       sum += sol[k] * l_i[k];
     sol[i] = rhs[i] - sum;
 
@@ -1948,19 +1916,18 @@ cs_sdm_ldlt_solve(int                n_rows,
    *     x_i = z_i/d_ii - \sum_{k=i+1}^{n} l_ki * x_k
    */
 
-  const short int  last_row_id = n_rows - 1;
+  const int  last_row_id = n_rows - 1;
   const int  shift = n_rows*(last_row_id)/2;   /* idx with n_rows - 1 */
   int  diagi_idx = shift + last_row_id;        /* last entry of the facto. */
   sol[last_row_id] *= facto[diagi_idx];        /* 1 / d_nn */
 
-  for (short int i = last_row_id - 1; i >= 0; i--) {
-
-    diagi_idx -= (i+2);
+  for (int i = last_row_id - 1; i >= 0; i--) {
+    diagi_idx -= (i + 2);
     sol[i] *= facto[diagi_idx];
 
-    short int  rowk_idx = shift;
+    int        rowk_idx = shift;
     cs_real_t  sum = 0.0;
-    for (short int k = last_row_id; k > i; k--) {
+    for (int k = last_row_id; k > i; k--) {
       /*sol[i] -= facto[k*(k+1)/2+i] * sol[k];*/
       const cs_real_t  *l_k = facto + rowk_idx;
       sum += l_k[i] * sol[k];
@@ -2069,12 +2036,12 @@ cs_sdm_block_dump(cs_lnum_t parent_id, const cs_sdm_t *mat)
                 n_b_cols);
 
   const char _sep[] = "------------------------------------------------------";
-  for (short int bi = 0; bi < n_b_rows; bi++) {
+  for (int bi = 0; bi < n_b_rows; bi++) {
     const cs_sdm_t *bi0    = blocks + bi * n_b_cols;
     const int       n_rows = bi0->n_rows;
 
     for (int i = 0; i < n_rows; i++) {
-      for (short int bj = 0; bj < n_b_cols; bj++) {
+      for (int bj = 0; bj < n_b_cols; bj++) {
         const cs_sdm_t  *bij    = blocks + bi * n_b_cols + bj;
         const int        n_cols = bij->n_cols;
         const cs_real_t *mval_i = bij->val + i * n_cols;
@@ -2132,12 +2099,12 @@ cs_sdm_block_fprintf(FILE           *fp,
   const int       n_b_cols = m->block_desc->n_col_blocks;
   const cs_sdm_t *blocks   = m->block_desc->blocks;
 
-  for (short int bi = 0; bi < n_b_rows; bi++) {
+  for (int bi = 0; bi < n_b_rows; bi++) {
     const cs_sdm_t *bi0    = blocks + bi * n_b_cols;
     const int       n_rows = bi0->n_rows;
 
     for (int i = 0; i < n_rows; i++) {
-      for (short int bj = 0; bj < n_b_cols; bj++) {
+      for (int bj = 0; bj < n_b_cols; bj++) {
         const cs_sdm_t  *bij    = blocks + bi * n_b_cols + bj;
         const int        n_cols = bij->n_cols;
         const cs_real_t *mval_i = bij->val + i * n_cols;
@@ -2241,7 +2208,7 @@ _cs_sdm_t::_cs_sdm_t(const _cs_sdm_t &other)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Modifiy the value (i,j) of the matric
+ * \brief   Modifiy the value (i,j) of the matrix
  *
  * \param[in]  i        index of the row
  * \param[in]  j        index of the column
@@ -2260,7 +2227,7 @@ _cs_sdm_t::operator()(const int i, const int j)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the value (i,j) of the matric
+ * \brief   Get the value (i,j) of the matrix
  *
  * \param[in]  i        index of the row
  * \param[in]  j        index of the column
@@ -2296,7 +2263,7 @@ _cs_sdm_t::init(const int nrows, const int ncols)
   n_rows = nrows;
   n_cols = ncols;
 
-  std::memset(val, 0, n_rows * n_cols * sizeof(cs_real_t));
+  this->set_zero();
 };
 
 /*----------------------------------------------------------------------------*/
@@ -2314,6 +2281,33 @@ _cs_sdm_t::init(const int nrows)
   init(nrows, nrows);
 };
 
+/*---------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the matrix to zero.
+ */
+/*---------------------------------------------------------------------------*/
+
+void
+_cs_sdm_t::set_zero()
+{
+  std::memset(val, 0, n_rows * n_cols * sizeof(cs_real_t));
+};
+
+/*---------------------------------------------------------------------------*/
+/*!
+ * \brief   Fill the matrix with the value.
+ *
+ * \param[in]  value
+ *
+ */
+/*---------------------------------------------------------------------------*/
+
+void
+_cs_sdm_t::fill(cs_real_t value)
+{
+  *this = value;
+};
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Transpose a matrix.
@@ -2327,9 +2321,9 @@ _cs_sdm_t::transpose() const
 {
   _cs_sdm_t tr(flag, n_max_rows, n_max_cols);
 
-  for (short int i = 0; i < n_rows; i++) {
+  for (int i = 0; i < n_rows; i++) {
     const cs_real_t *mval_i = this->row(i);
-    for (short int j = 0; j < n_cols; j++)
+    for (int j = 0; j < n_cols; j++)
       tr(j, i) = mval_i[j];
   }
 
@@ -2347,12 +2341,31 @@ _cs_sdm_t::transpose() const
 void
 _cs_sdm_t::symmetrize_ur()
 {
-  for (short int i = 1; i < n_rows; i++) {
+  for (int i = 1; i < n_rows; i++) {
     cs_real_t *m_i = this->row(i);
-    for (short int j = 0; j < i; j++) {
+    for (int j = 0; j < i; j++) {
       m_i[j] = this->operator()(j, i);
     }
   }
+};
+
+/*---------------------------------------------------------------------------*/
+/*!
+ * \brief   Fill with the given value
+ *
+ * \param[in]  value
+ */
+/*---------------------------------------------------------------------------*/
+
+_cs_sdm_t &
+_cs_sdm_t::operator=(cs_real_t value)
+{
+  const int nb_val = this->size();
+  for (int i = 0; i < nb_val; i++) {
+    val[i] = value;
+  }
+
+  return *this;
 };
 
 /*----------------------------------------------------------------------------*/
@@ -2364,10 +2377,10 @@ _cs_sdm_t::symmetrize_ur()
 /*----------------------------------------------------------------------------*/
 
 _cs_sdm_t &
-_cs_sdm_t::operator*=(const cs_real_t &scaling)
+_cs_sdm_t::operator*=(cs_real_t scaling)
 {
   const int nb_val = this->size();
-  for (short int i = 0; i < nb_val; i++) {
+  for (int i = 0; i < nb_val; i++) {
     val[i] *= scaling;
   }
 
@@ -2389,7 +2402,7 @@ _cs_sdm_t::operator+=(const _cs_sdm_t &add)
   assert(n_cols == add.n_cols);
 
   const int nb_val = this->size();
-  for (short int i = 0; i < nb_val; i++) {
+  for (int i = 0; i < nb_val; i++) {
     val[i] += add.val[i];
   }
 
@@ -2414,15 +2427,15 @@ _cs_sdm_t::dot(const cs_real_t vec[], cs_real_t mv[]) const
   /* Initialize mv with the first column */
 
   const cs_real_t v = vec[0];
-  for (short int i = 0; i < n_rows; i++) {
+  for (int i = 0; i < n_rows; i++) {
     mv[i] = v * val[i * n_cols];
   }
 
   /* Increment mv */
 
-  for (short int i = 0; i < n_rows; i++) {
+  for (int i = 0; i < n_rows; i++) {
     const cs_real_t *m_i = this->row(i);
-    for (short int j = 1; j < n_cols; j++) {
+    for (int j = 1; j < n_cols; j++) {
       mv[i] += m_i[j] * vec[j];
     }
   }
@@ -2442,8 +2455,8 @@ _cs_sdm_t::dump() const
     return;
   }
 
-  for (short int i = 0; i < n_rows; i++) {
-    for (short int j = 0; j < n_cols; j++) {
+  for (int i = 0; i < n_rows; i++) {
+    for (int j = 0; j < n_cols; j++) {
       cs_log_printf(CS_LOG_DEFAULT, " % .4e", this->operator()(i, j));
     }
     cs_log_printf(CS_LOG_DEFAULT, "\n");
@@ -2480,14 +2493,14 @@ _cs_sdm_t::dump(cs_lnum_t        parent_id,
   }
   else {
     cs_log_printf(CS_LOG_DEFAULT, " %8s %11ld", " ", (long)col_ids[0]);
-    for (short int i = 1; i < n_cols; i++) {
+    for (int i = 1; i < n_cols; i++) {
       cs_log_printf(CS_LOG_DEFAULT, " %11ld", (long)col_ids[i]);
     }
     cs_log_printf(CS_LOG_DEFAULT, "\n");
 
-    for (short int i = 0; i < n_rows; i++) {
+    for (int i = 0; i < n_rows; i++) {
       cs_log_printf(CS_LOG_DEFAULT, " %8ld ", (long)row_ids[i]);
-      for (short int j = 0; j < n_cols; j++) {
+      for (int j = 0; j < n_cols; j++) {
         cs_log_printf(CS_LOG_DEFAULT, " % .4e", this->operator()(i, j));
       }
       cs_log_printf(CS_LOG_DEFAULT, "\n");
