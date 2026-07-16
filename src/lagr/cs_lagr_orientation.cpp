@@ -474,11 +474,11 @@ _bm_rotation_phase_spheroid_by_spherical_coordinates(const cs_lnum_t   ip,
          theta = 2.0*cs_math_pi - theta;
          phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi);
     }
-    else if ( (-cs_math_pi < theta) & (theta < 0.0) ){
+    else if ( (-cs_math_pi < theta) & (theta < 0.0) ) {
          theta = -theta;
          phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi);
     }
-    else if ( (-2.0*cs_math_pi < theta) & (theta < -cs_math_pi) ){
+    else if ( (-2.0*cs_math_pi < theta) & (theta < -cs_math_pi) ) {
          theta = 2.0*cs_math_pi - cs::abs(theta);
     }
     if (phi < 0.0)
@@ -521,7 +521,7 @@ _bm_rotation_phase_spheroid_by_spherical_coordinates(const cs_lnum_t   ip,
       theta = -theta;
       phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi);
     }
-    else if ((-2.0*cs_math_pi < theta) & (theta < -cs_math_pi)){
+    else if ((-2.0*cs_math_pi < theta) & (theta < -cs_math_pi)) {
       theta = 2.0*cs_math_pi - cs::abs(theta);
     }
     if (phi < 0.0)
@@ -852,4 +852,3 @@ cs_lagr_orientation_dyn_jeffery(cs_lnum_t        p_id,
 }
 
 /*----------------------------------------------------------------------------*/
-

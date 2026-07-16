@@ -408,8 +408,8 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
 
   T _rhs[stride][3];
 
-  for (cs_lnum_t i = 0; i < stride; i++){
-    for (cs_lnum_t j = 0; j < 3; j++){
+  for (cs_lnum_t i = 0; i < stride; i++) {
+    for (cs_lnum_t j = 0; j < 3; j++) {
       _rhs[i][j] = rhs[c_id][i][j];
     }
   }
@@ -578,7 +578,7 @@ _correct_gradient_b_strided(const cs_lnum_t               n_b_cells,
 
     }
 
-    for (cs_lnum_t i = 0; i < stride; i++){
+    for (cs_lnum_t i = 0; i < stride; i++) {
       grad_c[i][0] =   rhs_c[i][0] * _cocg[0]
                      + rhs_c[i][1] * _cocg[3]
                      + rhs_c[i][2] * _cocg[5];
@@ -730,8 +730,8 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t            n_cells,
 
   T _grad[stride][3];
 
-  for (cs_lnum_t i = 0; i < stride; i++){
-    for (cs_lnum_t j = 0; j < 3; j++){
+  for (cs_lnum_t i = 0; i < stride; i++) {
+    for (cs_lnum_t j = 0; j < 3; j++) {
       _grad[i][j] = 0;
     }
   }
@@ -739,7 +739,7 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t            n_cells,
   auto _pvar1 = pvar[c_id1];
   auto _r_grad1 = r_grad[c_id1];
 
-  for (cs_lnum_t idx = s_id; idx < e_id; idx++){
+  for (cs_lnum_t idx = s_id; idx < e_id; idx++) {
 
     cs_lnum_t c_id2 = cell_cells[idx];
     cs_lnum_t f_id = cell_i_faces[idx];
@@ -776,8 +776,8 @@ _gg_with_r_gradient_cell_cells(cs_lnum_t            n_cells,
     }
   }
 
-  for (cs_lnum_t i = 0; i < stride; i++){
-    for (cs_lnum_t j = 0; j < 3; j++){
+  for (cs_lnum_t i = 0; i < stride; i++) {
+    for (cs_lnum_t j = 0; j < 3; j++) {
       grad[c_id1][i][j] = _grad[i][j];
     }
   }
@@ -818,7 +818,7 @@ _gg_with_r_gradient_b_faces(cs_lnum_t                     n_b_faces,
 
 #if 1
 
-  for (cs_lnum_t j = 0; j < 3; j++){
+  for (cs_lnum_t j = 0; j < 3; j++) {
     grad_cf[j].get() = pfac * b_face_u_normal[f_id][j];
   }
   cell_v::ref(grad[c_id][i]).conflict_free_add(-1u, grad_cf);
@@ -863,7 +863,7 @@ _gg_gradient_rescale(cs_lnum_t                       n_cells,
   else
     dvol = 0.;
 
-  for (cs_lnum_t j = 0; j < 3; j++){
+  for (cs_lnum_t j = 0; j < 3; j++) {
     grad[c_id][i][j] *= dvol;
   }
 

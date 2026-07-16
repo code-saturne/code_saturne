@@ -152,7 +152,7 @@ cs_ctwr_add_variable_fields(void)
       f->set_key_int(kivisl, ifcvsl);
 
       /* If mixture model, continuous phase has drift vs. mixture phase */
-      if (ct_opt->mixture_model){
+      if (ct_opt->mixture_model) {
         /* Activate the drift for all scalars with key "drift" > 0 */
         int drift = CS_DRIFT_SCALAR_ON + CS_DRIFT_SCALAR_ADD_DRIFT_FLUX;
 
@@ -209,7 +209,7 @@ cs_ctwr_add_variable_fields(void)
       f->set_key_int(kivisl, ifcvsl);
 
       /* If mixture model, continuous phase has drift vs. mixture phase */
-      if (ct_opt->mixture_model){
+      if (ct_opt->mixture_model) {
         /* Associate temperature to continuous phase -> class_id = -1 */
         f->set_key_int(keyccl, class_id);
 

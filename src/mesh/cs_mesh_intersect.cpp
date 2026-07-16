@@ -583,7 +583,7 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
               _cell_ids[c_id0] = s_id;
 
               /* OD enters cell i from cell j */
-              if (n_inout[0] > 0){
+              if (n_inout[0] > 0) {
                 _seg_c_len[c_id0] -= length_up;
                 _n_in[c_id0] += 1;
                 for (int i = 0; i < 3; i++)
@@ -591,7 +591,7 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
               }
 
               /* OD leaves cell i to cell j */
-              if (n_inout[1] > 0){
+              if (n_inout[1] > 0) {
                 _seg_c_len[c_id0] -= length_down;
                 _n_out[c_id0] += 1;
                 for (int i = 0; i < 3; i++)
@@ -607,7 +607,7 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
 
               /* OD enters cell i from cell j
                * so leaves cell j */
-              if (n_inout[0] > 0){
+              if (n_inout[0] > 0) {
                 _seg_c_len[c_id1] -= length_down;
                 _n_out[c_id1] += 1;
                 for (int i = 0; i < 3; i++)
@@ -616,7 +616,7 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
 
               /* OD leaves cell i to cell j
                * so enters cell j */
-              if (n_inout[1] > 0){
+              if (n_inout[1] > 0) {
                 _seg_c_len[c_id1] -= length_up;
                 _n_in[c_id1] += 1;
                 for (int i = 0; i < 3; i++)
@@ -690,7 +690,7 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
           _cell_ids[c_id] = s_id;
 
           /* OD enters cell i */
-          if (n_inout[0] > 0){
+          if (n_inout[0] > 0) {
             _seg_c_len[c_id] -= length_up;
             _n_in[c_id] += 1;
             for (int i = 0; i < 3; i++)
@@ -698,7 +698,7 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
           }
 
           /* OD leaves cell i */
-          if (n_inout[1] > 0){
+          if (n_inout[1] > 0) {
             _seg_c_len[c_id] -= length_down;
             _n_out[c_id] += 1;
             for (int i = 0; i < 3; i++)
@@ -724,12 +724,12 @@ cs_mesh_intersect_polyline_cell_select(void          *input,
 
       /* When the segment enter a cell but do not leave it (or the contrary)
          we take the extremity of the segment as center point */
-      if (_cell_ids[cell_id] == s_id){
-        if ( _n_out[cell_id] > 0 && _n_in[cell_id] == 0){
+      if (_cell_ids[cell_id] == s_id) {
+        if ( _n_out[cell_id] > 0 && _n_in[cell_id] == 0) {
           for (int i = 0; i < 3; i++)
             _seg_c_cen[cell_id][i] = sx0[i];
         }
-        if ( _n_out[cell_id] == 0 && _n_in[cell_id] > 0){
+        if ( _n_out[cell_id] == 0 && _n_in[cell_id] > 0) {
           for (int i = 0; i < 3; i++)
             _seg_c_cen[cell_id][i] = sx1[i];
         }

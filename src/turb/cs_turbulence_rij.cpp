@@ -929,7 +929,7 @@ _gravity_st_epsilon(int              phase_id,
   cs_real_t *viscls = nullptr;
 
   cs_field_t *f_t = cs_thermal_model_field();
-  if (f_t != nullptr){
+  if (f_t != nullptr) {
     turb_flux_model = f_t->get_key_int(kturt);
 
     cs_field_t *f_t_var = cs_field_get_variance(f_t);

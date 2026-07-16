@@ -1106,7 +1106,7 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
   cs_real_t *cvar_fracm = nullptr;
   cs_real_t *cvar_frace = nullptr;
 
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2){
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
     cvar_fracv = (cs_real_t *)CS_F_(volume_f)->val;
     cvar_fracm = (cs_real_t *)CS_F_(mass_f)->val;
     cvar_frace = (cs_real_t *)CS_F_(energy_f)->val;

@@ -316,7 +316,7 @@ cs_thermal_model_gamma_d_c_square(const cs_real_t  cp[],
   /* Mult */
   cs_real_t mult = 1.0;
   // TODO cp/cv variable
-  if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY){
+  if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
     mult = cs_glob_fluid_properties->cp0;
   } else if (cs_glob_thermal_model->thermal_variable
       == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
@@ -693,7 +693,7 @@ cs_thermal_model_add_kst(cs_real_t  smbrs[])
         cs_real_t *meteo_p = cs_field_by_name("meteo_pressure")->val;
         cs_real_t *mol_mass = nullptr;
         cs_real_t *cpro_cp = nullptr;
-        if (cs_glob_cf_model->ieos == CS_EOS_GAS_MIX){
+        if (cs_glob_cf_model->ieos == CS_EOS_GAS_MIX) {
           mol_mass = cs_field_by_name("mix_mol_mas")->val;
           cpro_cp = CS_F_(cp)->val;
         }

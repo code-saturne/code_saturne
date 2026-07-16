@@ -1283,7 +1283,7 @@ cs_turb_compute_constants(int phase_id)
       cs_turb_csrij = 0.22;
   }
 
-  if (cs_glob_turb_model->model == CS_TURB_K_OMEGA){
+  if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
     /* SST DDES */
     if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_DDES)
       cs_turb_cddes = 0.65;
@@ -1294,7 +1294,7 @@ cs_turb_compute_constants(int phase_id)
     cs_turb_cddes = 0.60;
   }
 
-  if (cs_glob_turb_model->model == CS_TURB_K_OMEGA){
+  if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
     /* SST HTLES */
     cs_turb_chtles_bt0 = 0.48;
   }
@@ -1825,7 +1825,7 @@ cs_turb_model_log_setup(void)
   }
 
   if (   turb_model->type == CS_TURB_RANS
-      && turb_model->order == CS_TURB_FIRST_ORDER){
+      && turb_model->order == CS_TURB_FIRST_ORDER) {
 
     const char *irccor_value_str[]
       = {N_("0 (no rotation/curvature correction)"),

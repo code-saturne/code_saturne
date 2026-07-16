@@ -118,7 +118,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     cs_array<int> mrkcel;
     if ((cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) ||
-        (cs_glob_turb_model->itytur == 5)){
+        (cs_glob_turb_model->itytur == 5)) {
 
       mrkcel.reshape(n_cells_ext);
       for (cs_lnum_t i = 0; i < n_cells_ext; i++)

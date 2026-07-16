@@ -2407,7 +2407,7 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
   CS_MALLOC(c_aggr_count, f_n_rows, cs_lnum_t);
   CS_MALLOC(maxi, f_n_rows, cs_real_t);
 
-  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++){
+  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
     c_aggr_count[ii] = 1;
   }
 

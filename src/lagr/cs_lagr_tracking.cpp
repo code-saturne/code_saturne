@@ -1071,7 +1071,7 @@ _internal_treatment(cs_lagr_particle_set_t  &p_set,
 
   if (   internal_conditions == nullptr
       || internal_conditions->i_face_zone_id[face_id] < 0) {
-    if(cs_glob_lagr_time_scheme->cell_wise_integ > 0){
+    if(cs_glob_lagr_time_scheme->cell_wise_integ > 0) {
 
       cs_lnum_t  c_id1 = mesh->i_face_cells[face_id][0];
       cs_lnum_t  c_id2 = mesh->i_face_cells[face_id][1];
@@ -1089,7 +1089,7 @@ _internal_treatment(cs_lagr_particle_set_t  &p_set,
         cell_cen = fvq->cell_cen[c_id1];
 
       cs_real_3_t vect_cen;
-      for (int k = 0; k < 3; k++){
+      for (int k = 0; k < 3; k++) {
         vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
         p_info->start_coords[k] =   intersect_pt[k] + bc_epsilon * vect_cen[k];
       }
@@ -1179,7 +1179,7 @@ _internal_treatment(cs_lagr_particle_set_t  &p_set,
 
     }
   }
-  else if (internal_conditions->i_face_zone_id[face_id] == CS_LAGR_BC_USER){
+  else if (internal_conditions->i_face_zone_id[face_id] == CS_LAGR_BC_USER) {
     cs_lagr_user_internal_interaction(p_set,
                                       p_id,
                                       face_id,
@@ -1943,7 +1943,7 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
   }
 
   /* Elastic rebound */
-  else if (b_type == CS_LAGR_SYM){
+  else if (b_type == CS_LAGR_SYM) {
 
     particle_state = CS_LAGR_PART_TO_SYNC;
 
@@ -2809,7 +2809,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
       specific_face_interaction = true;
 
       /* update  next position*/
-      for(int k = 0; k < 3 ; k++){
+      for(int k = 0; k < 3 ; k++) {
         next_location[k] = particle_coord[k];
       }
       p_info->last_face_id = face_id;
@@ -3623,7 +3623,7 @@ _initialize_displacement(cs_lagr_particle_set_t  &p_set,
         _tracking_info(p_set, p_id)->state = CS_LAGR_PART_STUCK;
     }
 
-    else if (r_truncate > 1.9){ /* from previous displacement */
+    else if (r_truncate > 1.9) { /* from previous displacement */
       _tracking_info(p_set, p_id)->state = CS_LAGR_PART_ERR;
     }
     else {

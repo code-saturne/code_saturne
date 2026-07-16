@@ -1764,7 +1764,7 @@ _locate_on_triangles_2d(cs_lnum_t           elt_num,
 
       max_dist = -1.0;
 
-      for (j = 0; j < 3; j++){
+      for (j = 0; j < 3; j++) {
 
         dist = 2.*cs::abs(shapef[j] - 0.5);
 
@@ -1871,7 +1871,7 @@ _locate_in_tetra(cs_lnum_t         elt_num,
 
     max_dist = -1.0;
 
-    for (j = 0; j < 4; j++){
+    for (j = 0; j < 4; j++) {
 
       dist = 2.*cs::abs(shapef[j] - 0.5);
 
@@ -2245,7 +2245,7 @@ _locate_in_cell_3d(cs_lnum_t          elt_num,
 
         if (elt_type == FVM_CELL_HEXA) {
 
-          for (j = 0; j < 3; j++){
+          for (j = 0; j < 3; j++) {
 
             dist = 2.*cs::abs(uvw[j] - 0.5);
 

@@ -723,7 +723,7 @@ cs_param_saddle_create(void)
   saddlep->solver = CS_PARAM_SADDLE_SOLVER_NONE;  /* Not used by default */
   saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
 
-  saddlep->cvg_param = (cs_param_convergence_t){
+  saddlep->cvg_param = (cs_param_convergence_t) {
     .atol       = 1e-12, /* absolute tolerance */
     .rtol       = 1e-6,  /* relative tolerance */
     .dtol       = 1e3,   /* divergence tolerance */

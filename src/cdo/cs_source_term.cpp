@@ -2580,7 +2580,7 @@ cs_source_term_fcb_pcsd_by_analytic(const cs_xdef_t           *source,
         const short int  *f2e_ids = cm->f2e_ids + start;
 
         assert(n_vf > 2);
-        switch(n_vf){
+        switch(n_vf) {
 
         case 3: /* triangle (optimized version, no subdivision) */
         {
@@ -2894,7 +2894,7 @@ cs_source_term_fb_pcvd_by_analytic(const cs_xdef_t           *source,
         const short int  *f2e_ids = cm->f2e_ids + start;
 
         assert(n_vf > 2);
-        switch(n_vf){
+        switch(n_vf) {
 
         case 3: /* triangle (optimized version, no subdivision) */
         {
@@ -3194,7 +3194,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
       const short int *f2e_ids = cm->f2e_ids + start;
 
       assert(n_vf > 2);
-      switch(n_vf){
+      switch(n_vf) {
 
       case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
@@ -3311,7 +3311,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
       const short int *f2e_ids = cm->f2e_ids + start;
 
       assert(n_vf > 2);
-      switch(n_vf){
+      switch(n_vf) {
 
       case 3: /* triangle (optimized version, no subdivision) */
         {

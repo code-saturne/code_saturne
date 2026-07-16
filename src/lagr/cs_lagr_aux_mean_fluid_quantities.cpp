@@ -172,8 +172,8 @@ compute_particle_covariance_gradient(int          phase_id,
                             0,
                             -phase_id-1);
 
-  for (cs_lnum_t i = 0; i < 9; i++){
-    for (int iel_ = 0; iel_ < mesh->n_cells; iel_++){
+  for (cs_lnum_t i = 0; i < 9; i++) {
+    for (int iel_ = 0; iel_ < mesh->n_cells; iel_++) {
       f_inter_cov[iel_] = stat_cov_skp->val[9 * iel_ + i];
     }
     if (mesh->halo != nullptr)
@@ -207,7 +207,7 @@ compute_particle_covariance_gradient(int          phase_id,
                                                     -phase_id-1);
 
   for (int i = 0; i < 6; i++) {
-    for (int iel_ = 0; iel_ < mesh->n_cells; iel_++){
+    for (int iel_ = 0; iel_ < mesh->n_cells; iel_++) {
       f_inter_cov[iel_] = stat_cov_sk->val[6 * iel_ + i];
     }
     if (mesh->halo != nullptr)

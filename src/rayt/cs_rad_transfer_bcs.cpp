@@ -618,7 +618,7 @@ cs_rad_transfer_bcs(int bc_type[])
 
   int iok = 0;
   for (int ii = 0; ii < 14; ii++) {
-    if (nrferr[ii] > 0){
+    if (nrferr[ii] > 0) {
       iok = 1;
       break;
     }

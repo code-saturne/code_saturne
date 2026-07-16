@@ -240,13 +240,13 @@ uref2 = 10.;
 dh = 0.2;
 re = sqrt(uref2)*dh*rho0/mu0;
 
-if (re < 2000){
+if (re < 2000) {
 #     in this case u*^2 is directly calculated to not have a problem with
 #     xlmbda=64/Re when Re->0
 
   ustar2 = 8.*mu0*sqrt(uref2)/rho0/dh;}
 
-else if (re<4000){
+else if (re<4000) {
 
   xlmbda = 0.021377 + 5.3115e-6*re;
   ustar2 = uref2*xlmbda/8.;}
@@ -271,13 +271,13 @@ uref2 = 10.;
 dh = 0.2;
 re = sqrt(uref2)*dh*rho0/mu0;
 
-if (re < 2000){
+if (re < 2000) {
 #     in this case u*^2 is directly calculated to not have a problem with
 #     xlmbda=64/Re when Re->0
 
   ustar2 = 8.*mu0*sqrt(uref2)/rho0/dh;}
 
-else if (re<4000){
+else if (re<4000) {
 
   xlmbda = 0.021377 + 5.3115e-6*re;
   ustar2 = uref2*xlmbda/8.;}
@@ -302,13 +302,13 @@ uref2 = 10.;
 dh = 0.2;
 re = sqrt(uref2)*dh*rho0/mu0;
 
-if (re < 2000){
+if (re < 2000) {
 #     in this case u*^2 is directly calculated to not have a problem with
 #     xlmbda=64/Re when Re->0
 
   ustar2 = 8.*mu0*sqrt(uref2)/rho0/dh;}
 
-else if (re<4000){
+else if (re<4000) {
 
   xlmbda = 0.021377 + 5.3115e-6*re;
   ustar2 = uref2*xlmbda/8.;}

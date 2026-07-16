@@ -277,7 +277,8 @@ parallel_for(size_t         n,
              double         a,
              const bool    *is_disabled,
              const double  *x,
-             double        *y){
+             double        *y)
+{
   auto_generated func(i_face_cells, a, x, y, i_sum_type);
 
   cs_cuda_kernel_parallel_for<<<l_grid_size, block_size_, 0, stream_>>>
@@ -289,8 +290,9 @@ With the following CUDA kernel:
 
 ```{.cpp}
 __global__ void
-cs_cuda_kernel_parallel_for(cs_lnum_t      n,
-                            auto_genrated  f) {
+cs_cuda_kernel_parallel_for(cs_lnum_t       n,
+                            auto_generated  f)
+{
   // grid_size-stride loop
   for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
        id += blockDim.x * gridDim.x) {
@@ -432,7 +434,7 @@ auto my_lambda = [=] (cs_lnum_t i) {
 };
 ```
 
-Then passed as an argument to the dispatch mechanism: 
+Then passed as an argument to the dispatch mechanism:
 
 ```{.cpp}
 ctx.parallel_for(n, my_lambda);

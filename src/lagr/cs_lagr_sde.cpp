@@ -932,7 +932,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
     /* Initialized with the four terms not depending on phases */
     part_vel_r[id] = ter1p + ter4p + ter5p + ter7p + tbriu;
 
-    for (int phase_id = 0; phase_id < n_phases; phase_id++){
+    for (int phase_id = 0; phase_id < n_phases; phase_id++) {
       /* trajectory  */
       displ_r[id] += ter2x[phase_id] + ter3x[phase_id] + ter6x[phase_id];
 
@@ -963,9 +963,11 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
     cs_math_33t_3_product(trans_m, part_vel_r, part_vel);
 
     /* Flow-seen velocity */
-    for (int phase_id = 0; phase_id < n_phases; phase_id++){
+    for (int phase_id = 0; phase_id < n_phases; phase_id++) {
       cs_real_t part_vel_seen_p[3] = {0., 0., 0.};
-      cs_math_33t_3_product(trans_m, part_vel_seen_r.sub_array(phase_id), part_vel_seen_p);
+      cs_math_33t_3_product(trans_m,
+                            part_vel_seen_r.sub_array(phase_id),
+                            part_vel_seen_p);
       for (int id = 0; id < 3; id++) {
         if (lambda[phase_id] < 1.e-8) {
           part_vel_seen[phase_id * 3 + id] = cvar_vel[phase_id][cell_id][id];
@@ -980,8 +982,8 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
     for (cs_lnum_t id = 0; id < 3; id++) {
       part_coords[id] = old_part_coords[id] + displ_r[id];
       part_vel[id] = part_vel_r[id];
-      for (int phase_id = 0; phase_id < n_phases; phase_id ++){
-        if (lambda[phase_id] < 1.0e-8){
+      for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
+        if (lambda[phase_id] < 1.0e-8) {
           part_vel_seen[phase_id * 3 + id] = cvar_vel[phase_id][cell_id][id];
         } else {
           part_vel_seen[phase_id * 3 + id] = part_vel_seen_r(phase_id, id);

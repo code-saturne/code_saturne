@@ -589,11 +589,11 @@ cs_atmo_source_term(int              f_id,
     /* Initialize properties based on cloud type */
     cs_real_t rs;
     cs_real_t sigma;
-    if (cloud_type == 0){
+    if (cloud_type == 0) {
       rs = 9.59e-6;
       sigma = 0.15;
     }
-    if (cloud_type == 1){
+    if (cloud_type == 1) {
       rs = 7.47e-6;
       sigma = 0.28;
     }
@@ -605,7 +605,7 @@ cs_atmo_source_term(int              f_id,
 
       /* Compute r3 */
       cs_real_t r3;
-      if (nc[cell_id] >= 1){
+      if (nc[cell_id] >= 1) {
         r3 = cbrt((0.75*rho_h[cell_id]*yc[cell_id])
                           / (cs_math_pi*rho_l*nc[cell_id]));
       }
@@ -623,7 +623,7 @@ cs_atmo_source_term(int              f_id,
           *( 1e6*r3*pow(exp_sig2 - 1.,1./6.)-7.5);
 
         //TODO check a >0
-        if (a < 0.){
+        if (a < 0.) {
           a= 0.;
         }
 

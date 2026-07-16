@@ -329,7 +329,7 @@ _add_tetra_reduction_v(cs_real_t                           t_eval,
 
     cbf->eval_all_at_point(cbf, gpts[gp], phi_eval);
 
-    for (short int i = 0; i < cbf->size; i++){
+    for (short int i = 0; i < cbf->size; i++) {
 
       const double  gcoef = gw[gp] *  phi_eval[i];
       /* x-component */
@@ -685,7 +685,7 @@ _compute_mcg(const cs_cell_mesh_t    *cm,
       const short int n_vf = end - start; /* #vertices (=#edges) */
       const short int *f2e_ids = cm->f2e_ids + start;
 
-      switch(n_vf){
+      switch(n_vf) {
 
       case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
@@ -1007,7 +1007,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
       cs_sdm_t *rf = rhs_t->get_block(f, 0);
 
       assert(n_vf > 2);
-      switch(n_vf){
+      switch(n_vf) {
 
       case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
@@ -1300,7 +1300,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
     const int  n_vf = end - start; /* #vertices (=#edges) */
     const short int  *f2e_ids = cm->f2e_ids + start;
 
-    switch(n_vf){
+    switch(n_vf) {
 
     case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
       {
@@ -1546,7 +1546,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
       assert(fbf->facto != nullptr);
       assert(cbf->size >= fbf->size);
       assert(n_vf > 2);
-      switch(n_vf){
+      switch(n_vf) {
 
       case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
@@ -1734,7 +1734,7 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
         assert(fbf->facto != nullptr);
         assert(cbf->size >= fbf->size);
         assert(n_vf > 2);
-        switch(n_vf){
+        switch(n_vf) {
 
         case CS_TRIANGLE_CASE: /* Triangle (optimized, no subdivision) */
           {
@@ -1890,7 +1890,7 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
       const short int *f2e_ids = cm->f2e_ids + start;
 
       assert(n_vf > 2);
-      switch(n_vf){
+      switch(n_vf) {
 
       case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {
@@ -2023,7 +2023,7 @@ cs_hho_builder_compute_dirichlet_v(const cs_xdef_t         *def,
       const short int *f2e_ids = cm->f2e_ids + start;
 
       assert(n_vf > 2);
-      switch(n_vf){
+      switch(n_vf) {
 
       case CS_TRIANGLE_CASE: /* triangle (optimized, no subdivision) */
         {

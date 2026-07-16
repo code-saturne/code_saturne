@@ -391,7 +391,7 @@ cs_lagr_car(int                         iprev,
 
       /* Modèle Arcen & Tanière (2009) */
       for (cs_lnum_t id = 0; id < 3; id++) {
-        for (int j = 0; j < 3; j++){
+        for (int j = 0; j < 3; j++) {
           piil[id] += extra_i[phase_id].grad_cov_skp[3 * id + j][cell_id][j];
         }
       }
@@ -410,7 +410,7 @@ cs_lagr_car(int                         iprev,
         (int)extra_i[phase_id].iturb);
     }
     for (int id = 0; id < 3; id++) {
-      for (int j = 0; j < 3; j++){
+      for (int j = 0; j < 3; j++) {
         /* Instantaneous velocity model */
         piil[id] -= (part_vel_seen[3 * phase_id + j]
             - extra_i[phase_id].vel->vals[iprev][3 * cell_id + j])

@@ -4233,7 +4233,7 @@ cs_boundary_conditions_set_generalized_sym_vector_aniso
     /* Flux BCs */
     af[isou] = qimpv[isou];
     /* "[1 -n(x)n] Qimp" is divided into two */
-    for (int jsou = 0; jsou < 3; jsou++){
+    for (int jsou = 0; jsou < 3; jsou++) {
       af[isou] = af[isou] - normal[isou]*normal[jsou]
                   * (hintpv[jsou] + qimpv[jsou]);
 

@@ -1341,7 +1341,7 @@ _filter_b_face_equiv(cs_lnum_t        n_faces,
       for (cs_lnum_t i = 0; i < n_faces; i++) {
         cs_lnum_t face_id = face_ids[i];
         if (  b_face_r_c_idx[face_id] == local_order
-            && face_id != f_id){
+            && face_id != f_id) {
           face_equiv[face_id] = f_id;
           n_b_loc_face ++;
         }

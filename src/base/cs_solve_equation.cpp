@@ -913,7 +913,7 @@ _physical_model_source_terms(cs_field_t        *f,
     cs_atmo_scalar_source_term(f->id, rhs);
 
     cs_atmo_option_t *at_opt = cs_glob_atmo_option;
-    if (at_opt->rain == true){
+    if (at_opt->rain == true) {
       cs_atmo_source_term(f->id, rhs, fimp);
     }
   }
@@ -1221,7 +1221,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       const cs_real_t pther = fluid_props->pther;
       const cs_real_t pthera = fluid_props->pthera;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      	rhs[c_id] += (pther - pthera) / dt[c_id]*cell_f_vol[c_id];
+        rhs[c_id] += (pther - pthera) / dt[c_id]*cell_f_vol[c_id];
       });
     }
     else if (th_cf_model->ieos != CS_EOS_NONE) {
@@ -1467,7 +1467,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     }
 
     if (iscacp == 2) {
-      if (th_cf_model->ieos == CS_EOS_GAS_MIX){
+      if (th_cf_model->ieos == CS_EOS_GAS_MIX) {
         cs_array_copy<cs_real_t>(n_cells,
             cs_field_by_name("isobaric_heat_capacity")->val, xcpp);
       } else {
@@ -2172,7 +2172,7 @@ cs_solve_equation_vector(cs_field_t       *f,
 
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
     cs_atmo_option_t *at_opt = cs_glob_atmo_option;
-    if (at_opt->rain == true){
+    if (at_opt->rain == true) {
       cs_atmo_source_term(f->id, (cs_real_t *)rhs, (cs_real_t *)fimp);
     }
     if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] > 0)

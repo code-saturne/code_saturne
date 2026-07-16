@@ -447,7 +447,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
    * - Humid air density otherwise */
   cs_real_t *rho = nullptr;
   cs_real_t *rho_h = nullptr;
-  if (ct_opt->mixture_model){
+  if (ct_opt->mixture_model) {
     rho = (cs_real_t *)CS_F_(rho)->val;    /* Humid air + rain
                                                (bulk) density */
     rho_h = cs_field_by_name("rho_humid_air")->val; /* Humid air density */

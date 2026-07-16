@@ -548,7 +548,7 @@ cs_boundary_conditions_set_generalized_sym_vector
     /* Flux BCs */
     af[i] = qimpv[i];
     /* "[1 -n(x)n] Qimp" is divided into two */
-    for (int j = 0; j < 3; j++){
+    for (int j = 0; j < 3; j++) {
 
       af[i] = af[i] - normal[i]*normal[j]
                   * (hint * pimpv[j] + qimpv[j]);

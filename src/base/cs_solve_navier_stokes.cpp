@@ -2121,7 +2121,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   }
 
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0) {
-    if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] > 0){
+    if (cs_glob_physical_model_flag[CS_COOLING_TOWERS] > 0) {
       cs_ctwr_source_term(CS_F_(vel)->id,
                           (cs_real_t *)tsexp,
                           (cs_real_t *)tsimp);

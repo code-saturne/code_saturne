@@ -726,7 +726,7 @@ ecs_pre_ccm__prepa_mail(_nodes_t    *noeuds,
 
   }
 
-  for (icel = 0; icel < cels->n_cells; icel++){
+  for (icel = 0; icel < cels->n_cells; icel++) {
 
     /* Position in connectivity */
 
@@ -1084,7 +1084,7 @@ ecs_pre_ccm__lit_maillage(const char  *nom_fic_maillage,
   for (isom = 0; isom < liste_faces_bord->taille_connect; isom++)
     liste_faces_bord->connect[isom] += 1;
 
-  for (ifac = 0; ifac < liste_faces_internes->n_faces; ifac++){
+  for (ifac = 0; ifac < liste_faces_internes->n_faces; ifac++) {
     assert(liste_faces_internes->icel1[ifac] > -1);
     liste_faces_internes->icel1[ifac] += 1;
     if (liste_faces_internes->icel2[ifac] != -1)
@@ -1118,7 +1118,7 @@ ecs_pre_ccm__lit_maillage(const char  *nom_fic_maillage,
     liste_faces->connect[taille_connect_bord + isom ]
       = liste_faces_internes->connect[isom];
 
-  for (ifac = 0; ifac < nbr_faint; ifac ++){
+  for (ifac = 0; ifac < nbr_faint; ifac ++) {
     liste_faces->icoul[nbr_fabord + ifac] = liste_faces_internes->icoul[ifac];
     liste_faces->icel1[nbr_fabord + ifac] = liste_faces_internes->icel1[ifac];
     liste_faces->icel2[nbr_fabord + ifac] = liste_faces_internes->icel2[ifac];

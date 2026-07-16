@@ -1053,7 +1053,7 @@ _ecs_pre_ideas__lit_elements(ecs_maillage_t   *maillage,
 
   while (ecs_file_gets_try(chaine, ECS_LOC_LNG_MAX_CHAINE_IDEAS,
                            fic_maillage, num_ligne) != NULL
-         && strcmp(chaine, ECS_IDEAS_SEPARATEUR_DATASET) != 0){
+         && strcmp(chaine, ECS_IDEAS_SEPARATEUR_DATASET) != 0) {
 
     /* Lecture des caracteristiques de l'element */
     /*===========================================*/
@@ -1155,7 +1155,7 @@ _ecs_pre_ideas__lit_elements(ecs_maillage_t   *maillage,
 
       for (inod_lig = 0; inod_lig <  nbr_nod_ligne; inod_lig++) {
 
-        if (inod == (_ecs_ideas_init_elt_liste_c[ityp].num_som[inum_som]-1)){
+        if (inod == (_ecs_ideas_init_elt_liste_c[ityp].num_som[inum_som]-1)) {
           retour = sscanf(ssch,"%d", &ideas_nod_elt[isom++]);
           ssch   = strtok(NULL, " ");
           inum_som++;
@@ -1511,7 +1511,7 @@ _ecs_pre_ideas__lit_groups(ecs_maillage_t   *maillage,
               bool_label_elt_a_trier = true;
 
             }
-            else if(max_val_ent[tab_ent[ient_sup]]<min_val_ent[tab_ent[ient]]){
+            else if(max_val_ent[tab_ent[ient_sup]]<min_val_ent[tab_ent[ient]]) {
 
               /* On echange l'ordre des entites    */
               /*  pour la concatenation des labels */

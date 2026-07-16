@@ -183,7 +183,7 @@ cs_xdef_cw_eval_c_int_by_analytic(const cs_cell_mesh_t            *cm,
         const short int  *f2e_ids = cm->f2e_ids + start;
 
         assert(n_vf > 2);
-        switch(n_vf){
+        switch(n_vf) {
 
         case CS_TRIANGLE_CASE: /* Optimized version, no subdivision */
           {
@@ -298,7 +298,7 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
       const short int  *f2e_ids = cm->f2e_ids + start;
 
       assert(n_vf > 2);
-      switch(n_vf){
+      switch(n_vf) {
 
       case CS_TRIANGLE_CASE: /* triangle (optimized version, no subdivision) */
         {

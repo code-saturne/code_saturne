@@ -585,7 +585,7 @@ cs_velocity_pressure_param_log_setup(void)
 
     const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
     if (turb_model != nullptr) {
-      if (turb_model->order == CS_TURB_SECOND_ORDER){
+      if (turb_model->order == CS_TURB_SECOND_ORDER) {
         const char *igprij_value_str[]
           = {N_("0 (do not take into account div(rho R) terms in the\n"
                 "                   "

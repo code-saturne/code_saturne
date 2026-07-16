@@ -377,7 +377,7 @@ cs_param_sles_create(int          field_id,
 
   slesp->mat_is_sym = false;
 
-  slesp->cvg_param = (cs_param_convergence_t){
+  slesp->cvg_param = (cs_param_convergence_t) {
     .atol       = 1e-15, /* absolute tolerance */
     .rtol       = 1e-6,  /* relative tolerance */
     .dtol       = 1e3,   /* divergence tolerance */

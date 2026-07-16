@@ -166,7 +166,7 @@ _condition_number(int               n_rows,
   cs_real_t vmax   = cs::abs(R->val[0]);
   cs_real_t vmin   = cs::abs(R->val[0]);
 
-  for (int i = 1; i < n_rows; i++){
+  for (int i = 1; i < n_rows; i++) {
     vmax = cs::max(vmax, cs::abs(R->val[i * (1 + n_cols)]));
     vmin = cs::min(vmin, cs::abs(R->val[i * (1 + n_cols)]));
   }

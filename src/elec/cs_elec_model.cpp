@@ -614,7 +614,7 @@ _pot_arg_f(int               location_id,
 
     if (cpotr[i] > 0.)
       v[idx] = atan(cpoti[i] / cpotr[i]);
-    else if (cpotr[i] < 0.){
+    else if (cpotr[i] < 0.) {
       if (cpoti[i] > 0.)
         v[idx] = 4.*atan(1.) + atan(cpoti[i] / cpotr[i]);
       else

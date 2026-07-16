@@ -5573,7 +5573,7 @@ cs_gui_scalar_source_terms(cs_field_t        *f,
                            "thermophysical_models/source_terms/scalar_formula");
       char z_id_str[32];
       snprintf(z_id_str, 31, "%d", z->id);
-      while (tn != nullptr){
+      while (tn != nullptr) {
         const char *name = cs_gui_node_get_tag(tn, "name");
         const char *zone_id = cs_gui_node_get_tag(tn, "zone_id");
         if (cs_gui_strcmp(name, f->name) && cs_gui_strcmp(zone_id, z_id_str))

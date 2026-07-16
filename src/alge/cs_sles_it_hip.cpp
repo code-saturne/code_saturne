@@ -918,8 +918,8 @@ _gcr_update_vx(cs_lnum_t                      n_rows,
   if (ii < n_rows) {
     double sii = 0.0;
     #pragma unroll 2
-    for (cs_lnum_t kk = 0; kk < n_c_iter; kk++){
-      for (cs_lnum_t jj = 0; jj <= kk; jj++){
+    for (cs_lnum_t kk = 0; kk < n_c_iter; kk++) {
+      for (cs_lnum_t jj = 0; jj <= kk; jj++) {
         const cs_real_t *zk_j = zk + jj*wa_size;
         sii += alpha[kk] * zk_j[ii] * gkj_inv[(kk + 1) * kk / 2 + jj];
       }
@@ -2980,4 +2980,3 @@ cs_sles_it_hip_gcr(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------*/
-

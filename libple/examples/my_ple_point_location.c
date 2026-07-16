@@ -2951,7 +2951,7 @@ _locate_on_triangles_2d(ple_lnum_t           elt_num,
 
       max_dist = -1.0;
 
-      for (j = 0; j < 3; j++){
+      for (j = 0; j < 3; j++) {
 
         dist = 2.*_ABS(shapef[j] - 0.5);
 
@@ -3058,7 +3058,7 @@ _locate_in_tetra(ple_lnum_t         elt_num,
 
     max_dist = -1.0;
 
-    for (j = 0; j < 4; j++){
+    for (j = 0; j < 4; j++) {
 
       dist = 2.*_ABS(shapef[j] - 0.5);
 
@@ -3424,7 +3424,7 @@ _locate_in_cell_3d(ple_lnum_t          elt_num,
 
         if (elt_type == MY_PLE_CELL_HEXA) {
 
-          for (j = 0; j < 3; j++){
+          for (j = 0; j < 3; j++) {
 
             dist = 2.*_ABS(uvw[j] - 0.5);
 
@@ -3440,7 +3440,7 @@ _locate_in_cell_3d(ple_lnum_t          elt_num,
 
           _compute_shapef_3d(elt_type, uvw, shapef, NULL);
 
-          for (j = 0; j < n_vertices; j++){
+          for (j = 0; j < n_vertices; j++) {
 
             dist = 2.*_ABS(shapef[j] - 0.5);
 

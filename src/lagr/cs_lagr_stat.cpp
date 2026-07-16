@@ -1164,7 +1164,7 @@ _attr_moment_name(int                    attr_id,
   char _iphas_name[1];
   if (attr_id == CS_LAGR_VELOCITY_SEEN
     || attr_id == CS_LAGR_PRED_VELOCITY_SEEN
-    || attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV){
+    || attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV) {
     _iphas_name[0] = name[0];
   }
 
@@ -1182,7 +1182,7 @@ _attr_moment_name(int                    attr_id,
   size_t l0 =   strlen(_comp_name) + strlen(_class_name)
               + strlen(type_name[moment_type]);
 
-  if (attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV){
+  if (attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV) {
     snprintf(name,
              63 - l0,
              "%s_particle_%s",
@@ -1199,7 +1199,7 @@ _attr_moment_name(int                    attr_id,
   name[63] = '\0';
   if (   attr_id == CS_LAGR_VELOCITY_SEEN
       || attr_id == CS_LAGR_PRED_VELOCITY_SEEN
-      || attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV){
+      || attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV) {
     strcat(name, _iphas_name);
   }
   strcat(name, _comp_name);
@@ -4589,8 +4589,8 @@ cs_lagr_stat_initialize(void)
             } else {
               if (attr_id == CS_LAGR_VELOCITY_SEEN
                   || attr_id == CS_LAGR_PRED_VELOCITY_SEEN
-                  || attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV){
-                for (int phase_id = 0; phase_id < n_phases; phase_id ++){
+                  || attr_id == CS_LAGR_VELOCITY_SEEN_VELOCITY_COV) {
+                for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
                   /* On change le nom pour qu'il tienne compte de la phase porteuse */
                   sprintf(name, "%d", phase_id);
 

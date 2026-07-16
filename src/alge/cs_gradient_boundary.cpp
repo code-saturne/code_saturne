@@ -1252,12 +1252,12 @@ cs_gradient_boundary_iprime_lsq_strided
       const cs_lnum_t *restrict cell_cells_p;
       cs_lnum_t s_id, e_id;
 
-      if (adj_id == 0){
+      if (adj_id == 0) {
         s_id = cell_cells_idx[c_id];
         e_id = cell_cells_idx[c_id+1];
         cell_cells_p = cell_cells;
       }
-      else if (cell_cells_e_idx != nullptr){
+      else if (cell_cells_e_idx != nullptr) {
         s_id = cell_cells_e_idx[c_id];
         e_id = cell_cells_e_idx[c_id+1];
         cell_cells_p = cell_cells_e;

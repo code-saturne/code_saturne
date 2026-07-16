@@ -336,7 +336,7 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
       const short int *f2e_ids = cm->f2e_ids + start;
       assert(n_vf > 2);
 
-      switch(n_vf){
+      switch(n_vf) {
 
       case CS_TRIANGLE_CASE: /* Triangle */
         {

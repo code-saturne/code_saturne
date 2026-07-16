@@ -901,7 +901,7 @@ cs_hho_vecteq_init_context(cs_equation_param_t    *eqp,
     const cs_zone_t  *bz = cs_boundary_zone_by_id(def->z_id);
 
 #   pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < bz->n_elts; i++){
+    for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
       eqc->bf2def_ids[bz->elt_ids[i]] = def_id;
     }
 

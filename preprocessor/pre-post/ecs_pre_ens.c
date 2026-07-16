@@ -1022,7 +1022,7 @@ ecs_loc_pre_ens__lit_elem_gold(ecs_file_t                   *fic,
 
     if (noeuds->id_noeud != NULL) {
 
-      for (ind = 0; ind < taille_connect; ind++){
+      for (ind = 0; ind < taille_connect; ind++) {
         assert(   (connect_loc[ind]-1) >= 0
                && (connect_loc[ind]-1) < noeuds->nbr_noeuds);
         connect_loc[ind] = noeuds->id_noeud[connect_loc[ind]-1];

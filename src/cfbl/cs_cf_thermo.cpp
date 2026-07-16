@@ -1683,7 +1683,7 @@ cs_cf_thermo(const int    iccfth,
   cvar_fracm = nullptr;
   cvar_frace = nullptr;
 
-  if (CS_F_(volume_f) != nullptr){
+  if (CS_F_(volume_f) != nullptr) {
     cvar_fracv = (cs_real_t *)CS_F_(volume_f)->val;
     cvar_fracm = (cs_real_t *)CS_F_(mass_f)->val;
     cvar_frace = (cs_real_t *)CS_F_(energy_f)->val;

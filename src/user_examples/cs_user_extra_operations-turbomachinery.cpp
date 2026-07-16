@@ -209,7 +209,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
   /*! [extra_tbm_velocity_cylinder] */
 
-  if (domain->time_step->nt_cur == domain->time_step->nt_max){
+  if (domain->time_step->nt_cur == domain->time_step->nt_max) {
 
     cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
 

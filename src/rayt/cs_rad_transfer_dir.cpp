@@ -177,7 +177,7 @@ cs_rad_transfer_dir(void)
 
   /* Initializations  */
 
-  switch(cs_rp->i_quadrature){
+  switch(cs_rp->i_quadrature) {
 
   case CS_RAD_QUADRATURE_S4: /* quadrature S4 : 24 directions  */
     cs_rp->ndirs = 3;

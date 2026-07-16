@@ -407,7 +407,7 @@ cs_ctwr_define(const char           zone_criteria[],
 
   if (ct->type != CS_CTWR_INJECTION)
     ct->delta_t = delta_t;
-  else if (ct->type == CS_CTWR_INJECTION && delta_t > 0.){
+  else if (ct->type == CS_CTWR_INJECTION && delta_t > 0.) {
     bft_printf("WARNING: imposed temperature difference is not possible\n"
                "for injection zone. Value will not be considered.\n\n");
     ct->delta_t = -1;
@@ -551,7 +551,7 @@ cs_ctwr_define_zones(void)
   }
 
   /* Define the packing zone (union of all packings), "auto:packings" */
-  if (_n_ct_zones > 0){
+  if (_n_ct_zones > 0) {
     const char  zone_name[] = "auto:packings";
     int z_id = cs_volume_zone_define_by_func(zone_name,
                                              _packing_selection,

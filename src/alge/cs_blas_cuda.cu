@@ -212,7 +212,7 @@ _scal(cs_lnum_t         n,
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
 
   size_t grid_size = blockDim.x*gridDim.x;
-  while (ii < n){
+  while (ii < n) {
     x[ii] *= _alpha;
     ii += grid_size;
   }

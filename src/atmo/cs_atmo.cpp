@@ -3198,7 +3198,7 @@ cs_atmo_init_meteo_profiles(void)
     (aopt->latitude  < 0.5*cs_math_big_r)
   );
 
-  if (l93_coord_defined && !origin_coord_defined){
+  if (l93_coord_defined && !origin_coord_defined) {
     aopt->x_origin = aopt->x_l93;
     aopt->y_origin = aopt->y_l93;
     origin_coord_defined = (
@@ -3227,7 +3227,7 @@ cs_atmo_init_meteo_profiles(void)
                        aopt->utm_zone);
   }
   /* else if latitude/longitude are given */
-  else if (!origin_coord_defined && wgs_coord_defined){
+  else if (!origin_coord_defined && wgs_coord_defined) {
     bft_printf(" Latitude and longitude were given,\n"
                " domain origin's coordinates are automatically computed\n");
 
@@ -3262,7 +3262,7 @@ cs_atmo_init_meteo_profiles(void)
   /* BL height according to Marht 1982 formula */
   /* value of C=0.2, 0.185, 0.06, 0.14, 0.07, 0.04 */
 
-  if (aopt->meteo_zi < 0){
+  if (aopt->meteo_zi < 0) {
     cs_real_t zi_coef = 0.2;
     cs_real_t corio_f = 4. * cs_math_pi / 86164.
                          * sin(aopt->latitude * cs_math_pi / 180.);
@@ -5176,7 +5176,7 @@ cs_atmo_projection(cs_atmo_projection_t origin_projection,
   if (origin_projection == CS_ATMO_PROJ_UNDEF)
     return;
 
-  if (origin_projection == target_projection){
+  if (origin_projection == target_projection) {
     *x_target = x_origin;
     *y_target = y_origin;
     return;
@@ -5187,7 +5187,7 @@ cs_atmo_projection(cs_atmo_projection_t origin_projection,
 
   switch (origin_projection) {
   case (CS_ATMO_PROJ_WGS84):
-    switch (target_projection){
+    switch (target_projection) {
     case (CS_ATMO_PROJ_LAMBERT_93):
       _wgs84_to_l93(x_origin, y_origin, x_target, y_target);
       break;
@@ -5205,7 +5205,7 @@ cs_atmo_projection(cs_atmo_projection_t origin_projection,
 
   case (CS_ATMO_PROJ_LAMBERT_93):
     _l93_to_wgs84(x_origin, y_origin,  &lon_dummy,  &lat_dummy);
-    switch (target_projection){
+    switch (target_projection) {
     case (CS_ATMO_PROJ_WGS84):
       *x_target = lon_dummy;
       *y_target = lat_dummy;
@@ -5224,7 +5224,7 @@ cs_atmo_projection(cs_atmo_projection_t origin_projection,
 
   case (CS_ATMO_PROJ_UTM):
     _utm_to_wgs84(x_origin, y_origin,  &lon_dummy,  &lat_dummy, utm_fixed_zone);
-    switch (target_projection){
+    switch (target_projection) {
     case (CS_ATMO_PROJ_WGS84):
       *x_target = lon_dummy;
       *y_target = lat_dummy;
@@ -5243,7 +5243,7 @@ cs_atmo_projection(cs_atmo_projection_t origin_projection,
 
   case (CS_ATMO_PROJ_TAN):
     _tangential_to_wgs84(x_origin, y_origin, &lon_dummy, &lat_dummy);
-    switch (target_projection){
+    switch (target_projection) {
     case (CS_ATMO_PROJ_WGS84):
       *x_target = lon_dummy;
       *y_target = lat_dummy;

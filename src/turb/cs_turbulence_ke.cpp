@@ -212,9 +212,9 @@ _tsepls(int       phase_id,
       for (cs_lnum_t j = 0; j < 3; j++)
         njsj[j] = i_face_u_normal[face_id][j] * i_face_surf[face_id];
 
-      for (cs_lnum_t j = 0; j < 3; j++){
+      for (cs_lnum_t j = 0; j < 3; j++) {
         cs_real_t c_w7_0[3], c_w7_1[3];
-        for (cs_lnum_t k = 0; k < 3; k++){
+        for (cs_lnum_t k = 0; k < 3; k++) {
           c_w7_0[k] =  duidxk[k]*njsj[j];
           c_w7_1[k] = -duidxk[k]*njsj[j];
         }
@@ -233,7 +233,7 @@ _tsepls(int       phase_id,
       for (cs_lnum_t j = 0; j < 3; j++)
         njsj[j] = b_face_u_normal[face_id][j] * b_face_surf[face_id];
 
-      for (cs_lnum_t j = 0; j < 3; j++){
+      for (cs_lnum_t j = 0; j < 3; j++) {
         cs_real_t c_w7[3];
         for (cs_lnum_t k = 0; k < 3; k++) {
           c_w7[k] = duidxk[k]*njsj[j];
@@ -438,7 +438,7 @@ cs_turbulence_ke(int              phase_id,
   cs_real_t *cvara_ep =  f_eps->val_pre;
   cs_real_t *cvara_phi = nullptr;
   if (   model == CS_TURB_V2F_PHI
-      || model == CS_TURB_V2F_BL_V2K){
+      || model == CS_TURB_V2F_BL_V2K) {
     cvara_phi = f_phi->val_pre;
   }
   cs_real_t *cvara_al = nullptr;
@@ -457,7 +457,7 @@ cs_turbulence_ke(int              phase_id,
   if (istprv >= 0) {
     c_st_k_p = cs_field(istprv)->val;
     istprv = f_eps->get_key_int(kstprv);
-    if (istprv >= 0){
+    if (istprv >= 0) {
       c_st_eps_p = cs_field(istprv)->val;
     }
     if (istprv >= 0)

@@ -326,8 +326,8 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 
   /* If mixture model is on, continuous phase has its own velocity and volume fraction */
   cs_real_t *vol_f_c = nullptr;
-  if (ct_opt->mixture_model){
-    if (cfld_vc != nullptr){
+  if (ct_opt->mixture_model) {
+    if (cfld_vc != nullptr) {
       v_c = (cs_real_3_t *)cfld_vc->val;
       vol_f_c = cs_field_by_name("vol_f_c")->val;
     }

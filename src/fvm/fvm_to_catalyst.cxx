@@ -881,7 +881,7 @@ _get_catalyst_field_id(fvm_to_catalyst_t         *writer,
 
   int i;
 
-  for (i = 0; i < writer->n_fields; ++i){
+  for (i = 0; i < writer->n_fields; ++i) {
 
     vtkFieldData *fData_ptr ;
 
@@ -893,7 +893,7 @@ _get_catalyst_field_id(fvm_to_catalyst_t         *writer,
     else
       fData_ptr = writer->fields[i]->f->GetCellData();
 
-    if (fData_ptr->HasArray(fieldname)){
+    if (fData_ptr->HasArray(fieldname)) {
       break;
     }
   }

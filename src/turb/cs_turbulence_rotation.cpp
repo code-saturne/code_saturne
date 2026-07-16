@@ -138,12 +138,12 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
   const cs_real_t *cvara_ep = nullptr;
   const cs_real_t *cvara_omg = nullptr;
 
-  if (cs_glob_turb_rans_model->itycor == 1){
+  if (cs_glob_turb_rans_model->itycor == 1) {
     cvara_k = (const cs_real_t *)CS_F_(k)->val_pre;
     cvara_ep = (const cs_real_t *)CS_F_(eps)->val_pre;
   }
-  else if (cs_glob_turb_rans_model->itycor == 2){
-    if (cs_glob_turb_model->model == CS_TURB_K_OMEGA){
+  else if (cs_glob_turb_rans_model->itycor == 2) {
+    if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
       cvara_omg = (const cs_real_t *)CS_F_(omg)->val_pre;
     }
   }
@@ -276,7 +276,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
       || cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
     eqp = cs_field_get_equation_param_const(CS_F_(k));
   }
-  else if (cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS){
+  else if (cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS) {
     eqp = cs_field_get_equation_param_const(CS_F_(nusa));
   }
 
