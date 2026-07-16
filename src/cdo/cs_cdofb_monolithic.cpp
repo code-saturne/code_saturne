@@ -2299,12 +2299,13 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
 
   mom_eqb->bdy_flag |= CS_FLAG_COMP_PFC;
 
-  sc->apply_symmetry = cs_cdofb_symmetry;
+  sc->apply_symmetry = cs_cdofb_symmetry_weak;
 
   /* Default BC for walls */
 
   switch (mom_eqp->default_enforcement) {
     case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+      sc->apply_symmetry = cs_cdofb_symmetry_alge;
       sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
       sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_alge;
       break;

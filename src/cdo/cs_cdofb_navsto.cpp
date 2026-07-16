@@ -1909,6 +1909,107 @@ cs_cdofb_block_dirichlet_wsym(short int                  fb,
 /*!
  * \brief Take into account a boundary defined as 'symmetry' (treated as a
  *        sliding BCs on the three velocity components.)
+ *        An algebraic technique is used.  One
+ *        assumes that static condensation has not been performed yet and that
+ *        the velocity-block has (n_fc + 1) blocks of size 3x3.
+ *        This prototype matches the function pointer cs_cdo_apply_boundary_t
+ *
+ * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
+ * \param[in]      cm    pointer to a cellwise mesh structure
+ * \param[in]      pty   pointer to a \ref cs_property_data_t structure
+ * \param[in, out] cb    pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out] csys  structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_symmetry_alge(short int                  fb,
+                       const cs_equation_param_t *eqp,
+                       const cs_cell_mesh_t      *cm,
+                       const cs_property_data_t  *pty,
+                       cs_cell_builder_t         *cb,
+                       cs_cell_sys_t             *csys)
+{
+
+  assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
+  assert(pty->is_iso == true); /* if not the case something else TODO ? */
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC));
+
+  const cs_quant_t  pfq = cm->face[fb];
+  const cs_real_t  *ni = pfq.unitv;
+
+  /* nn :  n x n^t, projection onto normal axis
+   * p_t : I - n x n^t, projection onto tangential plane */
+
+  cs_sdm_t p_t{3}, nn{3}, buffer{3};
+
+  nn(0,0) = ni[0]*ni[0], nn(0,1) = ni[0]*ni[1], nn(0,2) = ni[0]*ni[2];
+  nn(1,0) = ni[1]*ni[0], nn(1,1) = ni[1]*ni[1], nn(1,2) = ni[1]*ni[2];
+  nn(2,0) = ni[2]*ni[0], nn(2,1) = ni[2]*ni[1], nn(2,2) = ni[2]*ni[2];
+
+  p_t(0,0) = 1.0 - nn(0,0);
+  p_t(0,1) =     - nn(0,1);
+  p_t(0,2) =     - nn(0,2);
+
+  p_t(1,0) =     - nn(1,0);
+  p_t(1,1) = 1.0 - nn(1,1);
+  p_t(1,2) =     - nn(1,2);
+
+  p_t(2,0) =     - nn(2,0);
+  p_t(2,1) =     - nn(2,1);
+  p_t(2,2) = 1.0 - nn(2,2);
+
+  /* ============================================
+   *  Apply the Dirichlet for Normal component
+   *  =========================================== */
+
+  cs_sdm_t *m = csys->mat;
+  cs_sdm_block_t *bd = m->block_desc;
+  cs_sdm_t *mFF = m->get_block(fb, fb);
+  assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
+
+  for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+    if (bi != fb) {
+
+      /* Right project block (I,F) which is a 3x3 block
+       * mIF = mIF p_t */
+
+      buffer.init(buffer.n_rows);
+
+      cs_sdm_t *mIF = m->get_block(bi, fb);
+      cs_sdm_multiply(mIF, &p_t, &buffer);
+      cs_sdm_copy(mIF, &buffer);
+    }
+    else { /* bi == f */
+
+      /* Left project block (I==F,J) which is a 3x3 block */
+
+      for (int bj = 0; bj < bd->n_col_blocks; bj++) {
+
+        buffer.init(buffer.n_rows);
+
+        cs_sdm_t *mFJ = m->get_block(fb, bj);
+        cs_sdm_multiply(&p_t, mFJ, &buffer);
+        cs_sdm_copy(mFJ, &buffer);
+      }
+
+      /* mFF = n x n^t + p_t mFF p_t; */
+      buffer.init(buffer.n_rows);
+
+      cs_sdm_multiply(mFF, &p_t, &buffer);
+      cs_sdm_copy(mFF, &buffer);
+
+      *mFF += nn;
+    }
+  } /* Block bi */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Take into account a boundary defined as 'symmetry' (treated as a
+ *        sliding BCs on the three velocity components.)
  *        A weak penalization technique (symmetrized Nitsche) is used.  One
  *        assumes that static condensation has not been performed yet and that
  *        the velocity-block has (n_fc + 1) blocks of size 3x3.
@@ -1924,12 +2025,12 @@ cs_cdofb_block_dirichlet_wsym(short int                  fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_symmetry(short int                  fb,
-                  const cs_equation_param_t *eqp,
-                  const cs_cell_mesh_t      *cm,
-                  const cs_property_data_t  *pty,
-                  cs_cell_builder_t         *cb,
-                  cs_cell_sys_t             *csys)
+cs_cdofb_symmetry_weak(short int                  fb,
+                       const cs_equation_param_t *eqp,
+                       const cs_cell_mesh_t      *cm,
+                       const cs_property_data_t  *pty,
+                       cs_cell_builder_t         *cb,
+                       cs_cell_sys_t             *csys)
 {
 
   assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);

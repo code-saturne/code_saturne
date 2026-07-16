@@ -819,11 +819,12 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t *nsp,
   /* Set the way to enforce the Dirichlet BC on the velocity
    * "fixed_wall" means a no-slip BC */
 
-  sc->apply_symmetry = cs_cdofb_symmetry;
+  sc->apply_symmetry = cs_cdofb_symmetry_weak;
 
   switch (mom_eqp->default_enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+    sc->apply_symmetry = cs_cdofb_symmetry_alge;
     sc->apply_velocity_inlet = cs_cdofb_block_dirichlet_alge;
     sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
     sc->apply_fixed_wall = cs_cdofb_block_dirichlet_alge;

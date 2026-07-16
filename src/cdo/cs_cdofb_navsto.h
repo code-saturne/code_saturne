@@ -576,7 +576,7 @@ cs_cdofb_block_dirichlet_wsym(short int                  fb,
                               cs_cell_sys_t             *csys);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Take into account a boundary defined as 'symmetry' (treated as a
  *        sliding BCs on the three velocity components.)
  *        A weak penalization technique (symmetrized Nitsche) is used.  One
@@ -594,12 +594,38 @@ cs_cdofb_block_dirichlet_wsym(short int                  fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_symmetry(short int                  fb,
-                  const cs_equation_param_t *eqp,
-                  const cs_cell_mesh_t      *cm,
-                  const cs_property_data_t  *pty,
-                  cs_cell_builder_t         *cb,
-                  cs_cell_sys_t             *csys);
+cs_cdofb_symmetry_weak(short int                  fb,
+                       const cs_equation_param_t *eqp,
+                       const cs_cell_mesh_t      *cm,
+                       const cs_property_data_t  *pty,
+                       cs_cell_builder_t         *cb,
+                       cs_cell_sys_t             *csys);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Take into account a boundary defined as 'symmetry' (treated as a
+ *        sliding BCs on the three velocity components.)
+ *        An algebraic technique is used.  One
+ *        assumes that static condensation has not been performed yet and that
+ *        the velocity-block has (n_fc + 1) blocks of size 3x3.
+ *        This prototype matches the function pointer cs_cdo_apply_boundary_t
+ *
+ * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
+ * \param[in]      cm    pointer to a cellwise mesh structure
+ * \param[in]      pty   pointer to a \ref cs_property_data_t structure
+ * \param[in, out] cb    pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out] csys  structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_symmetry_alge(short int                  fb,
+                       const cs_equation_param_t *eqp,
+                       const cs_cell_mesh_t      *cm,
+                       const cs_property_data_t  *pty,
+                       cs_cell_builder_t         *cb,
+                       cs_cell_sys_t             *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
