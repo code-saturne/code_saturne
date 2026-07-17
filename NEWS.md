@@ -3,10 +3,13 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix wall distance fallback computation for highly warped meshes,
+  broken since v8.2.
+
 - Fix postprocessing of distance to fluid face centers for CHT when coupled with
   the CDO HTSolver.
 
-- Fix Ustar definition in lagrangian module when used with NCFD.
+- Fix Ustar definition in Lagrangian module when used with NCFD.
 
 - Fix crash in restart with time moments and no auxiliary restart file.
 

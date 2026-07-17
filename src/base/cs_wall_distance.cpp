@@ -407,6 +407,8 @@ cs_wall_distance(int iterns)
 
       eqp_wd->nswrsm = nswrsp;
       eqp_wd->ircflu = ircflp;
+      eqp_loc.nswrsm = nswrsp;
+      eqp_loc.ircflu = ircflp;
 
       cs_log_printf
         (CS_LOG_DEFAULT,
