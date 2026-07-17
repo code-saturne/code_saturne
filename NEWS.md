@@ -3,6 +3,9 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix wall distance fallback computation for highly warped meshes,
+  broken since v8.2.
+
 - Fix postprocessing of distance to fluid face centers for CHT when coupled with
   the CDO HTSolver.
 
