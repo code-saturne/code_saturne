@@ -249,28 +249,24 @@ cs_user_extra_operations_finalize([[maybe_unused]] cs_domain_t  *domain)
 
   /* Open a file */
 
-  char  *filename = nullptr;
-  int len = strlen("Resume-.log")+strlen(eqname)+1;
-
+  std::string filename;
   if (eqp->flag & CS_EQUATION_UNSTEADY) {
     if (time_step->nt_cur == 0)
       return;
     if (cs_log_default_is_active() == false)
       return;
 
-    len += 9;
-    CS_MALLOC(filename, len, char);
-    sprintf(filename, "Resume-%s-t%.f.log", eqname, time_step->t_cur);
+    filename = std::string("Resume-") + std::string(eqname) + std::string("-t")
+             + std::to_string(time_step->t_cur) + std::string(".log");
   }
   else {
     if (time_step->nt_cur > 0)
       return;
 
-    CS_MALLOC(filename, len, char);
-    sprintf(filename, "Resume-%s.log", eqname);
+    filename = std::string("Resume-") + std::string(eqname) + std::string(".log");
   }
 
-  resume = fopen(filename, "w");
+  resume = fopen(filename.c_str(), "w");
 
   bft_printf("\n%s", cs_sepline);
   bft_printf("    Extra operations\n");
@@ -295,7 +291,6 @@ cs_user_extra_operations_finalize([[maybe_unused]] cs_domain_t  *domain)
 
   /* Free */
 
-  CS_FREE(filename);
   fclose(resume);
 
   /*! [extra_verif_cdo_diff] */
