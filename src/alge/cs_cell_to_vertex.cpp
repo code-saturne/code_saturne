@@ -532,7 +532,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
       }
       else {
         cs_real_t *v_w;
-        CS_MALLOC(v_w, n_vertices, cs_real_t);
+        CS_MALLOC_HD(v_w, n_vertices, cs_real_t, cs_alloc_mode);
 
         ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
           v_w[v_id] = 0.;
@@ -587,7 +587,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
 
       cs_real_t *v_w = nullptr;
       if (c_weight != nullptr) {
-        CS_MALLOC(v_w, n_vertices, cs_real_t);
+        CS_MALLOC_HD(v_w, n_vertices, cs_real_t, cs_alloc_mode);
 
         ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
           v_w[v_id] = 0.;
@@ -806,14 +806,14 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
 
       const cs_weight_t *ldlt = _weights[CS_CELL_TO_VERTEX_LR][0];
 
-      for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+      ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
         const cs_real_t *_ldlt = ldlt + v_id*10;
         for (cs_lnum_t k = 0; k < stride; k++) {
           const cs_real_t *_rhs = rhs + v_id*4*stride + k*4;
           v_var[v_id*stride + k]
             = cs_math_sym_44_partial_solve_ldlt(_ldlt, _rhs);
         }
-      }
+      });
 
       ctx.wait();
       CS_FREE(rhs);
