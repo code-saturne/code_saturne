@@ -66,15 +66,13 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
                              double      tolerance)
 {
   cs_lnum_t  n_free_faces = 0, n_b_faces = 0, n_no_group = 0;
-  cs_lnum_t  *free_faces_list = nullptr, *no_group_list = nullptr;
-  int *family_flag = nullptr;
 
   if (mesh->n_g_free_faces == 0)
     return;
 
   /* Mark families matching "no groups" */
 
-  CS_MALLOC(family_flag, mesh->n_families, int);
+  cs_array<int> family_flag(mesh->n_families, CS_ALLOC_HOST);
   for (int i = 0; i < mesh->n_families; i++)
     family_flag[i] = 1;
 
@@ -102,8 +100,8 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   /* Build associated lists */
 
-  CS_MALLOC(free_faces_list, n_free_faces, cs_lnum_t);
-  CS_MALLOC(no_group_list, n_no_group, cs_lnum_t);
+  cs_array<cs_lnum_t> free_faces_list(n_free_faces, CS_ALLOC_HOST);
+  cs_array<cs_lnum_t> no_group_list(n_no_group, CS_ALLOC_HOST);
 
   n_free_faces = 0;
   n_no_group = 0;
@@ -118,7 +116,6 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   }
 
-  CS_FREE(family_flag);
 
   /* Build nodal mesh associated to isolated faces */
 
@@ -140,20 +137,16 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
   ple_locator_t *locator = ple_locator_create();
 #endif
 
-  cs_real_3_t  *b_face_cog = nullptr;
-  cs_nreal_3_t *b_face_u_normal = nullptr;
-  CS_MALLOC_HD(b_face_cog, mesh->n_b_faces, cs_real_3_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_face_u_normal, mesh->n_b_faces, cs_nreal_3_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t>  b_face_cog(mesh->n_b_faces, 3, cs_alloc_mode);
+  cs_array_2d<cs_nreal_t> b_face_u_normal(mesh->n_b_faces, 3, cs_alloc_mode);
 
   cs_mesh_quantities_compute_face_cog_un
     (mesh->n_b_faces,
      reinterpret_cast<const cs_real_3_t *>(mesh->vtx_coord),
      mesh->b_face_vtx_idx,
      mesh->b_face_vtx_lst,
-     b_face_cog,
-     b_face_u_normal);
-
-  CS_FREE(b_face_u_normal);
+     b_face_cog.data<cs_real_3_t>(),
+     b_face_u_normal.data<cs_nreal_3_t>());
 
   ple_locator_set_mesh(locator,
                        free_faces,
@@ -164,12 +157,11 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
                        n_no_group,
                        no_group_list,
                        nullptr,
-                       (const cs_real_t *)b_face_cog,
+                       b_face_cog,
                        nullptr,
                        cs_coupling_mesh_extents,
                        cs_coupling_point_in_mesh_p);
 
-  CS_FREE(b_face_cog);
 
   /* Log number of found and free faces */
 
@@ -207,8 +199,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   const ple_lnum_t *dist_loc = ple_locator_get_dist_locations(locator);
 
-  int *dist_fm_id = nullptr;
-  CS_MALLOC(dist_fm_id, n_dist_points, int);
+  cs_array<int> dist_fm_id(n_dist_points, CS_ALLOC_HOST);
 
   for (cs_lnum_t i = 0; i < n_dist_points; i++)
     dist_fm_id[i] = mesh->b_face_family[dist_loc[i]];
@@ -225,8 +216,6 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   free_faces = fvm_nodal_destroy(free_faces);
 
-  CS_FREE(free_faces_list);
-  CS_FREE(no_group_list);
 }
 
 /*============================================================================
