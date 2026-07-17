@@ -355,6 +355,48 @@ _wall_function_1scale_log(const double    pena_bc_coeff,
 /*----------------------------------------------------------------------------*/
 
 static void
+_wall_function_scalable_2scales_log(const double    pena_bc_coeff,
+                                    const double    nu,
+                                    const double    rho,
+                                    const double    k,
+                                    const double    hfc,
+                                    const double    uct,
+                                    const double    uft,
+                                    cs_real_t      *ht,
+                                    cs_real_t      *f_w)
+{
+  const double ypluli = cs_get_glob_wall_functions()->ypluli;
+  const double re = sqrt(k)*hfc/nu;
+  const double g = exp(-re/11.);
+  const double uk = sqrt((1.-g)*sqrt(cs_turb_cmu)*k + g*nu*uct/hfc);
+  double yplus = hfc * uk / nu;
+
+  if (yplus < ypluli)
+    yplus = ypluli;
+  double ustar = uct / (log(yplus)/cs_turb_xkappa + cs_turb_cstlog);
+  f_w[0] = rho*uk*ustar;
+  ht[0] = f_w[0] / (uft + 1.0/pena_bc_coeff);
+  ht[0] = cs::min(cs::max(ht[0], 0.0), pena_bc_coeff);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function used to define the exchange coefficients for tangential and
+ *        normal components. (2-velocity scales method)
+ *
+ * \param[in]      pena_bc_coeff  pena coefficient used as Dirichlet BC
+ * \param[in]      nu             laminar kinematic viscosity
+ * \param[in]      rho            density at the boundary face
+ * \param[in]      k              turbulent kinetic energy
+ * \param[in]      hfc            distance from cell center to the wall
+ * \param[in]      uct            norm of tangential components of cell velocity
+ * \param[in]      uft            norm of tangential components of face velocity
+ * \param[in, out] ht             value of the resulting exchange coefficients
+ * \param[in, out] f_w            value of the resulting friction flux
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
 _wall_function_2scales_log(const double    pena_bc_coeff,
                            const double    nu,
                            const double    rho,
@@ -1171,6 +1213,16 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                 f_w);
       break;
     case CS_WALL_F_SCALABLE_2SCALES_LOG:
+      _wall_function_scalable_2scales_log(eqp->strong_pena_bc_coeff,
+                                          nu,
+                                          rho,
+                                          k,
+                                          hfc,
+                                          uct,
+                                          uft,
+                                          ht,
+                                          f_w);
+      break;
     case CS_WALL_F_2SCALES_LOG:
       _wall_function_2scales_log(eqp->strong_pena_bc_coeff,
                                  nu,
@@ -1186,7 +1238,8 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
       bft_error(__FILE__, __LINE__, 0, " %s: Invalid wall function type.\n"
                 " Expected wall function types in CDO turbulence: \n"
                 " CS_WALL_F_DISABLED, CS_WALL_F_1SCALE_LOG"
-                " or CS_WALL_F_SCALABLE_2SCALES_LOG.", __func__);
+                " CS_WALL_F_2SCALES_LOG or CS_WALL_F_SCALABLE_2SCALES_LOG."
+                , __func__);
   }
 }
 
