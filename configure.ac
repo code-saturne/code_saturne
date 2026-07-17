@@ -119,6 +119,66 @@ user_CS_LD=$CS_LD
 AC_PROG_CC
 AC_PROG_CXX
 
+# Check for AOCC workaround?
+AC_LANG_PUSH(C++)
+#AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+AC_COMPILE_IFELSE([AC_LANG_SOURCE(
+[[#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+namespace cs {
+template <class T>
+class array {
+
+public:
+
+void *
+operator new
+(
+  std::size_t count,
+  const char *file_name   = __builtin_FILE(),
+  const int   line_number = __builtin_LINE()
+)
+{
+  return ::operator new(count);
+}
+
+array() = default;
+~array() = default;
+
+private:
+  T* _data{nullptr};
+
+};
+}
+
+int
+main
+(
+ int argc,
+ char *argv[]
+)
+{
+  cs::array<int> *ptr = new cs::array<int>();
+
+  delete ptr;
+
+  return 0;
+}
+]]
+)],
+[ AC_MSG_RESULT([AOCC Workaround not needed])
+],
+[ AC_DEFINE([HAVE_AOCC_BUILTIN_WORKAROUND], 1, [AOCC Workaround needed])
+ cs_need_amdclang_workaround=yes
+])
+AC_SUBST(cs_need_amdclang_workaround)
+AC_SUBST(HAVE_AOCC_BUILTIN_WORKAROUND)
+AC_LANG_POP(C++)
+
+
 # For Fortran check if it is disabled first
 AC_ARG_ENABLE(fortran,
   [AS_HELP_STRING([--disable-fortran], [disable optional Fortran compilation])],
