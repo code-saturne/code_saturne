@@ -3,6 +3,8 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix error in CS_SLES_PCR3 (3 layer conjugate residual) solver.
+
 - Fix usage of `cs_user_scripts.py` with Python 3.13 and above.
 
 - Fix wall distance fallback computation for highly warped meshes,

@@ -1950,7 +1950,6 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       rk[ii] -= rhs[ii];
-      vx[ii] = 0.;
     });
   }
   else {
