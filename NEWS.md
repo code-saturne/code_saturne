@@ -3,6 +3,9 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix wall distance fallback computation for highly warped meshes,
+  broken since v8.2.
+
 - Fix crash with SOLU on vector (e.g. velcoity) and 2nd order in time.
 
 - Fix missing boundary values update in iterative process, which led to
