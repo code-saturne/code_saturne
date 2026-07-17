@@ -2228,12 +2228,12 @@ cs_cdofb_prescribed_smooth_wall_n_pena_t_robin(
 
 void
 cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
-  short int                  fb,
+  short int                                   fb,
   [[maybe_unused]] const cs_equation_param_t *eqp,
-  const cs_cell_mesh_t      *cm,
+  const cs_cell_mesh_t                       *cm,
   [[maybe_unused]] const cs_property_data_t  *pty,
-  cs_cell_builder_t         *cb,
-  cs_cell_sys_t             *csys)
+  cs_cell_builder_t                          *cb,
+  cs_cell_sys_t                              *csys)
 {
   assert(cm != nullptr && csys != nullptr);
   double         *x_dir  = cb->values;
@@ -2425,12 +2425,12 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
 
 void
 cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
-  short int                  fb,
+  short int                                   fb,
   [[maybe_unused]] const cs_equation_param_t *eqp,
-  const cs_cell_mesh_t      *cm,
+  const cs_cell_mesh_t                       *cm,
   [[maybe_unused]] const cs_property_data_t  *pty,
-  cs_cell_builder_t         *cb,
-  cs_cell_sys_t             *csys)
+  cs_cell_builder_t                          *cb,
+  cs_cell_sys_t                              *csys)
 {
   assert(cm != nullptr && csys != nullptr);
   double         *x_dir  = cb->values;
