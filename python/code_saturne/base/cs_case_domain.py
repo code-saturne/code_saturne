@@ -564,7 +564,7 @@ class domain(base_domain):
         if os.path.isfile(user_scripts):
             d = dict(locals())
             try:
-                exec(compile(open(user_scripts).read(), user_scripts, 'exec'), 
+                exec(compile(open(user_scripts).read(), user_scripts, 'exec'),
                      d,
                      d)
             except Exception:
