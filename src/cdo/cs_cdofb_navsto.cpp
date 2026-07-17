@@ -1976,7 +1976,7 @@ cs_cdofb_symmetry_alge(short int                  fb,
       /* Right project block (I,F) which is a 3x3 block
        * mIF = mIF p_t */
 
-      buffer.init(buffer.n_rows);
+      buffer.set_zero();
 
       cs_sdm_t *mIF = m->get_block(bi, fb);
       cs_sdm_multiply(mIF, &p_t, &buffer);
@@ -1988,7 +1988,7 @@ cs_cdofb_symmetry_alge(short int                  fb,
 
       for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
-        buffer.init(buffer.n_rows);
+        buffer.set_zero();
 
         cs_sdm_t *mFJ = m->get_block(fb, bj);
         cs_sdm_multiply(&p_t, mFJ, &buffer);
