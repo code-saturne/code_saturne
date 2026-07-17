@@ -75,6 +75,7 @@
 #include "alge/cs_matrix_util.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
+#include "base/cs_profiling.h"
 #include "base/cs_reducers.h"
 #include "alge/cs_sles.h"
 #include "base/cs_sort.h"
@@ -938,8 +939,8 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
   cs_matrix_t *matrix = g->_matrix;
   cs_alloc_mode_t alloc_mode = cs_matrix_get_alloc_mode(matrix);
 
-  if (alloc_mode == CS_ALLOC_DEVICE) {
-    alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+  if (alloc_mode > CS_ALLOC_HOST) {
+    alloc_mode = CS_ALLOC_HOST;
     cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(g->_matrix),
                              alloc_mode);
     if (g->matrix_struct != nullptr)
@@ -980,7 +981,7 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
     g->_xa = nullptr;
 
   cs_lnum_t *c_row_index;
-  CS_MALLOC_HD(c_row_index, n_rows+1, cs_lnum_t, alloc_mode);
+  CS_MALLOC(c_row_index, n_rows+1, cs_lnum_t);
   c_row_index[0] = 0;
 
   int n_threads = cs_parall_n_threads(n_rows, CS_THR_MIN);
@@ -1081,6 +1082,8 @@ static void
 _merge_bottom_grids_to_single(cs_grid_t  *g,
                               int         verbosity)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   std::chrono::high_resolution_clock::time_point tm_start;
   if (cs_glob_timer_kernels_flag > 0)
     tm_start = std::chrono::high_resolution_clock::now();
@@ -1234,16 +1237,19 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
   int *recvcounts = nullptr, *displs = nullptr;
   int n_send = 0;
 
+  cs_lnum_t nnz_recv = 0;
+
   if (base_rank == 0) {
     g->n_rows = rank_index[n_ranks*2];
     g->n_cols_ext = rank_index[n_ranks*2];
+    nnz_recv = rank_index[n_ranks*2 + 1];
 
     assert(g->n_g_rows == (cs_gnum_t)(g->n_rows));
 
-    CS_REALLOC_HD(row_index, rank_index[n_ranks*2] + 1, cs_lnum_t, alloc_mode);
-    CS_REALLOC_HD(col_id, rank_index[n_ranks*2 + 1], cs_lnum_t, alloc_mode);
-    CS_REALLOC_HD(d_val, rank_index[n_ranks*2], cs_real_t, alloc_mode);
-    CS_REALLOC_HD(x_val, rank_index[n_ranks*2 + 1], cs_real_t, alloc_mode);
+    CS_REALLOC(row_index, g->n_rows + 1, cs_lnum_t);
+    CS_REALLOC(col_id, nnz_recv, cs_lnum_t);
+    CS_REALLOC(d_val, g->n_rows, cs_real_t);
+    CS_REALLOC(x_val, nnz_recv, cs_real_t);
 
     CS_MALLOC(recvcounts, n_ranks, int);
     CS_MALLOC(displs, n_ranks, int);
@@ -1302,11 +1308,17 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
     g->n_cols_ext = 0;
 
     CS_FREE(row_index);
-    CS_MALLOC_HD(row_index, 1, cs_lnum_t, g->alloc_mode);
+    CS_MALLOC_HD(row_index, 1, cs_lnum_t, alloc_mode);
     row_index[0] = 0;
     CS_FREE(col_id);
     CS_FREE(d_val);
     CS_FREE(x_val);
+  }
+  else if (alloc_mode > CS_ALLOC_HOST) {
+    CS_REALLOC_HD(row_index, g->n_rows + 1, cs_lnum_t, alloc_mode);
+    CS_REALLOC_HD(col_id, nnz_recv, cs_lnum_t, alloc_mode);
+    CS_REALLOC_HD(d_val, g->n_rows, cs_real_t, alloc_mode);
+    CS_REALLOC_HD(x_val, nnz_recv, cs_real_t, alloc_mode);
   }
 
   _build_coarse_matrix_msr(g,
