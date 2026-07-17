@@ -25,7 +25,7 @@ do
   fi
 done
 
-for file in docs/*/*.tex
+for file in doc/*/*.tex
 do
   tmpfile=`basename $file`
   sed -e 's/ *$//' $file > $RMBDIR/$tmpfile
