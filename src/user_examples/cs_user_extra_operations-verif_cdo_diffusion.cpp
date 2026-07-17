@@ -188,14 +188,10 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
     for (int i = 0; i < n_vertices; i++)
       ddip[i] = rpex[i] - pdi[i];
 
-    char  *postlabel = nullptr;
-    size_t len = strlen(field->name) + 7 + 1;
-    CS_MALLOC(postlabel, len, char);
-    sprintf(postlabel, "%s.Error", field->name);
-
+    std::string error_label = std::string(field->name) + std::string(".Error");
     cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                              CS_POST_WRITER_ALL_ASSOCIATED,
-                             postlabel,
+                             error_label.c_str(),
                              1,           /* dim */
                              false,       /* interlace */
                              true,        /* parent mesh */
@@ -203,10 +199,10 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
                              ddip,        /* values on vertices */
                              time_step);  /* time step structure */
 
-    sprintf(postlabel, "%s.RefSol", field->name);
+    std::string ref_label = std::string(field->name) + std::string(".RefSol");
     cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                              CS_POST_WRITER_ALL_ASSOCIATED,
-                             postlabel,
+                             ref_label.c_str(),
                              1,           /* dim */
                              false,       /* interlace */
                              true,        /* parent mesh */
@@ -216,7 +212,6 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 
     /* Free */
 
-    CS_FREE(postlabel);
   }
 }
 
