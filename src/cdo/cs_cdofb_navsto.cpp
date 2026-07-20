@@ -93,14 +93,14 @@
 
 /* Redefined the name of functions from cs_math to get shorter names */
 
-#define _dp3  cs_math_3_dot_product
+#define _dp3 cs_math_3_dot_product
 
 /*============================================================================
  * Private variables
  *============================================================================*/
 
-static cs_cdofb_navsto_boussinesq_type_t  cs_cdofb_navsto_boussinesq_type =
-  CS_CDOFB_NAVSTO_BOUSSINESQ_FACE_DOF;
+static cs_cdofb_navsto_boussinesq_type_t
+cs_cdofb_navsto_boussinesq_type = CS_CDOFB_NAVSTO_BOUSSINESQ_FACE_DOF;
 
 /*============================================================================
  * Private function prototypes
@@ -108,69 +108,64 @@ static cs_cdofb_navsto_boussinesq_type_t  cs_cdofb_navsto_boussinesq_type =
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute \f$ \int_{fb} \nabla (u) \cdot \nu_{fb} v \f$ where \p fb
- *         is a boundary face (Co+St algorithm)
+ * \brief Compute \f$ \int_{bf} \nabla (u) \cdot \nu_{bf} v \f$ where \p bf is
+ *        a boundary face (Co+St algorithm)
  *
- * \param[in]       fb        index of the boundary face on the local numbering
- * \param[in]       beta      value of coefficient in front of the STAB part
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in]       kappa_f   diffusion property against face vector for all
- *                            faces
- * \param[in, out]  ntrgrd    pointer to a local matrix structure
+ * \param[in]      bf       boundary face if in the cell mesh numbering
+ * \param[in]      beta     value of coefficient in front of the stabiliz. part
+ * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      kappa_f  diffusion property against each face vector
+ * \param[in, out] ntrgrd   pointer to a local matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_normal_flux_reco(short int                  fb,
-                  const double               beta,
-                  const cs_cell_mesh_t      *cm,
-                  const cs_real_3_t         *kappa_f,
-                  cs_sdm_t                  *ntrgrd)
+_normal_flux_reco(short int             bf,
+                  const double          beta,
+                  const cs_cell_mesh_t *cm,
+                  const cs_real_3_t    *kappa_f,
+                  cs_sdm_t             *ntrgrd)
 {
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
                        CS_FLAG_COMP_PFC));
-  assert(cm->f_sgn[fb] == 1);  /* +1 because it's a boundary face */
+  assert(cm->f_sgn[bf] == 1);  /* +1 because it's a boundary face */
 
-  const short int  nfc = cm->n_fc;
-  const double  inv_volc = 1./cm->vol_c;
-  const cs_quant_t  pfbq = cm->face[fb];
-  const cs_nvec3_t  debq = cm->dedge[fb];
+  const short int nfc   = cm->n_fc;
+  const double inv_volc = 1./cm->vol_c;
+  const cs_quant_t pfbq = cm->face[bf];
+  const cs_nvec3_t debq = cm->dedge[bf];
 
-  /* |fb|^2 * nu_{fb}^T.kappa.nu_{fb} */
+  /* |bf|^2 * nu_{bf}^T.kappa.nu_{bf} */
 
-  const double  stab_scaling =
-    beta * pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv) / cm->pvol_f[fb];
+  const double stab_scaling
+    = beta * pfbq.meas * _dp3(kappa_f[bf], pfbq.unitv) / cm->pvol_f[bf];
 
-  /* Get the 'fb' row */
-
-  cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (nfc + 1);
-  double  row_sum = 0.0;
+  // Get the 'bf' row
+  cs_real_t *ntrgrd_bf = ntrgrd->val + bf * (nfc + 1);
+  double row_sum = 0.0;
 
   for (short int f = 0; f < nfc; f++) {
 
-    const cs_quant_t  pfq = cm->face[f];
+    const cs_quant_t pfq = cm->face[f];
 
-    /* consistent part */
+    // consistent part
+    const double consist_scaling = cm->f_sgn[f] * pfq.meas * inv_volc;
+    const double consist_part = consist_scaling * _dp3(kappa_f[bf], pfq.unitv);
 
-    const double  consist_scaling = cm->f_sgn[f] * pfq.meas * inv_volc;
-    const double  consist_part = consist_scaling * _dp3(kappa_f[fb], pfq.unitv);
-
-    /* stabilization part */
-
-    double  stab_part = -consist_scaling*debq.meas*_dp3(debq.unitv, pfq.unitv);
-    if (f == fb) stab_part += 1;
+    // stabilization part
+    double stab_part = -consist_scaling*debq.meas*_dp3(debq.unitv, pfq.unitv);
+    if (f == bf) stab_part += 1;
     stab_part *= stab_scaling;
 
-    const double  fb_f_part = consist_part + stab_part;
+    const double bf_f_part = consist_part + stab_part;
 
-    ntrgrd_fb[f] -= fb_f_part;  /* Minus because -du/dn */
-    row_sum      += fb_f_part;
+    ntrgrd_bf[f] -= bf_f_part; // Minus because -du/dn
+    row_sum      += bf_f_part;
 
-  } /* Loop on f */
+  } // Loop on cell faces
 
-  /* Cell column */
-
-  ntrgrd_fb[nfc] += row_sum;
+  // Cell column
+  ntrgrd_bf[nfc] += row_sum;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -181,32 +176,32 @@ _normal_flux_reco(short int                  fb,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the way to compute the Boussinesq approximation
+ * \brief Set the way to compute the Boussinesq approximation
  *
- * \param[in] type     type of algorithm to use
+ * \param[in] type  type of algorithm to use
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_set_boussinesq_algo(cs_cdofb_navsto_boussinesq_type_t   type)
+cs_cdofb_navsto_set_boussinesq_algo(cs_cdofb_navsto_boussinesq_type_t type)
 {
   cs_cdofb_navsto_boussinesq_type = type;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and allocate a local NavSto builder when Fb schemes are used
+ * \brief Create and allocate a local NavSto builder when Fb schemes are used
  *
- * \param[in] nsp         set of parameters to define the NavSto system
- * \param[in] connect     pointer to a cs_cdo_connect_t structure
+ * \param[in] nsp      set of parameters to define the NavSto system
+ * \param[in] connect  pointer to a cs_cdo_connect_t structure
  *
  * \return a cs_cdofb_navsto_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdofb_navsto_builder_t
-cs_cdofb_navsto_create_builder(const cs_navsto_param_t  *nsp,
-                               const cs_cdo_connect_t   *connect)
+cs_cdofb_navsto_create_builder(const cs_navsto_param_t *nsp,
+                               const cs_cdo_connect_t  *connect)
 {
   cs_cdofb_navsto_builder_t nsb = { .rho_c           = 1.,
                                     .div_op          = nullptr,
@@ -229,14 +224,14 @@ cs_cdofb_navsto_create_builder(const cs_navsto_param_t  *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy the given cs_cdofb_navsto_builder_t structure
+ * \brief Destroy the given cs_cdofb_navsto_builder_t structure
  *
- * \param[in, out] nsb   pointer to the cs_cdofb_navsto_builder_t to free
+ * \param[in, out] nsb  pointer to the cs_cdofb_navsto_builder_t to free
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_free_builder(cs_cdofb_navsto_builder_t   *nsb)
+cs_cdofb_navsto_free_builder(cs_cdofb_navsto_builder_t *nsb)
 {
   if (nsb != nullptr) {
     CS_FREE(nsb->div_op);
@@ -247,33 +242,34 @@ cs_cdofb_navsto_free_builder(cs_cdofb_navsto_builder_t   *nsb)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the members of the cs_cdofb_navsto_builder_t structure
+ * \brief Set the members of the cs_cdofb_navsto_builder_t structure
  *
- * \param[in]      t_eval     time at which one evaluates the pressure BC
- * \param[in]      nsp        set of parameters to define the NavSto system
- * \param[in]      cm         cellwise view of the mesh
- * \param[in]      csys       cellwise view of the algebraic system
- * \param[in]      pr_bc      set of definitions for the presuure BCs
- * \param[in]      bf_type    type of boundaries for all boundary faces
- * \param[in, out] nsb        builder to update
+ * \param[in]      t_eval   time at which one evaluates the pressure BC
+ * \param[in]      nsp      set of parameters to define the NavSto system
+ * \param[in]      cm       cellwise view of the mesh
+ * \param[in]      csys     cellwise view of the algebraic system
+ * \param[in]      pr_bc    set of definitions for the presuure BCs
+ * \param[in]      bf_type  type of boundaries for all boundary faces
+ * \param[in, out] nsb      builder to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
-                               const cs_navsto_param_t     *nsp,
-                               const cs_cell_mesh_t        *cm,
-                               const cs_cell_sys_t         *csys,
-                               const cs_cdo_bc_face_t      *pr_bc,
-                               const cs_boundary_type_t    *bf_type,
-                               cs_cdofb_navsto_builder_t   *nsb)
+cs_cdofb_navsto_define_builder(cs_real_t                  t_eval,
+                               const cs_navsto_param_t   *nsp,
+                               const cs_cell_mesh_t      *cm,
+                               const cs_cell_sys_t       *csys,
+                               const cs_cdo_bc_face_t    *pr_bc,
+                               const cs_boundary_type_t  *bf_type,
+                               cs_cdofb_navsto_builder_t *nsb)
 {
-  assert(cm != nullptr && csys != nullptr
-         && nsp != nullptr); /* sanity checks */
+  assert(cm   != nullptr &&
+         csys != nullptr &&
+         nsp  != nullptr); // sanity checks
 
   const short int n_fc = cm->n_fc;
 
-  nsb->mass_rhs = 0;            /* Reset the mass rhs */
+  nsb->mass_rhs = 0;       // Reset the mass rhs
 
   /* Update the value of the mass density for the current cell if needed */
   /* TODO: Case of a uniform but not constant in time */
@@ -298,16 +294,15 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
       for (short int f = 0; f < n_fc; f++) {
 
-        const cs_quant_t  pfq = cm->face[f];
-        const cs_real_t  sgn_f = -cm->f_sgn[f] * pfq.meas;
+        const cs_quant_t pfq = cm->face[f];
+        const cs_real_t sgn_f = -cm->f_sgn[f] * pfq.meas;
 
-        cs_real_t  *_div_f = nsb->div_op + 3*f;
+        cs_real_t *_div_f = nsb->div_op + 3*f;
         _div_f[0] = sgn_f * pfq.unitv[0];
         _div_f[1] = sgn_f * pfq.unitv[1];
         _div_f[2] = sgn_f * pfq.unitv[2];
 
-      } /* Loop on cell faces */
-
+      } // Loop on cell faces
       break;
 
     default:
@@ -317,7 +312,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_NAVSTO_DBG > 2
   if (cs_dbg_cw_test(nullptr, cm, csys)) {
-    const cs_real_t  sovc = -1. / cm->vol_c;
+    const cs_real_t sovc = -1. / cm->vol_c;
 #   pragma omp critical
     {
       cs_log_printf(CS_LOG_DEFAULT, ">> Divergence:\n");
@@ -336,41 +331,38 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
     /* Get the boundary face in the cell numbering and the boundary face id in
        the mesh numbering */
 
-    const short int  f = csys->_f_ids[i];
-    const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
+    const short int f = csys->_f_ids[i];
+    const cs_lnum_t bf_id = cm->f_ids[f] - cm->bface_shift;
 
-    /* Set the type of boundary */
-
+    // Set the type of boundary
     nsb->bf_type[i] = bf_type[bf_id];
 
-    /* Set the pressure BC if required */
-
+    // Set the pressure BC if required
     if (nsb->bf_type[i] & CS_BOUNDARY_IMPOSED_P) {
 
       assert(nsb->bf_type[i] & (CS_BOUNDARY_INLET | CS_BOUNDARY_OUTLET));
 
-      /* Add a Dirichlet for the pressure field */
-
-      const short int  def_id = pr_bc->def_ids[bf_id];
-      const cs_xdef_t  *def = nsp->pressure_bc_defs[def_id];
+      // Add a Dirichlet for the pressure field
+      const short int def_id = pr_bc->def_ids[bf_id];
+      const cs_xdef_t *def = nsp->pressure_bc_defs[def_id];
       assert(pr_bc != nullptr);
 
       switch(def->type) {
       case CS_XDEF_BY_VALUE:
         {
-          const cs_real_t  *constant_val = (cs_real_t *)def->context;
+          const cs_real_t *constant_val = (cs_real_t *)def->context;
           nsb->pressure_bc_val[i] = constant_val[0];
         }
         break;
 
       case CS_XDEF_BY_ARRAY:
         {
-        cs_xdef_array_context_t *c
-          = static_cast<cs_xdef_array_context_t *>(def->context);
-        assert(c->stride == 1);
-        assert(cs_flag_test(c->value_location, cs_flag_primal_face));
+          cs_xdef_array_context_t *c
+            = static_cast<cs_xdef_array_context_t *>(def->context);
+          assert(c->stride == 1);
+          assert(cs_flag_test(c->value_location, cs_flag_primal_face));
 
-        nsb->pressure_bc_val[i] = c->values[bf_id];
+          nsb->pressure_bc_val[i] = c->values[bf_id];
         }
         break;
 
@@ -396,7 +388,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
                     _(" %s: Invalid type of reduction.\n"
                       " Stop computing the Dirichlet value.\n"), __func__);
 
-        } /* switch on reduction */
+        } // switch on the type of reduction
         break;
 
       default:
@@ -411,7 +403,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
     else
       nsb->pressure_bc_val[i] = 0.;
 
-  } /* Loop on boundary faces */
+  } // Loop on boundary faces
 }
 
 /*----------------------------------------------------------------------------*/
@@ -422,7 +414,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
  *        velocity vector defined on each face.
  *
  * \param[in]      nsp        set of parameters to define the NavSto system
- * \param[in]      quant      set of additional geometrical quantities
+ * \param[in]      cdoq       set of additional geometrical quantities
  * \param[in]      face_vel   velocity vectors for each face
  * \param[in, out] mass_flux  array of mass flux values to update (allocated)
  */
@@ -430,7 +422,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 void
 cs_cdofb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
-                          const cs_cdo_quantities_t *quant,
+                          const cs_cdo_quantities_t *cdoq,
                           const cs_real_t           *face_vel,
                           cs_real_t                 *mass_flux)
 {
@@ -447,15 +439,13 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
   case CS_NAVSTO_MODEL_OSEEN:
   case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
     {
-      const cs_real_t  rho_val = nsp->mass_density->ref_value;
+      const cs_real_t rho_val = nsp->mass_density->ref_value;
 
-      /* Define the mass flux */
-
-#     pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
-      for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
-        const cs_real_t *fq = quant->get_face_vector_area(f_id);
+      // Define the mass flux
+#     pragma omp parallel for if (cdoq->n_faces > CS_THR_MIN)
+      for (cs_lnum_t f_id = 0; f_id < cdoq->n_faces; f_id++) {
+        const cs_real_t *fq = cdoq->get_face_vector_area(f_id);
         mass_flux[f_id] = rho_val*cs_math_3_dot_product(face_vel + 3*f_id, fq);
-
       }
     }
     break;
@@ -471,11 +461,11 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the divergence in a cell of a vector-valued array defined at
- *        faces (values are defined both at interior and border faces).
+ *        faces (values are defined both at interior and boundary faces).
  *        Variant based on the usage of \ref cs_cdo_quantities_t structure.
  *
  * \param[in] c_id    cell id
- * \param[in] quant   pointer to a \ref cs_cdo_quantities_t
+ * \param[in] cdoq    pointer to a \ref cs_cdo_quantities_t
  * \param[in] c2f     pointer to cell-to-face \ref cs_adjacency_t
  * \param[in] f_vals  values of the face DoFs
  *
@@ -485,25 +475,25 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
 
 double
 cs_cdofb_navsto_cell_divergence(const cs_lnum_t            c_id,
-                                const cs_cdo_quantities_t *quant,
+                                const cs_cdo_quantities_t *cdoq,
                                 const cs_adjacency_t      *c2f,
                                 const cs_real_t           *f_vals)
 {
-  const cs_lnum_t  thd = 3 * quant->n_i_faces;
+  const cs_lnum_t thd = 3 * cdoq->n_i_faces;
 
-  double  div = 0.0;
+  double div = 0.0;
   for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id+1]; f++) {
 
-    const cs_lnum_t  shift = 3*c2f->ids[f];
-    const cs_real_t  *_val = f_vals + shift;
-    const cs_real_t  *fnorm = (shift < thd) ?
-      quant->i_face_normal + shift : quant->b_face_normal + (shift - thd);
+    const cs_lnum_t shift = 3*c2f->ids[f];
+    const cs_real_t *_val = f_vals + shift;
+    const cs_real_t *fnorm = (shift < thd) ?
+      cdoq->i_face_normal + shift : cdoq->b_face_normal + (shift - thd);
 
     div += c2f->sgn[f]*cs_math_3_dot_product(_val, fnorm);
 
   } /* Loop on cell faces */
 
-  div /= quant->cell_vol[c_id];
+  div /= cdoq->cell_vol[c_id];
 
 #if 0 // Advanced debug output
   double div_threshold = 1e-6;
@@ -512,10 +502,10 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t            c_id,
     printf("\n cell_id: %d --> DIV=% 10.8e\n", c_id, div);
     for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id+1]; f++) {
 
-      const cs_lnum_t  shift = 3*c2f->ids[f];
-      const cs_real_t  *_val = f_vals + shift;
-      const cs_real_t  *fnorm = (shift < thd) ?
-        quant->i_face_normal + shift : quant->b_face_normal + (shift - thd);
+      const cs_lnum_t shift = 3*c2f->ids[f];
+      const cs_real_t *_val = f_vals + shift;
+      const cs_real_t *fnorm = (shift < thd) ?
+        cdoq->i_face_normal + shift : cdoq->b_face_normal + (shift - thd);
 
       printf(" f_id: %5d | nf: % 8.5e; % 8.5e; % 8.5e | contrib: % 10.8e\n",
              c2f->ids[f], fnorm[0], fnorm[1], fnorm[2],
@@ -530,62 +520,56 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t            c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute an estimation of the pressure at faces
+ * \brief Compute an estimation of the pressure at faces
  *
- * \param[in]       mesh      pointer to a cs_mesh_t structure
- * \param[in]       connect   pointer to a cs_cdo_connect_t structure
- * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]       ts        pointer to a cs_time_step_t structure
- * \param[in]       nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]       p_cell    value of the pressure inside each cell
- * \param[in, out]  p_face    value of the pressure at each face
+ * \param[in]       mesh     pointer to a cs_mesh_t structure
+ * \param[in]       connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure
+ * \param[in]       ts       pointer to a cs_time_step_t structure
+ * \param[in]       nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       p_cell   value of the pressure inside each cell
+ * \param[in, out]  p_face   value of the pressure at each face
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_compute_face_pressure(const cs_mesh_t             *mesh,
-                                      const cs_cdo_connect_t      *connect,
-                                      const cs_cdo_quantities_t   *quant,
-                                      const cs_time_step_t        *ts,
-                                      const cs_navsto_param_t     *nsp,
-                                      const cs_real_t             *p_cell,
-                                      cs_real_t                   *p_face)
+cs_cdofb_navsto_compute_face_pressure(const cs_mesh_t           *mesh,
+                                      const cs_cdo_connect_t    *connect,
+                                      const cs_cdo_quantities_t *cdoq,
+                                      const cs_time_step_t      *ts,
+                                      const cs_navsto_param_t   *nsp,
+                                      const cs_real_t           *p_cell,
+                                      cs_real_t                 *p_face)
 {
-  /* Interior faces */
-
-  for (cs_lnum_t  i = 0; i < mesh->n_i_faces; i++) {
-
-    cs_lnum_t  iid = mesh->i_face_cells[i][0];
-    cs_lnum_t  jid = mesh->i_face_cells[i][1];
-
+  // Interior faces
+  for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++) {
+    cs_lnum_t iid = mesh->i_face_cells[i][0];
+    cs_lnum_t jid = mesh->i_face_cells[i][1];
     p_face[i] = 0.5*(p_cell[iid] + p_cell[jid]);
-
   }
 
-  /* Border faces
+  /* Boundary faces
    * Use the knowledge from the BCs if possible, otherwise assume a homogeneous
    * Neumann (i.e. p_face = p_cell). */
 
-  cs_real_t  *p_bface = p_face + mesh->n_i_faces;
-
-  for (cs_lnum_t  i = 0; i < mesh->n_b_faces; i++)
+  cs_real_t *p_bface = p_face + mesh->n_i_faces;
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
     p_bface[i] = p_cell[mesh->b_face_cells[i]];
 
   for (int def_id = 0; def_id < nsp->n_pressure_bc_defs; def_id++) {
 
-    cs_xdef_t  *pbc_def = nsp->pressure_bc_defs[def_id];
-    const cs_zone_t  *z = cs_boundary_zone_by_id(pbc_def->z_id);
-
+    cs_xdef_t *pbc_def = nsp->pressure_bc_defs[def_id];
     assert(pbc_def->meta & CS_CDO_BC_DIRICHLET);
+    const cs_zone_t *z = cs_boundary_zone_by_id(pbc_def->z_id);
 
     switch(pbc_def->type) {
 
     case CS_XDEF_BY_VALUE:
       cs_xdef_eval_scalar_by_val(z->n_elts, z->elt_ids,
-                                 false, /* dense output */
+                                 false, // dense output
                                  mesh,
                                  connect,
-                                 quant,
+                                 cdoq,
                                  ts->t_cur,
                                  pbc_def->context,
                                  p_bface);
@@ -597,40 +581,37 @@ cs_cdofb_navsto_compute_face_pressure(const cs_mesh_t             *mesh,
                   " Stop computing the pressure BC value.\n"), __func__);
       break;
 
-    } /* def->type */
+    } // Switch on the type of definition
 
-  } /* Loop on pressure BCs */
+  } // Loop only on pressure BCs
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add the grad-div part to the local matrix (i.e. for the current
- *         cell)
+ * \brief Add the grad-div part to the local matrix (i.e. for the current cell)
  *
- * \param[in]      n_fc       local number of faces for the current cell
- * \param[in]      zeta       scalar coefficient for the grad-div operator
- * \param[in]      div        divergence
- * \param[in, out] mat        local system matrix to update
+ * \param[in]      n_fc  local number of faces for the current cell
+ * \param[in]      zeta  scalar coefficient for scaling the grad-div operator
+ * \param[in]      div   divergence operator
+ * \param[in, out] mat   local system matrix to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_add_grad_div(short int          n_fc,
-                             const cs_real_t    zeta,
-                             const cs_real_t    div[],
-                             cs_sdm_t          *mat)
+cs_cdofb_navsto_add_grad_div(short int        n_fc,
+                             const cs_real_t  zeta,
+                             const cs_real_t  div[],
+                             cs_sdm_t        *mat)
 {
   cs_sdm_t *b = nullptr;
 
-  /* Avoid dealing with cell DoFs which are not impacted */
-
+  // Avoid dealing with cell DoFs which are not involved by this operation
   for (short int bi = 0; bi < n_fc; bi++) {
 
-    const cs_real_t  *divi = div + 3*bi;
-    const cs_real_t  zt_di[3] = {zeta*divi[0], zeta*divi[1], zeta*divi[2]};
+    const cs_real_t *divi = div + 3*bi;
+    const cs_real_t zt_di[3] = {zeta*divi[0], zeta*divi[1], zeta*divi[2]};
 
-    /* Begin with the diagonal block */
-
+    // Begin with the diagonal block
     b = mat->get_block(bi, bi);
     assert(b->n_rows == b->n_cols && b->n_rows == 3);
     for (short int l = 0; l < 3; l++) {
@@ -639,97 +620,92 @@ cs_cdofb_navsto_add_grad_div(short int          n_fc,
         m_l[m] += zt_di[l] * divi[m];
     }
 
-    /* Continue with the extra-diag. blocks */
-
+    // Continue with the extra-diag. blocks
     for (short int bj = bi+1; bj < n_fc; bj++) {
+      const cs_real_t *divj = div + 3*bj;
+
+      // Get the 3x3 block for the (DoF_i, Dof_j) entry
       b = mat->get_block(bi, bj);
       assert(b->n_rows == b->n_cols && b->n_rows == 3);
-      cs_real_t *mij  = b->val;
-      b               = mat->get_block(bj, bi);
+      cs_real_t *mij = b->val;
+      // Get the 3x3 block for the (DoF_j, Dof_i) entry
+      b              = mat->get_block(bj, bi);
       assert(b->n_rows == b->n_cols && b->n_rows == 3);
-      cs_real_t *mji  = b->val;
-
-      const cs_real_t *divj = div + 3*bj;
+      cs_real_t *mji = b->val;
 
       for (short int l = 0; l < 3; l++) {
 
-        /* Diagonal: 3*l+l = 4*l */
-
-        const cs_real_t  gd_coef_ll = zt_di[l]*divj[l];
+        // Diagonal entry: 3*l+l = 4*l */
+        const cs_real_t gd_coef_ll = zt_di[l]*divj[l];
         mij[4*l] += gd_coef_ll;
         mji[4*l] += gd_coef_ll;
 
-        /* Extra-diagonal: Use the symmetry of the grad-div */
-
+        // Extra-diagonal: Use the symmetry of the grad-div
         for (short int m = l+1; m < 3; m++) {
-          const short int  lm = 3*l+m, ml = 3*m+l;
-          const cs_real_t  gd_coef_lm = zt_di[l]*divj[m];
+          const short int lm = 3*l+m, ml = 3*m+l;
+          const cs_real_t gd_coef_lm = zt_di[l]*divj[m];
           mij[lm] += gd_coef_lm;
           mji[ml] += gd_coef_lm;
-          const cs_real_t  gd_coef_ml = zt_di[m]*divj[l];
+          const cs_real_t gd_coef_ml = zt_di[m]*divj[l];
           mij[ml] += gd_coef_ml;
           mji[lm] += gd_coef_ml;
         }
       }
 
-    } /* Loop on column blocks: bj */
-  } /* Loop on row blocks: bi */
+    } // Loop on column blocks: bj
+  } // Loop on row blocks: bi
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the pressure values
+ * \brief Initialize the pressure values using the Initial Condition definition
  *
- * \param[in]       nsp     pointer to a \ref cs_navsto_param_t structure
- * \param[in]       quant   pointer to a \ref cs_cdo_quantities_t structure
- * \param[in]       ts      pointer to a \ref cs_time_step_t structure
- * \param[in, out]  pr      pointer to the pressure \ref cs_field_t structure
+ * \param[in]      nsp   pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      cdoq  pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]      ts    pointer to a \ref cs_time_step_t structure
+ * \param[in, out] pr    pointer to the pressure \ref cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
-                              const cs_cdo_quantities_t   *quant,
-                              const cs_time_step_t        *ts,
-                              cs_field_t                  *pr)
+cs_cdofb_navsto_init_pressure(const cs_navsto_param_t   *nsp,
+                              const cs_cdo_quantities_t *cdoq,
+                              const cs_time_step_t      *ts,
+                              cs_field_t                *pr)
 {
   assert(nsp != nullptr);
-
-  /* Initial conditions for the pressure */
 
   if (nsp->n_pressure_ic_defs == 0)
     return; /* Nothing to do */
 
   assert(nsp->pressure_ic_defs != nullptr);
 
-  const cs_real_t  t_cur = ts->t_cur;
-  const cs_flag_t  dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
+  const cs_real_t t_cur = ts->t_cur;
+  const cs_flag_t dof_flag = CS_FLAG_SCALAR | cs_flag_primal_cell;
 
-  cs_real_t  *values = pr->val;
-
+  // Initial conditions for the pressure
+  cs_real_t *values = pr->val;
   for (int def_id = 0; def_id < nsp->n_pressure_ic_defs; def_id++) {
 
-    /* Get and then set the definition of the initial condition */
+    // Get and then set the definition of the initial condition
+    cs_xdef_t *def = nsp->pressure_ic_defs[def_id];
 
-    cs_xdef_t  *def = nsp->pressure_ic_defs[def_id];
-
-    /* Initialize face-based array */
-
+    // Initialize cell-based array
     switch (def->type) {
 
       /* Evaluating the integrals: the averages will be taken care of at the
        * end when ensuring zero-mean valuedness */
 
     case CS_XDEF_BY_VALUE:
-      /* When constant mean-value or the value at cell center is the same */
+      // When constant mean-value or the value at cell center is the same
       cs_evaluate_potential_at_cells_by_value(def, values);
       break;
 
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
       {
-        const cs_param_dof_reduction_t  red = nsp->dof_reduction_mode;
+        const cs_param_dof_reduction_t red_mode = nsp->dof_reduction_mode;
 
-        switch (red) {
+        switch (red_mode) {
         case CS_PARAM_REDUCTION_DERHAM:
           cs_evaluate_density_by_analytic(dof_flag, def, t_cur, values);
           break;
@@ -741,9 +717,7 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
           bft_error(__FILE__, __LINE__, 0,
                     _(" %s: Incompatible reduction for the field %s.\n"),
                     __func__, pr->name);
-
-        }  /* Switch on possible reduction types */
-
+        }
       }
       break;
 
@@ -753,9 +727,9 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
                 __func__, pr->name);
       break;
 
-    }  /* Switch on possible type of definition */
+    } /* Switch on possible type of definition */
 
-  }  /* Loop on definitions */
+  } /* Loop on definitions */
 
   /* We should ensure that the mean value of the pressure is zero. Thus we
    * compute it and subtract it from every value.
@@ -768,18 +742,17 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
    *    information (e.g. cs_cdo_quantities_t) which we do not know here
    */
 
-  cs_cdofb_navsto_rescale_pressure_to_ref(nsp, quant, values);
+  cs_cdofb_navsto_rescale_pressure_to_ref(nsp, cdoq, values);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the pressure values when the pressure is defined at
- *         faces
+ * \brief Initialize the pressure values when the pressure is defined at faces
  *
- * \param[in]       nsp       pointer to a \ref cs_navsto_param_t structure
- * \param[in]       connect   pointer to a \ref cs_cdo_connect_t structure
- * \param[in]       ts        pointer to a \ref cs_time_step_t structure
- * \param[in, out]  pr_f      pointer to the pressure values at faces
+ * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      connect  pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]      ts       pointer to a \ref cs_time_step_t structure
+ * \param[in, out] pr_f     pointer to the pressure values at faces
  */
 /*----------------------------------------------------------------------------*/
 
@@ -792,15 +765,14 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
   CS_UNUSED(connect);
   assert(nsp != nullptr && pr_f != nullptr);
 
-  /* Initial conditions for the pressure */
-
   if (nsp->n_pressure_ic_defs == 0)
     return; /* Nothing to do */
 
+  // Initial conditions for the pressure
   assert(nsp->pressure_ic_defs != nullptr);
 
-  cs_lnum_t  *def2f_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
-  cs_lnum_t  *def2f_idx = nullptr;
+  cs_lnum_t *def2f_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
+  cs_lnum_t *def2f_idx = nullptr;
 
   CS_MALLOC(def2f_idx, nsp->n_pressure_ic_defs + 1, cs_lnum_t);
 
@@ -808,18 +780,15 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
                                def2f_idx,
                                def2f_ids);
 
-  const cs_real_t  t_cur = ts->t_cur;
-
+  const cs_real_t t_cur = ts->t_cur;
   for (int def_id = 0; def_id < nsp->n_pressure_ic_defs; def_id++) {
 
-    /* Get and then set the definition of the initial condition */
+    // Get and then set the definition of the initial condition
+    cs_xdef_t *def = nsp->pressure_ic_defs[def_id];
+    const cs_lnum_t n_f_selected = def2f_idx[def_id+1] - def2f_idx[def_id];
+    const cs_lnum_t *selected_lst = def2f_ids + def2f_idx[def_id];
 
-    cs_xdef_t  *def = nsp->pressure_ic_defs[def_id];
-    const cs_lnum_t  n_f_selected = def2f_idx[def_id+1] - def2f_idx[def_id];
-    const cs_lnum_t  *selected_lst = def2f_ids + def2f_idx[def_id];
-
-    /* Initialize face-based array */
-
+    // Initialize face-based array
     switch (def->type) {
 
       /* Evaluating the integrals: the averages will be taken care of at the
@@ -834,9 +803,9 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
 
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
       {
-        const cs_param_dof_reduction_t  red = nsp->dof_reduction_mode;
+        const cs_param_dof_reduction_t red_mode = nsp->dof_reduction_mode;
 
-        switch (red) {
+        switch (red_mode) {
         case CS_PARAM_REDUCTION_DERHAM:
           cs_evaluate_potential_at_faces_by_analytic(def,
                                                      t_cur,
@@ -858,9 +827,8 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
                     _(" %s: Incompatible reduction for the pressure field\n"),
                     __func__);
 
-        }  /* Switch on possible reduction types */
-
-      }
+        }
+      } // Analytic definition
       break;
 
     default:
@@ -869,102 +837,87 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
                 __func__);
       break;
 
-    }  /* Switch on possible type of definition */
-
-  }  /* Loop on definitions */
+    } // Switch on possible type of definition
+  } // Loop on definitions
 
   CS_FREE(def2f_idx);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check initial state
+ * \brief Check the compatibility of the initial state
  *
- * \param[in]       nsp     pointer to a \ref cs_navsto_param_t structure
- * \param[in]       connect pointer to a \ref cs_cdo_connect_t structure
- * \param[in]       quant   pointer to a \ref cs_cdo_quantities_t structure
- * \param[in]       ts      pointer to a \ref cs_time_step_t structure
- * \param[in]  velocity     pointer to the velocity \ref cs_field_t structure
- * \param[in]  face_vel     pointer to the face velocity
- * \param[in]  pressue      pointer to the pressure \ref cs_field_t structure
+ * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in] connect   pointer to a \ref cs_cdo_connect_t structure
+ * \param[in] cdoq      pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in] ts        pointer to a \ref cs_time_step_t structure
+ * \param[in] velocity  pointer to the velocity \ref cs_field_t structure
+ * \param[in] face_vel  pointer to the face velocity
+ * \param[in] pressure  pointer to the pressure \ref cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_navsto_check_init([[maybe_unused]] const cs_navsto_param_t *nsp,
                            const cs_cdo_connect_t                   *connect,
-                           const cs_cdo_quantities_t                *quant,
+                           const cs_cdo_quantities_t                *cdoq,
                            [[maybe_unused]] const cs_time_step_t    *ts,
                            [[maybe_unused]] const cs_field_t        *velocity,
                            const cs_real_t                          *face_vel,
                            [[maybe_unused]] const cs_field_t        *pressure)
 {
-  // Check that divergence is close to zero since the fluid is incompressible
+  // Check that divergence is close to zero since the fluid is assumed to be
+  // incompressible
   double div_norm2 = 0.;
 
-  /* Only the face velocity is used */
-#pragma omp parallel for if (quant->n_cells > CS_THR_MIN)                      \
+  // Only the face velocity is used
+#pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)        \
   reduction(+ : div_norm2)
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-    const double div_c =
-      cs_cdofb_navsto_cell_divergence(c_id, quant, connect->c2f, face_vel);
-
-    div_norm2 += quant->cell_vol[c_id] * div_c * div_c;
-  } /* Loop on cells */
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+    const double div_c
+      = cs_cdofb_navsto_cell_divergence(c_id, cdoq, connect->c2f, face_vel);
+    div_norm2 += cdoq->cell_vol[c_id] * div_c * div_c;
+  }
 
   cs::parall::sum(div_norm2);
   div_norm2 = sqrt(div_norm2);
 
   // We choose 1e-6 since it is small but not enougth to avoid to detect false
   // error
-  if (div_norm2 > 1e-6) {
-    bft_error(
-      __FILE__,
-      __LINE__,
-      0,
+  if (div_norm2 > 1e-6)
+    bft_error(__FILE__, __LINE__, 0,
       _(" %s: The norm of the divergence velocity field is not close to zero "
         "(norm=%f).\n"
         "- Check that initial and boundary conditions are compatible.\n"),
-      __func__,
-      div_norm2);
-  }
+      __func__, div_norm2);
 
-  // Other check could be done like that the problem is equilibrated
+  // Other checks could be done like that the problem is equilibrated
 };
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the pressure field in order to get a field with a mean-value
- *         equal to the reference value
+ * \brief Update the pressure field in order to get a field with a mean-value
+ *        equal to the reference value
  *
- * \param[in]       nsp       pointer to a cs_navsto_param_t structure
- * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
- * \param[in, out]  values    pressure field values
+ * \param[in]      nsp     pointer to a cs_navsto_param_t structure
+ * \param[in]      cdoq    pointer to a cs_cdo_quantities_t structure
+ * \param[in, out] values  pressure field values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_rescale_pressure_to_ref(const cs_navsto_param_t    *nsp,
-                                        const cs_cdo_quantities_t  *quant,
-                                        cs_real_t                   values[])
+cs_cdofb_navsto_rescale_pressure_to_ref(const cs_navsto_param_t   *nsp,
+                                        const cs_cdo_quantities_t *cdoq,
+                                        cs_real_t                  values[])
 {
-  const cs_lnum_t  n_cells = quant->n_cells;
+  assert(cdoq->vol_tot > 0.);
 
-  /*
-   * The algorithm used for summing is l3superblock60, based on the article:
-   * "Reducing Floating Point Error in Dot Product Using the Superblock Family
-   * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
-   * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
-   * 2008 Society for Industrial and Applied Mathematics
-   */
-
-  cs_real_t  intgr = cs_weighted_sum(n_cells, quant->cell_vol, values);
-
+  const cs_lnum_t n_cells = cdoq->n_cells;
+  cs_real_t intgr = cs_weighted_sum(n_cells, cdoq->cell_vol, values);
   cs::parall::sum(intgr);
 
-  assert(quant->vol_tot > 0.);
-  const cs_real_t  g_avg = intgr / quant->vol_tot;
-  const cs_real_t  p_shift = nsp->reference_pressure - g_avg;
+  const cs_real_t g_avg = intgr / cdoq->vol_tot;
+  const cs_real_t p_shift = nsp->reference_pressure - g_avg;
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -973,42 +926,37 @@ cs_cdofb_navsto_rescale_pressure_to_ref(const cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update the pressure field in order to get a field with a zero-mean
- *         average
+ * \brief Update the pressure field in order to get a field with a zero-mean
+ *        average
  *
- * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
- * \param[in, out]  values    pressure field values
+ * \param[in]      cdoq    pointer to a cs_cdo_quantities_t structure
+ * \param[in, out] values  pressure field values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
-                                       cs_real_t                   values[])
+cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t *cdoq,
+                                       cs_real_t                  values[])
 {
-  /* We should ensure that the mean of the pressure is zero. Thus we compute
-   * it and subtract it from every value. */
-  /* NOTES:
+  assert(cdoq->vol_tot > 0.);
+
+  /* We should ensure that the mean of the pressure is zero to circumvent the
+   * problem that the pressure is defined up to a constant. Thus we compute it
+   * and subtract it from every value.
+   *
+   * NOTES:
    *  - It could be useful to stored this average somewhere
    *  - The procedure is not optimized (we can avoid setting the average if
    *    it's a value), but it is the only way to allow multiple definitions
-   *    and definitions that do not cover all the domain. */
-
-  const cs_lnum_t  n_cells = quant->n_cells;
-
-  /*
-   * The algorithm used for summing is l3superblock60, based on the article:
-   * "Reducing Floating Point Error in Dot Product Using the Superblock Family
-   * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
-   * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
-   * 2008 Society for Industrial and Applied Mathematics
+   *    and definitions that do not cover all the domain.
    */
 
-  cs_real_t  intgr = cs_weighted_sum(n_cells, quant->cell_vol, values);
+  const cs_lnum_t n_cells = cdoq->n_cells;
 
+  // Compute the pressure average over the domain
+  cs_real_t intgr = cs_weighted_sum(n_cells, cdoq->cell_vol, values);
   cs::parall::sum(intgr);
-
-  assert(quant->vol_tot > 0.);
-  const cs_real_t  g_avg = intgr / quant->vol_tot;
+  const cs_real_t g_avg = intgr / cdoq->vol_tot;
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -1017,42 +965,42 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Perform extra-operation related to Fb schemes when solving
- *         Navier-Stokes. Computation of the following quantities according to
- *         post-processing flags beeing activated.
- *         - The mass flux accross the boundaries.
- *         - The global mass in the computational domain
- *         - The norm of the velocity divergence
- *         - the cellwise mass flux balance
- *         - the kinetic energy
- *         - the velocity gradient
- *         - the pressure gradient
- *         - the vorticity
- *         - the helicity
- *         - the enstrophy
- *         - the stream function
+ * \brief Perform extra post-processing operations related to Face-based (Fb)
+ *        schemes when solving the Navier-Stokes equations.
+ *        Compute the following physical quantities depending on the activated
+ *        post-processing flags:
+ *        - Mass flux accross the boundaries.
+ *        - Global mass in the computational domain
+ *        - Norm of the velocity divergence
+ *        - Cellwise mass flux balance
+ *        - Kinetic energy
+ *        - Velocity gradient
+ *        - Pressure gradient
+ *        - Vorticity
+ *        - Helicity
+ *        - Enstrophy
+ *        - Stream function
  *
- * \param[in]      nsp           pointer to a \ref cs_navsto_param_t struct.
- * \param[in]      mesh          pointer to a cs_mesh_t structure
- * \param[in]      quant         pointer to a \ref cs_cdo_quantities_t struct.
- * \param[in]      connect       pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]      ts            pointer to a \ref cs_time_step_t struct.
- * \param[in,out]  time_plotter  pointer to a \ref cs_time_plot_t struct.
- * \param[in]      turb          pointer to a \ref cs_turbulence_t struct.
- * \param[in]      adv_field     pointer to a \ref cs_adv_field_t struct.
- * \param[in]      mass_flux     scalar-valued mass flux for each face
- * \param[in]      p_cell        scalar-valued pressure in each cell
- * \param[in]      u_cell        vector-valued velocity in each cell
- * \param[in]      u_face        vector-valued velocity on each face
- * \param[in]      ps_cvg        pointer to a \ref cs_cdo_navsto_psteady_cvg_t
- *                               struct.
+ * \param[in]     nsp           pointer to a cs_navsto_param_t struct.
+ * \param[in]     mesh          pointer to a cs_mesh_t structure
+ * \param[in]     cdoq          pointer to a cs_cdo_quantities_t struct.
+ * \param[in]     connect       pointer to a cs_cdo_connect_t struct.
+ * \param[in]     ts            pointer to a cs_time_step_t struct.
+ * \param[in,out] time_plotter  pointer to a cs_time_plot_t struct.
+ * \param[in]     turb          pointer to a cs_turbulence_t struct.
+ * \param[in]     adv_field     pointer to a cs_adv_field_t struct.
+ * \param[in]     mass_flux     scalar-valued mass flux for each face
+ * \param[in]     p_cell        scalar-valued pressure in each cell
+ * \param[in]     u_cell        vector-valued velocity in each cell
+ * \param[in]     u_face        vector-valued velocity on each face
+ * \param[in]     ps_cvg        pointer to a cs_cdo_navsto_psteady_cvg_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
                          const cs_mesh_t                   *mesh,
-                         const cs_cdo_quantities_t         *quant,
+                         const cs_cdo_quantities_t         *cdoq,
                          const cs_cdo_connect_t            *connect,
                          const cs_time_step_t              *ts,
                          cs_time_plot_t                    *time_plotter,
@@ -1066,17 +1014,17 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
 {
   CS_UNUSED(adv_field);
 
-  const cs_boundary_t  *boundaries = nsp->boundaries;
-  const cs_real_t  *bmass_flux = mass_flux + quant->n_i_faces;
+  const cs_boundary_t *boundaries = nsp->boundaries;
+  const cs_real_t *bmass_flux = mass_flux + cdoq->n_i_faces;
 
   /* 1. Compute for each boundary the integrated mass flux to perform a mass
    *    balance
    */
 
   bool *belong_to_default = nullptr;
-  CS_MALLOC(belong_to_default, quant->n_b_faces, bool);
-# pragma omp parallel for if  (quant->n_b_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < quant->n_b_faces; i++)
+  CS_MALLOC(belong_to_default, cdoq->n_b_faces, bool);
+# pragma omp parallel for if  (cdoq->n_b_faces > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < cdoq->n_b_faces; i++)
     belong_to_default[i] = true;
 
   cs_real_t *boundary_fluxes = nullptr;
@@ -1086,161 +1034,137 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
               (boundaries->n_boundaries + 1) * sizeof(cs_real_t));
 
   for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
-
-    const cs_zone_t  *z = cs_boundary_zone_by_id(boundaries->zone_ids[b_id]);
-
+    const cs_zone_t *z = cs_boundary_zone_by_id(boundaries->zone_ids[b_id]);
     for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-      const cs_lnum_t  bf_id = z->elt_ids[i];
+      const cs_lnum_t bf_id = z->elt_ids[i];
       belong_to_default[bf_id] = false;
       boundary_fluxes[b_id] += bmass_flux[bf_id];
     }
+  }
 
-  } /* Loop on domain boundaries */
-
-  /* Update the flux through the default boundary */
-
-  cs_lnum_t  default_case_count = 0;
-  for (cs_lnum_t i = 0; i < quant->n_b_faces; i++) {
+  // Update the flux through the default boundary
+  cs_lnum_t default_case_count = 0;
+  for (cs_lnum_t i = 0; i < cdoq->n_b_faces; i++) {
     if (belong_to_default[i]) {
       default_case_count += 1;
       boundary_fluxes[boundaries->n_boundaries] += bmass_flux[i];
     }
   }
 
-  /* Parallel synchronization if needed */
-
+  // Parallel synchronization if needed
   cs_parall_sum(boundaries->n_boundaries + 1, CS_REAL_TYPE, boundary_fluxes);
   cs_parall_counter_max(&default_case_count, 1);
 
-  /* Output result */
+  // Output result
+  char descr[32];
 
   cs_log_printf(CS_LOG_DEFAULT,
                 "\n- Balance of the mass flux across the boundaries:\n");
 
-  char descr[32];
   for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
-
-    const cs_zone_t  *z = cs_boundary_zone_by_id(boundaries->zone_ids[b_id]);
-
+    const cs_zone_t *z = cs_boundary_zone_by_id(boundaries->zone_ids[b_id]);
     cs_boundary_get_type_descr(boundaries, boundaries->types[b_id], 32, descr);
-
     cs_log_printf(CS_LOG_DEFAULT, "b %-32s | %-32s |% -8.6e\n",
                   descr, z->name, boundary_fluxes[b_id]);
+  }
 
-  } /* Loop on boundaries */
-
-  /* Default boundary (if something to do) */
-
+  // Default boundary (if something to do)
   if (default_case_count > 0) {
-
     cs_boundary_get_type_descr(boundaries, boundaries->default_type, 32, descr);
     cs_log_printf(CS_LOG_DEFAULT, "b %-32s | %-32s |% -8.6e\n",
                   descr, "default boundary",
                   boundary_fluxes[boundaries->n_boundaries]);
-
   }
 
-  /* Free temporary buffers */
-
+  // Free temporary buffers
   CS_FREE(belong_to_default);
   CS_FREE(boundary_fluxes);
 
-  /* Predefined post-processing */
-  /* ========================== */
+  /* Other predefined post-processing */
+  /* ================================ */
 
-  /* There are five values if all flags are activated for the monitoring plot */
-
-  int  n_cols = 0;
+  // There are seven values if all flags are activated for the monitoring plot
+  int n_cols = 0;
   cs_real_t col_vals[7] = { 0, 0, 0, 0, 0, 0, 0 };
 
   if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_DIVERGENCE) {
 
-    double  div_norm2 = 0.;
-    cs_field_t  *vel_div = cs_field_by_name("velocity_divergence");
+    double div_norm2 = 0.;
+    cs_field_t *vel_div = cs_field_by_name("velocity_divergence");
     assert(vel_div != nullptr);
 
     if (nsp->coupling != CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY)
       cs_field_current_to_previous(vel_div);
 
-    /* Only the face velocity is used */
-
-#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN) \
-    reduction(+:div_norm2)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-      double  div_c = cs_cdofb_navsto_cell_divergence(c_id,
-                                                      quant,
-                                                      connect->c2f,
-                                                      u_face);
-
+    // Only the face velocity is used
+#   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)     \
+  reduction(+:div_norm2)
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+      double div_c = cs_cdofb_navsto_cell_divergence(c_id,
+                                                     cdoq,
+                                                     connect->c2f,
+                                                     u_face);
       vel_div->val[c_id] = div_c;
-      div_norm2 += quant->cell_vol[c_id] * div_c * div_c;
-
-    } /* Loop on cells */
+      div_norm2 += cdoq->cell_vol[c_id] * div_c * div_c;
+    }
 
     cs::parall::sum(div_norm2);
     col_vals[n_cols++] = sqrt(div_norm2);
 
-  } /* Velocity divergence */
+  } // Velocity divergence
 
   if (nsp->post_flag & CS_NAVSTO_POST_MASS_DENSITY) {
 
-    double  mass_integral = 0.;
-    cs_field_t  *rho = cs_field_by_name("mass_density");
+    double mass_integral = 0.;
+    cs_field_t *rho = cs_field_by_name("mass_density");
     assert(rho != nullptr);
 
     cs_field_current_to_previous(rho);
 
-#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN) \
-    reduction(+:mass_integral)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+#   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)     \
+  reduction(+:mass_integral)
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
-      double  boussi_coef = 1;
+        // Exclude cells tag as "solid" of this computation
+        double boussi_coef = 1;
+        for (int i = 0; i < nsp->n_boussinesq_terms; i++) {
+          cs_navsto_param_boussinesq_t *bp = nsp->boussinesq_param + i;
+          boussi_coef += -bp->beta*(bp->var[c_id] - bp->var0);
+        }
 
-      for (int i = 0; i < nsp->n_boussinesq_terms; i++) {
-
-        cs_navsto_param_boussinesq_t  *bp = nsp->boussinesq_param + i;
-        boussi_coef += -bp->beta*(bp->var[c_id] - bp->var0);
-
-      } /* Loop on Boussinesq terms */
-
-      double  rho_c = nsp->mass_density->ref_value * boussi_coef;
-      rho->val[c_id] = rho_c;
-      mass_integral += quant->cell_vol[c_id] * rho_c;
+        double rho_c = nsp->mass_density->ref_value * boussi_coef;
+        rho->val[c_id] = rho_c;
+        mass_integral += cdoq->cell_vol[c_id] * rho_c;
 
     } /* Loop on cells */
 
     cs::parall::sum(mass_integral);
     col_vals[n_cols++] = mass_integral;
 
-  } /* Mass density */
+  } // Mass density
 
   if (nsp->post_flag & CS_NAVSTO_POST_CELL_MASS_FLUX_BALANCE) {
 
-    cs_field_t  *mf_balance = cs_field_by_name("mass_flux_balance");
+    cs_field_t *mf_balance = cs_field_by_name("mass_flux_balance");
     assert(mf_balance != nullptr);
 
     cs_field_current_to_previous(mf_balance);
 
-    const cs_adjacency_t  *c2f = connect->c2f;
+    const cs_adjacency_t *c2f = connect->c2f;
 
-#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-      double  balance = 0.;
-      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+#   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+      double balance = 0.;
+      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++)
         balance += c2f->sgn[j]*mass_flux[c2f->ids[j]];
-
-      }
       mf_balance->val[c_id] = balance;
+    }
 
-    } /* Loop on cells */
-
-  } /* Cell mass flux balance */
+  } // Mass flux balance for each cell
 
   if (nsp->post_flag & CS_NAVSTO_POST_PRESSURE_GRADIENT) {
 
-    cs_field_t  *pr_grd = cs_field_by_name("pressure_gradient");
+    cs_field_t *pr_grd = cs_field_by_name("pressure_gradient");
     assert(pr_grd != nullptr);
 
     cs_field_current_to_previous(pr_grd);
@@ -1248,30 +1172,30 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
     /* Compute a face pressure */
 
     cs_real_t *p_face = nullptr;
-    CS_MALLOC(p_face, quant->n_faces, cs_real_t);
+    CS_MALLOC(p_face, cdoq->n_faces, cs_real_t);
 
     cs_cdofb_navsto_compute_face_pressure(mesh,
                                           connect,
-                                          quant,
+                                          cdoq,
                                           ts,
                                           nsp,
                                           p_cell,
                                           p_face);
 
-#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-      cs_reco_grad_cell_from_fb_dofs(c_id, connect, quant,
+#   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++)
+      cs_reco_grad_cell_from_fb_dofs(c_id, connect, cdoq,
                                      p_cell, p_face,
                                      pr_grd->val + 3*c_id);
 
     CS_FREE(p_face);
 
-  } /* Pressure gradient */
+  } // Pressure gradient
 
   if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY) {
 
-    double  k_integral = 0.;
-    cs_field_t  *kinetic_energy = cs_field_by_name("kinetic_energy");
+    double k_integral = 0.;
+    cs_field_t *kinetic_energy = cs_field_by_name("kinetic_energy");
     assert(kinetic_energy != nullptr);
 
     cs_field_current_to_previous(kinetic_energy);
@@ -1281,36 +1205,31 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
       /* This can be any cell but one assumes that there is at least one cell by
          MPI rank */
 
-      const cs_real_t  rho = cs_property_get_cell_value(0, /* cell_id */
-                                                        ts->t_cur,
-                                                        nsp->mass_density);
+      const cs_real_t rho = cs_property_get_cell_value(0, /* cell_id */
+                                                       ts->t_cur,
+                                                       nsp->mass_density);
 
-#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)  \
-      reduction(+:k_integral)
-      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
+#     pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)   \
+  reduction(+:k_integral)
+      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
         double kc = 0.5*rho*cs_math_3_square_norm(u_cell + 3*c_id);
-
         kinetic_energy->val[c_id] = kc;
-        k_integral += quant->cell_vol[c_id]*kc;
-
+        k_integral += cdoq->cell_vol[c_id]*kc;
       }
 
     }
     else { /* Mass density is not uniform in space */
 
-#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN) \
-      reduction(+:k_integral)
-      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-        cs_real_t  rho_c = cs_property_get_cell_value(c_id,
-                                                      ts->t_cur,
-                                                      nsp->mass_density);
-        double  kc = 0.5*rho_c*cs_math_3_square_norm(u_cell + 3*c_id);
+#     pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)   \
+  reduction(+:k_integral)
+      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+        cs_real_t rho_c = cs_property_get_cell_value(c_id,
+                                                     ts->t_cur,
+                                                     nsp->mass_density);
+        double kc = 0.5*rho_c*cs_math_3_square_norm(u_cell + 3*c_id);
 
         kinetic_energy->val[c_id] = kc;
-        k_integral += quant->cell_vol[c_id] * kc;
-
+        k_integral += cdoq->cell_vol[c_id] * kc;
       }
 
     }
@@ -1318,68 +1237,67 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
     cs::parall::sum(k_integral); /* Sync. parallel computations */
     col_vals[n_cols++] = k_integral;
 
-  } /* Kinetic energy */
+  } // Kinetic energy
 
   if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_GRADIENT) {
 
-    cs_field_t  *velocity_gradient = cs_field_by_name("velocity_gradient");
+    cs_field_t *velocity_gradient = cs_field_by_name("velocity_gradient");
     assert(velocity_gradient != nullptr);
+    assert(u_cell != nullptr);
+    assert(u_face != nullptr);
 
     cs_field_current_to_previous(velocity_gradient);
 
-#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-      cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
+#   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++)
+      cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, cdoq,
                                         u_cell, u_face,
                                         velocity_gradient->val + 9*c_id);
 
   } /* Velocity gradient */
 
   if (nsp->post_flag & CS_NAVSTO_POST_BOUNDARY_STRESS) {
+
     cs_field_t *boundary_stress = cs_field_by_name("boundary_stress");
     assert(boundary_stress != nullptr);
-
-    cs_field_current_to_previous(boundary_stress);
-
-    /* Sanity checks */
     assert(u_cell != nullptr);
     assert(u_face != nullptr);
     assert(p_cell != nullptr);
     assert(nsp->tot_viscosity != nullptr);
 
+    cs_field_current_to_previous(boundary_stress);
+
     cs_field_t *velocity_gradient = cs_field_by_name_try("velocity_gradient");
+    assert(velocity_gradient != nullptr);
 
-    const cs_lnum_t *bf2c_ids =
-      connect->f2c->ids + connect->f2c->idx[quant->n_i_faces];
+    const cs_lnum_t *bf2c_ids
+      = connect->f2c->ids + connect->f2c->idx[cdoq->n_i_faces];
 
-#pragma omp parallel for if (quant->n_b_faces > CS_THR_MIN)
-    for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
+#   pragma omp parallel for if (cdoq->n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t bf_id = 0; bf_id < cdoq->n_b_faces; bf_id++) {
       const cs_lnum_t c_id = bf2c_ids[bf_id];
 
       cs_real_9_t grad_vel;
-
       if (velocity_gradient != nullptr) {
-        for (cs_lnum_t i = 0; i < 9; i++) {
+        for (cs_lnum_t i = 0; i < 9; i++)
           grad_vel[i] = velocity_gradient->val[9 * c_id + i];
-        }
       }
       else {
         cs_reco_grad_33_cell_from_fb_dofs(c_id,
                                           connect,
-                                          quant,
+                                          cdoq,
                                           u_cell,
                                           u_face,
                                           grad_vel);
       }
 
       // mu_tot = mu_laminar + mu_turb
-      const cs_real_t mu_tot =
-        cs_property_get_cell_value(c_id, ts->t_cur, nsp->tot_viscosity);
+      const cs_real_t mu_tot
+        = cs_property_get_cell_value(c_id, ts->t_cur, nsp->tot_viscosity);
 
       // Compute sigma = 2*mu_tot*grad_sym(u) - p*I_d
-      cs_real_6_t sigma;
-
       // Convention : xx, yy, zz, xy, yz, xz
+      cs_real_6_t sigma;
       sigma[0] = 2.0 * mu_tot * grad_vel[0] - p_cell[c_id];
       sigma[1] = 2.0 * mu_tot * grad_vel[4] - p_cell[c_id];
       sigma[2] = 2.0 * mu_tot * grad_vel[8] - p_cell[c_id];
@@ -1388,109 +1306,99 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
       sigma[5] = mu_tot * (grad_vel[2] + grad_vel[6]);
 
       // Compute sigma.n
-
-      const cs_nreal_t *normal = quant->get_bface_normal(bf_id);
-
+      const cs_nreal_t *normal = cdoq->get_bface_normal(bf_id);
       cs_math_sym_33_3_product(sigma, normal, boundary_stress->val + 3 * bf_id);
     }
 
-    if (turb) {
-      // Turbulence with fisrt-order model add: -2/3*rho*k*n
+    if (turb) { // Turbulence with first-order model add: -2/3*rho*k*n
       turb->add_boundary_stress(mesh, boundary_stress);
     }
 
-  } /* Boundary stress */
+  } // Boundary stress
 
-  cs_flag_t  mask_velgrd[3] = { CS_NAVSTO_POST_VORTICITY,
-                                CS_NAVSTO_POST_HELICITY,
-                                CS_NAVSTO_POST_ENSTROPHY };
+  cs_flag_t mask_velgrd[3] = { CS_NAVSTO_POST_VORTICITY,
+                               CS_NAVSTO_POST_HELICITY,
+                               CS_NAVSTO_POST_ENSTROPHY };
 
   if (cs_flag_at_least(nsp->post_flag, 3, mask_velgrd)) {
 
-    cs_field_t  *vorticity = cs_field_by_name("vorticity");
+    cs_field_t *vorticity = cs_field_by_name("vorticity");
     assert(vorticity != nullptr);
+
     cs_field_current_to_previous(vorticity);
 
-    double  e_integral = 0.;
-    cs_field_t  *enstrophy = cs_field_by_name_try("enstrophy");
+    double e_integral = 0.;
+    cs_field_t *enstrophy = cs_field_by_name_try("enstrophy");
     if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY)
       cs_field_current_to_previous(enstrophy);
 
-    double  h_integral = 0.;
-    cs_field_t  *helicity = cs_field_by_name_try("helicity");
+    double h_integral = 0.;
+    cs_field_t *helicity = cs_field_by_name_try("helicity");
     if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
       cs_field_current_to_previous(helicity);
 
-    cs_field_t  *velocity_gradient = cs_field_by_name_try("velocity_gradient");
+    cs_field_t *velocity_gradient = cs_field_by_name_try("velocity_gradient");
 
     if (velocity_gradient == nullptr) {
 
-#pragma omp parallel for if (quant->n_cells > CS_THR_MIN)                      \
-  reduction(+ : e_integral) reduction(+ : h_integral)
-      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+#     pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)   \
+  reduction(+:e_integral) reduction(+:h_integral)
+      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
+        // Compute the velocity gradient
         cs_real_t grd_uc[9];
-
-        /* Compute the velocity gradient */
-
         cs_reco_grad_33_cell_from_fb_dofs(
-          c_id, connect, quant, u_cell, u_face, grd_uc);
+          c_id, connect, cdoq, u_cell, u_face, grd_uc);
 
-        /* Compute the cell vorticity */
-
+        // Compute the cell vorticity
         cs_real_t *w = vorticity->val + 3 * c_id;
-        w[0]         = grd_uc[7] - grd_uc[5];
-        w[1]         = grd_uc[2] - grd_uc[6];
-        w[2]         = grd_uc[3] - grd_uc[1];
+        w[0] = grd_uc[7] - grd_uc[5];
+        w[1] = grd_uc[2] - grd_uc[6];
+        w[2] = grd_uc[3] - grd_uc[1];
 
         if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
-
-          double ec            = cs_math_3_square_norm(w);
+          double ec = cs_math_3_square_norm(w);
           enstrophy->val[c_id] = ec;
-          e_integral += quant->cell_vol[c_id] * ec;
+          e_integral += cdoq->cell_vol[c_id] * ec;
         }
 
         if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
-
-          double hc           = cs_math_3_dot_product(u_cell + 3 * c_id, w);
+          double hc = cs_math_3_dot_product(u_cell + 3 * c_id, w);
           helicity->val[c_id] = hc;
-          h_integral += quant->cell_vol[c_id] * hc;
+          h_integral += cdoq->cell_vol[c_id] * hc;
         }
 
-      } /* Loop on cells */
+      } // Loop on cells
     }
     else {
 
-#pragma omp parallel for if (quant->n_cells > CS_THR_MIN)                      \
-  reduction(+ : e_integral) reduction(+ : h_integral)
-      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+#     pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)   \
+  reduction(+:e_integral) reduction(+:h_integral)
+      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
         cs_real_t *grd_uc = velocity_gradient->val + 9 * c_id;
 
-        /* Compute the cell vorticity */
-
+        // Compute the cell vorticity
         cs_real_t *w = vorticity->val + 3 * c_id;
-        w[0]         = grd_uc[7] - grd_uc[5];
-        w[1]         = grd_uc[2] - grd_uc[6];
-        w[2]         = grd_uc[3] - grd_uc[1];
+        w[0] = grd_uc[7] - grd_uc[5];
+        w[1] = grd_uc[2] - grd_uc[6];
+        w[2] = grd_uc[3] - grd_uc[1];
 
         if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
-
-          double ec            = cs_math_3_square_norm(w);
+          double ec = cs_math_3_square_norm(w);
           enstrophy->val[c_id] = ec;
-          e_integral += quant->cell_vol[c_id] * ec;
+          e_integral += cdoq->cell_vol[c_id] * ec;
         }
 
         if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
-
-          double hc           = cs_math_3_dot_product(u_cell + 3 * c_id, w);
+          double hc = cs_math_3_dot_product(u_cell + 3 * c_id, w);
           helicity->val[c_id] = hc;
-          h_integral += quant->cell_vol[c_id] * hc;
+          h_integral += cdoq->cell_vol[c_id] * hc;
         }
 
-      } /* Loop on cells */
+      } // Loop on cells
 
-    } /* velocity gradient has been computed previously */
+    } // velocity gradient has been computed previously ?
 
     if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
       cs::parall::sum(e_integral);
@@ -1502,10 +1410,10 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
       col_vals[n_cols++] = h_integral;
     }
 
-  } /* vorticity, helicity or enstrophy computations */
+  } // vorticity, helicity or enstrophy computations
 
   if (nsp->num_flag & CS_NAVSTO_NUM_PSEUDO_STEADY) {
-    /* Log residual for pseudo-steady algo */
+    // Log residual for pseudo-steady algorithm
     col_vals[n_cols++] = ps_cvg.norm2_mass_flux_stat;
     col_vals[n_cols++] = ps_cvg.norm2_turb_k_stat;
   }
@@ -1519,27 +1427,28 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
 
   if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
 
-    cs_equation_t *eq = cs_equation_by_name(CS_NAVSTO_STREAM_EQNAME);
-    assert(eq != nullptr);
-    cs_equation_solve_steady_state(mesh, eq);
+    cs_equation_t *stream_eq = cs_equation_by_name(CS_NAVSTO_STREAM_EQNAME);
+    assert(stream_eq != nullptr);
+    cs_equation_solve_steady_state(mesh, stream_eq);
 
-    cs_equation_param_t *eqp = cs_equation_get_param(eq);
-    if (eqp->n_bc_defs == 0) {
+    cs_equation_param_t *stream_eqp = cs_equation_get_param(stream_eq);
+    if (stream_eqp->n_bc_defs == 0) {
 
-      /* Since this is an equation solved with only homogeneous Neumann BCs, one
-       * substracts the mean value to get a unique solution */
+      /* Since this is an equation solved with only homogeneous Neumann BCs,
+       * one subtracts the mean value to get a unique solution. Otherwise, the
+       * solution is given up to a constant value. */
 
       cs_real_t mean_value;
-      cs_equation_integrate_variable(connect, quant, eq, &mean_value);
-      mean_value /= quant->vol_tot;
+      cs_equation_integrate_variable(connect, cdoq, stream_eq, &mean_value);
+      mean_value /= cdoq->vol_tot;
 
-      cs_real_t *psi_v = cs_equation_get_vertex_values(eq, false);
-      for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
+      cs_real_t *psi_v = cs_equation_get_vertex_values(stream_eq, false);
+      for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++)
         psi_v[i] -= mean_value;
 
-    } /* If homogeneous Neumann everywhere */
+    } // If homogeneous Neumann BC is set everywhere
 
-  } /* Computation of the stream function is requested */
+  } // Computation of the stream function is requested
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1550,7 +1459,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
  *        an algebraic technique.
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]      f     face id in the cell mesh numbering
+ * \param[in]      bf    boundary face id in the cell mesh numbering
  * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
  * \param[in]      cm    pointer to a cellwise mesh structure
  * \param[in]      pty   pointer to a \ref cs_property_data_t structure
@@ -1560,32 +1469,29 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_alge(short int                              f,
-                              const cs_equation_param_t             *eqp,
-                              [[maybe_unused]] const cs_cell_mesh_t *cm,
-                              const cs_property_data_t              *pty,
-                              cs_cell_builder_t                     *cb,
-                              cs_cell_sys_t                         *csys)
+cs_cdofb_block_dirichlet_alge(short int                                   bf,
+                              [[maybe_unused]] const cs_equation_param_t *eqp,
+                              [[maybe_unused]] const cs_cell_mesh_t      *cm,
+                              [[maybe_unused]] const cs_property_data_t  *pty,
+                              [[maybe_unused]] cs_cell_builder_t         *cb,
+                              cs_cell_sys_t                              *csys)
 {
-  CS_UNUSED(eqp);
-  CS_UNUSED(pty);
-
   double         *x_dir  = cb->values;
   double         *ax_dir = cb->values + 3;
   cs_sdm_t       *m      = csys->mat;
   cs_sdm_block_t *bd     = m->block_desc;
   assert(bd != nullptr);
   assert(bd->n_row_blocks == cm->n_fc || bd->n_row_blocks == cm->n_fc + 1);
+  assert(bf > -1);
 
-  /* Build x_dir */
-
-  bool is_non_homogeneous = false; /* Assume homogeneous by default */
+  // Build x_dir
+  bool is_non_homogeneous = false; // Assume homogeneous by default
 
   std::memset(cb->values, 0, 6 * sizeof(double));
 
   for (int k = 0; k < 3; k++) {
-    if (csys->dof_flag[3 * f + k] & CS_CDO_BC_DIRICHLET) {
-      x_dir[k]           = csys->dir_values[3 * f + k];
+    if (csys->dof_flag[3 * bf + k] & CS_CDO_BC_DIRICHLET) {
+      x_dir[k]           = csys->dir_values[3 * bf + k];
       is_non_homogeneous = true;
     }
   }
@@ -1594,52 +1500,51 @@ cs_cdofb_block_dirichlet_alge(short int                              f,
 
     for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-      if (bi == f)
+      if (bi == bf)
         continue;
 
       cs_real_t *_rhs = csys->rhs + 3 * bi;
-      cs_sdm_t  *mIF  = m->get_block(bi, f);
+      cs_sdm_t *m_if  = m->get_block(bi, bf);
 
-      mIF->matvec(x_dir, ax_dir);
+      m_if->matvec(x_dir, ax_dir);
       for (int k = 0; k < 3; k++)
         _rhs[k] -= ax_dir[k];
     }
 
-  } /* Non-homogeneous Dirichlet BC */
+  } // Non-homogeneous Dirichlet BC
 
-  /* Set RHS to the Dirichlet value for the related face */
-
+  // Set RHS to the Dirichlet value for the related face
   for (int k = 0; k < 3; k++)
-    csys->rhs[3 * f + k] = x_dir[k];
+    csys->rhs[3 * bf + k] = x_dir[k];
 
   /* Second pass: Replace the Dirichlet block by a diagonal block and fill with
    * zero the remaining row and column */
 
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-    if (bi != f) {
+    if (bi != bf) {
 
-      /* Reset block (I,F) which is a 3x3 block */
+      // Reset block (i, bf) which is a 3x3 block
+      cs_sdm_t *m_if = m->get_block(bi, bf);
+      std::memset(m_if->val, 0, 9 * sizeof(double));
 
-      cs_sdm_t *mIF = m->get_block(bi, f);
-      std::memset(mIF->val, 0, 9 * sizeof(double));
     }
-    else { /* bi == f */
+    else { // bi == bf
 
-      /* Reset block (I==F,J) which is a 3x3 block */
-
+      // Reset block (i==bf, j) which is a 3x3 block
       for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-        cs_sdm_t *mFJ = m->get_block(f, bj);
-        std::memset(mFJ->val, 0, 9 * sizeof(double));
+        cs_sdm_t *m_fj = m->get_block(bf, bj);
+        std::memset(m_fj->val, 0, 9 * sizeof(double));
       }
 
-      cs_sdm_t *mFF = m->get_block(f, f);
-      assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
+      cs_sdm_t *m_ff = m->get_block(bf, bf);
+      assert((m_ff->n_cols == 3) && (m_ff->n_rows == 3));
       for (int k = 0; k < 3; k++)
-        mFF->val[4 * k] = 1; /* 4 == mFF->n_rows + 1 */
+        m_ff->val[4 * k] = 1; // 4 == m_ff->n_rows + 1
+
     }
 
-  } /* Block bi */
+  } // Block bi
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1652,7 +1557,7 @@ cs_cdofb_block_dirichlet_alge(short int                              f,
  *        the velocity-block has size 3*n_fc
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]      f     face id in the cell mesh numbering
+ * \param[in]      bf    boundary face id in the cell mesh numbering
  * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
  * \param[in]      cm    pointer to a cellwise mesh structure
  * \param[in]      pty   pointer to a \ref cs_property_data_t structure
@@ -1662,24 +1567,22 @@ cs_cdofb_block_dirichlet_alge(short int                              f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_pena(short int                              f,
-                              const cs_equation_param_t             *eqp,
-                              [[maybe_unused]] const cs_cell_mesh_t *cm,
-                              const cs_property_data_t              *pty,
-                              cs_cell_builder_t                     *cb,
-                              cs_cell_sys_t                         *csys)
+cs_cdofb_block_dirichlet_pena(short int                                   bf,
+                              [[maybe_unused]] const cs_equation_param_t *eqp,
+                              [[maybe_unused]] const cs_cell_mesh_t      *cm,
+                              [[maybe_unused]] const cs_property_data_t  *pty,
+                              [[maybe_unused]] cs_cell_builder_t         *cb,
+                              cs_cell_sys_t                              *csys)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(pty);
-
+  assert(bf > -1);
   assert(csys != nullptr);
 
   cs_sdm_t *m = csys->mat;
   assert(m->block_desc != nullptr);
   assert(m->block_desc->n_row_blocks == cm->n_fc);
 
-  const cs_flag_t *_flag    = csys->dof_flag + 3 * f;
-  const cs_real_t *_dir_val = csys->dir_values + 3 * f;
+  const cs_flag_t *_flag    = csys->dof_flag + 3 * bf;
+  const cs_real_t *_dir_val = csys->dir_values + 3 * bf;
 
   bool is_non_homogeneous = true;
   for (int k = 0; k < 3; k++) {
@@ -1687,25 +1590,21 @@ cs_cdofb_block_dirichlet_pena(short int                              f,
       is_non_homogeneous = true;
   }
 
-  /* Penalize diagonal entry (and its rhs if needed) */
-
-  cs_sdm_t *mFF = m->get_block(f, f);
-  assert((mFF->n_rows == 3) && (mFF->n_cols == 3));
+  // Penalize the diagonal entry (and its rhs if needed)
+  cs_sdm_t *m_ff = m->get_block(bf, bf);
+  assert((m_ff->n_rows == 3) && (m_ff->n_cols == 3));
 
   if (is_non_homogeneous) {
-
-    cs_real_t *_rhs = csys->rhs + 3 * f;
+    cs_real_t *_rhs = csys->rhs + 3 * bf;
     for (int k = 0; k < 3; k++) {
-      mFF->val[4 * k] += eqp->strong_pena_bc_coeff; /* 4 == mFF->n_rows + 1 */
+      m_ff->val[4 * k] += eqp->strong_pena_bc_coeff; // 4 == m_ff->n_rows + 1
       _rhs[k] += _dir_val[k] * eqp->strong_pena_bc_coeff;
     }
   }
   else {
-
     for (int k = 0; k < 3; k++)
-      mFF->val[4 * k] += eqp->strong_pena_bc_coeff; /* 4 == mFF->n_rows + 1 */
-
-  } /* Homogeneous BC */
+      m_ff->val[4 * k] += eqp->strong_pena_bc_coeff; // 4 == m_ff->n_rows + 1
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1718,7 +1617,7 @@ cs_cdofb_block_dirichlet_pena(short int                              f,
  *        that the velocity-block has size 3*(n_fc + 1)
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      bf    boundary face id in the cell mesh numbering
  * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
  * \param[in]      cm    pointer to a cellwise mesh structure
  * \param[in]      pty   pointer to a \ref cs_property_data_t structure
@@ -1728,21 +1627,20 @@ cs_cdofb_block_dirichlet_pena(short int                              f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_weak(short int                  fb,
-                              const cs_equation_param_t *eqp,
-                              const cs_cell_mesh_t      *cm,
-                              const cs_property_data_t  *pty,
-                              cs_cell_builder_t         *cb,
-                              cs_cell_sys_t             *csys)
+cs_cdofb_block_dirichlet_weak(short int                                   bf,
+                              [[maybe_unused]] const cs_equation_param_t *eqp,
+                              [[maybe_unused]] const cs_cell_mesh_t      *cm,
+                              [[maybe_unused]] const cs_property_data_t  *pty,
+                              [[maybe_unused]] cs_cell_builder_t         *cb,
+                              cs_cell_sys_t                              *csys)
 {
-
+  assert(bf > -1);
   assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
   assert(pty->is_iso == true);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC));
 
-  /* 0) Pre-compute the product between diffusion property and the
-     face vector areas */
-
+  // 0) Pre-compute the product between diffusion property and the
+  //    face vector areas
   cs_real_3_t *kappa_f = cb->vectors;
   for (short int f = 0; f < cm->n_fc; f++) {
     const double coef = cm->face[f].meas * pty->value;
@@ -1750,46 +1648,38 @@ cs_cdofb_block_dirichlet_weak(short int                  fb,
       kappa_f[f][k] = coef * cm->face[f].unitv[k];
   }
 
-  /* 1) Build the bc_op matrix (scalar-valued version) */
+  // 1) Build the bc_op matrix (scalar-valued version)
 
-  /* Initialize the matrix related to the flux reconstruction operator */
-
-  const short int n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
+  // Initialize the matrix related to the flux reconstruction operator
+  const short int n_dofs = cm->n_fc + 1; // n_blocks = n_scalar_dofs
   cs_sdm_t       *bc_op  = cb->loc;
   bc_op->init(n_dofs);
 
-  /* Compute \int_f du/dn v and update the matrix */
-
+  // Compute \int_f du/dn v and update the matrix
   _normal_flux_reco(
-    fb, eqp->diffusion_hodgep.coef, cm, (const cs_real_t(*)[3])kappa_f, bc_op);
+    bf, eqp->diffusion_hodgep.coef, cm, (const cs_real_t(*)[3])kappa_f, bc_op);
 
-  /* 2) Update the bc_op matrix and the RHS with the Dirichlet values. */
+  // 2) Update the bc_op matrix and the RHS with the Dirichlet values.
 
-  /* h_f \approx |pvol_f| / |f| */
-
-  const cs_quant_t pfq = cm->face[fb];
+  // h_f \approx |pvol_f| / |f|
+  const cs_quant_t pfq = cm->face[bf];
   const double pcoef
-    = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[fb];
+    = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[bf];
 
-  bc_op->val[fb * (n_dofs + 1)] += pcoef; /* Diagonal term */
-
+  bc_op->val[bf * (n_dofs + 1)] += pcoef; // Diagonal term
   for (short int k = 0; k < 3; k++)
-    csys->rhs[3 * fb + k] += pcoef * csys->dir_values[3 * fb + k];
+    csys->rhs[3 * bf + k] += pcoef * csys->dir_values[3 * bf + k];
 
-  /* 3) Update the local system matrix */
-
-  for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
+  // 3) Update the local system matrix (n_(scalar)_dofs == n_blocks)
+  for (int bi = 0; bi < n_dofs; bi++) {
     for (int bj = 0; bj < n_dofs; bj++) {
 
-      /* Retrieve the 3x3 matrix */
-
+      // Retrieve the 3x3 matrix
       cs_sdm_t *bij = csys->mat->get_block(bi, bj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
+      // Update diagonal terms only
       const cs_real_t _val = bc_op->val[n_dofs * bi + bj];
-
-      /* Update diagonal terms only */
-
       bij->val[0] += _val;
       bij->val[4] += _val;
       bij->val[8] += _val;
@@ -1807,7 +1697,7 @@ cs_cdofb_block_dirichlet_weak(short int                  fb,
  *        that the velocity-block has size 3*(n_fc + 1)
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      bf    boundary face id in the cell mesh numbering
  * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
  * \param[in]      cm    pointer to a cellwise mesh structure
  * \param[in]      pty   pointer to a \ref cs_property_data_t structure
@@ -1817,20 +1707,20 @@ cs_cdofb_block_dirichlet_weak(short int                  fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_wsym(short int                  fb,
-                              const cs_equation_param_t *eqp,
-                              const cs_cell_mesh_t      *cm,
-                              const cs_property_data_t  *pty,
-                              cs_cell_builder_t         *cb,
-                              cs_cell_sys_t             *csys)
+cs_cdofb_block_dirichlet_wsym(short int                                   bf,
+                              [[maybe_unused]] const cs_equation_param_t *eqp,
+                              [[maybe_unused]] const cs_cell_mesh_t      *cm,
+                              [[maybe_unused]] const cs_property_data_t  *pty,
+                              [[maybe_unused]] cs_cell_builder_t         *cb,
+                              cs_cell_sys_t                              *csys)
 {
-
+  assert(bf > -1);
   assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
   assert(cs_equation_param_has_diffusion(eqp));
   assert(pty->is_iso == true);
 
-  /* 0) Pre-compute the product between diffusion property and the
-     face vector areas */
+  // 0) Pre-compute the product between diffusion property and the
+  //    face vector areas
 
   cs_real_3_t *kappa_f = cb->vectors;
   for (short int f = 0; f < cm->n_fc; f++) {
@@ -1839,65 +1729,52 @@ cs_cdofb_block_dirichlet_wsym(short int                  fb,
       kappa_f[f][k] = coef * cm->face[f].unitv[k];
   }
 
-  /* 1) Build the bc_op matrix (scalar-valued version) */
+  // (1) Build the bc_op matrix (scalar-valued version)
 
-  /* Initialize the matrix related to the flux reconstruction operator */
-
-  const short int n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
+  // Initialize the matrix related to the flux reconstruction operator
+  const short int n_dofs = cm->n_fc + 1; // n_blocks or n_scalar_dofs
   cs_sdm_t       *bc_op = cb->loc, *bc_op_t = cb->aux;
   bc_op->init(n_dofs);
 
-  /* Compute \int_f du/dn v and update the matrix. Only the line associated to
-     fb has non-zero values */
+  // Compute \int_f du/dn v and update the matrix.
+  // Only the line associated to bf has non-zero values
 
   _normal_flux_reco(
-    fb, eqp->diffusion_hodgep.coef, cm, (const cs_real_t(*)[3])kappa_f, bc_op);
+    bf, eqp->diffusion_hodgep.coef, cm, (const cs_real_t(*)[3])kappa_f, bc_op);
 
-  /* 2) Update the bc_op matrix and the RHS with the Dirichlet values */
+  // (2) Update the bc_op matrix and the RHS with the Dirichlet values
 
-  /* Update bc_op = bc_op + transp and transp = transpose(bc_op)
-     cb->loc plays the role of the flux operator */
-
+  // Update bc_op = bc_op + transp and transp = transpose(bc_op)
+  // cb->loc plays the role of the flux operator
   cs_sdm_square_add_transpose(bc_op, bc_op_t);
 
-  /* Update the RHS with bc_op_t * dir_fb */
-
+  // Update the RHS with bc_op_t * dir_bf
+  // Only the bf column has non-zero values in bc_op_t
+  // One thus simplifies the matrix-vector operation
   for (int k = 0; k < 3; k++) {
-
-    /* Only the fb column has non-zero values in bc_op_t
-       One thus simplifies the matrix-vector operation */
-
-    const cs_real_t dir_fb = csys->dir_values[3 * fb + k];
+    const cs_real_t dir_bf = csys->dir_values[3 * bf + k];
     for (short int i = 0; i < n_dofs; i++)
-      csys->rhs[3 * i + k] += bc_op_t->val[i * n_dofs + fb] * dir_fb;
+      csys->rhs[3 * i + k] += bc_op_t->val[i * n_dofs + bf] * dir_bf;
+  }
 
-  } /* Loop on components */
+  // (3) Update the bc_op matrix and the RHS with the penalization
+  //     coeff * \meas{f} / h_f  \equiv coeff * h_f
+  const double pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[bf].meas);
 
-  /* 3) Update the bc_op matrix and the RHS with the penalization */
-
-  /* coeff * \meas{f} / h_f  \equiv coeff * h_f */
-
-  const double pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[fb].meas);
-
-  bc_op->val[fb * (n_dofs + 1)] += pcoef; /* Diagonal term */
-
+  bc_op->val[bf * (n_dofs + 1)] += pcoef; // Diagonal term
   for (short int k = 0; k < 3; k++)
-    csys->rhs[3 * fb + k] += pcoef * csys->dir_values[3 * fb + k];
+    csys->rhs[3 * bf + k] += pcoef * csys->dir_values[3 * bf + k];
 
-  /* 4) Update the local system matrix */
+  // (4) Update the local system matrix
 
-  for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
+  for (int bi = 0; bi < n_dofs; bi++) { // n_(scalar)_dofs == n_blocks
     for (int bj = 0; bj < n_dofs; bj++) {
-
-      /* Retrieve the 3x3 matrix */
-
+      // Retrieve the 3x3 matrix
       cs_sdm_t *bij = csys->mat->get_block(bi, bj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
+      // Update diagonal terms only
       const cs_real_t _val = bc_op->val[n_dofs * bi + bj];
-
-      /* Update diagonal terms only */
-
       bij->val[0] += _val;
       bij->val[4] += _val;
       bij->val[8] += _val;
@@ -1914,7 +1791,7 @@ cs_cdofb_block_dirichlet_wsym(short int                  fb,
  *        the velocity-block has (n_fc + 1) blocks of size 3x3.
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      bf    boundary face id in the cell mesh numbering
  * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
  * \param[in]      cm    pointer to a cellwise mesh structure
  * \param[in]      pty   pointer to a \ref cs_property_data_t structure
@@ -1924,20 +1801,20 @@ cs_cdofb_block_dirichlet_wsym(short int                  fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_symmetry_alge(short int                  fb,
-                       const cs_equation_param_t *eqp,
-                       const cs_cell_mesh_t      *cm,
-                       const cs_property_data_t  *pty,
-                       cs_cell_builder_t         *cb,
-                       cs_cell_sys_t             *csys)
+cs_cdofb_symmetry_alge(short int                                   bf,
+                       [[maybe_unused]] const cs_equation_param_t *eqp,
+                       [[maybe_unused]] const cs_cell_mesh_t      *cm,
+                       [[maybe_unused]] const cs_property_data_t  *pty,
+                       [[maybe_unused]] cs_cell_builder_t         *cb,
+                       cs_cell_sys_t                              *csys)
 {
-
+  assert(bf > -1);
   assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
-  assert(pty->is_iso == true); /* if not the case something else TODO ? */
+  assert(pty->is_iso == true); // if not the case something else TODO ?
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC));
 
-  const cs_quant_t  pfq = cm->face[fb];
-  const cs_real_t  *ni = pfq.unitv;
+  const cs_quant_t pfq = cm->face[bf];
+  const cs_real_t *ni = pfq.unitv;
 
   /* nn :  n x n^t, projection onto normal axis
    * p_t : I - n x n^t, projection onto tangential plane */
@@ -1966,44 +1843,43 @@ cs_cdofb_symmetry_alge(short int                  fb,
 
   cs_sdm_t *m = csys->mat;
   cs_sdm_block_t *bd = m->block_desc;
-  cs_sdm_t *mFF = m->get_block(fb, fb);
-  assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
+  cs_sdm_t *m_ff = m->get_block(bf, bf);
+  assert((m_ff->n_cols == 3) && (m_ff->n_rows == 3));
 
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-    if (bi != fb) {
+    if (bi != bf) {
 
-      /* Right project block (I,F) which is a 3x3 block
-       * mIF = mIF p_t */
-
+      // Right project block (I,F) which is a 3x3 block: m_if = m_if p_t
       buffer.set_zero();
 
-      cs_sdm_t *mIF = m->get_block(bi, fb);
-      cs_sdm_multiply(mIF, &p_t, &buffer);
-      cs_sdm_copy(mIF, &buffer);
+      cs_sdm_t *m_if = m->get_block(bi, bf);
+      cs_sdm_multiply(m_if, &p_t, &buffer);
+      cs_sdm_copy(m_if, &buffer);
+
     }
-    else { /* bi == f */
+    else { // bi == bf
 
-      /* Left project block (I==F,J) which is a 3x3 block */
-
+      // Left project block (I==F,J) which is a 3x3 block
       for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-
         buffer.set_zero();
 
-        cs_sdm_t *mFJ = m->get_block(fb, bj);
-        cs_sdm_multiply(&p_t, mFJ, &buffer);
-        cs_sdm_copy(mFJ, &buffer);
+        cs_sdm_t *m_fj = m->get_block(bf, bj);
+        cs_sdm_multiply(&p_t, m_fj, &buffer);
+        cs_sdm_copy(m_fj, &buffer);
       }
 
-      /* mFF = n x n^t + p_t mFF p_t; */
+      // m_ff = n x n^t + p_t m_ff p_t
       buffer.init(buffer.n_rows);
 
-      cs_sdm_multiply(mFF, &p_t, &buffer);
-      cs_sdm_copy(mFF, &buffer);
+      cs_sdm_multiply(m_ff, &p_t, &buffer);
+      cs_sdm_copy(m_ff, &buffer);
 
-      *mFF += nn;
-    }
-  } /* Block bi */
+      *m_ff += nn;
+
+    } // bi == bf ?
+
+  } // Loop on bi blocks
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2015,7 +1891,7 @@ cs_cdofb_symmetry_alge(short int                  fb,
  *        the velocity-block has (n_fc + 1) blocks of size 3x3.
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      bf    boundary face id in the cell mesh numbering
  * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
  * \param[in]      cm    pointer to a cellwise mesh structure
  * \param[in]      pty   pointer to a \ref cs_property_data_t structure
@@ -2025,21 +1901,21 @@ cs_cdofb_symmetry_alge(short int                  fb,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_symmetry_weak(short int                  fb,
-                       const cs_equation_param_t *eqp,
-                       const cs_cell_mesh_t      *cm,
-                       const cs_property_data_t  *pty,
-                       cs_cell_builder_t         *cb,
-                       cs_cell_sys_t             *csys)
+cs_cdofb_symmetry_weak(short int                                   bf,
+                       [[maybe_unused]] const cs_equation_param_t *eqp,
+                       [[maybe_unused]] const cs_cell_mesh_t      *cm,
+                       [[maybe_unused]] const cs_property_data_t  *pty,
+                       [[maybe_unused]] cs_cell_builder_t         *cb,
+                       cs_cell_sys_t                              *csys)
 {
-
+  assert(bf > -1);
   assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
   assert(cs_equation_param_has_diffusion(eqp));
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC));
 
-  /* 0) Pre-compute the product between diffusion property and the
-     face vector areas */
+  // (0) Pre-compute the product between diffusion property and the
+  //     face vector areas
 
   cs_real_3_t *kappa_f = cb->vectors;
   for (short int f = 0; f < cm->n_fc; f++) {
@@ -2048,80 +1924,74 @@ cs_cdofb_symmetry_weak(short int                  fb,
       kappa_f[f][k] = coef * cm->face[f].unitv[k];
   }
 
-  /* 1) Build the bc_op matrix (scalar-valued version) */
+  // (1) Build the bc_op matrix (scalar-valued version)
 
-  /* Initialize the matrix related this flux reconstruction operator */
-
-  const short int n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
-
+  // Initialize the matrix related this flux reconstruction operator
+  const short int n_dofs = cm->n_fc + 1; // n_blocks or n_scalar_dofs
   cs_sdm_t *bc_op = cb->aux;
   bc_op->init(n_dofs);
 
-  /* Compute \int_f du/dn v and update the matrix. Only the line associated to
-     fb has non-zero values */
-
+  // Compute \int_f du/dn v and update the matrix.
+  // Only the line associated to bf has non-zero values
   _normal_flux_reco(
-    fb, eqp->diffusion_hodgep.coef, cm, (const cs_real_t(*)[3])kappa_f, bc_op);
+    bf, eqp->diffusion_hodgep.coef, cm, (const cs_real_t(*)[3])kappa_f, bc_op);
 
-  /* 2) Update the bc_op matrix and nothing is added to the RHS since a sliding
-     means homogeneous Dirichlet values on the normal component and hommogeneous
-     Neumann on the tangential flux */
+  // (2) Update the bc_op matrix
+  //     Nothing is added to the RHS since this is a sliding
+  //     Sliding means:
+  //        - homogeneous Dirichlet values on the normal component
+  //        - hommogeneous Neumann on the tangential flux
 
-  const cs_quant_t   pfq = cm->face[fb];
-  const cs_real_t   *nf  = pfq.unitv;
+  const cs_quant_t pfq = cm->face[bf];
+  const cs_real_t *nf  = pfq.unitv;
   const cs_real_33_t nf_nf
     = { { nf[0] * nf[0], nf[0] * nf[1], nf[0] * nf[2] },
         { nf[1] * nf[0], nf[1] * nf[1], nf[1] * nf[2] },
         { nf[2] * nf[0], nf[2] * nf[1], nf[2] * nf[2] } };
 
-  /* 1/h_f \approx |f| / |pvol_fc| */
-
+  // 1/h_f \approx |f| / |pvol_fc|
   const double pcoef
-    = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[fb];
+    = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[bf];
 
-  /* Handle the diagonal block: Retrieve the 3x3 matrix */
+  // Handle the diagonal block: Retrieve the 3x3 matrix
+  cs_sdm_t *b_ff = csys->mat->get_block(bf, bf);
+  assert(b_ff->n_rows == b_ff->n_cols && b_ff->n_rows == 3);
 
-  cs_sdm_t *bFF = csys->mat->get_block(fb, fb);
-  assert(bFF->n_rows == bFF->n_cols && bFF->n_rows == 3);
-
-  const cs_real_t _val = pcoef + 2 * bc_op->val[fb * (n_dofs + 1)];
+  const cs_real_t _val = pcoef + 2 * bc_op->val[bf * (n_dofs + 1)];
   for (short int k = 0; k < 3; k++) {
-    bFF->val[3*k    ] += nf_nf[0][k] * _val;
-    bFF->val[3*k + 1] += nf_nf[1][k] * _val;
-    bFF->val[3*k + 2] += nf_nf[2][k] * _val;
+    b_ff->val[3*k    ] += nf_nf[0][k] * _val;
+    b_ff->val[3*k + 1] += nf_nf[1][k] * _val;
+    b_ff->val[3*k + 2] += nf_nf[2][k] * _val;
   }
 
   for (short int xj = 0; xj < n_dofs; xj++) {
 
-    if (xj == fb)
-      continue;
+    if (xj == bf)
+      continue; // Diagonal is already treated
 
-    /* It should be done both for face- and cell-defined DoFs */
-    /* Retrieve the 3x3 matrix */
+    // It should be done both for face- and cell-defined DoFs
+    // Retrieve the 3x3 matrix
+    cs_sdm_t *b_fj = csys->mat->get_block(bf, xj);
+    assert(b_fj->n_rows == b_fj->n_cols && b_fj->n_rows == 3);
+    cs_sdm_t *b_jf = csys->mat->get_block(xj, bf);
+    assert(b_jf->n_rows == b_jf->n_cols && b_jf->n_rows == 3);
 
-    cs_sdm_t *bFJ = csys->mat->get_block(fb, xj);
-    assert(bFJ->n_rows == bFJ->n_cols && bFJ->n_rows == 3);
-    cs_sdm_t *bJF = csys->mat->get_block(xj, fb);
-    assert(bJF->n_rows == bJF->n_cols && bJF->n_rows == 3);
-
-    const cs_real_t op_fj      = bc_op->val[n_dofs * fb + xj];
-    const cs_real_t op_jf      = bc_op->val[n_dofs * xj + fb];
+    const cs_real_t op_fj      = bc_op->val[n_dofs * bf + xj];
+    const cs_real_t op_jf      = bc_op->val[n_dofs * xj + bf];
     const cs_real_t _val_fj_jf = op_fj + op_jf;
 
     for (int k = 0; k < 3; k++) {
+      b_fj->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
+      b_fj->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
+      b_fj->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
 
-      bFJ->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
-      bFJ->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
-      bFJ->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
-
-      /* nf_nf is symmetric */
-
-      bJF->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
-      bJF->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
-      bJF->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
+      // nf_nf is symmetric
+      b_jf->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
+      b_jf->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
+      b_jf->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
     }
 
-  } /* Loop on xj */
+  } // Loop on xj
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2130,7 +2000,7 @@ cs_cdofb_symmetry_weak(short int                  fb,
  *        component, and strong penalization on normal component.
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      bf    boundary face id in the cell mesh numbering
  * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
  * \param[in]      cm    pointer to a cellwise mesh structure
  * \param[in]      pty   pointer to a \ref cs_property_data_t structure
@@ -2141,16 +2011,14 @@ cs_cdofb_symmetry_weak(short int                  fb,
 
 void
 cs_cdofb_prescribed_smooth_wall_n_pena_t_robin(
-  short int                  fb,
-  const cs_equation_param_t *eqp,
-  const cs_cell_mesh_t      *cm,
-  const cs_property_data_t  *pty,
-  cs_cell_builder_t         *cb,
-  cs_cell_sys_t             *csys)
+  short int                                   bf,
+  [[maybe_unused]] const cs_equation_param_t *eqp,
+  [[maybe_unused]] const cs_cell_mesh_t      *cm,
+  [[maybe_unused]] const cs_property_data_t  *pty,
+  [[maybe_unused]] cs_cell_builder_t         *cb,
+  cs_cell_sys_t                              *csys)
 {
-  CS_UNUSED(cb);
-  CS_UNUSED(pty);
-
+  assert(bf > -1);
   assert(cm != nullptr && csys != nullptr);
 
   /* wall BC expression: -K du/dx = h_t (I - (n x n))(u - u_w)
@@ -2159,51 +2027,50 @@ cs_cdofb_prescribed_smooth_wall_n_pena_t_robin(
    * condition to normal components*/
   /* ----------------------------------------------------- */
 
-  if (csys->bf_flag[fb] & CS_CDO_BC_WALL_PRESCRIBED) {
+  if (csys->bf_flag[bf] & CS_CDO_BC_WALL_PRESCRIBED) {
 
-    const cs_real_t  f_meas = cm->face[fb].meas;
-    const double  *u0 = &(csys->rob_values[9*fb]);
-    const double  h_t = csys->rob_values[9*fb + 3];
-    const double  h_n = eqp->strong_pena_bc_coeff;
-
-    const cs_quant_t  pfq = cm->face[fb];
-    const cs_real_t  *ni = pfq.unitv;
-    const cs_real_t  ni_ni[9] =
+    const cs_quant_t pfq = cm->face[bf];
+    const cs_real_t f_meas = pfq.meas;
+    const cs_real_t *ni = pfq.unitv;
+    const cs_real_t ni_ni[9] =
     { ni[0]*ni[0], ni[0]*ni[1], ni[0]*ni[2],
       ni[1]*ni[0], ni[1]*ni[1], ni[1]*ni[2],
       ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2]};
 
-   /* Update the RHS and the local system */
+    const double *u0 = &(csys->rob_values[9*bf]);
+    const double h_t = csys->rob_values[9*bf + 3];
+    const double h_n = eqp->strong_pena_bc_coeff;
 
-    csys->rhs[3*fb + 0] += ((h_t + (-h_t + h_n)*ni_ni[0])*u0[0]
-                                 + (-h_t + h_n)*ni_ni[1]*u0[1]
-                                 + (-h_t + h_n)*ni_ni[2]*u0[2])*f_meas;
+    // Update the RHS and the local system
+    csys->rhs[3*bf + 0] += ((h_t + (-h_t + h_n)*ni_ni[0])*u0[0]
+                                 + (-h_t + h_n)*ni_ni[1] *u0[1]
+                                 + (-h_t + h_n)*ni_ni[2] *u0[2] ) * f_meas;
 
-    csys->rhs[3*fb + 1] += ((h_t + (-h_t + h_n)*ni_ni[4])*u0[1]
-                                 + (-h_t + h_n)*ni_ni[3]*u0[0]
-                                 + (-h_t + h_n)*ni_ni[5]*u0[2])*f_meas;
+    csys->rhs[3*bf + 1] += ((h_t + (-h_t + h_n)*ni_ni[4])*u0[1]
+                                 + (-h_t + h_n)*ni_ni[3] *u0[0]
+                                 + (-h_t + h_n)*ni_ni[5] *u0[2] ) * f_meas;
 
-    csys->rhs[3*fb + 2] += ((h_t + (-h_t + h_n)*ni_ni[8])*u0[2]
-                                 + (-h_t + h_n)*ni_ni[6]*u0[0]
-                                 + (-h_t + h_n)*ni_ni[7]*u0[1])*f_meas;
+    csys->rhs[3*bf + 2] += ((h_t + (-h_t + h_n)*ni_ni[8])*u0[2]
+                                 + (-h_t + h_n)*ni_ni[6] *u0[0]
+                                 + (-h_t + h_n)*ni_ni[7] *u0[1] ) * f_meas;
 
-    /* Update the local system matrix */
-
-    cs_sdm_t *bff = csys->mat->get_block(fb, fb);
+    // Update the local system matrix
+    cs_sdm_t *bff = csys->mat->get_block(bf, bf);
     assert(bff->n_rows == bff->n_cols && bff->n_rows == 3);
 
-    bff->val[0] += (h_t + (-h_t + h_n)*ni_ni[0])*f_meas;
-    bff->val[1] += (-h_t + h_n)*ni_ni[1]*f_meas;
-    bff->val[2] += (-h_t + h_n)*ni_ni[2]*f_meas;
+    bff->val[0] += (h_t + (-h_t + h_n)*ni_ni[0]) * f_meas;
+    bff->val[1] +=        (-h_t + h_n)*ni_ni[1]  * f_meas;
+    bff->val[2] +=        (-h_t + h_n)*ni_ni[2]  * f_meas;
 
-    bff->val[3] += (-h_t + h_n)*ni_ni[3]*f_meas;
-    bff->val[4] += (h_t + (-h_t + h_n)*ni_ni[4])*f_meas;
-    bff->val[5] += (-h_t + h_n)*ni_ni[5]*f_meas;
+    bff->val[3] +=        (-h_t + h_n)*ni_ni[3]  * f_meas;
+    bff->val[4] += (h_t + (-h_t + h_n)*ni_ni[4]) * f_meas;
+    bff->val[5] +=        (-h_t + h_n)*ni_ni[5]  * f_meas;
 
-    bff->val[6] += (-h_t + h_n)*ni_ni[6]*f_meas;
-    bff->val[7] += (-h_t + h_n)*ni_ni[7]*f_meas;
-    bff->val[8] += (h_t + (-h_t + h_n)*ni_ni[8])*f_meas;
-  }  /* wall face */
+    bff->val[6] +=        (-h_t + h_n)*ni_ni[6]  * f_meas;
+    bff->val[7] +=        (-h_t + h_n)*ni_ni[7]  * f_meas;
+    bff->val[8] += (h_t + (-h_t + h_n)*ni_ni[8]) * f_meas;
+
+  } // boundary face is a wall
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys))
@@ -2217,7 +2084,7 @@ cs_cdofb_prescribed_smooth_wall_n_pena_t_robin(
  *        normal component and robin on tangent component.
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      bf    boundary face id in the cell mesh numbering
  * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
  * \param[in]      cm    pointer to a cellwise mesh structure
  * \param[in]      pty   pointer to a \ref cs_property_data_t structure
@@ -2228,34 +2095,34 @@ cs_cdofb_prescribed_smooth_wall_n_pena_t_robin(
 
 void
 cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
-  short int                                   fb,
+  short int                                   bf,
   [[maybe_unused]] const cs_equation_param_t *eqp,
-  const cs_cell_mesh_t                       *cm,
+  [[maybe_unused]] const cs_cell_mesh_t      *cm,
   [[maybe_unused]] const cs_property_data_t  *pty,
-  cs_cell_builder_t                          *cb,
+  [[maybe_unused]] cs_cell_builder_t         *cb,
   cs_cell_sys_t                              *csys)
 {
+  assert(bf > -1);
   assert(cm != nullptr && csys != nullptr);
-  double         *x_dir  = cb->values;
-  double         *ax_dir = cb->values + 3;
-  cs_sdm_t *m = csys->mat;
+
+  double *x_dir  = cb->values;
+  double *ax_dir = cb->values + 3;
+  cs_sdm_t *m    = csys->mat;
   cs_sdm_block_t *bd = m->block_desc;
-  cs_sdm_t *mFF = m->get_block(fb, fb);
+  cs_sdm_t *m_ff = m->get_block(bf, bf);
   std::memset(cb->values, 0, 6 * sizeof(double));
 
   /* wall BC expression: -K du/dx.tau = h_t (I - (n x n))(u - u_w)
    *                      u.n = 0
    * ----------------------------------------------------- */
 
-  if (csys->bf_flag[fb] & CS_CDO_BC_WALL_PRESCRIBED) {
+  if (csys->bf_flag[bf] & CS_CDO_BC_WALL_PRESCRIBED) {
 
-    const cs_real_t  f_meas = cm->face[fb].meas;
-    const double  *u0 = &(csys->rob_values[9*fb]);
-    const double  h_t = csys->rob_values[9*fb + 3];
+    const cs_real_t f_meas = cm->face[bf].meas;
+    const double *u0 = &(csys->rob_values[9*bf]);
+    const double h_t = csys->rob_values[9*bf + 3];
 
-    /* In case of the laminar wall treatment :
-     * classic Dirichlet BC on ux, uy, uz*/
-
+    // In case of laminar wall treatment: classical Dirichlet BC on ux, uy, uz
     if (h_t > 0.5*eqp->strong_pena_bc_coeff) {
 
       const double u0_norm = cs_math_3_norm(u0);
@@ -2264,48 +2131,47 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
 
         for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-          if (bi == fb)
-            continue;
+          if (bi == bf)
+            continue; // Skip the diagonal term
 
           cs_real_t *_rhs = csys->rhs + 3 * bi;
-          cs_sdm_t  *mIF  = m->get_block(bi, fb);
+          cs_sdm_t *m_if  = m->get_block(bi, bf);
 
-          mIF->matvec(u0, ax_dir);
-
+          m_if->matvec(u0, ax_dir);
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
+
         }
       } /* Non-homogeneous Dirichlet BC */
 
       for (short int k = 0; k < 3; k++)
-        csys->rhs[3*fb + k] = u0[k];
+        csys->rhs[3*bf + k] = u0[k];
 
       for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-        if (bi != fb) {
-
-          cs_sdm_t *mIF = m->get_block(bi, fb);
-          mIF->set_zero();
+        if (bi != bf) {
+          cs_sdm_t *m_if = m->get_block(bi, bf);
+          m_if->set_zero();
         }
-        else { /* bi == f */
-
+        else { // bi == bf
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-            cs_sdm_t *mFJ = m->get_block(fb, bj);
+            cs_sdm_t *mFJ = m->get_block(bf, bj);
             mFJ->set_zero();
           }
-          mFF->set_zero();
-          (*mFF)(0,0) = 1., (*mFF)(1,1) = 1., (*mFF)(2,2) = 1.;
+          m_ff->set_zero();
+          (*m_ff)(0,0) = 1., (*m_ff)(1,1) = 1., (*m_ff)(2,2) = 1.;
         }
-      } /* Block bi */
-    } /* In case of applying the turbulent wall treatment on u_t, u.n = u0n */
-    else {
 
-      const cs_quant_t  pfq = cm->face[fb];
-      const cs_real_t  *ni = pfq.unitv;
+      } // Loop on bi blocks
 
-      /* nn :  n x n^t, projection onto normal axis
-       * p_t : I - n x n^t, projection onto tangential plane */
+    }
+    else { // Apply a turbulent wall treatment on u_t, u.n = u0n
 
+      const cs_quant_t pfq = cm->face[bf];
+      const cs_real_t *ni = pfq.unitv;
+
+      // nn :  n x n^t, projection onto normal axis
+      // p_t : I - n x n^t, projection onto tangential plane
       cs_sdm_t p_t{3}, nn{3}, buffer{3};
 
       nn(0,0) = ni[0]*ni[0], nn(0,1) = ni[0]*ni[1], nn(0,2) = ni[0]*ni[2];
@@ -2328,10 +2194,10 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
        *  Apply the Dirichlet for Normal component
        *  =========================================== */
 
-      p_t.matvec(csys->rhs + 3*fb, x_dir);
+      p_t.matvec(csys->rhs + 3*bf, x_dir);
 
       for (short int k = 0; k < 3; k++)
-        csys->rhs[3 * fb + k] = x_dir[k];
+        csys->rhs[3 * bf + k] = x_dir[k];
 
       nn.matvec(u0, x_dir);
       const double u0n_norm = cs_math_3_norm(x_dir);
@@ -2339,17 +2205,17 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
       if (u0n_norm > cs_math_zero_threshold) {
 
         for (short int k = 0; k < 3; k++)
-          csys->rhs[3 * fb + k] += x_dir[k];
+          csys->rhs[3 * bf + k] += x_dir[k];
 
         for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-          if (bi == fb)
+          if (bi == bf)
             continue;
 
           cs_real_t *_rhs = csys->rhs + 3 * bi;
-          cs_sdm_t  *mIF  = m->get_block(bi, fb);
+          cs_sdm_t *m_if  = m->get_block(bi, bf);
 
-          mIF->matvec(x_dir, ax_dir);
+          m_if->matvec(x_dir, ax_dir);
 
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
@@ -2358,49 +2224,48 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
 
       for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-        if (bi != fb) {
+        if (bi != bf) {
 
-          /* Right project block (I,F) which is a 3x3 block
-           * mIF = mIF p_t */
+          /* Right project block (bi,bF) which is a 3x3 block
+           * m_if = m_if p_t */
 
           buffer.set_zero();
-          cs_sdm_t *mIF = m->get_block(bi, fb);
-          cs_sdm_multiply(mIF, &p_t, &buffer);
-          cs_sdm_copy(mIF, &buffer);
+          cs_sdm_t *m_if = m->get_block(bi, bf);
+          cs_sdm_multiply(m_if, &p_t, &buffer);
+          cs_sdm_copy(m_if, &buffer);
         }
-        else { /* bi == f */
+        else { /* bi == bf */
 
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
             buffer.set_zero();
-
-            cs_sdm_t *mFJ = m->get_block(fb, bj);
+            cs_sdm_t *mFJ = m->get_block(bf, bj);
             cs_sdm_multiply(&p_t, mFJ, &buffer);
             cs_sdm_copy(mFJ, &buffer);
           }
 
           buffer.set_zero();
-          cs_sdm_multiply(mFF, &p_t, &buffer);
-          cs_sdm_copy(mFF, &buffer);
+          cs_sdm_multiply(m_ff, &p_t, &buffer);
+          cs_sdm_copy(m_ff, &buffer);
 
-          *mFF += nn;
+          *m_ff += nn;
+
         }
-      } /* Block bi */
+      } // Loop on bi blocks
 
-      /* Update the RHS and the local system */
-
+      // Update the RHS and the local system
       cs_real_t u0_t[3] = {0., 0., 0.};
 
       p_t.matvec(u0, u0_t);
 
-      csys->rhs[3*fb + 0] += h_t*f_meas*u0_t[0];
-      csys->rhs[3*fb + 1] += h_t*f_meas*u0_t[1];
-      csys->rhs[3*fb + 2] += h_t*f_meas*u0_t[2];
+      csys->rhs[3*bf + 0] += h_t*f_meas*u0_t[0];
+      csys->rhs[3*bf + 1] += h_t*f_meas*u0_t[1];
+      csys->rhs[3*bf + 2] += h_t*f_meas*u0_t[2];
 
-      /* Update the local system matrix */
+      // Update the local system matrix
+      cs_sdm_add_mult(m_ff, h_t*f_meas, &p_t);
 
-      cs_sdm_add_mult(mFF, h_t*f_meas, &p_t);
     }
-  }  /* wall face */
+  } // The boundary face is a wall
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys))
@@ -2414,7 +2279,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
  *        normal component, and neumann for the tangent component.
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      bf    boundary face id in the cell mesh numbering
  * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
  * \param[in]      cm    pointer to a cellwise mesh structure
  * \param[in]      pty   pointer to a \ref cs_property_data_t structure
@@ -2425,20 +2290,22 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
 
 void
 cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
-  short int                                   fb,
+  short int                                   bf,
   [[maybe_unused]] const cs_equation_param_t *eqp,
-  const cs_cell_mesh_t                       *cm,
+  [[maybe_unused]] const cs_cell_mesh_t      *cm,
   [[maybe_unused]] const cs_property_data_t  *pty,
-  cs_cell_builder_t                          *cb,
+  [[maybe_unused]] cs_cell_builder_t         *cb,
   cs_cell_sys_t                              *csys)
 {
+  assert(bf > -1);
   assert(cm != nullptr && csys != nullptr);
-  double         *x_dir  = cb->values;
-  double         *ax_dir = cb->values + 3;
-  cs_sdm_t *m = csys->mat;
+
+  double *x_dir  = cb->values;
+  double *ax_dir = cb->values + 3;
+  cs_sdm_t *m    = csys->mat;
   cs_sdm_block_t *bd = m->block_desc;
-  cs_sdm_t *mFF = m->get_block(fb, fb);
-  assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
+  cs_sdm_t *m_ff = m->get_block(bf, bf);
+  assert((m_ff->n_cols == 3) && (m_ff->n_rows == 3));
 
   std::memset(cb->values, 0, 6 * sizeof(double));
 
@@ -2446,11 +2313,11 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
    *                      u.n = 0
    * ----------------------------------------------------- */
 
-  if (csys->bf_flag[fb] & CS_CDO_BC_WALL_PRESCRIBED) {
+  if (csys->bf_flag[bf] & CS_CDO_BC_WALL_PRESCRIBED) {
 
-    const cs_real_t  f_meas = cm->face[fb].meas;
-    const double  *u0 = &(csys->rob_values[9*fb]);
-    const double  *f_w = &(csys->rob_values[9*fb + 6]);
+    const cs_quant_t pfq = cm->face[bf];
+    const double *u0 = &(csys->rob_values[9*bf]);
+    const double *f_w = &(csys->rob_values[9*bf + 6]);
 
     const cs_real_t f_w_norm = cs_math_3_norm(f_w);
 
@@ -2463,13 +2330,13 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
 
         for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-          if (bi == fb)
+          if (bi == bf)
             continue;
 
           cs_real_t *_rhs = csys->rhs + 3 * bi;
-          cs_sdm_t  *mIF  = m->get_block(bi, fb);
+          cs_sdm_t *m_if  = m->get_block(bi, bf);
 
-          mIF->matvec(u0, ax_dir);
+          m_if->matvec(u0, ax_dir);
 
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
@@ -2477,30 +2344,30 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
       } /* Non-homogeneous Dirichlet BC */
 
       for (short int k = 0; k < 3; k++)
-        csys->rhs[3*fb + k] = u0[k];
+        csys->rhs[3*bf + k] = u0[k];
 
       for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-        if (bi != fb) {
+        if (bi != bf) {
 
-          cs_sdm_t *mIF = m->get_block(bi, fb);
-          mIF->set_zero();
+          cs_sdm_t *m_if = m->get_block(bi, bf);
+          m_if->set_zero();
         }
         else { /* bi == f */
 
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-            cs_sdm_t *mFJ = m->get_block(fb, bj);
+            cs_sdm_t *mFJ = m->get_block(bf, bj);
             mFJ->set_zero();
           }
 
-          mFF->set_zero();
-          (*mFF)(0,0) = 1., (*mFF)(1,1) = 1., (*mFF)(2,2) = 1.;
+          m_ff->set_zero();
+          (*m_ff)(0,0) = 1., (*m_ff)(1,1) = 1., (*m_ff)(2,2) = 1.;
         }
       } /* Block bi */
     } /* In case of applying the turbulent wall treatment on u_t, u.n = u0n */
     else {
-      const cs_quant_t  pfq = cm->face[fb];
-      const cs_real_t  *ni = pfq.unitv;
+
+      const cs_real_t *ni = pfq.unitv;
 
       /* nn :  n x n^t, projection onto normal axis
        * p_t : I - n x n^t, projection onto tangential plane */
@@ -2527,10 +2394,10 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
        *  Apply the Dirichlet for Normal component
        *  =========================================== */
 
-      p_t.matvec(csys->rhs + 3*fb, x_dir);
+      p_t.matvec(csys->rhs + 3*bf, x_dir);
 
       for (short int k = 0; k < 3; k++)
-        csys->rhs[3 * fb + k] = x_dir[k];
+        csys->rhs[3 * bf + k] = x_dir[k];
 
       nn.matvec(u0, x_dir);
       const double u0n_norm = cs_math_3_norm(x_dir);
@@ -2538,17 +2405,17 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
       if (u0n_norm > cs_math_zero_threshold) {
 
         for (short int k = 0; k < 3; k++)
-          csys->rhs[3*fb + k] += x_dir[k];
+          csys->rhs[3*bf + k] += x_dir[k];
 
         for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-          if (bi == fb)
+          if (bi == bf)
             continue;
 
           cs_real_t *_rhs = csys->rhs + 3 * bi;
-          cs_sdm_t  *mIF  = m->get_block(bi, fb);
+          cs_sdm_t *m_if  = m->get_block(bi, bf);
 
-          mIF->matvec(x_dir, ax_dir);
+          m_if->matvec(x_dir, ax_dir);
 
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
@@ -2557,49 +2424,49 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
 
       for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-        if (bi != fb) {
-
-          /* Right project block (I,F) which is a 3x3 block
-           * mIF = mIF p_t */
-
+        if (bi != bf) {
+          // Right project block (bi, bf) which is a 3x3 block
+          // m_if = m_if p_t
           buffer.set_zero();
-
-          cs_sdm_t *mIF = m->get_block(bi, fb);
-          cs_sdm_multiply(mIF, &p_t, &buffer);
-          cs_sdm_copy(mIF, &buffer);
+          cs_sdm_t *m_if = m->get_block(bi, bf);
+          cs_sdm_multiply(m_if, &p_t, &buffer);
+          cs_sdm_copy(m_if, &buffer);
         }
-        else { /* bi == f */
+        else { /* bi == bf */
 
-          /* Left project block (I==F,J) which is a 3x3 block */
-
+          // Left project block (i==bf, j) which is a 3x3 block
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
             buffer.set_zero();
-            cs_sdm_t *mFJ = m->get_block(fb, bj);
+            cs_sdm_t *mFJ = m->get_block(bf, bj);
             cs_sdm_multiply(&p_t, mFJ, &buffer);
             cs_sdm_copy(mFJ, &buffer);
           }
 
-          /* mFF = n x n^t + p_t mFF p_t; */
+          /* m_ff = n x n^t + p_t m_ff p_t; */
           buffer.set_zero();
-          cs_sdm_multiply(mFF, &p_t, &buffer);
-          cs_sdm_copy(mFF, &buffer);
+          cs_sdm_multiply(m_ff, &p_t, &buffer);
+          cs_sdm_copy(m_ff, &buffer);
 
-          *mFF += nn;
+          *m_ff += nn;
+
         }
-      } /* Block bi */
 
-      /* Update the RHS and the local system */
+      } // Loop on bi blocks
 
-      /* After the cs_equation_bc_cw_turb_smooth_wall function
-       * f_w will be either
-       *  0 in case of sub-viscous layer
-       *  ustar*uk in the tangent direction in case of log layer
-       */
-      csys->rhs[3*fb + 0] += f_w[0]*f_meas;
-      csys->rhs[3*fb + 1] += f_w[1]*f_meas;
-      csys->rhs[3*fb + 2] += f_w[2]*f_meas;
-    }
-  }  /* wall face */
+      // Update the RHS and the local system
+      // -----------------------------------
+
+      // After the cs_equation_bc_cw_turb_smooth_wall function
+      // f_w will be either
+      //    0 in case of sub-viscous layer
+      //    ustar*uk in the tangent direction in case of log layer
+      csys->rhs[3*bf + 0] += f_w[0] * pfq.meas;
+      csys->rhs[3*bf + 1] += f_w[1] * pfq.meas;
+      csys->rhs[3*bf + 2] += f_w[2] * pfq.meas;
+
+    } // Turbulent or laminar treatment ?
+
+  } // This boundary face is a wall
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys))
@@ -2613,7 +2480,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
  *        normal component, and neumann for the tangent component.
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
- * \param[in]      fb    face id in the cell mesh numbering
+ * \param[in]      bf    boundary face id in the cell mesh numbering
  * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
  * \param[in]      cm    pointer to a cellwise mesh structure
  * \param[in]      pty   pointer to a \ref cs_property_data_t structure
@@ -2624,36 +2491,35 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
 
 void
 cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
-  short int                                   fb,
+  short int                                   bf,
   [[maybe_unused]] const cs_equation_param_t *eqp,
-  const cs_cell_mesh_t                       *cm,
+  [[maybe_unused]] const cs_cell_mesh_t      *cm,
   [[maybe_unused]] const cs_property_data_t  *pty,
-  cs_cell_builder_t                          *cb,
+  [[maybe_unused]] cs_cell_builder_t         *cb,
   cs_cell_sys_t                              *csys)
 {
+  assert(bf > -1);
   assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
   assert(cs_equation_param_has_diffusion(eqp));
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC));
 
   std::memset(cb->values, 0, 6 * sizeof(double));
-  double         *ax_dir = cb->values + 3;
+  double *ax_dir = cb->values + 3;
   cs_sdm_t *m = csys->mat;
   cs_sdm_block_t *bd = m->block_desc;
-  cs_sdm_t *mFF = m->get_block(fb, fb);
-  assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
+  cs_sdm_t *m_ff = m->get_block(bf, bf);
+  assert((m_ff->n_cols == 3) && (m_ff->n_rows == 3));
 
-  if (csys->bf_flag[fb] & CS_CDO_BC_WALL_PRESCRIBED) {
+  if (csys->bf_flag[bf] & CS_CDO_BC_WALL_PRESCRIBED) {
 
-    const cs_real_t  f_meas = cm->face[fb].meas;
-    const double  *u0 = &(csys->rob_values[9*fb]);
-    const double  h_t = csys->rob_values[9*fb + 3];
-    const double  *f_w = &(csys->rob_values[9*fb + 6]);
-
-    /* In case of the laminar wall treatment :
-     * classic Dirichlet BC on ux, uy, uz*/
+    const cs_quant_t pfq = cm->face[bf];
+    const double *u0 = &(csys->rob_values[9*bf]);
+    const double h_t = csys->rob_values[9*bf + 3];
+    const double *f_w = &(csys->rob_values[9*bf + 6]);
 
     if (h_t > 0.5*eqp->strong_pena_bc_coeff) {
+      // Laminar wall treatment: classical Dirichlet BC on ux, uy, uz
 
       const double u0_norm = cs_math_3_norm(u0);
 
@@ -2661,13 +2527,13 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
 
         for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-          if (bi == fb)
+          if (bi == bf)
             continue;
 
           cs_real_t *_rhs = csys->rhs + 3 * bi;
-          cs_sdm_t  *mIF  = m->get_block(bi, fb);
+          cs_sdm_t *m_if  = m->get_block(bi, bf);
 
-          mIF->matvec(u0, ax_dir);
+          m_if->matvec(u0, ax_dir);
 
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
@@ -2675,31 +2541,31 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
       } /* Non-homogeneous Dirichlet BC */
 
       for (short int k = 0; k < 3; k++)
-        csys->rhs[3*fb + k] = u0[k];
+        csys->rhs[3*bf + k] = u0[k];
 
       for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
-        if (bi != fb) {
-
-          cs_sdm_t *mIF = m->get_block(bi, fb);
-          mIF->set_zero();
+        if (bi != bf) {
+          cs_sdm_t *m_if = m->get_block(bi, bf);
+          m_if->set_zero();
         }
-        else { /* bi == f */
-
+        else { // bi == bf
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-            cs_sdm_t *mFJ = m->get_block(fb, bj);
+            cs_sdm_t *mFJ = m->get_block(bf, bj);
             mFJ->set_zero();
           }
 
-          mFF->set_zero();
-          (*mFF)(0,0) = 1., (*mFF)(1,1) = 1., (*mFF)(2,2) = 1.;
+          m_ff->set_zero();
+          (*m_ff)(0,0) = 1., (*m_ff)(1,1) = 1., (*m_ff)(2,2) = 1.;
         }
-      } /* Block bi */
-    }
-    else {
 
-      /* 0) Pre-compute the product between diffusion property and the
-         face vector areas */
+      } /* Block bi */
+
+    }
+    else { // Turbulent wall treatment
+
+      // (0) Pre-compute the product between diffusion property and the face
+      //     vector areas
 
       cs_real_3_t *kappa_f = cb->vectors;
       for (short int f = 0; f < cm->n_fc; f++) {
@@ -2708,84 +2574,80 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
           kappa_f[f][k] = coef * cm->face[f].unitv[k];
       }
 
-      /* 1) Build the bc_op matrix (scalar-valued version) */
+      // (1) Build the bc_op matrix (scalar-valued version)
 
-      /* Initialize the matrix related this flux reconstruction operator */
-
-      const short int n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
-
+      // Initialize the matrix related this flux reconstruction operator
+      const short int n_dofs = cm->n_fc + 1; // n_blocks or n_scalar_dofs
       cs_sdm_t *bc_op = cb->aux;
       bc_op->init(n_dofs);
 
-      /* Compute \int_f du/dn v and update the matrix. Only the line associated to
-         fb has non-zero values */
+      // Compute \int_f du/dn v and update the matrix.
+      // Only the line associated to bf has non-zero values
+      _normal_flux_reco(bf,
+                        eqp->diffusion_hodgep.coef,
+                        cm,
+                        (const cs_real_t(*)[3])kappa_f,
+                        bc_op);
 
-      _normal_flux_reco(
-          fb, eqp->diffusion_hodgep.coef, cm, (const cs_real_t(*)[3])kappa_f, bc_op);
+      // (2) Update the bc_op matrix
+      //     Nothing is added to the RHS since this is a sliding
+      //     A sliding boundary condition means:
+      //      - homogeneous Dirichlet values on the normal component
+      //      - hommogeneous Neumann on the tangential flux
 
-      /* 2) Update the bc_op matrix and nothing is added to the RHS since a sliding
-         means homogeneous Dirichlet values on the normal component and hommogeneous
-         Neumann on the tangential flux */
-
-      const cs_quant_t   pfq = cm->face[fb];
-      const cs_real_t   *nf  = pfq.unitv;
+      const cs_real_t *nf  = pfq.unitv;
       const cs_real_33_t nf_nf
         = { { nf[0] * nf[0], nf[0] * nf[1], nf[0] * nf[2] },
             { nf[1] * nf[0], nf[1] * nf[1], nf[1] * nf[2] },
             { nf[2] * nf[0], nf[2] * nf[1], nf[2] * nf[2] } };
 
-      /* 1/h_f \approx |f| / |pvol_fc| */
-
+      // 1/h_f \approx |f| / |pvol_fc|
       const double pcoef
-        = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[fb];
+        = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[bf];
 
-      /* Handle the diagonal block: Retrieve the 3x3 matrix */
+      // Handle the diagonal block: Retrieve the 3x3 matrix
+      cs_sdm_t *b_ff = csys->mat->get_block(bf, bf);
+      assert(b_ff->n_rows == b_ff->n_cols && b_ff->n_rows == 3);
 
-      cs_sdm_t *bFF = csys->mat->get_block(fb, fb);
-      assert(bFF->n_rows == bFF->n_cols && bFF->n_rows == 3);
-
-      const cs_real_t _val = pcoef + 2 * bc_op->val[fb * (n_dofs + 1)];
+      const cs_real_t _val = pcoef + 2 * bc_op->val[bf * (n_dofs + 1)];
       for (short int k = 0; k < 3; k++) {
-        bFF->val[3*k    ] += nf_nf[0][k] * _val;
-        bFF->val[3*k + 1] += nf_nf[1][k] * _val;
-        bFF->val[3*k + 2] += nf_nf[2][k] * _val;
+        b_ff->val[3*k    ] += nf_nf[0][k] * _val;
+        b_ff->val[3*k + 1] += nf_nf[1][k] * _val;
+        b_ff->val[3*k + 2] += nf_nf[2][k] * _val;
       }
 
+      // Handle extra-diagonal blocks
       for (short int xj = 0; xj < n_dofs; xj++) {
 
-        if (xj == fb)
-          continue;
+        if (xj == bf)
+          continue; // Skip the diagonal term
 
-        /* It should be done both for face- and cell-defined DoFs */
-        /* Retrieve the 3x3 matrix */
+        // It should be done both for face- and cell-defined DoFs
+        // Retrieve the 3x3 matrix
+        cs_sdm_t *b_fj = csys->mat->get_block(bf, xj);
+        assert(b_fj->n_rows == b_fj->n_cols && b_fj->n_rows == 3);
+        cs_sdm_t *b_jf = csys->mat->get_block(xj, bf);
+        assert(b_jf->n_rows == b_jf->n_cols && b_jf->n_rows == 3);
 
-        cs_sdm_t *bFJ = csys->mat->get_block(fb, xj);
-        assert(bFJ->n_rows == bFJ->n_cols && bFJ->n_rows == 3);
-        cs_sdm_t *bJF = csys->mat->get_block(xj, fb);
-        assert(bJF->n_rows == bJF->n_cols && bJF->n_rows == 3);
-
-        const cs_real_t op_fj      = bc_op->val[n_dofs * fb + xj];
-        const cs_real_t op_jf      = bc_op->val[n_dofs * xj + fb];
+        const cs_real_t op_fj      = bc_op->val[n_dofs * bf + xj];
+        const cs_real_t op_jf      = bc_op->val[n_dofs * xj + bf];
         const cs_real_t _val_fj_jf = op_fj + op_jf;
 
         for (int k = 0; k < 3; k++) {
-
-          bFJ->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
-          bFJ->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
-          bFJ->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
-
-          /* nf_nf is symmetric */
-
-          bJF->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
-          bJF->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
-          bJF->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
+          b_fj->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
+          b_fj->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
+          b_fj->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
+          // nf_nf is symmetric
+          b_jf->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
+          b_jf->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
+          b_jf->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
         }
 
-      } /* Loop on xj */
+      } // Loop on xj blocks
 
-      csys->rhs[3*fb + 0] += f_w[0]*f_meas;
-      csys->rhs[3*fb + 1] += f_w[1]*f_meas;
-      csys->rhs[3*fb + 2] += f_w[2]*f_meas;
+      csys->rhs[3*bf + 0] += f_w[0] * pfq.meas;
+      csys->rhs[3*bf + 1] += f_w[1] * pfq.meas;
+      csys->rhs[3*bf + 2] += f_w[2] * pfq.meas;
 
     }
   }
@@ -2818,33 +2680,26 @@ cs_cdofb_navsto_nl_algo_cvg(const cs_navsto_param_t *nsp,
 {
   assert(nsp != nullptr && algo != nullptr);
 
-  if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
-
-    /* The Anderson acceleration can modified the current iterate to speed_up
-       the convergence of the non-linear algorithm */
-
+  if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
+    // The Anderson acceleration can modified the current iterate to speed_up
+    // the convergence of the non-linear algorithm
     cs_iter_algo_update_anderson(algo,
                                  cur_iterate,
                                  pre_iterate,
                                  nsp->dotprod,
                                  nsp->square_norm);
 
-  } /* Anderson acceleration */
+  // Update the residual values. Compute the norm of the difference between the
+  // two mass fluxes (the current one and the previous one)
 
-  /* Update the residual values. Compute the norm of the difference between the
-     two mass fluxes (the current one and the previous one) */
-
-  double  res = nsp->square_norm_diff(pre_iterate, cur_iterate);
-
+  double res = nsp->square_norm_diff(pre_iterate, cur_iterate);
   cs_iter_algo_update_residual(algo, sqrt(res));
 
-  /* Update the convergence members */
+  // Update the convergence members
+  cs_sles_convergence_state_t cvg_status
+    = cs_iter_algo_update_cvg_tol_auto(algo);
 
-  cs_sles_convergence_state_t
-    cvg_status = cs_iter_algo_update_cvg_tol_auto(algo);
-
-  /* Log the convergence if needed */
-
+  // Log the convergence if needed
   cs_iter_algo_log_cvg(algo, cs_param_get_nl_algo_label(nsp->nl_algo_type));
 
   return cvg_status;
@@ -2852,31 +2707,28 @@ cs_cdofb_navsto_nl_algo_cvg(const cs_navsto_param_t *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the function pointer computing the source term in the momentum
- *         equation related to the gravity effect (hydrostatic pressure or the
- *         Boussinesq approximation)
+ * \brief Set the function pointer computing the source term in the momentum
+ *        equation related to the gravity effect (hydrostatic pressure or the
+ *        Boussinesq approximation)
  *
- * \param[in]  nsp          set of parameters for the Navier-Stokes system
- * \param[out] p_func       way to compute the gravity effect
+ * \param[in]  nsp     set of parameters for the Navier-Stokes system
+ * \param[out] p_func  way to compute the term related to the gravity effect
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_set_gravity_func(const cs_navsto_param_t      *nsp,
-                                 cs_cdofb_navsto_source_t    **p_func)
+cs_cdofb_navsto_set_gravity_func(const cs_navsto_param_t   *nsp,
+                                 cs_cdofb_navsto_source_t **p_func)
 {
   if (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ) {
 
     switch (cs_cdofb_navsto_boussinesq_type) {
-
     case CS_CDOFB_NAVSTO_BOUSSINESQ_FACE_DOF:
       *p_func = cs_cdofb_navsto_boussinesq_at_face;
       break;
-
     case CS_CDOFB_NAVSTO_BOUSSINESQ_CELL_DOF:
       *p_func = cs_cdofb_navsto_boussinesq_at_cell;
       break;
-
     default:
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Invalid type of algorithm to compute the Boussinesq"
@@ -2893,98 +2745,103 @@ cs_cdofb_navsto_set_gravity_func(const cs_navsto_param_t      *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Take into account the gravity effects.
- *         Compute and add the source term to the local RHS.
- *         This is a special treatment since of face DoFs are involved
- *         contrary to the standard case where only the cell DoFs is involved.
+ * \brief Take into account the gravity effects.
+ *        Compute and add the source term to the local RHS.
+ *        This is a special treatment since of face DoFs are involved
+ *        contrary to the standard case where only the cell DoFs are involved.
  *
- * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      nsb     pointer to a builder structure for the NavSto system
- * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      nsp   set of parameters to handle the Navier-Stokes system
+ * \param[in]      cm    pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb   pointer to a builder structure for the NavSto system
+ * \param[in, out] csys  pointer to a cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_gravity_term(const cs_navsto_param_t           *nsp,
-                             const cs_cell_mesh_t              *cm,
-                             const cs_cdofb_navsto_builder_t   *nsb,
-                             cs_cell_sys_t                     *csys)
+cs_cdofb_navsto_gravity_term
+(
+ const cs_navsto_param_t                          *nsp,
+ const cs_cell_mesh_t                             *cm,
+ [[maybe_unused]] const cs_cdofb_navsto_builder_t *nsb,
+ cs_cell_sys_t                                    *csys
+)
 {
   assert(nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS);
+  assert(csys != nullptr && nsb != nullptr);
 
-  const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
-  const cs_real_t  cell_coef = _dp3(gravity_vector, cm->xc);
+  const cs_real_t *gravity_vector = nsp->phys_constants->gravity;
+  const cs_real_t cell_coef = _dp3(gravity_vector, cm->xc);
 
   for (int f = 0; f < cm->n_fc; f++) {
 
-    const cs_real_t  *_div_f = nsb->div_op + 3*f;
-    const cs_quant_t  pfq = cm->face[f];
-    const cs_real_t  face_coef = _dp3(gravity_vector, pfq.center);
+    const cs_real_t *_div_f = nsb->div_op + 3*f;
+    const cs_quant_t pfq = cm->face[f];
+    const cs_real_t face_coef = _dp3(gravity_vector, pfq.center);
 
-    /* div_op is built such that _div_f[k] = -i_{f,c} * |f| * n_f[k] */
-
+    // div_op is built such that _div_f[k] = -i_{f,c} * |f| * n_f[k]
     for (int k = 0; k < 3; k++)
       csys->rhs[3*f+k] += _div_f[k] * nsb->rho_c * (cell_coef - face_coef);
 
   } /* Loop on cell faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Take into account the buoyancy force with the Boussinesq approx.
- *         Compute and add the source term to the local RHS.
- *         This is the standard case where the face DoFs are used for the
- *         constant part rho0 . g[] and only the cell DoFs are involved for the
- *         remaining part (the Boussinesq approximation).
+ * \brief Take into account the buoyancy force with the Boussinesq approx.
+ *        Compute and add the source term to the local RHS.
+ *        This is the standard case where
+ *          - the face DoFs are used for the constant part rho0 . g[]
+ *          - only the cell DoFs are involved for the remaining part (the
+ *            Boussinesq approximation).
  *
- * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      nsb     pointer to a builder structure for the NavSto system
- * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      nsp   set of parameters to handle the Navier-Stokes system
+ * \param[in]      cm    pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb   pointer to a builder structure for the NavSto system
+ * \param[in, out] csys  pointer to a cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_boussinesq_at_cell(const cs_navsto_param_t           *nsp,
-                                   const cs_cell_mesh_t              *cm,
-                                   const cs_cdofb_navsto_builder_t   *nsb,
-                                   cs_cell_sys_t                     *csys)
+cs_cdofb_navsto_boussinesq_at_cell
+(
+ const cs_navsto_param_t                          *nsp,
+ const cs_cell_mesh_t                             *cm,
+ [[maybe_unused]] const cs_cdofb_navsto_builder_t *nsb,
+ cs_cell_sys_t                                    *csys
+)
 {
-  CS_UNUSED(nsb);
   assert(nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ);
+  assert(csys != nullptr);
 
-  /* Boussinesq term: rho0 * g[] * ( 1 - beta * (var[c] - var0) ).  The
-   * remaining part rho0 * g[] * ( -beta * (var - var_c) has a zero mean-value
-   * if one considers the reconstruction var = var_c + grad(vard)|_c * ( x -
-   * x_c) which has a mean value equal to var_c */
+  // Boussinesq term: rho0 * g[] * ( 1 - beta * (var[c] - var0) ).
+  // ---------------
+  // The remaining part rho0 * g[] * ( -beta * (var - var_c))
+  // has a zero mean-value if one considers the reconstruction
+  //            var = var_c + grad(vard)|_c * ( x - x_c)
+  // which has a mean value equal to var_c
 
-  const cs_real_t  rho0 = nsp->mass_density->ref_value;
-  const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
+  const cs_real_t rho0 = nsp->mass_density->ref_value;
+  const cs_real_t *gravity_vector = nsp->phys_constants->gravity;
 
-  cs_real_t  rho0g[3] = { rho0 * gravity_vector[0],
-                          rho0 * gravity_vector[1],
-                          rho0 * gravity_vector[2] };
+  const cs_real_t rho0g[3] = { rho0 * gravity_vector[0],
+                               rho0 * gravity_vector[1],
+                               rho0 * gravity_vector[2] };
 
-  /* Constant part: rho_ref * g[] => Should be in balance with the pressure
-     gradient in order to retrieve the hydrostatic case */
+  // Constant part: rho_ref * g[]
+  //  => Should be in balance with the pressure gradient in order to retrieve
+  //     the hydrostatic case
 
   for (int f = 0; f < cm->n_fc; f++) {
-    const cs_real_t  *_div_f = nsb->div_op + 3*f;
+    const cs_real_t *_div_f = nsb->div_op + 3*f;
     for (int k = 0; k < 3; k++)
       csys->rhs[3*f+k] += rho0g[k] * _div_f[k] * cm->xc[k];
   }
 
-  /* Volume part  */
-
-  double  boussi_coef = 0;
-
+  // Volume part
+  double boussi_coef = 0;
   for (int i = 0; i < nsp->n_boussinesq_terms; i++) {
-
-    cs_navsto_param_boussinesq_t  *bp = nsp->boussinesq_param + i;
+    cs_navsto_param_boussinesq_t *bp = nsp->boussinesq_param + i;
     boussi_coef += -bp->beta*(bp->var[cm->c_id] - bp->var0);
-
   }
 
   for (int k = 0; k < 3; k++)
@@ -2993,53 +2850,52 @@ cs_cdofb_navsto_boussinesq_at_cell(const cs_navsto_param_t           *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Take into account the buoyancy force with the Boussinesq approx.
- *         Compute and add the source term to the local RHS.
- *         This way to compute the Boussinesq approximation applies only to
- *         face DoFs. This should enable to keep a stable (no velocity) in
- *         case of a stratified configuration.
+ * \brief Take into account the buoyancy force with the Boussinesq approx.
+ *        Compute and add the source term to the local RHS.
+ *        This way to compute the Boussinesq approximation applies only to
+ *        face DoFs. This should enable to keep a stable (no velocity) in
+ *        case of a stratified configuration.
  *
- * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      nsb     pointer to a builder structure for the NavSto system
- * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      nsp   set of parameters to handle the Navier-Stokes system
+ * \param[in]      cm    pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb   pointer to a builder structure for the NavSto system
+ * \param[in, out] csys  pointer to a cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_boussinesq_at_face(const cs_navsto_param_t           *nsp,
-                                   const cs_cell_mesh_t              *cm,
-                                   const cs_cdofb_navsto_builder_t   *nsb,
-                                   cs_cell_sys_t                     *csys)
+cs_cdofb_navsto_boussinesq_at_face
+(
+ const cs_navsto_param_t                          *nsp,
+ const cs_cell_mesh_t                             *cm,
+ [[maybe_unused]] const cs_cdofb_navsto_builder_t *nsb,
+ cs_cell_sys_t                                    *csys
+)
 {
-  CS_UNUSED(nsb);
   assert(nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ);
+  assert(csys != nullptr && nsb != nullptr);
 
-  /* Boussinesq term: rho0 * g[] * ( 1 - beta * (var[c] - var0) ). */
+  // Boussinesq term: rho0 * g[] * ( 1 - beta * (var[c] - var0) )
 
-  /* 1. Compute the mass density for this cell taking into account the
-     Boussinesq approximation */
-
-  double  boussi_coef = 1;
-
+  // 1. Compute the mass density for this cell taking into account the
+  //    Boussinesq approximation
+  double boussi_coef = 1;
   for (int i = 0; i < nsp->n_boussinesq_terms; i++) {
-
-    cs_navsto_param_boussinesq_t  *bp = nsp->boussinesq_param + i;
+    cs_navsto_param_boussinesq_t *bp = nsp->boussinesq_param + i;
     boussi_coef += -bp->beta*(bp->var[cm->c_id] - bp->var0);
+  }
 
-  } /* Loop on Boussinesq terms */
-
-  const cs_real_t  rho_c = nsp->mass_density->ref_value * boussi_coef;
-  const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
-  const double  cell_coef = _dp3(gravity_vector, cm->xc);
+  const cs_real_t rho_c = nsp->mass_density->ref_value * boussi_coef;
+  const cs_real_t *gravity_vector = nsp->phys_constants->gravity;
+  const double cell_coef = _dp3(gravity_vector, cm->xc);
 
   for (int f = 0; f < cm->n_fc; f++) {
 
-    /* div_op is built such that _div_f[k] = -i_{f,c} * |f| * n_f[k] */
+    // div_op is built such that _div_f[k] = -i_{f,c} * |f| * n_f[k]
 
-    const cs_real_t  *_div_f = nsb->div_op + 3*f;
-    const cs_quant_t  pfq = cm->face[f];
-    const double  face_coef = _dp3(gravity_vector, pfq.center);
+    const cs_real_t *_div_f = nsb->div_op + 3*f;
+    const cs_quant_t pfq = cm->face[f];
+    const double face_coef = _dp3(gravity_vector, pfq.center);
     const double rhs_coef = rho_c * (cell_coef - face_coef);
 
     for (int k = 0; k < 3; k++)
@@ -3050,120 +2906,108 @@ cs_cdofb_navsto_boussinesq_at_face(const cs_navsto_param_t           *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the source term for computing the stream function.
- *         This relies on the prototype associated to the generic function
- *         pointer \ref cs_dof_func_t
+ * \brief Get the source term for computing the stream function.
+ *        This relies on the prototype associated to the generic function
+ *        pointer \ref cs_dof_func_t
  *
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         nullptr or pointer to a structure cast
- * on-the-fly \param[in, out] retval        result of the function. Must be
- * allocated.
+ * \param[in]      input         nullptr or pointer cast on-the-fly
+ * \param[in, out] retval        result of the function. Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_stream_source_term(cs_lnum_t            n_elts,
-                                   const cs_lnum_t     *elt_ids,
-                                   bool                 dense_output,
-                                   void                *input,
-                                   cs_real_t           *retval)
+cs_cdofb_navsto_stream_source_term(cs_lnum_t        n_elts,
+                                   const cs_lnum_t *elt_ids,
+                                   bool             dense_output,
+                                   void            *input,
+                                   cs_real_t       *retval)
 {
   assert(input != nullptr);
   assert(retval != nullptr);
 
-  /* input is a pointer to the vorticity field */
-  const cs_real_t  *w = (cs_real_t *)input;
+  // input is a pointer to the vorticity field
+  const cs_real_t *w = static_cast<cs_real_t *>(input);
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
-
-    cs_lnum_t  id   = (elt_ids == nullptr) ? i : elt_ids[i];
-    cs_lnum_t  r_id = dense_output ? i : id;
-
-    retval[r_id] = w[3*id+2];   /* Extract the z component */
-
+    cs_lnum_t id   = (elt_ids == nullptr) ? i : elt_ids[i];
+    cs_lnum_t r_id = dense_output ? i : id;
+    retval[r_id] = w[3*id+2]; // Extract the z component
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the balance for an NS system over the full computational
- *         domain between time t_cur and t_cur + dt_cur
- *         Case of Navier-Stokes system with CDO face-based scheme
+ * \brief Compute the balance for a Navier-Stokes system over the full
+ *        computational domain between time t_cur and t_cur + dt_cur
+ *        Case of the Navier-Stokes system with CDO face-based schemes
  *
- * \param[in]      nsp           set of parameters to handle the Navier-Stokes system
- * \param[in]      quant         pointer to a \ref cs_cdo_quantities_t struct.
- * \param[in]      connect       pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]      ts            pointer to a \ref cs_time_step_t struct.
- * \param[in]      pr_bc         set of definitions for the presuure BCs
- * \param[in]      bf_type       type of boundaries for all boundary faces
- * \param[in]      pr_c          scalar-valued pressure in each cell
+ * \param[in] nsp      set of parameters to handle the Navier-Stokes system
+ * \param[in] cdoq     pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in] connect  pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in] ts       pointer to a \ref cs_time_step_t struct.
+ * \param[in] pr_bc    set of definitions for the presuure BCs
+ * \param[in] bf_type  type of boundaries for all boundary faces
+ * \param[in] pr_c     scalar-valued pressure in each cell
  *
  * \return a pointer to a \ref cs_cdo_balance_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_balance_t *
-cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
-                        const cs_cdo_connect_t      *connect,
-                        const cs_cdo_quantities_t   *quant,
-                        const cs_time_step_t        *ts,
-                        const cs_cdo_bc_face_t      *pr_bc,
-                        const cs_boundary_type_t    *bf_type,
-                        const cs_real_t             *pr_c)
+cs_cdofb_navsto_balance(const cs_navsto_param_t   *nsp,
+                        const cs_cdo_connect_t    *connect,
+                        const cs_cdo_quantities_t *cdoq,
+                        const cs_time_step_t      *ts,
+                        const cs_cdo_bc_face_t    *pr_bc,
+                        const cs_boundary_type_t  *bf_type,
+                        const cs_real_t           *pr_c)
 
 {
   const char *func_name = __func__;
 
-  cs_timer_t  t0 = cs_timer_time();
-
+  cs_timer_t t0 = cs_timer_time();
   cs_equation_t *mom_eq = cs_navsto_system_get_momentum_eq();
-  cs_cdofb_vecteq_t  *eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
+  cs_cdofb_vecteq_t *eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *eqp = mom_eq->param;
   cs_equation_builder_t *eqb = mom_eq->builder;
 
-  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
-  const cs_lnum_t  n_cells = quant->n_cells;
-  const cs_lnum_t  n_faces = quant->n_faces;
+  cs_field_t *pot = cs_field_by_id(eqc->var_field_id);
+  const cs_lnum_t n_cells = cdoq->n_cells;
+  const cs_lnum_t n_faces = cdoq->n_faces;
 
-  /* Allocate and initialize the structure storing the balance evaluation */
+  // Allocate and initialize the structure storing the balance evaluation
+  cs_cdo_balance_t *eb = cs_cdo_balance_create(cs_flag_primal_cell,
+                                               3*(n_cells + n_faces));
 
-  cs_cdo_balance_t  *eb = cs_cdo_balance_create(cs_flag_primal_cell,
-                                                3*(n_cells + n_faces));
-
-# pragma omp parallel if (n_cells > CS_THR_MIN)     \
-  shared(quant, connect, ts, eqp, eqb, eqc, pot, eb, \
-         func_name)
+# pragma omp parallel if (n_cells > CS_THR_MIN)                 \
+  shared(cdoq, connect, ts, eqp, eqb, eqc, pot, eb, func_name)
   {
-    const int  t_id = cs_get_thread_id();
+    const int t_id = cs_get_thread_id();
 
-    /* Each thread get back its related structures:
-       Get the cell-wise view of the mesh and the algebraic system */
-
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-
-    cs_cell_sys_t     *csys = nullptr;
-    cs_cell_builder_t *cb   = nullptr;
+    // Each thread get back its related structures:
+    // Get the cell-wise view of the mesh and the algebraic system
+    cs_cell_mesh_t *cm    = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_sys_t *csys   = nullptr;
+    cs_cell_builder_t *cb = nullptr;
     cs_cdofb_vecteq_get(&csys, &cb);
 
-    cs_hodge_t         *diff_hodge = (eqc->diffusion_hodge == nullptr)
-                                       ? nullptr
-                                       : eqc->diffusion_hodge[t_id];
-    cs_hodge_t *mass_hodge
-      = (eqc->mass_hodge == nullptr) ? nullptr : eqc->mass_hodge[t_id];
+    cs_hodge_t *diff_hodge = (eqc->diffusion_hodge == nullptr) ?
+      nullptr : eqc->diffusion_hodge[t_id];
+    cs_hodge_t *mass_hodge = (eqc->mass_hodge == nullptr) ?
+      nullptr : eqc->mass_hodge[t_id];
 
-    const cs_real_t  t_cur = ts->t_cur;
-    const cs_real_t  dt_cur = ts->dt[0];
-    const cs_real_t  inv_dtcur = 1./dt_cur;
+    const cs_real_t t_cur = ts->t_cur;
+    const cs_real_t dt_cur = ts->dt[0];
+    const cs_real_t inv_dtcur = 1./dt_cur;
 
-    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
-                                                                    connect);
+    cs_cdofb_navsto_builder_t nsb
+      = cs_cdofb_navsto_create_builder(nsp, connect);
 
-    /* Set times at which one evaluates quantities if needed */
-
+    // Set times at which one evaluates quantities if needed
     switch (eqp->time_scheme) {
-
     case CS_TIME_SCHEME_EULER_EXPLICIT:
       cb->t_pty_eval = t_cur;
       cb->t_bc_eval = t_cur;
@@ -3179,32 +3023,29 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
       cb->t_bc_eval = t_cur + dt_cur;
       cb->t_st_eval = t_cur + dt_cur;
       break;
-
-    default: /* Implicit (Forward Euler or BDF2) */
+    default: // Implicit (Forward Euler or BDF2)
       cb->t_pty_eval = t_cur + dt_cur;
       cb->t_bc_eval = t_cur + dt_cur;
       cb->t_st_eval = t_cur + dt_cur;
       break;
+    }
 
-      } /* Switch on time scheme */
-
-    /* Initialization of the values of properties */
-
+    // Initialization of the values of properties
     cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 
-    /* Set inside the OMP section so that each thread has its own value */
-
-    cs_real_t  _p_cur[30], _p_prev[30], _p_theta[30];
-    cs_real_t *p_cur = nullptr, *p_prev = nullptr, *p_theta = nullptr;
+    // Set inside the OMP section so that each thread has its own value
+    cs_real_t _p_cur[30], _p_pre[30], _p_theta[30];
+    cs_real_t *p_cur = nullptr, *p_pre = nullptr, *p_theta = nullptr;
 
     if (connect->n_max_fbyc > 9) {
       CS_MALLOC(p_cur, 3*(connect->n_max_fbyc + 1), cs_real_t);
-      CS_MALLOC(p_prev, 3*(connect->n_max_fbyc + 1), cs_real_t);
+      CS_MALLOC(p_pre, 3*(connect->n_max_fbyc + 1), cs_real_t);
       CS_MALLOC(p_theta, 3*(connect->n_max_fbyc + 1), cs_real_t);
     }
     else {
+      assert(3*(connect->n_max_fbyc + 1) < 30);
       p_cur = _p_cur;
-      p_prev = _p_prev;
+      p_pre = _p_pre;
       p_theta = _p_theta;
     }
 
@@ -3217,50 +3058,40 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
 
       cb->cell_flag = connect->cell_flag[c_id];
 
-      /* Set the local mesh structure for the current cell */
-
+      // Set the local mesh structure for the current cell
       cs_cell_mesh_build(c_id,
                          cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
-                         connect, quant, cm);
+                         connect,
+                         cdoq,
+                         cm);
 
-
-      /* Set the local (i.e. cellwise) structures for the current cell */
-
+      // Set the local (i.e. cellwise) structures for the current cell
       cs_cdofb_vecteq_init_cell_system(cm,
                                        eqp,
                                        eqb,
                                        eqc->face_values,
                                        pot->val,
                                        nullptr,
-                                       nullptr, /* no n-1 state is given */
+                                       nullptr, // no n-1 state is given
                                        csys,
                                        cb);
 
-
-      /* Setup the navsto local builder
-       * =================================
-       * - Set the type of boundary associated to each boundary face
-       * - Set the pressure boundary conditions (if required)
-       * - Define the divergence operator used in the linear system (div_op is
-       *   equal to minus the divergence)
-       */
-
+      // Setup the navsto local builder
+      // =================================
+      //  - Set the type of boundary associated to each boundary face
+      //  - Set the pressure boundary conditions (if required)
+      //  - Define the divergence operator used in the linear system (div_op is
+      //    equal to minus the divergence)
       cs_cdofb_navsto_define_builder(cb->t_bc_eval, nsp, cm, csys,
                                      pr_bc, bf_type, &nsb);
 
-
-      if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) { /* MASS MATRIX
-                                                      * =========== */
+      if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) {
+        // Build the mass matrix and store it in mass_hodge->matrix
         assert(mass_hodge != nullptr);
-
-        /* Build the mass matrix and store it in mass_hodge->matrix */
-
         eqc->get_mass_matrix(cm, mass_hodge, cb);
-
       }
 
-      /* Unsteady term + time scheme */
-
+      // Unsteady term + time scheme
       if (cs_equation_param_has_time(eqp)) {
 
         if (!(eqb->time_pty_uniform))
@@ -3268,58 +3099,66 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
                                                    eqp->time_property,
                                                    cb->t_pty_eval);
 
-        /* Set the value of the current potential */
-
-        for (short int f = 0; f < cm->n_fc; f++)
+        // Set the value of the current potential (face values)
+        for (short int f = 0; f < cm->n_fc; f++) {
+          cs_real_t *p_cur_cw = p_cur + 3*f;
+          cs_real_t *p_pre_cw = p_pre + 3*f;
+          const cs_real_t *p_cur_mesh = eqc->face_values + 3*cm->f_ids[f];
+          const cs_real_t *p_pre_mesh = eqc->face_values_pre + 3*cm->f_ids[f];
           for (short int k = 0; k < 3; k++) {
-            p_cur[3*f + k] = eqc->face_values[3*cm->f_ids[f] + k];
-            p_prev[3*f + k] = eqc->face_values_pre[3*cm->f_ids[f] + k];
+            p_cur_cw[k] = p_cur_mesh[k];
+            p_pre_cw[k] = p_pre_mesh[k];
           }
-
-        for (short int k = 0; k < 3; k++) {
-          p_cur[3*cm->n_fc + k] = pot->val[3*cm->c_id + k];
-          p_prev[3*cm->n_fc + k] = pot->val_pre[3*cm->c_id + k];
         }
 
-        /* Get the value of the time property */
+        // Set the value of the current potential (cell values)
+        {
+          cs_real_t *p_cur_cw = p_cur + 3*cm->n_fc;
+          cs_real_t *p_pre_cw = p_pre + 3*cm->n_fc;
+          const cs_real_t *p_cur_mesh = eqc->face_values + 3*cm->c_id;
+          const cs_real_t *p_pre_mesh = eqc->face_values_pre + 3*cm->c_id;
+          for (short int k = 0; k < 3; k++) {
+            p_cur_cw[k] = p_cur_mesh[k];
+            p_pre_cw[k] = p_pre_mesh[k];
+          }
+        }
 
-        const double  tptyc = inv_dtcur * cb->tpty_val;
+        // Get the value of the time property
+        const double tptyc = inv_dtcur * cb->tpty_val;
 
-        /* Assign local matrix to a mass matrix to define */
-
+        // Assign local matrix to a mass matrix to define
         CS_CDO_OMP_ASSERT(cb->loc->n_rows == cb->loc->n_cols);
         CS_CDO_OMP_ASSERT(cb->loc->n_rows == cm->n_fc + 1);
 
         if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
           for (short int k = 0; k < 3; k++)
             eb->unsteady_term[3*n_faces + 3*c_id + k] += tptyc * cm->vol_c *
-              (p_cur[3*cm->n_fc + k] - p_prev[3*cm->n_fc + k]);
+              (p_cur[3*cm->n_fc + k] - p_pre[3*cm->n_fc + k]);
         }
         else
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Not implemented yet.", func_name);
 
-      } /* End of time contribution */
+      } // End of time part
 
-      /* Set p_theta */
-
+      // Set p_theta
       switch (eqp->time_scheme) {
 
       case CS_TIME_SCHEME_EULER_EXPLICIT:
         for (short int i = 0; i < cm->n_fc + 1; i++)
-         for (int k = 0; k < 3; k++)
-           p_theta[3*i + k] = p_prev[3*i + k];
+          for (int k = 0; k < 3; k++)
+            p_theta[3*i + k] = p_pre[3*i + k];
         break;
       case CS_TIME_SCHEME_CRANKNICO:
         for (short int i = 0; i < cm->n_fc + 1; i++)
           for (int k = 0; k < 3; k++)
-            p_theta[3*i + k] = 0.5*(p_cur[3*i + k] + p_prev[3*i + k]);
+            p_theta[3*i + k] = 0.5*(p_cur[3*i + k] + p_pre[3*i + k]);
         break;
       case CS_TIME_SCHEME_THETA:
         for (short int i = 0; i < cm->n_fc + 1; i++)
           for (int k = 0; k < 3; k++)
             p_theta[3*i + k] = eqp->theta*p_cur[3*i + k] +
-              (1-eqp->theta)*p_prev[3*i + k];
+              (1-eqp->theta)*p_pre[3*i + k];
         break;
 
       case CS_TIME_SCHEME_EULER_IMPLICIT: /* Implicit (Euler or BDF2) */
@@ -3330,46 +3169,40 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-            "%s: Not implemented yet.", func_name);
+                  "%s: Not implemented yet.", func_name);
         break;
 
-      } /* Switch on time scheme */
+      } // Switch on time scheme
 
-      /* Reaction term */
-
+      // Reaction term
       if (cs_equation_param_has_reaction(eqp)) {
 
-        /* Update the value of the reaction property(ies) if needed */
-
+        // Update the value of the reaction property(ies) if needed
         cs_equation_builder_set_reaction_pty_cw(eqp, eqb, cm, cb);
 
-        /* Define the local reaction property */
-
-        const double  rpty_val = cb->rpty_val * cm->vol_c;
+        // Define the local reaction property
+        const double rpty_val = cb->rpty_val * cm->vol_c;
         for (int k = 0; k < 3; k++)
-          eb->reaction_term[3*n_faces + 3*c_id + k] += rpty_val * p_theta[3*cm->n_fc + k];
+          eb->reaction_term[3*n_faces + 3*c_id + k]
+            += rpty_val * p_theta[3*cm->n_fc + k];
 
-      } /* Reaction */
+      }
 
-      /* Diffusion term */
-
+      // Diffusion term
       if (cs_equation_param_has_diffusion(eqp)) {
-
         assert(diff_hodge != nullptr);
 
-        /* Set the diffusion property */
-
+        // Set the diffusion property
         if (!(eqb->diff_pty_uniform))
           cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, cb->cell_flag,
                                         diff_hodge);
 
-        /* Define the local stiffness matrix: local matrix owned by the cellwise
-           builder (store in cb->loc) */
+        // Define the local stiffness matrix
+        // local matrix owned by the cellwise builder (store in cb->loc)
         cs_sdm_block33_init(csys->mat, cm->n_fc + 1, cm->n_fc + 1);
-
         cs_cdofb_vecteq_diffusion(eqp, eqb, eqc, cm, diff_hodge, csys, cb);
 
-        cs_real_t  *res = cb->values;
+        cs_real_t *res = cb->values;
         std::memset(res, 0, 3 * (cm->n_fc + 1) * sizeof(cs_real_t));
         cs_sdm_block_matvec(csys->mat, p_theta, res);
 
@@ -3382,38 +3215,33 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
         for (short int k = 0; k < 3; k++)
           eb->diffusion_term[3*n_faces + 3*cm->c_id + k] += res[3*cm->n_fc + k];
 
-      } /* End of diffusion */
+      } // End of the diffusion part
 
-      /* Advection term */
-
+      // Advection term
       if (cs_equation_param_has_convection(eqp)
-          && ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0)) { /* ADVECTION TERM
-                                                             * ============== */
+          && ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0)) {
 
-        /* Open hook: Compute the advection flux for the numerical scheme and store
-           the advection fluxes across primal faces */
-
+        // Open hook:
+        //   Compute the advection flux for the numerical scheme and store
+        //   the advection fluxes across primal faces
         eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
 
-        /* Define the local advection matrix */
-
+        // Define the local advection matrix
         const cs_property_data_t *diff_pty =
           (diff_hodge == nullptr) ? nullptr : diff_hodge->pty_data;
-
         eqc->advection_main(eqp, cm, csys, diff_pty, eqc->advection_scheme, cb);
 
-        /* Close hook: Modify if needed the computed advection matrix and update
-           the local system */
-
+        // Close hook:
+        //   Modify if needed the computed advection matrix and update
+        //   the local system
         cs_sdm_block33_init(csys->mat, cm->n_fc + 1, cm->n_fc + 1);
-
         eqc->advection_close(eqp, cm, csys, cb, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
         if (cs_dbg_cw_test(eqp, cm, csys))
           csys->dump("\n>> Cell system after advection");
 #endif
-        cs_real_t  *res = cb->values;
+        cs_real_t *res = cb->values;
         std::memset(res, 0, 3 * (cm->n_fc + 1) * sizeof(cs_real_t));
         cs_sdm_block_matvec(csys->mat, p_theta, res);
 
@@ -3426,23 +3254,20 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
         for (short int k = 0; k < 3; k++)
           eb->advection_term[3*n_faces + 3*cm->c_id + k] += res[3*cm->n_fc + k];
 
-      } /* End of advection */
+      } // End of the advection part
 
-      /* Source term */
-
+      // Source term
       if (cs_equation_param_has_sourceterm(eqp)) {
 
-        /* Reset the local contribution */
-
-        cs_real_t  *src = cb->values;
+        // Reset the local contribution
+        cs_real_t *src = cb->values;
         std::memset(src, 0, 3 * (cm->n_fc + 1) * sizeof(cs_real_t));
 
-        /* Source term contribution to the algebraic system
-           If the equation is steady, the source term has already been computed
-           and is added to the right-hand side during its initialization. */
-
+        // Source term contribution to the algebraic system
+        // If the equation is steady, the source term has already been computed
+        // and is added to the right-hand side during its initialization.
         cs_source_term_compute_cellwise(eqp->n_source_terms,
-                    (cs_xdef_t *const *)eqp->source_terms,
+                                      (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
@@ -3460,23 +3285,17 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
         for (short int k = 0; k < 3; k++)
           eb->source_term[3*n_faces + 3*cm->c_id + k] += src[3*cm->n_fc + k];
 
-      } /* End of term source contribution */
+      } // End of the term source part
 
       cs_real_t *div_op = nsb.div_op;
-
       if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
-        const cs_boundary_type_t  *_bf_type = nsb.bf_type;
-
+        const cs_boundary_type_t *_bf_type = nsb.bf_type;
         for (short int i = 0; i < csys->n_bc_faces; i++) {
-
-          /* Get the boundary face in the cell numbering */
-
-          const short int  f = csys->_f_ids[i];
-
-          if (_bf_type[i] & CS_BOUNDARY_IMPOSED_VEL
-           || _bf_type[i] & CS_BOUNDARY_SYMMETRY
-           || _bf_type[i] & CS_BOUNDARY_WALL) {
-
+          // Get the boundary face in the cell numbering */
+          const short int f = csys->_f_ids[i];
+          if (_bf_type[i] & CS_BOUNDARY_IMPOSED_VEL ||
+              _bf_type[i] & CS_BOUNDARY_SYMMETRY    ||
+              _bf_type[i] & CS_BOUNDARY_WALL) {
             for (short int k = 0; k < 3; k++)
               div_op[3*f+k] = 0.;
           }
@@ -3489,26 +3308,26 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
           eb->source_term[3*f_id + k] -= div_op[3*i + k]*pr_c[c_id];
       }
 
-    } /* Main loop on cells */
+    } // Main loop on cells
 
     if (p_cur != _p_cur) {
       CS_FREE(p_cur);
-      CS_FREE(p_prev);
+      CS_FREE(p_pre);
       CS_FREE(p_theta);
     }
 
     cs_cdofb_navsto_free_builder(&nsb);
 
-  } /* OPENMP Block */
+  } // OpenMP block
 
   for (cs_lnum_t dof_id = 0; dof_id < n_faces + n_cells; dof_id++)
     for (short int k = 0; k < 3; k++)
-      eb->balance[3*dof_id + k] =
-        eb->unsteady_term[3*dof_id + k]  + eb->reaction_term[3*dof_id + k] +
-        eb->diffusion_term[3*dof_id + k] + eb->advection_term[3*dof_id + k] -
-        eb->source_term[3*dof_id + k];
+      eb->balance[3*dof_id + k]
+        = eb->unsteady_term[3*dof_id + k]  + eb->reaction_term[3*dof_id + k]
+        + eb->diffusion_term[3*dof_id + k] + eb->advection_term[3*dof_id + k]
+        - eb->source_term[3*dof_id + k];
 
-  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   return eb;
@@ -3520,19 +3339,17 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
  *        when the unsteady Navier-Stokes system with a CDO face-based scheme
  *        is used.
  *
- * \param[in]  nsp           set of parameters to handle the Navier-Stokes
- *                           system
- * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
- * \param[in]  sc            pointer to a \ref cs::cdo_navsto_ctx_t structure
- * \param[in]  tbs           pointer to a \ref cs_turbulence_t struct.
- * \param[in]  ps_cvg        pointer to a \ref cs_cdo_navsto_psteady_cvg_t
- *                           struct.
+ * \param[in] nsp     set of parameters to handle the Navier-Stokes system
+ * \param[in] cdoq    pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in] sc      pointer to a \ref cs::cdo_navsto_ctx_t structure
+ * \param[in] tbs     pointer to a \ref cs_turbulence_t struct.
+ * \param[in] ps_cvg  pointer to a \ref cs_cdo_navsto_psteady_cvg_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_navsto_check_convergence(const cs_navsto_param_t     *nsp,
-                                  const cs_cdo_quantities_t   *quant,
+                                  const cs_cdo_quantities_t   *cdoq,
                                   const cs_time_step_t        *ts,
                                   const cs::cdo_navsto_ctx_t  *sc,
                                   const cs_turbulence_t       *tbs,
@@ -3591,7 +3408,7 @@ cs_cdofb_navsto_check_convergence(const cs_navsto_param_t     *nsp,
 
   // Test convergence on turbulence
   if (tbs != nullptr) {
-    tbs->check_convergence(quant, ts, nsp->psteady_cvg_param, ps_cvg);
+    tbs->check_convergence(cdoq, ts, nsp->psteady_cvg_param, ps_cvg);
   }
 
   const bool cvg_iter = ps_cvg.cvg_iter_mass_flux && ps_cvg.cvg_iter_turb_k;

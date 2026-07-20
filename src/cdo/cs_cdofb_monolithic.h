@@ -216,4 +216,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t         *mesh,
                        const cs_navsto_param_t *nsp,
                        cs_cdofb_monolithic_t   *sc);
 
+/*----------------------------------------------------------------------------*/
+
 #endif /* CS_CDOFB_MONOLITHIC_H */
