@@ -953,7 +953,7 @@ template<class T,
          class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
 CS_F_HOST_DEVICE
 inline
-bool
+constexpr bool
 any_eq
 (
   const T     ref_val, /*!<[in] Reference value to compare to */
@@ -976,7 +976,7 @@ template<class T,
          class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
 CS_F_HOST_DEVICE
 inline
-bool
+constexpr bool
 all_eq
 (
   const T     ref_val, /*!<[in] Reference value to compare to */
@@ -999,7 +999,7 @@ template<class T,
          class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
 CS_F_HOST_DEVICE
 inline
-bool
+constexpr bool
 none_eq
 (
   const T     ref_val, /*!<[in] Reference value to compare to */

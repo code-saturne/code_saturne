@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <string.h>
+#include <tuple>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -41,6 +42,7 @@
 
 #include "base/cs_dispatch.h"
 #include "base/cs_execution_context.h"
+#include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -49,9 +51,10 @@ namespace cs {
 /*! Enum with layout options */
 enum class
 layout {
-  right,   /*!< Layout right */
-  left,    /*!< Layout left */
-  unknown  /*!< Layout unknown */
+  right,          /*!< Layout right */
+  left,           /*!< Layout left */
+  strided,        /*!< generic strided layout */
+  unknown         /*!< Layout unknown */
 };
 
 /*----------------------------------------------------------------------------*/
@@ -123,6 +126,30 @@ public:
   )
   {
     set_size_(dims);
+    _data = data;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method using dimensions.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<layout LL = L, typename = std::enable_if_t<LL == layout::strided>>
+  CS_F_HOST_DEVICE
+  mdspan
+  (
+    T                     *data, /*!<[in] data pointer (raw) */
+    std::tuple<cs_lnum_t *, cs_lnum_t *> tup
+  )
+  {
+    const auto [dims, offs] = tup;
+    _size = 1;
+    for (int i = 0; i < N; i++) {
+      _offset[i] = offs[i];
+      _extent[i] = dims[i];
+      _size *= dims[i];
+    }
     _data = data;
   }
 
@@ -299,7 +326,13 @@ public:
 #if defined(CS_ARRAY_DBG_BOUNDS)
     check_bounds_(i);
 #endif
-    return _data[i];
+    static_assert(cs::any_eq(L, layout::right, layout::left, layout::strided),
+                  "Unknown layout.");
+
+    if constexpr (cs::any_eq(L, layout::right, layout::left))
+      return _data[i];
+    else if constexpr (L == layout::strided)
+      return _data[i*_offset[0]];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -323,7 +356,13 @@ public:
 #if defined(CS_ARRAY_DBG_BOUNDS)
     check_bounds_(i);
 #endif
-    return _data[i];
+    static_assert(cs::any_eq(L, layout::right, layout::left, layout::strided),
+                  "Unknown layout.");
+
+    if constexpr (cs::any_eq(L, layout::right, layout::left))
+      return _data[i];
+    else if constexpr (L == layout::strided)
+      return _data[i*_offset[0]];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -349,11 +388,14 @@ public:
     check_bounds_(i,j);
 #endif
 
+    static_assert(cs::any_eq(L, layout::right, layout::left, layout::strided),
+                  "Unknown layout.");
+
     if constexpr (L == layout::right)
       return _data[i*_offset[0] + j];
     else if constexpr (L == layout::left)
       return _data[i + j*_offset[1]];
-    else
+    else if constexpr (L == layout::strided)
       return _data[i*_offset[0] + j*_offset[1]];
   }
 
@@ -380,11 +422,14 @@ public:
     check_bounds_(i,j);
 #endif
 
+    static_assert(cs::any_eq(L, layout::right, layout::left, layout::strided),
+                  "Unknown layout.");
+
     if constexpr (L == layout::right)
       return _data[i*_offset[0] + j];
     else if constexpr (L == layout::left)
       return _data[i + j*_offset[1]];
-    else
+    else if constexpr (L == layout::strided)
       return _data[i*_offset[0] + j*_offset[1]];
   }
 
@@ -409,6 +454,9 @@ public:
 #if defined(CS_ARRAY_DBG_BOUNDS)
     check_bounds_(indices...);
 #endif
+
+    static_assert(cs::any_eq(L, layout::right, layout::left, layout::strided),
+                  "Unknown layout.");
 
     return _data[data_offset_(indices...)];
   }
@@ -435,7 +483,158 @@ public:
     check_bounds_(indices...);
 #endif
 
+    static_assert(cs::any_eq(L, layout::right, layout::left, layout::strided),
+                  "Unknown layout.");
+
     return _data[data_offset_(indices...)];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Return a vector, 1D cs_mdspan of size 3, with a strided layout from
+   * a left layout mdspan.
+   *
+   * \return cs_mdspan<T,1,cs::layout::strided>(3)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  inline
+  std::enable_if_t<cs::always_true<Args...>::value && (N>1) &&
+                   (L == layout::left) && sizeof...(Args) == N-1,
+                   mdspan<T, 1, layout::strided>>
+  vect
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    std::tuple<cs_lnum_t *, cs_lnum_t *> tmp_tup(_extent + (N-1),
+                                                 _offset + (N-1));
+    return mdspan<T,1,layout::strided>(_data + data_offset_(indices...),
+                                       tmp_tup);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Return a vector, 1D cs_mdspan of size 3, with a layout right from
+   * a right layout mdspan.
+   *
+   * \return cs_mdspan<T,1,cs::layout::right>(3)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  inline
+  std::enable_if_t<cs::always_true<Args...>::value && (N>1) &&
+                   (L == layout::right) && sizeof...(Args) == N-1,
+                   mdspan<T, 1, layout::right>>
+  vect
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    return mdspan<T,1,layout::right>(_data + data_offset_(indices...), 3);
+  }
+
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Return a symmetric tensor, size 6, which is a 1D cs_mdspan of size
+   * 6, with a strided layout from a left layout mdspan.
+   *
+   * \return cs_mdspan<T,1,cs::layout::strided>(6);
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  inline
+  std::enable_if_t<cs::always_true<Args...>::value && (N>1) &&
+                   (L == layout::left) && sizeof...(Args) == N-1,
+                   mdspan<T, 1, layout::strided>>
+  sym_tensor
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    std::tuple<cs_lnum_t *, cs_lnum_t *> tmp_tup(_extent + (N-1),
+                                                 _offset + (N-1));
+    return mdspan<T,1,layout::strided>(_data + data_offset_(indices...),
+                                       tmp_tup);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Return a symmetric tensor, size 6, which is a 1D cs_mdspan of size
+   * 6, with a right layout from a right layout mdspan.
+   *
+   * \return cs_mdspan<T,1,cs::layout::right>(6);
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  inline
+  std::enable_if_t<cs::always_true<Args...>::value && (N>1) &&
+                   (L == layout::right) && sizeof...(Args) == N-1,
+                   mdspan<T, 1, layout::right>>
+  sym_tensor
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    return mdspan<T,1,layout::right>(_data + data_offset_(indices...), 6);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Return a tensor which is a 2D cs_mdspan of size (3,3), with a
+   * strided layout from a left layout mdspan.
+   *
+   * \return cs_mdspan<T,2,cs::layout::strided>(3,3);
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  inline
+  std::enable_if_t<cs::always_true<Args...>::value && (N>2) &&
+                   (L == layout::left) && sizeof...(Args) == N-2,
+                   mdspan<T, 2, layout::strided>>
+  tensor
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    std::tuple<cs_lnum_t *, cs_lnum_t *> tmp_tup(_extent + (N-1),
+                                                 _offset + (N-1));
+    return mdspan<T,2,layout::strided>(_data + data_offset_(indices...),
+                                       tmp_tup);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Return a tensor which is a 2D cs_mdspan of size (3,3), with a
+   * right layout from a right layout mdspan.
+   *
+   * \return cs_mdspan<T,2,cs::layout::right>(3,3);
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  inline
+  std::enable_if_t<cs::always_true<Args...>::value && (N>2) &&
+                   (L == layout::right) && sizeof...(Args) == N-2,
+                   mdspan<T, 2, layout::right>>
+  tensor
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    return mdspan<T,2,layout::right>(_data + data_offset_(indices...), 3, 3);
   }
 
   /*===========================================================================
@@ -1010,6 +1209,7 @@ protected:
     cs_lnum_t _indices[n_idx] = {indices...};
 
     cs_lnum_t retval = 0;
+
     for (int i = 0; i < n_idx; i++)
       retval +=_indices[i] * _offset[i];
 
@@ -1184,6 +1384,7 @@ protected:
   cs_lnum_t   _offset[N];
   cs_lnum_t   _size;
   mutable T*  _data;
+
 };
 
 } /* namespace cs */
