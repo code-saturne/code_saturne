@@ -1,0 +1,229 @@
+%-------------------------------------------------------------------------------
+\section{Compatible Discrete Operator (CDO) schemes}
+
+\subsection{Introduction }
+
+Compatible Discrete Operator schemes have been recently introduced in \CS to
+handle distorted and/or polyhedral meshes in a robust way. CDO schemes belong to
+the broad family of \emph{compatible} or \emph{mimetic} or
+\emph{structure-preserving} schemes. For more details about compatible
+discretizations and previous works on this topic, please refer
+to~\cite[Chapter~2 - Compatible spatial discretization]{Bonel14}. Constitutive
+relations or closure laws (\emph{metric relations}) are clearly separated from
+relations defining differential operators or conservation laws
+(\emph{topological relations}).
+
+CDO schemes gather several space discretization schemes according to the
+localization of the degrees of freedom (DoFs). Namely, DoFs are defined and
+located following their physical meaning (potential, circulation, flux or
+density). DoFs and discrete differential operators are linked together to
+satisfy a discrete De Rham complex mimicking the continuous one.
+
+
+Figure~\ref{fig:cdo_dofs} depicts a sketch of all DoF locations available in CDO
+schemes. According to the space discretization scheme, some of them are
+considered to build a given CDO scheme.
+\begin{itemize}
+\item \emph{vertex-based} schemes when DoFs are located at mesh vertices. DoF
+  definition corresponds to a discrete field associated with a potential.
+\item \emph{vertex+cell-based} schemes when DoFs are both located at mesh cells
+  and mesh vertices. DoF definitions correspond to a discrete field associated
+  with a potential. After building the cellwise system, DoF associated with the
+  cell mesh can be algebraically removed using an operation called \emph{static
+    condensation}. After the resolution (a system of size equal to the number of
+  mesh vertices for a scalar-valued equation), cell DoFs can be recovered
+  performing the reverse operation.
+\item \emph{face-based} schemes when DoFs are located at mesh faces and mesh
+  cells. DoF definitions correspond to a discrete field associated with a
+  potential. After building the cellwise system, DoF associated with the cell
+  mesh can be algebraically removed using an operation called \emph{static
+    condensation}. After the resolution (a system of size equal to the number of
+  mesh faces for a scalar-valued equation), cell DoFs can be recovered
+  performing the reverse operation.
+\item \emph{edge-based} schemes when DoFs are located at mesh edges. DoF
+  definition corresponds to the circulation along each edge of a vector-valued
+  unknown. This scheme is only available for vector-valued \emph{curl-curl}
+  problems.
+\item \emph{cell-based} schemes when DoFs are located at mesh cells (for DoFs
+  associated with a potential unknown) and mesh faces (for DoFs associated with
+  a flux unknown). This scheme is only available for scalar-valued diffusion
+  equations.
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.7\textwidth]{cdo_dofs}
+  \caption{Location of the degrees of freedom (DoFs) on a hexagonal prismatic
+    cell according to the CDO space discretization schemes.}
+  \label{fig:cdo_dofs}
+\end{figure}
+
+\begin{remark}
+  For a scalar-valued equation associated with a pure diffusion problem,
+  \emph{vertex-based} and \emph{vertex+cell-based} schemes are related to the
+  \emph{primal} formulation of the problem, \emph{cell-based} schemes are
+  related to the \emph{mixed} formulation of the problem and \emph{face-based}
+  schemes to a \emph{hybrid} formulation of the problem.
+\end{remark}
+
+
+CDO schemes have been devised and mathematically analyzed during three PhD
+thesis. Part of these works have been integrated inside \CS and are now
+available in \CS when activating the \texttt{CDO} mode:
+\begin{itemize}
+\item Bonelle's Phd~\cite{Bonel14} for vertex-based, face-based and cell-based
+  schemes in the case of steady anisotropic diffusion equation and an
+  edge-based scheme for a steady \emph{curl-curl} equation;
+\item Cantin's Phd~\cite{Cant16} for the scalar-valued unsteady
+  convection/diffusion/reaction equation with vertex-based schemes and
+  vertex+cell-based schemes;
+\item Milani's PhD~\cite{Mila20} for the discretization of the steady/unsteady
+  Stokes and Navier--Stokes equations using face-based schemes. Two
+  velocity-pressure coupling algorithms are investigated and analyzed: (1) a
+  fully coupled (or \textit{monolithic}) algorithm and (2) an
+  \textit{artificial compressibility} algorithm.
+\end{itemize}
+
+\subsection{Diffusion operator}
+
+The discretization of the diffusion is detailed in several reports and
+articles. The EDF's report~\cite{Bonel12} (in French) is a good
+introduction. The link with other space discretizations and the mathematical
+analysis (stability, convergence proof and \emph{a priori} error estimates) is
+available in~\cite{BonEr14}. The key operator is the discrete Hodge
+operator. This operator can be built in several ways. An example of the
+influence of the choice of the discrete Hodge operator on the quality of the
+solution is available in~\cite{BDPE15}.
+
+An detailed explanation on the way to enforce Dirichlet boundary conditions in
+vertex-based scheme along with the description of vertex+cell-based schemes for
+scalar-valued diffusion equation is available in~\cite{Cant16}.
+
+\subsubsection{Discrete Hodge Operator}
+
+The discrete Hodge operator is the key operator linking the primal and dual
+entities. It acts as a mass-like matrix mapping discrete differential forms
+(degrees of freedom such as circulations or fluxes) associated with either the
+primal or dual mesh. This operator bridges degrees of freedom (DoFs) in duality.
+
+Depending on the discretization scheme and the localization of the DoFs, several
+types of discrete Hodge operators are defined in \CS:
+\begin{itemize}
+\item \textbf{Primal Vertices to Dual Cells (VpCd):} Maps primal vertex values
+  to dual cell values. This operator acts as a mass matrix for vertex-based
+  schemes.
+\item \textbf{Primal Edges to Dual Faces (EpFd):} Connects primal edge
+  circulations (e.g., circulation of a vector field) to dual face fluxes. This
+  operator plays an important role in the build of stiffness matrices for
+  vertex-based schemes.
+\item \textbf{Primal Faces to Dual Edges (FpEd):} Connects primal face fluxes to
+  dual edge circulations. This operator plays an important role in cell-based
+  schemes.
+\item \textbf{Dual Edges to Primal Faces (EdFp):} Maps dual edge circulations to
+  primal face fluxes. This operator plays an important role in the build of
+  stiffness matrices for face-based schemes.
+\item \textbf{Primal Cells to Dual Vertices (CpVd):} Maps primal cell values to
+  dual vertex values. This operator acts as a mass matrix for cell-based
+  schemes.
+\item \textbf{Dual Vertices to Primal Cells (VdCp):} Maps dual vertex values to
+  primal cell values.
+\item \textbf{Face-based (FC):} Play the role of a mass-like matrix for
+  face-based schemes. In this case, one operates on a hybrid space of degrees of
+  freedom located at both faces and cells.
+\item \textbf{Vertex+Cell-based (VC):} Play the role of a mass-like matrix for
+  vertex+cell-based schemes, operating on a hybrid space of degrees of freedom
+  situated at both vertices and cells.
+\end{itemize}
+
+\paragraph{Algorithms for discrete Hodge operators.}
+
+To compute the local contributions of the discrete Hodge operators, \CS offers
+four main algorithms, offering different trade-offs between mesh alignment,
+consistency, and computational cost:
+
+\begin{itemize}
+\item \textbf{Voronoi algorithm:} This algorithm assumes that a geometric
+  orthogonality condition holds between the primal and dual entities (e.g., the
+  line connecting two cell centers is orthogonal to their shared face). It leads
+  to a diagonal discrete Hodge operator (conceptually related to a Two-Point
+  Flux Approximation - TPFA). While computationally very efficient, using this
+  algorithm on non-orthogonal or skewed meshes introduces a consistency error
+  that does not vanish under mesh refinement.
+\item \textbf{Whitney on the Barycentric Subdivision (WBS):} This algorithm
+  relies on a subdivision of each polyhedral cell into a set of sub-tetrahedra
+  via its barycentric subdivision (see~\cite[Bonel14]). Classical Finite Element
+  polynomial shape functions (Whitney forms) are then defined on this
+  subdivision. This provides a consistent and robust approximation on arbitrary
+  polyhedral meshes. On tetrahedral meshes, operators defined using this
+  algorithm are similar to classical Finite Element formulations. This algorithm
+  does not required a geometric orthogonality condition for the mesh.
+\item \textbf{Orthogonal Consistency/Stabilization (COST):} This algorithm
+  decomposes the local Hodge operator $\mathsf{H}_c$ into two orthogonal contributions for each cell $c\in C$ ($C$ is the set of primal cells):
+  \begin{equation}
+    \mathsf{H}_c = \mathsf{H}_c^{CO} + \beta^2 \mathsf{H}_c^{ST}
+  \end{equation}
+  where $\mathsf{H}_c^{CO}$ is the consistency part (ensuring exact
+  reconstruction of piecewise constant vector-valued fields or piecewise linear
+  scalar-valued fields) and $\mathsf{H}_c^{ST}$ is the stabilization part
+  (guaranteeing stability and positive-definiteness on nearly arbitrary
+  meshes). The user-defined scaling parameter $\beta^2$ controls the weight of
+  the stabilization. This formulation underpins several advanced polyhedral
+  schemes of the literature such as the SUSHI scheme (\textup{S}cheme
+  \textup{U}sing \textup{S}tabilization and \textup{H}ybrid \textup{I}nterfaces)
+  ($\beta = \frac{1}{\sqrt{3}}$), the Discrete Geometric Approach (DGA) scheme
+  ($\beta = \frac{1}{3}$), and the Generalized Crouzeix--Raviart (GCR) scheme
+  ($\beta = 1$). This algorithm also naturally supports anisotropic and
+  tensor-valued material properties.
+\item \textbf{Bubble stabilization:} Similar to the \textbf{COST} approach, this
+  algorithm utilizes an orthogonal decomposition between consistency and
+  stabilization. However, the stabilization term $\mathsf{H}_c^{ST}$ is built
+  using piecewise linear bubble functions, similar to those of the Finite
+  Element literature. This leads to a stabilization scaling of:
+  \begin{equation}
+    C_{stab} = 0.1 \times \beta^2
+  \end{equation}
+  where $\beta$ is the user-defined stabilization coefficient and $0.1$ is the
+  scaling arising from the integral of the squared bubble function over a
+  tetrahedral subdivision. This is particularly useful for vertex-based schemes
+  to avoid over-stabilization on stretched cells.
+\end{itemize}
+
+
+
+\subsection{Convection operator}
+
+Several advection schemes are detailed in~\cite{Cant16} for scalar-valued
+vertex-based schemes. The classical upwind and centered discretizations are
+discussed along with a \emph{P\'eclet-robust} scheme which automatically
+applies an upwind weighting according to the value of the local P\'eclet
+number.
+
+An upwind and centered schemes are detailed in~\cite{Mila20} in the case of
+scalar- and vector-valued face-based schemes.
+
+\subsection{Stokes and Navier--Stokes equations}
+
+The discretization of the Stokes or Navier--Stokes equations in the case of a
+laminar flow with a constant mass density and viscosity is detailed
+in~\cite{Mila20}. With these assumptions, the viscous term is simply a
+vector-valued Laplacian operator.
+
+Two types of velocity/pressure coupling algorithms are available:
+\begin{itemize}
+\item A \emph{monolithic} algorithm: a fully coupled algorithm between the
+  velocity components and the pressure DoFs. This yields to a linear system
+  which is a saddle-point problem. A specific algorithm to solve steady-state
+  problem is also available.
+\item An \emph{artificial compressibility} algorithm~\cite{GuMi15} up to a
+  second-order accuracy~\cite{MiBoE22}. Only unsteady problems are tackled with this
+  algorithm. This is an experimental feature.
+\end{itemize}
+
+A short introduction to this discretization describing the main operators in
+the steady case with the monolithic approach is available in~\cite{BoErM20}.
+
+
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: "theory"
+%%% End:

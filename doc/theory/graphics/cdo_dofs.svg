@@ -1,0 +1,684 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="615.10577"
+   height="398.08801"
+   viewBox="0 0 615.10577 398.08801"
+   id="cdo-dofs-diagram"
+   version="1.1"
+   sodipodi:docname="cdo_dofs.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   inkscape:export-filename="cdo_dofs.pdf"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview158"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="1.5745455"
+     inkscape:cx="174.33603"
+     inkscape:cy="194.3418"
+     inkscape:window-width="1920"
+     inkscape:window-height="1011"
+     inkscape:window-x="1920"
+     inkscape:window-y="32"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="cdo-dofs-diagram" />
+  <defs
+     id="defs6">
+    <!-- Define arrowhead for Edge-based DoFs -->
+    <marker
+       id="arrow"
+       viewBox="0 0 10 10"
+       refX="5"
+       refY="5"
+       markerWidth="6"
+       markerHeight="6"
+       orient="auto-start-reverse">
+      <path
+         d="M 0,1.5 8,5 0,8.5 Z"
+         fill="#fe5815"
+         id="path2" />
+    </marker>
+    <!-- Drop shadow for text labels -->
+    <filter
+       id="shadow"
+       x="-0.0032608695"
+       y="-0.003"
+       width="1.0065217"
+       height="1.006">
+      <feDropShadow
+         dx="1"
+         dy="1"
+         stdDeviation="1"
+         flood-opacity="0.3" />
+    </filter>
+  </defs>
+  <style
+     id="style8">
+    .primal-solid { stroke: #09357a; stroke-width: 3px; fill: none; stroke-linejoin: round; }
+    .primal-dashed { stroke: #7f7f7f; stroke-dasharray: 6,4; stroke-width: 1.5px; fill: none; stroke-linejoin: round; }
+    .back-face { fill: #f3f3f3; fill-opacity: 0.6; }
+    .front-face { fill: #26c4ec; fill-opacity: 0.12; }
+    .top-face { fill: #26c4ec; fill-opacity: 0.22; }
+    .v-dof { fill: #0070c0; stroke: #ffffff; stroke-width: 1.5px; }
+    .e-dof-arrow { stroke: #fe5815; stroke-width: 3.5px; stroke-linecap: round; fill: none; }
+    .f-dof { fill: #f39d00; stroke: #fe5815; stroke-width: 1.5px; }
+    .c-dof { fill: #509e2f; stroke: #ffffff; stroke-width: 2px; }
+    .label-text { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; fill: #333333; }
+    .legend-title { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #09357a; }
+  </style>
+  <!-- BACKGROUND GRID / CANVAS BACKGROUND -->
+  <!-- TITLE -->
+  <text
+     x="280.95294"
+     y="13.338"
+     text-anchor="middle"
+     font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+     font-size="18px"
+     font-weight="bold"
+     fill="#09357a"
+     id="text12">CDO Schemes: Degrees of Freedom (DoFs) on a Hexagonal Prism</text>
+  <!-- LAYER 1: BACK SHADED FACES (Inner parts) -->
+  <g
+     id="back-shading"
+     transform="translate(-127.54061,-40.998549)">
+    <!-- Face 1-2 -->
+    <polygon
+       points="292,283 292,83 412,113 412,313 "
+       class="back-face"
+       id="polygon14" />
+    <!-- Face 2-3 -->
+    <polygon
+       points="180,320 180,120 292,83 292,283 "
+       class="back-face"
+       id="polygon16" />
+    <!-- Face 0-1 -->
+    <polygon
+       points="412,313 412,113 420,180 420,380 "
+       class="back-face"
+       id="polygon18" />
+  </g>
+  <!-- LAYER 2: SHADED FRONT FACES & TOP FACE -->
+  <g
+     id="front-shading"
+     transform="translate(-127.54061,-40.998549)">
+    <!-- Face 3-4 -->
+    <polygon
+       points="188,387 188,187 180,120 180,320 "
+       class="front-face"
+       id="polygon21" />
+    <!-- Face 4-5 -->
+    <polygon
+       points="308,417 308,217 188,187 188,387 "
+       class="front-face"
+       id="polygon23" />
+    <!-- Face 5-0 -->
+    <polygon
+       points="420,380 420,180 308,217 308,417 "
+       class="front-face"
+       id="polygon25" />
+    <!-- Top Face -->
+    <polygon
+       points="308,217 420,180 412,113 292,83 180,120 188,187 "
+       class="top-face"
+       id="polygon27" />
+  </g>
+  <!-- LAYER 3: INNER/DASHED PRIMAL EDGES -->
+  <g
+     id="dashed-edges"
+     transform="translate(-127.54061,-40.998549)">
+    <line
+       x1="180"
+       y1="320"
+       x2="292"
+       y2="283"
+       class="primal-dashed"
+       id="line30" />
+    <line
+       x1="292"
+       y1="283"
+       x2="412"
+       y2="313"
+       class="primal-dashed"
+       id="line32" />
+    <line
+       x1="412"
+       y1="313"
+       x2="420"
+       y2="380"
+       class="primal-dashed"
+       id="line34" />
+    <line
+       x1="292"
+       y1="283"
+       x2="292"
+       y2="83"
+       class="primal-dashed"
+       id="line36" />
+    <line
+       x1="412"
+       y1="313"
+       x2="412"
+       y2="113"
+       class="primal-dashed"
+       id="line38" />
+  </g>
+  <g
+     id="face-dofs"
+     transform="translate(-127.54061,-40.998549)">
+    <!-- Top Face center -->
+    <!-- Bottom Face center -->
+    <!-- Face 3-4 center -->
+    <!-- Face 4-5 center -->
+    <!-- Face 5-0 center -->
+    <g
+       id="g1878">
+      <rect
+         x="294"
+         y="144"
+         width="12"
+         height="12"
+         class="f-dof"
+         transform="rotate(45,300,150)"
+         id="rect85" />
+      <rect
+         x="382.19119"
+         y="-105.71246"
+         width="12"
+         height="12"
+         class="f-dof"
+         transform="rotate(45)"
+         id="rect85-6"
+         style="fill:#f39d00;stroke:#fe5815;stroke-width:1.5px" />
+      <rect
+         x="304.76303"
+         y="-30.748737"
+         width="12"
+         height="12"
+         class="f-dof"
+         transform="rotate(45)"
+         id="rect85-6-7"
+         style="fill:#f39d00;stroke:#fe5815;stroke-width:1.5px" />
+      <rect
+         x="294"
+         y="344"
+         width="12"
+         height="12"
+         class="f-dof"
+         transform="rotate(45,300,350)"
+         id="rect87" />
+      <rect
+         x="178"
+         y="247.5"
+         width="12"
+         height="12"
+         class="f-dof"
+         transform="rotate(45,184,253.5)"
+         id="rect89" />
+      <rect
+         x="467.40799"
+         y="-120.90485"
+         width="12"
+         height="12"
+         class="f-dof"
+         transform="rotate(45)"
+         id="rect89-3"
+         style="fill:#f39d00;stroke:#fe5815;stroke-width:1.5px" />
+      <rect
+         x="242"
+         y="296"
+         width="12"
+         height="12"
+         class="f-dof"
+         transform="rotate(45,248,302)"
+         id="rect91" />
+      <rect
+         x="358"
+         y="292.5"
+         width="12"
+         height="12"
+         class="f-dof"
+         transform="rotate(45,364,298.5)"
+         id="rect93" />
+    </g>
+  </g>
+  <!-- LAYER 4: SOLID PRIMAL EDGES -->
+  <g
+     id="solid-edges"
+     transform="translate(-127.54061,-40.998549)">
+    <!-- Base front edges -->
+    <line
+       x1="180"
+       y1="320"
+       x2="188"
+       y2="387"
+       class="primal-solid"
+       id="line41" />
+    <line
+       x1="188"
+       y1="387"
+       x2="308"
+       y2="417"
+       class="primal-solid"
+       id="line43" />
+    <line
+       x1="308"
+       y1="417"
+       x2="420"
+       y2="380"
+       class="primal-solid"
+       id="line45" />
+    <!-- Vertical front edges -->
+    <line
+       x1="180"
+       y1="320"
+       x2="180"
+       y2="120"
+       class="primal-solid"
+       id="line47" />
+    <line
+       x1="188"
+       y1="387"
+       x2="188"
+       y2="187"
+       class="primal-solid"
+       id="line49" />
+    <line
+       x1="308"
+       y1="417"
+       x2="308"
+       y2="217"
+       class="primal-solid"
+       id="line51" />
+    <line
+       x1="420"
+       y1="380"
+       x2="420"
+       y2="180"
+       class="primal-solid"
+       id="line53" />
+    <!-- Top edges -->
+    <polygon
+       points="308,217 420,180 412,113 292,83 180,120 188,187 "
+       class="primal-solid"
+       id="polygon55" />
+  </g>
+  <!-- LAYER 5: EDGE-BASED DEGREES OF FREEDOM (EPFD) - ORANGE ARROWS -->
+  <g
+     id="edge-dofs"
+     transform="translate(-127.54061,-40.998549)">
+    <!-- Bottom base visible edges arrows -->
+    <!-- Vertical visible edges arrows -->
+    <!-- Top base edges arrows -->
+    <g
+       id="g1893">
+      <line
+         x1="182"
+         y1="337"
+         x2="186"
+         y2="370"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line58" />
+      <line
+         x1="233"
+         y1="398"
+         x2="263"
+         y2="406"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line60" />
+      <line
+         x1="349"
+         y1="403.5"
+         x2="379"
+         y2="393.5"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line62" />
+      <line
+         x1="180"
+         y1="235"
+         x2="180"
+         y2="205"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line64" />
+      <line
+         x1="188"
+         y1="302"
+         x2="188"
+         y2="272"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line66" />
+      <line
+         x1="308"
+         y1="332"
+         x2="308"
+         y2="302"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line68" />
+      <line
+         x1="420"
+         y1="295"
+         x2="420"
+         y2="265"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line70" />
+      <line
+         x1="418"
+         y1="163"
+         x2="414"
+         y2="130"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line72" />
+      <line
+         x1="367"
+         y1="101.7"
+         x2="337"
+         y2="94.300003"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line74" />
+      <line
+         x1="250"
+         y1="97"
+         x2="222"
+         y2="106"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line76" />
+      <line
+         x1="182"
+         y1="137"
+         x2="186"
+         y2="170"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line78" />
+      <line
+         x1="233"
+         y1="198"
+         x2="263"
+         y2="206"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line80" />
+      <line
+         x1="349"
+         y1="203.5"
+         x2="379"
+         y2="193.5"
+         class="e-dof-arrow"
+         marker-end="url(#arrow)"
+         id="line82" />
+    </g>
+  </g>
+  <!-- LAYER 6: FACE-BASED DEGREES OF FREEDOM (FPED) - ORANGE SQUARES/DIAMONDS -->
+  <!-- LAYER 7: VERTEX-BASED DEGREES OF FREEDOM (VPCD/VC) - BLUE DOTS -->
+  <g
+     id="vertex-dofs"
+     transform="translate(-127.54061,-40.998549)">
+    <!-- Base vertices -->
+    <circle
+       cx="420"
+       cy="380"
+       r="7"
+       class="v-dof"
+       id="circle96" />
+    <circle
+       cx="412"
+       cy="313"
+       r="7"
+       class="v-dof"
+       id="circle98" />
+    <circle
+       cx="292"
+       cy="283"
+       r="7"
+       class="v-dof"
+       id="circle100" />
+    <circle
+       cx="180"
+       cy="320"
+       r="7"
+       class="v-dof"
+       id="circle102" />
+    <circle
+       cx="188"
+       cy="387"
+       r="7"
+       class="v-dof"
+       id="circle104" />
+    <circle
+       cx="308"
+       cy="417"
+       r="7"
+       class="v-dof"
+       id="circle106" />
+    <!-- Top vertices -->
+    <circle
+       cx="420"
+       cy="180"
+       r="7"
+       class="v-dof"
+       id="circle108" />
+    <circle
+       cx="412"
+       cy="113"
+       r="7"
+       class="v-dof"
+       id="circle110" />
+    <circle
+       cx="292"
+       cy="83"
+       r="7"
+       class="v-dof"
+       id="circle112" />
+    <circle
+       cx="180"
+       cy="120"
+       r="7"
+       class="v-dof"
+       id="circle114" />
+    <circle
+       cx="188"
+       cy="187"
+       r="7"
+       class="v-dof"
+       id="circle116" />
+    <circle
+       cx="308"
+       cy="217"
+       r="7"
+       class="v-dof"
+       id="circle118" />
+  </g>
+  <!-- LAYER 8: CELL-BASED DEGREES OF FREEDOM - GREEN SPHERE AT CENTER -->
+  <g
+     id="cell-dof"
+     transform="matrix(0.75989942,0,0,0.73859525,-58.382392,21.203479)">
+    <circle
+       cx="300"
+       cy="250"
+       r="11"
+       class="c-dof"
+       id="circle121"
+       style="stroke:#509e2f;stroke-opacity:1" />
+  </g>
+  <!-- LAYER 9: LEGEND (INKSCAPE GROUPS COMPATIBLE) -->
+  <text
+     x="353.51019"
+     y="83.873283"
+     class="legend-title"
+     id="text128"
+     transform="scale(1.0117806,0.98835658)"
+     style="stroke-width:1.02869">Degrees of Freedom</text>
+  <g
+     id="g1918"
+     inkscape:label="vertices"
+     transform="matrix(1.0408095,0,0,1.0167135,340.81149,39.945956)">
+    <circle
+       cx="25"
+       cy="70"
+       r="7"
+       class="v-dof"
+       id="circle130" />
+    <text
+       x="45"
+       y="74"
+       class="label-text"
+       font-weight="bold"
+       id="text132"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13px;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;-inkscape-font-specification:'Helvetica Neue, Helvetica, Arial, sans-serif, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#333333"><tspan
+         sodipodi:role="line"
+         id="tspan1920"
+         x="45"
+         y="74">Vertices (Potential)</tspan></text>
+    <text
+       x="45"
+       y="90"
+       class="label-text"
+       fill="#666666"
+       font-size="11px"
+       id="text134"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13px;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;-inkscape-font-specification:'Helvetica Neue, Helvetica, Arial, sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#333333"><tspan
+         sodipodi:role="line"
+         id="tspan465"
+         x="45"
+         y="90">Vertex-based schemes</tspan><tspan
+         sodipodi:role="line"
+         id="tspan467"
+         x="45"
+         y="106.25">Vertex+Cell-based schemes</tspan></text>
+  </g>
+  <g
+     id="g1994"
+     inkscape:label="edges"
+     transform="matrix(1.0408095,0,0,1.0167135,344.97473,52.604291)">
+    <line
+       x1="15"
+       y1="126"
+       x2="35"
+       y2="126"
+       class="e-dof-arrow"
+       marker-end="url(#arrow)"
+       id="line136" />
+    <text
+       x="45"
+       y="130"
+       class="label-text"
+       font-weight="bold"
+       id="text138"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13px;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;-inkscape-font-specification:'Helvetica Neue, Helvetica, Arial, sans-serif, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#333333"><tspan
+         sodipodi:role="line"
+         id="tspan2008"
+         x="45"
+         y="130">Edges (Circulation)</tspan></text>
+    <text
+       x="45"
+       y="146"
+       class="label-text"
+       fill="#666666"
+       font-size="11px"
+       id="text140"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13px;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;-inkscape-font-specification:'Helvetica Neue, Helvetica, Arial, sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#333333"><tspan
+         sodipodi:role="line"
+         id="tspan2010"
+         x="45"
+         y="146">Edge-based schemes</tspan></text>
+  </g>
+  <g
+     id="g1987"
+     inkscape:label="faces"
+     transform="matrix(1.0408095,0,0,1.0167135,342.7786,58.245028)">
+    <text
+       x="45"
+       y="180"
+       class="label-text"
+       font-weight="bold"
+       id="text144"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13px;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;-inkscape-font-specification:'Helvetica Neue, Helvetica, Arial, sans-serif, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#333333"><tspan
+         sodipodi:role="line"
+         id="tspan1989"
+         x="45"
+         y="180">Faces (Flux or Potential)</tspan></text>
+    <rect
+       x="541.61121"
+       y="-160.84872"
+       width="12"
+       height="12"
+       class="f-dof"
+       transform="matrix(0.67938156,0.69548283,-0.67938156,0.69548283,-451.87828,-97.612137)"
+       id="rect2749"
+       style="fill:#f39d00;stroke:#fe5815;stroke-width:1.5px" />
+    <text
+       x="45"
+       y="196"
+       class="label-text"
+       fill="#666666"
+       font-size="11px"
+       id="text146"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13px;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;-inkscape-font-specification:'Helvetica Neue, Helvetica, Arial, sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#333333"><tspan
+         sodipodi:role="line"
+         id="tspan1829"
+         x="45"
+         y="196">Face-based schemes (potential)</tspan><tspan
+         sodipodi:role="line"
+         id="tspan1831"
+         x="45"
+         y="212.25">Cell-based schemes (flux)</tspan></text>
+  </g>
+  <g
+     id="g1927"
+     inkscape:label="cell"
+     transform="matrix(1.0408095,0,0,1.0167135,340.78547,81.704413)">
+    <circle
+       cx="27.275"
+       cy="226.48351"
+       r="9"
+       class="c-dof"
+       id="circle148" />
+    <text
+       x="45"
+       y="230"
+       class="label-text"
+       font-weight="bold"
+       id="text152">Cell center (Potential)</text>
+    <text
+       x="45"
+       y="246"
+       class="label-text"
+       fill="#666666"
+       font-size="11px"
+       id="text154"
+       inkscape:label="text154"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13px;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;-inkscape-font-specification:'Helvetica Neue, Helvetica, Arial, sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#333333"><tspan
+         sodipodi:role="line"
+         id="tspan1976"
+         x="45"
+         y="246">Cell-based schemes</tspan><tspan
+         sodipodi:role="line"
+         id="tspan1978"
+         x="45"
+         y="262.25">Face-based schemes</tspan><tspan
+         sodipodi:role="line"
+         id="tspan1980"
+         x="45"
+         y="278.5">Vertex+Cell-based schemes</tspan></text>
+  </g>
+</svg>
