@@ -1124,6 +1124,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
 #   pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)     \
   reduction(+:mass_integral)
     for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+      if ((connect->cell_flag[c_id] & CS_FLAG_SOLID_CELL) == 0) {
 
         // Exclude cells tag as "solid" of this computation
         double boussi_coef = 1;
@@ -1136,6 +1137,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t           *nsp,
         rho->val[c_id] = rho_c;
         mass_integral += cdoq->cell_vol[c_id] * rho_c;
 
+      }
     } /* Loop on cells */
 
     cs::parall::sum(mass_integral);
