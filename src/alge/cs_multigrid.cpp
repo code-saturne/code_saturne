@@ -1501,8 +1501,6 @@ _multigrid_pc_apply(void                *context,
                     const cs_real_t     *x_in,
                     cs_real_t           *x_out)
 {
-  CS_PROFILE_FUNC_RANGE();
-
   int     n_iter;
   double  residual;
 
@@ -3138,6 +3136,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                    size_t                aux_size,
                    void                 *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   int level, coarsest_level;
   cs_timer_t t0, t1;
 
@@ -4062,6 +4062,8 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
                    size_t                aux_size,
                    void                 *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_timer_t t0, t1;
 
   bool end_cycle = false;
@@ -5278,6 +5280,8 @@ cs_multigrid_setup(void               *context,
                    int                 verbosity)
 
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_multigrid_t  *mg = (cs_multigrid_t *)context;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -5373,8 +5377,6 @@ cs_multigrid_solve(void                *context,
                    size_t               aux_size,
                    void                *aux_vectors)
 {
-  CS_PROFILE_FUNC_RANGE();
-
   cs_timer_t t0, t1;
   t0 = cs_timer_time();
 

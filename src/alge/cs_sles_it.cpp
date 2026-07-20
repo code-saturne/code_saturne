@@ -340,10 +340,10 @@ _convergence_test(cs_sles_it_t              *c,
 static double
 _dot_product
 (
-  const cs_sles_it_t                    *c,
-  [[ maybe_unused]] cs_dispatch_context  &ctx,
-  const cs_real_t                        x[],
-  const cs_real_t                        y[]
+  const cs_sles_it_t                   *c,
+  [[maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_real_t                       x[],
+  const cs_real_t                       y[]
 )
 {
 #if defined(HAVE_ACCEL)
@@ -392,9 +392,9 @@ _dot_product
 static double
 _dot_product_xx
 (
-  const cs_sles_it_t                    *c,
-  [[ maybe_unused]] cs_dispatch_context  &ctx,
-  const cs_real_t                        x[]
+  const cs_sles_it_t                   *c,
+  [[maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_real_t                       x[]
 )
 {
 #if defined(HAVE_ACCEL)
@@ -443,12 +443,12 @@ _dot_product_xx
 static void
 _dot_products_xx_xy
 (
-  const cs_sles_it_t                    *c,
-  [[ maybe_unused]] cs_dispatch_context  &ctx,
-  const cs_real_t                        x[],
-  const cs_real_t                        y[],
-  double                                *xx,
-  double                                *xy
+  const cs_sles_it_t                   *c,
+  [[maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_real_t                       x[],
+  const cs_real_t                       y[],
+  double                               *xx,
+  double                               *xy
 )
 {
 #if defined(HAVE_ACCEL)
@@ -502,13 +502,13 @@ _dot_products_xx_xy
 inline static void
 _dot_products_xy_yz
 (
-  const cs_sles_it_t                     *c,
-  [[ maybe_unused]] cs_dispatch_context  &ctx,
-  const cs_real_t                        *x,
-  const cs_real_t                        *y,
-  const cs_real_t                        *z,
-  double                                 *s1,
-  double                                 *s2
+  const cs_sles_it_t                    *c,
+  [[maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_real_t                       *x,
+  const cs_real_t                       *y,
+  const cs_real_t                       *z,
+  double                                *s1,
+  double                                *s2
 )
 {
 #if defined(HAVE_ACCEL)
@@ -562,7 +562,7 @@ static void
 _dot_products_xx_xy_yz
 (
   const cs_sles_it_t                    *c,
-  [[ maybe_unused]] cs_dispatch_context  &ctx,
+  [[maybe_unused]] cs_dispatch_context  &ctx,
   const cs_real_t                        x[],
   const cs_real_t                        y[],
   const cs_real_t                        z[],
@@ -621,16 +621,16 @@ _dot_products_xx_xy_yz
 inline static void
 _dot_products_xx_yy_xy_xz_yz
 (
-  const cs_sles_it_t                     *c,
-  [[ maybe_unused]] cs_dispatch_context  &ctx,
-  const cs_real_t                        *x,
-  const cs_real_t                        *y,
-  const cs_real_t                        *z,
-  double                                 *restrict xx,
-  double                                 *restrict yy,
-  double                                 *restrict xy,
-  double                                 *restrict xz,
-  double                                 *restrict yz
+  const cs_sles_it_t                    *c,
+  [[maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_real_t                       *x,
+  const cs_real_t                       *y,
+  const cs_real_t                       *z,
+  double                                *restrict xx,
+  double                                *restrict yy,
+  double                                *restrict xy,
+  double                                *restrict xz,
+  double                                *restrict yz
 )
 {
 #if defined(HAVE_ACCEL)
@@ -839,6 +839,8 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
                              size_t                     aux_size,
                              void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
   cs_real_t  *_aux_vectors;
   cs_real_t  *restrict rk, *restrict vk, *restrict wk;
@@ -1023,6 +1025,8 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
                        size_t                     aux_size,
                        void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg;
   double  ro_0, ro_1, alpha, rk_gk_m1, rkm1_gk, rk_gk, beta, residual;
   cs_real_t  *_aux_vectors;
@@ -1236,6 +1240,8 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
                        size_t                     aux_size,
                        void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
   cs_real_t *_aux_vectors = nullptr;
@@ -1448,6 +1454,8 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
                           size_t                     aux_size,
                           void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
   cs_real_t *_aux_vectors = nullptr;
@@ -1680,6 +1688,8 @@ _conjugate_gradient_sr_npc(cs_sles_it_t              *c,
                            size_t                     aux_size,
                            void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict sk;
@@ -1893,6 +1903,8 @@ _conjugate_residual_3(cs_sles_it_t              *c,
                       size_t                     aux_size,
                       void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg;
   double  residual = -1;
   cs_real_t *_aux_vectors;
@@ -2104,6 +2116,8 @@ _jacobi(cs_sles_it_t              *c,
         size_t                     aux_size,
         void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
   cs_real_t *_aux_vectors;
@@ -2280,17 +2294,17 @@ _jacobi(cs_sles_it_t              *c,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_block_3_jacobi(cs_sles_it_t              *c,
-                const cs_matrix_t         *a,
-                cs_lnum_t                  diag_block_size,
-                cs_sles_it_convergence_t  *convergence,
-                const cs_real_t           *rhs,
-                cs_real_t                 *restrict vx_ini,
-                cs_real_t                 *restrict vx,
-                size_t                     aux_size,
-                void                      *aux_vectors)
+_block_3_jacobi(cs_sles_it_t                *c,
+                const cs_matrix_t           *a,
+                [[maybe_unused]] cs_lnum_t   diag_block_size,
+                cs_sles_it_convergence_t    *convergence,
+                const cs_real_t             *rhs,
+                cs_real_t                   *restrict vx_ini,
+                cs_real_t                   *restrict vx,
+                size_t                       aux_size,
+                void                        *aux_vectors)
 {
-  CS_UNUSED(diag_block_size);
+  CS_PROFILE_FUNC_RANGE();
 
   assert(diag_block_size == 3);
 
@@ -2466,6 +2480,8 @@ _block_jacobi(cs_sles_it_t              *c,
               size_t                     aux_size,
               void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg;
   double  res2, residual;
   cs_real_t *_aux_vectors;
@@ -2700,6 +2716,8 @@ _bi_cgstab(cs_sles_it_t              *c,
            size_t                     aux_size,
            void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg;
   double  ro_0, ro_1, alpha, beta, betam1, gamma, omega, ukres0;
   double  residual;
@@ -2913,6 +2931,8 @@ _bicgstab2(cs_sles_it_t              *c,
            size_t                     aux_size,
            void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg;
   double  ro_0, ro_1, alpha, beta, gamma;
   double  omega_1, omega_2, mu, nu, tau;
@@ -3279,6 +3299,8 @@ _gcr(cs_sles_it_t              *c,
      size_t                     aux_size,
      void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
   cs_real_t *_aux_vectors = nullptr, *alpha = nullptr;
@@ -3508,6 +3530,8 @@ _gmres(cs_sles_it_t              *c,
        size_t                     aux_size,
        void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
   int l_iter, l_old_iter;
   double    beta, dot_prod, residual;
@@ -3769,6 +3793,8 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 #  endif
 #endif
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg;
   double  res2, residual;
 
@@ -3952,6 +3978,8 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 #  endif
 #endif
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg;
   double  res2, residual;
 
@@ -4128,16 +4156,15 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
                         const cs_real_t           *rhs,
                         cs_real_t                 *restrict vx_ini,
                         cs_real_t                 *restrict vx,
-                        size_t                     aux_size,
-                        void                      *aux_vectors)
+                        [[maybe_unused]] size_t    aux_size,
+                        [[maybe_unused]] void     *aux_vectors)
 #if defined(__has_feature)
 #  if __has_feature(thread_sanitizer)
   __attribute__((no_sanitize("thread")))
 #  endif
 #endif
 {
-  CS_UNUSED(aux_size);
-  CS_UNUSED(aux_vectors);
+  CS_PROFILE_FUNC_RANGE();
 
   cs_sles_convergence_state_t cvg;
   double  res2, residual;
@@ -4384,16 +4411,15 @@ _p_gauss_seidel(cs_sles_it_t              *c,
                 const cs_real_t           *rhs,
                 cs_real_t                 *restrict vx_ini,
                 cs_real_t                 *restrict vx,
-                size_t                     aux_size,
-                void                      *aux_vectors)
+                [[maybe_unused]] size_t    aux_size,
+                [[maybe_unused]] void     *aux_vectors)
 #if defined(__has_feature)
 #  if __has_feature(thread_sanitizer)
   __attribute__((no_sanitize("thread")))
 #  endif
 #endif
 {
-  CS_UNUSED(aux_size);
-  CS_UNUSED(aux_vectors);
+  CS_PROFILE_FUNC_RANGE();
 
   cs_sles_convergence_state_t cvg;
 
@@ -4966,6 +4992,8 @@ cs_sles_it_setup(void               *context,
                  const cs_matrix_t  *a,
                  int                 verbosity)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_it_t *c = static_cast<cs_sles_it_t *>(context);
 
   cs_timer_t t0;
@@ -5205,8 +5233,6 @@ cs_sles_it_solve(void                *context,
                  size_t               aux_size,
                  void                *aux_vectors)
 {
-  CS_PROFILE_FUNC_RANGE();
-
   cs_sles_it_t *c = static_cast<cs_sles_it_t *>(context);
 
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;

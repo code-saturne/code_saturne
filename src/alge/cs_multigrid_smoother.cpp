@@ -47,6 +47,7 @@
 
 #include "base/cs_mem.h"
 #include "base/cs_dispatch.h"
+#include "base/cs_profiling.h"
 
 #if defined(__CUDACC__)
 #include "alge/cs_blas_cuda.h"
@@ -241,16 +242,18 @@ _jacobi(cs_sles_it_t              *c,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_relaxed_jacobi(cs_sles_it_t              *c,
-                const cs_matrix_t         *a,
-                cs_lnum_t                  diag_block_size,
-                cs_sles_it_convergence_t  *convergence,
-                const cs_real_t           *rhs,
-                cs_real_t                 *vx_ini,
-                cs_real_t                 *vx,
-                size_t                     aux_size,
-                void                      *aux_vectors)
+_sr_jacobi(cs_sles_it_t              *c,
+           const cs_matrix_t         *a,
+           cs_lnum_t                  diag_block_size,
+           cs_sles_it_convergence_t  *convergence,
+           const cs_real_t           *rhs,
+           cs_real_t                 *vx_ini,
+           cs_real_t                 *vx,
+           size_t                     aux_size,
+           void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_real_t *_aux_vectors;
   cs_real_t *restrict vx_tmp;
 
@@ -387,17 +390,17 @@ _relaxed_jacobi(cs_sles_it_t              *c,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_block_3_jacobi(cs_sles_it_t              *c,
-                const cs_matrix_t         *a,
-                cs_lnum_t                  diag_block_size,
-                cs_sles_it_convergence_t  *convergence,
-                const cs_real_t           *rhs,
-                cs_real_t                 *restrict vx_ini,
-                cs_real_t                 *restrict vx,
-                size_t                     aux_size,
-                void                      *aux_vectors)
+_block_3_jacobi(cs_sles_it_t                *c,
+                const cs_matrix_t           *a,
+                [[maybe_unused]] cs_lnum_t   diag_block_size,
+                cs_sles_it_convergence_t    *convergence,
+                const cs_real_t             *rhs,
+                cs_real_t                   *restrict vx_ini,
+                cs_real_t                   *restrict vx,
+                size_t                       aux_size,
+                void                        *aux_vectors)
 {
-  CS_UNUSED(diag_block_size);
+  CS_PROFILE_FUNC_RANGE();
 
   assert(diag_block_size == 3);
 
@@ -514,6 +517,8 @@ _block_jacobi(cs_sles_it_t              *c,
               size_t                     aux_size,
               void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_real_t *_aux_vectors;
   cs_real_t *restrict vxx;
 
@@ -620,16 +625,18 @@ _block_jacobi(cs_sles_it_t              *c,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_block_relaxed_jacobi(cs_sles_it_t              *c,
-                      const cs_matrix_t         *a,
-                      cs_lnum_t                  diag_block_size,
-                      cs_sles_it_convergence_t  *convergence,
-                      const cs_real_t           *rhs,
-                      cs_real_t                 *restrict vx_ini,
-                      cs_real_t                 *restrict vx,
-                      size_t                     aux_size,
-                      void                      *aux_vectors)
+_block_sr_jacobi(cs_sles_it_t              *c,
+                 const cs_matrix_t         *a,
+                 cs_lnum_t                  diag_block_size,
+                 cs_sles_it_convergence_t  *convergence,
+                 const cs_real_t           *rhs,
+                 cs_real_t                 *restrict vx_ini,
+                 cs_real_t                 *restrict vx,
+                 size_t                     aux_size,
+                 void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_real_t *_aux_vectors = nullptr;
   cs_real_t *restrict vx_tmp = nullptr, *vxx = nullptr;
 
@@ -808,6 +815,8 @@ _l1_jacobi(cs_sles_it_t              *c,
            size_t                     aux_size,
            void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_real_t *_aux_vectors = nullptr;
   cs_real_t *vx_tmp = nullptr;
 
@@ -930,6 +939,8 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 #  endif
 #endif
 {
+  CS_PROFILE_FUNC_RANGE();
+
   unsigned n_iter = 0;
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
@@ -1060,6 +1071,8 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 #  endif
 #endif
 {
+  CS_PROFILE_FUNC_RANGE();
+
   unsigned n_iter = 0;
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
@@ -1180,16 +1193,15 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
                         const cs_real_t           *rhs,
                         cs_real_t                 *restrict vx_ini,
                         cs_real_t                 *restrict vx,
-                        size_t                     aux_size,
-                        void                      *aux_vectors)
+                        [[maybe_unused]] size_t    aux_size,
+                        [[maybe_unused]] void     *aux_vectors)
 #if defined(__has_feature)
 #  if __has_feature(thread_sanitizer)
   __attribute__((no_sanitize("thread")))
 #  endif
 #endif
 {
-  CS_UNUSED(aux_size);
-  CS_UNUSED(aux_vectors);
+  CS_PROFILE_FUNC_RANGE();
 
   /* Check matrix storage type */
 
@@ -1390,16 +1402,15 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t                *c,
                        const cs_real_t             *rhs,
                        cs_real_t                   *restrict vx_ini,
                        cs_real_t                   *restrict vx,
-                       size_t                       aux_size,
-                       void                        *aux_vectors)
+                       [[maybe_unused]] size_t     aux_size,
+                       [[maybe_unused]] void      *aux_vectors)
 #if defined(__has_feature)
 #  if __has_feature(thread_sanitizer)
   __attribute__((no_sanitize("thread")))
 #  endif
 #endif
 {
-  CS_UNUSED(aux_size);
-  CS_UNUSED(aux_vectors);
+  CS_PROFILE_FUNC_RANGE();
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
   const cs_lnum_t n_cols_ext = cs_matrix_get_n_columns(a);
@@ -1520,16 +1531,15 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
                        const cs_real_t           *rhs,
                        cs_real_t                 *restrict vx_ini,
                        cs_real_t                 *restrict vx,
-                       size_t                     aux_size,
-                       void                      *aux_vectors)
+                       [[maybe_unused]] size_t    aux_size,
+                       [[maybe_unused]] void     *aux_vectors)
 #if defined(__has_feature)
 #  if __has_feature(thread_sanitizer)
   __attribute__((no_sanitize("thread")))
 #  endif
 #endif
 {
-  CS_UNUSED(aux_size);
-  CS_UNUSED(aux_vectors);
+  CS_PROFILE_FUNC_RANGE();
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
   const cs_lnum_t n_cols_ext = cs_matrix_get_n_columns(a);
@@ -1647,11 +1657,10 @@ _p_gauss_seidel(cs_sles_it_t              *c,
                 const cs_real_t           *rhs,
                 cs_real_t                 *restrict vx_ini,
                 cs_real_t                 *restrict vx,
-                size_t                     aux_size,
-                void                      *aux_vectors)
+                [[maybe_unused]] size_t    aux_size,
+                [[maybe_unused]] void     *aux_vectors)
 {
-  CS_UNUSED(aux_size);
-  CS_UNUSED(aux_vectors);
+  CS_PROFILE_FUNC_RANGE();
 
   cs_sles_convergence_state_t cvg;
 
@@ -1886,9 +1895,9 @@ cs_multigrid_smoother_setup(void               *context,
   case CS_SLES_SRJ3:
     {
       if (diag_block_size == 1)
-        c->solve = _relaxed_jacobi;
+        c->solve = _sr_jacobi;
       else
-        c->solve = _block_relaxed_jacobi;
+        c->solve = _block_sr_jacobi;
       unsigned wk_m = 1;
       if (c->type == CS_SLES_SRJ2)
         wk_m = 2;

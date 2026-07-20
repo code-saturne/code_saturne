@@ -1014,11 +1014,6 @@ _coarsen_halo(const cs_grid_t   *f,
   c->_halo = c_halo;
 
   cs_alloc_mode_t halo_alloc_mode = cs_check_device_ptr(c_halo->send_index);
-  if (c->alloc_mode == CS_ALLOC_HOST && halo_alloc_mode > CS_ALLOC_HOST) {
-    halo_alloc_mode = CS_ALLOC_HOST;
-    CS_REALLOC_HD(c_halo->send_index, 2*c_halo->n_c_domains + 1, cs_lnum_t,
-                  halo_alloc_mode);
-  }
 
   /* Initialize coarse halo counters */
 
@@ -1396,6 +1391,49 @@ _coarsen_halo(const cs_grid_t   *f,
     printf(", total = %ld\n", elapsed.count());
   }
 }
+
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Change halo allocation mode.
+ *
+ * \param[in, out]  g      grid structure
+ * \param[in]       amode  new allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_halo_alloc_mode(cs_grid_t        *g,
+                        cs_alloc_mode_t   amode)
+{
+  CS_PROFILE_FUNC_RANGE();
+
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  cs_halo_t *halo = g->_halo;
+  const int n_c_domains = halo->n_c_domains;
+
+  const int stride = halo->n_c_domains*4;
+
+  CS_REALLOC_HD(halo->send_index, 2*n_c_domains + 1, cs_lnum_t, amode);
+  CS_REALLOC_HD(halo->send_list, halo->n_send_elts[0], cs_lnum_t, amode);
+  CS_REALLOC_HD(halo->perio_lst, halo->n_transforms*stride, cs_lnum_t, amode);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d:   %s (level %d)", cs_glob_rank_id, __func__, g->level);
+    printf(", total = %ld\n", elapsed.count());
+  }
+}
+
+#endif // defined(HAVE_ACCEL)
 
 /*----------------------------------------------------------------------------
  * Finalize row count computation and halo coarsening for coarse grid.
@@ -5269,11 +5307,12 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
   const cs_lnum_t  *row_index, *col_id;
   const cs_real_t  *d_val, *x_val;
 
-  cs_matrix_get_msr_arrays(grid->matrix,
-                           &row_index,
-                           &col_id,
-                           &d_val,
-                           &x_val);
+  _matrix_get_msr_arrays_host(grid->matrix,
+                              grid->level,
+                             &row_index,
+                             &col_id,
+                             &d_val,
+                             &x_val);
 
   const cs_lnum_t   *cell_face = grid->cell_face;
 
@@ -5375,7 +5414,7 @@ _warn_neg_diag(const cs_grid_t  *g,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Change allocation mode of geometric ggrid quantities.
+ * \brief Change allocation mode of geometric grid quantities.
  *
  * \param[in, out]  g      grid structure
  * \param[in]       amode  new allocation mode
@@ -6569,7 +6608,7 @@ _coarse_quantities_msr_with_faces_stage_1(const cs_grid_t      *f,
 
   const cs_lnum_t *f_c_row = c->coarse_row;
 
-  cs_alloc_mode_t alloc_mode = c->alloc_mode;
+  cs_alloc_mode_t alloc_mode = f->alloc_mode;
 
   const cs_lnum_t    *f_cell_idx;
   const cs_lnum_t    *f_cell_face;
@@ -6963,7 +7002,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
                            &f_x_val);
 
   cs_dispatch_context ctx;
-  if (c->alloc_mode == CS_ALLOC_HOST)
+  if (f->alloc_mode == CS_ALLOC_HOST)
     ctx.set_use_gpu(false);
 
   /* Determine reverse coarse to fine adjacency */
@@ -6979,7 +7018,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
                                 f->level,
                                 f_n_rows,
                                 c_n_rows,
-                                c->alloc_mode,
+                                f->alloc_mode,
                                 n_f_threads,
                                 f_c_row,
                                 f_row_index,
@@ -7000,7 +7039,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
     _coarse_msr_struct(f->level,
                        f_n_rows,
                        c_n_rows,
-                       c->alloc_mode,
+                       f->alloc_mode,
                        f_row_index,
                        f_col_id,
                        f_c_row,
@@ -7015,7 +7054,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
     _coarse_msr_struct_hd(ctx,
                           f->level,
                           c_n_rows, // c->n_cols_ext,
-                          c->alloc_mode,
+                          f->alloc_mode,
                           f_row_index,
                           f_col_id,
                           f_c_row,
@@ -7037,7 +7076,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
                             f_n_rows,
                             c_n_rows,
                             c->n_cols_ext,
-                            c->alloc_mode,
+                            f->alloc_mode,
                             f_row_index,
                             f_col_id,
                             f_c_row,
@@ -7060,8 +7099,8 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
   const cs_lnum_t db_stride = db_size*db_size;
 
   cs_real_t *c_d_val, *c_x_val;
-  CS_MALLOC_HD(c_d_val, c_n_rows*db_stride, cs_real_t, c->alloc_mode);
-  CS_MALLOC_HD(c_x_val, c_nnz, cs_real_t, c->alloc_mode);
+  CS_MALLOC_HD(c_d_val, c_n_rows*db_stride, cs_real_t, f->alloc_mode);
+  CS_MALLOC_HD(c_x_val, c_nnz, cs_real_t, f->alloc_mode);
 
   /* Compute face adjacency
      ---------------------- */
@@ -8403,7 +8442,7 @@ cs_grid_coarsen(cs_grid_t            *f,
   if (amode_prev == CS_ALLOC_DEVICE) {
     if ((   fine_matrix_type == CS_MATRIX_MSR
          && c->relaxation > 0 && msr_gather
-         && c->alloc_mode > CS_ALLOC_HOST
+         && f->alloc_mode > CS_ALLOC_HOST
          && coarsening_type == CS_GRID_COARSENING_SPD_DX) == false) {
       amode_coarsen = CS_ALLOC_HOST_DEVICE_SHARED;
 
@@ -8485,7 +8524,7 @@ cs_grid_coarsen(cs_grid_t            *f,
 #if defined(HAVE_ACCEL)
   /* Where implemented algorithms allow it, use device-only allocation. */
   if (   amode_prev == CS_ALLOC_DEVICE
-      && amode_coarsen == CS_ALLOC_HOST_DEVICE_PINNED) {
+      && amode_coarsen == CS_ALLOC_HOST_DEVICE_SHARED) {
     cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(f->matrix), amode_prev);
     if (f->matrix_struct != nullptr)
       cs_matrix_structure_set_alloc_mode(f->matrix_struct, amode_prev);
@@ -8590,18 +8629,21 @@ cs_grid_coarsen(cs_grid_t            *f,
     assert(   fine_matrix_type == CS_MATRIX_MSR
            && coarse_matrix_type == CS_MATRIX_MSR);
 
-#if defined(HAVE_ACCEL)
-    if (   f->alloc_mode == CS_ALLOC_DEVICE
-        && c->alloc_mode == CS_ALLOC_HOST)
-      _update_quantities_alloc_mode(f, CS_ALLOC_HOST);
-#endif
-
     _compute_coarse_quantities_msr_with_faces(f, c, coarse_struct_v_id,
                                               verbosity);
 
   }
 
   CS_PROFILE_MARK_LINE();
+
+#if defined(HAVE_ACCEL)
+  if (   f->alloc_mode == CS_ALLOC_DEVICE
+      && c->alloc_mode == CS_ALLOC_HOST) {
+    _update_halo_alloc_mode(c, CS_ALLOC_HOST);
+    _update_quantities_alloc_mode(c, CS_ALLOC_HOST);
+    CS_PROFILE_MARK_LINE();
+  }
+#endif
 
   /* Apply tuning if needed */
 
