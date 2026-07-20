@@ -1063,7 +1063,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
 
   /* Contribution of the Dirichlet conditions */
 
-  csys->mat->matvec(x_dir, ax_dir);
+  cs_sdm_block_matvec(csys->mat, x_dir, ax_dir);
 
   /* Second pass: Replace the Dirichlet block by a diagonal block */
 

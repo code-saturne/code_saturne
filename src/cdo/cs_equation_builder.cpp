@@ -686,7 +686,7 @@ cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t *eqb,
 
   /* Contribution of the DoFs which are enforced */
 
-  csys->mat->matvec(x_vals, ax);
+  cs_sdm_block_matvec(csys->mat, x_vals, ax);
 
   /* Define the new right-hand side (rhs) */
 
