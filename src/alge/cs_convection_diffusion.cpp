@@ -2936,7 +2936,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
      inc,
      &eqp,
      need_compute_bc_grad, need_compute_bc_flux,
-     -1, nullptr,
+     0, nullptr,
      gweight,
      nullptr, // weighb (aniso)
      pvar);

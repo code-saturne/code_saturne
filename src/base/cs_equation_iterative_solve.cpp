@@ -2278,7 +2278,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     (ctx, f, bc_coeffs, 1,
      eqp,
      true, true,
-     false, nullptr, // hyd_p_flag, f_ext
+     0, nullptr, // hyd_p_flag, f_ext
      (cs_real_t *)c_weight_ani, weighb,
      pvar);
 
