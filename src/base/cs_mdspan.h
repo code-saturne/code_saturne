@@ -42,7 +42,6 @@
 
 #include "base/cs_dispatch.h"
 #include "base/cs_execution_context.h"
-#include "bft/bft_printf.h"
 
 /*----------------------------------------------------------------------------*/
 
