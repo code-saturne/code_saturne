@@ -3629,9 +3629,10 @@ _initialize_displacement(cs_lagr_particle_set_t  &p_set,
     else {
       _tracking_info(p_set, p_id)->state = CS_LAGR_PART_TO_SYNC;
       int depo_flag = p_flag & CS_LAGR_PART_DEPOSITION_FLAGS;
-      if (depo_flag == CS_LAGR_PART_DEPOSITED) { /* deposited, no other flag */
+      /* deposited and no resuspension: no other flag */
+      if (depo_flag == CS_LAGR_PART_DEPOSITED
+          && cs_glob_lagr_model->resuspension == 0)
         _tracking_info(p_set, p_id)->state = CS_LAGR_PART_TREATED;
-      }
     }
     if (   cs_glob_lagr_time_scheme->cell_wise_integ == 1
         && _tracking_info(p_set, p_id)->state != CS_LAGR_PART_TO_SYNC)
