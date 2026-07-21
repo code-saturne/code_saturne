@@ -390,6 +390,17 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
               z_type_name, z_id, set_id,
               _("velocity"), (int)zis->velocity_profile);
 
+  if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_COMPONENTS) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      if (zis->velocity[i] < -0.5 * cs_math_big_r) {
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Lagrangian %s zone %d, set %d:\n"
+                    "  velocity component %d is not defined."),
+                  z_type_name, z_id, set_id, (int)i);
+      }
+    }
+  }
+
   /* statistical weight */
   if (zis->stat_weight <= 0.0 && zis->flow_rate <= 0.0)
     bft_error(__FILE__, __LINE__, 0, _profile_err_fmt_d,
