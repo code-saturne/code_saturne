@@ -2432,20 +2432,24 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
            * (for non-rolling particles) */
           if (p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
 
-            bound_stat[n_f_id + nfabor * bi->iscovc]
-              -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
-                 * 0.25 / mq->b_face_surf[n_f_id];
+            if (bi->iscovc > -1)
+              bound_stat[n_f_id + nfabor * bi->iscovc]
+                -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
+                   * 0.25 / mq->b_face_surf[n_f_id];
 
-            bound_stat[n_f_id + nfabor * bi->ihdepm]
-              -=   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
-                 * 0.25 / mq->b_face_surf[n_f_id];
+            if (bi->ihdepm > -1)
+              bound_stat[n_f_id + nfabor * bi->ihdepm]
+                -=   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                   * 0.25 / mq->b_face_surf[n_f_id];
 
-            bound_stat[n_f_id + nfabor * bi->ihdepv]
-              -=   cs_math_pow2(cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
-                 * 0.25 / mq->b_face_surf[n_f_id]);
+            if (bi->ihdepv > -1)
+              bound_stat[n_f_id + nfabor * bi->ihdepv]
+                -=   cs_math_pow2(  cs_math_pi * p_height
+                                  * cs_math_pow2(p_diam) * p_stat_w
+                                  * 0.25 / mq->b_face_surf[n_f_id]);
 
-            bound_stat[n_f_id + nfabor * bi->inclg]
-              -= p_stat_w;
+            if (bi->inclg > -1)
+              bound_stat[n_f_id + nfabor * bi->inclg] -= p_stat_w;
 
           }
 
@@ -2523,21 +2527,25 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
 
             if (p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
 
-              bound_stat[n_f_id + nfabor * bi->iscovc]
-                -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
-                   * 0.25 / mq->b_face_surf[n_f_id];
+              if (bi->iscovc > -1)
+                bound_stat[n_f_id + nfabor * bi->iscovc]
+                  -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
+                     * 0.25 / mq->b_face_surf[n_f_id];
 
-              bound_stat[n_f_id + nfabor * bi->ihdepm]
-                -=   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
-                   * 0.25 / mq->b_face_surf[n_f_id];
+              if (bi->ihdepm > -1)
+                bound_stat[n_f_id + nfabor * bi->ihdepm]
+                  -=   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                     * 0.25 / mq->b_face_surf[n_f_id];
 
-              bound_stat[n_f_id + nfabor * bi->ihdepv]
-                -=   cs_math_pow2(cs_math_pi * p_height
-                   * cs_math_pow2(p_diam) * p_stat_w
-                   * 0.25 / mq->b_face_surf[n_f_id]);
+              if (bi->ihdepv > -1)
+                bound_stat[n_f_id + nfabor * bi->ihdepv]
+                  -=   cs_math_pow2(cs_math_pi * p_height
+                     * cs_math_pow2(p_diam) * p_stat_w
+                     * 0.25 / mq->b_face_surf[n_f_id]);
 
-              bound_stat[n_f_id + nfabor * bi->inclg]
-                -= p_stat_w;
+              if (bi->inclg > -1)
+                bound_stat[n_f_id + nfabor * bi->inclg]
+                  -= p_stat_w;
 
             }
 
