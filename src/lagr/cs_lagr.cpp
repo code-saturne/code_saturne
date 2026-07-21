@@ -1887,6 +1887,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
   p_set.weight_fou = 0.0;
   p_set.n_failed_part = 0;
   p_set.weight_failed = 0.0;
+  p_set.n_part_resusp = 0;
+  p_set.weight_resusp = 0.0;
 
   /* Initialization for the dlvo, roughness and clogging  model
      ---------------------------------------------------------- */
