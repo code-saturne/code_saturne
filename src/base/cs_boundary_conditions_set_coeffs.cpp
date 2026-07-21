@@ -3699,7 +3699,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
             cs_boundary_conditions_update_bc_coeff_face_values
               (ctx, f, eqp,
                true, true,
-               false, nullptr, // hyd_p_flag, f_ext
+               0, nullptr, // hyd_p_flag, f_ext
                nullptr, // visel
                nullptr, // weighb
                f->val);

@@ -705,7 +705,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       cs_boundary_conditions_update_bc_coeff_face_values
         (ctx, f, eqp,
          true, true,
-         false, nullptr, // hyd_p_flag, f_ext
+         0, nullptr, // hyd_p_flag, f_ext
          nullptr, // visel
          nullptr, // weighb
          f->val);
@@ -2364,7 +2364,7 @@ cs_flux_through_surface(const char         *scalar_name,
       (ctx, f, f->bc_coeffs, 1, // inc
        &eqp_loc,
        true, true,
-       false, nullptr, // hyp_p_flag, f_ext
+       0, nullptr, // hyp_p_flag, f_ext
        nullptr, nullptr,
        f->val);
 

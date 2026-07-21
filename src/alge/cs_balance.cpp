@@ -518,7 +518,7 @@ cs_balance_scalar(int                         idtvar,
      inc,
      (const cs_equation_param_t *)eqp,
      need_compute_bc_grad, need_compute_bc_flux,
-     -1, nullptr, // hyd_p_flag, f_ext,
+     0, nullptr, // hyd_p_flag, f_ext,
      c_weight_diff,
      weighb,
      _pvar);
