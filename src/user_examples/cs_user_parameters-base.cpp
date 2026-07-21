@@ -922,6 +922,33 @@ cs_user_model(void)
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Time control function that returns true only on the first time step
+ *        of the current run, allowing calculations to freeze afterwards.
+ *
+ * \param[in]  ts     current time step structure
+ * \param[in]  input  pointer to optional (untyped) value or structure, or NULL
+ *
+ * \return  true if active (first time step), false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_time_control_first_step_only(const cs_time_step_t  *ts,
+                              void                  *input)
+{
+  CS_UNUSED(input);
+
+  /* Solve only if it is the first time step of the current computation.
+     nt_cur is the current absolute time step number, and nt_prev is the
+     absolute step number reached by the previous computation. */
+  if (ts->nt_cur == ts->nt_prev + 1)
+    return true;
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
@@ -1357,6 +1384,33 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
     cs_time_control_init_by_time_step(&tc, -1, -1, -1, false, false);
     cs_equation_time_control_add(eqp, &tc, false); /* Real copy and not shallow copy */
   }
+
+  /* Example: use a function pointer with cs_time_control_t to compute a
+   * variable only for the first time step, then freeze it. */
+  /*! [param_time_control_func] */
+  {
+    /* Get equation parameters for the temperature field */
+    cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(t));
+
+    if (eqp != nullptr) {
+      /* Instantiate cs_time_control_t using the function pointer.
+       * Parameters are:
+       * - control_func_: pointer to a function of type cs_time_control_func_t
+       * - input_: optional pointer to custom context data (NULL here)
+       * - at_start_: whether it should be active at the calculation
+       *              start (true)
+       * - at_end_: whether it should be active at the calculation end (false)
+       * - at_first_: whether it should be active at the very first
+       *              step of the overall calculation (false) */
+      cs_time_control_t tc(_time_control_first_step_only, nullptr, true, false, false);
+
+      /* Associate this time control with the equation. Setting the third
+       * argument to false ensures a real deep copy of the time control
+       * structure. */
+      cs_equation_time_control_add(eqp, &tc, false);
+    }
+  }
+  /*! [param_time_control_func] */
 
   /*
    * Turbulent flux model u'T' for the scalar T

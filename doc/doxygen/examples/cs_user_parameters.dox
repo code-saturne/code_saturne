@@ -150,6 +150,14 @@
 
   \snippet cs_user_parameters-base.cpp param_ircflu
 
+  It is also possible to freeze the solving of a variable (such as
+  temperature) at a specific point or based on a complex logic using
+  \ref cs_time_control_t. For example, to compute the temperature only
+  during the first time step of the current calculation and freeze it
+  afterwards, a custom time control function pointer can be used:
+
+  \snippet cs_user_parameters-base.cpp param_time_control_func
+
   Choice of turbulent flux model u'T' for the scalar T:
   - Algebraic Models
     -  0) SGDH
