@@ -229,5 +229,39 @@ cs_pressure_correction(int                   iterns,
                        cs_real_t             dfrcxt[][3]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ *  \brief Poisson equation resolution for hydrostatic pressure:
+ *         \f$ \divs ( \grad P ) = \divs ( f ) \f$
+ *
+ * \param[in]      m                pointer to glob mesh
+ * \param[in]      mq               pointer to glob mesh quantiites
+ * \param[out]     indhyd           indicator for cvar_hydro_pres update
+ * \param[in]      iterns           Navier-Stokes iteration number
+ * \param[in]      frcxt            external force generating
+ *                                  hydrostatic pressure
+ * \param[in]      dfrcxt           external force increment
+ *                                  generating hydrostatic pressure
+ * \param[out]     f                hydrostatic pressure field
+ * \param[in]      iflux            work array
+ * \param[in]      bflux            work array
+ * \param[out]     dphi             work array
+ * \param[in,out]  rhs              work array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
+                                cs_mesh_quantities_t  *mq,
+                                int                   *indhyd,
+                                int                    iterns,
+                                const cs_real_t        frcxt[][3],
+                                const cs_real_t        dfrcxt[][3],
+                                cs_field_t            *f,
+                                cs_real_t              iflux[],
+                                cs_real_t              bflux[],
+                                cs_real_t              dphi[],
+                                cs_real_t              rhs[]);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_PRESSURE_CORRECTION_H */

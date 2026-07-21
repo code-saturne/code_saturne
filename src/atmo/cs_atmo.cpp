@@ -96,6 +96,7 @@
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
 #include "base/cs_velocity_pressure.h"
+#include "base/cs_pressure_correction.h"
 #include "atmo/cs_intprf.h"
 
 #include "base/cs_porosity_from_scan.h"
@@ -246,275 +247,6 @@ _atmo_init_pressure_face(void)
   cs_parall_min_id_rank_r(&face_id, &rank_id, d0_min);
   fluid_props->p0_face_id = face_id;
   fluid_props->p0_rank_id = rank_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This auxiliary function solve a Poisson equation for hydrostatic
- *  pressure :
- *  \f$ \divs ( \grad P ) = \divs ( f ) \f$
- * \param[in]      f_ext       external forcing
- * \param[in]      dfext       external forcing increment
- * \param[in,out]  pvar        solved pressure variable
- * \param[in]      name        field name
- * \param[in,out]  i_massflux  Internal mass flux
- * \param[in,out]  b_massflux  Boundary mass flux
- * \param[in,out]  i_viscm     Internal face viscosity
- * \param[in,out]  b_viscm     Boundary face viscosity
- * \param[in,out]  dam         Working array
- * \param[in,out]  xam         Working array
- * \param[in,out]  dpvar       Pressure increment
- * \param[in,out]  rhs         Working array
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
-                              cs_real_3_t  dfext[],
-                              cs_real_t    pvar[],
-                              const char  *name,
-                              cs_real_t    i_massflux[],
-                              cs_real_t    b_massflux[],
-                              cs_real_t    i_viscm[],
-                              cs_real_t    b_viscm[],
-                              cs_real_t    dam[],
-                              cs_real_t    xam[],
-                              cs_real_t    dpvar[],
-                              cs_real_t    rhs[])
-
-{
-  /* Local variables */
-  cs_domain_t *domain = cs_glob_domain;
-  cs_mesh_t *m = domain->mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
-  cs_field_t *f = cs_field(name);
-  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);
-  int f_id = f->id;
-  int niterf;
-
-  cs_dispatch_context ctx;
-
-  cs_real_t *coefa = f->bc_coeffs->a;
-  cs_real_t *coefb = f->bc_coeffs->b;
-  cs_real_t *cofaf = f->bc_coeffs->af;
-  cs_real_t *cofbf = f->bc_coeffs->bf;
-
-  /*==========================================================================
-   * 0.  Initialization
-   *==========================================================================*/
-
-  /* solving info */
-  cs_solving_info_t *sinfo = nullptr;
-  int key_sinfo_id = cs_field_key_id("solving_info");
-  if (f_id > -1) {
-    f = cs_field(f_id);
-    sinfo = (cs_solving_info_t *)cs_field_get_key_struct_ptr(f, key_sinfo_id);
-    sinfo->n_it = 0;
-  }
-
-  /* Symmetric matrix, except if advection */
-  int isym = 1;
-  bool symmetric = true;
-
-  cs_array_2d<cs_real_t> next_fext(m->n_cells_with_ghosts, 3, cs_alloc_mode);
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-    next_fext(cell_id, 0) = f_ext[cell_id][0] + dfext[cell_id][0];
-    next_fext(cell_id, 1) = f_ext[cell_id][1] + dfext[cell_id][1];
-    next_fext(cell_id, 2) = f_ext[cell_id][2] + dfext[cell_id][2];
-  }
-
-  /* Handle parallelism and periodicity */
-  if (m->halo != nullptr)
-    cs_halo_sync(m->halo, false, next_fext.data<cs_real_3_t>());
-
-  /* Boundary conditions
-     =================== */
-
-  eqp_p->ndircl = 0;
-
-  /* To solve hydrostatic pressure:
-   * 0 on the pressure reference face, homogeneous Neumann everywhere else */
-  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
-    cs_real_t hint = 1. / mq->b_dist[face_id];
-    cs_real_t qimp = 0.;
-    if (   face_id         == fluid_props->p0_face_id
-        && cs_glob_rank_id == fluid_props->p0_rank_id) {
-      cs_real_t pimp = 0.;
-      cs_boundary_conditions_set_dirichlet_scalar(coefa[face_id],
-                                                  cofaf[face_id],
-                                                  coefb[face_id],
-                                                  cofbf[face_id],
-                                                  pimp,
-                                                  hint,
-                                                  cs_math_big_r);
-      eqp_p->ndircl = 1;
-    }
-    else {
-      cs_boundary_conditions_set_neumann_scalar(coefa[face_id],
-                                                cofaf[face_id],
-                                                coefb[face_id],
-                                                cofbf[face_id],
-                                                qimp,
-                                                hint);
-    }
-  }
-
-  cs::parall::max((eqp_p->ndircl));
-  cs_array<cs_real_t> rovsdt(m->n_cells_with_ghosts, cs_alloc_mode);
-
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
-    rovsdt[cell_id] = 0.;
-
-  /* Faces viscosity */
-  cs_array<cs_real_t> c_visc(m->n_cells_with_ghosts, cs_alloc_mode);
-
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
-    c_visc[cell_id] = 1.;
-
-  cs_face_viscosity(m, mq, eqp_p->imvisf, c_visc, i_viscm, b_viscm);
-
-  cs_matrix_wrapper(eqp_p->iconv,
-                    eqp_p->idiff,
-                    eqp_p->ndircl,
-                    isym,
-                    eqp_p->theta,
-                    0,
-                    f->bc_coeffs,
-                    rovsdt,
-                    i_massflux,
-                    b_massflux,
-                    i_viscm,
-                    b_viscm,
-                    nullptr,
-                    dam,
-                    xam);
-
-  /* Right hand side
-     =============== */
-
-  cs_ext_force_flux(m,
-                    mq,
-                    1, /* init */
-                    eqp_p->nswrgr,
-                    next_fext.data<cs_real_3_t>(),
-                    f->bc_coeffs->bf,
-                    i_massflux,
-                    b_massflux,
-                    i_viscm,
-                    b_viscm,
-                    c_visc,
-                    c_visc,
-                    c_visc);
-
-  cs_array<cs_real_t> divergfext(m->n_cells_with_ghosts, cs_alloc_mode);
-
-  cs_divergence(m,
-                1, /* init */
-                i_massflux,
-                b_massflux,
-                divergfext);
-
-  /* --- Right hand side residual */
-  cs_real_t rnorm = sqrt(cs_gdot(m->n_cells, divergfext, divergfext));
-  cs_real_t residu = rnorm;
-
-  /* Log */
-  if (sinfo != nullptr)
-    sinfo->rhs_norm = residu;
-
-  /* Initial Right-Hand-Side */
-  cs_diffusion_potential(f,
-                         eqp_p,
-                         m,
-                         mq,
-                         1, /* init */
-                         1, /* inc */
-                         1, /* iphydp */
-                         next_fext.data<cs_real_3_t>(),
-                         pvar,
-                         f->bc_coeffs,
-                         i_viscm,
-                         b_viscm,
-                         c_visc,
-                         rhs);
-
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
-    rhs[cell_id] = - divergfext[cell_id] - rhs[cell_id];
-
-  cs_real_t ressol = 0;
-  for (int sweep = 0;
-       sweep < eqp_p->nswrsm && residu > (rnorm * eqp_p->epsrsm);
-       sweep++) {
-
-    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
-      dpvar[cell_id] = 0.;
-
-    ressol = residu;
-
-    cs_sles_solve_native(f_id,
-                         nullptr,
-                         symmetric,
-                         1, /* db_size */
-                         1, /* eb_size */
-                         dam,
-                         xam,
-                         eqp_p->epsilo,
-                         rnorm,
-                         &niterf,
-                         &ressol,
-                         rhs,
-                         dpvar);
-
-    /* Log */
-    if (sinfo != nullptr)
-      sinfo->n_it += niterf;
-
-    /* Update variable and right-hand-side */
-    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
-      pvar[cell_id] += dpvar[cell_id];
-
-    cs_diffusion_potential(f,
-                           eqp_p,
-                           m,
-                           mq,
-                           1, /* init */
-                           1, /* inc */
-                           1, /* iphydp */
-                           next_fext.data<cs_real_3_t>(),
-                           pvar,
-                           f->bc_coeffs,
-                           i_viscm,
-                           b_viscm,
-                           c_visc,
-                           rhs);
-
-    for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
-      rhs[cell_id] = - divergfext[cell_id] - rhs[cell_id];
-
-    /* --- Convergence test */
-    residu = sqrt(cs_gdot(m->n_cells, rhs, rhs));
-
-    /* Writing */
-    if (eqp_p->verbosity >= 2) {
-      bft_printf("%s: CV_DIF_TS, IT: %d, Res: %12.5e, Norm: %12.5e\n",
-                 name, sweep, residu, rnorm);
-      bft_printf("%s: Current reconstruction sweep: %d, "
-                 "Iterations for solver: %d\n", name, sweep, niterf);
-    }
-
-  }
-
-  /* For log */
-  if (sinfo != nullptr) {
-    if (rnorm > 0.)
-      sinfo->res_norm = residu/rnorm;
-    else
-      sinfo->res_norm = 0.;
-  }
-
-  cs_sles_free_native(f_id, "");
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4053,21 +3785,17 @@ cs_atmo_hydrostatic_profiles_compute(void)
   /* Solving
    * ======= */
 
-  cs_array<cs_real_t> dam(m->n_cells_with_ghosts, cs_alloc_mode);
-
-  cs_array<cs_real_t> xam(m->n_i_faces, cs_alloc_mode);
-
   cs_array<cs_real_t> rhs(m->n_cells_with_ghosts, cs_alloc_mode);
 
   cs_array<cs_real_t> dpvar(m->n_cells_with_ghosts, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
     dpvar[cell_id] = 0.;
-    dam[cell_id] = 0.;
     rhs[cell_id] = 0.;
   }
 
   cs_real_t inf_norm = 1.;
+  int indhyd = 0;
 
   /* Loop to compute pressure profile */
   for (int sweep = 0;
@@ -4078,18 +3806,17 @@ cs_atmo_hydrostatic_profiles_compute(void)
     /* Update previous values of pressure for the convergence test */
     cs_field_current_to_previous(meteo_p_hyd);
 
-    _hydrostatic_pressure_compute(f_ext.data<cs_real_3_t>(),
-                                  dfext.data<cs_real_3_t>(),
-                                  meteo_p_hyd->val,
-                                  meteo_p_hyd->name,
-                                  i_massflux,
-                                  b_massflux,
-                                  i_viscm,
-                                  b_viscm,
-                                  dam,
-                                  xam,
-                                  dpvar,
-                                  rhs);
+    cs_hydrostatic_pressure_compute( m,
+                                     mq,
+                                    &indhyd,
+                                     0, // iterns
+                                     f_ext.data<cs_real_3_t>(),
+                                     dfext.data<cs_real_3_t>(),
+                                     meteo_p_hyd,
+                                     i_massflux,
+                                     b_massflux,
+                                     dpvar,
+                                     rhs);
 
     /* L infinity residual computation and forcing update */
     inf_norm = 0.;

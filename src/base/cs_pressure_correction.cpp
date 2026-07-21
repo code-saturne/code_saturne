@@ -141,13 +141,13 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = nullptr;
  *
  * \param[in]      m                pointer to glob mesh
  * \param[in]      mq               pointer to glob mesh quantiites
- * \param[out]     need_update      indicator for cvar_hydro_pres update
+ * \param[out]     indhyd           indicator for cvar_hydro_pres update
  * \param[in]      iterns           Navier-Stokes iteration number
  * \param[in]      frcxt            external force generating
  *                                  hydrostatic pressure
  * \param[in]      dfrcxt           external force increment
  *                                  generating hydrostatic pressure
- * \param[out]     cvar_hydro_pres  hydrostatic pressure increment
+ * \param[out]     f                hydrostatic pressure field
  * \param[in]      iflux            work array
  * \param[in]      bflux            work array
  * \param[out]     dphi             work array
@@ -155,18 +155,18 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = nullptr;
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_hydrostatic_pressure_compute(const cs_mesh_t       *m,
-                              cs_mesh_quantities_t  *mq,
-                              int                   *indhyd,
-                              int                    iterns,
-                              const cs_real_t        frcxt[][3],
-                              const cs_real_t        dfrcxt[][3],
-                              cs_real_t              cvar_hydro_pres[],
-                              cs_real_t              iflux[],
-                              cs_real_t              bflux[],
-                              cs_real_t              dphi[],
-                              cs_real_t              rhs[])
+void
+cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
+                                cs_mesh_quantities_t  *mq,
+                                int                   *indhyd,
+                                int                    iterns,
+                                const cs_real_t        frcxt[][3],
+                                const cs_real_t        dfrcxt[][3],
+                                cs_field_t            *f,
+                                cs_real_t              iflux[],
+                                cs_real_t              bflux[],
+                                cs_real_t              dphi[],
+                                cs_real_t              rhs[])
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
@@ -177,7 +177,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   cs_lnum_t has_dc = mq->has_disable_flag;
 
   const int ksinfo = cs_field_key_id("solving_info");
-  cs_field_t *f = cs_field_by_name_try("hydrostatic_pressure");
+  cs_real_t *cvar_hydro_pres = f->val;
   cs_solving_info_t *sinfo =
     static_cast<cs_solving_info_t*>(cs_field_get_key_struct_ptr(f, ksinfo));
   const cs_equation_param_t *eqp_pr = cs_field_get_equation_param_const(f);
@@ -1464,11 +1464,11 @@ _pressure_correction_fv(int                   iterns,
     /* This computation is needed only if there are outlet faces */
 
     if (ifcsor > -1 || open_bcs_flag != 0)
-      _hydrostatic_pressure_compute(m, fvq,
-                                    &indhyd, iterns,
-                                    frcxt, dfrcxt, cvar_hydro_pres,
-                                    iflux, bflux,
-                                    dphi, rhs);
+      cs_hydrostatic_pressure_compute(m, fvq,
+                                      &indhyd, iterns,
+                                      frcxt, dfrcxt, f_hp,
+                                      iflux, bflux,
+                                      dphi, rhs);
   }
 
   /* Compute the BCs for the pressure increment
