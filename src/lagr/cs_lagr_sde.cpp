@@ -3193,6 +3193,10 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
 
   cs_math_33t_3_product(rot_m, depl, depg);
 
+  /* Update displacement norm needed for resuspension */
+  if (p_set.p_am->count[0][CS_LAGR_DISPLACEMENT_NORM] > 0)
+    p_set.attr_real(p_id, CS_LAGR_DISPLACEMENT_NORM) += cs_math_3_norm(depl);
+
   /* 3.2 - Particle velocity   */
 
   cs_real_t *part_vel =
