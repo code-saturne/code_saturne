@@ -83,7 +83,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressure) :
         self.lineEditPressure.setValidator(validatorPressure)
 
         self.comboBoxPressureMode.activated[int].connect(self._slotChoicePressure)
-        self._modelPressure = ComboModel(self.comboBoxPressureMode, 2, 1);
+        self._modelPressure = ComboModel(self.comboBoxPressureMode, 3, 1);
 
 
     def setup(self, case, fieldId = None):
@@ -106,6 +106,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressure) :
 
         self._modelPressure.addItem(self.tr("Mean outlet pressure"), "dpdndtau")
         self._modelPressure.addItem(self.tr("Homogeneous outlet pressure"), "dirichlet")
+        self._modelPressure.addItem(self.tr("Hydrostatic outlet pressure"), "hydrostatic")
         pressureChoice = self.__boundary.getPressureChoice()
         self._modelPressure.setItem(str_model=pressureChoice)
 

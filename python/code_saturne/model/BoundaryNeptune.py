@@ -1082,7 +1082,7 @@ class OutletBoundary(Boundary) :
         Set reference boundary condition choice
         """
 
-        Model().isInList(value, ['dirichlet', 'dpdndtau'])
+        Model().isInList(value, ['dirichlet', 'dpdndtau', 'hydrostatic'])
 
         node = self.boundNode.xmlInitNode('variable', 'choice', name='pressure')
         node['choice'] = value
