@@ -2079,9 +2079,10 @@ cs_cdofb_prescribed_smooth_wall_n_pena_t_robin(
 
   } // boundary face is a wall
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_NAVSTO_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys))
-    csys->dump(">> Cell %d, scalar Fb: After smooth wall");
+    csys->dump(">> %s >> Cell %d, scalar Fb: After smooth wall",
+               __func__, csys->c_id);
 #endif
 }
 
@@ -2274,9 +2275,10 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
     }
   } // The boundary face is a wall
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_NAVSTO_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys))
-    csys->dump(">> Cell %d, scalar Fb: After smooth wall");
+    csys->dump(">> Cell %d, scalar Fb: After smooth wall",
+               __func__, csys->c_id);
 #endif
 }
 
@@ -2302,7 +2304,8 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
   [[maybe_unused]] const cs_cell_mesh_t      *cm,
   [[maybe_unused]] const cs_property_data_t  *pty,
   [[maybe_unused]] cs_cell_builder_t         *cb,
-  cs_cell_sys_t                              *csys)
+  cs_cell_sys_t                              *csys
+)
 {
   assert(bf > -1);
   assert(cm != nullptr && csys != nullptr);
@@ -2316,21 +2319,19 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
 
   std::memset(cb->values, 0, 6 * sizeof(double));
 
-  /* wall BC expression: -K du/dx.tau = h_t (I - (n x n))(u - u_w)
-   *                      u.n = 0
-   * ----------------------------------------------------- */
+  // wall BC expression: -K du/dx.tau = h_t (I - (n x n))(u - u_w)
+  //                      u.n = 0
 
   if (csys->bf_flag[bf] & CS_CDO_BC_WALL_PRESCRIBED) {
 
     const cs_quant_t pfq = cm->face[bf];
     const double *u0 = &(csys->rob_values[9*bf]);
     const double *f_w = &(csys->rob_values[9*bf + 6]);
-
     const cs_real_t f_w_norm = cs_math_3_norm(f_w);
 
-    /* In case of the laminar wall treatment :
-     * classic Dirichlet BC on ux, uy, uz*/
+    // Laminar wall treatment: classical Dirichlet BC on ux, uy, uz
     if (f_w_norm <= 10.0*cs_math_zero_threshold) {
+
       const double u0_norm = cs_math_3_norm(u0);
 
       if (u0_norm > cs_math_zero_threshold) {
@@ -2338,7 +2339,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
         for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
           if (bi == bf)
-            continue;
+            continue; // Skip the diagonal term
 
           cs_real_t *_rhs = csys->rhs + 3 * bi;
           cs_sdm_t *m_if  = m->get_block(bi, bf);
@@ -2348,6 +2349,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
         }
+
       } /* Non-homogeneous Dirichlet BC */
 
       for (short int k = 0; k < 3; k++)
@@ -2356,11 +2358,10 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
       for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
         if (bi != bf) {
-
           cs_sdm_t *m_if = m->get_block(bi, bf);
           m_if->set_zero();
         }
-        else { /* bi == f */
+        else { /* bi == bf */
 
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
             cs_sdm_t *mFJ = m->get_block(bf, bj);
@@ -2369,16 +2370,18 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
 
           m_ff->set_zero();
           (*m_ff)(0,0) = 1., (*m_ff)(1,1) = 1., (*m_ff)(2,2) = 1.;
+
         }
-      } /* Block bi */
+
+      } // Loop on bi blocks
+
     } /* In case of applying the turbulent wall treatment on u_t, u.n = u0n */
     else {
 
       const cs_real_t *ni = pfq.unitv;
 
-      /* nn :  n x n^t, projection onto normal axis
-       * p_t : I - n x n^t, projection onto tangential plane */
-
+      // nn:  n x n^t, projection onto normal axis
+      // p_t: I - n x n^t, projection onto tangential plane
       cs_sdm_t p_t{3}, nn{3}, buffer{3};
 
       nn(0,0) = ni[0]*ni[0], nn(0,1) = ni[0]*ni[1], nn(0,2) = ni[0]*ni[2];
@@ -2398,8 +2401,8 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
       p_t(2,2) = 1.0 - nn(2,2);
 
       /* ============================================
-       *  Apply the Dirichlet for Normal component
-       *  =========================================== */
+       * Apply the Dirichlet for the normal component
+       * ============================================ */
 
       p_t.matvec(csys->rhs + 3*bf, x_dir);
 
@@ -2427,7 +2430,8 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
         }
-      } /* Non-homogeneous Dirichlet BC */
+
+      } // Non-homogeneous Dirichlet BC
 
       for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
@@ -2449,7 +2453,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
             cs_sdm_copy(mFJ, &buffer);
           }
 
-          /* m_ff = n x n^t + p_t m_ff p_t; */
+          // m_ff = n x n^t + p_t m_ff p_t
           buffer.set_zero();
           cs_sdm_multiply(m_ff, &p_t, &buffer);
           cs_sdm_copy(m_ff, &buffer);
@@ -2475,9 +2479,10 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
 
   } // This boundary face is a wall
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_NAVSTO_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys))
-    csys->dump(">> Cell %d, scalar Fb: After smooth wall");
+    csys->dump(">> %s >> Cell %d, scalar Fb: After smooth wall",
+               __func__, csys->c_id);
 #endif
 }
 
@@ -2526,8 +2531,8 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
     const double *f_w = &(csys->rob_values[9*bf + 6]);
 
     if (h_t > 0.5*eqp->strong_pena_bc_coeff) {
-      // Laminar wall treatment: classical Dirichlet BC on ux, uy, uz
 
+      // Laminar wall treatment: classical Dirichlet BC on ux, uy, uz
       const double u0_norm = cs_math_3_norm(u0);
 
       if (u0_norm > cs_math_zero_threshold) {
@@ -2544,8 +2549,10 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
 
           for (int k = 0; k < 3; k++)
             _rhs[k] -= ax_dir[k];
+
         }
-      } /* Non-homogeneous Dirichlet BC */
+
+      } // Non-homogeneous Dirichlet BC
 
       for (short int k = 0; k < 3; k++)
         csys->rhs[3*bf + k] = u0[k];
@@ -2557,6 +2564,7 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
           m_if->set_zero();
         }
         else { // bi == bf
+
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
             cs_sdm_t *mFJ = m->get_block(bf, bj);
             mFJ->set_zero();
@@ -2564,9 +2572,10 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
 
           m_ff->set_zero();
           (*m_ff)(0,0) = 1., (*m_ff)(1,1) = 1., (*m_ff)(2,2) = 1.;
+
         }
 
-      } /* Block bi */
+      } // Loop on bi blocks
 
     }
     else { // Turbulent wall treatment
@@ -2658,9 +2667,11 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
 
     }
   }
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_NAVSTO_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys))
-    csys->dump(">> Cell %d, scalar Fb: After smooth wall");
+    csys->dump(">> %s >> Cell %d, scalar Fb: After smooth wall",
+               __func__, csys->c_id);
 #endif
 }
 
@@ -3244,7 +3255,7 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t   *nsp,
         cs_sdm_block33_init(csys->mat, cm->n_fc + 1, cm->n_fc + 1);
         eqc->advection_close(eqp, cm, csys, cb, cb->loc);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_NAVSTO_DBG > 1
         if (cs_dbg_cw_test(eqp, cm, csys))
           csys->dump("\n>> Cell system after advection");
 #endif
