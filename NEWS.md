@@ -12,7 +12,7 @@ Release 9.2.0 (2026-07-06)
 
 ### Numerics:
 
-- Update to pressure reference face: it was previously stored in the isostd
+- Update to pressure reference face: it was previously stored in the `isostd`
   array, it is now stored in `cs_glob_fluid_properties` under two new attributes:
   `p0_face_id` contains the face id, while `p0_rank_id` contains the rank id. It
   can therefore now be accessed by the user or any other place in the code. The
@@ -44,7 +44,7 @@ Release 9.2.0 (2026-07-06)
   quality meshes.
 
 - CDO: Several fixes in the order of building the cell system in CDOFb
-  monolithic schemes. A carful care has to be done between the
+  monolithic schemes. A careful care has to be done between the
   augmentation of the system, the static condensation and the way to
   enforce Dirichlet boundary conditions.
 
@@ -80,7 +80,7 @@ Release 9.2.0 (2026-07-06)
   The function is not yet removed to allow update by users.
 
 - Expand use of optional `CATALYST_IMPLEMENTATION_NAME` environment variable
-  from "stub", "paraview", and "legacty" to "ensight", "med", and "cgns".
+  from "stub", "paraview", and "legacy" to "ensight", "med", and "cgns".
   This is useful when running or debugging an existing case on a build where
   Catalyst is not available, or when loading Catalyst under a debugger is
   very slow.
@@ -111,7 +111,7 @@ Release 9.2.0 (2026-07-06)
   `-DCS_DONT_SUPPRESS_EXTERNAL_WARNINGS` compilation flag at the configure
   step.
 
-- Add extra debugging options for cs_mdspan and cs_array classes. These
+- Add extra debugging options for `cs_mdspan` and `cs_array classes`. These
   options can be activated using compilation flags provided at the configure
   step or during compilation.
   * `-DCS_ARRAY_DBG_BOUNDS`: adds a check bounds whenever one's tries to use
@@ -128,12 +128,12 @@ Release 9.2.0 (2026-07-06)
 - Add a HIP, AMD GPUs, backend to code_saturne.
 
 - Make Fortran compiler an optional prerequisite
-  * Fortran dependency is now only required for Atmo module, and more
+  * Fortran dependency is now only required for the Atmo module, and more
     specifically for the Polyphemus chemistry functions.
   * Disabling Fortran at configure step is done using the `--disable-fortran`
     configure flag.
-  * If fortran is disable in configure step, the corresponding code is not
-    compiled, and if any Fortran functions are needed from the atmospherical
+  * If Fortran is disable in configure step, the corresponding code is not
+    compiled, and if any Fortran functions are needed from the atmospheric
     flows module, based on the user defined parameters, then the code exits
     with a specific error message.
 
@@ -146,9 +146,9 @@ Release 9.2.0 (2026-07-06)
     by the series' owner. The other fields have their `_vals` (`cs_array_2d`)
     objects pointing to sub_arrays of the `cs_array_3d` owner.
 
-- Mesh refinement: restuctured handling of polyhedral cells refinement,
+- Mesh refinement: restructured handling of polyhedral cells refinement,
   based on the hypothesis than in most cases, only a small subset of all
-  cells require refinement with a polyhedra template, but that this refinement
+  cells require refinement with a polyhedral template, but that this refinement
   is more complex and costly than that of other types of cells.
   * Add a `cs_cell_refine_helper` class which can handle local refinement
     of a single polyhedron, allowing future refinement template improvements
@@ -264,13 +264,13 @@ Release 9.1.0 (2025-12-30)
 - Fixes related to notebook variables: modification in smgr now dominates over
   reading in checkpoint also fix incoherence between read and restart parameters
 
-- Fix periocidity with CDO-Fb scheme. It is now forbidden to have more than
+- Fix periodicity with CDO-Fb scheme. It is now forbidden to have more than
   one periodic face by cell.
 
 - Fix the time used to solve CDO equations after FV-NSE since there is a
   constant offset between them.
 
-- Fix treatments of BC conditions with CDO-FB. If imposed pression is used on
+- Fix treatments of BC conditions with CDO-FB. If imposed pressure is used on
   a face, it can missed other boundary faces of the same cells.
 
 - Reintroduce `CS_BC_HMG_NEUMANN` since it is really different from
@@ -318,7 +318,7 @@ Release 9.0.0 (2025-06-27)
   by a new one close to the CDO-Vb centered scheme. Also, former centered
   and upwind schemes are post-fixed by _v8 for comparison. Moreover, a mixed
   mixed centered/hybrid scheme is introduced with a fixed ratio or a variable
-  ratio using Sharfetter-Gummel weigth function which is Peclet-robust.
+  ratio using Sharfetter-Gummel weight function which is Peclet-robust.
 
 ### Bug fixes:
 
@@ -438,7 +438,7 @@ Release 8.2.0 (2024-06-17)
 - Reshape the interface with the MUMPS library (sparse direct solver)
   to make the usage of common MUMPS options easier. Take benefit from
   optimizations available in the latest 5.6.2 version.
-- Add a higher-level interface for settings algebraic multigrids (AMG)
+- Add a higher-level interface for settings algebraic multigrid (AMG)
   thanks to `cs_param_sles_t` structure
   * Context parameters for in-house K-cycle and V-cycle
   * Context parameters for boomerAMG included in the HYPRE library
@@ -465,7 +465,7 @@ Release 8.2.0 (2024-06-17)
     defined in `cs_user_parameters` and `cs_user_finalize_setup`).
 
 - Add a calculator mode to the mathematical expressions editor of the GUI.
-  The layout also contains a combobox with the available fields and/or
+  The layout also contains a combo-box with the available fields and/or
   notebook parameters.
 
 - Add a calculator function in the GUI.
@@ -527,7 +527,7 @@ Release 8.2.0 (2024-06-17)
     every other run.
 - Boundary layer insertion: limiter could reduce insertion at wrong
   vertices due to incorrect indirection.
-- Fix computation of Hodge operator with Voronoi algorithm and
+- Fix computation of Hodge operator with Voronoï algorithm and
   anisotropic property (CDO framework)
 
 Release 8.1.0 (2023-12-13)
@@ -661,7 +661,7 @@ Release 8.0.0 (2023-06-30)
 - Cartesian mesher can now handle multiple blocks
   * This requires modification of basic API, specifically by adding
     an additional input argument for some functions (name of id).
-  * A cartesian block can now have a name, which will lead to a renaming
+  * A Cartesian block can now have a name, which will lead to a renaming
     of boundary groups such as instead of "X0" the user will have
     "<name>_X0".
 
@@ -731,7 +731,7 @@ Release 7.3.0 (2022-12-20)
   molecular diffusivity.
 
 - Groundwater flows: Modify the default settings for a tracer equation
-  (unsteady/reaction terms to Voronoi Hodge, advection scheme - hybrid
+  (unsteady/reaction terms to Voronoï Hodge, advection scheme - hybrid
   upwind/centered, linear solvers: Jacobi preconditioner and tolerance
   to 10^-8). This follows from a first feedback on the VnV cases of the
   default options.
@@ -921,7 +921,7 @@ User changes:
   `--parametric-args [arg1] [arg2] ...`, and `--kw-args [arg1] [arg2] ...`
   arguments to `code_saturne run` and `code_saturne submit` commands.
   * If provided, they are available as the `notebook` and `kw_args`
-    attributes of each case domain object (as a Python dictionnary
+    attributes of each case domain object (as a Python dictionary
     and list respectively). Otherwise, these attributes are `None`.
   * These options are applied when running the case, and allow modifying
     the setup "on the fly" at run initialization.
@@ -1038,8 +1038,8 @@ User changes:
 - GUI: for gas combustion, allow creation of a thermochemistry data file
   based on user inputs.
 
-- GUI: Remove legacy definitions of syrthes coupling when opening old XML file:
-  * Starting from v7.0 a syrthes coupling is defined as a boundary
+- GUI: Remove legacy definitions of Syrthes coupling when opening old XML file:
+  * Starting from v7.0 a Syrthes coupling is defined as a boundary
     condition and no longer as an independent model.
   * Pre v7.0 definitions are saved to a file
     'deprecated_syrthes_coupling_data.txt' and are then removed from the
@@ -1080,7 +1080,7 @@ User changes:
 - Major evolution concerning coupling with external codes
   * Create a generic "Coupling parameters" page after boundary
     conditions in the tree view. This page gathers the parameters for
-    Syrthes, code_aster and cathare couplings.
+    Syrthes, code_aster and Cathare couplings.
   * The definition of a coupling with Syrthes is now done directly as a
     thermal boundary condition (like flux or temperature).
   * Display external coupling tab as deprecated.
@@ -1225,7 +1225,7 @@ User changes:
     direction (X,Y and Z)
 
 - When creating a case with `code_saturne create`, the `--noref` option is
-  enabled by default. It can be cancelled using the `--copy-ref` option.
+  enabled by default. It can be canceled using the `--copy-ref` option.
 
 - GUI: user source file editor can now also use reference files from the
   installation directory.
@@ -1243,7 +1243,7 @@ User changes:
 
 - Modify the way the code is handling input file.
   * If no xml file is provided by the 'run.cfg' file and a 'setup.xml' exists,
-    the latter is used (previous behaviour). If it does not exist, the
+    the latter is used (previous behavior). If it does not exist, the
     code prints a warning message indicating that no xml was found.
   * If an input file, other than 'setup.xml', is provided using the 'run.cfg'
     or '-p' option (for code_saturne run only), and a 'setup.xml' exists inside
@@ -1255,7 +1255,7 @@ User changes:
   Specific user functions are added (cs_user_paramedmem_coupling.c) to allow
   an easier definitions of coupling. Examples are provided in the
   'cs_user_paramedmem_coupling-base.c' user_example file.
-  Send/recieve operations still need to be done by the user, but are simplified
+  Send/receive operations still need to be done by the user, but are simplified
   by allowing send/recv based on a cs_field_t pointer.
 
 - GUI: present volume and boundary conditions using sub-nodes in the
@@ -1271,7 +1271,7 @@ Numerics and physical modeling:
 - CDO schemes: Add different strategies for the treatment of the advection term
   in Navier-Stokes equations (linearized implicit and explicit treatment). The
   Picard algorihtm (implicit) is the default as in the previous version. This is
-  based on results obtained during R. MILANI's PhD.
+  based on results obtained during R. Milani's PhD.
 
 - Amtospheric module: Major modification the scheme for Solar radiation based
   on the PhD of L. Asmar.
@@ -1348,7 +1348,7 @@ User changes:
 
 - Various improvements to CGNS output:
   * Added output of boundary condition sections (on by default)
-  * Allow discarding steady data (to avoid isues with ParaView when both
+  * Allow discarding steady data (to avoid issues with ParaView when both
     steady and unsteady data s present)
   * Use single precision by default for variables (leads to smaller files).
 
@@ -1429,9 +1429,9 @@ Architectural changes:
   uses an external MathJax server, so works on-line only.
 
 - [GUI]: enable Qt translation mechanism.
-  Translation files are not maintained, but may be built using  pylupdate5,
-  linguist-qt5, and lrelease, and files named code_saturne_<lang>.qm
-  under <install_prefix>/share/translation will be handled.
+  Translation files are not maintained, but may be built using `pylupdate5`,
+  `linguist-qt5`, and `lrelease`, and files named `code_saturne_<lang>.qm`
+  under `<install_prefix>/share/translation` will be handled.
 
 - Use `cs_probe_t` type profiles for GUI-defined profiles.
 
@@ -1505,7 +1505,7 @@ User changes:
   if loops.
 
 - Add cs_mesh_remove_cells and cs_mesh_remove_cells_negative_volumes
-  functions to allow removal of selected or degenrate cells in preprocessing.
+  functions to allow removal of selected or degenerate cells in preprocessing.
 
 - Add P1 interpolation function and associated example for probes output.
 
