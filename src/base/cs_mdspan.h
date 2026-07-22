@@ -501,7 +501,7 @@ public:
   CS_F_HOST_DEVICE
   inline
   std::enable_if_t<cs::always_true<Args...>::value && (N>1) &&
-                   (L == layout::left) && sizeof...(Args) == N-1,
+                   (L == layout::left) && sizeof...(Args)+1 == N,
                    mdspan<T, 1, layout::strided>>
   vect
   (
@@ -527,7 +527,7 @@ public:
   CS_F_HOST_DEVICE
   inline
   std::enable_if_t<cs::always_true<Args...>::value && (N>1) &&
-                   (L == layout::right) && sizeof...(Args) == N-1,
+                   (L == layout::right) && sizeof...(Args)+1 == N,
                    mdspan<T, 1, layout::right>>
   vect
   (
@@ -551,7 +551,7 @@ public:
   CS_F_HOST_DEVICE
   inline
   std::enable_if_t<cs::always_true<Args...>::value && (N>1) &&
-                   (L == layout::left) && sizeof...(Args) == N-1,
+                   (L == layout::left) && sizeof...(Args)+1 == N,
                    mdspan<T, 1, layout::strided>>
   sym_tensor
   (
@@ -577,7 +577,7 @@ public:
   CS_F_HOST_DEVICE
   inline
   std::enable_if_t<cs::always_true<Args...>::value && (N>1) &&
-                   (L == layout::right) && sizeof...(Args) == N-1,
+                   (L == layout::right) && sizeof...(Args)+1 == N,
                    mdspan<T, 1, layout::right>>
   sym_tensor
   (
@@ -600,7 +600,7 @@ public:
   CS_F_HOST_DEVICE
   inline
   std::enable_if_t<cs::always_true<Args...>::value && (N>2) &&
-                   (L == layout::left) && sizeof...(Args) == N-2,
+                   (L == layout::left) && sizeof...(Args)+2 == N,
                    mdspan<T, 2, layout::strided>>
   tensor
   (
@@ -626,7 +626,7 @@ public:
   CS_F_HOST_DEVICE
   inline
   std::enable_if_t<cs::always_true<Args...>::value && (N>2) &&
-                   (L == layout::right) && sizeof...(Args) == N-2,
+                   (L == layout::right) && sizeof...(Args)+2 == N,
                    mdspan<T, 2, layout::right>>
   tensor
   (
