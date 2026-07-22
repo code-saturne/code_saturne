@@ -1760,8 +1760,13 @@ cs_cdofb_block_dirichlet_wsym(short int                                   bf,
   }
 
   // (3) Update the bc_op matrix and the RHS with the penalization
-  //     coeff * \meas{f} / h_f  \equiv coeff * h_f
-  const double pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[bf].meas);
+
+  //     Knowing that h_f \approx |pvol_f| / |f|
+  //     |f| / h_f  \approx |f|**2 / |pvol_f|
+
+  const cs_quant_t pfq = cm->face[bf];
+  const double pcoef
+    = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[bf];
 
   bc_op->val[bf * (n_dofs + 1)] += pcoef; // Diagonal term
   for (short int k = 0; k < 3; k++)
