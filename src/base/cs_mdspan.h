@@ -796,6 +796,38 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Get span 2D view of the array, same total size.
+   *
+   * \return mdspan<T,2,L> view with same total size as original object.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  mdspan<T, 2, L>
+  view_2d()
+  {
+    static_assert(N==2, "Only available for 2D views");
+    return mdspan<T,2,L>(_data, _extent[0], _extent[1]);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get span 3D view of the array, same total size.
+   *
+   * \return mdspan<T,3,L> view with same total size as original object.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  mdspan<T, 3, L>
+  view_3d()
+  {
+    static_assert(N==3, "Only available for 3D views");
+    return mdspan<T,3,L>(_data,  _extent[0], _extent[1], _extent[2]);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Getter for a subspan based on first dimension
    *
    * \return pointer
