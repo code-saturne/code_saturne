@@ -10420,6 +10420,11 @@ cs_gradient_porosity_balance(int inc)
   cs_real_t *b_massflux = cs_field_by_name("boundary_mass_flux")->val;
   const cs_nreal_3_t *restrict i_face_u_normal = mq_g->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = mq_g->b_face_u_normal;
+  const cs_real_t *restrict i_f_face_surf = mq->i_face_surf;
+  const cs_real_t *restrict i_face_surf = mq_g->i_face_surf;
+  const cs_real_t *restrict b_f_face_surf = mq->b_face_surf;
+  const cs_real_t *restrict b_face_surf = mq_g->b_face_surf;
+
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
@@ -10471,15 +10476,17 @@ cs_gradient_porosity_balance(int inc)
          Not the case if coupled */
       if (   has_dc * c_disable_flag[has_dc * ii] == 0
           && has_dc * c_disable_flag[has_dc * jj] == 0)
-        d_f_surf = 1.;
+        d_f_surf = 1. / cs::max(i_f_face_surf[f_id],
+                                cs_math_epzero * i_face_surf[f_id]);
 
       i_poro_duq_0[f_id] = veli_dot_n * i_massflux[f_id] * d_f_surf;
       i_poro_duq_1[f_id] = velj_dot_n * i_massflux[f_id] * d_f_surf;
 
       cs_real_t fctb_ii[3], fctb_jj[3];
       for (cs_lnum_t i = 0; i < 3; i++) {
-        fctb_ii[i] =  i_poro_duq_0[f_id] * i_face_u_normal[f_id][i];
-        fctb_jj[i] = -i_poro_duq_1[f_id] * i_face_u_normal[f_id][i];
+        cs_real_t i_face_normal = i_face_u_normal[f_id][i] * i_f_face_surf[f_id];
+        fctb_ii[i] =  i_poro_duq_0[f_id] * i_face_normal;
+        fctb_jj[i] = -i_poro_duq_1[f_id] * i_face_normal;
       }
 
       if (ii < n_cells)
@@ -10510,13 +10517,15 @@ cs_gradient_porosity_balance(int inc)
       /* Is the cell disabled (for solid or porous)?
          Not the case if coupled */
       if (has_dc * c_disable_flag[has_dc * ii] == 0)
-        d_f_surf = 1.;
+        d_f_surf = 1. / cs::max(b_f_face_surf[f_id],
+                                cs_math_epzero * b_face_surf[f_id]);
 
       b_poro_duq[f_id] = veli_dot_n * b_massflux[f_id] * d_f_surf;
 
       cs_real_t fctb[3];
       for (cs_lnum_t i = 0; i < 3; i++)
-        fctb[i] = b_poro_duq[f_id] * b_face_u_normal[f_id][i];
+        fctb[i] =   b_poro_duq[f_id]
+                  * b_face_u_normal[f_id][i] * b_f_face_surf[f_id];
 
       cs_dispatch_sum<3>(c_poro_div_duq[ii], fctb, b_sum_type);
 
