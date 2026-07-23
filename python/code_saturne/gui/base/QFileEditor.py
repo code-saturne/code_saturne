@@ -315,17 +315,20 @@ _EXT_TO_LEXER = {
 
 # Map Pygments token types to our format_styles keys.
 # Order matters: more specific entries first.
-_TOKEN_FORMAT = [
-    (Token.Comment,               'comment'),
-    (Token.Literal.String,        'string'),
-    (Token.Literal.String.Doc,    'comment'),   # docstrings → green italic
-    (Token.Keyword,               'keyword'),
-    (Token.Keyword.Type,          'keyword'),
-    (Token.Name.Builtin,          'keyword'),
-    (Token.Operator,              'operator'),
-    (Token.Punctuation,           'brace'),
-    (Token.Literal.Number,        'expression'),
-]
+_TOKEN_FORMAT = []
+if _PYGMENTS_AVAILABLE:
+    _TOKEN_FORMAT = \
+    [
+        (Token.Comment,               'comment'),
+        (Token.Literal.String,        'string'),
+        (Token.Literal.String.Doc,    'comment'),   # docstrings → green italic
+        (Token.Keyword,               'keyword'),
+        (Token.Keyword.Type,          'keyword'),
+        (Token.Name.Builtin,          'keyword'),
+        (Token.Operator,              'operator'),
+        (Token.Punctuation,           'brace'),
+        (Token.Literal.Number,        'expression'),
+    ]
 
 
 class _PygmentsHighlighter(QtGui.QSyntaxHighlighter):
