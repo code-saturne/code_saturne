@@ -4054,6 +4054,138 @@ cs_atmo_log_setup(void)
     cs_log_printf(CS_LOG_SETUP,
         _("  and impose profiles at ingoing faces\n\n"));
 
+  /* Projection system */
+  const char *proj_name = _("undefined");
+  if (at_opt->projection_type == CS_ATMO_PROJ_WGS84)
+    proj_name = _("WGS-84");
+  else if (at_opt->projection_type == CS_ATMO_PROJ_LAMBERT_93)
+    proj_name = _("Lambert-93");
+  else if (at_opt->projection_type == CS_ATMO_PROJ_UTM)
+    proj_name = _("UTM");
+  else if (at_opt->projection_type == CS_ATMO_PROJ_TAN)
+    proj_name = _("Tangential");
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Projection system:                     %s\n"),
+                proj_name);
+  if (at_opt->projection_type == CS_ATMO_PROJ_UTM) {
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    UTM Zone:                            %d\n"),
+                  at_opt->utm_zone);
+  }
+  cs_log_printf(CS_LOG_SETUP, "\n");
+
+  /* Sedimentation and deposition models */
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Sedimentation model:                   %s\n"
+                  "  Deposition model:                      %s\n\n"),
+                (at_opt->sedimentation_model > 0) ? _("active")
+                                                  : _("inactive"),
+                (at_opt->deposition_model > 0) ? _("active")
+                                                : _("inactive"));
+
+  /* Ground model options */
+  if (at_opt->ground_model > 0) {
+    const char *ground_cat_name = _("unknown");
+    if (at_opt->ground_cat == CS_ATMO_GROUND_5_CAT)
+      ground_cat_name = _("5 categories");
+    else if (at_opt->ground_cat == CS_ATMO_GROUND_7_CAT)
+      ground_cat_name = _("7 categories");
+    else if (at_opt->ground_cat == CS_ATMO_GROUND_23_CAT)
+      ground_cat_name = _("23 categories (Corine Land Cover)");
+
+    const char *meb_model_name = _("unknown");
+    if (at_opt->ground_meb_model == CS_ATMO_GROUND_GENUINE)
+      meb_model_name = _("genuine force-restore");
+    else if (at_opt->ground_meb_model == CS_ATMO_GROUND_PHOTOVOLTAICS)
+      meb_model_name = _("photovoltaics");
+    else if (at_opt->ground_meb_model == CS_ATMO_GROUND_VEGETATION)
+      meb_model_name = _("vegetation");
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Ground model:                          active\n"
+                    "    Categories:                          %s\n"
+                    "    MEB model:                           %s\n"
+                    "    Zone ID:                             %d\n\n"),
+                  ground_cat_name,
+                  meb_model_name,
+                  at_opt->ground_zone_id);
+  }
+  else {
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Ground model:                          "
+                    "inactive\n\n"));
+  }
+
+  /* Humidity options and microphysics */
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+    const char *dist_model_name = _("unknown");
+    if (at_opt->distribution_model == 1)
+      dist_model_name = _("all or nothing");
+    else if (at_opt->distribution_model == 2)
+      dist_model_name = _("Gaussian");
+
+    const char *subgrid_model_name = _("none");
+    if (at_opt->subgrid_model == 0)
+      subgrid_model_name = _("simplest parameterization");
+    else if (at_opt->subgrid_model == 1)
+      subgrid_model_name = _("Bechtold et al. 1995");
+    else if (at_opt->subgrid_model == 2)
+      subgrid_model_name = _("Bouzereau et al. 2004");
+    else if (at_opt->subgrid_model == 3)
+      subgrid_model_name = _("Sommeria-Deardorff 1977");
+
+    const char *nucl_model_name = _("none");
+    if (at_opt->nucleation_model == 1)
+      nucl_model_name = _("Pruppacher and Klett 1997");
+    else if (at_opt->nucleation_model == 2)
+      nucl_model_name = _("Cohard et al. 1998, 1999");
+    else if (at_opt->nucleation_model == 3)
+      nucl_model_name = _("Abdul-Razzak et al. 1998, 2000");
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Humid atmosphere options:\n"
+                    "    Water distribution model:            %s\n"
+                    "    Cloud subgrid model:                 %s\n"
+                    "    Nucleation model:                    %s\n"
+                    "    Cloud type:                          %s\n"
+                    "    Rain processes:                      %s\n"),
+                  dist_model_name,
+                  subgrid_model_name,
+                  nucl_model_name,
+                  (at_opt->cloud_type == 0) ? _("Continental")
+                                            : _("Maritime"),
+                  at_opt->rain ? _("active") : _("inactive"));
+
+    if (at_opt->rain) {
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    Rain process parameters:\n"
+                      "      Accretion:                         %s\n"
+                      "      Autoconversion:                    %s\n"
+                      "      Autocollection cloud:              %s\n"
+                      "      Autocollection rain:               %s\n"
+                      "      Precipitation:                     %s\n"
+                      "      Evaporation:                       %s\n"
+                      "      Rupture:                           %s\n"),
+                    at_opt->accretion ? _("yes") : _("no"),
+                    at_opt->autoconversion ? _("yes") : _("no"),
+                    at_opt->autocollection_cloud ? _("yes") : _("no"),
+                    at_opt->autocollection_rain ? _("yes") : _("no"),
+                    at_opt->precipitation ? _("yes") : _("no"),
+                    at_opt->evaporation ? _("yes") : _("no"),
+                    at_opt->rupture ? _("yes") : _("no"));
+    }
+    cs_log_printf(CS_LOG_SETUP, "\n");
+  }
+
+  /* Humidity profile and hydrostatic pressure options */
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Humidity profile type:                 %s\n"
+                  "  Hydrostatic pressure model:            %d\n\n"),
+                (at_opt->qv_profile == 1) ? _("decreasing exponential")
+                                          : _("constant"),
+                at_opt->hydrostatic_pressure_model);
+
   /* CUT */
   cs_log_printf
     (CS_LOG_SETUP,
