@@ -362,29 +362,30 @@ cs_param_sles_create(int         field_id,
     strncpy(slesp->name, system_name, len + 1);
   }
 
-  slesp->field_id = field_id;                     // associated field id
-  slesp->verbosity = 0;                           // SLES verbosity
-
-  slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS; // solver family
-  slesp->precond = CS_PARAM_PRECOND_DIAG;         // preconditioner
-  slesp->solver = CS_PARAM_SOLVER_GCR;            // iterative solver
-  slesp->need_flexible = false;                   // not the flexible variant
-  slesp->restart = 25;                            // restart after ? iterations
-  slesp->amg_type = CS_PARAM_AMG_NONE;            // no predefined AMG type
+  slesp->field_id = field_id;     // associated field id
+  slesp->verbosity = 0;           // SLES verbosity
 
   slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
   slesp->resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
   slesp->allow_no_op = false;
   slesp->mat_is_sym = false;
+  slesp->need_flexible = false;
+  slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS; // solver family
+  slesp->restart = 20;            // restart after this number of iterations
 
   slesp->cvg_param = (cs_param_convergence_t) {
     .atol       = 1e-15,          // absolute tolerance
     .rtol       = 1e-6,           // relative tolerance
-    .dtol       = 1e3,            // divergence tolerance
+    .dtol       = 1e5,            // divergence tolerance
     .n_max_iter = 10000           // max. number of iterations
   };
 
   slesp->context_param = nullptr;
+
+  // Defined the default solver for an equation solved using CDO schemes
+  cs_param_sles_set_solver("gcr", slesp);
+  cs_param_sles_set_precond("amg", slesp);
+  cs_param_sles_set_amg_type("k_cycle", slesp);
 
   return slesp;
 }
@@ -969,7 +970,7 @@ cs_param_sles_set_precond(const char       *keyval,
     switch (ret_class) {
 
     case CS_PARAM_SOLVER_CLASS_CS:
-      cs_param_sles_amg_inhouse_reset(slesp, false, false); // precond; v-cycle
+      cs_param_sles_amg_inhouse_reset(slesp, false, true); // precond; v-cycle
       break;
     case CS_PARAM_SOLVER_CLASS_PETSC:
       slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;

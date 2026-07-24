@@ -731,69 +731,51 @@ cs_param_amg_inhouse_create(bool used_as_solver,
 
   // Options shared among all configurations
   amgp->max_levels = 15;
-  amgp->min_n_g_rows = 256;
+  amgp->min_n_g_rows = 100;
 
+  // Coarse grid solver options
   amgp->coarse_rtol_mult = 1.0;
-  amgp->coarse_max_iter = 2500;
-  amgp->coarse_poly_degree = 0;
-  amgp->coarse_solver = CS_PARAM_AMG_INHOUSE_CG;
+  amgp->coarse_max_iter = 2000;
+  amgp->coarse_poly_degree = -1;
+  amgp->coarse_solver = CS_PARAM_AMG_INHOUSE_GCR;
 
-  /* Down smoother options */
+  // Down smoother options
+  amgp->down_poly_degree = -1;
+  amgp->down_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_GS;
+  if (used_as_solver)
+    amgp->n_down_iter = 4;
+  else
+    amgp->n_down_iter = 2;
 
-  amgp->down_poly_degree = 0;
-  amgp->down_smoother = CS_PARAM_AMG_INHOUSE_CG;
-  amgp->n_down_iter = 2;
+  // Up smoother options
+  amgp->up_poly_degree = -1;
+  amgp->up_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_GS;
+  if (used_as_solver)
+    amgp->n_up_iter = 4;
+  else
+    amgp->n_up_iter = 2;
 
-  /* Up smoother options */
-
-  amgp->up_poly_degree = 0;
-  amgp->up_smoother = CS_PARAM_AMG_INHOUSE_CG;
-  amgp->n_up_iter = 2;
-  amgp->fine_level_threshold = -1;    // Not used by default
-  amgp->fine_level_aggreg_limit = 8;  // Aggressive coarsening
+  if (used_as_solver)
+    amgp->fine_level_threshold = -1;  // Not used by default
+  else
+    amgp->fine_level_threshold = 2;
 
   if (used_as_k_cycle) {
 
-    /* Coarsening options */
-
+    // Coarsening options
     amgp->coarsen_algo = CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW;
     amgp->p0p1_relax = 0.;
-
-    if (used_as_solver) {
-
-      amgp->aggreg_limit = 4;
-
-      /* Down smoother options */
-
-      amgp->down_poly_degree = -1;
-      amgp->down_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_SGS;
-      amgp->n_down_iter = 3;
-
-      /* Up smoother options */
-
-      amgp->up_poly_degree = -1;
-      amgp->up_smoother = CS_PARAM_AMG_INHOUSE_PROCESS_SGS;
-      amgp->n_up_iter = 3;
-
-    }
-    else { /* Used as a preconditioner */
-
-      amgp->aggreg_limit = 8; /* More aggresive */
-
-    }
+    amgp->aggreg_limit = 4;
+    amgp->fine_level_aggreg_limit = 8;  // Aggressive coarsening
 
   }
   else { // This is a V-cycle AMG algorithm
 
     // Coarsening options
     amgp->aggreg_limit = 3;
+    amgp->fine_level_aggreg_limit = 6;  // Aggressive coarsening
     amgp->coarsen_algo = CS_PARAM_AMG_INHOUSE_COARSEN_SPD_MX;
     amgp->p0p1_relax = 0.95;
-
-    if (used_as_solver) {
-      amgp->n_down_iter = 5; // Down smoother options
-      amgp->n_up_iter = 5;   // Up smoother options
-    }
 
   } // K-cylce or V-cycle ?
 
