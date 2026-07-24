@@ -720,23 +720,22 @@ cs_param_saddle_create(void)
   saddlep->name = nullptr;
 
   saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-  saddlep->solver = CS_PARAM_SADDLE_SOLVER_NONE;  /* Not used by default */
+  saddlep->solver = CS_PARAM_SADDLE_SOLVER_NONE;  // Not used by default
   saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
 
   saddlep->cvg_param = (cs_param_convergence_t) {
-    .atol       = 1e-12, /* absolute tolerance */
-    .rtol       = 1e-6,  /* relative tolerance */
-    .dtol       = 1e3,   /* divergence tolerance */
+    .atol       = 1e-12, // absolute tolerance
+    .rtol       = 1e-6,  // relative tolerance
+    .dtol       = 1e3,   // divergence tolerance
     .n_max_iter = 100,
   };
-  /* saddlep->block11_sles_param is shared and thus is only set if a
-     saddle-point problem is solved */
 
+  // saddlep->block11_sles_param is shared (const pointer)
+  // thus is only set if a saddle-point problem is solved
   saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_NONE;
   saddlep->schur_sles_param = nullptr;
 
-  /* By default, no context is set */
-
+  // By default, no context is set
   saddlep->context = nullptr;
 
   return saddlep;
@@ -1161,8 +1160,8 @@ cs_param_saddle_set_solver_class(const char          *keyval,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_param_saddle_set_solver(const char          *keyval,
-                           cs_param_saddle_t   *saddlep)
+cs_param_saddle_set_solver(const char        *keyval,
+                           cs_param_saddle_t *saddlep)
 {
   int  ierr = 1;
   if (keyval == nullptr)

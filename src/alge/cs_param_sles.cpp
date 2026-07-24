@@ -336,27 +336,28 @@ _check_hpddm_type(cs_param_sles_t *slesp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a \ref cs_param_sles_t structure and assign a default
- *         settings
+ * \brief Create a \ref cs_param_sles_t structure and assign a default
+ *        settings
  *
- * \param[in] field_id      id related to to the variable field or -1
- * \param[in] system_name   name of the system to solve or nullptr
+ * \param[in] field_id     id related to to the variable field or -1
+ * \param[in] system_name  name of the system to solve or nullptr
  *
- * \return a pointer to a cs_param_sles_t stucture
+ * \return a pointer to a cs_param_sles_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_param_sles_t *
-cs_param_sles_create(int          field_id,
-                     const char  *system_name)
+cs_param_sles_create(int         field_id,
+                     const char *system_name)
 {
-  cs_param_sles_t  *slesp = nullptr;
+  cs_param_sles_t *slesp = nullptr;
 
   CS_MALLOC(slesp, 1, cs_param_sles_t);
 
-  slesp->name = nullptr;
+  slesp->context_param = nullptr; // default initialization
+  slesp->name = nullptr;          // default initialization
   if (system_name != nullptr) {
-    size_t  len = strlen(system_name);
+    size_t len = strlen(system_name);
     CS_MALLOC(slesp->name, len + 1, char);
     strncpy(slesp->name, system_name, len + 1);
   }
@@ -374,14 +375,13 @@ cs_param_sles_create(int          field_id,
   slesp->precond_block_type = CS_PARAM_PRECOND_BLOCK_NONE;
   slesp->resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
   slesp->allow_no_op = false;
-
   slesp->mat_is_sym = false;
 
   slesp->cvg_param = (cs_param_convergence_t) {
-    .atol       = 1e-15, /* absolute tolerance */
-    .rtol       = 1e-6,  /* relative tolerance */
-    .dtol       = 1e3,   /* divergence tolerance */
-    .n_max_iter = 10000  /* max. number of iterations */
+    .atol       = 1e-15,          // absolute tolerance
+    .rtol       = 1e-6,           // relative tolerance
+    .dtol       = 1e3,            // divergence tolerance
+    .n_max_iter = 10000           // max. number of iterations
   };
 
   slesp->context_param = nullptr;
@@ -711,10 +711,10 @@ cs_param_sles_set_solver(const char       *keyval,
 
   }
   else if (strcmp(keyval, "gcr") == 0) {
-
     slesp->solver = CS_PARAM_SOLVER_GCR;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->need_flexible = true;
+    slesp->restart = 20; // restart after this number of iterations
   }
   else if (strcmp(keyval, "gmres") == 0) {
     slesp->solver        = CS_PARAM_SOLVER_GMRES;
@@ -741,9 +741,8 @@ cs_param_sles_set_solver(const char       *keyval,
 
   }
   else if (strcmp(keyval, "jacobi") == 0 ||
-           strcmp(keyval, "diag") == 0 ||
+           strcmp(keyval, "diag") == 0   ||
            strcmp(keyval, "diagonal") == 0) {
-
     slesp->solver = CS_PARAM_SOLVER_JACOBI;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     slesp->precond = CS_PARAM_PRECOND_NONE;
@@ -958,11 +957,10 @@ cs_param_sles_set_precond(const char       *keyval,
 
     default:
       break;  /* Do nothing */
-
     }
 
-    cs_param_solver_class_t  ret_class =
-      cs_param_sles_check_class(slesp->solver_class);
+    cs_param_solver_class_t  ret_class
+      = cs_param_sles_check_class(slesp->solver_class);
 
     /* Set the default AMG choice according to the class of solver */
 
@@ -1187,19 +1185,31 @@ cs_param_sles_set_solver_class(const char       *keyval,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_param_sles_set_amg_type(const char       *keyval,
-                           cs_param_sles_t  *slesp)
+cs_param_sles_set_amg_type(const char      *keyval,
+                           cs_param_sles_t *slesp)
 {
   if (slesp == nullptr)
     return EXIT_FAILURE;
 
-  const char  *sles_name = slesp->name;
+  const char *sles_name = slesp->name;
+
+  if (slesp->solver != CS_PARAM_SOLVER_AMG &&
+      slesp->precond != CS_PARAM_PRECOND_AMG) {
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  "%s: Set a type of AMG cycle but AMG is not set.\n"
+                  "%s: either as solver or preconditioner.",
+                  __func__, __func__);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
+  }
+
+  // It's safer to use a flexible solver when using an AMG technique
+  slesp->need_flexible = true;
 
   if (strcmp(keyval, "v_cycle") == 0) {
 
     slesp->amg_type = CS_PARAM_AMG_INHOUSE_V;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    slesp->need_flexible = true;
 
     if (slesp->solver == CS_PARAM_SOLVER_AMG)
       cs_param_sles_amg_inhouse_reset(slesp, true, false);
@@ -1210,7 +1220,6 @@ cs_param_sles_set_amg_type(const char       *keyval,
   else if (strcmp(keyval, "k_cycle") == 0 || strcmp(keyval, "kamg") == 0) {
 
     slesp->amg_type = CS_PARAM_AMG_INHOUSE_K;
-    slesp->need_flexible = true;
 
     if (slesp->solver == CS_PARAM_SOLVER_AMG)
       cs_param_sles_amg_inhouse_reset(slesp, true, true);
@@ -1233,7 +1242,6 @@ cs_param_sles_set_amg_type(const char       *keyval,
     cs_param_solver_class_t ret_class =
       cs_param_sles_check_class(wanted_class);
 
-    slesp->need_flexible = true;
     slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
     slesp->solver_class = ret_class;
 
@@ -1254,7 +1262,6 @@ cs_param_sles_set_amg_type(const char       *keyval,
     cs_param_solver_class_t ret_class =
       cs_param_sles_check_class(wanted_class);
 
-    slesp->need_flexible = true;
     slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
     slesp->solver_class = ret_class;
 
@@ -1273,7 +1280,6 @@ cs_param_sles_set_amg_type(const char       *keyval,
                 " Please check your settings.", __func__, sles_name);
 
     slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-    slesp->need_flexible = true;
 
     cs_param_sles_gamg_reset(slesp);
 
@@ -1289,8 +1295,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
                 " PETSc is not available."
                 " Please check your settings.", __func__, sles_name);
 
-    slesp->amg_type      = CS_PARAM_AMG_PETSC_GAMG_W;
-    slesp->need_flexible = true;
+    slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_W;
 
     cs_param_sles_gamg_reset(slesp);
 
@@ -1308,7 +1313,6 @@ cs_param_sles_set_amg_type(const char       *keyval,
 
     slesp->amg_type = CS_PARAM_AMG_PETSC_HMG_V;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
-    slesp->need_flexible = true;
 
   }
   else if (strcmp(keyval, "hmg_w") == 0) {
@@ -1324,7 +1328,7 @@ cs_param_sles_set_amg_type(const char       *keyval,
 
     slesp->amg_type = CS_PARAM_AMG_PETSC_HMG_W;
     slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
-    slesp->need_flexible = true;
+
   }
   else {
 
@@ -1496,17 +1500,17 @@ cs_param_sles_amg_inhouse_reset(cs_param_sles_t  *slesp,
  *        structure is not reset before applying the given parameter. Please
  *        call \ref cs_param_sles_amg_inhouse_reset to do so.
  *
- * \param[in, out] slesp           pointer to a cs_param_sles_t structure
- * \param[in]      n_down_iter     number of smoothing steps for the down cycle
- * \param[in]      down_smoother   type of smoother for the down cycle
- * \param[in]      down_poly_deg   poly. degree for the down smoother
- * \param[in]      n_up_iter       number of smoothing steps for the up cycle
- * \param[in]      up_smoother     type of smoother for the up cycle
- * \param[in]      up_poly_deg     poly. degree for the up smoother
- * \param[in]      coarse_solver   solver at the coarsest level
- * \param[in]      coarse_poly_deg poly. degree for the coarse solver
- * \param[in]      coarsen_algo    type of algorithm to coarsen grids
- * \param[in]      aggreg_limit    limit for the aggregation process
+ * \param[in, out] slesp            pointer to a cs_param_sles_t structure
+ * \param[in]      n_down_iter      number of smoothing steps of the down cycle
+ * \param[in]      down_smoother    type of smoother of the down cycle
+ * \param[in]      down_poly_deg    poly. degree of the down smoother
+ * \param[in]      n_up_iter        number of smoothing steps of the up cycle
+ * \param[in]      up_smoother      type of smoother of the up cycle
+ * \param[in]      up_poly_deg      poly. degree of the up smoother
+ * \param[in]      coarse_solver    solver at the coarsest level
+ * \param[in]      coarse_poly_deg  poly. degree of the coarse solver
+ * \param[in]      coarsen_algo     type of algorithm to coarsen grids
+ * \param[in]      aggreg_limit     limit for the aggregation process
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1527,8 +1531,8 @@ cs_param_sles_amg_inhouse(cs_param_sles_t                *slesp,
     return;
 
   assert(slesp->context_param != nullptr);
-  cs_param_amg_inhouse_t *amgp =
-    static_cast<cs_param_amg_inhouse_t *>(slesp->context_param);
+  cs_param_amg_inhouse_t *amgp
+    = static_cast<cs_param_amg_inhouse_t *>(slesp->context_param);
 
   if (n_down_iter != CS_CDO_KEEP_DEFAULT)
     amgp->n_down_iter = n_down_iter;

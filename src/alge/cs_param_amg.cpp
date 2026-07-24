@@ -722,15 +722,14 @@ cs_param_amg_hmg_log(const char                *name,
 /*----------------------------------------------------------------------------*/
 
 cs_param_amg_inhouse_t *
-cs_param_amg_inhouse_create(bool  used_as_solver,
-                            bool  used_as_k_cycle)
+cs_param_amg_inhouse_create(bool used_as_solver,
+                            bool used_as_k_cycle)
 {
-  cs_param_amg_inhouse_t  *amgp = nullptr;
+  cs_param_amg_inhouse_t *amgp = nullptr;
 
   CS_MALLOC(amgp, 1, cs_param_amg_inhouse_t);
 
-  /* Options shared among all configurations */
-
+  // Options shared among all configurations
   amgp->max_levels = 15;
   amgp->min_n_g_rows = 256;
 
@@ -782,27 +781,19 @@ cs_param_amg_inhouse_create(bool  used_as_solver,
     }
 
   }
-  else { /* This is a V-cycle AMG algorithm */
+  else { // This is a V-cycle AMG algorithm
 
-    /* Coarsening options */
-
+    // Coarsening options
     amgp->aggreg_limit = 3;
     amgp->coarsen_algo = CS_PARAM_AMG_INHOUSE_COARSEN_SPD_MX;
     amgp->p0p1_relax = 0.95;
 
     if (used_as_solver) {
-
-      /* Down smoother options */
-
-      amgp->n_down_iter = 5;
-
-      /* Up smoother options */
-
-      amgp->n_up_iter = 5;
-
+      amgp->n_down_iter = 5; // Down smoother options
+      amgp->n_up_iter = 5;   // Up smoother options
     }
 
-  } /* V-cycle */
+  } // K-cylce or V-cycle ?
 
   return amgp;
 }
