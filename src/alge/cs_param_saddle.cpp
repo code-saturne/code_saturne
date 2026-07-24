@@ -1852,6 +1852,17 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   switch (saddlep->solver) {
 
+  case CS_PARAM_SADDLE_SOLVER_AFS:
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+    {
+      cs_param_saddle_context_simple_t *ctxp =
+        static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
+
+      if (ctxp->xtra_sles_param != nullptr)
+        cs_param_sles_log(ctxp->xtra_sles_param);
+    }
+    break;
+
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
       cs_param_saddle_context_alu_t *ctxp =
