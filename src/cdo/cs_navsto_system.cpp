@@ -860,6 +860,8 @@ cs_navsto_system_init_setup(void)
 
   // Boundary stress should be set before the velocity
   if (nsp->post_flag & CS_NAVSTO_POST_BOUNDARY_STRESS) {
+    nsp->post_flag |= CS_NAVSTO_POST_VELOCITY_GRADIENT;
+
     ns->boundary_stress = cs_field_find_or_create("boundary_stress",
                                                   post_mask,
                                                   bdy_face_location_id,
