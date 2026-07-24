@@ -98,14 +98,14 @@ cs_param_saddle_schur_approx_name[CS_PARAM_SADDLE_N_SCHUR_APPROX]
  * \brief Define a \ref cs_param_sles_t structure for an extra system used in
  *        the construction of the approximation of the Schur complement
  *
- * \param[in] saddlep   set of parameters managing a saddle-point problem
+ * \param[in] saddlep  set of parameters managing a saddle-point problem
  *
  * \return the pointer to the newly defined set of parameters
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_param_sles_t *
-_init_xtra_slesp(const cs_param_saddle_t  *saddlep)
+_init_xtra_slesp(const cs_param_saddle_t *saddlep)
 {
   if (saddlep == nullptr)
     return nullptr;
@@ -124,10 +124,9 @@ _init_xtra_slesp(const cs_param_saddle_t  *saddlep)
 
   cs_param_sles_copy_from(b11_slesp, xtra_slesp);
 
-  /* By default, a coarse approximation should be sufficient */
-
+  // By default, a coarse approximation should be sufficient
   xtra_slesp->cvg_param.rtol = 1e-3;
-  xtra_slesp->cvg_param.n_max_iter = 50;
+  xtra_slesp->cvg_param.n_max_iter = 100;
 
   CS_FREE(name);
 
@@ -267,6 +266,10 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
 
   cs_param_sles_t  *schurp = cs_param_sles_create(-1, name);
 
+  // Set the default solver/preconditioner to a better settings
+  // since the Schur complement system is SPD by construction
+
+  // Set the iterative solver
   int ierr = cs_param_sles_set_solver("fcg", schurp);
   if (ierr != EXIT_SUCCESS)
     bft_error(__FILE__, __LINE__, 0,
@@ -274,11 +277,9 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
               "to the Schur complement approximation (%s).",
               __func__, schurp->name);
 
+  // Set the preconditioner
   ierr = cs_param_sles_set_precond("amg", schurp);
   assert(ierr == EXIT_SUCCESS);
-
-  schurp->cvg_param.rtol = 1e-4; /* relative tolerance to stop the iterative
-                                    solver */
 
   saddlep->schur_sles_param = schurp;
 
@@ -286,9 +287,7 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
     cs_param_sles_set_solver_class("petsc", schurp);
   }
 
-  /* Extra solve needed to compute the Schur approximation with some
-     settings */
-
+  // Extra solve needed to compute the Schur approximation with some settings
   cs_param_sles_t  *xtra_slesp = nullptr;
   if (saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE ||
       saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_MASS_SCALED_LUMPED_INVERSE)
@@ -300,6 +299,9 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
     {
+      // relative tolerance for the Schur complement
+      schurp->cvg_param.rtol = 1e-4;
+
       cs_param_saddle_context_block_krylov_t *ctxp =
         static_cast<cs_param_saddle_context_block_krylov_t *>(saddlep->context);
 
@@ -312,6 +314,9 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
+      // relative tolerance for the Schur complement
+      schurp->cvg_param.rtol = 1e-4;
+
       cs_param_saddle_context_uzacg_t *ctxp =
         static_cast<cs_param_saddle_context_uzacg_t *>(saddlep->context);
 
@@ -325,6 +330,13 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
   case CS_PARAM_SADDLE_SOLVER_AFS:
     {
+      // relative tolerance for the Schur complement
+      cs_param_sles_set_cvg_param(schurp,
+                                  1e-8,  // relative tol.
+                                  1e-15, // absolute tol.
+                                  1e3,   // divergence tol.
+                                  5000);
+
       cs_param_saddle_context_simple_t *ctxp =
         static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
 
@@ -336,6 +348,9 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
     break;
 
   default:
+    // relative tolerance for the Schur complement
+    schurp->cvg_param.rtol = 1e-4;
+
     assert(xtra_slesp == nullptr); /* There should be no xtra_slesp */
     break;
   }
@@ -1186,9 +1201,7 @@ cs_param_saddle_set_solver(const char        *keyval,
     cs_param_saddle_context_simple_t *ctxp = nullptr;
     CS_MALLOC(ctxp, 1, cs_param_saddle_context_simple_t);
 
-    ctxp->xtra_sles_param = nullptr;  /* It depends on the type of Schur
-                                         approximation used */
-
+    ctxp->xtra_sles_param = nullptr;  // Defined after the Schur sles param
     ctxp->dedicated_init_sles = false;
 
     /* Initialize an additional set of SLES parameters for the initial
@@ -1201,15 +1214,27 @@ cs_param_saddle_set_solver(const char        *keyval,
     /* Default value of scaling_coef for pressure scaling */
 
     ctxp->scaling_coef = 1.0;
-
     cs_sles_set_epzero(1e-15);  /* Avoid a too early exit */
 
     saddlep->context = ctxp;
 
-    // Now the parameters of the Schur can be set
+    // Now the parameters of the Schur can be set along with the extra sles
+    // parameters to solve the inv. lumped approximation
 
     _init_schur_slesp(saddlep);
+    assert(ctxp->xtra_sles_param != nullptr);
+    assert(saddlep->schur_sles_param != nullptr);
 
+    cs_param_sles_t *schur_slesp = saddlep->schur_sles_param;
+    cs_param_sles_amg_inhouse(schur_slesp,
+                              /* n_down_iter, down smoother, down poly. deg. */
+                              1, CS_PARAM_AMG_INHOUSE_FORWARD_GS, -1,
+                              /* n_up_iter, up smoother, up poly. deg. */
+                              1, CS_PARAM_AMG_INHOUSE_BACKWARD_GS, -1,
+                              /* coarse solver, coarse poly. deg. */
+                              CS_PARAM_AMG_INHOUSE_CG, 1,
+                              /* coarsen algo, aggregation limit */
+                              CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW, 8);
   }
   else if (strcmp(keyval, "alu") == 0) {
 
