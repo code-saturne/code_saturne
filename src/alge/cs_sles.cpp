@@ -27,9 +27,10 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
+#include <chrono>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1739,6 +1740,10 @@ cs_sles_solve(cs_sles_t           *sles,
 
   cs_timer_t t0 = cs_timer_time();
 
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
   if (sles->context == nullptr)
     _cs_sles_define_default(sles->f_id, sles->name, a);
 
@@ -1849,6 +1854,18 @@ cs_sles_solve(cs_sles_t           *sles,
          sles_name, rsd, precision, r_norm);
 
     CS_FREE(resr);
+  }
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::microseconds elapsed;
+    printf("%d: %s<%s>", cs_glob_rank_id, __func__, sles_name);
+
+    elapsed = std::chrono::duration_cast
+                <std::chrono::microseconds>(t_stop - t_start);
+    printf(", total = %ld\n", elapsed.count());
   }
 
   cs_timer_stats_switch(t_top_id);
