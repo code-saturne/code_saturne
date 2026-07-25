@@ -633,8 +633,8 @@ cs_turbulence_kw(int phase_id)
       cs_real_t xgdk2sk =   cs_math_3_square_norm(gradk.sub_array(c_id))
                           / cs_math_pow2(cvar_k[c_id]);
 
-      cs_real_t xgdw2sw =  cs_math_3_square_norm(grado.sub_array(c_id))
-                         / cs_math_pow2(cvar_omg[c_id]);
+      cs_real_t xgdw2sw =   cs_math_3_square_norm(grado.sub_array(c_id))
+                          / cs_math_pow2(cvar_omg[c_id]);
 
       maxgdsv[c_id] = cs::max(xgdk2sk, xgdw2sw);
 
@@ -659,11 +659,7 @@ cs_turbulence_kw(int phase_id)
     eqp_u_loc.iconv = 0;
 
     cs_array_2d<cs_real_t> vel_laplacian(n_cells_ext, 3, cs_alloc_mode);
-    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      vel_laplacian(c_id, 0) = 0.;
-      vel_laplacian(c_id, 1) = 0.;
-      vel_laplacian(c_id, 2) = 0.;
-    });
+    vel_laplacian.zero(ctx);
     ctx.wait();
 
     cs_balance_vector(cs_glob_time_step_options->idtvar,
@@ -675,8 +671,8 @@ cs_turbulence_kw(int phase_id)
                       cvar_vel.data<cs_real_3_t>(),
                       cvar_vela.data<cs_real_3_t>(),
                       f_vel->bc_coeffs,
-                      i_massflux,
-                      b_massflux,
+                      nullptr, // i_massflux,
+                      nullptr, // b_massflux,
                       viscf,
                       viscb,
                       nullptr,

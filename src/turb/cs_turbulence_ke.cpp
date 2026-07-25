@@ -1708,9 +1708,9 @@ cs_turbulence_ke(int              phase_id,
 
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
                       f_k->id,
-                      0,     /* imucpp */
-                      1,     /* imasac */
-                      1,     /* inc */
+                      0,        // imucpp
+                      1,        // imasac
+                      1,        // inc
                       &eqp_k_loc,
                       cvara_k,
                       cvara_k,
@@ -1719,12 +1719,12 @@ cs_turbulence_ke(int              phase_id,
                       bmasfl,
                       viscf,
                       viscb,
-                      nullptr,
-                      nullptr,
-                      nullptr,
-                      nullptr,
-                      0, /* boundary convective flux with upwind */
-                      nullptr,
+                      nullptr,  // c_visc
+                      nullptr,  // xcpp
+                      nullptr,  // weightf
+                      nullptr,  // weightb
+                      0,        // icvflb: boundary convective flux with upwind
+                      nullptr,  // icvfli
                       usexpk);
 
     if (eqp_k->verbosity >= 2) {
