@@ -23,25 +23,23 @@
 Advanced modeling setup
 =======================
 
-The documentation for this section is in the process of migration from the pdf
-documentation. It is also recommended to check the
-[pdf user's guide](../../../user/user.pdf) for sections which may not have been migrated yet.
-
 - \subpage low_level_boundary_condition_definitions
-- \subpage advanced_specific_physics
-- \subpage advanced_coal_and_gas_combution
 - \subpage advanced_radiative_thermal
 - \subpage advanced_conjugate_heat_transfer
-- \subpage advanced_particle_tracking
+- \subpage advanced_specific_physics
+
 - \subpage advanced_compressible
-- \subpage advanced_electric_arcs
-- \subpage advanced_coupling
-- \subpage advanced_ale
 - \subpage advanced_atmospheric
-- \subpage advanced_turbomachinery
-- \subpage advanced_cavitation
+- \subpage advanced_electric_arcs
 - [Groundwater flows (CDO)](@ref cs_ug_cdo_gwf)
+- \subpage advanced_coal_and_gas_combution
 - \subpage advanced_solidification
+
+- \subpage advanced_particle_tracking
+- \subpage advanced_coupling
+- \subpage advanced_turbomachinery
+- \subpage advanced_ale
+- \subpage advanced_cavitation
 
 <!-- ======================================================================= -->
 
