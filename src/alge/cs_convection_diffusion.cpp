@@ -2538,6 +2538,324 @@ _convection_diffusion_scalar_rc_grad
   CS_FREE(gradst);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add the explicit part of the diffusion terms of a
+ * standard equation of a scalar field \f$ \varia \f$.
+ *
+ * Warning:
+ * - \f$ Rhs \f$ has already been initialized before call !
+ * - mind the minus sign
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#cs_balance"><b>cs_balance</b></a> section of the
+ * theory guide for more information.
+ *
+ * \tparam assemble    assemble values to right-hand side
+ * \tparam store_flux  store computed fluxes
+ *
+ * \param[in]     f             pointer to field
+ * \param[in]     eqp           equation parameters
+ * \param[in]     n_i_face_ids  number of interior faces (assemble == false)
+ * \param[in]     n_b_face_ids  number of boundary faces (assemble == false)
+ * \param[in]     i_face_ids    interior face ids (assemble == false)
+ * \param[in]     b_face_ids    boundary face ids (assemble == false)
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     pvar          solved variable
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the r.h.s.
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the r.h.s.
+ * \param[in]     c_weight      weight for gradient reconstruction
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] i_flux        interior flux (or nullptr)
+ * \param[in,out] b_flux        boundary flux (or nullptr)
+ */
+/*----------------------------------------------------------------------------*/
+
+template <bool assemble, bool store_flux>
+static void
+_diffusion_scalar
+  (const cs_field_t           *f,
+   const cs_equation_param_t  &eqp,
+   cs_lnum_t                   n_i_face_ids,
+   cs_lnum_t                   n_b_face_ids,
+   cs_lnum_t                  *i_face_ids,
+   cs_lnum_t                  *b_face_ids,
+   int                         inc,
+   const cs_real_t            *restrict pvar,
+   cs_field_bc_coeffs_t       *bc_coeffs,
+   const cs_real_t             i_visc[],
+   const cs_real_t             b_visc[],
+   const cs_real_t            *c_weight,
+   cs_real_t         *restrict rhs,
+   cs_real_2_t       *restrict i_flux,
+   cs_real_t         *restrict b_flux)
+{
+  const int ircflp = eqp.ircflu;
+  const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
+  const int iwarnp = eqp.verbosity;
+  const double thetap = eqp.theta;
+
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
+
+  const int *bc_type = cs_glob_bc_type;
+  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
+    fvq->c_disable_flag : nullptr;
+
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+  if (assemble == false) {
+    i_sum_type = CS_DISPATCH_SUM_SIMPLE;
+    b_sum_type = CS_DISPATCH_SUM_SIMPLE;
+  }
+
+  /* Local variables */
+
+  char var_name[64];
+  const int f_id = (f != nullptr) ? f->id : -1;
+
+  cs_rreal_3_t *grad = nullptr;
+  cs_real_2_t *bounds = nullptr;
+
+  cs_real_t *df_limiter = nullptr;
+
+  /* Limiters */
+
+  if (f != nullptr) {
+    int df_limiter_id = eqp.diffusion_limiter_id;
+    if (df_limiter_id > -1)
+      df_limiter = cs_field_by_id(df_limiter_id)->val;
+
+    snprintf(var_name, 63, "%s", f->name);
+  }
+  else {
+    strncpy(var_name, "[scalar diffusion]", 63);
+  }
+  var_name[63] = '\0';
+
+  /* Compute the gradient of the variable */
+
+  if (ircflp == 1) {
+
+    /* Allocate work arrays */
+
+    CS_MALLOC_HD(grad, n_cells_ext, cs_rreal_3_t, cs_alloc_mode);
+
+    const cs_real_t rc_clip_factor
+      = (eqp.ircflu != 0) ? eqp.rc_clip_factor : -1;
+    if (rc_clip_factor >= 0)
+      CS_MALLOC_HD(bounds, n_cells_ext, cs_real_2_t, cs_alloc_mode);
+
+    /* Reconstruction gradient */
+
+    cs_halo_type_t halo_type = CS_HALO_STANDARD;
+    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+    cs_gradient_type_by_imrgra(eqp.d_gradient_r,
+                               &gradient_type,
+                               &halo_type);
+
+    cs_gradient_scalar_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    eqp.nswrgr,
+                                    0,       // hyd_p_flag
+                                    1,       // w_stride
+                                    eqp.verbosity,
+                                    (cs_gradient_limit_t)(eqp.d_imligr),
+                                    eqp.epsrgr,
+                                    eqp.d_climgr,
+                                    nullptr, // f_ext exterior force
+                                    bc_coeffs,
+                                    pvar,
+                                    c_weight,
+                                    grad,
+                                    bounds);
+
+    /* Adjust bounds if reconstruction clip factor is >= 0 and != 1. */
+    if (rc_clip_factor >= 0) {
+      cs_convection_diffusion_adjust_and_check_bounds_scalar
+        (ctx,
+         var_name,
+         eqp,
+         true, /* face_gradient */
+         ircflb,
+         m,
+         fvq,
+         pvar,
+         grad,
+         df_limiter,
+         bounds);
+    }
+  }
+
+  /* Contribution from interior faces
+     ================================ */
+
+  // Named lambda function may be used in different loop types
+
+  auto i_2_point_diffusion = [=] CS_F_HOST_DEVICE (cs_lnum_t  face_idx) {
+
+    cs_lnum_t face_id = face_idx;
+    if (assemble == false) {
+      if (i_face_ids != nullptr)
+        face_id = i_face_ids[face_idx];
+    }
+
+    cs_lnum_t c_id0 = i_face_cells[face_id][0];
+    cs_lnum_t c_id1 = i_face_cells[face_id][1];
+
+    cs_real_t pi = pvar[c_id0], pj = pvar[c_id1];
+
+    cs_real_t pip, pjp;
+
+    /* Reconstruction only if ircflp = 1 */
+    if (ircflp == 1) {
+      cs_rreal_t bldfrp = 1.;
+      if (df_limiter != nullptr)  /* Local limiter of the reconstruction */
+        bldfrp = cs::max(cs::min(df_limiter[c_id0], df_limiter[c_id1]),
+                         0.);
+
+      _i_fg_reconstruct_ip_jp(c_id0, c_id1, bldfrp,
+                              diipf[face_id], djjpf[face_id],
+                              grad, bounds,
+                              pi, pj,
+                              pip, pjp);
+    }
+    else {
+      pip = pi; pjp = pj;
+    }
+
+    // Diffusive flux
+
+    cs_real_t diff_flux = thetap*i_visc[face_id]*(pip - pjp);
+
+    /* Store and/or assemble fluxes */
+
+    if (store_flux) {
+      i_flux[face_idx][0] += diff_flux;
+      i_flux[face_idx][1] += diff_flux;
+    }
+    if (assemble) {
+      if (c_id0 < n_cells)
+        cs_dispatch_sum(&rhs[c_id0], -diff_flux, i_sum_type);
+      if (c_id1 < n_cells)
+        cs_dispatch_sum(&rhs[c_id1],  diff_flux, i_sum_type);
+    }
+
+  };  // i_2_point_diffusion
+
+  /* Parallel loop over interior faces
+     --------------------------------- */
+
+  if (assemble)
+    ctx.parallel_for_i_faces(m, i_2_point_diffusion);
+  else
+    ctx.parallel_for(n_i_face_ids, i_2_point_diffusion);
+
+  /* Contribution from boundary faces
+     ================================ */
+
+  const cs_real_t *flux_d = bc_coeffs->flux_diff;
+
+  // Named lambda function may be used in different loop types
+
+  auto b_2_point_diffusion = [=] CS_F_HOST_DEVICE (cs_lnum_t  face_idx) {
+
+    cs_lnum_t face_id = face_idx;
+    if (assemble == false) {
+      if (b_face_ids != nullptr)
+        face_id = b_face_ids[face_idx];
+    }
+
+    cs_lnum_t c_id = b_face_cells[face_id];
+
+    cs_real_t pi = pvar[c_id];
+
+    // Diffusive flux
+
+    cs_real_t diff_flux = thetap * b_visc[face_id] * flux_d[face_id];
+
+    /* Store and/or assemble fluxes. */
+
+    if (store_flux) {
+      b_flux[face_idx] += diff_flux;
+    }
+
+    if (assemble) {
+      cs_dispatch_sum(&rhs[c_id], -diff_flux, b_sum_type);
+    }
+
+  }; // b_2_point_diffusion
+
+  /* Parallel loop over boundary faces
+     --------------------------------- */
+
+  if (assemble)
+    ctx.parallel_for_b_faces(m, b_2_point_diffusion);
+  else
+    ctx.parallel_for(n_b_face_ids, b_2_point_diffusion);
+
+  ctx.wait();
+
+  /* Free memory */
+  CS_FREE(bounds);
+  CS_FREE(grad);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update face flux with convection contribution of a standard transport
+ * equation of a scalar field \f$ \varia \f$.
+ *
+ * <a name="cs_face_convection_scalar"></a>
+ *
+ * \f[
+ * C_\ij = \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
+ * \f]
+ *
+ * \param[in]     f_id          pointer to field, or nullptr
+ * \param[in]     eqp           equation parameters
+ * \param[in]     icvflb        global indicator of boundary convection flux
+ *                               - 0 upwind scheme at all boundary faces
+ *                               - 1 imposed flux at some boundary faces
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     imasac        take mass accumulation into account?
+ * \param[in]     pvar          solved variable (current time step)
+ * \param[in]     pvara         solved variable (previous time step)
+ * \param[in]     icvfli        boundary face indicator array of convection flux
+ *                               - 0 upwind scheme
+ *                               - 1 imposed flux
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     val_f         boundary face value for gradient
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at boundary faces
+ * \param[in,out] i_conv_flux   scalar convection flux at interior faces
+ * \param[in,out] b_conv_flux   scalar convection flux at boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
 template <bool is_thermal, bool store_flux>
 static void
 _convection_diffusion_unsteady_scalar
