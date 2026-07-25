@@ -127,7 +127,7 @@ struct cs_reduce_min1r_max1r_sum2r {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     a.r[0] = cs::min(a.r[0], b.r[0]);
     a.r[1] = cs::max(a.r[1], b.r[1]);
     a.r[2] += b.r[2];
@@ -147,7 +147,7 @@ struct cs_reduce_sum1i_min1float {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     a.i[0] += b.i[0];
     a.r[0] = cs::min(a.r[0], b.r[0]);
   }
@@ -163,7 +163,7 @@ struct cs_reduce_max_1gnum {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile cs_gnum_t &a, volatile const cs_gnum_t &b) const {
+  combine(cs_gnum_t &a, const cs_gnum_t &b) const {
     a = cs::max(a, b);
   }
 };
@@ -178,7 +178,7 @@ struct cs_reduce_max1r {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile cs_real_t &a, volatile const cs_real_t &b) const {
+  combine(cs_real_t &a, const cs_real_t &b) const {
     a = cs::max(a, b);
   }
 };
@@ -200,7 +200,7 @@ struct cs_reduce_min3float_max3float {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     a.r1[0] = cs::min(a.r1[0], b.r1[0]);
     a.r1[1] = cs::min(a.r1[1], b.r1[1]);
     a.r1[2] = cs::min(a.r1[2], b.r1[2]);
@@ -224,7 +224,7 @@ struct cs_reduce_sum_nr {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     for (size_t i = 0; i < stride; i++)
       a.r[i] += b.r[i];
   }
@@ -243,7 +243,7 @@ struct cs_reduce_sum_ni {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     for (size_t i = 0; i < stride; i++)
       a.i[i] += b.i[i];
   }
@@ -264,7 +264,7 @@ struct cs_reduce_min_max_nr {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     for (size_t i = 0; i < stride; i++) {
       a.r[i] = cs::min(a.r[i], b.r[i]);
       a.r[stride + i] = cs::max(a.r[stride + i], b.r[stride + i]);
@@ -288,7 +288,7 @@ struct cs_reduce_min_max_sum_nr {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     for (size_t i = 0; i < stride; i++) {
       a.r[i] = cs::min(a.r[i], b.r[i]);
       a.r[stride + i] = cs::max(a.r[stride + i], b.r[stride + i]);
@@ -310,7 +310,7 @@ struct cs_reduce_min1float_max1float_sum1int {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
       a.r[0] = cs::min(a.r[0], b.r[0]);
       a.r[1] = cs::max(a.r[1], b.r[1]);
       a.i[0] += b.i[0];
@@ -331,7 +331,7 @@ struct cs_reduce_min1float_max1float_sum2int {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     a.r[0] = cs::min(a.r[0], b.r[0]);
     a.r[1] = cs::max(a.r[1], b.r[1]);
     a.i[0] += b.i[0];
@@ -353,7 +353,7 @@ struct cs_reduce_sum1double_min1float_max1float {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     a.d[0] += b.d[0];
 
     a.r[0] = cs::min(a.r[0], b.r[0]);
@@ -376,7 +376,7 @@ struct cs_reduce_min_max_sum_nr_with_norm {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
 
     const size_t _stride = stride + 1;
 
@@ -406,7 +406,7 @@ struct cs_reduce_min_max_weighted_sum_nr {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     for (size_t i = 0; i < stride; i++) {
       a.r[i] = cs::min(a.r[i], b.r[i]);
       a.r[stride + i] = cs::max(a.r[stride + i], b.r[stride + i]);
@@ -433,7 +433,7 @@ struct cs_reduce_min_max_weighted_sum_nr_with_norm {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
 
     const size_t _stride = stride + 1;
     for (size_t i = 0; i < stride; i++) {
@@ -462,7 +462,7 @@ struct cs_reduce_max1float_bcast3float {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     if (a.r[3] < b.r[3]) {
       a.r[3] = b.r[3]; // a=max(a,b)
 
@@ -492,7 +492,7 @@ struct cs_reduce_minmax_n {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     for (size_t i = 0; i < stride; i++) {
       // Do not use stride for b, as only the first half needs to be set.
       a.r[i] = cs::min(a.r[i], b.r[i]);
@@ -515,7 +515,7 @@ struct cs_reduce_min_nr {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     for (size_t i = 0; i < stride; i++) {
       a.r[i] = cs::min(a.r[i], b.r[i]);
     }
@@ -536,7 +536,7 @@ struct cs_reduce_max_nr {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     for (size_t i = 0; i < stride; i++) {
       a.r[i] = cs::max(a.r[i], b.r[i]);
     }
@@ -560,7 +560,7 @@ struct cs_reduce_minmaxloc_n {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     for (size_t i = 0; i < stride; i++) {
       if (a.r[i] > b.r[i]) {
         a.r[i] = b.r[i];
@@ -592,7 +592,7 @@ struct cs_reduce_max2double_sum2double_sum4i {
   }
 
   CS_F_HOST_DEVICE void
-  combine(volatile T &a, volatile const T &b) const {
+  combine(T &a, const T &b) const {
     a.r[0] = cs::max(a.r[0], b.r[0]);
     a.r[1] = cs::max(a.r[1], b.r[1]);
     a.r[2] += b.r[2];
