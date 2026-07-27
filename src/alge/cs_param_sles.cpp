@@ -1602,13 +1602,13 @@ cs_param_sles_amg_inhouse_advanced(cs_param_sles_t  *slesp,
   if (max_levels != CS_CDO_KEEP_DEFAULT)
     amgp->max_levels = max_levels;
 
-  if (min_n_g_rows - CS_CDO_KEEP_DEFAULT == 0)
+  if (min_n_g_rows - CS_CDO_KEEP_DEFAULT > 0)
     amgp->min_n_g_rows = min_n_g_rows;
 
   if (fabs(p0p1_relax - CS_CDO_KEEP_DEFAULT) > cs_math_zero_threshold)
     amgp->p0p1_relax = p0p1_relax;
 
-  if (coarse_max_iter - CS_CDO_KEEP_DEFAULT)
+  if (coarse_max_iter != CS_CDO_KEEP_DEFAULT)
     amgp->coarse_max_iter = coarse_max_iter;
 
   if (fabs(coarse_rtol_mult - CS_CDO_KEEP_DEFAULT) > cs_math_zero_threshold)
