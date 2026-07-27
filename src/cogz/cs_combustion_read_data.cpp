@@ -1094,7 +1094,7 @@ cs_combustion_read_data(void)
       }
 
       // Stoichiometry in global reaction species
-      for (int ir= 0; ir < n_gas_species; ir++) {
+      for (int ir= 0; ir < cm->n_reactions; ir++) {
         for (int igg = 0; igg < n_gas_species; igg++) {
           stoeg[ir][igg] = 0.;
           for (int ige = 0; ige < ngase; ige++) {

@@ -3,6 +3,8 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Gas combustion: fix possible memory corruption when n_gas_species > 1.
+
 - Fix error in CS_SLES_PCR3 (3 layer conjugate residual) solver.
 
 - Fix usage of `cs_user_scripts.py` with Python 3.13 and above.
@@ -10,7 +12,7 @@ Release 9.2.1 (unreleased)
 - Fix wall distance fallback computation for highly warped meshes,
   broken since v8.2.
 
-- Fix crash with SOLU on vector (e.g. velcoity) and 2nd order in time.
+- Fix crash with SOLU on vector (e.g. velocity) and 2nd order in time.
 
 - Fix missing boundary values update in iterative process, which led to
   incorrect Rij results with isotropic diffusion (Shir model).
