@@ -3,6 +3,8 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Gas combustion: fix possible memory corruption when n_gas_species > 1.
+
 - Fix usage of `cs_user_scripts.py` with Python 3.13 and above.
 
 - Fix wall distance fallback computation for highly warped meshes,
