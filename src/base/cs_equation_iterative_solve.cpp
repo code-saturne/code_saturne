@@ -2158,8 +2158,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
      balance equation */
 
   if (i_flux != nullptr) {
-    imasac = 0; /* mass accumulation not taken into account */
-
     /* Last increment */
     inc = 0;
     cs_equation_param_t eqp_loc;
@@ -2181,7 +2179,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                               eqp_loc,
                               icvflb,
                               inc,
-                              imasac,
                               dpvar,
                               pvara,
                               icvfli,
@@ -2194,7 +2191,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     /* FIXME diffusion part */
 
     /* Finalize the convective flux calculation ,
-     * Note that the two sides are equal because imasac=0 */
+     * Note that the two sides are equal because no mass accumulation
+     * term is computed here */
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       i_flux[face_id] += i_flux_km1[face_id][0] + i_flux_0[face_id][0];
     });
@@ -2233,28 +2231,28 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     /* Without relaxation even for a steady computation */
 
-    cs_balance_scalar(idtvar,
-                      f_id,
-                      imucpp,
-                      imasac,
-                      inc,
-                      eqp,
-                      pvar,
-                      pvara,
-                      bc_coeffs,
-                      i_massflux,
-                      b_massflux,
-                      i_visc,
-                      b_visc,
-                      viscel,
-                      xcpp,
-                      weighf,
-                      weighb,
-                      icvflb,
-                      icvfli,
-                      rhs,
-                      nullptr,
-                      nullptr);
+      cs_balance_scalar(idtvar,
+                        f_id,
+                        imucpp,
+                        0, // imasac
+                        inc,
+                        eqp,
+                        pvar,
+                        pvara,
+                        bc_coeffs,
+                        i_massflux,
+                        b_massflux,
+                        i_visc,
+                        b_visc,
+                        viscel,
+                        xcpp,
+                        weighf,
+                        weighb,
+                        icvflb,
+                        icvfli,
+                        rhs,
+                        nullptr,
+                        nullptr);
 
     /* Contribution of the current component to the L2 norm stored in eswork */
 

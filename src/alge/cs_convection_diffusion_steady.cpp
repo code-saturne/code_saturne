@@ -2061,8 +2061,6 @@ cs_convection_diffusion_steady_scalar
  * \brief Update face flux with convection contribution of a standard transport
  * equation of a scalar field \f$ \varia \f$.
  *
- * <a name="cs_face_convection_scalar"></a>
- *
  * \f[
  * C_\ij = \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
  * \f]
@@ -2075,7 +2073,6 @@ cs_convection_diffusion_steady_scalar
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     icvfli        boundary face indicator array of convection flux

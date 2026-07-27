@@ -3899,8 +3899,6 @@ _convection_scalar
  * \brief Update face flux with convection contribution of a standard transport
  * equation of a scalar field \f$ \varia \f$.
  *
- * <a name="cs_face_convection_scalar"></a>
- *
  * \f[
  * C_\ij = \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
  * \f]
@@ -3913,7 +3911,6 @@ _convection_scalar
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     icvfli        boundary face indicator array of convection flux
@@ -3932,7 +3929,6 @@ _face_convection_unsteady_scalar(const cs_field_t           *f,
                                  const cs_equation_param_t   eqp,
                                  int                         icvflb,
                                  int                         inc,
-                                 int                         imasac,
                                  cs_real_t         *restrict pvar,
                                  const cs_real_t   *restrict pvara,
                                  const int                   icvfli[],
@@ -4296,11 +4292,9 @@ _face_convection_unsteady_scalar(const cs_field_t           *f,
         cs_real_t flui = 0.5*(_i_massflux + cs::abs(_i_massflux));
         cs_real_t fluj = 0.5*(_i_massflux - cs::abs(_i_massflux));
 
-        i_conv_flux[face_id][0] +=   thetap*(flui*_pvar[c_id0] + fluj*_pvar[c_id1])
-                                   - imasac * _i_massflux*_pvar[c_id0];
+        i_conv_flux[face_id][0] += thetap*(flui*_pvar[c_id0] + fluj*_pvar[c_id1]);
 
-        i_conv_flux[face_id][1] +=   thetap * (flui*_pvar[c_id0] + fluj*_pvar[c_id1])
-                                   - imasac * _i_massflux*_pvar[c_id1];
+        i_conv_flux[face_id][1] += thetap * (flui*_pvar[c_id0] + fluj*_pvar[c_id1]);
 
       }
 
@@ -4492,11 +4486,8 @@ _face_convection_unsteady_scalar(const cs_field_t           *f,
         cs_real_t flui = 0.5*(_i_massflux + cs::abs(_i_massflux));
         cs_real_t fluj = 0.5*(_i_massflux - cs::abs(_i_massflux));
 
-        i_conv_flux[face_id][0] +=   thetap*(flui*pif + fluj*pjf)
-                                   - imasac*_i_massflux*_pvar[c_id0];
-
-        i_conv_flux[face_id][1] +=   thetap*(flui*pif + fluj*pjf)
-                                   - imasac*_i_massflux*_pvar[c_id1];
+        i_conv_flux[face_id][0] += thetap*(flui*pif + fluj*pjf);
+        i_conv_flux[face_id][1] += thetap*(flui*pif + fluj*pjf);
 
       }
 
@@ -4641,11 +4632,9 @@ _face_convection_unsteady_scalar(const cs_field_t           *f,
         cs_real_t flui = 0.5*(_i_massflux + cs::abs(_i_massflux));
         cs_real_t fluj = 0.5*(_i_massflux - cs::abs(_i_massflux));
 
-        i_conv_flux[face_id][0] +=   thetap*(flui*pif + fluj*pjf)
-                                   - imasac*_i_massflux*_pvar[c_id0];
+        i_conv_flux[face_id][0] += thetap*(flui*pif + fluj*pjf);
 
-        i_conv_flux[face_id][1] +=   thetap*(flui*pif + fluj*pjf)
-                                   - imasac*_i_massflux*_pvar[c_id1];
+        i_conv_flux[face_id][1] += thetap*(flui*pif + fluj*pjf);
       }
 
       if (upwind_switch) {
@@ -4702,7 +4691,7 @@ _face_convection_unsteady_scalar(const cs_field_t           *f,
 
       cs_b_upwind_flux(iconvp,
                        thetap,
-                       imasac,
+                       0, // imasac,
                        bc_type[face_id],
                        _pvar[c_id],
                        _pvar[c_id], /* no relaxation */
@@ -4750,7 +4739,7 @@ _face_convection_unsteady_scalar(const cs_field_t           *f,
 
       cs_b_imposed_conv_flux(iconvp,
                              thetap,
-                             imasac,
+                             0, // imasac,
                              inc,
                              bc_type[face_id],
                              icvfli[face_id],
@@ -6480,8 +6469,6 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
  * \brief Update face flux with convection contribution of a standard transport
  * equation of a scalar field \f$ \varia \f$.
  *
- * <a name="cs_face_convection_scalar"></a>
- *
  * \f[
  * C_\ij = \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
  * \f]
@@ -6495,7 +6482,6 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     icvfli        boundary face indicator array of convection flux
@@ -6515,7 +6501,6 @@ cs_face_convection_scalar(int                         idtvar,
                           const cs_equation_param_t   eqp,
                           int                         icvflb,
                           int                         inc,
-                          int                         imasac,
                           cs_real_t         *restrict pvar,
                           const cs_real_t   *restrict pvara,
                           const int                   icvfli[],
@@ -6537,7 +6522,7 @@ cs_face_convection_scalar(int                         idtvar,
 
   if (idtvar >= 0) {
     _face_convection_unsteady_scalar
-      (f, eqp, icvflb, inc, imasac,
+      (f, eqp, icvflb, inc,
        pvar, pvara,
        icvfli,
        bc_coeffs,

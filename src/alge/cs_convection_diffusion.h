@@ -194,7 +194,6 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     icvfli        boundary face indicator array of convection flux
@@ -214,7 +213,6 @@ cs_face_convection_scalar(int                         idtvar,
                           const cs_equation_param_t   eqp,
                           int                         icvflb,
                           int                         inc,
-                          int                         imasac,
                           cs_real_t                  *pvar,
                           const cs_real_t            *pvara,
                           const int                   icvfli[],
