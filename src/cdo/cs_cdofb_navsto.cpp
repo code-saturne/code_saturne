@@ -1853,6 +1853,16 @@ cs_cdofb_symmetry_alge(short int                                   bf,
   cs_sdm_t *m_ff = m->get_block(bf, bf);
   assert((m_ff->n_cols == 3) && (m_ff->n_rows == 3));
 
+  /* alpha is a scaling for the algebraic treatment on the
+   * normal component to avoid bad conditioning of the
+   * local sdm */
+
+  cs_real_t alpha = 0.;
+  for (int k = 0; k < 3; k++)
+    alpha += m_ff->val[4*k]*m_ff->val[4*k];
+
+  alpha = sqrt(alpha);
+
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
     if (bi != bf) {
@@ -1876,13 +1886,15 @@ cs_cdofb_symmetry_alge(short int                                   bf,
         cs_sdm_copy(m_fj, &buffer);
       }
 
-      // m_ff = n x n^t + p_t m_ff p_t
-      buffer.init(buffer.n_rows);
+      // m_ff = alpha. n x n^t + p_t m_ff p_t
+
+      buffer.set_zero();
 
       cs_sdm_multiply(m_ff, &p_t, &buffer);
       cs_sdm_copy(m_ff, &buffer);
 
       *m_ff += nn;
+      cs_sdm_add_mult(m_ff, alpha, &nn);
 
     } // bi == bf ?
 
@@ -2163,8 +2175,8 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
         }
         else { // bi == bf
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-            cs_sdm_t *mFJ = m->get_block(bf, bj);
-            mFJ->set_zero();
+            cs_sdm_t *m_fj = m->get_block(bf, bj);
+            m_fj->set_zero();
           }
           m_ff->set_zero();
           (*m_ff)(0,0) = 1., (*m_ff)(1,1) = 1., (*m_ff)(2,2) = 1.;
@@ -2207,13 +2219,23 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
       for (short int k = 0; k < 3; k++)
         csys->rhs[3 * bf + k] = x_dir[k];
 
+      /* alpha is a scaling for the algebraic treatment on the
+       * normal component to avoid bad conditioning of the
+       * local sdm */
+
+      cs_real_t alpha = 0.;
+      for (int k = 0; k < 3; k++)
+        alpha += m_ff->val[4*k]*m_ff->val[4*k];
+
+      alpha = sqrt(alpha);
+
       nn.matvec(u0, x_dir);
       const double u0n_norm = cs_math_3_norm(x_dir);
 
       if (u0n_norm > cs_math_zero_threshold) {
 
         for (short int k = 0; k < 3; k++)
-          csys->rhs[3 * bf + k] += x_dir[k];
+          csys->rhs[3 * bf + k] += alpha*x_dir[k];
 
         for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
@@ -2226,7 +2248,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
           m_if->matvec(x_dir, ax_dir);
 
           for (int k = 0; k < 3; k++)
-            _rhs[k] -= ax_dir[k];
+            _rhs[k] -= alpha*ax_dir[k];
         }
       } /* Non-homogeneous Dirichlet BC */
 
@@ -2244,19 +2266,22 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
         }
         else { /* bi == bf */
 
+          /* Left project block (I==F,J) which is a 3x3 block */
+
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
             buffer.set_zero();
-            cs_sdm_t *mFJ = m->get_block(bf, bj);
-            cs_sdm_multiply(&p_t, mFJ, &buffer);
-            cs_sdm_copy(mFJ, &buffer);
+            cs_sdm_t *m_fj = m->get_block(bf, bj);
+            cs_sdm_multiply(&p_t, m_fj, &buffer);
+            cs_sdm_copy(m_fj, &buffer);
           }
+
+          // m_ff = alpha n x n^t + p_t mff p_t;
 
           buffer.set_zero();
           cs_sdm_multiply(m_ff, &p_t, &buffer);
           cs_sdm_copy(m_ff, &buffer);
 
-          *m_ff += nn;
-
+          cs_sdm_add_mult(m_ff, alpha, &nn);
         }
       } // Loop on bi blocks
 
@@ -2271,7 +2296,6 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_robin(
 
       // Update the local system matrix
       cs_sdm_add_mult(m_ff, h_t*f_meas, &p_t);
-
     }
   } // The boundary face is a wall
 
@@ -2364,8 +2388,8 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
         else { /* bi == bf */
 
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-            cs_sdm_t *mFJ = m->get_block(bf, bj);
-            mFJ->set_zero();
+            cs_sdm_t *m_fj = m->get_block(bf, bj);
+            m_fj->set_zero();
           }
 
           m_ff->set_zero();
@@ -2409,13 +2433,23 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
       for (short int k = 0; k < 3; k++)
         csys->rhs[3 * bf + k] = x_dir[k];
 
+      /* alpha is a scaling for the algebraic treatment on the
+       * normal component to avoid bad conditioning of the
+       * local sdm */
+
+      cs_real_t alpha = 0.;
+      for (int k = 0; k < 3; k++)
+        alpha += m_ff->val[4*k]*m_ff->val[4*k];
+
+      alpha = sqrt(alpha);
+
       nn.matvec(u0, x_dir);
       const double u0n_norm = cs_math_3_norm(x_dir);
 
       if (u0n_norm > cs_math_zero_threshold) {
 
         for (short int k = 0; k < 3; k++)
-          csys->rhs[3*bf + k] += x_dir[k];
+          csys->rhs[3*bf + k] += alpha*x_dir[k];
 
         for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
@@ -2428,7 +2462,7 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
           m_if->matvec(x_dir, ax_dir);
 
           for (int k = 0; k < 3; k++)
-            _rhs[k] -= ax_dir[k];
+            _rhs[k] -= alpha*ax_dir[k];
         }
 
       } // Non-homogeneous Dirichlet BC
@@ -2448,18 +2482,18 @@ cs_cdofb_prescribed_smooth_wall_n_alge_t_neumann(
           // Left project block (i==bf, j) which is a 3x3 block
           for (int bj = 0; bj < bd->n_col_blocks; bj++) {
             buffer.set_zero();
-            cs_sdm_t *mFJ = m->get_block(bf, bj);
-            cs_sdm_multiply(&p_t, mFJ, &buffer);
-            cs_sdm_copy(mFJ, &buffer);
+            cs_sdm_t *m_fj = m->get_block(bf, bj);
+            cs_sdm_multiply(&p_t, m_fj, &buffer);
+            cs_sdm_copy(m_fj, &buffer);
           }
 
-          // m_ff = n x n^t + p_t m_ff p_t
+          // m_ff = alpha.n x n^t + p_t m_ff p_t
+
           buffer.set_zero();
           cs_sdm_multiply(m_ff, &p_t, &buffer);
           cs_sdm_copy(m_ff, &buffer);
 
-          *m_ff += nn;
-
+          cs_sdm_add_mult(m_ff, alpha, &nn);
         }
 
       } // Loop on bi blocks
