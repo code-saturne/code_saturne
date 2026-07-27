@@ -46,6 +46,7 @@
 #include "base/cs_base.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
+#include "cdo/cs_param_cdo.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1200,11 +1201,9 @@ cs_param_saddle_set_solver(const char        *keyval,
     saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
     saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
     saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE;
-
     saddlep->cvg_param.n_max_iter = 1;  // As in a SIMPLE algorithm
 
-    /* Context structure dedicated to this algorithm */
-
+    // Context structure dedicated to this algorithm
     cs_param_saddle_context_simple_t *ctxp = nullptr;
     CS_MALLOC(ctxp, 1, cs_param_saddle_context_simple_t);
 
@@ -1226,7 +1225,7 @@ cs_param_saddle_set_solver(const char        *keyval,
 
     saddlep->context = ctxp;
 
-    // Now the parameters of the Schur can be set along with the extra sles
+    // Now the parameters of the Schur can be set along with the extra SLES
     // parameters to solve the inv. lumped approximation
 
     _init_schur_slesp(saddlep);
@@ -1234,6 +1233,8 @@ cs_param_saddle_set_solver(const char        *keyval,
     assert(saddlep->schur_sles_param != nullptr);
 
     cs_param_sles_t *schur_slesp = saddlep->schur_sles_param;
+    ierr = cs_param_sles_set_amg_type("k_cycle", schur_slesp);
+
     cs_param_sles_amg_inhouse(schur_slesp,
                               /* n_down_iter, down smoother, down poly. deg. */
                               1, CS_PARAM_AMG_INHOUSE_FORWARD_GS, -1,
@@ -1243,6 +1244,14 @@ cs_param_saddle_set_solver(const char        *keyval,
                               CS_PARAM_AMG_INHOUSE_CG, 1,
                               /* coarsen algo, aggregation limit */
                               CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW, 8);
+
+    cs_param_sles_amg_inhouse_advanced(schur_slesp,
+                                       CS_CDO_KEEP_DEFAULT, // max_levels
+                                       64,                  // min_n_g_rows
+                                       CS_CDO_KEEP_DEFAULT, // p0p1_relax
+                                       CS_CDO_KEEP_DEFAULT, // coarse_max_iter,
+                                       0.1);                // coarse_rtol_mult
+
   }
   else if (strcmp(keyval, "alu") == 0) {
 
