@@ -957,36 +957,64 @@ _slope_test_gradient_h
   cs_dispatch_sum_type_t i_sum_type = p_ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = p_ctx.get_parallel_for_b_faces_sum_type(m);
 
-  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+  if (grad != nullptr) {
 
-    cs_lnum_t c_id0 = i_face_cells[face_id][0];
-    cs_lnum_t c_id1 = i_face_cells[face_id][1];
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-    cs_real_t difv[3] = {i_face_cog[face_id][0] - cell_cen[c_id0][0],
-                         i_face_cog[face_id][1] - cell_cen[c_id0][1],
-                         i_face_cog[face_id][2] - cell_cen[c_id0][2]};
+      cs_lnum_t c_id0 = i_face_cells[face_id][0];
+      cs_lnum_t c_id1 = i_face_cells[face_id][1];
 
-    cs_real_t djfv[3] = {i_face_cog[face_id][0] - cell_cen[c_id1][0],
-                         i_face_cog[face_id][1] - cell_cen[c_id1][1],
-                         i_face_cog[face_id][2] - cell_cen[c_id1][2]};
+      cs_real_t pif =   pvar[c_id0]
+                      + cs_math_3_distance_dot_product(cell_cen[c_id0],
+                                                       i_face_cog[face_id],
+                                                       grad[c_id0]);
+      cs_real_t pjf =   pvar[c_id1]
+                      + cs_math_3_distance_dot_product(cell_cen[c_id1],
+                                                       i_face_cog[face_id],
+                                                       grad[c_id1]);
 
-    cs_real_t pif = pvar[c_id0] + cs_math_3_dot_product(difv, grad[c_id0]);
-    cs_real_t pjf = pvar[c_id1] + cs_math_3_dot_product(djfv, grad[c_id1]);
+      cs_real_t pfac = (i_massflux[face_id] > 0.) ? pif : pjf;
+      pfac *= i_face_surf[face_id];
 
-    cs_real_t pfac = (i_massflux[face_id] > 0.) ? pif : pjf;
-    pfac *= i_face_surf[face_id];
+      T vfac_i[3], vfac_j[3];
+      const T _pfac = static_cast<T>(pfac);
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        vfac_i[k] = _pfac*i_face_u_normal[face_id][k];
+        vfac_j[k] = - vfac_i[k];
+      }
 
-    T vfac_i[3], vfac_j[3];
-    const T _pfac = static_cast<T>(pfac);
-    for (cs_lnum_t k = 0; k < 3; k++) {
-      vfac_i[k] = _pfac*i_face_u_normal[face_id][k];
-      vfac_j[k] = - vfac_i[k];
-    }
+      cs_dispatch_sum<3>(grdpa[c_id0], vfac_i, i_sum_type);
+      cs_dispatch_sum<3>(grdpa[c_id1], vfac_j, i_sum_type);
 
-    cs_dispatch_sum<3>(grdpa[c_id0], vfac_i, i_sum_type);
-    cs_dispatch_sum<3>(grdpa[c_id1], vfac_j, i_sum_type);
+    });
 
-  });
+  }
+  else {
+
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+
+      cs_lnum_t c_id0 = i_face_cells[face_id][0];
+      cs_lnum_t c_id1 = i_face_cells[face_id][1];
+
+      cs_real_t pif = pvar[c_id0];
+      cs_real_t pjf = pvar[c_id1];
+
+      cs_real_t pfac = (i_massflux[face_id] > 0.) ? pif : pjf;
+      pfac *= i_face_surf[face_id];
+
+      T vfac_i[3], vfac_j[3];
+      const T _pfac = static_cast<T>(pfac);
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        vfac_i[k] = _pfac*i_face_u_normal[face_id][k];
+        vfac_j[k] = - vfac_i[k];
+      }
+
+      cs_dispatch_sum<3>(grdpa[c_id0], vfac_i, i_sum_type);
+      cs_dispatch_sum<3>(grdpa[c_id1], vfac_j, i_sum_type);
+
+    });
+
+  }
 
   ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
     cs_lnum_t c_id = b_face_cells[face_id];
@@ -1074,45 +1102,83 @@ _slope_test_gradient_d
   cs_dispatch_context &p_ctx = static_cast<cs_dispatch_context&>(ctx);
   cs_dispatch_sum_type_t b_sum_type = p_ctx.get_parallel_for_b_faces_sum_type(m);
 
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+  if (grad != nullptr) {
 
-    T grdpa_c[3] = {0, 0, 0};
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
 
-    /* Loop on interior faces */
-    const cs_lnum_t s_id_i = c2c_idx[cell_id];
-    const cs_lnum_t e_id_i = c2c_idx[cell_id + 1];
+      T grdpa_c[3] = {0, 0, 0};
 
-    for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
-      const cs_lnum_t face_id = cell_i_faces[cidx];
+      /* Loop on interior faces */
+      const cs_lnum_t s_id_i = c2c_idx[cell_id];
+      const cs_lnum_t e_id_i = c2c_idx[cell_id + 1];
 
-      /* Which cell is upwind ? */
-      cs_lnum_t u_cell_id = cell_id;
-      short int f_sgn = c2f_sgn[cidx];
-      if (f_sgn*i_massflux[face_id] <= 0.)
-        u_cell_id = c2c[cidx];
+      for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+        const cs_lnum_t face_id = cell_i_faces[cidx];
 
-      cs_real_t dufv[3];
-      for (cs_lnum_t isou = 0; isou < 3; isou++)
-        dufv[isou] = i_face_cog[face_id][isou] - cell_cen[u_cell_id][isou];
+        /* Which cell is upwind ? */
+        cs_lnum_t u_cell_id = cell_id;
+        short int f_sgn = c2f_sgn[cidx];
+        if (f_sgn*i_massflux[face_id] <= 0.)
+          u_cell_id = c2c[cidx];
 
-      cs_real_t pfac =   pvar[u_cell_id]
-                       + cs_math_3_dot_product(dufv, grad[u_cell_id]);
+        cs_real_t pfac =   pvar[u_cell_id]
+                         + cs_math_3_distance_dot_product(cell_cen[u_cell_id],
+                                                          i_face_cog[face_id],
+                                                          grad[u_cell_id]);
 
-      pfac *= i_face_surf[face_id] * f_sgn;
+        pfac *= i_face_surf[face_id] * f_sgn;
 
-      const T _pfac = static_cast<T>(pfac);
-      for (cs_lnum_t isou = 0; isou < 3; isou++)
-        grdpa_c[isou] += _pfac*i_face_u_normal[face_id][isou];
+        const T _pfac = static_cast<T>(pfac);
+        for (cs_lnum_t isou = 0; isou < 3; isou++)
+          grdpa_c[isou] += _pfac*i_face_u_normal[face_id][isou];
 
-      /* Scale now to avoid second loop */
+        /* Scale now to avoid second loop */
 
-      T unsvol = cs_mq_cell_vol_inv(cell_id, c_disable_flag, cell_vol);
-      for (cs_lnum_t isou = 0; isou < 3; isou++) {
-        grdpa[cell_id][isou] = grdpa_c[isou]*unsvol;
+        T unsvol = cs_mq_cell_vol_inv(cell_id, c_disable_flag, cell_vol);
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
+          grdpa[cell_id][isou] = grdpa_c[isou]*unsvol;
+        }
+
       }
+    });
 
-    }
-  });
+  }
+  else {
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+
+      T grdpa_c[3] = {0, 0, 0};
+
+      /* Loop on interior faces */
+      const cs_lnum_t s_id_i = c2c_idx[cell_id];
+      const cs_lnum_t e_id_i = c2c_idx[cell_id + 1];
+
+      for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+        const cs_lnum_t face_id = cell_i_faces[cidx];
+
+        /* Which cell is upwind ? */
+        cs_lnum_t u_cell_id = cell_id;
+        short int f_sgn = c2f_sgn[cidx];
+        if (f_sgn*i_massflux[face_id] <= 0.)
+          u_cell_id = c2c[cidx];
+
+        cs_real_t pfac = pvar[u_cell_id] * i_face_surf[face_id] * f_sgn;
+
+        const T _pfac = static_cast<T>(pfac);
+        for (cs_lnum_t isou = 0; isou < 3; isou++)
+          grdpa_c[isou] += _pfac*i_face_u_normal[face_id][isou];
+
+        /* Scale now to avoid second loop */
+
+        T unsvol = cs_mq_cell_vol_inv(cell_id, c_disable_flag, cell_vol);
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
+          grdpa[cell_id][isou] = grdpa_c[isou]*unsvol;
+        }
+
+      }
+    });
+
+  }
 
   /* Contribution from boundary faces
 
