@@ -2085,9 +2085,9 @@ _convert_inhouse_solver(cs_param_amg_inhouse_solver_t  solver)
     return CS_SLES_L1_JACOBI;
   case CS_PARAM_AMG_INHOUSE_R_JACOBI:
     return CS_SLES_R_JACOBI;
-  case CS_PARAM_AMG_INHOUSE_RJ2:
+  case CS_PARAM_AMG_INHOUSE_SRJ2:
     return CS_SLES_SRJ2;
-  case CS_PARAM_AMG_INHOUSE_RJ3:
+  case CS_PARAM_AMG_INHOUSE_SRJ3:
     return CS_SLES_SRJ3;
 
   case CS_PARAM_AMG_INHOUSE_JACOBI:

@@ -860,9 +860,9 @@ cs_param_amg_get_inhouse_solver_name(cs_param_amg_inhouse_solver_t  solver)
     return "L1-Jacobi smoother";
   case CS_PARAM_AMG_INHOUSE_R_JACOBI:
     return "Weighted relaxed Jacobi smoother";
-  case CS_PARAM_AMG_INHOUSE_RJ2:
+  case CS_PARAM_AMG_INHOUSE_SRJ2:
     return "Scheduled relaxed Jacobi smoother with M=2";
-  case CS_PARAM_AMG_INHOUSE_RJ3:
+  case CS_PARAM_AMG_INHOUSE_SRJ3:
     return "Scheduled relaxed Jacobi smoother with M=3";
   case CS_PARAM_AMG_INHOUSE_JACOBI:
     return "Jacobi";

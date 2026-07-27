@@ -277,8 +277,8 @@ typedef struct {
    CS_PARAM_AMG_INHOUSE_BACKWARD_GS = 2,   /* smoother only */
    CS_PARAM_AMG_INHOUSE_L1_JACOBI   = 11,  /* smoother only */
    CS_PARAM_AMG_INHOUSE_R_JACOBI    = 12,  /* smoother only */
-   CS_PARAM_AMG_INHOUSE_RJ2         = 13,  /* smoother only */
-   CS_PARAM_AMG_INHOUSE_RJ3         = 14,  /* smoother only */
+   CS_PARAM_AMG_INHOUSE_SRJ2        = 13,  /* smoother only */
+   CS_PARAM_AMG_INHOUSE_SRJ3        = 14,  /* smoother only */
 
    CS_PARAM_AMG_INHOUSE_JACOBI      = 3,
    CS_PARAM_AMG_INHOUSE_PROCESS_GS  = 4,
