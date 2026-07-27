@@ -509,15 +509,17 @@ cs_user_linear_solvers(void)
                                 /* Coarse: solver, poly. deg. */
                                 CS_PARAM_AMG_INHOUSE_CG, 0,
                                 /* coarsen algo, aggregation limit */
-                                CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW, 8);
+                                CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW, 6);
 
       cs_param_sles_amg_inhouse_advanced
         (slesp,
-         CS_CDO_KEEP_DEFAULT,  /* max_levels */
-         500,                  /* coarse min_n_g_rows */
-         CS_CDO_KEEP_DEFAULT,  /* p0p1_relax */
-         CS_CDO_KEEP_DEFAULT,  /* coarse_max_iter */
-         CS_CDO_KEEP_DEFAULT); /* coarse_rtol_mult */
+         CS_CDO_KEEP_DEFAULT, /* max_levels */
+         500,                 /* coarse min_n_g_rows */
+         CS_CDO_KEEP_DEFAULT, /* p0p1_relax */
+         CS_CDO_KEEP_DEFAULT, /* coarse_max_iter */
+         CS_CDO_KEEP_DEFAULT, /* coarse_rtol_mult */
+         1,                   // More aggressive coarsening
+         10);                 // on the two finest levels
 
     }  /* K-cycle multigrid as preconditioner */
   }

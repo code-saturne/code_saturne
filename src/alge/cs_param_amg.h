@@ -321,37 +321,53 @@ typedef struct {
  *         parameters are the most impacting ones. For a more advanced
  *         usage, this is still possible to consider the function \ref
  *         cs_user_linear_solvers
+ *
+ * There are three main sets of parameters:
+ * (1) the way to coarsen the grids from the finest level to the coarsest level
+ * (2) the way to smooth the error at each level (excepted for the coarsest one)
+ * (3) the way to solve the coarsest level
+ *
+ * It is possible to specify a more aggressive coarsening settings for the
+ * finest levels.
+ *
  */
 
 typedef struct {
 
-  /* Coarsening algorithm */
-
-  int                             max_levels;     /* advanced settings */
-  cs_gnum_t                       min_n_g_rows;   /* advanced settings */
-  double                          p0p1_relax;     /* advanced settings */
-
-  int                             aggreg_limit;
+  // Parameters for the coarsening algorithm
+  // ---------------------------------------
   cs_param_amg_inhouse_coarsen_t  coarsen_algo;
+  int          aggreg_limit;
 
-  /* Down smoother */
+  // Advanced settings
+  int          max_levels;   // Stop coarsening below this level
+  cs_gnum_t    min_n_g_rows; // Stop coarsening if the size is below
+  double       p0p1_relax;   // Portion of P1 interpolation
 
+  // Up to which level aggressive coarsening is applied
+  int          fine_level_threshold;
+  int          fine_level_aggreg_limit;
+
+  // Parameters for the smoothers
+  // ----------------------------
+
+  // Down smoother
   int                             n_down_iter;
   cs_param_amg_inhouse_solver_t   down_smoother;
   int                             down_poly_degree;
 
-  /* Up smoother */
-
+  // Up smoother
   int                             n_up_iter;
   cs_param_amg_inhouse_solver_t   up_smoother;
   int                             up_poly_degree;
 
-  /* Coarse solver */
+  // Parameters for the coarse solver
+  // --------------------------------
 
-  double                          coarse_rtol_mult; /* advanced settings */
-  int                             coarse_max_iter;  /* advanced settings */
   cs_param_amg_inhouse_solver_t   coarse_solver;
   int                             coarse_poly_degree;
+  double                          coarse_rtol_mult; // advanced settings
+  int                             coarse_max_iter;  // advanced settings
 
 } cs_param_amg_inhouse_t;
 

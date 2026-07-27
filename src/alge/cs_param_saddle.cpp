@@ -1250,7 +1250,9 @@ cs_param_saddle_set_solver(const char        *keyval,
                                        64,                  // min_n_g_rows
                                        CS_CDO_KEEP_DEFAULT, // p0p1_relax
                                        CS_CDO_KEEP_DEFAULT, // coarse_max_iter,
-                                       0.1);                // coarse_rtol_mult
+                                       0.1,     // coarse_rtol_mult
+                                       1,       // the two first levels
+                                       8);      // more aggressive coarsening
 
   }
   else if (strcmp(keyval, "alu") == 0) {

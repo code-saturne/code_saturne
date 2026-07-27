@@ -379,7 +379,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
                               /* coarse solver, coarse poly. deg. */
                               CS_PARAM_AMG_INHOUSE_CG, 1,
                               /* coarsen algo, aggregation limit */
-                              CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW, 8);
+                              CS_PARAM_AMG_INHOUSE_COARSEN_SPD_PW, 6);
 
     /* Set advanced parameters for an in-house AMG */
 
@@ -388,7 +388,9 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
                                        100,                 // min. n_g_rows
                                        CS_CDO_KEEP_DEFAULT, // p0p1 relax.
                                        CS_CDO_KEEP_DEFAULT, // coarse max. iter
-                                       1e-2);               // coarse rtol mult.
+                                       1e-2,                // coarse rtol mult.
+                                       1,     // More aggressive coarsening
+                                       10);   // on the two finest levels
 #endif
 
     /* Linear algebra settings for the Schur complement approximation */

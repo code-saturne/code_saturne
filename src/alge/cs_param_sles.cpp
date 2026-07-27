@@ -1567,12 +1567,17 @@ cs_param_sles_amg_inhouse(cs_param_sles_t                *slesp,
  *        advanced settings. CS_CDO_KEEP_DEFAULT can be used to let unchange
  *        the parameter value.
  *
+ *        The parameter "fine_coarsening" is only used if the "fine_lvl_agg" is
+ *        greater than -1
+ *
  * \param[in, out] slesp             pointer to a cs_param_sles_t structure
  * \param[in]      max_levels        max. number of levels
  * \param[in]      min_n_g_rows      do not coarsen anymore below this number
  * \param[in]      p0p1_relax        p0/p1 relaxation parameter
  * \param[in]      coarse_max_iter   max. number of iter. for the coarse solver
- * \param[in]      coarse_rtol_mult  max. number of iter. for the coarse solver
+ * \param[in]      coarse_rtol_mult  scaling on the coarse solver relative tol.
+ * \param[in]      fine_lvl_agg      fine levels for aggressive coarsening or -1
+ * \param[in]      fine_coarsening   aggregation limit for fine levels
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1582,7 +1587,9 @@ cs_param_sles_amg_inhouse_advanced(cs_param_sles_t  *slesp,
                                    cs_gnum_t         min_n_g_rows,
                                    double            p0p1_relax,
                                    int               coarse_max_iter,
-                                   double            coarse_rtol_mult)
+                                   double            coarse_rtol_mult,
+                                   int               fine_lvl_agg,
+                                   int               fine_coarsening)
 {
   if (slesp == nullptr)
     return;
@@ -1613,6 +1620,12 @@ cs_param_sles_amg_inhouse_advanced(cs_param_sles_t  *slesp,
 
   if (fabs(coarse_rtol_mult - CS_CDO_KEEP_DEFAULT) > cs_math_zero_threshold)
     amgp->coarse_rtol_mult = coarse_rtol_mult;
+
+  if (fine_lvl_agg != CS_CDO_KEEP_DEFAULT)
+    amgp->fine_level_threshold = fine_lvl_agg;
+
+  if (fine_coarsening != CS_CDO_KEEP_DEFAULT)
+    amgp->fine_level_aggreg_limit = fine_coarsening;
 }
 
 /*----------------------------------------------------------------------------*/

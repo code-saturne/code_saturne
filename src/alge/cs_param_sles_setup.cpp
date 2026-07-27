@@ -2241,6 +2241,12 @@ _set_saturne_amg_solver(const char             *sles_name,
                                       amgp->p0p1_relax,
                                       0);   /* postprocess */
 
+  if (amgp->fine_level_threshold > -1)
+    cs_multigrid_set_coarsening_options_fine_grid(mg,
+                                                  amgp->fine_level_threshold,
+                                                  amgp->fine_level_aggreg_limit,
+                                                  coarsen_algo);
+
   return mg;
 }
 
@@ -2322,6 +2328,12 @@ _set_saturne_amg_precond(const cs_param_sles_t  *slesp,
                                       amgp->min_n_g_rows,
                                       amgp->p0p1_relax,
                                       0);   /* postprocess */
+
+  if (amgp->fine_level_threshold > -1)
+    cs_multigrid_set_coarsening_options_fine_grid(mg,
+                                                  amgp->fine_level_threshold,
+                                                  amgp->fine_level_aggreg_limit,
+                                                  coarsen_algo);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -749,6 +749,8 @@ cs_param_amg_inhouse_create(bool used_as_solver,
   amgp->up_poly_degree = 0;
   amgp->up_smoother = CS_PARAM_AMG_INHOUSE_CG;
   amgp->n_up_iter = 2;
+  amgp->fine_level_threshold = -1;    // Not used by default
+  amgp->fine_level_aggreg_limit = 8;  // Aggressive coarsening
 
   if (used_as_k_cycle) {
 
@@ -814,18 +816,22 @@ cs_param_amg_inhouse_copy(const cs_param_amg_inhouse_t  *amgp)
 {
   cs_param_amg_inhouse_t  *cpy = cs_param_amg_inhouse_create(true, true);
 
-  cpy->max_levels = amgp->max_levels;
-  cpy->min_n_g_rows = amgp->min_n_g_rows;
-  cpy->p0p1_relax = amgp->p0p1_relax;
-
-  cpy->aggreg_limit = amgp->aggreg_limit;
-  cpy->coarsen_algo = amgp->coarsen_algo;
-
+  // Coarse grid solver options
   cpy->coarse_solver = amgp->coarse_solver;
   cpy->coarse_max_iter = amgp->coarse_max_iter;
   cpy->coarse_poly_degree = amgp->coarse_poly_degree;
   cpy->coarse_rtol_mult = amgp->coarse_rtol_mult;
 
+  // Coarsening options
+  cpy->coarsen_algo = amgp->coarsen_algo;
+  cpy->aggreg_limit = amgp->aggreg_limit;
+  cpy->max_levels = amgp->max_levels;
+  cpy->min_n_g_rows = amgp->min_n_g_rows;
+  cpy->p0p1_relax = amgp->p0p1_relax;
+  cpy->fine_level_threshold = amgp->fine_level_threshold;
+  cpy->fine_level_aggreg_limit = amgp->fine_level_aggreg_limit;
+
+  // Smoother options
   cpy->n_down_iter = amgp->n_down_iter;
   cpy->down_smoother = amgp->down_smoother;
   cpy->down_poly_degree = amgp->down_poly_degree;
@@ -960,6 +966,15 @@ cs_param_amg_inhouse_log(const char                    *name,
                 prefix, amgp->p0p1_relax);
   cs_log_printf(CS_LOG_SETUP, "%s   aggregation_limit:      %d\n",
                 prefix, amgp->aggreg_limit);
+  if (amgp->fine_level_threshold > -1) {
+    cs_log_printf(CS_LOG_SETUP, "%s   fine_grid_threshold:    %d\n",
+                  prefix, amgp->fine_level_threshold);
+    cs_log_printf(CS_LOG_SETUP, "%s   fine_grid_aggregation:  %d\n",
+                  prefix, amgp->fine_level_aggreg_limit);
+  }
+  else
+    cs_log_printf(CS_LOG_SETUP, "%s   no_specialized_fine_grid_aggregation\n",
+                  prefix);
 
   CS_FREE(prefix);
 }
