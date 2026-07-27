@@ -2517,120 +2517,67 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC));
 
   std::memset(cb->values, 0, 6 * sizeof(double));
-  double *ax_dir = cb->values + 3;
+  double *x_dir  = cb->values;
+
   cs_sdm_t *m = csys->mat;
   cs_sdm_block_t *bd = m->block_desc;
-  cs_sdm_t *m_ff = m->get_block(bf, bf);
-  assert((m_ff->n_cols == 3) && (m_ff->n_rows == 3));
+  cs_sdm_t *b_ff = csys->mat->get_block(bf, bf);
+  assert(b_ff->n_rows == b_ff->n_cols && b_ff->n_rows == 3);
 
   if (csys->bf_flag[bf] & CS_CDO_BC_WALL_PRESCRIBED) {
 
-    const cs_quant_t pfq = cm->face[bf];
-    const double *u0 = &(csys->rob_values[9*bf]);
-    const double h_t = csys->rob_values[9*bf + 3];
-    const double *f_w = &(csys->rob_values[9*bf + 6]);
+    const cs_real_t  f_meas = cm->face[bf].meas;
+    const double  *u0 = &(csys->rob_values[9*bf]);
+    const double  h_t = csys->rob_values[9*bf + 3];
+    const double  *f_w = &(csys->rob_values[9*bf + 6]);
+
+    // (0) Pre-compute the product between diffusion property and the face
+    //     vector areas
+
+    cs_real_3_t *kappa_f = cb->vectors;
+    for (short int f = 0; f < cm->n_fc; f++) {
+      const double coef = cm->face[f].meas * pty->value;
+      for (int k = 0; k < 3; k++)
+        kappa_f[f][k] = coef * cm->face[f].unitv[k];
+    }
+
+    // (1) Build the bc_op matrix (scalar-valued version)
+
+    // Initialize the matrix related this flux reconstruction operator
+
+    const short int n_dofs = cm->n_fc + 1; // n_blocks or n_scalar_dofs
+
+    cs_sdm_t *bc_op = cb->aux;
+    bc_op->init(n_dofs);
+
+    // Compute \int_f du/dn v and update the matrix.
+    // Only the line associated to bf has non-zero values
+    _normal_flux_reco(bf,
+                      eqp->diffusion_hodgep.coef,
+                      cm,
+                      (const cs_real_t(*)[3])kappa_f,
+                      bc_op);
+
+    // (2) Update the bc_op matrix
+
+    const cs_quant_t   pfq = cm->face[bf];
+
+    // 1/h_f \approx |f| / |pvol_fc|
+
+    const double pcoef
+      = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[bf];
+
+    // In case of the laminar wall treatment :
+    // classic Dirichlet BC on ux, uy, uz
 
     if (h_t > 0.5*eqp->strong_pena_bc_coeff) {
 
-      // Laminar wall treatment: classical Dirichlet BC on ux, uy, uz
-      const double u0_norm = cs_math_3_norm(u0);
-
-      if (u0_norm > cs_math_zero_threshold) {
-
-        for (int bi = 0; bi < bd->n_row_blocks; bi++) {
-
-          if (bi == bf)
-            continue;
-
-          cs_real_t *_rhs = csys->rhs + 3 * bi;
-          cs_sdm_t *m_if  = m->get_block(bi, bf);
-
-          m_if->matvec(u0, ax_dir);
-
-          for (int k = 0; k < 3; k++)
-            _rhs[k] -= ax_dir[k];
-
-        }
-
-      } // Non-homogeneous Dirichlet BC
-
-      for (short int k = 0; k < 3; k++)
-        csys->rhs[3*bf + k] = u0[k];
-
-      for (int bi = 0; bi < bd->n_row_blocks; bi++) {
-
-        if (bi != bf) {
-          cs_sdm_t *m_if = m->get_block(bi, bf);
-          m_if->set_zero();
-        }
-        else { // bi == bf
-
-          for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-            cs_sdm_t *mFJ = m->get_block(bf, bj);
-            mFJ->set_zero();
-          }
-
-          m_ff->set_zero();
-          (*m_ff)(0,0) = 1., (*m_ff)(1,1) = 1., (*m_ff)(2,2) = 1.;
-
-        }
-
-      } // Loop on bi blocks
-
-    }
-    else { // Turbulent wall treatment
-
-      // (0) Pre-compute the product between diffusion property and the face
-      //     vector areas
-
-      cs_real_3_t *kappa_f = cb->vectors;
-      for (short int f = 0; f < cm->n_fc; f++) {
-        const double coef = cm->face[f].meas * pty->value;
-        for (int k = 0; k < 3; k++)
-          kappa_f[f][k] = coef * cm->face[f].unitv[k];
-      }
-
-      // (1) Build the bc_op matrix (scalar-valued version)
-
-      // Initialize the matrix related this flux reconstruction operator
-      const short int n_dofs = cm->n_fc + 1; // n_blocks or n_scalar_dofs
-      cs_sdm_t *bc_op = cb->aux;
-      bc_op->init(n_dofs);
-
-      // Compute \int_f du/dn v and update the matrix.
-      // Only the line associated to bf has non-zero values
-      _normal_flux_reco(bf,
-                        eqp->diffusion_hodgep.coef,
-                        cm,
-                        (const cs_real_t(*)[3])kappa_f,
-                        bc_op);
-
-      // (2) Update the bc_op matrix
-      //     Nothing is added to the RHS since this is a sliding
-      //     A sliding boundary condition means:
-      //      - homogeneous Dirichlet values on the normal component
-      //      - hommogeneous Neumann on the tangential flux
-
-      const cs_real_t *nf  = pfq.unitv;
-      const cs_real_33_t nf_nf
-        = { { nf[0] * nf[0], nf[0] * nf[1], nf[0] * nf[2] },
-            { nf[1] * nf[0], nf[1] * nf[1], nf[1] * nf[2] },
-            { nf[2] * nf[0], nf[2] * nf[1], nf[2] * nf[2] } };
-
-      // 1/h_f \approx |f| / |pvol_fc|
-      const double pcoef
-        = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[bf];
-
       // Handle the diagonal block: Retrieve the 3x3 matrix
-      cs_sdm_t *b_ff = csys->mat->get_block(bf, bf);
-      assert(b_ff->n_rows == b_ff->n_cols && b_ff->n_rows == 3);
 
       const cs_real_t _val = pcoef + 2 * bc_op->val[bf * (n_dofs + 1)];
-      for (short int k = 0; k < 3; k++) {
-        b_ff->val[3*k    ] += nf_nf[0][k] * _val;
-        b_ff->val[3*k + 1] += nf_nf[1][k] * _val;
-        b_ff->val[3*k + 2] += nf_nf[2][k] * _val;
-      }
+
+      for (short int k = 0; k < 3; k++)
+        b_ff->val[4*k] +=  _val;
 
       // Handle extra-diagonal blocks
       for (short int xj = 0; xj < n_dofs; xj++) {
@@ -2650,21 +2597,67 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
         const cs_real_t _val_fj_jf = op_fj + op_jf;
 
         for (int k = 0; k < 3; k++) {
-          b_fj->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
-          b_fj->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
-          b_fj->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
-          // nf_nf is symmetric
-          b_jf->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
-          b_jf->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
-          b_jf->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
+          b_fj->val[4*k] +=  _val_fj_jf;
+          b_jf->val[4*k] +=  _val_fj_jf;
         }
+      } /* Loop on xj */
+
+      for (int k = 0; k < 3; k++)
+        csys->rhs[3*bf + k] += pcoef *u0[k];
+    }
+    else {
+      // Turbulent wall treatment
+
+      const cs_real_t   *ni  = pfq.unitv;
+
+      // nn :  n x n^t, projection onto normal axis
+      // p_t : I - n x n^t, projection onto tangential plane
+
+      cs_sdm_t p_t{3}, nn{3}, buffer{3};
+
+      nn(0,0) = ni[0]*ni[0], nn(0,1) = ni[0]*ni[1], nn(0,2) = ni[0]*ni[2];
+      nn(1,0) = ni[1]*ni[0], nn(1,1) = ni[1]*ni[1], nn(1,2) = ni[1]*ni[2];
+      nn(2,0) = ni[2]*ni[0], nn(2,1) = ni[2]*ni[1], nn(2,2) = ni[2]*ni[2];
+
+      // Handle the diagonal block: Retrieve the 3x3 matrix
+
+      const cs_real_t _val = pcoef + 2 * bc_op->val[bf * (n_dofs + 1)];
+
+      cs_sdm_add_mult(b_ff, _val, &nn);
+
+      for (short int xj = 0; xj < n_dofs; xj++) {
+
+        if (xj == bf)
+          continue;
+
+        // It should be done both for face- and cell-defined DoFs
+        // Retrieve the 3x3 matrix
+
+        cs_sdm_t *b_fj = csys->mat->get_block(bf, xj);
+        assert(b_fj->n_rows == b_fj->n_cols && b_fj->n_rows == 3);
+        cs_sdm_t *b_jf = csys->mat->get_block(xj, bf);
+        assert(b_jf->n_rows == b_jf->n_cols && b_jf->n_rows == 3);
+
+        const cs_real_t op_fj      = bc_op->val[n_dofs * bf + xj];
+        const cs_real_t op_jf      = bc_op->val[n_dofs * xj + bf];
+        const cs_real_t _val_fj_jf = op_fj + op_jf;
+
+        cs_sdm_add_mult(b_fj, _val_fj_jf, &nn);
+        cs_sdm_add_mult(b_jf, _val_fj_jf, &nn);
 
       } // Loop on xj blocks
 
-      csys->rhs[3*bf + 0] += f_w[0] * pfq.meas;
-      csys->rhs[3*bf + 1] += f_w[1] * pfq.meas;
-      csys->rhs[3*bf + 2] += f_w[2] * pfq.meas;
+      // Apply the normal component of u0 in RHS
 
+      nn.matvec(u0, x_dir);
+
+      for (int k = 0; k < 3; k++)
+        csys->rhs[3*bf + k] = pcoef*x_dir[k];
+
+      // f_w is already projected onto the tangential plane
+
+      for (int k = 0; k < 3; k++)
+        csys->rhs[3*bf + k] += f_w[k]*f_meas;
     }
   }
 
