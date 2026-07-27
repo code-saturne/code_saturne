@@ -3,6 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Gas combustion: fix possible memory corruption when n_gas_species > 1.
+
 - Remove spurious error message for Lagrangian module so than
   we can impose a frozen field even when no restart.
 
