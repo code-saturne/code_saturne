@@ -545,6 +545,8 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
                   slesp->name, slesp->cvg_param.rtol);
     cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.atol:        % -10.6e\n",
                   slesp->name, slesp->cvg_param.atol);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.dtol:        % -10.6e\n",
+                  slesp->name, slesp->cvg_param.dtol);
 
     if (slesp->solver == CS_PARAM_SOLVER_GMRES ||
         slesp->solver == CS_PARAM_SOLVER_FGMRES ||
