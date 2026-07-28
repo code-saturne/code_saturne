@@ -1,4 +1,4 @@
-dnl Copyright (C) 2005-2024 EDF
+dnl Copyright (C) 2005-2026 EDF
 dnl
 dnl This file is part of the PLE software package.  For license
 dnl information, see the COPYING file in the top level directory of the
@@ -28,11 +28,11 @@ AC_DEFUN([PLE_AC_PYTHON_DEV],[
   # Find the python include path
   AC_MSG_CHECKING([for Python *.h path])
   # Get generic include path
-  generic_python_inc=`$PYTHON -c "import distutils.sysconfig as dsyscfg; \
-    print(dsyscfg.get_python_inc());"`
+  generic_python_inc=`$PYTHON -c "import sysconfig; \
+    print(sysconfig.get_path('include'));"`
   # Get platform specific include path
-  pf_python_inc=`$PYTHON -c "import distutils.sysconfig as dsyscfg; \
-    print(dsyscfg.get_python_inc(plat_specific=1));"`
+  pf_python_inc=`$PYTHON -c "import sysconfig; \
+    print(sysconfig.get_path('platinclude'));"`
 
   # First check for generic path
   if test ! -f "${generic_python_inc}/Python.h"; then

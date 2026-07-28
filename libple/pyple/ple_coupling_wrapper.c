@@ -6,7 +6,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2024  EDF S.A.
+  Copyright (C) 2005-2026  EDF S.A.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -85,7 +85,6 @@ pyple_coupling_mpi_name_to_id(PyObject *self, PyObject *args)
   MPI_Comm *comm_p  = NULL;
 
   const char *group_name = "";
-  int         group_name_size = 0;
 
   /* We verify that the correct arguments are provided.
    * format is of the form "var1_typevar2_type..varn_type:function_name"
@@ -93,8 +92,10 @@ pyple_coupling_mpi_name_to_id(PyObject *self, PyObject *args)
    * know it failed here.
    * If a CPython function returns NULL, it means it failed.
    */
-  if (!PyArg_ParseTuple(args, "Os#:ple_coupling_mpi_name_to_id",
-                        &py_comm, &group_name, &group_name_size))
+  if (!PyArg_ParseTuple(args,
+                        "Os:ple_coupling_mpi_name_to_id",
+                        &py_comm,
+                        &group_name))
     return NULL;
 
   /* Retrieve the C MPI_Comm from the mpi4py.Comm */
