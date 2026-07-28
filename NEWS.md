@@ -13,11 +13,17 @@ Master (not on release branches yet)
   * Move to K-cycle as preconditioner of a GCR (Previously it was a
     Jacobi as preconditioner)
   * Add an aggressive coarsening for the finest level
+
 - Improve the level of logging for the linear algebra in the CDO part
+
 - Fix the settings of advanced parameters for in-house AMG
   solvers/preconditioners
+
 - Change the default settings for AFS saddle-point solvers
 
+- Reshape the way to enforce boundary conditions for CDO face-based
+  schemes in Navier-Stokes systems. This work is related to the
+  integration of the turbulence modeling inside the CDO part.
 
 Release 9.2.0 (2026-07-06)
 --------------------------
