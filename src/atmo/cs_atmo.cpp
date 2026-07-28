@@ -2634,6 +2634,7 @@ cs_atmo_fields_init0(void)
     int imode = 1;
     cs_f_read_chemistry_profile(imode);
 
+    const int chem_stride = at_chem->n_z_profiles * at_chem->nt_step_profiles;
     /* Check latitude / longitude from chemistry file */
     cs_real_t xy_chem[2] = {at_chem->x_conc_profiles[0],
                             at_chem->y_conc_profiles[0]};
@@ -2666,7 +2667,7 @@ cs_atmo_fields_init0(void)
                                      at_chem->nt_step_profiles,
                                      at_chem->z_conc_profiles,
                                      at_chem->t_conc_profiles,
-                                     at_chem->conc_profiles,
+                                     at_chem->conc_profiles + kk * chem_stride,
                                      cell_cen[c_id][2],
                                      cs_glob_time_step->t_cur);
 
@@ -3153,6 +3154,8 @@ cs_atmo_bcond(void)
       ----------------------------- */
   if (_atmo_chem.model > 0) {
 
+    const int chem_stride = _atmo_chem.n_z_profiles * _atmo_chem.nt_step_profiles;
+
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
       if (bc_type[face_id] != CS_INLET)
@@ -3170,7 +3173,7 @@ cs_atmo_bcond(void)
                                           _atmo_chem.nt_step_profiles,
                                           _atmo_chem.z_conc_profiles,
                                           _atmo_chem.t_conc_profiles,
-                                          _atmo_chem.conc_profiles,
+                                          _atmo_chem.conc_profiles + ii * chem_stride,
                                           b_face_cog[face_id][2],
                                           cs_glob_time_step->t_cur);
         f->bc_coeffs->rcodcl1[face_id] = xcent;

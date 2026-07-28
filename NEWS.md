@@ -3,7 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
-- Atmo: fix bug in chemistry boundary conditions.
+- Atmo: fix bug in chemistry boundary conditions and initialization using
+  chemisty file.
 
 - Gas combustion: fix possible memory corruption when n_gas_species > 1.
 
