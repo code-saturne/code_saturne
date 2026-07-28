@@ -1967,23 +1967,23 @@ cs_parameters_eqp_complete(void)
   /* Diffusivity model */
   if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
     cs_field_t *f_rij = CS_F_(rij);
-    cs_field_t *f_eps = CS_F_(eps);
+    cs_field_t *f_epsom = (CS_F_(eps) != nullptr) ? CS_F_(eps) : CS_F_(omg);
     cs_equation_param_t *eqp_rij = cs_field_get_equation_param(f_rij);
-    cs_equation_param_t *eqp_eps = nullptr;
+    cs_equation_param_t *eqp_epsom = nullptr;
     eqp_rij->normalization_sub_mean = 0;
-    if (f_eps->type & CS_FIELD_VARIABLE)
-      eqp_eps = cs_field_get_equation_param(f_eps);
-    /* Daly harlow (GGDH) on Rij and epsilon by default */
+    if (f_epsom != nullptr && (f_epsom->type & CS_FIELD_VARIABLE))
+      eqp_epsom = cs_field_get_equation_param(f_epsom);
+    /* Daly harlow (GGDH) on Rij and epsilon/omega by default */
     if (cs_glob_turb_rans_model->idirsm != 0) {
       eqp_rij->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
-      if (eqp_eps != nullptr)
-        eqp_eps->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
+      if (eqp_epsom != nullptr)
+        eqp_epsom->idften = CS_ANISOTROPIC_RIGHT_DIFFUSION;
       /* Scalar diffusivity (Shir model) elsewhere (idirsm = 0) */
     }
     else {
       eqp_rij->idften = CS_ISOTROPIC_DIFFUSION;
-      if (eqp_eps != nullptr)
-        eqp_eps->idften = CS_ISOTROPIC_DIFFUSION;
+      if (eqp_epsom != nullptr)
+        eqp_epsom->idften = CS_ISOTROPIC_DIFFUSION;
     }
   }
 
@@ -2514,7 +2514,10 @@ cs_parameters_eqp_complete(void)
 
   if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
     CS_F_(rij)->set_key_int(kclipp, 1);
-    CS_F_(eps)->set_key_int(kclipp, 1);
+    cs_field_t *f_epsom = (CS_F_(eps) != nullptr) ? CS_F_(eps) : CS_F_(omg);
+    if (f_epsom != nullptr) {
+      f_epsom->set_key_int(kclipp, 1);
+    }
   }
 
   /* Setup time control for dynamic variables

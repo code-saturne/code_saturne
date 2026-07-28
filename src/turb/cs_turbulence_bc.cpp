@@ -316,10 +316,13 @@ _inlet_bc(cs_lnum_t   face_id,
     else {
       for (int ii = 3; ii < 6; ii++)
         _turb_bc_id.bc_rij->rcodcl1[ii*n_b_faces + face_id] = 0.;
-    }
-    _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
+      }
+      if (turb_model->model == CS_TURB_RIJ_OMEGA)
+        _turb_bc_id.bc_omg->rcodcl1[face_id] = eps / (cs_turb_cmu * k);
+      else
+        _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
 
-    if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
+      if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
       _turb_bc_id.bc_alp_bl->rcodcl1[face_id] = 1.;
 
     /* Initialization of the turbulent fluxes to 0 if DFM or
@@ -441,8 +444,14 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
             > 0.5*cs_math_infinite_r)
           _turb_bc_id.bc_rij->rcodcl1[ij*n_b_faces + face_id] = 0.;
     }
-    if (_turb_bc_id.bc_eps->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
-      _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
+    if (turb_model->model == CS_TURB_RIJ_OMEGA) {
+      if (_turb_bc_id.bc_omg->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+        _turb_bc_id.bc_omg->rcodcl1[face_id] = eps / (cs_turb_cmu * k);
+    }
+    else {
+      if (_turb_bc_id.bc_eps->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
+        _turb_bc_id.bc_eps->rcodcl1[face_id] = eps;
+    }
 
     if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
       if (_turb_bc_id.bc_alp_bl->rcodcl1[face_id] > 0.5*cs_math_infinite_r)
@@ -834,8 +843,14 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
     for (int ii = 3; ii < 6; ii++)
       _turb_bc_id.bc_rij->rcodcl3[ii*n_b_faces + face_id] = 0.;
 
-    _turb_bc_id.bc_eps->icodcl[face_id] = CS_BC_NEUMANN;
-    _turb_bc_id.bc_eps->rcodcl3[face_id] = 0;
+    if (turb_model->model == CS_TURB_RIJ_OMEGA) {
+      _turb_bc_id.bc_omg->icodcl[face_id] = CS_BC_NEUMANN;
+      _turb_bc_id.bc_omg->rcodcl3[face_id] = 0.;
+    }
+    else {
+      _turb_bc_id.bc_eps->icodcl[face_id] = CS_BC_NEUMANN;
+      _turb_bc_id.bc_eps->rcodcl3[face_id] = 0;
+    }
 
     if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
       _turb_bc_id.bc_alp_bl->icodcl[face_id] = CS_BC_UNDEF;

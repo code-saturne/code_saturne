@@ -1490,12 +1490,18 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       eqp_eps = cs_field_get_equation_param(f_eps);
   }
   else if (order == CS_TURB_SECOND_ORDER) {
-    f_eps = CS_F_(eps);
+    if (model == CS_TURB_RIJ_OMEGA) {
+      f_omg = CS_F_(omg);
+      f_k = nullptr;
+    }
+    else {
+      f_eps = CS_F_(eps);
+      if (f_eps->type & CS_FIELD_VARIABLE)
+        eqp_eps = cs_field_get_equation_param(f_eps);
+    }
     f_rij = CS_F_(rij);
     if (model == CS_TURB_RIJ_EPSILON_EBRSM)
       f_alpha = CS_F_(alp_bl);
-    if (f_eps->type & CS_FIELD_VARIABLE)
-      eqp_eps = cs_field_get_equation_param(f_eps);
     eqp_rij = cs_field_get_equation_param(f_rij);
   }
   else if (model == CS_TURB_K_OMEGA) {
@@ -1922,6 +1928,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* TODO merge with MO without this max */
     if ((model == CS_TURB_NONE || itytur == 2 || itytur == 4
       || model == CS_TURB_K_OMEGA
+      || model == CS_TURB_RIJ_OMEGA
       || model == CS_TURB_MIXING_LENGTH
       || model == CS_TURB_RIJ_EPSILON_LRR
       || model == CS_TURB_RIJ_EPSILON_SSG
@@ -2439,7 +2446,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         if (      ((iuntur == 1)
                && (   model == CS_TURB_RIJ_EPSILON_LRR
                    || model == CS_TURB_RIJ_EPSILON_SSG
-                   || model == CS_TURB_RIJ_EPSILON_BFH))
+                   || model == CS_TURB_RIJ_EPSILON_BFH
+                   || model == CS_TURB_RIJ_OMEGA))
             || (   model == CS_TURB_RIJ_EPSILON_EBRSM
                 && cs_glob_wall_functions->iwallf != CS_WALL_F_DISABLED
                 && yplus > cs_math_epzero)
@@ -3069,39 +3077,44 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Boundary conditions on k and omega
        ================================== */
 
-    else if (model == CS_TURB_K_OMEGA) {
+    else if (model == CS_TURB_K_OMEGA || model == CS_TURB_RIJ_OMEGA) {
+
+      cs_real_t pimp = 0.;
+      cs_real_t hint = 0.;
 
       cs_real_t *coefa_omg = f_omg->bc_coeffs->a;
       cs_real_t *coefb_omg = f_omg->bc_coeffs->b;
       cs_real_t *cofaf_omg = f_omg->bc_coeffs->af;
       cs_real_t *cofbf_omg = f_omg->bc_coeffs->bf;
 
-      cs_real_t *coefa_k = f_k->bc_coeffs->a;
-      cs_real_t *coefb_k = f_k->bc_coeffs->b;
-      cs_real_t *cofaf_k = f_k->bc_coeffs->af;
-      cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
+      cs_real_t *coefa_k = (f_k != nullptr) ? f_k->bc_coeffs->a : nullptr;
+      cs_real_t *coefb_k = (f_k != nullptr) ? f_k->bc_coeffs->b : nullptr;
+      cs_real_t *cofaf_k = (f_k != nullptr) ? f_k->bc_coeffs->af : nullptr;
+      cs_real_t *cofbf_k = (f_k != nullptr) ? f_k->bc_coeffs->bf : nullptr;
 
       /* Dirichlet Boundary Condition on k
          --------------------------------- */
 
-      /* pimp > 0 if we are outside the visous sub-layer (really or through
-         the scalable wall functions).
-         pimp = 0 if we are in the viscous sub-layer */
-      cs_real_t pimp =
-        (iuntur == 1 || icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) ?
-        uk*uk/sqrcmu : 0.0;
+      if (f_k != nullptr) {
+        /* pimp > 0 if we are outside the visous sub-layer (really or through
+           the scalable wall functions).
+           pimp = 0 if we are in the viscous sub-layer */
+        pimp =
+          (iuntur == 1 || icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) ?
+          uk*uk/sqrcmu : 0.0;
 
-      /* FIXME it is wrong because sigma is computed within the model
-         see cs_turbulence_kw.c */
-      cs_real_t hint = (visclc + visctc / cs_turb_ckwsk2) / distbf;
+        /* FIXME it is wrong because sigma is computed within the model
+           see cs_turbulence_kw.c */
+        hint = (visclc + visctc / cs_turb_ckwsk2) / distbf;
 
-      cs_boundary_conditions_set_dirichlet_scalar(coefa_k[f_id],
-                                                  cofaf_k[f_id],
-                                                  coefb_k[f_id],
-                                                  cofbf_k[f_id],
-                                                  pimp,
+        cs_boundary_conditions_set_dirichlet_scalar(coefa_k[f_id],
+                                                    cofaf_k[f_id],
+                                                    coefb_k[f_id],
+                                                    cofbf_k[f_id],
+                                                    pimp,
                                                   hint,
                                                   cs_math_infinite_r);
+      }
 
       /* Dirichlet Boundary Condition on omega
          ------------------------------------- */
@@ -3490,7 +3503,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* No warnings in EBRSM */
       if (   (itytur ==  2 && model != CS_TURB_K_EPSILON_LS)
           || model == CS_TURB_RIJ_EPSILON_LRR
-          || model == CS_TURB_RIJ_EPSILON_SSG) {
+          || model == CS_TURB_RIJ_EPSILON_SSG
+          || model == CS_TURB_RIJ_OMEGA) {
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("@\n"

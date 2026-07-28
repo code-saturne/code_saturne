@@ -99,6 +99,7 @@
         - CS_TURB_RIJ_EPSILON_SSG: \f$ R_{ij}-\epsilon \f$ (SSG)
         - CS_TURB_RIJ_EPSILON_EBRSM: \f$ R_{ij}-\epsilon \f$ (EBRSM)
         - CS_TURB_RIJ_EPSILON_BFH: \f$ R_{ij}-\epsilon \f$ (BFH)
+        - CS_TURB_RIJ_OMEGA: \f$ R_{ij}-\omega \f$ (Wilcox 2006)
         - CS_TURB_LES_SMAGO_CONST: LES (constant Smagorinsky model)
         - CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic Smagorisky model)
         - CS_TURB_LES_WALE: LES (WALE)
@@ -1078,6 +1079,9 @@ _turbulence_model_enum_name(cs_turb_model_type_t  id)
   case CS_TURB_RIJ_EPSILON_BFH:
     s = "CS_TURB_RIJ_EPSILON_BFH";
     break;
+  case CS_TURB_RIJ_OMEGA:
+    s = "CS_TURB_RIJ_OMEGA";
+    break;
   case CS_TURB_LES_SMAGO_CONST:
     s = "CS_TURB_LES_SMAGO_CONST";
     break;
@@ -1150,6 +1154,7 @@ cs_turbulence_init_models(void)
   else if (   _turb_model.model == CS_TURB_RIJ_EPSILON_LRR
            || _turb_model.model == CS_TURB_RIJ_EPSILON_SSG
            || _turb_model.model == CS_TURB_RIJ_EPSILON_BFH
+           || _turb_model.model == CS_TURB_RIJ_OMEGA
            || _turb_model.model == CS_TURB_RIJ_EPSILON_EBRSM) {
     _turb_model.type = CS_TURB_RANS;
     _turb_model.order = CS_TURB_SECOND_ORDER;
@@ -1244,6 +1249,7 @@ cs_turb_compute_constants(int phase_id)
   cs_field_pointer_ensure_init();
 
   cs_field_t *f_k = CS_F_(k);
+  cs_field_t *f_omg = CS_F_(omg);
   cs_field_t *f_phi = CS_F_(phi);
   cs_field_t *f_eps = CS_F_(eps);
 
@@ -1263,6 +1269,11 @@ cs_turb_compute_constants(int phase_id)
       || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_SSG
       || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
     f_eps->set_key_double(k_turb_schmidt, 1.22);
+  else if (cs_glob_turb_model->model == CS_TURB_RIJ_OMEGA) {
+    f_omg->set_key_double(k_turb_schmidt, 1./0.5);
+    //TODO specify constants here
+    cs_turb_csrij = 0.6;//TODO CHECK
+  }
   else if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
     f_eps->set_key_double(k_turb_schmidt, 1.15);
     cs_turb_crij3 = 0.6;
@@ -1433,6 +1444,9 @@ cs_turbulence_model_name(cs_turb_model_type_t  id)
     break;
   case CS_TURB_RIJ_EPSILON_BFH:
     s = _("Rij-epsilon (BFH)");
+    break;
+  case CS_TURB_RIJ_OMEGA:
+    s = _("Rij-omega (Wilcox 2006)");
     break;
   case CS_TURB_LES_SMAGO_CONST:
     s = _("LES (constant Smagorinsky model)");

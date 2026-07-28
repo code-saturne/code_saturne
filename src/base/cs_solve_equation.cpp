@@ -409,7 +409,10 @@ _production_and_dissipation_terms(const cs_field_t  *f,
     cvara_ep = CS_F_(eps)->val_pre;
   }
   else if (turb_model->itytur == 3) {
-    cvara_ep = CS_F_(eps)->val_pre;
+    if (turb_model->model == CS_TURB_RIJ_OMEGA)
+      cvara_omg = CS_F_(omg)->val_pre;
+    else
+      cvara_ep = CS_F_(eps)->val_pre;
     cvara_rij = (cs_real_6_t*)CS_F_(rij)->val_pre;
     if (   variance_turb_flux_model == 11
         || variance_turb_flux_model == 21
@@ -431,8 +434,11 @@ _production_and_dissipation_terms(const cs_field_t  *f,
       xe = cvara_ep[c_id];
     }
     else if (model_itytur == 3) {
-      xe = cvara_ep[c_id];
       xk = 0.5 * (cvara_rij[c_id][0] + cvara_rij[c_id][1] + cvara_rij[c_id][2]);
+      if (model_turb == CS_TURB_RIJ_OMEGA)
+        xe = cmu*xk*cvara_omg[c_id];
+      else
+        xe = cvara_ep[c_id];
       /* Implicit term -1/Rh * Eps/k * Variance
        *  with
        * Rh = R = 0.8 for SGDH

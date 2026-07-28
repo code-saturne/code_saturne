@@ -571,11 +571,19 @@ _create_variable_fields(void)
                          _add_variable_field("rij", "Rij", 6));
     CS_F_(rij)->set_key_int(keycpl, 1);
 
-    /* epsilon given by an algebraic relation in LES with transport of tau_SGS */
-    if (model != CS_TURB_LES_TAUSGS)
-      cs_field_pointer_map(CS_ENUMF_(eps),
-                           _add_variable_field("epsilon",
-                                               "Turb Dissipation", 1));
+    /* epsilon or omega given by an algebraic relation in LES with transport of tau_SGS */
+    if (model != CS_TURB_LES_TAUSGS) {
+      if (model == CS_TURB_RIJ_OMEGA) {
+        cs_field_pointer_map(CS_ENUMF_(omg),
+                             _add_variable_field("omega",
+                                                 "Omega", 1));
+      }
+      else {
+        cs_field_pointer_map(CS_ENUMF_(eps),
+                             _add_variable_field("epsilon",
+                                                 "Turb Dissipation", 1));
+      }
+    }
 
     if (model == CS_TURB_RIJ_EPSILON_EBRSM) {
       cs_field_pointer_map(CS_ENUMF_(alp_bl),
@@ -1318,7 +1326,10 @@ _additional_fields_stage_1(void)
     }
     else if (turb_model->order == CS_TURB_SECOND_ORDER) {
       _add_source_term_prev_field(CS_F_(rij));
-      _add_source_term_prev_field(CS_F_(eps));
+      if (turb_model->model == CS_TURB_RIJ_OMEGA)
+        _add_source_term_prev_field(CS_F_(omg));
+      else
+        _add_source_term_prev_field(CS_F_(eps));
 
       if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
         _add_source_term_prev_field(CS_F_(alp_bl));

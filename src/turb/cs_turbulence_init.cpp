@@ -351,7 +351,12 @@ cs_turbulence_init_clip_and_verify(void)
   else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
     cs_span_2d<cs_real_t> cvar_rij = CS_F_(rij)->get_val_t();
-    cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_val_s();
+    cs_span<cs_real_t> cvar_ep;
+    cs_span<cs_real_t> cvar_omg;
+    if (turb_model->model == CS_TURB_RIJ_OMEGA)
+      cvar_omg = CS_F_(omg)->get_val_s();
+    else
+      cvar_ep = CS_F_(eps)->get_val_s();
 
     struct cs_data_double_n<4> rd_rij;
     struct cs_reduce_min_nr<4> reducer_rij;
@@ -359,14 +364,17 @@ cs_turbulence_init_clip_and_verify(void)
     struct cs_data_double_n<2> rd_alpha;
     struct cs_reduce_minmax_n<1> reducer_alpha;
 
-    /* First compute min over Rij-epsilon */
+    /* First compute min over Rij-scale */
     ctx.parallel_for_reduce(n_cells, rd_rij, reducer_rij, CS_LAMBDA
                             (cs_lnum_t c_id, cs_data_double_n<4> &res)
     {
       res.r[0] = cvar_rij(c_id, 0);
       res.r[1] = cvar_rij(c_id, 1);
       res.r[2] = cvar_rij(c_id, 2);
-      res.r[3] = cvar_ep[c_id];
+      if (turb_model->model == CS_TURB_RIJ_OMEGA)
+        res.r[3] = cvar_omg[c_id];
+      else
+        res.r[3] = cvar_ep[c_id];
     });
 
     /* If EBRSM, compute min/max of alpha */
@@ -398,7 +406,7 @@ cs_turbulence_init_clip_and_verify(void)
            "    Minimum value of R11 = %g\n"
            "    Minimum value of R22 = %g\n"
            "    Minimum value of R33 = %g\n"
-           "    Maximum value of epsilon = %g\n\n"
+           "    Minimum value of epsilon/omega = %g\n\n"
            "  Check user-defined initialization, restart data,\n"
            "  and value of reference velocity (uref)\n"),
          rd_rij.r[0], rd_rij.r[1], rd_rij.r[2], rd_rij.r[3]);

@@ -1673,12 +1673,15 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
   { /* k-epsilon and k-omega */
 
-    if (itytur == 2 || model == CS_TURB_K_OMEGA) {
+    if (itytur == 2 || model == CS_TURB_K_OMEGA || model == CS_TURB_RIJ_OMEGA) {
 
       cs_field_t *turb = nullptr;
       cs_real_t sigma = 0.0;
 
       for (int ii = 0; ii < 2; ii++) {
+
+        if (model == CS_TURB_RIJ_OMEGA && ii == 0)
+          continue;
 
         /* For k-omega, use sigma_k2 and sigma_w2 values as this term
            is in practice only for inlets (no issue at walls or with 0 flux). */

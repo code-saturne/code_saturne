@@ -57,6 +57,7 @@ typedef enum {
   CS_TURB_RIJ_EPSILON_SSG = 31,
   CS_TURB_RIJ_EPSILON_EBRSM = 32,
   CS_TURB_RIJ_EPSILON_BFH= 33,
+  CS_TURB_RIJ_OMEGA = 34,
   CS_TURB_LES_SMAGO_CONST = 40,
   CS_TURB_LES_SMAGO_DYN = 41,
   CS_TURB_LES_WALE = 42,
@@ -153,6 +154,7 @@ struct cs_turb_model_t {
                      - CS_TURB_RIJ_EPSILON_LRR: Rij-epsilon (LRR)
                      - CS_TURB_RIJ_EPSILON_SSG: Rij-epsilon (SSG)
                      - CS_TURB_RIJ_EPSILON_EBRSM: Rij-epsilon (EBRSM)
+                     - CS_TURB_RIJ_OMEGA: Rij-omega (Wilcox 2006)
                      - CS_TURB_LES_SMAGO_CONST: LES
                          (constant Smagorinsky model)
                      - CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic
