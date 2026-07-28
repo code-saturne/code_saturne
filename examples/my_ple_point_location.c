@@ -1030,7 +1030,7 @@ _polygon_delaunay_flip(const int          n_vertices,
       edge_vertices[2*edge_id + 1] = i_1;
 
       /*
-        Liste of triangles sharing an edge:
+        List of triangles sharing an edge:
         - (-1,-1): edge does not exist
         - (x ,-1): boundary edge, triangle x
         - (x ,-1): internal edge, triangles x and y
@@ -2951,7 +2951,7 @@ _locate_on_triangles_2d(ple_lnum_t           elt_num,
 
       max_dist = -1.0;
 
-      for (j = 0; j < 3; j++){
+      for (j = 0; j < 3; j++) {
 
         dist = 2.*_ABS(shapef[j] - 0.5);
 
@@ -3058,7 +3058,7 @@ _locate_in_tetra(ple_lnum_t         elt_num,
 
     max_dist = -1.0;
 
-    for (j = 0; j < 4; j++){
+    for (j = 0; j < 4; j++) {
 
       dist = 2.*_ABS(shapef[j] - 0.5);
 
