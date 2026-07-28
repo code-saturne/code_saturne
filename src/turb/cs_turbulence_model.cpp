@@ -2360,7 +2360,7 @@ cs_turbulence_function_eps(int                     location_id,
     }
   }
   else if (tm->model == CS_TURB_K_OMEGA) {
-    const cs_real_t *val_k = CS_F_(omg)->val;
+    const cs_real_t *val_k = CS_F_(k)->val;
     const cs_real_t *val_omg = CS_F_(omg)->val;
     if (elt_ids != nullptr) {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
