@@ -3534,7 +3534,7 @@ _gmres(cs_sles_it_t              *c,
 
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
   int l_iter, l_old_iter;
-  double    beta, dot_prod, residual;
+  double beta, dot_prod, residual;
   cs_real_t  *_aux_vectors;
   cs_real_t *restrict _krylov_vectors, *restrict _h_matrix;
   cs_real_t *restrict _givens_coeff, *restrict _beta;
@@ -3542,7 +3542,7 @@ _gmres(cs_sles_it_t              *c,
   cs_real_t *restrict bk, *restrict fk, *restrict krk;
   cs_real_t *_vx = vx_ini;
 
-  cs_lnum_t krylov_size_max = c->restart_interval;
+  const cs_lnum_t krylov_size = c->restart_interval;
 
   cs_dispatch_context ctx;
   ctx.set_use_gpu(false);  // Not on GPU yet
@@ -3558,24 +3558,8 @@ _gmres(cs_sles_it_t              *c,
 
   /* Allocate work arrays */
 
-  int krylov_size = sqrt(n_rows*diag_block_size)*1.5 + 1;
-  if (krylov_size > krylov_size_max)
-    krylov_size = krylov_size_max;
-
-#if defined(HAVE_MPI)
-  if (c->comm != MPI_COMM_NULL) {
-    int _krylov_size = krylov_size;
-    MPI_Allreduce(&_krylov_size,
-                  &krylov_size,
-                  1,
-                  MPI_INT,
-                  MPI_MIN,
-                  c->comm);
-  }
-#endif
-
-  int     check_freq = (int)(krylov_size/10) + 1;
-  double  epsi = 1.e-15;
+  int check_freq = (int)(krylov_size/10) + 1;
+  double epsi = 1.e-15;
   int scaltest = 0;
 
   {
@@ -3583,7 +3567,7 @@ _gmres(cs_sles_it_t              *c,
 
     size_t _aux_r_size;
     size_t  n_wa = 4;
-    size_t  wa_size = n_cols < krylov_size? krylov_size : n_cols;
+    size_t  wa_size = n_cols < krylov_size ? krylov_size : n_cols;
 
     wa_size = CS_SIMD_SIZE(wa_size);
     _aux_r_size =   wa_size*n_wa
