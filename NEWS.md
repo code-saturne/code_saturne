@@ -3,6 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Atmo: fix bug in chemistry boundary conditions.
+
 - Gas combustion: fix possible memory corruption when n_gas_species > 1.
 
 - Remove spurious error message for Lagrangian module so than
