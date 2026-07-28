@@ -389,15 +389,33 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
                                        CS_CDO_KEEP_DEFAULT, // p0p1 relax.
                                        CS_CDO_KEEP_DEFAULT, // coarse max. iter
                                        1e-2,                // coarse rtol mult.
-                                       1,     // More aggressive coarsening
+                                       2,     // More aggressive coarsening
                                        10);   // on the two finest levels
 #endif
-
-    /* Linear algebra settings for the Schur complement approximation */
-
-    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SCHUR_APPROX, "mass_scaled");
   }
   /*! [cdo_sles_navsto_minres] */
+
+  /*! [cdo_sles_navsto_afs] */
+  {
+    cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
+
+    // Set AFS = Algebraic Fraction Step as saddle-point solver
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SADDLE_SOLVER, "afs");
+
+    // Set the solver for the velocity block (prediction step)
+#if defined(HAVE_HYPRE)
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "fgmres");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND_BLOCK_TYPE, "diag");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
+#else
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER, "gcr");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "kamg"); // K-cycle
+#endif
+  }
+  /*! [cdo_sles_navsto_afs] */
+
 
   /*! [cdo_sles_boomer] */
   {
@@ -486,7 +504,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
     /* Set the main parameters of the HMG algorithm:
 
        --> HMG is a Hybrid MultiGrid in PETSc meaning that by default, if your
-       installation of PETSc relies on that of HYPRE, one can have the grid
+       installation of PETSc is associated with that of HYPRE, one can have the grid
        building performed by HYPRE algorithms and the smoothers/coarse solver
        relying on PETSc functions */
 
