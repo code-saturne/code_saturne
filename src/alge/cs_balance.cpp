@@ -465,6 +465,9 @@ cs_balance_scalar(int                         idtvar,
     eqp_loc.iwgrec = 0;  /* requires field id */
     eqp_loc.icoupl = -1; /* requires field id */
   }
+  else {
+    f = cs_field_by_id(f_id);
+  }
 
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
@@ -719,6 +722,9 @@ cs_balance_vector(int                         idtvar,
     eqp_loc.iwgrec = 0;  /* requires field id */
     eqp_loc.icoupl = -1; /* requires field id */
   }
+  else {
+    cs_field_t *f = cs_field_by_id(f_id);
+  }
 
   /* Scalar diffusivity */
   if (idftnp & CS_ISOTROPIC_DIFFUSION) {
@@ -906,6 +912,9 @@ cs_balance_tensor(int                         idtvar,
   if (f_id < 0) {
     eqp_loc.iwgrec = 0;  /* requires field id */
     eqp_loc.icoupl = -1; /* requires field id */
+  }
+  else {
+    cs_field_t *f = cs_field_by_id(f_id);
   }
 
   /* Scalar diffusivity */
