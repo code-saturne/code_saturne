@@ -207,6 +207,12 @@ def coupling(package,
                 err_str = f"Cannot create code_aster case with domain {domain_s} and n_procs_weight = {d.get('n_procs_weight')}."
                 raise RunCaseError(err_str)
 
+            try:
+                import ple
+            except ImportError:
+                err_str = f"PLE python package is not available. It is mandatory by code_aster."
+                raise RunCaseError(err_str)
+
             use_aster = True
             ast_domains.append(dom)
 

@@ -1121,11 +1121,66 @@ class case:
         rank_id = 0
 
         for d in self.domains:
-            s_args = d.solver_command(n_tot_procs=n_procs, need_abs_path=True)
+            first_rank = rank_id
+            last_rank = rank_id + d.n_procs - 1
 
-            cmd = '%d-%d\t' % (rank_id, rank_id + d.n_procs - 1) \
-                   + tool_args + s_args[1] + s_args[2] \
-                   + ' -wdir ' + os.path.basename(s_args[0]) + '\n'
+            if isinstance(d, aster_domain):
+                s_args = d.solver_command(
+                    n_tot_procs=n_procs,
+                    need_abs_path=True,
+                    use_srun=True,
+                )
+
+                executable = s_args[1]
+                arguments = s_args[2]
+
+                wrapper_path = os.path.join(
+                    d.exec_dir,
+                    "run_aster_srun_wrapper.sh",
+                )
+
+                aster_command = (
+                    f"exec {tool_args}"
+                    f"{executable}"
+                    f"{arguments}"
+                )
+
+                with open(wrapper_path, "w", encoding="utf-8") as wrapper:
+                    wrapper.write(
+                        "#!/usr/bin/env bash\n"
+                        "\n"
+                        "set -o pipefail\n"
+                        "\n"
+                        f'workdir="{d.exec_dir}"\n'
+                        "\n"
+                        'cd "$workdir" || exit 1\n'
+                        "\n"
+                    )
+
+                    if d.logfile:
+                        log_path = os.path.join(d.exec_dir, d.logfile)
+
+                        wrapper.write(
+                            f'logfile="{log_path}"\n'
+                            "\n"
+                            f'{aster_command} > "$logfile" 2>&1\n'
+                        )
+                    else:
+                        wrapper.write(f"{aster_command}\n")
+
+                current_mode = os.stat(wrapper_path).st_mode
+
+                os.chmod(wrapper_path, current_mode | stat.S_IXUSR | stat.S_IXGRP)
+
+                cmd = (
+                    f"{first_rank}-{last_rank}\t"
+                    f"{wrapper_path}\n"
+                )
+            else:
+                s_args = d.solver_command(n_tot_procs=n_procs, need_abs_path=True)
+                cmd = '%d-%d\t' % (first_rank, last_rank) \
+                    + tool_args + s_args[1] + s_args[2] \
+                    + ' -wdir ' + os.path.basename(s_args[0]) + '\n'
 
             e.write(cmd)
             rank_id += d.n_procs

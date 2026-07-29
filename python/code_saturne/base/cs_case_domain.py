@@ -2487,36 +2487,36 @@ class aster_domain(base_domain):
 
     # ---------------------------------------------------------------------------
 
-    def solver_command(self, n_tot_procs=int, need_abs_path=False):
+    def solver_command(self, n_tot_procs=int, need_abs_path=False, use_srun=False):
         """
         Returns a tuple indicating the script's working directory,
         executable path, and associated command-line arguments.
         """
 
-        assert not need_abs_path
-
         # Working directory
-
         wd = enquote_arg(self.exec_dir)
 
         # Executable
-
         exec_path = enquote_arg(self.solver_path)
 
         # Build kernel command-line arguments
-
         args = " "
-        # set proc0 to save results correctly
+        # global rank of the first code_aster process
         args += f" --proc0-is={n_tot_procs-self.n_procs}"
-        # already run under mpiexec
+        # MPI is already initialized by mpiexec or srun
         args += " --no-mpi"
+
         if self.logfile:
             # only proc0 write log file
             args += " --only-proc0"
-        # name of export file
-        args += " " + enquote_arg(self.script_name)
 
-        if self.logfile:
+        # name of export file
+        script_name = self.script_name
+        if need_abs_path and not os.path.isabs(script_name):
+            script_name = os.path.join(self.exec_dir, os.path.basename(script_name))
+        args += " " + enquote_arg(script_name)
+
+        if not use_srun and self.logfile:
             # write log in a separate file
             logpath = self.exec_dir + "/" + self.logfile
             args += " > " + enquote_arg(logpath)
