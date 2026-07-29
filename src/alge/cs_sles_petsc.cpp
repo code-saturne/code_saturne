@@ -1624,7 +1624,7 @@ cs_sles_petsc_solve(void                *context,
     PetscReal *x_w = const_cast<PetscReal *>(_x);
 
     ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (PetscInt i) {
-      x_w[i] = vx[i];
+      vx[i] = x_w[i];
     });
     ctx.wait();
 
