@@ -2512,19 +2512,18 @@ _set_saturne_sles(bool                 use_field_id,
   switch (slesp->precond) {
 
   case CS_PARAM_PRECOND_AMG:
-    /* -------------------- */
     assert(mg == nullptr);
     _set_saturne_amg_precond(slesp, itsol);
     break;
 
   case CS_PARAM_PRECOND_MUMPS:
     {
-      cs_sles_pc_t  *pc = nullptr;
+      cs_sles_pc_t *pc = nullptr;
 
 #if defined(HAVE_MUMPS)
       if (slesp->context_param == nullptr)
         cs_param_sles_mumps(slesp,
-                            true, /* single by default in case if precond. */
+                            true, // single precision by default when precond.
                             CS_PARAM_MUMPS_FACTO_LU);
 
       pc = cs_sles_mumps_pc_create(slesp);
@@ -2539,36 +2538,33 @@ _set_saturne_sles(bool                 use_field_id,
     }
     break;
 
-    case CS_PARAM_PRECOND_HPDDM:
-      bft_error(__FILE__, __LINE__, 0,
-        " %s: Eq. %s: Preconditioner HPDDM is not available outside PETSc.",
-        __func__, slesp->name);
-      break;
+  case CS_PARAM_PRECOND_HPDDM:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Eq. %s: Preconditioner HPDDM is not available"
+              " outside PETSc up to now.",
+              __func__, slesp->name);
+    break;
 
-    default: /* Nothing else to do */
-      break;
+  default: // Nothing else to do
+    break;
 
-    } /* Switch on the preconditioner */
+  } // Switch on the preconditioner
 
-    /* Last step */
+  // Last step
+  cs_sles_set_allow_no_op(sles, slesp->allow_no_op);
 
-    cs_sles_set_allow_no_op(sles, slesp->allow_no_op);
-
-    /* In case of high verbosity, additional outputs are generated */
-
-    if (slesp->verbosity > 3) {
-
-      /* 3rd parameter --> true = use_iteration instead of wall clock time */
-
-      if (multigrid_as_solver) {
-        assert(mg != nullptr);
-        cs_multigrid_set_plot_options(mg, slesp->name, true);
-      }
-      else {
-        assert(itsol != nullptr);
-        cs_sles_it_set_plot_options(itsol, slesp->name, true);
-      }
+  // In case of high verbosity level, additional outputs are generated
+  if (slesp->verbosity > 3) {
+    // 3rd parameter --> true = use_iteration instead of wall clock time
+    if (multigrid_as_solver) {
+      assert(mg != nullptr);
+      cs_multigrid_set_plot_options(mg, slesp->name, true);
     }
+    else {
+      assert(itsol != nullptr);
+      cs_sles_it_set_plot_options(itsol, slesp->name, true);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
