@@ -4744,8 +4744,34 @@ _convection_diffusion_unsteady_strided
      Contribution from boundary faces
      ======================================================================*/
 
+  /* Case with diffusive flux only */
+  if (iconvp == 0) {
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+
+      cs_lnum_t c_id = b_face_cells[face_id];
+
+      cs_real_t fluxi[stride], b_val_d[stride];
+      for (cs_lnum_t isou = 0; isou < stride; isou++) {
+        fluxi[isou] = 0;
+        b_val_d[isou] = flux[face_id][isou];
+      }
+
+      cs_b_diff_flux_strided<stride>(idiffp,
+                                     thetap,
+                                     b_visc[face_id],
+                                     b_val_d,
+                                     fluxi);
+
+      for (cs_lnum_t isou = 0; isou < stride; isou++)
+        fluxi[isou] *= -1;  /* For substraction in dispatch sum */
+      cs_dispatch_sum<stride>(rhs[c_id], fluxi, b_sum_type);
+
+    });
+  }
+
   /* Boundary convective fluxes are all computed with an upwind scheme */
-  if (icvflb == 0) {
+  else if (icvflb == 0) {
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 

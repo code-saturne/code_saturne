@@ -465,12 +465,6 @@ cs_balance_scalar(int                         idtvar,
     eqp_loc.iwgrec = 0;  /* requires field id */
     eqp_loc.icoupl = -1; /* requires field id */
   }
-  else {
-    f = cs_field_by_id(f_id);
-    const cs_equation_param_t *eqp_f = cs_field_get_equation_param(f);
-    eqp_loc = *eqp_f;
-    eqp_loc.theta = eqp->theta;
-  }
 
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
@@ -725,12 +719,6 @@ cs_balance_vector(int                         idtvar,
     eqp_loc.iwgrec = 0;  /* requires field id */
     eqp_loc.icoupl = -1; /* requires field id */
   }
-  else {
-    cs_field_t *f = cs_field_by_id(f_id);
-    int k_id = cs_field_key_id("var_cal_opt");
-    cs_field_get_key_struct(f, k_id, &eqp_loc);
-    eqp_loc.theta = eqp->theta;
-  }
 
   /* Scalar diffusivity */
   if (idftnp & CS_ISOTROPIC_DIFFUSION) {
@@ -902,11 +890,9 @@ cs_balance_tensor(int                         idtvar,
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
                   int                         icvflb,
-                  const int                   icvfli[],
+                  [[maybe_unused]] const int  icvfli[],
                   cs_real_6_t                 rhs[])
 {
-  CS_UNUSED(icvfli);
-
   cs_timer_t t0 = cs_timer_time();
 
   /* Local variables */
@@ -920,12 +906,6 @@ cs_balance_tensor(int                         idtvar,
   if (f_id < 0) {
     eqp_loc.iwgrec = 0;  /* requires field id */
     eqp_loc.icoupl = -1; /* requires field id */
-  }
-  else {
-    cs_field_t *f = cs_field_by_id(f_id);
-    int k_id = cs_field_key_id("var_cal_opt");
-    cs_field_get_key_struct(f, k_id, &eqp_loc);
-    eqp_loc.theta = eqp->theta;
   }
 
   /* Scalar diffusivity */

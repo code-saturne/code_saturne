@@ -765,16 +765,9 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
 
       /* Do not consider convective terms */
       eqp_loc.iconv = 0;
-      cs_array<cs_real_t> i_secvis;
-      cs_array<cs_real_t> b_secvis;
 
-      //TODO: compute it
-      if (vp_model->ivisse == 1) {
-        i_secvis.reshape(n_i_faces);
-        b_secvis.reshape(n_b_faces);
-      }
-
-      cs_array_real_fill_zero(3*n_cells_with_ghosts, (cs_real_t *)div_mu_gradvel);
+      cs_array_real_fill_zero(3*n_cells_with_ghosts,
+                              (cs_real_t *)div_mu_gradvel);
 
       /* Compute - div(mu_gradu) */
       cs_balance_vector(cs_glob_time_step_options->idtvar,
@@ -790,8 +783,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                         nullptr, // b_massflux
                         i_visc.data(),
                         b_visc.data(),
-                        i_secvis.data(),
-                        b_secvis.data(),
+                        nullptr,
+                        nullptr,
                         nullptr,
                         nullptr,
                         nullptr,
