@@ -2209,7 +2209,8 @@ cs_atmo_bcond(void)
       ----------------------------- */
   if (at_chem->model > 0) {
 
-    const int chem_stride = _atmo_chem.n_z_profiles * _atmo_chem.nt_step_profiles;
+    const int chem_stride = at_chem->n_z_profiles
+                          * at_chem->nt_step_profiles;
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
