@@ -674,11 +674,15 @@ cs_measures_set_map_values(cs_measures_set_t       *ms,
   {
     cs_lnum_t jj;
 #   pragma omp parallel for private(jj)
-    for (ii = 0; ii < nb_measures; ii++)
+    for (ii = 0; ii < nb_measures; ii++) {
       for (jj = 0; jj < 3; jj++) {
         ms->coords[ii*3 + jj] = measures_coords[ii*3 + jj];
-        ms->inf_radius[ii*3 +jj] = influence_radius[ii*3 + jj];
+        ms->inf_radius[ii*3 + jj] = influence_radius[ii*3 + jj];
       }
+    }
+    for (jj = 0; jj < 3; jj++) {
+      ms->coords[nb_measures*3 + jj] = measures_coords[nb_measures*3 + jj];
+    }
   }
 }
 

@@ -149,7 +149,7 @@ allocate(qqc(kmx+1), qql(kmx+1))
 allocate(qqco2(kmx+1))
 allocate(qqqc(kmx), qqql(kmx))
 allocate(qqqco2(kmx))
-allocate(pspo(kmx), pspoqq(kmx), dt4(kmx), tqq(kmx))
+allocate(pspo(kmx), pspoqq(kmx+1), dt4(kmx), tqq(kmx+1))
 allocate(dz0(kmx))
 allocate(kliq(kmx+1))
 
@@ -194,6 +194,9 @@ do k = 1, kmx
 
   if (aeroso(k).gt.1.d-8) iaer = 1
 enddo
+
+pspoqq(kmx+1) = 0.d0
+tqq(kmx+1) = 0.d0
 
 qqv(kmx+1) = 0.d0
 qqc(kmx+1) = 0.d0
@@ -302,14 +305,21 @@ endif
 ! surface temperature (Kelvin)
 tqq(k1) = t_surf + tkelvi
 
+! Top interface temperature (isothermal above the domain)
+tqq(kmray+1) = temray(kmray) + tkelvi
+pspoqq(kmray+1) = pspo(kmray)
+
 do k = k1+1, kmray
-  alpha_k = ( zray(k) - zqq(k)) / (zray(k) - zray(k-1))
+  alpha_k = (zqq(k) - zray(k-1)) / (zray(k) - zray(k-1))
   tqq(k) = (alpha_k * temray(k)+(1.d0 - alpha_k)*temray(k-1)) + tkelvi
   pspoqq(k) = (alpha_k * pspo(k) + (1.d0 - alpha_k) * pspo(k-1))
 
-  ! dT^4/dz x dz = 4 T^3 dT/dz x dz
+  ! Calculate dt4 on the dual grid (intervals between layer centers)
   dt4(k) = 4.d0 * (tqq(k)**3) * (temray(k) - temray(k-1))
 enddo
+
+! Boundary dual cell: transition from soil surface to center of layer 1
+dt4(k1) = 4.d0 * (tqq(k1)**3) * (temray(k1) - t_surf)
 
 ! qqv(k+1) = int(0, zqq(k+1)) rov dz
 ! qqqv(k) = qqv(k) + dz/2(k) * rov(k)
@@ -351,8 +361,8 @@ t4zt = (temray(kmray) + tkelvi)**4
 t41 = (tqq(k1))**4
 
 ! For cloudy sky (but also valid for clear sky)
-fn = fnerir(k1+1)
-do k = k1+1, kmray
+fn = fnerir(k1)
+do k = k1, kmray
   ! cloud fraction estimation (we take the maximum)
   fn = max(fn,fnerir(k))
   if (fn.lt.1.d-3) then
@@ -416,7 +426,7 @@ do i = k1, kmray
   ! upward fluxes
   if (i.gt.k1) then
     fn = fnerir(i)
-    do k = k1+1, i
+    do k = k1, i
       ! cloud fraction estimation (we take the maximum)
       fn = max(fn,fnerir(k))
       qqqqv = qqqv(i)-qqv(k)
@@ -443,7 +453,7 @@ do i = k1, kmray
   ! flux reflected by the ground when emissivity is different from 1
   ! requires to compute the integral below (a3).
   a3 = 0.d0
-  do k = k1+1, kmray
+  do k = k1, kmray
     qqqqv = qqqv(i) + qqv(k)
     qqqqc = qqqc(i) + qqc(k)
     qqqqco2 = qqqco2(i) + qqco2(k)
@@ -489,7 +499,7 @@ do k = k1, kmray
   a1 = 0.d0
   dul = rol(k)
 
-  do kk = k1+1, k
+  do kk = k1, k
     qqqqv = qqqv(k) - qqv(kk)
     qqqqc = qqqc(k) - qqc(kk)
     qqqqco2 = qqqco2(k) - qqco2(kk)
@@ -547,7 +557,7 @@ do k = k1, kmray
   ! a3: contribution of the upward flux reflected at the ground
   ! Modification of Ponnulakshmi and al. (2009)
   a3 = 0.d0
-  do kk = k1+1, kmray
+  do kk = k1, kmray
     qqqqv = qqqv(k) + qqv(kk)
     qqqqc = qqqc(k) + qqc(kk)
     qqqqco2 = qqqco2(k) + qqco2(kk)
@@ -600,8 +610,8 @@ do k = k1, kmray
   ! Integration from
   call rayigc(zqq(k1), zqq(k),abcinfe,dabcinfe,qqqqv,qv0(k),qqqqco2,qco2(k),romray(k))
 
-  fni = fnerir(k1+1)
-  do ineb =2, k
+  fni = fnerir(k1)
+  do ineb = k1, k
     fni = max(fni,fnerir(ineb))
   enddo
 
