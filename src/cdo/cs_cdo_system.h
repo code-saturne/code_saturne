@@ -454,6 +454,14 @@ cs_cdo_system_which_matrix_class(cs_param_solver_class_t  solver_class)
 #endif
     break;
 
+  case CS_PARAM_SOLVER_CLASS_PETSC:
+#if defined(HAVE_PETSC)
+    return CS_CDO_SYSTEM_MATRIX_PETSC;
+#else
+    return CS_CDO_SYSTEM_MATRIX_CS;
+#endif
+    break;
+
   default:
     return CS_CDO_SYSTEM_MATRIX_CS;
     break;

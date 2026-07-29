@@ -2289,27 +2289,8 @@ cs_cdofb_vecteq_init_context(cs_equation_param_t    *eqp,
    * The way to perform the assembly may change if an external librairy is used
    * for solving the linear system */
 
-  cs_cdo_system_matrix_class_t  matclass;
-
-  switch (eqp->sles_param->solver_class) {
-
-  case CS_PARAM_SOLVER_CLASS_CS:
-    matclass = CS_CDO_SYSTEM_MATRIX_CS;
-    break;
-
-  case CS_PARAM_SOLVER_CLASS_HYPRE:
-#if defined(HAVE_HYPRE)
-    matclass = CS_CDO_SYSTEM_MATRIX_HYPRE;
-#else
-    matclass = CS_CDO_SYSTEM_MATRIX_CS;
-#endif
-    break;
-
-  default:
-    matclass = CS_CDO_SYSTEM_MATRIX_CS;
-    break;
-
-  }
+  cs_cdo_system_matrix_class_t  matclass =
+    cs_cdo_system_which_matrix_class(eqp->sles_param->solver_class);
 
   cs_cdo_system_add_dblock(sh, 0,  /* block_id */
                            matclass,

@@ -49,6 +49,10 @@
 #include "alge/cs_matrix_hypre.h"
 #endif
 
+#if defined(HAVE_PETSC)
+#include "alge/cs_matrix_petsc.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -298,7 +302,8 @@ _assign_assembly_func(const cs_cdo_system_block_info_t   bi)
 {
   if (bi.stride == 1)  { /* Assemble a cell system with 1 DoF by element */
 
-    if (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE)
+    if (   (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE)
+        || (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_PETSC))
       return cs_cdo_assembly_matrix_scal_generic;
     else
       return _set_scalar_assembly_func();
@@ -306,7 +311,8 @@ _assign_assembly_func(const cs_cdo_system_block_info_t   bi)
   }
   else if (bi.stride == 3) {
 
-    if (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE)
+    if (   (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE)
+        || (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_PETSC))
       return cs_cdo_assembly_matrix_e33_generic;
 
     else {
@@ -1872,6 +1878,11 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
         }
 #endif
 
+#if defined(HAVE_PETSC)
+        if (b->info.matrix_class == CS_CDO_SYSTEM_MATRIX_PETSC) {
+          cs_matrix_set_type_petsc(db->matrix, nullptr);
+        }
+#endif
         /* Matrix assembler values */
 
         if (db->mav != nullptr)
