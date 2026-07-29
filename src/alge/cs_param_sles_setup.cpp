@@ -451,7 +451,15 @@ _set_petsc_mg_levels(const char                        *prefix,
       _petsc_cmd(true, prefix, "mg_levels_ksp_chebyshev_eigenvalues",
                  "0.1,1");  // rough estimation of min./max. eigenvalues
       _petsc_cmd(true, prefix, "mg_levels_pc_type", "jacobi");
+#if PETSC_VERSION_GE(3,21,0)
       _petsc_cmd(true, prefix, "mg_levels_pc_jacobi_type", "rowl1");
+#else
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: CS_PARAM_AMG_GAMG_L1_JACOBI not set.\n"
+                    "  PETSc v3.21 or newer is requested.", __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
+#endif
       break;
 
     case CS_PARAM_AMG_GAMG_FORWARD_GS:
@@ -511,7 +519,15 @@ _set_petsc_mg_levels(const char                        *prefix,
       _petsc_cmd(true, prefix, "mg_levels_up_ksp_chebyshev_eigenvalues",
                  "0.1,1");  // rough estimation of min./max. eigenvalues
       _petsc_cmd(true, prefix, "mg_levels_up_pc_type", "jacobi");
+#if PETSC_VERSION_GE(3,21,0)
       _petsc_cmd(true, prefix, "mg_levels_up_pc_jacobi_type", "rowl1");
+#else
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "%s: CS_PARAM_AMG_GAMG_L1_JACOBI not set.\n"
+                    "  PETSc v3.21 or newer is requested.", __func__);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
+#endif
       break;
 
     case CS_PARAM_AMG_GAMG_BACKWARD_GS:
