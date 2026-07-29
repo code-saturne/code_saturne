@@ -1129,48 +1129,10 @@ class case:
                     n_tot_procs=n_procs,
                     need_abs_path=True,
                     use_srun=True,
+                    tool_args=tool_args
                 )
 
-                executable = s_args[1]
-                arguments = s_args[2]
-
-                wrapper_path = os.path.join(
-                    d.exec_dir,
-                    "run_aster_srun_wrapper.sh",
-                )
-
-                aster_command = (
-                    f"exec {tool_args}"
-                    f"{executable}"
-                    f"{arguments}"
-                )
-
-                with open(wrapper_path, "w", encoding="utf-8") as wrapper:
-                    wrapper.write(
-                        "#!/usr/bin/env bash\n"
-                        "\n"
-                        "set -o pipefail\n"
-                        "\n"
-                        f'workdir="{d.exec_dir}"\n'
-                        "\n"
-                        'cd "$workdir" || exit 1\n'
-                        "\n"
-                    )
-
-                    if d.logfile:
-                        log_path = os.path.join(d.exec_dir, d.logfile)
-
-                        wrapper.write(
-                            f'logfile="{log_path}"\n'
-                            "\n"
-                            f'{aster_command} > "$logfile" 2>&1\n'
-                        )
-                    else:
-                        wrapper.write(f"{aster_command}\n")
-
-                current_mode = os.stat(wrapper_path).st_mode
-
-                os.chmod(wrapper_path, current_mode | stat.S_IXUSR | stat.S_IXGRP)
+                wrapper_path = s_args[3]
 
                 cmd = (
                     f"{first_rank}-{last_rank}\t"

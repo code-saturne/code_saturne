@@ -29,6 +29,7 @@ import os
 import os.path
 import sys
 import shutil
+import stat
 
 from code_saturne.base import cs_compile
 from code_saturne.base import cs_xml_reader
@@ -2487,10 +2488,17 @@ class aster_domain(base_domain):
 
     # ---------------------------------------------------------------------------
 
-    def solver_command(self, n_tot_procs=int, need_abs_path=False, use_srun=False):
+    def solver_command(
+            self,
+            n_tot_procs=int,
+            need_abs_path=False,
+            use_srun=False,
+            tool_args="",
+        ):
         """
         Returns a tuple indicating the script's working directory,
-        executable path, and associated command-line arguments.
+        executable path, associated command-line arguments, and
+        optionally the path of the srun wrapper.
         """
 
         # Working directory
@@ -2501,28 +2509,75 @@ class aster_domain(base_domain):
 
         # Build kernel command-line arguments
         args = " "
-        # global rank of the first code_aster process
-        args += f" --proc0-is={n_tot_procs-self.n_procs}"
+
+        # Global rank of the first code_aster process
+        args += f" --proc0-is={n_tot_procs - self.n_procs}"
+
         # MPI is already initialized by mpiexec or srun
         args += " --no-mpi"
 
         if self.logfile:
-            # only proc0 write log file
+            # Only proc0 writes the log file
             args += " --only-proc0"
 
-        # name of export file
+        # Name of export file
         script_name = self.script_name
+
         if need_abs_path and not os.path.isabs(script_name):
-            script_name = os.path.join(self.exec_dir, os.path.basename(script_name))
+            script_name = os.path.join(
+                self.exec_dir,
+                os.path.basename(script_name),
+            )
+
         args += " " + enquote_arg(script_name)
 
         if not use_srun and self.logfile:
-            # write log in a separate file
+            # Write log in a separate file
             logpath = self.exec_dir + "/" + self.logfile
             args += " > " + enquote_arg(logpath)
 
-        return wd, exec_path, args
+        wrapper_path = None
 
+        if use_srun:
+            wrapper_path = os.path.join(
+                self.exec_dir,
+                "run_aster_srun_wrapper.sh",
+            )
+
+            aster_command = (
+                f"exec {tool_args}"
+                f"{exec_path}"
+                f"{args}"
+            )
+
+            with open(wrapper_path, "w", encoding="utf-8") as wrapper:
+                wrapper.write(
+                    "#!/usr/bin/env bash\n"
+                    "\n"
+                    "set -o pipefail\n"
+                    "\n"
+                    f'workdir="{self.exec_dir}"\n'
+                    "\n"
+                    'cd "$workdir" || exit 1\n'
+                    "\n"
+                )
+
+                if self.logfile:
+                    log_path = os.path.join(self.exec_dir, self.logfile)
+
+                    wrapper.write(
+                        f'logfile="{log_path}"\n'
+                        "\n"
+                        f'{aster_command} > "$logfile" 2>&1\n'
+                    )
+                else:
+                    wrapper.write(f"{aster_command}\n")
+
+            current_mode = os.stat(wrapper_path).st_mode
+
+            os.chmod(wrapper_path, current_mode | stat.S_IXUSR | stat.S_IXGRP)
+
+        return wd, exec_path, args, wrapper_path
 
 # -------------------------------------------------------------------------------
 # End
