@@ -15,15 +15,26 @@
       <tab type="user" visible="yes" url="@ref cs_ug_parallel" title="Parallelism and periodicity"/>
       <tab type="user" visible="yes" url="@ref cs_ug_udf" title="User-defined functions"/>
       <tab type="user" visible="yes" url="@ref cs_var_dico" title="Variables and structures reference"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_user_settings" title="Global user settings"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_mesh_select_c" title="Mesh element set selection"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_base_setup" title="Basic modeling setup"/>
     </tab>
 
     <!-- Section 3: Setting up a computation -->
     <tab type="usergroup" visible="yes" title="Setting up a computation">
-      <tab type="user" visible="yes" url="@ref cs_ug_user_settings" title="Global user settings"/>
-      <tab type="usergroup" visible="yes" url="@ref cs_ug_mesh_prepare" title="Mesh import and preprocessing"/>
-      <tab type="user" visible="yes" url="@ref cs_ug_mesh_select_c" title="Mesh element set selection"/>
-      <tab type="user" visible="yes" url="@ref cs_ug_base_setup" title="Basic modeling setup"/>
+      <tab type="usergroup" visible="yes" url="@ref cs_ug_calculation_environment" title="Calculation environment"/>
+      <tab type="usergroup" visible="yes" url="@ref cs_ug_mesh" title="Mesh">
+        <tab type="user" visible="yes" url="@ref preprocessing" title="Preprocessing"/>
+        <tab type="user" visible="yes" url="@ref volume_zones" title="Volume zones"/>
+        <tab type="user" visible="yes" url="@ref boundary_zones" title="Boundary zones"/>
+      </tab>
       <tab type="usergroup" visible="yes" url="@ref cs_ug_advanced_setup" title="Calculation features">
+        <!-- standard calculation features module -->
+        <tab type="user" visible="yes" url="@ref thermal_model" title="Thermal model"/>
+        <tab type="user" visible="yes" url="@ref body_forces" title="Body forces"/>
+        <tab type="user" visible="yes" url="@ref turbulence_models" title="Turbulence_models"/>
+        <tab type="user" visible="yes" url="@ref species_transport" title="Species transport"/>
+        <!-- advanced calculation features module -->
         <tab type="user" visible="yes" url="@ref low_level_boundary_condition_definitions" title="Low-level finite-volume boundary-condition definitions"/>
         <tab type="user" visible="yes" url="@ref advanced_specific_physics" title="Specific physical models"/>
         <tab type="user" visible="yes" url="@ref advanced_coal_and_gas_combution" title="Pulverized coal and gas combustion module"/>
@@ -40,6 +51,25 @@
         <tab type="user" visible="yes" url="@ref cs_ug_cdo_gwf" title="Groundwater flows module"/>
         <tab type="user" visible="yes" url="@ref advanced_solidification" title="Solidification module"/>
       </tab>
+      <tab type="user" visible="yes" url="@ref cs_ug_volume_conditions" title="Volume conditions"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_boundary_conditions" title="Boundary conditions"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_coupling_parameters" title="Coupling parameters"/>
+      <tab type="usergroup" visible="yes" url="@ref cs_ug_time_settings" title="Time settings">
+        <tab type="user" visible="yes" url="@ref start_restart" title="Start/Restart"/>
+      </tab>
+      <tab type="usergroup" visible="yes" url="@ref cs_ug_numerical_parameters" title="Numerical parameters">
+        <tab type="user" visible="yes" url="@ref equation_parameters" title="Equation parameters"/>
+      </tab>
+      <tab type="usergroup" visible="yes" url="@ref cs_ug_postprocessing" title="Postprocessing">
+        <tab type="user" visible="yes" url="@ref calculator" title="Calculator"/>
+        <tab type="user" visible="yes" url="@ref additional_user_arrays" title="Additional user arrays"/>
+        <tab type="user" visible="yes" url="@ref time_averages" title="Time averages"/>
+        <tab type="user" visible="yes" url="@ref volume_solution_control" title="Volume solution control"/>
+        <tab type="user" visible="yes" url="@ref surface_solution_control" title="Surface solution control"/>
+        <tab type="user" visible="yes" url="@ref profiles" title="Profiles"/>
+        <tab type="user" visible="yes" url="@ref balance_by_zone" title="Balance by zone"/>
+      </tab>
+      <tab type="user" visible="yes" url="@ref cs_ug_performance_settings" title="Performance settings"/>
       <tab type="user" visible="yes" url="@ref cs_user_examples" title="User examples"/>
     </tab>
 

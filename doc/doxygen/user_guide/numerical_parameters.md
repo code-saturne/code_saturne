@@ -1,0 +1,52 @@
+<!--
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2026 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
+\page cs_ug_numerical_parameters Numerical parameters
+
+Number and type of time steps, and advanced parameters for the numerical solution of the equations.
+
+TODO
+
+- \subpage equation_parameters
+
+<!-- ======================================================================= -->
+
+\page equation_parameters Equation parameters
+
+Solver
+======
+
+remark : Update the image below and add the gradient window
+
+\anchor gui_numerical_parameters
+\image html gui_numerical_parameters.png "Numerical parameters for the main variables"
+
+Scheme
+======
+
+TODO
+
+Gradient
+========
+
+TODO
+
+Clipping
+========

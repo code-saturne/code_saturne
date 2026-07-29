@@ -1,0 +1,498 @@
+<!--
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2026 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
+\page cs_ug_mesh Mesh
+
+Mesh input
+==========
+
+This page provides additional details on mesh import and preprocessing steps,
+as well as how mesh regions can be managed in the code_saturne Solver.
+
+Referring to the modules described in the [base architecture](@ref main_components)
+presentation, a mesh can be imported using the code_saturne Preprocessor,
+than further preprocessed in the Solver's initialization steps.
+
+Importing meshes is done by the Preprocessor module, while most other
+preprocessing operations are done mainly by the code Solver
+(except for element orientation checking, which is done by the Preprocessor).
+
+The Preprocessor module of code_saturne reads the
+mesh file(s) (under any supported format) and translates the necessary
+information into a Solver input file.
+
+When multiple meshes are used, the Preprocessor is called once per mesh,
+and each resulting output is added in a `mesh_input`
+directory (instead of a single `mesh_input.csm`  file).
+
+\subpage cs_ug_mesh_select_c
+
+Throughout the use of code_saturne, including the selection of specific
+mesh sections for preprocessing operations, it is also useful to understand
+how high-level [mesh element selection](@ref cs_ug_mesh_select_c) can be handled.
+
+Preprocessor module {#sec_preprocessor_module}
+===================
+
+The code_saturne run operation automatically calls the Preprocessor for every
+mesh specified by the user with the GUI or in the `MESHES` list
+defined in `cs_user_scripys.py:define_domain_parameters`.
+
+\anchor gui_mesh_select
+\image html gui_mesh_select.png "Mesh selection with the GUI"
+
+Preprocessor options {#sec_prg_optappelecs}
+--------------------
+
+The executable of the Preprocessor module is named `cs_preprocess`, and
+is normally called through the run script, so it is not fount
+in the main executable program search paths.
+
+Nonetheless, it may be useful to call the Preprocessor manually
+in certain situations, especially for frequent verification when
+building a mesh, so its use is described here. Verification
+may also be done using the GUI or the mesh quality check mode
+of the general run script.
+
+The Preprocessor is controlled using command-line arguments.
+A few [environment variables](@ref sec_env_var_pcs) allow advanced users
+to modify its behavior or to obtain a trace of memory management.
+If needed, it can be called directly on most systems using the
+following syntax:
+```
+${install_prefix}/libexec/code_saturne/cs_preprocess [options] <mesh>
+```
+Note that on some systems (such as OpenSUSE), `libexec may be replaced by `lib`.
+
+To obtain a description of all available option, type:
+```
+${install_prefix}/libexec/code_saturne/cs_preprocess --help
+```
+In the following sections, the `${install_prefix}/libexec/code_saturne`
+prefix is omitted for conciseness.
+Main choices are done using command-line options. For example:
+
+`cs_preprocess --num 2 fluid.med`
+
+means that we read the second mesh defined in the `fluid.med` file, while:
+
+`cs_preprocess --no-write --post-volume med fluid.msh`
+
+means that we read file `fluid.msh`, and do not produce a
+`mesh_input.csm`  file, but do output `fluid.med` file
+(effectively converting a Gmsh file to a MED file).
+
+### Mesh selection {#sec_optpcs_mesh}
+<!-- -->
+
+Any use of the Preprocessor requires one mesh file (except for `cs_preprocess`
+and `cs_preprocess -h` which respectively print the version number and
+list of options). This file is selected as the last argument to `cs_preprocess`,
+and its format is usually automatically determined based on its
+[extension](@ref sec_mesh_viz_formats), but a `--format` option allows forcing
+the format choice of the selected file.
+
+For formats allowing multiple meshes in a single file, the
+`--num` option followed by a strictly positive integer allows
+selection of a specific mesh; by default, the first mesh is selected.
+
+For meshes in [CGNS](@ref sec_fmtdesc_cgns) format, we may in addition use the
+`--grp-cel` or `--grp-fac` options, followed by the `section`
+or `zone` keywords, to define additional groups of cell or faces
+based on the organization of the mesh in sections or zones. These sub-options
+have no effect on meshes of other formats.
+
+### Post-processing output {#sec_optpcs_post}
+<!-- -->
+
+By default, the Preprocessor does not generate any post-processor output.
+By adding `--post-volume [format]`,
+with the optional `format` argument being one of `ensight`,
+`med`, or `cgns` to the command-line arguments, the output of the volume
+mesh to the default or indicated format is provoked.
+
+In case of errors, output of error visualization output is always
+produced, and by adding `--post-error [format]`,
+the format of that output may be selected (from one of `ensight`,
+`med`, or `cgns`, assuming [MED](@ref sec_fmtdesc_med) and
+[CGNS](@ref sec_fmtdesc_cgns) are available),
+
+### Element orientation correction {#sec_optpcs_orient}
+<!-- -->
+
+Correction of element orientation is possible and can be activated using the
+`--reorient` option.
+
+Note that we cannot guarantee correction (or even detection) of a bad
+orientation in all cases.
+Not all local numbering possibilities of elements are tested,
+as we focus on "common" numbering permutations. Moreover,
+the algorithms used may produce false positives or fail to find
+a correct renumbering in the case of highly non convex elements.
+In this case, nothing may be done short of modifying the mesh, as
+without a convexity hypothesis, it is not always possible to choose
+between two possible definitions starting from a point set.
+
+With a post-processing option such as `--post-error`
+or, `--post-volume`, visualizable meshes of corrected elements as
+well as remaining badly oriented elements are generated.
+
+### Optional functionality {#sec_pcs_lib_opt}
+<!-- -->
+
+Some functions of the Preprocessor are based on external libraries,
+which may not always be available. It is thus possible to configure
+and compile the Preprocessor so as not to use these libraries.
+When running the Preprocessor, the supported options are printed.
+The following optional libraries may be used:
+
+* CGNS library. In its absence, [CGNS](@ref sec_fmtdesc_cgns)
+  format support is deactivated.
+
+* med-file library. In its absence, [MED](@ref sec_fmtdesc_med)
+  format support is simply deactivated.
+
+* libCCMIO library. In its absence, [STAR-CCM+](@ref sec_fmtdesc_ccm)
+  format support is simply deactivated.
+
+* Read compressed files using Zlib. With this option, it is
+  possible to directly read mesh files compressed with a
+  *gzip* type algorithm and bearing a `.gz` extension.
+  This is limited to formats not already based on an external
+  library (i.e. it is not usable with CGNS, MED, or CCM files),
+  and has memory and CPU time overhead, but may be practical.
+  Without this library, files must be uncompressed before use.
+
+General remarks
+---------------
+
+Note that the Preprocessor is in general capable of reading all "classical"
+element types present in mesh files (triangles, quadrangles, tetrahedra,
+pyramids, prisms, and hexahedra).
+Quadratic or cubic elements are converted upon reading into their
+linear counterparts. Vertices referenced by no element (isolated vertices
+or centres of higher-degree elements) are discarded. Meshes are read
+in the order defined by the user and are appended, vertex and element
+indices being incremented appropriately.
+Entity labels (numbers) are not maintained, as they would probably not be
+unique when appending multiple meshes.
+
+At this stage, volume elements are sorted by type, and the fluid domain
+post-processing output is generated if required.
+
+In general, groups assigned to vertices are ignored.
+selections are thus based on faces or cells. with tools such
+as Simail, faces of volume elements may be referenced directly, while
+with I-deas or SALOME, a layer of surface elements bearing the required
+colors and groups must be added. Internally, the Preprocessor always considers
+that a layer of surface elements is added (i.e. when reading a Simail
+mesh, additional faces are generated to bear cell face colors.
+When building the \f$faces \rightarrow cells\f$ connectivity, all faces with the
+same topology are merged: the initial presence of two layers of identical
+surface elements belonging to different groups would thus lead to
+a calculation mesh with faces belonging to two groups).
+
+Files passed to the Solver {#sec_pcs_mode_comm}
+--------------------------
+
+Data passed to the Solver by the Preprocessor is transmitted using a
+binary file, using a *big endian* data representation, named
+`mesh_input.csm` (or contained in a `mesh_input` directory).
+
+When using the Preprocessor for mesh verification, data for the Solver
+is not always needed. In this case, the `--no-write` option may
+avoid creating a Preprocessor output file.
+
+Execution mode
+==============
+
+Import mesh only, standard computation, ... (TODO)
+
+- \subpage preprocessing
+- \subpage volume_zones
+- \subpage boundary_zones
+
+<!-- ======================================================================= -->
+
+\page preprocessing Preprocessing
+
+Preprocessing {#sec_prepro}
+=============
+
+Meshing remarks {#sec_prg_meshes}
+---------------
+
+\warning
+Some turbulence models (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$, SSG, ...)
+used in code_saturne are "High-Reynolds" models. Therefore the size of the cells
+neighboring the wall must be greater than the thickness of the viscous
+sub-layer (at the wall, \f$y^+>2.5\f$ is required, and \f$30<y^+<100\f$ is
+preferable). If the mesh does not match this constraint, the results may
+be false (particularly if thermal phenomena are involved). For more details
+on these constraints, see the [iturb](@ref iturb) keyword.
+
+Mesh joining {#sec_optpcs_join}
+------------
+
+Conforming joining of possibly non-conforming meshes may be done by the
+solver, and defined either using the Graphical User Interface (GUI) or the
+`cs_user_join` user function. In the GUI, the user must
+add entries in the "Face joining" tab in the "Mesh/Proprocessing" page.
+The user may specify faces to be joined, and can also modify basic joining
+parameters.
+
+\anchor fig_joining
+\image html gui_mesh_join.png "Defining a mesh joining"
+
+For a simple mesh, it is rarely useful to specify strict face selection
+criteria, as joining is sufficiently automated to detect which faces
+may actually be joined. For a more complex mesh, or a mesh with thin
+walls which we want to avoid transforming into interior faces, it is
+recommended to filter boundary faces that may be joined by using
+face selection criteria. This has the additional advantage of reducing
+the number of faces to test for in the intersection/overlap search,
+and thus improving the performance of the joining algorithm.
+
+One may also modify tolerance criteria using 2 options, explained
+in the [figure](@ref fig_join_tolerance) below:
+
+* `fraction` assigns value \f$r\f$ (where \f$0 < r < 0.49\f$) to
+   the maximum intersection distance multiplier (\f$0.1\f$ by default).
+   The maximum intersection distance for a given vertex is based on the
+   length of the shortest incident edge, multiplied by *r*. The maximum
+   intersection at a given point along an edge is interpolated from that
+   at its vertices, as shown on the left of the figure
+* `plane` assigns the maximum angle between normals for two faces
+   to be considered coplanar (\f$25^{\circ}\f$ by default); this parameter is
+   used in the second stage of the algorithm, to reconstruct conforming
+   faces, as shown on the right of figure
+
+\anchor fig_join_tolerance
+\image html join_tolerance.svg "Maximum intersection tolerance and faces normal angle"
+
+As shown above, verbosity and visualization levels can also be set,
+to obtain more detailed logging of the joining operations, as
+well as detailed visualizable output of the selected and joined faces.
+
+In practice, we are sometimes led to increase the maximum intersection
+distance multiplier to *0.2* or even *0.3* when joining curved surfaces,
+so that all intersection are detected. As this influences merging
+of vertices and thus simplification of reconstructed faces, but also
+deformation of "lateral" faces, it is recommended only to modify it
+if necessary. As for the `plane` parameter, its use has
+only been necessary on a few meshes up to now, to
+reduce the tolerance so that face reconstruction does not
+try to generate faces from initial faces on different surfaces.
+
+This operation can be specified either using the GUI or the
+user-defined functions, as shown in various
+[examples](@ref cs_user_mesh_h_cs_user_mesh_joining).
+
+### Advanced parameters for mesh joining
+<!-- -->
+
+Advanced parameters may be set through user-defined functions by calling
+\ref cs_join_set_advanced_param, as shown in the
+[advanced mesh joining parameters](@ref cs_user_mesh_h_cs_user_mesh_add_advanced_joining) examples section.
+
+Periodicity {#sec_optpcs_period}
+-----------
+
+Handling of periodicity is based on an extension of conforming joining,
+as shown on the following [figure](@ref fig_join_periodic).
+It is thus not necessary for the periodic faces to be conforming (though
+it usually leads to better mesh quality). All options relative to conforming
+joining of non-conforming faces also apply to periodicity. Note also that
+once pre-processed, 2 periodic faces have the same orientation
+(possibly adjusted by periodicity of rotation).
+
+\anchor fig_join_periodic
+\image html join_periodic.svg "Matching of periodic faces: base principle"
+
+As with joining, it is recommended to filter boundary faces to process
+using a selection criterion. As many periodicities may be built as desired,
+as long as boundary faces are present. Once a periodicity is handled,
+faces having periodic matches do not appear as boundary faces, but as
+interior faces, and are thus not available anymore for other
+periodicities. Translation, rotation, and mixed periodicities
+can be defined.
+
+This operation can be specified either using the GUI, as shown below, or
+by user-defined functions, as shown in various
+[examples](@ref cs_user_mesh_h_cs_user_mesh_periodicity).
+
+\anchor fig_periodicities
+\image html gui_mesh_periodicity.png "Defining a periodicity relation"
+
+Modification of the mesh and geometry
+-------------------------------------
+
+### Mesh input modification or repetition
+<!-- -->
+
+Quite a few other preprocessing operations are available in the Solver:
+
+The \ref cs_user_mesh_input function may be used
+for advanced modification of the main \ref cs_mesh_t structure:
+
+* Apply a geometric transformation or renaming groups upon reading a mesh
+
+* reading a mesh files multiple times, in combination with application
+  of individual geometric transformations and group renames for each instance
+
+Examples with user-defined functions are provided in the
+[mesh reading and modification](@ref cs_user_mesh_h_cs_user_mesh_input)
+examples subsection.
+
+### General mesh modification
+<!-- -->
+
+The \ref cs_user_mesh_modify function may be used
+for advanced modification of the main \ref cs_mesh_t structure.
+
+* extruding some faces
+
+* inserting a refined boundary layer
+
+* inserting a boundary between cells along selected faces
+
+* applying a mesh refinement
+
+The \ref cs_user_mesh_modify function may be used
+for advanced modification of the main \ref cs_mesh_t structure.
+
+Examples with user-defined functions are provided in the
+[general mesh modification](@ref cs_user_mesh_h_cs_user_mesh_modifiy)
+examples subsection.
+
+\warning Caution must be exercised when modifying a mesh with
+periodicity. Indeed, the periodicity parameters may not
+be fully updated accordingly, meaning that the periodicity may not be valid
+after mesh vertex coordinates have changed. It is particularly
+true when one rescales the mesh. Most modifications should thus be done
+in a separate run, before defining periodicity (joining can be done
+in the same run without risk, as it is always applied first).
+
+### Mesh smoothing utilities
+<!-- -->
+
+The principle of smoothers is to mitigate the local defects by averaging
+the mesh quality. This procedure may help for calculation robustness or/and
+results quality.
+
+The \ref cs_user_mesh_smoothe user function allows to apply
+smoothing operations.
+
+An example with user-defined functions is provided in the
+[mesh smoothing](@ref cs_user_mesh_h_cs_user_mesh_smoothing)
+examples subsection.
+
+\warning Caution must be exercised when using smoothing utilities
+because the geometry may be modified. In order to preserve geometry,
+the \ref cs_mesh_smoother_fix_by_feature function allows to
+pin some boundary vertices in place by a feature angle criterion.
+Fixing all boundary vertices ensures the geometry is preserved, but reduces
+the smoothing algorithm's effectiveness.
+
+#### Warped faces smoother
+<!-- -->
+
+The \ref cs_mesh_smoother_unwarp function allows reducing face un-warping
+in the calculation mesh.
+
+Be aware that, in some cases, this algorithm may degrade other mesh quality
+criteria.
+
+<!-- ======================================================================= -->
+
+\page volume_zones Volume zones
+
+Volume zones {#sec_zones}
+============
+
+Though selection criteria can and should be used directly in mesh preprocessing
+operations and in some postprocessing subset extractions, for regions
+with a specific meaning, it is preferable to build **zones**.
+
+In most cases, zones can be mapped directly to mesh regions and groups,
+but can be defined in a more complex manner using selection criteria.
+
+Once built, boundary and volume zones can be used to quickly access
+all matching elements, as they maintain lists of corresponding elements.
+
+The GUI naturally builds and associates zones for boundary and volume
+conditions. The \ref cs_user_zones user-defined functions (from
+`cs_user_zones.c`) can be used to build such zones.
+
+In many cases, zones should simply correspond to mesh groups,
+but explicitely defining them allows merging or splitting selections
+using boolean operations with group ranges and geometric criteria
+when needed.
+
+\anchor gui_volume_zone_def
+\image html gui_volume_zone_def.png "Definition of mesh zones"
+
+<!-- ======================================================================= -->
+
+\page boundary_zones Boundary zones
+
+Boundary zones
+==============
+
+Though selection criteria can and should be used directly in mesh preprocessing
+operations and in some postprocessing subset extractions, for regions
+with a specific meaning, it is preferable to build **zones**.
+
+In most cases, zones can be mapped directly to mesh regions and groups,
+but can be defined in a more complex manner using selection criteria.
+
+Once built, boundary and volume zones can be used to quickly access
+all matching elements, as they maintain lists of corresponding elements.
+
+In many cases, zones should simply correspond to mesh groups,
+but explicitely defining them allows merging or splitting selections
+using boolean operations with group ranges and geometric criteria
+when needed.
+
+As usual, except for advanced models where a high level of automation
+is needed through specific preprocessing scripts or tools, using
+the GUI to define boundary conditions is recommended.
+
+Check the [pdf user's guide](../../../user/user.pdf) for details
+on legacy boundary condition settings and types.
+
+Prior to defining boundary conditions, the appropriate zones should be defined.
+Using the GUI, this is done in the Mesh section, as an early definition
+of the defined zones (before the mesh is actually read or built) may be useful
+for many other settings, not limited to boundary conditions.
+
+\anchor gui_bc_zones
+\image html gui_bc_regions.png "GUI: definition of the boundary zones"
+
+In most cases, the names of mesh groups than can be used for zone definitions
+faces may be read directly from `preprocessor.log` file created by the
+Preprocessor. Following an initial mesh proprocessing or verification run, these
+definitions can be imported directly by the GUI under the
+"Mesh/Boundary zones/Add from Preprocessor log" section.
+
+For advanced cases, or when it is necessary to define zones which overlap,
+or whose section is based on a (possibly time-varying) function,
+the \ref cs_user_zones function may be used.
+A few [examples](@ref cs_user_zones_examples) are also provided.
