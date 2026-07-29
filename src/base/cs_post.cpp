@@ -3163,8 +3163,6 @@ _cs_post_output_1d_thermal
   const cs_time_step_t *ts
 )
 {
-  bft_printf("%s[L%d] - DBG\n", __func__,__LINE__);
-  bft_printf_flush();
   assert(post_mesh != nullptr);
 
   int nt_cur = (ts != nullptr) ? ts->nt_cur : -1;
@@ -3172,8 +3170,7 @@ _cs_post_output_1d_thermal
 
   for (int i = 0; i < post_mesh->n_writers; i++) {
     cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
-  bft_printf("%s[L%d] - DBG\n", __func__,__LINE__);
-  bft_printf_flush();
+
     if (writer->active == 1 && writer->writer != nullptr) {
       cs_1d_wall_post_temperature_field(writer->writer,
                                         post_mesh->exp_mesh,
