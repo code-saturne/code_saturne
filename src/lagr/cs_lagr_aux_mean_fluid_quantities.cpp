@@ -744,11 +744,6 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                         i_visc.data(),
                         b_visc.data());
 
-      cs_array<cs_real_t> i_massflux(n_i_faces);
-      cs_array<cs_real_t> b_massflux(n_b_faces);
-      i_massflux.zero();
-      b_massflux.zero();
-
       cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
 
       cs_array_2d<cs_real_t> _div_mu_gradvel;
