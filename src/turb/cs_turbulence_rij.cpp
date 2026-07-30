@@ -1843,9 +1843,15 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
           for (cs_lnum_t j = 0; j < 3; j++) {
             const cs_lnum_t _ij = t2v[i][j];
             implmat2add[i][j] = gradv[c_id][i][j] - ccorio * matrot[i][j]
+            /* time stepping of version 9 and before*/
+#if 1
+                                + (impl_lin_cst + cphiw_impl) * st_deltaij[_ij]
+            /* time stepping with lesses implicit terms */
+#else
                                 + impl_lin_cst * st_deltaij[_ij]
                                 /* 5/tau * (1-alpha3) n x n  */
                                 + xnal[i] * xnal[j] * cphiw_impl
+#endif
                                 + (  impl_id_cst * d1s2
                                    + alpha3 * ceps_impl) * oo_matrn[_ij];
           }
