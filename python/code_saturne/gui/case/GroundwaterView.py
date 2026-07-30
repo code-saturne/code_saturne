@@ -53,6 +53,9 @@ from code_saturne.gui.case.GroundwaterForm  import Ui_GroundwaterForm
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

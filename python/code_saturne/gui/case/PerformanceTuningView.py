@@ -56,6 +56,9 @@ from code_saturne.gui.base.QtPage import ComboModel, IntValidator, RegExpValidat
 
 from code_saturne.gui.case.PerformanceTuningForm import Ui_PerformanceTuningForm
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

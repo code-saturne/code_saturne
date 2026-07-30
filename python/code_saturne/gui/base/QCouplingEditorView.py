@@ -59,6 +59,7 @@ except Exception:
         QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessagBox
 
 from code_saturne.model.Common import GuiParam
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -66,6 +67,22 @@ from code_saturne.model.Common import GuiParam
 logging.basicConfig()
 log = logging.getLogger("QCouplingEditorView")
 log.setLevel(GuiParam.DEBUG)
+
+#-------------------------------------------------------------------------------
+# Helper for QMessageBox Yes/No compatibility
+#-------------------------------------------------------------------------------
+
+def _msgbox_yes():
+    try:
+        return QMessageBox.StandardButton.Yes
+    except AttributeError:
+        return QMessageBox.Yes
+
+def _msgbox_no():
+    try:
+        return QMessageBox.StandardButton.No
+    except AttributeError:
+        return QMessageBox.No
 
 #-------------------------------------------------------------------------------
 # CouplingEditorView class
@@ -82,7 +99,8 @@ class domain_entry(object):
     Class for domain data entry management.
     """
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def __init__(self, data_dict):
         """
         Constructor
@@ -115,24 +133,23 @@ class domain_entry(object):
                 self.labels.append(self.__create_label__(k))
                 self.vals.append(self.__create_line__(data_dict[k]))
                 self.n_ent += 1
-    # ---------------------------------------------------------------
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def __create_label__(self, text):
         label = QLabel()
 
         label.setText(text)
         label.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlagAlignVCenter)
         return label
-    # ---------------------------------------------------------------
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def __create_line__(self, val):
         line = QLineEdit()
         line.setText(str(val))
 
         return line
-    # ---------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 # CouplingEditorView class
@@ -140,7 +157,8 @@ class domain_entry(object):
 
 class CouplingEditorView(QWidget):
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def __init__(self, parent, cfgfile=None):
         """
         Constructor
@@ -157,9 +175,9 @@ class CouplingEditorView(QWidget):
         self.file_loaded   = False
 
         self.initUI(self.cfgfile)
-    # ---------------------------------------------------------------
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def load_cfg_file(self, cfgfile=None):
         """
         Load a configuration file
@@ -176,9 +194,9 @@ class CouplingEditorView(QWidget):
                 if self.data != []:
                     self.file_loaded   = True
                 self.data_modified = False
-    # ---------------------------------------------------------------
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def save_cfg_file(self):
         """
         Save the configuration file
@@ -192,9 +210,9 @@ class CouplingEditorView(QWidget):
                                   str(d.vals[entry].text()))
 
         self.run_conf.save()
-    # ---------------------------------------------------------------
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def initUI(self, cfgfile):
         """
         Create the visual layout
@@ -251,18 +269,18 @@ class CouplingEditorView(QWidget):
 
 
         self.tabwidget.setCurrentIndex(0)
-    # ---------------------------------------------------------------
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def add_tab_data(self, data):
         """
         Add tab data
         """
 
         self.data.append(domain_entry(data))
-    # ---------------------------------------------------------------
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def add_tab(self, dom_data):
         """
         Add a tab to the tabWidget
@@ -292,14 +310,13 @@ class CouplingEditorView(QWidget):
         tab.setLayout(layout)
 
         return tab
-    # ---------------------------------------------------------------
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     @Slot()
     def dataModifed(self):
 
         self.data_modified = True
-    # ---------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 # QCouplingEditor class (Independent window)
@@ -310,7 +327,8 @@ class QCouplingEditor(QMainWindow):
     Independant window
     """
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def __init__(self, parent=None, cfgfile=None, standalone_mode=False):
         """
         Constructor
@@ -362,9 +380,9 @@ class QCouplingEditor(QMainWindow):
         self.toolbar.addAction(self.closeFileAction)
 
         self.setCentralWidget(self.editorView)
-    # ---------------------------------------------------------------
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def saveFile(self):
         """
         Save the configuration file
@@ -372,9 +390,9 @@ class QCouplingEditor(QMainWindow):
 
         self.editorView.save_cfg_file()
         self.editorView.data_modified = False
-    # ---------------------------------------------------------------
 
-    # ---------------------------------------------------------------
+    #---------------------------------------------------------------------------
+
     def closeOpenedFile(self):
         """
         Close and save if necessary the opened configuration file
@@ -383,17 +401,17 @@ class QCouplingEditor(QMainWindow):
         if self.editorView.file_loaded:
             choice = QMessageBox.question(self, 'Coupling parameters editor',
                                           'Exit editor ?',
-                                          QMessageBox.Yes | QMessageBox.No)
+                                          _msgbox_yes() | _msgbox_no())
         else:
-            choice = QMessageBox.Yes
+            choice = _msgbox_yes()
 
-        if choice == QMessageBox.Yes:
+        if choice == _msgbox_yes():
 
             if self.editorView.data_modified:
                 choice = QMessageBox.question(self, 'Coupling parameters editor',
                                               'Save modifications ?',
-                                              QMessageBox.Yes | QMessageBox.No)
-                if choice == QMessageBox.Yes:
+                                              _msgbox_yes() | _msgbox_no())
+                if choice == _msgbox_yes():
                     self.saveFile()
                 else:
                     pass
@@ -408,8 +426,7 @@ class QCouplingEditor(QMainWindow):
             return 0
         else:
             return 1
-    # ---------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
-# END OF FILE
+# End of file
 #-------------------------------------------------------------------------------

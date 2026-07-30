@@ -170,13 +170,13 @@ class TypeFuelDelegate(QItemDelegate):
             painter.save()
             # set background color
             if option.state & QStyle.State_Selected:
-                painter.setBrush(QBrush(Qt.darkRed))
+                painter.setBrush(QBrush(Qt.GlobalColor.darkRed))
             else:
-                painter.setBrush(QBrush(Qt.red))
+                painter.setBrush(QBrush(Qt.GlobalColor.red))
             # set text color
-            painter.setPen(QPen(Qt.NoPen))
+            painter.setPen(QPen(Qt.PenStyle.NoPen))
             painter.drawRect(option.rect)
-            painter.setPen(QPen(Qt.black))
+            painter.setPen(QPen(Qt.GlobalColor.black))
             value = index.data(Qt.ItemDataRole.DisplayRole)
             if value.isValid():
                 text = str(value)

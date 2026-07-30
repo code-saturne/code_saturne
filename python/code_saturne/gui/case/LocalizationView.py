@@ -63,6 +63,9 @@ from code_saturne.gui.case.PreProcessingInformationsView import Informations, pr
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.OutputControlModel import OutputControlModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

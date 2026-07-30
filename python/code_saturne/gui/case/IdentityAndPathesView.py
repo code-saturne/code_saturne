@@ -50,6 +50,9 @@ from code_saturne.gui.base.MainView import MainView
 from code_saturne.gui.case.IdentityAndPathesForm import Ui_IdentityAndPathesForm
 from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

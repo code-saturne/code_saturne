@@ -56,6 +56,9 @@ from code_saturne.gui.case.StartRestartForm import Ui_StartRestartForm
 from code_saturne.gui.case.StartRestartAdvancedDialogForm import Ui_StartRestartAdvancedDialogForm
 from code_saturne.model.StartRestartModel import StartRestartModel, getRestartInfo
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

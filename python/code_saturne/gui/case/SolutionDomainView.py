@@ -53,6 +53,9 @@ from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.SolutionDomainForm import Ui_SolutionDomainForm
 from code_saturne.model.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -81,13 +84,13 @@ class MeshNameDelegate(QItemDelegate):
             painter.save()
             # set background color
             if option.state & QStyle.State_Selected:
-                painter.setBrush(QBrush(Qt.darkRed))
+                painter.setBrush(QBrush(Qt.GlobalColor.darkRed))
             else:
-                painter.setBrush(QBrush(Qt.red))
+                painter.setBrush(QBrush(Qt.GlobalColor.red))
             # set text color
-            painter.setPen(QPen(Qt.NoPen))
+            painter.setPen(QPen(Qt.PenStyle.NoPen))
             painter.drawRect(option.rect)
-            painter.setPen(QPen(Qt.black))
+            painter.setPen(QPen(Qt.GlobalColor.black))
             value = index.data(Qt.ItemDataRole.DisplayRole)
             if value != None:
                 text = str(value)
@@ -161,13 +164,13 @@ class MeshFormatDelegate(QItemDelegate):
             painter.save()
             # set background color
             if option.state & QStyle.State_Selected:
-                painter.setBrush(QBrush(Qt.darkRed))
+                painter.setBrush(QBrush(Qt.GlobalColor.darkRed))
             else:
-                painter.setBrush(QBrush(Qt.red))
+                painter.setBrush(QBrush(Qt.GlobalColor.red))
             # set text color
-            painter.setPen(QPen(Qt.NoPen))
+            painter.setPen(QPen(Qt.PenStyle.NoPen))
             painter.drawRect(option.rect)
-            painter.setPen(QPen(Qt.black))
+            painter.setPen(QPen(Qt.GlobalColor.black))
             value = index.data(Qt.ItemDataRole.DisplayRole)
             if value != None:
                 if value.isValid():

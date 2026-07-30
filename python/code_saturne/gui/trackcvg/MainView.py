@@ -28,9 +28,9 @@ This module defines the main application classes for the Qt GUI.
 This module defines the following classes:
 - MainView
 
-    @copyright: 1998-2017 EDF S.A., France
+    @copyright: 1998-2026 EDF S.A., France
     @author: U{EDF<mailto:saturne-support@edf.fr>}
-    @license: GNU GPL v2, see COPYING for details.
+    @license: GNU GPL v2 or later, see COPYING for details.
 """
 
 #-------------------------------------------------------------------------------
@@ -74,6 +74,9 @@ from matplotlib.figure import Figure
 
 import xml
 from xml.dom.minidom import parse, Document
+
+if QT_API == "PYQT6":
+    from code_saturne.gui.trackcvg import resource_base_rc
 
 #-------------------------------------------------------------------------------
 # log config
@@ -1355,7 +1358,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
 def isAlive(qobj):
     """
-    return True if the object qobj exist
+    return True if the object qobj exists (not in PySide)
 
     @param qobj: the name of the attribute
     @return: C{True} or C{False}
@@ -1363,14 +1366,10 @@ def isAlive(qobj):
     try:
         import sip
         sip.unwrapinstance(qobj)
-    except ImportError:
-        # PySide6/PyQt6: sip not available, use a different check
-        try:
-            qobj.objectName()
-        except RuntimeError:
-            return False
     except RuntimeError:
         return False
+    except Exception:
+        pass
     return True
 
 #-------------------------------------------------------------------------------

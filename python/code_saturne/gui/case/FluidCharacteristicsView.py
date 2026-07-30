@@ -62,6 +62,9 @@ from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.InternalCouplingModel import InternalCouplingModel
 from code_saturne.model.LocalizationModel import LocalizationModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

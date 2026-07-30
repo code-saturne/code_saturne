@@ -61,6 +61,9 @@ from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.TimeTablesModel import TimeTablesModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -68,7 +71,6 @@ from code_saturne.model.TimeTablesModel import TimeTablesModel
 logging.basicConfig()
 log = logging.getLogger("BoundaryConditionsCoalInletView")
 log.setLevel(GuiParam.DEBUG)
-
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class to display Coals in a QTableView

@@ -783,7 +783,6 @@ class FileSystemModel(QtWidgets.QFileSystemModel):
                 return self.tr(self.title)
         return None
 
-
 #-------------------------------------------------------------------------------
 # Helper for QMessageBox Yes/No compatibility
 #-------------------------------------------------------------------------------
@@ -802,7 +801,6 @@ def _msgbox_no():
 
 def _msgbox_yes_no():
     return _msgbox_yes() | _msgbox_no()
-
 
 #-------------------------------------------------------------------------------
 # Explorer class

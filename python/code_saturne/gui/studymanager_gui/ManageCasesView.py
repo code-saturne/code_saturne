@@ -50,6 +50,9 @@ from code_saturne.gui.base.QtPage import RegExpValidator, from_qvariant
 from code_saturne.gui.studymanager_gui.ManageCasesForm import Ui_ManageCasesForm
 from code_saturne.gui.studymanager_gui.ManageCasesModel import ManageCasesModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.studymanager_gui import resource_base_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -57,7 +60,6 @@ from code_saturne.gui.studymanager_gui.ManageCasesModel import ManageCasesModel
 logging.basicConfig()
 log = logging.getLogger("ManageCasesView")
 log.setLevel(GuiParam.DEBUG)
-
 
 #-------------------------------------------------------------------------------
 # item class
@@ -800,7 +802,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.modelPostScripts = PostScriptItemModel(self.mdl, '', -1)
         self.tablePostScript.setModel(self.modelPostScripts)
         self.tablePostScript.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tablePostScript.setGridStyle(Qt.NoPen)
+        self.tablePostScript.setGridStyle(Qt.PenStyle.NoPen)
         self.tablePostScript.setAlternatingRowColors(True)
 
         hh = self.tablePostScript.horizontalHeader()

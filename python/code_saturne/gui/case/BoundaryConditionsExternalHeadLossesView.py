@@ -55,6 +55,9 @@ from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.TimeTablesModel import TimeTablesModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

@@ -24,7 +24,7 @@
 
 """
 This module defines the main application classes for the Qt GUI.
-This GUI provides a simple way to display independante pages, in order to put
+This GUI provides a simple way to display independant pages, in order to put
 informations in the XML document, which reflets the treated case.
 
 This module defines the following classes:
@@ -96,6 +96,9 @@ from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.model.ScriptRunningModel import ScriptRunningModel
 from code_saturne.model.SolutionDomainModel import getRunType
 from code_saturne.base.cs_meg_to_c import meg_to_c_interpreter
+
+if QT_API == "PYQT6":
+    from code_saturne.gui.base import resource_base_rc
 
 #-------------------------------------------------------------------------------
 # Theme

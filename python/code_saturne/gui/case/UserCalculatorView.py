@@ -58,6 +58,9 @@ from code_saturne.gui.case.QMegEditorView import QMegEditorView
 
 from code_saturne.model.UserCalculatorModel import UserCalculatorModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

@@ -62,6 +62,9 @@ from code_saturne.model.ThermalParticlesRadiationModel import ThermalParticlesRa
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.HTSModel import HTSModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

@@ -62,11 +62,17 @@ EXTRA_DIST = ${srcdir}/*
 
 # Install data
 
-iconsdir = ${pkgdatadir}/images
+imagesdir = ${pkgdatadir}/images
 
-icons_DATA = \
+images_DATA = \
 ${abs_top_srcdir}/python/code_saturne/data/icons/splashscreen.png \
 ${abs_top_srcdir}/python/code_saturne/data/icons/logo_salome_cfd.png
+
+# iconsdir = ${pkgdatadir}/icons
+
+# icons_DATA = \
+# ${abs_top_srcdir}/python/code_saturne/data/icons/22x22 \
+# ${abs_top_srcdir}/python/code_saturne/data/icons/32x32
 
 themesdir = ${pkgdatadir}/themes
 
