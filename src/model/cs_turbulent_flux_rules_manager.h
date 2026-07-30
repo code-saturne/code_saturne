@@ -1,20 +1,48 @@
-/*============================================================================
- * cs_turbulent_flux_rules_manager.h
- *
- * Manager pour parser TurbulentFluxRules.xml et exposer les regles de
- * creation des champs de flux turbulent.
- *
- *
- *============================================================================*/
 #ifndef CS_TURBULENT_FLUX_RULES_MANAGER_H
 #define CS_TURBULENT_FLUX_RULES_MANAGER_H
 
+/*============================================================================
+ * Parse TurbulentFluxRules.xml and expose rules for creation of
+ * turbulente flux fields.
+ *============================================================================*/
+
+/*
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2026 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
 #include "base/cs_defs.h"
-#include "base/cs_tree.h"
+
+/*----------------------------------------------------------------------------
+ * Standard library headers
+ *----------------------------------------------------------------------------*/
 
 #include <map>
 #include <string>
 #include <vector>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "base/cs_tree.h"
 
 /*============================================================================
  * Structure definitions
@@ -59,30 +87,39 @@ public:
   cs_turbulent_flux_rules_manager(const char *rules_xml_path);
   ~cs_turbulent_flux_rules_manager();
 
-  /* Obtenir la regle pour un modele donne (ex: "DFM") */
-  const cs_turb_flux_rule_t *get_rule_by_model(const std::string &model) const;
+  /* Obtain rule fro a given model (ex: "DFM") */
+  const cs_turb_flux_rule_t *
+  get_rule_by_model(const std::string &model) const;
 
-  /* Obtenir la regle pour une valeur numerique (ex: 30 pour DFM) */
-  const cs_turb_flux_rule_t *get_rule_by_value(int numeric_value) const;
+  /* Obtain rule for a numerical value (ex: 30 for DFM) */
+  const cs_turb_flux_rule_t *
+  get_rule_by_value(int numeric_value) const;
 
-  /* Obtenir le nom du champ en substituant {scalar} */
-  static std::string resolve_name(const std::string &name_template,
-                                  const std::string &scalar_name);
+  /* Obtain name of a field by substituting {scalar} */
+  static std::string
+  resolve_name(const std::string  &name_template,
+               const std::string  &scalar_name);
 
-  /* Obtenir la valeur numerique pour un modele GUI (ex: "DFM" -> 30) */
-  int get_numeric_value(const std::string &model_name) const;
+  /* Obtain numerical value for a GUI model (ex: "DFM" -> 30) */
+  int
+  get_numeric_value(const std::string  &model_name) const;
 
-  /* Verifier si un modele cree des champs supplementaires */
-  bool creates_fields(const std::string &model_name) const;
+  /* Check if a model created additional fields */
+  bool
+  creates_fields(const std::string  &model_name) const;
 
-  /* Verifier si un modele cree un champ alpha (EB-*) */
-  bool creates_alpha_field(const std::string &model_name) const;
+  /* Check if a model created an alpha field (EB-*) */
+  bool
+  creates_alpha_field(const std::string  &model_name) const;
 };
 
 /*============================================================================
  * Singleton access
  *============================================================================*/
 
-cs_turbulent_flux_rules_manager *cs_get_turbulent_flux_rules_manager(void);
+cs_turbulent_flux_rules_manager
+*cs_get_turbulent_flux_rules_manager(void);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_TURBULENT_FLUX_RULES_MANAGER_H */
