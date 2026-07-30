@@ -850,11 +850,11 @@ _get_coord_extents(cs_lnum_t         n_coords,
   ctx.parallel_for_reduce
     (n_coords, rd, reducer,
      [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<dim*2> &res) {
-       for (cs_lnum_t j = 0; j < dim; j++) {
-         res.r[j]       = coords[c_id*dim + j];
-         res.r[j + dim] = coords[c_id*dim + j];
-       }
-     });
+    for (cs_lnum_t j = 0; j < dim; j++) {
+      res.r[j]       = coords[c_id*dim + j];
+      res.r[j + dim] = coords[c_id*dim + j];
+    }
+  });
 
   ctx.wait();
 
@@ -1616,4 +1616,3 @@ fvm_morton_dump(int                dim,
 }
 
 /*----------------------------------------------------------------------------*/
-

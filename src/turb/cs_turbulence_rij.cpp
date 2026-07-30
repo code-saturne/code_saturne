@@ -3082,7 +3082,7 @@ _solve_omega(int              phase_id,
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const cs_real_t tuexpw = c_st_prv[c_id];
       c_st_prv[c_id] = rhs[c_id];
-      rhs[c_id] = fimp[c_id]*cvara_omg[c_id] - cs_glob_time_scheme->thetst*tuexpw;
+      rhs[c_id] = fimp[c_id]*cvara_omg[c_id] - thets*tuexpw;
       fimp[c_id] = -eqp_loc.theta*fimp[c_id];
     });
   }

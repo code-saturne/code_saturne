@@ -69,7 +69,7 @@
 
 template <size_t blockSize, size_t stride, typename T>
 __device__ static void __forceinline__
-cs_cuda_reduce_warp_reduce_sum(volatile T  *stmp,
+cs_cuda_reduce_warp_reduce_sum(T           *stmp,
                                size_t       tid)
 {
   if (stride == 1) {
@@ -328,7 +328,7 @@ cs_cuda_reduce_sum_single_block(size_t   n,
 
 template <size_t blockSize, typename R, typename T>
 __device__ static void __forceinline__
-cs_cuda_reduce_warp_reduce(volatile T  *stmp,
+cs_cuda_reduce_warp_reduce(T           *stmp,
                            size_t       tid)
 {
   R reducer;
