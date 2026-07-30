@@ -64,6 +64,9 @@ from code_saturne.model.LagrangianModel import LagrangianModel
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.LocalizationModel import LocalizationModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -214,16 +217,21 @@ class FormatWriterDelegate(QItemDelegate):
 
         if self.cfg_libs != None:
             if self.cfg_libs['med'].have == False:
-                editor.setItemData(1, QColor(Qt.red), Qt.ForegroundRole);
+                editor.setItemData(1, QColor(Qt.GlobalColor.red),
+                                   Qt.ItemDataRole.ForegroundRole);
             if self.cfg_libs['cgns'].have == False:
-                editor.setItemData(2, QColor(Qt.red), Qt.ForegroundRole);
+                editor.setItemData(2, QColor(Qt.GlobalColor.red),
+                                   Qt.ItemDataRole.ForegroundRole);
             if self.cfg_libs['catalyst'].have == False \
                and self.cfg_libs['catalyst2'].have == False:
-                editor.setItemData(3, QColor(Qt.red), Qt.ForegroundRole);
+                editor.setItemData(3, QColor(Qt.GlobalColor.red),
+                                   Qt.ItemDataRole.ForegroundRole);
             if self.cfg_libs['melissa'].have == False:
-                editor.setItemData(5, QColor(Qt.red), Qt.ForegroundRole);
+                editor.setItemData(5, QColor(Qt.GlobalColor.red),
+                                   Qt.ItemDataRole.ForegroundRole);
             if self.cfg_libs['ccm'].have == False:
-                editor.setItemData(6, QColor(Qt.red), Qt.ForegroundRole);
+                editor.setItemData(6, QColor(Qt.GlobalColor.red),
+                                   Qt.ItemDataRole.ForegroundRole);
 
         return editor
 
@@ -324,13 +332,13 @@ class TypeMeshDelegate(QItemDelegate):
             painter.save()
             # set background color
             if option.state & QStyle.State_Selected:
-                painter.setBrush(QBrush(Qt.darkRed))
+                painter.setBrush(QBrush(Qt.GlobalColor.darkRed))
             else:
-                painter.setBrush(QBrush(Qt.red))
+                painter.setBrush(QBrush(Qt.GlobalColor.red))
             # set text color
-            painter.setPen(QPen(Qt.NoPen))
+            painter.setPen(QPen(Qt.PenStyle.NoPen))
             painter.drawRect(option.rect)
-            painter.setPen(QPen(Qt.black))
+            painter.setPen(QPen(Qt.GlobalColor.black))
             value = index.data(Qt.ItemDataRole.DisplayRole)
             if value.isValid():
                 text = str(value)

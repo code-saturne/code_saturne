@@ -57,6 +57,9 @@ from code_saturne.gui.case.GasCombustionForm import Ui_GasCombustionForm
 from code_saturne.model.GasCombustionModel import GasCombustionModel
 from code_saturne.model.GasCombustionModel import ThermochemistryData
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

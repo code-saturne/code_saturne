@@ -75,6 +75,9 @@ from code_saturne.gui.case.XMLEditorView import XMLEditorView
 from code_saturne.gui.base.QtPage import getexistingdirectory
 from code_saturne.gui.base.QtPage import from_qvariant, getopenfilename, getsavefilename
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.studymanager_gui import resource_base_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -99,8 +102,11 @@ def _msgbox_no():
     except AttributeError:
         return QMessageBox.No
 
-def _msgbox_yes_no():
-    return _msgbox_yes() | _msgbox_no()
+def _msgbox_cancel():
+    try:
+        return QMessageBox.StandardButton.Cancel
+    except AttributeError:
+        return QMessageBox.Cancel
 
 
 class MainView(object):
@@ -128,7 +134,7 @@ class MainView(object):
 
 
     def ui_initialize(self):
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         MainView.Instances.add(self)
 
         iconpath = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
@@ -142,14 +148,19 @@ class MainView(object):
         self.dockWidgetBrowser.setWidget(self.Browser)
 
         self.scrollArea = QScrollArea(self.frame)
-        getattr(self, 'gridLayout1', getattr(self, 'gridlayout1', None)).addWidget(self.scrollArea,0,0,1,1)
-        getattr(self, 'gridLayout1', getattr(self, 'gridlayout1', None)).setSpacing(0)
-        getattr(self, 'gridLayout', getattr(self, 'gridlayout', None)).addWidget(self.frame,0,0,1,1)
+        if hasattr(self, 'gridlayout1'):
+            self.gridlayout1.addWidget(self.scrollArea,0,0,1,1)
+            self.gridlayout1.setSpacing(0)
+            self.gridlayout.addWidget(self.frame,0,0,1,1)
+        else:
+            self.gridLayout1.addWidget(self.scrollArea,0,0,1,1)
+            self.gridLayout1.setSpacing(0)
+            self.gridLayout.addWidget(self.frame,0,0,1,1)
 
         self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.setFrameShape(QFrame.StyledPanel)
-        self.scrollArea.setFrameShadow(QFrame.Raised)
-        self.scrollArea.setFrameStyle(QFrame.NoFrame)
+        self.scrollArea.setFrameShape(QFrame.Shape.StyledPanel)
+        self.scrollArea.setFrameShadow(QFrame.Shadow.Raised)
+        self.scrollArea.setFrameStyle(QFrame.Shape.NoFrame)
 
         # connections
 
@@ -380,10 +391,10 @@ class MainView(object):
             reply = QMessageBox.question(self,
                                          title,
                                          msg,
-                                         QMessageBox.Yes|
-                                         QMessageBox.No|
-                                         QMessageBox.Cancel)
-            if reply == QMessageBox.Cancel:
+                                         _msgbox_yes()|
+                                         _msgbox_no()|
+                                         _msgbox_cancel())
+            if reply == _msgbox_cancel():
                 return False
             elif reply == _msgbox_yes():
                 self.fileSave()
@@ -793,7 +804,7 @@ class MainView(object):
 
         reply = QMessageBox.question(self, "Restore defaults",
                                      "Restore default color and font ?",
-                                     _msgbox_yes_no())
+                                     _msgbox_yes() | _msgbox_no())
         if reply == _msgbox_yes():
             app = QCoreApplication.instance()
             if self.palette_default:
@@ -895,7 +906,7 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
 
 def isAlive(qobj):
     """
-    return True if the object qobj exist
+    return True if the object qobj exists (not in PySide)
 
     @param qobj: the name of the attribute
     @return: C{True} or C{False}
@@ -903,13 +914,10 @@ def isAlive(qobj):
     try:
         import sip
         sip.unwrapinstance(qobj)
-    except ImportError:
-        try:
-            qobj.objectName()
-        except RuntimeError:
-            return False
     except RuntimeError:
         return False
+    except Exception:
+        pass
     return True
 
 #-------------------------------------------------------------------------------

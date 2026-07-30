@@ -60,6 +60,22 @@ log = logging.getLogger("CommandMgr")
 log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
+# Helper for QMessageBox Yes/No compatibility
+#-------------------------------------------------------------------------------
+
+def _msgbox_yes():
+    try:
+        return QMessageBox.StandardButton.Yes
+    except AttributeError:
+        return QMessageBox.Yes
+
+def _msgbox_no():
+    try:
+        return QMessageBox.StandardButton.No
+    except AttributeError:
+        return QMessageBox.No
+
+#-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
 
@@ -247,9 +263,9 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         r = QMessageBox.question(self,
                                  self.tr("Kill"),
                                  self.tr("Kill the process "),
-                                 QMessageBox.Yes|QMessageBox.No)
+                                 _msgbox_yes() | _msgbox_no())
 
-        if r == QMessageBox.Yes:
+        if r == _msgbox_yes():
             self.__killChildren()
             self.proc.kill()
 

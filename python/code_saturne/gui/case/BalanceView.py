@@ -50,6 +50,9 @@ from code_saturne.gui.base.QtPage import LabelDelegate, IntegerDelegate
 from code_saturne.gui.case.BalanceForm import Ui_BalanceForm
 from code_saturne.gui.case.FacesSelectionView import StandardItemModelFaces
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -57,7 +60,6 @@ from code_saturne.gui.case.FacesSelectionView import StandardItemModelFaces
 logging.basicConfig()
 log = logging.getLogger("BalanceView")
 log.setLevel(GuiParam.DEBUG)
-
 
 #-------------------------------------------------------------------------------
 # Model class

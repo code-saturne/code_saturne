@@ -49,6 +49,9 @@ from code_saturne.model.Common import GuiParam
 from code_saturne.gui.studymanager_gui.PathesForm import Ui_PathesForm
 from code_saturne.studymanager.cs_studymanager_pathes_model import PathesModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.studymanager_gui import resource_base_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

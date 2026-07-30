@@ -61,6 +61,9 @@ from code_saturne.model.HgnModel import HgnModel
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.GasCombustionModel import GasCombustionModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

@@ -44,6 +44,9 @@ except Exception:
     sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
     from code_saturne.gui.case.WelcomeForm import Ui_WelcomeForm
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # This class defines the welcome page
 #-------------------------------------------------------------------------------
