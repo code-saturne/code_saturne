@@ -126,7 +126,8 @@
  *  Global variables
  *============================================================================*/
 
-static const char _petsc_ij_type_name[] = "PETSc, MATAIJ";
+static const char _petsc_ij_type_name[] = "PETSc, aij"; // "aij" char version
+                                                        // of MATAIJ
 static const char _petsc_ij_type_fullname[] = "PETSc (MATAIJ series)";
 
 static char _init_status = 0; /* 0 at start,  1 if initialized, 2 if finalized */
@@ -1417,8 +1418,6 @@ _release_coeffs(cs_matrix_t  *matrix)
       coeffs->matrix_state = 0;
     }
 
-    if (coeffs->matype_r != nullptr)
-      PetscFree(coeffs->matype_r);
   }
 }
 
@@ -1443,6 +1442,11 @@ _destroy_coeffs(cs_matrix_t  *matrix)
 {
   if (matrix->coeffs != nullptr) {
     _release_coeffs(matrix);
+   auto coeffs = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
+   if (coeffs->matype_r != nullptr)
+      PetscFree(coeffs->matype_r); // Do not free in _release_coeffs,
+                                   // because in case of matrix reuse,
+                                   // this matype_r is reset in _set_coeffs
     CS_FREE(matrix->coeffs);
   }
 }
