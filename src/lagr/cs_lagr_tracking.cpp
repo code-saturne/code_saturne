@@ -3688,10 +3688,10 @@ _initialize_displacement(cs_lagr_particle_set_t  &p_set,
   }
   CS_FREE(rot_m);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n Particle set after %s\n", __func__);
-  cs_lagr_particle_set_dump(p_set);
-#endif
+  if (cs_glob_lagr_model->verbosity >= 2) {
+    bft_printf("\n Particle set after %s\n", __func__);
+    cs_lagr_particle_set_dump(&p_set);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3772,10 +3772,10 @@ _finalize_displacement(cs_lagr_particle_set_t &p_set)
   CS_FREE(swap_buffer);
   CS_FREE(cell_idx);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n Particle set after %s\n", __func__);
-  cs_lagr_particle_set_dump(p_set);
-#endif
+  if (cs_glob_lagr_model->verbosity >= 2) {
+    bft_printf("\n Particle set after %s\n", __func__);
+    cs_lagr_particle_set_dump(&p_set);
+  }
 
   if (cs_glob_mesh->time_dep == CS_MESH_TRANSIENT_CONNECT)
     _particle_track_builder = _destroy_track_builder(_particle_track_builder);
@@ -3802,10 +3802,10 @@ cs_lagr_tracking_initialize(void)
 
   cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n PARTICLE SET AFTER CREATION\n");
-  cs_lagr_particle_set_dump(p_set);
-#endif
+  if (cs_glob_lagr_model->verbosity >= 2) {
+    bft_printf("\n PARTICLE SET AFTER CREATION\n");
+    cs_lagr_particle_set_dump(&p_set);
+  }
 
   /* Initialization */
 
@@ -4086,10 +4086,10 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
 
     continue_displacement = _sync_particle_set(p_set, particle_range);
 
-#if 0
-    bft_printf("\n Particle set after sync\n");
-    cs_lagr_particle_set_dump(p_set);
-#endif
+    if (cs_glob_lagr_model->verbosity >= 2) {
+      bft_printf("\n Particle set after sync\n");
+      cs_lagr_particle_set_dump(&p_set);
+    }
 
     /*  assert(j == -1);  After a loop on particles, next_id of the last
         particle must not be defined */
