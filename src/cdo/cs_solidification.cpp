@@ -4371,7 +4371,7 @@ cs_solidification_destroy_all(void)
 
       if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_NL ||
           solid->model == CS_SOLIDIFICATION_MODEL_VELOCITY_GIVEN)
-        CS_FREE(v_model->nl_algo);
+        cs_iter_algo_free(&(v_model->nl_algo));
 
       CS_FREE(v_model);
     }
