@@ -1232,7 +1232,7 @@ if test "x$NVCC" != "x" ; then
 
   # Default compiler flags
 
-  nvccflags_default="-std=c++17 --expt-extended-lambda "
+  nvccflags_default="-std=c++17 --expt-extended-lambda -Werror-cross-execution-space-call"
   nvccflags_default_dbg="-g -G"
   nvccflags_default_opt="-O2"
   nvccflags_default_prf="-O2 -g -lineinfo"
