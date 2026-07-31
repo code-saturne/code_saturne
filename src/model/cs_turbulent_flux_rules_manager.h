@@ -117,8 +117,8 @@ public:
  * Singleton access
  *============================================================================*/
 
-cs_turbulent_flux_rules_manager
-*cs_get_turbulent_flux_rules_manager(void);
+cs_turbulent_flux_rules_manager *
+cs_get_turbulent_flux_rules_manager(void);
 
 /*----------------------------------------------------------------------------*/
 

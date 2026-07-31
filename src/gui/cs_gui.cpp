@@ -1716,6 +1716,7 @@ _read_diffusivity(void)
      * depuis ThermalRules.xml via get_diffusivity_formula().
      * Fallback : comportement original si XML non disponible.
      * ========================================================================= */
+
     cs_thermal_rules_manager *thermal_rules = cs_get_thermal_rules_manager();
     const char *thermal_var_name = thermal_rules->get_thermal_variable_name(
                                       thermal_variable);
@@ -2307,6 +2308,17 @@ void
 cs_gui_finalize(void)
 {
   cs_gui_boundary_conditions_free_memory();
+
+  /* Clear rules */
+
+  cs_thermal_rules_manager *thermal_rules = cs_get_thermal_rules_manager(true);
+  if (thermal_rules != nullptr)
+    delete thermal_rules;
+
+  cs_turbulence_rules_manager *turb_rules
+    = cs_get_turbulence_rules_manager(true);
+  if (turb_rules != nullptr)
+    delete turb_rules;
 
   /* Clean MEG contexts */
 
@@ -4830,6 +4842,7 @@ cs_gui_turb_model(void)
    * Chaque propriété (wall_function, gravity, mixing_length, coupled_rij)
    * est lue conditionnellement selon ce que le XML déclare pour ce modèle.
    * ========================================================================= */
+
   cs_turbulence_rules_manager *rules = cs_get_turbulence_rules_manager();
 
   cs_tree_node_t *tn_t = cs_tree_get_node(cs_glob_tree,

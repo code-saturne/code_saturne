@@ -1,9 +1,5 @@
 /*============================================================================
- * cs_fields_rules_manager.cpp
- *
- * Implementation du manager pour FieldsRules.xml.
- *
- * 
+ * Rules manager for FieldsRules.xml.
  *============================================================================*/
 
 #include "cs_fields_rules_manager.h"
@@ -13,6 +9,12 @@
 #include "gui/cs_tree_xml.h"
 #include <cstring>
 #include <cstdlib>
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+static cs_fields_rules_manager *g_fields_manager = nullptr;
 
 /*============================================================================
  * Static helpers
@@ -37,6 +39,25 @@ cs_fields_rules_manager::_atof_safe(const char *s, double def)
 {
   if (s == nullptr) return def;
   return atof(s);
+}
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy helper and associated tree.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rule_manager_finalize(void)
+{
+  if (g_fields_manager != nullptr) {
+    delete g_fields_manager;
+    g_fields_manager = nullptr;
+  }
 }
 
 /*============================================================================
@@ -247,10 +268,8 @@ cs_fields_rules_manager::get_module_rules(const char *module_name) const
  * Singleton
  *============================================================================*/
 
-static cs_fields_rules_manager *g_fields_manager = nullptr;
-
-cs_fields_rules_manager*
-cs_get_fields_rules_manager()
+cs_fields_rules_manager *
+cs_get_fields_rules_manager(void)
 {
   if (g_fields_manager == nullptr) {
     char rules_path[1024];
@@ -267,6 +286,9 @@ cs_get_fields_rules_manager()
     }
 
     g_fields_manager = new cs_fields_rules_manager(rules_path);
+
+    cs_base_at_finalize(_rule_manager_finalize);
   }
   return g_fields_manager;
 }
+

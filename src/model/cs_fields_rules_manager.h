@@ -135,7 +135,8 @@ public:
  * Singleton accessor
  *============================================================================*/
 
-cs_fields_rules_manager* cs_get_fields_rules_manager();
+cs_fields_rules_manager *
+cs_get_fields_rules_manager(void);
 
 /*----------------------------------------------------------------------------*/
 

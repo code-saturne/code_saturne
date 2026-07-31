@@ -164,10 +164,10 @@ cs_boundary_conditions_rules_manager::get_legacy_type
  *============================================================================*/
 
 cs_boundary_conditions_rules_manager *
-cs_get_boundary_conditions_rules_manager(void)
+cs_get_boundary_conditions_rules_manager(bool  no_instanciate)
 {
   static cs_boundary_conditions_rules_manager *instance = nullptr;
-  if (instance == nullptr) {
+  if (instance == nullptr && no_instanciate == false) {
     const char *datadir = cs_base_get_pkgdatadir();
     char path[1024];
     snprintf(path, sizeof(path) - 1,

@@ -88,7 +88,7 @@ public:
  *============================================================================*/
 
 cs_boundary_conditions_rules_manager *
-cs_get_boundary_conditions_rules_manager(void);
+cs_get_boundary_conditions_rules_manager(bool  no_instanciate = false);
 
 /*----------------------------------------------------------------------------*/
 

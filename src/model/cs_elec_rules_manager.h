@@ -118,7 +118,8 @@ public:
  * Singleton access
  *============================================================================*/
 
-cs_elec_rules_manager *cs_get_elec_rules_manager(void);
+cs_elec_rules_manager *
+cs_get_elec_rules_manager(void);
 
 /*----------------------------------------------------------------------------*/
 

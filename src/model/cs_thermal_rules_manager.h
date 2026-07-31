@@ -293,7 +293,8 @@ public:
  * Singleton accessor (thread-safe)
  *============================================================================*/
 
-cs_thermal_rules_manager* cs_get_thermal_rules_manager();
+cs_thermal_rules_manager *
+cs_get_thermal_rules_manager(bool  no_instanciate = false);
 
 /*----------------------------------------------------------------------------*/
 

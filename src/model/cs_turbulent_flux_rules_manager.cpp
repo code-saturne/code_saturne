@@ -4,7 +4,7 @@
  * Manager pour parser TurbulentFluxRules.xml et exposer les regles de
  * creation des champs de flux turbulent.
  *
- * 
+ *
  *============================================================================*/
 
 #include "cs_turbulent_flux_rules_manager.h"
@@ -20,6 +20,12 @@
 #include <stdexcept>
 
 /*============================================================================
+ * Static global variable (singleton instance)
+ *============================================================================*/
+
+static cs_turbulent_flux_rules_manager *_instance = nullptr;
+
+/*============================================================================
  * Static helper methods
  *============================================================================*/
 
@@ -28,6 +34,25 @@ cs_turbulent_flux_rules_manager::_atoi_safe(const char *s, int def)
 {
   if (s == nullptr || s[0] == '\0') return def;
   return atoi(s);
+}
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy helper and associated tree.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rule_manager_finalize(void)
+{
+  if (_instance != nullptr) {
+    delete _instance;
+    _instance = nullptr;
+  }
 }
 
 /*============================================================================
@@ -191,16 +216,16 @@ cs_turbulent_flux_rules_manager::creates_alpha_field
 cs_turbulent_flux_rules_manager *
 cs_get_turbulent_flux_rules_manager(void)
 {
-  static cs_turbulent_flux_rules_manager *instance = nullptr;
-
-  if (instance == nullptr) {
+  if (_instance == nullptr) {
     const char *datadir = cs_base_get_pkgdatadir();
     char path[1024];
     snprintf(path, sizeof(path) - 1,
              "%s/model/TurbulentFluxRules.xml", datadir);
     path[sizeof(path) - 1] = '\0';
-    instance = new cs_turbulent_flux_rules_manager(path);
+    _instance = new cs_turbulent_flux_rules_manager(path);
+
+    cs_base_at_finalize(_rule_manager_finalize);
   }
 
-  return instance;
+  return _instance;
 }

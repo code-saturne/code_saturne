@@ -227,7 +227,8 @@ public:
  * Singleton accessor (thread-safe)
  *============================================================================*/
 
-cs_turbulence_rules_manager* cs_get_turbulence_rules_manager();
+cs_turbulence_rules_manager *
+cs_get_turbulence_rules_manager(bool  no_instanciate = false);
 
 /*----------------------------------------------------------------------------*/
 
