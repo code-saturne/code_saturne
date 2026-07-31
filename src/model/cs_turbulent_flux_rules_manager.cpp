@@ -1,40 +1,60 @@
 /*============================================================================
- * cs_turbulent_flux_rules_manager.cpp
- *
- * Manager pour parser TurbulentFluxRules.xml et exposer les regles de
- * creation des champs de flux turbulent.
- *
- *
+ * Parse TurbulentFluxRules.xml and expose rules for creation of
+ * turbulente flux fields.
  *============================================================================*/
 
-#include "cs_turbulent_flux_rules_manager.h"
+/*
+  This file is part of code_saturne, a general-purpose CFD tool.
 
-#include "base/cs_base.h"
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
+  Copyright (C) 1998-2026 EDF S.A.
 
-#include "gui/cs_tree_xml.h"
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+#include "base/cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard library headers
+ *----------------------------------------------------------------------------*/
 
 #include <cstdlib>
 #include <cstring>
 #include <stdexcept>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "base/cs_base.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
+#include "gui/cs_tree_xml.h"
+
+/*----------------------------------------------------------------------------
+ * Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_turbulent_flux_rules_manager.h"
 
 /*============================================================================
  * Static global variable (singleton instance)
  *============================================================================*/
 
 static cs_turbulent_flux_rules_manager *_instance = nullptr;
-
-/*============================================================================
- * Static helper methods
- *============================================================================*/
-
-inline int
-cs_turbulent_flux_rules_manager::_atoi_safe(const char *s, int def)
-{
-  if (s == nullptr || s[0] == '\0') return def;
-  return atoi(s);
-}
 
 /*============================================================================
  * Private function definitions
@@ -53,6 +73,17 @@ _rule_manager_finalize(void)
     delete _instance;
     _instance = nullptr;
   }
+}
+
+/*============================================================================
+ * Static helper methods
+ *============================================================================*/
+
+inline int
+cs_turbulent_flux_rules_manager::_atoi_safe(const char *s, int def)
+{
+  if (s == nullptr || s[0] == '\0') return def;
+  return atoi(s);
 }
 
 /*============================================================================
@@ -229,3 +260,5 @@ cs_get_turbulent_flux_rules_manager(void)
 
   return _instance;
 }
+
+/*-----------------------------------------------------------------------------*/
