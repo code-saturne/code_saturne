@@ -274,16 +274,16 @@ _align_extents(size_t  size)
 }
 
 /*----------------------------------------------------------------------------
- * Dump a particle structure
+ * Dump attributes of a single particle
  *
  * parameter
- *   p_set   <-- cs_lagr_particle_set_t structure to dump
- *   p_id <-- id of particle to dump
+ *   p_set   <-- cs_lagr_particle_set_t structure containing particle
+ *   p_id    <-- id of particle to dump
  *----------------------------------------------------------------------------*/
 
-static void
-_dump_particle(const cs_lagr_particle_set_t  *p_set,
-               cs_lnum_t                      p_id)
+void
+cs_lagr_particle_dump(const cs_lagr_particle_set_t  *p_set,
+                      cs_lnum_t                      p_id)
 {
   const cs_lagr_attribute_map_t *am = p_set->p_am;
 
@@ -1007,7 +1007,7 @@ cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *p_set)
     bft_printf_flush();
 
     for (cs_lnum_t i = 0; i < p_set->n_particles; i++) {
-      _dump_particle(p_set, i);
+      cs_lagr_particle_dump(p_set, i);
     }
 
   }

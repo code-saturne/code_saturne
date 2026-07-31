@@ -120,9 +120,9 @@
 
 typedef enum {
 
-  CS_LAGR_TRACKING_OK,
-  CS_LAGR_TRACKING_ERR_MAX_LOOPS,
-  CS_LAGR_TRACKING_ERR_LOST_PIC
+  CS_LAGR_TRACKING_OK = 0,
+  CS_LAGR_TRACKING_ERR_MAX_LOOPS = 1,
+  CS_LAGR_TRACKING_ERR_LOST_PIC = 2
 
 } cs_lagr_tracking_error_t;
 
@@ -785,6 +785,18 @@ _manage_error(cs_lnum_t                       failsafe_mode,
 
   if (error_type == CS_LAGR_TRACKING_ERR_LOST_PIC)
     p_set.attr_real(p_id, CS_LAGR_TR_TRUNCATE) = 2.0;
+
+  if (    error_type != CS_LAGR_TRACKING_OK
+      && (failsafe_mode != 0 || cs_glob_lagr_model->verbosity > 0)) {
+    bft_printf(_("\n"
+                 "========================================================================\n"
+                 "Tracking error detected (type %d) for particle %lu.\n"
+                 "Dumping particle attributes:\n"
+                 "------------------------------------------------------------------------\n"),
+               (int)error_type, (unsigned long)p_id);
+    cs_lagr_particle_dump(&p_set, p_id);
+    bft_printf("========================================================================\n\n");
+  }
 
   if (failsafe_mode == 1) {
     switch (error_type) {

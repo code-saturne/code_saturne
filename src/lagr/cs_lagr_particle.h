@@ -1729,6 +1729,19 @@ cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *p_set);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Dump attributes of a single particle.
+ *
+ * \param[in]  p_set  cs_lagr_particle_t structure containing the particle
+ * \param[in]  p_id   particle index/ID
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_particle_dump(const cs_lagr_particle_set_t  *p_set,
+                      cs_lnum_t                      p_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set number of user particle variables.
  *
  * \param[in]  n_user_variables  number of user variables
