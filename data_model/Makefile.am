@@ -37,7 +37,7 @@ modeldocsdir = $(pkgdatadir)/model/docs
 install-data-local:
 	@if command -v sphinx-build > /dev/null 2>&1 && sphinx-build --version > /dev/null 2>&1; then \
 	  echo "Generating model rules documentation..."; \
-	  cd $(srcdir)/docs && python3 generate_doc.py && make html; \
+	  $(MKDIR_P) $(builddir/docs) && cd $(builddir)/docs && python3 generate_doc.py && make html; \
 	  $(MKDIR_P) $(DESTDIR)$(modeldocsdir); \
 	  cp -r $(srcdir)/docs/build/html/. $(DESTDIR)$(modeldocsdir)/; \
 	  echo "Documentation installed in $(modeldocsdir)"; \

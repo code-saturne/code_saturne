@@ -50,7 +50,7 @@ install-data-local:
 	  else \
 	    echo "Doxygen XML not found, skipping API generation."; \
 	  fi && \
-	  $(SPHINXBUILD) -b html $(srcdir) $(DESTDIR)$(pkgdatadir)/doc/sphinx/html \
+	  $(SPHINXBUILD) -b html $(top_builddir)/doc/sphinx $(DESTDIR)$(pkgdatadir)/doc/sphinx/html \
 	    -d $(top_builddir)/doc/sphinx/.doctrees \
 	    -D breathe_projects.code_saturne=$(top_builddir)/doc/doxygen/src/xml; \
 	  echo "Sphinx documentation installed."; \
