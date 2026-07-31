@@ -158,15 +158,22 @@ cs_lagr_dlvo_init(const cs_real_t   water_permit,
          * _free_space_permit * PG_CST
          * cs_lagr_dlvo_param.temperature[cell_id]), -0.5);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(" epseau = %g\n", cs_lagr_dlvo_param.water_permit);
-  bft_printf(" fion   = %g\n", cs_lagr_dlvo_param.ionic_strength);
-  bft_printf(" temp[0]   = %g\n", cs_lagr_dlvo_param.temperature[0]);
-  bft_printf(" valen   = %g\n", cs_lagr_dlvo_param.valen);
-  bft_printf(" debye[0]   = %g\n", cs_lagr_dlvo_param.debye_length[0]);
-  bft_printf(" phi_p   = %g\n", cs_lagr_dlvo_param.phi_p);
-  bft_printf(" phi_s  = %g\n", cs_lagr_dlvo_param.phi_s);
-#endif
+  if (cs_glob_lagr_model->verbosity >= 1) {
+    bft_printf("[Lagrangian DLVO] water_permit = %g\n",
+               cs_lagr_dlvo_param.water_permit);
+    bft_printf("[Lagrangian DLVO] ionic_strength = %g\n",
+               cs_lagr_dlvo_param.ionic_strength);
+    bft_printf("[Lagrangian DLVO] temperature[0] = %g\n",
+               cs_lagr_dlvo_param.temperature[0]);
+    bft_printf("[Lagrangian DLVO] valen = %g\n",
+               cs_lagr_dlvo_param.valen);
+    bft_printf("[Lagrangian DLVO] debye_length[0] = %g\n",
+               cs_lagr_dlvo_param.debye_length[0]);
+    bft_printf("[Lagrangian DLVO] phi_p = %g\n",
+               cs_lagr_dlvo_param.phi_p);
+    bft_printf("[Lagrangian DLVO] phi_s = %g\n",
+               cs_lagr_dlvo_param.phi_s);
+  }
 
 }
 

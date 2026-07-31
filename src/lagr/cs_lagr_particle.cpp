@@ -708,10 +708,10 @@ cs_lagr_particle_set_create(void)
 {
   cs_glob_lagr_particle_set = new cs_lagr_particle_set_t(128, _p_attr_map);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n PARTICLE SET AFTER CREATION\n");
-  cs_lagr_particle_set_dump(cs_glob_lagr_particle_set);
-#endif
+  if (cs_glob_lagr_model->verbosity >= 2) {
+    bft_printf("\n PARTICLE SET AFTER CREATION\n");
+    cs_lagr_particle_set_dump(cs_glob_lagr_particle_set);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

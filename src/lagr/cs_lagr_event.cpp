@@ -579,10 +579,10 @@ cs_lagr_event_set_create(void)
 {
   cs_lagr_event_set_t  *events = _create_event_set(256, _e_attr_map);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n EVENT SET AFTER CREATION\n");
-  cs_lagr_event_set_dump(events);
-#endif
+  if (cs_glob_lagr_model->verbosity >= 2) {
+    bft_printf("\n EVENT SET AFTER CREATION\n");
+    cs_lagr_event_set_dump(events);
+  }
 
   return events;
 }

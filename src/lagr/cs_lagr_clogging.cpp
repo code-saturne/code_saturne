@@ -164,15 +164,22 @@ cs_lagr_clogging_initialize(const cs_real_t   *water_permit,
                 * _free_space_permit * PG_CST
                 * cs_lagr_clogging_param.temperature[c_id]), -0.5);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf(" epseau = %g\n", cs_lagr_clogging_param.water_permit);
-  bft_printf(" valen   = %g\n", cs_lagr_clogging_param.valen);
-  bft_printf(" fion   = %g\n", cs_lagr_clogging_param.ionic_strength);
-  bft_printf(" temp[1]   = %g\n", cs_lagr_clogging_param.temperature[0]);
-  bft_printf(" debye[1]   = %g\n", cs_lagr_clogging_param.debye_length[0]);
-  bft_printf(" phi1   = %g\n", cs_lagr_clogging_param.phi1);
-  bft_printf(" phi2  = %g\n", cs_lagr_clogging_param.phi2);
-#endif
+  if (cs_glob_lagr_model->verbosity >= 1) {
+    bft_printf("[Lagrangian Clogging] water_permit = %g\n",
+               cs_lagr_clogging_param.water_permit);
+    bft_printf("[Lagrangian Clogging] valen = %g\n",
+               cs_lagr_clogging_param.valen);
+    bft_printf("[Lagrangian Clogging] ionic_strength = %g\n",
+               cs_lagr_clogging_param.ionic_strength);
+    bft_printf("[Lagrangian Clogging] temperature[0] = %g\n",
+               cs_lagr_clogging_param.temperature[0]);
+    bft_printf("[Lagrangian Clogging] debye_length[0] = %g\n",
+               cs_lagr_clogging_param.debye_length[0]);
+    bft_printf("[Lagrangian Clogging] phi_p = %g\n",
+               cs_lagr_clogging_param.phi_p);
+    bft_printf("[Lagrangian Clogging] phi_s = %g\n",
+               cs_lagr_clogging_param.phi_s);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -265,12 +272,12 @@ cs_lagr_clogging_barrier(cs_lagr_particle_set_t         &p_set,
     contact_count[0] +=1;
   }
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (mean_nb_cont > 0) {
-    bft_printf("mean number = %g\n", mean_nb_cont);
-    bft_printf("calculated number = %d\n",  contact_count[0]);
+  if (cs_glob_lagr_model->verbosity >= 1) {
+    if (mean_nb_cont > 0) {
+      bft_printf("mean number = %g\n", mean_nb_cont);
+      bft_printf("calculated number = %d\n",  contact_count[0]);
+    }
   }
-#endif
 
   if (contact_count[0] == 0) {
 

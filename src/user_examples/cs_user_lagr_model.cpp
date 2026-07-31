@@ -320,6 +320,14 @@ cs_user_lagr_model(void)
    *  = 1: stop calculation if tracking error occurs */
   cs_glob_lagr_model->failsafe_mode = 0;
 
+  /* Verbosity level:
+   *  = 0: standard output (default)
+   *  = 1: log basic physical and numerical initialization parameters
+   *       (DLVO, Roughness, Clogging)
+   *  = 2: log full diagnostic and structured dumps of event/particle sets
+   *       (creation, sync, displacement) */
+  cs_glob_lagr_model->verbosity = 0;
+
   /* Two-way coupling: (iilagr = CS_LAGR_TWOWAY_COUPLING)
      ------------------------------ */
 

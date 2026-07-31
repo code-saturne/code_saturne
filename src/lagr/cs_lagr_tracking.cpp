@@ -789,13 +789,14 @@ _manage_error(cs_lnum_t                       failsafe_mode,
   if (    error_type != CS_LAGR_TRACKING_OK
       && (failsafe_mode != 0 || cs_glob_lagr_model->verbosity > 0)) {
     bft_printf(_("\n"
-                 "========================================================================\n"
+                 "========================================================\n"
                  "Tracking error detected (type %d) for particle %lu.\n"
                  "Dumping particle attributes:\n"
-                 "------------------------------------------------------------------------\n"),
+                 "--------------------------------------------------------\n"),
                (int)error_type, (unsigned long)p_id);
     cs_lagr_particle_dump(&p_set, p_id);
-    bft_printf("========================================================================\n\n");
+    bft_printf(
+      "========================================================\n\n");
   }
 
   if (failsafe_mode == 1) {

@@ -366,7 +366,12 @@ typedef struct {
       - 1: stop calculation if tracking error occurs */
   int  failsafe_mode;
 
-  /*! Verbose mode if > 0 */
+  /*! Verbosity level:
+      - 0: standard output (default)
+      - 1: log basic physical and numerical initialization parameters
+           (DLVO, Roughness, Clogging)
+      - 2: log full diagnostic and structured dumps of event/particle sets
+           (creation, sync, displacement) */
   int  verbosity;
 } cs_lagr_model_t;
 
