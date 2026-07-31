@@ -644,6 +644,14 @@ struct cs_solidification_t {
 
   cs_lnum_t        first_cell;
 
+  // Performance monitoring
+
+  cs_timer_counter_t  tcc; /*!< Cumulative elapsed time for computing (building
+                            *   and solving) the solidification system besides
+                            *   equations */
+  cs_timer_counter_t  tce; /*!< Cumulative elapsed time for computing all extra
+                            *   operations and post processing */
+
 };
 
 /*============================================================================
@@ -751,6 +759,9 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
 
 void
 cs_solidification_log_setup(void);
+
+void
+cs_solidification_log_performance(void);
 
 void
 cs_solidification_init_values(const cs_mesh_t              *mesh,

@@ -706,6 +706,9 @@ _performance_log_monitoring(const cs_domain_t   *domain)
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f seconds\n",
                 "<CDO/ExtraOperations> Runtime", domain->tcp.nsec*1e-9);
 
+  if (cs_solidification_is_activated())
+    cs_solidification_log_performance();
+
   cs_log_printf(CS_LOG_PERFORMANCE, "\n %-35s %9.3f seconds\n",
                 "<CDO> Total runtime", domain->tca.nsec*1e-9);
 

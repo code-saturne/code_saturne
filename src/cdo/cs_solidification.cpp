@@ -40,6 +40,7 @@
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
+#include "base/cs_timer.h"
 #include "bft/bft_error.h"
 #include "cdo/cs_cdofb_scaleq.h"
 #include "cdo/cs_navsto_system.h"
@@ -2814,11 +2815,16 @@ _voller_prakash_87(const cs_mesh_t           *mesh,
   cs_thermal_system_compute(true, // operate a cur2prev operation inside
                             mesh, connect, cdoq, time_step);
 
+  cs_timer_t t0 = cs_timer_time();
+
   // Update fields and properties which are related to solved variables
   cs_field_current_to_previous(solid->g_l_field);
 
   ctx->update_gl(mesh, connect, cdoq, time_step);
   ctx->update_thm_st(mesh, connect, cdoq, time_step);
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(solid->tcc), &t0, &t1);
 
   // Post-processing
   if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
@@ -2844,6 +2850,9 @@ _voller_prakash_87(const cs_mesh_t           *mesh,
      be done after _enforce_solid_cells() */
 
   cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
+
+  cs_timer_t t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(solid->tce), &t1, &t2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2872,6 +2881,8 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
   cs_iter_algo_t *algo = ctx->nl_algo;
   assert(algo != nullptr);
 
+  cs_timer_t t0 = cs_timer_time();
+
   // Retrieve enthalpy values to check convergence of the non-linear algorithm
   cs_real_t *hkp1 = solid->enthalpy->val;
   cs_real_t *hk   = nullptr; /* enthalpy  ^{n+1,k} */
@@ -2896,14 +2907,24 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
   cs_field_current_to_previous(solid->g_l_field);
   cs_field_current_to_previous(solid->enthalpy);
 
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(solid->tcc), &t0, &t1);
+
   do {
 
-    /* Compute the new thermal source term */
+    t0 = cs_timer_time();
+
+    // Compute the new thermal source term
     ctx->update_thm_st(mesh, connect, cdoq, time_step);
 
-    /* Solve the thermal system */
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(solid->tcc), &t0, &t1);
+
+    // Solve the thermal system
     cs_thermal_system_compute(false, // No cur2prev inside a non-linear loop
                               mesh, connect, cdoq, time_step);
+
+    t0 = cs_timer_time();
 
     /* Compute the new liquid fraction (and update the temperature if needed) */
     ctx->update_gl(mesh, connect, cdoq, time_step);
@@ -2925,9 +2946,13 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
                       solid->cp,               /* cp pty */
                       hkp1);                   /* computed enthalpy */
 
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(solid->tcc), &t0, &t1);
+
   } /* Until convergence */
   while (_check_nl_cvg(ctx->nl_algo_type, hk, hkp1, algo) == CS_SLES_ITERATING);
 
+  t0 = cs_timer_time();
   CS_FREE(hk);
 
   if (solid->verbosity > 0 && cs_log_default_is_active())
@@ -2949,6 +2974,9 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
      be done after _enforce_solid_cells() */
 
   cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
+
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(solid->tcc), &t0, &t1);
 }
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3050,6 +3078,7 @@ _default_binary_coupling(const cs_mesh_t           *mesh,
                          const cs_cdo_quantities_t *cdoq,
                          const cs_time_step_t      *time_step)
 {
+  cs_timer_t t0 = cs_timer_time();
   cs_solidification_t *solid = cs_solidification_structure;
   cs_solidification_binary_alloy_t *alloy
     = static_cast<cs_solidification_binary_alloy_t *>(solid->model_context);
@@ -3092,40 +3121,45 @@ _default_binary_coupling(const cs_mesh_t           *mesh,
   cs_equation_current_to_previous(t_eq);
   cs_field_current_to_previous(solid->g_l_field);
 
-  /* At the beginning, field_{n+1}^{k=0} = field_n */
-
+  // At the beginning, field_{n+1}^{k=0} = field_n
   cs_array_real_copy(cdoq->n_cells, temp, alloy->tk_bulk);
   cs_array_real_copy(cdoq->n_cells, conc, alloy->ck_bulk);
 
   cs_real_t delta_temp = 1 + alloy->delta_tolerance;
   cs_real_t delta_cbulk = 1 + alloy->delta_tolerance;
 
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(solid->tcc), &t0, &t1);
+
   alloy->iter = 0;
   while ( ( delta_temp  > alloy->delta_tolerance ||
             delta_cbulk > alloy->delta_tolerance  ) &&
           alloy->iter   < alloy->n_iter_max) {
 
-    /* Solve Cbulk^(k+1)_{n+1} knowing Cbulk^{k}_{n+1}  */
-
+    // Solve Cbulk^(k+1)_{n+1} knowing Cbulk^{k}_{n+1}
     cs_equation_solve(false,  // No cur2prev inside a non-linear loop
-                      mesh, c_eq);
+                      mesh,
+                      c_eq);
 
-    /* Update the source term for the thermal equation */
-
+    // Update the source term for the thermal equation
+    t0 = cs_timer_time();
     alloy->update_thm_st(mesh, connect, cdoq, time_step);
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(solid->tcc), &t0, &t1);
 
-    /* Solve the thermal system */
-
+    // Solve the thermal system
     cs_thermal_system_compute(false, // No cur2prev inside a non-linear loop
-                              mesh, connect, cdoq, time_step);
+                              mesh,
+                              connect,
+                              cdoq,
+                              time_step);
 
-    /* Update fields and properties which are related to solved variables
-     * g_l, state */
-
+    // Update fields and properties which are related to solved variables
+    // g_l, state
+    t0 = cs_timer_time();
     alloy->update_gl(mesh, connect, cdoq, time_step);
 
-    /* Update the diffusion property related to the solute */
-
+    // Update the diffusion property related to the solute
     if (alloy->diff_coef > cs_solidification_diffusion_eps) {
 
       const double rho_D = rho0 * alloy->diff_coef;
@@ -3169,21 +3203,26 @@ _default_binary_coupling(const cs_mesh_t           *mesh,
                     alloy->iter, delta_temp, delta_cbulk);
     }
 
-  } /* while iterating */
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(solid->tcc), &t0, &t1);
 
-  /* Update the liquid concentration of the solute (c_l) */
+  } // while iterating loop
 
+  t0 = cs_timer_time();
+
+  // Update the liquid concentration of the solute (c_l)
   alloy->update_clc(mesh, connect, cdoq, time_step);
 
-  /* The cell state is now updated at this stage. This will be useful for
-     the monitoring */
-
+  // The cell state is now updated at this stage. This will be useful for the
+  // monitoring
   _update_binary_alloy_final_state(connect, cdoq, time_step);
 
-  /* Update the forcing term in the momentum equation */
-
+  // Update the forcing term in the momentum equation
   if (solid->compute_navsto)
     alloy->update_velocity_forcing(mesh, connect, cdoq, time_step);
+
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(solid->tcc), &t0, &t1);
 
   if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
     _compute_enthalpy(cdoq,
@@ -3195,6 +3234,9 @@ _default_binary_coupling(const cs_mesh_t           *mesh,
                       solid->mass_density,     /* rho pty */
                       solid->cp,               /* cp pty */
                       solid->enthalpy->val);   /* computed enthalpy */
+
+  cs_timer_t t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(solid->tce), &t1, &t2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3271,8 +3313,11 @@ _create_solidification(void)
   solid->forcing_coef = k * k * solid->kozeny_constant;
 
   // Remaining parameters
-
   solid->first_cell = -1;
+
+  // Performance monitoring
+  CS_TIMER_COUNTER_INIT(solid->tcc); // compute
+  CS_TIMER_COUNTER_INIT(solid->tce); // extra operations
 
   return solid;
 }
@@ -4551,6 +4596,8 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t    *connect,
   if (solid == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
+  cs_timer_t t0 = cs_timer_time();
+
   const cs_lnum_t n_cells = cdoq->n_cells;
 
   // Retrieve the field associated to the temperature
@@ -4723,6 +4770,9 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t    *connect,
       CS_MALLOC(alloy->t_liquidus, n_cells, cs_real_t);
 
   } // Binary alloy model
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(solid->tcc), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4949,6 +4999,27 @@ cs_solidification_log_setup(void)
   } // Switch on model type
 
   cs_log_printf(CS_LOG_SETUP, "\n");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Summarize the performance metadata of the solidification module
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_log_performance(void)
+{
+  cs_solidification_t *solid = cs_solidification_structure;
+
+  if (solid == nullptr)
+    return;
+
+  double t[2] = { double(solid->tcc.nsec), double(solid->tce.nsec) };
+
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-38s Update    Extra\n", " ");
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f  seconds\n",
+                "<CDO/Solidification> Runtime", t[0]*1e-9, t[1]*1e-9);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5243,6 +5314,8 @@ cs_solidification_extra_op(const cs_cdo_connect_t    *connect,
   if (solid == nullptr)
     return;
 
+    cs_timer_t t0 = cs_timer_time();
+
   // Estimate the number of values to output
 
   int  n_output_values = CS_SOLIDIFICATION_N_STATES - 1;
@@ -5379,6 +5452,9 @@ cs_solidification_extra_op(const cs_cdo_connect_t    *connect,
                             output_values);
 
   CS_FREE(output_values);
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(solid->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5423,6 +5499,8 @@ cs_solidification_extra_post
   cs_solidification_t *solid = static_cast<cs_solidification_t *>(input);
   if (solid == nullptr)
     return;
+
+  cs_timer_t t0 = cs_timer_time();
 
   if (cat_id == CS_POST_MESH_PROBES) {
 
@@ -5631,6 +5709,9 @@ cs_solidification_extra_post
     } // Binary alloy model
 
   } // volume_mesh + on cells
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(solid->tce), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
