@@ -2061,6 +2061,7 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
     break;
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+  case CS_PARAM_SADDLE_SOLVER_AFS:
     {
       cs_saddle_solver_context_simple_t *ctx =
         static_cast<cs_saddle_solver_context_simple_t *>(solver->context);
