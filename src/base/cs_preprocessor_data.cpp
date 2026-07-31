@@ -1190,6 +1190,16 @@ _read_cartesian_dimensions(const int          id,
   const char *_default_b_names[7] = {"BOX_VOLUME",
                                      "X0", "X1", "Y0", "Y1", "Z0", "Z1"};
 
+  if (cs_mesh_cartesian_get_ogrid_cylinder_mode(id)) {
+    _default_b_names[0] = "CYL_VOLUME";
+    _default_b_names[1] = "side";
+    _default_b_names[2] = "unused_1";
+    _default_b_names[3] = "Z0";
+    _default_b_names[4] = "Z1";
+    _default_b_names[5] = "unused_2";
+    _default_b_names[6] = "unused_3";
+  }
+
   mesh->n_groups += n_grp_cart;
 
   if (mesh->family_item == nullptr) {

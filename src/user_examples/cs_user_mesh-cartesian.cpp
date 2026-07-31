@@ -155,6 +155,40 @@ cs_user_mesh_cartesian_define(void)
                                       "cartesian_vertex_coordinates.csv");
   }
   /*! [mesh_cartesian_3] */
+
+  /*! [mesh_cartesian_ogrid_cylinder] */
+  {
+    /* Define a conformed 5-block O-grid cylinder:
+     * - Central core: 10x10 cells, smin = -500., smax = 500. in X and Y
+     * - Outer sectors: 20 radial layers, outer radius R_outer = 2500.
+     * - Progression factor of 1.1 for radial outer layers.
+     * - Height (Z): 10 cells, from 0. to 500., progression 1.1.
+     */
+    const char *_name = "cylindre_ogrid";
+    cs_mesh_cartesian_params_t *mp = cs_mesh_cartesian_create(_name);
+
+    /* 1. Define the central square core block (10x10 cells) */
+    cs_mesh_cartesian_define_dir_params(mp, 0,
+                                        CS_MESH_CARTESIAN_CONSTANT_LAW,
+                                        10, -500.0, 500.0, 1.0);
+
+    cs_mesh_cartesian_define_dir_params(mp, 1,
+                                        CS_MESH_CARTESIAN_CONSTANT_LAW,
+                                        10, -500.0, 500.0, 1.0);
+
+    /* 2. Define height (Z) with a progression of 1.1 */
+    cs_mesh_cartesian_define_dir_params(mp, 2,
+                                        CS_MESH_CARTESIAN_GEOMETRIC_LAW,
+                                        10, 0.0, 500.0, 1.1);
+
+    /* 3. Configure O-grid cylinder mode:
+     *    - r_outer = 2500.0 (outer cylinder radius)
+     *    - nr      = 0 (automatic calculation of layers to match core cell size)
+     *    - r_prog  = 1.1 (radial geometric progression)
+     */
+    cs_mesh_cartesian_set_ogrid_cylinder(mp, 1, 2500.0, 0, 1.1);
+  }
+  /*! [mesh_cartesian_ogrid_cylinder] */
 }
 
 /*----------------------------------------------------------------------------*/

@@ -109,6 +109,13 @@ struct _cs_mesh_cartesian_params_t {
   cs_gnum_t n_faces_on_rank;
   cs_gnum_t n_vtx_on_rank;
 
+  /* O-grid cylinder parameters */
+  int       ogrid_cylinder_mode;
+  cs_real_t ogrid_r_core;
+  cs_real_t ogrid_r_outer;
+  int       ogrid_nr;
+  cs_real_t ogrid_r_prog;
+
 };
 
 /*============================================================================
@@ -243,6 +250,11 @@ _cs_mesh_cartesian_init(const char *name,
   }
 
   _new_mesh->gc_id_shift = 0;
+  _new_mesh->ogrid_cylinder_mode = 0;
+  _new_mesh->ogrid_r_core = -1.0;
+  _new_mesh->ogrid_r_outer = -1.0;
+  _new_mesh->ogrid_nr = 0;
+  _new_mesh->ogrid_r_prog = 1.0;
 
   /* Global values */
   _new_mesh->n_g_cells = 0;
@@ -1128,6 +1140,51 @@ cs_mesh_cartesian_set_gc_id_shift(int  id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set parameters for O-grid cylinder mode
+ *
+ * \param[in] mp       Pointer to mesh parameters
+ * \param[in] enable   Enable/disable flag
+ * \param[in] r_core   Core radius
+ * \param[in] r_outer  Outer cylinder radius
+ * \param[in] nr       Number of radial layers
+ * \param[in] r_prog   Radial geometric progression factor
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_set_ogrid_cylinder(cs_mesh_cartesian_params_t *mp,
+                                     int                         enable,
+                                     cs_real_t                   r_outer,
+                                     int                         nr,
+                                     cs_real_t                   r_prog)
+{
+  assert(mp != nullptr);
+
+  mp->ogrid_cylinder_mode = enable;
+  mp->ogrid_r_core = -1.0;  /* Computed automatically from core bounds */
+  mp->ogrid_r_outer = r_outer;
+  mp->ogrid_nr = nr;
+  mp->ogrid_r_prog = r_prog;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get ogrid_cylinder_mode parameter
+ *
+ * \param[in] id  Id of the cartesian mesh
+ * \return 1 if O-grid cylinder mode is enabled, 0 otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mesh_cartesian_get_ogrid_cylinder_mode(int id)
+{
+  cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
+  return mp->ogrid_cylinder_mode;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get global number of cells of a cartesian mesh
  *
  * \param[in] id    Id of the cartesian mesh
@@ -1209,6 +1266,516 @@ cs_mesh_cartesian_get_ncells(int  id,
  */
 /*----------------------------------------------------------------------------*/
 
+/*----------------------------------------------------------------------------*/
+/*! \brief Helper to map 2D core vertex indices to global 2D index.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_gnum_t
+_ogrid_g_c(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t i, cs_gnum_t j)
+{
+  return i + (nx + 1) * j;
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Helper to map 2D crown vertex indices to global 2D index.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_gnum_t
+_ogrid_g_o(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t nr, cs_gnum_t s, cs_gnum_t r)
+{
+  cs_gnum_t n_gamma = 2 * nx + 2 * ny;
+  cs_gnum_t n_center = (nx + 1) * (ny + 1);
+
+  if (r == 0) {
+    cs_gnum_t i_val = 0, j_val = 0;
+    if (s < nx) {
+      i_val = s;
+      j_val = 0;
+    } else if (s < nx + ny) {
+      i_val = nx;
+      j_val = s - nx;
+    } else if (s < 2 * nx + ny) {
+      i_val = 2 * nx + ny - s;
+      j_val = ny;
+    } else {
+      i_val = 0;
+      j_val = 2 * nx + 2 * ny - s;
+    }
+    return _ogrid_g_c(nx, ny, i_val, j_val);
+  } else {
+    return n_center + (r - 1) * n_gamma + s;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Helper to map 2D core cell indices to global 2D cell index.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_gnum_t
+_ogrid_c_c(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t i, cs_gnum_t j)
+{
+  CS_UNUSED(ny);
+  return i + nx * j;
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Helper to map 2D crown cell indices to global 2D cell index.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_gnum_t
+_ogrid_c_o(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t s, cs_gnum_t r)
+{
+  cs_gnum_t n_gamma = 2 * nx + 2 * ny;
+  return nx * ny + r * n_gamma + s;
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Build unstructured conformed 5-block O-grid cylinder connectivity.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
+                                            cs_mesh_t                  *m,
+                                            cs_mesh_builder_t          *mb)
+{
+  CS_UNUSED(m);
+
+  cs_gnum_t nx = mp->params[0]->ncells;
+  cs_gnum_t ny = mp->params[1]->ncells;
+  cs_gnum_t nz = mp->params[2]->ncells;
+  cs_gnum_t nr = mp->ogrid_nr;
+  cs_gnum_t n_gamma = 2 * nx + 2 * ny;
+  cs_gnum_t n_center = (nx + 1) * (ny + 1);
+
+  cs_gnum_t n_g_cells = mp->n_g_cells;
+  cs_gnum_t n_g_vtx   = mp->n_g_vtx;
+  cs_gnum_t n_g_faces = mp->n_g_faces;
+
+  cs_lnum_t n_cells = (mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0]);
+  cs_lnum_t n_faces = (mb->face_bi.gnum_range[1] - mb->face_bi.gnum_range[0]);
+  cs_lnum_t n_vertices = (mb->vertex_bi.gnum_range[1]
+                          - mb->vertex_bi.gnum_range[0]);
+
+  const cs_gnum_t mp_g_c_range[2] = {mp->n_g_cells_offset + 1,
+                                     mp->n_g_cells_offset + 1 + n_g_cells};
+  cs_gnum_t _rank_c_range[2] = {0, 0};
+  _intersect_intervals(mb->cell_bi.gnum_range, mp_g_c_range, _rank_c_range);
+
+  const cs_gnum_t mp_g_f_range[2] = {mp->n_g_faces_offset + 1,
+                                     mp->n_g_faces_offset + 1 + n_g_faces};
+  cs_gnum_t _rank_f_range[2] = {0, 0};
+  _intersect_intervals(mb->face_bi.gnum_range, mp_g_f_range, _rank_f_range);
+
+  const cs_gnum_t mp_g_v_range[2] = {mp->n_g_vtx_offset + 1,
+                                     mp->n_g_vtx_offset + 1 + n_g_vtx};
+  cs_gnum_t _rank_v_range[2] = {0, 0};
+  _intersect_intervals(mb->vertex_bi.gnum_range, mp_g_v_range, _rank_v_range);
+
+  mp->n_cells_on_rank = _rank_c_range[1] - _rank_c_range[0];
+  mp->n_faces_on_rank = _rank_f_range[1] - _rank_f_range[0];
+  mp->n_vtx_on_rank   = _rank_v_range[1] - _rank_v_range[0];
+
+  cs_gnum_t _rank_c_offset = 0;
+  cs_gnum_t _rank_f_offset = 0;
+  cs_gnum_t _rank_v_offset = 0;
+
+  if (mp->id > 0) {
+    for (int i = 0; i < mp->id; i++) {
+      _rank_c_offset += _mesh_params[i]->n_cells_on_rank;
+      _rank_f_offset += _mesh_params[i]->n_faces_on_rank;
+      _rank_v_offset += _mesh_params[i]->n_vtx_on_rank;
+    }
+  }
+
+  if (mb->cell_gc_id == nullptr)
+    CS_MALLOC(mb->cell_gc_id, n_cells, int);
+
+  for (cs_gnum_t i = 0; i < mp->n_cells_on_rank; i++)
+    mb->cell_gc_id[i + _rank_c_offset] = mp->gc_id_shift + 1;
+
+  if (mb->face_gc_id == nullptr)
+    CS_MALLOC(mb->face_gc_id, n_faces, int);
+
+  for (cs_gnum_t i = 0; i < mp->n_faces_on_rank; i++)
+    mb->face_gc_id[i + _rank_f_offset] = 1;
+
+  if (mb->face_vertices_idx == nullptr) {
+    CS_MALLOC(mb->face_vertices_idx, n_faces + 1, cs_lnum_t);
+    mb->face_vertices_idx[0] = 0;
+  }
+
+  for (cs_gnum_t i = 0; i < mp->n_faces_on_rank; i++)
+    mb->face_vertices_idx[_rank_f_offset + i + 1] =
+      mb->face_vertices_idx[_rank_f_offset + i] + 4;
+
+  if (mb->face_cells == nullptr)
+    CS_MALLOC(mb->face_cells, 2*n_faces, cs_gnum_t);
+  if (mb->face_vertices == nullptr)
+    CS_MALLOC(mb->face_vertices, 4*n_faces, cs_gnum_t);
+
+  cs_real_t r_core = mp->ogrid_r_core;
+  cs_real_t r_outer = mp->ogrid_r_outer;
+  cs_real_t q = mp->ogrid_r_prog;
+
+  CS_REALLOC(mb->vertex_coords, 3*(_rank_v_offset + n_vertices), cs_real_t);
+
+  cs_gnum_t g_v_num_min = _rank_v_range[0];
+  cs_gnum_t g_v_num_max = _rank_v_range[1];
+
+  cs_lnum_t v_id = 0;
+
+  for (cs_gnum_t k = 0; k <= nz; k++) {
+    cs_real_t z_orig = 0.0;
+    if (mp->params[2]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
+      z_orig = mp->params[2]->smin + k * mp->params[2]->s[0];
+    } else {
+      z_orig = mp->params[2]->s[k];
+    }
+
+    cs_gnum_t n_vtx_2d = n_center + nr * n_gamma;
+    for (cs_gnum_t g_2d = 0; g_2d < n_vtx_2d; g_2d++) {
+      cs_gnum_t g_v_num = 1 + mp->n_g_vtx_offset + g_2d + k * n_vtx_2d;
+
+      if (g_v_num >= g_v_num_min && g_v_num < g_v_num_max) {
+        cs_real_t x_phys = 0.0;
+        cs_real_t y_phys = 0.0;
+
+        if (g_2d < n_center) {
+          cs_gnum_t i = g_2d % (nx + 1);
+          cs_gnum_t j = g_2d / (nx + 1);
+
+          if (mp->params[0]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
+            x_phys = mp->params[0]->smin + i * mp->params[0]->s[0];
+          } else {
+            x_phys = mp->params[0]->s[i];
+          }
+
+          if (mp->params[1]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
+            y_phys = mp->params[1]->smin + j * mp->params[1]->s[0];
+          } else {
+            y_phys = mp->params[1]->s[j];
+          }
+        } else {
+          cs_gnum_t rem = g_2d - n_center;
+          cs_gnum_t r = 1 + rem / n_gamma;
+          cs_gnum_t s = rem % n_gamma;
+
+          cs_real_t eta_r = 0.0;
+          if (q > 1.0 + 1e-9 || q < 1.0 - 1e-9) {
+            eta_r = (pow(q, r) - 1.0) / (pow(q, nr) - 1.0);
+          } else {
+            eta_r = (cs_real_t)r / (cs_real_t)nr;
+          }
+
+          cs_real_t x_int = 0.0, y_int = 0.0;
+          cs_gnum_t i_val = 0, j_val = 0;
+          if (s < nx) {
+            i_val = s;
+            j_val = 0;
+          } else if (s < nx + ny) {
+            i_val = nx;
+            j_val = s - nx;
+          } else if (s < 2 * nx + ny) {
+            i_val = 2 * nx + ny - s;
+            j_val = ny;
+          } else {
+            i_val = 0;
+            j_val = 2 * nx + 2 * ny - s;
+          }
+
+          if (mp->params[0]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
+            x_int = mp->params[0]->smin + i_val * mp->params[0]->s[0];
+          } else {
+            x_int = mp->params[0]->s[i_val];
+          }
+
+          if (mp->params[1]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
+            y_int = mp->params[1]->smin + j_val * mp->params[1]->s[0];
+          } else {
+            y_int = mp->params[1]->s[j_val];
+          }
+
+          cs_real_t u_val = 0.0;
+          cs_real_t theta = 0.0;
+
+          if (s < nx) {
+            u_val = -1.0 + 2.0 * (cs_real_t)s / (cs_real_t)nx;
+            theta = -3.0 * cs_math_pi / 4.0 + (cs_real_t)s / (cs_real_t)nx * cs_math_pi / 2.0;
+          } else if (s < nx + ny) {
+            cs_gnum_t p = s - nx;
+            u_val = -1.0 + 2.0 * (cs_real_t)p / (cs_real_t)ny;
+            theta = -cs_math_pi / 4.0 + (cs_real_t)p / (cs_real_t)ny * cs_math_pi / 2.0;
+          } else if (s < 2 * nx + ny) {
+            cs_gnum_t p = s - (nx + ny);
+            u_val = 1.0 - 2.0 * (cs_real_t)p / (cs_real_t)nx;
+            theta = cs_math_pi / 4.0 + (cs_real_t)p / (cs_real_t)nx * cs_math_pi / 2.0;
+          } else {
+            cs_gnum_t p = s - (2 * nx + ny);
+            u_val = 1.0 - 2.0 * (cs_real_t)p / (cs_real_t)ny;
+            theta = 3.0 * cs_math_pi / 4.0 + (cs_real_t)p / (cs_real_t)ny * cs_math_pi / 2.0;
+          }
+
+          cs_real_t x_ext = r_outer * cos(theta);
+          cs_real_t y_ext = r_outer * sin(theta);
+
+          x_phys = (1.0 - eta_r) * x_int + eta_r * x_ext;
+          y_phys = (1.0 - eta_r) * y_int + eta_r * y_ext;
+        }
+
+        mb->vertex_coords[3 * (_rank_v_offset + v_id) + 0] = x_phys;
+        mb->vertex_coords[3 * (_rank_v_offset + v_id) + 1] = y_phys;
+        mb->vertex_coords[3 * (_rank_v_offset + v_id) + 2] = z_orig;
+        v_id++;
+      }
+    }
+  }
+
+  cs_gnum_t g_f_num_min = _rank_f_range[0];
+  cs_gnum_t g_f_num_max = _rank_f_range[1];
+  cs_lnum_t f_id = _rank_f_offset;
+  cs_gnum_t g_f_num = 1 + mp->n_g_faces_offset;
+
+  cs_gnum_t i0 = 1 + mp->n_g_vtx_offset;
+  cs_gnum_t c0 = 1 + mp->n_g_cells_offset;
+  cs_gnum_t n_vtx_2d = n_center + nr * n_gamma;
+  cs_gnum_t n_cells_2d = nx * ny + nr * n_gamma;
+
+  #define G_V(g2d, l) (i0 + (g2d) + (l) * n_vtx_2d)
+  #define G_C(g2d, l) (c0 + (g2d) + (l) * n_cells_2d)
+
+  for (cs_gnum_t k = 0; k < nz; k++) {
+    /* Lateral/Vertical faces: X-normal core faces */
+    for (cs_gnum_t j = 0; j < ny; j++) {
+      for (cs_gnum_t i = 0; i <= nx; i++) {
+        if (g_f_num >= g_f_num_min && g_f_num < g_f_num_max) {
+          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_c(nx, ny, i, j+1), k);
+          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_c(nx, ny, i, j+1), k+1);
+          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_c(nx, ny, i, j), k+1);
+          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_c(nx, ny, i, j), k);
+
+          cs_gnum_t c_id1 = 0;
+          cs_gnum_t c_id2 = 0;
+
+          if (i == 0) {
+            cs_gnum_t s_val = 2 * nx + 2 * ny - 1 - j;
+            c_id1 = G_C(_ogrid_c_o(nx, ny, s_val, 0), k);
+            c_id2 = G_C(_ogrid_c_c(nx, ny, 0, j), k);
+          } else if (i == nx) {
+            cs_gnum_t s_val = nx + j;
+            c_id1 = G_C(_ogrid_c_c(nx, ny, nx-1, j), k);
+            c_id2 = G_C(_ogrid_c_o(nx, ny, s_val, 0), k);
+          } else {
+            c_id1 = G_C(_ogrid_c_c(nx, ny, i-1, j), k);
+            c_id2 = G_C(_ogrid_c_c(nx, ny, i, j), k);
+          }
+
+          mb->face_cells[2 * f_id] = c_id1;
+          mb->face_cells[2 * f_id + 1] = c_id2;
+
+          if (i == 0 || i == nx)
+            mb->face_gc_id[f_id] = 1 + mp->gc_id_shift;
+          else
+            mb->face_gc_id[f_id] = 1;
+
+          f_id++;
+        }
+        g_f_num++;
+      }
+    }
+
+    /* Lateral/Vertical faces: Y-normal core faces */
+    for (cs_gnum_t j = 0; j <= ny; j++) {
+      for (cs_gnum_t i = 0; i < nx; i++) {
+        if (g_f_num >= g_f_num_min && g_f_num < g_f_num_max) {
+          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_c(nx, ny, i, j), k+1);
+          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_c(nx, ny, i+1, j), k+1);
+          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_c(nx, ny, i+1, j), k);
+          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_c(nx, ny, i, j), k);
+
+          cs_gnum_t c_id1 = 0;
+          cs_gnum_t c_id2 = 0;
+
+          if (j == 0) {
+            cs_gnum_t s_val = i;
+            c_id1 = G_C(_ogrid_c_o(nx, ny, s_val, 0), k);
+            c_id2 = G_C(_ogrid_c_c(nx, ny, i, 0), k);
+          } else if (j == ny) {
+            cs_gnum_t s_val = 2 * nx + ny - 1 - i;
+            c_id1 = G_C(_ogrid_c_c(nx, ny, i, ny-1), k);
+            c_id2 = G_C(_ogrid_c_o(nx, ny, s_val, 0), k);
+          } else {
+            c_id1 = G_C(_ogrid_c_c(nx, ny, i, j-1), k);
+            c_id2 = G_C(_ogrid_c_c(nx, ny, i, j), k);
+          }
+
+          mb->face_cells[2 * f_id] = c_id1;
+          mb->face_cells[2 * f_id + 1] = c_id2;
+
+          if (j == 0 || j == ny)
+            mb->face_gc_id[f_id] = 1 + mp->gc_id_shift;
+          else
+            mb->face_gc_id[f_id] = 1;
+
+          f_id++;
+        }
+        g_f_num++;
+      }
+    }
+
+    /* Lateral/Vertical faces: Radial-normal/circumferential outer faces */
+    for (cs_gnum_t r = 1; r <= nr; r++) {
+      for (cs_gnum_t s = 0; s < n_gamma; s++) {
+        if (g_f_num >= g_f_num_min && g_f_num < g_f_num_max) {
+          cs_gnum_t sp = (s + 1) % n_gamma;
+
+          mb->face_vertices[4 * f_id + 0] =
+            G_V(_ogrid_g_o(nx, ny, nr, s, r), k);
+          mb->face_vertices[4 * f_id + 1] =
+            G_V(_ogrid_g_o(nx, ny, nr, sp, r), k);
+          mb->face_vertices[4 * f_id + 2] =
+            G_V(_ogrid_g_o(nx, ny, nr, sp, r), k+1);
+          mb->face_vertices[4 * f_id + 3] =
+            G_V(_ogrid_g_o(nx, ny, nr, s, r), k+1);
+
+          cs_gnum_t c_id1 = 0;
+          cs_gnum_t c_id2 = 0;
+
+          if (r == nr) {
+            c_id1 = G_C(_ogrid_c_o(nx, ny, s, nr-1), k);
+            mb->face_gc_id[f_id] = 2 + mp->gc_id_shift;
+          } else {
+            c_id1 = G_C(_ogrid_c_o(nx, ny, s, r-1), k);
+            c_id2 = G_C(_ogrid_c_o(nx, ny, s, r), k);
+            mb->face_gc_id[f_id] = 1;
+          }
+
+          mb->face_cells[2 * f_id] = c_id1;
+          mb->face_cells[2 * f_id + 1] = c_id2;
+
+          f_id++;
+        }
+        g_f_num++;
+      }
+    }
+
+    /* Lateral/Vertical faces: Radial/transverse outer faces */
+    for (cs_gnum_t r = 0; r < nr; r++) {
+      for (cs_gnum_t s = 0; s < n_gamma; s++) {
+        if (g_f_num >= g_f_num_min && g_f_num < g_f_num_max) {
+          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_o(nx, ny, nr, s, r+1), k);
+          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_o(nx, ny, nr, s, r+1), k+1);
+          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_o(nx, ny, nr, s, r), k+1);
+          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_o(nx, ny, nr, s, r), k);
+
+          cs_gnum_t sm = (s - 1 + n_gamma) % n_gamma;
+          cs_gnum_t c_id1 = G_C(_ogrid_c_o(nx, ny, sm, r), k);
+          cs_gnum_t c_id2 = G_C(_ogrid_c_o(nx, ny, s, r), k);
+
+          mb->face_cells[2 * f_id] = c_id1;
+          mb->face_cells[2 * f_id + 1] = c_id2;
+          mb->face_gc_id[f_id] = 1;
+
+          f_id++;
+        }
+        g_f_num++;
+      }
+    }
+  }
+
+  /* Z-normal/Horizontal faces loop */
+  for (cs_gnum_t k = 0; k <= nz; k++) {
+    /* Horizontal faces of Core block */
+    for (cs_gnum_t j = 0; j < ny; j++) {
+      for (cs_gnum_t i = 0; i < nx; i++) {
+        if (g_f_num >= g_f_num_min && g_f_num < g_f_num_max) {
+          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_c(nx, ny, i+1, j), k);
+          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_c(nx, ny, i+1, j+1), k);
+          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_c(nx, ny, i, j+1), k);
+          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_c(nx, ny, i, j), k);
+
+          cs_gnum_t c_id1 = 0;
+          cs_gnum_t c_id2 = 0;
+
+          if (k == 0) {
+            c_id2 = G_C(_ogrid_c_c(nx, ny, i, j), 0);
+            mb->face_gc_id[f_id] = 4 + mp->gc_id_shift;
+          } else if (k == nz) {
+            c_id1 = G_C(_ogrid_c_c(nx, ny, i, j), nz-1);
+            mb->face_gc_id[f_id] = 5 + mp->gc_id_shift;
+          } else {
+            c_id1 = G_C(_ogrid_c_c(nx, ny, i, j), k-1);
+            c_id2 = G_C(_ogrid_c_c(nx, ny, i, j), k);
+            mb->face_gc_id[f_id] = 1;
+          }
+
+          mb->face_cells[2 * f_id] = c_id1;
+          mb->face_cells[2 * f_id + 1] = c_id2;
+
+          f_id++;
+        }
+        g_f_num++;
+      }
+    }
+
+    /* Horizontal faces of Outer blocks */
+    for (cs_gnum_t r = 0; r < nr; r++) {
+      for (cs_gnum_t s = 0; s < n_gamma; s++) {
+        if (g_f_num >= g_f_num_min && g_f_num < g_f_num_max) {
+          cs_gnum_t sp = (s + 1) % n_gamma;
+
+          mb->face_vertices[4 * f_id + 0] =
+            G_V(_ogrid_g_o(nx, ny, nr, s, r), k);
+          mb->face_vertices[4 * f_id + 1] =
+            G_V(_ogrid_g_o(nx, ny, nr, s, r+1), k);
+          mb->face_vertices[4 * f_id + 2] =
+            G_V(_ogrid_g_o(nx, ny, nr, sp, r+1), k);
+          mb->face_vertices[4 * f_id + 3] =
+            G_V(_ogrid_g_o(nx, ny, nr, sp, r), k);
+
+          cs_gnum_t c_id1 = 0;
+          cs_gnum_t c_id2 = 0;
+
+          if (k == 0) {
+            c_id2 = G_C(_ogrid_c_o(nx, ny, s, r), 0);
+            mb->face_gc_id[f_id] = 4 + mp->gc_id_shift;
+          } else if (k == nz) {
+            c_id1 = G_C(_ogrid_c_o(nx, ny, s, r), nz-1);
+            mb->face_gc_id[f_id] = 5 + mp->gc_id_shift;
+          } else {
+            c_id1 = G_C(_ogrid_c_o(nx, ny, s, r), k-1);
+            c_id2 = G_C(_ogrid_c_o(nx, ny, s, r), k);
+            mb->face_gc_id[f_id] = 1;
+          }
+
+          mb->face_cells[2 * f_id] = c_id1;
+          mb->face_cells[2 * f_id + 1] = c_id2;
+
+          f_id++;
+        }
+        g_f_num++;
+      }
+    }
+  }
+
+  #undef G_V
+  #undef G_C
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Build unstructured connectivity needed for partitionning.
+ *
+ * \param[in] id    Id of the cartesian mesh
+ * \param[in] m     pointer to cs_mesh_t structure
+ * \param[in] mb    pointer to cs_mesh_builder_t structure
+ * \param[in] echo  verbosity flag
+ */
+/*----------------------------------------------------------------------------*/
+
 void
 cs_mesh_cartesian_block_connectivity(int                 id,
                                      cs_mesh_t          *m,
@@ -1218,6 +1785,11 @@ cs_mesh_cartesian_block_connectivity(int                 id,
   CS_UNUSED(echo);
 
   cs_mesh_cartesian_params_t *mp = _get_structured_mesh_by_id(id);
+
+  if (mp->ogrid_cylinder_mode) {
+    _cs_mesh_cartesian_block_connectivity_ogrid(mp, m, mb);
+    return;
+  }
 
   const cs_gnum_t nx = cs_mesh_cartesian_get_ncells(id, 0);
   const cs_gnum_t ny = cs_mesh_cartesian_get_ncells(id, 1);
@@ -1378,22 +1950,96 @@ cs_mesh_cartesian_block_connectivity(int                 id,
         cs_gnum_t g_v_num = 1 + mp->n_g_vtx_offset + i + j*nxp1 + k*nxp1*nyp1;
 
         if (g_v_num >= g_v_num_min && g_v_num < g_v_num_max) {
+          cs_real_t x_orig = 0.0;
+          cs_real_t y_orig = 0.0;
+          cs_real_t z_orig = 0.0;
 
-          /* X coord */
-          cs_gnum_t ijk[3] = { i, j, k };
-          for (cs_lnum_t idim = 0; idim < 3; idim++) {
-            /* Constant step: xyz[idim] = xyzmin[idim] + ijk*dx[idim] */
-            if (mp->params[idim]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
-              mb->vertex_coords[3*(_rank_v_offset+v_id) + idim]
-                = mp->params[idim]->smin + ijk[idim] * mp->params[idim]->s[0];
-            }
-            /* Non constant step: We allready stored the vertices in dx,
-             * since dx[j+1] - dx[j] == dx of cell j */
-            else {
-              mb->vertex_coords[3*(_rank_v_offset+v_id) + idim]
-                = mp->params[idim]->s[ijk[idim]];
-            }
+          if (mp->params[0]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
+            x_orig = mp->params[0]->smin + i * mp->params[0]->s[0];
+          } else {
+            x_orig = mp->params[0]->s[i];
           }
+
+          if (mp->params[1]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
+            y_orig = mp->params[1]->smin + j * mp->params[1]->s[0];
+          } else {
+            y_orig = mp->params[1]->s[j];
+          }
+
+          if (mp->params[2]->law == CS_MESH_CARTESIAN_CONSTANT_LAW) {
+            z_orig = mp->params[2]->smin + k * mp->params[2]->s[0];
+          } else {
+            z_orig = mp->params[2]->s[k];
+          }
+
+          if (mp->ogrid_cylinder_mode) {
+            cs_real_t s_min_x = mp->params[0]->smin;
+            cs_real_t s_max_x = mp->params[0]->smax;
+            cs_real_t s_min_y = mp->params[1]->smin;
+            cs_real_t s_max_y = mp->params[1]->smax;
+
+            cs_real_t x_mid = 0.5 * (s_min_x + s_max_x);
+            cs_real_t y_mid = 0.5 * (s_min_y + s_max_y);
+            cs_real_t Lx = 0.5 * (s_max_x - s_min_x);
+            cs_real_t Ly = 0.5 * (s_max_y - s_min_y);
+
+            cs_real_t x_norm = (x_orig - x_mid) / Lx;
+            cs_real_t y_norm = (y_orig - y_mid) / Ly;
+
+            cs_real_t d = fabs(x_norm) > fabs(y_norm) ?
+                          fabs(x_norm) : fabs(y_norm);
+            cs_real_t a = 0.5;
+            if (mp->ogrid_r_core > 0.0 && mp->ogrid_r_outer > 0.0) {
+              a = mp->ogrid_r_core / mp->ogrid_r_outer;
+            }
+
+            cs_real_t x_mapped = 0.0;
+            cs_real_t y_mapped = 0.0;
+
+            if (d < 1e-12) {
+              x_mapped = 0.0;
+              y_mapped = 0.0;
+            } else if (d <= a) {
+              x_mapped = x_norm;
+              y_mapped = y_norm;
+            } else {
+              cs_real_t t = (d - a) / (1.0 - a);
+              cs_real_t u = 0.0;
+
+              /* Top sector */
+              if (y_norm == d) {
+                u = x_norm / y_norm;
+                x_mapped = (1.0 - t) * a * u + t * sin(u * cs_math_pi / 4.0);
+                y_mapped = (1.0 - t) * a + t * cos(u * cs_math_pi / 4.0);
+              }
+              /* Bottom sector */
+              else if (-y_norm == d) {
+                u = -x_norm / y_norm;
+                x_mapped = (1.0 - t) * a * u + t * sin(u * cs_math_pi / 4.0);
+                y_mapped = -((1.0 - t) * a + t * cos(u * cs_math_pi / 4.0));
+              }
+              /* Right sector */
+              else if (x_norm == d) {
+                u = y_norm / x_norm;
+                x_mapped = (1.0 - t) * a + t * cos(u * cs_math_pi / 4.0);
+                y_mapped = (1.0 - t) * a * u + t * sin(u * cs_math_pi / 4.0);
+              }
+              /* Left sector */
+              else {
+                u = -y_norm / x_norm;
+                x_mapped = -((1.0 - t) * a + t * cos(u * cs_math_pi / 4.0));
+                y_mapped = (1.0 - t) * a * u + t * sin(u * cs_math_pi / 4.0);
+              }
+            }
+
+            x_orig = x_mid + x_mapped * Lx;
+            y_orig = y_mid + y_mapped * Ly;
+          }
+
+          mb->vertex_coords[3 * (_rank_v_offset + v_id) + 0] = x_orig;
+          mb->vertex_coords[3 * (_rank_v_offset + v_id) + 1] = y_orig;
+          mb->vertex_coords[3 * (_rank_v_offset + v_id) + 2] = z_orig;
+
           v_id++;
         }
 
@@ -1422,6 +2068,60 @@ cs_mesh_cartesian_finalize_definition(void)
                   + (nxyz[1] + 1) * nxyz[2] * nxyz[0]
                   + (nxyz[2] + 1) * nxyz[0] * nxyz[1];
     mp->n_g_vtx   = (nxyz[0] + 1) * (nxyz[1] + 1) * (nxyz[2] + 1);
+
+    if (mp->ogrid_cylinder_mode) {
+      cs_gnum_t nx = nxyz[0];
+      cs_gnum_t ny = nxyz[1];
+      cs_gnum_t nz = nxyz[2];
+
+      cs_real_t r_core = mp->ogrid_r_core;
+      if (r_core <= 0.0) {
+        r_core = 0.5 * (mp->params[0]->smax - mp->params[0]->smin);
+        mp->ogrid_r_core = r_core;
+      }
+
+      cs_real_t r_outer = mp->ogrid_r_outer;
+      cs_real_t L_r = r_outer - r_core;
+
+      cs_real_t dx = nx > 0 ?
+                     (mp->params[0]->smax - mp->params[0]->smin) / nx : 1.0;
+      cs_real_t dy = ny > 0 ?
+                     (mp->params[1]->smax - mp->params[1]->smin) / ny : 1.0;
+      cs_real_t h_core = dx < dy ? dx : dy;
+      if (h_core < 1e-12) {
+        h_core = 1.0;
+      }
+
+      cs_gnum_t nr = mp->ogrid_nr;
+      cs_real_t q = mp->ogrid_r_prog;
+
+      /* Compute automatically if nr is 0 */
+      if (nr == 0) {
+        if (cs::abs(q - 1.0) > 1e-9) {
+          cs_real_t arg = 1.0 + L_r * (q - 1.0) / h_core;
+          if (arg > 1e-9) {
+            nr = (cs_gnum_t)round(log(arg) / log(q));
+          } else {
+            nr = 1;
+          }
+        } else {
+          nr = (cs_gnum_t)round(L_r / h_core);
+        }
+        if (nr < 1) {
+          nr = 1;
+        }
+        mp->ogrid_nr = nr;
+      }
+
+      cs_gnum_t n_gamma = 2 * nx + 2 * ny;
+      cs_gnum_t n_center = (nx + 1) * (ny + 1);
+
+      mp->n_g_cells = nz * (nx * ny + nr * n_gamma);
+      mp->n_g_vtx = (nz + 1) * (n_center + nr * n_gamma);
+
+      cs_gnum_t e_2d = 2 * nx * ny + 2 * nr * n_gamma + n_gamma / 2;
+      mp->n_g_faces = nz * e_2d + (nz + 1) * (nx * ny + nr * n_gamma);
+    }
 
     /* If multiple blocks, compute offset */
     if (i > 0) {

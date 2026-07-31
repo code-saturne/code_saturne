@@ -55,6 +55,10 @@
 
   \snippet cs_user_mesh-cartesian.cpp mesh_cartesian_3
 
+  It is also possible to define a conformed 5-block O-grid cylinder mesh:
+
+  \snippet cs_user_mesh-cartesian.cpp mesh_cartesian_ogrid_cylinder
+
   Moreover, a mesh composed of multiple cartesian blocks may also be created.
   Doing so requires combining a call to \ref cs_user_mesh_cartesian_define, such as:
 

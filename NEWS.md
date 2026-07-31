@@ -7,6 +7,11 @@ Master (not on release branches yet)
 
 - Switch to C++17 by default for code_saturne
 
+### Mesh generation:
+
+- Add fully hexahedral conformed 5-block O-grid cylinder mesh generation
+  option in cartesian mesh generator.
+
 ### Numerics:
 
 - Change the default settings for the SLES solver in CDO schemes

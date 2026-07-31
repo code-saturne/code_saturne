@@ -229,6 +229,35 @@ cs_mesh_cartesian_define_dir_params(cs_mesh_cartesian_params_t *mp,
                                     cs_real_t                   progression);
 
 /*----------------------------------------------------------------------------*/
+/*! \brief Set parameters for O-grid cylinder mode
+ *
+ * \param[in] mp       Pointer to mesh parameters
+ * \param[in] enable   Enable/disable flag
+ * \param[in] r_outer  Outer cylinder radius
+ * \param[in] nr       Number of radial layers (or 0 for automatic)
+ * \param[in] r_prog   Radial geometric progression factor
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_set_ogrid_cylinder(cs_mesh_cartesian_params_t *mp,
+                                     int                         enable,
+                                     cs_real_t                   r_outer,
+                                     int                         nr,
+                                     cs_real_t                   r_prog);
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Get ogrid_cylinder_mode parameter
+ *
+ * \param[in] id  Id of the cartesian mesh
+ * \return 1 if O-grid cylinder mode is enabled, 0 otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mesh_cartesian_get_ogrid_cylinder_mode(int id);
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Indicate if a cartesian mesh is to be built.
  *
  * \return 1 if mesh needs to be built, 0 otherwise
