@@ -526,13 +526,15 @@ cs_lagr_log_setup(void)
        "    Cell-wise integration (time-splitting alg.)   %s\n"
        "    P1 reconstruction of mean fields              %s\n"
        "    Extended time scheme:                         %s\n"
-       "    Poisson correction for particle velocity:     %s\n"),
+       "    Poisson correction for particle velocity:     %s\n"
+       "    Failsafe mode (stop on error):                %s\n"),
      cs_glob_lagr_time_scheme->t_order,
      cs_glob_lagr_time_scheme->max_track_propagation_loops,
      _status(cs_glob_lagr_time_scheme->cell_wise_integ),
      _status(cs_glob_lagr_time_scheme->interpol_field),
      _status(cs_glob_lagr_time_scheme->extended_t_scheme),
-     _status(cs_glob_lagr_time_scheme->ilapoi));
+     _status(cs_glob_lagr_time_scheme->ilapoi),
+     _status(cs_glob_lagr_model->failsafe_mode));
 
   cs_log_printf
     (CS_LOG_SETUP,

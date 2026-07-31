@@ -361,6 +361,11 @@ typedef struct {
   /*! Take viscous terms into account */
   bool viscous_terms;
 
+  /*! Failsafe mode:
+      - 0: continue calculation with warning if tracking error occurs
+      - 1: stop calculation if tracking error occurs */
+  int  failsafe_mode;
+
   /*! Verbose mode if > 0 */
   int  verbosity;
 } cs_lagr_model_t;

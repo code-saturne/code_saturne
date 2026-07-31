@@ -3843,8 +3843,8 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
 
   const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
 
-  const cs_lnum_t  failsafe_mode = 0; /* If 1 : stop as soon as an error is
-                                         detected */
+  const cs_lnum_t  failsafe_mode = lagr_model->failsafe_mode; /* If 1 : stop as soon as an error is
+                                                                 detected */
 
   int t_stat_id = cs_timer_stats_id_by_name("particle_displacement_stage");
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;

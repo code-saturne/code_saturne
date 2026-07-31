@@ -315,6 +315,11 @@ cs_user_lagr_model(void)
    * (Balvet et al. 2023) */
   cs_glob_lagr_time_scheme->cell_wise_integ = 1;
 
+  /* Failsafe mode:
+   *  = 0: continue calculation with warning if tracking error occurs
+   *  = 1: stop calculation if tracking error occurs */
+  cs_glob_lagr_model->failsafe_mode = 0;
+
   /* Two-way coupling: (iilagr = CS_LAGR_TWOWAY_COUPLING)
      ------------------------------ */
 

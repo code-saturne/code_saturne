@@ -229,6 +229,8 @@ cs_lagr_options_definition(int         is_restart,
 
   lagr_model->fouling = 0;
 
+  lagr_model->failsafe_mode = 0;
+
   /* Initializations for physical models */
   _init_lagr_encrustation_pointers();
 
@@ -319,6 +321,12 @@ cs_lagr_options_definition(int         is_restart,
                                 "cs_glob_lagr_model->physical_model",
                                 lagr_model->physical_model,
                                 0, 4);
+
+  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                _("in Lagrangian module"),
+                                "cs_glob_lagr_model->failsafe_mode",
+                                lagr_model->failsafe_mode,
+                                0, 1);
 
   cs_parameters_error_barrier();
 

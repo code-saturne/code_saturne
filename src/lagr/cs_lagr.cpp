@@ -192,6 +192,7 @@ static cs_lagr_model_t  _lagr_model
      .n_user_variables = 0,
      .transport_GLM_rotated = false,
      .viscous_terms = false,
+     .failsafe_mode = 0,
      .verbosity = 0};
 
 /* particle counter structure and associated pointer */
