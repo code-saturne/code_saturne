@@ -1648,9 +1648,12 @@ class Studies(object):
                 key_a = 'CS_SMGR_ASYNC_PREPARE'
                 os.environ[key_a] = '1'
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.__max_workers) as executor:
-                results = executor.map(self.__prepare_run_folder,
-                                       self.graph.graph_dict)
+            # loop on levels (0 means without dependency)
+            for level in range(self.graph.max_level+1):
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=self.__max_workers) as executor:
+                    results = executor.map(self.__prepare_run_folder,
+                                           self.graph.extract_sub_graph(level,None).graph_dict)
 
             if self.__max_workers > 1:
                 del os.environ[key_a]
