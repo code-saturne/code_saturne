@@ -652,7 +652,6 @@ _equation_iterative_solve_strided(int                   idtvar,
   {
     /* For non-symmetric matrices, the current MG coarsening
        algorithm needs to be able to access some matrix values on CPU. */
-    cs_alloc_mode_t amode = ctx.alloc_mode();
     if (symmetric == false && conv_diff_mg && amode == CS_ALLOC_DEVICE)
       amode = CS_ALLOC_HOST_DEVICE_SHARED;
 
@@ -1753,7 +1752,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   {
     /* For non-symmetric matrices, the current MG coarsening
        algorithm needs to be able to access some matrix values on CPU. */
-    cs_alloc_mode_t amode = ctx.alloc_mode();
     if (symmetric == false && conv_diff_mg && amode == CS_ALLOC_DEVICE)
       amode = CS_ALLOC_HOST_DEVICE_SHARED;
 

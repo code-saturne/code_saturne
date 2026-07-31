@@ -3024,7 +3024,6 @@ _solve_omega(int              phase_id,
   const cs_real_t ckwbt2 = cs_turb_ckwbt2;
   const cs_real_t ckwsw1 = cs_turb_ckwsw1;
   const cs_real_t ckwsw2 = cs_turb_ckwsw2;
-  const cs_real_t xkappa = cs_turb_xkappa;
 
   const cs_real_t *w_dist = cs_field("wall_distance")->val;
 
@@ -3040,7 +3039,6 @@ _solve_omega(int              phase_id,
   }
 
   /* Internal coupling */
-  cs_lnum_t solid_stride = 1;
   int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
   const int c_is_solid_ref[1] = {0};
   if (c_is_solid_zone_flag == nullptr) {
@@ -3048,7 +3046,6 @@ _solve_omega(int              phase_id,
       CS_MALLOC_HD(c_is_solid_zone_flag, 1, int, cs_alloc_mode);
       c_is_solid_zone_flag[0] = 0;
     }
-    solid_stride = 0;
   }
   const int *c_is_solid = c_is_solid_zone_flag;
   if (c_is_solid == nullptr)
@@ -3419,15 +3416,9 @@ _solve_epsilon(int              phase_id,
     c_is_solid = c_is_solid_ref;
 
   int st_prv_id = f_eps->get_key_int("source_term_prev_id");
-  cs_real_t *c_st_prv = nullptr, *cromo = nullptr;
+  cs_real_t *c_st_prv = nullptr;
   if (st_prv_id > -1)
     c_st_prv = cs_field(st_prv_id)->val;
-
-  int iroext = f_rho->get_key_int("time_extrapolated");
-  if ((iroext > 0) && (st_prv_id > -1))
-    cromo = f_rho->val_pre;
-  else
-    cromo = f_rho->val;
 
   const cs_real_t ce1 = cs_turb_ce1;
   const cs_real_t ceps2 = cs_turb_ce2;
