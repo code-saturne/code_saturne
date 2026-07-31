@@ -430,7 +430,10 @@ cs_equation_builder_log_performance(size_t                       compute_amount,
 
   const int n_compute_cores = cs_glob_n_ranks * cs_glob_n_threads;
   const double qcoef = compute_amount / n_compute_cores ;
-  double qperf[2] = {qcoef/t[0], qcoef/t[1]};
+
+  double qperf[2] = {0, 0};
+  if (t[0] > 0 && t[1] > 0)
+    qperf[0] = qcoef/t[0], qperf[1] = qcoef/t[1];
 
   if (eqp->name == nullptr) {
 
