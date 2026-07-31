@@ -120,8 +120,6 @@ cs_lagr_dlvo_init(const cs_real_t   water_permit,
                   const cs_real_t   csthpp,
                   const cs_real_t   lambda_vdw)
 {
-  cs_lnum_t iel;
-
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   /* Retrieve physical parameters related to clogging modeling */
@@ -146,19 +144,19 @@ cs_lagr_dlvo_init(const cs_real_t   water_permit,
 
   /* Store the temperature */
 
-  for (iel = 0; iel < mesh->n_cells; iel++)
-    cs_lagr_dlvo_param.temperature[iel] = temperature[iel];
+  for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
+    cs_lagr_dlvo_param.temperature[cell_id] = temperature[cell_id];
 
   /* Computation and storage of the Debye length */
 
-  for (iel = 0; iel < mesh->n_cells ; iel++)
+  for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells ; cell_id++)
 
-    cs_lagr_dlvo_param.debye_length[iel]
+    cs_lagr_dlvo_param.debye_length[cell_id]
       =   pow(2e3 * pow(_faraday_cst,2)
         * cs_lagr_dlvo_param.ionic_strength /
         (cs_lagr_dlvo_param.water_permit
          * _free_space_permit * PG_CST
-         * cs_lagr_dlvo_param.temperature[iel]), -0.5);
+         * cs_lagr_dlvo_param.temperature[cell_id]), -0.5);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf(" epseau = %g\n", cs_lagr_dlvo_param.water_permit);
@@ -198,7 +196,7 @@ cs_lagr_dlvo_finalize()
 void
 cs_lagr_barrier(cs_lagr_particle_set_t   &p_set,
                 cs_lnum_t                 p_id,
-                cs_lnum_t                 iel,
+                cs_lnum_t                 cell_id,
                 cs_real_t                *energy_barrier)
 {
   cs_lnum_t i;
@@ -214,7 +212,7 @@ cs_lagr_barrier(cs_lagr_particle_set_t   &p_set,
 
   for (i = 0; i < 1001; i++) {
 
-    cs_real_t  step = cs_lagr_dlvo_param.debye_length[iel]/30.0;
+    cs_real_t  step = cs_lagr_dlvo_param.debye_length[cell_id]/30.0;
 
     /* Interaction between the sphere and the plate */
 
@@ -232,8 +230,8 @@ cs_lagr_barrier(cs_lagr_particle_set_t   &p_set,
                                  cs_lagr_dlvo_param.valen,
                                  cs_lagr_dlvo_param.phi_p,
                                  cs_lagr_dlvo_param.phi_s,
-                                 cs_lagr_dlvo_param.temperature[iel],
-                                 cs_lagr_dlvo_param.debye_length[iel],
+                                 cs_lagr_dlvo_param.temperature[cell_id],
+                                 cs_lagr_dlvo_param.debye_length[cell_id],
                                  cs_lagr_dlvo_param.water_permit);
 
     barr = (var1 + var2);
@@ -253,7 +251,7 @@ cs_lagr_barrier(cs_lagr_particle_set_t   &p_set,
 
 void
 cs_lagr_barrier_pp(cs_real_t                       dpart,
-                   cs_lnum_t                       iel,
+                   cs_lnum_t                       cell_id,
                    cs_real_t                      *energy_barrier)
 {
   cs_real_t rpart = dpart * 0.5;
@@ -264,7 +262,7 @@ cs_lagr_barrier_pp(cs_real_t                       dpart,
 
   for (int i = 0; i < 1001; i++) {
 
-    cs_real_t step = cs_lagr_dlvo_param.debye_length[iel] / 30.0;
+    cs_real_t step = cs_lagr_dlvo_param.debye_length[cell_id] / 30.0;
 
     /* Interaction between two spheres */
 
@@ -284,8 +282,8 @@ cs_lagr_barrier_pp(cs_real_t                       dpart,
                                   cs_lagr_dlvo_param.valen,
                                   cs_lagr_dlvo_param.phi_p,
                                   cs_lagr_dlvo_param.phi_p,
-                                  cs_lagr_dlvo_param.temperature[iel],
-                                  cs_lagr_dlvo_param.debye_length[iel],
+                                  cs_lagr_dlvo_param.temperature[cell_id],
+                                  cs_lagr_dlvo_param.debye_length[cell_id],
                                   cs_lagr_dlvo_param.water_permit);
 
     cs_real_t barr = (var1 + var2);

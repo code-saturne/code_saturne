@@ -369,7 +369,7 @@ cs_lagr_resuspension(void)
               if (kinetic_energy > adhesion_energ) {
 
                 /* The particle is resuspended    */
-                /* and its kinetic energy is totally converted   */
+                /* and its kinetic energy is converted   */
                 /* along the wall-normal distance */
                 p_set.unset_flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
                 p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE) = 0.0;

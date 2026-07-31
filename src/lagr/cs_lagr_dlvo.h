@@ -86,7 +86,7 @@ cs_lagr_dlvo_finalize(void);
 
 void
 cs_lagr_barrier_pp(cs_real_t                       dpart,
-                   cs_lnum_t                       iel,
+                   cs_lnum_t                       cell_id,
                    cs_real_t                      *energy_barrier);
 
 /*----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ cs_lagr_edl_sphere_sphere(cs_real_t  distcc,
 void
 cs_lagr_barrier(cs_lagr_particle_set_t   &p_set,
                 cs_lnum_t                 p_id,
-                cs_lnum_t                 iel,
+                cs_lnum_t                 cell_id,
                 cs_real_t                 *energy_barrier);
 
 #endif /* __cplusplus */

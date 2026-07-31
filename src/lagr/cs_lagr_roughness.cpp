@@ -133,8 +133,6 @@ roughness_init (const cs_real_t   *water_permit,
                 const cs_real_t   *rayasp,
                 const cs_real_t   *rayasg)
 {
-  int iel;
-
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   /* Retrieve physical parameters related to clogging modeling */
@@ -162,19 +160,19 @@ roughness_init (const cs_real_t   *water_permit,
 
   /* Store the temperature */
 
-  for (iel = 0; iel < mesh->n_cells; iel++)
-    cs_lagr_roughness_param->temperature[iel] = temperature[iel];
+  for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++)
+    cs_lagr_roughness_param->temperature[cell_id] = temperature[cell_id];
 
   /* Computation and storage of the Debye length */
 
-  for (iel = 0; iel < mesh->n_cells ; iel++)
+  for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells ; cell_id++)
 
-    cs_lagr_roughness_param->debye_length[iel]
+    cs_lagr_roughness_param->debye_length[cell_id]
       =   pow(2e3 * pow(_faraday_cst,2)
         * cs_lagr_roughness_param->ionic_strength /
         (cs_lagr_roughness_param->water_permit
          * _free_space_permit * PG_CST
-         * cs_lagr_roughness_param->temperature[iel]), -0.5);
+         * cs_lagr_roughness_param->temperature[cell_id]), -0.5);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf(" epseau = %g\n", cs_lagr_roughness_param->water_permit);
