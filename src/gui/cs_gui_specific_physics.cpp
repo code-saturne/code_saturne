@@ -922,7 +922,7 @@ cs_gui_physical_model_select(void)
 
       cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
       cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "ocs");
-      cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "cg");
+      cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "fcg");
     }
   }
 
