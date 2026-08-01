@@ -351,12 +351,11 @@ cs_turbulence_init_clip_and_verify(void)
   else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
     cs_span_2d<cs_real_t> cvar_rij = CS_F_(rij)->get_val_t();
-    cs_span<cs_real_t> cvar_ep;
-    cs_span<cs_real_t> cvar_omg;
+    cs_span<cs_real_t> cvar_eps_omg;
     if (turb_model->model == CS_TURB_RIJ_OMEGA)
-      cvar_omg = CS_F_(omg)->get_val_s();
+      cvar_eps_omg = CS_F_(omg)->get_val_s();
     else
-      cvar_ep = CS_F_(eps)->get_val_s();
+      cvar_eps_omg = CS_F_(eps)->get_val_s();
 
     struct cs_data_double_n<4> rd_rij;
     struct cs_reduce_min_nr<4> reducer_rij;
@@ -371,10 +370,7 @@ cs_turbulence_init_clip_and_verify(void)
       res.r[0] = cvar_rij(c_id, 0);
       res.r[1] = cvar_rij(c_id, 1);
       res.r[2] = cvar_rij(c_id, 2);
-      if (turb_model->model == CS_TURB_RIJ_OMEGA)
-        res.r[3] = cvar_omg[c_id];
-      else
-        res.r[3] = cvar_ep[c_id];
+      res.r[3] = cvar_eps_omg[c_id];
     });
 
     /* If EBRSM, compute min/max of alpha */
