@@ -3,12 +3,50 @@
  *
  * Implementation of the parser for ElectricalRules.xml
  *============================================================================*/
-#include "cs_elec_rules_manager.h"
-#include "base/cs_base.h"
-#include "bft/bft_error.h"
-#include "gui/cs_tree_xml.h"
+/*
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2026 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+#include "base/cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard library headers
+ *----------------------------------------------------------------------------*/
+
 #include <cstdlib>
 #include <cstring>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "bft/bft_error.h"
+#include "base/cs_base.h"
+#include "gui/cs_tree_xml.h"
+
+/*----------------------------------------------------------------------------
+ * Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_elec_rules_manager.h"
 
 /*============================================================================
  * Private methods
@@ -101,7 +139,10 @@ cs_elec_rules_manager::parse_rules_()
  * Constructor / Destructor
  *============================================================================*/
 
-cs_elec_rules_manager::cs_elec_rules_manager(const char *rules_xml_path)
+cs_elec_rules_manager::cs_elec_rules_manager
+(
+  const char  *rules_xml_path
+)
 {
   rules_tree_ = cs_tree_node_create("");
   cs_tree_xml_read(rules_tree_, rules_xml_path);
@@ -202,3 +243,5 @@ cs_get_elec_rules_manager(void)
   }
   return instance;
 }
+
+/*----------------------------------------------------------------------------*/

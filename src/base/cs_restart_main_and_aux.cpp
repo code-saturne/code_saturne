@@ -22,20 +22,12 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-
-/* These two macros only work when "r" and "dummy_XXX" exist.
- * Both have the merit of simplifying the calls -> Only the section name
- * is needed
- */
-
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>

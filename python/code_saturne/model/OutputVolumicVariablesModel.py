@@ -360,7 +360,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         thermal_model = node_thermal['model'] if node_thermal else 'off'
 
         if thermal_model != 'off':
-            conditions_to_check.append('cflt_active')
+            conditions_to_check.append('fourier_t_active')
         if thermal_model == 'total_energy':
             conditions_to_check.append('thermal_internal_energy')
 

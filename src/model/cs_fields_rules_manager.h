@@ -48,29 +48,29 @@
  * Structure definitions
  *============================================================================*/
 
-/* Description of a field to creatr */
+/* Description of a field to create */
 struct cs_field_creation_rule_t {
   std::string  name;           /* field name (ex: "k") */
   std::string  label;          /* field label (ex: "Turb Kinetic Energy") */
   int          dimension;      /* 1, 3 or 6 */
   std::string  type;           /* "variable", "property", "postprocess",
                                   "internal" */
-  std::string  location;       /* "cells", "boundary_faces", "interior_faces" */
+  int          location_id;    /* mesh location id */
   std::string  pointer;        /* ex: "CS_ENUMF_(k)" */
   bool         coupled;        /* CoupledKey=1 */
   bool         no_convection;  /* iconv=0 */
   bool         no_time_term;   /* istat=0 */
   bool         no_diag_shift;  /* idircl=0 */
   bool         no_diffusion;   /* idiff=0 */
-  bool         hide_if_steady; /* cache si regime permanent */
-  std::string  hide_if_model;  /* cache si modele == X */
-  bool         post_process;   /* CS_POST_ON_LOCATION */
+  bool         hide_if_steady; /* hidden if steady flow */
+  std::string  hide_if_model;  /* hidden if model == X */
+  int          post_process;   /* CS_POST_ON_LOCATION */
   bool         log;            /* log=1 */
   std::string  restart_file;   /* "auxiliary" */
-  std::string  exclude_model;  /* exclure pour ce modele */
-  int          amr_scheme;     /* schema AMR */
-  double       scalar_min;     /* borne min */
-  double       scalar_max;     /* borne max */
+  std::string  exclude_model;  /* exclude for this model */
+  int          amr_scheme;     /* AMR scheme */
+  double       scalar_min;     /* min bound */
+  double       scalar_max;     /* max bound */
   int          convection_scheme; /* ischcv */
   int          limiter;        /* limiteur */
   int          slope_test;     /* isstpc */

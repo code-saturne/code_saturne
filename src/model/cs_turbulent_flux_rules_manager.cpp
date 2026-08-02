@@ -41,7 +41,6 @@
 
 #include "base/cs_base.h"
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
 #include "gui/cs_tree_xml.h"
 
 /*----------------------------------------------------------------------------
@@ -120,7 +119,7 @@ void
 cs_turbulent_flux_rules_manager::parse_rules_()
 {
   cs_tree_node_t *fcr = cs_tree_node_get_child(rules_tree_,
-                                                "FieldCreationRules");
+                                               "FieldCreationRules");
   if (fcr == nullptr) return;
 
   for (cs_tree_node_t *rule = cs_tree_node_get_child(fcr, "Rule");

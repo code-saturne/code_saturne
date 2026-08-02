@@ -1,24 +1,59 @@
 /*============================================================================
- * cs_thermal_rules_manager.cpp
- *
  * Implementation of the parser for ThermalRules.xml
  *============================================================================*/
 
-#include "cs_thermal_rules_manager.h"
-#include "base/cs_log.h"
-#include "base/cs_file.h"
+/*
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2026 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+#include "base/cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard library headers
+ *----------------------------------------------------------------------------*/
+
 #include <cmath>
-#include "base/cs_base.h"
-#include "bft/bft_printf.h"
-#include "bft/bft_error.h"
 #include <cstring>
 #include <cstdlib>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "bft/bft_error.h"
+#include "base/cs_log.h"
+#include "base/cs_field.h"
+#include "base/cs_file.h"
+#include "base/cs_base.h"
+#include "base/cs_wall_functions.h"
 #include "gui/cs_tree_xml.h"
 #include "gui/cs_tree_xml.h"
 #include "gui/cs_gui_util.h"
+#include "mesh/cs_mesh_location.h"
 
-#include "base/cs_field.h"
-#include "base/cs_wall_functions.h"
+/*----------------------------------------------------------------------------
+ * Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_thermal_rules_manager.h"
 
 /*============================================================================
  * Static helpers
@@ -39,10 +74,7 @@ cs_thermal_rules_manager::_strcmp(const char *s1, const char *s2)
 cs_thermal_rules_manager::cs_thermal_rules_manager(const char *rules_xml_path)
   : rules_tree_(nullptr)
 {
-  bft_printf("\n=== Initializing cs_thermal_rules_manager ===\n");
-  bft_printf("Loading: %s\n", rules_xml_path);
-
-  // Charger le fichier XML (comme cs_turbulence_rules_manager)
+  // Load the XML file (as cs_turbulence_rules_manager)
   rules_tree_ = cs_tree_node_create("");
   cs_tree_xml_read(rules_tree_, rules_xml_path);
 
@@ -58,8 +90,6 @@ cs_thermal_rules_manager::cs_thermal_rules_manager(const char *rules_xml_path)
   parse_validations_();
   parse_defaults_();
   parse_mappings_();
-
-  bft_printf("cs_thermal_rules_manager initialized successfully.\n\n");
 }
 
 /*============================================================================
@@ -79,12 +109,8 @@ cs_thermal_rules_manager::~cs_thermal_rules_manager()
 void
 cs_thermal_rules_manager::parse_definitions_()
 {
-  bft_printf("  Parsing Definitions...\n");
-
   // Nothing special to parse for Definitions
   // Types are just documented in the XML
-
-  bft_printf("  Definitions parsed.\n");
 }
 
 /*============================================================================
@@ -94,10 +120,8 @@ cs_thermal_rules_manager::parse_definitions_()
 void
 cs_thermal_rules_manager::parse_validation_rules_()
 {
-  bft_printf("  Parsing ValidationRules...\n");
-
   cs_tree_node_t *val_rules = cs_tree_find_node(rules_tree_,
-                                                  "ValidationRules");
+                                                "ValidationRules");
   if (val_rules == nullptr)
     return;
 
@@ -115,22 +139,28 @@ cs_thermal_rules_manager::parse_validation_rules_()
         var_rule.thermal_variable = std::string(thermal_var);
 
         // Parse fields to create
-        cs_tree_node_t *create_field = cs_tree_node_get_child(rule, "CreateField");
+        cs_tree_node_t *create_field = cs_tree_node_get_child(rule,
+                                                              "CreateField");
         while (create_field != nullptr) {
 
-          const char *field_name = cs_tree_node_get_tag(create_field, "Name");
-          const char *field_type = cs_tree_node_get_tag(create_field, "FieldType");
+          const char *field_name = cs_tree_node_get_tag(create_field,
+                                                        "Name");
+          const char *field_type = cs_tree_node_get_tag(create_field,
+                                                        "FieldType");
           const char *location = cs_tree_node_get_tag(create_field, "Location");
           const char *post_vis = cs_tree_node_get_tag(create_field, "PostVis");
           const char *log = cs_tree_node_get_tag(create_field, "Log");
 
-          if (field_name != nullptr && field_type != nullptr && location != nullptr) {
+          if (   field_name != nullptr
+              && field_type != nullptr
+              && location != nullptr) {
             cs_thermal_field_config_t field_cfg;
             field_cfg.field_name = std::string(field_name);
             field_cfg.field_type = std::string(field_type);
-            field_cfg.location = std::string(location);
+            field_cfg.location_id = cs_mesh_location_get_id_by_name(location);
             field_cfg.dimension = 1;  // Default scalar
-            field_cfg.post_vis = (post_vis != nullptr && _strcmp(post_vis, "on"));
+            field_cfg.post_vis
+              = (post_vis != nullptr && _strcmp(post_vis, "on")) ? 1 : 0;
             field_cfg.log = (log != nullptr && _strcmp(log, "on"));
 
             var_rule.required_fields.push_back(field_cfg);
@@ -146,15 +176,18 @@ cs_thermal_rules_manager::parse_validation_rules_()
           const char *flag_value = cs_tree_node_get_tag(set_flag, "Value");
 
           if (flag_name != nullptr && _strcmp(flag_name, "is_temperature")) {
-            var_rule.is_temperature_flag = (flag_value != nullptr) ? atoi(flag_value) : 0;
+            var_rule.is_temperature_flag = (flag_value != nullptr)
+              ? atoi(flag_value) : 0;
           }
         }
 
         // Parser DiffusivityFormula
-        cs_tree_node_t *diff_formula = cs_tree_find_node(rule, "DiffusivityFormula");
+        cs_tree_node_t *diff_formula = cs_tree_find_node(rule,
+                                                         "DiffusivityFormula");
         if (diff_formula != nullptr) {
           const char *formula = cs_tree_node_get_value_str(diff_formula);
-          var_rule.diffusivity_formula = (formula != nullptr) ? std::string(formula) : "";
+          var_rule.diffusivity_formula = (formula != nullptr) ?
+            std::string(formula) : "";
         }
 
         // Parser ThermoPlane
@@ -166,9 +199,6 @@ cs_thermal_rules_manager::parse_validation_rules_()
 
         // Store the rule
         thermal_variable_rules_[std::string(thermal_var)] = var_rule;
-
-        bft_printf("    RequiredFields rule for '%s': %lu fields\n",
-                   thermal_var, var_rule.required_fields.size());
       }
     }
 
@@ -186,8 +216,11 @@ cs_thermal_rules_manager::parse_validation_rules_()
         if (field_name != nullptr) {
           cs_thermal_field_config_t field_cfg;
           field_cfg.field_name = std::string(field_name);
-          field_cfg.field_type = (field_type != nullptr) ? std::string(field_type) : "property";
-          field_cfg.location = (location != nullptr) ? std::string(location) : "cells";
+          field_cfg.field_type = (field_type != nullptr) ?
+            std::string(field_type) : "property";
+          field_cfg.location_id = (location != nullptr) ?
+            cs_mesh_location_get_id_by_name(location)
+            : CS_MESH_LOCATION_CELLS;
           field_cfg.dimension = (dim != nullptr) ? atoi(dim) : 1;
           field_cfg.post_vis = true;
           field_cfg.log = true;
@@ -199,7 +232,6 @@ cs_thermal_rules_manager::parse_validation_rules_()
       }
 
       conditional_fields_["kinetic_st"] = fields;
-      bft_printf("    KineticSourceTerm: %lu fields\n", fields.size());
     }
 
     else if (rule_type != nullptr && _strcmp(rule_type, "MoistAir")) {
@@ -213,7 +245,7 @@ cs_thermal_rules_manager::parse_validation_rules_()
           cs_thermal_field_config_t field_cfg;
           field_cfg.field_name = std::string(field_name);
           field_cfg.field_type = "property";
-          field_cfg.location = "cells";
+          field_cfg.location_id = CS_MESH_LOCATION_CELLS;
           field_cfg.dimension = 1;
           field_cfg.post_vis = true;
           field_cfg.log = true;
@@ -225,7 +257,6 @@ cs_thermal_rules_manager::parse_validation_rules_()
       }
 
       conditional_fields_["moist_air"] = fields;
-      bft_printf("    MoistAir: %lu fields\n", fields.size());
     }
 
     else if (rule_type != nullptr && _strcmp(rule_type, "CompressibleFlow")) {
@@ -240,9 +271,9 @@ cs_thermal_rules_manager::parse_validation_rules_()
           cs_thermal_field_config_t field_cfg;
           field_cfg.field_name = std::string(field_name);
           field_cfg.field_type = "internal";
-          field_cfg.location = "cells";
+          field_cfg.location_id = CS_MESH_LOCATION_CELLS;
           field_cfg.dimension = (dim != nullptr) ? atoi(dim) : 1;
-          field_cfg.post_vis = false;
+          field_cfg.post_vis = 0;
           field_cfg.log = false;
 
           fields.push_back(field_cfg);
@@ -252,25 +283,19 @@ cs_thermal_rules_manager::parse_validation_rules_()
       }
 
       conditional_fields_["compressible"] = fields;
-      bft_printf("    CompressibleFlow: %lu fields\n", fields.size());
     }
 
     rule = cs_tree_node_get_next_of_name(rule);
   }
-
-  bft_printf("  ValidationRules parsed: %lu thermal variable rules\n",
-             thermal_variable_rules_.size());
 }
 
 /*============================================================================
- * Parse Validations (contraintes)
+ * Parse Validations (constraints)
  *============================================================================*/
 
 void
 cs_thermal_rules_manager::parse_validations_()
 {
-  bft_printf("  Parsing Validations...\n");
-
   cs_tree_node_t *validations = cs_tree_find_node(rules_tree_, "Validations");
   if (validations == nullptr)
     return;
@@ -320,8 +345,6 @@ cs_thermal_rules_manager::parse_validations_()
 
     constraint = cs_tree_node_get_next_of_name(constraint);
   }
-
-  bft_printf("  Validations parsed: %lu constraints\n", constraints_.size());
 }
 
 /*============================================================================
@@ -331,8 +354,6 @@ cs_thermal_rules_manager::parse_validations_()
 void
 cs_thermal_rules_manager::parse_defaults_()
 {
-  bft_printf("  Parsing Defaults...\n");
-
   cs_tree_node_t *defaults = cs_tree_find_node(rules_tree_, "Defaults");
   if (defaults == nullptr)
     return;
@@ -348,8 +369,6 @@ cs_thermal_rules_manager::parse_defaults_()
 
     def = cs_tree_node_get_next_of_name(def);
   }
-
-  bft_printf("  Defaults parsed: %lu entries\n", defaults_.size());
 }
 
 /*============================================================================
@@ -359,14 +378,13 @@ cs_thermal_rules_manager::parse_defaults_()
 void
 cs_thermal_rules_manager::parse_mappings_()
 {
-  bft_printf("  Parsing Mappings...\n");
-
   cs_tree_node_t *mappings = cs_tree_find_node(rules_tree_, "Mappings");
   if (mappings == nullptr)
     return;
 
   // Parser ThermalVariable enum
-  cs_tree_node_t *enum_map = cs_tree_find_node(mappings, "EnumMapping[@Name='ThermalVariable']");
+  cs_tree_node_t *enum_map
+    = cs_tree_find_node(mappings, "EnumMapping[@Name='ThermalVariable']");
   if (enum_map != nullptr) {
     cs_tree_node_t *entry = cs_tree_node_get_child(enum_map, "Entry");
     while (entry != nullptr) {
@@ -435,16 +453,15 @@ cs_thermal_rules_manager::parse_mappings_()
       entry = cs_tree_node_get_next_of_name(entry);
     }
   }
-
-  bft_printf("  Mappings parsed.\n");
 }
 
 /*============================================================================
- * GETTERS POUR cs_parameters.cpp
+ * Getters for cs_parameters.cpp
  *============================================================================*/
 
 const cs_thermal_variable_rule_t*
-cs_thermal_rules_manager::get_thermal_variable_rule(const char *thermal_var) const
+cs_thermal_rules_manager::get_thermal_variable_rule
+  (const char  *thermal_var) const
 {
   auto it = thermal_variable_rules_.find(std::string(thermal_var));
   if (it != thermal_variable_rules_.end())
@@ -453,22 +470,25 @@ cs_thermal_rules_manager::get_thermal_variable_rule(const char *thermal_var) con
 }
 
 bool
-cs_thermal_rules_manager::requires_kinetic_st_fields(int has_kinetic_st) const
+cs_thermal_rules_manager::requires_kinetic_st_fields
+  (int  has_kinetic_st) const
 {
   return (has_kinetic_st == 1 && conditional_fields_.count("kinetic_st") > 0);
 }
 
 bool
-cs_thermal_rules_manager::requires_moist_air_field(int ieos) const
+cs_thermal_rules_manager::requires_moist_air_field
+  (int  ieos) const
 {
   // CS_EOS_MOIST_AIR = 2
   return (ieos == 2 && conditional_fields_.count("moist_air") > 0);
 }
 
 bool
-cs_thermal_rules_manager::requires_compressible_fields(int ieos, int thermal_var) const
+cs_thermal_rules_manager::requires_compressible_fields
+(int  ieos,
+ int  thermal_var) const
 {
-  // ieos != CS_EOS_NONE (0) ET (thermal_var == TEMPERATURE (1) OU INTERNAL_ENERGY (3))
   return (ieos != 0 && (thermal_var == 1 || thermal_var == 3) &&
           conditional_fields_.count("compressible") > 0);
 }
@@ -501,7 +521,8 @@ cs_thermal_rules_manager::get_compressible_fields() const
 }
 
 const char*
-cs_thermal_rules_manager::get_diffusivity_formula(const char *thermal_var) const
+cs_thermal_rules_manager::get_diffusivity_formula
+  (const char  *thermal_var) const
 {
   auto it = thermal_variable_rules_.find(std::string(thermal_var));
   if (it != thermal_variable_rules_.end())
@@ -510,7 +531,8 @@ cs_thermal_rules_manager::get_diffusivity_formula(const char *thermal_var) const
 }
 
 const char*
-cs_thermal_rules_manager::get_thermo_plane(const char *thermal_var) const
+cs_thermal_rules_manager::get_thermo_plane
+  (const char  *thermal_var) const
 {
   auto it = thermal_variable_rules_.find(std::string(thermal_var));
   if (it != thermal_variable_rules_.end())
@@ -519,7 +541,8 @@ cs_thermal_rules_manager::get_thermo_plane(const char *thermal_var) const
 }
 
 int
-cs_thermal_rules_manager::get_thermo_plane_enum(const char *thermal_var) const
+cs_thermal_rules_manager::get_thermo_plane_enum
+  (const char  *thermal_var) const
 {
   const char *plane = get_thermo_plane(thermal_var);
   if (plane != nullptr) {
@@ -531,7 +554,7 @@ cs_thermal_rules_manager::get_thermo_plane_enum(const char *thermal_var) const
 }
 
 /*============================================================================
- * GETTERS POUR cs_parameters_check.cpp
+ * Getters for cs_parameters_check.cpp
  *============================================================================*/
 
 double
@@ -553,11 +576,14 @@ cs_thermal_rules_manager::get_max_value(const char *param_name) const
 }
 
 bool
-cs_thermal_rules_manager::check_constraint(const char *constraint_name,
-                                       int thermal_var,
-                                       int temp_scale,
-                                       int has_gravity,
-                                       int density_variable) const
+cs_thermal_rules_manager::check_constraint
+(
+  const char  *constraint_name,
+  int          thermal_var,
+  int          temp_scale,
+  int          has_gravity,
+  int          density_variable
+) const
 {
   // Rechercher la contrainte
   for (const auto &c : constraints_) {
@@ -571,7 +597,8 @@ cs_thermal_rules_manager::check_constraint(const char *constraint_name,
 }
 
 const char*
-cs_thermal_rules_manager::get_constraint_error_message(const char *constraint_name) const
+cs_thermal_rules_manager::get_constraint_error_message
+(const char  *constraint_name) const
 {
   for (const auto &c : constraints_) {
     if (c.target == std::string(constraint_name))
@@ -581,16 +608,19 @@ cs_thermal_rules_manager::get_constraint_error_message(const char *constraint_na
 }
 
 bool
-cs_thermal_rules_manager::is_lagrangian_second_order_forbidden(int thermal_var,
-                                                            int temp_scale) const
+cs_thermal_rules_manager::is_lagrangian_second_order_forbidden
+(
+  int  thermal_var,
+  int  temp_scale
+) const
 {
-  // Interdit si (TEMPERATURE + KELVIN) OU (ENTHALPY)
-  // thermal_var: 1=TEMPERATURE, 2=ENTHALPY
-  // temp_scale: 1=KELVIN
+  // Forbidden if si (temperature + kelvin) or (enthalpy)
+  // thermal_var: 1=temperature, 2=enthalpy
+  // temp_scale: 1=kelvin
 
-  if (thermal_var == 1 && temp_scale == 1)  // TEMPERATURE + KELVIN
+  if (thermal_var == 1 && temp_scale == 1)  // temperature + kelvin
     return true;
-  if (thermal_var == 2)  // ENTHALPY
+  if (thermal_var == 2)  // enthalpy
     return true;
 
   return false;
@@ -614,7 +644,8 @@ cs_thermal_rules_manager::get_property_method(const char *property_name) const
  *============================================================================*/
 
 int
-cs_thermal_rules_manager::get_thermal_variable_enum(const char *name) const
+cs_thermal_rules_manager::get_thermal_variable_enum
+  (const char  *name) const
 {
   auto it = thermal_variable_enum_.find(std::string(name));
   if (it != thermal_variable_enum_.end())
@@ -623,7 +654,8 @@ cs_thermal_rules_manager::get_thermal_variable_enum(const char *name) const
 }
 
 int
-cs_thermal_rules_manager::get_eos_enum(const char *name) const
+cs_thermal_rules_manager::get_eos_enum
+  (const char  *name) const
 {
   auto it = eos_enum_.find(std::string(name));
   if (it != eos_enum_.end())
@@ -632,7 +664,8 @@ cs_thermal_rules_manager::get_eos_enum(const char *name) const
 }
 
 int
-cs_thermal_rules_manager::get_temp_scale_enum(const char *name) const
+cs_thermal_rules_manager::get_temp_scale_enum
+  (const char  *name) const
 {
   auto it = temp_scale_enum_.find(std::string(name));
   if (it != temp_scale_enum_.end())
@@ -641,7 +674,8 @@ cs_thermal_rules_manager::get_temp_scale_enum(const char *name) const
 }
 
 int
-cs_thermal_rules_manager::get_thermo_plane_enum_by_name(const char *name) const
+cs_thermal_rules_manager::get_thermo_plane_enum_by_name
+  (const char  *name) const
 {
   auto it = thermo_plane_enum_.find(std::string(name));
   if (it != thermo_plane_enum_.end())
@@ -650,7 +684,8 @@ cs_thermal_rules_manager::get_thermo_plane_enum_by_name(const char *name) const
 }
 
 const char*
-cs_thermal_rules_manager::get_thermal_variable_name(int enum_val) const
+cs_thermal_rules_manager::get_thermal_variable_name
+  (int  enum_val) const
 {
   auto it = enum_to_thermal_var_.find(enum_val);
   if (it != enum_to_thermal_var_.end())
@@ -659,7 +694,8 @@ cs_thermal_rules_manager::get_thermal_variable_name(int enum_val) const
 }
 
 const char*
-cs_thermal_rules_manager::get_eos_name(int enum_val) const
+cs_thermal_rules_manager::get_eos_name
+  (int  enum_val) const
 {
   auto it = enum_to_eos_.find(enum_val);
   if (it != enum_to_eos_.end())
@@ -668,7 +704,8 @@ cs_thermal_rules_manager::get_eos_name(int enum_val) const
 }
 
 const char*
-cs_thermal_rules_manager::get_temp_scale_name(int enum_val) const
+cs_thermal_rules_manager::get_temp_scale_name
+  (int  enum_val) const
 {
   auto it = enum_to_temp_scale_.find(enum_val);
   if (it != enum_to_temp_scale_.end())
@@ -677,9 +714,10 @@ cs_thermal_rules_manager::get_temp_scale_name(int enum_val) const
 }
 
 const char*
-cs_thermal_rules_manager::get_thermal_variable_constant(int enum_val) const
+cs_thermal_rules_manager::get_thermal_variable_constant
+  (int  enum_val) const
 {
-  // Mapper enum → nom de constante C++
+  // Mapper enum → C++ constant name
   switch (enum_val) {
     case 0: return "CS_THERMAL_MODEL_NONE";
     case 1: return "CS_THERMAL_MODEL_TEMPERATURE";
@@ -690,7 +728,8 @@ cs_thermal_rules_manager::get_thermal_variable_constant(int enum_val) const
 }
 
 const char*
-cs_thermal_rules_manager::get_eos_constant(int enum_val) const
+cs_thermal_rules_manager::get_eos_constant
+  (int  enum_val) const
 {
   switch (enum_val) {
     case 0: return "CS_EOS_NONE";
@@ -702,7 +741,8 @@ cs_thermal_rules_manager::get_eos_constant(int enum_val) const
 }
 
 const char*
-cs_thermal_rules_manager::get_temp_scale_constant(int enum_val) const
+cs_thermal_rules_manager::get_temp_scale_constant
+  (int  enum_val) const
 {
   switch (enum_val) {
     case 0: return "CS_TEMPERATURE_SCALE_NONE";
@@ -759,3 +799,5 @@ cs_get_thermal_rules_manager(bool  no_instanciate)
   }
   return g_thermal_rules_manager;
 }
+
+/*----------------------------------------------------------------------------*/

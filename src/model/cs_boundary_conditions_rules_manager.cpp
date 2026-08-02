@@ -37,9 +37,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
 #include "bft/bft_error.h"
-#include "bft/bft_printf.h"
+#include "base/cs_base.h"
 #include "gui/cs_tree_xml.h"
 
 /*----------------------------------------------------------------------------
@@ -113,7 +112,9 @@ cs_boundary_conditions_rules_manager::parse_rules_()
  *============================================================================*/
 
 cs_boundary_conditions_rules_manager::cs_boundary_conditions_rules_manager
-  (const char *rules_xml_path)
+(
+  const char  *rules_xml_path
+)
   : default_icodcl_(1)
 {
   rules_tree_ = cs_tree_node_create("");
@@ -137,7 +138,9 @@ cs_boundary_conditions_rules_manager::~cs_boundary_conditions_rules_manager()
 
 int
 cs_boundary_conditions_rules_manager::get_icodcl
-  (const std::string &boundary_type) const
+(
+  const std::string  &boundary_type
+) const
 {
   auto it = bc_code_map_.find(boundary_type);
   if (it != bc_code_map_.end())
@@ -147,7 +150,9 @@ cs_boundary_conditions_rules_manager::get_icodcl
 
 int
 cs_boundary_conditions_rules_manager::get_legacy_type
-  (const std::string &nature) const
+(
+  const std::string  &nature
+) const
 {
   auto it = legacy_map_.find(nature);
   if (it != legacy_map_.end())

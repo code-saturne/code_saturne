@@ -52,7 +52,7 @@
 struct cs_thermal_field_config_t {
   std::string  field_name;
   std::string  field_type;        // variable, property, boundary, internal
-  std::string  location;          // cells, boundary_faces, interior_faces
+  int          location_id;       // cells, boundary_faces, interior_faces
   int          dimension;         // 1 for scalae, 3 for vector
   bool         post_vis;          // TODO: use int as several bits are possible
   bool         log;

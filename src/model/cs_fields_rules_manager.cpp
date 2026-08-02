@@ -2,13 +2,52 @@
  * Rules manager for FieldsRules.xml.
  *============================================================================*/
 
-#include "cs_fields_rules_manager.h"
-#include "base/cs_base.h"
-#include "bft/bft_printf.h"
-#include "bft/bft_error.h"
-#include "gui/cs_tree_xml.h"
+/*
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2026 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+#include "base/cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard library headers
+ *----------------------------------------------------------------------------*/
+
 #include <cstring>
 #include <cstdlib>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "bft/bft_error.h"
+#include "base/cs_base.h"
+#include "base/cs_log.h"
+#include "gui/cs_tree_xml.h"
+#include "mesh/cs_mesh_location.h"
+
+/*----------------------------------------------------------------------------
+ * Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_fields_rules_manager.h"
 
 /*============================================================================
  * Static global variables
@@ -71,9 +110,6 @@ cs_fields_rules_manager::_atof_safe(const char *s, double def)
 cs_fields_rules_manager::cs_fields_rules_manager(const char *rules_xml_path)
   : rules_tree_(nullptr)
 {
-  bft_printf("\n=== Initializing cs_fields_rules_manager ===\n");
-  bft_printf("Loading: %s\n", rules_xml_path);
-
   rules_tree_ = cs_tree_node_create("");
   cs_tree_xml_read(rules_tree_, rules_xml_path);
 
@@ -83,9 +119,6 @@ cs_fields_rules_manager::cs_fields_rules_manager(const char *rules_xml_path)
               rules_xml_path);
 
   parse_modules_();
-
-  bft_printf("cs_fields_rules_manager initialized: %lu modules\n\n",
-             modules_.size());
 }
 
 /*----------------------------------------------------------------------------
@@ -124,7 +157,8 @@ cs_fields_rules_manager::parse_field_(cs_tree_node_t *field_node)
   rule.type = type ? std::string(type) : "variable";
 
   const char *loc = get_attr("Location");
-  rule.location = loc ? std::string(loc) : "cells";
+  rule.location_id = loc ? cs_mesh_location_get_id_by_name(loc)
+    : CS_MESH_LOCATION_CELLS;
 
   const char *pointer = get_attr("Pointer");
   if (pointer) rule.pointer = std::string(pointer);
@@ -168,7 +202,7 @@ cs_fields_rules_manager::parse_modules_()
 {
   cs_tree_node_t *fcr = cs_tree_find_node(rules_tree_, "FieldCreationRules");
   if (fcr == nullptr) {
-    bft_printf("WARNING: No FieldCreationRules found in FieldsRules.xml\n");
+    cs_log_warning("No FieldCreationRules found in FieldsRules.xml\n");
     return;
   }
 
@@ -207,7 +241,6 @@ cs_fields_rules_manager::parse_modules_()
     }
 
     modules_[std::string(module_name)] = entries;
-    bft_printf("  Module '%s': %lu rules\n", module_name, entries.size());
   }
 }
 
@@ -285,7 +318,7 @@ cs_get_fields_rules_manager(void)
       fclose(test_file);
     }
     else {
-      bft_printf("WARNING: FieldsRules.xml not found in %s\n", rules_path);
+      cs_log_warning("FieldsRules.xml not found in %s\n", rules_path);
       snprintf(rules_path, 1024, "FieldsRules.xml");
     }
 

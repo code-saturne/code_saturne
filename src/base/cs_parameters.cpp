@@ -1195,11 +1195,11 @@ cs_parameters_define_auxiliary_fields(void)
   const int key_log   = cs_field_key_id("log");
   const int key_vis   = cs_field_key_id("post_vis");
 
-  /* Helper lambda : creer un champ depuis une regle XML */
+  /* Helper lambda: create a field from an XML rule. */
   auto create_from_rule = [&](const cs_field_creation_rule_t &rule,
-                               bool has_previous) -> cs_field_t * {
+                              bool has_previous) -> cs_field_t * {
 
-    /* Determiner le type de champ */
+    /* Determine field type */
     int field_type = 0;
     if (rule.type == "property")
       field_type = CS_FIELD_PROPERTY | CS_FIELD_INTENSIVE;
@@ -1207,20 +1207,13 @@ cs_parameters_define_auxiliary_fields(void)
       field_type = CS_FIELD_POSTPROCESS;
     /* internal : field_type = 0 */
 
-    /* Determiner la localisation */
-    int location = CS_MESH_LOCATION_CELLS;
-    if (rule.location == "interior_faces")
-      location = CS_MESH_LOCATION_INTERIOR_FACES;
-    else if (rule.location == "boundary_faces")
-      location = CS_MESH_LOCATION_BOUNDARY_FACES;
-
     cs_field_t *fld = cs_field_create(rule.name.c_str(),
                                       field_type,
-                                      location,
+                                      rule.location_id,
                                       rule.dimension,
                                       has_previous);
 
-    /* Appliquer post_process et log si specifies dans XML */
+    /* Apply post_process and log if specified in XML */
     if (rule.post_process) {
       fld->set_key_int(key_log, 1);
       fld->set_key_int(key_vis, post_flag);
@@ -1231,26 +1224,24 @@ cs_parameters_define_auxiliary_fields(void)
     return fld;
   };
 
-  /* --------------------------------------------------------------------- */
-  /* Condition "has_kinetic_st"                                             */
-  /* kinetic_energy_thermal_st, rho_k_prev,                                */
-  /* inner_face_velocity, boundary_face_velocity                           */
-  /* --------------------------------------------------------------------- */
+  /* Condition "has_kinetic_st"
+   * kinetic_energy_thermal_st, rho_k_prev,
+   * inner_face_velocity, boundary_face_velocity */
+
   if (th_model->has_kinetic_st == 1) {
     const auto *fields = frm->get_fields("Thermal", "has_kinetic_st");
     if (fields != nullptr) {
       for (const auto &rule : *fields) {
-        /* has_previous : true pour kinetic_energy_thermal_st */
+        /* has_previous : true for kinetic_energy_thermal_st */
         bool has_prev = (rule.name == "kinetic_energy_thermal_st");
         create_from_rule(rule, has_prev);
       }
     }
   }
 
-  /* --------------------------------------------------------------------- */
-  /* Condition "ieos_moist_air"                                             */
-  /* yv : fraction massique vapeur d eau                                   */
-  /* --------------------------------------------------------------------- */
+  /* Condition "ieos_moist_air"
+   * yv: mass fraction of water vapor. */
+
   if (th_cf_model->ieos == CS_EOS_MOIST_AIR) {
     const auto *fields = frm->get_fields("Thermal", "ieos_moist_air");
     if (fields != nullptr) {
@@ -1259,11 +1250,10 @@ cs_parameters_define_auxiliary_fields(void)
     }
   }
 
-  /* --------------------------------------------------------------------- */
-  /* Condition "ieos_not_none_and_temp_or_energy"                          */
-  /* algo:pressure_gradient, algo:pressure_increment_gradient,             */
-  /* isobaric_heat_capacity                                                 */
-  /* --------------------------------------------------------------------- */
+  /* Condition "ieos_not_none_and_temp_or_energy"
+   * algo:pressure_gradient, algo:pressure_increment_gradient,
+   * isobaric_heat_capacity. */
+
   if (th_cf_model->ieos != CS_EOS_NONE) {
     if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
         || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY
@@ -1277,7 +1267,7 @@ cs_parameters_define_auxiliary_fields(void)
       }
     }
 
-    /* Pour gas mix : variable rho, Cp, Cv */
+    /* For gas mix: variable rho, Cp, Cv */
     if (th_cf_model->ieos == CS_EOS_GAS_MIX) {
       fluid_pro->ivivar = 1;
       fluid_pro->icp = 0;
@@ -1285,23 +1275,21 @@ cs_parameters_define_auxiliary_fields(void)
     }
   }
 
-  /* --------------------------------------------------------------------- */
-  /* Condition "thermal_internal_energy"                                    */
-  /* temperature : creee comme propriete si energie interne resolue        */
-  /* --------------------------------------------------------------------- */
+  /* Condition "thermal_internal_energy"
+   * temperature: created as property if internal energy is solved. */
+
   if (th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
     const auto *fields = frm->get_fields("Thermal",
-                           "thermal_internal_energy");
+                                         "thermal_internal_energy");
     if (fields != nullptr) {
       for (const auto &rule : *fields)
         create_from_rule(rule, true);
     }
   }
 
-  /* --------------------------------------------------------------------- */
-  /* Conditions "cflt_active" et "cflp_active"                             */
-  /* cfl_t, cfl_p                                                           */
-  /* --------------------------------------------------------------------- */
+  /* Conditions "cflt_active" and "cflp_active"
+   * cfl_t, cfl_p */
+
   if (th_model->cflt) {
     const auto *fields = frm->get_fields("Thermal", "cflt_active");
     if (fields != nullptr) {

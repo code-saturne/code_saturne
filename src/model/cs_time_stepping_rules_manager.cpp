@@ -4,16 +4,53 @@
  * Implementation of the parser for TimeSteppingRules.xml
  *============================================================================*/
 
-#include "cs_time_stepping_rules_manager.h"
-#include "base/cs_log.h"
-#include "base/cs_file.h"
-#include "base/cs_base.h"
-#include "bft/bft_printf.h"
-#include "bft/bft_error.h"
-#include "gui/cs_tree_xml.h"
+/*
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2026 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+#include "base/cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard library headers
+ *----------------------------------------------------------------------------*/
+
+#include <cmath>
 #include <cstring>
 #include <cstdlib>
-#include <cmath>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "bft/bft_error.h"
+#include "base/cs_base.h"
+#include "base/cs_file.h"
+#include "base/cs_log.h"
+#include "gui/cs_tree_xml.h"
+
+/*----------------------------------------------------------------------------
+ * Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_time_stepping_rules_manager.h"
 
 /*============================================================================
  * Static global variables
@@ -56,19 +93,17 @@ cs_time_stepping_rules_manager::_strcmp(const char *s1, const char *s2)
  * Constructor
  *============================================================================*/
 
-cs_time_stepping_rules_manager::cs_time_stepping_rules_manager(const char *rules_xml_path)
+cs_time_stepping_rules_manager::cs_time_stepping_rules_manager
+  (const char  *rules_xml_path)
   : rules_tree_(nullptr)
 {
-  bft_printf("\n=== Initializing cs_time_stepping_rules_manager ===\n");
-  bft_printf("Loading: %s\n", rules_xml_path);
-
-  // Charger le fichier XML
+  // Load the XML file
   rules_tree_ = cs_tree_node_create("");
   cs_tree_xml_read(rules_tree_, rules_xml_path);
 
   if (rules_tree_ == nullptr) {
     bft_error(__FILE__, __LINE__, 0,
-              _("Error: Could not load TimeSteppingRules.xml from path: %s\n"),
+              _("Could not load TimeSteppingRules.xml from path: %s\n"),
               rules_xml_path);
   }
 
@@ -79,8 +114,6 @@ cs_time_stepping_rules_manager::cs_time_stepping_rules_manager(const char *rules
   parse_validation_rules_();
   parse_mappings_();
   parse_automatic_settings_();
-
-  bft_printf("cs_time_stepping_rules_manager initialized successfully.\n\n");
 }
 
 /*============================================================================
@@ -100,12 +133,8 @@ cs_time_stepping_rules_manager::~cs_time_stepping_rules_manager()
 void
 cs_time_stepping_rules_manager::parse_definitions_()
 {
-  bft_printf("  Parsing Definitions...\n");
-
   // Nothing special to parse for Definitions
   // Types are just documented in the XML
-
-  bft_printf("  Definitions parsed.\n");
 }
 
 /*============================================================================
@@ -115,13 +144,13 @@ cs_time_stepping_rules_manager::parse_definitions_()
 void
 cs_time_stepping_rules_manager::parse_theta_schemes_()
 {
-  bft_printf("  Parsing ThetaSchemes...\n");
-
-  cs_tree_node_t *theta_schemes = cs_tree_find_node(rules_tree_, "ThetaSchemes");
+  cs_tree_node_t *theta_schemes = cs_tree_find_node(rules_tree_,
+                                                    "ThetaSchemes");
   if (theta_schemes == nullptr)
     return;
 
-  cs_tree_node_t *config = cs_tree_node_get_child(theta_schemes, "cs_theta_config_t");
+  cs_tree_node_t *config = cs_tree_node_get_child(theta_schemes,
+                                                  "cs_theta_config_t");
   while (config != nullptr) {
     const char *property = cs_tree_node_get_tag(config, "Property");
 
@@ -130,7 +159,8 @@ cs_time_stepping_rules_manager::parse_theta_schemes_()
       tc.property_name = std::string(property);
 
       // Parser les extrapolations
-      cs_tree_node_t *extrap = cs_tree_node_get_child(config, "Extrapolation");
+      cs_tree_node_t *extrap = cs_tree_node_get_child(config,
+                                                      "Extrapolation");
       while (extrap != nullptr) {
         const char *method = cs_tree_node_get_tag(extrap, "Method");
         const char *theta = cs_tree_node_get_tag(extrap, "Theta");
@@ -150,7 +180,8 @@ cs_time_stepping_rules_manager::parse_theta_schemes_()
       }
 
       // Parser les ordres de termes sources
-      cs_tree_node_t *source_order = cs_tree_node_get_child(config, "SourceTermOrder");
+      cs_tree_node_t *source_order = cs_tree_node_get_child(config,
+                                                            "SourceTermOrder");
       while (source_order != nullptr) {
         const char *order = cs_tree_node_get_tag(source_order, "Order");
         const char *theta = cs_tree_node_get_tag(source_order, "Theta");
@@ -177,17 +208,10 @@ cs_time_stepping_rules_manager::parse_theta_schemes_()
       }
 
       theta_configs_[std::string(property)] = tc;
-
-      bft_printf("    cs_theta_config_t for '%s': %lu extrapolations, %lu source orders\n",
-                 property,
-                 tc.extrap_method_to_theta.size(),
-                 tc.source_order_to_theta.size());
     }
 
     config = cs_tree_node_get_next_of_name(config);
   }
-
-  bft_printf("  ThetaSchemes parsed: %lu configurations\n", theta_configs_.size());
 }
 
 /*============================================================================
@@ -197,8 +221,6 @@ cs_time_stepping_rules_manager::parse_theta_schemes_()
 void
 cs_time_stepping_rules_manager::parse_defaults_()
 {
-  bft_printf("  Parsing Defaults...\n");
-
   cs_tree_node_t *defaults = cs_tree_find_node(rules_tree_, "Defaults");
   if (defaults == nullptr)
     return;
@@ -214,8 +236,6 @@ cs_time_stepping_rules_manager::parse_defaults_()
 
     def = cs_tree_node_get_next_of_name(def);
   }
-
-  bft_printf("  Defaults parsed: %lu entries\n", defaults_.size());
 }
 
 /*============================================================================
@@ -225,9 +245,8 @@ cs_time_stepping_rules_manager::parse_defaults_()
 void
 cs_time_stepping_rules_manager::parse_validation_rules_()
 {
-  bft_printf("  Parsing ValidationRules...\n");
-
-  cs_tree_node_t *validation = cs_tree_find_node(rules_tree_, "ValidationRules");
+  cs_tree_node_t *validation = cs_tree_find_node(rules_tree_,
+                                                 "ValidationRules");
   if (validation == nullptr)
     return;
 
@@ -274,8 +293,6 @@ cs_time_stepping_rules_manager::parse_validation_rules_()
 
     rule = cs_tree_node_get_next_of_name(rule);
   }
-
-  bft_printf("  ValidationRules parsed: %lu constraints\n", constraints_.size());
 }
 
 /*============================================================================
@@ -285,8 +302,6 @@ cs_time_stepping_rules_manager::parse_validation_rules_()
 void
 cs_time_stepping_rules_manager::parse_mappings_()
 {
-  bft_printf("  Parsing Mappings...\n");
-
   cs_tree_node_t *mappings = cs_tree_find_node(rules_tree_, "Mappings");
   if (mappings == nullptr)
     return;
@@ -311,7 +326,8 @@ cs_time_stepping_rules_manager::parse_mappings_()
   }
 
   // Parser SourceTermOrder enum
-  enum_map = cs_tree_find_node(mappings, "EnumMapping[@Name='SourceTermOrder']");
+  enum_map = cs_tree_find_node(mappings,
+                               "EnumMapping[@Name='SourceTermOrder']");
   if (enum_map != nullptr) {
     cs_tree_node_t *entry = cs_tree_node_get_child(enum_map, "Entry");
     while (entry != nullptr) {
@@ -327,8 +343,6 @@ cs_time_stepping_rules_manager::parse_mappings_()
       entry = cs_tree_node_get_next_of_name(entry);
     }
   }
-
-  bft_printf("  Mappings parsed.\n");
 }
 
 /*============================================================================
@@ -338,22 +352,20 @@ cs_time_stepping_rules_manager::parse_mappings_()
 void
 cs_time_stepping_rules_manager::parse_automatic_settings_()
 {
-  bft_printf("  Parsing AutomaticSettings...\n");
-
   // These settings are already integrated in cs_theta_config_ts
   // This function is for future additions if needed
-
-  bft_printf("  AutomaticSettings parsed.\n");
 }
 
 /*============================================================================
- * GETTERS POUR cs_parameters.cpp
+ * getters for cs_parameters.cpp
  *============================================================================*/
 
 double
 cs_time_stepping_rules_manager::get_theta_for_extrapolation
-  (const char  *property_name,
-   int          extrap_method) const
+(
+  const char  *property_name,
+  int          extrap_method
+) const
 {
   auto it = theta_configs_.find(std::string(property_name));
   if (it != theta_configs_.end()) {
@@ -365,8 +377,11 @@ cs_time_stepping_rules_manager::get_theta_for_extrapolation
 }
 
 double
-cs_time_stepping_rules_manager::get_theta_for_source_term(const char *source_term_name,
-                                                      int source_order) const
+cs_time_stepping_rules_manager::get_theta_for_source_term
+(
+  const char  *source_term_name,
+  int          source_order
+) const
 {
   auto it = theta_configs_.find(std::string(source_term_name));
   if (it != theta_configs_.end()) {
@@ -391,19 +406,25 @@ cs_time_stepping_rules_manager::get_time_step_limits() const
 }
 
 bool
-cs_time_stepping_rules_manager::should_auto_init_theta(const char *property_name,
-                                                  double current_theta) const
+cs_time_stepping_rules_manager::should_auto_init_theta
+(
+  const char  *property_name,
+  double       current_theta
+) const
 {
   // If theta is -999, it must be auto-initialized
   return (fabs(current_theta + 999.0) < 1e-6);
 }
 
 /*============================================================================
- * GETTERS POUR cs_gui.cpp
+ * Getters for cs_gui.cpp
  *============================================================================*/
 
 const char*
-cs_time_stepping_rules_manager::get_default(const char *key) const
+cs_time_stepping_rules_manager::get_default
+(
+  const char  *key
+) const
 {
   auto it = defaults_.find(std::string(key));
   if (it != defaults_.end())
@@ -412,7 +433,10 @@ cs_time_stepping_rules_manager::get_default(const char *key) const
 }
 
 double
-cs_time_stepping_rules_manager::get_default_double(const char *key) const
+cs_time_stepping_rules_manager::get_default_double
+(
+  const char  *key
+) const
 {
   const char *val = get_default(key);
   if (val != nullptr)
@@ -421,7 +445,10 @@ cs_time_stepping_rules_manager::get_default_double(const char *key) const
 }
 
 int
-cs_time_stepping_rules_manager::get_default_int(const char *key) const
+cs_time_stepping_rules_manager::get_default_int
+(
+  const char  *key
+) const
 {
   const char *val = get_default(key);
   if (val != nullptr)
@@ -430,11 +457,14 @@ cs_time_stepping_rules_manager::get_default_int(const char *key) const
 }
 
 /*============================================================================
- * GETTERS POUR cs_parameters_check.cpp
+ * Getters for cs_parameters_check.cpp
  *============================================================================*/
 
 double
-cs_time_stepping_rules_manager::get_min_value(const char *param_name) const
+cs_time_stepping_rules_manager::get_min_value
+(
+  const char  *param_name
+) const
 {
   for (const auto &c : constraints_) {
     if (c.target == std::string(param_name) && c.type == "range")
@@ -444,7 +474,10 @@ cs_time_stepping_rules_manager::get_min_value(const char *param_name) const
 }
 
 double
-cs_time_stepping_rules_manager::get_max_value(const char *param_name) const
+cs_time_stepping_rules_manager::get_max_value
+(
+  const char  *param_name
+) const
 {
   for (const auto &c : constraints_) {
     if (c.target == std::string(param_name) && c.type == "range")
@@ -454,7 +487,12 @@ cs_time_stepping_rules_manager::get_max_value(const char *param_name) const
 }
 
 bool
-cs_time_stepping_rules_manager::validate_dt(double dt_ref, double dt_min, double dt_max) const
+cs_time_stepping_rules_manager::validate_dt
+(
+  double  dt_ref,
+  double  dt_min,
+  double  dt_max
+) const
 {
   if (dt_ref <= 0.0) return false;
   if (dt_min < 0.0) return false;
@@ -464,19 +502,28 @@ cs_time_stepping_rules_manager::validate_dt(double dt_ref, double dt_min, double
 }
 
 bool
-cs_time_stepping_rules_manager::validate_theta(double theta) const
+cs_time_stepping_rules_manager::validate_theta
+(
+  double  theta
+) const
 {
   return (theta >= 0.0 && theta <= 1.0);
 }
 
 bool
-cs_time_stepping_rules_manager::validate_cfl(double cfl_max) const
+cs_time_stepping_rules_manager::validate_cfl
+(
+  double  cfl_max
+) const
 {
   return (cfl_max > 0.0);
 }
 
 const char*
-cs_time_stepping_rules_manager::get_constraint_error_message(const char *constraint_name) const
+cs_time_stepping_rules_manager::get_constraint_error_message
+(
+  const char  *constraint_name
+) const
 {
   for (const auto &c : constraints_) {
     if (c.target == std::string(constraint_name))
@@ -490,7 +537,10 @@ cs_time_stepping_rules_manager::get_constraint_error_message(const char *constra
  *============================================================================*/
 
 int
-cs_time_stepping_rules_manager::get_extrapolation_method_enum(const char *name) const
+cs_time_stepping_rules_manager::get_extrapolation_method_enum
+(
+  const char  *name
+) const
 {
   auto it = extrap_method_enum_.find(std::string(name));
   if (it != extrap_method_enum_.end())
@@ -499,7 +549,10 @@ cs_time_stepping_rules_manager::get_extrapolation_method_enum(const char *name) 
 }
 
 int
-cs_time_stepping_rules_manager::get_source_order_enum(const char *name) const
+cs_time_stepping_rules_manager::get_source_order_enum
+(
+  const char  *name
+) const
 {
   auto it = source_order_enum_.find(std::string(name));
   if (it != source_order_enum_.end())
@@ -508,7 +561,10 @@ cs_time_stepping_rules_manager::get_source_order_enum(const char *name) const
 }
 
 const char*
-cs_time_stepping_rules_manager::get_extrapolation_method_name(int enum_val) const
+cs_time_stepping_rules_manager::get_extrapolation_method_name
+(
+  int  enum_val
+) const
 {
   auto it = enum_to_extrap_method_.find(enum_val);
   if (it != enum_to_extrap_method_.end())
@@ -517,7 +573,10 @@ cs_time_stepping_rules_manager::get_extrapolation_method_name(int enum_val) cons
 }
 
 const char*
-cs_time_stepping_rules_manager::get_source_order_name(int enum_val) const
+cs_time_stepping_rules_manager::get_source_order_name
+(
+  int  enum_val
+) const
 {
   auto it = enum_to_source_order_.find(enum_val);
   if (it != enum_to_source_order_.end())
@@ -526,7 +585,10 @@ cs_time_stepping_rules_manager::get_source_order_name(int enum_val) const
 }
 
 const char*
-cs_time_stepping_rules_manager::get_extrapolation_method_constant(int enum_val) const
+cs_time_stepping_rules_manager::get_extrapolation_method_constant
+(
+  int  enum_val
+) const
 {
   switch (enum_val) {
     case 0: return "CS_TIME_EXTRAP_NONE";
@@ -537,7 +599,10 @@ cs_time_stepping_rules_manager::get_extrapolation_method_constant(int enum_val) 
 }
 
 const char*
-cs_time_stepping_rules_manager::get_source_order_constant(int enum_val) const
+cs_time_stepping_rules_manager::get_source_order_constant
+(
+  int  enum_val
+) const
 {
   switch (enum_val) {
     case 0: return "CS_SOURCE_TERM_EXPLICIT";
@@ -572,3 +637,5 @@ cs_get_time_stepping_rules_manager()
   }
   return g_timestep_rules_manager;
 }
+
+/*----------------------------------------------------------------------------*/

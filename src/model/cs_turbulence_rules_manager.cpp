@@ -1,22 +1,55 @@
 /*============================================================================
- * cs_turbulence_rules_manager.cpp
- *
  * Complete implementation with validation rules
- *
- *
- * Date: February 2026
  *============================================================================*/
 
-#include "cs_turbulence_rules_manager.h"
-#include "bft/bft_printf.h"
-#include "bft/bft_error.h"
-#include "gui/cs_tree_xml.h"
-#include "gui/cs_gui_util.h"
-#include "turb/cs_turbulence_model.h"
-#include "base/cs_field.h"
-#include "base/cs_wall_functions.h"
+/*
+  This file is part of code_saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2026 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+#include "base/cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard library headers
+ *----------------------------------------------------------------------------*/
+
 #include <cstring>
 #include <cstdlib>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
+
+#include "bft/bft_error.h"
+#include "base/cs_field.h"
+#include "base/cs_log.h"
+#include "base/cs_wall_functions.h"
+#include "gui/cs_gui_util.h"
+#include "gui/cs_tree_xml.h"
+#include "turb/cs_turbulence_model.h"
+
+/*----------------------------------------------------------------------------
+ * Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_turbulence_rules_manager.h"
 
 /*============================================================================
  * Static global variable (singleton instance)
@@ -42,11 +75,9 @@ cs_get_turbulence_rules_manager(bool  no_instanciate)
       fclose(test_file);
     }
     else {
-      bft_printf("WARNING: TurbulenceRules.xml not found\n");
+      cs_log_warning("TurbulenceRules.xml not found\n");
       snprintf(rules_path, 1024, "TurbulenceRules.xml");
     }
-
-    bft_printf("Load turbulence rules from Chemin: %s\n", rules_path);
 
     g_rules_manager = new cs_turbulence_rules_manager(rules_path);
   }
@@ -58,13 +89,15 @@ cs_get_turbulence_rules_manager(bool  no_instanciate)
  * Private methods
  *============================================================================*/
 
-bool cs_turbulence_rules_manager::_strcmp(const char *s1, const char *s2)
+bool
+cs_turbulence_rules_manager::_strcmp(const char *s1, const char *s2)
 {
   if (s1 == nullptr || s2 == nullptr) return false;
   return strcmp(s1, s2) == 0;
 }
 
-void cs_turbulence_rules_manager::parse_model_groups_()
+void
+cs_turbulence_rules_manager::parse_model_groups_()
 {
   cs_tree_node_t *groups_node = cs_tree_find_node(rules_tree_, "ModelGroups");
   if (groups_node == nullptr) return;
@@ -91,7 +124,8 @@ void cs_turbulence_rules_manager::parse_model_groups_()
   }
 }
 
-void cs_turbulence_rules_manager::parse_validation_rules_()
+void
+cs_turbulence_rules_manager::parse_validation_rules_()
 {
   cs_tree_node_t *rules_node = cs_tree_find_node(rules_tree_, "ValidationRules");
   if (rules_node == nullptr) return;
@@ -114,7 +148,8 @@ void cs_turbulence_rules_manager::parse_validation_rules_()
   }
 }
 
-void cs_turbulence_rules_manager::parse_model_requirements_()
+void
+cs_turbulence_rules_manager::parse_model_requirements_()
 {
   cs_tree_node_t *rules_node = cs_tree_find_node(rules_tree_, "ValidationRules");
   if (rules_node == nullptr) return;
@@ -126,12 +161,14 @@ void cs_turbulence_rules_manager::parse_model_requirements_()
 
     if (model_name != nullptr && rule_type != nullptr) {
       if (_strcmp(rule_type, "RequiredComponents")) {
-        cs_tree_node_t *mixing = cs_tree_find_node_simple(rule, "RequireMixingLength");
+        cs_tree_node_t *mixing
+          = cs_tree_find_node_simple(rule, "RequireMixingLength");
         if (mixing != nullptr) {
           requires_mixing_length_[model_name] = true;
         }
 
-        cs_tree_node_t *var = cs_tree_find_node_simple(rule, "RequireVariable");
+        cs_tree_node_t *var
+          = cs_tree_find_node_simple(rule, "RequireVariable");
         if (var != nullptr) {
           if (!is_les_model_[model_name]) {
             requires_wall_function_[model_name] = true;
@@ -144,7 +181,8 @@ void cs_turbulence_rules_manager::parse_model_requirements_()
   }
 }
 
-void cs_turbulence_rules_manager::build_model_enum_map_()
+void
+cs_turbulence_rules_manager::build_model_enum_map_()
 {
   model_enum_map_["off"]               = CS_TURB_NONE;
   model_enum_map_["mixing_length"]     = CS_TURB_MIXING_LENGTH;
@@ -162,15 +200,18 @@ void cs_turbulence_rules_manager::build_model_enum_map_()
   model_enum_map_["Spalart-Allmaras"]  = CS_TURB_SPALART_ALLMARAS;
 }
 
-void cs_turbulence_rules_manager::parse_numerical_parameters_()
+void
+cs_turbulence_rules_manager::parse_numerical_parameters_()
 {
-  cs_tree_node_t *models_node = cs_tree_find_node(rules_tree_, "TurbulenceModels");
+  cs_tree_node_t *models_node = cs_tree_find_node(rules_tree_,
+                                                  "TurbulenceModels");
   if (models_node == nullptr) {
-    bft_printf("WARNING: TurbulenceModels node not found in XML\n");
+    cs_log_warning("TurbulenceModels node not found in XML\n");
     return;
   }
 
-  cs_tree_node_t *model = cs_tree_node_get_child(models_node, "TurbulenceModel");
+  cs_tree_node_t *model = cs_tree_node_get_child(models_node,
+                                                 "TurbulenceModel");
 
   while (model != nullptr) {
     const char *model_name = cs_tree_node_get_tag(model, "Name");
@@ -186,10 +227,12 @@ void cs_turbulence_rules_manager::parse_numerical_parameters_()
         }
       }
 
-      cs_tree_node_t *num_params = cs_tree_get_node(model, "NumericalParameters");
+      cs_tree_node_t *num_params = cs_tree_get_node(model,
+                                                    "NumericalParameters");
       if (num_params != nullptr) {
 
-        cs_tree_node_t *wf = cs_tree_get_node(num_params, "WallFunction");
+        cs_tree_node_t *wf = cs_tree_get_node(num_params,
+                                              "WallFunction");
         if (wf != nullptr) {
           const char *default_type =
             cs_tree_node_get_child_value_str(wf, "DefaultType");
@@ -218,23 +261,28 @@ void cs_turbulence_rules_manager::parse_numerical_parameters_()
   }
 }
 
-void cs_turbulence_rules_manager::parse_validation_rules_check_()
+void
+cs_turbulence_rules_manager::parse_validation_rules_check_()
 {
   // SECTION 1: Parser <Validations> pour les ranges (MinValue/MaxValue)
-  cs_tree_node_t *validations = cs_tree_find_node(rules_tree_, "Validations");
+  cs_tree_node_t *validations = cs_tree_find_node(rules_tree_,
+                                                  "Validations");
   if (validations != nullptr) {
-    cs_tree_node_t *constraint = cs_tree_node_get_child(validations, "Constraint");
+    cs_tree_node_t *constraint = cs_tree_node_get_child(validations,
+                                                        "Constraint");
     while (constraint != nullptr) {
       const char *target = cs_tree_node_get_tag(constraint, "Target");
       const char *type = cs_tree_node_get_tag(constraint, "Type");
 
       if (target != nullptr && type != nullptr && _strcmp(type, "range")) {
-        const char *min_str = cs_tree_node_get_child_value_str(constraint, "MinValue");
+        const char *min_str = cs_tree_node_get_child_value_str(constraint,
+                                                               "MinValue");
         if (min_str != nullptr) {
           validation_min_[target] = atoi(min_str);
         }
 
-        const char *max_str = cs_tree_node_get_child_value_str(constraint, "MaxValue");
+        const char *max_str
+          = cs_tree_node_get_child_value_str(constraint, "MaxValue");
         if (max_str != nullptr) {
           validation_max_[target] = atoi(max_str);
         }
@@ -245,12 +293,14 @@ void cs_turbulence_rules_manager::parse_validation_rules_check_()
   }
 
   // SECTION 2: Parse <ValidationRules> for compatibility rules
-  cs_tree_node_t *val_rules = cs_tree_find_node(rules_tree_, "ValidationRules");
+  cs_tree_node_t *val_rules = cs_tree_find_node(rules_tree_,
+                                                "ValidationRules");
   if (val_rules == nullptr) {
     return;
   }
 
-  cs_tree_node_t *compat_rules = cs_tree_get_node(val_rules, "CompatibilityRules");
+  cs_tree_node_t *compat_rules = cs_tree_get_node(val_rules,
+                                                  "CompatibilityRules");
   if (compat_rules != nullptr) {
     cs_tree_node_t *rule = cs_tree_node_get_child(compat_rules, "Rule");
     while (rule != nullptr) {
@@ -278,7 +328,8 @@ void cs_turbulence_rules_manager::parse_validation_rules_check_()
 
   cs_tree_node_t *constraints = cs_tree_get_node(val_rules, "Constraints");
   if (constraints != nullptr) {
-    cs_tree_node_t *constraint = cs_tree_node_get_child(constraints, "Constraint");
+    cs_tree_node_t *constraint = cs_tree_node_get_child(constraints,
+                                                        "Constraint");
     while (constraint != nullptr) {
       const char *param_name = cs_tree_node_get_tag(constraint, "Parameter");
       if (param_name != nullptr) {
@@ -308,10 +359,12 @@ void cs_turbulence_rules_manager::parse_validation_rules_check_()
     while (exclusion != nullptr) {
       const char *param_name = cs_tree_node_get_tag(exclusion, "Parameter");
       if (param_name != nullptr) {
-        cs_tree_node_t *not_available = cs_tree_get_node(exclusion, "NotAvailableFor");
+        cs_tree_node_t *not_available = cs_tree_get_node(exclusion,
+                                                         "NotAvailableFor");
         if (not_available != nullptr) {
           std::vector<std::string> models;
-          cs_tree_node_t *model = cs_tree_node_get_child(not_available, "Model");
+          cs_tree_node_t *model = cs_tree_node_get_child(not_available,
+                                                         "Model");
           while (model != nullptr) {
             const char *model_name = cs_tree_node_get_value_str(model);
             if (model_name != nullptr) {
@@ -333,7 +386,10 @@ void cs_turbulence_rules_manager::parse_validation_rules_check_()
  * Constructor & Destructor
  *============================================================================*/
 
-cs_turbulence_rules_manager::cs_turbulence_rules_manager(const char *rules_xml_path)
+cs_turbulence_rules_manager::cs_turbulence_rules_manager
+(
+   const char  *rules_xml_path
+)
   : rules_tree_(nullptr)
 {
   rules_tree_ = cs_tree_node_create("");
@@ -350,22 +406,6 @@ cs_turbulence_rules_manager::cs_turbulence_rules_manager(const char *rules_xml_p
   build_model_enum_map_();
   parse_numerical_parameters_();
   parse_validation_rules_check_();
-
-  bft_printf("[cs_turbulence_rules_manager] Chargement complet depuis %s\n",
-             rules_xml_path);
-  bft_printf("  - %zu models with mapped enum\n", model_enum_map_.size());
-  bft_printf("  - %zu LES models detected\n", is_les_model_.size());
-  bft_printf("  - %zu Rij models detected\n", is_rij_model_.size());
-  bft_printf("  - %zu models with configured wall function\n",
-             default_wall_function_type_.size());
-  bft_printf("  - %zu models with configured ypluli\n",
-             yplus_limit_.size());
-  bft_printf("  - %zu models with configured diffusion\n",
-             diffusion_model_.size());
-  bft_printf("  - %zu parameters with validation ranges\n",
-             validation_min_.size());
-  bft_printf("  - %zu compatibility rules loaded\n\n",
-             compatible_itytur_values_.size());
 }
 
 cs_turbulence_rules_manager::~cs_turbulence_rules_manager()
@@ -376,10 +416,14 @@ cs_turbulence_rules_manager::~cs_turbulence_rules_manager()
 }
 
 /*============================================================================
- * Getters pour cs_gui.cpp
+ * Getters for cs_gui.cpp
  *============================================================================*/
 
-int cs_turbulence_rules_manager::get_model_enum(const char *model_name) const
+int
+cs_turbulence_rules_manager::get_model_enum
+(
+  const char  *model_name
+) const
 {
   if (model_name == nullptr) return CS_TURB_NONE;
   auto it = model_enum_map_.find(model_name);
@@ -391,28 +435,44 @@ int cs_turbulence_rules_manager::get_model_enum(const char *model_name) const
   return CS_TURB_NONE;
 }
 
-bool cs_turbulence_rules_manager::requires_wall_function(const char *model_name) const
+bool
+cs_turbulence_rules_manager::requires_wall_function
+(
+   const char  *model_name
+) const
 {
   if (model_name == nullptr) return false;
   auto it = requires_wall_function_.find(model_name);
   return (it != requires_wall_function_.end() && it->second);
 }
 
-bool cs_turbulence_rules_manager::requires_gravity_terms(const char *model_name) const
+bool
+cs_turbulence_rules_manager::requires_gravity_terms
+(
+  const char  *model_name
+) const
 {
   if (model_name == nullptr) return false;
   auto it = requires_gravity_terms_.find(model_name);
   return (it != requires_gravity_terms_.end() && it->second);
 }
 
-bool cs_turbulence_rules_manager::requires_mixing_length(const char *model_name) const
+bool
+cs_turbulence_rules_manager::requires_mixing_length
+(
+  const char  *model_name
+) const
 {
   if (model_name == nullptr) return false;
   auto it = requires_mixing_length_.find(model_name);
   return (it != requires_mixing_length_.end() && it->second);
 }
 
-const char* cs_turbulence_rules_manager::get_forced_gravity(const char *model_name) const
+const char *
+cs_turbulence_rules_manager::get_forced_gravity
+(
+  const char  *model_name
+) const
 {
   if (model_name == nullptr) return nullptr;
   auto it = forced_gravity_.find(model_name);
@@ -422,21 +482,33 @@ const char* cs_turbulence_rules_manager::get_forced_gravity(const char *model_na
   return nullptr;
 }
 
-bool cs_turbulence_rules_manager::is_les_model(const char *model_name) const
+bool
+cs_turbulence_rules_manager::is_les_model
+(
+  const char *model_name
+) const
 {
   if (model_name == nullptr) return false;
   auto it = is_les_model_.find(model_name);
   return (it != is_les_model_.end() && it->second);
 }
 
-bool cs_turbulence_rules_manager::is_rij_model(const char *model_name) const
+bool
+cs_turbulence_rules_manager::is_rij_model
+(
+  const char *model_name
+) const
 {
   if (model_name == nullptr) return false;
   auto it = is_rij_model_.find(model_name);
   return (it != is_rij_model_.end() && it->second);
 }
 
-bool cs_turbulence_rules_manager::supports_coupled_rij(const char *model_name) const
+bool
+cs_turbulence_rules_manager::supports_coupled_rij
+(
+  const char *model_name
+) const
 {
   if (model_name == nullptr) return false;
   return (_strcmp(model_name, "Rij-SSG") || _strcmp(model_name, "Rij-EBRSM"));
@@ -446,7 +518,11 @@ bool cs_turbulence_rules_manager::supports_coupled_rij(const char *model_name) c
  * Getters pour cs_parameters.cpp
  *============================================================================*/
 
-const char* cs_turbulence_rules_manager::get_model_name_from_enum(int model_enum) const
+const char *
+cs_turbulence_rules_manager::get_model_name_from_enum
+(
+  int  model_enum
+) const
 {
   auto it = enum_to_name_.find(model_enum);
   if (it != enum_to_name_.end()) {
@@ -455,7 +531,11 @@ const char* cs_turbulence_rules_manager::get_model_name_from_enum(int model_enum
   return nullptr;
 }
 
-const char* cs_turbulence_rules_manager::get_default_wall_function_type(const char *model_name) const
+const char *
+cs_turbulence_rules_manager::get_default_wall_function_type
+(
+  const char  *model_name
+) const
 {
   if (model_name == nullptr) return nullptr;
   auto it = default_wall_function_type_.find(model_name);
@@ -465,7 +545,11 @@ const char* cs_turbulence_rules_manager::get_default_wall_function_type(const ch
   return "2SCALES_LOG";
 }
 
-double cs_turbulence_rules_manager::get_yplus_limit(const char *model_name) const
+double
+cs_turbulence_rules_manager::get_yplus_limit
+(
+  const char  *model_name
+) const
 {
   if (model_name == nullptr) return 2.38;
   auto it = yplus_limit_.find(model_name);
@@ -475,7 +559,11 @@ double cs_turbulence_rules_manager::get_yplus_limit(const char *model_name) cons
   return 2.38;
 }
 
-const char* cs_turbulence_rules_manager::get_diffusion_model(const char *model_name) const
+const char *
+cs_turbulence_rules_manager::get_diffusion_model
+(
+  const char  *model_name
+) const
 {
   if (model_name == nullptr) return nullptr;
   auto it = diffusion_model_.find(model_name);
@@ -485,7 +573,11 @@ const char* cs_turbulence_rules_manager::get_diffusion_model(const char *model_n
   return "ISOTROPIC";
 }
 
-int cs_turbulence_rules_manager::get_wall_function_enum(const char *wall_function_type) const
+int
+cs_turbulence_rules_manager::get_wall_function_enum
+(
+  const char  *wall_function_type
+) const
 {
   if (wall_function_type == nullptr) return CS_WALL_F_2SCALES_LOG;
 
@@ -508,10 +600,14 @@ int cs_turbulence_rules_manager::get_wall_function_enum(const char *wall_functio
 }
 
 /*============================================================================
- * Getters pour cs_parameters_check.cpp
+ * Getters for cs_parameters_check.cpp
  *============================================================================*/
 
-int cs_turbulence_rules_manager::get_validation_min(const char *param_name) const
+int
+cs_turbulence_rules_manager::get_validation_min
+(
+  const char *param_name
+) const
 {
   if (param_name == nullptr) return 0;
   auto it = validation_min_.find(param_name);
@@ -521,7 +617,11 @@ int cs_turbulence_rules_manager::get_validation_min(const char *param_name) cons
   return 0;
 }
 
-int cs_turbulence_rules_manager::get_validation_max(const char *param_name) const
+int
+cs_turbulence_rules_manager::get_validation_max
+(
+  const char *param_name
+) const
 {
   if (param_name == nullptr) return 0;
   auto it = validation_max_.find(param_name);
@@ -531,7 +631,11 @@ int cs_turbulence_rules_manager::get_validation_max(const char *param_name) cons
   return 0;
 }
 
-const std::vector<int>* cs_turbulence_rules_manager::get_compatible_itytur_values(const char *param_name) const
+const std::vector<int> *
+cs_turbulence_rules_manager::get_compatible_itytur_values
+(
+  const char  *param_name
+) const
 {
   if (param_name == nullptr) return nullptr;
   auto it = compatible_itytur_values_.find(param_name);
@@ -541,7 +645,12 @@ const std::vector<int>* cs_turbulence_rules_manager::get_compatible_itytur_value
   return nullptr;
 }
 
-bool cs_turbulence_rules_manager::requires_zero_value(const char *param_name, int model_enum) const
+bool
+cs_turbulence_rules_manager::requires_zero_value
+(
+  const char  *param_name,
+  int          model_enum
+) const
 {
   if (param_name == nullptr) return false;
 
@@ -559,7 +668,12 @@ bool cs_turbulence_rules_manager::requires_zero_value(const char *param_name, in
   return false;
 }
 
-bool cs_turbulence_rules_manager::is_available_for_model(const char *param_name, int model_enum) const
+bool
+cs_turbulence_rules_manager::is_available_for_model
+(
+  const char  *param_name,
+  int          model_enum
+) const
 {
   if (param_name == nullptr) return true;
 
@@ -577,7 +691,11 @@ bool cs_turbulence_rules_manager::is_available_for_model(const char *param_name,
   return true;
 }
 
-std::string cs_turbulence_rules_manager::get_model_constant_name(int model_enum) const
+std::string
+cs_turbulence_rules_manager::get_model_constant_name
+(
+  int model_enum
+) const
 {
   switch (model_enum) {
     case 0:  return "CS_TURB_NONE";
@@ -601,30 +719,26 @@ std::string cs_turbulence_rules_manager::get_model_constant_name(int model_enum)
 }
 
 /*============================================================================
- * PARSING DU MODULE OUTPUT
+ * Parsing of the output model
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Parse le module Output depuis le XML
+ * Parse output model from XML
  *----------------------------------------------------------------------------*/
 
 void
 cs_turbulence_rules_manager::parse_output_module_()
 {
-  bft_printf("\n--- Parsing Output module ---\n");
-
   cs_tree_node_t *output_module = cs_tree_find_node(rules_tree_,
                                                      "Module[@name='Output']");
   if (output_module == nullptr) {
-    bft_printf("WARNING: Module 'Output' not found in CodeSaturneRules.xml\n");
+    cs_log_warning("Module 'Output' not found in CodeSaturneRules.xml\n");
     return;
   }
 
   parse_output_field_defaults_();
   parse_output_boundary_variables_();
   parse_output_mappings_();
-
-  bft_printf("Output module parsed successfully\n");
 }
 
 /*----------------------------------------------------------------------------
@@ -635,12 +749,12 @@ void
 cs_turbulence_rules_manager::parse_output_field_defaults_()
 {
   cs_tree_node_t *output_module = cs_tree_find_node(rules_tree_,
-                                                     "Module[@name='Output']");
+                                                    "Module[@name='Output']");
   if (output_module == nullptr)
     return;
 
   cs_tree_node_t *validation_rules = cs_tree_find_node(output_module,
-                                                        "ValidationRules");
+                                                       "ValidationRules");
   if (validation_rules == nullptr)
     return;
 
@@ -655,12 +769,13 @@ cs_turbulence_rules_manager::parse_output_field_defaults_()
 
         cs_tree_node_t *listing = cs_tree_find_node(rule, "ListingPrinting");
         const char *listing_val = (listing != nullptr) ?
-                                   cs_tree_node_get_value_str(listing) : "on";
+          cs_tree_node_get_value_str(listing) : "on";
         defaults.listing = _strcmp(listing_val, "on");
 
-        cs_tree_node_t *post = cs_tree_find_node(rule, "PostprocessingRecording");
+        cs_tree_node_t *post = cs_tree_find_node(rule,
+                                                 "PostprocessingRecording");
         const char *post_val = (post != nullptr) ?
-                               cs_tree_node_get_value_str(post) : "on";
+          cs_tree_node_get_value_str(post) : "on";
         defaults.postprocessing = _strcmp(post_val, "on");
 
         cs_tree_node_t *probes = cs_tree_find_node(rule, "ProbesRecording");
@@ -669,9 +784,6 @@ cs_turbulence_rules_manager::parse_output_field_defaults_()
         defaults.probes = _strcmp(probes_val, "on");
 
         output_field_defaults_[std::string(target)] = defaults;
-
-        bft_printf("  Field defaults for '%s': listing=%d, post=%d, probes=%d\n",
-                   target, defaults.listing, defaults.postprocessing, defaults.probes);
       }
     }
 
@@ -680,19 +792,19 @@ cs_turbulence_rules_manager::parse_output_field_defaults_()
 }
 
 /*----------------------------------------------------------------------------
- * Parse les variables surfaciques
+ * Parse surfacic variables
  *----------------------------------------------------------------------------*/
 
 void
 cs_turbulence_rules_manager::parse_output_boundary_variables_()
 {
   cs_tree_node_t *output_module = cs_tree_find_node(rules_tree_,
-                                                     "Module[@name='Output']");
+                                                    "Module[@name='Output']");
   if (output_module == nullptr)
     return;
 
   cs_tree_node_t *validation_rules = cs_tree_find_node(output_module,
-                                                        "ValidationRules");
+                                                       "ValidationRules");
   if (validation_rules == nullptr)
     return;
 
@@ -709,7 +821,8 @@ cs_turbulence_rules_manager::parse_output_boundary_variables_()
         cs_tree_node_t *label_node = cs_tree_find_node(rule, "Label");
         if (label_node != nullptr) {
           const char *label_val = cs_tree_node_get_value_str(label_node);
-          config.label = (label_val != nullptr) ? std::string(label_val) : std::string(target);
+          config.label = (label_val != nullptr) ?
+            std::string(label_val) : std::string(target);
         } else {
           config.label = std::string(target);
         }
@@ -718,16 +831,20 @@ cs_turbulence_rules_manager::parse_output_boundary_variables_()
         cs_tree_node_t *default_node = cs_tree_find_node(rule, "DefaultStatus");
         if (default_node != nullptr) {
           const char *default_val = cs_tree_node_get_value_str(default_node);
-          config.default_status = (default_val != nullptr && _strcmp(default_val, "on"));
-        } else {
+          config.default_status = (   default_val != nullptr
+                                   && _strcmp(default_val, "on"));
+        }
+        else {
           config.default_status = false;
         }
 
         // Forbidden models
-        cs_tree_node_t *forbidden_node = cs_tree_find_node(rule, "ForbiddenWhen");
+        cs_tree_node_t *forbidden_node = cs_tree_find_node(rule,
+                                                           "ForbiddenWhen");
         if (forbidden_node != nullptr) {
           // Parser PhysicalModel
-          cs_tree_node_t *model = cs_tree_node_get_child(forbidden_node, "PhysicalModel");
+          cs_tree_node_t *model = cs_tree_node_get_child(forbidden_node,
+                                                         "PhysicalModel");
           while (model != nullptr) {
             const char *model_name = cs_tree_node_get_value_str(model);
             if (model_name != nullptr) {
@@ -737,7 +854,8 @@ cs_turbulence_rules_manager::parse_output_boundary_variables_()
           }
 
           // Parser FieldType
-          cs_tree_node_t *field = cs_tree_node_get_child(forbidden_node, "FieldType");
+          cs_tree_node_t *field = cs_tree_node_get_child(forbidden_node,
+                                                         "FieldType");
           while (field != nullptr) {
             const char *field_name = cs_tree_node_get_value_str(field);
             if (field_name != nullptr) {
@@ -748,13 +866,11 @@ cs_turbulence_rules_manager::parse_output_boundary_variables_()
         }
 
         // RequiresThermalModel
-        cs_tree_node_t *thermal_node = cs_tree_find_node(rule, "RequiresThermalModel");
+        cs_tree_node_t *thermal_node
+          = cs_tree_find_node(rule, "RequiresThermalModel");
         config.requires_thermal = (thermal_node != nullptr);
 
         output_boundary_var_config_[std::string(target)] = config;
-
-        bft_printf("  Boundary var '%s': label='%s', default=%d\n",
-                   target, config.label.c_str(), config.default_status);
       }
     }
 
@@ -763,14 +879,14 @@ cs_turbulence_rules_manager::parse_output_boundary_variables_()
 }
 
 /*----------------------------------------------------------------------------
- * Parse les mappings (TensorComponents, etc.)
+ * Parse mappings (TensorComponents, etc.)
  *----------------------------------------------------------------------------*/
 
 void
 cs_turbulence_rules_manager::parse_output_mappings_()
 {
   cs_tree_node_t *output_module = cs_tree_find_node(rules_tree_,
-                                                     "Module[@name='Output']");
+                                                    "Module[@name='Output']");
   if (output_module == nullptr)
     return;
 
@@ -795,9 +911,6 @@ cs_turbulence_rules_manager::parse_output_mappings_()
       }
 
       output_tensor_component_names_[std::string(tensor_name)] = component_names;
-
-      bft_printf("  Tensor '%s': %lu components\n",
-                 tensor_name, component_names.size());
     }
 
     tensor = cs_tree_node_get_next_of_name(tensor);
@@ -821,11 +934,14 @@ cs_turbulence_rules_manager::parse_output_mappings_()
 }
 
 /*============================================================================
- * OUTPUT GETTERS (publics)
+ * Output getters (public)
  *============================================================================*/
 
 cs_output_field_defaults_t
-cs_turbulence_rules_manager::get_output_field_defaults(const char *field_type) const
+cs_turbulence_rules_manager::get_output_field_defaults
+(
+   const char  *field_type
+) const
 {
   auto it = output_field_defaults_.find(std::string(field_type));
 
@@ -842,7 +958,10 @@ cs_turbulence_rules_manager::get_output_field_defaults(const char *field_type) c
 }
 
 cs_boundary_var_config_t
-cs_turbulence_rules_manager::get_output_boundary_var_config(const char *var_name) const
+cs_turbulence_rules_manager::get_output_boundary_var_config
+(
+  const char  *var_name
+) const
 {
   auto it = output_boundary_var_config_.find(std::string(var_name));
 
@@ -859,9 +978,11 @@ cs_turbulence_rules_manager::get_output_boundary_var_config(const char *var_name
 }
 
 bool
-cs_turbulence_rules_manager::is_output_boundary_var_forbidden(
-    const char *var_name,
-    const char *physics_model) const
+cs_turbulence_rules_manager::is_output_boundary_var_forbidden
+(
+ const char  *var_name,
+ const char  *physics_model
+) const
 {
   cs_boundary_var_config_t config = get_output_boundary_var_config(var_name);
 
@@ -875,9 +996,11 @@ cs_turbulence_rules_manager::is_output_boundary_var_forbidden(
   return false;
 }
 
-const std::vector<std::string>*
-cs_turbulence_rules_manager::get_output_tensor_component_names(
-    const char *tensor_name) const
+const std::vector<std::string> *
+cs_turbulence_rules_manager::get_output_tensor_component_names
+(
+  const char *tensor_name
+) const
 {
   auto it = output_tensor_component_names_.find(std::string(tensor_name));
 
@@ -889,7 +1012,10 @@ cs_turbulence_rules_manager::get_output_tensor_component_names(
 }
 
 const char*
-cs_turbulence_rules_manager::get_output_default(const char *key) const
+cs_turbulence_rules_manager::get_output_default
+(
+  const char *key
+) const
 {
   auto it = output_defaults_.find(std::string(key));
 
@@ -901,7 +1027,10 @@ cs_turbulence_rules_manager::get_output_default(const char *key) const
 }
 
 bool
-cs_turbulence_rules_manager::should_disable_yplus(const char *turb_model) const
+cs_turbulence_rules_manager::should_disable_yplus
+(
+  const char *turb_model
+) const
 {
   return _strcmp(turb_model, "off");
 }
