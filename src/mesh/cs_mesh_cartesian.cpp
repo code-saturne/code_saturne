@@ -2110,6 +2110,16 @@ cs_mesh_cartesian_finalize_definition(void)
       /* Compute automatically if nr is 0 */
       if (nr == 0) {
         if (cs::abs(q - 1.0) > 1e-9) {
+          /* If q < 1.0, the infinite geometric series sum is h_core / (1 - q).
+             If this sum is smaller than L_r, there is no real solution.
+             To prevent this and keep the starting cell size exactly equal
+             to h_core, we automatically adjust q to a valid decreasing
+             progression factor. */
+          if (q < 1.0 && q <= 1.0 - h_core / L_r) {
+            q = 1.0 - 0.8 * h_core / L_r;
+            mp->ogrid_r_prog = q;
+          }
+
           cs_real_t arg = 1.0 + L_r * (q - 1.0) / h_core;
           if (arg > 1e-9) {
             nr = (cs_gnum_t)round(log(arg) / log(q));
