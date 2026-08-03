@@ -1901,7 +1901,7 @@ _matrix_get_msr_arrays_host(const cs_matrix_t   *matrix,
   }
   if (x_val != nullptr) {
     if (cs_check_device_ptr(*x_val) == CS_ALLOC_DEVICE)
-      count[3] = nnz*db_size*db_size;
+      count[3] = nnz*eb_size*eb_size;
   }
 
   for (int i = 0; i < 4; i++)
