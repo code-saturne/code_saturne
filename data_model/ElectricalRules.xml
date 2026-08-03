@@ -88,7 +88,7 @@
     </Rule>
 
     <!-- When scaling is active with electric arc -->
-    <Rule Type="PositiveStrict" Parameter="couimp" When="ielcor=1 AND ielarc>0">
+    <Rule Type="PositiveStrict" Parameter="couimp" When="ielcor=1 AND ielarc&gt;0">
       <ErrorMessage>COUIMP must be strictly positive when scaling is active</ErrorMessage>
     </Rule>
     <Rule Type="PositiveStrict" Parameter="pot_diff" When="ielcor=1">
@@ -96,10 +96,10 @@
     </Rule>
 
     <!-- When scaling is active with Joule effect -->
-    <Rule Type="PositiveStrict" Parameter="puisim" When="ielcor=1 AND ieljou>0">
+    <Rule Type="PositiveStrict" Parameter="puisim" When="ielcor=1 AND ieljou&gt;0">
       <ErrorMessage>PUISIM must be strictly positive when scaling is active</ErrorMessage>
     </Rule>
-    <Rule Type="PositiveStrict" Parameter="coejou" When="ielcor=1 AND ieljou>0">
+    <Rule Type="PositiveStrict" Parameter="coejou" When="ielcor=1 AND ieljou&gt;0">
       <ErrorMessage>COEJOU must be strictly positive when scaling is active</ErrorMessage>
     </Rule>
 
