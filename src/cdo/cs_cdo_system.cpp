@@ -1816,7 +1816,7 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
 
   cs_real_t *rhs = *p_rhs;
   if (rhs == nullptr) {
-    CS_MALLOC(sh->_rhs, sh->full_rhs_size, cs_real_t);
+    CS_MALLOC_HD(sh->_rhs, sh->full_rhs_size, cs_real_t, cs_alloc_mode);
     *p_rhs = sh->_rhs;
     sh->rhs = sh->_rhs;
 

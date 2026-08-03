@@ -6398,7 +6398,8 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   /* Assign values
      ------------- */
 
-  {  // Useful with unifedi memory only.
+  if (coarse_grid->alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+    // Useful with unified memory only.
     cs_mem_advise_set_read_mostly(c_row_index);
     cs_mem_advise_set_read_mostly(c_col_id);
     cs_prefetch_h2d(c_row_index, (c_n_rows+1)*sizeof(cs_lnum_t));

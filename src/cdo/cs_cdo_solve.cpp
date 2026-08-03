@@ -119,7 +119,10 @@ _set_xsol(int                 stride,
   if (n_cols > n_scatter_elts) {
 
     assert(cs_glob_n_ranks > 1);
-    CS_MALLOC(xsol, stride * n_cols, cs_real_t);
+    CS_MALLOC_HD(xsol,
+                 stride * n_cols,
+                 cs_real_t,
+                 cs_matrix_get_alloc_mode(matrix));
     cs_array_real_copy(stride*n_scatter_elts, x, xsol);
 
   }

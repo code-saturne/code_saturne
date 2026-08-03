@@ -3846,8 +3846,9 @@ _get_diagonal_dist(const cs_matrix_t  *matrix)
  *
  * Only CSR and MSR formats are handled.
  *
- * \param[in]  type  type of matrix considered
- * \param[in]  ma    pointer to matrix assembler structure
+ * \param[in]   type         type of matrix considered
+ * \param[out]  alloc_mode   allocation mode
+ * \param[in]   ma           pointer to matrix assembler structure
  *
  * \return  a pointer to created matrix structure internals
  */
@@ -3857,6 +3858,7 @@ static void *
 _structure_from_assembler(cs_matrix_type_t        type,
                           cs_lnum_t               n_rows,
                           cs_lnum_t               n_cols_ext,
+                          cs_alloc_mode_t        &alloc_mode,
                           cs_matrix_assembler_t  *ma)
 {
   void *structure = nullptr;
@@ -3864,9 +3866,10 @@ _structure_from_assembler(cs_matrix_type_t        type,
   /* Get info on assembler structure */
 
   bool             ma_sep_diag = cs_matrix_assembler_get_separate_diag(ma);
-  cs_alloc_mode_t  alloc_mode = cs_alloc_mode;
   const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
   const cs_lnum_t *col_id = cs_matrix_assembler_get_col_ids(ma);
+
+  alloc_mode = cs_check_device_ptr(row_index);
 
   /* Define structure */
 
@@ -4622,6 +4625,7 @@ cs_matrix_structure_create_from_assembler(cs_matrix_type_t        type,
   ms->structure = _structure_from_assembler(ms->type,
                                             ms->n_rows,
                                             ms->n_cols_ext,
+                                            ms->alloc_mode,
                                             ma);
 
   /* Set pointers to structures shared from mesh here */
@@ -4827,6 +4831,7 @@ cs_matrix_create_from_assembler(cs_matrix_type_t        type,
   m->_structure = _structure_from_assembler(m->type,
                                             m->n_rows,
                                             m->n_cols_ext,
+                                            m->alloc_mode,
                                             ma);
   m->structure = m->_structure;
 
