@@ -191,22 +191,47 @@ cs_lagr_rules_manager::requires_restart(const std::string &coupling_mode) const
 }
 
 /*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+static cs_lagr_rules_manager *_g_lagr_rules_manager = nullptr;
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy helper and associated tree.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rule_manager_finalize(void)
+{
+  if (_g_lagr_rules_manager != nullptr) {
+    delete _g_lagr_rules_manager;
+    _g_lagr_rules_manager = nullptr;
+  }
+}
+
+/*============================================================================
  * Singleton
  *============================================================================*/
 
 cs_lagr_rules_manager *
 cs_get_lagr_rules_manager(void)
 {
-  static cs_lagr_rules_manager *instance = nullptr;
-  if (instance == nullptr) {
+  if (_g_lagr_rules_manager == nullptr) {
     const char *datadir = cs_base_get_pkgdatadir();
     char path[1024];
     snprintf(path, sizeof(path) - 1,
              "%s/model/LagrangianRules.xml", datadir);
     path[sizeof(path) - 1] = '\0';
-    instance = new cs_lagr_rules_manager(path);
+    _g_lagr_rules_manager = new cs_lagr_rules_manager(path);
+    cs_base_at_finalize(_rule_manager_finalize);
   }
-  return instance;
+  return _g_lagr_rules_manager;
 }
 
 /*----------------------------------------------------------------------------*/

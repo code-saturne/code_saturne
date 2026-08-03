@@ -1,8 +1,7 @@
 /*============================================================================
- * cs_elec_rules_manager.cpp
- *
  * Implementation of the parser for ElectricalRules.xml
  *============================================================================*/
+
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
@@ -226,22 +225,47 @@ cs_elec_rules_manager::get_properties(const std::string &model) const
 }
 
 /*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+static cs_elec_rules_manager *_g_elec_rules_manager = nullptr;
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy helper and associated tree.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rule_manager_finalize(void)
+{
+  if (_g_elec_rules_manager != nullptr) {
+    delete _g_elec_rules_manager;
+    _g_elec_rules_manager = nullptr;
+  }
+}
+
+/*============================================================================
  * Singleton
  *============================================================================*/
 
 cs_elec_rules_manager *
 cs_get_elec_rules_manager(void)
 {
-  static cs_elec_rules_manager *instance = nullptr;
-  if (instance == nullptr) {
+  if (_g_elec_rules_manager == nullptr) {
     const char *datadir = cs_base_get_pkgdatadir();
     char path[1024];
     snprintf(path, sizeof(path) - 1,
              "%s/model/ElectricalRules.xml", datadir);
     path[sizeof(path) - 1] = '\0';
-    instance = new cs_elec_rules_manager(path);
+    _g_elec_rules_manager = new cs_elec_rules_manager(path);
+    cs_base_at_finalize(_rule_manager_finalize);
   }
-  return instance;
+  return _g_elec_rules_manager;
 }
 
 /*----------------------------------------------------------------------------*/
