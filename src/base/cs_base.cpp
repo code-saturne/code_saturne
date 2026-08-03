@@ -491,8 +491,8 @@ _cs_base_exit(int status)
          silently, with ne reported error (so as to avoid the MPI
          launcher to kill remaining ranks also). */
 
-      const char exit_on_error[] = "CS_EXIT_ON_ERROR";
-      if (getenv(exit_on_error) != nullptr) {
+      const char *exit_on_error = getenv("CS_EXIT_ON_ERROR");
+      if (exit_on_error != nullptr) {
         if (strcmp(exit_on_error, "ignore") == 0)
           status = EXIT_SUCCESS;
       }
