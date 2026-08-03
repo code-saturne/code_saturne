@@ -75,6 +75,7 @@
 #include "pprt/cs_physical_model.h"
 #include "base/cs_prototypes.h"
 #include "alge/cs_sles.h"
+#include "alge/cs_sles_default.h"
 #include "alge/cs_sles_it.h"
 #include "base/cs_time_step.h"
 
@@ -225,8 +226,8 @@ _order_axis(const cs_real_t  s[],
 static void
 _order_by_direction(void)
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
@@ -255,11 +256,21 @@ _order_by_direction(void)
 
             if (cs_glob_rad_transfer_params->dispersion == false) {
 
-              cs_sles_it_t *sc = cs_sles_it_define(-1,
-                                                   name,
-                                                   CS_SLES_P_GAUSS_SEIDEL,
-                                                   0,      /* poly_degree */
-                                                   1000);  /* n_max_iter */
+              cs_matrix_t *a = cs_sles_default_get_matrix(-1, name, 1, 1, true);
+              cs_sles_it_t *sc = nullptr;
+
+              if (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST)
+                sc = cs_sles_it_define(-1,
+                                       name,
+                                       CS_SLES_JACOBI,
+                                       0,      /* poly_degree */
+                                       1000);  /* n_max_iter */
+              else
+                sc = cs_sles_it_define(-1,
+                                       name,
+                                       CS_SLES_P_GAUSS_SEIDEL,
+                                       0,      /* poly_degree */
+                                       1000);  /* n_max_iter */
 
               for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
                 s[c_id] =   v[0]*cell_cen[c_id][0]
