@@ -531,6 +531,8 @@ _run(void)
 
     }
 
+    cs_base_update_status("finalizing\n");
+
     /* Finalize gradient computation */
 
     cs_gradient_finalize();
