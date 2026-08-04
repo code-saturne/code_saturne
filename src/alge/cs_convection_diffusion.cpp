@@ -1942,8 +1942,8 @@ _convection_diffusion_scalar_rc_grad
    int                         imasac,
    cs_lnum_t                   n_i_face_ids,
    cs_lnum_t                   n_b_face_ids,
-   cs_lnum_t                  *i_face_ids,
-   cs_lnum_t                  *b_face_ids,
+   const cs_lnum_t            *i_face_ids,
+   const cs_lnum_t            *b_face_ids,
    const cs_real_t            *restrict pvar,
    const int                   icvfli[],
    cs_field_bc_coeffs_t       *bc_coeffs,
@@ -2653,8 +2653,8 @@ _diffusion_scalar
    int                         inc,
    cs_lnum_t                   n_i_face_ids,
    cs_lnum_t                   n_b_face_ids,
-   cs_lnum_t                  *i_face_ids,
-   cs_lnum_t                  *b_face_ids,
+   const cs_lnum_t            *i_face_ids,
+   const cs_lnum_t            *b_face_ids,
    const cs_real_t            *restrict pvar,
    cs_field_bc_coeffs_t       *bc_coeffs,
    const cs_real_t             i_visc[],
@@ -2929,8 +2929,8 @@ _convection_scalar
    int                         imasac,
    cs_lnum_t                   n_i_face_ids,
    cs_lnum_t                   n_b_face_ids,
-   cs_lnum_t                  *i_face_ids,
-   cs_lnum_t                  *b_face_ids,
+   const cs_lnum_t            *i_face_ids,
+   const cs_lnum_t            *b_face_ids,
    const cs_real_t            *restrict pvar,
    const int                   icvfli[],
    cs_field_bc_coeffs_t       *bc_coeffs,
@@ -5613,6 +5613,133 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
          rhs, nullptr, nullptr);
     }
 
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add the explicit part of the convection/diffusion terms of a
+ * standard transport equation of a scalar field \f$ \varia \f$.
+ *
+ * More precisely, the right hand side \f$ Rhs \f$ is updated as
+ * follows:
+ * \f[
+ * Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
+ *        \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
+ *      - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * Warning:
+ * - \f$ Rhs \f$ has already been initialized before calling bilsc2!
+ * - mind the sign minus
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#bilsc2"><b>bilsc2</b></a> section of the
+ * theory guide for more information.
+ *
+ * \param[in]     f             pointer to field, or null
+ * \param[in]     eqp           equation parameters
+ * \param[in]     icvflb        global indicator of boundary convection flux
+ *                               - 0 upwind scheme at all boundary faces
+ *                               - 1 imposed flux at some boundary faces
+ * \param[in]     n_i_faces     number of interior faces
+ * \param[in]     n_b_faces     number of boundary faces
+ * \param[in]     i_face_ids    interior face ids
+ * \param[in]     b_face_ids    boundary face ids
+ * \param[in]     pvar          solved variable
+ * \param[in]     icvfli        boundary face indicator array of convection flux
+ *                               - 0 upwind scheme
+ *                               - 1 imposed flux
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at boundary faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the r.h.s.
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the r.h.s.
+ * \param[in]     c_weight      diffusion gradient weighting
+ * \param[in]     xcpp          array of specific heat (\f$ C_p \f$), or nullptr
+ * \param[in,out] i_flux        interior flux (or nullptr)
+ * \param[in,out] b_flux        boundary flux (or nullptr)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_diffusion_scalar_at_faces
+(
+  const cs_field_t           *f,
+  const cs_equation_param_t   eqp,
+  int                         icvflb,
+  cs_lnum_t                   n_i_faces,
+  cs_lnum_t                   n_b_faces,
+  const cs_lnum_t            *i_face_ids,
+  const cs_lnum_t            *b_face_ids,
+  const cs_real_t            *restrict pvar,
+  const int                   icvfli[],
+  cs_field_bc_coeffs_t       *bc_coeffs,
+  const cs_real_t             i_massflux[],
+  const cs_real_t             b_massflux[],
+  const cs_real_t             i_visc[],
+  const cs_real_t             b_visc[],
+  const cs_real_t            *c_weight,
+  const cs_real_t            *xcpp,
+  cs_real_2_t                 i_flux[],
+  cs_real_t                   b_flux[]
+)
+{
+  CS_PROFILE_FUNC_RANGE();
+
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  constexpr int inc1 = 1;
+  constexpr int imasac0 = 0;
+
+  /* Select convection/diffusion operators
+     ------------------------------------- */
+
+  if (eqp.idiff) {
+    _diffusion_scalar<false, true>
+      (f, eqp, inc1,
+       n_i_faces, n_b_faces, i_face_ids, b_face_ids,
+       pvar,
+       bc_coeffs,
+       i_visc, b_visc, c_weight,
+       nullptr, i_flux, b_flux);
+  }
+
+  if (eqp.iconv) {
+    if (xcpp == nullptr)
+      _convection_scalar<false, false, true>
+        (f, eqp, icvflb, inc1, imasac0,
+         n_i_faces, n_b_faces, i_face_ids, b_face_ids,
+         pvar,
+         icvfli,
+         bc_coeffs,
+         i_massflux, b_massflux, nullptr,
+         nullptr, i_flux, b_flux);
+    else
+      _convection_scalar<true, false, true>
+        (f, eqp, icvflb, inc1, imasac0,
+         n_i_faces, n_b_faces, i_face_ids, b_face_ids,
+         pvar,
+         icvfli,
+         bc_coeffs,
+         i_massflux, b_massflux, xcpp,
+         nullptr, i_flux, b_flux);
+  }
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::microseconds elapsed;
+    printf("%d: %s", cs_glob_rank_id, __func__);
+
+    elapsed = std::chrono::duration_cast
+      <std::chrono::microseconds>(t_stop - t_start);
+    printf(", total = %ld\n", elapsed.count());
   }
 }
 

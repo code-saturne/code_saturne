@@ -72,7 +72,7 @@ typedef enum {
 } cs_nvd_type_t;
 
 /*============================================================================
- *  Global variables
+ * Global variables
  *============================================================================*/
 
 /*=============================================================================
@@ -81,82 +81,26 @@ typedef enum {
 
 /*----------------------------------------------------------------------------
  * Return pointer to slope test indicator field values if active.
- *
- * parameters:
- *   f_id  <-- field id (or -1)
- *   eqp   <-- equation parameters
- *
- * return:
- *   pointer to local values array, or NULL;
  *----------------------------------------------------------------------------*/
 
 cs_real_t *
 cs_get_v_slope_test(int                        f_id,
                     const cs_equation_param_t  eqp);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Compute the beta blending coefficient of the
+/*----------------------------------------------------------------------------
+ * Compute the beta blending coefficient of the
  * beta limiter (ensuring preservation of a given min/max pair of values).
- *
- * \param[in]     f_id         field id
- * \param[in]     inc          "not an increment" flag
- * \param[in]     rovsdt       rho * volume / dt
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_beta_limiter_building(int              f_id,
                          int              inc,
                          const cs_real_t  rovsdt[]);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Add the explicit part of the convection/diffusion terms of a
- * standard transport equation of a scalar field \f$ \varia \f$.
- *
- * More precisely, the right hand side \f$ Rhs \f$ is updated as
- * follows:
- * \f[
- * Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
- *        \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
- *      - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
- * \f]
- *
- * Warning:
- * - \f$ Rhs \f$ has already been initialized before calling bilsc2!
- * - mind the sign minus
- *
- * Please refer to the
- * <a href="../../theory.pdf#bilsc2"><b>bilsc2</b></a> section of the
- * theory guide for more information.
- *
- * \param[in]     f             pointer to field, or null
- * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     imasac        take mass accumulation into account?
- * \param[in]     pvar          solved variable
- * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
- *                               - 1 imposed flux
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_massflux    mass flux at interior faces
- * \param[in]     b_massflux    mass flux at boundary faces
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     c_weight      gradient weighting for diffusion
- * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
- * \param[in,out] i_flux        interior flux (or nullptr)
- * \param[in,out] b_flux        boundary flux (or nullptr)
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Add the explicit part of the convection/diffusion terms of a
+ * standard transport equation of a scalar field.
+ *----------------------------------------------------------------------------*/
 
 void
 cs_convection_diffusion_scalar(const cs_field_t           *f,
@@ -176,36 +120,29 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
                                cs_real_2_t                 i_flux[],
                                cs_real_t                   b_flux[]);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Update face flux with convection contribution of a standard transport
- * equation of a scalar field \f$ \varia \f$.
- *
- * \f[
- * C_\ij = \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
- * \f]
- *
- * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     f_id          field id (or -1)
- * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     pvar          solved variable (current time step)
- * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
- *                               - 1 imposed flux
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_massflux    mass flux at interior faces
- * \param[in]     b_massflux    mass flux at boundary faces
- * \param[in,out] i_conv_flux   scalar convection flux at interior faces
- * \param[in,out] b_conv_flux   scalar convection flux at boundary faces
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*
+ * Add the explicit part of the convection/diffusion terms of a transport
+ * equation of a scalar field such as the temperature.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_convection_diffusion_thermal(const cs_field_t           *f,
+                                const cs_equation_param_t   eqp,
+                                int                         inc,
+                                int                         imasac,
+                                const cs_real_t            *pvar,
+                                cs_field_bc_coeffs_t       *bc_coeffs,
+                                const cs_real_t             i_massflux[],
+                                const cs_real_t             b_massflux[],
+                                const cs_real_t             i_visc[],
+                                const cs_real_t             b_visc[],
+                                const cs_real_t            *c_weight,
+                                const cs_real_t             xcpp[],
+                                cs_real_t                  *rhs);
+
+/*----------------------------------------------------------------------------
+ * Update face flux with convection contribution of a standard transport
+ *----------------------------------------------------------------------------*/
 
 void
 cs_face_convection_scalar(int                         idtvar,
@@ -222,62 +159,38 @@ cs_face_convection_scalar(int                         idtvar,
                           cs_real_2_t                 i_conv_flux[],
                           cs_real_t                   b_conv_flux[]);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Add the explicit part of the convection/diffusion terms of a transport
- *  equation of a vector field \f$ \vect{\varia} \f$.
- *
- * More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
- * follows:
- * \f[
- *  \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
- *         \dot{m}_\ij \left( \vect{\varia}_\fij - \vect{\varia}_\celli \right)
- *       - \mu_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
- * \f]
- *
- * Remark:
- * if ivisep = 1, then we also take \f$ \mu \transpose{\gradt\vect{\varia}}
- * + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
- * the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
- *
- * Warning:
- * - \f$ \vect{Rhs} \f$ has already been initialized before calling bilsc!
- * - mind the sign minus
- *
- * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     f_id          index of the current variable
- * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     ivisep        indicator to take \f$ \divv
- *                               \left(\mu \gradt \transpose{\vect{a}} \right)
- *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
- *                               - 1 take into account,
- *                               - 0 otherwise
- * \param[in]     imasac        take mass accumulation into account?
- * \param[in]     pvar          solved velocity (current time step)
- * \param[in]     pvara         solved velocity (previous time step)
- * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
- *                               - 1 imposed flux
- * \param[in]     bc_coeffs     boundary conditions structure for the variable
- * \param[in]     i_massflux    mass flux at interior faces
- * \param[in]     b_massflux    mass flux at boundary faces
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     i_secvis      secondary viscosity at interior faces
- * \param[in]     b_secvis      secondary viscosity at boundary faces
- * \param[in]     i_pvar        velocity at interior faces
- * \param[in]     b_pvar        velocity at boundary faces
- * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Add the explicit part of the convection/diffusion terms of a
+ * standard transport equation of a scalar field.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_convection_diffusion_scalar_at_faces
+(
+  const cs_field_t           *f,
+  const cs_equation_param_t   eqp,
+  int                         icvflb,
+  cs_lnum_t                   n_i_faces,
+  cs_lnum_t                   n_b_faces,
+  const cs_lnum_t            *i_face_ids,
+  const cs_lnum_t            *b_face_ids,
+  const cs_real_t            *restrict pvar,
+  const int                   icvfli[],
+  cs_field_bc_coeffs_t       *bc_coeffs,
+  const cs_real_t             i_massflux[],
+  const cs_real_t             b_massflux[],
+  const cs_real_t             i_visc[],
+  const cs_real_t             b_visc[],
+  const cs_real_t            *c_weight,
+  const cs_real_t            *xcpp,
+  cs_real_2_t                 i_flux[],
+  cs_real_t                   b_flux[]
+);
+
+/*----------------------------------------------------------------------------
+ * Add the explicit part of the convection/diffusion terms of a transport
+ * equation of a vector field \f$ \vect{\varia} \f$.
+ *----------------------------------------------------------------------------*/
 
 void
 cs_convection_diffusion_vector(int                         idtvar,
@@ -301,45 +214,10 @@ cs_convection_diffusion_vector(int                         idtvar,
                                cs_real_3_t                *b_pvar,
                                cs_real_3_t                *rhs);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Add the explicit part of the convection/diffusion terms of a transport
- *  equation of a tensor field \f$ \tens{\varia} \f$.
- *
- * More precisely, the right hand side \f$ \tens{Rhs} \f$ is updated as
- * follows:
- * \f[
- *  \tens{Rhs} = \tens{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
- *         \dot{m}_\ij \left( \tens{\varia}_\fij - \tens{\varia}_\celli \right)
- *       - \mu_\fij \gradt_\fij \tens{\varia} \cdot \tens{S}_\ij  \right)
- * \f]
- *
- * Warning:
- * - \f$ \tens{Rhs} \f$ has already been initialized before calling bilsc!
- * - mind the sign minus
- *
- * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     f_id          index of the current variable
- * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     imasac        take mass accumulation into account?
- * \param[in]     pvar          solved velocity (current time step)
- * \param[in]     pvara         solved velocity (previous time step)
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_massflux    mass flux at interior faces
- * \param[in]     b_massflux    mass flux at boundary faces
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in,out] rhs           right hand side \f$ \tens{Rhs} \f$
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Add the explicit part of the convection/diffusion terms of a transport
+ * equation of a tensor field \f$ \tens{\varia} \f$.
+ *----------------------------------------------------------------------------*/
 
 void
 cs_convection_diffusion_tensor(int                          idtvar,
@@ -357,96 +235,10 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                const cs_real_t              b_visc[],
                                cs_real_6_t                 *rhs);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Add the explicit part of the convection/diffusion terms of a transport
- * equation of a scalar field \f$ \varia \f$ such as the temperature.
- *
- * More precisely, the right hand side \f$ Rhs \f$ is updated as
- * follows:
- * \f[
- * Rhs = Rhs + \sum_{\fij \in \Facei{\celli}}      \left(
- *        C_p\dot{m}_\ij \varia_\fij
- *      - \lambda_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
- * \f]
- *
- * \warning \f$ Rhs \f$ must have been initialized before calling this function!
- * \warning The ghost cell values of pvar must already have been synchronized.
- *
- * \param[in]     f             pointer to field, or null
- * \param[in]     eqp           equation parameters)
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     imasac        take mass accumulation into account?
- * \param[in]     pvar          solved variable
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_massflux    mass flux at interior faces
- * \param[in]     b_massflux    mass flux at boundary faces
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     c_weight      gradient_weighting for diffusion
- * \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
- * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_convection_diffusion_thermal(const cs_field_t           *f,
-                                const cs_equation_param_t   eqp,
-                                int                         inc,
-                                int                         imasac,
-                                const cs_real_t            *pvar,
-                                cs_field_bc_coeffs_t       *bc_coeffs,
-                                const cs_real_t             i_massflux[],
-                                const cs_real_t             b_massflux[],
-                                const cs_real_t             i_visc[],
-                                const cs_real_t             b_visc[],
-                                const cs_real_t            *c_weight,
-                                const cs_real_t             xcpp[],
-                                cs_real_t                  *rhs);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Add the explicit part of the diffusion terms with a symmetric tensor
+/*----------------------------------------------------------------------------
+ * Add the explicit part of the diffusion terms with a symmetric tensor
  * diffusivity for a transport equation of a scalar field \f$ \varia \f$.
- *
- * More precisely, the right hand side \f$ Rhs \f$ is updated as
- * follows:
- * \f[
- * Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
- *      - \tens{\mu}_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
- * \f]
- *
- * Warning:
- * - \f$ Rhs \f$ has already been initialized before
- *   calling cs_anisotropic_diffusion_scalar!
- * - mind the sign minus
- * - the ghost cell values of pvar must already be synchronized
- *
- * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     f_id          index of the current variable
- * \param[in]     eqp           equation parameters
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     pvar          solved variable (current time step)
- * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
- * \param[in]     weighf        internal face weight between cells i j in case
- *                               of tensor diffusion
- * \param[in]     weighb        boundary face weight for cells i in case
- *                               of tensor diffusion
- * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_anisotropic_diffusion_scalar(int                         idtvar,
@@ -463,50 +255,11 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                 const cs_real_t             weighb[],
                                 cs_real_t                  *rhs);
 
-/*-----------------------------------------------------------------------------*/
-/*
- * \brief Add explicit part of the terms of diffusion by a left-multiplying
+/*-----------------------------------------------------------------------------
+ * Add explicit part of the terms of diffusion by a left-multiplying
  * symmetric tensorial diffusivity for a transport equation of a vector field
  * \f$ \vect{\varia} \f$.
- *
- * More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
- * follows:
- * \f[
- * \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
- *      - \gradt_\fij \vect{\varia} \tens{\mu}_\fij  \cdot \vect{S}_\ij  \right)
- * \f]
- *
- * Remark:
- * if ivisep = 1, then we also take \f$ \mu \transpose{\gradt\vect{\varia}}
- * + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
- * the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
- *
- * Warning:
- * - \f$ \vect{Rhs} \f$ has already been initialized before calling the present
- *   function
- * - mind the sign minus
- *
- * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     f_id          index of the current variable
- * \param[in]     eqp           equation parameters
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     ivisep        indicator to take \f$ \divv
- *                               \left(\mu \gradt \transpose{\vect{a}} \right)
- *                               -2/3 \grad\left( \mu \dive \vect{a} \right)\f$
- *                               - 1 take into account,
- * \param[in]     pvar          solved variable (current time step)
- * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     i_secvis      secondary viscosity at interior faces
- * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_anisotropic_left_diffusion_vector(int                         idtvar,
@@ -522,45 +275,11 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                      const cs_real_t             i_secvis[],
                                      cs_real_3_t                *rhs);
 
-/*-----------------------------------------------------------------------------*/
-/*
- * \brief Add explicit part of the terms of diffusion by a right-multiplying
+/*-----------------------------------------------------------------------------
+ * Add explicit part of the terms of diffusion by a right-multiplying
  * symmetric tensorial diffusivity for a transport equation of a vector field
  * \f$ \vect{\varia} \f$.
- *
- * More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
- * follows:
- * \f[
- * \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
- *      - \gradt_\fij \vect{\varia} \tens{\mu}_\fij  \cdot \vect{S}_\ij  \right)
- * \f]
- *
- * Warning:
- * - \f$ \vect{Rhs} \f$ has already been initialized before calling the present
- *   function
- * - mind the sign minus
- *
- * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     f_id          index of the current variable
- * \param[in]     eqp           equation parameters
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     pvar          solved variable (current time step)
- * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
- * \param[in]     weighf        internal face weight between cells i j in case
- *                               of tensor diffusion
- * \param[in]     weighb        boundary face weight for cells i in case
- *                               of tensor diffusion
- * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_anisotropic_right_diffusion_vector(int                          idtvar,
@@ -577,44 +296,10 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
                                       const cs_real_t              weighb[],
                                       cs_real_3_t                 *rhs);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Add the explicit part of the diffusion terms with a symmetric tensor
+/*----------------------------------------------------------------------------
+ * Add the explicit part of the diffusion terms with a symmetric tensor
  * diffusivity for a transport equation of a scalar field \f$ \varia \f$.
- *
- * More precisely, the right hand side \f$ Rhs \f$ is updated as
- * follows:
- * \f[
- * Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
- *      - \tens{\mu}_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
- * \f]
- *
- * Warning:
- * - \f$ Rhs \f$ has already been initialized before
- *   calling cs_anisotropic_diffusion_scalar!
- * - mind the sign minus
- *
- * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     f_id          index of the current variable
- * \param[in]     eqp           equation parameters
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     pvar          solved variable (current time step)
- * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
- * \param[in]     weighf        internal face weight between cells i j in case
- *                               of tensor diffusion
- * \param[in]     weighb        boundary face weight for cells i in case
- *                               of tensor diffusion
- * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_anisotropic_diffusion_tensor(int                          idtvar,
@@ -631,44 +316,10 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
                                 const cs_real_t              weighb[],
                                 cs_real_6_t                 *rhs);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Update the face mass flux with the face pressure (or pressure
+/*----------------------------------------------------------------------------
+ * Update the face mass flux with the face pressure (or pressure
  * increment, or pressure double increment) gradient.
- *
- * \f[
- * \dot{m}_\ij = \dot{m}_\ij
- *             - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
- * \f]
- *
- * Please refer to the
- * <a href="../../theory.pdf#cs_face_diffusion_potential">
-     <b>cs_face_diffusion_potential/cs_diffusion_potential</b></a>
- * section of the theory guide for more information.
- *
- * \param[in]     f             pointer to field or nullptr
- * \param[in]     eqp           equation parameters
- * \param[in]     m             pointer to mesh
- * \param[in]     fvq           pointer to finite volume quantities
- * \param[in]     init          indicator
- *                               - 1 initialize the mass flux to 0
- *                               - 0 otherwise
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     iphydp        hydrostatic pressure indicator
- * \param[in]     frcxt         body force creating the hydrostatic pressure
- * \param[in]     pvar          solved variable (current time step)
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     visel         viscosity by cell
- * \param[in,out] i_massflux    mass flux at interior faces
- * \param[in,out] b_massflux    mass flux at boundary faces
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_face_diffusion_potential(const cs_field_t           *f,
@@ -687,47 +338,10 @@ cs_face_diffusion_potential(const cs_field_t           *f,
                             cs_real_t                  *i_massflux,
                             cs_real_t                  *b_massflux);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Add the explicit part of the pressure gradient term to the mass flux
+/*----------------------------------------------------------------------------
+ * Add the explicit part of the pressure gradient term to the mass flux
  * in case of anisotropic diffusion of the pressure field \f$ P \f$.
- *
- * More precisely, the mass flux side \f$ \dot{m}_\fij \f$ is updated as
- * follows:
- * \f[
- * \dot{m}_\fij = \dot{m}_\fij -
- *              \left( \tens{\mu}_\fij \gradv_\fij P \cdot \vect{S}_\ij  \right)
- * \f]
- *
- * \param[in]     f             pointer to field or nullptr
- * \param[in]     eqp           equation parameters
- * \param[in]     m             pointer to mesh
- * \param[in]     fvq           pointer to finite volume quantities
- * \param[in]     init           indicator
- *                               - 1 initialize the mass flux to 0
- *                               - 0 otherwise
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     iphydp        indicator
- *                               - 1 hydrostatic pressure taken into account
- *                               - 0 otherwise
- * \param[in]     frcxt         body force creating the hydrostatic pressure
- * \param[in]     pvar          solved variable (pressure)
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
- * \param[in]     weighf        internal face weight between cells i j in case
- *                               of tensor diffusion
- * \param[in]     weighb        boundary face weight for cells i in case
- *                               of tensor diffusion
- * \param[in,out] i_massflux    mass flux at interior faces
- * \param[in,out] b_massflux    mass flux at boundary faces
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_face_anisotropic_diffusion_potential
@@ -751,38 +365,10 @@ cs_face_anisotropic_diffusion_potential
   cs_real_t                  *b_massflux
 );
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Update the cell mass flux divergence with the face pressure (or
+/*----------------------------------------------------------------------------
+ * Update the cell mass flux divergence with the face pressure (or
  * pressure increment, or pressure double increment) gradient.
- *
- * \f[
- * \dot{m}_\ij = \dot{m}_\ij
- *             - \sum_j \Delta t \grad_\fij p \cdot \vect{S}_\ij
- * \f]
- *
- * \param[in]     f             pointer to field or nullptr
- * \param[in]     eqp           equation parameters
- * \param[in]     m             pointer to mesh
- * \param[in]     fvq           pointer to finite volume quantities
- * \param[in]     init          indicator
- *                               - 1 initialize the mass flux to 0
- *                               - 0 otherwise
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     iphydp        hydrostatic pressure indicator
- * \param[in]     frcxt         body force creating the hydrostatic pressure
- * \param[in]     pvar          solved variable (current time step)
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     visel         viscosity by cell
- * \param[in,out] diverg        mass flux divergence
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_diffusion_potential(const cs_field_t           *f,
@@ -800,48 +386,10 @@ cs_diffusion_potential(const cs_field_t           *f,
                        cs_real_t                   visel[],
                        cs_real_t                  *diverg);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Add the explicit part of the divergence of the mass flux due to the
+/*----------------------------------------------------------------------------
+ * Add the explicit part of the divergence of the mass flux due to the
  * pressure gradient (analog to cs_anisotropic_diffusion_scalar).
- *
- * More precisely, the divergence of the mass flux side
- * \f$ \sum_{\fij \in \Facei{\celli}} \dot{m}_\fij \f$ is updated as follows:
- * \f[
- * \sum_{\fij \in \Facei{\celli}} \dot{m}_\fij
- *  = \sum_{\fij \in \Facei{\celli}} \dot{m}_\fij
- *  - \sum_{\fij \in \Facei{\celli}}
- *    \left( \tens{\mu}_\fij \gradv_\fij P \cdot \vect{S}_\ij  \right)
- * \f]
- *
- * \param[in]     f             pointer to field or nullptr
- * \param[in]     eqp           equation parameters
- * \param[in]     m             pointer to mesh
- * \param[in]     fvq           pointer to finite volume quantities
- * \param[in]     init           indicator
- *                               - 1 initialize the mass flux to 0
- *                               - 0 otherwise
- * \param[in]     inc           indicator
- *                               - 0 when solving an increment
- *                               - 1 otherwise
- * \param[in]     iphydp        indicator
- *                               - 1 hydrostatic pressure taken into account
- *                               - 0 otherwise
- * \param[in]     frcxt         body force creating the hydrostatic pressure
- * \param[in]     pvar          solved variable (pressure)
- * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the r.h.s.
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the r.h.s.
- * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
- * \param[in]     weighf        internal face weight between cells i j in case
- *                               of tensor diffusion
- * \param[in]     weighb        boundary face weight for cells i in case
- *                               of tensor diffusion
- * \param[in,out] diverg        divergence of the mass flux
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_anisotropic_diffusion_potential(const cs_field_t           *f,
@@ -861,22 +409,9 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                    const cs_real_t             weighb[],
                                    cs_real_t         *restrict diverg);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Compute the upwind gradient used in the slope tests.
- *
- * This function assumes the input gradient and pvar values have already
- * been synchronized.
- *
- * \param[in]     f_id         field id
- * \param[in]     ctx          Reference to dispatch context
- * \param[in]     grad         standard gradient
- * \param[out]    grdpa        upwind gradient
- * \param[in]     pvar         values
- * \param[in]     val_f        face values for gradient
- * \param[in]     i_massflux   mass flux at interior faces
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Compute the upwind gradient used in the slope tests.
+ *----------------------------------------------------------------------------*/
 
 template <typename T>
 void
@@ -888,24 +423,9 @@ cs_slope_test_gradient(int                         f_id,
                        const cs_real_t             val_f[],
                        const cs_real_t            *i_massflux);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Compute the upwind gradient used in the slope tests.
- *
- * template parameters:
- *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
- *
- * This function assumes the input gradient and pvar values have already
- * been synchronized.
- *
- * \param[in]     ctx          Reference to dispatch context
- * \param[in]     grad         standard gradient
- * \param[out]    grdpa        upwind gradient
- * \param[in]     pvar         values
- * \param[in]     val_f        face values for gradient
- * \param[in]     i_massflux   mass flux at interior faces
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Compute the upwind gradient used in the slope tests.
+ *----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride, typename T>
 void
@@ -917,21 +437,10 @@ cs_slope_test_gradient_strided
    const cs_real_t              val_f[][stride],
    const cs_real_t             *i_massflux);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Compute the upwind gradient used in the pure SOLU schemes
- *        (observed in the litterature).
- *
- * \param[in]     ctx          Reference to dispatch context
- * \param[in]     inc          Not an increment flag
- * \param[in]     halo_type    halo type
- * \param[in]     bc_coeffs    boundary condition structure for the variable
- * \param[in]     i_massflux   mass flux at interior faces
- * \param[in]     b_massflux   mass flux at boundary faces
- * \param[in]     pvar         values
- * \param[out]    grdpa        upwind gradient
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Compute the upwind gradient used in the pure SOLU schemes
+ * (observed in the litterature).
+ *----------------------------------------------------------------------------*/
 
 template <typename T>
 void
@@ -944,21 +453,10 @@ cs_upwind_gradient(cs_dispatch_context          &ctx,
                    const cs_real_t              *pvar,
                    T                           (*grdpa)[3]);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Compute the upwind gradient used in the pure SOLU schemes
- *        (observed in the litterature) for a vector
- *
- * \param[in]     ctx          Reference to dispatch context
- * \param[in]     inc          Not an increment flag
- * \param[in]     halo_type    halo type
- * \param[in]     bc_coeffs    boundary condition structure for the variable
- * \param[in]     i_massflux   mass flux at interior faces
- * \param[in]     b_massflux   mass flux at boundary faces
- * \param[in]     pvar         values
- * \param[out]    grdpa        upwind gradient
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Compute the upwind gradient used in the pure SOLU schemes
+ * (observed in the litterature) for a vector or tensor
+ *----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride, typename T>
 void
@@ -974,44 +472,17 @@ cs_upwind_gradient_strided(cs_dispatch_context          &ctx,
 /*----------------------------------------------------------------------------
  * Compute the local cell Courant number as the maximum of all cell face based
  * Courant number at each cell.
- *
- * parameters:
- *   f           <-- pointer to field
- *   ctx         <-- reference to dispatch context
- *   courant     --> cell Courant number
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_cell_courant_number(const cs_field_t     *f,
                        cs_dispatch_context  &ctx,
                        cs_real_t            *courant);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Compute balance contribution of the transpose grad(vel) term
- *        and grad(-2/3 div(vel))
- *
- * Compute \f$ \mu \transpose{\gradt\vect{\varia}}
- * + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
- * the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
- *
- * \warning
- * - \f$ \vect{Rhs} \f$ must already have been initialized.
- * - mind the minus sign
- *
- * \param[in, out]  ctx       reference to dispatch context
- * \param[in]       m         pointer to mesh structure
- * \param[in]       mq        pointer to mesh quantities
- * \param[in]       thetap    theta-scheme value
- * \param[in]       i_visc    \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                            at interior faces for the r.h.s.
- * \param[in]       i_secvis  secondary viscosity at interior faces
- * \param[in]       b_secvis  secondary viscosity at boundary faces
- * \param[in]       gradv     velocity gradient
- * \param[in, out]  rhs       right hand side \f$ \vect{Rhs} \f$
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Compute balance contribution of the transpose grad(vel) term
+ * and grad(-2/3 div(vel))
+ *----------------------------------------------------------------------------*/
 
 void
 cs_convection_diffusion_secvis
@@ -1027,30 +498,10 @@ cs_convection_diffusion_secvis
   cs_real_3_t        *restrict rhs
 );
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Compute balance contribution of the transpose grad(vel) term
- *        and grad(-2/3 div(vel)) with anisotropic
- *
- * Compute \f$ \mu \transpose{\gradt\vect{\varia}}
- * + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
- * the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
- *
- * \warning
- * - \f$ \vect{Rhs} \f$ must already have been initialized.
- * - mind the minus sign
- *
- * \param[in, out]  ctx       reference to dispatch context
- * \param[in]       m         pointer to mesh structure
- * \param[in]       mq        pointer to mesh quantities
- * \param[in]       i_visc    \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                            at interior faces for the r.h.s.
- * \param[in]       i_secvis  secondary viscosity at interior faces
- * \param[in]       b_secvis  secondary viscosity at boundary faces
- * \param[in]       gradv     velocity gradient
- * \param[in, out]  rhs       right hand side \f$ \vect{Rhs} \f$
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Compute balance contribution of the transpose grad(vel) term
+ * and grad(-2/3 div(vel)) with anisotropic.
+ *----------------------------------------------------------------------------*/
 
 void
 cs_convection_anisotropic_leff_diffusion_secvis
@@ -1064,24 +515,16 @@ cs_convection_anisotropic_leff_diffusion_secvis
   cs_real_3_t        *restrict rhs
 );
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Query convection-diffusion scheme variants.
- *
- * \return  specific scheme (i.e. 90 for v9.0) or -1 for current.
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Query convection-diffusion scheme variants.
+ *----------------------------------------------------------------------------*/
 
 int
 cs_convection_diffusion_get_scheme_version(void);
 
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Allow reverting to older convection-diffusion scheme variants.
- *
- * \param[in]  version  Scheme version (90 for v9.0) -1 for current)
- */
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------
+ * Allow reverting to older convection-diffusion scheme variants.
+ *----------------------------------------------------------------------------*/
 
 void
 cs_convection_diffusion_set_scheme_version(int  version);
