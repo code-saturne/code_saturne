@@ -93,6 +93,69 @@
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add convective flux to flux at boundary face.
+ *
+ * The convective flux is a pure upwind flux.
+ *
+ * \param[in]     bc_type      type of boundary face
+ * \param[in]     pi           value at cell i
+ * \param[in]     coefap       explicit boundary coefficient for convection operator
+ * \param[in]     coefbp       implicit boundary coefficient for convection operator
+ * \param[in]     b_massflux   mass flux at boundary face
+ * \param[in,out] flux         flux at boundary face
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline void
+_b_upwind_flux(const int        bc_type,
+               const cs_real_t  pi,
+               const cs_real_t  coefap,
+               const cs_real_t  coefbp,
+               const cs_real_t  b_massflux,
+               cs_real_t       *flux)
+{
+  cs_real_t flui, fluj;
+
+  /* Remove decentering for coupled faces */
+  if (bc_type == CS_COUPLED_FD) {
+    flui = 0.0;
+    fluj = b_massflux;
+  }
+  else {
+    flui = (signbit(b_massflux)) ? 0. : b_massflux;
+    fluj = (signbit(b_massflux)) ? b_massflux : 0.;
+  }
+
+  cs_real_t pfac = coefap + coefbp*pi;
+  *flux += (flui*pi + fluj*pfac);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add convective fluxes to fluxes at face ij.
+ *
+ * \param[in]     pi           value at cell i
+ * \param[in]     pj           value at cell j
+ * \param[in]     i_massflux   mass flux at face ij
+ * \param[in,out] fluxij       fluxes at face ij
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline void
+_i_conv_flux(const cs_real_t  pi,
+             const cs_real_t  pj,
+             const cs_real_t  i_massflux,
+             cs_real_2_t      fluxij)
+{
+  cs_real_t flui = (signbit(i_massflux)) ? 0. : i_massflux;
+  cs_real_t fluj = (signbit(i_massflux)) ? i_massflux : 0.;
+
+  fluxij[0] += (flui*pi + fluj*pj);
+  fluxij[1] += (flui*pi + fluj*pj);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -786,9 +849,6 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
-  const cs_rreal_3_t *restrict diipf = fvq->diipf;
-  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
-  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -858,8 +918,6 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
 
   int iflmab = f_pres->get_key_int("boundary_mass_flux_id");
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
-
-  int inc = 1;
 
   /* Get user-selected zone
      ====================== */
@@ -954,9 +1012,6 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
 
   /* Compute the balance at time step n */
 
-  int iconvp = 1;
-  cs_real_t bldfrp = 0; /* No reconstruction */
-
   /* Balance on boundary faces
      -------------------------
 
@@ -969,36 +1024,19 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     /* Associated boundary cell */
     cs_lnum_t c_id = b_face_cells[f_id_sel];
 
-    cs_real_t pip;
-
     /* Pressure term FIXME rho0*gravity*(X-X0) should be added */
     cs_real_t p_rho = pressure[c_id] / rho[c_id];
     cs_real_t a_p_rho = a_p[f_id_sel] / rho[c_id];
     cs_real_t b_p_rho = b_p[f_id_sel];
 
-    cs_real_3_t grad = {0, 0, 0};
-
-    cs_b_cd_unsteady(bldfrp,
-                     diipb[f_id_sel],
-                     grad,
-                     p_rho,
-                     &pip);
-
     cs_real_t term_balance = 0.;
 
-    cs_b_upwind_flux(iconvp,
-                     1., /* thetap */
-                     0, /* Conservative formulation, no mass accumulation */
-                     inc,
-                     bc_type[f_id_sel],
-                     p_rho,
-                     p_rho, /* no relaxation */
-                     pip,
-                     a_p_rho,
-                     b_p_rho,
-                     b_mass_flux[f_id_sel],
-                     1.,
-                     &term_balance);
+    _b_upwind_flux(bc_type[f_id_sel],
+                   p_rho,
+                   a_p_rho,
+                   b_p_rho,
+                   b_mass_flux[f_id_sel],
+                   &term_balance);
 
     if (b_mass_flux[f_id_sel] > 0) {
       out_debit += b_mass_flux[f_id_sel]/rho[c_id];
@@ -1015,35 +1053,23 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_real_t u2 = 0.5 * cs_math_3_square_norm(velocity[c_id]);
     cs_real_t a_u2 = 0.5 * cs_math_3_square_norm(a_u[f_id_sel]);
     /* Approximation of u^2 BC */
-    cs_real_t b_u2 = 1./6.*( b_u[f_id_sel][0][0] * b_u[f_id_sel][0][0]
-                           + b_u[f_id_sel][1][1] * b_u[f_id_sel][1][1]
-                           + b_u[f_id_sel][2][2] * b_u[f_id_sel][2][2]);
-
-    cs_b_cd_unsteady(bldfrp,
-                     diipb[f_id_sel],
-                     grad,
-                     u2,
-                     &pip);
+    cs_real_t b_u2 = 1./6.*(  b_u[f_id_sel][0][0] * b_u[f_id_sel][0][0]
+                            + b_u[f_id_sel][1][1] * b_u[f_id_sel][1][1]
+                            + b_u[f_id_sel][2][2] * b_u[f_id_sel][2][2]);
 
     term_balance = 0.;
 
-    cs_b_upwind_flux(iconvp,
-                     1., /* thetap */
-                     0, /* Conservative formulation, no mass accumulation */
-                     inc,
-                     bc_type[f_id_sel],
-                     u2,
-                     u2, /* no relaxation */
-                     pip,
-                     a_u2,
-                     b_u2,
-                     b_mass_flux[f_id_sel],
-                     1.,
-                     &term_balance);
+    _b_upwind_flux(bc_type[f_id_sel],
+                   u2,
+                   a_u2,
+                   b_u2,
+                   b_mass_flux[f_id_sel],
+                   &term_balance);
 
     if (b_mass_flux[f_id_sel] > 0) {
       out_u2 += term_balance;
-    } else {
+    }
+    else {
       in_u2 += term_balance;
     }
 
@@ -1053,27 +1079,14 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_real_t a_gx = gx;
     cs_real_t b_gx = 0.;
 
-    cs_b_cd_unsteady(bldfrp,
-                     diipb[f_id_sel],
-                     grad,
-                     gx,
-                     &pip);
-
     term_balance = 0.;
 
-    cs_b_upwind_flux(iconvp,
-                     1., /* thetap */
-                     0, /* Conservative formulation, no mass accumulation */
-                     inc,
-                     bc_type[f_id_sel],
-                     gx,
-                     gx, /* no relaxation */
-                     pip,
-                     a_gx,
-                     b_gx,
-                     b_mass_flux[f_id_sel],
-                     1.,
-                     &term_balance);
+    _b_upwind_flux(bc_type[f_id_sel],
+                   gx,
+                   a_gx,
+                   b_gx,
+                   b_mass_flux[f_id_sel],
+                   &term_balance);
 
     if (b_mass_flux[f_id_sel] > 0) {
       out_rhogx += term_balance;
@@ -1095,40 +1108,15 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
     cs_real_2_t bi_bterms = {0.,0.};
-    cs_real_3_t grad = {0, 0, 0};
-
-    cs_real_t pip, pjp;
-    cs_real_t pif, pjf;
 
     /* Pressure term */
     cs_real_t p_rho_id1 = pressure[c_id1] / rho[c_id1];
     cs_real_t p_rho_id2 = pressure[c_id2] / rho[c_id2];
 
-    cs_i_cd_unsteady_upwind(bldfrp,
-                            diipf[f_id_sel],
-                            djjpf[f_id_sel],
-                            grad,
-                            grad,
-                            p_rho_id1,
-                            p_rho_id2,
-                            &pif,
-                            &pjf,
-                            &pip,
-                            &pjp);
-
-    cs_i_conv_flux(iconvp,
-                   1.,
-                   0, /* Conservative formulation, no mass accumulation */
-                   p_rho_id1,
-                   p_rho_id2,
-                   pif,
-                   pif, /* no relaxation */
-                   pjf,
-                   pjf, /* no relaxation */
-                   i_mass_flux[f_id_sel],
-                   1.,
-                   1.,
-                   bi_bterms);
+    _i_conv_flux(p_rho_id1,
+                 p_rho_id2,
+                 i_mass_flux[f_id_sel],
+                 bi_bterms);
 
     /* (The cell is counted only once in parallel by checking that
        the c_id is not in the halo) */
@@ -1139,7 +1127,8 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
           out_pressure += bi_bterms[0];
           out_debit += i_mass_flux[f_id_sel] / rho[c_id1];
           out_m_debit += i_mass_flux[f_id_sel];
-        } else {
+        }
+        else {
           in_pressure += bi_bterms[0];
           in_debit += i_mass_flux[f_id_sel] / rho[c_id1];
           in_m_debit += i_mass_flux[f_id_sel];
@@ -1169,31 +1158,10 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_real_t u2_id1 = 0.5 * cs_math_3_square_norm(velocity[c_id1]);
     cs_real_t u2_id2 = 0.5 * cs_math_3_square_norm(velocity[c_id2]);
 
-    cs_i_cd_unsteady_upwind(bldfrp,
-                            diipf[f_id_sel],
-                            djjpf[f_id_sel],
-                            grad,
-                            grad,
-                            u2_id1,
-                            u2_id2,
-                            &pif,
-                            &pjf,
-                            &pip,
-                            &pjp);
-
-    cs_i_conv_flux(iconvp,
-                   1.,
-                   0, /* Conservative formulation, no mass accumulation */
-                   u2_id1,
-                   u2_id2,
-                   pif,
-                   pif, /* no relaxation */
-                   pjf,
-                   pjf, /* no relaxation */
-                   i_mass_flux[f_id_sel],
-                   1.,
-                   1.,
-                   bi_bterms);
+    _i_conv_flux(u2_id1,
+                 u2_id2,
+                 i_mass_flux[f_id_sel],
+                 bi_bterms);
 
     /* (The cell is counted only once in parallel by checking that
        the c_id is not in the halo) */
@@ -1202,7 +1170,8 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
       if (c_id1 < n_cells) {
         if (i_mass_flux[f_id_sel] > 0) {
           out_u2 += bi_bterms[0];
-        } else {
+        }
+        else {
           in_u2 += bi_bterms[0];
         }
       }
@@ -1226,31 +1195,10 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
     cs_real_t gx_id1 = - cs_math_3_dot_product(gravity, i_face_cog[f_id_sel]);
     cs_real_t gx_id2 = - cs_math_3_dot_product(gravity, i_face_cog[f_id_sel]);
 
-    cs_i_cd_unsteady_upwind(bldfrp,
-                            diipf[f_id_sel],
-                            djjpf[f_id_sel],
-                            grad,
-                            grad,
-                            gx_id1,
-                            gx_id2,
-                            &pif,
-                            &pjf,
-                            &pip,
-                            &pjp);
-
-    cs_i_conv_flux(iconvp,
-                   1.,
-                   0, /* Conservative formulation, no mass accumulation */
-                   gx_id1,
-                   gx_id2,
-                   pif,
-                   pif, /* no relaxation */
-                   pjf,
-                   pjf, /* no relaxation */
-                   i_mass_flux[f_id_sel],
-                   1.,
-                   1.,
-                   bi_bterms);
+    _i_conv_flux(gx_id1,
+                 gx_id2,
+                 i_mass_flux[f_id_sel],
+                 bi_bterms);
 
     /* (The cell is counted only once in parallel by checking that
        the c_id is not in the halo) */
