@@ -217,7 +217,7 @@ cs_user_ibm_parameters(void)
 
   /*!< [n_sub_cut] */
   cs_ibm->nb_cut_cells = 1;
-  cs_ibm->nb_cut_faces = 1;
+  cs_ibm->nb_cut_edges = 1;
   /*!< [n_sub_cut] */
 
   /*!< [vel_bc_choice] */
@@ -265,28 +265,6 @@ cs_user_ibm_parameters(void)
 void
 cs_user_ibm_object_transformations([[maybe_unused]] const cs_real_t time)
 {
-}
-
-/*----------------------------------------------------------------------------*/
-/*
- * User function which allows the definition of a 'porous' object.
- *
- * \param[in]  c_id         local cell number
- * \param[in]  xyz          x, y, z coordinates of the current position
- * \param[in]  t            time value for the current time step
- * \param[in]  num_object   num of fsi object (if fsi activated)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_ibm_solid_por([[maybe_unused]] cs_lnum_t        c_id,
-                      [[maybe_unused]] const cs_real_t  xyz[3],
-                      [[maybe_unused]] cs_real_t        t,
-                      [[maybe_unused]] int              num_object)
-{
-  /*!< [solid_intern_poro] */
-  cs_ibm->solid_porosity[c_id] = 0.;
-  /*!< [solid_intern_poro] */
 }
 
 /*----------------------------------------------------------------------------*/

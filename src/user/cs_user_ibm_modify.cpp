@@ -62,8 +62,8 @@
 void
 cs_user_ibm_modify
 (
-  [[maybe_unused]] const cs_mesh_t *mesh,
-  [[maybe_unused]] const cs_mesh_quantities_t *mesh_quantities
+  [[maybe_unused]] cs_mesh_t *mesh,
+  [[maybe_unused]] cs_mesh_quantities_t *mesh_quantities
 )
 {
 }

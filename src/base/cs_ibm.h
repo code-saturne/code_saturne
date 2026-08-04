@@ -217,20 +217,24 @@ typedef struct
   cs_ibm_wall_cond_type_t  wall_condition;
   /* Number of sub-cut for cells using the Cut-Cells algo */
   int           nb_cut_cells;
-  /* Number of sub-cut for faces using the Cut-Cells algo */
-  int           nb_cut_faces;
+  /* Number of sub-cut for edges using the Cut-Cells algo */
+  int           nb_cut_edges;
   /* Porosity dynamic modification                        */
   bool          porosity_user_source_term_modification;
   /* Limitation area for porosity calculation             */
   cs_real_3_t   xyzmin_moving_porosity;
   /* Limitation area for porosity calculation             */
   cs_real_3_t   xyzmax_moving_porosity;
-  /* Solid internal porosity                              */
-  cs_real_t     *solid_porosity;
+  /* Neighbouring faces identifier for cells              */
+  cs_lnum_t *nfc;
+  /* Working array for face center of gravity and normals */
+  cs_real_t *xandnfc;
   /* Fluid volume at the first time step                  */
   cs_real_t     isovol;
   /* Keep same volume for porous object at each iteration */
   bool          ensure_isovol;
+  /* User sub-cycles to remove bad cells (only for FIXED POROSITY) */
+  bool          remove_bad_cells;
   /* Cell porosity based on nodes porosity (smoothing)    */
   bool          porosity_from_nodes;
 
@@ -315,8 +319,8 @@ cs_ibm_finalize(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_immersed_boundaries(const cs_mesh_t             *mesh,
-                       const cs_mesh_quantities_t  *mesh_quantities);
+cs_immersed_boundaries(cs_mesh_t             *mesh,
+                       cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
  * Define space immersed boundaries on a set of zones defined by the user in the
@@ -576,23 +580,6 @@ cs_user_ibm_object_transformations(const cs_real_t time);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User function which allows the definition of a 'porous' object.
- *
- * \param[in]  c_id         local cell number
- * \param[in]  xyz          x, y, z coordinates of the current position
- * \param[in]  t            time value for the current time step
- * \param[in]  num_object   num of fsi object (if fsi activated)
- */
-/*----------------------------------------------------------------------------*/
-
-extern "C" void
-cs_user_ibm_solid_por(const cs_lnum_t    c_id,
-                      const cs_real_3_t  xyz,
-                      const cs_real_t    t,
-                      const int          num_object);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief User function. Locally modify a given porosity to take into
  *        account erosion effect (for instance).
  *
@@ -606,8 +593,8 @@ cs_user_ibm_solid_por(const cs_lnum_t    c_id,
 /*----------------------------------------------------------------------------*/
 
 extern "C" void
-cs_user_ibm_modify(const cs_mesh_t             *mesh,
-                   const cs_mesh_quantities_t  *mesh_quantities);
+cs_user_ibm_modify(cs_mesh_t             *mesh,
+                   cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------*/
 

@@ -585,6 +585,72 @@ void
 cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
                         const cs_mesh_quantities_t  *mesh_quantities);
 
+/*----------------------------------------------------------------------------
+ * Compute some vectors to handle non-orthogonalities.
+ *
+ * parameters:
+ *   dim              <--  dimension
+ *   n_i_faces        <--  number of interior faces
+ *   n_b_faces        <--  number of border  faces
+ *   i_face_cells     <--  interior "faces -> cells" connectivity
+ *   b_face_cells     <--  border "faces -> cells" connectivity
+ *   b_face_u_normal  <--  unit normal of border faces
+ *   i_face_cog       <--  center of gravity of interior faces
+ *   b_face_cog       <--  center of gravity of border faces
+ *   cell_cen         <--  cell center
+ *   weight           <--  weighting factor (Aij=pond Ai+(1-pond)Aj)
+ *   diipb            -->  vector ii'  for border faces
+ *   dofij            -->  vector OF   for interior faces
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_compute_face_vectors(int               dim,
+                                        cs_lnum_t         n_i_faces,
+                                        cs_lnum_t         n_b_faces,
+                                        const cs_lnum_t   i_face_cells[][2],
+                                        const cs_lnum_t   b_face_cells[],
+                                        const cs_nreal_t  b_face_u_normal[][3],
+                                        const cs_real_t   i_face_cog[],
+                                        const cs_real_t   b_face_cog[],
+                                        const cs_real_t   cell_cen[],
+                                        const cs_real_t   weight[],
+                                        const cs_real_t   b_dist[],
+                                        cs_rreal_t        diipb[][3],
+                                        cs_real_t         dofij[]);
+
+/*----------------------------------------------------------------------------
+ * Compute some vectors to handle non-orthogonalities.
+ *
+ * parameters:
+ *   n_cells        <--  number of cells
+ *   n_i_faces      <--  number of interior faces
+ *   i_face_cells   <--  interior "faces -> cells" connectivity
+ *   i_face_u_norm  <--  unit normal of interior faces
+ *   i_face_norm    <--  surface normal of interior faces
+ *   i_face_cog     <--  center of gravity of interior faces
+ *   cell_cen       <--  cell center
+ *   cell_vol       <--  cell volume
+ *   dist           <--  interior distance
+ *   diipf          -->  vector ii' for interior faces
+ *   djjpf          -->  vector jj' for interior faces
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_compute_face_sup_vectors
+(
+  cs_lnum_t           n_cells,
+  cs_lnum_t           n_i_faces,
+  const cs_lnum_2_t   i_face_cells[],
+  const cs_nreal_t i_face_u_normal[][3],
+  const cs_real_t     i_face_normal[][3],
+  const cs_real_t     i_face_cog[][3],
+  const cs_real_t     cell_cen[][3],
+  const cs_real_t     cell_vol[],
+  const cs_real_t     dist[],
+  cs_rreal_t          diipf[][3],
+  cs_rreal_t          djjpf[][3]
+);
+
 /*----------------------------------------------------------------------------*/
 
 #endif /* CS_MESH_QUANTITIES_H */

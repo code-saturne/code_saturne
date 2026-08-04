@@ -365,7 +365,7 @@ cs_time_stepping(void)
                     _(" Compute porosity field from immersed boundaries\n"));
 
       cs_immersed_boundaries(m, cs_glob_mesh_quantities);
-      cs_porous_model_fluid_surfaces_preprocessing();
+      cs_porous_model_clip();
     }
     else {
 
@@ -377,7 +377,8 @@ cs_time_stepping(void)
 
     if (cs_glob_porous_model == 3) {
       /* Compute solid quantities and update fluid volume and porosity */
-      if (!(cs_glob_porosity_from_scan_opt->use_staircase)) {
+      if (   !(cs_glob_porosity_from_scan_opt->use_staircase)
+          && cs_glob_porosity_ibm_opt->porosity_mode <= 0) {
         cs_porous_model_mesh_quantities_update();
         cs_porous_model_restart_write_stage_2();
       }

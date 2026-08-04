@@ -658,7 +658,7 @@ cs_porous_model_fluid_surfaces_preprocessing(void)
       for (cs_lnum_t i = 0; i < 3; i++)
         i_f_face_normal[face_id][i] = face_porosity * i_face_normal[face_id][i];
 
-      mq->i_face_surf[face_id] = cs_math_3_norm(i_f_face_normal[face_id]);
+      i_f_face_surf[face_id] = cs_math_3_norm(i_f_face_normal[face_id]);
     }
 
     if (mq->i_f_face_factor != nullptr) {
@@ -690,7 +690,7 @@ cs_porous_model_fluid_surfaces_preprocessing(void)
       for (cs_lnum_t i = 0; i < 3; i++)
         b_f_face_normal[face_id][i] = face_porosity * b_face_normal[face_id][i];
 
-      mq->b_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
+      b_f_face_surf[face_id] = cs_math_3_norm(b_f_face_normal[face_id]);
     }
 
     if (mq->b_f_face_factor != nullptr) {
