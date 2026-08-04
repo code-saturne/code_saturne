@@ -1414,29 +1414,24 @@ cs_vof_drift_term(int                        imrgra,
 
     cs_real_t fluxij[2] = {0., 0.};
 
-    cs_i_conv_flux(1,
-                   1.,
-                   0,
-                   _pvar[c_id1],
-                   _pvar[c_id2],
-                   _pvar[c_id1]*(1.-_pvar[c_id2]),
-                   _pvar[c_id1]*(1.-_pvar[c_id2]),
-                   _pvar[c_id2]*(1.-_pvar[c_id1]),
-                   _pvar[c_id2]*(1.-_pvar[c_id1]),
-                   irvf,
-                   1.,
-                   1.,
-                   fluxij);
+    cs_real_t pi = _pvar[c_id1];
+    cs_real_t pj = _pvar[c_id2];
+    cs_real_t pif = pi*(1.-pj);
+    cs_real_t pjf = pj*(1.-pi);
 
-    cs_i_diff_flux(1,
-                   1.,
-                   _pvar[c_id1],
-                   _pvar[c_id2],
-                   _pvar[c_id1],
-                   _pvar[c_id2],
-                   kdrift*(2.-_pvar[c_id1]-_pvar[c_id2])
-                    / 2.*i_face_surf[face_id]/i_dist[face_id],
-                   fluxij);
+    // Convective flux
+    cs_real_t flui = (signbit(irvf)) ? 0. : irvf;
+    cs_real_t fluj = (signbit(irvf)) ? irvf : 0.;
+
+    fluxij[0] += (flui*pif + fluj*pjf);
+    fluxij[1] += (flui*pif + fluj*pjf);
+
+    // Diffusive flux
+    cs_real_t pi_m_pj = pi - pj;
+    cs_real_t fij_visc =   kdrift*(2.-pi_m_pj)
+                         / 2.*i_face_surf[face_id]/i_dist[face_id];
+    fluxij[0] += fij_visc * pi_m_pj;
+    fluxij[1] += fij_visc * pi_m_pj;
 
     if (c_id1 < n_cells)
       cs_dispatch_sum(&rhs[c_id1], -fluxij[0], sum_type);

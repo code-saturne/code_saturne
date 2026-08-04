@@ -1025,6 +1025,104 @@ cs_i_cd_steady_slope_test_strided(bool             *upwind_switch,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add convective fluxes (substracting the mass accumulation from them)
+ * to fluxes at face ij.
+ *
+ * \param[in]     iconvp       convection flag
+ * \param[in]     thetap       weighting coefficient for the theta-scheme,
+ * \param[in]     imasac       take mass accumulation into account?
+ * \param[in]     pi           value at cell i
+ * \param[in]     pj           value at cell j
+ * \param[in]     pifri        contribution of i to flux from i to j
+ * \param[in]     pifrj        contribution of i to flux from j to i
+ * \param[in]     pjfri        contribution of j to flux from i to j
+ * \param[in]     pjfrj        contribution of j to flux from j to i
+ * \param[in]     i_massflux   mass flux at face ij
+ * \param[in]     xcppi        specific heat value if the scalar is the temperature,
+ *                             1 otherwise at cell i
+ * \param[in]     xcppj        specific heat value if the scalar is the temperature,
+ *                             1 otherwise at cell j
+ * \param[in,out] fluxij       fluxes at face ij
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline static void
+cs_i_conv_flux(const int       iconvp,
+               const cs_real_t thetap,
+               const int       imasac,
+               const cs_real_t pi,
+               const cs_real_t pj,
+               const cs_real_t pifri,
+               const cs_real_t pifrj,
+               const cs_real_t pjfri,
+               const cs_real_t pjfrj,
+               const cs_real_t i_massflux,
+               const cs_real_t xcppi,
+               const cs_real_t xcppj,
+               cs_real_2_t     fluxij)
+{
+  cs_real_t flui, fluj;
+
+  flui = 0.5*(i_massflux + fabs(i_massflux));
+  fluj = 0.5*(i_massflux - fabs(i_massflux));
+
+  fluxij[0] += iconvp*xcppi*(thetap*(flui*pifri + fluj*pjfri) - imasac*i_massflux*pi);
+  fluxij[1] += iconvp*xcppj*(thetap*(flui*pifrj + fluj*pjfrj) - imasac*i_massflux*pj);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add convective fluxes (substracting the mass accumulation from them)
+ * to fluxes at face ij.
+ *
+ * template parameters:
+ *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
+ *
+ * \param[in]     iconvp       convection flag
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ * \param[in]     imasac        take mass accumulation into account?
+ * \param[in]     pi           value at cell i
+ * \param[in]     pj           value at cell j
+ * \param[out]    pifri        contribution of i to flux from i to j
+ * \param[out]    pifrj        contribution of i to flux from j to i
+ * \param[out]    pjfri        contribution of j to flux from i to j
+ * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[in]     i_massflux   mass flux at face ij
+ * \param[in,out] fluxi       fluxes at face i
+ * \param[in,out] fluxj       fluxes at face j
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+CS_F_HOST_DEVICE inline static void
+cs_i_conv_flux_strided(int              iconvp,
+                       cs_real_t        thetap,
+                       int              imasac,
+                       const cs_real_t  pi[stride],
+                       const cs_real_t  pj[stride],
+                       const cs_real_t  pifri[stride],
+                       const cs_real_t  pifrj[stride],
+                       const cs_real_t  pjfri[stride],
+                       const cs_real_t  pjfrj[stride],
+                       cs_real_t        i_massflux,
+                       cs_real_t        fluxi[stride],
+                       cs_real_t        fluxj[stride])
+{
+  cs_real_t flui, fluj;
+
+  flui = 0.5*(i_massflux + fabs(i_massflux));
+  fluj = 0.5*(i_massflux - fabs(i_massflux));
+
+  for (int isou = 0; isou < stride; isou++) {
+    fluxi[isou] +=  iconvp*(  thetap*(flui*pifri[isou] + fluj*pjfri[isou])
+                            - imasac*i_massflux*pi[isou]);
+    fluxj[isou] +=  iconvp*(  thetap*(flui*pifrj[isou] + fluj*pjfrj[isou])
+                            - imasac*i_massflux*pj[isou]);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Handle preparation of boundary face values for the flux computation in
  * case of a steady algorithm.
  *
