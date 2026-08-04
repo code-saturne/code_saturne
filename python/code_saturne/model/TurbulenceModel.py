@@ -80,6 +80,7 @@ class TurbulenceModel(Variables, Model):
                             'Rij-epsilon',
                             'Rij-SSG',
                             'Rij-EBRSM',
+                            'Rij-omega',
                             'v2f-BL-v2/k',
                             'k-omega-SST',
                             'Spalart-Allmaras',
@@ -281,12 +282,14 @@ class TurbulenceModel(Variables, Model):
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
 
-        elif model_turb in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
+        elif model_turb in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM', 'Rij-omega'):
             # Rij is now considered as a tensor (vector of length 6,
             # since it is symmetric)
             lst = ['rij', 'epsilon']
             if model_turb == 'Rij-EBRSM':
                 lst.append('alpha')
+            if model_turb == 'Rij-omega':
+                lst = ['rij', 'omega']
             for v in lst:
                 if v == 'rij':
                     self.setNewVariable(self.node_turb, 'rij', label='Rij', dim='6')
@@ -603,12 +606,14 @@ class TurbulenceModel(Variables, Model):
             if self.node_lagr['model'] != "off":
                 nodeList.append(self.node_turb.xmlGetNode('variable', name='k'))
                 nodeList.append(self.node_turb.xmlGetNode('variable', name='epsilon'))
-        elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
+        elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM', 'Rij-omega'):
             for var in ('r11', 'r22', 'r33',
                         'r12', 'r13', 'r23', 'epsilon'):
                 nodeList.append(self.node_turb.xmlGetNode('variable', name=var))
             if model == 'Rij-EBRSM':
                 nodeList.append(self.node_turb.xmlGetNode('variable', name='alpha'))
+            if model == 'Rij-omega':
+                nodeList.append(self.node_turb.xmlGetNode('variable', name='omega'))
         elif model == 'v2f-BL-v2/k':
             nodeList.append(self.node_turb.xmlGetNode('variable', name='k'))
             nodeList.append(self.node_turb.xmlGetNode('variable', name='epsilon'))

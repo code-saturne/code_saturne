@@ -48,21 +48,21 @@
  * Structure definitions
  *============================================================================*/
 
-/* Description d'un champ de flux turbulent a creer */
+/* Turbulent flux field description */
 struct cs_turb_flux_field_t {
-  std::string name_template;   /* ex: "{scalar}_turbulent_flux" */
-  std::string label_template;  /* ex: "{scalar} Turbulent Flux" */
-  int         dimension;       /* 1 ou 3 */
-  std::string type;            /* "variable" ou "property" */
-  bool        coupled;         /* Coupled=1 pour DFM */
-  bool        clipping;        /* Clipping=1 pour DFM */
-  bool        post_process;    /* PostProcess=1 */
-  bool        log;             /* Log=1 */
+  std::string name_template;   /* e.g.: "{scalar}_turbulent_flux" */
+  std::string label_template;  /* e.g.: "{scalar} Turbulent Flux" */
+  int         dimension;       /* 1 or 3 */
+  std::string type;            /* "variable" or "property" */
+  bool        coupled;         /* Coupled=1 for DFM */
+  bool        clipping;        /* Clipping=1 for DFM */
+  bool        post_process;    /* PostProcess=1 flag */
+  bool        log;             /* Log=1 flag */
 };
 
-/* Regle pour un modele de flux turbulent */
+/* Rule for a turbulent flux model */
 struct cs_turb_flux_rule_t {
-  std::string model_name;      /* "SGDH", "GGDH", "DFM", etc. */
+  std::string model_name;      /* "SGDH", "GGDH", "DFM", ... */
   int         numeric_value;   /* 0, 10, 11, 20, 21, 30, 31 */
   std::string description;
   std::vector<cs_turb_flux_field_t> fields;

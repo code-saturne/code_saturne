@@ -96,11 +96,12 @@ private:
   std::map<std::string, cs_thermal_variable_rule_t> thermal_variable_rules_;
 
   // Additionsl conditional fields
-  std::map<std::string, std::vector<cs_thermal_field_config_t>> conditional_fields_;
+  std::map<std::string,
+           std::vector<cs_thermal_field_config_t>> conditional_fields_;
   // Keys: "kinetic_st", "moist_air", "compressible_temp_energy"
 
   // Diffusivity formulas
-  std::map<std::string, std::string> diffusivity_formulas_;  // thermal_var → formule
+  std::map<std::string, std::string> diffusivity_formulas_;  /* thermal_var -> formula */
 
   // Plans thermodynamiques
   std::map<std::string, std::string> thermo_planes_;  // thermal_var → plane

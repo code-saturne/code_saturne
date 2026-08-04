@@ -11,6 +11,7 @@
     <Value>Rij-epsilon</Value>
     <Value>Rij-SSG</Value>
     <Value>Rij-EBRSM</Value>
+    <Value>Rij-omega</Value>
     <Value>LES_Smagorinsky</Value>
     <Value>LES_dynamique</Value>
     <Value>LES_WALE</Value>
@@ -129,7 +130,19 @@
       <DiffusionModel>ANISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
+  <TurbulenceModel Name="Rij-omega">
+    <Enum>34</Enum>
+    <Description>Rij-omega</Description>
+    <NumericalParameters>
+      <WallFunction>
+        <DefaultType>2SCALES_LOG</DefaultType>
+        <YPlusLimit>10.88</YPlusLimit>
+      </WallFunction>
+      <DiffusionModel>ANISOTROPIC</DiffusionModel>
+    </NumericalParameters>
+  </TurbulenceModel>
+
   <TurbulenceModel Name="LES_Smagorinsky">
     <Enum>40</Enum>
     <Description>LES Smagorinsky constant model</Description>
@@ -287,6 +300,12 @@
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
   
+  <Rule Type="RequiredComponents" Model="Rij-omega">
+    <RequireVariable Name="rij"/>
+    <RequireVariable Name="omega"/>
+    <RequireProperty Name="turbulent_viscosity"/>
+  </Rule>
+
   <Rule Type="RequiredComponents" Model="v2f-phi">
     <RequireVariable Name="k"/>
     <RequireVariable Name="epsilon"/>

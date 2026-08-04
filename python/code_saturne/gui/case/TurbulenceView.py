@@ -110,9 +110,10 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.modelTurbModel.addItemGroup(self.tr("RANS - 2nd order"))
 
         e = {"Rij-SSG": "R\u1D62\u2C7C-\u03B5 SSG",
-             "Rij-EBRSM": "R\u1D62\u2C7C-\u03B5 EBRSM"}
+             "Rij-EBRSM": "R\u1D62\u2C7C-\u03B5 EBRSM",
+             "Rij-omega": "Rij-\u03C9"}
 
-        for k in ("Rij-SSG", "Rij-EBRSM"):
+        for k in ("Rij-SSG", "Rij-EBRSM", "Rij-omega"):
             self.modelTurbModel.addItem(self.tr(e[k]), k,
                                         groupName="RANS - 2nd order")
 
@@ -253,7 +254,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.comboBoxTurbDiff.hide()
         self.checkBoxRijCoupled.hide()
 
-        if turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
+        if turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM', 'Rij-omega'):
             turb_diff = self.model.getTurbDiffModel()
             self.labelTurbDiff.show()
             self.comboBoxTurbDiff.show()
