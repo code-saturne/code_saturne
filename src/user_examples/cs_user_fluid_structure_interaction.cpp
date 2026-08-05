@@ -98,12 +98,11 @@ cs_user_fsi_structure_define
   /*! [fsi_i_ex_c] */
   *plot = 2;  /* .csv format */
 
-  cs_time_control_init_by_time_step(plot_time_control,
-                                    -1,
-                                    -1,
-                                    5,       /* nt_interval */
-                                    true,    /* at_start */
-                                    false);  /* at end */
+  *plot_time_control = cs_time_control_t(-1,
+                                         -1,
+                                         5,       /* nt_interval */
+                                         true,    /* at_start */
+                                         false);  /* at end */
   /*! [fsi_i_ex_c] */
 }
 
