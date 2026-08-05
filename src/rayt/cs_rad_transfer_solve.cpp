@@ -75,7 +75,6 @@
 #include "pprt/cs_physical_model.h"
 #include "base/cs_prototypes.h"
 #include "alge/cs_sles.h"
-#include "alge/cs_sles_default.h"
 #include "alge/cs_sles_it.h"
 #include "base/cs_time_step.h"
 
@@ -235,6 +234,7 @@ _order_by_direction(void)
   /* Global direction id */
   int kdir = 0;
 
+  cs_dispatch_context ctx;
   cs_array<cs_real_t> s(n_cells);
 
   for (int kk = -1; kk < 2; kk+=2) {
@@ -254,28 +254,22 @@ _order_by_direction(void)
 
           if (sles == nullptr) {
 
-            if (cs_glob_rad_transfer_params->dispersion == false) {
+            if (   cs_glob_rad_transfer_params->dispersion == false
+                && ctx.use_gpu() == false) {
 
-              cs_matrix_t *a = cs_sles_default_get_matrix(-1, name, 1, 1, true);
-              cs_sles_it_t *sc = nullptr;
+              cs_sles_it_t *sc = cs_sles_it_define(-1,
+                                                   name,
+                                                   CS_SLES_P_GAUSS_SEIDEL,
+                                                   0,      /* poly_degree */
+                                                   1000);  /* n_max_iter */
 
-              if (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST)
-                sc = cs_sles_it_define(-1,
-                                       name,
-                                       CS_SLES_JACOBI,
-                                       0,      /* poly_degree */
-                                       1000);  /* n_max_iter */
-              else
-                sc = cs_sles_it_define(-1,
-                                       name,
-                                       CS_SLES_P_GAUSS_SEIDEL,
-                                       0,      /* poly_degree */
-                                       1000);  /* n_max_iter */
+              cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
 
-              for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+              h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
                 s[c_id] =   v[0]*cell_cen[c_id][0]
                           + v[1]*cell_cen[c_id][1]
                           + v[2]*cell_cen[c_id][2];
+              });
 
               cs_lnum_t *order;
               CS_MALLOC(order, n_cells, cs_lnum_t);
@@ -286,7 +280,8 @@ _order_by_direction(void)
 
             }
             else { /* In case of dispersion, Jacobi and Gauss-Seidel
-                      usually exhibit quite bad convergence. */
+                      usually exhibit quite bad convergence,
+                      and Gauss-Seidel is not usable on GPU. */
 
               (void)cs_sles_it_define(-1,
                                       name,
