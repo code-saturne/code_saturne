@@ -82,7 +82,7 @@ fvm_to_catalyst_init_writer(const char             *name,
 
 #else
 
-void *
+extern "C" void *
 fvm_to_catalyst_init_writer(const char             *name,
                             const char             *path,
                             const char             *options,

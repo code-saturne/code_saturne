@@ -38,10 +38,6 @@
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_writer.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -132,7 +128,7 @@ typedef void
 
 #if defined(HAVE_MPI)
 
-void *
+extern "C" void *
 fvm_to_histogram_init_writer(const char             *name,
                              const char             *path,
                              const char             *options,
@@ -141,7 +137,7 @@ fvm_to_histogram_init_writer(const char             *name,
 
 #else
 
-void *
+extern "C" void *
 fvm_to_histogram_init_writer(const char             *name,
                              const char             *path,
                              const char             *options,
@@ -159,7 +155,7 @@ fvm_to_histogram_init_writer(const char             *name,
  *   null pointer.
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 fvm_to_histogram_finalize_writer(void  *writer);
 
 /*----------------------------------------------------------------------------
@@ -171,7 +167,7 @@ fvm_to_histogram_finalize_writer(void  *writer);
  *   time_value    <-- time_value number
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_histogram_set_mesh_time(void          *writer,
                                const int      time_step,
                                const double   time_value);
@@ -201,7 +197,7 @@ fvm_to_histogram_set_mesh_time(void          *writer,
  *   field_values     <-- array of associated field value arrays
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_histogram_export_field(void                  *writer,
                               const fvm_nodal_t     *mesh,
                               const char            *name,
@@ -224,11 +220,9 @@ fvm_to_histogram_export_field(void                  *writer,
  *   writer <-- pointer to associated writer
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_histogram_flush(void  *writer);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* FVM_TO_HISTOGRAM_H */

@@ -40,10 +40,6 @@
 #include "fvm_nodal.h"
 #include "fvm_writer.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -66,7 +62,7 @@ BEGIN_C_DECLS
  *   number of library version strings associated with Catalyst output.
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 fvm_to_catalyst2_n_version_strings(void);
 
 /*----------------------------------------------------------------------------
@@ -94,7 +90,7 @@ fvm_to_catalyst2_n_version_strings(void);
  *   pointer to constant string containing the library's version.
  *----------------------------------------------------------------------------*/
 
-const char *
+extern "C" const char *
 fvm_to_catalyst2_version_string(int string_index,
                                 int compile_time_version);
 
@@ -118,14 +114,14 @@ fvm_to_catalyst2_version_string(int string_index,
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
-void *
+extern "C" void *
 fvm_to_catalyst2_init_writer(const char             *name,
                              const char             *path,
                              const char             *options,
                              fvm_writer_time_dep_t   time_dependency,
                              MPI_Comm                comm);
 #else
-void *
+extern "C" void *
 fvm_to_catalyst2_init_writer(const char             *name,
                              const char             *path,
                              const char             *options,
@@ -143,7 +139,7 @@ fvm_to_catalyst2_init_writer(const char             *name,
  *   NULL pointer
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 fvm_to_catalyst2_finalize_writer(void  *this_writer_p);
 
 /*----------------------------------------------------------------------------
@@ -155,7 +151,7 @@ fvm_to_catalyst2_finalize_writer(void  *this_writer_p);
  *   time_value    <-- time_value number
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_catalyst2_set_mesh_time(void    *this_writer_p,
                                int      time_step,
                                double   time_value);
@@ -168,7 +164,7 @@ fvm_to_catalyst2_set_mesh_time(void    *this_writer_p,
  *   mesh          <-- pointer to nodal mesh structure that should be written.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_catalyst2_export_nodal(void               *this_writer_p,
                               const fvm_nodal_t  *mesh);
 
@@ -197,7 +193,7 @@ fvm_to_catalyst2_export_nodal(void               *this_writer_p,
  *   field_values     <-- array of associated field value arrays
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_catalyst2_export_field(void                  *this_writer_p,
                               const fvm_nodal_t     *mesh,
                               const char            *name,
@@ -220,12 +216,10 @@ fvm_to_catalyst2_export_field(void                  *this_writer_p,
  *   this_writer_p    <-- pointer to associated writer
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_catalyst2_flush(void  *this_writer_p);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* defined(HAVE_CATALYST2) */
 

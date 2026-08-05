@@ -29,8 +29,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
 /*----------------------------------------------------------------------------
  * Standard library headers
  *----------------------------------------------------------------------------*/
@@ -40,10 +38,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-/*-----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Public types
@@ -76,7 +70,7 @@ typedef void (bft_error_handler_t) (const char    *const file_name,
 
 #if defined(__GNUC__)
 
-void
+extern "C" void
 bft_error(const char  *const file_name,
           const int          line_num,
           const int          sys_error_code,
@@ -86,7 +80,7 @@ bft_error(const char  *const file_name,
 
 #else
 
-void
+extern "C" void
 bft_error(const char  *const file_name,
           const int          line_num,
           const int          sys_error_code,
@@ -102,7 +96,7 @@ bft_error(const char  *const file_name,
  *  pointer to the error handler function.
  */
 
-bft_error_handler_t *
+extern "C" bft_error_handler_t *
 bft_error_handler_get(void);
 
 /*
@@ -112,11 +106,9 @@ bft_error_handler_get(void);
  *   handler: <-- pointer to the error handler function.
  */
 
-void
+extern "C" void
 bft_error_handler_set(bft_error_handler_t  *const handler);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* BFT_ERROR_H */

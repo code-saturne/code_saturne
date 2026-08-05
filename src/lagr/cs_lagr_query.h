@@ -29,12 +29,6 @@
 
 #include "base/cs_defs.h"
 
-#include "base/cs_base.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -48,7 +42,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return Lagranian module status.
  *
  * \return 0 if module is not active, > 0 if active
@@ -59,7 +53,7 @@ int
 cs_lagr_model_type(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return Lagranian particle restart status.
  *
  * \return 1 if particles restart is available, 0 otherwise
@@ -70,7 +64,5 @@ int
 cs_lagr_particle_restart(void);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_LAGR_QUERY_H */

@@ -34,10 +34,6 @@
 #include "base/cs_base.h"
 #include "base/cs_math.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -721,7 +717,7 @@ cs_atmo_set_meteo_file_name(const char *file_name);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_atmo_compute_solar_angles(cs_real_t xlat,
                              cs_real_t xlong,
                              cs_real_t jour,
@@ -762,7 +758,7 @@ cs_user_ground_model(void);
 
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_atmo_get_ground_zone(cs_lnum_t         *n_elts,
                         int               *n_ground_cat,
                         const cs_lnum_t  **elt_ids);
@@ -797,7 +793,5 @@ cs_atmo_projection
 );
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_ATMO_H */

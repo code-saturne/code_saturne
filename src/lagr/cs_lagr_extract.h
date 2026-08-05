@@ -42,10 +42,6 @@
 #include "lagr/cs_lagr_particle.h"
 #include "base/cs_time_step.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -161,7 +157,5 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
                               void                          *segment_values);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_LAGR_EXTRACT_H */

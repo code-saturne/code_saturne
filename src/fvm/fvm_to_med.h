@@ -40,10 +40,6 @@
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_writer.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -66,7 +62,7 @@ BEGIN_C_DECLS
  *   number of library version strings associated with the MED format.
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 fvm_to_med_n_version_strings(void);
 
 /*----------------------------------------------------------------------------
@@ -94,7 +90,7 @@ fvm_to_med_n_version_strings(void);
  *   pointer to constant string containing the library's version.
  *----------------------------------------------------------------------------*/
 
-const char *
+extern "C" const char *
 fvm_to_med_version_string(int string_index,
                           int compile_time_version);
 
@@ -121,7 +117,7 @@ fvm_to_med_version_string(int string_index,
 
 #if defined(HAVE_MPI)
 
-void *
+extern "C" void *
 fvm_to_med_init_writer(const char                   *const name,
                        const char                   *const path,
                        const char                   *const options,
@@ -130,7 +126,7 @@ fvm_to_med_init_writer(const char                   *const name,
 
 #else
 
-void *
+extern "C" void *
 fvm_to_med_init_writer(const char                   *const name,
                        const char                   *const path,
                        const char                   *const options,
@@ -148,7 +144,7 @@ fvm_to_med_init_writer(const char                   *const name,
  *   null pointer.
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 fvm_to_med_finalize_writer(void  *this_writer_p);
 
 /*----------------------------------------------------------------------------
@@ -164,7 +160,7 @@ fvm_to_med_finalize_writer(void  *this_writer_p);
  *   1 if tesselation of the given element type is needed, 0 otherwise
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 fvm_to_med_needs_tesselation(void               *this_writer,
                              const fvm_nodal_t  *mesh,
                              fvm_element_t       element_type);
@@ -178,7 +174,7 @@ fvm_to_med_needs_tesselation(void               *this_writer,
  *   time_value  <-- time_value number
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_med_set_mesh_time(void          *const this_writer,
                          const int            time_step,
                          const double         time_value);
@@ -195,7 +191,7 @@ fvm_to_med_set_mesh_time(void          *const this_writer,
  *   mesh         <-- pointer to nodal mesh structure that should be written.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_med_map_nodal(void               *this_writer,
                      const fvm_nodal_t  *mesh);
 
@@ -207,7 +203,7 @@ fvm_to_med_map_nodal(void               *this_writer,
  *   mesh          <-- pointer to nodal mesh structure that should be written.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_med_export_nodal(void               *const this_writer_p,
                         const fvm_nodal_t  *const mesh);
 
@@ -236,7 +232,7 @@ fvm_to_med_export_nodal(void               *const this_writer_p,
  *   field_values     <-- array of associated field value arrays
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_med_export_field(void                      *const this_writer,
                         const fvm_nodal_t         *const mesh,
                         const char                *const name,
@@ -251,8 +247,6 @@ fvm_to_med_export_field(void                      *const this_writer,
                         const void                *const field_values[]);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* FVM_TO_MED_H */
 

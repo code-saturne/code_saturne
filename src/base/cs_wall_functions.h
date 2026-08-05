@@ -36,10 +36,6 @@
 #include "base/cs_math.h"
 #include "turb/cs_turbulence_model.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -1199,18 +1195,16 @@ cs_wall_functions_s_vdriest(cs_real_t  prl,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
-cs_wall_functions_s_smooth_rough(cs_real_t  l_visc,
-                                 cs_real_t  prl,
-                                 cs_real_t  prt,
-                                 cs_real_t  rough_t,
-                                 cs_real_t  uk,
-                                 cs_real_t  yplus,
-                                 cs_real_t  dplus,
-                                 cs_real_t *htur)
+inline void
+cs_wall_functions_s_smooth_rough(cs_real_t        l_visc,
+                                 cs_real_t        prl,
+                                 [[maybe_unused]] cs_real_t  prt,
+                                 cs_real_t        rough_t,
+                                 cs_real_t        uk,
+                                 cs_real_t        yplus,
+                                 cs_real_t        dplus,
+                                 cs_real_t       *htur)
 {
-  CS_UNUSED(prt);
-
   /* Sand grain roughness is:
    * zeta = z0 * exp(kappa 8.5)
    * Then:
@@ -1235,10 +1229,6 @@ cs_wall_functions_s_smooth_rough(cs_real_t  l_visc,
     (*htur) = prl * yplus / tplus;
   }
 }
-
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
 
 /*=============================================================================
  * Public function prototypes
@@ -1358,7 +1348,5 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
                          cs_real_t          *yplim);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_WALL_FUNCTIONS_H */

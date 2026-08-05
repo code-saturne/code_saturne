@@ -27,19 +27,19 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
+
+/*----------------------------------------------------------------------------
+ * Standard library headers
+ *----------------------------------------------------------------------------*/
+
+#include "assert.h"
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
-
 #include "lagr/cs_lagr_particle.h"
-
-#include "assert.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -303,11 +303,7 @@ cs_lagr_events_attr_const(const cs_lagr_event_set_t  *event_set,
 }
 
 /*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#if defined(__cplusplus)
 template <typename T>
 T *
 cs_lagr_events_attr_get_ptr(cs_lagr_event_set_t  *event_set,
@@ -360,9 +356,6 @@ cs_lagr_events_attr_set_val(cs_lagr_event_set_t *event_set,
                   + event_set->e_am->extents*event_id
                   + event_set->e_am->displ[attr])) = value;
 }
-#endif
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -514,7 +507,5 @@ cs_lagr_event_set_t  *
 cs_lagr_event_set_boundary_interaction(void);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_LAGR_EVENT_H */

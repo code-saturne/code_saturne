@@ -29,8 +29,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
 /*----------------------------------------------------------------------------
  * Standard library headers
  *----------------------------------------------------------------------------*/
@@ -40,10 +38,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-/*-----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Public types
@@ -77,14 +71,14 @@ typedef int (bft_printf_flush_proxy_t) (void);
 
 #if defined(__GNUC__)
 
-int
+extern "C" int
 bft_printf(const char  *const format,
            ...)
   __attribute__((format(printf, 1, 2)));
 
 #else
 
-int
+extern "C" int
 bft_printf(const char  *const format,
            ...);
 
@@ -104,7 +98,7 @@ bft_printf(const char  *const format,
  *   (with errno set to indicate the error).
  */
 
-int
+extern "C" int
 bft_printf_flush(void);
 
 /*
@@ -114,7 +108,7 @@ bft_printf_flush(void);
  *   pointer to the vprintf() or replacement function.
  */
 
-bft_printf_proxy_t *
+extern "C" bft_printf_proxy_t *
 bft_printf_proxy_get(void);
 
 /*
@@ -124,7 +118,7 @@ bft_printf_proxy_get(void);
  *   fct: <-- pointer to a vprintf() type function.
  */
 
-void
+extern "C" void
 bft_printf_proxy_set(bft_printf_proxy_t  *const fct);
 
 /*
@@ -134,7 +128,7 @@ bft_printf_proxy_set(bft_printf_proxy_t  *const fct);
  *   pointer to the bft_printf_flush() proxy.
  */
 
-bft_printf_flush_proxy_t *
+extern "C" bft_printf_flush_proxy_t *
 bft_printf_flush_proxy_get(void);
 
 /*
@@ -151,11 +145,9 @@ bft_printf_flush_proxy_get(void);
  *   fct <-- pointer to a function similar to {return fflush(stdout)}.
  */
 
-void
+extern "C" void
 bft_printf_flush_proxy_set(bft_printf_flush_proxy_t  *const fct);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* BFT_PRINTF_H */

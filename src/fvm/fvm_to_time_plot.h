@@ -38,10 +38,6 @@
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_writer.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -77,7 +73,7 @@ BEGIN_C_DECLS
 
 #if defined(HAVE_MPI)
 
-void *
+extern "C" void *
 fvm_to_time_plot_init_writer(const char             *name,
                              const char             *path,
                              const char             *options,
@@ -86,7 +82,7 @@ fvm_to_time_plot_init_writer(const char             *name,
 
 #else
 
-void *
+extern "C" void *
 fvm_to_time_plot_init_writer(const char             *name,
                              const char             *path,
                              const char             *options,
@@ -104,7 +100,7 @@ fvm_to_time_plot_init_writer(const char             *name,
  *   null pointer.
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 fvm_to_time_plot_finalize_writer(void  *writer);
 
 /*----------------------------------------------------------------------------
@@ -116,7 +112,7 @@ fvm_to_time_plot_finalize_writer(void  *writer);
  *   time_value <-- time_value number
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_time_plot_set_mesh_time(void          *writer,
                                const int      time_step,
                                const double   time_value);
@@ -129,7 +125,7 @@ fvm_to_time_plot_set_mesh_time(void          *writer,
  *   mesh   <-- pointer to nodal mesh structure that should be written.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_time_plot_export_nodal(void               *writer,
                               const fvm_nodal_t  *mesh);
 
@@ -158,7 +154,7 @@ fvm_to_time_plot_export_nodal(void               *writer,
  *   field_values     <-- array of associated field value arrays
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_time_plot_export_field(void                  *writer,
                               const fvm_nodal_t     *mesh,
                               const char            *name,
@@ -173,7 +169,5 @@ fvm_to_time_plot_export_field(void                  *writer,
                               const void      *const field_values[]);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* FVM_TO_TIME_PLOT_H */
