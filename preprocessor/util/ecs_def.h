@@ -30,7 +30,7 @@
 #include "cs_config.h"
 
 /*
- * Standard C library headers
+ * Standard library headers
  */
 
 /*============================================================================

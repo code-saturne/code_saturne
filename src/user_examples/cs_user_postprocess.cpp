@@ -359,8 +359,8 @@ cs_user_postprocess_meshes(void)
 
     cs_post_define_surface_mesh(CS_POST_MESH_BOUNDARY,  /* mesh_id */
                                 "Boundary",  /* mesh name */
-                                nullptr,        /* interior face selection criteria */
-                                "all[]",     /* boundary face selection criteria */
+                                nullptr,     /* interior face sel. criteria */
+                                "all[]",     /* boundary face sel. criteria */
                                 true,        /* add_groups */
                                 true,        /* automatic variables output */
                                 n_writers,
@@ -396,9 +396,9 @@ cs_user_postprocess_meshes(void)
   /*--------------------------------------------------------------------------*/
 
   /* Advanced example:
-     Build a surface mesh containing interior faces separating cells of group "2"
-     from those of group "3", (assuming no cell has both colors), as well as
-     boundary faces of group "4". */
+     Build a surface mesh containing interior faces separating cells of
+     group "2" from those of group "3", (assuming no cell has both colors),
+     as well as  boundary faces of group "4". */
 
   /*! [post_define_mesh_3] */
   {
@@ -411,8 +411,8 @@ cs_user_postprocess_meshes(void)
                                         "Mixed surface",
                                         _i_faces_select_example,
                                         _b_faces_select_example,
-                                        nullptr,            /* i_faces_sel_input */
-                                        nullptr,            /* b_faces_sel_input */
+                                        nullptr,         /* i_faces_sel_input */
+                                        nullptr,         /* b_faces_sel_input */
                                         false,           /* time varying */
                                         false,           /* add_groups */
                                         false,           /* auto_variables */
@@ -432,13 +432,13 @@ cs_user_postprocess_meshes(void)
 
     /* Define postprocessing mesh */
 
-    cs_post_define_volume_mesh_by_func(4,               /* mesh id */
+    cs_post_define_volume_mesh_by_func(4,              /* mesh id */
                                        "He_fraction_05",
                                        _he_fraction_05_select,
-                                       nullptr,            /* _c_05_select_input */
-                                       true,            /* time varying */
-                                       false,           /* add_groups */
-                                       false,           /* auto_variables */
+                                       nullptr,        /* _c_05_select_input */
+                                       true,           /* time varying */
+                                       false,          /* add_groups */
+                                       false,          /* auto_variables */
                                        n_writers,
                                        writer_ids);
   }
@@ -795,8 +795,8 @@ cs_user_postprocess_values
                         true,                           /* use_parent */
                         CS_POST_TYPE_cs_real_t,         /* var_type */
                         f->val,                         /* cel_vals */
-                        nullptr,                           /* i_face_vals */
-                        nullptr,                           /* b_face_vals */
+                        nullptr,                        /* i_face_vals */
+                        nullptr,                        /* b_face_vals */
                         ts);
   }
   /*< [postprocess_values_ex_3] */
@@ -823,8 +823,8 @@ cs_user_postprocess_values
                           true,                           /* use_parent */
                           CS_POST_TYPE_cs_real_t,         /* var_type */
                           f->val,                         /* cel_vals */
-                          nullptr,                           /* i_face_vals */
-                          nullptr,                           /* b_face_vals */
+                          nullptr,                        /* i_face_vals */
+                          nullptr,                        /* b_face_vals */
                           &ts0);
 
       }

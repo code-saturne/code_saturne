@@ -133,7 +133,7 @@ typedef struct _cs_matrix_cusparse_map_t {
 #endif // defined(HAVE_CUSPARSE)
 
 /*============================================================================
- *  Global variables
+ * Global variables
  *============================================================================*/
 
 static cudaStream_t _stream = 0;

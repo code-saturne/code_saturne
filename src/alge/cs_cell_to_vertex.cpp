@@ -27,7 +27,7 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -98,7 +98,7 @@ typedef  cs_real_t  cs_weight_t;  /* Will allow testing single precision
                                      if set to float. */
 
 /*============================================================================
- *  Global variables
+ * Global variables
  *============================================================================*/
 
 bool _set[3] = {false, false, false};

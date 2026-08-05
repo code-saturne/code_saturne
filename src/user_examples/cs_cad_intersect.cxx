@@ -71,7 +71,7 @@
 #include <STEPControl_Reader.hxx>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "user_examples/cs_cad_intersect.h"

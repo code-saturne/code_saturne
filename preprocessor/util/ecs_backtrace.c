@@ -33,7 +33,7 @@
 /*-----------------------------------------------------------------------------*/
 
 /*
- * Standard C library headers
+ * Standard library headers
  */
 
 #include <assert.h>

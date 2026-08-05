@@ -27,7 +27,7 @@
 #include "ecs_def.h"
 
 /*
- * Standard C library headers
+ * Standard library headers
  */
 
 #include <assert.h>

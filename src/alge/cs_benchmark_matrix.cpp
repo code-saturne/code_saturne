@@ -134,7 +134,7 @@ typedef struct {
 } cs_matrix_timing_variant_t;
 
 /*============================================================================
- *  Global variables
+ * Global variables
  *============================================================================*/
 
 /* Short names for matrix types */

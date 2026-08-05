@@ -29,7 +29,7 @@
 /*-----------------------------------------------------------------------------*/
 
 /*
- * Standard C library headers
+ * Standard library headers
  */
 
 #include <time.h>
