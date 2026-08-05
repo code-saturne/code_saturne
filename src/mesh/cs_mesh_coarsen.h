@@ -48,8 +48,6 @@
  * Public function prototypes
  *============================================================================*/
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Coarsen flagged mesh cells.
@@ -81,7 +79,5 @@ cs_mesh_coarsen_simple_selected(cs_mesh_t        *m,
                                 const cs_lnum_t   cells[]);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MESH_COARSEN_H */
