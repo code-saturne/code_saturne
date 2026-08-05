@@ -6678,7 +6678,7 @@ cs_post_write_function(int                    mesh_id,
   cs_lnum_t n_elts = fvm_nodal_get_n_entities(post_mesh->exp_mesh, ent_dim);
 
   cs_lnum_t *elt_ids;
-  CS_MALLOC(elt_ids, n_elts, cs_lnum_t);
+  CS_MALLOC_HD(elt_ids, n_elts, cs_lnum_t, cs_alloc_mode);
   fvm_nodal_get_parent_id(post_mesh->exp_mesh, ent_dim, elt_ids);
 
   if (elt_id_shift > 0) {
@@ -6688,7 +6688,8 @@ cs_post_write_function(int                    mesh_id,
 
   unsigned char *_vals = nullptr;
   size_t elt_size = cs_datatype_size[f->datatype] * f->dim;
-  CS_MALLOC(_vals, ((size_t)n_elts) * elt_size,  unsigned char);
+  CS_MALLOC_HD(_vals, ((size_t)n_elts) * elt_size,  unsigned char,
+               cs_alloc_mode);
 
   cs_function_evaluate(f,
                        ts,
@@ -6919,12 +6920,13 @@ cs_post_write_vertex_function(int                    mesh_id,
   cs_lnum_t n_elts = fvm_nodal_get_n_entities(post_mesh->exp_mesh, 0);
 
   cs_lnum_t *elt_ids;
-  CS_MALLOC(elt_ids, n_elts, cs_lnum_t);
+  CS_MALLOC_HD(elt_ids, n_elts, cs_lnum_t, cs_alloc_mode);
   fvm_nodal_get_parent_id(post_mesh->exp_mesh, 0, elt_ids);
 
   unsigned char *_vals = nullptr;
   size_t elt_size = cs_datatype_size[f->datatype] * f->dim;
-  CS_MALLOC(_vals, ((size_t)n_elts) * elt_size,  unsigned char);
+  CS_MALLOC_HD(_vals, ((size_t)n_elts) * elt_size,  unsigned char,
+               cs_alloc_mode);
 
   cs_function_evaluate(f,
                        ts,
