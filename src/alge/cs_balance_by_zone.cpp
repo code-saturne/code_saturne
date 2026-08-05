@@ -235,7 +235,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
   /* Specific heat (CP) */
-  cs_real_t *xcpp = nullptr;
+  const cs_real_t *xcpp = nullptr;
+  cs_real_t *_xcpp = nullptr;
   cs_real_t cp0 = 1;
   if (f->get_key_int("is_temperature")) {
     const int icp = cs_field_id_by_name("specific_heat");
@@ -245,8 +246,9 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       cp0 = cs_glob_fluid_properties->cp0;
   }
   if (xcpp == nullptr) {
-    CS_MALLOC_HD(xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
-    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, cp0, xcpp);
+    CS_MALLOC_HD(_xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
+    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, cp0, _xcpp);
+    xcpp = _xcpp;
   }
 
   /* Zone cells selection variables*/
@@ -676,7 +678,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   /* Free memory */
 
-  CS_FREE(xcpp);
+  CS_FREE(_xcpp);
   CS_FREE(c_visc);
   CS_FREE(i_visc);
   CS_FREE(b_visc);
@@ -1519,7 +1521,8 @@ cs_flux_through_surface(const char         *scalar_name,
     ------------------- */
 
   /* Specific heat (CP) */
-  cs_real_t *xcpp = nullptr;
+  const cs_real_t *xcpp = nullptr;
+  cs_real_t *_xcpp = nullptr;
   cs_real_t cp0 = 1;
   if (f->get_key_int("is_temperature")) {
     const int icp = cs_field_id_by_name("specific_heat");
@@ -1529,8 +1532,9 @@ cs_flux_through_surface(const char         *scalar_name,
       cp0 = cs_glob_fluid_properties->cp0;
   }
   if (xcpp == nullptr) {
-    CS_MALLOC_HD(xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
-    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, cp0, xcpp);
+    CS_MALLOC_HD(_xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
+    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, cp0, _xcpp);
+    xcpp = _xcpp;
   }
 
   /* Convective mass fluxes for inner and boundary faces */
@@ -1621,7 +1625,8 @@ cs_flux_through_surface(const char         *scalar_name,
       cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
       cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
-      cs_real_t dot_pro = cs_math_3_dot_product(normal, i_face_u_normal[f_id_sel]);
+      cs_real_t dot_pro = cs_math_3_dot_product(normal,
+                                                i_face_u_normal[f_id_sel]);
       if (fabs(dot_pro) < 1.0e-14)//FIXME
         dot_pro = 0;
       if (dot_pro > 0.)
@@ -1686,7 +1691,8 @@ cs_flux_through_surface(const char         *scalar_name,
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces_sel; f_id++) {
 
-    cs_lnum_t f_id_sel = (b_face_sel_ids != nullptr) ? b_face_sel_ids[f_id] : f_id;
+    cs_lnum_t f_id_sel = (b_face_sel_ids != nullptr) ?
+      b_face_sel_ids[f_id] : f_id;
 
     cs_real_t term_balance = b_flux(f_id);
 
@@ -1768,7 +1774,7 @@ cs_flux_through_surface(const char         *scalar_name,
 
   CS_FREE(bi_face_cells);
 
-  CS_FREE(xcpp);
+  CS_FREE(_xcpp);
   CS_FREE(c_visc);
   CS_FREE(i_visc);
   CS_FREE(b_visc);
