@@ -46,10 +46,6 @@
 
 #include "mesh/cs_mesh_builder.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -213,10 +209,12 @@ typedef struct {
   cs_gnum_t n_g_free_faces;        /*!< global number of boundary faces
                                      which are in fact isolated */
 
-  cs_gnum_t n_g_b_faces_all;       /*!< global number of boundary faces
-                                     including those ignored in FV schemes */
-  cs_lnum_t n_b_faces_all;         /*!< number of boundary faces including
-                                     faces ignored in FV schemes */
+  int64_t   n_g_b_faces_appended;  /*!< global number of appended boundary
+                                     faces (negative in case of hidden faces) */
+  cs_lnum_t n_b_faces_appended;    /*!< number of appended boundary faces
+                                     (not part of normal connectivity);
+                                     negative when faces which are part of
+                                     the connectivity are hidden. */
 
   int verbosity;                   /*!< current verbosity level */
   int modified;                    /*!< modification status */
@@ -716,7 +714,40 @@ cs_mesh_i_faces_thread_block_range(const cs_mesh_t     *m,
                                    cs_lnum_t           *e_id);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Get the local number of true boundary faces.
+ *
+ * Hidden boundary faces are accounted for, while appended faces are not,
+ * so that the number returned matches that of the actual connectivity.
+ *
+ * \param[in]   m  pointer to mesh
+ *
+ * \return  number of true boundary faces
+ */
+/*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+cs_gnum_t
+cs_mesh_n_g_b_faces_true(const cs_mesh_t  *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the local number of true boundary faces.
+ *
+ * Hidden boundary faces are accounted for, while appended faces are not,
+ * so that the number returned matches that of the actual connectivity.
+ *
+ * \param[in]   m  pointer to mesh
+ *
+ * \return  number of true boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+inline cs_lnum_t
+cs_mesh_n_b_faces_true(const cs_mesh_t  *m)
+{
+  return  (m->n_b_faces - m->n_b_faces_appended);
+}
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_MESH_H */

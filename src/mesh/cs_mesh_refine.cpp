@@ -6614,7 +6614,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   CS_FREE(c_r_flag);
   CS_FREE(f_r_flag);
 
-  m->n_b_faces_all = m->n_b_faces;
+  m->n_g_b_faces_appended = 0;
+  m->n_b_faces_appended = 0;
   m->modified |= (CS_MESH_MODIFIED | CS_MESH_MODIFIED_BALANCE);
 
   t2 = cs_timer_time();

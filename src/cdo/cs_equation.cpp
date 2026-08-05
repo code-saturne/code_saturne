@@ -4176,8 +4176,7 @@ cs_equation_post_balance(const cs_mesh_t           *mesh,
        is a mesh modification. In particular, a removal of the 2D extruded
        border faces */
 
-    bool use_parent
-      = (mesh->n_g_b_faces_all > mesh->n_g_b_faces) ? false : true;
+    bool use_parent = (mesh->n_g_b_faces_appended < 0) ? false : true;
 
     sprintf(postlabel, "%s.BdyFlux", eqp->name);
 

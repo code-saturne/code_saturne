@@ -109,7 +109,7 @@ typedef struct {
 
   /* cells -> hidden boundary faces connectivity, if present;
      "hidden" boundary faces are those whose ids are in the meshe's
-     ] n_b_faces, n_b_faces_all ] range */
+     ] n_b_faces, n_b_faces_true() ] range */
 
   cs_lnum_t        *cell_hb_faces_idx;  /*!< cells to hidden boundary faces
                                           index, if present */

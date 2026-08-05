@@ -589,9 +589,6 @@ cs_restart_map_build(void)
     cs_preprocessor_data_read_headers(m, mb, true);
     cs_preprocessor_data_read_mesh(m, mb, true);
 
-    m->n_b_faces_all = m->n_b_faces;
-    m->n_g_b_faces_all = m->n_g_b_faces;
-
     cs_mesh_builder_destroy(&mb);
     cs_glob_mesh_builder = mb_s;
 

@@ -356,9 +356,6 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   else if (need_save)
     cs_mesh_save(m, nullptr, nullptr, "mesh_output.csm");
 
-  m->n_b_faces_all = m->n_b_faces;
-  m->n_g_b_faces_all = m->n_g_b_faces;
-
   /* Destroy the temporary structure used to build the main mesh */
 
   cs_mesh_builder_destroy(&cs_glob_mesh_builder);
@@ -556,7 +553,7 @@ cs_preprocess_mesh_update_device()
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_cells = m->n_b_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;
-  const cs_lnum_t n_b_faces = m->n_b_faces_all;
+  const cs_lnum_t n_b_faces = cs_mesh_n_b_faces_true(m);
   const cs_lnum_t n_vertices = m->n_vertices;
 
   /* Mesh structures

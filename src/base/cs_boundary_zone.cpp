@@ -307,7 +307,7 @@ _boundary_zone_compute_metadata(bool       mesh_modified,
     cs_real_t *b_face_surf   = cs_glob_mesh_quantities_g->b_face_surf;
     cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_face_surf;
     cs_real_3_t *face_cen = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
-    cs_lnum_t n_b_faces_all = mesh->n_b_faces_all;
+    cs_lnum_t n_b_faces_true = cs_mesh_n_b_faces_true(mesh);
 
     z->measure = 0.;
     z->f_measure = 0.;
@@ -323,7 +323,7 @@ _boundary_zone_compute_metadata(bool       mesh_modified,
       for (int idim = 0; idim < 3; idim++)
         z->cog[idim] += face_cen[f_id][idim] * b_f_face_surf[f_id];
 
-      if (f_id < n_b_faces_all)
+      if (f_id < n_b_faces_true)
         z->measure += b_face_surf[f_id];
     }
 
@@ -349,7 +349,6 @@ _boundary_zone_compute_metadata(bool       mesh_modified,
         z->cog[idim] = measures[4+idim] / measures[0];
 
   } /* Need to compute metadata */
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

@@ -1323,6 +1323,10 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
   /* local variables */
 
   fvm_nodal_t  *exp_mesh = nullptr;
+  const cs_mesh_t *mesh = cs_glob_mesh;
+
+  cs_lnum_t n_b_faces_adj =   mesh->n_b_faces
+                            - std::max(mesh->n_b_faces_appended, 0);
 
   /* Create associated structure */
 
@@ -1330,14 +1334,14 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
 
     if (post_mesh->ent_flag[0] == 1) {
 
-      if (n_cells >= cs_glob_mesh->n_cells)
-        exp_mesh = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
+      if (n_cells >= mesh->n_cells)
+        exp_mesh = cs_mesh_connect_cells_to_nodal(mesh,
                                                   post_mesh->name,
                                                   post_mesh->add_groups,
-                                                  cs_glob_mesh->n_cells,
+                                                  mesh->n_cells,
                                                   nullptr);
       else
-        exp_mesh = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
+        exp_mesh = cs_mesh_connect_cells_to_nodal(mesh,
                                                   post_mesh->name,
                                                   post_mesh->add_groups,
                                                   n_cells,
@@ -1346,11 +1350,8 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
     }
     else {
 
-      cs_lnum_t n_b_faces_adj = cs::min(cs_glob_mesh->n_b_faces,
-                                        cs_glob_mesh->n_b_faces_all);
-
-      if (n_b_faces >= n_b_faces_adj&& n_i_faces == 0)
-        exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+      if (n_b_faces >= n_b_faces_adj && n_i_faces == 0)
+        exp_mesh = cs_mesh_connect_faces_to_nodal(mesh,
                                                   post_mesh->name,
                                                   post_mesh->add_groups,
                                                   0,
@@ -1358,7 +1359,7 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
                                                   nullptr,
                                                   nullptr);
       else
-        exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
+        exp_mesh = cs_mesh_connect_faces_to_nodal(mesh,
                                                   post_mesh->name,
                                                   post_mesh->add_groups,
                                                   n_i_faces,
@@ -1381,8 +1382,8 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
 
     if (post_mesh->ent_flag[0] == 1) {
 
-      if (n_cells >= cs_glob_mesh->n_cells) {
-        n_elts = cs_glob_mesh->n_cells;
+      if (n_cells >= mesh->n_cells) {
+        n_elts = mesh->n_cells;
       }
       else {
         n_elts = n_cells;
@@ -1390,15 +1391,15 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
       }
 
       elt_coords = cs_glob_mesh_quantities->cell_cen;
-      elt_gnum = cs_glob_mesh->global_cell_num;
+      elt_gnum = mesh->global_cell_num;
 
     }
     else {
 
       if (post_mesh->ent_flag[1] == 0) {
 
-        if (n_b_faces >= cs_glob_mesh->n_b_faces_all) {
-          n_elts = cs_glob_mesh->n_b_faces_all;
+        if (n_b_faces >= n_b_faces_adj) {
+          n_elts = n_b_faces_adj;
         }
         else {
           n_elts = n_b_faces;
@@ -1406,13 +1407,13 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
         }
 
         elt_coords = cs_glob_mesh_quantities->b_face_cog;
-        elt_gnum = cs_glob_mesh->global_b_face_num;
+        elt_gnum = mesh->global_b_face_num;
 
       }
       else if (post_mesh->ent_flag[2] == 0) {
 
-        if (n_i_faces >= cs_glob_mesh->n_i_faces) {
-          n_elts = cs_glob_mesh->n_i_faces;
+        if (n_i_faces >= mesh->n_i_faces) {
+          n_elts = mesh->n_i_faces;
         }
         else {
           n_elts = n_i_faces;
@@ -1420,7 +1421,7 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
         }
 
         elt_coords = cs_glob_mesh_quantities->i_face_cog;
-        elt_gnum = cs_glob_mesh->global_i_face_num;
+        elt_gnum = mesh->global_i_face_num;
 
       }
       else {
@@ -1724,10 +1725,12 @@ _define_regular_mesh(cs_post_mesh_t  *post_mesh)
 
   if (post_mesh->criteria[2] != nullptr) {
     const char *criteria = post_mesh->criteria[2];
+    cs_lnum_t n_b_faces_adj =   mesh->n_b_faces
+                              - std::max(mesh->n_b_faces_appended, 0);
     if (!strcmp(criteria, "all[]"))
-      n_b_faces = mesh->n_b_faces_all;
+      n_b_faces = n_b_faces_adj;
     else {
-      CS_MALLOC(b_face_list, mesh->n_b_faces_all, cs_lnum_t);
+      CS_MALLOC(b_face_list, n_b_faces_adj, cs_lnum_t);
       cs_selector_get_b_face_list(criteria, &n_b_faces, b_face_list);
     }
   }
@@ -2638,7 +2641,8 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
         = fam_flag[mesh->i_face_family[i]] | 2;
   }
   if (mesh->b_face_family != nullptr) {
-    for (i = 0; i < mesh->n_b_faces_all; i++)
+    cs_lnum_t n_b_faces_true = cs_mesh_n_b_faces_true(mesh);
+    for (i = 0; i < n_b_faces_true; i++)
       fam_flag[mesh->b_face_family[i]]
         = fam_flag[mesh->b_face_family[i]] | 4;
   }
@@ -2721,8 +2725,10 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
 
   /* Now extract faces by groups */
 
+  cs_lnum_t n_b_faces_true = cs_mesh_n_b_faces_true(mesh);
+
   CS_MALLOC(i_face_list, mesh->n_i_faces, cs_lnum_t);
-  CS_MALLOC(b_face_list, mesh->n_b_faces_all, cs_lnum_t);
+  CS_MALLOC(b_face_list, n_b_faces_true, cs_lnum_t);
 
   for (i = 0; i < mesh->n_groups; i++) {
 
@@ -2742,7 +2748,7 @@ _vol_submeshes_by_group(const cs_mesh_t  *mesh,
       }
       n_b_faces = 0;
       if (mesh->b_face_family != nullptr) {
-        for (j = 0; j < mesh->n_b_faces_all; j++) {
+        for (j = 0; j < n_b_faces_true; j++) {
           int f_id = mesh->b_face_family[j];
           if (f_id > 0 && fam_flag[f_id - 1])
             b_face_list[n_b_faces++] = j;
@@ -2817,14 +2823,16 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
 
   /* Check how many boundary faces belong to no group */
 
+  cs_lnum_t n_b_faces_true = cs_mesh_n_b_faces_true(mesh);
+
   if (mesh->b_face_family != nullptr) {
-    for (j = 0, n_b_faces = 0; j < mesh->n_b_faces_all; j++) {
+    for (j = 0, n_b_faces = 0; j < n_b_faces_true; j++) {
       if (mesh->b_face_family[j] <= max_null_family)
         n_no_group += 1;
     }
   }
   else
-    n_no_group = mesh->n_b_faces_all;
+    n_no_group = n_b_faces_true;
 
   cs_parall_counter(&n_no_group, 1);
 
@@ -2849,7 +2857,7 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
   memset(fam_flag, 0, (mesh->n_families + 1)*sizeof(int));
 
   if (mesh->b_face_family != nullptr) {
-    for (i = 0; i < mesh->n_b_faces_all; i++)
+    for (i = 0; i < n_b_faces_true; i++)
       fam_flag[mesh->b_face_family[i]] = 1;
   }
 
@@ -2861,7 +2869,7 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
 
   CS_REALLOC(fam_flag, mesh->n_families, int);
 
-  CS_MALLOC(b_face_list, mesh->n_b_faces_all, cs_lnum_t);
+  CS_MALLOC(b_face_list, n_b_faces_true, cs_lnum_t);
 
   for (i = 0; i < mesh->n_groups; i++) {
 
@@ -2873,7 +2881,7 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
 
       n_b_faces = 0;
       if (mesh->b_face_family != nullptr) {
-        for (j = 0; j < mesh->n_b_faces_all; j++) {
+        for (j = 0; j < n_b_faces_true; j++) {
           int f_id = mesh->b_face_family[j];
           if (f_id > 0 && fam_flag[f_id - 1])
             b_face_list[n_b_faces++] = j;
@@ -2904,13 +2912,13 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
   if (n_no_group > 0) {
 
     if (mesh->b_face_family != nullptr) {
-      for (j = 0, n_b_faces = 0; j < mesh->n_b_faces_all; j++) {
+      for (j = 0, n_b_faces = 0; j < n_b_faces_true; j++) {
         if (mesh->b_face_family[j] <= max_null_family)
           b_face_list[n_b_faces++] = j;
       }
     }
     else {
-      for (j = 0, n_b_faces = 0; j < mesh->n_b_faces_all; j++)
+      for (j = 0, n_b_faces = 0; j < n_b_faces_true; j++)
         b_face_list[n_b_faces++] = j;
     }
 
@@ -4847,7 +4855,7 @@ cs_post_define_existing_mesh(int           mesh_id,
 
     fvm_nodal_get_parent_id(exp_mesh, dim_ext_ent, parent_ent_id);
 
-    b_f_num_shift = cs_glob_mesh->n_b_faces_all;
+    b_f_num_shift = cs_mesh_n_b_faces_true(cs_glob_mesh);
     for (ind_fac = 0; ind_fac < n_elts; ind_fac++) {
       if (parent_ent_id[ind_fac] >= b_f_num_shift)
         post_mesh->n_i_faces += 1;
@@ -5060,7 +5068,7 @@ cs_post_assign_existing_mesh(int           mesh_id,
 
     fvm_nodal_get_parent_id(exp_mesh, dim_ext_ent, parent_ent_id);
 
-    cs_lnum_t b_f_num_shift = cs_glob_mesh->n_b_faces_all;
+    cs_lnum_t b_f_num_shift = cs_mesh_n_b_faces_true(cs_glob_mesh);
     for (cs_lnum_t ind_fac = 0; ind_fac < n_elts; ind_fac++) {
       if (parent_ent_id[ind_fac] >= b_f_num_shift)
         post_mesh->n_i_faces += 1;
@@ -5456,12 +5464,13 @@ cs_post_mesh_get_i_face_ids(int        mesh_id,
         i_face_ids[i] -= id_shift;
     }
     else {
+      const cs_lnum_t n_b_faces_true = cs_mesh_n_b_faces_true(cs_glob_mesh);
       cs_lnum_t n_i_faces = 0;
       cs_lnum_t *tmp_ids = nullptr;
       CS_MALLOC(tmp_ids, n_faces, cs_lnum_t);
       fvm_nodal_get_parent_id(mesh->exp_mesh, 3, tmp_ids);
       for (cs_lnum_t i = 0; i < n_faces; i++) {
-        if (tmp_ids[i] > cs_glob_mesh->n_b_faces_all)
+        if (tmp_ids[i] > n_b_faces_true)
           i_face_ids[n_i_faces++] = tmp_ids[i] - id_shift;
       }
       CS_FREE(tmp_ids);
@@ -5525,12 +5534,13 @@ cs_post_mesh_get_b_face_ids(int        mesh_id,
       fvm_nodal_get_parent_id(mesh->exp_mesh, 3, b_face_ids);
     }
     else {
+      const cs_lnum_t n_b_faces_true = cs_mesh_n_b_faces_true(cs_glob_mesh);
       cs_lnum_t n_b_faces = 0;
       cs_lnum_t *tmp_ids = nullptr;
       CS_MALLOC(tmp_ids, n_faces, cs_lnum_t);
       fvm_nodal_get_parent_id(mesh->exp_mesh, 3, tmp_ids);
       for (cs_lnum_t i = 0; i < n_faces; i++) {
-        if (tmp_ids[i] > cs_glob_mesh->n_b_faces_all)
+        if (tmp_ids[i] > n_b_faces_true)
           b_face_ids[n_b_faces++] = tmp_ids[i];
       }
       CS_FREE(tmp_ids);
@@ -6365,7 +6375,8 @@ cs_post_write_var(int                    mesh_id,
 
       if (post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] == 1) {
         if (interlace == false) {
-          dec_ptr = cs_glob_mesh->n_b_faces_all * cs_datatype_size[datatype];
+          const cs_lnum_t n_b_faces_true = cs_mesh_n_b_faces_true(cs_glob_mesh);
+          dec_ptr = n_b_faces_true * cs_datatype_size[datatype];
           for (i = 0; i < var_dim; i++)
             var_ptr[i] = ((const char *)b_face_vals) + i*dec_ptr;
         }
@@ -6643,7 +6654,8 @@ cs_post_write_function(int                    mesh_id,
     if (post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 1) {
       loc_type = CS_MESH_LOCATION_INTERIOR_FACES;
       f = i_face_f;
-      elt_id_shift = cs_glob_mesh->n_b_faces_all;
+      elt_id_shift = cs_mesh_n_b_faces_true(cs_glob_mesh);
+
     }
     else {
       loc_type = CS_MESH_LOCATION_BOUNDARY_FACES;
@@ -7565,32 +7577,33 @@ cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
 
     /* Prepare renumbering */
 
-    n_elts = mesh->n_i_faces + mesh->n_b_faces_all;
+    const cs_lnum_t n_b_faces_true = cs_mesh_n_b_faces_true(mesh);
+    n_elts = mesh->n_i_faces + n_b_faces_true;
 
     CS_MALLOC(renum_ent_parent, n_elts, cs_lnum_t);
 
     if (init_b_face_num == nullptr) {
-      for (ifac = 0; ifac < mesh->n_b_faces_all; ifac++)
+      for (ifac = 0; ifac < n_b_faces_true; ifac++)
         renum_ent_parent[ifac] = ifac;
     }
     else {
-      for (ifac = 0; ifac < mesh->n_b_faces_all; ifac++)
+      for (ifac = 0; ifac < n_b_faces_true; ifac++)
         renum_ent_parent[init_b_face_num[ifac]] = ifac;
     }
 
     if (init_i_face_num == nullptr) {
-      for (ifac = 0, i = mesh->n_b_faces_all;
+      for (ifac = 0, i = n_b_faces_true;
            ifac < mesh->n_i_faces;
            ifac++, i++)
-        renum_ent_parent[mesh->n_b_faces_all + ifac]
-          = mesh->n_b_faces_all + ifac;
+        renum_ent_parent[n_b_faces_true + ifac]
+          = n_b_faces_true + ifac;
     }
     else {
-      for (ifac = 0, i = mesh->n_b_faces_all;
+      for (ifac = 0, i = n_b_faces_true;
            ifac < mesh->n_i_faces;
            ifac++, i++)
-        renum_ent_parent[mesh->n_b_faces_all + init_i_face_num[ifac]]
-          = mesh->n_b_faces_all + ifac;
+        renum_ent_parent[n_b_faces_true + init_i_face_num[ifac]]
+          = n_b_faces_true + ifac;
     }
 
     /* Effective modification */
@@ -8063,7 +8076,7 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
       else if (dim_ent == 2 && n_elts > 0) {
 
-        cs_lnum_t  b_f_num_shift = cs_glob_mesh->n_b_faces_all;
+        cs_lnum_t  b_f_num_shift = cs_mesh_n_b_faces_true(cs_glob_mesh);
 
         for (cs_lnum_t ind_fac = 0; ind_fac < n_elts; ind_fac++) {
           if (parent_ids[ind_fac] >= b_f_num_shift)
@@ -8440,9 +8453,10 @@ cs_post_add_free_faces(void)
 
   /* Build list of faces to extract */
 
-  CS_MALLOC(f_face_list, mesh->n_b_faces_all, cs_lnum_t);
+  cs_lnum_t n_b_faces_true = cs_mesh_n_b_faces_true(mesh);
+  CS_MALLOC(f_face_list, n_b_faces_true, cs_lnum_t);
 
-  for (i = 0; i < mesh->n_b_faces_all; i++) {
+  for (i = 0; i < n_b_faces_true; i++) {
     if (mesh->b_face_cells[i] < 0)
       f_face_list[n_f_faces++] = i + 1;
   }
@@ -8523,7 +8537,7 @@ cs_post_add_free_faces(void)
 
     CS_REALLOC(fam_flag, mesh->n_families, int);
 
-    CS_MALLOC(b_face_list, mesh->n_b_faces_all, cs_lnum_t);
+    CS_MALLOC(b_face_list, n_b_faces_true, cs_lnum_t);
 
     for (i = 0; i < mesh->n_groups; i++) {
 

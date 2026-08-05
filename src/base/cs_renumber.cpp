@@ -711,12 +711,10 @@ _cs_renumber_update_b_faces(cs_mesh_t        *mesh,
 {
   if (new_to_old_b != nullptr) {
 
-    cs_lnum_t  face_id, face_id_old;
-
     cs_lnum_t  *b_face_cells_old = nullptr;
 
-    const cs_lnum_t n_b_faces_connect
-      = cs::min(mesh->n_b_faces_all, mesh->n_b_faces);
+    const cs_lnum_t n_b_faces_connect =   mesh->n_b_faces
+                                        - std::max(mesh->n_b_faces_appended, 0);
 
     /* Allocate Work array */
 
@@ -727,8 +725,8 @@ _cs_renumber_update_b_faces(cs_mesh_t        *mesh,
     memcpy(b_face_cells_old, mesh->b_face_cells,
            n_b_faces_connect*sizeof(cs_lnum_t));
 
-    for (face_id = 0; face_id < n_b_faces_connect; face_id++) {
-      face_id_old = new_to_old_b[face_id];
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces_connect; face_id++) {
+      cs_lnum_t face_id_old = new_to_old_b[face_id];
       mesh->b_face_cells[face_id] = b_face_cells_old[face_id_old];
     }
 
@@ -1490,8 +1488,8 @@ _renumber_i_faces_by_cell_adjacency(cs_mesh_t  *mesh)
 static void
 _renumber_b_faces_by_cell_adjacency(cs_mesh_t  *mesh)
 {
-  const cs_lnum_t n_b_faces_connect
-      = cs::min(mesh->n_b_faces_all, mesh->n_b_faces);
+  const cs_lnum_t n_b_faces_connect =   mesh->n_b_faces
+                                      - std::max(mesh->n_b_faces_appended, 0);
 
   cs_lnum_t  *new_to_old_b;
   CS_MALLOC(new_to_old_b, n_b_faces_connect, cs_lnum_t);
@@ -2525,8 +2523,8 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
   cs_lnum_t ii, subset_size, start_id, end_id;
 
   int retval = 0;
-  const cs_lnum_t n_b_faces_connect
-    = cs::min(mesh->n_b_faces_all, mesh->n_b_faces);
+  const cs_lnum_t n_b_faces_connect =   mesh->n_b_faces
+                                      - std::max(mesh->n_b_faces_appended, 0);
 
   /* Initialization */
 
@@ -2588,7 +2586,7 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
     (*b_group_index)[(t_id*n_b_groups + g_id)*2 + 1] = end_id;
   }
 
-  if (mesh->n_b_faces > mesh->n_b_faces_all) {
+  if (mesh->n_b_faces_appended > 0) {
     /* The second groups contains all the immersed boundary faces */
     cs_lnum_t g_id = 1;
     cs_lnum_t ip = n_b_faces_connect;
@@ -5041,7 +5039,8 @@ _renumber_b_faces(cs_mesh_t   *mesh,
   cs_lnum_t  ii;
   cs_lnum_t  *new_to_old_b = nullptr;
   cs_lnum_t  *b_group_index = nullptr;
-  cs_lnum_t n_b_faces_connect = cs::min(mesh->n_b_faces_all, mesh->n_b_faces);
+  const cs_lnum_t n_b_faces_connect =   mesh->n_b_faces
+                                      - std::max(mesh->n_b_faces_appended, 0);
 
   int  n_b_threads = _cs_renumber_n_threads;
 
@@ -6137,7 +6136,8 @@ cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh)
   if (mesh->b_face_numbering != nullptr)
     cs_numbering_destroy(&(mesh->b_face_numbering));
 
-  cs_lnum_t n_b_faces_connect = cs::min(mesh->n_b_faces_all, mesh->n_b_faces);
+  const cs_lnum_t n_b_faces_connect =   mesh->n_b_faces
+                                      - std::max(mesh->n_b_faces_appended, 0);
 
   if (mesh->global_b_face_num != nullptr) {
 
@@ -6164,8 +6164,8 @@ cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh)
  *        and will be ignored.
  *
  * Those faces will appear last, and the local number of boundary faces set
- * to the number of remaining faces; The mesh's n_b_faces_all and
- * n_g_b_faces_all allows accessing the full boundary faces list.
+ * to the number of remaining faces; cs_mesh_n_b_faces_true() allows accessing
+ * the full boundary faces list.
  *
  * \param[in, out]  mesh      pointer to global mesh structure
  * \param[in]       n_faces   number of selected faces
@@ -6180,15 +6180,21 @@ cs_renumber_b_faces_select_ignore(cs_mesh_t        *mesh,
 {
   cs_lnum_t  *_face_ids = nullptr;
 
+  if (mesh->n_g_b_faces_appended > 0)
+    return;
+
   /* Try to ensure number of total boundary faces with symmetry is updated */
 
-  if (mesh->n_b_faces_all < mesh->n_b_faces) {
-    mesh->n_g_b_faces_all = mesh->n_g_b_faces;
-    mesh->n_b_faces_all = mesh->n_b_faces;
+  if (mesh->n_g_b_faces_appended < 0) {
+    cs_gnum_t n_hidden = - mesh->n_g_b_faces_appended;
+    mesh->n_g_b_faces += n_hidden;
+    mesh->n_g_b_faces_appended = 0;
   }
-
-  mesh->n_g_b_faces = mesh->n_g_b_faces_all;
-  mesh->n_b_faces = mesh->n_b_faces_all;
+  if (mesh->n_b_faces_appended < 0) {
+    cs_lnum_t n_hidden = - mesh->n_b_faces_appended;
+    mesh->n_b_faces += n_hidden;
+    mesh->n_b_faces_appended = 0;
+  }
 
   if (n_faces < 1)
     return;
@@ -6273,12 +6279,13 @@ cs_renumber_b_faces_select_ignore(cs_mesh_t        *mesh,
   /* Also modify global boundary faces so that the remaining faces can
      be used in parallel operators requiring them in a consistent manner */
 
-  mesh->n_b_faces = mesh->n_b_faces_all - n_faces;
+  mesh->n_b_faces_appended = - n_faces;
+  mesh->n_b_faces -= n_faces;
 
   if (mesh->n_domains > 1 || mesh->global_b_face_num != nullptr) {
 
     cs_lnum_t n_b_faces = mesh->n_b_faces;
-    cs_lnum_t n_b_faces_ext = mesh->n_b_faces_all - mesh->n_b_faces;
+    cs_lnum_t n_b_faces_ext = - mesh->n_b_faces_appended;
 
     fvm_io_num_t *n_io_num
       = fvm_io_num_create_from_select(nullptr,
@@ -6303,6 +6310,7 @@ cs_renumber_b_faces_select_ignore(cs_mesh_t        *mesh,
     n_io_num = fvm_io_num_destroy(n_io_num);
     n_io_num_end = fvm_io_num_destroy(n_io_num_end);
 
+    mesh->n_g_b_faces_appended = - (mesh->n_g_b_faces - n_g_b_faces);
     mesh->n_g_b_faces = n_g_b_faces;
 
   }

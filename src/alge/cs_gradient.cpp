@@ -2608,7 +2608,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
   /* Contribution from hidden boundary faces, if present */
 
-  if (m->n_b_faces_all > m->n_b_faces) {
+  if (m->n_b_faces_appended < 0) {
     _add_hb_faces_cell_cocg_lsq(m, fvq, ma, ctx, cocg);
   }
 
@@ -10410,7 +10410,7 @@ cs_gradient_porosity_balance(int inc)
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
-  const cs_lnum_t n_b_faces_all = m->n_b_faces_all;
+  const cs_lnum_t n_b_faces_true = cs_mesh_n_b_faces_true(m);
   const cs_halo_t  *halo = m->halo;
 
   const cs_real_t *restrict cell_vol = mq->cell_vol;
@@ -10501,7 +10501,7 @@ cs_gradient_porosity_balance(int inc)
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
       /* Skip the IBM faces */
-      if (f_id >= n_b_faces_all)
+      if (f_id >= n_b_faces_true)
         return;  // skip this face, continue loop to next one.
 
       cs_lnum_t ii = b_face_cells[f_id];

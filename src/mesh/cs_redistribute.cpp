@@ -929,8 +929,10 @@ cs_redistribute(const int           cell_dest_rank[],
 
   CS_FREE(g_b_face_vtx_lst);
 
+  mesh->n_g_b_faces_appended = 0;
+  mesh->n_b_faces_appended = 0;
+
   mesh->n_b_faces = n_b_faces;
-  mesh->n_b_faces_all = mesh->n_b_faces;
 
   /* Cells */
 

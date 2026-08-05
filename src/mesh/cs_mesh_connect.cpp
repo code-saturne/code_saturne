@@ -120,8 +120,8 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
 
   /* Count the number of faces to convert */
 
-  cs_lnum_t n_max_faces =   mesh->n_i_faces
-                          + cs::max(mesh->n_b_faces, mesh->n_b_faces_all);
+  cs_lnum_t n_max_faces =   mesh->n_i_faces + mesh->n_b_faces
+                          - cs::min(mesh->n_b_faces_appended, 0);
   CS_MALLOC(extr_face_list, n_max_faces, cs_lnum_t);
 
   /* Initialize list as marker */
@@ -204,14 +204,12 @@ static void
 _order_nodal_faces(const cs_mesh_t  *mesh,
                    fvm_nodal_t      *extr_mesh)
 {
-  cs_lnum_t   face_id, i;
-
   cs_gnum_t  *num_glob_fac = nullptr;
 
   /* Count the number of faces to convert */
 
-  cs_lnum_t n_max_faces =   mesh->n_i_faces
-                          + cs::max(mesh->n_b_faces, mesh->n_b_faces_all);
+  cs_lnum_t n_max_faces =   mesh->n_i_faces + mesh->n_b_faces
+                          - cs::min(mesh->n_b_faces_appended, 0);
 
   /* In case of parallelism or face renumbering, sort faces by
      increasing global number */
@@ -221,24 +219,24 @@ _order_nodal_faces(const cs_mesh_t  *mesh,
     CS_MALLOC(num_glob_fac, n_max_faces, cs_gnum_t);
 
     if (mesh->global_b_face_num == nullptr) {
-      for (face_id = 0; face_id < mesh->n_b_faces; face_id++)
+      for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++)
         num_glob_fac[face_id] = face_id + 1;
     }
     else {
-      for (face_id = 0; face_id < mesh->n_b_faces; face_id++)
+      for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++)
         num_glob_fac[face_id] = mesh->global_b_face_num[face_id];
     }
 
     assert(mesh->n_g_b_faces + mesh->n_g_i_faces > 0);
 
     if (mesh->global_i_face_num == nullptr) {
-      for (face_id = 0, i = mesh->n_b_faces;
+      for (cs_lnum_t face_id = 0, i = mesh->n_b_faces;
            face_id < mesh->n_i_faces;
            face_id++, i++)
         num_glob_fac[i] = face_id + 1 + mesh->n_g_b_faces;
     }
     else {
-      for (face_id = 0, i = mesh->n_b_faces;
+      for (cs_lnum_t face_id = 0, i = mesh->n_b_faces;
            face_id < mesh->n_i_faces;
            face_id++, i++)
         num_glob_fac[i] = mesh->global_i_face_num[face_id] + mesh->n_g_b_faces;
@@ -294,7 +292,8 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
   cs_lnum_t  *cell_faces_idx = nullptr;
   cs_lnum_t  *cell_faces_val = nullptr;
 
-  const cs_lnum_t n_b_faces = mesh->n_b_faces_all;
+  const cs_lnum_t n_b_faces =   mesh->n_b_faces
+                              - cs::min(mesh->n_b_faces_appended, 0);
 
   /* Allocate and initialize cell ->faces index */
 
@@ -463,7 +462,8 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 
   fvm_nodal_t  *extr_mesh;
 
-  const cs_lnum_t n_b_faces = mesh->n_b_faces_all;
+  const cs_lnum_t n_b_faces =   mesh->n_b_faces
+                              - cs::min(mesh->n_b_faces_appended, 0);
 
   /* If a family has no attributes, it must be 1st by construction
      (as families are sorted when merging duplicates) */
@@ -758,7 +758,7 @@ cs_mesh_connect_vertices_to_cells(cs_mesh_t    *mesh,
                                   cs_lnum_t   **v2c)
 {
   const cs_lnum_t n_vertices = mesh->n_vertices;
-  const cs_lnum_t n_b_faces = mesh->n_b_faces_all;
+  const cs_lnum_t n_b_faces = cs_mesh_n_b_faces_true(mesh);
 
   /* Mark vertices which may be split (vertices lying on new boundary faces) */
 

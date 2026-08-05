@@ -2107,9 +2107,7 @@ cs_navsto_system_extra_post(void                 *input,
          there is a mesh modification. In particular, a removal of 2D
          extruded border faces*/
 
-      bool use_parent
-        = (cs_glob_mesh->n_g_b_faces_all > cs_glob_mesh->n_g_b_faces) ? false
-                                                                      : true;
+      bool use_parent = (cs_glob_mesh->n_g_b_faces_appended < 0) ? false : true;
 
       /* Mass flux is a scalar associated to each face (first interior faces
          then border faces */

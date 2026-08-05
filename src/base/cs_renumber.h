@@ -359,8 +359,8 @@ cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh);
  *        and will be ignored.
  *
  * Those faces will appear last, and the local number of boundary faces set
- * to the number of remaining faces; The mesh's n_b_faces_all and
- * n_g_b_faces_all allows accessing the full boundary faces list.
+ * to the number of remaining faces; cs_mesh_n_b_faces_true() allows accessing
+ * the full boundary faces list.
  *
  * \param[in, out]  mesh      pointer to global mesh structure
  * \param[in]       n_faces   number of selected faces

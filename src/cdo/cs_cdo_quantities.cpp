@@ -1581,7 +1581,7 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
 
   /* Is there a removal of boundary faces to speed-up 2D computations */
 
-  if (m->n_g_b_faces_all > m->n_g_b_faces) {
+  if (m->n_g_b_faces_appended < 0) {
     cdoq->remove_boundary_faces = true;
 
     /* The computation of the cell barycenter with the Mirtich algorithm is

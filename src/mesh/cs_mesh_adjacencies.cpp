@@ -297,7 +297,7 @@ _update_cell_hb_faces(cs_mesh_adjacencies_t  *ma)
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_lnum_t n_b_faces_all = m->n_b_faces_all;
+  const cs_lnum_t n_b_faces_true = cs_mesh_n_b_faces_true(m);
 
   /* (re)build cell -> boundary faces index */
 
@@ -314,7 +314,7 @@ _update_cell_hb_faces(cs_mesh_adjacencies_t  *ma)
   for (cs_lnum_t i = 0; i < n_cells; i++)
     c2b_count[i] = 0;
 
-  for (cs_lnum_t i = n_b_faces; i < n_b_faces_all; i++)
+  for (cs_lnum_t i = n_b_faces; i < n_b_faces_true; i++)
     c2b_count[b_face_cells[i]] += 1;
 
   c2b_idx[0] = 0;
@@ -330,7 +330,7 @@ _update_cell_hb_faces(cs_mesh_adjacencies_t  *ma)
   cs_mem_advise_set_read_mostly(ma->cell_hb_faces);
   cs_lnum_t *c2b = ma->cell_hb_faces;
 
-  for (cs_lnum_t i = n_b_faces; i < n_b_faces_all; i++) {
+  for (cs_lnum_t i = n_b_faces; i < n_b_faces_true; i++) {
     cs_lnum_t c_id = b_face_cells[i];
     c2b[c2b_idx[c_id] + c2b_count[c_id]] = i;
     c2b_count[c_id] += 1;
@@ -687,7 +687,7 @@ cs_mesh_adjacencies_update_mesh(void)
 
   cs_mesh_adjacencies_update_cell_b_faces();
 
-  if (m->n_b_faces_all > m->n_b_faces)
+  if (m->n_b_faces_appended < 0)
     _update_cell_hb_faces(ma);
 
   /* (re)build or map cell -> face connectivities */

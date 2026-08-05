@@ -1092,9 +1092,6 @@ _update_mesh(bool     restart_mode,
                                    false);
   }
 
-  cs_glob_mesh->n_b_faces_all = cs_glob_mesh->n_b_faces;
-  cs_glob_mesh->n_g_b_faces_all = cs_glob_mesh->n_g_b_faces;
-
   tbm->n_b_faces_ref = cs_glob_mesh->n_b_faces;
 
   /* Initialize extended connectivity, ghost cells and other remaining

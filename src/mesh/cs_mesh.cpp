@@ -36,7 +36,6 @@
 #include <string.h>
 #include <limits.h>
 #include <math.h>
-#include <assert.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -2029,8 +2028,8 @@ cs_mesh_create(void)
 
   mesh->n_g_free_faces = 0;
 
-  mesh->n_g_b_faces_all = 0;
-  mesh->n_b_faces_all = 0;
+  mesh->n_g_b_faces_appended = 0;
+  mesh->n_b_faces_appended = 0;
 
   mesh->verbosity = 1;
   mesh->modified = 0;
@@ -2154,8 +2153,8 @@ cs_mesh_reinit(cs_mesh_t  *mesh)
 
   mesh->n_g_free_faces = 0;
 
-  mesh->n_g_b_faces_all = 0;
-  mesh->n_b_faces_all = 0;
+  mesh->n_g_b_faces_appended = 0;
+  mesh->n_b_faces_appended = 0;
 
   mesh->verbosity = 1;
   mesh->modified = 0;
@@ -2980,6 +2979,29 @@ cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh)
 #endif
 
   return n_g_ghost_cells;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the global number of true boundary faces.
+ *
+ * Hidden boundary faces are accounted for, while appended faces are not,
+ * so that the number returned matches that of the actual connectivity.
+ *
+ * \param[in]  m  pointer to mesh
+ *
+ * \return  global number of true boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_mesh_n_g_b_faces_true(const cs_mesh_t  *m)
+{
+  int64_t n_g_b_faces_true =   (int64_t)(m->n_g_b_faces)
+                              - m->n_g_b_faces_appended;
+  assert(n_g_b_faces_true >= 0);
+
+  return  (cs_gnum_t)n_g_b_faces_true;
 }
 
 /*----------------------------------------------------------------------------

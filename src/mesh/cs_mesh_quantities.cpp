@@ -117,6 +117,25 @@ static int _n_computations = 0;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the number of boundary faces on which quantities should
+ *        be computed.
+ *
+ * THe largest value between true and true + appended faces is used.
+ *
+ * \param[in]   m  pointer to mesh
+ *
+ * \return  number of true boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+inline cs_lnum_t
+_n_b_faces_mq(const cs_mesh_t  *m)
+{
+  return (m->n_b_faces - cs::min(m->n_b_faces_appended, 0));
+}
+
 /*----------------------------------------------------------------------------
  * Project solid vertices to a plane
  *
@@ -173,7 +192,7 @@ _compute_corr_grad_lin(const cs_mesh_t       *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_with_ghosts = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
-  const cs_lnum_t n_b_faces = cs::max(m->n_b_faces, m->n_b_faces_all);
+  const cs_lnum_t n_b_faces = _n_b_faces_mq(m);
 
   const cs_alloc_mode_t amode = cs_alloc_mode_read_mostly;
 
@@ -1204,12 +1223,12 @@ _compute_cell_quantities(const cs_mesh_t      *mesh,
 {
   /* Mesh connectivity */
 
-  const  cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const  cs_lnum_t  n_b_faces = cs::max(mesh->n_b_faces, mesh->n_b_faces_all);
-  const  cs_lnum_t  n_cells = mesh->n_cells;
-  const  cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
-  const  cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
-  const  cs_lnum_t  *b_face_cells = mesh->b_face_cells;
+  const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_b_faces = _n_b_faces_mq(mesh);
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
+  const cs_lnum_t  *b_face_cells = mesh->b_face_cells;
 
   /* Checking */
 
@@ -1334,7 +1353,7 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
                          cs_real_3_t         cell_cen[])
 {
   const  cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  const  cs_lnum_t  n_b_faces = cs::max(mesh->n_b_faces, mesh->n_b_faces_all);
+  const  cs_lnum_t  n_b_faces = _n_b_faces_mq(mesh);
 
   const  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
@@ -1616,7 +1635,7 @@ _compute_cell_volume(const cs_mesh_t   *mesh,
                      const cs_real_3_t  cell_cen[],
                      cs_real_t          cell_vol[])
 {
-  const cs_lnum_t  n_b_faces = cs::max(mesh->n_b_faces, mesh->n_b_faces_all);
+  const cs_lnum_t  n_b_faces = _n_b_faces_mq(mesh);
   const cs_real_t  a_third = 1.0/3.0;
 
   /* Initialization */
@@ -2567,7 +2586,7 @@ _compute_unit_normals(const cs_mesh_t       *m,
                       cs_mesh_quantities_t  *mq)
 {
   cs_lnum_t  n_i_faces = m->n_i_faces;
-  cs_lnum_t  n_b_faces = cs::max(m->n_b_faces, m->n_b_faces_all);
+  const cs_lnum_t  n_b_faces = _n_b_faces_mq(m);
 
   const cs_real_3_t *i_face_normal = (const cs_real_3_t *)mq->i_face_normal;
   const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
@@ -2780,8 +2799,8 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
                                       cs_mesh_quantities_t  *mq)
 {
   cs_lnum_t  n_i_faces = m->n_i_faces;
-  cs_lnum_t  n_b_faces = cs::max(m->n_b_faces, m->n_b_faces_all);
-  cs_lnum_t  n_cells_with_ghosts = m->n_cells_with_ghosts;
+  const cs_lnum_t n_b_faces = _n_b_faces_mq(m);
+  const cs_lnum_t  n_cells_with_ghosts = m->n_cells_with_ghosts;
 
   const cs_alloc_mode_t amode = cs_alloc_mode_read_mostly;
 
@@ -4504,10 +4523,10 @@ void
 cs_mesh_quantities_compute(const cs_mesh_t       *m,
                            cs_mesh_quantities_t  *mq)
 {
-  cs_lnum_t  dim = m->dim;
-  cs_lnum_t  n_i_faces = m->n_i_faces;
-  cs_lnum_t  n_b_faces = cs::max(m->n_b_faces, m->n_b_faces_all);
-  cs_lnum_t  n_cells_with_ghosts = m->n_cells_with_ghosts;
+  const cs_lnum_t dim = m->dim;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = _n_b_faces_mq(m);
+  const cs_lnum_t n_cells_with_ghosts = m->n_cells_with_ghosts;
 
   const cs_alloc_mode_t amode = cs_alloc_mode_read_mostly;
 

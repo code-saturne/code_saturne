@@ -733,16 +733,18 @@ cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
     = (const cs_real_t *)mq_f->c_w_face_surf;
   const cs_real_3_t *restrict c_w_face_cog
     = (const cs_real_3_t *)mq_f->c_w_face_cog;
-  const cs_real_t *c_w_dist_inv = (const cs_real_t *)mq_f->c_w_dist_inv;
+  const cs_real_t *c_w_dist_inv = mq_f->c_w_dist_inv;
   const cs_real_3_t *cell_cen = mq_f->cell_cen;
 
   const cs_lnum_t n_b_faces_old = m->n_b_faces;
-  const cs_lnum_t n_g_b_faces_all = m->n_g_b_faces_all;
+  const cs_lnum_t n_g_b_faces_true = m->n_g_b_faces;
   const cs_lnum_t n_b_faces_tot = n_b_faces_old + n_ib_cells;
 
+  assert(m->n_b_faces_appended >= 0);
+
   m->n_b_faces = n_b_faces_tot;
-  cs_mesh_location_build(m,
-                         CS_MESH_LOCATION_BOUNDARY_FACES);
+  m->n_b_faces_appended += n_ib_cells;
+  cs_mesh_location_build(m, CS_MESH_LOCATION_BOUNDARY_FACES);
 
   /* Update bc_type */
   cs_boundary_conditions_ibm_create(n_ib_cells);
@@ -810,7 +812,7 @@ cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
     b_face_cells[f_id] = c_id;
 
     if (cs_glob_n_ranks > 1) {
-      g_b_face_num[f_id] = n_g_b_faces_all + face_gnum[i];
+      g_b_face_num[f_id] = n_g_b_faces_true + face_gnum[i];
     }
     else {
       g_b_face_num[f_id] = f_id+1;
@@ -840,7 +842,9 @@ cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
                               c_w_face_cog[c_id][2] - cell_cen[c_id][2]};
 
     // ---> ib_diipb = IF - (IF.NIJ)NIJ
-    cs_math_3_orthogonal_projection(b_face_u_normal[f_id], ib_vec_if, diipb[f_id]);
+    cs_math_3_orthogonal_projection(b_face_u_normal[f_id],
+                                    ib_vec_if,
+                                    diipb[f_id]);
 
     /*const int n_vtx = 0.5*(w_vtx_idx[c_id+1]-w_vtx_idx[c_id]);
     b_face_vtx_idx[f_id+1] = b_face_vtx_idx[f_id]+n_vtx;
