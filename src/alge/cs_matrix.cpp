@@ -992,8 +992,8 @@ _create_struct_csr_from_restrict_local(const cs_matrix_struct_csr_t  *src)
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_alloc_mode_csr(cs_matrix_struct_csr_t  *ms,
-                    cs_alloc_mode_t          alloc_mode)
+_set_alloc_mode_csr(cs_matrix_struct_csr_t            *ms,
+                    [[maybe_unused]] cs_alloc_mode_t   alloc_mode)
 {
   if (ms->_row_index != nullptr) {
     cs_set_alloc_mode_r(ms->_row_index, alloc_mode);

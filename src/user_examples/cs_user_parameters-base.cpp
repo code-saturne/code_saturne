@@ -816,13 +816,11 @@ cs_user_model(void)
 
   /* Update period of the radiation module */
 
-  cs_time_control_init_by_time_step
-    (&( rt_params->time_control),
-     - 1,     /* nt_start */
-     -1,      /* nt_end */
-     5,       /* interval */
-     true,    /* at start */
-     false);  /* at end */
+  rt_params->time_control = cs_time_control_t(-1,      // nt_start
+                                              -1,      // nt_end
+                                              5,       // interval
+                                              true,    // at start
+                                              false);  // at end
 
   /* Quadrature Sn (n(n+2) directions)
 
@@ -983,9 +981,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 
     cs_velocity_pressure_param_t *vp_param
       = cs_get_glob_velocity_pressure_param();
-    cs_time_control_t *vp_tc =
-      &(vp_param->time_control);
-    cs_time_control_init_by_time_step(vp_tc, -1, -1, -1, false, false);
+    vp_param->time_control = cs_time_control_t(-1, -1, -1, false, false);
   }
   /*! [param_iccvfg] */
 
@@ -1380,8 +1376,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
   {
     cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(t));
 
-    cs_time_control_t tc;
-    cs_time_control_init_by_time_step(&tc, -1, -1, -1, false, false);
+    cs_time_control_t tc(-1, -1, -1, false, false);
     cs_equation_time_control_add(eqp, &tc, false); /* Real copy and not shallow copy */
   }
 

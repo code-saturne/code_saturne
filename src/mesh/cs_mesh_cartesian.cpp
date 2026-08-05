@@ -363,7 +363,8 @@ _cs_mesh_cartesian_create_direction(cs_mesh_cartesian_law_t law,
       np = ncells / 2;
       cs_real_t rho_np = pow(rho, np);
       dx0 = 0.5 * dir_len * (rho - 1.) / (rho_np - 1.);
-    } else {
+    }
+    else {
       np = (ncells - 1) / 2;
       cs_real_t rho_np = pow(rho, np);
       cs_real_t rho_np1 = rho_np * rho;
@@ -513,10 +514,12 @@ _add_ny_face(cs_mesh_cartesian_params_t *mp,
   if (j == 0) {
     c_id2 = c0 + i + j*nx + k*nx*ny;
     mb->face_gc_id[f_id] = 4 + mp->gc_id_shift;
-  } else if (j == ny) {
+  }
+  else if (j == ny) {
     c_id1 = c0 + i + (j-1)*nx + k*nx*ny;
     mb->face_gc_id[f_id] = 5 + mp->gc_id_shift;
-  } else {
+  }
+  else {
     c_id1 = c0 + i + (j-1)*nx + k*nx*ny;
     c_id2 = c0 + i + j*nx     + k*nx*ny;
   }
@@ -585,10 +588,12 @@ _add_nz_face(cs_mesh_cartesian_params_t *mp,
   if (k == 0) {
     c_id2 = c0 + i + j*nx + k*nx*ny;
     mb->face_gc_id[f_id] = 6 + mp->gc_id_shift;
-  } else if (k == nz) {
+  }
+  else if (k == nz) {
     c_id1 = c0 + i + j*nx + (k-1)*nx*ny;
     mb->face_gc_id[f_id] = 7 + mp->gc_id_shift;
-  } else {
+  }
+  else {
     c_id1 = c0 + i + j*nx + (k-1)*nx*ny;
     c_id2 = c0 + i + j*nx + k*nx*ny;
   }
@@ -937,8 +942,8 @@ cs_mesh_cartesian_define_from_csv(const char  *name,
       /* First and third lines contain header or are empty */
       ln += 1;
       continue;
-
-    } else if (ln == 1) {
+    }
+    else if (ln == 1) {
       /* Second line contains values : <nx>;<ny>;<nz> */
       sscanf(line, "%d;%d;%d", &nc[0], &nc[1], &nc[2]);
 
@@ -947,7 +952,6 @@ cs_mesh_cartesian_define_from_csv(const char  *name,
 
       ln += 1;
       continue;
-
     }
     else {
       /* Fourth line and beyond contain values for vertices coordinates */
@@ -1293,18 +1297,22 @@ _ogrid_g_o(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t nr, cs_gnum_t s, cs_gnum_t r)
     if (s < nx) {
       i_val = s;
       j_val = 0;
-    } else if (s < nx + ny) {
+    }
+    else if (s < nx + ny) {
       i_val = nx;
       j_val = s - nx;
-    } else if (s < 2 * nx + ny) {
+    }
+    else if (s < 2 * nx + ny) {
       i_val = 2 * nx + ny - s;
       j_val = ny;
-    } else {
+    }
+    else {
       i_val = 0;
       j_val = 2 * nx + 2 * ny - s;
     }
     return _ogrid_g_c(nx, ny, i_val, j_val);
-  } else {
+  }
+  else {
     return n_center + (r - 1) * n_gamma + s;
   }
 }
@@ -1315,9 +1323,11 @@ _ogrid_g_o(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t nr, cs_gnum_t s, cs_gnum_t r)
 /*----------------------------------------------------------------------------*/
 
 static cs_gnum_t
-_ogrid_c_c(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t i, cs_gnum_t j)
+_ogrid_c_c(cs_gnum_t                   nx,
+           [[maybe_unused]] cs_gnum_t  ny,
+           cs_gnum_t                   i,
+           cs_gnum_t                   j)
 {
-  CS_UNUSED(ny);
   return i + nx * j;
 }
 
@@ -1500,23 +1510,21 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
             y_int = mp->params[1]->s[j_val];
           }
 
-          cs_real_t u_val = 0.0;
           cs_real_t theta = 0.0;
 
           if (s < nx) {
-            u_val = -1.0 + 2.0 * (cs_real_t)s / (cs_real_t)nx;
             theta = -3.0 * cs_math_pi / 4.0 + (cs_real_t)s / (cs_real_t)nx * cs_math_pi / 2.0;
-          } else if (s < nx + ny) {
+          }
+          else if (s < nx + ny) {
             cs_gnum_t p = s - nx;
-            u_val = -1.0 + 2.0 * (cs_real_t)p / (cs_real_t)ny;
             theta = -cs_math_pi / 4.0 + (cs_real_t)p / (cs_real_t)ny * cs_math_pi / 2.0;
-          } else if (s < 2 * nx + ny) {
+          }
+          else if (s < 2 * nx + ny) {
             cs_gnum_t p = s - (nx + ny);
-            u_val = 1.0 - 2.0 * (cs_real_t)p / (cs_real_t)nx;
             theta = cs_math_pi / 4.0 + (cs_real_t)p / (cs_real_t)nx * cs_math_pi / 2.0;
-          } else {
+          }
+          else {
             cs_gnum_t p = s - (2 * nx + ny);
-            u_val = 1.0 - 2.0 * (cs_real_t)p / (cs_real_t)ny;
             theta = 3.0 * cs_math_pi / 4.0 + (cs_real_t)p / (cs_real_t)ny * cs_math_pi / 2.0;
           }
 
@@ -1565,11 +1573,13 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
             cs_gnum_t s_val = 2 * nx + 2 * ny - 1 - j;
             c_id1 = G_C(_ogrid_c_o(nx, ny, s_val, 0), k);
             c_id2 = G_C(_ogrid_c_c(nx, ny, 0, j), k);
-          } else if (i == nx) {
+          }
+          else if (i == nx) {
             cs_gnum_t s_val = nx + j;
             c_id1 = G_C(_ogrid_c_c(nx, ny, nx-1, j), k);
             c_id2 = G_C(_ogrid_c_o(nx, ny, s_val, 0), k);
-          } else {
+          }
+          else {
             c_id1 = G_C(_ogrid_c_c(nx, ny, i-1, j), k);
             c_id2 = G_C(_ogrid_c_c(nx, ny, i, j), k);
           }
@@ -1604,11 +1614,13 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
             cs_gnum_t s_val = i;
             c_id1 = G_C(_ogrid_c_o(nx, ny, s_val, 0), k);
             c_id2 = G_C(_ogrid_c_c(nx, ny, i, 0), k);
-          } else if (j == ny) {
+          }
+          else if (j == ny) {
             cs_gnum_t s_val = 2 * nx + ny - 1 - i;
             c_id1 = G_C(_ogrid_c_c(nx, ny, i, ny-1), k);
             c_id2 = G_C(_ogrid_c_o(nx, ny, s_val, 0), k);
-          } else {
+          }
+          else {
             c_id1 = G_C(_ogrid_c_c(nx, ny, i, j-1), k);
             c_id2 = G_C(_ogrid_c_c(nx, ny, i, j), k);
           }
