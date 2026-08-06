@@ -308,7 +308,10 @@ cs_time_stepping_rules_manager::parse_mappings_()
 
   // Parser ExtrapolationMethod enum
   cs_tree_node_t *enum_map
-    = cs_tree_find_node(mappings, "EnumMapping[@Name='ExtrapolationMethod']");
+    = cs_tree_get_node_with_tag(mappings,
+                                         "EnumMapping",
+                                         "Name",
+                                         "ExtrapolationMethod");
   if (enum_map != nullptr) {
     cs_tree_node_t *entry = cs_tree_node_get_child(enum_map, "Entry");
     while (entry != nullptr) {
