@@ -1,20 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Copyright (C) 1998-2026 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
 <ModuleRules version="1.0" module="TurbulentFlux">
   <!--
-    TurbulentFluxRules.xml
-    Source de verite unique pour les modeles de flux turbulent des scalaires.
-    Centralise les regles extraites de :
-    - cs_setup.cpp : creation des champs {scalar}_turbulent_flux et {scalar}_alpha
+    Rules for scalar turbulent flux models.
+    Centralises rules from:
+    - cs_setup.cpp : create {scalar}_turbulent_flux and {scalar}_alpha fields
     - cs_gui.cpp   : _variable_turbulent_flux_model()
-    Lu par :
-    - kernel C++ : cs_turbulent_flux_rules_manager
-    - GUI Python  : NumericalParamEquationModel (ElementTree)
-    
+    Used by:
+    - Solver : cs_turbulent_flux_rules_manager
+    - GUI    : NumericalParamEquationModel (ElementTree)
   -->
 
   <!-- =========================================================== -->
-  <!-- DEFINITIONS                                                   -->
+  <!-- Definitions                                                 -->
   <!-- =========================================================== -->
+
   <Definitions>
 
     <TypeDef name="TurbulentFluxModel">
@@ -34,9 +52,9 @@
 
     <TypeDef name="TurbulenceCompatibility">
       <Description>
-        SGDH fonctionne avec tous les modeles de turbulence.
-        GGDH, AFM, DFM necessitent un modele Rij (second ordre).
-        EB-GGDH, EB-AFM, EB-DFM necessitent Rij-EBRSM.
+        SGDH is usable with all turbulence models.
+        GGDH, AFM, DFM require an RSM model(Rij, second order).
+        EB-GGDH, EB-AFM, EB-DFM require Rij-EBRSM.
       </Description>
       <Value>Rij-epsilon</Value>
       <Value>Rij-SSG</Value>
@@ -46,25 +64,26 @@
   </Definitions>
 
   <!-- =========================================================== -->
-  <!-- REGLES DE CREATION DES CHAMPS                                -->
-  <!-- {scalar} est remplace par le nom du scalaire utilisateur     -->
+  <!-- Field creation rules                                        -->
+  <!-- {scalar} is replaced by the user scalar name                -->
   <!-- =========================================================== -->
+
   <FieldCreationRules>
 
-    <!-- SGDH (0) : pas de champ supplementaire cree -->
+    <!-- SGDH (0) : no additional field -->
     <Rule Model="SGDH" NumericValue="0">
       <Description>
-        SGDH : Simple Gradient Diffusion Hypothesis.
-        Pas de champ supplementaire cree.
-        Fonctionne avec tous les modeles de turbulence.
+        SGDH: Simple Gradient Diffusion Hypothesis.
+        Requires no additional field.
+        Usable with all turbulence models.
       </Description>
     </Rule>
 
-    <!-- GGDH (10) : {scalar}_turbulent_flux comme propriete -->
+    <!-- GGDH (10) : {scalar}_turbulent_flux property -->
     <Rule Model="GGDH" NumericValue="10">
       <Description>
-        GGDH : Generalized Gradient Diffusion Hypothesis.
-        Necessite un modele de turbulence Rij (second ordre).
+        GGDH: Generalized Gradient Diffusion Hypothesis.
+        Requires an Rij turbulence model (second order).
       </Description>
       <Field NameTemplate="{scalar}_turbulent_flux"
              LabelTemplate="{scalar} Turbulent Flux"
@@ -76,9 +95,9 @@
     <!-- EB-GGDH (11) : {scalar}_turbulent_flux + {scalar}_alpha -->
     <Rule Model="EB-GGDH" NumericValue="11">
       <Description>
-        EB-GGDH : Elliptic Blending GGDH.
-        Necessite Rij-EBRSM.
-        Cree un champ alpha pour l equation elliptique.
+        EB-GGDH: Elliptic Blending GGDH.
+        Requires Rij-EBRSM.
+        Solves an elliptical equation on a scalar_alpha field.
       </Description>
       <Field NameTemplate="{scalar}_turbulent_flux"
              LabelTemplate="{scalar} Turbulent Flux"
@@ -91,11 +110,11 @@
              Type="variable"/>
     </Rule>
 
-    <!-- AFM (20) : {scalar}_turbulent_flux comme propriete -->
+    <!-- AFM (20) : {scalar}_turbulent_flux property -->
     <Rule Model="AFM" NumericValue="20">
       <Description>
-        AFM : Algebraic Flux Model.
-        Necessite un modele de turbulence Rij (second ordre).
+        AFM: Algebraic Flux Model.
+        Requires an Rij turbulence model (second order).
       </Description>
       <Field NameTemplate="{scalar}_turbulent_flux"
              LabelTemplate="{scalar} Turbulent Flux"
@@ -107,9 +126,9 @@
     <!-- EB-AFM (21) : {scalar}_turbulent_flux + {scalar}_alpha -->
     <Rule Model="EB-AFM" NumericValue="21">
       <Description>
-        EB-AFM : Elliptic Blending AFM.
-        Necessite Rij-EBRSM.
-        Cree un champ alpha pour l equation elliptique.
+        EB-AFM: Elliptic Blending GGDH.
+        Requires Rij-EBRSM.
+        Solves an elliptical equation on a scalar_alpha field.
       </Description>
       <Field NameTemplate="{scalar}_turbulent_flux"
              LabelTemplate="{scalar} Turbulent Flux"
@@ -122,12 +141,12 @@
              Type="variable"/>
     </Rule>
 
-    <!-- DFM (30) : {scalar}_turbulent_flux comme variable couplee -->
+    <!-- DFM (30) : {scalar}_turbulent_flux elliptical equation variable -->
     <Rule Model="DFM" NumericValue="30">
       <Description>
-        DFM : Differential Flux Model.
-        Necessite un modele de turbulence Rij (second ordre).
-        Cree une variable vectorielle couplee avec diffusivite anisotrope.
+        DFM: Differential Flux Model.
+        Requires an Rij turbulence model (second order).
+        Creates a coupled vector variable with anisotropic diffusivity.
       </Description>
       <Field NameTemplate="{scalar}_turbulent_flux"
              LabelTemplate="{scalar} Turbulent Flux"
@@ -141,9 +160,10 @@
     <!-- EB-DFM (31) : {scalar}_turbulent_flux + {scalar}_alpha -->
     <Rule Model="EB-DFM" NumericValue="31">
       <Description>
-        EB-DFM : Elliptic Blending DFM.
-        Necessite Rij-EBRSM.
-        Cree une variable vectorielle couplee + champ alpha elliptique.
+        EB-DFM: Elliptic Blending DFM.
+        Requires Rij-EBRSM.
+        Creates a coupled vector variable with anisotropic diffusivity
+        and solves an elliptical equation on a scalar_alpha field.
       </Description>
       <Field NameTemplate="{scalar}_turbulent_flux"
              LabelTemplate="{scalar} Turbulent Flux"

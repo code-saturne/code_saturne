@@ -1,27 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<!--
+  Copyright (C) 1998-2026 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
 <ModuleRules version="1.0" module="BoundaryConditions">
 
   <!--
-    BoundaryConditionsRules.xml
-    Centralized rules for boundary conditions
-    de Code_Saturne.
+    Centralized rules for boundary conditions of code_saturne.
 
-    Lu par :
-    - kernel C++ : cs_boundary_conditions_rules_manager
-    - GUI Python  : BoundaryConditionsRulesManager (ElementTree)
-
-    
+    - Solver: cs_boundary_conditions_rules_manager
+    - GUI: BoundaryConditionsRulesManager (ElementTree)
   -->
 
   <!-- =========================================================== -->
-  <!-- DEFINITIONS                                                   -->
-  <!-- Types valides pour validation GUI et kernel                   -->
+  <!-- Definitions                                                 -->
+  <!-- Valid types for GUI and kernel validation                   -->
   <!-- =========================================================== -->
 
   <Definitions>
 
-    <!-- Types de conditions aux limites -->
+    <!-- BC types -->
     <TypeDef name="BCNature">
       <Value>inlet</Value>
       <Value>wall</Value>
@@ -58,7 +71,7 @@
       <Value>formula</Value>
     </TypeDef>
 
-    <!-- Types de conditions aux limites pour les scalaires -->
+    <!-- BC types for scalars -->
     <TypeDef name="ScalarBC">
       <Value>dirichlet</Value>
       <Value>neumann</Value>
@@ -67,7 +80,7 @@
       <Value>neumann_implicit</Value>
     </TypeDef>
 
-    <!-- Types de conditions compressibles -->
+    <!-- Compressible BC types -->
     <TypeDef name="CompressibleInletChoice">
       <Value>imposed_inlet</Value>
       <Value>subsonic_inlet_PH</Value>
@@ -78,7 +91,7 @@
       <Value>subsonic_outlet</Value>
     </TypeDef>
 
-    <!-- Types de conditions pour la combustion -->
+    <!-- Combustion BC types -->
     <TypeDef name="CombustionInletChoice">
       <Value>oxydant</Value>
       <Value>fuel</Value>
@@ -89,8 +102,8 @@
   </Definitions>
 
   <!-- =========================================================== -->
-  <!-- VALIDATION RULES                                              -->
-  <!-- Validation rules for each BC type                  -->
+  <!-- VALIDATION RULES                                            -->
+  <!-- Validation rules for each BC type                           -->
   <!-- =========================================================== -->
 
   <ValidationRules>
@@ -109,7 +122,7 @@
     </Rule>
 
     <!-- Turbulence inlet rules: model to BC variables mapping -->
-    <!-- Extrait de cs_gui_boundary_conditions.cpp lignes 2826-3000 -->
+    <!-- See cs_gui_boundary_conditions.cpp -->
     <Rule Type="TurbulenceInlet" Model="k-epsilon">
       <NBoundaryValues>2</NBoundaryValues>
       <MEGFunction>turbulence_ke</MEGFunction>
@@ -199,7 +212,7 @@
   </ValidationRules>
 
   <!-- =========================================================== -->
-  <!-- DEFAULTS                                                      -->
+  <!-- Defaults                                                    -->
   <!-- =========================================================== -->
 
   <Defaults>
@@ -211,8 +224,7 @@
   </Defaults>
 
   <!-- =========================================================== -->
-  <!-- MAPPINGS                                                      -->
-  <!-- Correspondances entre noms XML et flags C++                  -->
+  <!-- Mappings between XML names and C++ flags                    -->
   <!-- =========================================================== -->
 
   <Mappings>
@@ -232,10 +244,11 @@
   </Mappings>
 
   <!-- =========================================================== -->
-  <!-- BC CODE MAPPINGS                                              -->
-  <!-- boundary_type -> icodcl (legacy solver codes)                -->
-  <!-- Source: cs_boundary_conditions.cpp                           -->
+  <!-- BC CODE MAPPINGS                                            -->
+  <!-- boundary_type -> icodcl (legacy solver codes)               -->
+  <!-- Source: cs_boundary_conditions.cpp                          -->
   <!-- =========================================================== -->
+
   <BCCodeMappings>
     <BCCodeMapping Name="icodcl">
       <Entry BoundaryType="CS_BOUNDARY_WALL"             icodcl="5"  Label="Smooth wall"/>

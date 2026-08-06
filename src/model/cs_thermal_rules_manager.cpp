@@ -778,12 +778,12 @@ cs_thermal_rules_manager::get_default_double(const char *key) const
  * Singleton
  *============================================================================*/
 
-static cs_thermal_rules_manager *g_thermal_rules_manager = nullptr;
+static cs_thermal_rules_manager *_g_thermal_rules_manager = nullptr;
 
 cs_thermal_rules_manager*
 cs_get_thermal_rules_manager(bool  no_instanciate)
 {
-  if (g_thermal_rules_manager == nullptr  && no_instanciate == false) {
+  if (_g_thermal_rules_manager == nullptr  && no_instanciate == false) {
     // Search for ThermalRules.xml in the installation directory
     char rules_path[1024];
     const char *install_prefix = cs_base_get_pkgdatadir();
@@ -795,9 +795,9 @@ cs_get_thermal_rules_manager(bool  no_instanciate)
       snprintf(rules_path, 1024, "ThermalRules.xml");
     }
 
-    g_thermal_rules_manager = new cs_thermal_rules_manager(rules_path);
+    _g_thermal_rules_manager = new cs_thermal_rules_manager(rules_path);
   }
-  return g_thermal_rules_manager;
+  return _g_thermal_rules_manager;
 }
 
 /*----------------------------------------------------------------------------*/

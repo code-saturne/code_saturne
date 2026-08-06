@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Copyright (C) 1998-2026 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
 <ModuleRules version="1.0" module="Turbulence">
-<!--passage en snake case les variables et les -->
 
 <Definitions>
   <TypeDef name="TurbulenceModel">
@@ -22,7 +40,7 @@
   </TypeDef>
 
   <!--test comment after correcting cs_xml_tree-->
-  
+
   <TypeDef name="TurbulenceVariable">
     <Value>k</Value>
     <Value>epsilon</Value>
@@ -38,13 +56,12 @@
     <Value>omega</Value>
     <Value>nu_tilda</Value>
   </TypeDef>
-  
+
   <TypeDef name="TurbulenceProperty">
     <Value>turbulent_viscosity</Value>
     <Value>smagorinsky_constant^2</Value>
   </TypeDef>
 </Definitions>
-
 
 <TurbulenceModels>
   <TurbulenceModel Name="off">
@@ -58,7 +75,7 @@
       <DiffusionModel>NONE</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="mixing_length">
     <Enum>10</Enum>
     <Description>Mixing length model</Description>
@@ -70,7 +87,7 @@
       <DiffusionModel>NONE</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="k-epsilon">
     <Enum>20</Enum>
     <Description>Standard k-epsilon model</Description>
@@ -82,7 +99,7 @@
       <DiffusionModel>ISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="k-epsilon-PL">
     <Enum>21</Enum>
     <Description>k-epsilon with linear production</Description>
@@ -94,7 +111,7 @@
       <DiffusionModel>ISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="Rij-epsilon">
     <Enum>30</Enum>
     <Description>Rij-epsilon LRR model</Description>
@@ -106,7 +123,7 @@
       <DiffusionModel>ANISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="Rij-SSG">
     <Enum>31</Enum>
     <Description>Rij-epsilon SSG model</Description>
@@ -118,7 +135,7 @@
       <DiffusionModel>ANISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="Rij-EBRSM">
     <Enum>32</Enum>
     <Description>Rij-epsilon EBRSM model</Description>
@@ -154,7 +171,7 @@
       <DiffusionModel>ISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="LES_dynamique">
     <Enum>41</Enum>
     <Description>LES dynamic Smagorinsky model</Description>
@@ -166,7 +183,7 @@
       <DiffusionModel>ISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="LES_WALE">
     <Enum>42</Enum>
     <Description>LES WALE model</Description>
@@ -178,7 +195,7 @@
       <DiffusionModel>ISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="v2f-phi">
     <Enum>50</Enum>
     <Description>v2f phi-model</Description>
@@ -190,7 +207,7 @@
       <DiffusionModel>ISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="v2f-BL-v2/k">
     <Enum>51</Enum>
     <Description>v2f BL-v2/k model</Description>
@@ -202,7 +219,7 @@
       <DiffusionModel>ISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="k-omega-SST">
     <Enum>60</Enum>
     <Description>k-omega SST model</Description>
@@ -214,7 +231,7 @@
       <DiffusionModel>ISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
-  
+
   <TurbulenceModel Name="Spalart-Allmaras">
     <Enum>70</Enum>
     <Description>Spalart-Allmaras one equation model</Description>
@@ -228,7 +245,6 @@
   </TurbulenceModel>
 </TurbulenceModels>
 
-
 <ModelGroups>
   <Group Name="RANS">
     <Model>k-epsilon</Model>
@@ -241,19 +257,19 @@
     <Model>k-omega-SST</Model>
     <Model>Spalart-Allmaras</Model>
   </Group>
-  
+
   <Group Name="LES">
     <Model>LES_Smagorinsky</Model>
     <Model>LES_dynamique</Model>
     <Model>LES_WALE</Model>
   </Group>
-  
+
   <Group Name="RijModels">
     <Model>Rij-epsilon</Model>
     <Model>Rij-SSG</Model>
     <Model>Rij-EBRSM</Model>
   </Group>
-  
+
   <Group Name="TwoEquations">
     <Model>k-epsilon</Model>
     <Model>k-epsilon-PL</Model>
@@ -261,45 +277,44 @@
   </Group>
 </ModelGroups>
 
-
 <ValidationRules>
-  
+
   <Rule Type="RequiredComponents" Model="mixing_length">
     <RequireProperty Name="turbulent_viscosity"/>
     <RequireMixingLength/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="k-epsilon">
     <RequireVariable Name="k"/>
     <RequireVariable Name="epsilon"/>
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="k-epsilon-PL">
     <RequireVariable Name="k"/>
     <RequireVariable Name="epsilon"/>
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="Rij-epsilon">
     <RequireVariable Name="rij"/>
     <RequireVariable Name="epsilon"/>
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="Rij-SSG">
     <RequireVariable Name="rij"/>
     <RequireVariable Name="epsilon"/>
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="Rij-EBRSM">
     <RequireVariable Name="rij"/>
     <RequireVariable Name="epsilon"/>
     <RequireVariable Name="alpha"/>
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="Rij-omega">
     <RequireVariable Name="rij"/>
     <RequireVariable Name="omega"/>
@@ -312,7 +327,7 @@
     <RequireVariable Name="phi"/>
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="v2f-BL-v2/k">
     <RequireVariable Name="k"/>
     <RequireVariable Name="epsilon"/>
@@ -320,59 +335,58 @@
     <RequireVariable Name="alpha"/>
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="k-omega-SST">
     <RequireVariable Name="k"/>
     <RequireVariable Name="omega"/>
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="Spalart-Allmaras">
     <RequireVariable Name="nu_tilda"/>
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="LES_Smagorinsky">
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="LES_dynamique">
     <RequireProperty Name="smagorinsky_constant^2"/>
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
+
   <Rule Type="RequiredComponents" Model="LES_WALE">
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
-  
-  
+
   <Rule Type="WallFunction" Model="off">
     <Allowed>0</Allowed>
     <Default>0</Default>
   </Rule>
-  
+
   <Rule Type="WallFunction" Model="mixing_length">
     <Allowed>2</Allowed>
     <Default>2</Default>
   </Rule>
-  
+
   <Rule Type="WallFunction" Model="v2f-phi">
     <Allowed>0</Allowed>
     <Allowed>3</Allowed>
     <Default>3</Default>
   </Rule>
-  
+
   <Rule Type="WallFunction" Model="v2f-BL-v2/k">
     <Allowed>0</Allowed>
     <Default>0</Default>
   </Rule>
-  
+
   <Rule Type="WallFunction" Model="Rij-EBRSM">
     <Allowed>0</Allowed>
     <Allowed>7</Allowed>
     <Default>7</Default>
   </Rule>
-  
+
   <Rule Type="WallFunction" Model="k-omega-SST">
     <Allowed>0</Allowed>
     <Allowed>2</Allowed>
@@ -381,12 +395,12 @@
     <Allowed>7</Allowed>
     <Default>3</Default>
   </Rule>
-  
+
   <Rule Type="WallFunction" Model="Spalart-Allmaras">
     <Allowed>2</Allowed>
     <Default>2</Default>
   </Rule>
-  
+
   <Rule Type="WallFunction" Group="TwoEquations">
     <Allowed>0</Allowed>
     <Allowed>2</Allowed>
@@ -394,7 +408,7 @@
     <Allowed>4</Allowed>
     <Default>3</Default>
   </Rule>
-  
+
   <Rule Type="WallFunction" Group="RijModels">
     <Allowed>0</Allowed>
     <Allowed>2</Allowed>
@@ -402,13 +416,11 @@
     <Allowed>4</Allowed>
     <Default>3</Default>
   </Rule>
-  
- 
+
   <Rule Type="GravityConstraint" Model="Spalart-Allmaras">
     <ForceValue>off</ForceValue>
   </Rule>
-  
-  
+
   <Rule Type="LESConstraints" Group="LES">
     <ForbidWallFunction/>
     <RemoveWallFunctionNode/>
@@ -424,7 +436,6 @@
   <Rule Type="RemoveWallFunctionNode" Model="Spalart-Allmaras"/>
 </ValidationRules>
 
-
 <Validations>
 
   <Constraint Target="iwallf" Type="range">
@@ -432,19 +443,18 @@
     <MaxValue>8</MaxValue>
     <ErrorMessage>Wall function type must be between 0 and 8</ErrorMessage>
   </Constraint>
-  
+
   <Constraint Target="iclkep" Type="range">
     <MinValue>0</MinValue>
     <MaxValue>2</MaxValue>
     <ErrorMessage>iclkep must be between 0 and 2</ErrorMessage>
   </Constraint>
-  
+
   <Constraint Target="ikecou" Type="range">
     <MinValue>0</MinValue>
     <MaxValue>2</MaxValue>
     <ErrorMessage>ikecou must be between 0 and 2</ErrorMessage>
   </Constraint>
-  
 
   <Constraint Target="iwallf" Type="must_be_in">
     <ValidValues>
@@ -456,7 +466,6 @@
     </ValidValues>
     <ErrorMessage>iwallf must be one of: 2, 3, 5, 6, 7</ErrorMessage>
   </Constraint>
-  
 
   <Constraint Target="ikecou" Type="must_equal_zero_for_models">
     <Value>0</Value>
@@ -478,7 +487,6 @@
   </Constraint>
 </Validations>
 
-
 <Defaults>
   <Default Key="turbulence_model" Value="k-epsilon-PL"/>
   <Default Key="length_scale" Value="1.0"/>
@@ -491,16 +499,13 @@
   <Default Key="time_scheme_order" Value="1"/>
 </Defaults>
 
-
 <Mappings>
 </Mappings>
-
 
 <GUIRules>
   <ModuleGUI Name="TurbulenceGUI">
   </ModuleGUI>
 </GUIRules>
-
 
 <OutputModule>
   <FieldDefaults>
@@ -509,20 +514,20 @@
       <PostprocessingRecording>on</PostprocessingRecording>
       <ProbesRecording>on</ProbesRecording>
     </FieldType>
-    
+
     <FieldType Name="property">
       <ListingPrinting>off</ListingPrinting>
       <PostprocessingRecording>on</PostprocessingRecording>
       <ProbesRecording>off</ProbesRecording>
     </FieldType>
-    
+
     <FieldType Name="time_average">
       <ListingPrinting>on</ListingPrinting>
       <PostprocessingRecording>on</PostprocessingRecording>
       <ProbesRecording>on</ProbesRecording>
     </FieldType>
   </FieldDefaults>
-  
+
   <BoundaryVariables>
     <BoundaryVar Name="stress">
       <Label>Stress</Label>
@@ -533,7 +538,7 @@
         <FieldType>CDO_velocity</FieldType>
       </ForbiddenFor>
     </BoundaryVar>
-    
+
     <BoundaryVar Name="stress_tangential">
       <Label>Stress, tangential</Label>
       <DefaultStatus>off</DefaultStatus>
@@ -543,7 +548,7 @@
         <FieldType>CDO_velocity</FieldType>
       </ForbiddenFor>
     </BoundaryVar>
-    
+
     <BoundaryVar Name="stress_normal">
       <Label>Stress, normal</Label>
       <DefaultStatus>off</DefaultStatus>
@@ -553,7 +558,7 @@
         <FieldType>CDO_velocity</FieldType>
       </ForbiddenFor>
     </BoundaryVar>
-    
+
     <BoundaryVar Name="yplus">
       <Label>Yplus</Label>
       <DefaultStatus>on</DefaultStatus>
@@ -563,19 +568,19 @@
         <FieldType>CDO_velocity</FieldType>
       </ForbiddenFor>
     </BoundaryVar>
-    
+
     <BoundaryVar Name="thermal_flux">
       <Label>Thermal flux</Label>
       <DefaultStatus>on</DefaultStatus>
       <RequiresThermalModel>true</RequiresThermalModel>
     </BoundaryVar>
-    
+
     <BoundaryVar Name="boundary_layer_nusselt">
       <Label>Boundary layer Nusselt</Label>
       <DefaultStatus>off</DefaultStatus>
       <RequiresThermalModel>true</RequiresThermalModel>
     </BoundaryVar>
-    
+
     <BoundaryVar Name="tplus">
       <DefaultStatus>on</DefaultStatus>
       <RequiresThermalModel>true</RequiresThermalModel>
@@ -585,14 +590,14 @@
         <When Type="total_energy" Label="Eplus"/>
       </LabelByThermalVariable>
     </BoundaryVar>
-    
+
     <BoundaryVar Name="boundary_temperature">
       <Label>Boundary temperature</Label>
       <DefaultStatus>on</DefaultStatus>
       <RequiresThermalModel>true</RequiresThermalModel>
     </BoundaryVar>
   </BoundaryVariables>
-  
+
   <Mappings>
     <TensorComponents Name="rij">
       <Component Index="0" Name="r11" Label="R11"/>
@@ -603,7 +608,7 @@
       <Component Index="5" Name="r13" Label="R13"/>
     </TensorComponents>
   </Mappings>
-  
+
   <OutputDefaults>
     <Default Key="listing_frequency" Value="1"/>
     <Default Key="probe_frequency" Value="1"/>

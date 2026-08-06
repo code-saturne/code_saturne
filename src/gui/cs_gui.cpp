@@ -1711,17 +1711,15 @@ _read_diffusivity(void)
 
     double visls_0 = fprops->lambda0;
 
-    /* =========================================================================
-     * MODIF XML : La formule de diffusivité (lambda ou lambda/cp) est lue
-     * depuis ThermalRules.xml via get_diffusivity_formula().
-     * Fallback : comportement original si XML non disponible.
-     * ========================================================================= */
+    /* The diffusivity forumula is read from ThermalRules.xml via
+       get_diffusivity_formula().
+       Fallback: original behavior if rules not available. */
 
     cs_thermal_rules_manager *thermal_rules = cs_get_thermal_rules_manager();
-    const char *thermal_var_name = thermal_rules->get_thermal_variable_name(
-                                      thermal_variable);
-    const char *diffusivity_formula = thermal_rules->get_diffusivity_formula(
-                                        thermal_var_name);
+    const char *thermal_var_name
+      = thermal_rules->get_thermal_variable_name(thermal_variable);
+    const char *diffusivity_formula
+      = thermal_rules->get_diffusivity_formula(thermal_var_name);
 
     if (diffusivity_formula != nullptr) {
       if (strcmp(diffusivity_formula, "lambda/cp") == 0)
@@ -1729,7 +1727,7 @@ _read_diffusivity(void)
       /* Sinon formule "lambda" -> visls_0 reste inchangé */
     }
     else {
-      /* Fallback : comportement original */
+      /* Fallback: origina behavior */
       if (thermal_variable != CS_THERMAL_MODEL_TEMPERATURE)
         visls_0 /= cs_glob_fluid_properties->cp0;
     }
@@ -4147,18 +4145,18 @@ cs_gui_physical_properties(void)
   material = _thermal_table_choice("material");
   if (material != nullptr) {
     if (!(cs_gui_strcmp(material, "user_material"))) {
-      /* =========================================================================
-       * MODIF XML : Le plan thermodynamique est lu depuis ThermalRules.xml
-       * via get_thermo_plane_enum(). Fallback si XML non disponible.
-       * ========================================================================= */
+      /* The thermaldynamic plane is read from ThermalRules.xml using
+       * get_thermo_plane_enum(), with a fallback if not available. */
+
       cs_thermal_rules_manager *thermal_rules = cs_get_thermal_rules_manager();
-      const char *thermal_var_name = thermal_rules->get_thermal_variable_name(
-                                        thermal_variable);
+      const char *thermal_var_name
+        = thermal_rules->get_thermal_variable_name(thermal_variable);
       int plane_enum = thermal_rules->get_thermo_plane_enum(thermal_var_name);
 
       cs_phys_prop_thermo_plane_type_t thermal_plane;
       if (plane_enum >= 0) {
-        thermal_plane = static_cast<cs_phys_prop_thermo_plane_type_t>(plane_enum);
+        thermal_plane
+          = static_cast<cs_phys_prop_thermo_plane_type_t>(plane_enum);
       }
       else {
         /* Fallback : comportement original */

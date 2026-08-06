@@ -825,10 +825,9 @@ cs_parameters_error_barrier(void)
 void
 cs_parameters_check(void)
 {
-  /* =========================================================================
-   * MODIF XML : Validations depuis TurbulenceRules.xml et ThermalRules.xml
-   * Les singletons sont instanciés localement là où ils sont utilisés.
-   * ========================================================================= */
+  /* Validations from TurbulenceRules.xml and ThermalRules.xml.
+   * Singletons are instanciated where used. */
+
   int n_fields = cs_field_n_fields();
   const int keysca = cs_field_key_id("scalar_id");
   const int kscavr = cs_field_key_id("first_moment_id");
@@ -1151,10 +1150,9 @@ cs_parameters_check(void)
          time_scheme->thetsn, time_scheme->isno2t,
          time_scheme->thetst, time_scheme->isto2t);
 
-    /* =====================================================================
-     * MODIF XML : Condition lue depuis ThermalRules.xml via
-     * is_lagrangian_second_order_forbidden(). Comportement identique.
-     * ===================================================================== */
+    /* Condition read from ThermalRules.xml using
+     * is_lagrangian_second_order_forbidden(). */
+
     cs_thermal_rules_manager *thermal_rules = cs_get_thermal_rules_manager();
 
     if (thermal_rules->is_lagrangian_second_order_forbidden(
