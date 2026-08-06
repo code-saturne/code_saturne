@@ -1560,13 +1560,12 @@ cs_function_boundary_thermal_flux(int               location_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_function_boundary_nusselt(int               location_id,
-                             cs_lnum_t         n_elts,
-                             const cs_lnum_t  *elt_ids,
-                             void             *input,
-                             void             *vals)
+cs_function_boundary_nusselt(int                      location_id,
+                             cs_lnum_t                n_elts,
+                             const cs_lnum_t         *elt_ids,
+                             [[maybe_unused]] void   *input,
+                             void                    *vals)
 {
-  CS_UNUSED(input);
   assert(location_id == CS_MESH_LOCATION_BOUNDARY_FACES);
 
   cs_real_t *bnussl = static_cast<cs_real_t *>(vals);
@@ -1585,7 +1584,7 @@ cs_function_boundary_nusselt(int               location_id,
    * b_face_dist / (xvsl * tplus * tstar)
    *
    * Where xvsl is the thermal diffusivity (uniform or not) of the
-   * adjancent cell.
+   * adjacent cell.
    *
    * This would present the advantage of factoring more code, but in this case,
    * a boundary-only version of the cs_flux_through_surface function could
@@ -1624,8 +1623,6 @@ cs_function_boundary_nusselt(int               location_id,
     const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
     const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f_t);
-
-    const bool *is_coupled = nullptr;
 
     cs_real_t *theipb = nullptr, *dist_theipb = nullptr;
     CS_MALLOC(theipb, n_elts, cs_real_t);
@@ -1667,9 +1664,20 @@ cs_function_boundary_nusselt(int               location_id,
 
     if (eqp->icoupl > 0) {
 
-      cs_real_t *loc_theipb;
-      CS_MALLOC(loc_theipb, n_b_faces, cs_real_t);
+      const int coupling_key_id = cs_field_key_id("coupling_entity");
+      int coupling_id = f_t->get_key_int(coupling_key_id);
+      const cs_internal_coupling_t  *cpl
+        = cs_internal_coupling_by_id(coupling_id);
+      const cs_lnum_t n_local = cpl->n_local;
+      const cs_lnum_t *faces_local = cpl->faces_local;
+
       CS_MALLOC(dist_theipb, n_b_faces, cs_real_t);
+
+      cs_real_t *recv_theipb;
+      CS_MALLOC(recv_theipb, n_b_faces, cs_real_t);
+
+      /* Temporarily use dist_theipb as loc_theipb */
+      cs_real_t *loc_theipb = dist_theipb;
 
       for (cs_lnum_t i = 0; i < n_b_faces; i++)
         loc_theipb[i] = 0;
@@ -1679,16 +1687,20 @@ cs_function_boundary_nusselt(int               location_id,
         loc_theipb[j] = theipb[i];
       }
 
-      const int coupling_key_id = cs_field_key_id("coupling_entity");
-      int coupling_id = f_t->get_key_int(coupling_key_id);
-      const cs_internal_coupling_t  *cpl
-        = cs_internal_coupling_by_id(coupling_id);
+      cs_internal_coupling_exchange_by_face_id(cpl, 1, loc_theipb, recv_theipb);
 
-      is_coupled = cpl->coupled_faces;
+      /* No need for loc_theipb anymore; we can work on dist_theipb */
+      loc_theipb = nullptr;
 
-      cs_ic_field_dist_data_by_face_id(f_t->id, 1, loc_theipb, dist_theipb);
+      for (cs_lnum_t i = 0; i < n_b_faces; i++)
+        dist_theipb[i] = - cs_math_infinite_r*2;
 
-      CS_FREE(loc_theipb);
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        cs_lnum_t f_id = faces_local[ii];
+        dist_theipb[f_id] = recv_theipb[ii];
+      }
+
+      CS_FREE(recv_theipb);
 
     }
 
@@ -1731,7 +1743,7 @@ cs_function_boundary_nusselt(int               location_id,
          FIXME exchange coefs not computed at start of calculation */
 
       if (have_coupled) {
-        if (is_coupled[face_id]) {
+        if (dist_theipb[face_id] > -cs_math_infinite_r) {
           cs_real_t heq =   rcodcl2[face_id] * hint[face_id]
                           / (rcodcl2[face_id] + hint[face_id]);
           numer = heq*(theipb[i]-dist_theipb[face_id]) * b_dist[face_id];
