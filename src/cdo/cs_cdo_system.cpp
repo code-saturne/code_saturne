@@ -200,40 +200,6 @@ _set_eblock33_assembly_func(void)
 /*----------------------------------------------------------------------------*/
 
 static inline cs_cdo_assembly_func_t *
-_set_petsc_eblock33_assembly_func(void)
-{
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {  /* Parallel */
-
-    if (cs_glob_n_threads < 2) /* Without OpenMP */
-      return cs_cdo_assembly_eblock33_petsc_matrix_mpis;
-    else                      /* With OpenMP */
-      return cs_cdo_assembly_eblock33_petsc_matrix_mpit;
-
-  }
-#endif /* defined(HAVE_MPI) */
-
-  if (cs_glob_n_ranks <= 1) {  /* Sequential */
-
-    if (cs_glob_n_threads < 2) /* Without OpenMP */
-      return cs_cdo_assembly_eblock33_petsc_matrix_seqs;
-    else                      /* With OpenMP */
-      return cs_cdo_assembly_eblock33_petsc_matrix_seqt;
-  }
-
-  return nullptr; /* Case not handled */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Choose which function will be used to perform the matrix assembly
- *         Case of block 3x3 matrices.
- *
- * \return  a pointer to a function
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_cdo_assembly_func_t *
 _set_block33_assembly_func(void)
 {
 #if defined(HAVE_MPI)
@@ -345,12 +311,9 @@ _assign_assembly_func(const cs_cdo_system_block_info_t   bi)
   }
   else if (bi.stride == 3) {
 
-    if (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE)
+    if (   (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE)
+        || (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_PETSC))
       return cs_cdo_assembly_matrix_e33_generic;
-
-    else if (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_PETSC) {
-      return _set_petsc_eblock33_assembly_func();
-    }
 
     else {
 
