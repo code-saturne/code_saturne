@@ -186,8 +186,8 @@
     </EnumMapping>
 
     <EnumMapping Name="ThermoPlane">
-      <Entry Value="PT" Enum="0" Constant="CS_PHYS_PROP_PLANE_PT"/>
-      <Entry Value="PH" Enum="1" Constant="CS_PHYS_PROP_PLANE_PH"/>
+      <Entry Value="PH" Enum="0" Constant="CS_PHYS_PROP_PLANE_PH"/>
+      <Entry Value="PT" Enum="1" Constant="CS_PHYS_PROP_PLANE_PT"/>
       <Entry Value="PS" Enum="2" Constant="CS_PHYS_PROP_PLANE_PS"/>
     </EnumMapping>
 

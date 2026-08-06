@@ -383,8 +383,10 @@ cs_thermal_rules_manager::parse_mappings_()
     return;
 
   // Parser ThermalVariable enum
-  cs_tree_node_t *enum_map
-    = cs_tree_find_node(mappings, "EnumMapping[@Name='ThermalVariable']");
+  cs_tree_node_t *enum_map = cs_tree_get_node_with_tag(mappings,
+                                                       "EnumMapping",
+                                                       "Name",
+                                                       "ThermalVariable");
   if (enum_map != nullptr) {
     cs_tree_node_t *entry = cs_tree_node_get_child(enum_map, "Entry");
     while (entry != nullptr) {
@@ -402,7 +404,10 @@ cs_thermal_rules_manager::parse_mappings_()
   }
 
   // Parser EquationOfState enum
-  enum_map = cs_tree_find_node(mappings, "EnumMapping[@Name='EquationOfState']");
+  enum_map = cs_tree_get_node_with_tag(mappings,
+                                       "EnumMapping",
+                                       "Name",
+                                       "EquationOfState");
   if (enum_map != nullptr) {
     cs_tree_node_t *entry = cs_tree_node_get_child(enum_map, "Entry");
     while (entry != nullptr) {
@@ -420,7 +425,10 @@ cs_thermal_rules_manager::parse_mappings_()
   }
 
   // Parser TemperatureScale enum
-  enum_map = cs_tree_find_node(mappings, "EnumMapping[@Name='TemperatureScale']");
+  enum_map = cs_tree_get_node_with_tag(mappings,
+                                       "EnumMapping",
+                                       "Name",
+                                       "TemperatureScale");
   if (enum_map != nullptr) {
     cs_tree_node_t *entry = cs_tree_node_get_child(enum_map, "Entry");
     while (entry != nullptr) {
@@ -438,7 +446,10 @@ cs_thermal_rules_manager::parse_mappings_()
   }
 
   // Parser ThermoPlane enum
-  enum_map = cs_tree_find_node(mappings, "EnumMapping[@Name='ThermoPlane']");
+  enum_map = cs_tree_get_node_with_tag(mappings,
+                                       "EnumMapping",
+                                       "Name",
+                                       "ThermoPlane");
   if (enum_map != nullptr) {
     cs_tree_node_t *entry = cs_tree_node_get_child(enum_map, "Entry");
     while (entry != nullptr) {
