@@ -54,6 +54,13 @@
 #include "cdo/cs_dbg.h"
 #endif
 
+#if defined(HAVE_PETSC)
+
+#include <petscmat.h>
+#include "alge/cs_matrix_petsc_priv.h"
+
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -365,6 +372,133 @@ _add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
         xvals[row->col_idx[j]] += row->val[j];
   }
 }
+
+#if defined(HAVE_PETSC)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for adding values to a petsc matrix.
+ *
+ *  Specific case:
+ *        CDO schemes with no openMP and scalar-valued quantities
+ *
+ * \warning The matrix pointer must point to valid data when the selection
+ *          function is called, so the life cycle of the data pointed to should
+ *          be at least as long as that of the assembler values structure.
+ *
+ * \remark Note that we pass column indexes (not ids) here; as the caller is
+ *         already assumed to have identified the index matching a given
+ *         column id.
+ *
+ * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
+ * \param[in, out] matrix_p    untyped pointer to matrix description structure
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_add_petsc_scal_values_single(const cs_cdo_assembly_row_t    *row,
+                              void                           *matrix_p)
+{
+  cs_matrix_t *matrix = (cs_matrix_t *)matrix_p;
+  auto mc = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
+
+  Mat hm = mc->hm;
+  assert(hm != nullptr);
+
+  const cs_lnum_t n = row->n_cols;
+
+  const cs_lnum_t max_chunck_size = 32;
+
+  PetscInt idxm[1] = {0};
+  PetscInt idxn[max_chunck_size] = {0};
+  PetscScalar v[max_chunck_size] = {0.};
+
+  for (PetscInt s_id = 0; s_id < n; s_id += max_chunck_size) {
+
+    PetscInt n_group = max_chunck_size;
+    if (s_id + n_group > n)
+      n_group = n - s_id;
+
+    idxm[0] = row->g_id;
+
+    const cs_real_t *r_val = row->val;
+
+    PetscInt l = 0;
+    for (int j = 0; j < n_group; j++) {
+      if (cs::abs(r_val[s_id + j]) > 0.0) {
+        idxn[l] = row->col_g_id[s_id + j];
+        v[l] = row->val[s_id + j];
+        l++;
+      }
+    }
+
+    MatSetValues(hm, 1, idxm, l, idxn, v, ADD_VALUES);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for adding values to a Petc matrix.
+ *
+ * Specific case:
+ *  CDO schemes with openMP critical section and scalar-valued quantities
+ *
+ * \warning The matrix pointer must point to valid data when the selection
+ *          function is called, so the life cycle of the data pointed to should
+ *          be at least as long as that of the assembler values structure.
+ *
+ * \remark Note that we pass column indexes (not ids) here; as the caller is
+ *         already assumed to have identified the index matching a given
+ *         column id.
+ *
+ * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
+ * \param[in, out] matrix_p    untyped pointer to matrix description structure
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+_add_petsc_scal_values_critical(const cs_cdo_assembly_row_t    *row,
+                                void                           *matrix_p)
+{
+  cs_matrix_t *matrix = (cs_matrix_t *)matrix_p;
+  auto mc = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
+
+  Mat hm = mc->hm;
+  assert(hm != nullptr);
+
+  const cs_lnum_t n = row->n_cols;
+
+  const cs_lnum_t max_chunck_size = 32;
+
+  PetscInt idxm[1] = {0};
+  PetscInt idxn[max_chunck_size] = {0};
+  PetscScalar v[max_chunck_size] = {0.};
+
+  for (PetscInt s_id = 0; s_id < n; s_id += max_chunck_size) {
+
+    PetscInt n_group = max_chunck_size;
+    if (s_id + n_group > n)
+      n_group = n - s_id;
+
+    idxm[0] = row->g_id;
+
+    const cs_real_t *r_val = row->val;
+
+    PetscInt l = 0;
+    for (int j = 0; j < n_group; j++) {
+      if (cs::abs(r_val[s_id + j]) > 0.0) {
+        idxn[l] = row->col_g_id[s_id + j];
+        v[l] = row->val[s_id + j];
+        l++;
+      }
+    }
+#   pragma omp critical
+    {
+      MatSetValues(hm, 1, idxm, l, idxn, v, ADD_VALUES);
+    }
+  }
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2291,6 +2425,282 @@ cs_cdo_assembly_matrix_sys_mpit(const cs_sdm_t                   *m,
   }  /* Extra-diagonal block to assemble in the full system */
 }
 #endif /* defined(HAVE_MPI) */
+
+#if defined(HAVE_PETSC)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Sequential run without openMP threading.
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] asb      pointer to an equation assembly structure
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_eblock33_petsc_matrix_seqs
+(const cs_sdm_t               *m,
+ const cs_lnum_t              *dof_ids,
+ const cs_range_set_t         *rset,
+ cs_cdo_assembly_t            *asb,
+ cs_matrix_assembler_values_t *mav)
+{
+  const cs_sdm_block_t  *bd = m->block_desc;
+
+  cs_cdo_assembly_row_t  *row = asb->row;
+
+  assert(m->flag & CS_SDM_BY_BLOCK);
+  assert(m->block_desc != nullptr);
+  assert(bd->n_row_blocks == bd->n_col_blocks);
+  assert(asb->ddim >= 3);
+  assert(row->expval != nullptr);
+
+  /* Expand the values for a bundle of rows */
+
+  cs_real_t  *xyz_row[3] = {row->expval,
+                            row->expval + m->n_rows,
+                            row->expval + 2*m->n_rows };
+
+  row->n_cols = m->n_rows;
+
+  /* Switch to the global numbering */
+
+  for (int i = 0; i < row->n_cols; i++)
+    row->col_g_id[i] = rset->g_id[dof_ids[i]];
+
+  for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+    /* Expand all the blocks for this row */
+
+    for (int bj = 0; bj < bd->n_col_blocks; bj++)
+      _fill_e33_rows(bi, bj, m, xyz_row);
+
+    /* dof_ids is an interlaced array (get access to the next 3 values) */
+
+    for (int k = 0; k < 3; k++) {
+
+      row->i = 3*bi+k;                          /* cellwise numbering */
+      row->g_id = row->col_g_id[row->i];        /* global numbering */
+      row->val = xyz_row[k];
+
+      _add_petsc_scal_values_single(row, mav->matrix);
+    } /* Push each row of the block */
+
+  } /* Loop on row-wise blocks */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Sequential run with openMP threading.
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] asb      pointer to an equation assembly structure
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_eblock33_petsc_matrix_seqt
+(const cs_sdm_t                *m,
+ const cs_lnum_t               *dof_ids,
+ const cs_range_set_t          *rset,
+ cs_cdo_assembly_t             *asb,
+ cs_matrix_assembler_values_t  *mav)
+{
+  const cs_sdm_block_t  *bd = m->block_desc;
+
+  cs_cdo_assembly_row_t  *row = asb->row;
+
+  assert(m->flag & CS_SDM_BY_BLOCK);
+  assert(m->block_desc != nullptr);
+  assert(bd->n_row_blocks == bd->n_col_blocks);
+  assert(asb->ddim >= 3);
+  assert(row->expval != nullptr);
+
+  /* Expand the values for a bundle of rows */
+
+  cs_real_t  *xyz_row[3] = {row->expval,
+                          row->expval + m->n_rows,
+                          row->expval + 2*m->n_rows };
+
+  row->n_cols = m->n_rows;
+
+  /* Switch to the global numbering */
+
+  for (int i = 0; i < row->n_cols; i++)
+    row->col_g_id[i] = rset->g_id[dof_ids[i]];
+
+  for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+    /* Expand all the blocks for this row */
+
+    for (int bj = 0; bj < bd->n_col_blocks; bj++)
+      _fill_e33_rows(bi, bj, m, xyz_row);
+
+    /* dof_ids is an interlaced array (get access to the next 3 values */
+
+    for (int k = 0; k < 3; k++) {
+
+      row->i = 3*bi+k;                          /* cellwise numbering */
+      row->g_id = row->col_g_id[row->i];        /* global numbering */
+      row->val = xyz_row[k];
+
+      _add_petsc_scal_values_critical(row, mav->matrix);
+    } /* Push each row of the block */
+
+  } /* Loop on row-wise blocks */
+}
+
+#if defined(HAVE_MPI)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assemble a cellwise matrix into the global matrix.
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Parallel run without openMP threading.
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] asb      pointer to an equation assembly structure
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_eblock33_petsc_matrix_mpis
+(const cs_sdm_t                *m,
+ const cs_lnum_t               *dof_ids,
+ const cs_range_set_t          *rset,
+ cs_cdo_assembly_t             *asb,
+ cs_matrix_assembler_values_t  *mav)
+{
+  const cs_sdm_block_t  *bd = m->block_desc;
+  const cs_matrix_assembler_t  *ma = mav->ma;
+
+  cs_cdo_assembly_row_t  *row = asb->row;
+
+  assert(m->flag & CS_SDM_BY_BLOCK);
+  assert(m->block_desc != nullptr);
+  assert(bd->n_row_blocks == bd->n_col_blocks);
+  assert(asb->ddim >= 3);
+  assert(row->expval != nullptr);
+
+  /* Expand the values for a bundle of rows */
+
+  cs_real_t *xyz_row[3] = {row->expval,
+                           row->expval + m->n_rows,
+                           row->expval + 2*m->n_rows };
+
+  row->n_cols = m->n_rows;
+
+  /* Switch to the global numbering */
+
+  for (int i = 0; i < row->n_cols; i++)
+    row->col_g_id[i] = rset->g_id[dof_ids[i]];
+
+  for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+    /* Expand all the blocks for this row */
+
+    for (int bj = 0; bj < bd->n_col_blocks; bj++)
+      _fill_e33_rows(bi, bj, m, xyz_row);
+
+    /* dof_ids is an interlaced array (get access to the next 3 values */
+
+    for (int k = 0; k < 3; k++) {
+
+      row->i = 3*bi+k;                          /* cellwise numbering */
+      row->g_id = row->col_g_id[row->i];        /* global numbering */
+      row->val = xyz_row[k];
+
+      if (row->g_id < ma->l_range[0] || row->g_id >= ma->l_range[1])
+        _assemble_scal_dist_row_single(mav, ma, row);
+      else
+        _add_petsc_scal_values_single(row, mav->matrix);
+    } /* Push each row of the block */
+
+  } /* Loop on row-wise blocks */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assemble a cellwise matrix into the global matrix
+ *        Case of a block 3x3 entries. Expand each row.
+ *        Parallel run with openMP threading.
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] asb      pointer to an equation assembly structure
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_eblock33_petsc_matrix_mpit
+(const cs_sdm_t                *m,
+ const cs_lnum_t               *dof_ids,
+ const cs_range_set_t          *rset,
+ cs_cdo_assembly_t             *asb,
+ cs_matrix_assembler_values_t  *mav)
+{
+  const cs_matrix_assembler_t  *ma = mav->ma;
+
+  cs_cdo_assembly_row_t  *row = asb->row;
+
+  row->n_cols = m->n_rows;
+
+  assert(row->expval != nullptr);
+  assert(asb->ddim >= 3); /* ddim = diag. dim */
+  assert(m->flag & CS_SDM_BY_BLOCK);
+  assert(m->block_desc != nullptr);
+
+  const cs_sdm_block_t  *bd = m->block_desc;
+  assert(bd->n_row_blocks == bd->n_col_blocks);
+
+  /* Expand the values for a bundle of rows */
+
+  cs_real_t  *xyz_row[3] = {row->expval,
+                            row->expval +   m->n_rows,
+                            row->expval + 2*m->n_rows};
+
+  /* Switch to the global numbering */
+
+  for (int i = 0; i < row->n_cols; i++)
+    row->col_g_id[i] = rset->g_id[dof_ids[i]];
+
+  for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+
+    /* Expand all the blocks for this row */
+
+    for (int bj = 0; bj < bd->n_col_blocks; bj++)
+      _fill_e33_rows(bi, bj, m, xyz_row);
+
+    /* dof_ids is an interlaced array (get access to the next 3 values) */
+
+    for (int k = 0; k < 3; k++) {
+
+      row->i = 3*bi+k;                          /* cellwise numbering */
+      row->g_id = row->col_g_id[row->i];        /* global numbering */
+      row->val = xyz_row[k];
+
+      if (row->g_id < ma->l_range[0] || row->g_id >= ma->l_range[1])
+        _assemble_scal_dist_row_threaded(mav, ma, row);
+      else
+        _add_petsc_scal_values_critical(row, mav->matrix);
+    } /* Push each row of the block */
+  } /* Loop on row-wise blocks */
+}
+#endif /* defined(HAVE_MPI) */
+#endif /* defined(HAVE_PETSC) */
 
 /*----------------------------------------------------------------------------*/
 /*!
