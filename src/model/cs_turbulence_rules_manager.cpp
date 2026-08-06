@@ -729,8 +729,10 @@ cs_turbulence_rules_manager::get_model_constant_name
 void
 cs_turbulence_rules_manager::parse_output_module_()
 {
-  cs_tree_node_t *output_module = cs_tree_find_node(rules_tree_,
-                                                     "Module[@name='Output']");
+  cs_tree_node_t *output_module = cs_tree_get_node_with_tag(rules_tree_,
+                                                            "Module",
+                                                            "name",
+                                                            "Output");
   if (output_module == nullptr) {
     cs_log_warning("Module 'Output' not found in CodeSaturneRules.xml\n");
     return;
@@ -749,10 +751,11 @@ void
 cs_turbulence_rules_manager::parse_output_field_defaults_()
 {
   cs_tree_node_t *output_module = cs_tree_find_node(rules_tree_,
-                                                    "Module[@name='Output']");
+                                                    "OutputModule");
   if (output_module == nullptr)
     return;
 
+  // FIXME this does not seem to match the XML file.
   cs_tree_node_t *validation_rules = cs_tree_find_node(output_module,
                                                        "ValidationRules");
   if (validation_rules == nullptr)
@@ -798,8 +801,10 @@ cs_turbulence_rules_manager::parse_output_field_defaults_()
 void
 cs_turbulence_rules_manager::parse_output_boundary_variables_()
 {
-  cs_tree_node_t *output_module = cs_tree_find_node(rules_tree_,
-                                                    "Module[@name='Output']");
+  cs_tree_node_t *output_module = cs_tree_get_node_with_tag(rules_tree_,
+                                                            "Module",
+                                                            "name",
+                                                            "Output");
   if (output_module == nullptr)
     return;
 
@@ -886,7 +891,7 @@ void
 cs_turbulence_rules_manager::parse_output_mappings_()
 {
   cs_tree_node_t *output_module = cs_tree_find_node(rules_tree_,
-                                                    "Module[@name='Output']");
+                                                    "OutputModule");
   if (output_module == nullptr)
     return;
 
@@ -940,7 +945,7 @@ cs_turbulence_rules_manager::parse_output_mappings_()
 cs_output_field_defaults_t
 cs_turbulence_rules_manager::get_output_field_defaults
 (
-   const char  *field_type
+  const char  *field_type
 ) const
 {
   auto it = output_field_defaults_.find(std::string(field_type));
