@@ -84,9 +84,6 @@ typedef struct {
   cs_lnum_t  n_distant; /* Number of faces in faces_distant */
   cs_lnum_t *faces_distant; /* Distant boundary faces associated with locator */
 
-  /* Face i is coupled in this entity if coupled_faces[i] = true */
-  bool *coupled_faces;
-
   /* IJ vectors */
   cs_real_3_t *ci_cj_vect;
 

@@ -241,7 +241,6 @@ _destroy_entity(cs_internal_coupling_t  *cpl)
   CS_FREE(cpl->faces_local);
   CS_FREE(cpl->faces_distant);
   CS_FREE(cpl->ci_cj_vect);
-  CS_FREE(cpl->coupled_faces);
   CS_FREE(cpl->cells_criteria);
   CS_FREE(cpl->faces_criteria);
   CS_FREE(cpl->interior_faces_group_name);
@@ -299,34 +298,6 @@ _compute_ci_cj_vect(const cs_internal_coupling_t  *cpl)
 }
 
 /*----------------------------------------------------------------------------
- * Define component coupled_faces[] of given coupling entity.
- *
- * parameters:
- *   cpl <-> pointer to coupling structure to modify
- *----------------------------------------------------------------------------*/
-
-static void
-_initialize_coupled_faces(cs_internal_coupling_t *cpl)
-{
-  const cs_lnum_t n_local = cpl->n_local;
-  const cs_lnum_t *faces_local = cpl->faces_local;
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-
-  CS_REALLOC(cpl->coupled_faces, n_b_faces, bool);
-  bool *coupled_faces = cpl->coupled_faces;
-
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-    coupled_faces[face_id] = false;
-  }
-
-  for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-    cs_lnum_t face_id = faces_local[ii];
-    coupled_faces[face_id] = true;
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Initialize to 0 or nullptr most of the fields in given coupling structure.
  *
  * parameters:
@@ -352,7 +323,6 @@ _cpl_initialize(cs_internal_coupling_t *cpl)
   cpl->n_distant = 0;
   cpl->faces_distant = nullptr;
 
-  cpl->coupled_faces = nullptr;
   cpl->ci_cj_vect = nullptr;
 }
 
@@ -664,22 +634,20 @@ _volume_face_initialize(cs_mesh_t               *m,
  * Initialize locators
  *
  * parameters:
- *   m              <->  pointer to mesh structure to modify
  *   cpl <-> pointer to coupling structure to modify
  *----------------------------------------------------------------------------*/
 
 static void
-_locator_initialize(cs_mesh_t               *m,
-                    cs_internal_coupling_t  *cpl)
+_locator_initialize(cs_internal_coupling_t  *cpl)
 {
   /* Initialize locator */
 
   cpl->locator = _create_locator(cpl);
   cpl->n_distant = ple_locator_get_n_dist_points(cpl->locator);
   CS_MALLOC_HD(cpl->faces_distant,
-              cpl->n_distant,
-              cs_lnum_t,
-              cs_alloc_mode);
+               cpl->n_distant,
+               cs_lnum_t,
+               cs_alloc_mode);
   const cs_lnum_t *faces_distant_num
     = ple_locator_get_dist_locations(cpl->locator);
 
@@ -1123,9 +1091,8 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
 
   cs_real_t *hintp = f->bc_coeffs->h_int_tot;
   cs_real_t *hextp = f->bc_coeffs->rcodcl2;
-  /* Opitonal additional "resistance" for radiative transfer */
+  /* Optional additional "resistance" for radiative transfer */
   cs_real_t *h_rad = f->bc_coeffs->h_rad;
-  cs_real_t *flux_rad = f->bc_coeffs->flux_rad;
 
   if (f->dim == 1) {
     if (h_rad == nullptr) {
@@ -1167,7 +1134,8 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
         y[cell_id] += thetap * idiffp * surf * (heqi * pi - heqj * pj);
       }
     }
-  } else if (f->dim == 3) {
+  }
+  else if (f->dim == 3) {
 
     cs_real_3_t *_y = (cs_real_3_t *)y;
     const cs_real_3_t *_x = (const cs_real_3_t *)x;
@@ -1525,8 +1493,7 @@ cs_internal_coupling_initialize(void)
 {
   for (int i = 0; i < _n_internal_couplings; i++) {
     cs_internal_coupling_t *cpl = _internal_coupling + i;
-    _locator_initialize(cs_glob_mesh, cpl);
-    _initialize_coupled_faces(cpl);
+    _locator_initialize(cpl);
   }
 }
 
