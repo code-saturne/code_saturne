@@ -212,7 +212,9 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx;
-  ctx.set_use_gpu(false);  /* balance_by_zone case not ported to GPU */
+  cs_alloc_mode_t amode = ctx.alloc_mode(true);
+
+  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
 
   /* initialize output */
 
@@ -246,7 +248,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       cp0 = cs_glob_fluid_properties->cp0;
   }
   if (xcpp == nullptr) {
-    CS_MALLOC_HD(_xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(_xcpp, n_cells_ext, cs_real_t, amode);
     cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, cp0, _xcpp);
     xcpp = _xcpp;
   }
@@ -326,11 +328,11 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   int imvisf = eqp->imvisf;
   cs_real_t *i_visc;
   cs_real_t *b_visc;
-  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, amode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, amode);
 
   cs_real_t *c_visc = nullptr;
-  CS_MALLOC_HD(c_visc, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(c_visc, n_cells_ext, cs_real_t, amode);
   const int kivisl = f->get_key_int("diffusivity_id");
   if (kivisl != -1) {
     cs_array_copy(n_cells_ext, cs_field_by_id(kivisl)->val, c_visc);
@@ -346,9 +348,12 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   if (eqp->idifft == 1) {
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
     cs_real_t turb_schmidt = f->get_key_double(ksigmas);
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       c_visc[c_id] += xcpp[c_id] * c_visct[c_id]/turb_schmidt;
+    });
   }
+
+  ctx.wait();
 
   cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
 
@@ -358,35 +363,38 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   /* Initialize arrays */
 
   /* Internal faces of the selected zone */
-  CS_MALLOC_HD(i_face_sel_ids, n_i_faces, cs_lnum_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_face_sel_ids, n_i_faces, cs_lnum_t, amode);
   /* Boundary faces of the selected zone,
      which are internal faces of the global mesh.
      Faces -> cells connectivity */
-  CS_MALLOC_HD(bi_face_sel_ids, n_i_faces, cs_lnum_t, cs_alloc_mode);
-  CS_MALLOC_HD(bi_face_cells, n_i_faces, cs_lnum_2_t, cs_alloc_mode);
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+  CS_MALLOC_HD(bi_face_sel_ids, n_i_faces, cs_lnum_t, amode);
+  CS_MALLOC_HD(bi_face_cells, n_i_faces, cs_lnum_2_t, amode);
+
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     i_face_sel_ids[f_id] = -1;
     bi_face_sel_ids[f_id] = -1;
     bi_face_cells[f_id][0] = -999;
     bi_face_cells[f_id][1] = -999;
-  }
+  });
 
   /* Boundary faces of the selected zone,
      which are also boundary faces of the global mesh */
-  CS_MALLOC(bb_face_sel_ids, n_b_faces, cs_lnum_t);
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+  CS_MALLOC_HD(bb_face_sel_ids, n_b_faces, cs_lnum_t, amode);
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     bb_face_sel_ids[f_id] = -1;
-  }
+  });
 
   /* Synchronization for parallelism */
-  CS_MALLOC_HD(cells_tag_ids, n_cells_ext, cs_lnum_t, cs_alloc_mode);
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    cells_tag_ids[c_id] = 0;
-  }
-  for (cs_lnum_t c_id = 0; c_id < n_cells_sel; c_id++) {
+  CS_MALLOC(cells_tag_ids, n_cells_ext, cs_lnum_t);
+  cs_array_lnum_fill_zero(n_cells_ext, cells_tag_ids);
+
+  h_ctx.parallel_for(n_cells_sel, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     cs_lnum_t c_id_sel = cell_sel_ids[c_id];
     cells_tag_ids[c_id_sel] = 1;
-  }
+  });
+
+  ctx.wait();
+
   if (halo != nullptr) {
     cs_halo_sync_num(halo, CS_HALO_STANDARD, cells_tag_ids);
   }
@@ -574,9 +582,9 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     }
   }
 
-  cs_array_2d<cs_real_t> i_flux(n_bi_faces_sel, 2, cs_alloc_mode);
-  cs_array<cs_real_t> b_flux(n_bb_faces_sel, cs_alloc_mode);
-  cs_array<int> icvfli(n_bb_faces_sel, cs_alloc_mode);
+  cs_array_2d<cs_real_t> i_flux(n_bi_faces_sel, 2, amode);
+  cs_array<cs_real_t> b_flux(n_bb_faces_sel, amode);
+  cs_array<int> icvfli(n_bb_faces_sel, amode);
 
   i_flux.zero();
   b_flux.zero();
@@ -1371,8 +1379,10 @@ cs_surface_balance(const char       *selection_crit,
   cs_lnum_t n_i_faces_sel = 0;
   cs_lnum_t *i_face_sel_ids = nullptr;
 
-  CS_MALLOC(i_face_sel_ids, m->n_i_faces, cs_lnum_t);
-  CS_MALLOC(b_face_sel_ids, m->n_b_faces, cs_lnum_t);
+  cs_alloc_mode_t amode = cs_alloc_mode;
+
+  CS_MALLOC_HD(i_face_sel_ids, m->n_i_faces, cs_lnum_t, amode);
+  CS_MALLOC_HD(b_face_sel_ids, m->n_b_faces, cs_lnum_t, amode);
 
   cs_selector_get_i_face_list(selection_crit, &n_i_faces_sel, i_face_sel_ids);
   cs_selector_get_b_face_list(selection_crit, &n_b_faces_sel, b_face_sel_ids);
@@ -1499,7 +1509,7 @@ cs_flux_through_surface(const char         *scalar_name,
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx;
-  ctx.set_use_gpu(false);  /* not yet ported to GPU */
+  cs_alloc_mode_t amode = ctx.alloc_mode(true);
 
   const int *bc_type = cs_glob_bc_type;
 
@@ -1532,7 +1542,7 @@ cs_flux_through_surface(const char         *scalar_name,
       cp0 = cs_glob_fluid_properties->cp0;
   }
   if (xcpp == nullptr) {
-    CS_MALLOC_HD(_xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(_xcpp, n_cells_ext, cs_real_t, amode);
     cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, cp0, _xcpp);
     xcpp = _xcpp;
   }
@@ -1565,11 +1575,11 @@ cs_flux_through_surface(const char         *scalar_name,
   int imvisf = eqp->imvisf;
   cs_real_t *i_visc;
   cs_real_t *b_visc;
-  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, amode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, amode);
 
   cs_real_t *c_visc = nullptr;
-  CS_MALLOC_HD(c_visc, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(c_visc, n_cells_ext, cs_real_t, amode);
   const int kivisl = f->get_key_int("diffusivity_id");
   if (kivisl != -1) {
     cs_array_copy(n_cells_ext, cs_field_by_id(kivisl)->val, c_visc);
@@ -1585,9 +1595,12 @@ cs_flux_through_surface(const char         *scalar_name,
   if (eqp->idifft == 1) {
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
     const cs_real_t turb_schmidt = f->get_key_double(ksigmas);
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       c_visc[c_id] += xcpp[c_id] * c_visct[c_id]/turb_schmidt;
+    });
   }
+
+  ctx.wait();
 
   cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
 
@@ -1601,12 +1614,6 @@ cs_flux_through_surface(const char         *scalar_name,
                              &gradient_type,
                              &halo_type);
 
-  /* Limiters */
-
-  if (field_id != -1) {
-    f = cs_field_by_id(field_id);
-  }
-
   /* Faces selection
      --------------- */
 
@@ -1614,13 +1621,13 @@ cs_flux_through_surface(const char         *scalar_name,
 
   if (n_i_faces_sel > 0) {
 
-    CS_MALLOC(bi_face_cells, n_i_faces, cs_lnum_2_t);
-    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    CS_MALLOC_HD(bi_face_cells, n_i_faces, cs_lnum_2_t, amode);
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       bi_face_cells[f_id][0] = -999;
       bi_face_cells[f_id][1] = -999;
-    }
+    });
 
-    for (cs_lnum_t f_id = 0; f_id < n_i_faces_sel; f_id++) {
+    ctx.parallel_for(n_i_faces_sel, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       cs_lnum_t f_id_sel = i_face_sel_ids[f_id];
       cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
       cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
@@ -1633,17 +1640,15 @@ cs_flux_through_surface(const char         *scalar_name,
         bi_face_cells[f_id_sel][0] = c_id1;
       else if (dot_pro < 0.)
         bi_face_cells[f_id_sel][1] = c_id2;
-    }
+    });
 
-    if (flux_i_faces != nullptr) {
-      for (cs_lnum_t f_id = 0; f_id < n_i_faces_sel; f_id++)
-        flux_i_faces[f_id] = 0.;
-    }
+    if (flux_i_faces != nullptr)
+      cs_arrays_set_zero<cs_real_t, 1>(ctx, n_i_faces_sel, flux_i_faces);
 
-    if (flux_b_faces != nullptr) {
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces_sel; f_id++)
-        flux_b_faces[f_id] = 0.;
-    }
+    if (flux_b_faces != nullptr)
+      cs_arrays_set_zero<cs_real_t, 1>(ctx, n_b_faces_sel, flux_b_faces);
+
+    ctx.wait();
 
   }
 
@@ -1659,9 +1664,9 @@ cs_flux_through_surface(const char         *scalar_name,
     }
   }
 
-  cs_array_2d<cs_real_t> i_flux(n_i_faces_sel, 2, cs_alloc_mode);
-  cs_array<cs_real_t> b_flux(n_b_faces_sel, cs_alloc_mode);
-  cs_array<int> icvfli(n_b_faces_sel, cs_alloc_mode);
+  cs_array_2d<cs_real_t> i_flux(n_i_faces_sel, 2, amode);
+  cs_array<cs_real_t> b_flux(n_b_faces_sel, amode);
+  cs_array<int> icvfli(n_b_faces_sel, amode);
 
   i_flux.zero();
   b_flux.zero();
