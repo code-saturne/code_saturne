@@ -169,7 +169,7 @@ class TypeFuelDelegate(QItemDelegate):
         else:
             painter.save()
             # set background color
-            if option.state & QStyle.State_Selected:
+            if option.state & QStyle.StateFlag.State_Selected:
                 painter.setBrush(QBrush(Qt.GlobalColor.darkRed))
             else:
                 painter.setBrush(QBrush(Qt.GlobalColor.red))
