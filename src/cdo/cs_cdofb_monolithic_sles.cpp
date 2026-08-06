@@ -441,7 +441,7 @@ _schur_approx_diag_inv_m11(cs_param_solver_class_t  mat_class,
     smat = cs_matrix_external("HYPRE_ParCSR",
                               false, /* symmetry */
                               1, 1);
-  else if (mat_class = CS_PARAM_SOLVER_CLASS_PETSC)
+  else if (mat_class == CS_PARAM_SOLVER_CLASS_PETSC)
     smat = cs_matrix_external("PETSc, aij",
                                false, // symmetry
                                1,  // dbsize
