@@ -183,6 +183,12 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   cs_real_t *val_s = f_sc->val;
   cs_equation_param_t *eqp_sc = cs_field_get_equation_param(f_sc);
 
+  int *icodcl_vel = CS_F_(vel)->bc_coeffs->icodcl;
+  int *icodcl_sc = f_sc->bc_coeffs->icodcl;
+  cs_real_t *rcodcl1_sc = f_sc->bc_coeffs->rcodcl1;
+  cs_real_t *rcodcl2_sc = f_sc->bc_coeffs->rcodcl2;
+  cs_real_t *rcodcl3_sc = f_sc->bc_coeffs->rcodcl3;
+
   /* If we have no diffusion, no boundary face should have a wall BC type
      (this is ensured in cs_boundary_conditions_type) */
 
@@ -255,7 +261,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   /* pointers to T+ and T* if saved */
 
   cs_real_t *tplusp = nullptr, *tstarp = nullptr;
-  cs_real_t *dist_theipb = nullptr;
 
   if (f_sc == f_th) {
     cs_field_t *itplus = cs_field_by_name_try("tplus");
@@ -267,11 +272,33 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     if (itstar != nullptr)
       tstarp = itstar->val;
 
-    //TODO: why only for temperature? That should be exchanged for all
+    // TODO: why only for temperature? That should be exchanged for all
     // coupled scalars
     if (eqp_sc->icoupl > 0) {
-      CS_MALLOC(dist_theipb, n_b_faces, cs_real_t);
-      cs_ic_field_dist_data_by_face_id(f_sc->id, 1, theipb, dist_theipb);
+      int coupling_id = f_sc->get_key_int("coupling_entity");
+
+      const cs_internal_coupling_t  *cpl
+        = cs_internal_coupling_by_id(coupling_id);
+      const cs_lnum_t n_local = cpl->n_local;
+      const cs_lnum_t *faces_local = cpl->faces_local;
+
+      cs_real_t *dist_theipb = nullptr;
+      CS_MALLOC(dist_theipb, n_local, cs_real_t);
+      cs_internal_coupling_exchange_by_face_id(cpl, 1, theipb, dist_theipb);
+
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        cs_lnum_t f_id = faces_local[ii];
+
+        if (   icodcl_vel[f_id] != CS_BC_WALL_MODELLED
+            && icodcl_vel[f_id] != CS_BC_ROUGH_WALL_MODELLED
+            && icodcl_sc[f_id]  != CS_BC_IMPOSED_EXCHANGE_COEF)
+          continue;
+
+        /* Update val_ext for for coupled face */
+        rcodcl1_sc[f_id] = dist_theipb[ii];
+      }
+
+      CS_FREE(dist_theipb);
     }
   }
 
@@ -285,15 +312,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
   if (f_rough_t != nullptr)
     bpro_rough_t = f_rough_t->val;
-
-  bool *cpl_faces = nullptr;
-  if (eqp_sc->icoupl > 0) {
-    const int coupling_key_id = cs_field_key_id("coupling_entity");
-    const int coupling_id = f_sc->get_key_int(coupling_key_id);
-    const cs_internal_coupling_t *cpl = cs_internal_coupling_by_id(coupling_id);
-
-    cpl_faces = cpl->coupled_faces;
-  }
 
   /* Pointers to specific fields */
 
@@ -347,12 +365,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   cs_field_t *f_id_cv = cs_field_by_name_try("isobaric_heat_capacity");
   if (f_id_cv != nullptr)
     cpro_cv = f_id_cv->val;
-
-  int *icodcl_vel = CS_F_(vel)->bc_coeffs->icodcl;
-  int *icodcl_sc = f_sc->bc_coeffs->icodcl;
-  cs_real_t *rcodcl1_sc = f_sc->bc_coeffs->rcodcl1;
-  cs_real_t *rcodcl2_sc = f_sc->bc_coeffs->rcodcl2;
-  cs_real_t *rcodcl3_sc = f_sc->bc_coeffs->rcodcl3;
 
   cs_real_t ypth = 0.0;
 
@@ -561,15 +573,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     const cs_real_t rkl = (ifcvsl < 0) ? visls_0 : viscls[c_id];
 
     cs_real_t pimp = rcodcl1_sc[f_id];
-
-    //FIXME not only temperature!
-    /* Set correct val_ext for for coupled face
-     * Note: it could be passed directly through rcodcl1 */
-    if (dist_theipb != nullptr) {
-      if (cpl_faces[f_id]) {
-        pimp = dist_theipb[f_id];
-      }
-    }
 
     const cs_real_t hext = rcodcl2_sc[f_id];
     cs_real_t heq = 0.0, cofimp = 0.0, hflui = h_int_tot[f_id], tplus = 0.0;
@@ -916,7 +919,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
   CS_FREE(hint);
   CS_FREE(yptp);
-  CS_FREE(dist_theipb);
 }
 
 /*----------------------------------------------------------------------------*/
