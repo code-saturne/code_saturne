@@ -769,8 +769,12 @@ cs_cdo_solve_unsteady_state_domain(void)
   ts->nt_cur += 1;
   ts->t_cur += ts->dt_ref;
 
-  if (cs_glob_domain->is_last_iter)
-    cs_glob_domain->time_step->nt_max = cs_glob_domain->time_step->nt_cur;
+  // Do not stop computation for ALE (thermal solver)
+  if (cs_solidification_is_activated() or cs_navsto_system_is_activated()) {
+    if (cs_glob_domain->is_last_iter) {
+      cs_glob_domain->time_step->nt_max = cs_glob_domain->time_step->nt_cur;
+    }
+  }
 
   /* From now - FV and CDO use the same time */
   /* Extra operations and post-processing of the computed solutions */
