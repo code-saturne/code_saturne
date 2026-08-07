@@ -546,14 +546,8 @@ _convection_diffusion_scalar_unsteady_v91
         cpj = xcpp[jj];
       }
 
-      cs_real_t pif, pjf;
+      cs_real_t pif = 0, pjf = 0;
       cs_real_t pip, pjp;
-
-#if defined(__INTEL_LLVM_COMPILER)
-      // Silence unitialized variables warning due do compiler ignoring
-      // initializations in inlined functions.
-      pif = 0., pjf = 0.;
-#endif
 
       cs_real_t fluxi = 0., fluxj = 0.;
 
