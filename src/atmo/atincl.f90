@@ -251,7 +251,7 @@ double precision, dimension(:), pointer :: soil_pressure
 double precision, dimension(:), pointer :: soil_density
 
 !> internal variable for 1D radiative model
-double precision, save :: tausup
+real(c_double), pointer, save :: tausup
 
 !> internal variable for 1D radiative model
 double precision, dimension(:,:), pointer  :: rayi, rayst
@@ -294,34 +294,35 @@ real(c_double), pointer, save :: aod_h2o_tot
 
 !> total aerosol optical depth in the IR domain for thermal radiation
 !> deduced from aeronet data
-double precision, save:: aod_ir = 0.1d0
+real(c_double), pointer, save:: aod_ir
 
 !> CO2 concentration in cm NTP with correction to the ratio of
 !> molar masses for Mco2 and Mair
 !> default is 350ppm
-double precision, save:: conco2 = 3.5d-2*44.d0/29.d0
+real(c_double), pointer, save:: conco2
 
 !> Asymmetry factor for O3 (non-dimensional)
 !> climatic value gaero_o3=0.66
-double precision, save:: gaero_o3 = 0.66d0
+real(c_double), pointer, save:: gaero_o3
 !> Asymmetry factor for H2O (non-dimensional)
 !> climatic value gaero_h2o=0.64
-double precision, save:: gaero_h2o = 0.64d0
+real(c_double), pointer, save:: gaero_h2o
 
 !> Single scattering albedo for O3 (non-dimensional)
 !> climatic value piaero_o3=0.84, other referenced values are 0.963
-double precision, save:: piaero_o3 = 0.84d0
+real(c_double), pointer, save:: piaero_o3
+
 !> Single scattering albedo for H2O (non-dimensional)
 !> climatic value piaero_h2o=0.84, other referenced values are 0.964
-double precision, save:: piaero_h2o = 0.84d0
+real(c_double), pointer, save:: piaero_h2o
 
 !> Fraction of Black carbon (non-dimensional): black_carbon_frac=1.d-8 for no BC
-double precision, save:: black_carbon_frac = 0.d0
+real(c_double), pointer, save:: black_carbon_frac
 
 !> Maximal height for aerosol distribution on the vertical
 !> important should be <= zqq(kmray-1);
 !> in meters : referenced value: zaero=6000
-double precision, save:: zaero = 6000d0
+real(c_double), pointer, save:: zaero
 
 !> Cp of dry air
 real(c_double), pointer, save :: cp_a
@@ -343,11 +344,11 @@ integer(c_int), pointer, save :: rad_atmo_model
 
   interface
 
-    subroutine cs_f_atmo_get_radiative_model_1d(iatra1, nvertv, kvert, kmx, nfatr1)  &
+    subroutine cs_f_atmo_get_radiative_model_1d(iatra1, nvertv, kvert, kmx, nfatr1, tausup)  &
          bind(C, name='cs_f_atmo_get_radiative_model_1d')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: iatra1, nvertv, kvert, kmx, nfatr1
+      type(c_ptr), intent(out) :: iatra1, nvertv, kvert, kmx, nfatr1, tausup
     end subroutine cs_f_atmo_get_radiative_model_1d
 
     !---------------------------------------------------------------------------
@@ -461,6 +462,17 @@ integer(c_int), pointer, save :: rad_atmo_model
       type(c_ptr), intent(out) :: p_rad_atmo_model
     end subroutine cs_rad_transfer_get_pointers
 
+    subroutine cs_f_atmo_chemistry_get_pointer(aod_o3_tot, aod_h2o_tot, aod_ir, conco2, &
+                                               gaero_o3, gaero_h2o, piaero_o3,          &
+                                               piaero_h2o, black_carbon_frac, zaero)    &
+      bind(C, name='cs_f_atmo_chemistry_get_pointer')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: aod_o3_tot, aod_h2o_tot, aod_ir, conco2
+      type(c_ptr), intent(out) :: gaero_o3, gaero_h2o, piaero_o3
+      type(c_ptr), intent(out) :: piaero_h2o, black_carbon_frac, zaero
+    end subroutine cs_f_atmo_chemistry_get_pointer
+
   end interface
 
 contains
@@ -507,11 +519,12 @@ contains
     type(c_ptr) :: c_imeteo, c_idrayi, c_idrayst, c_igrid
     type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt
     type(c_ptr) :: c_nfatr1
-    type(c_ptr) :: c_iatsoil
+    type(c_ptr) :: c_iatsoil, c_tausup
     type(c_ptr) :: c_nvert, c_kvert, c_kmx, c_theo_interp, c_ihpm
-    type(c_ptr) :: c_aod_o3_tot, c_aod_h2o_tot
-    type(c_ptr) :: c_cp_a, c_cp_v
-    type(c_ptr) :: p_rad_atmo_model
+    type(c_ptr) :: c_aod_o3_tot, c_aod_h2o_tot, c_aod_ir
+    type(c_ptr) :: c_cp_a, c_cp_v, c_conco2, c_gaero_o3
+    type(c_ptr) :: p_rad_atmo_model, c_gaero_h2o, c_piaero_o3
+    type(c_ptr) :: c_piaero_h2o, c_black_carbon_frac, c_zaero
 
     call cs_f_atmo_get_pointers(c_ps,               &
       c_syear, c_squant, c_shour, c_smin, c_ssec,   &
@@ -525,8 +538,10 @@ contains
       c_sigc, c_idrayi, c_idrayst, c_igrid,         &
       c_aod_o3_tot, c_aod_h2o_tot)
 
-    call cs_f_atmo_get_radiative_model_1d(c_iatra1, c_nvert, c_kvert, c_kmx, c_nfatr1)
-
+    call cs_f_atmo_get_radiative_model_1d(c_iatra1, c_nvert, c_kvert, c_kmx, c_nfatr1, c_tausup)
+    call cs_f_atmo_chemistry_get_pointer(c_aod_o3_tot, c_aod_h2o_tot, c_aod_ir, c_conco2,    &
+                                         c_gaero_o3, c_gaero_h2o, c_piaero_o3, c_piaero_h2o, &
+                                         c_black_carbon_frac, c_zaero)
     call c_f_pointer(c_ps, ps)
     call c_f_pointer(c_syear, syear)
     call c_f_pointer(c_squant, squant)
@@ -551,6 +566,7 @@ contains
     call c_f_pointer(c_nfatr1, nfatr1)
     call c_f_pointer(c_nbmaxt, nbmaxt)
     call c_f_pointer(c_iatsoil, iatsoil)
+    call c_f_pointer(c_tausup, tausup)
 
     call c_f_pointer(c_nvert, nvert)
     call c_f_pointer(c_kvert, kvert)
@@ -563,6 +579,14 @@ contains
 
     call c_f_pointer(c_aod_o3_tot,  aod_o3_tot)
     call c_f_pointer(c_aod_h2o_tot, aod_h2o_tot)
+    call c_f_pointer(c_aod_ir, aod_ir)
+    call c_f_pointer(c_conco2, conco2)
+    call c_f_pointer(c_gaero_o3, gaero_o3)
+    call c_f_pointer(c_gaero_h2o, gaero_h2o)
+    call c_f_pointer(c_piaero_o3, piaero_o3)
+    call c_f_pointer(c_piaero_h2o, piaero_h2o)
+    call c_f_pointer(c_black_carbon_frac, black_carbon_frac)
+    call c_f_pointer(c_zaero, zaero)
 
     call cs_air_glob_properties_get_pointers(c_cp_a, c_cp_v)
 

@@ -88,11 +88,7 @@ cs_atprke.cpp \
 cs_intprf.cpp
 
 if HAVE_FORTRAN
-libcsatmo_a_SOURCES += atr1vf.f90 \
-rayigc.f90 \
-rayir.f90 \
-rayive.f90 \
-rayso.f90
+libcsatmo_a_SOURCES += atr1vf.f90
 endif
 
 clean-local:

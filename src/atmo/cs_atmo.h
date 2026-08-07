@@ -437,10 +437,6 @@ struct cs_atmo_option_t {
   /*! id of grid formed by 1D profiles */
   int profiles_grid_id{-1};
 
-  cs_real_t aod_o3_tot{0.2};
-
-  cs_real_t aod_h2o_tot{0.1};
-
 };// cs_atmo_option_t;
 
 /*----------------------------------------------------------------------------

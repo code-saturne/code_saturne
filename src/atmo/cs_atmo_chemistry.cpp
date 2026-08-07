@@ -121,7 +121,17 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .t_conc_profiles = nullptr,
   .x_conc_profiles = nullptr,
   .y_conc_profiles = nullptr,
-  .dt_chemistry_max = 10.0
+  .dt_chemistry_max = 10.0,
+  .aod_o3_tot = 0.2,
+  .aod_h2o_tot = 0.1,
+  .aod_ir = 0.1,
+  .conco2 = 3.5e-2*44.0/29.0,
+  .gaero_o3 = 0.66,
+  .gaero_h2o = 0.64,
+  .piaero_o3 = 0.84,
+  .piaero_h2o = 0.84,
+  .black_carbon_frac = 0.0,
+  .zaero = 6000.0
 };
 
 /*============================================================================
@@ -256,6 +266,49 @@ cs_ext_polyphemus_ssh_lu_solve(int       n_species_g,
                                double    dlalu[],
                                double    dlx[]);
 #endif
+
+/*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+extern "C" void
+cs_f_atmo_chemistry_get_pointer(cs_real_t  **aod_o3_tot,
+                                cs_real_t  **aod_h2o_tot,
+                                cs_real_t  **aod_ir,
+                                cs_real_t  **conco2,
+                                cs_real_t  **gaero_o3,
+                                cs_real_t  **gaero_h2o,
+                                cs_real_t  **piaero_o3,
+                                cs_real_t  **piaero_h2o,
+                                cs_real_t  **black_carbon_frac,
+                                cs_real_t  **zaero);
+
+
+void
+cs_f_atmo_chemistry_get_pointer(cs_real_t  **aod_o3_tot,
+                                cs_real_t  **aod_h2o_tot,
+                                cs_real_t  **aod_ir,
+                                cs_real_t  **conco2,
+                                cs_real_t  **gaero_o3,
+                                cs_real_t  **gaero_h2o,
+                                cs_real_t  **piaero_o3,
+                                cs_real_t  **piaero_h2o,
+                                cs_real_t  **black_carbon_frac,
+                                cs_real_t  **zaero)
+{
+  *zaero       = &(_atmo_chem.zaero);
+  *aod_ir      = &(_atmo_chem.aod_ir);
+  *conco2      = &(_atmo_chem.conco2);
+  *gaero_o3    = &(_atmo_chem.gaero_o3);
+  *gaero_h2o   = &(_atmo_chem.gaero_h2o);
+  *piaero_o3   = &(_atmo_chem.piaero_o3);
+  *piaero_h2o  = &(_atmo_chem.piaero_h2o);
+  *aod_o3_tot  = &(_atmo_chem.aod_o3_tot);
+  *aod_h2o_tot = &(_atmo_chem.aod_h2o_tot);
+  *black_carbon_frac = &(_atmo_chem.black_carbon_frac);
+}
+
 
 /*============================================================================
  * Private function definitions

@@ -48,7 +48,7 @@ use, intrinsic :: iso_c_binding
 
 implicit none
 
-procedure() :: grimap, gripol, rayir, rayso, mesmap
+procedure() :: grimap, gripol, mesmap
 
 ! Local variables
 integer k, ii, jj
@@ -123,6 +123,40 @@ interface
     real(kind=c_double), dimension(*), intent(inout) :: romray, qvray
     real(kind=c_double), dimension(*), intent(inout) :: qlray,  ncray, aeroso
   end subroutine cs_user_atmo_1d_rad_prf
+
+  subroutine cs_atmo_compute_radiative_fluxes(ivertc, k1, kmray, heuray, imer1,      &
+                                              albe, qqv, qqvinf, zqq, zray, qvray,   &
+                                              qlray, fneray, romray, preray, temray, &
+                                              fos, rayst, ncray)                     &
+    bind(C, name="cs_atmo_compute_radiative_fluxes")
+    use iso_c_binding
+    implicit none
+    integer(c_int), value :: ivertc, k1
+    integer(c_int), value :: kmray, imer1
+    real(c_double), value :: qqvinf, heuray
+    real(c_double), intent(out) :: albe, fos
+    real(c_double) :: qqv(*)
+    real(c_double) :: qlray(*), fneray(*)
+    real(c_double) :: zqq(*), zray(*), qvray(*)
+    real(c_double) :: romray(*), preray(*), temray(*)
+    real(c_double) :: rayst(*), ncray(*)
+  end subroutine cs_atmo_compute_radiative_fluxes
+
+  subroutine cs_atmo_compute_ir_fluxes_divergence(ivertc, k1, kmray, emis,               &
+                                                  qqv, qqqv, qqvinf, zqq,                &
+                                                  zray, temray, qvray, qlray, fnerir,    &
+                                                  romray, preray, aeroso,                &
+                                                  t_surf, p_surf, foir, rayi, ncray)     &
+    bind(C, name="cs_atmo_compute_ir_fluxes_divergence")
+    use iso_c_binding
+    implicit none
+    integer(c_int), value :: ivertc, kmray, k1
+    real(c_double), value :: emis, t_surf, p_surf
+    real(c_double), intent(out) :: qqvinf, foir
+    real(c_double) :: qqv(*), qqqv(*), zqq(*), zray(*)
+    real(c_double) :: temray(*), qvray(*), qlray(*), fnerir(*)
+    real(c_double) :: romray(*), preray(*), aeroso(*), rayi(*), ncray(*)
+  end subroutine cs_atmo_compute_ir_fluxes_divergence
 
 end interface
 
@@ -443,20 +477,18 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     !-----------------------------------------------------
 
     ! --- Long-wave: InfraRed
-    call rayir(ii, k1, kmx, emis,                                 &
-               tauzq, tauz, tausup, zq,                           &
-               zray, temray, qvray,                               &
-               qlray, fneray, romray, preray, aeroso,             &
-               soil_ttsoil(ii), soil_totwat(ii),                  &
-               soil_density (ii), soil_pressure(ii),              &
-               foir, rayi(:,ii), ncray)
+    call cs_atmo_compute_ir_fluxes_divergence(ii-1, k1-1, kmx-1, emis,                           &
+                                              tauzq, tauz, tausup, zq,                           &
+                                              zray, temray, qvray,                               &
+                                              qlray, fneray, romray, preray, aeroso,             &
+                                              soil_ttsoil(ii), soil_pressure(ii), foir, rayi(:,ii), ncray)
 
     ! --- Short-wave: Sun
-    call rayso(ii, k1, kmx, heuray, imer1, albedo,                &
-               tauzq, tauz, tausup, zq,                           &
-               zray,                                              &
-               qvray, qlray, fneray, romray, preray, temray,      &
-               fos, rayst(:,ii), ncray)
+    call cs_atmo_compute_radiative_fluxes(ii-1, k1-1, kmx-1, heuray, imer1, albedo,          &
+                                          tauzq, tausup, zq,                                 &
+                                          zray,                                              &
+                                          qvray, qlray, fneray, romray, preray, temray,      &
+                                          fos, rayst(:,ii), ncray)
 
   enddo
 

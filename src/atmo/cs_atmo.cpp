@@ -177,9 +177,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **sigc,
                        int                    **idrayi,
                        int                    **idrayst,
-                       int                    **igrid,
-                       cs_real_t              **aod_o3_tot,
-                       cs_real_t              **aod_h2o_tot);
+                       int                    **igrid);
 
 extern "C" void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
@@ -1157,9 +1155,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **sigc,
                        int                    **idrayi,
                        int                    **idrayst,
-                       int                    **igrid,
-                       cs_real_t              **aod_o3_tot,
-                       cs_real_t              **aod_h2o_tot)
+                       int                    **igrid)
 {
   *ps        = &(_atmo_constants.ps);
   *syear     = &(_atmo_option.syear);
@@ -1188,8 +1184,6 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *idrayi = &(_atmo_option.infrared_1D_profile);
   *idrayst = &(_atmo_option.solar_1D_profile);
   *igrid = &(_atmo_option.profiles_grid_id);
-  *aod_o3_tot  = &(_atmo_option.aod_o3_tot);
-  *aod_h2o_tot  = &(_atmo_option.aod_h2o_tot);
 }
 
 void

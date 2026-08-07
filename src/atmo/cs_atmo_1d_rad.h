@@ -61,6 +61,9 @@ typedef struct {
   /*! 1D radiative model pass frequency (1 valu bu default)*/
   int frequency;
 
+  /*! internal variable for 1D radiative model */
+   cs_real_t tausup;
+
   /*! horizontal coordinates of the vertical grid */
   cs_real_t *xy;
 
@@ -150,6 +153,123 @@ extern cs_atmo_1d_rad_t *cs_glob_atmo_1d_rad;
 
 extern "C" void
 cs_atmo_1d_rad_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute radiative source term for the atmospheric model (1D scheme).
+ *
+ *         Computes the source term for scalar equations from radiative forcing
+ *         (UV and IR radiative fluxes) using a 1D formulation.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_compute_radiative_source_term_1d(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute solar fluxes for both clear and cloudy atmosphere following
+ * Lacis and Hansen (1974). The multiple diffusion is taken into account by an
+ * addition method and overlapping between water vapor and liquid water with k
+ * distribution method.
+ * Some improvements from original version concerns:
+ * - introduction of cloud fraction with hazardous recovering
+ * - introduction of aerosol diffusion in the same way as for cloud droplets
+ *   but with specific optical properties for aerosols.
+ *
+ * \param[in]   ivertc      index of vertical profile
+ * \param[in]   k1          index for ground level
+ * \param[in]   kmray       vertical levels number for radiation
+ * \param[in]   heuray      Universal time (Hour)
+ * \param[in]   imer1       sea index
+ * \param[in]   albe        albedo
+ * \param[in]   qqv         optical depth for water vapor (0,zqq)
+ * \param[in]   qqvinf      idem qqv but for altitude above 11000m
+ * \param[in]   zqq         vertical levels (interfaces)
+ * \param[in]   zray        vertical levels (volumes)
+ * \param[in]   qvray       specific humidity for water vapor
+ * \param[in]   qlray       specific humidity for liquid water
+ * \param[in]   fneray      cloud fraction
+ * \param[in]   romray      air density
+ * \param[in]   preray      pressure
+ * \param[in]   temray      temperature
+ * \param[out]  fos         global downward solar flux at the ground
+ * \param[out]  rayst       flux divergence of solar radiation
+ */
+/*----------------------------------------------------------------------------*/
+
+extern "C" void
+cs_atmo_compute_radiative_fluxes(const int       ivertc,
+                                 const int       k1,
+                                 const int       kmray,
+                                 const cs_real_t heuray,
+                                 const int       imer1,
+                                 cs_real_t       *albe,
+                                 cs_real_t       qqv[],
+                                 const cs_real_t qqvinf,
+                                 const cs_real_t zqq[],
+                                 const cs_real_t zray[],
+                                 const cs_real_t qvray[],
+                                 cs_real_t       qlray[],
+                                 cs_real_t       fneray[],
+                                 const cs_real_t romray[],
+                                 const cs_real_t preray[],
+                                 const cs_real_t temray[],
+                                 cs_real_t       *fos,
+                                 cs_real_t       rayst[],
+                                 const cs_real_t ncray[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute infrared flux divergence profile and downward flux at
+ *        ground level relying on a 1D radiative scheme.
+ *
+ * \param[in]  ivertc      index of vertical profile
+ * \param[in]  k1          index for ground level
+ * \param[in]  kmray       vertical levels number for radiation
+ * \param[in]  emis        ground surface emissivity
+ * \param[out] qqv         optical depth for water vapor (0,zqq)
+ * \param[out] qqqv        idem qqv but for intermediates vertical levels (zray)
+ * \param[in]  qqvinf      idem qqv but for altitude above 11000m
+ * \param[in]  zqq         vertical levels (interfaces)
+ * \param[in]  zray        vertical levels (volumes)
+ * \param[in]  temray      temperature in Celsius
+ * \param[in]  qvray       specific humidity for water vapor
+ * \param[in]  qlray       specific humidity for liquid water
+ * \param[in]  fnerir      cloud fraction
+ * \param[in]  romray      air density
+ * \param[in]  preray      pressure
+ * \param[in]  aeroso      aerosol concentration in micro-g/m3
+ * \param[in]  t_surf      surface temperature
+ * \param[in]  p_surf      surface pressure
+ * \param[out] foir        downward IR flux at the ground
+ * \param[out] rayi        IR flux divergence
+ * \param[in]  ncray       Number of droplets interpolated on vertical grid
+ */
+/*----------------------------------------------------------------------------*/
+
+extern "C" void
+cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
+                                     const int        k1,
+                                     const int        kmray,
+                                     const cs_real_t  emis,
+                                     cs_real_t        qqv[],
+                                     cs_real_t        qqqv[],
+                                     cs_real_t        *qqvinf,
+                                     cs_real_t        zqq[],
+                                     cs_real_t        zray[],
+                                     const cs_real_t  temray[],
+                                     const cs_real_t  qvray[],
+                                     const cs_real_t  qlray[],
+                                     cs_real_t        fnerir[],
+                                     const cs_real_t  romray[],
+                                     const cs_real_t  preray[],
+                                     const cs_real_t  aeroso[],
+                                     const cs_real_t  t_surf,
+                                     const cs_real_t  p_surf,
+                                     cs_real_t        *foir,
+                                     cs_real_t        rayi[],
+                                     const cs_real_t  ncray[]);
 
 /*----------------------------------------------------------------------------*/
 

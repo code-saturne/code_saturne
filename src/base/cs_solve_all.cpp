@@ -1367,6 +1367,7 @@ cs_solve_all()
                 "%s: code_saturne compiled without Fortran support.\n",
                 __func__);
 #endif
+      //cs_atmo_compute_radiative_source_term_1d();
 
     cs_rad_transfer_solve(cs_boundary_conditions_get_bc_type());
   }

@@ -134,6 +134,36 @@ typedef struct {
   cs_real_t *y_conc_profiles;
   /*! maximal time step for chemistry resolution */
   cs_real_t dt_chemistry_max;
+  /*! adimensional :  aod_o3_tot=0.2 other referenced values are  0.10, 0.16 */
+  cs_real_t aod_o3_tot;
+  /*! adimensional :  aod_h2o_tot=0.10 other referenced values are  0.06, 0.08 */
+  cs_real_t aod_h2o_tot;
+  /*! total aerosol optical depth in the IR domain for thermal radiation
+      deduced from aeronet data */
+  cs_real_t aod_ir;
+  /*!  CO2 concentration in cm NTP with correction to the ratio of
+    molar masses for Mco2 and Mair
+    default is 350ppm */
+  cs_real_t conco2;
+  /*! Asymmetry factor for O3 (non-dimensional)
+      climatic value gaero_o3=0.66 */
+  cs_real_t gaero_o3;
+  /*! Asymmetry factor for H2O (non-dimensional)
+      climatic value gaero_h2o=0.64 */
+  cs_real_t gaero_h2o;
+  /*! Single scattering albedo for O3 (non-dimensional)
+     climatic value piaero_o3=0.84, other referenced values are 0.963 */
+  cs_real_t piaero_o3;
+  /*! Single scattering albedo for H2O (non-dimensional)
+     climatic value piaero_h2o=0.84, other referenced values are 0.964 */
+  cs_real_t piaero_h2o;
+  /*! Fraction of Black carbon (non-dimensional): black_carbon_frac=1.d-8 for no BC */
+  cs_real_t black_carbon_frac;
+
+  /*! Maximal height for aerosol distribution on the vertical
+    important should be <= zqq(kmray-1);
+    in meters : referenced value: zaero=6000 */
+  cs_real_t zaero;
 
 } cs_atmo_chemistry_t;
 
