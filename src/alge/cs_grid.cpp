@@ -1319,10 +1319,7 @@ _coarsen_halo(const cs_grid_t   *f,
 
     cs_lnum_t *send_perio_lst, *perio_lst;
     CS_MALLOC(send_perio_lst, c_halo->n_transforms*stride_n, cs_lnum_t);
-    CS_MALLOC_HD(perio_lst,
-                 c_halo->n_transforms*stride_n,
-                 cs_lnum_t,
-                 c->alloc_mode);
+    CS_MALLOC(perio_lst, c_halo->n_transforms*stride_n, cs_lnum_t);
 
     for (int i = 0; i < c_halo->n_transforms; i++) {
 
