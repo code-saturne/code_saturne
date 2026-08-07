@@ -629,7 +629,7 @@ _read_header(cs_xml_t  *doc)
                          doc->buffer_name, attr_key, attr_val);
           }
           else if (strcmp(attr_key, "encoding") == 0) {
-            if (strcmp(attr_val, "utf-8") != 0)
+            if (strcmp(attr_val, "utf-8") != 0 && strcmp(attr_val, "UTF-8"))
               bft_printf(_("XML (%s) %s %s unexpected\n"),
                          doc->buffer_name, attr_key, attr_val);
           }
