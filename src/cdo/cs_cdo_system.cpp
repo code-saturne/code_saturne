@@ -190,6 +190,7 @@ _set_eblock33_assembly_func(void)
   return nullptr; /* Case not handled */
 }
 
+#if defined (HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Choose which function will be used to perform the matrix assembly
@@ -223,6 +224,7 @@ _set_petsc_eblock33_assembly_func(void)
 
   return nullptr; /* Case not handled */
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -348,8 +350,10 @@ _assign_assembly_func(const cs_cdo_system_block_info_t   bi)
     if (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE)
       return cs_cdo_assembly_matrix_e33_generic;
 
+#if defined (HAVE_PETSC)
     else if (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_PETSC)
       return _set_petsc_eblock33_assembly_func();
+#endif
 
     else {
       if (bi.unrolled)
