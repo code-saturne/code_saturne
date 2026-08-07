@@ -1,11 +1,11 @@
-Master (not on release branches yet)
+﻿Master (not on release branches yet)
 ------------------------------------
 
 ### Architectural changes:
 
 - Mesh: revamp handling of hidden and appended boundary faces.
-  The `n_b_faces_all` memeber is replaced by `n_b_faces_appended`,
-  which is negative for hiddent faces, positieve for appended faces.
+  The `n_b_faces_all` member is replaced by `n_b_faces_appended`,
+  which is negative for hidden faces, positive for appended faces.
 
 - Move documentation directory back from `docs` to more standard `doc`.
 
