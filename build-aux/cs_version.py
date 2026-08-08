@@ -76,6 +76,10 @@ def version_from_news(srcdir):
             j = i-1
             l = lines[j]
 
+            # Avoid issue when previous line is empty
+            while l[0].isprintable() == False:
+                l = l[1:]
+
             if l[0:7] == 'Master ' and master < 0:
                 master = j
 
