@@ -4362,8 +4362,8 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
       c_cardinality[ii] += 1;
       c_cardinality[jj] += 1;
 
-      xv_sum[ii] += fabs(_f_xa[face_id*isym]);
-      xv_sum[jj] += fabs(_f_xa[face_id*isym + isym-1]);
+      xv_sum[ii] += abs(_f_xa[face_id*isym]);
+      xv_sum[jj] += abs(_f_xa[face_id*isym + isym-1]);
     }
 
     /* Also check for penalization */
@@ -5208,10 +5208,10 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
   for (cs_lnum_t c_face = 0; c_face < n_faces; c_face++) {
     cs_lnum_t ic = face_cell[c_face][0];
     cs_lnum_t jc = face_cell[c_face][1];
-    w3[ic] = cs::max(fabs(xa[c_face*isym]), w3[ic]);
-    w4[ic] = cs::min(fabs(xa[c_face*isym]), w4[ic]);
-    w3[jc] = cs::max(fabs(xa[(c_face +1)*isym -1]), w3[jc]);
-    w4[jc] = cs::min(fabs(xa[(c_face +1)*isym -1]), w4[jc]);
+    w3[ic] = cs::max(abs(xa[c_face*isym]), w3[ic]);
+    w4[ic] = cs::min(abs(xa[c_face*isym]), w4[ic]);
+    w3[jc] = cs::max(abs(xa[(c_face +1)*isym -1]), w3[jc]);
+    w4[jc] = cs::min(abs(xa[(c_face +1)*isym -1]), w4[jc]);
   }
 
   for (cs_lnum_t ic = 0; ic < n_cells; ic++)
@@ -5345,8 +5345,8 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
 
     for (cs_lnum_t r_idx = s_id; r_idx < e_id; r_idx++) {
       cs_real_t v = x_val[r_idx];
-      w3 = cs::max(fabs(v), w3);
-      w4 = cs::min(fabs(v), w4);
+      w3 = cs::max(abs(v), w3);
+      w4 = cs::min(abs(v), w4);
 
       if (cell_face != nullptr) {
         cs_real_t v_o_v0 = v / xa0[cell_face[r_idx]];
@@ -5764,7 +5764,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
                  + c_xa0ij[3*c_face +2] * dij[2];
       }
 
-      if (fabs(dsigjg) > cs_math_epzero) {
+      if (abs(dsigjg) > cs_math_epzero) {
 
         cs_real_t agij = dsxaij/dsigjg;
 
@@ -6203,7 +6203,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
                + c_xa0ij[3*c_face +1] * c_face_normal[c_face][1]
                + c_xa0ij[3*c_face +2] * c_face_normal[c_face][2];
 
-      if (fabs(dsigjg) > cs_math_epzero) {
+      if (abs(dsigjg) > cs_math_epzero) {
 
         cs_real_t agij = dsxaij/dsigjg;
 
@@ -7196,7 +7196,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
           cs_real_t c_x_val_c = c_xa0[c_face_id];
 
-          if (fabs(dsigjg) > cs_math_epzero) {
+          if (abs(dsigjg) > cs_math_epzero) {
             const cs_real_t dsxaij
               = cs_math_3_dot_product(c_xa0ij[c_face_id],
                                       c_face_normal[c_face_id]);
@@ -7249,7 +7249,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
           cs_real_t c_x_val_c = c_xa0[c_face_id];
 
-          if (fabs(dsigjg) > cs_math_epzero) {
+          if (abs(dsigjg) > cs_math_epzero) {
             const cs_real_t dsxaij
               = cs_math_3_dot_product(c_xa0ij[c_face_id], dijc);
             const cs_real_t agij = dsxaij/dsigjg;
