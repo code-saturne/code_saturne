@@ -3003,7 +3003,7 @@ cs_set_alloc_mode(void             **host_ptr,
       cs_copy_d2h(ret_ptr, _ptr, me.size);
 
       if (mode == CS_ALLOC_HOST) {
-        cs_mem_free(_ptr, var_name, __FILE__, __LINE__);
+        cs_mem_free(_ptr, var_name, nullptr, 0);
         me_new.device_ptr = nullptr;
       }
 
