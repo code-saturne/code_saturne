@@ -172,7 +172,7 @@ Examples
 ### Note
 
 `report_figures.pdf` is generated only if the option `-p, --post` is present in
-the command line.
+the command line. The file is stored in the POST folder.
 
 `write-up.pdf` is generated only if the option `--report` is present in the
 command line. The content of POST folder in **destination** is not overwriten

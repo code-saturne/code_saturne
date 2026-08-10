@@ -210,6 +210,7 @@ class Report(TexWriter):
     def __init__(self, dest, label, pdflatex):
         """
         """
+        os.chdir(dest)
         TexWriter.__init__(self, dest, label, pdflatex)
 
     def add_row(self, values, studyLabel, caseLabel):

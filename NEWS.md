@@ -45,6 +45,8 @@
   Catalyst) into the destination POST folder with the following structure:
   `POST/datasets/<case>/<run_id>`
 
+- The report figures file is now stored in the POST folder
+
 Release 9.2.0 (2026-07-06)
 --------------------------
 

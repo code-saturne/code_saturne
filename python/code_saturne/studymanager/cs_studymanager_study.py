@@ -2835,15 +2835,13 @@ class Studies(object):
             f, dest, repo, tex = self.__parser.getInput(i_node)
             doc.appendLine("\\subsubsection{%s}" % f)
 
+            d = ""
+            dd = self.__dest
             if dest:
                 d = dest
-                dd = self.__dest
             elif repo:
                 d = repo
                 dd = self.__repo
-            else:
-                d = ""
-                dd = ""
 
             if c_label:
                 fd = os.path.join(dd, s_label, c_label, r_label, run_label)
@@ -2913,16 +2911,20 @@ class Studies(object):
 
         self.reporting('  o Generation of the automatic detailed report')
 
-        # figures report
-        doc = Report(self.__dest,
-                     report_fig,
-                     self.__pdflatex)
-
         previous_study_name = None
         for case in self.graph.graph_dict:
 
             # detect new study
             if case.study is not previous_study_name:
+                # close previous report figure file
+                if previous_study_name:
+                    attached_files.append(doc.close())
+                    self.reporting('    - Done for study '+ case.study)
+
+                # open new report figure file
+                dest = os.path.join(self.__dest, case.study, "POST") 
+                doc = Report(dest, report_fig, self.__pdflatex)
+
                 # retrieve study_object from index
                 study_label, study_object = self.studies[case.study_index]
                 previous_study_name = study_label
@@ -2962,14 +2964,16 @@ class Studies(object):
             if case.plot:
                 nodes = self.__parser.getChildren(case.node, "input")
                 if nodes:
-                    doc.appendLine("\\subsection{Results for "
-                                   "case %s}" % case.label)
+                    doc.appendLine("\\subsection{Results for case "
+                                   "%s}" % (case.label + "/" + case.run_id))
                     self.report_input(doc, nodes, case.study, case.label,
                                       case.resu, case.run_id)
                     # copy input in POST/datasets/
                     self.copy_input(nodes, case.study, case.label, case.run_id)
 
+        # close last report figure file
         attached_files.append(doc.close())
+        self.reporting('    - Done for study '+ previous_study_name)
 
         self.reporting('')
 
