@@ -20,7 +20,6 @@
 
 <ModuleRules version="1.0" module="TimeStepping">
 
-
   <Definitions>
 
     <TypeDef name="TimeScheme">
@@ -43,9 +42,7 @@
 
   </Definitions>
 
-
   <ValidationRules>
-
 
     <Rule Type="ThetaScheme" Property="viscosity">
       <Extrapolation Method="none" Theta="0.0"/>
@@ -89,7 +86,6 @@
       <Description>Scalar diffusivity extrapolation</Description>
     </Rule>
 
-
     <Rule Type="TimeStepLimits">
       <Parameter Name="dt_ref" Type="double" Default="0.1">
         <Range Min="0.0" Exclusive="true"/>
@@ -101,7 +97,6 @@
         <Range Min="0.0" Exclusive="true"/>
       </Parameter>
     </Rule>
-
 
     <Rule Type="AutomaticSetting" Setting="ThetaAutoInit">
       <Property Name="viscosity" Key="iviext">

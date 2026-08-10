@@ -158,7 +158,7 @@ cs_time_stepping_rules_manager::parse_theta_schemes_()
       cs_theta_config_t tc;
       tc.property_name = std::string(property);
 
-      // Parser les extrapolations
+      // Parse extrapolations
       cs_tree_node_t *extrap = cs_tree_node_get_child(config,
                                                       "Extrapolation");
       while (extrap != nullptr) {
@@ -179,7 +179,7 @@ cs_time_stepping_rules_manager::parse_theta_schemes_()
         extrap = cs_tree_node_get_next_of_name(extrap);
       }
 
-      // Parser les ordres de termes sources
+      // Parse source term orders
       cs_tree_node_t *source_order = cs_tree_node_get_child(config,
                                                             "SourceTermOrder");
       while (source_order != nullptr) {
@@ -377,7 +377,7 @@ cs_time_stepping_rules_manager::get_theta_for_extrapolation
     if (theta_it != it->second.extrap_method_to_theta.end())
       return theta_it->second;
   }
-  return -999.0;  // Valeur invalide
+  return -999.0;  // Invald value
 }
 
 double
@@ -393,7 +393,7 @@ cs_time_stepping_rules_manager::get_theta_for_source_term
     if (theta_it != it->second.source_order_to_theta.end())
       return theta_it->second;
   }
-  return -999.0;  // Valeur invalide
+  return -999.0;  // Invald value
 }
 
 cs_time_step_limits_t

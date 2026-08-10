@@ -715,6 +715,39 @@ _log_func_default_var_cal_opt(const void *t)
                 _("Relaxation of variables (1 for no relaxation)"));
 }
 
+/*----------------------------------------------------------------------------
+ * Determine theta scheme value from scheme parameter.
+ *
+ * \param[in]       k_name
+ * \param[in]       t_name
+ * \param[in]       k_id
+ * \param[in, out]  theta
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_theta_scheme(const char  *k_name,
+                  const char  *t_name,
+                  int          k_id,
+                  double      &theta)
+{
+  if (std::abs(theta+999.) > cs_math_epzero) {
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in the data specification"),
+       _("%s = %d\n"
+         "%s will be initialized automatically.\n"
+         "Do not modify it.\n"),
+       k_name, k_id, t_name);
+  }
+  else if (k_id == 0)
+    theta = 0.;
+  else if (k_id == 1)
+    theta = 0.5;
+  else if (k_id == 2)
+    theta = 1.;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -1672,75 +1705,31 @@ cs_parameters_global_complete(void)
 
   /* Physical properties */
 
-  /* Model rules: theta values are initialized through TimeSteppingRules.xml */
-  cs_time_stepping_rules_manager *ts_rules = cs_get_time_stepping_rules_manager();
-
-  int iviext = f_mu->get_key_int(key_t_ext_id);
-  if (ts_rules->should_auto_init_theta("viscosity", time_scheme->thetvi)) {
-    time_scheme->thetvi = ts_rules->get_theta_for_extrapolation("viscosity", iviext);
-  }
-  else {
-    cs_parameters_error
-      (CS_ABORT_DELAYED,
-       _("in the data specification"),
-       _("iviext = %d\n"
-         "thetvi will be initialized automatically.\n"
-         "Do not modify it.\n"),
-       iviext);
-  }
+  _set_theta_scheme("molecular_viscosity, \"time_extrapolated\" keyword",
+                    "cs_glob_time_scheme->thetvi",
+                    f_mu->get_key_int(key_t_ext_id),
+                    time_scheme->thetvi);
 
   if (cs_glob_fluid_properties->icp >= 0) {
-
-    int icpext = f_cp->get_key_int(key_t_ext_id);
-    if (ts_rules->should_auto_init_theta("heat_capacity",
-                                         time_scheme->thetcp)) {
-      time_scheme->thetcp
-        = ts_rules->get_theta_for_extrapolation("heat_capacity", icpext);
-    }
-    else {
-      cs_parameters_error
-        (CS_ABORT_DELAYED,
-         _("in the data specification"),
-         _("icpext = %d\n"
-           "thetcp will be initialized automatically.\n"
-           "Do not modify it.\n"),
-         icpext);
-    }
+    _set_theta_scheme("specific_heat, \"time_extrapolated\" keyword",
+                      "cs_glob_time_scheme->thetcp",
+                      f_cp->get_key_int(key_t_ext_id),
+                      time_scheme->thetcp);
   }
 
   /* NS source terms */
-  int isno2t = cs_glob_time_scheme->isno2t;
-  if (ts_rules->should_auto_init_theta("navier_stokes_source",
-                                       time_scheme->thetsn)) {
-    time_scheme->thetsn
-      = ts_rules->get_theta_for_source_term("navier_stokes_source", isno2t);
-  }
-  else {
-    cs_parameters_error
-      (CS_ABORT_DELAYED,
-       _("in the data specification"),
-       _("isno2t = %d\n"
-         "thetsn will be initialized automatically.\n"
-         "Do not modify it.\n"),
-       isno2t);
-  }
+
+  _set_theta_scheme("cs_glob_time_scheme->isno2t" ,
+                    "cs_glob_time_scheme->thetsn",
+                    time_scheme->isno2t,
+                    time_scheme->thetsn);
 
   /* Turbulent variables source terms */
-  int isto2t = cs_glob_time_scheme->isto2t;
-  if (ts_rules->should_auto_init_theta("turbulence_source",
-      time_scheme->thetst)) {
-    time_scheme->thetst
-      = ts_rules->get_theta_for_source_term("turbulence_source", isto2t);
-  }
-  else {
-    cs_parameters_error
-      (CS_ABORT_DELAYED,
-       _("in the data specification"),
-       _("isto2t = %d\n"
-         "thetst will be initialized automatically.\n"
-         "Do not modify it.\n"),
-       isto2t);
-  }
+
+  _set_theta_scheme("cs_glob_time_scheme->isto2t" ,
+                    "cs_glob_time_scheme->thetst",
+                    time_scheme->isto2t,
+                    time_scheme->thetst);
 
   const int n_fields = cs_field_n_fields();
 
@@ -1774,36 +1763,31 @@ cs_parameters_global_complete(void)
         thetss = 0.;
         f->set_key_double(kthetss, thetss);
       }
+
       /* Scalar diffusivity */
       int f_id_d = f->get_key_int(kivisl);
+      int iviext = 0;
       if (f_id_d >= 0)
         iviext = cs_field_by_id(f_id_d)->get_key_int(key_t_ext_id);
-      else
-        iviext = 0;
 
       cs_real_t thetvs = f->get_key_double(kthetvs);
       if (fabs(thetvs+1.) > cs_math_epzero) {
         cs_parameters_error
           (CS_ABORT_DELAYED,
            _("in the data specification"),
-           _("Scalar (%s) iviext = %d\n"
-             "thetvs will be initialized automatically.\n"
+           _("Scalar (%s) \"diffusivity_id\" key value = %d\n"
+             "\"diffusivity_extrapolated\" value will be set automatically.\n"
              "Do not modify it.\n"),
            f->name, iviext);
       }
-      else if (iviext == 0) {
+      else if (iviext == 0)
         thetvs = 0.;
-        f->set_key_double(kthetvs, thetvs);
-      }
-      else if (iviext == 1) {
+      else if (iviext == 1)
         thetvs = 0.5;
-        f->set_key_double(kthetvs, thetvs);
-      }
-      else if (iviext == 2) {
+      else if (iviext == 2)
         thetvs = 1.;
-        f->set_key_double(kthetvs, thetvs);
-      }
 
+      f->set_key_double(kthetvs, thetvs);
     }
   }
 }
