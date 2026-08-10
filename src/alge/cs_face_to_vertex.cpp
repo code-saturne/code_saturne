@@ -82,27 +82,13 @@
  * Local macros
  *============================================================================*/
 
-/* Cache line multiple, in cs_real_t units */
-
-#define CS_CL (CS_CL_SIZE / 8)
-
-#if !defined(HUGE_VAL)
-#define HUGE_VAL 1.E+12
-#endif
-
 /*=============================================================================
  * Local type definitions
  *============================================================================*/
 
-typedef cs_real_t cs_weight_t; /* Will allow testing single precision
-                                  if set to float. */
-
 /*============================================================================
  *  Global variables
  *============================================================================*/
-
-bool         _set_bface[3]     = { false, false, false };
-cs_weight_t *_weights_bface[3] = { nullptr, nullptr, nullptr };
 
 /* Short names for gradient computation types */
 
@@ -113,183 +99,73 @@ const char *cs_face_to_vertex_type_name[] = {
 };
 
 /*============================================================================
- * Private function definitions
+ * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute multipliers (pseudo-weights) for unweighted case
- *
- * In this case the weights directly match the number of adjacent cells.
- *
- * \param[in]  tr_ignore  if > 0, ignore periodicity with rotation;
- *                        if > 1, ignore all periodic transforms
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_b_face_to_vertex_w_unweighted(int tr_ignore)
+template <cs_lnum_t stride>
+void
+cs_face_to_vertex_t<stride>::initialize(cs_lnum_t        n_faces,
+                                        const cs_lnum_t *list_faces,
+                                        cs_lnum_t        n_vtx,
+                                        const cs_lnum_t *list_vtx)
 {
-  const cs_mesh_t *m = cs_glob_mesh;
+  _n_faces    = n_faces;
+  _list_faces = list_faces;
+  _n_vtx      = n_vtx;
+  _list_vtx   = list_vtx;
 
-  cs_dispatch_context    ctx;
-  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+  const cs_mesh_t *m          = cs_glob_mesh;
+  const cs_lnum_t  n_vertices = m->n_vertices;
 
-  const cs_lnum_t n_vertices = m->n_vertices;
+  if (_list_vtx == nullptr && n_vertices != _n_vtx) {
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("Error: %s incompatible number of verticies."),
+              __func__);
+  }
 
-  const cs_lnum_t *bf2v_idx = m->b_face_vtx_idx;
-  const cs_lnum_t *bf2v_ids = m->b_face_vtx_lst;
+  if (_list_faces == nullptr && m->n_b_faces != _n_faces) {
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("Error: %s incompatible number of boundary faces."),
+              __func__);
+  }
 
-  cs_weight_t *w = _weights_bface[CS_FACE_TO_VERTEX_UNWEIGHTED];
-  int         *w_sum;
-  CS_REALLOC_HD(w, n_vertices, cs_weight_t, cs_alloc_mode);
-  CS_MALLOC_HD(w_sum, n_vertices, int, cs_alloc_mode);
+  CS_MALLOC(_v_w, n_vertices, cs_real_t);
+  CS_MALLOC(_v_var, stride * n_vertices, cs_real_t);
 
-  _set_bface[CS_FACE_TO_VERTEX_UNWEIGHTED]     = true;
-  _weights_bface[CS_FACE_TO_VERTEX_UNWEIGHTED] = w;
-
-  cs_array_int_fill_zero(n_vertices, w_sum);
-
-  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_id) {
-    cs_lnum_t s_id = bf2v_idx[bf_id];
-    cs_lnum_t e_id = bf2v_idx[bf_id + 1];
-    for (cs_lnum_t j = s_id; j < e_id; j++) {
-      cs_lnum_t v_id = bf2v_ids[j];
-      cs_dispatch_sum(&w_sum[v_id], 1, b_sum_type);
-    }
-  });
-
-  ctx.wait();
-
-  if (m->vtx_interfaces != nullptr)
-    cs_interface_set_sum_tr(m->vtx_interfaces,
-                            m->n_vertices,
-                            1,
-                            true,
-                            CS_INT_TYPE,
-                            tr_ignore,
-                            w_sum);
+  cs_dispatch_context ctx;
 
   ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
-    w[v_id] = 1. / w_sum[v_id];
-  });
-  ctx.wait();
-
-  CS_FREE(w_sum);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute weights based on inversed distance
- *
- * \param[in]  tr_ignore  if > 0, ignore periodicity with rotation;
- *                        if > 1, ignore all periodic transforms
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_b_face_to_vertex_w_inv_distance(int tr_ignore)
-{
-  const cs_mesh_t            *m  = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  cs_dispatch_context    ctx;
-  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
-
-  cs_real_t         *vtx_coord  = m->vtx_coord;
-  const cs_real_3_t *b_face_cog = mq->b_face_cog;
-
-  const cs_lnum_t n_vertices = m->n_vertices;
-  const cs_lnum_t n_b_faces  = m->n_b_faces;
-
-  const cs_lnum_t *bf2v_idx = m->b_face_vtx_idx;
-  const cs_lnum_t *bf2v_ids = m->b_face_vtx_lst;
-
-  cs_weight_t *wb = _weights_bface[CS_FACE_TO_VERTEX_SHEPARD];
-  cs_real_t   *w_sum;
-  CS_REALLOC_HD(wb, bf2v_idx[n_b_faces], cs_weight_t, cs_alloc_mode);
-  CS_MALLOC_HD(w_sum, n_vertices, cs_real_t, cs_alloc_mode);
-
-  _set_bface[CS_FACE_TO_VERTEX_SHEPARD]     = true;
-  _weights_bface[CS_FACE_TO_VERTEX_SHEPARD] = wb;
-
-  ctx.parallel_for(n_vertices,
-                   [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) { w_sum[v_id] = 0.; });
-
-  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_id) {
-    const cs_real_t *f_coo = b_face_cog[bf_id];
-
-    cs_lnum_t s_id = bf2v_idx[bf_id];
-    cs_lnum_t e_id = bf2v_idx[bf_id + 1];
-
-    for (cs_lnum_t j = s_id; j < e_id; j++) {
-      cs_lnum_t  v_id  = bf2v_ids[j];
-      cs_real_t *v_coo = vtx_coord + v_id * 3;
-      cs_real_t  d     = cs_math_3_distance(f_coo, v_coo);
-      if (d <= DBL_MIN) {
-        wb[j]       = 1;
-        w_sum[v_id] = HUGE_VAL;
-      }
-      else {
-        cs_real_t _w = 1. / d;
-        wb[j]        = _w;
-        cs_dispatch_sum(&w_sum[v_id], _w, b_sum_type);
-      }
+    _v_w[v_id] = 0.;
+    for (cs_lnum_t k = 0; k < stride; ++k) {
+      _v_var[v_id * stride + k] = 0.0;
     }
   });
-
   ctx.wait();
-
-  if (m->vtx_interfaces != nullptr)
-    cs_interface_set_sum_tr(m->vtx_interfaces,
-                            m->n_vertices,
-                            1,
-                            true,
-                            CS_REAL_TYPE,
-                            tr_ignore,
-                            w_sum);
-
-  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_id) {
-    cs_lnum_t s_id = bf2v_idx[bf_id];
-    cs_lnum_t e_id = bf2v_idx[bf_id + 1];
-
-    for (cs_lnum_t j = s_id; j < e_id; j++) {
-      cs_lnum_t v_id = bf2v_ids[j];
-      wb[j] /= w_sum[v_id];
-    }
-  });
-
-  ctx.wait();
-
-  CS_FREE(w_sum);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Interpolate boundary face values to vertex values for a strided
- * arrray.
- *
- * \param[in]   method      interpolation method
- * \param[in]   verbosity   verbosity level
- * \param[in]   tr_ignore   if > 0, ignore periodicity with rotation;
- *                          if > 1, ignore all periodic transforms
- * \param[in]   b_weight    boundary-face weight, or nullptr
- * \param[in]   b_var       base boundary-face values
- * \param[out]  v_var       vertex-based variable
- */
-/*----------------------------------------------------------------------------*/
+};
 
 template <cs_lnum_t stride>
-static void
-_b_face_to_vertex_strided(cs_face_to_vertex_type_t method,
-                          [[maybe_unused]] int     verbosity,
-                          int                      tr_ignore,
-                          const cs_real_t *restrict b_weight,
-                          const cs_real_t *restrict b_var,
-                          cs_real_t *restrict v_var)
+void
+cs_face_to_vertex_t<stride>::free()
 {
-  const cs_mesh_t            *m  = cs_glob_mesh;
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  CS_FREE(_v_w);
+  CS_FREE(_v_var);
+};
+
+template <cs_lnum_t stride>
+void
+cs_face_to_vertex_t<stride>::compute_on_boundary(
+  cs_face_to_vertex_type_t method,
+  bool                     ignore_rot_perio,
+  const cs_real_t         *b_var,
+  cs_real_t               *v_var)
+{
+  const cs_mesh_t            *m        = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq       = cs_glob_mesh_quantities;
+  const cs_real_t            *vtx_coor = m->vtx_coord;
 
   cs_dispatch_context    ctx;
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -299,244 +175,143 @@ _b_face_to_vertex_strided(cs_face_to_vertex_type_t method,
   const cs_lnum_t *bf2v_idx = m->b_face_vtx_idx;
   const cs_lnum_t *bf2v_ids = m->b_face_vtx_lst;
 
-  const cs_lnum_t n_v_values = n_vertices * stride;
-
-  ctx.parallel_for(n_v_values,
-                   [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) { v_var[v_id] = 0.; });
+  // Initialize
+  ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
+    _v_w[v_id] = 0.;
+    for (cs_lnum_t k = 0; k < stride; ++k) {
+      _v_var[v_id * stride + k] = 0.0;
+    }
+  });
   ctx.wait();
 
   switch (method) {
     case CS_FACE_TO_VERTEX_UNWEIGHTED: {
-      if (b_weight == nullptr) {
+      if (_list_faces == nullptr && _n_faces > 0) {
         ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_id) {
           cs_lnum_t s_id = bf2v_idx[bf_id];
           cs_lnum_t e_id = bf2v_idx[bf_id + 1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = bf2v_ids[j];
-            for (cs_lnum_t k = 0; k < stride; k++)
-              cs_dispatch_sum(&v_var[v_id * stride + k],
+            for (cs_lnum_t k = 0; k < stride; k++) {
+              cs_dispatch_sum(&_v_var[v_id * stride + k],
                               b_var[bf_id * stride + k],
                               b_sum_type);
+            }
+            cs_dispatch_sum(&_v_w[v_id], 1.0, b_sum_type);
           }
         });
-        ctx.wait();
-
-        if (m->vtx_interfaces != nullptr)
-          cs_interface_set_sum_tr(m->vtx_interfaces,
-                                  m->n_vertices,
-                                  stride,
-                                  true,
-                                  CS_REAL_TYPE,
-                                  tr_ignore,
-                                  v_var);
-
-        if (!_set_bface[CS_FACE_TO_VERTEX_UNWEIGHTED])
-          _b_face_to_vertex_w_unweighted(tr_ignore);
-
-        const cs_weight_t *wb = _weights_bface[CS_FACE_TO_VERTEX_UNWEIGHTED];
-        ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
-          for (cs_lnum_t k = 0; k < stride; k++)
-            v_var[v_id * stride + k] *= wb[v_id];
-        });
-        ctx.wait();
       }
       else {
-        cs_real_t *v_w;
-        CS_MALLOC(v_w, n_vertices, cs_real_t);
-
-        ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
-          v_w[v_id] = 0.;
-        });
-
-        ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_id) {
-          cs_lnum_t s_id = bf2v_idx[bf_id];
-          cs_lnum_t e_id = bf2v_idx[bf_id + 1];
+        ctx.parallel_for(_n_faces, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_l_id) {
+          cs_lnum_t bf_id = _list_faces[bf_l_id];
+          cs_lnum_t s_id  = bf2v_idx[bf_id];
+          cs_lnum_t e_id  = bf2v_idx[bf_id + 1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = bf2v_ids[j];
-            for (cs_lnum_t k = 0; k < stride; k++)
-              cs_dispatch_sum(&v_var[v_id * stride + k],
-                              b_var[bf_id * stride + k] * b_weight[bf_id],
+            for (cs_lnum_t k = 0; k < stride; k++) {
+              cs_dispatch_sum(&_v_var[v_id * stride + k],
+                              b_var[bf_l_id * stride + k],
                               b_sum_type);
-            cs_dispatch_sum(&v_w[v_id], b_weight[bf_id], b_sum_type);
+            }
+            cs_dispatch_sum(&_v_w[v_id], 1.0, b_sum_type);
           }
         });
-        ctx.wait();
-
-        if (m->vtx_interfaces != nullptr) {
-          cs_interface_set_sum_tr(m->vtx_interfaces,
-                                  n_vertices,
-                                  stride,
-                                  true,
-                                  CS_REAL_TYPE,
-                                  tr_ignore,
-                                  v_var);
-          cs_interface_set_sum_tr(m->vtx_interfaces,
-                                  n_vertices,
-                                  1,
-                                  true,
-                                  CS_REAL_TYPE,
-                                  tr_ignore,
-                                  v_w);
-        }
-        ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
-          for (cs_lnum_t k = 0; k < stride; k++)
-            v_var[v_id * stride + k] /= v_w[v_id];
-        });
-        ctx.wait();
-        CS_FREE(v_w);
       }
+
+      ctx.wait();
     } break;
 
     case CS_FACE_TO_VERTEX_SURFACE: {
       const cs_real_t *bf_surf = mq->b_face_surf;
 
-      cs_real_t *v_w = nullptr;
-      CS_MALLOC(v_w, n_vertices, cs_real_t);
-
-      ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
-        v_w[v_id] = 0.;
-      });
-      ctx.wait();
-
-      if (b_weight == nullptr) {
+      if (_list_faces == nullptr && _n_faces > 0) {
         ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_id) {
           cs_lnum_t s_id = bf2v_idx[bf_id];
           cs_lnum_t e_id = bf2v_idx[bf_id + 1];
+          cs_real_t bw   = bf_surf[bf_id];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = bf2v_ids[j];
             for (cs_lnum_t k = 0; k < stride; k++) {
-              cs_dispatch_sum(&v_var[v_id * stride + k],
-                              b_var[bf_id * stride + k] * bf_surf[bf_id],
+              cs_dispatch_sum(&_v_var[v_id * stride + k],
+                              b_var[bf_id * stride + k] * bw,
                               b_sum_type);
             }
-            cs_dispatch_sum(&v_w[v_id], bf_surf[bf_id], b_sum_type);
+            cs_dispatch_sum(&_v_w[v_id], bw, b_sum_type);
           }
         });
       }
-      else { /* b_weight != nullptr */
-
-        ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_id) {
-          cs_lnum_t s_id = bf2v_idx[bf_id];
-          cs_lnum_t e_id = bf2v_idx[bf_id + 1];
+      else {
+        ctx.parallel_for(_n_faces, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_l_id) {
+          cs_lnum_t bf_id = _list_faces[bf_l_id];
+          cs_lnum_t s_id  = bf2v_idx[bf_id];
+          cs_lnum_t e_id  = bf2v_idx[bf_id + 1];
+          cs_real_t bw    = bf_surf[bf_id];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = bf2v_ids[j];
             for (cs_lnum_t k = 0; k < stride; k++) {
-              cs_dispatch_sum(&v_var[v_id * stride + k],
-                              b_var[bf_id * stride + k] * bf_surf[bf_id] *
-                                b_weight[bf_id],
+              cs_dispatch_sum(&_v_var[v_id * stride + k],
+                              b_var[bf_l_id * stride + k] * bw,
                               b_sum_type);
             }
-            cs_dispatch_sum(&v_w[v_id],
-                            bf_surf[bf_id] * b_weight[bf_id],
-                            b_sum_type);
+            cs_dispatch_sum(&_v_w[v_id], bw, b_sum_type);
           }
         });
       }
 
       ctx.wait();
-
-      if (m->vtx_interfaces != nullptr)
-        cs_interface_set_sum_tr(m->vtx_interfaces,
-                                m->n_vertices,
-                                stride,
-                                true,
-                                CS_REAL_TYPE,
-                                tr_ignore,
-                                v_var);
-
-      if (m->vtx_interfaces != nullptr)
-        cs_interface_set_sum_tr(m->vtx_interfaces,
-                                n_vertices,
-                                1,
-                                true,
-                                CS_REAL_TYPE,
-                                tr_ignore,
-                                v_w);
-      ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
-        for (cs_lnum_t k = 0; k < stride; k++)
-          v_var[v_id * stride + k] /= v_w[v_id];
-      });
-
-      ctx.wait();
-      CS_FREE(v_w);
-
     } break;
 
     case CS_FACE_TO_VERTEX_SHEPARD: {
-      if (!_set_bface[CS_FACE_TO_VERTEX_SHEPARD])
-        _b_face_to_vertex_w_inv_distance(tr_ignore);
+      const cs_real_3_t *b_face_cog = mq->b_face_cog;
 
-      const cs_weight_t *wb = _weights_bface[CS_FACE_TO_VERTEX_SHEPARD];
-
-      cs_real_t *v_w = nullptr;
-      if (b_weight != nullptr) {
-        CS_MALLOC(v_w, n_vertices, cs_real_t);
-
-        ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
-          v_w[v_id] = 0.;
-        });
-      }
-
-      if (b_weight == nullptr) {
+      if (_list_faces == nullptr && _n_faces > 0) {
         ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_id) {
+          const cs_real_t *bf_coor = b_face_cog[bf_id];
+
           cs_lnum_t s_id = bf2v_idx[bf_id];
           cs_lnum_t e_id = bf2v_idx[bf_id + 1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
-            cs_lnum_t v_id = bf2v_ids[j];
-            for (cs_lnum_t k = 0; k < stride; k++)
-              cs_dispatch_sum(&v_var[v_id * stride + k],
-                              b_var[bf_id * stride + k] * wb[j],
+            cs_lnum_t        v_id   = bf2v_ids[j];
+            const cs_real_t *v_coor = vtx_coor + v_id * 3;
+            cs_real_t        dist   = cs_math_3_distance(bf_coor, v_coor);
+            // Power 1 as cell_to_vertex
+            cs_real_t bw = 1.0 / dist;
+            for (cs_lnum_t k = 0; k < stride; k++) {
+              cs_dispatch_sum(&_v_var[v_id * stride + k],
+                              b_var[bf_id * stride + k] * bw,
                               b_sum_type);
+            }
+            cs_dispatch_sum(&_v_w[v_id], bw, b_sum_type);
           }
         });
       }
-      else { /* b_weight != nullptr */
+      else {
+        ctx.parallel_for(_n_faces, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_l_id) {
+          cs_lnum_t        bf_id   = _list_faces[bf_l_id];
+          const cs_real_t *bf_coor = b_face_cog[bf_id];
 
-        ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE(cs_lnum_t bf_id) {
           cs_lnum_t s_id = bf2v_idx[bf_id];
           cs_lnum_t e_id = bf2v_idx[bf_id + 1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
-            cs_lnum_t v_id = bf2v_ids[j];
-            for (cs_lnum_t k = 0; k < stride; k++)
-              cs_dispatch_sum(&v_var[v_id * stride + k],
-                              b_var[bf_id * stride + k] * wb[j] *
-                                b_weight[bf_id],
+            cs_lnum_t        v_id   = bf2v_ids[j];
+            const cs_real_t *v_coor = vtx_coor + v_id * 3;
+            cs_real_t        dist   = cs_math_3_distance(bf_coor, v_coor);
+            // Power 1 as cell_to_vertex
+            cs_real_t bw = 1.0 / dist;
+
+            for (cs_lnum_t k = 0; k < stride; k++) {
+              cs_dispatch_sum(&_v_var[v_id * stride + k],
+                              b_var[bf_l_id * stride + k] * bw,
                               b_sum_type);
-            cs_dispatch_sum(&v_w[v_id], wb[j] * b_weight[bf_id], b_sum_type);
+            }
+            cs_dispatch_sum(&_v_w[v_id], bw, b_sum_type);
           }
         });
       }
 
       ctx.wait();
-
-      if (m->vtx_interfaces != nullptr)
-        cs_interface_set_sum_tr(m->vtx_interfaces,
-                                m->n_vertices,
-                                stride,
-                                true,
-                                CS_REAL_TYPE,
-                                tr_ignore,
-                                v_var);
-
-      if (b_weight != nullptr) {
-        if (m->vtx_interfaces != nullptr)
-          cs_interface_set_sum_tr(m->vtx_interfaces,
-                                  n_vertices,
-                                  1,
-                                  true,
-                                  CS_REAL_TYPE,
-                                  tr_ignore,
-                                  v_w);
-        ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
-          for (cs_lnum_t k = 0; k < stride; k++)
-            v_var[v_id * stride + k] /= v_w[v_id];
-        });
-
-        ctx.wait();
-        CS_FREE(v_w);
-      }
-
     } break;
+
     default:
       bft_error(__FILE__,
                 __LINE__,
@@ -546,88 +321,51 @@ _b_face_to_vertex_strided(cs_face_to_vertex_type_t method,
       break;
   }
 
-  ctx.wait();
-}
+  if (m->vtx_interfaces != nullptr) {
+    cs_interface_set_sum_tr(m->vtx_interfaces,
+                            n_vertices,
+                            stride,
+                            true,
+                            CS_REAL_TYPE,
+                            ignore_rot_perio,
+                            _v_var);
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free face to vertex interpolation weights.
- *
- * This will force subsequent calls to rebuild those weights if needed.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_face_to_vertex_free(void)
-{
-  for (int i = 0; i < 3; i++) {
-    CS_FREE(_weights_bface[i]);
-    _set_bface[i] = false;
+    cs_interface_set_sum_tr(m->vtx_interfaces,
+                            n_vertices,
+                            1,
+                            true,
+                            CS_REAL_TYPE,
+                            ignore_rot_perio,
+                            _v_w);
   }
-}
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Interpolate boundary face values to vertex values.
- *
- * \param[in]       method            interpolation method
- * \param[in]       verbosity         verbosity level
- * \param[in]       ignore_rot_perio  if true, ignore periodicity of rotation
- * \param[in]       b_weight          boundary-face weight, or nullptr
- * \param[in]       b_var             base boundary-face values, or nullptr
- * \param[out]      v_var             vertex-based variable
- */
-/*----------------------------------------------------------------------------*/
+  if (_list_vtx == nullptr && _n_vtx > 0) {
+    ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE(cs_lnum_t v_id) {
+      cs_real_t ivw = 1.0;
+      if (_v_w[v_id] > cs_dbl_epsilon) {
+        ivw = 1.0 / _v_w[v_id];
+      }
+      for (cs_lnum_t k = 0; k < stride; k++) {
+        v_var[v_id * stride + k] = _v_var[v_id * stride + k] * ivw;
+      }
+    });
+  }
+  else {
+    ctx.parallel_for(_n_vtx, [=] CS_F_HOST_DEVICE(cs_lnum_t v_l_id) {
+      cs_lnum_t v_id = _list_vtx[v_l_id];
+      cs_real_t ivw  = 1.0;
+      if (_v_w[v_id] > cs_dbl_epsilon) {
+        ivw = 1.0 / _v_w[v_id];
+      }
+      for (cs_lnum_t k = 0; k < stride; k++) {
+        v_var[v_l_id * stride + k] = _v_var[v_id * stride + k] * ivw;
+      }
+    });
+  }
 
-template <cs_lnum_t stride>
-void
-cs_b_face_to_vertex(cs_face_to_vertex_type_t method,
-                    int                      verbosity,
-                    bool                     ignore_rot_perio,
-                    const cs_real_t *restrict b_weight,
-                    const cs_real_t *restrict b_var,
-                    cs_real_t *restrict v_var)
-{
-  int tr_ignore = (ignore_rot_perio) ? 1 : 0;
+  ctx.wait();
+};
 
-  _b_face_to_vertex_strided<stride>(method,
-                                   verbosity,
-                                   tr_ignore,
-                                   b_weight,
-                                   b_var,
-                                   v_var);
-}
-
-// Force instanciation
-
-template void
-cs_b_face_to_vertex<1>(cs_face_to_vertex_type_t method,
-                       int                      verbosity,
-                       bool                     ignore_rot_perio,
-                       const cs_real_t *restrict b_weight,
-                       const cs_real_t *restrict b_var,
-                       cs_real_t *restrict v_var);
-
-template void
-cs_b_face_to_vertex<3>(cs_face_to_vertex_type_t method,
-                       int                      verbosity,
-                       bool                     ignore_rot_perio,
-                       const cs_real_t *restrict b_weight,
-                       const cs_real_t *restrict b_var,
-                       cs_real_t *restrict v_var);
-
-template void
-cs_b_face_to_vertex<6>(cs_face_to_vertex_type_t method,
-                       int                      verbosity,
-                       bool                     ignore_rot_perio,
-                       const cs_real_t *restrict b_weight,
-                       const cs_real_t *restrict b_var,
-                       cs_real_t *restrict v_var);
+template class cs_face_to_vertex_t<3>;
 
 /*----------------------------------------------------------------------------*/

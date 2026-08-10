@@ -55,6 +55,72 @@ typedef enum {
 
 } cs_face_to_vertex_type_t;
 
+/*----------------------------------------------------------------------------
+ * Main structure for interpolation
+ *----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+class cs_face_to_vertex_t {
+private:
+  cs_lnum_t        _n_faces;    /*!< Number of faces */
+  const cs_lnum_t *_list_faces; /*!< List of faces */
+
+  cs_lnum_t        _n_vtx;    /*!< Number of vertices */
+  const cs_lnum_t *_list_vtx; /*!< List of verticies */
+
+  cs_real_t *_v_w;   /*!< Weight for verticies */
+  cs_real_t *_v_var; /*!< Values for verticies */
+
+public:
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Initialize internal strucutres.
+   *
+   * \param[in]       n_faces         number of faces
+   * \param[in]       list_faces      list of face's ids or nullptr
+   *                                  if all faces are used
+   * \param[in]       n_vtx           number of verticies
+   * \param[in]       list_vtx        list of vertex's ids or nullptr
+   *                                  if all verticies are used
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  initialize(cs_lnum_t        n_faces,
+             const cs_lnum_t *list_faces,
+             cs_lnum_t        n_vtx,
+             const cs_lnum_t *list_vtx);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Interpolate boundary faces values to vertex values.
+   *         The size of the vector-values have to be compatible with the
+   *         initialization.
+   *
+   * \param[in]       method            interpolation method
+   * \param[in]       verbosity         verbosity level
+   * \param[in]       ignore_rot_perio  if true, ignore periodicity of rotation
+   * \param[in]       b_var             boundary-face values
+   * \param[out]      v_var             vertex-based values
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  compute_on_boundary(cs_face_to_vertex_type_t method,
+                      bool                     ignore_rot_perio,
+                      const cs_real_t         *b_var,
+                      cs_real_t               *v_var);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Free internal structures.
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  free();
+};
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -66,40 +132,6 @@ extern const char *cs_face_to_vertex_type_name[];
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free cell to vertex interpolation weights.
- *
- * This will force subsequent calls to rebuild those weights if needed.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_face_to_vertex_free(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Interpolate boundary faces values to vertex values.
- *
- * \param[in]       method            interpolation method
- * \param[in]       verbosity         verbosity level
- * \param[in]       var_dim           variable dimension
- * \param[in]       ignore_rot_perio  if true, ignore periodicity of rotation
- * \param[in]       b_weight          boundary-face weight, or NULL
- * \param[in]       b_var             base boundary-face values, or NULL
- * \param[out]      v_var             vertex-based variable
- */
-/*----------------------------------------------------------------------------*/
-
-template <cs_lnum_t stride>
-void
-cs_b_face_to_vertex(cs_face_to_vertex_type_t method,
-                    int                      verbosity,
-                    bool                     ignore_rot_perio,
-                    const cs_real_t *restrict b_weight,
-                    const cs_real_t *restrict b_var,
-                    cs_real_t v_var[]);
 
 /*----------------------------------------------------------------------------*/
 

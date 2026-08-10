@@ -170,10 +170,9 @@ struct _cs_aster_coupling_t {
   cs_real_t *tmp[3]; /* Temporary array */
 
   // For conversion in case of interpolation FACE->VTX
-  cs_real_t *bstress_bface;  /* Boundary stress at boundary faces */
-  cs_real_t *bstress_bcoeff; /* Interpolation at boundary faces */
-  cs_real_t *bstress_bvtx;   /* Boundary stress at boundary vertex */
-  cs_real_t *bstress_vtx;    /* Boundary stress at interface vertex */
+  cs_face_to_vertex_t<3> *projection;
+
+  cs_real_t *bstress_vtx; /* Boundary stress at coupling verticies */
 };
 
 /*============================================================================
@@ -191,7 +190,7 @@ static int _visualization = 1;
 
 // Projection with InterpKernelDEC is bugged if surface is not plane
 // For the moment use nodal projection (but loose conservativity)
-#define USE_CFEMDEC_FFORCES true
+#define USE_CFEMDEC_BSTRESS true
 
 /*============================================================================
  * Global variables
@@ -360,20 +359,8 @@ _allocate_arrays(cs_aster_coupling_t *ast_cpl)
     CS_MALLOC(ast_cpl->tmp[i], 3 * cs::max(n_vertices, n_faces), cs_real_t);
   }
 
-  if (USE_CFEMDEC_FFORCES) {
-    const cs_mesh_t *m            = cs_glob_mesh;
-    const cs_lnum_t  n_m_bfaces   = m->n_b_faces;
-    const cs_lnum_t  n_m_vertices = m->n_vertices;
-
-    CS_MALLOC(ast_cpl->bstress_bface, 3 * n_m_bfaces, cs_real_t);
-    CS_MALLOC(ast_cpl->bstress_bcoeff, 3 * n_m_bfaces, cs_real_t);
-    CS_MALLOC(ast_cpl->bstress_bvtx, 3 * n_m_vertices, cs_real_t);
+  if (USE_CFEMDEC_BSTRESS) {
     CS_MALLOC(ast_cpl->bstress_vtx, 3 * n_vertices, cs_real_t);
-
-    cs_arrays_set_value<cs_real_t, 1>(3 * n_m_bfaces,
-                                      0.,
-                                      ast_cpl->bstress_bface,
-                                      ast_cpl->bstress_bcoeff);
   }
 }
 
@@ -716,10 +703,9 @@ cs_aster_coupling_initialize(int nalimx, cs_real_t epalim)
     cpl->tmp[i] = nullptr;
   }
 
-  cpl->bstress_bface  = nullptr;
-  cpl->bstress_bcoeff = nullptr;
-  cpl->bstress_bvtx   = nullptr;
   cpl->bstress_vtx    = nullptr;
+
+  CS_MALLOC(cpl->projection, 1, cs_face_to_vertex_t<3>);
 
   cs_glob_ast_coupling = cpl;
 
@@ -793,7 +779,7 @@ cs_aster_coupling_initialize(int nalimx, cs_real_t epalim)
     _cs_ast_sync_send_value(cpl->aci.root_rank,
                             0,
                             "ALGOP",
-                            int(USE_CFEMDEC_FFORCES));
+                            int(USE_CFEMDEC_BSTRESS));
 
     _cs_ast_sync_send_value(cpl->aci.root_rank, 0, "NBSSIT", cpl->nbssit);
     _cs_ast_sync_send_value(cpl->aci.root_rank, 0, "TADAPT", idtvar);
@@ -836,9 +822,6 @@ cs_aster_coupling_finalize(void)
     CS_FREE(cpl->tmp[i]);
   }
 
-  CS_FREE(cpl->bstress_bface);
-  CS_FREE(cpl->bstress_bcoeff);
-  CS_FREE(cpl->bstress_bvtx);
   CS_FREE(cpl->bstress_vtx);
 
   if (cpl->post_mesh != nullptr)
@@ -849,6 +832,9 @@ cs_aster_coupling_finalize(void)
 
   cpl->mc_vertices = nullptr;
   cpl->mc_faces    = nullptr;
+
+  cpl->projection->free();
+  CS_FREE(cpl->projection);
 
   CS_FREE(cpl);
 
@@ -895,7 +881,7 @@ cs_aster_coupling_geometry(cs_lnum_t        n_faces,
   cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->aci.root_rank > -1) {
-    if (!USE_CFEMDEC_FFORCES) {
+    if (!USE_CFEMDEC_BSTRESS) {
       cpl->mc_faces = cs_paramedmem_coupling_create(nullptr,
                                                     cpl->aci.app_name,
                                                     "fsi_faces_exchange",
@@ -907,7 +893,7 @@ cs_aster_coupling_geometry(cs_lnum_t        n_faces,
                                                      CS_MEDCPL_CFEMDEC);
   }
   else {
-    if (!USE_CFEMDEC_FFORCES) {
+    if (!USE_CFEMDEC_BSTRESS) {
       cpl->mc_faces =
         cs_paramedmem_coupling_create_uncoupled("fsi_faces_exchange");
     }
@@ -915,7 +901,7 @@ cs_aster_coupling_geometry(cs_lnum_t        n_faces,
       cs_paramedmem_coupling_create_uncoupled("fsi_vertices_exchange");
   }
 
-  if (!USE_CFEMDEC_FFORCES) {
+  if (!USE_CFEMDEC_BSTRESS) {
     cpl->mc_faces->add_mesh_from_ids(n_faces, face_ids, 2);
   }
 
@@ -994,18 +980,12 @@ cs_aster_coupling_geometry(cs_lnum_t        n_faces,
                               CS_MEDCPL_ON_NODES_FE,
                               CS_MEDCPL_ONE_TIME);
 
-  if (USE_CFEMDEC_FFORCES) {
+  if (USE_CFEMDEC_BSTRESS) {
     cpl->mc_vertices->add_field(_name_b_s,
                                 3,
                                 CS_MEDCPL_FIELD_INT_MAXIMUM,
                                 CS_MEDCPL_ON_NODES_FE,
                                 CS_MEDCPL_ONE_TIME);
-
-    /* Set coefficient to one only for faces on the interface */
-    const cs_lnum_t *v_face_ids = cpl->mc_vertices->get_elt_list();
-    for (cs_lnum_t f_id = 0; f_id < n_faces; ++f_id) {
-      cpl->bstress_bcoeff[v_face_ids[f_id]] = 1.0;
-    }
   }
   else {
     cpl->mc_faces->add_field(_name_b_s,
@@ -1014,6 +994,11 @@ cs_aster_coupling_geometry(cs_lnum_t        n_faces,
                              CS_MEDCPL_ON_CELLS,
                              CS_MEDCPL_ONE_TIME);
   }
+
+  cpl->projection->initialize(cpl->mc_vertices->get_n_elts(),
+                              cpl->mc_vertices->get_elt_list(),
+                              cpl->mc_vertices->get_n_vertices(),
+                              cpl->mc_vertices->get_vertex_list());
 
   /* Post-processing */
 
@@ -1215,45 +1200,48 @@ cs_aster_coupling_send_bstress(void)
   /* Send boundary stress */
 
   if (verbosity > 1) {
+    // Compute total force sended.
+    cs_real_3_t bface_inte = { 0., 0., 0. };
+    cs_real_t   surf       = 0.0;
+
+    const cs_lnum_t *face_ids = cpl->mc_vertices->get_elt_list();
+    assert(face_ids != nullptr);
+    const cs_real_t *bfaces_surf = cs_glob_mesh_quantities->b_face_surf;
+
+    for (cs_lnum_t f_id = 0; f_id < n_faces; ++f_id) {
+      cs_lnum_t bf_id  = face_ids[f_id];
+      cs_real_t b_surf = bfaces_surf[bf_id];
+      bface_inte[0] += cpl->bstress_pred[3 * f_id + 0] * b_surf;
+      bface_inte[1] += cpl->bstress_pred[3 * f_id + 1] * b_surf;
+      bface_inte[2] += cpl->bstress_pred[3 * f_id + 2] * b_surf;
+      surf += b_surf;
+    }
+
+    cs::parall::sum(bface_inte);
+    cs::parall::sum(surf);
+
+    bft_printf(_("integrated stress in code_saturne: fx= %.5g, fy= %.5g,fz= "
+                 "%.5g, (surface=%.5g).\n"),
+               bface_inte[0],
+               bface_inte[1],
+               bface_inte[2],
+               surf);
+    bft_printf_flush();
+
     bft_printf(_("code_aster: starting MEDCoupling send of values "
                  "at coupled faces..."));
     bft_printf_flush();
   }
 
-  if (USE_CFEMDEC_FFORCES) {
-    // Convertion FACE->VTX
-    const cs_lnum_t *face_ids = cpl->mc_vertices->get_elt_list();
-    const cs_lnum_t *vtx_ids  = cpl->mc_vertices->get_vertex_list();
+  if (USE_CFEMDEC_BSTRESS) {
+    // We use CS_FACE_TO_VERTEX_SURFACE since we interpolate a pressure
+    // constant by face. Hence, the pressure at a vertex is the average
+    // pressure around this vertex ins an integrale sense.
+    cpl->projection->compute_on_boundary(CS_FACE_TO_VERTEX_SURFACE,
+                                         true,
+                                         cpl->bstress_pred,
+                                         cpl->bstress_vtx);
 
-    cs_arrays_set_value<cs_real_t, 1>(3 * cpl->n_vertices,
-                                      0.,
-                                      cpl->bstress_vtx);
-
-    _scatter_values_r3(cpl->n_faces,
-                       face_ids,
-                       (const cs_real_3_t *)cpl->bstress_pred,
-                       (cs_real_3_t *)cpl->bstress_bface);
-    cs_b_face_to_vertex<3>(CS_FACE_TO_VERTEX_SURFACE,
-                           0,
-                           true,
-                           cpl->bstress_bcoeff,
-                           cpl->bstress_bface,
-                           cpl->bstress_bvtx);
-    if (vtx_ids != nullptr) {
-      for (cs_lnum_t v_id = 0; v_id < cpl->n_vertices; ++v_id) {
-        const cs_lnum_t vg_id = vtx_ids[v_id];
-        for (cs_lnum_t j = 0; j < 3; ++j) {
-          cpl->bstress_vtx[3 * v_id + j] = cpl->bstress_bvtx[3 * vg_id + j];
-        }
-      }
-    }
-    else {
-      for (cs_lnum_t v_id = 0; v_id < cpl->n_vertices; ++v_id) {
-        for (cs_lnum_t j = 0; j < 3; ++j) {
-          cpl->bstress_vtx[3 * v_id + j] = cpl->bstress_bvtx[3 * v_id + j];
-        }
-      }
-    }
     cpl->mc_vertices->send_data(_name_b_s, cpl->bstress_vtx, false);
   }
   else {
