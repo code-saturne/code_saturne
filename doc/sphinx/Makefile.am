@@ -47,13 +47,13 @@ install-data-local:
 	    echo "Generating API RST from Doxygen XML..."; \
 	    python3 $(srcdir)/generate_rst.py $(top_srcdir) $(top_builddir); \
 	    python3 $(srcdir)/generate_toctree.py $(top_srcdir) $(top_builddir); \
-	  else \
-	    echo "Doxygen XML not found, skipping API generation."; \
-	  fi && \
-	  $(SPHINXBUILD) -b html $(top_builddir)/doc/sphinx $(DESTDIR)$(pkgdatadir)/doc/sphinx/html \
+	    $(SPHINXBUILD) -c ${srcdir} -b html $(top_builddir)/doc/sphinx $(DESTDIR)$(pkgdatadir)/doc/sphinx/html \
 	    -d $(top_builddir)/doc/sphinx/.doctrees \
 	    -D breathe_projects.code_saturne=$(top_builddir)/doc/doxygen/src/xml; \
-	  echo "Sphinx documentation installed."; \
+	    echo "Sphinx documentation installed."; \
+	  else \
+	    echo "Doxygen XML not found, skipping API documentation generation."; \
+	  fi \
 	else \
 	  echo "sphinx-build not found, skipping Sphinx documentation."; \
 	fi
