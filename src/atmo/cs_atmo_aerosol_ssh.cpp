@@ -486,11 +486,11 @@ cs_atmo_aerosol_ssh_initialize(void)
     /* Get the suffix */
     if (isize < 0)
       bft_error(__FILE__, __LINE__, 0,
-                _("Atmospheric aerosols : Number of aerosols negative."));
+                _("Atmospheric aerosols: number of aerosols negative."));
     if (isize > 999)
       bft_error(__FILE__, __LINE__, 0,
-                _("Atmospheric aerosols : Number of aerosols above limit."));
-    char suffix[12];
+                _("Atmospheric aerosols: number of aerosols above limit."));
+    char suffix[16];
     sprintf(suffix, "_%03d", isize);
     strcat(name, suffix);
 
