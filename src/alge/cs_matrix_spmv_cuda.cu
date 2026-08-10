@@ -851,11 +851,11 @@ _set_cusparse_map(cs_matrix_t  *matrix)
 
   if (csm != nullptr) {
     _unset_cusparse_map(matrix);
+    csm = nullptr;
   }
-  else {
-    CS_MALLOC(csm, 1, cs_matrix_cusparse_map_t);
-    matrix->ext_lib_map = (void *)csm;
-  }
+
+  CS_MALLOC(csm, 1, cs_matrix_cusparse_map_t);
+  matrix->ext_lib_map = (void *)csm;
   matrix->destroy_adaptor = _unset_cusparse_map;
 
   const void *row_index, *col_id;

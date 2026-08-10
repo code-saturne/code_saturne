@@ -933,6 +933,7 @@ CS_AC_TEST_PETSC
 CS_AC_TEST_HYPRE
 CS_AC_TEST_AMGX
 CS_AC_TEST_CUDSS
+CS_AC_TEST_GINKGO
 
 CS_AC_TEST_DOCS
 
@@ -1536,6 +1537,7 @@ echo " MUMPS support: "$cs_have_mumps""
 echo " HYPRE support: "$cs_have_hypre""
 echo " AMGX support: "$cs_have_amgx""
 echo " cuDSS support: "$cs_have_cudss""
+echo " Ginkgo support: "$cs_have_ginkgo""
 echo " Dynamic loader support: "$cs_have_dlloader""
 if (test "x$cs_env_modules" != "x") ; then
   echo " Auto load environment modules: "$cs_env_modules""

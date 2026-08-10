@@ -1534,18 +1534,21 @@ _copy_diagonal_csr(const cs_matrix_t    *matrix,
   const auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
   cs_lnum_t  n_rows = ms->n_rows;
 
+  const cs_lnum_t  *restrict row_index = ms->row_index;
+  const cs_lnum_t  *restrict col_id = ms->col_id;
+  const cs_real_t  *restrict val = mc->val;
+
   cs_dispatch_context  ctx;
 
   ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
 
-    const cs_lnum_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-    const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-    cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+    const cs_lnum_t s_id = row_index[ii];
+    const cs_lnum_t e_id = row_index[ii+1];
 
     da[ii] = 0.0;
-    for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
+    for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
       if (col_id[jj] == ii) {
-        da[ii] = m_row[jj];
+        da[ii] = val[jj];
         break;
       }
     }
@@ -7050,6 +7053,37 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
     }
 
 #endif /* defined(HAVE_HIP) */
+
+#if defined(HAVE_GINKGO)
+
+    if (   m->fill_type == CS_MATRIX_SCALAR
+        || m->fill_type == CS_MATRIX_SCALAR_SYM) {
+      auto ms = static_cast<const cs_matrix_struct_csr_t *>(m->structure);
+      if (ms->col_id != nullptr) {
+        _variant_add(_("CSR, with Ginkgo"),
+                     m->type,
+                     m->fill_type,
+                     m->numbering,
+                     "ginkgo",
+                     n_variants,
+                     &n_variants_max,
+                     m_variant);
+#if defined(HAVE_ACCEL)
+        if (cs_get_device_id() > -1) {
+          _variant_add(_("CSR, with Ginkgo (device)"),
+                       m->type,
+                       m->fill_type,
+                       m->numbering,
+                       "ginkgo_device",
+                       n_variants,
+                       &n_variants_max,
+                       m_variant);
+        }
+#endif
+      }
+    }
+
+#endif /* defined(HAVE_GINKGO) */
 
   }
 

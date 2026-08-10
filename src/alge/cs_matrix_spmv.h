@@ -87,6 +87,8 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *     cusparse        (with cuSPARSE)
  *     hip             (HIP-accelerated)
  *     rocsparse       (with rocSPARSE)
+ *     ginkgo          (with Ginkgo)
+ *     ginkgo_device   (with Ginkgo, device execution)
  *
  *   CS_MATRIX_MSR
  *     default

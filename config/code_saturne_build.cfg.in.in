@@ -285,3 +285,9 @@ have: @cs_have_cudss@
 cppflags: @CUDSS_CPPFLAGS@
 ldflags: @CUDSS_LDFLAGS@
 libs: @CUDSS_LIBS@
+
+[ginkgo]
+have: @cs_have_ginkgo@
+cppflags: @GINKGO_CPPFLAGS@
+ldflags: @GINKGO_LDFLAGS@
+libs: @GINKGO_LIBS@

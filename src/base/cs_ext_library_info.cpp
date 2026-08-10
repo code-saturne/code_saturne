@@ -93,6 +93,10 @@ extern "C" void cs_sles_petsc_library_info(cs_log_t log_type);
 #include "alge/cs_sles_cudss.h"
 #endif
 
+#if defined(HAVE_GINKGO)
+#include "alge/cs_matrix_spmv_ginkgo.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -194,12 +198,16 @@ _ext_library_version_info(bool  log)
     cs_sles_cudss_library_info(logs[log_id]);
 #endif
 
+#if defined(HAVE_GINKGO)
+    cs_matrix_spmv_ginkgo_library_info(logs[log_id]);
+#endif
+
 #if    defined(HAVE_METIS)  || defined(HAVE_PARMETIS) \
     || defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
     cs_partition_external_library_info(logs[log_id]);
 #endif
-
   }
+
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -236,4 +244,4 @@ cs_ext_library_info_no_log(void)
   _ext_library_version_info(false);
 }
 
-/*-----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/

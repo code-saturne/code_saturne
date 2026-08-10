@@ -85,6 +85,10 @@
 #include "alge/cs_matrix_spmv_hip.h"
 #endif
 
+#if defined (HAVE_GINKGO)
+#include "alge/cs_matrix_spmv_ginkgo.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*! \file cs_matrix_spmv.cpp
  *
@@ -262,15 +266,15 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
 
   if (csm != nullptr) {
     _unset_mkl_sparse_map(matrix);
+    csm = nulllptr;
   }
-  else {
-    CS_MALLOC(csm, 1, cs_matrix_mkl_sparse_map_t);
-    csm->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
-    csm->descr.mode = SPARSE_FILL_MODE_FULL;
-    csm->descr.diag = SPARSE_DIAG_NON_UNIT;
-    csm->mapped = false;
-    matrix->ext_lib_map = (void *)csm;
-  }
+
+  CS_MALLOC(csm, 1, cs_matrix_mkl_sparse_map_t);
+  csm->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
+  csm->descr.mode = SPARSE_FILL_MODE_FULL;
+  csm->descr.diag = SPARSE_DIAG_NON_UNIT;
+  csm->mapped = false;
+  matrix->ext_lib_map = (void *)csm;
   matrix->destroy_adaptor = _unset_mkl_sparse_map;
 
   const cs_lnum_t *row_index, *col_id;
@@ -449,15 +453,15 @@ _set_mkl_sparse_sycl_map(cs_matrix_t   *matrix)
 
   if (csm != nullptr) {
     _unset_mkl_sparse_sycl_map(matrix);
+    csm = nullptr;
   }
-  else {
-    CS_MALLOC(csm, 1, cs_matrix_mkl_sparse_sycl_map_t);
-    csm->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
-    csm->descr.mode = SPARSE_FILL_MODE_FULL;
-    csm->descr.diag = SPARSE_DIAG_NON_UNIT;
-    csm->mapped = false;
-    matrix->ext_lib_map = (void *)csm;
-  }
+
+  CS_MALLOC(csm, 1, cs_matrix_mkl_sparse_sycl_map_t);
+  csm->descr.type = SPARSE_MATRIX_TYPE_GENERAL;
+  csm->descr.mode = SPARSE_FILL_MODE_FULL;
+  csm->descr.diag = SPARSE_DIAG_NON_UNIT;
+  csm->mapped = false;
+  matrix->ext_lib_map = (void *)csm;
   matrix->destroy_adaptor = _unset_mkl_sparse_sycl_map;
 
   const cs_lnum_t *row_index, *col_id;
@@ -4253,6 +4257,24 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
                      cs_matrix_spmv_hip_csr_rocsparse;
         _spmv[1] = (cs_matrix_vector_product_t *)
                      cs_matrix_spmv_hip_csr_rocsparse;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+#else
+        retcode = 2;
+#endif
+      }
+      else if (!strcmp(func_name, "ginkgo")) {
+#if defined(HAVE_GINKGO)
+        _spmv[0] = cs_matrix_spmv_ginkgo_csr;
+        _spmv[1] = cs_matrix_spmv_ginkgo_csr;
+#else
+        retcode = 2;
+#endif
+      }
+      else if (!strcmp(func_name, "ginkgo_device")) {
+#if defined(HAVE_GINKGO) && (defined(HAVE_CUDA) || defined(HAVE_HIP))
+        _spmv[0] = cs_matrix_spmv_ginkgo_device_csr;
+        _spmv[1] = cs_matrix_spmv_ginkgo_device_csr;
         _spmv_xy_hd[0] = 'd';
         _spmv_xy_hd[1] = 'd';
 #else

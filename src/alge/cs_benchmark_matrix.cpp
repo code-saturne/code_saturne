@@ -75,6 +75,10 @@
 #include "alge/cs_matrix_petsc.h"
 #endif
 
+#if defined(HAVE_GINKGO)
+#include "alge/cs_matrix_spmv_ginkgo.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -525,6 +529,54 @@ _variant_build_list(int                             n_fill_types,
 
 #endif /* defined(HAVE_CUSPARSE) */
 
+#if defined(HAVE_GINKGO)
+
+    {
+      int   _n_fill_types = 0;
+      cs_matrix_fill_type_t  _fill_types[2];
+
+      for (int i = 0; i < n_fill_types; i++) {
+        if (   fill_types[i] == CS_MATRIX_SCALAR
+            || fill_types[i] == CS_MATRIX_SCALAR_SYM) {
+          _fill_types[_n_fill_types] = fill_types[i];
+          _n_fill_types += 1;
+        }
+      }
+
+      if (_n_fill_types > 0) {
+        _variant_add("CSR, Ginkgo",
+                     nullptr,
+                     CS_MATRIX_CSR,
+                     _n_fill_types,
+                     _fill_types,
+                     op_flag_ae,
+                     "ginkgo",
+                     nullptr,
+                     nullptr,
+                     n_variants,
+                     &n_variants_max,
+                     m_variant);
+
+#if defined(HAVE_CUDA) || defined(HAVE_HIP)
+        if (cs_get_device_id() > -1)
+          _variant_add("CSR, Ginkgo (device)",
+                       nullptr,
+                       CS_MATRIX_CSR,
+                       _n_fill_types,
+                       _fill_types,
+                       op_flag_ae,
+                       "ginkgo_device",
+                       nullptr,
+                       nullptr,
+                       n_variants,
+                       &n_variants_max,
+                       m_variant);
+#endif
+      }
+    }
+
+#endif /* defined(HAVE_GINKGO) */
+
   }
 
   if (type_filter[CS_MATRIX_MSR]) {
@@ -673,7 +725,7 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-#endif /* defined(HAVE_MKL_SPARSE_IE) */
+#endif /* defined(HAVE_PETSC) */
 
   }
 
@@ -1144,6 +1196,20 @@ _matrix_time_test(int                          n_time_runs,
         cs_matrix_destroy(&m);
 
       m = cs_matrix_create(ms);
+
+#if defined(HAVE_HYPRE)
+      if (strcmp(v->external_type, "HYPRE") == 0) {
+        int device_id = cs_get_device_id();
+        int use_device = (device_id < 0) ? 0 : 1;
+        cs_matrix_set_type_hypre(m, use_device);
+      }
+#endif
+
+#if defined(HAVE_PETSC)
+      if (strcmp(v->external_type, "PETSc") == 0) {
+        cs_matrix_set_type_petsc(m, nullptr);
+      }
+#endif
 
       /* Measure overhead of setting coefficients if not already done */
 

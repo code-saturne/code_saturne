@@ -934,11 +934,11 @@ _set_rocsparse_map(cs_matrix_t   *matrix,
 
   if (csm != nullptr) {
     _unset_rocsparse_map(matrix);
+    csm = nullptr;
   }
-  else {
-    CS_MALLOC(csm, 1, cs_matrix_rocsparse_map_t);
-    matrix->ext_lib_map = (void *)csm;
-  }
+
+  CS_MALLOC(csm, 1, cs_matrix_rocsparse_map_t);
+  matrix->ext_lib_map = (void *)csm;
   matrix->destroy_adaptor = _unset_rocsparse_map;
 
   if (matrix->eb_size == matrix->db_size)

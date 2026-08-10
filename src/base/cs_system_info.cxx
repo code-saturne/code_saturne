@@ -75,24 +75,6 @@
 #include "base/cs_base_hip.h"
 #endif
 
-#if defined(HAVE_PETSC)
-#if 0
-#include "alge/cs_sles_petsc.h"
-#else
-/* Duplicate prototype here to avoid requiring PETSc headers */
-void
-cs_sles_petsc_library_info(cs_log_t  log_type);
-#endif
-#endif
-
-#if defined(HAVE_HYPRE)
-#include "alge/cs_sles_hypre.h"
-#endif
-
-#if defined(HAVE_AMGX)
-#include "alge/cs_sles_amgx.h"
-#endif
-
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/

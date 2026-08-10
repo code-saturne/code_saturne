@@ -71,6 +71,10 @@ libcsalge_hypre_a_CPPFLAGS =\
 -I$(top_srcdir)/src -I$(top_builddir)/src \
 $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
 
+libcsalge_ginkgo_a_CPPFLAGS =\
+-I$(top_srcdir)/src -I$(top_builddir)/src \
+$(GINKGO_CPPFLAGS) $(MPI_CPPFLAGS)
+
 noinst_HEADERS = \
 cs_convection_diffusion_priv.h \
 cs_gradient_priv.h \
@@ -80,10 +84,10 @@ cs_matrix_hypre_priv.h \
 cs_matrix_petsc_priv.h \
 cs_matrix_priv.h \
 cs_matrix_spmv_cuda.h \
+cs_matrix_spmv_ginkgo.h \
 cs_matrix_spmv_hip.h \
 cs_sles_it_priv.h \
 cs_sles_pc_priv.h
-
 
 # Public header files (to be installed)
 
@@ -338,6 +342,34 @@ cs_sles_cudss = $(top_srcdir)/src/alge/cs_sles_cudss.cpp
 libcsalge_cudss_a-cs_sles_cudss.$(OBJEXT): $(cs_sles_cudss)
 	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(CUDSS_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_cudss) -o libcsalge_cudss_a-cs_sles_cudss.$(OBJEXT)
 endif
+endif
+
+if HAVE_GINKGO
+
+noinst_LIBRARIES += libcsalge_ginkgo.a
+libcsalge_ginkgo_a_SOURCES = cs_matrix_spmv_ginkgo.cpp
+libcsalge_a_LIBADD += libcsalge_ginkgo_a-cs_matrix_spmv_ginkgo.$(OBJEXT)
+
+cs_matrix_spmv_ginkgo = $(top_srcdir)/src/alge/cs_matrix_spmv_ginkgo.cpp
+
+if HAVE_CUDA_CPP
+cs_ginkgo_cxx = $(NVCC)
+cs_ginkgo_cxxflags = $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP)
+else
+if HAVE_HIP_CPP
+cs_ginkgo_cxx = $(HIPCC)
+cs_ginkgo_cxxflags = $(HIPCCFLAGS) $(HIPCCFLAGS_DBG) $(HIPCCFLAGS_OPT) $(HIPCCFLAGS_CPP)
+else
+cs_ginkgo_cxx = $(CXX)
+cs_ginkgo_cxxflags = $(AM_CXXFLAGS) $(CXXFLAGS)
+endif
+endif
+
+libcsalge_ginkgo_a-cs_matrix_spmv_ginkgo.$(OBJEXT): $(cs_matrix_spmv_ginkgo)
+	@cxxflags_filtered=`$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_flags_filter.py ginkgo $(cs_ginkgo_cxxflags)` ; \
+	echo $(cs_ginkgo_cxx) -c $(DEFS) $(AM_CPPFLAGS) $(GINKGO_CPPFLAGS) $${cxxflags_filtered} $(cs_matrix_spmv_ginkgo) -o libcsalge_ginkgo_a-cs_matrix_spmv_ginkgo.$(OBJEXT) ; \
+	$(cs_ginkgo_cxx) -c $(DEFS) $(AM_CPPFLAGS) $(GINKGO_CPPFLAGS) $${cxxflags_filtered} $(cs_matrix_spmv_ginkgo) -o libcsalge_ginkgo_a-cs_matrix_spmv_ginkgo.$(OBJEXT)
+
 endif
 
 clean-local:
