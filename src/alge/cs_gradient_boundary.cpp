@@ -193,6 +193,7 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
  */
 /*----------------------------------------------------------------------------*/
 
+template <bool is_porous>
 void
 cs_gradient_boundary_iprime_lsq_s
 (
@@ -259,6 +260,9 @@ cs_gradient_boundary_iprime_lsq_s
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
   const auto *restrict diipb = fvq->diipb;
 
+  const cs_real_t *restrict i_face_surf = (is_porous) ? fvq->i_face_surf : nullptr;
+  const cs_real_t *restrict b_face_surf = (is_porous) ? fvq->b_face_surf : nullptr;
+
   const cs_real_t *bc_coeff_a = bc_coeffs->a;
   const cs_real_t *bc_coeff_b = bc_coeffs->b;
 
@@ -267,6 +271,7 @@ cs_gradient_boundary_iprime_lsq_s
   cs_real_t *i_poro_duq_0 = nullptr;
   cs_real_t *i_poro_duq_1 = nullptr;
   cs_real_t *b_poro_duq = nullptr;
+
   if (f_i_poro_duq_0 != nullptr) {
     i_poro_duq_0 = f_i_poro_duq_0->val;
     i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
@@ -309,8 +314,13 @@ cs_gradient_boundary_iprime_lsq_s
 
         cs_real_t dc[3];
         cs_lnum_t c_id1 = cell_cells[i];
+
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
+
+        cs_lnum_t f_id_ij = cell_i_faces[i];
+        if (is_porous)
+          if (i_face_surf[f_id_ij] < DBL_MIN) continue;
 
         cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
 
@@ -328,7 +338,6 @@ cs_gradient_boundary_iprime_lsq_s
         cs_real_t pfac = var_j - var_i;
 
         if (hyd_p_flag == 1) {
-          cs_lnum_t f_id_ij = cell_i_faces[i];
 
           cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
                                                            cell_cen[c_id],
@@ -371,6 +380,10 @@ cs_gradient_boundary_iprime_lsq_s
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
 
+        cs_lnum_t f_id_ij = cell_i_faces[i];
+        if (is_porous)
+          if (i_face_surf[f_id_ij] < DBL_MIN) continue;
+
         cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
 
         cocg[0] += dc[0]*dc[0]*ddc;
@@ -390,7 +403,6 @@ cs_gradient_boundary_iprime_lsq_s
         cs_real_t pfac = (var_j - var_i);
 
         if (hyd_p_flag == 1) {
-          cs_lnum_t f_id_ij = cell_i_faces[i];
 
           cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
                                                            cell_cen[c_id],
@@ -452,6 +464,10 @@ cs_gradient_boundary_iprime_lsq_s
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
 
+        cs_lnum_t f_id_ij = cell_i_faces[i];
+        if (is_porous)
+          if (i_face_surf[f_id_ij] < DBL_MIN) continue;
+
         cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
 
         cocg[0] += dc[0]*dc[0]*ddc;
@@ -497,6 +513,9 @@ cs_gradient_boundary_iprime_lsq_s
     cs_lnum_t e_id_b = cell_b_faces_idx[c_id+1];
 
     for (cs_lnum_t i = s_id_b; i < e_id_b; i++) {
+
+      if (is_porous)
+        if (b_face_surf[f_id] < DBL_MIN) continue;
 
       cs_lnum_t c_f_id = cell_b_faces[i];
 
@@ -567,7 +586,8 @@ cs_gradient_boundary_iprime_lsq_s
     cs_real_t a12 = cocg[3]*cocg[5] - cocg[0]*cocg[4];
     cs_real_t a22 = cocg[0]*cocg[1] - cocg[3]*cocg[3];
 
-    cs_real_t det_inv = 1. / (cocg[0]*a00 + cocg[3]*a01 + cocg[5]*a02);
+    cs_real_t det = (cocg[0]*a00 + cocg[3]*a01 + cocg[5]*a02);
+    cs_real_t det_inv = (det > 0.) ? 1. / det : 0.;
 
     cs_real_t grad[3];
 
@@ -644,6 +664,46 @@ cs_gradient_boundary_iprime_lsq_s
     printf(" = %ld\n", elapsed.count());
   }
 }
+
+template void
+cs_gradient_boundary_iprime_lsq_s<false>
+(
+  cs_dispatch_context           &ctx,
+  const cs_mesh_t               *m,
+  const cs_mesh_quantities_t    *fvq,
+  cs_lnum_t                      n_faces,
+  const cs_lnum_t               *face_ids,
+  cs_halo_type_t                 halo_type,
+  double                         clip_coeff,
+  int                            hyd_p_flag,
+  cs_real_t                      f_ext[][3],
+  cs_real_t                     *df_limiter,
+  const cs_field_bc_coeffs_t    *bc_coeffs,
+  const cs_real_t                c_weight[],
+  const cs_real_t                var[],
+  cs_real_t           *restrict  var_iprime,
+  cs_real_t                      var_iprime_flux[]
+);
+
+template void
+cs_gradient_boundary_iprime_lsq_s<true>
+(
+  cs_dispatch_context           &ctx,
+  const cs_mesh_t               *m,
+  const cs_mesh_quantities_t    *fvq,
+  cs_lnum_t                      n_faces,
+  const cs_lnum_t               *face_ids,
+  cs_halo_type_t                 halo_type,
+  double                         clip_coeff,
+  int                            hyd_p_flag,
+  cs_real_t                      f_ext[][3],
+  cs_real_t                     *df_limiter,
+  const cs_field_bc_coeffs_t    *bc_coeffs,
+  const cs_real_t                c_weight[],
+  const cs_real_t                var[],
+  cs_real_t           *restrict  var_iprime,
+  cs_real_t                      var_iprime_flux[]
+);
 
 /*----------------------------------------------------------------------------*/
 /*!

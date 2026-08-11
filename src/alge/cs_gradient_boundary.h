@@ -98,6 +98,7 @@
  */
 /*----------------------------------------------------------------------------*/
 
+template <bool is_porous>
 void
 cs_gradient_boundary_iprime_lsq_s
   (cs_dispatch_context           &ctx,
