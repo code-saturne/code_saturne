@@ -1207,7 +1207,10 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
     (n_i_faces, maxfluxsurf, reducer,
      [=] CS_F_HOST_DEVICE (cs_lnum_t f_id, cs_real_t &res) {
 
-    res = cs::abs(i_volflux[f_id])/i_face_surf[f_id];
+    if (i_face_surf[f_id] > 1.e-15)
+      res = cs::abs(i_volflux[f_id])/i_face_surf[f_id];
+    else
+      res = 0.;
   });
 
   ctx.wait();
@@ -1220,8 +1223,9 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
     cs_lnum_t cell_id1 = i_face_cells[f_id][0];
     cs_lnum_t cell_id2 = i_face_cells[f_id][1];
 
-    cs_real_t fluxfactor
-      = cs::min(cdrift*std::abs(i_volflux[f_id])/i_face_surf[f_id],
+    cs_real_t fluxfactor = 0.;
+    if (i_face_surf[f_id] > 1.e-15)
+      fluxfactor = cs::min(cdrift*std::abs(i_volflux[f_id])/i_face_surf[f_id],
                 maxfluxsurf);
 
     cs_real_t gradface[3], normalface[3];
