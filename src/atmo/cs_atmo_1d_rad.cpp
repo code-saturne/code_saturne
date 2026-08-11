@@ -1366,7 +1366,8 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
     constexpr cs_real_t mbarh2o = 5.0 / 3.0;
 
     // for LH74 quadrature method in two-stream
-    constexpr cs_real_t mui = 1.0 / sqrt(3.0);
+    // sqrt is not available at compile time.
+    constexpr cs_real_t mui = 0.57735026918962576451; // 1.0 / sqrt(3.0);
 
     //  3 -  albedos for O3 and Rayleigh diffusion
     // Note LH74 equation (18)
