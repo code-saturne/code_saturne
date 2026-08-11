@@ -2871,6 +2871,37 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
+    def copy_input(self, i_nodes, s_label, c_label, run_label, r_label="RESU"):
+        """
+        Copy input in POST for later description report generation
+        """
+
+        # list of accepted formats
+        input_format = ['.png', '.jpg', '.pdf', '.tex', '.jpeg']
+
+        for i_node in i_nodes:
+            # file_path can include another folder (ex: datasets/fig.png)
+            file_path, tmp, repo, tex = self.__parser.getInput(i_node)
+            input_file = os.path.join(self.__dest, s_label, c_label, r_label,
+                                      run_label, file_path)
+
+            # Input copied in POST/datasets/CASE/run_id folder
+            file_name = os.path.basename(file_path)
+            file_dest = os.path.join(self.__dest, s_label, 'POST', 'datasets',
+                                     c_label, run_label, file_name)
+            dest_folder = os.path.dirname(file_dest)
+
+            if os.path.isfile(input_file):
+                file_format = input_file[-4:]
+                if input_file[-5] == ".":
+                    file_format = input_file[-5:]
+                if file_format in input_format:
+                    if not os.path.exists(dest_folder):
+                        os.makedirs(dest_folder)
+                    shutil.copyfile(input_file, file_dest)
+
+    #---------------------------------------------------------------------------
+
     def build_reports(self, report_fig):
         """
         @type report_fig: C{String}
@@ -2935,6 +2966,8 @@ class Studies(object):
                                    "case %s}" % case.label)
                     self.report_input(doc, nodes, case.study, case.label,
                                       case.resu, case.run_id)
+                    # copy input in POST/datasets/
+                    self.copy_input(nodes, case.study, case.label, case.run_id)
 
         attached_files.append(doc.close())
 

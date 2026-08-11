@@ -182,6 +182,8 @@ if the option `-p, --post` is not also present in the command line.
 display results in POST directory. The data concerned are those used within the
 `<data>` and `<probes>` markups in the SMGR file. They are copied into the POST
 folder with the following structure: `POST/CURRENT/<case>/<run_id>`.
+All files referenced in the `<input>` markups are also copied into the POST
+folder with the following structure: `POST/datasets/<case>/<run_id>`.
 
 SMGR parameter file
 ===================
@@ -928,6 +930,9 @@ The following example shows the inclusion of two figures from the
 
 Text files, \f$ \mbox{\LaTeX} \f$ source files, or graphical (PNG, JPEG, or PDF)
 files may be included.
+
+All files specified with the `<input>` markup are copied in
+`POST/datasets/<case>/<run_id>` directory.
 
 In the parameters file, input files are defined with markups `<input>` as
 children of a single markup `<case>`.

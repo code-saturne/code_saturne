@@ -39,6 +39,12 @@
   schemes in Navier-Stokes systems. This work is related to the
   integration of the turbulence modeling inside the CDO part.
 
+### SMGR
+
+- The postprocessing step now copy input files (e.g. images generated with
+  Catalyst) into the destination POST folder with the following structure:
+  `POST/datasets/<case>/<run_id>`
+
 Release 9.2.0 (2026-07-06)
 --------------------------
 
