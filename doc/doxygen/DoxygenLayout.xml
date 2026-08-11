@@ -91,7 +91,7 @@
       <tab type="user" visible="yes" url="[none]" title="Cell size at the wall"/> -->
       <tab type="user" visible="yes" url="[none]" title="Numerical Parameters"/> -->
       <tab type="user" visible="yes" url="@ref cs_ug_troubleshooting" title="What if a calculation fails ?"/>
-      <tab type="user" visible="yes" url="[none]" title="Analysis of the results"/> -->
+      <tab type="user" visible="yes" url="@ref bpg_analysis_of_results" title="Analysis of the results"/>
     </tab>
 
     <!-- Section 6: Installation -->
