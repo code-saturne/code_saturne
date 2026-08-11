@@ -64,6 +64,7 @@
 #include "base/cs_all_to_all.h"
 #include "base/cs_array.h"
 #include "base/cs_coupling.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_interface.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
@@ -84,6 +85,16 @@
 /*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*=============================================================================
+ * Global constexpr
+ *============================================================================*/
+
+constexpr int DEBUG_LEVEL_CPL = 0;
+
+// Projection with InterpKernelDEC is bugged if surface is not plane
+// For the moment use nodal projection (but loose conservativity)
+constexpr bool USE_CFEMDEC_BSTRESS = true;
 
 /*=============================================================================
  * Local Structure Definitions
@@ -173,6 +184,123 @@ struct _cs_aster_coupling_t {
   cs_face_to_vertex_t<3> *projection;
 
   cs_real_t *bstress_vtx; /* Boundary stress at coupling verticies */
+
+  /* Public method */
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Return current verbosity level.
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  int
+  get_current_verbosity() const
+  {
+    return (cs_log_default_is_active()) ? verbosity : 0;
+  }
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Allocate and initialize dynamic vectors
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  allocate_arrays()
+  {
+    for (int i = 0; i < 2; i++) {
+      CS_MALLOC(xast_curr[i], 3 * n_vertices, cs_real_t);
+      CS_MALLOC(xsat_pred[i], 3 * n_vertices, cs_real_t);
+    }
+
+    CS_MALLOC(vast_curr, 3 * n_vertices, cs_real_t);
+    CS_MALLOC(vast_prev, 3 * n_vertices, cs_real_t);
+    CS_MALLOC(vast_pprev, 3 * n_vertices, cs_real_t);
+
+    cs_arrays_set_value<cs_real_t, 1>(3 * n_vertices,
+                                      0.,
+                                      xast_curr[0],
+                                      xast_curr[1],
+                                      xsat_pred[0],
+                                      xsat_pred[1],
+                                      vast_curr,
+                                      vast_prev,
+                                      vast_pprev);
+
+    CS_MALLOC(bstress_curr, 3 * n_faces, cs_real_t);
+    CS_MALLOC(bstress_prev, 3 * n_faces, cs_real_t);
+    CS_MALLOC(bstress_pred, 3 * n_faces, cs_real_t);
+
+    cs_arrays_set_value<cs_real_t, 1>(3 * n_faces,
+                                      0.,
+                                      bstress_curr,
+                                      bstress_prev,
+                                      bstress_pred);
+
+    for (int i = 0; i < 3; i++) {
+      CS_MALLOC(tmp[i], 3 * cs::max(n_vertices, n_faces), cs_real_t);
+    }
+
+    if (USE_CFEMDEC_BSTRESS) {
+      CS_MALLOC(bstress_vtx, 3 * n_vertices, cs_real_t);
+    }
+  }
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Finalize coupling with code_aster.
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  free()
+  {
+    for (int i = 0; i < 2; i++) {
+      CS_FREE(xast_curr[i]);
+      CS_FREE(xsat_pred[i]);
+    }
+
+    CS_FREE(vast_curr);
+    CS_FREE(vast_prev);
+    CS_FREE(vast_pprev);
+
+    CS_FREE(bstress_curr);
+    CS_FREE(bstress_prev);
+    CS_FREE(bstress_pred);
+
+    for (int i = 0; i < 3; i++) {
+      CS_FREE(tmp[i]);
+    }
+
+    CS_FREE(bstress_vtx);
+
+    if (post_mesh != nullptr)
+      post_mesh = fvm_nodal_destroy(post_mesh);
+
+    cs_paramedmem_coupling_destroy(mc_vertices);
+    cs_paramedmem_coupling_destroy(mc_faces);
+
+    mc_vertices = nullptr;
+    mc_faces    = nullptr;
+
+    projection->free();
+    CS_FREE(projection);
+  }
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Set coefficient for prediction
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  set_coefficients(cs_real_t aexxst_, cs_real_t bexxst_, cs_real_t cfopre_)
+  {
+    aexxst = aexxst_;
+    bexxst = bexxst_;
+    cfopre = cfopre_;
+  }
 };
 
 /*============================================================================
@@ -185,12 +313,6 @@ static const char _name_m_v[] = "mesh_velocity";
 
 static int _verbosity     = 1;
 static int _visualization = 1;
-
-#define DEBUG_LEVEL_CPL 0
-
-// Projection with InterpKernelDEC is bugged if surface is not plane
-// For the moment use nodal projection (but loose conservativity)
-#define USE_CFEMDEC_BSTRESS true
 
 /*============================================================================
  * Global variables
@@ -310,61 +432,6 @@ _cs_ast_sync_send_value(int         rank_id,
 }
 
 /*----------------------------------------------------------------------------
- * Allocate and initialize dynamic vectors (cs_real_t) based on the
- * 'n_vertices' number of points.
- *----------------------------------------------------------------------------*/
-
-static int
-_get_current_verbosity(const cs_aster_coupling_t *ast_cpl)
-{
-  return (cs_log_default_is_active()) ? ast_cpl->verbosity : 0;
-}
-
-static void
-_allocate_arrays(cs_aster_coupling_t *ast_cpl)
-{
-  const cs_lnum_t n_vertices = ast_cpl->n_vertices;
-  const cs_lnum_t n_faces    = ast_cpl->n_faces;
-
-  for (int i = 0; i < 2; i++) {
-    CS_MALLOC(ast_cpl->xast_curr[i], 3 * n_vertices, cs_real_t);
-    CS_MALLOC(ast_cpl->xsat_pred[i], 3 * n_vertices, cs_real_t);
-  }
-
-  CS_MALLOC(ast_cpl->vast_curr, 3 * n_vertices, cs_real_t);
-  CS_MALLOC(ast_cpl->vast_prev, 3 * n_vertices, cs_real_t);
-  CS_MALLOC(ast_cpl->vast_pprev, 3 * n_vertices, cs_real_t);
-
-  cs_arrays_set_value<cs_real_t, 1>(3 * n_vertices,
-                                    0.,
-                                    ast_cpl->xast_curr[0],
-                                    ast_cpl->xast_curr[1],
-                                    ast_cpl->xsat_pred[0],
-                                    ast_cpl->xsat_pred[1],
-                                    ast_cpl->vast_curr,
-                                    ast_cpl->vast_prev,
-                                    ast_cpl->vast_pprev);
-
-  CS_MALLOC(ast_cpl->bstress_curr, 3 * n_faces, cs_real_t);
-  CS_MALLOC(ast_cpl->bstress_prev, 3 * n_faces, cs_real_t);
-  CS_MALLOC(ast_cpl->bstress_pred, 3 * n_faces, cs_real_t);
-
-  cs_arrays_set_value<cs_real_t, 1>(3 * n_faces,
-                                    0.,
-                                    ast_cpl->bstress_curr,
-                                    ast_cpl->bstress_prev,
-                                    ast_cpl->bstress_pred);
-
-  for (int i = 0; i < 3; i++) {
-    CS_MALLOC(ast_cpl->tmp[i], 3 * cs::max(n_vertices, n_faces), cs_real_t);
-  }
-
-  if (USE_CFEMDEC_BSTRESS) {
-    CS_MALLOC(ast_cpl->bstress_vtx, 3 * n_vertices, cs_real_t);
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Scatter values of type cs_real_3_t (tuples) based on indirection list
  *
  * parameters:
@@ -381,23 +448,26 @@ _scatter_values_r3(cs_lnum_t         n_elts,
                    cs_real_3_t       v_out[])
 {
   assert(v_in != nullptr && v_out != nullptr);
+  cs_dispatch_context ctx;
 
   if (elt_ids != nullptr) {
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
+    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE(cs_lnum_t i) {
       cs_lnum_t j = elt_ids[i];
 
       v_out[j][0] = v_in[i][0];
       v_out[j][1] = v_in[i][1];
       v_out[j][2] = v_in[i][2];
-    }
+    });
   }
   else {
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
+    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE(cs_lnum_t i) {
       v_out[i][0] = v_in[i][0];
       v_out[i][1] = v_in[i][1];
       v_out[i][2] = v_in[i][2];
-    }
+    });
   }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -422,19 +492,20 @@ _pred(cs_real_t       *valpre,
 
   /* Update prediction array */
   const cs_lnum_t size = 3 * n;
+  cs_dispatch_context ctx;
 
   if (val3 != nullptr) {
-#pragma omp parallel for if (size > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < size; i++) {
+    ctx.parallel_for(size, [=] CS_F_HOST_DEVICE(cs_lnum_t i) {
       valpre[i] = c1 * val1[i] + c2 * val2[i] + c3 * val3[i];
-    }
+    });
   }
   else {
-#pragma omp parallel for if (size > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < size; i++) {
+    ctx.parallel_for(size, [=] CS_F_HOST_DEVICE(cs_lnum_t i) {
       valpre[i] = c1 * val1[i] + c2 * val2[i];
-    }
+    });
   }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -472,8 +543,7 @@ _dinorm(cs_real_t *vect1, cs_real_t *vect2, cs_lnum_t nbpts)
   }
 #endif
 
-  norm = sqrt(norm / rescale);
-  return norm;
+  return sqrt(norm / rescale);
 }
 
 /*----------------------------------------------------------------------------
@@ -501,9 +571,7 @@ _aitken(const cs_real_t *dp_k,
   cs_array_difference(size, d_kp, dp_k, tmp1);
   cs_array_difference(size, d_k, dp_km, tmp2);
 
-#pragma omp parallel for if (size > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < size; ii++)
-    tmp1[ii] += tmp2[ii];
+  cs_array_real_padd(size, tmp2, tmp1);
 
   cs_real_t xx, xy;
   cs_gdot_xx_xy(size, tmp1, tmp0, &xx, &xy);
@@ -768,7 +836,7 @@ cs_aster_coupling_initialize(int nalimx, cs_real_t epalim)
   /* Coupling (communication) initialization */
 
   if (cs_glob_rank_id <= 0) {
-    int verbosity = _get_current_verbosity(cpl);
+    int verbosity = cpl->get_current_verbosity();
 
     if (verbosity > 0) {
       bft_printf("Send calculation parameters to code_aster\n");
@@ -805,36 +873,7 @@ cs_aster_coupling_finalize(void)
   if (cpl == nullptr)
     return;
 
-  for (int i = 0; i < 2; i++) {
-    CS_FREE(cpl->xast_curr[i]);
-    CS_FREE(cpl->xsat_pred[i]);
-  }
-
-  CS_FREE(cpl->vast_curr);
-  CS_FREE(cpl->vast_prev);
-  CS_FREE(cpl->vast_pprev);
-
-  CS_FREE(cpl->bstress_curr);
-  CS_FREE(cpl->bstress_prev);
-  CS_FREE(cpl->bstress_pred);
-
-  for (int i = 0; i < 3; i++) {
-    CS_FREE(cpl->tmp[i]);
-  }
-
-  CS_FREE(cpl->bstress_vtx);
-
-  if (cpl->post_mesh != nullptr)
-    cpl->post_mesh = fvm_nodal_destroy(cpl->post_mesh);
-
-  cs_paramedmem_coupling_destroy(cpl->mc_vertices);
-  cs_paramedmem_coupling_destroy(cpl->mc_faces);
-
-  cpl->mc_vertices = nullptr;
-  cpl->mc_faces    = nullptr;
-
-  cpl->projection->free();
-  CS_FREE(cpl->projection);
+  cpl->free();
 
   CS_FREE(cpl);
 
@@ -857,9 +896,7 @@ cs_aster_coupling_set_coefficients(cs_real_t aexxst,
   if (cpl == nullptr)
     return;
 
-  cpl->aexxst = aexxst;
-  cpl->bexxst = bexxst;
-  cpl->cfopre = cfopre;
+  cpl->set_coefficients(aexxst, bexxst, cfopre);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -936,7 +973,7 @@ cs_aster_coupling_geometry(cs_lnum_t        n_faces,
     fsi_mesh = fvm_nodal_destroy(fsi_mesh);
   }
 
-  _allocate_arrays(cpl);
+  cpl->allocate_arrays();
 
   if (almax <= 0) {
     bft_error(__FILE__,
@@ -950,7 +987,7 @@ cs_aster_coupling_geometry(cs_lnum_t        n_faces,
   cpl->lref = almax;
 
   if (cs_glob_rank_id <= 0) {
-    int verbosity = _get_current_verbosity(cpl);
+    int verbosity = cpl->get_current_verbosity();
 
     if (verbosity > 0) {
       bft_printf("\n"
@@ -1104,7 +1141,7 @@ cs_aster_coupling_exchange_time_step(cs_real_t c_dt[])
 
   cpl->dt = dttmp;
 
-  int verbosity = _get_current_verbosity(cpl);
+  int verbosity = cpl->get_current_verbosity();
   if (verbosity > 0)
     bft_printf("----------------------------------\n"
                "reference time step:     %4.2le\n"
@@ -1162,13 +1199,14 @@ cs_aster_coupling_send_bstress(void)
   if (cpl->iteration < 0)
     return;
 
-  int verbosity = _get_current_verbosity(cpl);
+  int verbosity = cpl->get_current_verbosity();
 
   const cs_lnum_t n_faces = cpl->n_faces;
 
   /* Prediction ared defined in Fabien Huvelin PhD*/
+  constexpr bool use_pred = false;
   cs_real_t c1, c2;
-  if (cpl->s_it_id == 0) {
+  if (cpl->s_it_id == 0 and use_pred) {
     /* Explicit synchrone prediction */
     c1 = cpl->cfopre;
     c2 = 1.0 - cpl->cfopre;
@@ -1220,23 +1258,29 @@ cs_aster_coupling_send_bstress(void)
     cs::parall::sum(bface_inte);
     cs::parall::sum(surf);
 
-    bft_printf(_("integrated stress in code_saturne: fx= %.5g, fy= %.5g,fz= "
-                 "%.5g, (surface=%.5g).\n"),
-               bface_inte[0],
-               bface_inte[1],
-               bface_inte[2],
-               surf);
-    bft_printf_flush();
+    bft_printf(
+      _("integrated stress (=forces) in code_saturne: fx= %.5g, fy= %.5g,fz= "
+        "%.5g, (surface=%.5g).\n"),
+      bface_inte[0],
+      bface_inte[1],
+      bface_inte[2],
+      surf);
 
-    bft_printf(_("code_aster: starting MEDCoupling send of values "
-                 "at coupled faces..."));
+    if (USE_CFEMDEC_BSTRESS) {
+      bft_printf(_("code_aster: starting MEDCoupling send of values "
+                   "at coupled vertices..."));
+    }
+    else {
+      bft_printf(_("code_aster: starting MEDCoupling send of values "
+                   "at coupled faces..."));
+    }
     bft_printf_flush();
   }
 
   if (USE_CFEMDEC_BSTRESS) {
-    // We use CS_FACE_TO_VERTEX_SURFACE since we interpolate a pressure
-    // constant by face. Hence, the pressure at a vertex is the average
-    // pressure around this vertex ins an integrale sense.
+    // We use CS_FACE_TO_VERTEX_SURFACE since we interpolate a stress
+    // constant by face. Hence, the stess at a vertex is the average
+    // stress around this vertex has an integrale sense.
     cpl->projection->compute_on_boundary(CS_FACE_TO_VERTEX_SURFACE,
                                          true,
                                          cpl->bstress_pred,
@@ -1270,7 +1314,7 @@ cs_aster_coupling_evaluate_cvg(void)
 
   cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
-  int verbosity = _get_current_verbosity(cpl);
+  int verbosity = cpl->get_current_verbosity();
 
   int icv = 1;
 
@@ -1324,7 +1368,7 @@ cs_aster_coupling_recv_displacement(void)
 {
   cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
-  int verbosity = _get_current_verbosity(cpl);
+  int verbosity = cpl->get_current_verbosity();
 
   if (verbosity > 1) {
     bft_printf(_("code_aster: starting MEDCouping receive of values "
@@ -1473,9 +1517,7 @@ cs_aster_coupling_compute_displacement(cs_real_t disp[][3])
     }
   }
 
-  int verbosity = _get_current_verbosity(cpl);
-
-  if (verbosity > 0) {
+  if (cpl->get_current_verbosity() > 0) {
     bft_printf("*********************************\n"
                "*     sub-iteration %i        *\n"
                "*********************************\n\n",
