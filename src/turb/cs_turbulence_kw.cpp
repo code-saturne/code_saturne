@@ -1432,7 +1432,7 @@ cs_turbulence_kw(int phase_id)
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_k),
-                    sqrt(cs_gdot(n_cells, smbrk, smbrk)));
+                    sqrt(cs_gdot(n_cells, w5, w5)));
     }
 
     /* Handle omega */
@@ -1492,7 +1492,7 @@ cs_turbulence_kw(int phase_id)
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_omg),
-                    sqrt(cs_gdot(n_cells, smbrw, smbrw)));
+                    sqrt(cs_gdot(n_cells, w6, w6)));
     }
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {

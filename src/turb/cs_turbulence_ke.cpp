@@ -1731,7 +1731,7 @@ cs_turbulence_ke(int              phase_id,
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: explicit balance = %12.5e\n",
                     cs_field_get_label(f_k),
-                    sqrt(cs_gdot(n_cells, smbrk, smbrk)));
+                    sqrt(cs_gdot(n_cells, usexpk, usexpk)));
     }
 
     /* Handle epsilon */
@@ -1798,7 +1798,7 @@ cs_turbulence_ke(int              phase_id,
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_eps),
-                    sqrt(cs_gdot(n_cells, smbre, smbre)));
+                    sqrt(cs_gdot(n_cells, usexpe, usexpe)));
     }
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
