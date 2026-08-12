@@ -355,6 +355,14 @@ public:
       }
     }
 
+    if (ptr != nullptr && mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+#if defined(HAVE_CUDA)
+      cs_mem_cuda_unset_advise_read_mostly(ptr, me_size);
+#elif defined(HAVE_HIP)
+      cs_mem_hip_unset_advise_read_mostly(ptr, me_size);
+#endif
+    }
+
     return ptr;
   }
 
@@ -2438,6 +2446,8 @@ cs_mem_malloc_hd(cs_alloc_mode_t   mode,
                                  file_name,
                                  line_num);
     me.device_ptr = me.host_ptr;
+    cs_mem_cuda_unset_advise_read_mostly(me.device_ptr,
+                                         me.size);
   }
 
   else if (mode == CS_ALLOC_DEVICE) {
