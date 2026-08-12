@@ -190,7 +190,7 @@ _mach_p(const cs_real_t    machl,
 
 static void
 _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
-                                          int                  iterns, // cfmsfp en fortran
+                                          int                  iterns,
                                           cs_real_t            i_mass_flux[],
                                           cs_real_t            b_mass_flux[])
 {
@@ -204,7 +204,10 @@ _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
 
   cs_real_t *dt = CS_F_(dt)->val;
 
-  const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
+  const cs_real_t gxyz[3] = {cs_glob_physical_constants->gravity[0],
+                             cs_glob_physical_constants->gravity[1],
+                             cs_glob_physical_constants->gravity[2]};
+
   const int itytur = cs_glob_turb_model->itytur;
   const cs_velocity_pressure_model_t *vp_model = cs_glob_velocity_pressure_model;
   const int idtvar = cs_glob_time_step_options->idtvar;
@@ -454,8 +457,7 @@ _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
                          tsexp);
   }
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     /* Volumic forces term (gravity) */
     const cs_real_t rom = crom[c_id];
@@ -467,7 +469,8 @@ _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
     for (cs_lnum_t i = 0; i < 3; i++)
       tsexp(c_id, i) *= dt[c_id];
 
-  }
+  });
+  ctx.wait();
 
   /* Computation of the flux
      Volumic flux part based on dt*f^n */
@@ -832,10 +835,11 @@ cs_cf_convective_mass_flux(int  iterns)
      ------------ */
 
   /* Initialization */
-  ctx.parallel_for(n_cells, CS_LAMBDA (cs_lnum_t c_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     smbrs[c_id] = 0.0;
     rovsdt[c_id] = 0.0;
   });
+  ctx.wait();
 
   /* Mass source term
      ---------------- */
@@ -878,10 +882,10 @@ cs_cf_convective_mass_flux(int  iterns)
                         c2,
                         n_cells);
 
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    rovsdt[c_id] =   rovsdt[c_id]
-                   + eqp_p->istat*(cell_f_vol[c_id]/(dt[c_id]*c2[c_id]));
+  if (eqp_p->istat) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      rovsdt[c_id] += (cell_f_vol[c_id]/(dt[c_id]*c2[c_id]));
+    });
   }
 
   /* "Mass flux" and face "viscosity" computation
@@ -898,22 +902,25 @@ cs_cf_convective_mass_flux(int  iterns)
   /* Mass flux at internal faces (upwind scheme for the density)
      (negative because added to RHS) */
 
-# pragma omp parallel for if(n_i_faces > CS_THR_MIN)
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     const cs_lnum_t c_id1 = i_face_cells[f_id][0];
     const cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-    wflmas[f_id] = -0.5 *
-      (  crom[c_id1]*(ivolfl[f_id]+fabs(ivolfl[f_id]))
-       + crom[c_id2]*(ivolfl[f_id]-fabs(ivolfl[f_id])));
-  }
+    // signbit true if negative
+    cs_real_t &volfl = ivolfl[f_id];
+
+    wflmas[f_id] = (signbit(volfl)) ?
+      crom[c_id2] * volfl : crom[c_id1] * volfl;
+  });
 
   /* Mass flux at boundary faces
      (negative because added to RHS) */
 
-# pragma omp parallel for if(n_b_faces > CS_THR_MIN)
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
     wflmab[f_id] = -brom[f_id] * bvolfl[f_id];
+  });
+
+  ctx.wait();
 
   cs_divergence(mesh,
                 0, /* init */
@@ -981,15 +988,22 @@ cs_cf_convective_mass_flux(int  iterns)
      the increment is removed) */
 
   if (eqp_p->verbosity >= 2) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      smbrs[c_id] =    smbrs[c_id]
-                    -  eqp_p->istat * (cell_f_vol[c_id] / dt[c_id])
-                    * (cvar_pr[c_id] - cvar_pr_pre[c_id])
-                    * cs::max(0, cs::min(eqp_p->nswrsm-2, 1));
-    }
-    const cs_real_t sclnor = sqrt(cs_gdot(n_cells, smbrs, smbrs));
+    int mult = eqp_p->istat * cs::max(0, cs::min(eqp_p->nswrsm-2, 1));
+    double sclnor = 0;
+
+    ctx.parallel_for_reduce_sum(n_cells, sclnor, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      cs_real_t c_rhs = smbrs[c_id] - mult * (cell_f_vol[c_id] / dt[c_id])
+                                           * (cvar_pr[c_id] - cvar_pr_pre[c_id]);
+      sum += c_rhs * c_rhs;
+    });
+
+    ctx.wait();
+    cs_parall_sum(1, CS_DOUBLE, &sclnor);
+
     cs_log_printf(CS_LOG_DEFAULT,
-                  _("\n PRESSURE: EXPLICIT BALANCE = %14.5e\n"),
+                  _("\n Pressure: explicit balance = %14.5e\n"),
                   sclnor);
   }
 
@@ -1032,11 +1046,13 @@ cs_cf_convective_mass_flux(int  iterns)
      (added with a negative sign since wflmas,wflmab was used above
      in the right hand side). */
 
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
-    i_mass_flux_e[f_id] = i_mass_flux_e[f_id] - wflmas[f_id];
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    i_mass_flux_e[f_id] -= wflmas[f_id];
+  });
 
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
-    b_mass_flux_e[f_id] = b_mass_flux_e[f_id] - wflmab[f_id];
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    b_mass_flux_e[f_id] -= wflmab[f_id];
+  });
 
   /* Updating of the density
      ----------------------- */
@@ -1045,24 +1061,26 @@ cs_cf_convective_mass_flux(int  iterns)
 
     cs_real_t *crom_pre = CS_F_(rho)->val_pre;
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       /* Backup of the current density values
-         FIXMA: should be done only if iterns = 1 */
+         FIXME: should be done only if iterns = 1 */
       crom_pre[c_id] = crom[c_id];
 
       /* Update of density values */
       crom[c_id] += (cvar_pr[c_id] - cvar_pr_pre[c_id]) / c2[c_id];
-    }
+    });
 
     /* Density communication */
 
     if (mesh->halo != nullptr) {
-      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, crom);
-      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, crom_pre);
+      ctx.wait();
+      cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), crom);
+      cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), crom_pre);
     }
 
   }
+
+  ctx.wait();
 
   wbfa = nullptr;
   wbfb = nullptr;
