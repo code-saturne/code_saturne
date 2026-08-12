@@ -489,17 +489,17 @@ cs_cf_physical_properties(void)
 
   if (ifcven >= 0) {
 
+    cs_dispatch_context ctx;
     cs_real_t *cpro_venerg = cs_field(ifcven)->val;
 
     int ifclam = CS_F_(t)->get_key_int(kivisl);
     if (ifclam >= 0) {
       const cs_real_t *cpro_lambda = cs_field(ifclam)->val;
-      cs_array_real_copy(n_cells, cpro_lambda, cpro_venerg);
+      cs_array_copy(n_cells, cpro_lambda, cpro_venerg);
     }
     else {
-      const int kvisl0 = cs_field_key_id("diffusivity_ref");
-      double visls_0 = CS_F_(t)->get_key_double(kvisl0);
-      cs_array_real_set_scalar(n_cells, visls_0, cpro_venerg);
+      double visls_0 = CS_F_(t)->get_key_double("diffusivity_ref");
+      cs_arrays_set_value<cs_real_t, 1>(n_cells, visls_0, cpro_venerg);
     }
 
     if (fluid_props->icv > -1) {
@@ -507,28 +507,34 @@ cs_cf_physical_properties(void)
       cs_real_t *cpro_cv = cs_field(fluid_props->icv)->val;
       cs_real_t *mix_mol_mas = cs_field("mix_mol_mas")->val;
 
+      cs_array<cs_real_t> neg_cv_flag(1, cs_alloc_mode);
+      neg_cv_flag[0] = 1.;
+
       cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, n_cells);
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         if (cpro_cv[c_id] <= 0)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("The isochoric specific heat has at least one\n"
-                      " negative or zero value: %g."), cpro_cv[c_id]);
+          neg_cv_flag[0] = cpro_cv[c_id];
         cpro_venerg[c_id] /= cpro_cv[c_id];
-      }
+      });
+      ctx.wait();
+
+      if (neg_cv_flag[0] < 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The isochoric specific heat has at least one\n"
+                    " negative or zero value: %g."), neg_cv_flag[0]);
     }
     else {
       cs_real_t cv0 = fluid_props->cv0;
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cpro_venerg[c_id] /= cv0;
-      }
+      });
+      ctx.wait();
     }
   }
 
   else {
-    // TODO: this part should be done at setup time,
+    // FIXME: this part should be done at setup time,
     // instead of modifying field keywards in the time loop
     // (i.e. after setup logging), which is ugly and risky.
 

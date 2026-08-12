@@ -43,6 +43,7 @@
 
 #include "bft/bft_printf.h"
 
+#include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
@@ -829,16 +830,23 @@ cs_cf_thermo_cv(cs_real_t *cp,
 {
   int ieos = cs_glob_cf_model->ieos;
 
+  cs_dispatch_context ctx;
+  if (cs_check_device_ptr(cv) == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
   /* Cv for a single ideal gas  or a mixture of ideal gas */
   if (ieos == CS_EOS_IDEAL_GAS || ieos == CS_EOS_GAS_MIX) {
     cs_real_t r_pg = cs_physical_constants_r;
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      cv[i] = cp[i]-r_pg/xmasml[i];
+     ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      cv[i] = cp[i] - r_pg / xmasml[i];
+    });
   }
   /* Cv for a stiffened gas */
   else if (ieos == CS_EOS_STIFFENED_GAS) {
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      cv[i] = cs_glob_fluid_properties->cv0;
+    cs_arrays_set_value<cs_real_t, 1>(ctx,
+                                      n_elts,
+                                      cs_glob_fluid_properties->cv0,
+                                      cv);
   }
 }
 
@@ -930,7 +938,9 @@ cs_cf_thermo_wall_bc(cs_real_t *wbfa,
   int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos  or ideal gas mixture */
-  if (ieos == CS_EOS_IDEAL_GAS || ieos == CS_EOS_STIFFENED_GAS || ieos == CS_EOS_GAS_MIX) {
+  if (   ieos == CS_EOS_IDEAL_GAS
+      || ieos == CS_EOS_STIFFENED_GAS
+      || ieos == CS_EOS_GAS_MIX) {
     cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t cell_id = b_face_cells[face_id];
 
@@ -1037,7 +1047,9 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
   int ieos = cs_glob_cf_model->ieos;
 
   /* single ideal gas or stiffened gas eos  or ideal gas mixture */
-  if (ieos == CS_EOS_IDEAL_GAS || ieos == CS_EOS_STIFFENED_GAS || ieos == CS_EOS_GAS_MIX) {
+  if (   ieos == CS_EOS_IDEAL_GAS
+      || ieos == CS_EOS_STIFFENED_GAS
+      || ieos == CS_EOS_GAS_MIX) {
     cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_lnum_t cell_id = b_face_cells[face_id];
 

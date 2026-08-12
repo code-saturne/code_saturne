@@ -56,6 +56,7 @@
 #include "cfbl/cs_cf_model.h"
 #include "cfbl/cs_cf_thermo.h"
 #include "alge/cs_divergence.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_equation_iterative_solve.h"
 #include "alge/cs_face_viscosity.h"
 #include "base/cs_field_default.h"
@@ -114,8 +115,6 @@ _cf_div(cs_real_t div[])
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_halo_t *halo = mesh->halo;
-  const cs_lnum_t n_i_faces = mesh->n_i_faces;
-  const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t n_cells = mesh->n_cells;
 
@@ -127,6 +126,8 @@ _cf_div(cs_real_t div[])
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
 
   const int itytur = cs_glob_turb_model->itytur;
+
+  cs_dispatch_context ctx;
 
   /* Initialization
      -------------- */
@@ -152,26 +153,23 @@ _cf_div(cs_real_t div[])
   /* Compute total viscosity */
 
   if (itytur == 3) {
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-      vistot[c_id] = viscl[c_id];
+    cs_array_copy<cs_real_t>(n_cells,
+                             viscl,
+                             (cs_real_t *)vistot.data());
   }
   else {
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       vistot[c_id] = viscl[c_id] + visct[c_id];
-    }
+    });
+    ctx.wait();
   }
 
   /* Periodicity and parallelism process */
 
-  if (cs_glob_rank_id > -1 || mesh->periodicity != nullptr) {
+  cs_halo_sync(halo, CS_HALO_STANDARD, vistot.data());
 
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, vistot.data());
-
-    if (f_viscv != nullptr)
-      cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_kappa);
-  }
+  if (f_viscv != nullptr)
+    cs_halo_sync(halo, CS_HALO_STANDARD, cpro_kappa);
 
   /* Compute the divegence of (sigma.u)
      ---------------------------------- */
@@ -187,64 +185,49 @@ _cf_div(cs_real_t div[])
   /* Variable kappa in space */
   const cs_real_t viscv0 = cs_glob_fluid_properties->viscv0;
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     const cs_real_t kappa = (f_viscv != nullptr) ? cpro_kappa[c_id] : viscv0;
     const cs_real_t mu = vistot[c_id];
 
-    const cs_real_t trgdru = cs_math_33_trace((cs_real_3_t *)gradv.sub_array(c_id));
+    const cs_real_t trgdru
+      = cs_math_33_trace((cs_real_3_t *)gradv.sub_array(c_id));
+    const cs_real_t k_m_23_mu_trgdru = (kappa - 2.0 / 3.0 * mu) * trgdru;
 
     /* Symmetric matrix sigma */
     cs_real_t sigma[6] = {0., 0., 0., 0., 0., 0.};
 
-    sigma[0] =   mu * 2.0 * gradv(c_id, 0, 0)
-      + (kappa - 2.0 / 3.0 * mu) * trgdru;
-
-    sigma[1] =   mu * 2.0 * gradv(c_id, 1, 1)
-      + (kappa - 2.0 / 3.0 * mu) * trgdru;
-
-    sigma[2] =   mu * 2.0 * gradv(c_id, 2, 2)
-      + (kappa - 2.0 / 3.0 * mu) * trgdru;
+    sigma[0] =   mu * 2.0 * gradv(c_id, 0, 0) + k_m_23_mu_trgdru;
+    sigma[1] =   mu * 2.0 * gradv(c_id, 1, 1) + k_m_23_mu_trgdru;
+    sigma[2] =   mu * 2.0 * gradv(c_id, 2, 2) + k_m_23_mu_trgdru;
 
     sigma[3] = mu * (gradv(c_id, 0, 1) + gradv(c_id, 1, 0));
-
     sigma[4] = mu * (gradv(c_id, 1, 2) + gradv(c_id, 2, 1));
-
     sigma[5] = mu * (gradv(c_id, 0, 2) + gradv(c_id, 2, 0));
 
     cs_math_sym_33_3_product(sigma, vel[c_id], tempv.sub_array(c_id));
 
-  }
+  });
+  ctx.wait();
 
   /* Periodicity and parallelism process */
 
-  if (cs_glob_rank_id > -1 || mesh->periodicity != nullptr) {
-    cs_halo_sync_var_strided(halo,
-                             CS_HALO_STANDARD,
-                             tempv.data(),
-                             3);
+  cs_halo_sync(halo, ctx.use_gpu(), tempv.data());
 
-    if (mesh->n_init_perio > 0)
-      cs_halo_perio_sync_var_vect(halo,
-                                  CS_HALO_STANDARD,
-                                  tempv.data(),
-                                  3);
-
-  }
-
-  /* Initialize diverg(ncel+1, ncelet)
-     (unused value, but need to be initialized to avoid Nan values) */
-
-  if (n_cells_ext > n_cells) {
-#   pragma omp parallel for if ((n_cells_ext-n_cells) > CS_THR_MIN)
-    for (cs_lnum_t c_id = n_cells; c_id < n_cells_ext; c_id++)
-      div[c_id] = 0.0;
-  }
+  if (mesh->n_init_perio > 0)
+    cs_halo_perio_sync_var_vect(halo,
+                                CS_HALO_STANDARD,
+                                tempv.data(),
+                                3);
 
   /* Interior faces contribution */
 
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+  cs_dispatch_sum_type_t i_sum_type
+    = ctx.get_parallel_for_i_faces_sum_type(mesh);
+  cs_dispatch_sum_type_t b_sum_type
+    = ctx.get_parallel_for_b_faces_sum_type(mesh);
+
+  ctx.parallel_for_i_faces(mesh, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
     const cs_lnum_t c_id0 = i_face_cells[f_id][0];
     const cs_lnum_t c_id1 = i_face_cells[f_id][1];
 
@@ -254,13 +237,15 @@ _cf_div(cs_real_t div[])
              + i_face_u_normal[f_id][1]*(tempv(c_id0, 1)+tempv(c_id1, 1))
              + i_face_u_normal[f_id][2]*(tempv(c_id0, 2)+tempv(c_id1, 2)));
 
-    div[c_id0] = div[c_id0] + vecfac;
-    div[c_id1] = div[c_id1] - vecfac;
-  }
+    if (c_id0 < n_cells)
+      cs_dispatch_sum(&div[c_id0], vecfac, i_sum_type);
+    if (c_id1 < n_cells)
+      cs_dispatch_sum(&div[c_id1], -vecfac, i_sum_type);
+  });
 
   /* Boundary faces contribution */
 
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+  ctx.parallel_for_b_faces(mesh, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
     const cs_lnum_t c_id = b_face_cells[f_id];
 
     const cs_real_t vecfac
@@ -268,9 +253,10 @@ _cf_div(cs_real_t div[])
                              + b_face_u_normal[f_id][1] * tempv(c_id, 1)
                              + b_face_u_normal[f_id][2] * tempv(c_id, 1));
 
-    div[c_id] = div[c_id] + vecfac;
-  }
+    cs_dispatch_sum(&div[c_id], vecfac, b_sum_type);
+  });
 
+  ctx.wait();
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
