@@ -270,7 +270,6 @@ _convergence_test(cs_sles_it_t              *c,
                             wall_time,           /* current time */
                             1,                   /* number of values */
                             &vals);              /* values */
-
   }
 
   /* If converged */
