@@ -272,5 +272,17 @@ cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
                                      const cs_real_t  ncray[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute radiative fluxes for the atmospheric model.
+ *
+ * Computes the source term for scalar equations from radiative forcing
+ * (UV and IR radiative fluxes) with a 1D scheme.
+ */
+/*----------------------------------------------------------------------------*/
+
+extern "C" void
+cs_atmo_1d_rad_source_term(void);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_ATMO_1D_RAD */

@@ -2035,7 +2035,7 @@ cs_atmo_bcond(void)
   const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
 
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
-  const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+  const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
   cs_real_t *grav = phys_cst->gravity;
   cs_real_t ps = cs_glob_atmo_constants->ps;
   cs_real_t rair = phys_pro->r_pg_cnst;

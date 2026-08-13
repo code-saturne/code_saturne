@@ -3068,3 +3068,462 @@ cs_atmo_1d_rad_finalize(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute radiative fluxes for the atmospheric model.
+ *
+ * Computes the source term for scalar equations from radiative forcing
+ * (UV and IR radiative fluxes) with a 1D scheme.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_1d_rad_source_term(void)
+{
+  static bool initialized = false;
+
+  const cs_time_step_t *ts = cs_glob_time_step;
+  cs_atmo_1d_rad_t *atmo_1d_rad = cs_glob_atmo_1d_rad;
+
+  /* Radiative fluxes are computed at the first call
+     and then for a gvien frequency. */
+
+  if ((ts->nt_cur % atmo_1d_rad->frequency) != 0 && initialized)
+    return;
+
+  /* 1. Initializations
+   * ================== */
+
+  const int kmx = atmo_1d_rad->nlevels_max;
+  const int nlevels = atmo_1d_rad->nlevels;
+  const int nvert = atmo_1d_rad->nvert;
+
+  const cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+
+  const int model_flag = cs_glob_physical_model_flag[CS_ATMOSPHERIC];
+  const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+  cs_array<cs_real_t> temray(kmx);
+  cs_array<cs_real_t> qvray(kmx);
+  cs_array<cs_real_t> qlray(kmx);
+  cs_array<cs_real_t> ncray(kmx);
+  cs_array<cs_real_t> fneray(kmx);
+  cs_array<cs_real_t> romray(kmx);
+  cs_array<cs_real_t> preray(kmx);
+  cs_array<cs_real_t> zproj(kmx);
+  cs_array<cs_real_t> aeroso(kmx);
+  cs_array_2d<cs_real_t> ttvert(nvert, kmx);
+  cs_array_2d<cs_real_t> romvert(nvert, kmx);
+  cs_real_t *tauz  = atmo_1d_rad->tauz;
+  cs_real_t *tauzq  = atmo_1d_rad->tauzq;
+
+  cs_span_2d<cs_real_t> qwvert(atmo_1d_rad->qw, nvert, kmx);
+  cs_span_2d<cs_real_t> qlvert(atmo_1d_rad->ql, nvert, kmx);
+  cs_span_2d<cs_real_t> qvvert(atmo_1d_rad->qv, nvert, kmx);
+  cs_span_2d<cs_real_t> ncvert(atmo_1d_rad->nc, nvert, kmx);
+  cs_span_2d<cs_real_t> fnvert(atmo_1d_rad->fn, nvert, kmx);
+  cs_span_2d<cs_real_t> aevert(atmo_1d_rad->aerosols, nvert, kmx);
+  cs_span_2d<cs_real_t> xyvert(atmo_1d_rad->xy, 3, nvert);
+  cs_span_2d<cs_real_t> ir_div(atmo_1d_rad->ir_div, nvert, kmx);
+  cs_span_2d<cs_real_t> sol_div(atmo_1d_rad->sol_div, nvert, kmx);
+
+  cs_array_3d<cs_real_t> coords(nvert, kmx+1, 3);
+
+  initialized = true;
+
+  double heuray =   (double)at_opt->shour
+                  + (double)at_opt->smin/60.
+                  + at_opt->ssec/3600.;
+
+  {
+    cs_time_step_type_t idtvar = cs_glob_time_step_options->idtvar;
+    if (idtvar == CS_TIME_STEP_CONSTANT || idtvar == CS_TIME_STEP_ADAPTIVE)
+      heuray += ts->t_cur/3600.;
+  }
+
+  // Initialization:
+  for (int k = 1; k < nlevels; k++) {
+    preray[k] = 0.;
+    temray[k] = 0.;
+    qvray[k] = 0.;
+    romray[k] = 0.;
+    qlray [k] = 0.;
+    ncray [k] = 0.;
+    fneray[k] = 0.;
+  }
+
+  const cs_real_t *crom = cs_field("density")->val;
+  const cs_real_t *cpro_tempc = cs_field("real_temperature")->val;
+
+  const cs_real_t *cpro_pcliq = nullptr, *cvara_totwt = nullptr;
+  const cs_real_t *cvara_ntdrp = nullptr, *nebdia = nullptr;
+
+  if (model_flag == CS_ATMO_HUMID) {
+    cpro_pcliq = cs_field("liquid_water")->val;
+    cvara_totwt = cs_field("ym_water")->val_pre;
+    cvara_ntdrp = cs_field("number_of_droplets")->val_pre;
+    nebdia = cs_field("nebulosity_diag")->val;
+  }
+
+  /* 2.  Computing long-wave and short-wave radiative fluxes
+   * ======================================================= */
+
+  // Index of the bottom level
+  const int k1 = 0;
+
+  cs_span<cs_real_t> zq(atmo_1d_rad->zq, atmo_1d_rad->nlevels_max + 1);
+  cs_span<cs_real_t> zray(atmo_1d_rad->z, atmo_1d_rad->nlevels_max);
+
+  for (int ii = 0; ii < nvert; ii++) {  // (ixj) index
+
+    cs_real_t xvert = xyvert(0, ii);
+    cs_real_t yvert = xyvert(1, ii);
+
+    // Addition of one level for solar radiation
+    // TODO merge with 44km
+    zq[kmx] = 16000.;
+
+    // Coords are levels (faces in 3D) whereas zray is slice (cells in 3D)
+    for (int k = 0; k < kmx+1; k++) {
+      coords(ii, k, 0) = xvert;
+      coords(ii, k, 1) = yvert;
+      coords(ii, k, 2) = zq[k];
+      if (k < kmx)
+        zray[k] = 0.5 * (zq[k] + zq[k+1]);
+    }
+  }
+
+  cs_interpol_grid_t *ig = cs_interpol_grid_by_id(at_opt->profiles_grid_id);
+
+  if (ts->nt_cur == ts->nt_prev + 1) {
+    cs_interpol_grid_init(ig, nvert*kmx, coords.data());  // face grid
+  }
+
+  /*
+    Grid interpolation is refurbished to get a P0 interpolation
+    and not a point-point interpolation.
+    (i.e. we need to compute the mean of all code_saturne cells for a layer)
+    A way could be to tag all nodes of the mesh is they belong to a ijk cell
+    and then consider that a cell (or a face) belongs to a ijk if one node is
+    in it (i.e. there is a non-zero intersection between the two).
+    Then we can renormalize by the ratio "Volume(ijk)/SUM(cell_f_vol)".
+  */
+
+  // Interpolation from 3D to 1D in the fluid domain
+  cs_interpol_field_on_grid(ig, cpro_tempc, ttvert.data());
+  cs_interpol_field_on_grid(ig, crom, romvert.data());
+
+  if (model_flag == CS_ATMO_HUMID) {
+    // liquid content interpolation
+    cs_interpol_field_on_grid(ig, cpro_pcliq, qlvert.data());
+    // total water content interpolation
+    cs_interpol_field_on_grid(ig, cvara_totwt, qwvert.data());
+
+    // deduce vapor content interpolation
+    for (int ii = 0; ii < nvert; ii++) {
+      for (int k = 0; k < nlevels; k++)
+        qvvert(ii, k) = qwvert(ii, k) - qlvert(ii, k);
+    }
+
+    cs_interpol_field_on_grid(ig, cvara_ntdrp, ncvert.data());
+    cs_interpol_field_on_grid(ig, nebdia, fnvert.data());
+  }
+
+  // Interpolate soil (P0 interpolation), same for all verticals for the moment.
+
+  cs_real_t *ground_albedo = atmo_1d_rad->albedo0;
+  cs_real_t *ground_emissi = atmo_1d_rad->emissi0;
+  cs_real_t *ground_temp = atmo_1d_rad->temp0;
+  cs_real_t *ground_pressure = atmo_1d_rad->p0;
+
+  if (at_opt->ground_model >= 1) {
+
+    const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+    const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
+
+    cs_real_t *ground_totwat = atmo_1d_rad->qw0;
+    cs_real_t *ground_density = atmo_1d_rad->rho0;
+
+    int nbrsol;
+    cs_lnum_t nfmodsol;
+    const cs_lnum_t *elt_ids;
+
+    const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->ground_zone_id);
+    cs_atmo_get_ground_zone(&nfmodsol, &nbrsol, &elt_ids);
+
+    // Note: we use previous values of the ground to be coherent with
+    // previous datasetting and what have seen the fluid.
+    const cs_real_t *bvar_tempp = cs_field("ground_pot_temperature")->val_pre;
+    const cs_real_t *bvar_total_water = cs_field("ground_total_water")->val_pre;
+
+    const cs_real_t *bpro_albedo = cs_field("boundary_albedo")->val;
+    const cs_real_t *bpro_emissi = cs_field("emissivity")->val;
+
+    cs_real_t ground_mean_albedo = 0.;
+    cs_real_t ground_mean_emissi = 0.;
+
+    cs_real_t ground_mean_density = 0.;
+    cs_real_t ground_mean_ttground  = 0.;
+    cs_real_t ground_mean_totwat  = 0.;
+
+    for (cs_lnum_t isol = 0; isol < nfmodsol; isol++) {
+      cs_lnum_t face_id = elt_ids[isol];
+      cs_real_t f_surf = b_face_surf[face_id];
+
+      // Density: property of the boundary face:
+      ground_mean_density += f_surf * crom[b_face_cells[face_id]];
+
+      // Potential temperature for consistency with the code before.
+      //TODO is it correct?
+      ground_mean_ttground  += f_surf * (bvar_tempp[isol] - tkelvi);
+      ground_mean_totwat  += f_surf * bvar_total_water[isol];
+
+      ground_mean_albedo += f_surf * bpro_albedo[face_id];
+      ground_mean_emissi += f_surf * bpro_emissi[face_id];
+    }
+
+    cs::parall::sum(ground_mean_density,
+                    ground_mean_ttground,
+                    ground_mean_totwat,
+                    ground_mean_albedo,
+                    ground_mean_emissi);
+
+    ground_mean_density /= z->measure;
+    ground_mean_ttground  /= z->measure;
+    ground_mean_totwat  /= z->measure;
+    ground_mean_albedo  /= z->measure;
+    ground_mean_emissi  /= z->measure;
+
+    // For now, all verticals have the same value.
+    // TODO: automatic treatment for pressure ?
+
+    for (int ii = 0; ii < nvert; ii++) {
+      ground_albedo[ii] = ground_mean_albedo;
+      ground_emissi[ii] = ground_mean_emissi;
+      ground_temp[ii] = ground_mean_ttground;
+      ground_totwat[ii] = ground_mean_totwat;
+      ground_density[ii] = ground_mean_density;
+    }
+
+  } // ground model
+
+  // Loop on the vertical array:
+
+  const int distribution_model = at_opt->distribution_model;
+  const int meteo_profile = at_opt->meteo_profile;
+  const int met_1d_nlevels_d = at_opt->met_1d_nlevels_d;
+  const int met_1d_ntimes = at_opt->met_1d_ntimes;
+  const int nbmaxt = at_opt->met_1d_nlevels_max_t;
+  const int nbmett = at_opt->met_1d_nlevels_t;
+
+  const cs_real_t *z_dyn_met = at_opt->z_dyn_met;
+  const cs_real_t *time_met = at_opt->time_met;
+  const cs_real_t *hyd_p_met = at_opt->hyd_p_met;
+  const cs_real_t *ttmet = at_opt->temp_met;
+  const cs_real_t *qvmet = at_opt->qw_met;
+
+  cs_real_t tausup = atmo_1d_rad->tausup;
+
+  const cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
+  const cs_real_t rvsra = cs_glob_fluid_properties->rvsra;
+  const cs_real_t abs_gz = cs::abs(cs_glob_physical_constants->gravity[2]);
+
+  const cs_real_t p0 = cs_glob_fluid_properties->p0;
+  const cs_real_t t0 = cs_glob_fluid_properties->t0;
+  const double t_cur = ts->t_cur;
+
+  for (int ii = 0; ii < nvert; ii++) {
+
+    // FIXME the x, y position plays no role...
+    // interpolation must be reviewed
+    // cs_real_t xvert = xyvert(0, ii);
+    // cs_real_t yvert = xyvert(1, ii);
+
+    // Ground constants
+    cs_real_t albedo = ground_albedo[ii];
+    cs_real_t emis   = ground_emissi[ii];
+
+    int imer1 = 0;
+
+    // 2.1 Profiles used for the computation of the radiative fluxes
+    // -------------------------------------------------------------
+
+    // Loop over the variable defined until the top of the full domain.
+    for (int k = 0; k < kmx; k++) {
+      aeroso[k] = aevert(ii, k);
+      if (model_flag == CS_ATMO_HUMID && distribution_model == 2) {
+        qlray[k]  = qlvert(ii, k);
+        ncray[k]  = ncvert(ii, k);
+        fneray[k] = fnvert(ii, k);
+      }
+      else {
+        // default values
+        qlray[k] = 0.;
+        ncray[k] = 0.;
+        fneray[k] = 0.;
+      }
+    }
+
+    // Ground variables
+    // temray(1) = ground_temp[ii]
+    // qvray(1)  = ground_totwat[ii]
+    // romray(1) = ground_density[ii]
+    // preray(1) = ground_pressure[ii]
+
+    for (int k = 0; k < nlevels; k++) {
+
+      temray[k] = ttvert(ii, k);
+      qvray[k]  = qvvert(ii, k);
+      romray[k] = romvert(ii, k);
+
+      cs_real_t dummy;
+      if (meteo_profile == 0)
+        cs_atmo_profile_std(0., p0, t0, zray[k],
+                            &preray[k], &dummy, &dummy);
+      else if (meteo_profile == 1)
+        preray[k] = cs_intprf(met_1d_nlevels_d, met_1d_ntimes,
+                              z_dyn_met, time_met, hyd_p_met, zray[k], t_cur);
+      else {
+        // TODO would be more coherent with an averaging of
+        // "meteo_pressure" field.
+        cs_atmo_profile_std(0., p0, t0, zray[k],
+                            &preray[k], &dummy, &dummy);
+      }
+
+    }
+
+    // Filling the additional levels
+    // TODO do it before
+
+    for (int k = nlevels; k < kmx; k++) {
+      // Initialize with standard atmosphere above the domain.
+      cs_atmo_profile_std(zray[nlevels-1],
+                          preray[nlevels-1],
+                          temray[nlevels-1]+tkelvi,
+                          zray[k],
+                          &preray[k],
+                          &temray[k],
+                          &romray[k]);
+      temray[k] -= tkelvi;
+    }
+
+    cs_user_atmo_1d_rad_prf(preray.data(),
+                            temray.data(),
+                            romray.data(),
+                            qvray.data(),
+                            qlray.data(),
+                            ncray.data(),
+                            aeroso.data());
+
+    // Smoothing the temperature and humidity profile in the damping zone
+
+    int ktamp = 0;
+    if (meteo_profile == 1) {
+      ktamp = cs::min(6, nlevels);
+      for (int k = nlevels - ktamp; k < kmx; k++) {
+        temray[k] = cs_intprf(nbmaxt, met_1d_ntimes, z_dyn_met, time_met,
+                              ttmet, zray[k], t_cur);
+        qvray[k] = cs_intprf(nbmaxt, met_1d_ntimes, z_dyn_met, time_met,
+                             qvmet, zray[k], t_cur);
+      }
+
+      int icompt = 0;
+      for (int k = nlevels-1; k > 0; k--) {
+        icompt++;
+        if (icompt <= 6) {
+          cs_real_t zrac = 2.0 * (zray[k] - zray[nbmett-ktamp+2])
+                              / (zray[nbmett-1] - zray[nbmett-ktamp-1]);
+          cs_real_t w = (1. + tanh(zrac)) * 0.5;
+          temray[k] = ttvert(ii, k) * (1. - w) + temray[k] * w;
+          qvray[k]  = qvvert(ii, k) * (1. - w) + qvray[k] * w;
+          qlray[k]  = qlvert(ii, k) * (1. - w) + qlray[k] * w;
+        }
+      }
+    }
+
+    // Clipping the humidity
+
+    for (int k = 0; k < kmx; k++) {
+      qvray[k] = cs::max(0., qvray[k]);
+      qlray[k] = cs::max(0., qlray[k]);
+    }
+
+    // Computing pressure and density according to temperature
+    // and qv profiles.
+
+    for (int k = nlevels-ktamp; k < kmx; k++) {
+      cs_real_t tmoy = 0.5 * (temray[k-1]+temray[k]) + tkelvi;
+      cs_real_t rhum = rair*(1.+(rvsra-1.)*qvray[k]);
+      cs_real_t rap = -abs_gz*(zray[k]-zray(k-1)) / (rhum*tmoy);
+      preray[k] = preray[k-1] * exp(rap);
+      romray[k] = preray[k] / ((temray[k] + tkelvi) * rhum);
+    }
+
+    // 2.2 Computing the radiative fluxes for the vertical
+    // ---------------------------------------------------
+
+    cs_real_t foir, fos;
+
+    // Long-wave: InfraRed
+    cs_atmo_compute_ir_fluxes_divergence(ii, k1, kmx-1, emis,
+                                         tauzq, tauz, &tausup, zq,
+                                         zray, temray, qvray, qlray,
+                                         fneray, romray, preray, aeroso,
+                                         ground_temp[ii], ground_pressure[ii],
+                                         &foir,
+                                         ir_div.sub_view(ii), ncray);
+
+    // Short-wave: Sun
+    cs_atmo_compute_radiative_fluxes(ii, k1, kmx-1, heuray,
+                                     imer1, &albedo, tauzq, tausup, zq,
+                                     zray, qvray, qlray,
+                                     fneray, romray, preray, temray,
+                                     &fos,
+                                     sol_div.sub_view(ii), ncray);
+
+    // FIXME: albedo may be modified by previous call, but the value
+    // is not modified in the ground_albedo (e.g. albedo0) array.
+    // If the value should only be modified locall, a "pass by value"
+    // approach to the above function should be preffered
+    // (this may be an artifact from the Fortran code).
+
+  }
+
+  atmo_1d_rad->tausup = tausup;
+
+  int kmx_nvert = kmx*nvert;
+
+  cs_array<int> cressm(kmx_nvert);
+  cs_array<int> interp(kmx_nvert);
+  cs_array_2d<cs_real_t> infrad(kmx_nvert, 3);
+
+  cs_real_t h_cressman_radius = 1./8500;  // horizontal
+  cs_real_t v_cressman_radius = 4./1.;    // vertical
+
+  for (int ii = 0; ii < kmx_nvert; ii++) {
+    cressm[ii] = 1;
+    interp[ii] = 1;
+    infrad(ii, 0) = h_cressman_radius;
+    infrad(ii, 1) = h_cressman_radius;
+    infrad(ii, 2) = v_cressman_radius;
+  }
+
+  // Map Infra Red 1D (rayi) on the structure idrayi
+  cs_measures_set_map_values(cs_measures_set_by_id(at_opt->infrared_1D_profile),
+                             kmx_nvert,
+                             cressm.data(),
+                             interp.data(),
+                             coords.data(),
+                             ir_div.data(),
+                             infrad.data());
+
+  // Map Sun 1D (rayst) on the structure idrayst
+  cs_measures_set_map_values(cs_measures_set_by_id(at_opt->solar_1D_profile),
+                             kmx_nvert,
+                             cressm.data(),
+                             interp.data(),
+                             coords.data(),
+                             sol_div.data(),
+                             infrad.data());
+}
+
+/*----------------------------------------------------------------------------*/

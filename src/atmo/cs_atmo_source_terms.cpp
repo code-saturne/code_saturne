@@ -115,16 +115,6 @@ static cs_real_3_t *grad1 = nullptr, *grad2 = nullptr;
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-#if defined(HAVE_FORTRAN)
-extern "C" void
-cs_f_atr1vf(void);
-#endif
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -765,14 +755,7 @@ cs_atmo_scalar_source_term(int              f_id,
 
       /* Call the 1D radiative model
        * Compute the divergence of the IR and solar radiative fluxes: */
-      #if defined(HAVE_FORTRAN)
-      cs_f_atr1vf();
-#else
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: code_saturne compiled without Fortran support.\n",
-                __func__);
-#endif
-      //cs_atmo_compute_radiative_source_term_1d();
+      cs_atmo_1d_rad_source_term();
 
       /* Cressman interpolation of the 1D radiative fluxes on the 3D mesh:
        * Infra red */

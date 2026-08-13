@@ -10,7 +10,6 @@ Full C/C++ API auto-generated from source code.
    api/advanced_examples
    api/atincl_8f90
    api/atmospheric_examples
-   api/atr1vf_8f90
    api/base__setup_8md
    api/base_examples
    api/base_examples_legacy
