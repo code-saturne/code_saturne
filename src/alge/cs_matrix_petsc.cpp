@@ -794,7 +794,9 @@ _assembler_values_add_g(void             *matrix_p,
 
     for (PetscInt i = 0; i < nrows; i++) {
       PetscInt r_g_id = row_g_id[i];
-      if (r_g_id >= l_b && r_g_id < u_b) {
+      if (   r_g_id >= l_b
+          && r_g_id < u_b
+          && cs::abs(vals[i]) > 0.0) {
         PetscInt idxm[] = {r_g_id};
         PetscInt idxn[] = {(PetscInt)col_g_id[i]};
         PetscScalar v[] = {vals[i]};
