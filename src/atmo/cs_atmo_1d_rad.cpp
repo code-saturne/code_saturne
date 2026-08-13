@@ -1057,9 +1057,43 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
                                  cs_real_t       rayst[],
                                  const cs_real_t ncray[])
 {
+  /* Minimal local class to access some 2D spans with shifted
+     arguments, replacing ref(i, j) with ref(i+1, j).
+
+     This is used to use a consistent syntax, with an array that
+     would require the first indes to go to -1. */
+
+  class mdspan_1_0_shifted_accessor {
+  public:
+
+    // Simple constructor
+    CS_F_HOST_DEVICE
+    mdspan_1_0_shifted_accessor(int stride, cs_real_t *data):
+      _stride{stride},
+      _data{data}
+    {};
+
+    // Overloaded () operator to access the (i+1,j)-th value tuple.
+    CS_F_HOST_DEVICE
+    inline cs_real_t &
+    operator()
+      (
+       int  i,
+       int  j
+       ) const
+    {
+      return _data[(i+1) * _stride + j];
+    }
+
+  private:
+    int         _stride;
+    cs_real_t  *_data;
+  };
+
+  /* Regular variables */
+
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
 
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -1072,6 +1106,8 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
   const cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
 
   const int kmx = at_1d_rad->nlevels_max;
+  const int kmxp1 = kmx + 1;
+  const int k0 = k1 - 1;
   const int nbmett = at_opt->met_1d_nlevels_t;
 
   cs_real_t fos  = *fos_p;
@@ -1150,85 +1186,59 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
     390.0, 0.075, 0.28, 1.6, 209500.0
   };
 
-  cs_real_t *ufs = nullptr, *dfs = nullptr;
-  cs_real_t *tau = nullptr, *pic = nullptr;
-  cs_real_t *tra = nullptr, *dow = nullptr;
+  // ref_(0,:) and refb_(0,!) : albedo
+  cs_array_2d<cs_real_t> ref_(kmx+2, 8);
+  cs_array_2d<cs_real_t> refb_(kmx+2, 8);
 
-  cs_real_t *ref  = nullptr, *tauc = nullptr;
-  cs_real_t *reft = nullptr, *trat = nullptr;
-  cs_real_t *drfs = nullptr, *ddfs = nullptr;
-  cs_real_t *refb = nullptr, *upwf = nullptr;
-  cs_real_t *dowd = nullptr, *trad = nullptr;
-  cs_real_t *dowf = nullptr, *atln = nullptr;
-  cs_real_t *absn = nullptr, *fneba = nullptr;
+  mdspan_1_0_shifted_accessor ref(8, ref_.data());
+  mdspan_1_0_shifted_accessor refb(8, refb_.data());
 
-  cs_real_t *trard = nullptr, *fabso3 = nullptr;
-  cs_real_t *ufso3 = nullptr, *dfsh2o = nullptr;
-  cs_real_t *ufso3c = nullptr, *dfso3 = nullptr;
-  cs_real_t *w0_sir = nullptr, *w0_suv = nullptr;
-  cs_real_t *ufsh2o = nullptr, *fabsh2o = nullptr;
+  cs_array_2d<cs_real_t> tau(kmx+1, 8);
+  cs_array_2d<cs_real_t> pic(kmx+1, 8);
+  cs_array_2d<cs_real_t> reft(kmx+1, 8);
+  cs_array_2d<cs_real_t> upwf(kmx+1, 8);
+  cs_array_2d<cs_real_t> fabso3c(kmx+1, 2);
+  cs_array_2d<cs_real_t> tra(kmx+1, 8);
+  cs_array_2d<cs_real_t> trad(kmx+1, 8);
+  cs_array_2d<cs_real_t> trat(kmx+1, 8);
+  cs_array_2d<cs_real_t> trard(kmx+1, 8);
+  cs_array_2d<cs_real_t> dow(kmx+1, 8);
+  cs_array_2d<cs_real_t> dowf(kmx+1, 8);
+  cs_array_2d<cs_real_t> dowd(kmx+1, 8);
+  cs_array_2d<cs_real_t> atln(kmx+1, 8);
+  cs_array_2d<cs_real_t> absn(kmx+1, 8);
+  cs_array_2d<cs_real_t> ufso3c(kmx+1, 2);
 
-  cs_real_t *dffso3 = nullptr,  *ddfsh2o  = nullptr;
-  cs_real_t *ddfso3 = nullptr,  *dddfsh2o = nullptr;
-  cs_real_t *dffsh2o = nullptr, *dddfso3  = nullptr;
-  cs_real_t *fabso3c = nullptr, *fnebmax  = nullptr;
+  cs_array<cs_real_t> w0_sir(kmx);
+  cs_array<cs_real_t> w0_suv(kmx);
+  cs_array<cs_real_t> g_apc_sir(kmx);
+  cs_array<cs_real_t> g_apc_suv(kmx);
+  cs_array<cs_real_t> ckup_suv_f(kmx);
+  cs_array<cs_real_t> ckup_sir_f(kmx);
+  cs_array<cs_real_t> ckdown_sir_r(kmx);
+  cs_array<cs_real_t> ckdown_sir_f(kmx);
+  cs_array<cs_real_t> ckdown_suv_r(kmx);
+  cs_array<cs_real_t> ckdown_suv_f(kmx);
 
-  cs_real_t *g_apc_sir = nullptr,  *g_apc_suv  = nullptr;
-  cs_real_t *ckup_sir_f = nullptr, *ckup_suv_f = nullptr;
-
-  cs_real_t *ckdown_sir_r = nullptr, *ckdown_sir_f = nullptr;
-  cs_real_t *ckdown_suv_r = nullptr, *ckdown_suv_f = nullptr;
-
-  // Allocation
-  CS_MALLOC(w0_sir,       kmx, cs_real_t);
-  CS_MALLOC(w0_suv,       kmx, cs_real_t);
-  CS_MALLOC(g_apc_sir,    kmx, cs_real_t);
-  CS_MALLOC(g_apc_suv,    kmx, cs_real_t);
-  CS_MALLOC(ckup_suv_f,   kmx, cs_real_t);
-  CS_MALLOC(ckup_sir_f,   kmx, cs_real_t);
-  CS_MALLOC(ckdown_sir_r, kmx, cs_real_t);
-  CS_MALLOC(ckdown_sir_f, kmx, cs_real_t);
-  CS_MALLOC(ckdown_suv_r, kmx, cs_real_t);
-  CS_MALLOC(ckdown_suv_f, kmx, cs_real_t);
-
-  CS_MALLOC(dfs,      kmx + 1, cs_real_t);
-  CS_MALLOC(ufs,      kmx + 1, cs_real_t);
-  CS_MALLOC(drfs,     kmx + 1, cs_real_t);
-  CS_MALLOC(ddfs,     kmx + 1, cs_real_t);
-  CS_MALLOC(tauc,     kmx + 1, cs_real_t);
-  CS_MALLOC(dfso3,    kmx + 1, cs_real_t);
-  CS_MALLOC(ufso3,    kmx + 1, cs_real_t);
-  CS_MALLOC(fneba,    kmx + 1, cs_real_t);
-  CS_MALLOC(fabso3,   kmx + 1, cs_real_t);
-  CS_MALLOC(dffso3,   kmx + 1, cs_real_t);
-  CS_MALLOC(dfsh2o,   kmx + 1, cs_real_t);
-  CS_MALLOC(ufsh2o,   kmx + 1, cs_real_t);
-  CS_MALLOC(ddfso3,   kmx + 1, cs_real_t);
-  CS_MALLOC(fabsh2o,  kmx + 1, cs_real_t);
-  CS_MALLOC(dddfso3,  kmx + 1, cs_real_t);
-  CS_MALLOC(dffsh2o,  kmx + 1, cs_real_t);
-  CS_MALLOC(fnebmax,  kmx + 1, cs_real_t);
-  CS_MALLOC(ddfsh2o,  kmx + 1, cs_real_t);
-  CS_MALLOC(dddfsh2o, kmx + 1, cs_real_t);
-
-  CS_MALLOC(ufso3c,  (kmx + 1) * 2, cs_real_t);
-  CS_MALLOC(fabso3c, (kmx + 1) * 2, cs_real_t);
-
-  CS_MALLOC(tau,   (kmx + 1) * 8, cs_real_t);
-  CS_MALLOC(pic,   (kmx + 1) * 8, cs_real_t);
-  CS_MALLOC(ref,   (kmx + 2) * 8, cs_real_t);
-  CS_MALLOC(reft,  (kmx + 1) * 8, cs_real_t);
-  CS_MALLOC(trat,  (kmx + 1) * 8, cs_real_t);
-  CS_MALLOC(refb,  (kmx + 2) * 8, cs_real_t);
-  CS_MALLOC(tra,   (kmx + 2) * 8, cs_real_t);
-  CS_MALLOC(dow,   (kmx + 1) * 8, cs_real_t);
-  CS_MALLOC(upwf,  (kmx + 1) * 8, cs_real_t);
-  CS_MALLOC(dowf,  (kmx + 1) * 8, cs_real_t);
-  CS_MALLOC(atln,  (kmx + 1) * 8, cs_real_t);
-  CS_MALLOC(absn,  (kmx + 1) * 8, cs_real_t);
-  CS_MALLOC(dowd,  (kmx + 1) * 8, cs_real_t);
-  CS_MALLOC(trad,  (kmx + 1) * 8, cs_real_t);
-  CS_MALLOC(trard, (kmx + 2) * 8, cs_real_t);
+  cs_array<cs_real_t> dfs(kmx + 1);
+  cs_array<cs_real_t> ufs(kmx + 1);
+  cs_array<cs_real_t> drfs(kmx + 1);
+  cs_array<cs_real_t> ddfs(kmx + 1);
+  cs_array<cs_real_t> tauc(kmx + 1);
+  cs_array<cs_real_t> dfso3(kmx + 1);
+  cs_array<cs_real_t> ufso3(kmx + 1);
+  cs_array<cs_real_t> fneba(kmx + 1);
+  cs_array<cs_real_t> fabso3(kmx + 1);
+  cs_array<cs_real_t> dffso3(kmx + 1);
+  cs_array<cs_real_t> dfsh2o(kmx + 1);
+  cs_array<cs_real_t> ufsh2o(kmx + 1);
+  cs_array<cs_real_t> ddfso3(kmx + 1);
+  cs_array<cs_real_t> fabsh2o(kmx + 1);
+  cs_array<cs_real_t> dddfso3(kmx + 1);
+  cs_array<cs_real_t> dffsh2o(kmx + 1);
+  cs_array<cs_real_t> fnebmax(kmx + 1);
+  cs_array<cs_real_t> ddfsh2o(kmx + 1);
+  cs_array<cs_real_t> dddfsh2o(kmx + 1);
 
   cs::array<cs_real_t> gco3(kmx + 1);
   cs::array<cs_real_t> gch2o(kmx + 1);
@@ -1247,7 +1257,7 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
   constexpr cs_real_t epsc = 1.e-8;
   constexpr cs_real_t z_ref = 0.647;
 
-  for (int k = 0; k < kmray; k++) {
+  for (int k = 0; k <= kmray; k++) {
     w0_sir[k] = 0.;
     w0_suv[k] = 0.;
     g_apc_sir[k] = 0.;
@@ -1260,7 +1270,7 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
     }
   }
 
-  for (int k = 0; k <= kmx; k++) {
+  for (int k = 0; k < kmxp1; k++) {
     dfs[k] = 0.;
     ddfs[k] = 0.;
     drfs[k] = 0.;
@@ -1281,24 +1291,22 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
     if (iaer)
       fneba[k] = 1.;
     for (int n = 0; n < 2; n++)
-      fabso3c[k + n * (kmx + 1)] = 0.;
+      fabso3c(k, n) = 0.;
     for (int n = 0; n < 8; n++) {
-      const int idx = k + n * (kmx + 1);
-      const int idx_bc = (k+1) + n * (kmx + 2);
-      dow[idx]   = 0.;
-      tau[idx]   = 0.;
-      pic[idx]   = 0.;
-      reft[idx]  = 0.;
-      atln[idx]  = 0.;
-      absn[idx]  = 0.;
-      trat[idx]  = 1.;
-      upwf[idx]  = 0.;
-      dowf[idx]  = 0.;
-      trad[idx]  = 1.;
-      dowd[idx]  = 1.;
-      tra[idx_bc]   = 1.;
-      ref[idx_bc]   = 0.;
-      refb[idx_bc]  = 0.;
+      dow(k, n)   = 0.;
+      tau(k, n)   = 0.;
+      pic(k, n)   = 0.;
+      reft(k, n)  = 0.;
+      atln(k, n)  = 0.;
+      absn(k, n)  = 0.;
+      trat(k, n)  = 1.;
+      upwf(k, n)  = 0.;
+      dowf(k, n)  = 0.;
+      trad(k, n)  = 1.;
+      dowd(k, n)  = 1.;
+      tra(k, n)   = 1.;
+      ref(k, n)   = 0.;
+      refb(k, n)  = 0.;
     }
     gco3[k] = 0.;
     gch2o[k] = 0.;
@@ -1308,6 +1316,11 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
     pic_h2o[k] = 0.;
   }
 
+  for (int n = 0; n < 8; n++) {
+    ref(k0, n)   = 0.;
+    refb(k0, n)  = 0.;
+  }
+
   cs_real_t refx = 0.;
   cs_real_t trax = 0.;
   cs_real_t refx0 = 0.;
@@ -1315,8 +1328,6 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
 
   /* Leighton 1980 - aerosol layer configuration */
   int iaero_top = 0;     /* id of the top of the aerosol layer */
-  int k0 = k1 - 1;
-  if (k0 < 0) k0 = 0;
 
   /* Initialization for Chuang (2002) black carbon in droplets */
   constexpr cs_real_t dm0 = 20.0;    /* droplet diameter (micrometers) */
@@ -1384,15 +1395,16 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
     qqv[kmray + 1] = qqvtot - qqvinf;
 
     // Transmission for minor gases
-    cs_real_t Tmg = 1.;
+    cs_real_t tmg = 1.;
     for (int i = 0; i < 5; i++) {
       const cs_real_t num = amg[i] * m * umg[i];
-      const cs_real_t den = pow(1.0 + bmg[i] * m * umg[i], cmg[i])
-                          + dmg[i] * m * umg[i];
-     Tmg = Tmg * (1. - num / den);
+      const cs_real_t den =   pow(1.0 + bmg[i] * m * umg[i], cmg[i])
+                            + dmg[i] * m * umg[i];
+     tmg = tmg * (1. - num / den);
     }
+
     //introduction of absorption by minor gases
-    fo = fo * Tmg;
+    fo = fo * tmg;
 
     /* 5 - Solar radiation calculation for cloudy sky
        In order to take into account cloud fraction,
@@ -1403,7 +1415,7 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
        base for the bottom of the lower cloud) */
 
     int itop  = -1;
-    for (int i = kmray; i >= k1; --i) {
+    for (int i = kmray; i >= k1; i--) {
       if (qlray[i] > epsc) {
         // FIXME: to be coherent with 3D version
         // For now we do not force fneray[i] = 1.0 (fractional cloud kept)
@@ -1418,14 +1430,16 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
       itop  = k1;
       ibase = k1;
     }
-    /* alculation for optical parameters of clouds and aerosols
+
+    /* Calculation for optical parameters of clouds and aerosols
        (single scattering albedo, optical depth, radius, asymmetry factor) */
+
     fnebmax[kmray + 1] = 0.;
     cs_real_t tauctot = 0.;
     const cs_real_t pi = cs_math_pi;
     const cs_real_t sigc = at_opt->sigc;
 
-    for (int i = kmray; i >= k1; --i) {
+    for (int i = kmray; i >= k1; i--) {
       cs_real_t req = 0.;
       deltaz = 0.;
 
@@ -1466,12 +1480,18 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
         iaero_top = std::max(i + 1, iaero_top);
         fneba[i]  = 1.;
         deltaz    = zqq[i+1] - zqq[i];
+
+        // Distribution of AOD on the vertical homogeneous between 0 and zaero
+        // Note, we used a formula based on concentration before v6.2.
         tauao3[i] = at_chem->aod_o3_tot * deltaz / zqq[iaero_top];
         tauah2o[i]= at_chem->aod_h2o_tot * deltaz / zqq[iaero_top];
       }
 
-      // Cloud optical properties (Nielsen 2014 or Chuang 2002 if BC present)
-      const cs_real_t pioco3_1 = 1. - 33e-9 * req;
+      // Calculation of SSA and Asymmetry factor for clouds using- Nielsen 2014
+      // Note only the first two bands are taken, the third only is
+      // approximately 0.
+      // Useful for gas assymmetry, for albedo, either Chuang if BC, or Nielsen.
+      const cs_real_t pioco3_1 = 1. - 33e-9 * req;  // FIXME MF: bad idea for precision
       const cs_real_t pioco3_2 = 1. - 1e-7  * req;
       const cs_real_t pioch2o_1 = 0.99999 - 149e-7 * req;
       const cs_real_t pioch2o_2 = 0.9985  - 92e-5  * req;
@@ -1484,6 +1504,8 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
         cs_real_t pioco3C = 0.;
         cs_real_t pioch2oC = 0.;
 
+        // 4 to 12 because we there is no energy in the
+        // 4 first spectral bands defined by Chuang 2002.
         for (int k = 4; k < 12; ++k) {
           const cs_real_t coef
             = (1.0 - exp(-beta3[k] * (at_chem->black_carbon_frac - nu0)));
@@ -1559,14 +1581,17 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
     // Effective reflectance for aerosol layer
     cs_real_t rbara = rabara + tabara * tabara * albe / (1. - rabara * albe);
 
-    // --- Case: aerosol layer above the cloud layer ---
+    // in case there is an aerosol layer above the cloud layer
+
     if ((iaer == true) && (iaero_top > itop)) {
       itop   = iaero_top;
       rbar   = rbara;
       rrbar2s = rabara;
     }
+
     // Calculation above the top of the cloud or aerosol layer
-    for (int l = itop; l <= kmray; ++l) {
+
+    for (int l = itop; l <= kmray; l++) {
       const cs_real_t zq    = zqq[l];
       const cs_real_t zqp1  = zqq[l + 1];
 
@@ -1635,23 +1660,24 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
       ckup_suv_f[l]   = d_ray_ozone_absorption(xstar, dzx) / denom2;
     }
 
+    // Calculation under the top of the cloud or the aerosol layer, the adding
+    // Method with multiple diffusion is used
+
     // Top boundary conditions
-    tra[kmray + 2] = 1.;
-    ref[kmray + 2] = 0.;
-    trard[kmray + 2] = 1.;
+    tra(kmray+1, 0) = 1.;
+
     // value from 44km to 11km
-    trad[kmray + 1]  = 1.;
-    trat[kmray + 1]  = 1.;
-    reft[kmray + 1]  = ref[kmray + 2];
+    trard(kmray+1, 0) = 1.;
+    trad(kmray+1, 0) = 1.;
+    ref(kmray+1, 0) = 0.;
+    trat(kmray+1, 0) = 1.;
+    reft(kmray+1, 0) = ref(kmray+1, 0);
 
     // Bottom boundary conditions
-    tra[k0]   = 0.;
-    ref[k0]   = albe;
-    trard[k0] = 0.;
+    ref(k0, 0) = albe;
 
-    for (int l = k1; l <= kmray; ++l) {
-      const int bc_idx = l + 1;
-      tau[l] = tauc[l] + tauao3[l];
+    for (int l = k1; l <= kmray; l++) {
+      tau(l, 0) = tauc(l) + tauao3(l);
 
       gasym = gco3[l];
       pioc  = pic_o3[l];
@@ -1663,8 +1689,8 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
                                        refx, trax,
                                        epsc, 0., mui, muzero_cor);
 
-      ref[bc_idx] = fneray[l] * refx;
-      tra[bc_idx] = fneray[l] * trax;
+      ref(l, 0) = fneray[l] * refx;
+      tra(l, 0) = fneray[l] * trax;
 
       //In the aerosol layers
       _compute_reflection_transmission(0., at_chem->piaero_o3, 0.,
@@ -1672,52 +1698,59 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
                                        refx, trax,
                                        epsc, 0., mui, muzero_cor);
 
-      ref[bc_idx] += (1. - fneray[l]) * refx;
-      tra[bc_idx] += (1. - fneray[l]) * trax;
+      ref(l, 0) += (1. - fneray[l]) * refx;
+      tra(l, 0) += (1. - fneray[l]) * trax;
 
-      trard[bc_idx] = (fneray[l] * exp(-m * tauc[l]) + (1. - fneray[l]))
+      trard(l, 0) =   (fneray[l] * exp(-m * tauc[l]) + (1. - fneray[l]))
                     *  exp(-m * tauao3[l]);
     }
 
-    //  Downward addition of layers
-    for (int l = kmray; l >= k1; --l) {
-      const int lp1 = l + 1;
-      const int bc_idx  = l + 1;
-      cs_real_t drtt1 = 1. / (1. - reft[lp1] * ref[bc_idx]);
+    // Downward addition of layers
+    for (int l = kmray; l >= k1; l--) {
+      cs_real_t drtt1 = 1. / (1. - reft(l+1, 0) * ref(l, 0));
+
+      // Note:
+      // R(top->l) = R(top->l+1)
+      //           + T(top->l+1) R(l) T*(top->l+1) / (1 - R*(top->l+1)- R(l))
+      // Equations 34 of LH74
+      // Note R*(top->l) = R(top->l)
+      //      T*(top->l+1) = T(top->l+1)
+
       // Eq. (33) LH74: reflection from top to level l
-      reft[l] = reft[lp1] + trat[lp1] * ref[bc_idx] * trat[lp1] * drtt1;
+      reft(l, 0) =   reft(l+1, 0)
+                   + trat(l+1, 0) * ref(l, 0) * trat(l+1, 0) * drtt1;
 
       // Eq. (34) LH74: transmission from top to level l
-      trat[l] = trat[lp1] * tra[bc_idx] * drtt1;
+      trat(l, 0) = trat(l+1, 0) * tra(l, 0) * drtt1;
 
-      // Direct transmission for direct radiation
-      trad[l] = trad[lp1] * trard[bc_idx];
+      // Transmission for direct radiation
+      trad(l, 0) = trad(l+1, 0) * trard(l, 0);
     }
 
     // Upward addition (from surface to top)
-    refb[k0] = ref[k0];
-    for (int l = k1; l <= kmray + 1; ++l) {
-      const int idx_bc = l + 1;
-      const cs_real_t dtrb1 = 1. - ref[idx_bc] * refb[idx_bc-1];
-      refb[idx_bc] = ref[idx_bc]
-                   + tra[idx_bc] * refb[idx_bc-1] * tra[idx_bc] / dtrb1;
-      // alculation of upward and downward fluxes and absorption
-      const cs_real_t dud1 = 1. - reft[l] * refb[idx_bc-1];
+
+    refb(k0, 0) = ref(k0, 0);
+
+    for (int l = k1; l <= kmray+1; l++) {
+      const cs_real_t dtrb1 = 1. -ref(l, 0) * refb(l-1, 0);
+      refb(l, 0) = ref(l, 0) + tra(l, 0) * refb(l-1, 0) * tra(l, 0) / dtrb1;
+
+      // Calculation of upward and downward fluxes and absorption
+      const cs_real_t dud1 = 1. -reft(l, 0) * refb(l-1, 0);
       // Direct
-      dowd[l] = trad[l];
+      dowd(l, 0) = trad(l, 0);
       // Diffuse
-      dowf[l] = trat[l] / dud1 - trad[l];
-      // Total downward flux
-      dow[l] = trat[l] / dud1;
-      // Upward diffuse flux
-      upwf[l] = refb[idx_bc - 1] * dow[l];
+      dowf(l, 0) = trat(l, 0) / dud1 - trad(l, 0);
+      // Global == dowf(l,n) + dowd(l,n)
+      dow(l, 0) = trat(l, 0) / dud1;
+      upwf(l, 0) = refb(l-1, 0) * dow(l, 0);
       // Absorption from top to level l
-      atln[l] = 1. - reft[k1] + upwf[l] - dow[l];
+      atln(l, 0) = 1. - reft(k1, 0) + upwf(l, 0) - dow(l, 0);
     }
+
     // If there is a cloud
     if (itop > k1) {
-      for (int l = k1; l < itop; ++l) {
-        const int idx_bc = l + 1;
+      for (int l = k1; l < itop; l++) {
         // addition of ozone absorption for heating in the
         // layers when adding method is used
         const cs_real_t zq   = zqq[l];
@@ -1728,13 +1761,13 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
         // upwf[idx_ln] - dow[idx_ln] - upwf[idx_lp1_n] + dow[idx_lp1_n]
         // absn[idx_ln] =   dow[idx_ln] * (refb(l-1,n) - 1.0)
         //                - dow[idx_lp1_n] * (refb[idx_ln] - 1.0)
-        absn[l] = dow[l]   * (refb[idx_bc-1] - 1.)
-                - dow[l+1] * (refb[idx_bc]   - 1.);
+        absn(l, 0) =   dow(l, 0) * (refb(l-1, 0) - 1.)
+                     - dow(l+1, 0) * (refb(l, 0) - 1.);
 
-        const cs_real_t x = m * ozone_amount(zbas)
-                          + mbar * (ozone_amount(zq)-ozone_amount(zbas));
-        const cs_real_t xp1 = m * ozone_amount(zbas)
-                            + mbar * (ozone_amount(zqp1) - ozone_amount(zbas));
+        const cs_real_t x =    m * ozone_amount(zbas)
+                            + mbar * (ozone_amount(zq)-ozone_amount(zbas));
+        const cs_real_t xp1 =   m * ozone_amount(zbas)
+                              + mbar * (ozone_amount(zqp1) - ozone_amount(zbas));
         const cs_real_t xstar = m * ozone_amount(zbas)
           + mbar * (ozone_amount(zqq[k1]) - ozone_amount(zbas))
           + mbar * (ozone_amount(zqq[k1]) - ozone_amount(zq));
@@ -1761,16 +1794,16 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
         // two contributions: 1) transform direct into diffuse (dowf)
         //                    2) diffuse coming from the top
         dddfso3[l] =   muzero * fo * (z_ref - rrbar - ray_ozone_absorption(x))
-                     * (dowf[l] +   dow[l] * albe * rrbar2s
-                                  / (1. - rrbar2s * albe));
+                     * (dowf(l, 0) +   dow(l, 0) * albe * rrbar2s
+                                     / (1. - rrbar2s * albe));
 
         // Global: dfso3 = ddfso3 + dddfso3  (we compute it via dow and factor)
         dfso3[l] = muzero * fo * (z_ref - rrbar - ray_ozone_absorption(x) )
-                 * dow[l] / (1. - rrbar2s * albe);
+                 * dow(l, 0) / (1. - rrbar2s * albe);
 
         // Upward (diffuse) radiation
         ufso3[l] = muzero * fo
-                 * (z_ref - rrbar - ray_ozone_absorption(xstar) ) * upwf[l];
+                 * (z_ref - rrbar - ray_ozone_absorption(xstar) ) * upwf(l, 0);
 
         // gradient for absorption coefficient computation
         const cs_real_t dzx = ozone_gradient(zq);
@@ -1791,13 +1824,13 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
       // the upward flux transmitted by cloud or aerosol layers
       // if there is no cloud and no aerosol (itop == k1)
       // this term must NOT be added
-      for (int l = itop; l <= kmray + 1; ++l) {
+      for (int l = itop; l <= kmray + 1; l++) {
         const cs_real_t zq   = zqq[l];
         const cs_real_t zbas = zqq[k1];
         const cs_real_t xstar = m * ozone_amount(zbas)
                               + mbar * (ozone_amount(zbas) - ozone_amount(zq));
         ufso3[l] = muzero * fo
-                 * (z_ref - rrbar - ray_ozone_absorption(xstar) ) * upwf[itop];
+                 * (z_ref - rrbar - ray_ozone_absorption(xstar) ) * upwf(itop, 0);
       }
     } // endif (itop > k1)
 
@@ -1807,178 +1840,182 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
     // by means of the adding method following Lacis et Hansen, 1974
     // calculation of reflexivity and transmissivity for each vertical layer.
     for (int n = 0; n < 8; ++n) {
-      const int id_km = (kmray + 1) + n * (kmx + 1);
-      const int id_km_bc = (kmray + 2) + n * (kmx + 2);
       // From 44 km -> 11 km
       cs_real_t dqqv = kn[n] * (qqvtot - qqv[kmray]) / 10.0;
 
       // Tod and ground Bcs
-      tau[id_km]    = dqqv;
-      tra[id_km_bc] = exp(-m * dqqv);
+      tau(kmray+1, n) = dqqv;
+      tra(kmray+1, n) = exp(-m * dqqv);     // == exp(-m * tau(kmray+1, n))
 
       // For direct radiation
-      trad[id_km]  = trard[id_km_bc];
-      trard[id_km_bc] = exp(-m * dqqv);
+      trard(kmray+1, n) = tra(kmray+1, n);  // exp(-m * tau(kmray+1, n));
+      trad(kmray+1, n) = trard(kmray+1, n);
 
-      tra[k0 + n * (kmx + 2)]            = 0.;
-      ref[k0 + n * (kmx + 2)]            = albe;
-      ref[(kmray + 2) + n * (kmx + 2)]   = 0.;
+      ref(kmray+1, n) = 0.;
+      ref(k0, n) = albe;
 
-      trat[id_km] = tra[id_km_bc];
-      reft[id_km] = ref[id_km_bc];
+      trat(kmray+1, n) = tra(kmray+1, n);
+      reft(kmray+1, n) = ref(kmray+1, n);
 
-      trad[id_km] = trard[id_km_bc];
+      // For direct radiation
+      trad(kmray+1, n) = trard(kmray+1, n);
 
-      for (int l = k1; l <= kmray; ++l) {
-        const int idx = l + n * (kmx + 1);
-        const int idx_bc = l + 1 + n * (kmx + 2);
-
+      for (int l = k1; l <= kmray; l++) {
         gasym = gch2o[l];
         pioc  = pic_h2o[l];
 
         // /10 for unit conversion
         dqqv = kn[n] * (qqv[l + 1] - qqv[l]) / 10.0;
 
-        // In cloud layers
-        tau[idx] = tauc[l] + dqqv + tauah2o[l];
+        // In the cloud layers
+        tau(l, n) = tauc[l] + dqqv + tauah2o[l];
 
         if (qlray[l] >= epsc) {
           _compute_reflection_transmission(pioc, at_chem->piaero_h2o, gasym,
                                            at_chem->gaero_h2o, tauc[l],
                                            tauah2o[l], refx, trax, epsc,
                                            dqqv, mui, muzero_cor);
-          ref[idx_bc] = fneray[l] * refx;
-          tra[idx_bc] = fneray[l] * trax
+          ref(l, n) =   fneray[l] * refx;
+          tra(l, n) =   fneray[l] * trax
                       + (1. - fneray[l]) * exp(-mbarh2o * dqqv);
           if (iaer) {
             _compute_reflection_transmission(0., at_chem->piaero_h2o,
                                              0., at_chem->gaero_h2o,
                                              0., tauah2o[l], refx0, trax0,
                                              epsc, dqqv, mui, muzero_cor);
-           ref[idx_bc] = fneray[l] * refx + (1. - fneray[l]) * refx0;
-            tra[idx_bc] = fneray[l] * trax + (1. - fneray[l]) * trax0;
+            ref(l, n) = fneray[l] * refx + (1. - fneray[l]) * refx0;
+            tra(l, n) = fneray[l] * trax + (1. - fneray[l]) * trax0;
           }
           // trard transmissivity for direct radiation
-          trard[idx_bc] =
-            (fneray[l] * exp(-m * tauc[l]) + (1. - fneray[l])) *
-            exp(-m * (dqqv + tauah2o[l]));
-
+          trard(l, n) =   (fneray[l] * exp(-m * tauc[l]) + (1. - fneray[l]))
+                        * exp(-m * (dqqv + tauah2o[l]));
         }
+
         else {
           // Clear sky layers
-          ref[idx_bc] = 0.;
-          tra[idx_bc] = exp(-mbarh2o * tau[idx]);
-          trard[idx_bc] = exp(-m * (dqqv + tauah2o[l]));
+          ref(l, n) = 0.;
+          tra(l, n) = exp(-mbarh2o * tau(l, n));
+          trard(l, n) = exp(-m * (dqqv + tauah2o[l]));
 
-          if (l >= itop) tra[idx_bc] = exp(-m * tau[idx]);
+          if (l >= itop) tra(l, n) = exp(-m * tau(l, n));
 
           if (iaer) {
             _compute_reflection_transmission(0., at_chem->piaero_h2o,
                                              0., at_chem->gaero_h2o, 0.,
                                              tauah2o[l], refx, trax, epsc,
                                              dqqv, mui, muzero_cor);
-            ref[idx_bc] = fneba[l] * refx;
-            tra[idx_bc] = fneba[l] * trax
+            ref(l, n) = fneba[l] * refx;
+            tra(l, n) = fneba[l] * trax
                         + (1. - fneba[l]) * exp(-mbarh2o * dqqv);
           }
         }
       }
 
       // Downward addition of layers
-      for (int l = kmray; l >= k1; --l) {
-        const int idx = l + n * (kmx + 1);
-        const int idx_p1 = l + 1 + n * (kmx + 1);
-        const int idx_bc = l + 1 + n * (kmx + 2);
-        cs_real_t drtt1 = 1. / (1. - reft[idx_p1] * ref[idx_bc]);
-        reft[idx] = reft[idx_p1]
-                        + trat[idx_p1] * ref[idx_bc]
-                        * trat[idx_p1] * drtt1;
+      for (int l = kmray; l >= k1; l--) {
+        cs_real_t drtt1 = 1. / (1. - reft(l+1, n) * ref(l, n));
+        // Note R(l->top) = R*(l->top)
+        // R*(l->top) = R(l) + T*(l)*T(l) * R*(l+1>top)/(1 - R*(l+1->top).R(l))
+        reft(l, n) =   reft(l+1, n)
+                     + trat(l+1, n) * ref(l, n) * trat(l+1, n) * drtt1;
+        // T(l->top) = T(l+1->top).T(l) /(1 - R*(l+1->top).R(l))
+        // Note also it is equal to
+        // T*(l->top) = T*(l+1->top)*T(l) /(1 - R*(l+1->top).R(l))
+        trat(l, n) = trat(l+1, n) * tra(l, n) * drtt1;
 
-        trat[idx] = trat[idx_p1] * tra[idx_bc] * drtt1;
-        trad[idx] = trad[idx_p1] * trard[idx_bc];
+        // trad for direct radiation
+        trad(l, n) = trad(l+1, n) * trard(l, n);
       }
 
-      // Upward addition
-      refb[k0 + n * (kmx + 2)] = ref[k0 + n * (kmx + 2)];
+      // upward layer addition
+      refb(k0, n) = ref(k0, n);
 
-      for (int l = k1; l <= kmray; ++l) {
-        const int idx = l + n * (kmx + 2);
-        const int idx_p1 = l + 1 + n * (kmx + 2);
-        cs_real_t dtrb1 = 1. / (1. - refb[idx] * ref[idx_p1]);
-        refb[idx_p1]
-          = ref[idx_p1] + tra[idx_p1] * refb[idx] * tra[idx_p1] * dtrb1;
+      // Note LH74 equation (33)
+      // T*(l) = T(l)
+      for (int l = k1; l <= kmray; l++) {
+        cs_real_t dtrb1 = 1. / (1. - refb(l-1, n) * ref(l, n));
+        refb(l, n) = ref(l, n) + tra(l, n) * refb(l-1, n) * tra(l, n) * dtrb1;
       }
 
       // Downward and upward fluxes
-      for (int l = kmray + 1; l >= k1; --l) {
-        const int idx = l + n * (kmx + 1);
-        const int idx_bc = l + n * (kmx + 2);
-        dowd[idx] = trad[idx];
+      for (int l = kmray + 1; l >= k1; l--) {
+        // downward fluxes for direct radiation
+        dowd(l, n) = trad(l, n);
 
-        cs_real_t dud1 = 1. - reft[idx] * refb[idx_bc];
-        dow[idx]  = trat[idx] / dud1;
+        cs_real_t dud1 = 1. - reft(l, n) * refb(l-1, n);
+        // Diffuse
+        dowf(l,n) = trat(l, n) / dud1 - trad(l,n);
 
-        dowf[idx] = trat[idx] / dud1 - trad[idx];
+        // Global
+        dow(l, n) = trat(l, n) / dud1;
 
-        upwf[idx] = refb[idx_bc] * dow[idx];
-        atln[idx]
-          = pkn[n] * (1. - reft[k1 + n * (kmx + 1)] + upwf[idx] - dow[idx]);
+        // Diffuse up = global up
+        upwf(l, n) = refb(l-1, n) * dow(l, n);
+
+        // calculation of absorption from 16km to level l
+        // Note can be factorized
+        atln(l, n) = pkn[n] * (1. - reft(k1, n) + upwf(l, n) - dow(l, n));
       }
 
       // Absorption per layer
-      for (int l = kmray; l >= k1; --l) {
-        const int idx = l + n * (kmx + 1);
-        const int idx_bc = l + n * (kmx + 2);
-        absn[idx] = pkn[n] * (  dow[idx] * (refb[idx_bc] - 1.)
-                              - dow[idx + 1] * (refb[idx_bc + 1] - 1.));
+      for (int l = kmray; l >= k1; l--) {
+        // Note LH74 compute absn as:
+        // absn(l,n) = atln(l,n) - atln(l+1,n)
+        // but can be simplified as
+        // upwf(l,n)-dow(l,n) - upwf(l+1,n) + dow(l+1,n)
+
+        absn(l, n) = pkn[n] * (  dow(l, n)   * (refb(l-1, n) - 1.)
+                               - dow(l+1, n) * (refb(l, n)   - 1.));
       }
     } // end loop 6.4
 
     //  summation over frequencies and estimation of absorption integrated
     //  on the whole spectru
-    for (int l = kmray; l >= k1; --l) {
+    for (int l = kmray; l >= k1; l--) {
       fabsh2o[l] = 0.;
       for (int n = 0; n < 8; ++n) {
-        const int id = l + n * (kmx + 1);
-        fabsh2o[l] += absn[id];
+        fabsh2o[l] += absn(l, n);
       }
 
       fabsh2o[l] = fabsh2o[l] * fo * muzero;
     }
-    // Case with no cloud and no aerosol: same 1D/3D heating rate
+
+    // In the case with no clouds and aerosol in order to have exactly
+    // the same expressions in 1D and 3D for the heating rate
     if (itop == k1) {
-      for (int l = k1; l <= kmray; ++l) {
-        const cs_real_t y   = m * (qqvtot - qqv[l]);
+      for (int l = k1; l <= kmray; l++) {
+        const cs_real_t y   = m * (qqvtot - qqv[l]);  // Note qqv(1) = 0
         const cs_real_t yp1 = m * (qqvtot - qqv[l+1]);
         const cs_real_t ystar = m * qqvtot + mbarh2o * qqv[l];
         const cs_real_t ystarp1= m * qqvtot + mbarh2o * qqv[l+1];
 
-        fabsh2o[l] = muzero * fo * ( ray_sve(y) - ray_sve(yp1)
-                                    + albe *
-                                    ( ray_sve(ystarp1) - ray_sve(ystar) ) );
+        fabsh2o[l] = muzero * fo * (  ray_sve(y) - ray_sve(yp1)
+                                    + albe * (  ray_sve(ystarp1)
+                                              - ray_sve(ystar)));
       }
     }
 
     // 5.5 heating in the layers
-    for (int i = k1; i <= kmray; ++i) {
+    for (int i = k1; i <= kmray; i++) {
       deltaz = zqq[i+1] - zqq[i];
       const cs_real_t cphum = cp0 * (1.0 + (cpvcpa - 1.) * qvray[i]);
+
       rayst[i] = (fabsh2o[i] + fabso3[i]) / deltaz / romray[i] / cphum;
     }
 
     // 5.6 calculation of solar fluxes
     // for global radiation, fd for direct radiation for the water vapor band
     // H20: SIR band
-    for (int i = k1; i <= kmray; ++i) {
+
+    for (int i = k1; i <= kmray; i++) {
       dfsh2o[i]   = 0.;
       ufsh2o[i]   = 0.;
       ddfsh2o[i]  = 0.;
       dddfsh2o[i] = 0.;
       for (int n = 1; n < 8; ++n) {
-        const int idx = i + n * (kmx + 1);
-        ufsh2o[i]  += pkn[n] * upwf[idx];
-        ddfsh2o[i] += pkn[n] * dowd[idx];
-        dddfsh2o[i] += pkn[n] * dowf[idx];
+        ufsh2o[i]  += pkn[n] * upwf(i, n);
+        ddfsh2o[i] += pkn[n] * dowd(i, n);
+        dddfsh2o[i] += pkn[n] * dowf(i, n);
       }
       ufsh2o[i]  *= fo * muzero;
       ddfsh2o[i] *= fo * muzero;
@@ -1987,14 +2024,17 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
       // Global
       dfsh2o[i] = ddfsh2o[i] + dddfsh2o[i];
 
-      // Compute y and ystar
-      cs_real_t ystar = m * (qqvtot - qqv[itop])
-                      + mbarh2o * (qqv[itop] + qqv[i]);
+      // The optical depth for gases have to be changed to take into account
+      // the transformation of direct radiation in diffuse radiation under
+      // the top of the cloud.
+      cs_real_t ystar = m *   (qqvtot - qqv[itop])
+                            + mbarh2o * (qqv[itop] + qqv[i]);
 
-      cs_real_t y = m * (qqvtot - qqv[itop])
-                  + mbarh2o * (qqv[itop] - qqv[i]);
+      cs_real_t y;
       if (i >= itop)
         y = m * (qqvtot - qqv[i]);
+      else
+        y = m * (qqvtot - qqv[itop]) + mbarh2o * (qqv[itop] - qqv[i]);
 
       // to test in the case with no clouds and aerosol in order to have exactly
       // the same expressions in 1D and 3D for the fluxes
@@ -2018,26 +2058,34 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
     }
 
     // 6. Calculation of solar fluxes For the whole spectrum
-    for (int k = k1; k <= kmray; ++k) {
+    for (int k = k1; k <= kmray; k++) {
       // Global (down and up) fluxes
       dfs[k] = dfsh2o[k] + dfso3[k];
       ufs[k] = ufsh2o[k] + ufso3[k];
+
       // direct radiation and diffuse mod (sum of vapor water band and O3 band)
       drfs[k] = ddfsh2o[k] + ddfso3[k];
       ddfs[k] = dddfsh2o[k] + dddfso3[k];
 
       _atmo_1d_rad.solu[k + ivertc * kmx] = ufs[k];
       _atmo_1d_rad.sold[k + ivertc * kmx] = dfs[k];
-
     }
+
+    // Note: Multiplication by transmission function for minor gases
+    // Tmg is now taken into account by fo=fo*Tmg
 
     // Solar heating of the ground surface by downward global flux
     fos = dfs[k1] * (1. - albe);
 
+    // Calculation of absorption coefficient ckup and ckdown useful
+    // for 3D simulation
+    // For water vapor without clouds and aerosols downward is only direct,
+    // upward is only diffuse.
+
     // SIR band
-    for (int k = k1; k <= kmray; ++k) {
-      deltaz = zqq[k + 1] - zqq[k];
+    for (int k = k1; k <= kmray; k++) {
       cs_real_t tauapc = tauah2o[k] + tauc[k];
+      deltaz = zqq[k + 1] - zqq[k];
 
       cs_real_t ckapcd = 0.;
       cs_real_t ckapcf = 0.;
@@ -2049,23 +2097,24 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
         g_apc_sir[k] = 0.;
       }
       else {
-        cs_real_t picapc =
-          (pic_h2o[k] * tauc[k] + at_chem->piaero_h2o * tauah2o[k]) / tauapc;
+        cs_real_t picapc
+          = (pic_h2o[k] * tauc[k] + at_chem->piaero_h2o * tauah2o[k]) / tauapc;
+
         /* if we take into account asymmetry factor for forward diffuse radiation
          * Note apc means aerosols+clouds */
         cs_real_t gapc = (  pic_h2o[k] * tauc[k] * gch2o[k]
                           + at_chem->piaero_h2o * tauah2o[k] * at_chem->gaero_h2o)
                        / (tauapc * picapc);
 
-        // Save 3D-use values
-        w0_sir[k] = picapc;
+        // Save values without Joseph correction for 3D
         g_apc_sir[k] = gapc;
+        w0_sir[k] = picapc;
 
         // Absorption and forward diffusion
         ckapcf = tauapc / deltaz;
 
         // Direct (no Joseph correction)
-       ckapcd = tauapc / (deltaz * muzero_cor);
+        ckapcd = tauapc / (deltaz * muzero_cor);
         // Aerosol contributions
         ck_aero_h2of = tauah2o[k] / deltaz;
         ck_aero_h2od = tauah2o[k] / (deltaz * muzero_cor);
@@ -2086,7 +2135,7 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
     }
 
     // SUV band
-    for (int k = k1; k <= kmray; ++k) {
+    for (int k = k1; k <= kmray; k++) {
       cs_real_t tauapc = tauao3[k] + tauc[k];
       deltaz = zqq[k + 1] - zqq[k];
 
@@ -2102,6 +2151,7 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
       else {
         const cs_real_t picapc
           = (pic_o3[k] * tauc[k] + at_chem->piaero_o3 * tauao3[k]) / tauapc;
+        // if we take into account asymmetry factor for forward diffuse radiation
         const cs_real_t gapc = (  pic_o3[k] * tauc[k] * gco3[k]
                                 +   at_chem->piaero_o3 * tauao3[k]
                                   * at_chem->gaero_o3)
@@ -2124,11 +2174,24 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
         = ckdown_suv_f[k] + ck_aero_o3f * (1.0 - fneray[k]) + ckapcf * fneray[k];
     }
 
+    /* In addition a source term has to be added in 3D for diffuse radiation.
+
+       if mui=1/sqrt(3) quadrature method as LH74 the source term is added for
+       both downward and upward radiation
+       where  g1= 31/2(1-wo) , g3=(1-31/2µo)/2, g4=(1+31/2µo)/2 and t the total
+       optical depth (gas + aerosol + cloud) t = tg + ta + tc.
+       If mui=muzero_cor delta method the source term is added only in the downward
+       diffuse radiation.
+       In that condition the two-stream equations can be written:
+       where  g1=(1-wo)/µo, g4=1 and t the total optical depth
+       (gas + aerosol + cloud) t = tg + ta + tc. */
+
   } // end if muzero >= cs_math_epzero
+
   else {
 
     muzero = 0.;
-    for (int k = k1; k <= kmray; ++k) {
+    for (int k = k1; k <= kmray; k++) {
       rayst[k] = 0.;
 
       _atmo_1d_rad.solu[k + ivertc * kmx] = 0.;
@@ -2149,6 +2212,7 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
       g_apc_suv[k] = 0.;
     }
     fos = 0.;
+
   }
 
   // Compute Boundary conditions for the 3D
@@ -2156,7 +2220,6 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
   // at the top of the CFD domain and the absorption coefficients
   if (   cs_rad_time_is_active() == true
       && cs_field_by_name_try("spectral_rad_incident_flux") != nullptr) {
-
 
     const int *bc_type = cs_glob_bc_type;
 
@@ -2292,70 +2355,11 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
                          n_cells, zray, g_apc_suv,
                          cell_cen, cpro_gapc);
   }
+
  } // end if
+
  *fos_p  = fos;
  *albe_p = albe;
-
-  CS_FREE(fabsh2o);
-  CS_FREE(fabso3);
-  CS_FREE(tauc);
-
-  CS_FREE(tau);
-  CS_FREE(pic);
-  CS_FREE(ref);
-
-  CS_FREE(reft);
-  CS_FREE(trat);
-
-  CS_FREE(refb);
-  CS_FREE(upwf);
-
-  CS_FREE(fabso3c);
-  CS_FREE(tra);
-  CS_FREE(dow);
-  CS_FREE(dowf);
-  CS_FREE(atln);
-  CS_FREE(absn);
-
-  CS_FREE(fnebmax);
-  CS_FREE(fneba);
-
-  CS_FREE(ufso3c);
-  CS_FREE(dowd);
-  CS_FREE(trad);
-  CS_FREE(trard);
-
-  CS_FREE(dfsh2o);
-  CS_FREE(ufsh2o);
-
-  CS_FREE(dfso3);
-  CS_FREE(ufso3);
-
-  CS_FREE(dfs);
-  CS_FREE(ufs);
-
-  CS_FREE(ckup_sir_f);
-  CS_FREE(ckdown_sir_r);
-  CS_FREE(ckdown_sir_f);
-
-  CS_FREE(ckup_suv_f);
-  CS_FREE(ckdown_suv_r);
-  CS_FREE(ckdown_suv_f);
-
-  CS_FREE(w0_sir);
-  CS_FREE(w0_suv);
-  CS_FREE(g_apc_sir);
-  CS_FREE(g_apc_suv);
-  CS_FREE(dffsh2o);
-  CS_FREE(dffso3);
-  CS_FREE(ddfsh2o);
-  CS_FREE(ddfso3);
-  CS_FREE(dddfsh2o);
-  CS_FREE(dddfso3);
-
-  CS_FREE(drfs);
-  CS_FREE(ddfs);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2421,7 +2425,7 @@ cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
 
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
   const cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
- const cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
+  const cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
 
   const int kmx = at_1d_rad->nlevels_max;
 
