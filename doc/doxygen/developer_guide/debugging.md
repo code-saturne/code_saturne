@@ -648,7 +648,7 @@ mpiexec <options> ./cs_solver
 ```
     with:
 ```{.sh}
-mpiexec ddt <options> ./cs_solver
+ddt mpiexec <options> ./cs_solver
 ```
 
 - If using a batch system, request an interactive allocation (for example, using `salloc` with SLURM).
