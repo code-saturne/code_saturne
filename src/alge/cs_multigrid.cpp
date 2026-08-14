@@ -1616,6 +1616,8 @@ _multigrid_pc_create(cs_multigrid_type_t   mg_type,
 {
   cs_multigrid_t *mg = cs_multigrid_create(mg_type, config);
 
+  mg->info.is_pc = true;
+
   switch(mg_type) {
   case CS_MULTIGRID_V_CYCLE:
     cs_multigrid_set_solver_options
@@ -5684,8 +5686,6 @@ cs_sles_pc_t *
 cs_multigrid_pc_create(cs_multigrid_type_t  mg_type)
 {
   cs_multigrid_t *mg = _multigrid_pc_create(mg_type, nullptr);
-
-  mg->info.is_pc = true;
 
   cs_sles_pc_t *pc = cs_sles_pc_define(mg,
                                        _multigrid_pc_get_type,
