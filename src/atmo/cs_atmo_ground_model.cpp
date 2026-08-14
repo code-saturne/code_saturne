@@ -229,12 +229,41 @@ _ground_model_variable_init(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Allocate arrays for meteo profile data.
+ *
+ * \param[in]  n_ground_cat  number of ground catergories
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_atmo_ground_alloc_arrays(int n_ground_cat)
+{
+  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+
+ /* The dimension is n_ground_cat + 1 because the element at index 0
+    is kept unused. */
+  int n = n_ground_cat + 1;
+
+  CS_REALLOC(at_opt->ground_cat_roughness, n, cs_real_t);
+  CS_REALLOC(at_opt->ground_cat_thermal_inertia, n, cs_real_t);
+  CS_REALLOC(at_opt->ground_cat_thermal_roughness, n, cs_real_t);
+  CS_REALLOC(at_opt->ground_cat_albedo, n, cs_real_t);
+  CS_REALLOC(at_opt->ground_cat_emissi, n, cs_real_t);
+  CS_REALLOC(at_opt->ground_cat_vegeta, n, cs_real_t);
+  CS_REALLOC(at_opt->ground_cat_w1, n, cs_real_t);
+  CS_REALLOC(at_opt->ground_cat_w2, n, cs_real_t);
+  CS_REALLOC(at_opt->ground_cat_r1, n, cs_real_t);
+  CS_REALLOC(at_opt->ground_cat_r2, n, cs_real_t);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute mean values
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-cs_ground_compute_mean(void)
+_ground_compute_mean(void)
 {
   /* Local variables */
   cs_real_t rugdij, rugtij, albeij, emisij;
@@ -1032,7 +1061,8 @@ _compute_plant_to_air_source_terms(cs_lnum_t ground_id,
   st_q_p_exp->val[ground_id] = dq_p_to_atm / (1. + dq_p_to_atm) / dtref;
   st_q_p_imp->val[ground_id] = - dq_p_to_atm / (1. + dq_p_to_atm) / dtref;
 
-  st_conv_energy_p->val[ground_id] = sensible_heat_plant_to_air->val[ground_id] / dz_max ;
+  st_conv_energy_p->val[ground_id] = sensible_heat_plant_to_air->val[ground_id]
+                                     / dz_max ;
   st_mass_energy_p->val[ground_id] = drho_p_to_atm
     * ct_prop->cp_v * ( leaf_temp->val[ground_id]
     + cs_physical_constants_celsius_to_kelvin ) / dtref;
@@ -1679,7 +1709,7 @@ cs_atmo_ground_initialize(void)
   if (n_elts > 0) {
     /* Second pass, print and check ground categories parameters */
     cs_atmo_ground_cat(2);
-    cs_ground_compute_mean();
+    _ground_compute_mean();
 
     /* Initialization of ground variables */
     /* Only if ground is activated */
@@ -1758,17 +1788,7 @@ cs_atmo_ground_cat(int call_stage)
   /*----------------------------------------------------------------------*/
 
   if (call_stage == 1) {
-    cs_atmo_ground_init_arrays(&n_ground_cat,
-                               &at_opt->ground_cat_thermal_inertia,
-                               &at_opt->ground_cat_roughness,
-                               &at_opt->ground_cat_thermal_roughness,
-                               &at_opt->ground_cat_albedo,
-                               &at_opt->ground_cat_emissi,
-                               &at_opt->ground_cat_vegeta,
-                               &at_opt->ground_cat_w1,
-                               &at_opt->ground_cat_w2,
-                               &at_opt->ground_cat_r1,
-                               &at_opt->ground_cat_r2);
+    _atmo_ground_alloc_arrays(n_ground_cat);
 
     for (cs_lnum_t n = 1; n <= n_ground_cat; n++) {
       at_opt->ground_cat_thermal_inertia[n] = codinv;

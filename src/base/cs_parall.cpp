@@ -158,14 +158,6 @@ static size_t _cs_parall_min_coll_buf_size = 1024*1024;
 
 cs_e2n_sum_t cs_glob_e2n_sum_type = CS_E2N_SUM_SCATTER;
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-extern "C" void
-cs_f_parall_sum_r(double  *sum);
-
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -224,34 +216,6 @@ _get_array_distribution(MPI_Comm  comm,
 }
 
 #endif  /* HAVE_MPI */
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compute the global sum of a real in case of parallelism
- *
- * parameters:
- *   sum <->  input = local sum; output = global sum
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_parall_sum_r(double  *sum)
-{
-#if defined(HAVE_MPI)
-
-  double  global_sum;
-
-  assert (sizeof (double) == sizeof (cs_real_t));
-
-  MPI_Allreduce (sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM,
-                 cs_glob_mpi_comm);
-
-  *sum = global_sum;
-
-#endif
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

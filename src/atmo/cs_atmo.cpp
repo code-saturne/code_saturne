@@ -142,62 +142,7 @@ static cs_atmo_constants_t _atmo_constants = {
  *============================================================================*/
 
 cs_atmo_option_t *cs_glob_atmo_option = &_atmo_option;
-
 cs_atmo_constants_t *cs_glob_atmo_constants = &_atmo_constants;
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-extern "C" void
-cs_f_atmo_get_pointers(cs_real_t              **ps,
-                       int                    **syear,
-                       int                    **squant,
-                       int                    **shour,
-                       int                    **smin,
-                       cs_real_t              **ssec,
-                       cs_real_t              **longitude,
-                       cs_real_t              **latitude,
-                       bool                   **compute_z_ground,
-                       int                    **open_bcs_treatment,
-                       int                    **theo_interp,
-                       int                    **sedimentation_model,
-                       int                    **deposition_model,
-                       int                    **nucleation_model,
-                       int                    **subgrid_model,
-                       int                    **distribution_model,
-                       int                    **meteo_profile,
-                       int                    **nbmetd,
-                       int                    **nbmett,
-                       int                    **nbmetm,
-                       int                    **nbmaxt,
-                       int                    **ground_model,
-                       int                    **ihpm,
-                       cs_real_t              **sigc,
-                       int                    **idrayi,
-                       int                    **idrayst,
-                       int                    **igrid);
-
-extern "C" void
-cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
-                              cs_real_t **xyp_met,
-                              cs_real_t **u_met,
-                              cs_real_t **v_met,
-                              cs_real_t **w_met,
-                              cs_real_t **time_met,
-                              cs_real_t **hyd_p_met,
-                              cs_real_t **pot_t_met,
-                              cs_real_t **ek_met,
-                              cs_real_t **ep_met,
-                              cs_real_t **ttmet,
-                              cs_real_t **rmet,
-                              cs_real_t **qvmet,
-                              cs_real_t **ncmet,
-                              int         dim_nd_nt[2],
-                              int         dim_ntx_nt[2],
-                              int         dim_nd_3[2],
-                              int         dim_nt_3[2]);
 
 extern "C" void
 cs_atmo_get_ground_zone(cs_lnum_t         *n_elts,
@@ -1120,134 +1065,18 @@ _log_meteo_profile(int                    itp,
 
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate arrays for meteo profile data.
+ */
+/*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- * Access pointers for Fortran mapping.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_atmo_get_pointers(cs_real_t              **ps,
-                       int                    **syear,
-                       int                    **squant,
-                       int                    **shour,
-                       int                    **smin,
-                       cs_real_t              **ssec,
-                       cs_real_t              **longitude,
-                       cs_real_t              **latitude,
-                       bool                   **compute_z_ground,
-                       int                    **open_bcs_treatment,
-                       int                    **theo_interp,
-                       int                    **sedimentation_model,
-                       int                    **deposition_model,
-                       int                    **nucleation_model,
-                       int                    **subgrid_model,
-                       int                    **distribution_model,
-                       int                    **meteo_profile,
-                       int                    **nbmetd,
-                       int                    **nbmett,
-                       int                    **nbmetm,
-                       int                    **nbmaxt,
-                       int                    **ground_model,
-                       int                    **ihpm,
-                       cs_real_t              **sigc,
-                       int                    **idrayi,
-                       int                    **idrayst,
-                       int                    **igrid)
+static void
+_cs_atmo_alloc_meteo_profile_arrays(void)
 {
-  *ps        = &(_atmo_constants.ps);
-  *syear     = &(_atmo_option.syear);
-  *squant    = &(_atmo_option.squant);
-  *shour     = &(_atmo_option.shour);
-  *smin      = &(_atmo_option.smin);
-  *ssec      = &(_atmo_option.ssec);
-  *longitude = &(_atmo_option.longitude);
-  *latitude  = &(_atmo_option.latitude);
-  *compute_z_ground = &(_atmo_option.compute_z_ground);
-  *open_bcs_treatment = &(_atmo_option.open_bcs_treatment);
-  *theo_interp = &(_atmo_option.theo_interp);
-  *sedimentation_model = &(_atmo_option.sedimentation_model);
-  *deposition_model = &(_atmo_option.deposition_model);
-  *nucleation_model = &(_atmo_option.nucleation_model);
-  *subgrid_model = &(_atmo_option.subgrid_model);
-  *distribution_model = &(_atmo_option.distribution_model);
-  *meteo_profile = &(_atmo_option.meteo_profile);
-  *nbmetd     = &(_atmo_option.met_1d_nlevels_d);
-  *nbmett     = &(_atmo_option.met_1d_nlevels_t);
-  *nbmetm     = &(_atmo_option.met_1d_ntimes);
-  *nbmaxt     = &(_atmo_option.met_1d_nlevels_max_t);
-  *ground_model = &(_atmo_option.ground_model);
-  *ihpm = &(_atmo_option.hydrostatic_pressure_model);
-  *sigc  = &(_atmo_option.sigc);
-  *idrayi = &(_atmo_option.infrared_1D_profile);
-  *idrayst = &(_atmo_option.solar_1D_profile);
-  *igrid = &(_atmo_option.profiles_grid_id);
-}
-
-void
-cs_atmo_get_ground_zone(cs_lnum_t         *n_elts,
-                        int               *n_ground_cat,
-                        const cs_lnum_t  **elt_ids)
-{
-  *n_elts = 0;
-  *elt_ids = nullptr;
-
-  cs_atmo_option_t *at_opt = &_atmo_option;
-
-  /* Not defined */
-  if (at_opt->ground_zone_id < 0) {
-    *n_ground_cat = 0;
-    return;
-  }
-
-  const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->ground_zone_id);
-  *elt_ids = z->elt_ids;
-  *n_elts = z->n_elts;
-  switch (at_opt->ground_cat) {
-    case CS_ATMO_GROUND_5_CAT:
-      *n_ground_cat = 5;
-      break;
-    case CS_ATMO_GROUND_7_CAT:
-      *n_ground_cat = 7;
-      break;
-    case CS_ATMO_GROUND_23_CAT:
-      *n_ground_cat = 23;
-      break;
-    default:
-      *n_ground_cat = 0;
-      break;
-  }
-}
-
-void
-cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
-                              cs_real_t **xyp_met,
-                              cs_real_t **u_met,
-                              cs_real_t **v_met,
-                              cs_real_t **w_met,
-                              cs_real_t **time_met,
-                              cs_real_t **hyd_p_met,
-                              cs_real_t **pot_t_met,
-                              cs_real_t **ek_met,
-                              cs_real_t **ep_met,
-                              cs_real_t **ttmet,
-                              cs_real_t **rmet,
-                              cs_real_t **qvmet,
-                              cs_real_t **ncmet,
-                              int         dim_nd_nt[2],
-                              int         dim_ntx_nt[2],
-                              int         dim_nd_3[2],
-                              int         dim_nt_3[2])
-{
-  int n_level = 0, n_level_t = 0;
-  int n_times = 0;
-  if (_atmo_option.meteo_profile) {
-    n_level = cs::max(1, _atmo_option.met_1d_nlevels_d);
-    n_level_t = cs::max(1, _atmo_option.met_1d_nlevels_max_t);
-    n_times = cs::max(1, _atmo_option.met_1d_ntimes);
-  }
+  int n_level = cs::max(1, _atmo_option.met_1d_nlevels_d);
+  int n_level_t = cs::max(1, _atmo_option.met_1d_nlevels_max_t);
+  int n_times = cs::max(1, _atmo_option.met_1d_ntimes);
 
   CS_REALLOC(_atmo_option.z_dyn_met, n_level, cs_real_t);
   CS_REALLOC(_atmo_option.z_temp_met, n_level_t, cs_real_t);
@@ -1267,73 +1096,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
   CS_REALLOC(_atmo_option.dpdt_met, n_level, cs_real_t);
   CS_REALLOC(_atmo_option.mom_met, n_level, cs_real_3_t);
   CS_REALLOC(_atmo_option.mom_cs, n_level, cs_real_3_t);
-
-  *xyp_met   = _atmo_option.xyp_met;
-  *u_met     = _atmo_option.u_met;
-  *v_met     = _atmo_option.v_met;
-  *w_met     = _atmo_option.w_met;
-  *hyd_p_met = _atmo_option.hyd_p_met;
-  *pot_t_met = _atmo_option.pot_t_met;
-  *ek_met    = _atmo_option.ek_met;
-  *ep_met    = _atmo_option.ep_met;
-  *ttmet     = _atmo_option.temp_met;
-  *rmet      = _atmo_option.rho_met;
-  *qvmet     = _atmo_option.qw_met;
-  *ncmet     = _atmo_option.ndrop_met;
-
-  *z_temp_met = _atmo_option.z_temp_met;
-  *time_met   = _atmo_option.time_met;
-
-  /* number of layers for dynamics times number of time steps */
-  dim_nd_nt[0]     = _atmo_option.met_1d_nlevels_d;
-  dim_nd_nt[1]     = _atmo_option.met_1d_ntimes;
-  /* number of layers for temperature (max value) times number of time steps */
-  dim_ntx_nt[0] = _atmo_option.met_1d_nlevels_max_t;
-  dim_ntx_nt[1] = _atmo_option.met_1d_ntimes;
-  dim_nd_3[0]    = _atmo_option.met_1d_nlevels_d;
-  dim_nd_3[1]    = 3;
-  dim_nt_3[0]    = 3;
-  dim_nt_3[1]    = _atmo_option.met_1d_ntimes;
-}
-
-void
-cs_atmo_ground_init_arrays(int        *n_ground_cat,
-                         cs_real_t  **csol,
-                         cs_real_t  **rugdyn,
-                         cs_real_t  **rugthe,
-                         cs_real_t  **albedo,
-                         cs_real_t  **emissi,
-                         cs_real_t  **vegeta,
-                         cs_real_t  **c1w,
-                         cs_real_t  **c2w,
-                         cs_real_t  **r1,
-                         cs_real_t  **r2)
-
- /* The dimension is n_ground_cat + 1 because the element at index 0
-    is kept unused. */
-{
-  CS_REALLOC(_atmo_option.ground_cat_roughness, *n_ground_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.ground_cat_thermal_inertia, *n_ground_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.ground_cat_thermal_roughness, *n_ground_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.ground_cat_albedo, *n_ground_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.ground_cat_emissi, *n_ground_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.ground_cat_vegeta, *n_ground_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.ground_cat_w1, *n_ground_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.ground_cat_w2, *n_ground_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.ground_cat_r1, *n_ground_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.ground_cat_r2, *n_ground_cat+1, cs_real_t);
-
-  *rugdyn = _atmo_option.ground_cat_roughness;
-  *csol   = _atmo_option.ground_cat_thermal_inertia;
-  *rugthe = _atmo_option.ground_cat_thermal_roughness;
-
-  *r1     = _atmo_option.ground_cat_r1;
-  *r2     = _atmo_option.ground_cat_r2 ;
-  *vegeta = _atmo_option.ground_cat_vegeta;
-  *albedo = _atmo_option.ground_cat_albedo;
-  *emissi = _atmo_option.ground_cat_emissi;
-  *c1w    = _atmo_option.ground_cat_w1;
-  *c2w    = _atmo_option.ground_cat_w2;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1648,8 +1410,7 @@ cs_atmo_fields_init0(void)
   /* Reading the meteo profile file (if meteo_profile==1) */
 
   if (at_opt->meteo_profile == 1) {
-    int imode = 1;
-    cs_atmo_read_meteo_profile(imode);
+    cs_atmo_read_meteo_profile(1);
 
     /* Check latitude / longitude from meteo file */
     int n_times = cs::max(1, at_opt->met_1d_ntimes);
@@ -1675,8 +1436,7 @@ cs_atmo_fields_init0(void)
   if (at_chem->model > 0) {
 
     // Second reading of chemical profiles file
-    int imode = 1;
-    cs_atmo_read_chemistry_profile(imode);
+    cs_atmo_read_chemistry_profile(1);
 
     const int chem_stride = at_chem->n_z_profiles * at_chem->nt_step_profiles;
     /* Check latitude / longitude from chemistry file */
@@ -4622,8 +4382,10 @@ cs_atmo_read_meteo_profile(int mode)
 
   } // end loop
 
-  if (mode == 0)
+  if (mode == 0) {
     at_opt->met_1d_ntimes = itp + 1;
+    _cs_atmo_alloc_meteo_profile_arrays();
+  }
 
   fclose(file);
 }
@@ -5194,6 +4956,47 @@ cs_atmo_projection(cs_atmo_projection_t origin_projection,
   default:
     bft_error(__FILE__, __LINE__, 0,
               _("Unknown target projection type."));
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get ground zone info
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_get_ground_zone(cs_lnum_t         *n_elts,
+                        int               *n_ground_cat,
+                        const cs_lnum_t  **elt_ids)
+{
+  *n_elts = 0;
+  *elt_ids = nullptr;
+
+  cs_atmo_option_t *at_opt = &_atmo_option;
+
+  /* Not defined */
+  if (at_opt->ground_zone_id < 0) {
+    *n_ground_cat = 0;
+    return;
+  }
+
+  const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->ground_zone_id);
+  *elt_ids = z->elt_ids;
+  *n_elts = z->n_elts;
+  switch (at_opt->ground_cat) {
+    case CS_ATMO_GROUND_5_CAT:
+      *n_ground_cat = 5;
+      break;
+    case CS_ATMO_GROUND_7_CAT:
+      *n_ground_cat = 7;
+      break;
+    case CS_ATMO_GROUND_23_CAT:
+      *n_ground_cat = 23;
+      break;
+    default:
+      *n_ground_cat = 0;
+      break;
   }
 }
 

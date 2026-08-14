@@ -126,36 +126,8 @@ int cs_glob_physical_model_flag[CS_N_PHYSICAL_MODEL_TYPES] = {
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-extern "C" void
-cs_f_physical_model_get_pointers(int     **ippmod);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global physical model flags.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   ippmod --> pointer to cs_glob_physical_model_flag
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_physical_model_get_pointers(int     **ippmod)
-{
-  *ippmod = cs_glob_physical_model_flag;
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

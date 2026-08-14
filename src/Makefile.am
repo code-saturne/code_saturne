@@ -32,49 +32,14 @@ user user_examples meg apps
 
 AM_LDFLAGS = -no-undefined
 
-# Library source files
-
-noinst_LIBRARIES = libcsmodules.a
-
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
 cs_headers.h
 
-if HAVE_FORTRAN
-AM_FCFLAGS = \
-$(FCMODINCLUDE)$(top_builddir)/src \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
-
-libcsmodules_a_SOURCES = \
-base/mesh.f90 \
-base/field.f90 \
-base/cstphy.f90 \
-base/cstnum.f90 \
-base/optcal.f90 \
-base/parall.f90 \
-base/cs_c_bindings.f90 \
-atmo/atincl.f90 \
-pprt/ppincl.f90
-
-# Module dependencies (handled manually, as Automake does
-# not yet handle Fortran module dependencies)
-
-base/cs_c_bindings.$(OBJEXT): base/mesh.$(OBJEXT)  base/field.$(OBJEXT)
-
-base/optcal.$(OBJEXT): base/cs_c_bindings.$(OBJEXT)
-
-atmo/atincl.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
- base/mesh.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
-
-endif
-
 # Additional local targets
 
-clean-local:
-	-rm -f *__genmod.f90 *.mod
-
-install-exec-local: $(libcsmodules_a_SOURCES)
+install-exec-local:
 	@$(NORMAL_INSTALL)
 	test -z "$(pkgincludedir)" || $(MKDIR_P) "$(DESTDIR)$(pkgincludedir)"
 	test -h $(DESTDIR)$(pkgincludedir)/cs_defs.h || ln -s base/cs_defs.h $(DESTDIR)$(pkgincludedir)/cs_defs.h;

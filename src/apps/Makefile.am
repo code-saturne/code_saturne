@@ -105,7 +105,6 @@ $(top_builddir)/src/lagr/libcslagr.a \
 $(top_builddir)/src/rayt/libcsrayt.a \
 $(top_builddir)/src/user/libcsuser.a \
 $(top_builddir)/src/meg/libcsmeg.a \
-$(top_builddir)/src/libcsmodules.a \
 $(top_builddir)/src/bft/libbft.a
 
 cs_solver = $(top_srcdir)/src/apps/cs_solver.cxx

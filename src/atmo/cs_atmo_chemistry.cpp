@@ -268,49 +268,6 @@ cs_ext_polyphemus_ssh_lu_solve(int       n_species_g,
 #endif
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-extern "C" void
-cs_f_atmo_chemistry_get_pointer(cs_real_t  **aod_o3_tot,
-                                cs_real_t  **aod_h2o_tot,
-                                cs_real_t  **aod_ir,
-                                cs_real_t  **conco2,
-                                cs_real_t  **gaero_o3,
-                                cs_real_t  **gaero_h2o,
-                                cs_real_t  **piaero_o3,
-                                cs_real_t  **piaero_h2o,
-                                cs_real_t  **black_carbon_frac,
-                                cs_real_t  **zaero);
-
-
-void
-cs_f_atmo_chemistry_get_pointer(cs_real_t  **aod_o3_tot,
-                                cs_real_t  **aod_h2o_tot,
-                                cs_real_t  **aod_ir,
-                                cs_real_t  **conco2,
-                                cs_real_t  **gaero_o3,
-                                cs_real_t  **gaero_h2o,
-                                cs_real_t  **piaero_o3,
-                                cs_real_t  **piaero_h2o,
-                                cs_real_t  **black_carbon_frac,
-                                cs_real_t  **zaero)
-{
-  *zaero       = &(_atmo_chem.zaero);
-  *aod_ir      = &(_atmo_chem.aod_ir);
-  *conco2      = &(_atmo_chem.conco2);
-  *gaero_o3    = &(_atmo_chem.gaero_o3);
-  *gaero_h2o   = &(_atmo_chem.gaero_h2o);
-  *piaero_o3   = &(_atmo_chem.piaero_o3);
-  *piaero_h2o  = &(_atmo_chem.piaero_h2o);
-  *aod_o3_tot  = &(_atmo_chem.aod_o3_tot);
-  *aod_h2o_tot = &(_atmo_chem.aod_h2o_tot);
-  *black_carbon_frac = &(_atmo_chem.black_carbon_frac);
-}
-
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -372,6 +329,7 @@ _decompose_lu(const int  n_species_g,
 
   /* Compute DLx
      ----------- */
+
 #if defined(HAVE_FORTRAN)
   if (kindlu == 0) {
     for (int jj = 0; jj < n_species_g; jj++) {

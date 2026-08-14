@@ -84,13 +84,6 @@ cs_preprocess_mesh_selected_b_faces_ignore(cs_mesh_t             *m,
                                            cs_lnum_t              n_faces,
                                            const cs_lnum_t        face_ids[]);
 
-/*----------------------------------------------------------------------------
- * Update fortran arrays relative to the global mesh.
- *----------------------------------------------------------------------------*/
-
-void
-cs_preprocess_mesh_update_fortran(void);
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Map some mesh arrays for use on device.

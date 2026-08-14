@@ -363,9 +363,6 @@ cs_porous_model_init_disable_flag(void)
       CS_MALLOC_HD(mq->c_disable_flag, 1, int, cs_alloc_mode);
     mq->c_disable_flag[0] = 0;
   }
-
-  /* Update Fortran pointer quantities */
-  cs_preprocess_mesh_update_fortran();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -393,9 +390,6 @@ cs_porous_model_set_has_disable_flag(int  flag)
       /* Use fluid quantities */
       cs_glob_mesh_quantities = mq_f;
     }
-
-    /* Update Fortran pointer quantities */
-    cs_preprocess_mesh_update_fortran();
   }
 
   cs_glob_mesh_quantities->has_disable_flag = flag;

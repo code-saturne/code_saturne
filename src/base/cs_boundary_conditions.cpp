@@ -131,14 +131,6 @@ const int *cs_glob_bc_type = nullptr;
 cs_boundary_condition_pm_info_t  *cs_glob_bc_pm_info = nullptr;
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-extern "C" void
-cs_f_boundary_conditions_get_pointers(int  **itypfb);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -1385,20 +1377,6 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
                   c->scale_func_input,
                   c->vel_buffer);
   }
-}
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers for Fortran bindings
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_boundary_conditions_get_pointers(int **itypfb)
-{
-  *itypfb = _bc_type;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

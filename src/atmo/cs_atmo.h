@@ -762,21 +762,6 @@ cs_atmo_get_ground_zone(cs_lnum_t         *n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_ground_init_arrays(int        *n_ground_cat,
-                           cs_real_t  **csol,
-                           cs_real_t  **rugdyn,
-                           cs_real_t  **rugthe,
-                           cs_real_t  **albedo,
-                           cs_real_t  **emissi,
-                           cs_real_t  **vegeta,
-                           cs_real_t  **c1w,
-                           cs_real_t  **c2w,
-                           cs_real_t  **r1,
-                           cs_real_t  **r2);
-
-/*----------------------------------------------------------------------------*/
-
-void
 cs_atmo_projection
 (
   cs_atmo_projection_t origin_projection,

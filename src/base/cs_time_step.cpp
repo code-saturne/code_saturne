@@ -273,61 +273,6 @@ const cs_time_step_options_t  *cs_glob_time_step_options = &_time_step_options;
 static double _c = 0; /* compensation term for Kahan sum */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-extern "C" void
-cs_f_time_step_get_pointers(int     **nt_cur,
-                            double  **t_cur);
-
-extern "C" void
-cs_f_time_step_options_get_pointers(int  **idtvar);
-
-/*============================================================================
- * Private function definitions
- *============================================================================*/
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global time step structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   nt_cur  --> pointer to cs_glob_time_step->nt_cur
- *   t_cur   --> pointer to cs_glob_time_step->t_cur
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_time_step_get_pointers(int      **nt_cur,
-                            double   **t_cur)
-{
-  *nt_cur = &(_time_step.nt_cur);
-  *t_cur = &(_time_step.t_cur);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global time step structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   idtvar --> pointer to cs_glob_time_step_options->idtvar
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_time_step_options_get_pointers(int  **idtvar)
-{
-  *idtvar = reinterpret_cast<int *>(&(_time_step_options.idtvar));
-}
-
-/*=============================================================================
  * Private function definitions
  *============================================================================*/
 

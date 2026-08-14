@@ -151,13 +151,6 @@
  * Public function prototypes
  *============================================================================*/
 
-/* Initialize Fortran base common block values */
-
-#if defined(HAVE_FORTRAN)
-extern "C" void
-cs_f_init(int  irgpar);  /* MPI Rank in parallel, -1 otherwise */
-#endif
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -312,10 +305,6 @@ _run(void)
 
   if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
 
-#if defined(HAVE_FORTRAN)
-    cs_f_init(cs_glob_rank_id);
-#endif
-
     cs_setup();
 
     if (cs_parameters_need_extended_neighborhood())
@@ -464,10 +453,6 @@ _run(void)
       cs_matrix_initialize();
 
       cs_restart_update_mesh_checkpoint();
-
-      /* Update Fortran mesh sizes and quantities */
-
-      cs_preprocess_mesh_update_fortran();
 
       /* Choose between standard and user solver */
 

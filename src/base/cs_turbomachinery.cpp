@@ -1148,10 +1148,6 @@ _update_mesh(bool     restart_mode,
   cs_mesh_coherency_check();
 #endif
 
-  /* Update Fortran mesh sizes and quantities */
-
-  cs_preprocess_mesh_update_fortran();
-
   /* Update mapping for accelerated devices */
 
 #if defined(HAVE_ACCEL)

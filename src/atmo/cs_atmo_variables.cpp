@@ -93,15 +93,6 @@
  * Global variables
  *============================================================================*/
 
-/*============================================================================
- * Private function definitions
- *============================================================================*/
-
-#if defined(HAVE_FORTRAN)
-extern "C" void
-cs_f_allocate_map_atmo(void);
-#endif
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Internal function -
@@ -1551,9 +1542,8 @@ cs_atmo_init_variables_1(void)
     if (cs_glob_atmo_option->meteo_profile == 1)
       cs_atmo_read_meteo_profile(0);
 
-#if defined(HAVE_FORTRAN)
-    cs_f_allocate_map_atmo();
-#endif
+    if (cs_glob_atmo_1d_rad->radiative_model_1d != 0)
+      cs_atmo_1d_rad_initialize();
 
     if (cs_glob_atmo_chemistry->model > 0) {
       cs_atmo_read_chemistry_profile(0);

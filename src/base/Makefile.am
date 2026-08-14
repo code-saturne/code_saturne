@@ -40,17 +40,6 @@ $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 AM_CXXFLAGS = $(CXXFLAGS_SYCL) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
-AM_FCFLAGS = \
-$(FCMODINCLUDE)$(top_builddir)/src \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
-#if HAVE_FORTRAN
-#  AM_FCFLAGS = \
-#  $(FCMODINCLUDE)$(top_builddir)/src \
-#  $(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
-#else
-#  AM_FCFLAGS =
-#endif
-
 AM_LDFLAGS =
 
 # Files not built through classical Automake rules need to be explicitely
@@ -422,10 +411,6 @@ cs_wall_distance.cpp \
 cs_wall_functions.cpp \
 cs_xdef_eval_at_zone.cpp
 
-if HAVE_FORTRAN
-libcsbase_a_SOURCES += iniini.f90
-endif
-
 libcsbase_a_LIBADD =
 local_libraries_add =
 
@@ -587,7 +572,6 @@ endif
 all-local: ${local_libraries_add}
 
 clean-local:
-	-rm -f *__genmod.f90 *__genmod.mod
 	@list=; for p in ${local_libraries_add}; do \
 	  if test -f $$p; then \
 	    echo "rm -f $$p"; \

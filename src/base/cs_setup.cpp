@@ -120,20 +120,6 @@
  *----------------------------------------------------------------------------*/
 
 /*============================================================================
- * External function prototypes
- *============================================================================*/
-
-/* Bindings to Fortran routines */
-
-#if defined(HAVE_FORTRAN)
-extern "C" void
-cs_f_iniini(void);
-
-extern "C" void
-cs_f_pp_models_init(void);
-#endif
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -162,15 +148,6 @@ _init_setup(void)
   /* Other mappings */
 
   cs_set_glob_turb_model(); /* set global pointer to turbulence model */
-
-  /* Initializations for some specific physical models.
-     At this stage, physical model flags may not be set yet, so only default
-     initializations and C/Fortran global model pointer mapping is done here. */
-
-#if defined(HAVE_FORTRAN)
-  cs_f_iniini();
-  cs_f_pp_models_init();
-#endif
 }
 
 /*----------------------------------------------------------------------------*/

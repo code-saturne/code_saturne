@@ -464,67 +464,8 @@ const cs_fluid_properties_t  *cs_glob_fluid_properties = &_fluid_properties;
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-extern "C" void
-cs_f_physical_constants_get_pointers(double  **gz);
-
-extern "C" void
-cs_f_fluid_properties_get_pointers(double  **p0,
-                                   double  **t0,
-                                   double  **cp0,
-                                   double  **rair,
-                                   double  **rvsra);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global physical constants structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   gz     --> pointer to cs_glob_physical_constants->gravity[2]
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_physical_constants_get_pointers(double  **gz)
-{
-  *gz = &(_physical_constants.gravity[2]);
-}
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global fluid properties structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   p0       --> pointer to cs_glob_fluid_properties->p0
- *   t0       --> pointer to cs_glob_fluid_properties->t0
- *   cp0      --> pointer to cs_glob_fluid_properties->cp0
- *   rair     --> pointer to cs_glob_fluid_properties->r_pg_cnst
- *   rvsra    --> pointer to cs_glob_fluid_properties->rvsra
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_fluid_properties_get_pointers(double  **p0,
-                                   double  **t0,
-                                   double  **cp0,
-                                   double  **rair,
-                                   double  **rvsra)
-{
-  *p0       = &(_fluid_properties.p0);
-  *t0       = &(_fluid_properties.t0);
-  *cp0      = &(_fluid_properties.cp0);
-  *rair     = &(_fluid_properties.r_pg_cnst);
-  *rvsra    = &(_fluid_properties.rvsra);
-}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
