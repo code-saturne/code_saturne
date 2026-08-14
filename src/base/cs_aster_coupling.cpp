@@ -447,6 +447,10 @@ _scatter_values_r3(cs_lnum_t         n_elts,
                    const cs_real_3_t v_in[],
                    cs_real_3_t       v_out[])
 {
+  if (n_elts < 1) {
+    return;
+  }
+
   assert(v_in != nullptr && v_out != nullptr);
   cs_dispatch_context ctx;
 
@@ -1243,7 +1247,7 @@ cs_aster_coupling_send_bstress(void)
     cs_real_t   surf       = 0.0;
 
     const cs_lnum_t *face_ids = cpl->mc_vertices->get_elt_list();
-    assert(face_ids != nullptr);
+    assert(n_faces == 0 || face_ids != nullptr);
     const cs_real_t *bfaces_surf = cs_glob_mesh_quantities->b_face_surf;
 
     for (cs_lnum_t f_id = 0; f_id < n_faces; ++f_id) {

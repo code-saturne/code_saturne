@@ -740,7 +740,7 @@ _cs_paramedmem_coupling_t::_computeGlobalNodeIds(
   }
 
   if (cs_glob_n_ranks > 1 || parent_mesh->global_vtx_num != nullptr) {
-    if (this->mesh->vtx_list != nullptr) {
+    if (this->mesh->vtx_list != nullptr || n_vtx == 0) {
       for (cs_lnum_t i = 0; i < n_vtx; i++) {
         cs_lnum_t v_id = this->mesh->vtx_list[i];
         array[i]       = parent_mesh->global_vtx_num[v_id];
@@ -753,7 +753,7 @@ _cs_paramedmem_coupling_t::_computeGlobalNodeIds(
     }
   }
   else {
-    if (this->mesh->vtx_list != nullptr) {
+    if (this->mesh->vtx_list != nullptr || n_vtx == 0) {
       for (cs_lnum_t i = 0; i < n_vtx; i++) {
         cs_lnum_t v_id = this->mesh->vtx_list[i];
         array[i]       = v_id;

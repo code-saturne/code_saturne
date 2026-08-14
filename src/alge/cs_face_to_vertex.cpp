@@ -113,11 +113,13 @@ cs_face_to_vertex_t<stride>::initialize(cs_lnum_t        n_faces,
   _list_faces = list_faces;
   _n_vtx      = n_vtx;
   _list_vtx   = list_vtx;
+  _v_w        = nullptr;
+  _v_var      = nullptr;
 
   const cs_mesh_t *m          = cs_glob_mesh;
   const cs_lnum_t  n_vertices = m->n_vertices;
 
-  if (_list_vtx == nullptr && n_vertices != _n_vtx) {
+  if (_list_vtx == nullptr && n_vertices != _n_vtx && _n_vtx > 0) {
     bft_error(__FILE__,
               __LINE__,
               0,
@@ -125,7 +127,7 @@ cs_face_to_vertex_t<stride>::initialize(cs_lnum_t        n_faces,
               __func__);
   }
 
-  if (_list_faces == nullptr && m->n_b_faces != _n_faces) {
+  if (_list_faces == nullptr && m->n_b_faces != _n_faces && _n_faces > 0) {
     bft_error(__FILE__,
               __LINE__,
               0,
