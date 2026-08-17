@@ -796,7 +796,8 @@ cs_1d_wall_thermal_export_nodal(void)
                                nullptr,
                                connect.data(),
                                nullptr);
-  fvm_nodal_set_shared_vertices(nm, coords.data());
+
+  fvm_nodal_transfer_vertices(nm, coords.data());
 
   /* In parallel, ensure correct renumbering */
   if (cs_glob_n_ranks > 1) {
