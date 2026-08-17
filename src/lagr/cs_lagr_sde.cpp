@@ -335,7 +335,6 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
   auto piil_r = piil.get_deep_copy();
   cs_array_2d<cs_real_t> taup_r(n_phases, 3);
 
-
   /* Integrate SDE's over particles
    * Note: new particles will be integrated at the next time step, otherwise
    * positions might be overwritten */
@@ -426,7 +425,6 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
       old_part_vel_seen_r(phase_id, i) = old_part_vel_seen[phase_id * 3 + i];
       fluid_vel_r(phase_id, i) = loc_fluid_vel(phase_id, i);
     }
-
 
     for (int i = 0; i < 3; i ++) {
       taup_r(phase_id, i) = taup(phase_id);
@@ -2251,6 +2249,16 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
                          - 2.0 * aux4 * tlp * cs_math_pow2(taup) * (1.0 - aux1 * aux2);
       omega2 *= aux8;
 
+      cs_real_t aux9  = 0.5 * tlp * (1.0 - aux2 * aux2);
+      cs_real_t aux10 = 0.5 * taup * (1.0 - aux1 * aux1);
+      cs_real_t aux11 = taup * tlp * (1.0 - aux1 * aux2) / (taup + tlp);
+      cs_real_t grga2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
+      cs_real_t gagam = (aux9 - aux11) * (aux8 / aux3);
+      cs_real_t gaome = (  (tlp - taup) * (aux5 - aa)
+                         - tlp * aux9
+                         - taup * aux10
+                         + (tlp + taup) * aux11) * aux8;
+
       cs_real_t  p11, p21, p22, p31, p32, p33;
 
       if (cs::abs(gama2) >cs_math_epzero) {
@@ -2275,16 +2283,6 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
       cs_real_t ter3f = p11 * vagaus[0][i0];
 
       /* --> Integral for particles velocity */
-
-      cs_real_t aux9  = 0.5 * tlp * (1.0 - aux2 * aux2);
-      cs_real_t aux10 = 0.5 * taup * (1.0 - aux1 * aux1);
-      cs_real_t aux11 = taup * tlp * (1.0 - aux1 * aux2) / (taup + tlp);
-      cs_real_t grga2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
-      cs_real_t gagam = (aux9 - aux11) * (aux8 / aux3);
-      cs_real_t gaome = (  (tlp - taup) * (aux5 - aa)
-                         - tlp * aux9
-                         - taup * aux10
-                         + (tlp + taup) * aux11) * aux8;
 
       if (p11 > cs_math_epzero)
         p31 = gagam / p11;
@@ -3416,6 +3414,21 @@ _sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
                        * (1.0 - aux1 * aux2);
         omega2 = aux8 * omega2;
 
+        /* --> integral for the particles velocity  */
+        aux9  = 0.5 * tlag(phase_id, id) * (1.0 - aux2 * aux2);
+        aux10 = 0.5 * taup[phase_id] * (1.0 - aux1 * aux1);
+        aux11 =   taup[phase_id] * tlag(phase_id, id)
+                * (1.0 - aux1 * aux2)
+                / (taup[phase_id] + tlag(phase_id, id));
+
+        grga2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
+        gagam = (aux9 - aux11) * (aux8 / aux3);
+        gaome = ( (tlag(phase_id, id) - taup[phase_id]) * (aux5 - aa)
+                  - tlag(phase_id, id) * aux9
+                  - taup[phase_id] * aux10
+                  + (tlag(phase_id, id) + taup[phase_id]) * aux11)
+                * aux8;
+
         if (cs::abs(gama2) > cs_math_epzero) {
 
           p21 = omegam / sqrt(gama2);
@@ -3435,21 +3448,6 @@ _sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
         /* --> integral for the flow-seen velocity  */
         p11   = sqrt(gama2 * aux6);
         ter3f = p11 * vagaus(0, id);
-
-        /* --> integral for the particles velocity  */
-        aux9  = 0.5 * tlag(phase_id, id) * (1.0 - aux2 * aux2);
-        aux10 = 0.5 * taup[phase_id] * (1.0 - aux1 * aux1);
-        aux11 =   taup[phase_id] * tlag(phase_id, id)
-                * (1.0 - aux1 * aux2)
-                / (taup[phase_id] + tlag(phase_id, id));
-
-        grga2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
-        gagam = (aux9 - aux11) * (aux8 / aux3);
-        gaome = ( (tlag(phase_id, id) - taup[phase_id]) * (aux5 - aa)
-                  - tlag(phase_id, id) * aux9
-                  - taup[phase_id] * aux10
-                  + (tlag(phase_id, id) + taup[phase_id]) * aux11)
-                * aux8;
 
         if (p11 > cs_math_epzero)
           p31 = gagam / p11;
