@@ -1219,7 +1219,6 @@ public:
   CS_F_HOST_DEVICE
   array()
   {
-    _owner = true;
 #if !defined(__CUDA_ARCH__) && \
     !defined(SYCL_LANGUAGE_VERSION) && \
     !defined(__HIP_DEVICE_COMPILE__)
@@ -1252,7 +1251,6 @@ public:
 #endif
   )
   :
-    _owner(true),
     _mode(alloc_mode)
   {
     /* Only usable for array */
@@ -1288,7 +1286,6 @@ public:
 #endif
   )
   :
-    _owner(true),
     _mode(alloc_mode)
   {
     _span::set_size_(dims);
@@ -1321,7 +1318,6 @@ public:
 #endif
   )
   :
-    _owner(true),
     _mode(alloc_mode)
   {
     /* Only usable for array */
@@ -1360,7 +1356,6 @@ public:
 #endif
   )
   :
-    _owner(true),
     _mode(alloc_mode)
   {
     /* Only usable for array */
@@ -1400,7 +1395,6 @@ public:
 #endif
   )
   :
-    _owner(true),
     _mode(alloc_mode)
   {
     /* Only usable for array */
@@ -2306,7 +2300,7 @@ private:
    * Private members
    *==========================================================================*/
 
-  bool            _owner;
+  bool            _owner {true};
   cs_alloc_mode_t _mode;
 
 };

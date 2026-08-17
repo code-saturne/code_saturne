@@ -85,11 +85,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  mdspan():
-    _extent{0},
-    _offset{0},
-    _size(0),
-    _data(nullptr)
+  mdspan()
   {}
 
   /*--------------------------------------------------------------------------*/
@@ -1411,10 +1407,10 @@ protected:
    * Private members
    *==========================================================================*/
 
-  cs_lnum_t   _extent[N];
-  cs_lnum_t   _offset[N];
-  cs_lnum_t   _size;
-  mutable T*  _data;
+  cs_lnum_t   _extent[N] {0};
+  cs_lnum_t   _offset[N] {0};
+  cs_lnum_t   _size {0};
+  mutable T*  _data {nullptr};
 
 };
 
