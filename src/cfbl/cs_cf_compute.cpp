@@ -910,7 +910,7 @@ cs_cf_convective_mass_flux(int  iterns)
     cs_real_t &volfl = ivolfl[f_id];
 
     wflmas[f_id] = (signbit(volfl)) ?
-      crom[c_id2] * volfl : crom[c_id1] * volfl;
+      -crom[c_id2] * volfl : -crom[c_id1] * volfl;
   });
 
   /* Mass flux at boundary faces
@@ -1001,6 +1001,7 @@ cs_cf_convective_mass_flux(int  iterns)
 
     ctx.wait();
     cs_parall_sum(1, CS_DOUBLE, &sclnor);
+    sclnor = sqrt(sclnor);
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n Pressure: explicit balance = %14.5e\n"),
