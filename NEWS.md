@@ -3,6 +3,8 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix memory leak in 1D thermal postprocessing function
+
 - Gas combustion: fix possible memory corruption when n_gas_species > 1.
 
 - Fix error in CS_SLES_PCR3 (3 layer conjugate residual) solver.
