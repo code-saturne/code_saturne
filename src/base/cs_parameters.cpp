@@ -1265,8 +1265,9 @@ cs_parameters_define_auxiliary_fields(void)
     const auto *fields = frm->get_fields("Thermal", "has_kinetic_st");
     if (fields != nullptr) {
       for (const auto &rule : *fields) {
-        /* has_previous : true for kinetic_energy_thermal_st */
-        bool has_prev = (rule.name == "kinetic_energy_thermal_st");
+        bool has_prev =    (rule.name == "kinetic_energy_thermal_st")
+                        || (rule.name == "inner_face_velocity")
+                        || (rule.name == "boundary_face_velocity");
         create_from_rule(rule, has_prev);
       }
     }
