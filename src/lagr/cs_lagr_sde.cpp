@@ -3100,10 +3100,10 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
               }
               else if (itreated == 0) {
                 /* Duplication of the particle */
-                *n_new_particles = *n_new_particles + 1;
                 cs_lnum_t new_p_id = p_set.n_particles + *n_new_particles;
+                *n_new_particles = *n_new_particles + 1;
                 p_set.resize(p_set.n_particles + *n_new_particles);
-                cs_lagr_part_copy(p_set.n_particles + *n_new_particles, p_id);
+                cs_lagr_part_copy(new_p_id, p_id);
 
                 /* We split both particles:
                 * Part p_id stays while the new one starts rolling */
