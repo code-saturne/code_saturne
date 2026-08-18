@@ -972,10 +972,23 @@ cs_field_find_or_create(const char   *name,
 
   if (f != nullptr) {
 
-    if (   type_flag != f->type || location_id != f->location_id
-        || dim != f->dim) {
+    if (location_id != f->location_id || dim != f->dim) {
       bft_error(__FILE__, __LINE__, 0,
                 _("Mismatch in field definitions:\n"
+                  "  name:        \"%s\"\n"
+                  "  type_flag:   %d\n"
+                  "  location_id: %d\n"
+                  "  dimension:   %d\n\n"
+                  "A previous definition for that has attributes:\n"
+                  "  id:          %d\n"
+                  "  type_flag:   %d\n"
+                  "  location_id: %d\n"
+                  "  dimension:   %d\n\n"),
+                name, type_flag, location_id, dim,
+                f->id, f->type, f->location_id, f->dim);
+    }
+    else if (type_flag != f->type) {
+      bft_printf(_("Mismatch in field definitions:\n"
                   "  name:        \"%s\"\n"
                   "  type_flag:   %d\n"
                   "  location_id: %d\n"
