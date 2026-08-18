@@ -972,23 +972,27 @@ cs_field_find_or_create(const char   *name,
 
   if (f != nullptr) {
 
-    if (location_id != f->location_id || dim != f->dim) {
+    bool type_mismatch = false;
+    int type_mask =   CS_FIELD_VARIABLE | CS_FIELD_PROPERTY
+                    | CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR
+                    | CS_FIELD_USER | CS_FIELD_CDO;
+    if ((f->type & type_mask) != (type_flag & type_mask))
+      type_mismatch = true;
+
+    /* Keep most informative (old or new) info relative to
+       intensive/extensive aspect. */
+
+    int ie_mask = CS_FIELD_INTENSIVE | CS_FIELD_EXTENSIVE;
+    int ie_flag = f->type & ie_mask;
+    {
+      int new_ie_flag = type_flag & ie_mask;
+      if (ie_flag*new_ie_flag != 0 && ie_flag != new_ie_flag)
+        type_mismatch = true;
+    }
+
+    if (type_mismatch || location_id != f->location_id || dim != f->dim) {
       bft_error(__FILE__, __LINE__, 0,
                 _("Mismatch in field definitions:\n"
-                  "  name:        \"%s\"\n"
-                  "  type_flag:   %d\n"
-                  "  location_id: %d\n"
-                  "  dimension:   %d\n\n"
-                  "A previous definition for that has attributes:\n"
-                  "  id:          %d\n"
-                  "  type_flag:   %d\n"
-                  "  location_id: %d\n"
-                  "  dimension:   %d\n\n"),
-                name, type_flag, location_id, dim,
-                f->id, f->type, f->location_id, f->dim);
-    }
-    else if (type_flag != f->type) {
-      bft_printf(_("Mismatch in field definitions:\n"
                   "  name:        \"%s\"\n"
                   "  type_flag:   %d\n"
                   "  location_id: %d\n"
