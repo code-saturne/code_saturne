@@ -68,6 +68,7 @@
 #include "base/cs_base.h"
 #include "base/cs_halo.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_numbering.h"
 #include "base/cs_timer.h"
 
@@ -796,7 +797,7 @@ _assembler_values_add_g(void             *matrix_p,
       PetscInt r_g_id = row_g_id[i];
       if (   r_g_id >= l_b
           && r_g_id < u_b
-          && cs::abs(vals[i]) > 0.0) {
+          && cs::abs(vals[i]) > cs_math_epzero) {
         PetscInt idxm[] = {r_g_id};
         PetscInt idxn[] = {(PetscInt)col_g_id[i]};
         PetscScalar v[] = {vals[i]};
@@ -1629,6 +1630,64 @@ cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
 
 #endif
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function pointer for adding one row to a petsc matrix.
+ *
+ * \warning The matrix pointer must point to valid data when the selection
+ *          function is called, so the life cycle of the data pointed to should
+ *          be at least as long as that of the assembler values structure.
+ *
+ * \param[in]      n_cols      number of column values to add
+ * \param[in]      row_g_id    row global id
+ * \param[in]      col_g_ids   column global id list with n_cols elements
+ * \param[in]      vals        value list with n_cols elements to add
+ * \param[in, out] matrix_p    untyped pointer to matrix description structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_petsc_add_scal_row_values(const cs_lnum_t                n_cols,
+                                    const cs_gnum_t                row_g_id,
+                                    const cs_gnum_t               *col_g_ids,
+                                    const cs_real_t               *vals,
+                                    void                          *matrix_p)
+{
+  cs_matrix_t *matrix = (cs_matrix_t *)matrix_p;
+  auto mc = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
+
+  Mat hm = mc->hm;
+  assert(hm != nullptr);
+
+  const cs_lnum_t max_chunck_size = 32;
+
+  PetscInt idxm[1] = {0};
+  PetscInt idxn[max_chunck_size] = {0};
+  PetscScalar v[max_chunck_size] = {0.};
+
+  for (PetscInt s_id = 0; s_id < n_cols; s_id += max_chunck_size) {
+
+    PetscInt n_group = max_chunck_size;
+    if (s_id + n_group > n_cols)
+      n_group = n_cols - s_id;
+
+    idxm[0] = row_g_id;
+
+    PetscInt l = 0;
+    for (int j = 0; j < n_group; j++) {
+      if (cs::abs(vals[s_id + j]) > cs_math_epzero) {
+        idxn[l] = col_g_ids[s_id + j];
+        v[l] = vals[s_id + j];
+        l++;
+      }
+    }
+#   pragma omp critical
+    {
+      MatSetValues(hm, 1, idxm, l, idxn, v, ADD_VALUES);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

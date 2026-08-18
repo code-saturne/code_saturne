@@ -204,23 +204,13 @@ static inline cs_cdo_assembly_func_t *
 _set_petsc_eblock33_assembly_func(void)
 {
 #if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {  /* Parallel */
+  if (cs_glob_n_ranks > 1)   /* Parallel */
+    return cs_cdo_assembly_eblock33_petsc_matrix_mpi;
 
-    if (cs_glob_n_threads < 2) /* Without OpenMP */
-      return cs_cdo_assembly_eblock33_petsc_matrix_mpis;
-    else                      /* With OpenMP */
-      return cs_cdo_assembly_eblock33_petsc_matrix_mpit;
-
-  }
 #endif /* defined(HAVE_MPI) */
 
-  if (cs_glob_n_ranks <= 1) {  /* Sequential */
-
-    if (cs_glob_n_threads < 2) /* Without OpenMP */
-      return cs_cdo_assembly_eblock33_petsc_matrix_seqs;
-    else                      /* With OpenMP */
-      return cs_cdo_assembly_eblock33_petsc_matrix_seqt;
-  }
+  if (cs_glob_n_ranks <= 1)   /* Sequential */
+    return cs_cdo_assembly_eblock33_petsc_matrix_seq;
 
   return nullptr; /* Case not handled */
 }
