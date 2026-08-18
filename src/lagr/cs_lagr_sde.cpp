@@ -2318,7 +2318,9 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
 
   if (cs_glob_lagr_model->resuspension == 1) {
 
-    cs_real_t p_height = p_set.attr_real(p_id, CS_LAGR_HEIGHT);
+    cs_real_t p_height = p_diam;
+    if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+      p_height = p_set.attr_real(p_id, CS_LAGR_HEIGHT);
 
     cs_lnum_t iresusp = 0;
 
@@ -2394,9 +2396,12 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
         }
 
         /* Case with consolidation */
+        cs_real_t p_consol_h = 0.0;
+        if (p_set.p_am->count[0][CS_LAGR_CONSOL_HEIGHT] > 0)
+          p_consol_h = p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT);
+
         if (    cs_glob_lagr_consolidation_model->iconsol > 0
-             &&   p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT)
-                > 0.01 * diam_mean) {
+             && p_consol_h > 0.01 * diam_mean) {
 
           p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE)
             = cs_glob_lagr_consolidation_model->force_consol;
@@ -2468,7 +2473,8 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
             if (cs::abs(p_height-p_diam)/p_diam > 1.0e-6) {
               cs_real_t d_resusp = cbrt(0.75 * cs_math_pow2(p_diam) * p_height);
               p_set.attr_real(p_id, CS_LAGR_DIAMETER) = d_resusp;
-              p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
+              if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+                p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
             }
           }
 
@@ -2762,14 +2768,15 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
         if (   cs_glob_lagr_consolidation_model->iconsol > 0
             && p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
 
-          const cs_real_t consol_height
-            = p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT);
+          cs_real_t consol_height = 0.0;
+          if (p_set.p_am->count[0][CS_LAGR_CONSOL_HEIGHT] > 0)
+            consol_height = p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT);
 
           if (consol_height > 0.01 * diam_mean) {
             adhes_force = cs_glob_lagr_consolidation_model->force_consol +
-              (adhes_force - cs_glob_lagr_consolidation_model->force_consol) * 0.5
-            * (1.0 + tanh((mean_depo_height - consol_height)
-                          /(0.1 * consol_height)));
+              (adhes_force - cs_glob_lagr_consolidation_model->force_consol)
+              * 0.5 * (1.0 + tanh((mean_depo_height - consol_height)
+                                  /(0.1 * consol_height)));
           }
           else {
             adhes_force *= ncont_pp;
@@ -2873,7 +2880,8 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
           if (cs::abs(p_height-p_diam)/p_diam > 1.0e-6) {
             cs_real_t d_resusp = cbrt(0.75 * cs_math_pow2(p_diam) * p_height);
             p_set.attr_real(p_id, CS_LAGR_DIAMETER) = d_resusp;
-            p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
+            if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+              p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
           }
 
           if (p_set.p_am->count[0][CS_LAGR_N_LARGE_ASPERITIES] > 0)
@@ -2987,24 +2995,29 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
               cs_real_t clust_consol_height;
               cs_real_t height_reent;
               cs_real_t random;
+
+              cs_real_t consol_h = 0.0;
+              if (p_set.p_am->count[0][CS_LAGR_CONSOL_HEIGHT] > 0)
+                consol_h = p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT);
+
               /* Sample of a possible break line */
-              if (  p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT)
-                  < diam_mean) {
+              if (consol_h < diam_mean) {
                 cs_random_uniform(1, &random);
                 clust_consol_height = 0.0;
               }
               else {
-                cs_real_t param = 1.0 - ((drag_tor_norm + lift_tor_norm
-                                          - grav_tor_norm) /p_diam
-                                          - 2.0 * adhes_force ) /
-                  (cs_glob_lagr_consolidation_model->force_consol - adhes_force);
+                cs_real_t param
+                  = 1.0 - ((drag_tor_norm + lift_tor_norm - grav_tor_norm)
+                           / p_diam - 2.0 * adhes_force)
+                  / (cs_glob_lagr_consolidation_model->force_consol
+                     - adhes_force);
                 if (param >= 1.)
                   clust_consol_height = p_height; // Very high consolidation
                 else if (param <= -1.)
                   clust_consol_height = 0.; // Very high hydrodynamic forces
                 else
                   clust_consol_height =
-                    p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT)
+                    consol_h
                     * (1 + cs_glob_lagr_consolidation_model->slope_consol
                        * 0.5 * log((1.0+param)/(1.0-param) ) );
               }
@@ -3050,9 +3063,11 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
                   p_stat_w;
 
                 itreated = 1;
-                cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
+                cs_real_t d_resusp
+                  = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
                 p_set.attr_real(p_id, CS_LAGR_DIAMETER) = d_resusp;
-                p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
+                if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+                  p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
 
                 /* Treatment of cluster motion */
                 cs_real_t iner_tor = (7.0 / 5.0) * p_mass * cs_math_pow2((p_diam * 0.5));
@@ -3099,9 +3114,11 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
                   * p_set.attr_real(new_p_id, CS_LAGR_CLUSTER_NB_PART)
                   / p_set.attr_real(p_id, CS_LAGR_CLUSTER_NB_PART);
                 p_set.attr_real(new_p_id, CS_LAGR_MASS) = m_resusp;
-                cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
+                cs_real_t d_resusp
+                  = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
                 p_set.attr_real(new_p_id, CS_LAGR_DIAMETER) = d_resusp;
-                p_set.attr_real(new_p_id, CS_LAGR_HEIGHT) = d_resusp;
+                if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+                  p_set.attr_real(new_p_id, CS_LAGR_HEIGHT) = d_resusp;
 
                 p_set.unset_flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
                 p_set.set_flag(p_id, CS_LAGR_PART_DEPOSITED);
@@ -3112,8 +3129,10 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
                 }
 
                 /* Update of deposit height */
-                cs_real_t d_stay = p_set.attr_real(p_id, CS_LAGR_HEIGHT);
-                p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_stay;
+                if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0) {
+                  cs_real_t d_stay = p_set.attr_real(p_id, CS_LAGR_HEIGHT);
+                  p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_stay;
+                }
 
                 bound_stat[n_f_id + nfabor * bi->ihdepm]
                   -= cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
@@ -3141,7 +3160,8 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
                 p_set.attr_real(new_p_id, CS_LAGR_ADHESION_TORQUE)
                   = adhes_force * d_resusp * 0.5;
                 p_set.attr_real(new_p_id, CS_LAGR_DEPO_TIME) = 0.0;
-                p_set.attr_real(new_p_id, CS_LAGR_CONSOL_HEIGHT) = 0.0;
+                if (p_set.p_am->count[0][CS_LAGR_CONSOL_HEIGHT] > 0)
+                  p_set.attr_real(new_p_id, CS_LAGR_CONSOL_HEIGHT) = 0.0;
 
                 itreated = 1;
               }

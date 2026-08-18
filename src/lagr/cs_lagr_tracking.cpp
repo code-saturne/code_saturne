@@ -1571,8 +1571,9 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
                    * n_b_faces + face_id] += particle_stat_weight;
         *deposit_diameter_sum += particle_diameter;
 
-        cs_real_t particle_height
-          = p_set.attr_real(p_id, CS_LAGR_HEIGHT);
+        cs_real_t particle_height = particle_diameter;
+        if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+          particle_height = p_set.attr_real(p_id, CS_LAGR_HEIGHT);
 
         cs_real_t depositing_radius = particle_diameter * 0.5;
 
@@ -1698,8 +1699,9 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
           cs_real_t cur_part_diameter
             = p_set.attr_real( cur_p_id, CS_LAGR_DIAMETER);
 
-          cs_real_t cur_part_height
-            = p_set.attr_real( cur_p_id, CS_LAGR_HEIGHT);
+          cs_real_t cur_part_height = cur_part_diameter;
+          if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+            cur_part_height = p_set.attr_real(cur_p_id, CS_LAGR_HEIGHT);
 
           cs_real_t cur_part_cluster_nb_part
             = p_set.attr_real( cur_p_id, CS_LAGR_CLUSTER_NB_PART);
@@ -1714,11 +1716,13 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
                                  * pow(cur_part_diameter, 4);
 
           if (*surface_coverage >= limit) {
-            p_set.attr_real(cur_p_id, CS_LAGR_HEIGHT) = cur_part_height
-                                       +  (  pow(particle_diameter, 3)
-                                           / cs_math_sq(cur_part_diameter)
-                                           * particle_stat_weight
-                                          / cur_part_stat_weight);
+            cur_part_height = cur_part_height
+                               +  (  pow(particle_diameter, 3)
+                                   / cs_math_sq(cur_part_diameter)
+                                   * particle_stat_weight
+                                  / cur_part_stat_weight);
+            if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+              p_set.attr_real(cur_p_id, CS_LAGR_HEIGHT) = cur_part_height;
           }
           else {
             *surface_coverage -= (pi * pow(cur_part_diameter,2)/4.)
@@ -1736,7 +1740,9 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
             *surface_coverage +=   (pi * pow(cur_part_diameter,2)/4.)
                                  * cur_part_stat_weight / face_area;
 
-            p_set.attr_real(cur_p_id, CS_LAGR_HEIGHT) = cur_part_diameter;
+            cur_part_height = cur_part_diameter;
+            if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+              p_set.attr_real(cur_p_id, CS_LAGR_HEIGHT) = cur_part_diameter;
           }
 
           p_set.attr_real(cur_p_id, CS_LAGR_MASS)
@@ -1755,8 +1761,10 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
           p_set.n_part_dep += 1;
           p_set.weight_dep += particle_stat_weight;
 
-          cur_part_height   = p_set.attr_real( cur_p_id,
-                                                         CS_LAGR_HEIGHT);
+          if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+            cur_part_height = p_set.attr_real(cur_p_id, CS_LAGR_HEIGHT);
+          else
+            cur_part_height = cur_part_diameter;
 
           *deposit_height_mean +=   cur_part_height*pi*pow(cur_part_diameter,2)
                                   * cur_part_stat_weight / (4.0*face_area);

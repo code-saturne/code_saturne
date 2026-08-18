@@ -2466,14 +2466,23 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
           cs_real_t p_depo_time
             = p_set.attr_real(npt, CS_LAGR_DEPO_TIME);
-          cs_real_t p_consol_height
-            = cs::min(p_set.attr_real(npt, CS_LAGR_HEIGHT),
-                      cs_glob_lagr_consolidation_model->rate_consol * p_depo_time);
-          p_set.attr_real(npt, CS_LAGR_CONSOL_HEIGHT) = p_consol_height;
-          p_set.attr_real(npt, CS_LAGR_DEPO_TIME) = p_depo_time + cs_glob_lagr_time_step->dtp;
+          if (p_set.p_am->count[0][CS_LAGR_CONSOL_HEIGHT] > 0) {
+            cs_real_t p_height = 0.0;
+            if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+              p_height = p_set.attr_real(npt, CS_LAGR_HEIGHT);
+            cs_real_t p_consol_height
+              = cs::min(p_height,
+                        cs_glob_lagr_consolidation_model->rate_consol
+                        * p_depo_time);
+            p_set.attr_real(npt, CS_LAGR_CONSOL_HEIGHT) = p_consol_height;
+          }
+          p_set.attr_real(npt, CS_LAGR_DEPO_TIME)
+            = p_depo_time + cs_glob_lagr_time_step->dtp;
         }
         else {
-          p_set.attr_real(npt, CS_LAGR_CONSOL_HEIGHT) = 0.0;
+          if (p_set.p_am->count[0][CS_LAGR_CONSOL_HEIGHT] > 0) {
+            p_set.attr_real(npt, CS_LAGR_CONSOL_HEIGHT) = 0.0;
+          }
         }
 
       }
@@ -2506,9 +2515,14 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
           bound_stat[lag_bdi->iclogt * n_b_faces + face_id]
             += p_set.attr_real(npt, CS_LAGR_DEPO_TIME);
+
+          cs_real_t p_consol_h = 0.0;
+          if (p_set.p_am->count[0][CS_LAGR_CONSOL_HEIGHT] > 0)
+            p_consol_h = p_set.attr_real(npt, CS_LAGR_CONSOL_HEIGHT);
+
           bound_stat[lag_bdi->iclogh * n_b_faces + face_id]
-            +=  p_set.attr_real(npt, CS_LAGR_CONSOL_HEIGHT)
-                * cs_math_pi * cs_math_sq(p_diam) * 0.25 / b_face_surf[face_id];
+            +=  p_consol_h * cs_math_pi * cs_math_sq(p_diam) * 0.25
+                / b_face_surf[face_id];
 
         }
 

@@ -1197,7 +1197,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     cs_real_t mporos = cs_glob_lagr_clogging_model->mporos;
     if (cs_glob_lagr_model->clogging == 1) {
       p_set.attr_real(p_id, CS_LAGR_DIAMETER) = diam/(1.-mporos);
-      p_set.attr_real(p_id, CS_LAGR_HEIGHT) = diam;
+      if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
+        p_set.attr_real(p_id, CS_LAGR_HEIGHT) = diam;
     }
 
     /* Other variables (mass, ...) depending on physical model */
@@ -1486,7 +1487,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
     if (cs_glob_lagr_model->clogging == 1) {
       p_set.attr_real(p_id, CS_LAGR_DEPO_TIME) =  0.0;
-      p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT) =  0.0;
+      if (p_set.p_am->count[0][CS_LAGR_CONSOL_HEIGHT] > 0)
+        p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT) =  0.0;
       p_set.attr_real(p_id, CS_LAGR_CLUSTER_NB_PART) =  1.0;
     }
 
