@@ -66,8 +66,11 @@ layout {
  */
 /*----------------------------------------------------------------------------*/
 
-template<class T, int N, layout L = layout::right>
+template<class T, int N, layout L>
 class mdspan {
+
+static_assert(std::is_scalar_v<T> && !std::is_pointer_v<T>,
+              "Base type must be a scalar type and not array/pointer");
 
 /*=============================================================================
  * Public methods

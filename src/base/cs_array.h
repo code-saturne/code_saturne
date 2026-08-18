@@ -1114,7 +1114,7 @@ namespace cs {
  */
 /*----------------------------------------------------------------------------*/
 
-template<class T, int N = 1, layout L = layout::right>
+template<class T, int N, layout L>
 class array : public mdspan<T, N, L> {
 
 private:
