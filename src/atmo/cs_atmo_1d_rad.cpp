@@ -1087,12 +1087,12 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
   cs_array<cs_real_t> ddfsh2o(kmx + 1);
   cs_array<cs_real_t> dddfsh2o(kmx + 1);
 
-  cs::array<cs_real_t> gco3(kmx + 1);
-  cs::array<cs_real_t> gch2o(kmx + 1);
-  cs::array<cs_real_t> pic_o3(kmx + 1);
-  cs::array<cs_real_t> tauao3(kmx + 1);
-  cs::array<cs_real_t> tauah2o(kmx + 1);
-  cs::array<cs_real_t> pic_h2o(kmx + 1);
+  cs_array<cs_real_t> gco3(kmx + 1);
+  cs_array<cs_real_t> gch2o(kmx + 1);
+  cs_array<cs_real_t> pic_o3(kmx + 1);
+  cs_array<cs_real_t> tauao3(kmx + 1);
+  cs_array<cs_real_t> tauah2o(kmx + 1);
+  cs_array<cs_real_t> pic_h2o(kmx + 1);
 
   /* local initializations
      ===================== */
