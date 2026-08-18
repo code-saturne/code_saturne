@@ -3064,7 +3064,7 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
 
                 itreated = 1;
                 cs_real_t d_resusp
-                  = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
+                  = cbrt(0.75 * cs_math_pow2(p_diam) * p_height);
                 p_set.attr_real(p_id, CS_LAGR_DIAMETER) = d_resusp;
                 if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
                   p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
@@ -3115,7 +3115,7 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
                   / p_set.attr_real(p_id, CS_LAGR_CLUSTER_NB_PART);
                 p_set.attr_real(new_p_id, CS_LAGR_MASS) = m_resusp;
                 cs_real_t d_resusp
-                  = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
+                  = cbrt(0.75 * cs_math_pow2(p_diam) * p_height);
                 p_set.attr_real(new_p_id, CS_LAGR_DIAMETER) = d_resusp;
                 if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
                   p_set.attr_real(new_p_id, CS_LAGR_HEIGHT) = d_resusp;

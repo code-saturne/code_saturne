@@ -165,7 +165,6 @@ cs_lagr_car(int                         iprev,
   cs_real_t cl     = 1.0 / (0.5 + 0.75 * c0);
   cs_real_t cb     = 0.8;
   cs_real_t d6spi  = 6.0 / cs_math_pi;
-  cs_real_t d1s3   = 1.0 / 3.0;
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
@@ -256,7 +255,7 @@ cs_lagr_car(int                         iprev,
     }
 
     cs_real_t prt  = mu_f / diff_f;
-    cs_real_t fnus = 2.0 + 0.55 * pow (rep, 0.5) * pow (prt, (d1s3));
+    cs_real_t fnus = 2.0 + 0.55 * sqrt(rep) * cbrt(prt);
 
     cs_real_t p_cp = p_set.attr_real(p_id, CS_LAGR_CP);
 

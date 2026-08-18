@@ -1125,9 +1125,9 @@ _internal_treatment(cs_lagr_particle_set_t  &p_set,
   for (int k = 0; k < 3; k++)
     disp[k] = next_location[k] - p_info->start_coords[k];
 
-  assert(! (fabs(disp[0]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15 &&
-            fabs(disp[1]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15 &&
-            fabs(disp[2]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15));
+  assert(! (fabs(disp[0]/cbrt(cell_vol[cell_id])) < 1e-15 &&
+            fabs(disp[1]/cbrt(cell_vol[cell_id])) < 1e-15 &&
+            fabs(disp[2]/cbrt(cell_vol[cell_id])) < 1e-15));
 
   for (int k = 0; k < 3; k++)
     intersect_pt[k] = disp[k] * rel_disp_intersect + p_info->start_coords[k];
@@ -1351,9 +1351,9 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   CS_NO_WARN_IF_UNUSED(cell_vol);
 
-  assert(! (fabs(disp[0]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15 &&
-            fabs(disp[1]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15 &&
-            fabs(disp[2]/pow(cell_vol[cell_id],1.0/3.0)) < 1e-15));
+  assert(! (fabs(disp[0]/cbrt(cell_vol[cell_id])) < 1e-15 &&
+            fabs(disp[1]/cbrt(cell_vol[cell_id])) < 1e-15 &&
+            fabs(disp[2]/cbrt(cell_vol[cell_id])) < 1e-15));
 
   for (int k = 0; k < 3; k++)
     intersect_pt[k] = disp[k] * rel_disp_intersect + p_info->start_coords[k];

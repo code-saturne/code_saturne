@@ -611,7 +611,7 @@ cs_lagr_adh(cs_lnum_t   p_id,
      * which is close to our approach  */
 
     cs_real_t omsurf = lag_pc->cstham / (24.0 * cs_math_pi * pow (_d_cut_off, 2));
-    dismom = pow ((4.0 * cs_math_pi * omsurf * (pow (rpart, 2.0)) / modyeq), (1.0 / 3.0));
+    dismom = cbrt(4.0 * cs_math_pi * omsurf * pow(rpart, 2.0) / modyeq);
     /* dismom = (12.0d0 * cs_math_pi * omsurf * (rpart**2)/modyeq)**(1.0d0/3.0d0) */
 
   }
