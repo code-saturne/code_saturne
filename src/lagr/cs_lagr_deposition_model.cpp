@@ -43,6 +43,7 @@
 #include <ctype.h>
 #include <float.h>
 #include <assert.h>
+#include <cmath>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -748,11 +749,12 @@ _dep_inner_zone_diffusion(cs_real_t *dx,
   cs_real_t the2   = cs_math_pow2(thet);
   cs_real_t etl    = exp (-dtstl);
   cs_real_t etp    = exp (-dtstp);
-  cs_real_t l1l    = 1.0 - etl;
-  cs_real_t l1p    = 1.0 - etp;
-  cs_real_t l2l    = 1.0 - etl * etl;
-  cs_real_t l2p    = 1.0 - etp * etp;
-  cs_real_t l3     = 1.0 - etl * etp;
+  // Use of expm1 to improve accuracy
+  cs_real_t l1l    = - expm1(-dtstl);
+  cs_real_t l1p    = - expm1(-dtstp);
+  cs_real_t l2l    = - expm1(-2*dtstl);
+  cs_real_t l2p    = - expm1(-2*dtstp);
+  cs_real_t l3     = - expm1(-(dtstp + dtstl));
   cs_real_t kaux2  = cs_math_pow2(kaux);
   cs_real_t k2the2 = kaux2 * the2;
   cs_real_t aa1    = taup * l1p;
