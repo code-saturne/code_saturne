@@ -884,6 +884,19 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("source_term_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("slope_test_upwind_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("clipping_id", -1, 0);
+
+  /* indicates the clipping method used for the field.
+   * - For standard fields (Rij, omega, nusa, phi, alp_bl), setting this
+   *   key to 1 enables default standard clipping, while 0 disables it.
+   * - For k and epsilon fields in k-epsilon and v2f models:
+   *   - 0: no clipping.
+   *   - 1: clipping in absolute value (equivalent to old iclkep = 0).
+   *   - 2: coupled clipping based on physical relationships and almax
+   *        (equivalent to old iclkep = 1).
+   *   The results obtained with the method corresponding to level 2 showed in
+   *   some cases a substantial sensitivity to the values of the length scale
+   *   almax. It is therefore not recommended, and, if chosen, must be used
+   *   cautiously. */
   cs_field_define_key_int("is_clipped", -1, 0);
 
   cs_field_define_key_int("boundary_value_id", -1, 0);
@@ -1840,6 +1853,19 @@ cs_parameters_eqp_complete(void)
 
   cs_real_t *xyzp0 = fluid_props->xyzp0;
 
+  /* Setup clippings for turbulence models
+   * Some fields (Rij, Epsilon, ..) are clipped by default, but
+   * those clippings can be removed by user */
+  cs_field_t *f_turb_list[] = {
+    CS_F_(k), CS_F_(eps), CS_F_(omg), CS_F_(rij),
+    CS_F_(phi), CS_F_(f_bar), CS_F_(alp_bl), CS_F_(nusa)
+  };
+  for (cs_field_t *f_turb : f_turb_list) {
+    if (f_turb != nullptr) {
+      f_turb->set_key_int(kclipp, 1);
+    }
+  }
+
   const int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
@@ -2495,18 +2521,6 @@ cs_parameters_eqp_complete(void)
 
     CS_F_(void_f)->set_key_double(kscmin, clvfmn);
     CS_F_(void_f)->set_key_double(kscmax, clvfmx);
-  }
-
-  /* Setup clippings for turbulence models
-   * Some fields (Rij, Epsilon, ..) are clipped by default, but
-   * those clippings can be removed by user */
-
-  if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
-    CS_F_(rij)->set_key_int(kclipp, 1);
-    cs_field_t *f_epsom = (CS_F_(eps) != nullptr) ? CS_F_(eps) : CS_F_(omg);
-    if (f_epsom != nullptr) {
-      f_epsom->set_key_int(kclipp, 1);
-    }
   }
 
   /* Setup time control for dynamic variables

@@ -360,13 +360,19 @@ _clip(cs_lnum_t  n_cells)
 
   cs_lnum_t iclpnu = 0;
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    cs_real_t xnu = cvar_nusa[c_id];
-    if (xnu < 0) {
-      if (clip_nusa_id > -1)
-        cpro_nusa_clipped[c_id] = - xnu;
-      iclpnu += 1;
-      cvar_nusa[c_id] = 0;
+  const int kisclp = cs_field_key_id("is_clipped");
+  const int is_nusa_clipped = CS_F_(nusa)->get_key_int(kisclp);
+  const bool do_nusa_clipping = (is_nusa_clipped != 0);
+
+  if (do_nusa_clipping) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_real_t xnu = cvar_nusa[c_id];
+      if (xnu < 0) {
+        if (clip_nusa_id > -1)
+          cpro_nusa_clipped[c_id] = - xnu;
+        iclpnu += 1;
+        cvar_nusa[c_id] = 0;
+      }
     }
   }
 

@@ -2164,9 +2164,11 @@ cs_turbulence_ke_clip(int        phase_id,
 
   cs_gnum_t iclpke = 0;
 
-  const cs_lnum_t ke_clip_method = cs_glob_turb_rans_model->iclkep;
+  const int kisclp = cs_field_key_id("is_clipped");
+  const int is_k_clipped = f_k->get_key_int(kisclp);
+  const int is_eps_clipped = f_eps->get_key_int(kisclp);
 
-  if (eqp->verbosity >= 2 || cs_glob_turb_rans_model->iclkep == 1) {
+  if (eqp->verbosity >= 2 || is_k_clipped == 2 || is_eps_clipped == 2) {
 
     if (iclip == 1) {
 
@@ -2183,10 +2185,12 @@ cs_turbulence_ke_clip(int        phase_id,
         cs_real_t xkmin = xkm * cs_math_pow2(viscl[c_id] / crom[c_id]);
         cs_real_t xepmin = xepm * cs_math_pow3(viscl[c_id] / crom[c_id]);
         if (xk <= xkmin || xe <= xepmin) {
-          if (ke_clip_method == 1) {
+          if (is_k_clipped == 2) {
             if (clip_k_id >= 0)
               cpro_k_clipped[c_id] = xkmin - xk;
             cvar_k[c_id]  = xkmin;
+          }
+          if (is_eps_clipped == 2) {
             if (clip_e_id >= 0)
               cpro_e_clipped[c_id] = xepmin - xe;
             cvar_ep[c_id] = xepmin;
@@ -2211,10 +2215,12 @@ cs_turbulence_ke_clip(int        phase_id,
         cs_real_t xk = cvar_k[c_id];
         cs_real_t xe = cvar_ep[c_id];
         if (xk <= xkm || xe <= xepm) {
-          if (ke_clip_method == 1) {
+          if (is_k_clipped == 2) {
             cvar_k[c_id]  = xkm;
             if (clip_k_id >= 0)
               cpro_k_clipped[c_id] = xkm - xk;
+          }
+          if (is_eps_clipped == 2) {
             cvar_ep[c_id] = xepm;
             if (clip_e_id >= 0)
               cpro_e_clipped[c_id] = xepm - xe;
@@ -2245,15 +2251,15 @@ cs_turbulence_ke_clip(int        phase_id,
 
   }
 
-  /* "standard" clipping ICLKEP = 0
-   * ============================== */
+  /* "standard" clipping is_clipped = 1
+   * ================================== */
 
   struct cs_int_n<2> rd_sum;
   rd_sum.i[0] = 0;
   rd_sum.i[1] = 0;
   struct cs_reduce_sum_ni<2> reducer_sum;
 
-  if (cs_glob_turb_rans_model->iclkep == 0) {
+  if (is_k_clipped == 1 || is_eps_clipped == 1) {
 
     ctx.parallel_for_reduce
       (n_cells, rd_sum, reducer_sum, [=] CS_F_HOST_DEVICE
@@ -2263,29 +2269,33 @@ cs_turbulence_ke_clip(int        phase_id,
 
       cs_real_t xk = cvar_k[c_id];
       cs_real_t xe = cvar_ep[c_id];
-      if (fabs(xk) <= epz2) {
-        res.i[0] = 1;
-        if (clip_k_id >= 0)
-          cpro_k_clipped[c_id] = epz2 - cvar_k[c_id];
-        cvar_k[c_id] = cs::max(cvar_k[c_id],epz2);
+      if (is_k_clipped == 1) {
+        if (fabs(xk) <= epz2) {
+          res.i[0] = 1;
+          if (clip_k_id >= 0)
+            cpro_k_clipped[c_id] = epz2 - cvar_k[c_id];
+          cvar_k[c_id] = cs::max(cvar_k[c_id], epz2);
+        }
+        else if (xk <= 0.) {
+          res.i[0] = 1;
+          if (clip_k_id >= 0)
+            cpro_k_clipped[c_id] = -xk;
+          cvar_k[c_id] = -xk;
+        }
       }
-      else if(xk <= 0.) {
-        res.i[0] = 1;
-        if (clip_k_id >= 0)
-          cpro_k_clipped[c_id] = -xk;
-        cvar_k[c_id] = -xk;
-      }
-      if (fabs(xe) <= epz2) {
-        res.i[1] = 1;
-        if (clip_e_id >= 0)
-          cpro_e_clipped[c_id] = epz2 - cvar_ep[c_id];
-        cvar_ep[c_id] = cs::max(cvar_ep[c_id], epz2);
-      }
-      else if(xe <= 0.) {
-        res.i[1] = 1;
-        if (clip_e_id >= 0)
-          cpro_e_clipped[c_id] = - xe;
-        cvar_ep[c_id] = - xe;
+      if (is_eps_clipped == 1) {
+        if (fabs(xe) <= epz2) {
+          res.i[1] = 1;
+          if (clip_e_id >= 0)
+            cpro_e_clipped[c_id] = epz2 - cvar_ep[c_id];
+          cvar_ep[c_id] = cs::max(cvar_ep[c_id], epz2);
+        }
+        else if (xe <= 0.) {
+          res.i[1] = 1;
+          if (clip_e_id >= 0)
+            cpro_e_clipped[c_id] = - xe;
+          cvar_ep[c_id] = - xe;
+        }
       }
     });
 

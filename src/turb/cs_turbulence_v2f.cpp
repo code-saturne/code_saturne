@@ -120,6 +120,14 @@ _clip_v2f(cs_lnum_t  n_cells,
   auto cvar_phi = CS_F_(phi)->get_val_s();
 
   int kclipp = cs_field_key_id("clipping_id");
+  int kisclp = cs_field_key_id("is_clipped");
+
+  int is_phi_clipped = CS_F_(phi)->get_key_int(kisclp);
+  int is_alp_clipped = (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) ?
+    CS_F_(alp_bl)->get_key_int(kisclp) : -1;
+
+  bool do_phi_clipping = (is_phi_clipped != 0);
+  bool do_alp_clipping = (is_alp_clipped != 0);
 
   cs_lnum_t nclp[2] =  {0, 0};  /* Min and max clipping values respectively */
 
@@ -181,12 +189,14 @@ _clip_v2f(cs_lnum_t  n_cells,
 
   /* Clipping in absolute value for negative values */
 
-  for (cs_lnum_t i = 0; i < n_cells; i++) {
-    if (cvar_phi[i] < 0) {
-      if (cpro_phi_clipped != nullptr)
-        cpro_phi_clipped[i] = cvar_phi[i];
-      cvar_phi[i] = -cvar_phi[i];
-      nclp[0] += 1;
+  if (do_phi_clipping) {
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
+      if (cvar_phi[i] < 0) {
+        if (cpro_phi_clipped != nullptr)
+          cpro_phi_clipped[i] = cvar_phi[i];
+        cvar_phi[i] = -cvar_phi[i];
+        nclp[0] += 1;
+      }
     }
   }
 
@@ -212,18 +222,20 @@ _clip_v2f(cs_lnum_t  n_cells,
 
     nclp[0] = 0; nclp[1] = 0;
 
-    for (cs_lnum_t i = 0; i < n_cells; i++) {
-      if (cvar_al[i] < 0) {
-        if (cpro_a_clipped != nullptr)
-          cpro_a_clipped[i] = -cvar_al[i];
-        cvar_al[i] = 0;
-        nclp[0] += 1;
-      }
-      if (cvar_al[i] > 1) {
-        if (cpro_a_clipped != nullptr)
-          cpro_a_clipped[i] = 1.0 - cvar_al[i];
-        cvar_al[i] = 1.0;
-        nclp[1] += 1;
+    if (do_alp_clipping) {
+      for (cs_lnum_t i = 0; i < n_cells; i++) {
+        if (cvar_al[i] < 0) {
+          if (cpro_a_clipped != nullptr)
+            cpro_a_clipped[i] = -cvar_al[i];
+          cvar_al[i] = 0;
+          nclp[0] += 1;
+        }
+        if (cvar_al[i] > 1) {
+          if (cpro_a_clipped != nullptr)
+            cpro_a_clipped[i] = 1.0 - cvar_al[i];
+          cvar_al[i] = 1.0;
+          nclp[1] += 1;
+        }
       }
     }
 

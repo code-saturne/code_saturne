@@ -174,6 +174,13 @@ cs_turbulence_kw_clip(int       phase_id,
     cpro_w_clipped = cs_field(clip_w_id)->get_val_s();
   }
 
+  int kisclp = cs_field_key_id("is_clipped");
+  int is_k_clipped = f_k->get_key_int(kisclp);
+  int is_omg_clipped = f_omg->get_key_int(kisclp);
+
+  bool do_k_clipping = (is_k_clipped != 0);
+  bool do_omg_clipping = (is_omg_clipped != 0);
+
   /* These two kernels are optional, and are activated only if the user
    * is explicitly asking to postprocess the clipped cells.
    * Hence, to reduce the size of the main kernel, called all the time,
@@ -204,27 +211,31 @@ cs_turbulence_kw_clip(int       phase_id,
 
     cs_real_t xk = cvar_k[c_id];
     cs_real_t xw = cvar_omg[c_id];
-    if (fabs(xk) <= epz2) {
-      res.i[0] = 1;
-      if (clip_k_id >= 0)
-        cpro_k_clipped[c_id] = epz2 - xk;
-      cvar_k[c_id] = epz2;
-    } else if (xk <= 0.) {
-      res.i[0] = 1;
-      if (clip_k_id >= 0)
-        cpro_k_clipped[c_id] = - xk;
-      cvar_k[c_id] = -xk;
+    if (do_k_clipping) {
+      if (fabs(xk) <= epz2) {
+        res.i[0] = 1;
+        if (clip_k_id >= 0)
+          cpro_k_clipped[c_id] = epz2 - xk;
+        cvar_k[c_id] = epz2;
+      } else if (xk <= 0.) {
+        res.i[0] = 1;
+        if (clip_k_id >= 0)
+          cpro_k_clipped[c_id] = - xk;
+        cvar_k[c_id] = -xk;
+      }
     }
-    if (fabs(xw) <= epz2) {
-      res.i[1] = 1;
-      if (clip_w_id >= 0)
-        cpro_w_clipped[c_id] = epz2 - xw;
-      cvar_omg[c_id] = epz2;
-    } else if  (xw <= 0.) {
-      res.i[1] = 1;
-      if (clip_w_id >= 0)
-        cpro_w_clipped[c_id] = - xw;
-      cvar_omg[c_id] = -xw;
+    if (do_omg_clipping) {
+      if (fabs(xw) <= epz2) {
+        res.i[1] = 1;
+        if (clip_w_id >= 0)
+          cpro_w_clipped[c_id] = epz2 - xw;
+        cvar_omg[c_id] = epz2;
+      } else if  (xw <= 0.) {
+        res.i[1] = 1;
+        if (clip_w_id >= 0)
+          cpro_w_clipped[c_id] = - xw;
+        cvar_omg[c_id] = -xw;
+      }
     }
   });
 

@@ -157,18 +157,6 @@
         turbulent diffusion model for second moment closure
         - 0: scalar diffusivity (Shir model, default model)
         - 1: tensorial diffusivity (Daly and Harlow model)
-  \var  cs_turb_rans_model_t::iclkep
-        Indicates the clipping method used for \f$k\f$ and
-        \f$\varepsilon\f$, for the \f$k-\epsilon\f$ and v2f models\n
-        - 0: clipping in absolute value
-        - 1: coupled clipping based on physical relationships\n
-        Useful if and only if \ref model = CS_TURB_K_EPSILON,
-        CS_TURB_K_EPSILON_LIN_PROD or CS_TURB_V2F_PHI (\f$k-\epsilon\f$ and
-        v2f models). The results obtained with the method corresponding to
-        \ref iclkep =1 showed in some cases a substantial sensitivity to the
-        values of the length scale \ref almax.\n
-        The option \ref iclkep = 1 is therefore not recommended, and,
-        if chosen, must be used cautiously.
   \var  cs_turb_rans_model_t::igrhok
         Indicates if the term \f$\frac{2}{3}\grad \rho k\f$
         is taken into account in the velocity equation.
@@ -255,7 +243,7 @@
   \var  cs_turb_ref_values_t::almax
         characteristic macroscopic length of the domain, used for the
         initialization of the turbulence and the potential clipping (with
-        \ref cs_turb_rans_model_t::iclkep "iclkep"= 1)
+        is_clipped = 2)
         - Negative value: not initialized (the code then uses the cubic root of
           the domain volume).
 
@@ -371,7 +359,6 @@ _turb_rans_model =
   .irccor     =    0,
   .itycor     = -999,
   .idirsm     =    0,
-  .iclkep     =    0,
   .igrhok     =    0,
   .has_buoyant_term = 1,
   .ikecou     =    0,
@@ -1584,11 +1571,9 @@ cs_turb_model_log_setup(void)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    uref:             %14.5e (Characteristic velocity)\n"
-         "    iclkep:           %14d (k-epsilon clipping model)\n"
          "    ikecou:           %14d (k-epsilon coupling mode)\n"
          "    has_buoyant_term: %14d (Account for gravity)\n"),
        cs_glob_turb_ref_values->uref,
-       cs_glob_turb_rans_model->iclkep,
        cs_glob_turb_rans_model->ikecou,
        cs_glob_turb_rans_model->has_buoyant_term);
 
@@ -1697,11 +1682,9 @@ cs_turb_model_log_setup(void)
 
     cs_log_printf(CS_LOG_SETUP,
                   _("    uref:             %14.5e (Characteristic velocity)\n"
-                    "    iclkep:           %14d (k-epsilon clipping model)\n"
                     "    ikecou:           %14d (k-epsilon coupling mode)\n"
                     "    has_buoyant_term: %14d (Account for gravity)\n"),
                   cs_glob_turb_ref_values->uref,
-                  cs_glob_turb_rans_model->iclkep,
                   cs_glob_turb_rans_model->ikecou,
                   cs_glob_turb_rans_model->has_buoyant_term);
 
@@ -1740,12 +1723,10 @@ cs_turb_model_log_setup(void)
 
     cs_log_printf(CS_LOG_SETUP,
                   _("    uref:             %14.5e (Characteristic velocity)\n"
-                    "    iclkep:           %14d (k-epsilon clipping model)\n"
                     "    ikecou:           %14d (k-epsilon coupling mode)\n"
                     "    hybrid_turb:      %s\n"
                     "    has_buoyant_term: %14d (Account for gravity)\n"),
                   cs_glob_turb_ref_values->uref,
-                  cs_glob_turb_rans_model->iclkep,
                   cs_glob_turb_rans_model->ikecou,
                   hybrid_turb_value_str[turb_model->hybrid_turb],
                   cs_glob_turb_rans_model->has_buoyant_term);

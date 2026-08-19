@@ -2391,14 +2391,6 @@ cs_parameters_check(void)
   if (   turb_model->itytur == 2
       || turb_model->itytur == 5
       || turb_model->itytur == 6) {
-    /* iclkep option not available in k-omega */
-    if (turb_model->model != CS_TURB_K_OMEGA) {
-      cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                    _("while reading input data"),
-                                    "cs_glob_turb_rans_model->iclkep",
-                                    cs_glob_turb_rans_model->iclkep,
-                                    0, 2);
-    }
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("while reading input data"),

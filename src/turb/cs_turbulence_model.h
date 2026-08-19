@@ -226,10 +226,6 @@ typedef struct {
                                  - 0: scalar diffusivity (Shir model, default)
                                  - 1: tensorial diffusivity (Daly and Harlow
                                       model) */
-  int           iclkep;       /* clipping of k and epsilon
-                                 - 0: absolute value clipping
-                                 - 1: coupled clipping based on physical
-                                      relationships */
   int           igrhok;       /* take (2/3 rho grad k) in the momentum
                                  equation
                                  - 1: true
