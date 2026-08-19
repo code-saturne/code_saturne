@@ -69,6 +69,7 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "base/cs_algorithm.h"
 #include "base/cs_dispatch.h"
@@ -5809,7 +5810,7 @@ _match_edge(cs_dispatch_context   &ctx,
 
     cs_lnum_t jj = preferred_neighbor[ii];
     if (    jj > -1 && preferred_neighbor[jj] == ii
-        &&  ii <= jj) {
+        &&  ii < jj) {
       aggr_row[ii] = ii;
       aggr_row[jj] = ii;
     }
@@ -5915,6 +5916,9 @@ _assign_to_aggregate(cs_dispatch_context   &ctx,
  *   ctx                   <-- associated dispatch context
  *   n_rows                <-- Number of rows
  *   aggr_row              <-> Row aggregation id
+ *
+ * return:
+ *   number of coarse rows
  *----------------------------------------------------------------------------*/
 
 static cs_lnum_t
@@ -5922,16 +5926,16 @@ _aggr_to_coarse(cs_dispatch_context   &ctx,
                 cs_lnum_t              n_rows,
                 cs_lnum_t             *aggr_row)
 {
-  cs_array<cs_lnum_t> a_count(n_rows+1);
-  a_count.zero();
+  cs_array<cs_lnum_t> a_count(n_rows+1, ctx.alloc_mode());
+  a_count.zero(ctx);
 
   cs_lnum_t *idx = a_count.data();
 
-  for (cs_lnum_t i = 0; i < n_rows; i++) {
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
     cs_lnum_t j = aggr_row[i];
     if (j > -1)
-      idx[aggr_row[i]] = 1;
-  }
+      idx[aggr_row[j]] = 1;
+  });
 
   cs::algorithm::count_to_index(ctx, n_rows, idx);
 
@@ -5981,8 +5985,9 @@ _automatic_aggregation_dx_msr_pgm
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
-  const float threshold_base_factor = 6;
   const int npass_max = 10;
+  const float threshold_base_factor = 6;
+  const float max_unassigned_ratio = 1./10;
 
   const cs_lnum_t f_n_rows = f->n_rows;
 
@@ -5990,8 +5995,6 @@ _automatic_aggregation_dx_msr_pgm
   if (f->alloc_mode == CS_ALLOC_HOST) {
     ctx.set_use_gpu(false);
   }
-
-  cs_lnum_t c_n_rows = -1;
 
   cs_real_t epsilon = 1.e-6;
 
@@ -6036,15 +6039,7 @@ _automatic_aggregation_dx_msr_pgm
     preferred_neighbor[i] = -2;
   });
 
-  /* aggregation queue: local column id, index in matrix */
-  constexpr cs_lnum_t ag_queue_stride = 2;
-  cs_lnum_t ag_work_size = cs::max(f_nnz*ag_queue_stride, f_n_rows);
-  cs_lnum_t *ag_work;
-  CS_MALLOC(ag_work, ag_work_size, cs_lnum_t);
-
   CS_PROFILE_MARK_LINE();
-
-  float max_unassigned_ratio = 1./10;
 
   cs_lnum_t n_unaggr_prev = f_n_rows, n_unaggr = f_n_rows;
 
@@ -6109,13 +6104,12 @@ _automatic_aggregation_dx_msr_pgm
     CS_FREE(intermediate_aggr_row);
   }
 
-  _aggr_to_coarse(ctx, f_n_rows, aggr_row);
+  cs_lnum_t c_n_rows = _aggr_to_coarse(ctx, f_n_rows, aggr_row);
 
   CS_PROFILE_MARK_LINE();
 
   /* Free working arrays */
 
-  CS_FREE(ag_work);
   CS_FREE(aggr_strength);
   CS_FREE(c_cardinality);
   CS_FREE(c_aggr_count);
