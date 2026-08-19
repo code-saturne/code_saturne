@@ -101,6 +101,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_algorithm.h"
+#include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "alge/cs_blas.h"
 #include "base/cs_dispatch.h"
@@ -500,7 +501,6 @@ _copy_diagonal_separate(const cs_matrix_t    *matrix,
   const cs_lnum_t  n_rows = matrix->n_rows;
 
   cs_dispatch_context  ctx;
-
   if (matrix->alloc_mode == CS_ALLOC_HOST)
     ctx.set_use_gpu(false);
 
@@ -512,11 +512,8 @@ _copy_diagonal_separate(const cs_matrix_t    *matrix,
       ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
         da[ii] = _d_val[ii];
       });
-    else {
-      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
-        da[ii] = 0.0;
-      });
-    }
+    else
+      cs_arrays_set_zero<cs_real_t, 1>(ctx, n_rows, da);
 
   }
 
@@ -534,11 +531,8 @@ _copy_diagonal_separate(const cs_matrix_t    *matrix,
         da[idx] = _d_val[ii*db_size_2 + jj*db_size + jj];
       });
     }
-    else {
-      ctx.parallel_for(n_rows*db_size, [=] CS_F_HOST_DEVICE (cs_lnum_t idx) {
-        da[idx] = 0.0;
-      });
-    }
+    else
+      cs_arrays_set_zero<cs_real_t, 1>(ctx, n_rows*db_size, da);
   }
 
   ctx.wait();
@@ -1075,39 +1069,42 @@ _destroy_coeff(cs_matrix_t  *m)
  * threading behavior should be consistent with SpMW in NUMA cases.
  *
  * parameters:
+ *   ctx     <-- Reference to dispatch context
  *   ms      <-> pointer to matrix structure
  *   eb_size <-> associated block size
  *   val     <-- value
  *----------------------------------------------------------------------------*/
 
 static void
-_zero_coeffs_csr(const cs_matrix_struct_csr_t  *ms,
+_zero_coeffs_csr(cs_dispatch_context           &ctx,
+                 const cs_matrix_struct_csr_t  *ms,
                  const cs_lnum_t                eb_size,
                  cs_real_t                      val[])
 {
   const cs_lnum_t  n_rows = ms->n_rows;
+  const cs_lnum_t *row_index = ms->row_index;
 
   if (eb_size == 1) {
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-      const cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t  *m_row = val + ms->row_index[ii];
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      const cs_lnum_t  n_cols = row_index[ii+1] - row_index[ii];
+      cs_real_t  *m_row = val + row_index[ii];
       for (cs_lnum_t jj = 0; jj < n_cols; jj++)
         m_row[jj] = 0.0;
-    }
+    });
   }
   else {
     const cs_lnum_t eb_size_2 = eb_size * eb_size;
-#   pragma omp parallel for  if(n_rows*eb_size > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-      const cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t  *m_row = val + ms->row_index[ii]*eb_size_2;
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      const cs_lnum_t  n_cols = row_index[ii+1] - row_index[ii];
+      cs_real_t  *m_row = val + row_index[ii]*eb_size_2;
       for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
         for (cs_lnum_t kk = 0; kk < eb_size_2; kk++)
           m_row[jj*eb_size_2 + kk] = 0.0;
       }
-    }
+    });
   }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1116,6 +1113,7 @@ _zero_coeffs_csr(const cs_matrix_struct_csr_t  *ms,
  * to a given coefficient).
  *
  * parameters:
+ *   ctx         <-- Reference to dispatch context
  *   matrix      <-- pointer to matrix structure
  *   symmetric   <-- indicates if extradiagonal values are symmetric
  *   n_edges     <-- local number of graph edges
@@ -1124,55 +1122,60 @@ _zero_coeffs_csr(const cs_matrix_struct_csr_t  *ms,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_xa_coeffs_csr_direct(cs_matrix_t       *matrix,
-                          bool               symmetric,
-                          cs_lnum_t          n_edges,
-                          const cs_lnum_2_t *restrict edges,
-                          const cs_real_t   *restrict xa)
+_set_xa_coeffs_csr_direct(cs_dispatch_context  &ctx,
+                          cs_matrix_t          *matrix,
+                          bool                  symmetric,
+                          cs_lnum_t             n_edges,
+                          const cs_lnum_2_t    *restrict edges,
+                          const cs_real_t      *restrict xa)
 {
-  auto mc = static_cast<cs_matrix_coeff_t  *>( matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
 
   /* Copy extra-diagonal values */
 
-  assert(edges != nullptr);
+  assert(edges != nullptr || n_edges == 0);
+
+  const cs_lnum_t n_rows = ms->n_rows;
+  const cs_lnum_t *row_index = ms->row_index;
+  const cs_lnum_t *col_id = ms->col_id;
+  cs_real_t *val = mc->_val;
 
   if (symmetric == false) {
 
-    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
       cs_lnum_t ii = edges[edge_id][0];
       cs_lnum_t jj = edges[edge_id][1];
-      if (ii < ms->n_rows) {
+      if (ii < n_rows) {
         cs_lnum_t kk;
-        for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-        mc->_val[kk] = xa[2*edge_id];
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
+        val[kk] = xa[2*edge_id];
       }
-      if (jj < ms->n_rows) {
+      if (jj < n_rows) {
         cs_lnum_t ll;
-        for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-        mc->_val[ll] = xa[2*edge_id + 1];
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
+        val[ll] = xa[2*edge_id + 1];
       }
-    }
+    });
 
   }
   else { /* if symmetric == true */
 
-    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
       cs_lnum_t ii = edges[edge_id][0];
       cs_lnum_t jj = edges[edge_id][1];
-      if (ii < ms->n_rows) {
+      if (ii < n_rows) {
         cs_lnum_t kk;
-        for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-        mc->_val[kk] = xa[edge_id];
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
+        val[kk] = xa[edge_id];
       }
-      if (jj < ms->n_rows) {
+      if (jj < n_rows) {
         cs_lnum_t ll;
-        for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-        mc->_val[ll] = xa[edge_id];
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
+        val[ll] = xa[edge_id];
       }
-
-    }
+    });
 
   } /* end of condition on coefficients symmetry */
 }
@@ -1185,6 +1188,7 @@ _set_xa_coeffs_csr_direct(cs_matrix_t       *matrix,
  * some before using this function.
  *
  * parameters:
+ *   ctx         <-- Reference to dispatch context
  *   matrix      <-- pointer to matrix structure
  *   symmetric   <-- indicates if extradiagonal values are symmetric
  *   n_edges     <-- local number of graph edges
@@ -1193,11 +1197,12 @@ _set_xa_coeffs_csr_direct(cs_matrix_t       *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_xa_coeffs_csr_increment(cs_matrix_t       *matrix,
-                             bool               symmetric,
-                             cs_lnum_t          n_edges,
-                             const cs_lnum_2_t *restrict edges,
-                             const cs_real_t   *restrict xa)
+_set_xa_coeffs_csr_increment(cs_dispatch_context  &ctx,
+                             cs_matrix_t          *matrix,
+                             bool                  symmetric,
+                             cs_lnum_t             n_edges,
+                             const cs_lnum_2_t    *restrict edges,
+                             const cs_real_t      *restrict xa)
 {
   auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
 
@@ -1205,43 +1210,51 @@ _set_xa_coeffs_csr_increment(cs_matrix_t       *matrix,
 
   /* Copy extra-diagonal values */
 
-  assert(edges != nullptr);
+  assert(edges != nullptr || n_edges == 0);
+
+  const cs_lnum_t n_rows = ms->n_rows;
+  const cs_lnum_t *row_index = ms->row_index;
+  const cs_lnum_t *col_id = ms->col_id;
+  cs_real_t *val = mc->_val;
+
+  cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
+  if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
 
   if (symmetric == false) {
 
-    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
       cs_lnum_t ii = edges[edge_id][0];
       cs_lnum_t jj = edges[edge_id][1];
-      if (ii < ms->n_rows) {
+      if (ii < n_rows) {
         cs_lnum_t kk;
-        for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-        mc->_val[kk] += xa[2*edge_id];
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
+        cs_dispatch_sum(&val[kk], xa[2*edge_id], sum_type);
       }
-      if (jj < ms->n_rows) {
+      if (jj < n_rows) {
         cs_lnum_t ll;
-        for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-        mc->_val[ll] += xa[2*edge_id + 1];
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
+        cs_dispatch_sum(&val[ll], xa[2*edge_id + 1], sum_type);
       }
-    }
+    });
 
   }
   else { /* if symmetric == true */
 
-    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
       cs_lnum_t ii = edges[edge_id][0];
       cs_lnum_t jj = edges[edge_id][1];
-      if (ii < ms->n_rows) {
+      if (ii < n_rows) {
         cs_lnum_t kk;
-        for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-        mc->_val[kk] += xa[edge_id];
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
+        cs_dispatch_sum(&val[kk], xa[edge_id], sum_type);
       }
-      if (jj < ms->n_rows) {
+      if (jj < n_rows) {
         cs_lnum_t ll;
-        for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-        mc->_val[ll] += xa[edge_id];
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
+        cs_dispatch_sum(&val[ll], xa[edge_id], sum_type);
       }
-
-    }
+    });
 
   } /* end of condition on coefficients symmetry */
 }
@@ -1260,18 +1273,15 @@ _set_xa_coeffs_csr_increment(cs_matrix_t       *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_coeffs_csr(cs_matrix_t *matrix,
-                bool         symmetric,
-                bool         copy,
-                cs_lnum_t    n_edges,
-                const cs_lnum_2_t *restrict edges,
-                const cs_real_t *restrict da,
-                const cs_real_t *restrict xa)
+_set_coeffs_csr(cs_matrix_t                  *matrix,
+                bool                          symmetric,
+                [[maybe_unused]] bool         copy,
+                cs_lnum_t                     n_edges,
+                const cs_lnum_2_t   *restrict edges,
+                const cs_real_t     *restrict da,
+                const cs_real_t     *restrict xa)
 {
-  CS_UNUSED(copy);
-
   auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
-
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
 
   if (mc->_val == nullptr)
@@ -1279,28 +1289,37 @@ _set_coeffs_csr(cs_matrix_t *matrix,
                  matrix->alloc_mode);
   mc->val = mc->_val;
 
+  cs_dispatch_context  ctx;
+  // if (matrix->alloc_mode == CS_ALLOC_HOST)
+  ctx.set_use_gpu(false);
+
   /* Initialize coefficients to zero if assembly is incremental */
 
   if (ms->direct_assembly == false || (n_edges > 0 && xa == nullptr))
-    _zero_coeffs_csr(ms, matrix->eb_size, mc->_val);
+    _zero_coeffs_csr(ctx, ms, matrix->eb_size, mc->_val);
 
   /* Copy diagonal values */
 
   if (ms->have_diag == true) {
 
+    const cs_lnum_t n_rows = ms->n_rows;
+    const cs_lnum_t *row_index = ms->row_index;
+    const cs_lnum_t *col_id = ms->col_id;
+    cs_real_t *_val = mc->_val;
+
     if (da != nullptr) {
-      for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++) {
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
         cs_lnum_t kk;
-        for (kk = ms->row_index[ii]; ms->col_id[kk] != ii; kk++);
-        mc->_val[kk] = da[ii];
-      }
+        for (kk = row_index[ii]; col_id[kk] != ii; kk++);
+        _val[kk] = da[ii];
+      });
     }
     else {
-      for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++) {
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
         cs_lnum_t kk;
-        for (kk = ms->row_index[ii]; ms->col_id[kk] != ii; kk++);
-        mc->_val[kk] = 0.0;
-      }
+        for (kk = row_index[ii]; col_id[kk] != ii; kk++);
+        _val[kk] = 0.0;
+      });
     }
 
   }
@@ -1314,11 +1333,13 @@ _set_coeffs_csr(cs_matrix_t *matrix,
   if (edges != nullptr && xa != nullptr) {
 
     if (ms->direct_assembly == true)
-      _set_xa_coeffs_csr_direct(matrix, symmetric, n_edges, edges, xa);
+      _set_xa_coeffs_csr_direct(ctx, matrix, symmetric, n_edges, edges, xa);
     else
-      _set_xa_coeffs_csr_increment(matrix, symmetric, n_edges, edges, xa);
+      _set_xa_coeffs_csr_increment(ctx, matrix, symmetric, n_edges, edges, xa);
 
   }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1348,7 +1369,6 @@ _set_coeffs_csr_from_msr(cs_matrix_t    *matrix,
                          cs_real_t **x_vals_transfer)
 {
   auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
-
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
 
   const cs_lnum_t  n_rows = ms->n_rows;
@@ -1390,19 +1410,28 @@ _set_coeffs_csr_from_msr(cs_matrix_t    *matrix,
 
   mc->d_val = nullptr;
 
+  const cs_lnum_t *ms_row_index = ms->row_index;
+  const cs_lnum_t *ms_col_id = ms->col_id;
+  cs_real_t * _val = mc->_val;
+
+  cs_dispatch_context ctx;
+#if defined(HAVE_ACCEL)
+  if (matrix->alloc_mode = CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+#endif
+
   /* Case with diagonal and extradiagonal values */
 
   if (d_vals != nullptr && x_vals != nullptr) {
 
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
 
-      const cs_lnum_t  *restrict m_col_id = ms->col_id + ms->row_index[ii];
-      cs_real_t  *restrict m_row = mc->_val + ms->row_index[ii];
-      cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+      const cs_lnum_t  *restrict m_col_id = ms_col_id + ms_row_index[ii];
+      cs_real_t  *restrict m_row = _val + ms_row_index[ii];
+      cs_lnum_t  n_cols = ms_row_index[ii+1] - ms_row_index[ii];
 
       const cs_lnum_t  *restrict s_col_id = col_id + row_index[ii];
-      const cs_real_t  *restrict s_row = x_vals + ms->row_index[ii];
+      const cs_real_t  *restrict s_row = x_vals + ms_row_index[ii];
       cs_lnum_t  n_s_cols = row_index[ii+1] - row_index[ii];
 
       cs_lnum_t c_id_0 = 0;
@@ -1427,19 +1456,19 @@ _set_coeffs_csr_from_msr(cs_matrix_t    *matrix,
         }
       }
 
-    }
+    });
+
   }
 
   /* Case with diagonal values only */
 
   else if (d_vals != nullptr) {
 
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
 
-      const cs_lnum_t  *restrict m_col_id = ms->col_id + ms->row_index[ii];
-      cs_real_t  *restrict m_row = mc->_val + ms->row_index[ii];
-      cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+      const cs_lnum_t  *restrict m_col_id = ms_col_id + ms_row_index[ii];
+      cs_real_t  *restrict m_row = mc->_val + ms_row_index[ii];
+      cs_lnum_t  n_cols = ms_row_index[ii+1] - ms_row_index[ii];
 
       for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
         if (m_col_id[jj] == ii)
@@ -1448,22 +1477,22 @@ _set_coeffs_csr_from_msr(cs_matrix_t    *matrix,
           m_row[jj] = 0.;
       }
 
-    }
+    });
+
   }
 
   /* Case with null-diagonal */
 
   else if (x_vals != nullptr) {
 
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
 
-      const cs_lnum_t  *restrict m_col_id = ms->col_id + ms->row_index[ii];
-      cs_real_t  *restrict m_row = mc->_val + ms->row_index[ii];
-      cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+      const cs_lnum_t  *restrict m_col_id = ms_col_id + ms_row_index[ii];
+      cs_real_t  *restrict m_row = _val + ms_row_index[ii];
+      cs_lnum_t  n_cols = ms_row_index[ii+1] - ms_row_index[ii];
 
       const cs_lnum_t  *restrict s_col_id = col_id + row_index[ii];
-      const cs_real_t  *restrict s_row = x_vals + ms->row_index[ii];
+      const cs_real_t  *restrict s_row = x_vals + ms_row_index[ii];
       cs_lnum_t  n_s_cols = row_index[ii+1] - row_index[ii];
 
       cs_lnum_t c_id_0 = 0;
@@ -1488,12 +1517,14 @@ _set_coeffs_csr_from_msr(cs_matrix_t    *matrix,
         }
       }
 
-    }
+    });
 
   }
 
   else
-    _zero_coeffs_csr(ms, matrix->eb_size, mc->_val);
+    _zero_coeffs_csr(ctx, ms, matrix->eb_size, mc->_val);
+
+  ctx.wait();
 
   /* Now free transferred arrays */
 
@@ -1629,13 +1660,18 @@ _csr_assembler_values_init(void        *matrix_p,
   CS_MALLOC_HD(mc->_val, e_size_2*ms->row_index[ms->n_rows], cs_real_t, amode);
   mc->val = mc->_val;
 
-# pragma omp parallel for  if(n_rows*db_size > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-    cs_lnum_t n_s_cols = (ms->row_index[ii+1] - ms->row_index[ii])*e_size_2;
-    cs_lnum_t displ = ms->row_index[ii]*e_size_2;
+  cs_dispatch_context ctx;
+  cs_real_t *_val = mc->_val;
+  const cs_lnum_t *row_index = ms->row_index;
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+    cs_lnum_t n_s_cols = (row_index[ii+1] - row_index[ii])*e_size_2;
+    cs_lnum_t displ = row_index[ii]*e_size_2;
     for (cs_lnum_t jj = 0; jj < n_s_cols; jj++)
-      mc->_val[displ + jj] = 0;
-  }
+      _val[displ + jj] = 0;
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1690,7 +1726,9 @@ _csr_assembler_values_add(void                    *matrix_p,
 #endif
   }
 
-  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+  cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
+  if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
      --------------- */
@@ -1788,7 +1826,9 @@ _csr_assembler_values_add_g(void                    *matrix_p,
 #endif
   }
 
-  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+  cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
+  if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
      --------------- */
@@ -1900,6 +1940,7 @@ _assembler_values_create_csr(cs_matrix_t  *matrix,
  * to a given coefficient).
  *
  * parameters:
+ *   ctx         <-- Reference to dispatch context
  *   matrix      <-- pointer to matrix structure
  *   symmetric   <-- indicates if extradiagonal values are symmetric
  *   n_edges     <-- local number of graph edges
@@ -1908,11 +1949,12 @@ _assembler_values_create_csr(cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_e_coeffs_msr_direct(cs_matrix_t        *matrix,
-                         bool                symmetric,
-                         cs_lnum_t           n_edges,
-                         const cs_lnum_2_t  *restrict edges,
-                         const cs_real_t    *restrict xa)
+_set_e_coeffs_msr_direct(cs_dispatch_context  &ctx,
+                         cs_matrix_t          *matrix,
+                         bool                  symmetric,
+                         cs_lnum_t             n_edges,
+                         const cs_lnum_2_t    *restrict edges,
+                         const cs_real_t      *restrict xa)
 {
   auto  mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
@@ -1925,10 +1967,6 @@ _set_e_coeffs_msr_direct(cs_matrix_t        *matrix,
   cs_real_t *val = mc->_e_val;
 
   /* Copy extra-diagonal values */
-
-  cs_dispatch_context  ctx;
-  if (matrix->alloc_mode == CS_ALLOC_HOST)
-    ctx.set_use_gpu(false);
 
   assert(edges != nullptr || n_edges == 0);
 
@@ -1968,7 +2006,6 @@ _set_e_coeffs_msr_direct(cs_matrix_t        *matrix,
     });
 
   } /* end of condition on coefficients symmetry */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1977,6 +2014,7 @@ _set_e_coeffs_msr_direct(cs_matrix_t        *matrix,
  * to a given coefficient).
  *
  * parameters:
+ *   ctx         <-- Reference to dispatch context
  *   matrix      <-- pointer to matrix structure
  *   symmetric   <-- indicates if extradiagonal values are symmetric
  *   n_edges     <-- local number of graph edges
@@ -1985,11 +2023,12 @@ _set_e_coeffs_msr_direct(cs_matrix_t        *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_e_coeffs_msr_direct_block(cs_matrix_t        *matrix,
-                               bool                symmetric,
-                               cs_lnum_t           n_edges,
-                               const cs_lnum_2_t  *restrict edges,
-                               const cs_real_t    *restrict xa)
+_set_e_coeffs_msr_direct_block(cs_dispatch_context  &ctx,
+                               cs_matrix_t          *matrix,
+                               bool                  symmetric,
+                               cs_lnum_t             n_edges,
+                               const cs_lnum_2_t    *restrict edges,
+                               const cs_real_t      *restrict xa)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
@@ -2006,10 +2045,6 @@ _set_e_coeffs_msr_direct_block(cs_matrix_t        *matrix,
   /* Copy extra-diagonal values */
 
   assert(edges != nullptr || n_edges == 0);
-
-  cs_dispatch_context  ctx;
-  if (matrix->alloc_mode == CS_ALLOC_HOST)
-    ctx.set_use_gpu(false);
 
   if (symmetric == false) {
 
@@ -2049,7 +2084,6 @@ _set_e_coeffs_msr_direct_block(cs_matrix_t        *matrix,
     });
 
   } /* end of condition on coefficients symmetry */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2060,6 +2094,7 @@ _set_e_coeffs_msr_direct_block(cs_matrix_t        *matrix,
  * some before using this function.
  *
  * parameters:
+ *   ctx         <-- Reference to dispatch context
  *   matrix      <-- pointer to matrix structure
  *   symmetric   <-- indicates if extradiagonal values are symmetric
  *   n_edges     <-- local number of graph edges
@@ -2068,149 +2103,176 @@ _set_e_coeffs_msr_direct_block(cs_matrix_t        *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_e_coeffs_msr_increment(cs_matrix_t        *matrix,
-                            bool                symmetric,
-                            cs_lnum_t           n_edges,
-                            const cs_lnum_2_t  *restrict edges,
-                            const cs_real_t    *restrict xa)
-{
-  auto       mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
-
-  auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
-  const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
-
-  /* Copy extra-diagonal values */
-
-  assert(edges != nullptr);
-
-  if (symmetric == false) {
-
-    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
-      cs_lnum_t ii = edges[edge_id][0];
-      cs_lnum_t jj = edges[edge_id][1];
-      if (ii < ms_e->n_rows) {
-        cs_lnum_t kk;
-        for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
-        mc->_e_val[kk] += xa[2*edge_id];
-      }
-      if (jj < ms_e->n_rows) {
-        cs_lnum_t ll;
-        for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
-        mc->_e_val[ll] += xa[2*edge_id + 1];
-      }
-    }
-
-  }
-  else { /* if symmetric == true */
-
-    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
-      cs_lnum_t ii = edges[edge_id][0];
-      cs_lnum_t jj = edges[edge_id][1];
-      if (ii < ms_e->n_rows) {
-        cs_lnum_t kk;
-        for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
-        mc->_e_val[kk] += xa[edge_id];
-      }
-      if (jj < ms_e->n_rows) {
-        cs_lnum_t ll;
-        for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
-        mc->_e_val[ll] += xa[edge_id];
-      }
-
-    }
-
-  } /* end of condition on coefficients symmetry */
-
-}
-
-/*----------------------------------------------------------------------------
- * Set MSR extradiagonal matrix coefficients for the case where there are
- * multiple contributions to a given coefficient.
- *
- * The matrix coefficients should have been initialized (i.e. set to 0)
- * some before using this function.
- *
- * parameters:
- *   matrix      <-- pointer to matrix structure
- *   symmetric   <-- indicates if extradiagonal values are symmetric
- *   n_edges     <-- local number of graph edges
- *   edges       <-- edges (symmetric row <-> column) connectivity
- *   xa          <-- extradiagonal values
- *----------------------------------------------------------------------------*/
-
-static void
-_set_e_coeffs_msr_increment_block(cs_matrix_t        *matrix,
-                                  bool                symmetric,
-                                  cs_lnum_t           n_edges,
-                                  const cs_lnum_2_t  *restrict edges,
-                                  const cs_real_t    *restrict xa)
+_set_e_coeffs_msr_increment(cs_dispatch_context  &ctx,
+                            cs_matrix_t          *matrix,
+                            bool                  symmetric,
+                            cs_lnum_t             n_edges,
+                            const cs_lnum_2_t    *restrict edges,
+                            const cs_real_t      *restrict xa)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
 
-  const cs_lnum_t  b_size_2 = matrix->eb_size * matrix->eb_size;
+  const cs_lnum_t n_rows = ms_e->n_rows;
+  const cs_lnum_t *row_index = ms_e->row_index;
+  const cs_lnum_t *col_id = ms_e->col_id;
+  cs_real_t *val = mc->_e_val;
 
   /* Copy extra-diagonal values */
 
-  assert(edges != nullptr);
+  assert(edges != nullptr || n_edges == 0);
+
+  cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
+  if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
 
   if (symmetric == false) {
 
-    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
       cs_lnum_t ii = edges[edge_id][0];
       cs_lnum_t jj = edges[edge_id][1];
-      cs_lnum_t kk, ll;
-      if (ii < ms_e->n_rows) {
-        for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
-        for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[kk*b_size_2 + pp] += xa[2*edge_id*b_size_2 + pp];
+      if (ii < n_rows) {
+        cs_lnum_t kk;
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
+        cs_dispatch_sum(&val[kk], xa[2*edge_id], sum_type);
       }
-      if (jj < ms_e->n_rows) {
-        for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
-        for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[ll*b_size_2 + pp] += xa[(2*edge_id+1)*b_size_2 + pp];
+      if (jj < n_rows) {
+        cs_lnum_t ll;
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
+        cs_dispatch_sum(&val[ll], xa[2*edge_id + 1], sum_type);
       }
-    }
+    });
 
   }
   else { /* if symmetric == true */
 
-    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
+      if (ii < n_rows) {
+        cs_lnum_t kk;
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
+        cs_dispatch_sum(&val[kk], xa[edge_id], sum_type);
+      }
+      if (jj < n_rows) {
+        cs_lnum_t ll;
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
+        cs_dispatch_sum(&val[ll], xa[edge_id], sum_type);
+      }
+    });
+
+  } /* end of condition on coefficients symmetry */
+}
+
+/*----------------------------------------------------------------------------
+ * Set MSR extradiagonal matrix coefficients for the case where there are
+ * multiple contributions to a given coefficient.
+ *
+ * The matrix coefficients should have been initialized (i.e. set to 0)
+ * some before using this function.
+ *
+ * parameters:
+ *   ctx         <-- Reference to dispatch context
+ *   matrix      <-- pointer to matrix structure
+ *   symmetric   <-- indicates if extradiagonal values are symmetric
+ *   n_edges     <-- local number of graph edges
+ *   edges       <-- edges (symmetric row <-> column) connectivity
+ *   xa          <-- extradiagonal values
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_e_coeffs_msr_increment_block(cs_dispatch_context  &ctx,
+                                  cs_matrix_t          *matrix,
+                                  bool                  symmetric,
+                                  cs_lnum_t             n_edges,
+                                  const cs_lnum_2_t    *restrict edges,
+                                  const cs_real_t      *restrict xa)
+{
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
+
+  auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
+  const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+
+  const cs_lnum_t  n_rows = ms_e->n_rows;
+  const cs_lnum_t  b_size_2 = matrix->eb_size * matrix->eb_size;
+
+  const cs_lnum_t *row_index = ms_e->row_index;
+  const cs_lnum_t *col_id = ms_e->col_id;
+  cs_real_t *val = mc->_e_val;
+
+  /* Copy extra-diagonal values */
+
+  assert(edges != nullptr || n_edges == 0);
+
+  cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
+  if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
+
+  if (symmetric == false) {
+
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
       cs_lnum_t ii = edges[edge_id][0];
       cs_lnum_t jj = edges[edge_id][1];
       cs_lnum_t kk, ll;
-      if (ii < ms_e->n_rows) {
-        for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
+      if (ii < n_rows) {
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
         for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[kk*b_size_2 + pp] += xa[edge_id*b_size_2 + pp];
+          cs_dispatch_sum(&val[kk*b_size_2 + pp],
+                          xa[2*edge_id*b_size_2 + pp],
+                          sum_type);
       }
-      if (jj < ms_e->n_rows) {
-        for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
+      if (jj < n_rows) {
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
         for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[ll*b_size_2 + pp] += xa[edge_id*b_size_2 + pp];
+          cs_dispatch_sum(&val[ll*b_size_2 + pp],
+                          xa[(2*edge_id+1)*b_size_2 + pp],
+                          sum_type);
       }
+    });
 
-    }
+  }
+  else { /* if symmetric == true */
+
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
+      cs_lnum_t kk, ll;
+      if (ii < n_rows) {
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
+        for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
+          cs_dispatch_sum(&val[kk*b_size_2 + pp],
+                          xa[edge_id*b_size_2 + pp],
+                          sum_type);
+      }
+      if (jj < n_rows) {
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
+        for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
+          cs_dispatch_sum(&val[ll*b_size_2 + pp],
+                          xa[edge_id*b_size_2 + pp],
+                          sum_type);
+      }
+    });
 
   } /* end of condition on coefficients symmetry */
-
 }
 
 /*----------------------------------------------------------------------------
  * Map or copy MSR matrix diagonal coefficients.
  *
  * parameters:
+ *   ctx              <-- Reference to dispatch context
  *   matrix           <-> pointer to matrix structure
  *   copy             <-- indicates if coefficients should be copied
  *   da               <-- diagonal values (nullptr if all zero)
  *----------------------------------------------------------------------------*/
 
 static void
-_map_or_copy_d_coeffs_msr(cs_matrix_t      *matrix,
-                          bool              copy,
-                          const cs_real_t  *restrict da)
+_map_or_copy_d_coeffs_msr(cs_dispatch_context  &ctx,
+                          cs_matrix_t          *matrix,
+                          bool                  copy,
+                          const cs_real_t      *restrict da)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
@@ -2233,11 +2295,12 @@ _map_or_copy_d_coeffs_msr(cs_matrix_t      *matrix,
       const cs_lnum_t b_size = mc->db_size;
       const cs_lnum_t b_size_2 = b_size * b_size;
       CS_MALLOC_HD(mc->_d_val, b_size_2*n_rows, cs_real_t, matrix->alloc_mode);
-#     pragma omp parallel for  if(n_rows*b_size > CS_THR_MIN)
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      cs_real_t *d_val = mc->_d_val;
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
         for (cs_lnum_t jj = 0; jj < b_size_2; jj++)
-          mc->_d_val[ii*b_size_2 + jj] = da[ii*b_size_2 + jj];
-      }
+          d_val[ii*b_size_2 + jj] = da[ii*b_size_2 + jj];
+      });
+      ctx.wait();
       mc->d_val = mc->_d_val;
     }
     else
@@ -2257,15 +2320,17 @@ _map_or_copy_d_coeffs_msr(cs_matrix_t      *matrix,
  * of and zeroes extradiagonal coefficients.
  *
  * parameters:
+ *   ctx              <-- Reference to dispatch context
  *   matrix           <-> pointer to matrix structure
  *   copy             <-- indicates if coefficients should be copied
  *   xa               <-- extradiagonal values (nullptr if all zero)
  *----------------------------------------------------------------------------*/
 
 static void
-_map_or_copy_e_coeffs_msr(cs_matrix_t      *matrix,
-                          bool              copy,
-                          const cs_real_t  *restrict xa)
+_map_or_copy_e_coeffs_msr(cs_dispatch_context  &ctx,
+                          cs_matrix_t          *matrix,
+                          bool                  copy,
+                          const cs_real_t      *restrict xa)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
@@ -2290,7 +2355,7 @@ _map_or_copy_e_coeffs_msr(cs_matrix_t      *matrix,
 
     /* zero if required */
     if (xa == nullptr)
-      _zero_coeffs_csr(ms_e, mc->eb_size, mc->_e_val);
+      _zero_coeffs_csr(ctx, ms_e, mc->eb_size, mc->_e_val);
 
   }
 
@@ -2300,29 +2365,30 @@ _map_or_copy_e_coeffs_msr(cs_matrix_t      *matrix,
   if (xa != nullptr) {
 
     if (copy) {
+      cs_real_t *_e_val = mc->_e_val;
+      const cs_lnum_t *row_index = ms_e->row_index;
+
       if (mc->eb_size == 1) {
-#       pragma omp parallel for  if(n_rows > CS_THR_MIN)
-        for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-          const cs_lnum_t  n_cols = ms_e->row_index[ii+1] - ms_e->row_index[ii];
-          const cs_real_t  *s_row = xa + ms_e->row_index[ii];
-          cs_real_t  *m_row = mc->_e_val + ms_e->row_index[ii];
+        ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+          const cs_lnum_t  n_cols = row_index[ii+1] - row_index[ii];
+          const cs_real_t  *s_row = xa + row_index[ii];
+          cs_real_t  *m_row = _e_val + row_index[ii];
           for (cs_lnum_t jj = 0; jj < n_cols; jj++)
             m_row[jj] = s_row[jj];
-        }
+        });
       }
       else {
         const cs_lnum_t b_size = mc->eb_size;
         const cs_lnum_t b_size_2 = b_size * b_size;
-#       pragma omp parallel for  if(n_rows*b_size > CS_THR_MIN)
-        for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-          const cs_lnum_t  n_cols = ms_e->row_index[ii+1] - ms_e->row_index[ii];
-          const cs_real_t  *s_row = xa + ms_e->row_index[ii]*b_size_2;
-          cs_real_t  *m_row = mc->_e_val + ms_e->row_index[ii]*b_size_2;
+        ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+          const cs_lnum_t  n_cols = row_index[ii+1] - row_index[ii];
+          const cs_real_t  *s_row = xa + row_index[ii]*b_size_2;
+          cs_real_t  *m_row = _e_val + row_index[ii]*b_size_2;
           for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
             for (cs_lnum_t kk = 0; kk < b_size_2; kk++)
               m_row[jj*b_size_2 + kk] = s_row[jj*b_size_2 + kk];
           }
-        }
+        });
       }
     }
 
@@ -2330,6 +2396,8 @@ _map_or_copy_e_coeffs_msr(cs_matrix_t      *matrix,
       mc->e_val = xa;
 
   }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -2358,9 +2426,13 @@ _set_coeffs_msr(cs_matrix_t         *matrix,
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
 
+  cs_dispatch_context  ctx;
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
   /* Map or copy diagonal values */
 
-  _map_or_copy_d_coeffs_msr(matrix, copy, da);
+  _map_or_copy_d_coeffs_msr(ctx, matrix, copy, da);
 
   /* Extradiagonal values */
 
@@ -2380,22 +2452,28 @@ _set_coeffs_msr(cs_matrix_t         *matrix,
 
   if (ms_e->direct_assembly) {
     if (xa == nullptr)
-      _zero_coeffs_csr(ms_e, mc->eb_size, mc->_e_val);
+      _zero_coeffs_csr(ctx, ms_e, mc->eb_size, mc->_e_val);
     if (eb_size == 1)
-      _set_e_coeffs_msr_direct(matrix, symmetric, n_edges, edges, xa);
+      _set_e_coeffs_msr_direct(ctx, matrix, symmetric, n_edges, edges, xa);
     else
-      _set_e_coeffs_msr_direct_block(matrix, symmetric, n_edges, edges, xa);
+      _set_e_coeffs_msr_direct_block(ctx, matrix, symmetric, n_edges, edges,
+                                     xa);
   }
 
   /* Initialize coefficients to zero if assembly is incremental */
 
   else {
-    _zero_coeffs_csr(ms_e, mc->eb_size, mc->_e_val);
+    ctx.set_use_gpu(false);
+
+    _zero_coeffs_csr(ctx, ms_e, mc->eb_size, mc->_e_val);
     if (eb_size == 1)
-      _set_e_coeffs_msr_increment(matrix, symmetric, n_edges, edges, xa);
+      _set_e_coeffs_msr_increment(ctx, matrix, symmetric, n_edges, edges, xa);
     else
-      _set_e_coeffs_msr_increment_block(matrix, symmetric, n_edges, edges, xa);
+      _set_e_coeffs_msr_increment_block(ctx, matrix, symmetric, n_edges, edges,
+                                        xa);
   }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -2464,11 +2542,17 @@ _set_coeffs_msr_from_msr(cs_matrix_t       *matrix,
     }
   }
 
+  cs_dispatch_context  ctx;
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
   if (d_transferred == false)
-    _map_or_copy_d_coeffs_msr(matrix, copy, d_vals);
+    _map_or_copy_d_coeffs_msr(ctx, matrix, copy, d_vals);
 
   if (x_transferred == false)
-    _map_or_copy_e_coeffs_msr(matrix, copy, x_vals);
+    _map_or_copy_e_coeffs_msr(ctx, matrix, copy, x_vals);
+
+  ctx.wait();
 
   /* Now free transferred arrays */
 
@@ -2532,15 +2616,21 @@ _msr_assembler_values_init(void              *matrix_p,
   CS_MALLOC_HD(mc->_e_val, nnz_e, cs_real_t, amode);
   mc->e_val = mc->_e_val;
 
-# pragma omp parallel for  if(n_rows*db_size > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+  cs_dispatch_context ctx;
+  cs_real_t *_d_val = mc->_d_val;
+  cs_real_t *_e_val = mc->_e_val;
+  const cs_lnum_t *row_index = ms_e->row_index;
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     for (cs_lnum_t jj = 0; jj < d_size_2; jj++)
-      mc->_d_val[ii*d_size_2 + jj] = 0;
-    cs_lnum_t n_e_cols = (ms_e->row_index[ii+1] - ms_e->row_index[ii])*e_size_2;
-    cs_lnum_t displ_e = ms_e->row_index[ii]*e_size_2;
+      _d_val[ii*d_size_2 + jj] = 0.;
+    cs_lnum_t n_e_cols = (row_index[ii+1] - row_index[ii])*e_size_2;
+    cs_lnum_t displ_e = row_index[ii]*e_size_2;
     for (cs_lnum_t jj = 0; jj < n_e_cols; jj++)
-      mc->_e_val[displ_e + jj] = 0;
-  }
+      _e_val[displ_e + jj] = 0.;
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2597,7 +2687,9 @@ _msr_assembler_values_add(void                    *matrix_p,
 #endif
   }
 
-  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+  cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
+  if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
      --------------- */
@@ -2710,7 +2802,9 @@ _msr_assembler_values_add_g(void                    *matrix_p,
 #endif
   }
 
-  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+  cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
+  if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
      --------------- */
@@ -2882,19 +2976,28 @@ _dist_assembler_values_init(void        *matrix_p,
   mc->e_val = mc->_e_val;
   mc->h_val = mc->_h_val;
 
-# pragma omp parallel for  if(n_rows*db_size > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+  cs_dispatch_context ctx;
+
+  cs_real_t *_d_val = mc->_d_val;
+  cs_real_t *_h_val = mc->_h_val;
+  cs_real_t *_e_val = mc->_e_val;
+  const cs_lnum_t *e_row_index = ms_e->row_index;
+  const cs_lnum_t *h_row_index = ms_h->row_index;
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     for (cs_lnum_t jj = 0; jj < d_size_2; jj++)
-      mc->_d_val[ii*d_size_2 + jj] = 0;
-    cs_lnum_t n_e_cols = (ms_e->row_index[ii+1] - ms_e->row_index[ii])*e_size_2;
-    cs_lnum_t displ_e = ms_e->row_index[ii]*e_size_2;
+      _d_val[ii*d_size_2 + jj] = 0.;
+    cs_lnum_t n_e_cols = (e_row_index[ii+1] - e_row_index[ii])*e_size_2;
+    cs_lnum_t displ_e = e_row_index[ii]*e_size_2;
     for (cs_lnum_t jj = 0; jj < n_e_cols; jj++)
-      mc->_e_val[displ_e + jj] = 0;
-    cs_lnum_t n_h_cols = (ms_h->row_index[ii+1] - ms_h->row_index[ii])*e_size_2;
-    cs_lnum_t displ_h = ms_h->row_index[ii]*e_size_2;
+      _e_val[displ_e + jj] = 0.;
+    cs_lnum_t n_h_cols = (h_row_index[ii+1] - h_row_index[ii])*e_size_2;
+    cs_lnum_t displ_h = h_row_index[ii]*e_size_2;
     for (cs_lnum_t jj = 0; jj < n_h_cols; jj++)
-      mc->_h_val[displ_h + jj] = 0;
-  }
+      _h_val[displ_h + jj] = 0.;
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2955,7 +3058,9 @@ _dist_assembler_values_add(void                    *matrix_p,
 #endif
   }
 
-  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+  cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
+  if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
      --------------- */
@@ -3093,7 +3198,9 @@ _dist_assembler_values_add_g(void                    *matrix_p,
 #endif
   }
 
-  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+  cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
+  if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
      --------------- */
@@ -3898,13 +4005,14 @@ _destroy_struct_dist(void  **ms)
 }
 
 /*----------------------------------------------------------------------------
- * Set distributed extradiagonal matrix coefficients for the case where there are
- * multiple contributions to a given coefficient.
+ * Set distributed extradiagonal matrix coefficients for the case where
+ * there are multiple contributions to a given coefficient.
  *
  * The matrix coefficients should have been initialized (i.e. set to 0)
  * some before using this function.
  *
  * parameters:
+ *   ctx         <-- Reference to dispatch context
  *   matrix      <-- pointer to matrix structure
  *   symmetric   <-- indicates if extradiagonal values are symmetric
  *   n_edges     <-- local number of graph edges
@@ -3913,11 +4021,12 @@ _destroy_struct_dist(void  **ms)
  *----------------------------------------------------------------------------*/
 
 static void
-_set_e_coeffs_dist_increment(cs_matrix_t        *matrix,
-                             bool                symmetric,
-                             cs_lnum_t           n_edges,
-                             const cs_lnum_2_t  *restrict edges,
-                             const cs_real_t    *restrict xa)
+_set_e_coeffs_dist_increment(cs_dispatch_context  &ctx,
+                             cs_matrix_t          *matrix,
+                             bool                  symmetric,
+                             cs_lnum_t             n_edges,
+                             const cs_lnum_2_t    *restrict edges,
+                             const cs_real_t      *restrict xa)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
@@ -3926,48 +4035,62 @@ _set_e_coeffs_dist_increment(cs_matrix_t        *matrix,
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
   const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
 
+  const cs_lnum_t n_rows = ms->n_rows;
+  const cs_lnum_t *e_row_index = ms_e->row_index;
+  const cs_lnum_t *e_col_id = ms_e->col_id;
+  const cs_lnum_t *h_row_index = ms_h->row_index;
+  const cs_lnum_t *h_col_id = ms_h->col_id;
+
+  cs_real_t *e_val = mc->_e_val;
+  cs_real_t *h_val = mc->_h_val;
+
   /* Copy extra-diagonal values */
 
-  assert(edges != nullptr);
+  assert(edges != nullptr || n_edges == 0);
 
   const cs_lnum_t xa_stride = (symmetric) ? 1 : 2;
   const cs_lnum_t xa_sj = xa_stride / 2;
 
-  for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+  cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
+  if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
+
+  ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
     cs_lnum_t kk, ll;
     cs_lnum_t ii = edges[edge_id][0];
     cs_lnum_t jj = edges[edge_id][1];
-    if (ii < ms->n_rows) {
-      if (jj < ms->n_rows) {
-        for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
-        mc->_e_val[kk] += xa[xa_stride*edge_id];
+    if (ii < n_rows) {
+      if (jj < n_rows) {
+        for (kk = e_row_index[ii]; e_col_id[kk] != jj; kk++);
+        cs_dispatch_sum(&e_val[kk], xa[xa_stride*edge_id], sum_type);
       }
       else {
-        for (kk = ms_h->row_index[ii]; ms_h->col_id[kk] != jj; kk++);
-        mc->_h_val[kk] += xa[xa_stride*edge_id];
+        for (kk = h_row_index[ii]; h_col_id[kk] != jj; kk++);
+        cs_dispatch_sum(&h_val[kk], xa[xa_stride*edge_id], sum_type);
       }
     }
-    if (jj < ms->n_rows) {
-      if (ii < ms->n_rows) {
-        for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
-        mc->_e_val[ll] += xa[xa_stride*edge_id + xa_sj];
+    if (jj < n_rows) {
+      if (ii < n_rows) {
+        for (ll = e_row_index[jj]; e_col_id[ll] != ii; ll++);
+        cs_dispatch_sum(&e_val[ll], xa[xa_stride*edge_id + xa_sj], sum_type);
       }
       else {
-        for (ll = ms_h->row_index[jj]; ms_h->col_id[ll] != ii; ll++);
-        mc->_h_val[ll] += xa[xa_stride*edge_id + xa_sj];
+        for (ll = h_row_index[jj]; h_col_id[ll] != ii; ll++);
+        cs_dispatch_sum(&h_val[ll], xa[xa_stride*edge_id + xa_sj], sum_type);
       }
     }
-  }
+  });
 }
 
 /*----------------------------------------------------------------------------
- * Set distributed extradiagonal matrix coefficients for the case where there are
- * multiple contributions to a given coefficient.
+ * Set distributed extradiagonal matrix coefficients for the case where
+ * there are multiple contributions to a given coefficient.
  *
  * The matrix coefficients should have been initialized (i.e. set to 0)
  * some before using this function.
  *
  * parameters:
+ *   ctx         <-- Reference to dispatch context
  *   matrix      <-- pointer to matrix structure
  *   symmetric   <-- indicates if extradiagonal values are symmetric
  *   n_edges     <-- local number of graph edges
@@ -3976,11 +4099,12 @@ _set_e_coeffs_dist_increment(cs_matrix_t        *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_e_coeffs_dist_increment_block(cs_matrix_t        *matrix,
-                                   bool                symmetric,
-                                   cs_lnum_t           n_edges,
-                                   const cs_lnum_2_t  *restrict edges,
-                                   const cs_real_t    *restrict xa)
+_set_e_coeffs_dist_increment_block(cs_dispatch_context  &ctx,
+                                   cs_matrix_t          *matrix,
+                                   bool                  symmetric,
+                                   cs_lnum_t             n_edges,
+                                   const cs_lnum_2_t    *restrict edges,
+                                   const cs_real_t      *restrict xa)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
@@ -3991,63 +4115,80 @@ _set_e_coeffs_dist_increment_block(cs_matrix_t        *matrix,
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
   const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
 
+  const cs_lnum_t n_rows = ms->n_rows;
+  const cs_lnum_t *e_row_index = ms_e->row_index;
+  const cs_lnum_t *e_col_id = ms_e->col_id;
+  const cs_lnum_t *h_row_index = ms_h->row_index;
+  const cs_lnum_t *h_col_id = ms_h->col_id;
+
+  cs_real_t *e_val = mc->_e_val;
+  cs_real_t *h_val = mc->_h_val;
+
   /* Copy extra-diagonal values */
 
-  assert(edges != nullptr);
+  assert(edges != nullptr || n_edges == 0);
 
   const cs_lnum_t xa_stride = (symmetric) ? b_size_2 : 2*b_size_2;
   const cs_lnum_t xa_sj = (symmetric) ? 0 : b_size_2;
 
-  for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+  cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
+  if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
+
+  ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
+    cs_lnum_t kk, ll;
     cs_lnum_t ii = edges[edge_id][0];
     cs_lnum_t jj = edges[edge_id][1];
-    cs_lnum_t kk, ll;
-    if (ii < ms->n_rows) {
-      if (jj < ms->n_rows) {
-        for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++) {
-          for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-            mc->_e_val[kk * b_size_2 + pp] += xa[xa_stride * edge_id + pp];
-        }
+    if (ii < n_rows) {
+      if (jj < n_rows) {
+        for (kk = e_row_index[ii]; e_col_id[kk] != jj; kk++);
+        for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
+          cs_dispatch_sum(&e_val[kk * b_size_2 + pp],
+                          xa[xa_stride * edge_id + pp],
+                          sum_type);
       }
       else {
-        for (kk = ms_h->row_index[ii]; ms_h->col_id[kk] != jj; kk++) {
-          for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-            mc->_h_val[kk * b_size_2 + pp] += xa[xa_stride * edge_id + pp];
-        }
+        for (kk = h_row_index[ii]; h_col_id[kk] != jj; kk++);
+        for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
+          cs_dispatch_sum(&h_val[kk * b_size_2 + pp],
+                          xa[xa_stride * edge_id + pp],
+                          sum_type);
       }
     }
-    if (jj < ms->n_rows) {
-      if (ii < ms->n_rows) {
-        for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++) {
-          for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-            mc->_e_val[ll * b_size_2 + pp] +=
-              xa[xa_stride * edge_id + xa_sj + pp];
-        }
+    if (jj < n_rows) {
+      if (ii < n_rows) {
+        for (ll = e_row_index[jj]; e_col_id[ll] != ii; ll++);
+        for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
+          cs_dispatch_sum(&e_val[ll * b_size_2 + pp],
+                          xa[xa_stride * edge_id + xa_sj + pp],
+                          sum_type);
       }
       else {
-        for (ll = ms_h->row_index[jj]; ms_h->col_id[ll] != ii; ll++) {
-          for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-            mc->_h_val[ll * b_size_2 + pp] +=
-              xa[xa_stride * edge_id + xa_sj + pp];
-        }
+        for (ll = h_row_index[jj]; h_col_id[ll] != ii; ll++);
+        for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
+          cs_dispatch_sum(&h_val[ll * b_size_2 + pp],
+                          xa[xa_stride * edge_id + xa_sj + pp],
+                          sum_type);
       }
     }
-  }
+  });
 }
 
 /*----------------------------------------------------------------------------
  * Map or copy distributed matrix diagonal coefficients.
  *
  * parameters:
+ *   ctx              <-- Reference to dispatch context
  *   matrix           <-> pointer to matrix structure
  *   copy             <-- indicates if coefficients should be copied
  *   da               <-- diagonal values (nullptr if all zero)
  *----------------------------------------------------------------------------*/
 
 static void
-_map_or_copy_d_coeffs_dist(cs_matrix_t      *matrix,
-                           bool              copy,
-                           const cs_real_t  *restrict da)
+_map_or_copy_d_coeffs_dist(cs_dispatch_context  &ctx,
+                           cs_matrix_t          *matrix,
+                           bool                  copy,
+                           const cs_real_t      *restrict da)
 {
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
@@ -4062,11 +4203,12 @@ _map_or_copy_d_coeffs_dist(cs_matrix_t      *matrix,
     if (copy) {
       CS_FREE(mc->_d_val);
       CS_MALLOC_HD(mc->_d_val, db_size_2*n_rows, cs_real_t, matrix->alloc_mode);
-#     pragma omp parallel for  if(n_rows*db_size > CS_THR_MIN)
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      cs_real_t *d_val = mc->_d_val;
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
         for (cs_lnum_t jj = 0; jj < db_size_2; jj++)
-          mc->_d_val[ii*db_size_2 + jj] = da[ii*db_size_2 + jj];
-      }
+          d_val[ii*db_size_2 + jj] = da[ii*db_size_2 + jj];
+      });
+      ctx.wait();
       mc->d_val = mc->_d_val;
     }
     else
@@ -4107,9 +4249,13 @@ _set_coeffs_dist(cs_matrix_t         *matrix,
   const cs_lnum_t eb_size = matrix->eb_size;
   const cs_lnum_t eb_size_2 = matrix->eb_size * matrix->eb_size;
 
+  cs_dispatch_context  ctx;
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
   /* Map or copy diagonal values */
 
-  _map_or_copy_d_coeffs_dist(matrix, copy, da);
+  _map_or_copy_d_coeffs_dist(ctx, matrix, copy, da);
 
   /* Extradiagonal values */
 
@@ -4130,12 +4276,15 @@ _set_coeffs_dist(cs_matrix_t         *matrix,
 
   /* No direct assembly optimization (yet) */
 
-  _zero_coeffs_csr(&(ms->e), matrix->eb_size, mc->_e_val);
-  _zero_coeffs_csr(&(ms->h), matrix->eb_size, mc->_h_val);
+  _zero_coeffs_csr(ctx, &(ms->e), matrix->eb_size, mc->_e_val);
+  _zero_coeffs_csr(ctx, &(ms->h), matrix->eb_size, mc->_h_val);
   if (eb_size == 1)
-    _set_e_coeffs_dist_increment(matrix, symmetric, n_edges, edges, xa);
+    _set_e_coeffs_dist_increment(ctx, matrix, symmetric, n_edges, edges, xa);
   else
-    _set_e_coeffs_dist_increment_block(matrix, symmetric, n_edges, edges, xa);
+    _set_e_coeffs_dist_increment_block(ctx, matrix, symmetric, n_edges, edges,
+                                       xa);
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -4180,9 +4329,11 @@ _get_diagonal_dist(const cs_matrix_t  *matrix)
                    matrix->alloc_mode);
       mc->db_size = matrix->db_size;
     }
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      mc->_d_val[ii] = 0.0;
+    cs_dispatch_context  ctx;
+    if (matrix->alloc_mode == CS_ALLOC_HOST)
+      ctx.set_use_gpu(false);
+    cs_arrays_set_zero<cs_real_t, 1>(ctx, n_rows, mc->_d_val);
+    ctx.wait();
     mc->d_val = mc->_d_val;
   }
   diag = mc->d_val;
@@ -5276,27 +5427,27 @@ cs_matrix_create_by_local_restrict(const cs_matrix_t  *src)
   switch(m->type) {
   case CS_MATRIX_MSR:
     {
-    auto ms_src = static_cast<const cs_matrix_struct_csr_t *>(src->structure);
+      auto ms_src = static_cast<const cs_matrix_struct_csr_t *>(src->structure);
 
-    m->_structure = _create_struct_csr_from_restrict_local(ms_src);
-    m->structure  = m->_structure;
-    m->coeffs     = _create_coeff();
-    auto mc       = static_cast<cs_matrix_coeff_t *>(m->coeffs);
-    auto mc_src   = static_cast<cs_matrix_coeff_t *>(src->coeffs);
-    auto ms       = static_cast<const cs_matrix_struct_csr_t *>(m->structure);
-    mc->d_val     = mc_src->d_val;
-    CS_MALLOC_HD(mc->_e_val,
-                 eb_size_2 * ms->row_index[n_rows],
-                 cs_real_t,
-                 src->alloc_mode);
-    mc->e_val = mc->_e_val;
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-      const cs_lnum_t  n_cols = ms->row_index[ii + 1] - ms->row_index[ii];
-      const cs_real_t *s_row =
-        mc_src->e_val + ms_src->row_index[ii] * eb_size_2;
-      cs_real_t *m_row = mc->_e_val + ms->row_index[ii] * eb_size_2;
-      memcpy(m_row, s_row, sizeof(cs_real_t) * eb_size_2 * n_cols);
-    }
+      m->_structure = _create_struct_csr_from_restrict_local(ms_src);
+      m->structure  = m->_structure;
+      m->coeffs     = _create_coeff();
+      auto mc       = static_cast<cs_matrix_coeff_t *>(m->coeffs);
+      auto mc_src   = static_cast<cs_matrix_coeff_t *>(src->coeffs);
+      auto ms       = static_cast<const cs_matrix_struct_csr_t *>(m->structure);
+      mc->d_val     = mc_src->d_val;
+      CS_MALLOC_HD(mc->_e_val,
+                   eb_size_2 * ms->row_index[n_rows],
+                   cs_real_t,
+                   src->alloc_mode);
+      mc->e_val = mc->_e_val;
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        const cs_lnum_t  n_cols = ms->row_index[ii + 1] - ms->row_index[ii];
+        const cs_real_t *s_row =
+          mc_src->e_val + ms_src->row_index[ii] * eb_size_2;
+        cs_real_t *m_row = mc->_e_val + ms->row_index[ii] * eb_size_2;
+        memcpy(m_row, s_row, sizeof(cs_real_t) * eb_size_2 * n_cols);
+      }
       mc->db_size = m->db_size;
       mc->eb_size = m->eb_size;
     }
