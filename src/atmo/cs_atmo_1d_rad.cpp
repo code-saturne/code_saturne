@@ -2602,6 +2602,11 @@ cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
       // Integration from i to k
       _compute_ir_co2_o3_absorption(zqq[i], zqq[k], abco2, dabco2, qqqqv,
                                     qv0[i], qqqqco2, qco2[i], romray[i]);
+
+      fn = fnerir[k1];
+      for (int ineb = k1; ineb <= kmray; ineb++)
+        fn = std::max(fn, fnerir[ineb]);
+
       _cf_estimate(fn, taul, 1e-3, 0.0, 1.0, fn, qqqql);
 
       a3 -= (1.0 - (1.0 + fn * (taul - 1.0)) * (tauv - abco2)) * dt4[k];
@@ -2689,6 +2694,8 @@ cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
                                          qqqqc, qc[k], romray[k]);
       _compute_ir_co2_o3_absorption(zqq[k], zqq[kk], abco2, dabco2, qqqqv,
                                     qv0[k], qqqqco2, qco2[k], romray[k]);
+
+      fn = fnerir[k1];
       for (int ineb = k1; ineb <= kmray; ineb++)
         fn = std::max(fn, fnerir[ineb]);
 
@@ -2756,6 +2763,12 @@ cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
     const cs_real_t term_2
       =   ((1.0 + fnss*(tlsups - 1.0))
         * (dtvsups - dabcsups) - dul * tlsups * (tvsups - abcsups));
+
+    /*! cooling rate in cloudy conditions
+       Formula follows Ponnulakshmi and al. (2009)
+       TODO should give back previous formula for dul=0 and tlsup=1 and tlsups=1
+     */
+
     rayi[k] =  ctray * ( a1 - a2 + t4zt * term_1
                         -(1.0 - emis) * (a3 + t4zt * term_2));
 
@@ -3081,14 +3094,13 @@ cs_atmo_1d_rad_source_term(void)
   cs_real_t *ground_emissi = atmo_1d_rad->emissi0;
   cs_real_t *ground_temp = atmo_1d_rad->temp0;
   cs_real_t *ground_pressure = atmo_1d_rad->p0;
+  cs_real_t *ground_totwat = atmo_1d_rad->qw0;
+  cs_real_t *ground_density = atmo_1d_rad->rho0;
 
   if (at_opt->ground_model >= 1) {
 
     const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
     const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
-
-    cs_real_t *ground_totwat = atmo_1d_rad->qw0;
-    cs_real_t *ground_density = atmo_1d_rad->rho0;
 
     int nbrsol;
     cs_lnum_t nfmodsol;
@@ -3251,6 +3263,7 @@ cs_atmo_1d_rad_source_term(void)
                           &temray[k],
                           &romray[k]);
       temray[k] -= tkelvi;
+      qvray[k] = 0.;
     }
 
     cs_user_atmo_1d_rad_prf(preray.data(),
