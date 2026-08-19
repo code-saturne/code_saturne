@@ -609,10 +609,7 @@ _coarse_init(const cs_grid_t  *f,
   if (amode != CS_ALLOC_HOST)
     amode = CS_ALLOC_HOST_DEVICE_SHARED;
   CS_MALLOC_HD(c->coarse_row, f->n_cols_ext, cs_lnum_t, amode);
-
-# pragma omp parallel for if(f->n_cols_ext > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < f->n_cols_ext; ii++)
-    c->coarse_row[ii] = -2;
+  // Initialized later to avoid extra loop or CPU/GPU exchange.
 
 #if defined(HAVE_MPI)
   c->merge_stride = f->merge_stride;
@@ -2331,6 +2328,9 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
   const cs_real_t dd_threshold = (f->level == 0) ? _dd_threshold_pw : -1;
   const cs_lnum_t f_n_rows = f->n_rows;
 
+  /* Initialize f_c_row */
+  cs_arrays_set_value<cs_lnum_t, 1>(f->n_cols_ext, -2, f_c_row);
+
   /* Access matrix MSR vectors */
 
   const cs_lnum_t  *row_index, *col_id;
@@ -2426,6 +2426,9 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
 
   cs_lnum_t *c_aggr_count = nullptr;
   cs_real_t *maxi = nullptr;
+
+  /* Initialize f_c_row */
+  cs_arrays_set_value<cs_lnum_t, 1>(f->n_cols_ext, -2, f_c_row);
 
   /* Access matrix native arrays */
 
@@ -2651,6 +2654,9 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
 
   const cs_lnum_t db_size = f->db_size;
   const cs_lnum_t eb_size = f->eb_size;
+
+  /* Initialize f_c_row */
+  cs_arrays_set_value<cs_lnum_t, 1>(f->n_cols_ext, -2, f_c_row);
 
   /* Access matrix MSR vectors */
 
@@ -4713,12 +4719,15 @@ _automatic_aggregation_dx_msr_v1(const cs_grid_t       *f,
           f_c_row[ii] = -1;
           c_aggr_count[ii] = 0;
         }
+        else
+          f_c_row[ii] = -2;
       }
     }
     else {
       for (cs_lnum_t ii = t_s_id; ii < t_e_id; ii++) {
         c_cardinality[ii] = row_index[ii+1] - row_index[ii];
         c_aggr_count[ii] = 1;
+        f_c_row[ii] = -2;
       }
     }
 
@@ -5078,7 +5087,7 @@ _automatic_aggregation_dx_msr_v1(const cs_grid_t       *f,
  *   g                      <-- grid structure
  *   coarsening_type        <-- coarsening type
  *   penalization_threshold <-- penalization threshold, ignored if <= 0
- *   f_c_row                <-> fine to coarse row map
+ *   f_c_row                --> fine to coarse row map
  *                              (-2 initial, -1 if penalized)
  *   aggr_strength          --> base aggregation strength (< 0 if penalized)
  *
@@ -5167,7 +5176,7 @@ _aggr_strenght_dx_msr
       }
     }
 
-    // f_c_row[i] = -2;
+    f_c_row[i] = -2;
 
     /* Loop on columns */
 
@@ -5258,7 +5267,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
                               int                    verbosity,
                               cs_lnum_t             *f_c_row)
 {
-  CS_PROFILE_MARK_LINE();
+  CS_PROFILE_FUNC_RANGE();
 
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
@@ -5701,7 +5710,7 @@ _find_preferred_neighbor(cs_dispatch_context   &ctx,
                          cs_lnum_t             *aggr_row,
                          cs_lnum_t             *preferred_neighbor)
 {
-  CS_PROFILE_MARK_LINE();
+  CS_PROFILE_FUNC_RANGE();
 
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
@@ -5847,7 +5856,7 @@ _assign_to_aggregate(cs_dispatch_context   &ctx,
                      cs_lnum_t             *intermediate_aggr_row,
                      cs_lnum_t             *aggr_row)
 {
-  CS_PROFILE_MARK_LINE();
+  CS_PROFILE_FUNC_RANGE();
 
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
@@ -5979,7 +5988,7 @@ _automatic_aggregation_dx_msr_pgm
   cs_lnum_t                   *f_c_row
 )
 {
-  CS_PROFILE_MARK_LINE();
+  CS_PROFILE_FUNC_RANGE();
 
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
