@@ -5676,6 +5676,466 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
 }
 
 /*----------------------------------------------------------------------------
+ * Find preferred neighbor for aggregation.
+ *
+ * parameters:
+ *   ctx                  <-- associated dispatch context
+ *   level                <-- fine grid level (for logging)
+ *   n_rows               <-- Number of rows
+ *   row_index            <-- MSR row index
+ *   col_id               <-- MSR column id
+ *   aggr_strength        <-- Base aggregation strength
+ *   aggr_row             <-- Aggregation row
+ *   preferred_neighbor   <-- Preferred neighbor after this pass
+ *----------------------------------------------------------------------------*/
+
+static void
+_find_preferred_neighbor(cs_dispatch_context   &ctx,
+                         int                    level,
+                         float                  aggr_threshold,
+                         cs_lnum_t              n_rows,
+                         const cs_lnum_t       *row_index,
+                         const cs_lnum_t       *col_id,
+                         float                 *aggr_strength,
+                         cs_lnum_t             *aggr_row,
+                         cs_lnum_t             *preferred_neighbor)
+{
+  CS_PROFILE_MARK_LINE();
+
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+
+    if (aggr_row[ii] != -2)
+      return;
+
+    cs_lnum_t aggr_col_unaggr = -2, aggr_col_aggr = -2;
+    float max_weight_unaggr = 0, max_weight_aggr = 0;
+
+    cs_lnum_t row_s_id = row_index[ii];
+    cs_lnum_t row_e_id = row_index[ii+1];
+    for (cs_lnum_t ix0 = row_s_id; ix0 < row_e_id; ix0++) {
+
+      cs_lnum_t jj = col_id[ix0];
+
+      /* Exclude aggregation on parallel or periodic boundary, so as
+         not to coarsen the grid across those boundaries (which would
+         change the communication pattern and require a more complex
+         algorithm). */
+
+      if (jj < 0 || jj >= n_rows)
+        return;
+
+      cs_lnum_t jj_a = aggr_row[jj];
+
+      /* If both rows are already aggregated or one is penalized, pass */
+
+      if (jj_a == -1)
+        return;
+
+      float aggr_crit = aggr_strength[ix0];
+
+      if (aggr_crit > aggr_threshold) {
+        if (jj_a > -1) {
+          if (max_weight_aggr < aggr_crit) {
+            max_weight_aggr = aggr_crit;
+            aggr_col_aggr = jj;
+          }
+        }
+        else if (jj_a == -2) {
+          if (max_weight_unaggr <= aggr_crit) {
+            if (max_weight_unaggr < aggr_crit || jj > aggr_col_unaggr) {
+              max_weight_unaggr = aggr_crit;
+              aggr_col_unaggr = jj;
+            }
+          }
+        }
+      }
+
+    }  /* Loop on columns */
+
+    if (aggr_col_unaggr == -2 && aggr_col_aggr != -2) {
+      // All neighbors already aggregated, connect to the
+      // neighbor with strongest criteria.
+      // Note that no others will use this item as their
+      // strongest_neighbor since they are already aggregated.
+      // So this is deterministic behavior.
+      aggr_row[ii] = aggr_row[aggr_col_aggr];
+    }
+    else if (aggr_col_unaggr != -2) {
+      // set the preferred neighbor in the unagg group
+      preferred_neighbor[ii] = aggr_col_unaggr;
+    }
+    else {
+      // no neighbor
+      preferred_neighbor[ii] = ii;
+    }
+  });  /* Loop on rows */
+
+  ctx.wait();
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d:   %s (level %d)", cs_glob_rank_id, __func__, level);
+    printf(" = %ld\n", elapsed.count());
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Match edges given a preferred neighbor info.
+ *
+ * parameters:
+ *   ctx                   <-- associated dispatch context
+ *   n_rows                <-- Number of rows
+ *   preferred_neighbor    <-- Preferred neighbor id
+ *   aggr_row              <-> Row aggregation id
+ *----------------------------------------------------------------------------*/
+
+static void
+_match_edge(cs_dispatch_context   &ctx,
+            cs_lnum_t              n_rows,
+            const cs_lnum_t       *preferred_neighbor,
+            cs_lnum_t             *aggr_row)
+{
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+    if (aggr_row[ii] != -2)
+      return;
+
+    cs_lnum_t jj = preferred_neighbor[ii];
+    if (    jj > -1 && preferred_neighbor[jj] == ii
+        &&  ii <= jj) {
+      aggr_row[ii] = ii;
+      aggr_row[jj] = ii;
+    }
+  });
+}
+
+/*----------------------------------------------------------------------------
+ * Assign remaining rows to aggregates.
+ *
+ * parameters:
+ *   ctx                   <-- associated dispatch context
+ *   coarsening_type       <-- Coarsening type
+ *   max_aggregation       <-- Max fine cells per coarse cell
+ *   coarsening_type       <-- Coarsening type
+ *   max_aggregation       <-- Max fine cells per coarse cell
+ *   n_rows                <-- Number of rows
+ *   row_index             <-- MSR row index
+ *   col_id                <-- MSR column id
+ *   aggr_strength         <-- Base aggregation strength
+ *   c_cardinality         <-- Row cardinality (valence)
+ *   c_aggr_count          <-- Coarse aggregate count
+ *   intermediate_aggr_row --> Intermediate aggragation for deterministic
+ *                             algorithm, aggr_row for nondeterministic.
+ *   aggr_row              --> Row aggregation id
+ *----------------------------------------------------------------------------*/
+
+static void
+_assign_to_aggregate(cs_dispatch_context   &ctx,
+                     int                    level,
+                     cs_lnum_t              n_rows,
+                     const cs_lnum_t       *row_index,
+                     const cs_lnum_t       *col_id,
+                     float                 *aggr_strength,
+                     cs_lnum_t             *intermediate_aggr_row,
+                     cs_lnum_t             *aggr_row)
+{
+  CS_PROFILE_MARK_LINE();
+
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+
+    if (intermediate_aggr_row != aggr_row)
+      intermediate_aggr_row[ii] = aggr_row[ii];
+
+    if (aggr_row[ii] != -2)
+      return;
+
+    float  max_weight_aggr = 0;
+    cs_lnum_t  preferred_aggr = -2;
+
+    cs_lnum_t row_s_id = row_index[ii];
+    cs_lnum_t row_e_id = row_index[ii+1];
+    for (cs_lnum_t ix0 = row_s_id; ix0 < row_e_id; ix0++) {
+      cs_lnum_t jj = col_id[ix0];
+      if (jj >= n_rows)
+        continue;
+
+      float aggr_crit = aggr_strength[ix0];
+
+      if (   aggr_row[jj] > -1
+          && max_weight_aggr <= aggr_crit) {
+        if (   max_weight_aggr < aggr_crit
+            || jj > preferred_aggr) {
+          max_weight_aggr = aggr_crit;
+          preferred_aggr = jj;
+        }
+      }
+    }
+
+    if (preferred_aggr != -2) {
+      intermediate_aggr_row[ii] = aggr_row[preferred_aggr];
+    }
+    else {
+      intermediate_aggr_row[ii] = ii;
+    }
+  });
+
+  // Copy intermediate aggregation array to main aggregation array
+  if (intermediate_aggr_row != aggr_row) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      aggr_row[ii] = intermediate_aggr_row[ii];
+    });
+  }
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d:   %s (level %d)", cs_glob_rank_id, __func__, level);
+    printf(" = %ld\n", elapsed.count());
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Match edges given a preferred neighbor info.
+ *
+ * parameters:
+ *   ctx                   <-- associated dispatch context
+ *   n_rows                <-- Number of rows
+ *   aggr_row              <-> Row aggregation id
+ *----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_aggr_to_coarse(cs_dispatch_context   &ctx,
+                cs_lnum_t              n_rows,
+                cs_lnum_t             *aggr_row)
+{
+  cs_array<cs_lnum_t> a_count(n_rows+1);
+  a_count.zero();
+
+  cs_lnum_t *idx = a_count.data();
+
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+    cs_lnum_t j = aggr_row[i];
+    if (j > -1)
+      idx[aggr_row[i]] = 1;
+  }
+
+  cs::algorithm::count_to_index(ctx, n_rows, idx);
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+    cs_lnum_t j = aggr_row[i];
+    if (j > -1)
+      aggr_row[i] = idx[j];
+  });
+
+  const cs_lnum_t nc = _get_host_value(ctx, idx + n_rows);
+
+  return nc;
+}
+
+/*----------------------------------------------------------------------------
+ * Build a coarse grid level from the previous level using
+ * an automatic criterion, using a MSR matrix adjacency.
+ *
+ * This variant uses parallel graph matching.
+ *
+ * parameters:
+ *   f                    <-- Fine grid structure
+ *   coarsening_type      <-- Coarsening type
+ *   max_aggregation      <-- Max fine cells per coarse cell
+ *   relaxation_parameter <-- P0/P1 relaxation factor
+ *   verbosity            <-- Verbosity level
+ *   f_c_row              --> Fine row -> coarse row mapping
+ *
+ * return:
+ *   number of coarse rows
+ *----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_automatic_aggregation_dx_msr_pgm
+(
+  const cs_grid_t             *f,
+  cs_grid_coarsening_t         coarsening_type,
+  [[maybe_unused]] cs_lnum_t   max_aggregation,
+  double                       relaxation_parameter,
+  int                          verbosity,
+  cs_lnum_t                   *f_c_row
+)
+{
+  CS_PROFILE_MARK_LINE();
+
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  const float threshold_base_factor = 6;
+  const int npass_max = 10;
+
+  const cs_lnum_t f_n_rows = f->n_rows;
+
+  cs_dispatch_context ctx;
+  if (f->alloc_mode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+
+  cs_lnum_t c_n_rows = -1;
+
+  cs_real_t epsilon = 1.e-6;
+
+  short int  *c_cardinality = nullptr;
+  float      *aggr_strength = nullptr;
+
+  cs_lnum_t *aggr_row = f_c_row;
+
+  /* Precompute base aggregation strength */
+
+  const cs_real_t penalization_threshold = (f->level == 0) ?
+    _penalization_threshold : -1;
+
+  const cs_lnum_t f_nnz
+    = _aggr_strenght_dx_msr(f,
+                            coarsening_type,
+                            penalization_threshold,
+                            aggr_row,
+                            aggr_strength);
+
+  /* Access matrix MSR vectors */
+
+  const cs_lnum_t  *row_index, *col_id;
+
+  _matrix_get_msr_arrays_host(f->matrix,
+                              f->level,
+                              &row_index,
+                              &col_id,
+                              nullptr,
+                              nullptr);
+
+  CS_PROFILE_MARK_LINE();
+
+  /* Allocate working arrays */
+
+  short int *c_aggr_count;
+  CS_MALLOC_HD(c_aggr_count, f_n_rows, short int, ctx.alloc_mode());
+
+  cs_lnum_t *preferred_neighbor;
+  CS_MALLOC_HD(preferred_neighbor, f_n_rows, cs_lnum_t, ctx.alloc_mode());
+  ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+    preferred_neighbor[i] = -2;
+  });
+
+  /* aggregation queue: local column id, index in matrix */
+  constexpr cs_lnum_t ag_queue_stride = 2;
+  cs_lnum_t ag_work_size = cs::max(f_nnz*ag_queue_stride, f_n_rows);
+  cs_lnum_t *ag_work;
+  CS_MALLOC(ag_work, ag_work_size, cs_lnum_t);
+
+  CS_PROFILE_MARK_LINE();
+
+  float max_unassigned_ratio = 1./10;
+
+  cs_lnum_t n_unaggr_prev = f_n_rows, n_unaggr = f_n_rows;
+
+  for (int iter = 0; iter < npass_max; iter++) {
+
+    float aggr_threshold = 1. - epsilon;
+    if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
+      int npass = iter;
+      aggr_threshold = cs_math_pow2(  (1. - epsilon)
+                                    * pow(relaxation_parameter, npass));
+    }
+    aggr_threshold /= cs_math_pow2(threshold_base_factor + iter);
+
+    _find_preferred_neighbor(ctx,
+                             f->level,
+                             aggr_threshold,
+                             f_n_rows,
+                             row_index,
+                             col_id,
+                             aggr_strength,
+                             aggr_row,
+                             preferred_neighbor);
+
+    _match_edge(ctx, f_n_rows, preferred_neighbor, aggr_row);
+
+    /* Count unaggregated */
+
+    n_unaggr = 0;
+
+    ctx.parallel_for_reduce_sum(f_n_rows, n_unaggr, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t ii,
+                                 CS_DISPATCH_REDUCER_TYPE(cs_lnum_t) &_n_unaggr) {
+      if (aggr_row[ii] == -2)
+        _n_unaggr += 1;
+    });
+
+    if (  n_unaggr == 0 || n_unaggr == n_unaggr_prev
+        || n_unaggr < f_n_rows * max_unassigned_ratio)
+      break;
+
+    n_unaggr_prev = n_unaggr;
+
+    if (verbosity > 3) {
+      bft_printf("       pass %d; n_unaggegated = %ld/%ld;\n",
+                 iter, (long)n_unaggr, (long)f_n_rows);
+    }
+  }
+
+  if (n_unaggr > 0) {
+    cs_lnum_t *intermediate_aggr_row;
+    CS_MALLOC_HD(intermediate_aggr_row, f_n_rows, cs_lnum_t, ctx.alloc_mode());
+
+    _assign_to_aggregate(ctx,
+                         f->level,
+                         f_n_rows,
+                         row_index,
+                         col_id,
+                         aggr_strength,
+                         intermediate_aggr_row,
+                         aggr_row);
+
+    CS_FREE(intermediate_aggr_row);
+  }
+
+  _aggr_to_coarse(ctx, f_n_rows, aggr_row);
+
+  CS_PROFILE_MARK_LINE();
+
+  /* Free working arrays */
+
+  CS_FREE(ag_work);
+  CS_FREE(aggr_strength);
+  CS_FREE(c_cardinality);
+  CS_FREE(c_aggr_count);
+  CS_FREE(preferred_neighbor);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d:   %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           f->level, f->level+1);
+    printf(", total = %ld\n", elapsed.count());
+  }
+
+  return c_n_rows;
+}
+
+/*----------------------------------------------------------------------------
  * Compute volume and center of coarse cells.
  *
  * parameters:
@@ -8989,6 +9449,8 @@ cs_grid_coarsen(cs_grid_t            *f,
    * CS_MG_COARSENING_VERSION value:
    * - 1:      For CS_GRID_COARSENING_SPD_DX or CS_GRID_COARSENING_CONV_DIFF_DX,
    *           legacy (v9.0 and older) criteria.
+   * - 2:      For CS_GRID_COARSENING_SPD_DX or CS_GRID_COARSENING_CONV_DIFF_DX,
+   *           use PGM (parallel graph matching) algorithm.
    * - others: default
    */
 
@@ -9126,6 +9588,13 @@ cs_grid_coarsen(cs_grid_t            *f,
                                                      c->relaxation,
                                                      verbosity,
                                                      c->coarse_row);
+      else if (spd_dx_variant == 2)
+        c->n_rows = _automatic_aggregation_dx_msr_pgm(f,
+                                                      coarsening_type,
+                                                      aggregation_limit,
+                                                      c->relaxation,
+                                                      verbosity,
+                                                      c->coarse_row);
       else
         c->n_rows = _automatic_aggregation_dx_msr(f,
                                                   coarsening_type,
