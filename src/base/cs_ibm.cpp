@@ -3923,12 +3923,14 @@ void cs_immersed_boundaries(const cs_mesh_t *mesh,
                          cell_f_vol);
     }
 
-    cs_field_gradient_potential(CS_F_(p),
-                                use_previous_t,
-                                inc,
-                                hyd_p_flag,
-                                f_ext,
-                                gradp);
+    if (ipass >= 3) {
+      cs_field_gradient_potential(CS_F_(p),
+                                  use_previous_t,
+                                  inc,
+                                  hyd_p_flag,
+                                  f_ext,
+                                  gradp);
+    }
 
     /* Initialize porosity at the previous value */
 
