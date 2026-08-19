@@ -2054,12 +2054,12 @@ cs_internal_coupling_update_bc_coeffs_strided
 
   var_t *var_ext = nullptr, *var_ext_lim = nullptr;
   var_t *var_tosend = nullptr, *var_distant_lim = nullptr;
-  CS_MALLOC(var_ext, n_local, var_t);
-  CS_MALLOC(var_tosend, n_distant, var_t);
+  CS_MALLOC_HD(var_ext, n_local, var_t, cs_alloc_mode);
+  CS_MALLOC_HD(var_tosend, n_distant, var_t, cs_alloc_mode);
 
   if (df_limiter != nullptr) {
-    CS_MALLOC(var_ext_lim, n_local, var_t);
-    CS_MALLOC(var_distant_lim, n_distant, var_t);
+    CS_MALLOC_HD(var_ext_lim, n_local, var_t, cs_alloc_mode);
+    CS_MALLOC_HD(var_distant_lim, n_distant, var_t, cs_alloc_mode);
   }
 
   const cs_lnum_t *restrict b_face_cells = mesh->b_face_cells;
