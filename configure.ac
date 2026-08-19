@@ -1107,7 +1107,7 @@ sys.exit(0)]"
   fi
 
   # Test for PyQt6 developer tools
-  if test "x$cs_have_gui" = "xPyQt5" ; then
+  if test "x$cs_have_gui" = "xPyQt6" ; then
 
     # Try to find PyQt6 tools through Python interpreter
     prog="[import os, sys

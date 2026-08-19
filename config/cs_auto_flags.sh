@@ -751,9 +751,18 @@ elif test "x$cs_gxx" = "xclang"; then
   cxxflags_default_omp="-fopenmp=libomp"
 
   cs_clangpp_version_number=`echo $cs_ac_cxx_version | sed -e "s/^.*version //"`
-  case "$cs_clangpp_version_number" in
-    14* | 15*)
+  case "$cs_ac_cxx_version" in
+    *Apple*)
+      # Apple clang version numbers do not match LLVM ones, and the
+      # default C++ standard remains C++14 in recent versions.
       cxxflags_default="$cxxflags_default  -std=c++17"
+      ;;
+    *)
+      case "$cs_clangpp_version_number" in
+        14* | 15*)
+        cxxflags_default="$cxxflags_default  -std=c++17"
+        ;;
+      esac
       ;;
   esac
   case "$cs_clangpp_version_number" in
