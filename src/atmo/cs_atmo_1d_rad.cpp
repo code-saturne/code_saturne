@@ -75,6 +75,16 @@ static cs_atmo_1d_rad_t _atmo_1d_rad = {
   .nlevels_max = 0,
   .frequency = 1,
   .tausup = -1.0,
+  .aod_o3_tot = 0.2,
+  .aod_h2o_tot = 0.1,
+  .aod_ir = 0.1,
+  .conco2 = 3.5e-2*44.0/29.0,
+  .gaero_o3 = 0.66,
+  .gaero_h2o = 0.64,
+  .piaero_o3 = 0.84,
+  .piaero_h2o = 0.84,
+  .black_carbon_frac = 0.0,
+  .zaero = 6000.0,
   .xy = nullptr,
   .z = nullptr,
   .acinfe = nullptr,
@@ -884,25 +894,25 @@ cs_atmo_1d_rad_initialize(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_compute_radiative_fluxes(const int       ivertc,
-                                 const int       k1,
-                                 const int       kmray,
-                                 const cs_real_t heuray,
-                                 const int       imer1,
-                                 cs_real_t       *albe_p,
-                                 cs_real_t       qqv[],
-                                 const cs_real_t qqvinf,
-                                 const cs_real_t zqq[],
-                                 const cs_real_t zray[],
-                                 const cs_real_t qvray[],
-                                 cs_real_t       qlray[],
-                                 cs_real_t       fneray[],
-                                 const cs_real_t romray[],
-                                 const cs_real_t preray[],
-                                 const cs_real_t temray[],
-                                 cs_real_t       *fos_p,
-                                 cs_real_t       rayst[],
-                                 const cs_real_t ncray[])
+cs_atmo_1d_rad_compute_solar(const int       ivertc,
+                             const int       k1,
+                             const int       kmray,
+                             const cs_real_t heuray,
+                             const int       imer1,
+                             cs_real_t       *albe_p,
+                             cs_real_t       qqv[],
+                             const cs_real_t qqvinf,
+                             const cs_real_t zqq[],
+                             const cs_real_t zray[],
+                             const cs_real_t qvray[],
+                             cs_real_t       qlray[],
+                             cs_real_t       fneray[],
+                             const cs_real_t romray[],
+                             const cs_real_t preray[],
+                             const cs_real_t temray[],
+                             cs_real_t       *fos_p,
+                             cs_real_t       rayst[],
+                             const cs_real_t ncray[])
 {
   /* Minimal local class to access some 2D spans with shifted
      arguments, replacing ref(i, j) with ref(i+1, j).
@@ -949,7 +959,6 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
   const cs_real_3_t *b_face_cog = mq->b_face_cog;
 
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
-  const cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
   const cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
 
   const int kmx = at_1d_rad->nlevels_max;
@@ -1323,15 +1332,15 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
       // Aerosol optical depth AOD
       fneba[i] = 0.;
 
-      if (iaer == true && zray[i] <= at_chem->zaero) {
+      if (iaer == true && zray[i] <= at_1d_rad->zaero) {
         iaero_top = std::max(i + 1, iaero_top);
         fneba[i]  = 1.;
         deltaz    = zqq[i+1] - zqq[i];
 
         // Distribution of AOD on the vertical homogeneous between 0 and zaero
         // Note, we used a formula based on concentration before v6.2.
-        tauao3[i] = at_chem->aod_o3_tot * deltaz / zqq[iaero_top];
-        tauah2o[i]= at_chem->aod_h2o_tot * deltaz / zqq[iaero_top];
+        tauao3[i] = at_1d_rad->aod_o3_tot * deltaz / zqq[iaero_top];
+        tauah2o[i]= at_1d_rad->aod_h2o_tot * deltaz / zqq[iaero_top];
       }
 
       // Calculation of SSA and Asymmetry factor for clouds using- Nielsen 2014
@@ -1345,7 +1354,7 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
 
       fnebmax[i] = std::max(fnebmax[i + 1], fneray[i]);
 
-      if (at_chem->black_carbon_frac > epsc) {
+      if (at_1d_rad->black_carbon_frac > epsc) {
         // SSA with black carbon fraction (Chuang 2002)
         const cs_real_t dm = req * 4.0 / 3.0;
         cs_real_t pioco3C = 0.;
@@ -1355,9 +1364,9 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
         // 4 first spectral bands defined by Chuang 2002.
         for (int k = 4; k < 12; ++k) {
           const cs_real_t coef
-            = (1.0 - exp(-beta3[k] * (at_chem->black_carbon_frac - nu0)));
+            = (1.0 - exp(-beta3[k] * (at_1d_rad->black_carbon_frac - nu0)));
           const cs_real_t coef1
-            = (1.0 - exp(-beta4[k] * (at_chem->black_carbon_frac - nu0)));
+            = (1.0 - exp(-beta4[k] * (at_1d_rad->black_carbon_frac - nu0)));
           copioc20[k] = omega0[k] + beta1[k] * coef + beta2[k] * coef1;
 
           copioc[k] = (copioc20[k] * dm / dm0)
@@ -1416,9 +1425,9 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
     cs_real_t rbarc = rabarc + tabarc * tabarc * albe / (1. - rabarc * albe);
 
     // --- Calculation for aerosol layers ---
-    _compute_reflection_transmission(0., at_chem->piaero_o3, 0.,
-                                     at_chem->gaero_o3, 0.,
-                                     at_chem->aod_o3_tot,
+    _compute_reflection_transmission(0., at_1d_rad->piaero_o3, 0.,
+                                     at_1d_rad->gaero_o3, 0.,
+                                     at_1d_rad->aod_o3_tot,
                                      refx, trax, epsc, 0.,
                                      mui, muzero_cor);
 
@@ -1530,8 +1539,8 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
       pioc  = pic_o3[l];
 
       //In the cloudy layers
-      _compute_reflection_transmission(pioc, at_chem->piaero_o3, gasym,
-                                       at_chem->gaero_o3,
+      _compute_reflection_transmission(pioc, at_1d_rad->piaero_o3, gasym,
+                                       at_1d_rad->gaero_o3,
                                        tauc[l], tauao3[l],
                                        refx, trax,
                                        epsc, 0., mui, muzero_cor);
@@ -1540,8 +1549,8 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
       tra(l, 0) = fneray[l] * trax;
 
       //In the aerosol layers
-      _compute_reflection_transmission(0., at_chem->piaero_o3, 0.,
-                                       at_chem->gaero_o3, 0., tauao3[l],
+      _compute_reflection_transmission(0., at_1d_rad->piaero_o3, 0.,
+                                       at_1d_rad->gaero_o3, 0., tauao3[l],
                                        refx, trax,
                                        epsc, 0., mui, muzero_cor);
 
@@ -1718,16 +1727,16 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
         tau(l, n) = tauc[l] + dqqv + tauah2o[l];
 
         if (qlray[l] >= epsc) {
-          _compute_reflection_transmission(pioc, at_chem->piaero_h2o, gasym,
-                                           at_chem->gaero_h2o, tauc[l],
+          _compute_reflection_transmission(pioc, at_1d_rad->piaero_h2o, gasym,
+                                           at_1d_rad->gaero_h2o, tauc[l],
                                            tauah2o[l], refx, trax, epsc,
                                            dqqv, mui, muzero_cor);
           ref(l, n) =   fneray[l] * refx;
           tra(l, n) =   fneray[l] * trax
                       + (1. - fneray[l]) * exp(-mbarh2o * dqqv);
           if (iaer) {
-            _compute_reflection_transmission(0., at_chem->piaero_h2o,
-                                             0., at_chem->gaero_h2o,
+            _compute_reflection_transmission(0., at_1d_rad->piaero_h2o,
+                                             0., at_1d_rad->gaero_h2o,
                                              0., tauah2o[l], refx0, trax0,
                                              epsc, dqqv, mui, muzero_cor);
             ref(l, n) = fneray[l] * refx + (1. - fneray[l]) * refx0;
@@ -1747,8 +1756,8 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
           if (l >= itop) tra(l, n) = exp(-m * tau(l, n));
 
           if (iaer) {
-            _compute_reflection_transmission(0., at_chem->piaero_h2o,
-                                             0., at_chem->gaero_h2o, 0.,
+            _compute_reflection_transmission(0., at_1d_rad->piaero_h2o,
+                                             0., at_1d_rad->gaero_h2o, 0.,
                                              tauah2o[l], refx, trax, epsc,
                                              dqqv, mui, muzero_cor);
             ref(l, n) = fneba[l] * refx;
@@ -1945,12 +1954,12 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
       }
       else {
         cs_real_t picapc
-          = (pic_h2o[k] * tauc[k] + at_chem->piaero_h2o * tauah2o[k]) / tauapc;
+          = (pic_h2o[k] * tauc[k] + at_1d_rad->piaero_h2o * tauah2o[k]) / tauapc;
 
         /* if we take into account asymmetry factor for forward diffuse radiation
          * Note apc means aerosols+clouds */
         cs_real_t gapc = (  pic_h2o[k] * tauc[k] * gch2o[k]
-                          + at_chem->piaero_h2o * tauah2o[k] * at_chem->gaero_h2o)
+                          + at_1d_rad->piaero_h2o * tauah2o[k] * at_1d_rad->gaero_h2o)
                        / (tauapc * picapc);
 
         // Save values without Joseph correction for 3D
@@ -1997,11 +2006,11 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
       }
       else {
         const cs_real_t picapc
-          = (pic_o3[k] * tauc[k] + at_chem->piaero_o3 * tauao3[k]) / tauapc;
+          = (pic_o3[k] * tauc[k] + at_1d_rad->piaero_o3 * tauao3[k]) / tauapc;
         // if we take into account asymmetry factor for forward diffuse radiation
         const cs_real_t gapc = (  pic_o3[k] * tauc[k] * gco3[k]
-                                +   at_chem->piaero_o3 * tauao3[k]
-                                  * at_chem->gaero_o3)
+                                +   at_1d_rad->piaero_o3 * tauao3[k]
+                                  * at_1d_rad->gaero_o3)
                              / (tauapc * picapc);
         // Direct (no Joseph correction)
         ckapcd = tauapc / (deltaz * muzero_cor);
@@ -2239,27 +2248,27 @@ cs_atmo_compute_radiative_fluxes(const int       ivertc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
-                                     const int        k1,
-                                     const int        kmray,
-                                     const cs_real_t  emis,
-                                     cs_real_t        qqv[],
-                                     cs_real_t        qqqv[],
-                                     cs_real_t        *qqvinf_p,
-                                     cs_real_t        zqq[],
-                                     cs_real_t        zray[],
-                                     const cs_real_t  temray[],
-                                     const cs_real_t  qvray[],
-                                     const cs_real_t  qlray[],
-                                     cs_real_t        fnerir[],
-                                     const cs_real_t  romray[],
-                                     const cs_real_t  preray[],
-                                     const cs_real_t  aeroso[],
-                                     const cs_real_t  t_surf,
-                                     const cs_real_t  p_surf,
-                                     cs_real_t       *foir_p,
-                                     cs_real_t        rayi[],
-                                     const cs_real_t  ncray[])
+cs_atmo_1d_rad_compute_infrared(const int        ivertc,
+                                const int        k1,
+                                const int        kmray,
+                                const cs_real_t  emis,
+                                cs_real_t        qqv[],
+                                cs_real_t        qqqv[],
+                                cs_real_t        *qqvinf_p,
+                                cs_real_t        zqq[],
+                                cs_real_t        zray[],
+                                const cs_real_t  temray[],
+                                const cs_real_t  qvray[],
+                                const cs_real_t  qlray[],
+                                cs_real_t        fnerir[],
+                                const cs_real_t  romray[],
+                                const cs_real_t  preray[],
+                                const cs_real_t  aeroso[],
+                                const cs_real_t  t_surf,
+                                const cs_real_t  p_surf,
+                                cs_real_t       *foir_p,
+                                cs_real_t        rayi[],
+                                const cs_real_t  ncray[])
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -2272,7 +2281,6 @@ cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
 
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
   const cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
-  const cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
 
   const int kmx = at_1d_rad->nlevels_max;
 
@@ -2390,7 +2398,7 @@ cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
 
     kliq[k] = beta * 0.75 * 1e3 / req;
     // Estimation of the inverse of the aerosol layer
-    if (iaer == true && zray[k] <= at_chem->zaero) {
+    if (iaer == true && zray[k] <= at_1d_rad->zaero) {
       fnerir[k] = 1.0;
       iaero_top = std::max(iaero_top, k+1);
     }
@@ -2420,7 +2428,7 @@ cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
 
     qv0[k] = qvray[k] * corp * sqrt(cort);
     rov[k] = romray[k] * qv0[k];
-    qco2[k] = at_chem->conco2 * pow(corp, 0.75) * pow(cort, 0.325);
+    qco2[k] = at_1d_rad->conco2 * pow(corp, 0.75) * pow(cort, 0.325);
     roco2[k] = romray[k] * qco2[k];
     qc[k] =   qvray[k] * qvray[k] * corp
             * exp(1800.0 * (1.0 / (temray[k] + tkelvi) - 1.0 / 296.0))
@@ -2431,9 +2439,9 @@ cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
   // Same for cloud layers (aerosol only for clear sky condition)
   if (inua) {
     for (int k = k1; k <= kmray; ++k) {
-      if (zray[k] <= at_chem->zaero)
+      if (zray[k] <= at_1d_rad->zaero)
         rol[k] =   kliq[k] * romray[k] * qlray[k]
-                 + beta * at_chem->aod_ir * dz_aero;
+                 + beta * at_1d_rad->aod_ir * dz_aero;
       else
         rol[k] = kliq[k] * romray[k] * qlray[k];
     }
@@ -2441,8 +2449,8 @@ cs_atmo_compute_ir_fluxes_divergence(const int        ivertc,
 
   else if (iaer) {
     for (int k = k1; k <= kmray; ++k)
-      if (zray[k] <= at_chem->zaero)
-        rol[k] = beta * at_chem->aod_ir * dz_aero;
+      if (zray[k] <= at_1d_rad->zaero)
+        rol[k] = beta * at_1d_rad->aod_ir * dz_aero;
   }
 
   // 2. optical depth calculation for water vapor and its dimer
@@ -3324,21 +3332,21 @@ cs_atmo_1d_rad_source_term(void)
     cs_real_t foir, fos;
 
     // Long-wave: InfraRed
-    cs_atmo_compute_ir_fluxes_divergence(ii, k1, kmx-1, emis,
-                                         tauzq, tauz, &tausup, zq,
-                                         zray, temray, qvray, qlray,
-                                         fneray, romray, preray, aeroso,
-                                         ground_temp[ii], ground_pressure[ii],
-                                         &foir,
-                                         ir_div.sub_view(ii), ncray);
+    cs_atmo_1d_rad_compute_infrared(ii, k1, kmx-1, emis,
+                                    tauzq, tauz, &tausup, zq,
+                                    zray, temray, qvray, qlray,
+                                    fneray, romray, preray, aeroso,
+                                    ground_temp[ii], ground_pressure[ii],
+                                    &foir,
+                                    ir_div.sub_view(ii), ncray);
 
     // Short-wave: Sun
-    cs_atmo_compute_radiative_fluxes(ii, k1, kmx-1, heuray,
-                                     imer1, &albedo, tauzq, tausup, zq,
-                                     zray, qvray, qlray,
-                                     fneray, romray, preray, temray,
-                                     &fos,
-                                     sol_div.sub_view(ii), ncray);
+    cs_atmo_1d_rad_compute_solar(ii, k1, kmx-1, heuray,
+                                 imer1, &albedo, tauzq, tausup, zq,
+                                 zray, qvray, qlray,
+                                 fneray, romray, preray, temray,
+                                 &fos,
+                                 sol_div.sub_view(ii), ncray);
 
     // FIXME: albedo may be modified by previous call, but the value
     // is not modified in the ground_albedo (e.g. albedo0) array.

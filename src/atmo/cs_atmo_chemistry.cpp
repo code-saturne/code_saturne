@@ -121,17 +121,7 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .t_conc_profiles = nullptr,
   .x_conc_profiles = nullptr,
   .y_conc_profiles = nullptr,
-  .dt_chemistry_max = 10.0,
-  .aod_o3_tot = 0.2,
-  .aod_h2o_tot = 0.1,
-  .aod_ir = 0.1,
-  .conco2 = 3.5e-2*44.0/29.0,
-  .gaero_o3 = 0.66,
-  .gaero_h2o = 0.64,
-  .piaero_o3 = 0.84,
-  .piaero_h2o = 0.84,
-  .black_carbon_frac = 0.0,
-  .zaero = 6000.0
+  .dt_chemistry_max = 10.0
 };
 
 /*============================================================================
