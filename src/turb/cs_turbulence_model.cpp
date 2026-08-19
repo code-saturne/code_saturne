@@ -2165,7 +2165,6 @@ cs_clip_turbulent_fluxes(int  flux_id,
   /* Local variables */
   const cs_real_t tol_jacobi = 1.0e-12;
   const cs_real_t l_threshold = 1.0e12;
-  cs_lnum_t iclip = 0;
   cs_real_t flsq, maj;
   cs_real_33_t rij;
   cs_real_33_t eigvect = {{1.0,0.0,0.0}, {0.0,1.0,0.0}, {0.0,0.0,1.0}};
@@ -2193,6 +2192,8 @@ cs_clip_turbulent_fluxes(int  flux_id,
   cs_lnum_t iclip_tab_min[3] = {0, 0, 0};
 
   for (int cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_lnum_t iclip = 0;
+
     rij[0][0] = cvar_rij[cell_id][0];
     rij[1][1] = cvar_rij[cell_id][1];
     rij[2][2] = cvar_rij[cell_id][2];
@@ -2208,7 +2209,7 @@ cs_clip_turbulent_fluxes(int  flux_id,
     rit[2] = cvar_rit[cell_id][2];
 
     cs_math_33_eig_val_vec(rij, tol_jacobi, eigval, eigvect);
-    cs_math_33_3_product(eigvect, cvar_rit[cell_id], rot_rit);
+    cs_math_33t_3_product(eigvect, cvar_rit[cell_id], rot_rit);
 
     for (cs_lnum_t i = 0; i < 3; i++) {
       rit_min_prcoord[i] = cs::min(rit_min_prcoord[i], rot_rit[i]);
@@ -2229,7 +2230,7 @@ cs_clip_turbulent_fluxes(int  flux_id,
     }
 
     if (iclip > 0) {
-      cs_math_33t_3_product(eigvect,rot_rit,cvar_rit[cell_id]);
+      cs_math_33_3_product(eigvect, rot_rit, cvar_rit[cell_id]);
       cvar_clip_rit[cell_id][0] = cvar_rit[cell_id][0] - rit[0];
       cvar_clip_rit[cell_id][1] = cvar_rit[cell_id][1] - rit[1];
       cvar_clip_rit[cell_id][2] = cvar_rit[cell_id][2] - rit[2];
