@@ -4353,39 +4353,39 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                  \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
       */
 
-      cs_real_t pfaci
-        =  ktpond
-             * (  d_oi[0]*f_ext[c_id1][0]
-                + d_oi[1]*f_ext[c_id1][1]
-                + d_oi[2]*f_ext[c_id1][2]
-                + poro[0])
-        +  (1.0 - ktpond)
-             * (  d_oj[0]*f_ext[c_id2][0]
-                + d_oj[1]*f_ext[c_id2][1]
-                + d_oj[2]*f_ext[c_id2][2]
-                + poro[1]);
+      cs_real_t dpfaci =   c_var[c_id1]
+                         + cs_math_3_distance_dot_product(cell_cen[c_id1],
+                                                          i_face_cog[f_id],
+                                                          f_ext[c_id1]);
+
+      cs_real_t dpfacj =   c_var[c_id2]
+                         + cs_math_3_distance_dot_product(cell_cen[c_id2],
+                                                          i_face_cog[f_id],
+                                                          f_ext[c_id2]);
+
+      cs_real_t pfaci =   ktpond*poro[0] + (1.0-ktpond)*poro[1]
+                        + 0.5*(  cs_math_3_distance_dot_product(f_ext[c_id1],
+                                                                r_grad[c_id1],
+                                                                dofij[f_id])
+                               + cs_math_3_distance_dot_product(f_ext[c_id2],
+                                                                r_grad[c_id2],
+                                                                dofij[f_id]));
 
       cs_real_t pfacj = pfaci;
-      cs_real_t d_var = c_var[c_id2] - c_var[c_id1];
 
-      pfaci += (1.0-ktpond) * d_var;
-      pfacj -=      ktpond  * d_var;
+      pfaci += (1.0-ktpond) * (dpfacj - dpfaci)
+               + cs_math_3_dot_product(d_oi, f_ext[c_id1]);
+      pfacj -=      ktpond  * (dpfacj - dpfaci)
+               - cs_math_3_dot_product(d_oj, f_ext[c_id2]);
 
-      /* Reconstruction part */
-      cs_real_t rfac =
-               - weight[f_id]      * cs_math_3_dot_product(d_oi, fexd)
-           -  (1.0 - weight[f_id]) * cs_math_3_dot_product(d_oj, fexd)
-           + (  dofij[f_id][0] * (r_grad[c_id1][0]+r_grad[c_id2][0])
-              + dofij[f_id][1] * (r_grad[c_id1][1]+r_grad[c_id2][1])
-              + dofij[f_id][2] * (r_grad[c_id1][2]+r_grad[c_id2][2])) * 0.5;
+      pfaci *= i_face_surf[f_id];
+      pfacj *= i_face_surf[f_id];
 
-      T _pfaci = (pfaci + rfac) * i_face_surf[f_id];
-      T _pfacj = (pfacj + rfac) * i_face_surf[f_id];
 
       T rhsv1[3], rhsv2[3];
       for (cs_lnum_t j = 0; j < 3; j++) {
-        rhsv1[j] =   _pfaci * i_face_u_normal[f_id][j];
-        rhsv2[j] = - _pfacj * i_face_u_normal[f_id][j];
+        rhsv1[j] =   pfaci * i_face_u_normal[f_id][j];
+        rhsv2[j] = - pfacj * i_face_u_normal[f_id][j];
       }
 
       if (c_id1 < n_cells)
