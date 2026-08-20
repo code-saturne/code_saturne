@@ -3174,7 +3174,7 @@ cs_atmo_1d_rad_source_term(void)
   const int nbmaxt = at_opt->met_1d_nlevels_max_t;
   const int nbmett = at_opt->met_1d_nlevels_t;
 
-  const cs_real_t *z_dyn_met = at_opt->z_dyn_met;
+  const cs_real_t *z_temp_met = at_opt->z_temp_met;
   const cs_real_t *time_met = at_opt->time_met;
   const cs_real_t *hyd_p_met = at_opt->hyd_p_met;
   const cs_real_t *ttmet = at_opt->temp_met;
@@ -3223,10 +3223,10 @@ cs_atmo_1d_rad_source_term(void)
     }
 
     // Ground variables
-    // temray(1) = ground_temp[ii]
-    // qvray(1)  = ground_totwat[ii]
-    // romray(1) = ground_density[ii]
-    // preray(1) = ground_pressure[ii]
+    // temray(0) = ground_temp[ii]
+    // qvray(0)  = ground_totwat[ii]
+    // romray(0) = ground_density[ii]
+    // preray(0) = ground_pressure[ii]
 
     for (int k = 0; k < nlevels; k++) {
 
@@ -3240,7 +3240,7 @@ cs_atmo_1d_rad_source_term(void)
                             &preray[k], &dummy, &dummy);
       else if (meteo_profile == 1)
         preray[k] = cs_intprf(met_1d_nlevels_d, met_1d_ntimes,
-                              z_dyn_met, time_met, hyd_p_met, zray[k], t_cur);
+                              z_temp_met, time_met, hyd_p_met, zray[k], t_cur);
       else {
         // TODO would be more coherent with an averaging of
         // "meteo_pressure" field.
@@ -3280,9 +3280,9 @@ cs_atmo_1d_rad_source_term(void)
     if (meteo_profile == 1) {
       ktamp = cs::min(6, nlevels);
       for (int k = nlevels - ktamp; k < kmx; k++) {
-        temray[k] = cs_intprf(nbmaxt, met_1d_ntimes, z_dyn_met, time_met,
+        temray[k] = cs_intprf(nbmaxt, met_1d_ntimes, z_temp_met, time_met,
                               ttmet, zray[k], t_cur);
-        qvray[k] = cs_intprf(nbmaxt, met_1d_ntimes, z_dyn_met, time_met,
+        qvray[k] = cs_intprf(nbmaxt, met_1d_ntimes, z_temp_met, time_met,
                              qvmet, zray[k], t_cur);
       }
 
