@@ -1109,7 +1109,6 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
   bool iaer = true; // has aerosols, always, remove
   int ibase = 0;
 
-  constexpr cs_real_t one = 1.0;
   constexpr cs_real_t epsc = 1.e-8;
   constexpr cs_real_t z_ref = 0.647;
 
@@ -1464,7 +1463,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
 
       // --- Cloudy sky absorption (index 0) ---
       const cs_real_t dud1 = 1. / (1. - rrbar2s * albe);
-      fabso3c[l] =
+      fabso3c(l, 0) =
         muzero * fo * (ray_ozone_absorption(x)
                        - ray_ozone_absorption(xp1) * dud1
                        + rbarc * (ray_ozone_absorption(xstarp1)
@@ -1473,11 +1472,11 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
       // Direct downward radiation
       ddfso3[l] = muzero * fo * (z_ref - rrbar - ray_ozone_absorption(x));
       // Diffuse downward radiation (Rayleigh factor)
-      dddfso3[l] = ddfso3[l] * (dud1 - one);
+      dddfso3[l] = ddfso3[l] * (dud1 - 1.);
       // Global downward radiation
       dfso3[l] = ddfso3[l] * dud1;
       // Upward diffuse radiation under cloudy sky
-      ufso3c[l] =
+      ufso3c(l, 0) =
         muzero * fo * (z_ref - rrbar - ray_ozone_absorption(xstar)) * rbarc;
 
       // Calculation of heat and radiation fluxes during  Clear sky
@@ -1488,23 +1487,23 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
       xstar =   m * ozone_amount(zbas)
               + mbar * (ozone_amount(zbas) - ozone_amount(zq));
 
-      fabso3c[l + kmx + 1] =
+      fabso3c(l, 1) =
         muzero * fo * (  (ray_ozone_absorption(x) - ray_ozone_absorption(xp1))
                        * dud1
                        + albe * dud1 * (ray_ozone_absorption(xstarp1)
                                         - ray_ozone_absorption(xstar)));
 
       // Upward diffuse radiation for clear sky
-      ufso3c[l  + kmx + 1] =   muzero * fo
+      ufso3c(l, 1) =   muzero * fo
                              * (z_ref - rrbar - ray_ozone_absorption(xstar))
                              * albe * dud1;
 
       // sum depending on cloud fraction
       fabso3[l] =
-        fnebmax[k1] * fabso3c[l] + (1. - fnebmax[k1]) * fabso3c[l + kmx + 1];
+        fnebmax[k1] * fabso3c(l, 0) + (1. - fnebmax[k1]) * fabso3c(l, 1);
 
       ufso3[l] =
-        fnebmax[k1] * ufso3c[l] + (1. - fnebmax[k1]) * ufso3c[l + kmx + 1];
+        fnebmax[k1] * ufso3c(l, 0) + (1. - fnebmax[k1]) * ufso3c(l, 1);
 
       const cs_real_t dzx = ozone_gradient(zq);
 
@@ -1640,7 +1639,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
         const cs_real_t ozone
           = (ray_ozone_absorption(xstarp1) - ray_ozone_absorption(xstar) );
         fabso3[l]
-          = muzero * fo * (x_ozone + bas_ozone * absn[l] + rbar * ozone);
+          = muzero * fo * (x_ozone + bas_ozone * absn(l, 0) + rbar * ozone);
         // fluxes calculation taking into account ozone absorption
         // Direct
         ddfso3[l]
@@ -1848,6 +1847,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
         fabsh2o[l] = muzero * fo * (  ray_sve(y) - ray_sve(yp1)
                                     + albe * (  ray_sve(ystarp1)
                                               - ray_sve(ystar)));
+
       }
     }
 
