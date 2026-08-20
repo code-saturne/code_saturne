@@ -505,7 +505,7 @@ public:
   vect
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
+  ) const
   {
     std::tuple<cs_lnum_t *, cs_lnum_t *> tmp_tup(_extent + (N-1),
                                                  _offset + (N-1));
@@ -531,7 +531,7 @@ public:
   vect
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
+  ) const
   {
     return mdspan<T,1,layout::right>(_data + data_offset_(indices...), 3);
   }
@@ -555,7 +555,7 @@ public:
   sym_tensor
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
+  ) const
   {
     std::tuple<cs_lnum_t *, cs_lnum_t *> tmp_tup(_extent + (N-1),
                                                  _offset + (N-1));
@@ -581,7 +581,7 @@ public:
   sym_tensor
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
+  ) const
   {
     return mdspan<T,1,layout::right>(_data + data_offset_(indices...), 6);
   }
@@ -604,7 +604,7 @@ public:
   tensor
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
+  ) const
   {
     std::tuple<cs_lnum_t *, cs_lnum_t *> tmp_tup(_extent + (N-1),
                                                  _offset + (N-1));
@@ -630,7 +630,7 @@ public:
   tensor
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
+  ) const
   {
     return mdspan<T,2,layout::right>(_data + data_offset_(indices...), 3, 3);
   }
