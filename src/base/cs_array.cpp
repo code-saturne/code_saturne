@@ -321,8 +321,8 @@ cs_array_int_set_value_on_subset(cs_lnum_t        n_elts,
  *
  * \param[in]      n_elts   number of elements in the array
  * \param[in]      stride   number of values for each element
- * \param[in]      mode     apply the subset ids to which array(s)
  * \param[in]      elt_ids  list of ids in the subset or null (size: n_elts)
+ * \param[in]      mode     apply the subset ids to which array(s)
  * \param[in]      ref      reference values to copy
  * \param[in, out] dest     array storing values after applying the indirection
  */
