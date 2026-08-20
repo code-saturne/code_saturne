@@ -80,15 +80,15 @@
  * Local constexpr variables
  *============================================================================*/
 
-constexpr int ng = 100;
-constexpr int nt     = 38;
-constexpr int nconc  = 5;
-constexpr int nband  = 450;
-constexpr int maxit  = 1000;
-constexpr int imlinear    = 0;
-constexpr int im2dspline  = 6;
-constexpr cs_real_t eps    = 3e-14;
-constexpr cs_real_t x_kg[5] = {0.0001, 0.25, 0.5, 0.75, 1.0};
+static constexpr int ng = 100;
+static constexpr int nt     = 38;
+static constexpr int nconc  = 5;
+static constexpr int nband  = 450;
+static constexpr int maxit  = 1000;
+static constexpr int imlinear    = 0;
+static constexpr int im2dspline  = 6;
+static constexpr cs_real_t eps    = 3e-14;
+static constexpr cs_real_t x_kg[5] = {0.0001, 0.25, 0.5, 0.75, 1.0};
 
 /*=============================================================================
  * Local static variables
@@ -613,7 +613,7 @@ _simple_interpg(int        nxy,
     }
   }
 
-  if (cs::abs(xi[ni] - xx[nxym1]) / (xx[nxym1] + 1e-15) < 0.001)
+  if (cs::abs(xi[ni-1] - xx[nxym1]) / (xx[nxym1] + 1e-15) < 0.001)
     yi[ni] = yy[nxym1];
 }
 
