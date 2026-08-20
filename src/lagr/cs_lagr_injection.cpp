@@ -302,7 +302,7 @@ _distribute_particles(cs_gnum_t         n_g_particles,
 /*----------------------------------------------------------------------------*/
 
 static void
-_injection_check(const cs_lagr_injection_set_t  *zis)
+_injection_check(cs_lagr_injection_set_t  *zis)
 {
   const char _profile_err_fmt_i[]
     = N_("Lagrangian %s zone %d, set %d\n"
@@ -402,10 +402,13 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   }
 
   /* statistical weight */
-  if (zis->stat_weight <= 0.0 && zis->flow_rate <= 0.0)
-    bft_error(__FILE__, __LINE__, 0, _profile_err_fmt_d,
+  if (zis->stat_weight <= 0.0 && zis->flow_rate <= 0.0) {
+    bft_printf(_profile_err_fmt_d,
               z_type_name, z_id, set_id,
               _("statistical weight"), (double)zis->stat_weight);
+    zis->n_inject = 0;
+    zis->stat_weight = 0.0;
+  }
 
   /* mass flow rate */
   if (zis->flow_rate > 0.0 && zis->n_inject  == 0)
