@@ -4326,6 +4326,9 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
   const cs_real_t *f_da = f->da;
   const cs_real_t *f_xa = f->xa;
 
+  /* Initialize f_c_cell */
+  cs_arrays_set_value<cs_lnum_t, 1>(f->n_cols_ext, -2, f_c_cell);
+
   /* Reduce block to scalar equivalents */
 
   const cs_real_t *_f_da = f_da;
