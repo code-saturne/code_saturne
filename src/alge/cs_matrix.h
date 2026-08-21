@@ -851,6 +851,18 @@ cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
 bool
 cs_matrix_is_symmetric(const cs_matrix_t  *matrix);
 
+/*----------------------------------------------------------------------------
+ * Set (force) matrix coefficients symmetry flag
+ *
+ * parameters:
+ *   matrix   <-- pointer to matrix structure
+ *   symmetry <-- matrix symmetry flag
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_set_symmetric(cs_matrix_t  *matrix,
+                        bool          symmetric);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Indicate whether coefficients were mapped from native face-based

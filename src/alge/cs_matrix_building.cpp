@@ -2096,6 +2096,9 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
 
       cs_matrix_assembler_values_finalize(&mav);
 
+      if (isym == 1)
+        cs_matrix_set_symmetric(a, true);
+
     }
 
     else {
@@ -2444,6 +2447,9 @@ cs_matrix_compute_coeffs
       /* Finalize assembly */
 
       cs_matrix_assembler_values_finalize(&mav);
+
+      if (isym == 1)
+        cs_matrix_set_symmetric(a, true);
 
     }
 

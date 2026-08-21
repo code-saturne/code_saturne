@@ -5807,6 +5807,22 @@ cs_matrix_is_symmetric(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set (force) matrix coefficients symmetry flag
+ *
+ * \param[in]  matrix    pointer to matrix structure
+ * \param[in]  symmetry  matrix symmetry flag
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_set_symmetric(cs_matrix_t  *matrix,
+                        bool          symmetric)
+{
+  matrix->symmetric = symmetric;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Indicate whether coefficients were mapped from native face-based
  *        arrays.
  *
