@@ -57,10 +57,10 @@ def split_req_components(req_list):
     for r in req_list:
 
         rf = r
-        if bool(re.search('\[[A-Za-z0-9]\]', r)):
-            rf = re.sub('\[[A-Za-z0-9]\]', '', r)
-        elif bool(re.search('\[[A-Za-z0-9][A-Za-z0-9]\]', r)):
-            rf = re.sub('\[[A-Za-z0-9][A-Za-z0-9]\]', '', r)
+        if bool(re.search(r'\[[A-Za-z0-9]\]', r)):
+            rf = re.sub(r'\[[A-Za-z0-9]\]', '', r)
+        elif bool(re.search(r'\[[A-Za-z0-9][A-Za-z0-9]\]', r)):
+            rf = re.sub(r'\[[A-Za-z0-9][A-Za-z0-9]\]', '', r)
 
         if rf == r:
             req_fields.append(create_req_field(r,1))
@@ -737,8 +737,8 @@ class cs_math_parser:
         for t in tokens:
             # In the case of components, ensure the main field is added
             tklist = [t[0]]
-            if (bool(re.search('\[[0-9]\]', t[0]))):
-                tklist.append(re.sub('\[[0-9]\]', '', t[0]))
+            if (bool(re.search(r'\[[0-9]\]', t[0]))):
+                tklist.append(re.sub(r'\[[0-9]\]', '', t[0]))
 
             for tk in tklist:
                 if tk not in known_symbols:

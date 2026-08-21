@@ -383,7 +383,7 @@ def break_expression(exp):
 
     for line in exp.split('\n'):
         line_comp = []
-        for elt in re.split('=|\+|-|\*|\/|\(|\)|;|,|\^|<|>|\&\&|\|\|',line):
+        for elt in re.split(r'=|\+|-|\*|\/|\(|\)|;|,|\^|<|>|\&\&|\|\|',line):
             if elt != '':
                 line_comp.append(elt.strip())
 
