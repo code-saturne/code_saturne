@@ -888,7 +888,6 @@ cs_atmo_1d_rad_initialize(void)
  * \param[in]   romray      air density
  * \param[in]   preray      pressure
  * \param[in]   temray      temperature
- * \param[out]  fos         global downward solar flux at the ground
  * \param[out]  rayst       flux divergence of solar radiation
  */
 /*----------------------------------------------------------------------------*/
@@ -910,7 +909,6 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
                              const cs_real_t romray[],
                              const cs_real_t preray[],
                              const cs_real_t temray[],
-                             cs_real_t       *fos_p,
                              cs_real_t       rayst[],
                              const cs_real_t ncray[])
 {
@@ -966,7 +964,6 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
   const int k0 = k1 - 1;
   const int nbmett = at_opt->met_1d_nlevels_t;
 
-  cs_real_t fos  = *fos_p;
   cs_real_t albe = *albe_p;
   const cs_real_t cp0  = cs_glob_fluid_properties->cp0;
   const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
@@ -1931,7 +1928,8 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     // Tmg is now taken into account by fo=fo*Tmg
 
     // Solar heating of the ground surface by downward global flux
-    fos = dfs[k1] * (1. - albe);
+    // see ground model
+    // fos = dfs[k1] * (1. - albe);
 
     // Calculation of absorption coefficient ckup and ckdown useful
     // for 3D simulation
@@ -2067,7 +2065,6 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
       g_apc_sir[k] = 0.;
       g_apc_suv[k] = 0.;
     }
-    fos = 0.;
 
   }
 
@@ -2088,8 +2085,9 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     cs_real_t *cpro_ck_down = cs_field_by_name("rad_absorption_coeff_down")->val;
     cs_real_t *bpro_rad_inc = cs_field_by_name("spectral_rad_incident_flux")->val;
 
+    int rad_atmo_model = cs_glob_rad_transfer_params->atmo_model;
     // Direct Solar (denoted by _r) (for Solar IR band absorbed by H20)
-    if (cs_glob_rad_transfer_params->atmo_model & 1) {
+    if (rad_atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
       idx += 1;
       _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
                                               bc_type, n_b_faces,
@@ -2102,7 +2100,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     }
 
     // Direct Solar (denoted by _r) (for visible UV (SUV) band absorbed by O3)
-    if (cs_glob_rad_transfer_params->atmo_model & 2) {
+    if (rad_atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND) {
       idx += 1;
       _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
                                               bc_type, n_b_faces,
@@ -2116,7 +2114,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     }
 
     // Direct Solar (_r) if O3 band not activated: add to total solar band
-    else if (cs_glob_rad_transfer_params->atmo_model & 1) {
+    else if (rad_atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
       _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
                                               bc_type, n_b_faces,
                                               muzero, muzero_cor,
@@ -2129,7 +2127,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     }
 
     // Diffuse solar radiation incident up and down (SIR band)
-    if (cs_glob_rad_transfer_params->atmo_model & 4) {
+    if (rad_atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
       idx += 1;
       _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
                                               bc_type, n_b_faces,
@@ -2159,7 +2157,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     }
 
     // Diffuse solar radiation incident up and down (SUV - O3 band)
-    if (cs_glob_rad_transfer_params->atmo_model & 8) {
+    if (rad_atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND) {
       idx += 1;
       _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
                                               bc_type, n_b_faces,
@@ -2171,7 +2169,6 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
       _interpolate_coeff(idx, dim, kmray + 1,
                          n_cells, zray, ckdown_suv_f,
                          cell_cen, cpro_ck_down);
-
 
       // Upward
       _interpolate_coeff(idx, dim, kmray + 1,
@@ -2188,7 +2185,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
                          n_cells, zray, g_apc_suv,
                          cell_cen, cpro_gapc);
     }
-    else if (cs_glob_rad_transfer_params->atmo_model & 4) {
+    else if (rad_atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
       _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
                                               bc_type, n_b_faces,
                                               muzero, 1.0,
@@ -2214,7 +2211,6 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
 
  } // end if
 
- *fos_p  = fos;
  *albe_p = albe;
 }
 
@@ -2241,7 +2237,6 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
  * \param[in]  aeroso      aerosol concentration in micro-g/m3
  * \param[in]  t_surf      surface temperature
  * \param[in]  p_surf      surface pressure
- * \param[out] foir        downward IR flux at the ground
  * \param[out] rayi        IR flux divergence
  * \param[in]  ncray       Number of droplets interpolated on vertical grid
  */
@@ -2266,7 +2261,6 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
                                 const cs_real_t  aeroso[],
                                 const cs_real_t  t_surf,
                                 const cs_real_t  p_surf,
-                                cs_real_t       *foir_p,
                                 cs_real_t        rayi[],
                                 const cs_real_t  ncray[])
 {
@@ -2284,7 +2278,8 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
 
   const int kmx = at_1d_rad->nlevels_max;
 
-  cs_real_t foir = *foir_p;
+  // downward IR flux at the ground
+  cs_real_t foir = 0.;
   cs_real_t qqvinf = *qqvinf_p;
 
   const cs_real_t cp0 = cs_glob_fluid_properties->cp0;
@@ -2366,8 +2361,6 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
   qql[kmx] = 0.;
   qqqv[kmx] = 0.;
 
-  foir = 0.;
-
   // Upper layers contribution (11000-44000) to optical depth
   qqvinf = 0.0050;
   constexpr cs_real_t qqcinf = 3.28e-7;
@@ -2390,9 +2383,8 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
     // in case, microphysics data is available
     cs_real_t req = 1.5 * rm;
     if (ncray[k] > cs_math_epzero && qlray[k] > cs_math_epzero) {
-      req = 1e6 * pow(    (3.0 * romray[k] * qlray[k])
-                        / (4.0 * cs_math_pi * 1000.0 * ncray[k] * 1e6),
-                      1.0 / 3.0)
+      req = 1e6 * cbrt(    (3.0 * romray[k] * qlray[k])
+                        / (4.0 * cs_math_pi * 1000.0 * ncray[k] * 1e6))
           * exp(cs_math_pow2(at_opt->sigc));
     }
 
@@ -2438,7 +2430,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
 
   // Same for cloud layers (aerosol only for clear sky condition)
   if (inua) {
-    for (int k = k1; k <= kmray; ++k) {
+    for (int k = k1; k <= kmray; k++) {
       if (zray[k] <= at_1d_rad->zaero)
         rol[k] =   kliq[k] * romray[k] * qlray[k]
                  + beta * at_1d_rad->aod_ir * dz_aero;
@@ -2448,7 +2440,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
   }
 
   else if (iaer) {
-    for (int k = k1; k <= kmray; ++k)
+    for (int k = k1; k <= kmray; k++)
       if (zray[k] <= at_1d_rad->zaero)
         rol[k] = beta * at_1d_rad->aod_ir * dz_aero;
   }
@@ -2523,7 +2515,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
                                   dabco2, qqv[k], qv0[k1],
                                   qqco2[k], qco2[k1], romray[k]);
 
-    fo = fo - (1.0 - (1.0 + fn * (taul - 1.0))
+    fo -= (1.0 - (1.0 + fn * (taul - 1.0))
                * (tauv - abco2)) * dt4[k];
   }
 
@@ -2784,13 +2776,11 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
     ckdown[k] = (dabcsup - dtvsup) / (tvsup - abcsup);
   }
 
-  foir = sig * foir;
+  // Finalization: multiplication by sig
   for (int k = 0; k <= kmray; k++) {
     const int idx = k + ivertc * kmx;
-    ufir[k] = sig * ufir[k];
-    dfir[k] = sig * dfir[k];
-    _atmo_1d_rad.iru[idx] = ufir[k];
-    _atmo_1d_rad.ird[idx] = dfir[k];
+    _atmo_1d_rad.iru[idx] = sig * ufir[k];
+    _atmo_1d_rad.ird[idx] = sig * dfir[k];
   }
 
   // Compute Boundary conditions for the 3D
@@ -2808,21 +2798,22 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
     cs_real_t *cpro_ck_down = cs_field("rad_absorption_coeff_down")->val;
     cs_real_t *bpro_rad_inc = cs_field("spectral_rad_incident_flux")->val;
 
+    int rad_atmo_model = cs_glob_rad_transfer_params->atmo_model;
     // Direct solar radiation incident (for H2O band)
-    if (cs_glob_rad_transfer_params->atmo_model & 1)
+    if (rad_atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR)
       idx++;
     //  Direct solar radiation incident (for O3 band)
-    if (cs_glob_rad_transfer_params->atmo_model & 2)
+    if (rad_atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND)
       idx++;
     // Diffuse solar radiation incident
-    if (cs_glob_rad_transfer_params->atmo_model & 4)
+    if (rad_atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR)
       idx++;
     // Diffuse solar radiation incident (for SUV O3 band)
-    if (cs_glob_rad_transfer_params->atmo_model & 8)
+    if (rad_atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND)
       idx++;
 
     // Infra Red radiation incident
-    if (cs_glob_rad_transfer_params->atmo_model & 16) {
+    if (rad_atmo_model & CS_RAD_ATMO_3D_INFRARED) {
       idx++;
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
         const int id = idx + face_id * dim;
@@ -2862,7 +2853,6 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
     }
   }
 
-  *foir_p = foir;
   *qqvinf_p = qqvinf;
 
   CS_FREE(qc);
@@ -3329,15 +3319,12 @@ cs_atmo_1d_rad_source_term(void)
     // 2.2 Computing the radiative fluxes for the vertical
     // ---------------------------------------------------
 
-    cs_real_t foir, fos;
-
     // Long-wave: InfraRed
     cs_atmo_1d_rad_compute_infrared(ii, k1, kmx-1, emis,
                                     tauzq, tauz, &tausup, zq,
                                     zray, temray, qvray, qlray,
                                     fneray, romray, preray, aeroso,
                                     ground_temp[ii], ground_pressure[ii],
-                                    &foir,
                                     ir_div.sub_view(ii), ncray);
 
     // Short-wave: Sun
@@ -3345,7 +3332,6 @@ cs_atmo_1d_rad_source_term(void)
                                  imer1, &albedo, tauzq, tausup, zq,
                                  zray, qvray, qlray,
                                  fneray, romray, preray, temray,
-                                 &fos,
                                  sol_div.sub_view(ii), ncray);
 
     // FIXME: albedo may be modified by previous call, but the value
