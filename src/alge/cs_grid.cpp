@@ -5190,7 +5190,7 @@ _aggr_strenght_dx_msr
       /* No aggregation if adjacent row is on another rank */
       if (j >= n_rows) {
         aggr_strength[ix] = -1.;
-        return;
+        continue;
       }
 
       cs_real_t d_val_j = d_val[j];
@@ -5201,9 +5201,10 @@ _aggr_strenght_dx_msr
         cs_lnum_t jx_e = row_index[j+1];
         while (col_id[jx] != i && jx < jx_e)
           jx++;
-        if (jx >= jx_e) // non-symmetric structure; (should not occur)
+        if (jx >= jx_e) { // non-symmetric structure; (should not occur)
           aggr_strength[ix] = -1.;
-        return;
+          continue;
+        }
       }
 
       cs_real_t f_xa0_xa1;
@@ -5743,7 +5744,7 @@ _find_preferred_neighbor(cs_dispatch_context   &ctx,
 
       cs_lnum_t jj_a = aggr_row[jj];
 
-      /* If both rows are already aggregated or one is penalized, pass */
+      /* If a row is penalized, pass */
 
       if (jj_a == -1)
         return;
@@ -6053,6 +6054,9 @@ _automatic_aggregation_dx_msr_pgm
 
   CS_PROFILE_MARK_LINE();
 
+  if (verbosity > 3)
+    bft_printf("\n     %s:\n", __func__);
+
   cs_lnum_t n_unaggr_prev = f_n_rows, n_unaggr = f_n_rows;
 
   for (int iter = 0; iter < npass_max; iter++) {
@@ -6083,7 +6087,8 @@ _automatic_aggregation_dx_msr_pgm
 
     ctx.parallel_for_reduce_sum(f_n_rows, n_unaggr, [=] CS_F_HOST_DEVICE
                                 (cs_lnum_t ii,
-                                 CS_DISPATCH_REDUCER_TYPE(cs_lnum_t) &_n_unaggr) {
+                                 CS_DISPATCH_REDUCER_TYPE(cs_lnum_t) &_n_unaggr)
+    {
       if (aggr_row[ii] == -2)
         _n_unaggr += 1;
     });
