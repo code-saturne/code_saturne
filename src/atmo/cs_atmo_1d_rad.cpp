@@ -1467,8 +1467,8 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
       // --- Cloudy sky absorption (index 0) ---
       const cs_real_t dud1 = 1. / (1. - rrbar2s * albe);
       fabso3c(l, 0) =
-        muzero * fo * (ray_ozone_absorption(x)
-                       - ray_ozone_absorption(xp1) * dud1
+        muzero * fo * ( ( ray_ozone_absorption(x)
+                        - ray_ozone_absorption(xp1)) * dud1
                        + rbarc * (ray_ozone_absorption(xstarp1)
                                   - ray_ozone_absorption(xstar)));
 
