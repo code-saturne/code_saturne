@@ -797,7 +797,7 @@ _assembler_values_add_g(void             *matrix_p,
       PetscInt r_g_id = row_g_id[i];
       if (   r_g_id >= l_b
           && r_g_id < u_b
-          && cs::abs(vals[i]) > cs_math_epzero) {
+          && cs::abs(vals[i]) > cs_dbl_epsilon) {
         PetscInt idxm[] = {r_g_id};
         PetscInt idxn[] = {(PetscInt)col_g_id[i]};
         PetscScalar v[] = {vals[i]};
@@ -1677,7 +1677,7 @@ cs_matrix_petsc_add_scal_row_values(const cs_lnum_t                n_cols,
 
     PetscInt l = 0;
     for (int j = 0; j < n_group; j++) {
-      if (cs::abs(vals[s_id + j]) > cs_math_epzero) {
+      if (cs::abs(vals[s_id + j]) > cs_dbl_epsilon) {
         idxn[l] = col_g_ids[s_id + j];
         v[l] = vals[s_id + j];
         l++;
