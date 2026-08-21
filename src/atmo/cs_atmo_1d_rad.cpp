@@ -2099,14 +2099,19 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     // Direct Solar (denoted by _r) (for Solar IR band absorbed by H20)
     if (rad_atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
       idx += 1;
-      _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
+      _interpolate_boundary_rad_incident_flux(idx, dim, kmx,
                                               bc_type, n_b_faces,
                                               muzero, muzero_cor,
                                               zqq, ddfsh2o,
                                               b_face_cog, bpro_rad_inc);
-      _interpolate_coeff(idx, dim, kmray + 1,
+      _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, ckdown_sir_r,
                          cell_cen, cpro_ck_down);
+
+      _interpolate_coeff(idx, dim, kmx,
+                         n_cells, zray, w0_sir,
+                         cell_cen, cpro_w0);
+
     }
 
     // Direct Solar (denoted by _r) (for visible UV (SUV) band absorbed by O3)
@@ -2118,20 +2123,24 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
                                               zqq, ddfso3,
                                               b_face_cog, bpro_rad_inc);
 
-      _interpolate_coeff(idx, dim, kmray + 1,
+      _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, ckdown_suv_r,
                          cell_cen, cpro_ck_down);
+
+      _interpolate_coeff(idx, dim, kmx,
+                         n_cells, zray, w0_sir,
+                         cell_cen, cpro_w0);
     }
 
     // Direct Solar (_r) if O3 band not activated: add to total solar band
     else if (rad_atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
-      _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
+      _interpolate_boundary_rad_incident_flux(idx, dim, kmx,
                                               bc_type, n_b_faces,
                                               muzero, muzero_cor,
                                               zqq, ddfso3,
                                               b_face_cog, bpro_rad_inc);
 
-      _interpolate_coeff(idx, dim, kmray + 1,
+      _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, ckdown_suv_r,
                          cell_cen, cpro_ck_down);
     }
@@ -2844,21 +2853,21 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const int id = idx + c_id * dim;
         cs_real_t var;
-        cs_intprz(kmray + 1,
+        cs_intprz(kmx,
                   zray,
                   ckdown,
                   cell_cen[c_id][2],
                   nullptr,
                   &var);
-        cpro_ck_down[id] = var * 3.0 / 5.0;
+        cpro_ck_down[id] = var;
 
-        cs_intprz(kmray + 1,
+        cs_intprz(kmx,
                   zray,
                   ckup,
                   cell_cen[c_id][2],
                   nullptr,
                   &var);
-        cpro_ck_up[id] = var * 3.0 / 5.0;
+        cpro_ck_up[id] = var;
       }
     }
   }
