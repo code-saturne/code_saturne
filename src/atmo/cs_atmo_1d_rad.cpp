@@ -760,6 +760,7 @@ cs_atmo_1d_rad_initialize(void)
     n_level = std::max(1, _atmo_1d_rad.nlevels_max);
     n_vert = std::max(1, _atmo_1d_rad.nvert);
   }
+  int n_lp1 = n_level+1;
 
   if (_atmo_1d_rad.xy == nullptr)
     CS_MALLOC(_atmo_1d_rad.xy , 3*n_vert, cs_real_t);
@@ -796,16 +797,16 @@ cs_atmo_1d_rad_initialize(void)
   if (_atmo_1d_rad.sol_div == nullptr)
     CS_MALLOC(_atmo_1d_rad.sol_div, n_level * n_vert, cs_real_t);
   if (_atmo_1d_rad.iru == nullptr)
-    CS_MALLOC(_atmo_1d_rad.iru, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_1d_rad.iru, n_lp1 * n_vert, cs_real_t);
   if (_atmo_1d_rad.ird == nullptr) {
-    CS_MALLOC(_atmo_1d_rad.ird, n_level * n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_level * n_vert, _atmo_1d_rad.ird);
+    CS_MALLOC(_atmo_1d_rad.ird, n_lp1 * n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_lp1 * n_vert, _atmo_1d_rad.ird);
   }
   if (_atmo_1d_rad.solu == nullptr)
-    CS_MALLOC(_atmo_1d_rad.solu, n_level * n_vert, cs_real_t);
+    CS_MALLOC(_atmo_1d_rad.solu, n_lp1 * n_vert, cs_real_t);
   if (_atmo_1d_rad.sold == nullptr) {
-    CS_MALLOC(_atmo_1d_rad.sold, n_level * n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_level * n_vert, _atmo_1d_rad.sold);
+    CS_MALLOC(_atmo_1d_rad.sold, n_lp1 * n_vert, cs_real_t);
+    cs_array_real_fill_zero(n_lp1 * n_vert, _atmo_1d_rad.sold);
   }
   if (_atmo_1d_rad.qw == nullptr) {
     CS_MALLOC(_atmo_1d_rad.qw, n_level * n_vert, cs_real_t);
@@ -1443,9 +1444,14 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
 
     // Calculation above the top of the cloud or aerosol layer
 
-    for (int l = itop; l <= kmray; l++) {
+    //calculation have to start at the first level
+    for (int l = itop; l <= kmray + 1; l++) {
       const cs_real_t zq    = zqq[l];
-      const cs_real_t zqp1  = zqq[l + 1];
+      cs_real_t zqp1;
+      if (l == kmray + 1)
+        zqp1 = zq;
+      else
+        zqp1 = zqq[l + 1];
 
       // Ozone amount traversed by the direct solar beam
       cs_real_t x   = m * ozone_amount(zq);
@@ -1507,9 +1513,11 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
       const cs_real_t denom1 = (z_ref - rrbar - ray_ozone_absorption(x));
       const cs_real_t denom2 = (z_ref - rrbar - ray_ozone_absorption(xstar));
 
-      ckdown_suv_r[l] = d_ray_ozone_absorption(x, dzx) / denom1;
-      ckdown_suv_f[l] = d_ray_ozone_absorption(x, dzx) / denom1;
-      ckup_suv_f[l]   = d_ray_ozone_absorption(xstar, dzx) / denom2;
+      if (l < kmray + 1) {
+        ckdown_suv_r[l] = d_ray_ozone_absorption(x, dzx) / denom1;
+        ckdown_suv_f[l] = d_ray_ozone_absorption(x, dzx) / denom1;
+        ckup_suv_f[l]   = d_ray_ozone_absorption(xstar, dzx) / denom2;
+      }
     }
 
     // Calculation under the top of the cloud or the aerosol layer, the adding
@@ -1860,7 +1868,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     // for global radiation, fd for direct radiation for the water vapor band
     // H20: SIR band
 
-    for (int i = k1; i <= kmray; i++) {
+    for (int i = k1; i <= kmray + 1; i++) {
       dfsh2o[i]   = 0.;
       ufsh2o[i]   = 0.;
       ddfsh2o[i]  = 0.;
@@ -1899,19 +1907,21 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
         ddfsh2o[i] = fo * muzero * (0.353 - ray_sve(y));
       }
 
-      // (p_i/p_k) * (p_k/p0) = p_i/p0
-      cs_real_t corp = preray[i] / 101315.0;
-      cs_real_t dy =
-        romray[i] * (qvray[i] * corp * sqrt(tkelvi / (temray[i] + tkelvi)));
+      if (i < kmray + 1) {
+        // (p_i/p_k) * (p_k/p0) = p_i/p0
+        cs_real_t corp = preray[i] / 101315.0;
+        cs_real_t dy =
+          romray[i] * (qvray[i] * corp * sqrt(tkelvi / (temray[i] + tkelvi)));
 
-      // Absorption coefficients
-      ckdown_sir_r[i] = ray_sve_derivative(y, dy) / (0.353 - ray_sve(y));
-      ckdown_sir_f[i] = ray_sve_derivative(y, dy) / (0.353 - ray_sve(y));
-      ckup_sir_f[i] = ray_sve_derivative(ystar, dy) / (0.353 - ray_sve(ystar));
+        // Absorption coefficients
+        ckdown_sir_r[i] = ray_sve_derivative(y, dy) / (0.353 - ray_sve(y));
+        ckdown_sir_f[i] = ray_sve_derivative(y, dy) / (0.353 - ray_sve(y));
+        ckup_sir_f[i] = ray_sve_derivative(ystar, dy) / (0.353 - ray_sve(ystar));
+      }
     }
 
     // 6. Calculation of solar fluxes For the whole spectrum
-    for (int k = k1; k <= kmray; k++) {
+    for (int k = k1; k <= kmray + 1; k++) {
       // Global (down and up) fluxes
       dfs[k] = dfsh2o[k] + dfso3[k];
       ufs[k] = ufsh2o[k] + ufso3[k];
