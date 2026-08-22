@@ -385,6 +385,12 @@ cs_user_model(void)
   /* Activate 1-D radiative transfer model */
   at_1d_rad->radiative_model_1d = 1;
 
+  /* Set output verbosity level:
+   *   0: quiet (default)
+   *   1: basic output (print cloud/aerosol layer top height)
+   *   2: detailed output (print and dump 21 solar trace files) */
+  at_1d_rad->verbosity = 2;
+
   /* Specify the number of verticals and the number of levels.
    * The mesh levels can be specified in cs_user_parameters function.
    * */

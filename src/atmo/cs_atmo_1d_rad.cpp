@@ -57,6 +57,33 @@
 
 #include "atmo/cs_atmo_1d_rad.h"
 
+static void
+_dump_scalar_to_file(const char *filename, double heuray, cs_real_t val)
+{
+  FILE *f = fopen(filename, "a");
+  if (f != nullptr) {
+    fprintf(f, "%14.7e %14.7e\n", heuray, val);
+    fclose(f);
+  }
+}
+
+static void
+_dump_array_to_file(const char *filename,
+                    double      heuray,
+                    const       cs_real_t *arr,
+                    int         size)
+{
+  FILE *f = fopen(filename, "a");
+  if (f != nullptr) {
+    fprintf(f, "%14.7e", heuray);
+    for (int i = 0; i < size; i++) {
+      fprintf(f, " %14.7e", arr[i]);
+    }
+    fprintf(f, "\n");
+    fclose(f);
+  }
+}
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -74,6 +101,8 @@ static cs_atmo_1d_rad_t _atmo_1d_rad = {
   .nlevels = 20,
   .nlevels_max = 0,
   .frequency = 1,
+  .has_aerosol = 1,
+  .verbosity = 0,
   .tausup = -1.0,
   .aod_o3_tot = 0.2,
   .aod_h2o_tot = 0.1,
@@ -1104,7 +1133,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
   /* local initializations
      ===================== */
 
-  bool iaer = true; // has aerosols, always, remove
+  const bool has_aerosol = (at_1d_rad->has_aerosol > 0);
   int ibase = 0;
 
   constexpr cs_real_t epsc = 1.e-8;
@@ -1141,7 +1170,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     dffsh2o[k] = 0.;
     ddfsh2o[k] = 0.;
     dddfsh2o[k] = 0.;
-    if (iaer)
+    if (has_aerosol)
       fneba[k] = 1.;
     for (int n = 0; n < 2; n++)
       fabso3c(k, n) = 0.;
@@ -1329,7 +1358,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
       // Aerosol optical depth AOD
       fneba[i] = 0.;
 
-      if (iaer == true && zray[i] <= at_1d_rad->zaero) {
+      if (has_aerosol && zray[i] <= at_1d_rad->zaero) {
         iaero_top = std::max(i + 1, iaero_top);
         fneba[i]  = 1.;
         deltaz    = zqq[i+1] - zqq[i];
@@ -1436,10 +1465,16 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
 
     // in case there is an aerosol layer above the cloud layer
 
-    if ((iaer == true) && (iaero_top > itop)) {
+    if (has_aerosol && (iaero_top > itop)) {
       itop   = iaero_top;
       rbar   = rbara;
       rrbar2s = rabara;
+    }
+
+    if (at_1d_rad->verbosity > 0) {
+      bft_printf("1D Radiative Model: top of cloud/aerosol layer "
+                 "height = %f m (itop = %d)\n",
+                 zqq[itop], itop);
     }
 
     // Calculation above the top of the cloud or aerosol layer
@@ -1738,7 +1773,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
           ref(l, n) =   fneray[l] * refx;
           tra(l, n) =   fneray[l] * trax
                       + (1. - fneray[l]) * exp(-mbarh2o * dqqv);
-          if (iaer) {
+          if (has_aerosol) {
             _compute_reflection_transmission(0., at_1d_rad->piaero_h2o,
                                              0., at_1d_rad->gaero_h2o,
                                              0., tauah2o[l], refx0, trax0,
@@ -1759,7 +1794,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
 
           if (l >= itop) tra(l, n) = exp(-m * tau(l, n));
 
-          if (iaer) {
+          if (has_aerosol) {
             _compute_reflection_transmission(0., at_1d_rad->piaero_h2o,
                                              0., at_1d_rad->gaero_h2o, 0.,
                                              tauah2o[l], refx, trax, epsc,
@@ -1932,6 +1967,16 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
 
       _atmo_1d_rad.solu[k + ivertc * kmx] = ufs[k];
       _atmo_1d_rad.sold[k + ivertc * kmx] = dfs[k];
+    }
+
+    if (at_1d_rad->verbosity > 1) {
+      bft_printf("\n--- 1D Radiative Model Solar Fluxes ---\n");
+      bft_printf("fo = %e, mu0 = %e, albe = %e\n", fo, muzero, albe);
+      bft_printf("itop = %d (z = %f m), k1 = %d (z = %f m)\n",
+                 itop, zqq[itop], k1, zqq[k1]);
+      bft_printf("dfsh2o[0] = %e, dfso3[0] = %e, dfs[0] = %e\n",
+                 dfsh2o[k1], dfso3[k1], dfs[k1]);
+      bft_printf("----------------------------------------\n\n");
     }
 
     // Note: Multiplication by transmission function for minor gases
@@ -2230,6 +2275,56 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
 
  } // end if
 
+  // Write solar parameter dumps
+  if (at_1d_rad->verbosity >= 2) {
+    cs_array<cs_real_t> rayst_h2o(kmx);
+    cs_array<cs_real_t> rayst_o3(kmx);
+    for (int i = k1; i <= kmray; i++) {
+      deltaz = zqq[i+1] - zqq[i];
+      const cs_real_t cphum = cp0 * (1.0 + (cpvcpa - 1.) * qvray[i]);
+      rayst_h2o[i] = fabsh2o[i] / deltaz / romray[i] / cphum;
+      rayst_o3[i]  = fabso3[i]  / deltaz / romray[i] / cphum;
+    }
+
+    _dump_scalar_to_file("direct.txt", heuray, drfs[k1]);
+    _dump_scalar_to_file("global.txt", heuray, dfs[k1]);
+    _dump_scalar_to_file("direct_h2o.txt", heuray, ddfsh2o[k1]);
+    _dump_scalar_to_file("global_h2o.txt", heuray, dfsh2o[k1]);
+    _dump_scalar_to_file("direct_o3.txt", heuray, ddfso3[k1]);
+    _dump_scalar_to_file("global_o3.txt", heuray, dfso3[k1]);
+
+    _dump_array_to_file("heat_o3.txt",
+                        heuray, rayst_o3.data(), kmx);
+    _dump_array_to_file("heat_h2o.txt",
+                        heuray, rayst_h2o.data(), kmx);
+    _dump_array_to_file("sold_h2o.txt",
+                        heuray, dfsh2o.data(), kmx + 1);
+    _dump_array_to_file("sold_o3.txt",
+                        heuray, dfso3.data(), kmx + 1);
+    _dump_array_to_file("sold_o3_direct.txt",
+                        heuray, ddfso3.data(), kmx + 1);
+    _dump_array_to_file("sold_o3_diffuse.txt",
+                        heuray, dddfso3.data(), kmx + 1);
+    _dump_array_to_file("solu_h2o.txt",
+                        heuray, ufsh2o.data(), kmx + 1);
+    _dump_array_to_file("solu_o3.txt",
+                        heuray, ufso3.data(), kmx + 1);
+    _dump_array_to_file("qlray.txt",
+                        heuray, qlray, kmx);
+    _dump_array_to_file("sold_h2o_diffuse.txt",
+                        heuray, dddfsh2o.data(), kmx + 1);
+    _dump_array_to_file("sold_h2o_direct.txt",
+                        heuray, ddfsh2o.data(), kmx + 1);
+    _dump_array_to_file("fneray.txt",
+                        heuray, fneray, kmx);
+    _dump_array_to_file("fnebmax.txt",
+                        heuray, fnebmax.data(), kmx + 1);
+    _dump_array_to_file("taua_h2o.txt",
+                        heuray, tauah2o.data(), kmx);
+    _dump_array_to_file("taua_o3.txt",
+                        heuray, tauao3.data(), kmx);
+  }
+
  *albe_p = albe;
 }
 
@@ -2369,7 +2464,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
     dt4[k]  = 0.;
     tqq[k]  = 0.;
     rayi[k] = 0.;
-    if (aeroso[k] > 1.e-8) iaer = true;
+    if (at_1d_rad->has_aerosol > 0 && aeroso[k] > 1.e-8) iaer = true;
   }
 
   pspoqq[kmx] = 0.;
@@ -2423,7 +2518,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
   }
   dz0[kmray] = 0.0;
 
-  // Warning zqq(kmx+1) is not 16 000 for the moment...
+  // Warning zqq[kmx] is not 16 000 for the moment...
   cs_real_t zqq0 = 44000.0;
   cs_real_t tvsups, dtvsups;
 

@@ -60,6 +60,10 @@ typedef struct {
   int nlevels_max;
   /*! 1D radiative model pass frequency (1 valu bu default)*/
   int frequency;
+  /*! aerosols active (0 off, 1 on) */
+  int has_aerosol;
+  /*! output verbosity (0 off, 1 on, etc.) */
+  int verbosity;
 
   /*! internal variable for 1D radiative model */
   cs_real_t tausup;

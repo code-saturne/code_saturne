@@ -4016,6 +4016,39 @@ cs_atmo_log_setup(void)
        _univ_fn_name[at_opt->meteo_phim_u],
        _univ_fn_name[at_opt->meteo_phih_u]);
   }
+
+  /* 1D Radiative Model setup log */
+  if (cs_glob_atmo_1d_rad->radiative_model_1d == 1) {
+    const cs_atmo_1d_rad_t *rad = cs_glob_atmo_1d_rad;
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  1-D Radiative Model Options:\n"
+                    "    Has aerosol:                         %s\n"
+                    "    Verbosity:                           %d\n"
+                    "    Black carbon fraction:               %e\n"
+                    "    Max aerosol height (m):              %f\n\n"
+                    "    Solar Options:\n"
+                    "      AOD O3 total:                      %f\n"
+                    "      AOD H2O total:                     %f\n"
+                    "      Gaero O3:                          %f\n"
+                    "      Gaero H2O:                         %f\n"
+                    "      Piaero O3:                         %f\n"
+                    "      Piaero H2O:                        %f\n\n"
+                    "    Infrared Options:\n"
+                    "      AOD IR total:                      %f\n"
+                    "      CO2 concentration parameter:       %f\n\n"),
+                  (rad->has_aerosol > 0) ? _("active") : _("inactive"),
+                  rad->verbosity,
+                  rad->black_carbon_frac,
+                  rad->zaero,
+                  rad->aod_o3_tot,
+                  rad->aod_h2o_tot,
+                  rad->gaero_o3,
+                  rad->gaero_h2o,
+                  rad->piaero_o3,
+                  rad->piaero_h2o,
+                  rad->aod_ir,
+                  rad->conco2);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
