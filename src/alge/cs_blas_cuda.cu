@@ -51,6 +51,7 @@
 #include "base/cs_mem.h"
 #include "base/cs_base_accel.h"
 #include "base/cs_base_cuda.h"
+#include "base/cs_cuda_reduce.h"
 #include "base/cs_dispatch.h"
 
 /*----------------------------------------------------------------------------
@@ -118,7 +119,7 @@ _asum_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize, 1>(stmp, tid, b_res);
+  cs_cuda_reduce_block_sum<blockSize, 1>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -155,7 +156,7 @@ _dot_xy_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize, 1>(stmp, tid, b_res);
+  cs_cuda_reduce_block_sum<blockSize, 1>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -191,7 +192,7 @@ _dot_xx_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize, 1>(stmp, tid, b_res);
+  cs_cuda_reduce_block_sum<blockSize, 1>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------
@@ -389,7 +390,7 @@ cs_blas_cuda_asum(cudaStream_t     stream,
 
   _asum_stage_1_of_2<block_size><<<grid_size, block_size, 0, stream>>>
     (n, x, _r_grid);
-  cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, stream>>>
+  cs_cuda_reduce_sum_single_block<block_size, 1><<<1, block_size, 0, stream>>>
     (grid_size, _r_grid, _r_reduce);
 
   /* Need to synchronize stream in all cases so as to
@@ -429,7 +430,7 @@ cs_blas_cuda_dot(cudaStream_t     stream,
   else
     _dot_xx_stage_1_of_2<block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, _r_grid);
-  cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, stream>>>
+  cs_cuda_reduce_sum_single_block<block_size, 1><<<1, block_size, 0, stream>>>
     (grid_size, _r_grid, _r_reduce);
 
   /* Need to synchronize stream in all cases so as to

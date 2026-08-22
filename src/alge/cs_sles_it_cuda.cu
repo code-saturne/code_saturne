@@ -181,7 +181,7 @@ _jacobi_compute_vx_ini0(cs_lnum_t                       n_rows,
  * Compute Vx <- Vx - (A-diag).Rk and residual for Jacobi solver.
  *
  * This call must be followed by
- * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ * cs_cuda_reduce_sum_single_block<block_size><<<1, block_size, 0>>>
  *  (grid_size, sum_block, _r_reduce);
  * Also, block_size must be a power of 2.
  *
@@ -219,7 +219,7 @@ _jacobi_compute_vx_and_residual(cs_lnum_t                       n_rows,
   else
     sdata[tid] = 0.0;
 
-  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+  cs_cuda_reduce_block_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
@@ -227,7 +227,7 @@ _jacobi_compute_vx_and_residual(cs_lnum_t                       n_rows,
  * when the initial value of Vx is zero.
  *
  * This call must be followed by
- * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ * cs_cuda_reduce_sum_single_block<block_size><<<1, block_size, 0>>>
  *  (grid_size, sum_block, _r_reduce);
  * Also, block_size must be a power of 2.
  *
@@ -263,7 +263,7 @@ _jacobi_compute_vx_and_residual_ini0(cs_lnum_t                       n_rows,
   else
     sdata[tid] = 0.0;
 
-  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+  cs_cuda_reduce_block_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
@@ -348,7 +348,7 @@ _block_3_jacobi_compute_vx0(cs_lnum_t                       n_rows,
  * Compute residual for Jacobi with 3x3 block-diagonal matrix.
  *
  * This call must be followed by
- * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ * cs_cuda_reduce_sum_single_block<block_size><<<1, block_size, 0>>>
  *  (grid_size, sum_block, _r_reduce);
  * Also, block_size must be a power of 2.
  *
@@ -392,7 +392,7 @@ _block_3_jacobi_compute_residual(cs_lnum_t                       n_rows,
     sdata[tid] += (r*r);
   }
 
-  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+  cs_cuda_reduce_block_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
@@ -485,7 +485,7 @@ _block_jacobi_compute_vx0(cs_lnum_t                       n_rows,
  * nxn block-diagonal matrix.
  *
  * This call must be followed by
- * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ * cs_cuda_reduce_sum_single_block<block_size><<<1, block_size, 0>>>
  *  (grid_size, sum_block, _r_reduce);
  * Also, block_size must be a power of 2.
  *
@@ -534,7 +534,7 @@ _block_jacobi_compute_residual(cs_lnum_t                       n_rows,
     sdata[tid] += (r*r);
   }
 
-  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+  cs_cuda_reduce_block_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
@@ -664,7 +664,7 @@ _fcg_update_0(cs_lnum_t                      n,
  * Compute y <- y - x and stage 1 of resulting y.y.
  *
  * This call must be followed by
- * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ * cs_cuda_reduce_sum_single_block<block_size><<<1, block_size, 0>>>
  *  (grid_size, sum_block, _r_reduce);
  * Also, block_size must be a power of 2.
  *
@@ -698,14 +698,14 @@ _ymx_dot_yy(cs_lnum_t                       n,
     ii += grid_size;
   }
 
-  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+  cs_cuda_reduce_block_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
  * Set x to 0 and y to -r and compute stage 1 of resulting y.y.
  *
  * This call must be followed by
- * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ * cs_cuda_reduce_sum_single_block<block_size><<<1, block_size, 0>>>
  *  (grid_size, sum_block, _r_reduce);
  * Also, block_size must be a power 2.
  *
@@ -742,14 +742,14 @@ _x0_ymr_dot_yy(cs_lnum_t                       n,
     ii += grid_size;
   }
 
-  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+  cs_cuda_reduce_block_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
  * Compute y <- -alpha.x + y and stage 1 of resulting y.y.
  *
  * This call must be followed by
- * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ * cs_cuda_reduce_sum_single_block<block_size><<<1, block_size, 0>>>
  *  (grid_size, sum_block, _r_reduce);
  *
  * parameters:
@@ -783,14 +783,14 @@ _smaxpy_dot_yy(cs_lnum_t                       n,
     ii += grid_size;
   }
 
-  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+  cs_cuda_reduce_block_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
  * Compute y <- alpha.y and stage 1 of following x.y dot product.
  *
  * This call must be followed by
- * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ * cs_cuda_reduce_sum_single_block<block_size><<<1, block_size, 0>>>
  *  (grid_size, sum_block, _r_reduce);
  *
  * parameters:
@@ -825,7 +825,7 @@ _y_scale_dot_xy(cs_lnum_t                      n,
     ii += grid_size;
   }
 
-  cs_blas_cuda_block_reduce_sum<block_size, 1>(sdata, tid, sum_block);
+  cs_cuda_reduce_block_sum<block_size, 1>(sdata, tid, sum_block);
 }
 
 /*----------------------------------------------------------------------------
@@ -1204,7 +1204,7 @@ _dot_product_xx_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize, 1>(stmp, tid, b_res);
+  cs_cuda_reduce_block_sum<blockSize, 1>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1243,7 +1243,7 @@ _dot_product_xy_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize, 1>(stmp, tid, b_res);
+  cs_cuda_reduce_block_sum<blockSize, 1>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1284,7 +1284,7 @@ _dot_products_xx_xy_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize, 2>(stmp, tid, b_res);
+  cs_cuda_reduce_block_sum<blockSize, 2>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1327,7 +1327,7 @@ _dot_products_xy_yz_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize, 2>(stmp, tid, b_res);
+  cs_cuda_reduce_block_sum<blockSize, 2>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1372,7 +1372,7 @@ _dot_products_xx_xy_yz_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize, 3>(stmp, tid, b_res);
+  cs_cuda_reduce_block_sum<blockSize, 3>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1421,7 +1421,7 @@ _dot_products_xx_yy_xy_xz_yz_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize, 5>(stmp, tid, b_res);
+  cs_cuda_reduce_block_sum<blockSize, 5>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1469,7 +1469,7 @@ _dot_products_vr_vw_vq_rr_stage_1_of_2(cs_lnum_t    n,
 
   // Output: b_res for this block
 
-  cs_blas_cuda_block_reduce_sum<blockSize, 4>(stmp, tid, b_res);
+  cs_cuda_reduce_block_sum<blockSize, 4>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------
@@ -1520,7 +1520,7 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
     _dot_products_vr_vw_vq_rr_stage_1_of_2
       <block_size><<<grid_size, block_size, 0, stream>>>
       (n, v, w, q, r, sum_block);
-    cs_blas_cuda_reduce_single_block<block_size, 4><<<1, block_size, 0, stream>>>
+    cs_cuda_reduce_sum_single_block<block_size, 4><<<1, block_size, 0, stream>>>
       (grid_size, sum_block, s_d);
 
     _sync_reduction_sum(c, stream, 4, s_d, s_h);
@@ -1603,7 +1603,7 @@ cs_sles_it_dot_product
     _dot_product_xy_stage_1_of_2
       <block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, y, sum_block);
-    cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, stream>>>
+    cs_cuda_reduce_sum_single_block<block_size, 1><<<1, block_size, 0, stream>>>
       (grid_size, sum_block, s_d);
 
     _sync_reduction_sum(c, stream, 1, s_d, s_h);
@@ -1674,7 +1674,7 @@ cs_sles_it_dot_product_xx
     _dot_product_xx_stage_1_of_2
       <block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, sum_block);
-    cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, stream>>>
+    cs_cuda_reduce_sum_single_block<block_size, 1><<<1, block_size, 0, stream>>>
       (grid_size, sum_block, s_d);
 
     _sync_reduction_sum(c, stream, 1, s_d, s_h);
@@ -1748,7 +1748,7 @@ cs_sles_it_dot_products_xx_xy
     _dot_products_xx_xy_stage_1_of_2
       <block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, y, sum_block);
-    cs_blas_cuda_reduce_single_block<block_size, 2><<<1, block_size, 0, stream>>>
+    cs_cuda_reduce_sum_single_block<block_size, 2><<<1, block_size, 0, stream>>>
       (grid_size, sum_block, s_d);
 
     _sync_reduction_sum(c, stream, 2, s_d, s_h);
@@ -1826,7 +1826,7 @@ cs_sles_it_dot_products_xy_yz
     _dot_products_xy_yz_stage_1_of_2
       <block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, y, z, sum_block);
-    cs_blas_cuda_reduce_single_block<block_size, 2><<<1, block_size, 0, stream>>>
+    cs_cuda_reduce_sum_single_block<block_size, 2><<<1, block_size, 0, stream>>>
       (grid_size, sum_block, s_d);
 
     _sync_reduction_sum(c, stream, 2, s_d, s_h);
@@ -1906,7 +1906,7 @@ cs_sles_it_dot_products_xx_xy_yz
     _dot_products_xx_xy_yz_stage_1_of_2
       <block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, y, z, sum_block);
-    cs_blas_cuda_reduce_single_block<block_size, 3><<<1, block_size, 0, stream>>>
+    cs_cuda_reduce_sum_single_block<block_size, 3><<<1, block_size, 0, stream>>>
       (grid_size, sum_block, s_d);
 
     _sync_reduction_sum(c, stream, 3, s_d, s_h);
@@ -1992,7 +1992,7 @@ cs_sles_it_dot_products_xx_yy_xy_xz_yz
     _dot_products_xx_yy_xy_xz_yz_stage_1_of_2
       <block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, y, z, sum_block);
-    cs_blas_cuda_reduce_single_block<block_size, 5><<<1, block_size, 0, stream>>>
+    cs_cuda_reduce_sum_single_block<block_size, 5><<<1, block_size, 0, stream>>>
       (grid_size, sum_block, s_d);
 
     _sync_reduction_sum(c, stream, 5, s_d, s_h);
@@ -2157,7 +2157,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
       _jacobi_compute_vx_and_residual_ini0
         <blocksize><<<gridsize, blocksize, 0, stream>>>
           (n_rows, ad_inv, rhs, vx, rk, sum_block);
-      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+      cs_cuda_reduce_sum_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
         (gridsize, sum_block, res_d);
       _sync_reduction_sum(c, stream, 1, res_d, res_h);
       residual = sqrt(*res_h); /* Actually, residual of previous iteration */
@@ -2195,7 +2195,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     if (update_residual) {
       _jacobi_compute_vx_and_residual<blocksize><<<gridsize, blocksize, 0, stream>>>
         (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
-      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+      cs_cuda_reduce_sum_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
         (gridsize, sum_block, res_d);
     }
     else {
@@ -2235,7 +2235,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
       if (update_residual) {
         _jacobi_compute_vx_and_residual<blocksize><<<gridsize, blocksize, 0, stream>>>
           (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
-        cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+        cs_cuda_reduce_sum_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
           (gridsize, sum_block, res_d);
       }
       else
@@ -2419,7 +2419,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     {cs_real_t *v_t = vx_k; vx_k = rk; rk = v_t;}
 
     if (update_residual) {
-      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+      cs_cuda_reduce_sum_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
         (gridsize, sum_block, res_d);
       _sync_reduction_sum(c, stream, 1, res_d, res_h);
       residual = sqrt(*res_h); /* Actually, residual of previous iteration */
@@ -2474,7 +2474,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     }
 
     if (update_residual) {
-      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+      cs_cuda_reduce_sum_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
         (gridsize, sum_block, res_d);
       _sync_reduction_sum(c, stream, 1, res_d, res_h);
       residual = sqrt(*res_h); /* Actually, residual of previous iteration */
@@ -2825,7 +2825,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   // CS_MALLOC_HD(gkj_inv, n_gkj, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
 
   const unsigned int blocksize = CS_BLOCKSIZE;
-  const unsigned int blocksize_rsb = 512; /* cs_blas_cuda_reduce_single_block */
+  const unsigned int blocksize_rsb = 512; /* cs_cuda_reduce_sum_single_block */
 
   cs_cuda_grid_size(n_rows, blocksize);
 

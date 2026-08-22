@@ -54,6 +54,7 @@ namespace cg = cooperative_groups;
 #include "base/cs_base_accel.h"
 #include "base/cs_base_cuda.h"
 #include "base/cs_cuda_contrib.h"
+#include "base/cs_cuda_reduce.h"
 
 #include "base/cs_system_info.h"
 
@@ -107,7 +108,7 @@ _reduce_single_block(size_t   n,
     __syncthreads();
   }
 
-  if (tid < 32) cs_blas_cuda_warp_reduce_sum<blockSize, 1>(sdata, tid);
+  if (tid < 32) cs_cuda_reduce_warp_sum<blockSize, 1>(sdata, tid);
   if (tid == 0) *g_odata = sdata[0];
 }
 
@@ -155,8 +156,9 @@ _dot_xy_stage_1_of_2(cs_lnum_t    n,
     __syncthreads();
   }
 
-  if (tid < 32)
-    cs_blas_cuda_warp_reduce_sum<blockSize, 1>(stmp, tid);
+  if (tid < 32) {
+    cs_cuda_reduce_warp_sum<blockSize, 1>(stmp, tid);
+  }
 
   // Output: b_res for this block
 

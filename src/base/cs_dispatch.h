@@ -553,16 +553,16 @@ cs_cuda_kernel_parallel_for_reduce_sum(cs_lnum_t   n,
 
   switch (blockDim.x) {
   case 1024:
-    cs_cuda_reduce_block_reduce_sum<1024, 1>(stmp, tid, b_res);
+    cs_cuda_reduce_block_sum<1024, 1>(stmp, tid, b_res);
     break;
   case 512:
-    cs_cuda_reduce_block_reduce_sum<512, 1>(stmp, tid, b_res);
+    cs_cuda_reduce_block_sum<512, 1>(stmp, tid, b_res);
     break;
   case 256:
-    cs_cuda_reduce_block_reduce_sum<256, 1>(stmp, tid, b_res);
+    cs_cuda_reduce_block_sum<256, 1>(stmp, tid, b_res);
     break;
   case 128:
-    cs_cuda_reduce_block_reduce_sum<128, 1>(stmp, tid, b_res);
+    cs_cuda_reduce_block_sum<128, 1>(stmp, tid, b_res);
     break;
   default:
     assert(0);

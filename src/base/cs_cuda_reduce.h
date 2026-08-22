@@ -69,8 +69,8 @@
 
 template <size_t blockSize, size_t stride, typename T>
 __device__ static void __forceinline__
-cs_cuda_reduce_warp_reduce_sum(T           *stmp,
-                               size_t       tid)
+cs_cuda_reduce_warp_sum(volatile T  *stmp,
+                        size_t       tid)
 {
   if (stride == 1) {
 
@@ -139,9 +139,9 @@ cs_cuda_reduce_warp_reduce_sum(T           *stmp,
 
 template <size_t blockSize, size_t stride, typename T>
 __device__ static void __forceinline__
-cs_cuda_reduce_block_reduce_sum(T       *stmp,
-                                size_t   tid,
-                                T       *sum_block)
+cs_cuda_reduce_block_sum(T       *stmp,
+                         size_t   tid,
+                         T       *sum_block)
 {
   __syncthreads();
 
@@ -173,7 +173,7 @@ cs_cuda_reduce_block_reduce_sum(T       *stmp,
     }
 
     if (tid < 32) {
-      cs_cuda_reduce_warp_reduce_sum<blockSize, stride>(stmp, tid);
+      cs_cuda_reduce_warp_sum<blockSize, stride>(stmp, tid);
     }
 
     // Output: b_res for this block
@@ -216,7 +216,7 @@ cs_cuda_reduce_block_reduce_sum(T       *stmp,
     }
 
     if (tid < 32)
-      cs_cuda_reduce_warp_reduce_sum<blockSize, stride>(stmp, tid);
+      cs_cuda_reduce_warp_sum<blockSize, stride>(stmp, tid);
 
     // Output: b_res for this block
 
@@ -270,7 +270,7 @@ cs_cuda_reduce_sum_single_block(size_t   n,
       __syncthreads();
     }
 
-    if (tid < 32) cs_cuda_reduce_warp_reduce_sum<blockSize, stride>(sdata, tid);
+    if (tid < 32) cs_cuda_reduce_warp_sum<blockSize, stride>(sdata, tid);
     if (tid == 0) *g_odata = sdata[0];
 
   }
@@ -303,7 +303,7 @@ cs_cuda_reduce_sum_single_block(size_t   n,
       __syncthreads();
     }
 
-    if (tid < 32) cs_cuda_reduce_warp_reduce_sum<blockSize, stride>(sdata, tid);
+    if (tid < 32) cs_cuda_reduce_warp_sum<blockSize, stride>(sdata, tid);
     if (tid == 0) {
       #pragma unroll
       for (size_t k = 0; k < stride; k++)
