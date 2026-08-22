@@ -58,7 +58,6 @@
 /*!
  * \brief  Kernel for sum reduction within a warp (for warp size 32).
  *
- * \tparam  blockSize  size of CUDA block
  * \tparam  stride     vector stride
  * \tparam  T          data type
  *
@@ -67,55 +66,94 @@
  */
 /*----------------------------------------------------------------------------*/
 
-template <size_t blockSize, size_t stride, typename T>
+template <size_t stride, typename T>
 __device__ static void __forceinline__
 cs_cuda_reduce_warp_sum(volatile T  *stmp,
                         size_t       tid)
 {
-  if (stride == 1) {
+  T v[stride];
+  #pragma unroll
+  for (size_t i = 0; i < stride; i++)
+    v[i] = stmp[tid*stride + i];
+  __syncwarp();
 
-    if (blockSize >= 64) stmp[tid] += stmp[tid + 32];
-    if (blockSize >= 32) stmp[tid] += stmp[tid + 16];
-    if (blockSize >= 16) stmp[tid] += stmp[tid +  8];
-    if (blockSize >=  8) stmp[tid] += stmp[tid +  4];
-    if (blockSize >=  4) stmp[tid] += stmp[tid +  2];
-    if (blockSize >=  2) stmp[tid] += stmp[tid +  1];
-
+  {
+    #pragma unroll
+    for (size_t i = 0; i < stride; i++)
+      v[i] += stmp[(tid + 16)*stride + i];
+    __syncwarp();
+    #pragma unroll
+    for (size_t i = 0; i < stride; i++)
+      stmp[tid*stride + i] = v[i];
+    __syncwarp();
   }
-  else {
-
-    if (blockSize >= 64) {
-      #pragma unroll
-      for (size_t i = 0; i < stride; i++)
-        stmp[tid*stride + i] += stmp[(tid + 32)*stride + i];
-    }
-    if (blockSize >= 32) {
-      #pragma unroll
-      for (size_t i = 0; i < stride; i++)
-        stmp[tid*stride + i] += stmp[(tid + 16)*stride + i];
-    }
-    if (blockSize >= 16) {
-      #pragma unroll
-      for (size_t i = 0; i < stride; i++)
-        stmp[tid*stride + i] += stmp[(tid + 8)*stride + i];
-    }
-    if (blockSize >= 8) {
-      #pragma unroll
-      for (size_t i = 0; i < stride; i++)
-        stmp[tid*stride + i] += stmp[(tid + 4)*stride + i];
-    }
-    if (blockSize >= 4) {
-      #pragma unroll
-      for (size_t i = 0; i < stride; i++)
-        stmp[tid*stride + i] += stmp[(tid + 2)*stride + i];
-    }
-    if (blockSize >= 2) {
-      #pragma unroll
-      for (size_t i = 0; i < stride; i++)
-        stmp[tid*stride + i] += stmp[(tid + 1)*stride + i];
-    }
+  {
+    #pragma unroll
+    for (size_t i = 0; i < stride; i++)
+      v[i] += stmp[(tid + 8)*stride + i];
+    __syncwarp();
+    #pragma unroll
+    for (size_t i = 0; i < stride; i++)
+      stmp[tid*stride + i] = v[i];
+    __syncwarp();
+  }
+  {
+    #pragma unroll
+    for (size_t i = 0; i < stride; i++)
+      v[i] += stmp[(tid + 4)*stride + i];
+    __syncwarp();
+    #pragma unroll
+    for (size_t i = 0; i < stride; i++)
+      stmp[tid*stride + i] = v[i];
+    __syncwarp();
+  }
+  {
+    #pragma unroll
+    for (size_t i = 0; i < stride; i++)
+      v[i] += stmp[(tid + 2)*stride + i];
+    __syncwarp();
+    #pragma unroll
+    for (size_t i = 0; i < stride; i++)
+      stmp[tid*stride + i] = v[i];
+    __syncwarp();
+  }
+  {
+    #pragma unroll
+    for (size_t i = 0; i < stride; i++)
+      v[i] += stmp[(tid + 1)*stride + i];
+    __syncwarp();
+    #pragma unroll
+    for (size_t i = 0; i < stride; i++)
+      stmp[tid*stride + i] = v[i];
+    __syncwarp();
   }
 }
+
+template <typename T>
+__device__ static void __forceinline__
+cs_cuda_reduce_warp_sum(volatile T  *stmp,
+                        size_t       tid)
+{
+  constexpr unsigned int full_mask{0xffffffff};
+  T sum = stmp[tid];
+  for (size_t offset = CS_CUDA_WARP_SIZE/2; offset > 0; offset >>= 1)
+    sum += __shfl_down_sync(full_mask, sum, offset);
+  stmp[tid] = sum;
+}
+
+#if __CUDA_ARCH__ >= 800
+// Specialize warpReduceFunc for int inputs to use __reduce_add_sync intrinsic
+// when on SM 8.0 or higher
+
+__device__ static void __forceinline__
+cs_cuda_reduce_warp_sum(volatile int  *stmp,
+                        size_t         tid)
+{
+  constexpr unsigned int full_mask{0xffffffff};
+  int sum = __reduce_add_sync(full_mask, stmp[tid]);
+  stmp[tid] = sum;
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -171,9 +209,14 @@ cs_cuda_reduce_block_sum(T       *stmp,
         stmp[tid] += stmp[tid +  64];
       } __syncthreads();
     }
+    if (blockSize >= 64) {
+      if (tid <  32) {
+        stmp[tid] += stmp[tid +  32];
+      } __syncthreads();
+    }
 
     if (tid < 32) {
-      cs_cuda_reduce_warp_sum<blockSize, stride>(stmp, tid);
+      cs_cuda_reduce_warp_sum<stride>(stmp, tid);
     }
 
     // Output: b_res for this block
@@ -214,9 +257,16 @@ cs_cuda_reduce_block_sum(T       *stmp,
           stmp[tid*stride + i] += stmp[(tid + 64)*stride + i];
       } __syncthreads();
     }
+    if (blockSize >= 64) {
+      if (tid <  32) {
+        #pragma unroll
+        for (size_t i = 0; i < stride; i++)
+          stmp[tid*stride + i] += stmp[(tid + 32)*stride + i];
+      } __syncthreads();
+    }
 
     if (tid < 32)
-      cs_cuda_reduce_warp_sum<blockSize, stride>(stmp, tid);
+      cs_cuda_reduce_warp_sum<stride>(stmp, tid);
 
     // Output: b_res for this block
 
@@ -263,14 +313,15 @@ cs_cuda_reduce_sum_single_block(size_t   n,
     sdata[tid] = r_s[0];
     __syncthreads();
 
-    for (size_t j = blockSize/2; j > CS_CUDA_WARP_SIZE; j /= 2) {
+    for (size_t j = blockSize/2; j >= CS_CUDA_WARP_SIZE; j /= 2) {
       if (tid < j) {
         sdata[tid] += sdata[tid + j];
       }
       __syncthreads();
     }
 
-    if (tid < 32) cs_cuda_reduce_warp_sum<blockSize, stride>(sdata, tid);
+    if (tid < 32)
+      cs_cuda_reduce_warp_sum<stride>(sdata, tid);
     if (tid == 0) *g_odata = sdata[0];
 
   }
@@ -294,7 +345,7 @@ cs_cuda_reduce_sum_single_block(size_t   n,
       sdata[tid*stride + k] = r_s[k];
     __syncthreads();
 
-    for (size_t j = blockSize/2; j > CS_CUDA_WARP_SIZE; j /= 2) {
+    for (size_t j = blockSize/2; j >= CS_CUDA_WARP_SIZE; j /= 2) {
       if (tid < j) {
         #pragma unroll
         for (size_t k = 0; k < stride; k++)
@@ -303,7 +354,8 @@ cs_cuda_reduce_sum_single_block(size_t   n,
       __syncthreads();
     }
 
-    if (tid < 32) cs_cuda_reduce_warp_sum<blockSize, stride>(sdata, tid);
+    if (tid < 32)
+      cs_cuda_reduce_warp_sum<stride>(sdata, tid);
     if (tid == 0) {
       #pragma unroll
       for (size_t k = 0; k < stride; k++)
@@ -317,7 +369,6 @@ cs_cuda_reduce_sum_single_block(size_t   n,
 /*!
  * \brief  Kernel for general reduction within a warp (for warp size 32).
  *
- * \tparam  blockSize  size of CUDA block
  * \tparam  R          reducer class
  * \tparam  T          data type
  *
@@ -326,19 +377,36 @@ cs_cuda_reduce_sum_single_block(size_t   n,
  */
 /*----------------------------------------------------------------------------*/
 
-template <size_t blockSize, typename R, typename T>
+template <typename R, typename T>
 __device__ static void __forceinline__
 cs_cuda_reduce_warp_reduce(T           *stmp,
                            size_t       tid)
 {
   R reducer;
 
-  if (blockSize >= 64) reducer.combine(stmp[tid], stmp[tid + 32]);
-  if (blockSize >= 32) reducer.combine(stmp[tid], stmp[tid + 16]);
-  if (blockSize >= 16) reducer.combine(stmp[tid], stmp[tid +  8]);
-  if (blockSize >=  8) reducer.combine(stmp[tid], stmp[tid +  4]);
-  if (blockSize >=  4) reducer.combine(stmp[tid], stmp[tid +  2]);
-  if (blockSize >=  2) reducer.combine(stmp[tid], stmp[tid +  1]);
+  T v = stmp[tid];
+  __syncwarp();
+
+  {
+    reducer.combine(v, stmp[tid + 16]); __syncwarp();
+    stmp[tid] = v;                      __syncwarp();
+  }
+  {
+    reducer.combine(v, stmp[tid +  8]); __syncwarp();
+    stmp[tid] = v;                      __syncwarp();
+  }
+  {
+    reducer.combine(v, stmp[tid +  4]); __syncwarp();
+    stmp[tid] = v;                      __syncwarp();
+  }
+  {
+    reducer.combine(v, stmp[tid +  2]); __syncwarp();
+    stmp[tid] = v;                      __syncwarp();
+  }
+  {
+    reducer.combine(v, stmp[tid +  1]); __syncwarp();
+    stmp[tid] = v;                      __syncwarp();
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -391,9 +459,14 @@ cs_cuda_reduce_block_reduce(T       *stmp,
       reducer.combine(stmp[tid], stmp[tid +  64]);
     } __syncthreads();
   }
+  if (blockSize >= 64) {
+    if (tid <  32) {
+      reducer.combine(stmp[tid], stmp[tid +  32]);
+    } __syncthreads();
+  }
 
   if (tid < 32) {
-    cs_cuda_reduce_warp_reduce<blockSize, R>(stmp, tid);
+    cs_cuda_reduce_warp_reduce<R>(stmp, tid);
   }
 
   // Output: rd_block for this block
@@ -437,14 +510,14 @@ cs_cuda_reduce_single_block(size_t   n,
   sdata[tid] = r_s[0];
   __syncthreads();
 
-  for (size_t j = blockSize/2; j > CS_CUDA_WARP_SIZE; j /= 2) {
+  for (size_t j = blockSize/2; j >= CS_CUDA_WARP_SIZE; j /= 2) {
     if (tid < j) {
       reducer.combine(sdata[tid], sdata[tid + j]);
     }
     __syncthreads();
   }
 
-  if (tid < 32) cs_cuda_reduce_warp_reduce<blockSize, R>(sdata, tid);
+  if (tid < 32) cs_cuda_reduce_warp_reduce<R>(sdata, tid);
   if (tid == 0) *g_odata = sdata[0];
 }
 

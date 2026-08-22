@@ -101,14 +101,14 @@ _reduce_single_block(size_t   n,
   sdata[tid] = r_s;
   __syncthreads();
 
-  for (int j = blockSize/2; j > CS_CUDA_WARP_SIZE; j /= 2) {
+  for (int j = blockSize/2; j >= CS_CUDA_WARP_SIZE; j /= 2) {
     if (tid < j) {
       sdata[tid] += sdata[tid + j];
     }
     __syncthreads();
   }
 
-  if (tid < 32) cs_cuda_reduce_warp_sum<blockSize, 1>(sdata, tid);
+  if (tid < CS_CUDA_WARP_SIZE) cs_cuda_reduce_warp_sum(sdata, tid);
   if (tid == 0) *g_odata = sdata[0];
 }
 
@@ -149,15 +149,15 @@ _dot_xy_stage_1_of_2(cs_lnum_t    n,
 
   // Loop might be unrolled since blockSize is a template parameter.
 
-  for (int j = blockSize/2; j > CS_CUDA_WARP_SIZE; j /= 2) {
+  for (int j = blockSize/2; j >= CS_CUDA_WARP_SIZE; j /= 2) {
     if (tid < j) {
       stmp[tid] += stmp[tid + j];
     }
     __syncthreads();
   }
 
-  if (tid < 32) {
-    cs_cuda_reduce_warp_sum<blockSize, 1>(stmp, tid);
+  if (tid < CS_CUDA_WARP_SIZE) {
+    cs_cuda_reduce_warp_sum(stmp, tid);
   }
 
   // Output: b_res for this block
