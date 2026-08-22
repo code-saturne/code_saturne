@@ -1683,7 +1683,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
         // fluxes calculation taking into account ozone absorption
         // Direct
         ddfso3[l]
-          = muzero * fo * (z_ref - rrbar - ray_ozone_absorption(x)) * dowd[l];
+          = muzero * fo * (z_ref - rrbar - ray_ozone_absorption(x)) * dowd(l, 0);
 
         // Diffuse:
         // two contributions: 1) transform direct into diffuse (dowf)
