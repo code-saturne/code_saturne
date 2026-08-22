@@ -183,9 +183,9 @@ _proj_solid_vtx_to_plane(const cs_real_t  v0[3],
  *   fvq  <->  mesh quantities
  *----------------------------------------------------------------------------*/
 
-static void
-_compute_corr_grad_lin(const cs_mesh_t       *m,
-                       cs_mesh_quantities_t  *fvq)
+void
+cs_compute_corr_grad_lin(const cs_mesh_t       *m,
+                         cs_mesh_quantities_t  *fvq)
 {
   /* Local variables */
 
@@ -4652,7 +4652,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
 
   /* Build the geometrical matrix linear gradient correction */
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION)
-    _compute_corr_grad_lin(m, mq);
+    cs_compute_corr_grad_lin(m, mq);
 
   if (amode > CS_ALLOC_HOST) {
     void * arrays[]

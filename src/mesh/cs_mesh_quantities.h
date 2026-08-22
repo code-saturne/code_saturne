@@ -200,6 +200,18 @@ cs_mq_cell_vol_inv(cs_lnum_t         c_id,
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Build the geometrical matrix linear gradient correction
+ *
+ * parameters:
+ *   m    <--  mesh
+ *   fvq  <->  mesh quantities
+ *----------------------------------------------------------------------------*/
+
+void
+cs_compute_corr_grad_lin(const cs_mesh_t       *m,
+                         cs_mesh_quantities_t  *fvq);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return 0 if cell is disabled, 1 otherwise.

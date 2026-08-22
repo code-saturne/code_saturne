@@ -3057,7 +3057,7 @@ _compute_b_fac_porosity(const cs_mesh_t      *mesh,
       b_f_dist[f_id] = dist_ipf;
     //}
 
-    if (c_disable_flag[c_id] == 1 || bfpro_poro[f_id] < 0.001) {
+    if (c_disable_flag[c_id] == 1 || bfpro_poro[f_id] < cs_ibm->min_poro) {
       b_f_face_normal[f_id][0] = 0.;
       b_f_face_normal[f_id][1] = 0.;
       b_f_face_normal[f_id][2] = 0.;
@@ -3202,7 +3202,7 @@ _compute_i_fac_porosity(const cs_mesh_t      *mesh,
     cs_lnum_t c_id1 = i_face_cells[f_id][1];
 
     if (   c_disable_flag[c_id0] == 1
-        || c_disable_flag[c_id1] == 1 || ifpro_poro[f_id] < 0.001) {
+        || c_disable_flag[c_id1] == 1 || ifpro_poro[f_id] < cs_ibm->min_poro) {
       i_f_face_normal[f_id][0] = 0.;
       i_f_face_normal[f_id][1] = 0.;
       i_f_face_normal[f_id][2] = 0.;
@@ -3720,7 +3720,6 @@ _compute_solid_surface_cog(const cs_mesh_t      *mesh,
   const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
 
   const cs_real_t *cell_vol = mq_g->cell_vol;
-  const cs_real_t *cell_f_vol = mesh_quantities->cell_vol;
   const cs_real_3_t *cell_cen = mq_g->cell_cen;
   const cs_real_3_t *cell_f_cen = mesh_quantities->cell_cen;
   cs_real_3_t *cell_s_cen
@@ -4441,6 +4440,7 @@ cs_ibm_create(void)
   ibm->prob_dim       = CS_IBM_3D;
   ibm->algo_choice    = CS_IBM_ALGO_CUT_CELLS;
   ibm->wall_condition = CS_IBM_WALL_LAW_WALL_CONDITION;
+  ibm->min_poro       = 0.001;
   ibm->nb_cut_cells   = 2;
   ibm->nb_cut_edges   = 5;
   ibm->porosity_user_source_term_modification = false;
@@ -4682,7 +4682,7 @@ void cs_immersed_boundaries(cs_mesh_t      *mesh,
 
     /* Disable cell and update fluid volume */
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-      if (poro_val[c_id] < 0.001) {
+      if (poro_val[c_id] < cs_ibm->min_poro) {
         poro_val[c_id] = 0.;
         c_disable_flag[c_id] = 1;
       }
@@ -4937,6 +4937,8 @@ void cs_immersed_boundaries(cs_mesh_t      *mesh,
       for (cs_lnum_t i = 0; i < 3; i++)
         c_w_face_normal[c_id][i] = - c_w_face_normal[c_id][i];
   }
+
+  cs_compute_corr_grad_lin(mesh, mesh_quantities);
 
   cs_porous_model_convert_cell_to_boundary(n_ib_cells_filt, ibcell_cells_filt);
 

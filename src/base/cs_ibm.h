@@ -215,6 +215,8 @@ typedef struct
   cs_ibm_algo_type_t       algo_choice;
   /* Choice for velocity B.C. at walls                    */
   cs_ibm_wall_cond_type_t  wall_condition;
+  /* Minimum porosity to compute                          */
+  cs_real_t     min_poro;
   /* Number of sub-cut for cells using the Cut-Cells algo */
   int           nb_cut_cells;
   /* Number of sub-cut for edges using the Cut-Cells algo */
