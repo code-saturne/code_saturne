@@ -1313,7 +1313,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
       ibase = k1;
     }
 
-    /* Calculation for optical parameters of clouds and aerosols
+    /* 5.2 Calculation for optical parameters of clouds and aerosols
        (single scattering albedo, optical depth, radius, asymmetry factor) */
 
     fnebmax[kmray + 1] = 0.;
@@ -2162,7 +2162,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     // Direct Solar (denoted by _r) (for visible UV (SUV) band absorbed by O3)
     if (rad_atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR_O3BAND) {
       idx += 1;
-      _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
+      _interpolate_boundary_rad_incident_flux(idx, dim, kmx,
                                               bc_type, n_b_faces,
                                               muzero, muzero_cor,
                                               zqq, ddfso3,
@@ -2183,7 +2183,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
                                               bc_type, n_b_faces,
                                               muzero, muzero_cor,
                                               zqq, ddfso3,
-                                              b_face_cog, bpro_rad_inc);
+                                              b_face_cog, bpro_rad_inc);//FIXME +=
 
       _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, ckdown_suv_r,
@@ -2193,29 +2193,29 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     // Diffuse solar radiation incident up and down (SIR band)
     if (rad_atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
       idx += 1;
-      _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
+      _interpolate_boundary_rad_incident_flux(idx, dim, kmx,
                                               bc_type, n_b_faces,
-                                              muzero, 1.0,
+                                              1.0, 1.0,
                                               zqq, dddfsh2o,
                                               b_face_cog, bpro_rad_inc);
 
       // Downward
-      _interpolate_coeff(idx, dim, kmray + 1,
+      _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, ckdown_sir_f,
                          cell_cen, cpro_ck_down);
 
       // Upward
-      _interpolate_coeff(idx, dim, kmray + 1,
+      _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, ckup_sir_f,
                          cell_cen, cpro_ck_up);
 
       // Simple diffusion albedo w0
-      _interpolate_coeff(idx, dim, kmray + 1,
+      _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, w0_sir,
                          cell_cen, cpro_w0);
 
       // Asymmetry factor
-      _interpolate_coeff(idx, dim, kmray + 1,
+      _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, g_apc_sir,
                          cell_cen, cpro_gapc);
     }
@@ -2223,38 +2223,40 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     // Diffuse solar radiation incident up and down (SUV - O3 band)
     if (rad_atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND) {
       idx += 1;
-      _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
+      _interpolate_boundary_rad_incident_flux(idx, dim, kmx,
                                               bc_type, n_b_faces,
-                                              muzero, 1.0,
+                                              1.0, 1.0,
                                               zqq, dddfso3,
                                               b_face_cog, bpro_rad_inc);
 
       // Downward
-      _interpolate_coeff(idx, dim, kmray + 1,
+      _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, ckdown_suv_f,
                          cell_cen, cpro_ck_down);
 
       // Upward
-      _interpolate_coeff(idx, dim, kmray + 1,
+      _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, ckup_suv_f,
                          cell_cen, cpro_ck_up);
 
       // Simple diffusion albedo w0
-      _interpolate_coeff(idx, dim, kmray + 1,
+      _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, w0_suv,
                          cell_cen, cpro_w0);
 
       // Asymmetry factor
-      _interpolate_coeff(idx, dim, kmray + 1,
+      _interpolate_coeff(idx, dim, kmx,
                          n_cells, zray, g_apc_suv,
                          cell_cen, cpro_gapc);
     }
+    /* If Diffuse solar O3 band in 3D is not activated -> add in the total
+       diffuse solar band */
     else if (rad_atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
-      _interpolate_boundary_rad_incident_flux(idx, dim, kmray + 1,
+      _interpolate_boundary_rad_incident_flux(idx, dim, kmx,
                                               bc_type, n_b_faces,
-                                              muzero, 1.0,
+                                              1.0, 1.0,
                                               zqq, dddfso3,
-                                              b_face_cog, bpro_rad_inc);
+                                              b_face_cog, bpro_rad_inc);//FIXME += TODO init to 0 to simplify it
 
       _interpolate_coeff(idx, dim, kmray + 1,
                          n_cells, zray, ckdown_suv_f,
@@ -2893,8 +2895,10 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
   // Finalization: multiplication by sig
   for (int k = 0; k <= kmray; k++) {
     const int idx = k + ivertc * kmx;
-    _atmo_1d_rad.iru[idx] = sig * ufir[k];
-    _atmo_1d_rad.ird[idx] = sig * dfir[k];
+    ufir[k] *= sig;
+    dfir[k] *= sig;
+    _atmo_1d_rad.iru[idx] = ufir[k];
+    _atmo_1d_rad.ird[idx] = dfir[k];
   }
 
   // Compute Boundary conditions for the 3D
@@ -2935,7 +2939,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
         if (   bc_type[face_id] != CS_SMOOTHWALL
             && bc_type[face_id] != CS_ROUGHWALL) {
           cs_real_t var;
-          cs_intprz(kmray + 1,
+          cs_intprz(kmx,
                     zqq,
                     dfir,
                     b_face_cog[face_id][2],
