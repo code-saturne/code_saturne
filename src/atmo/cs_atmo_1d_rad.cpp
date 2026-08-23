@@ -750,7 +750,7 @@ _compute_ir_co2_o3_absorption(const cs_real_t zz,
 
   /* 3. O3 optical depth */
   cs_real_t ao3, dao3;
-  cs_real_t uo3  = abs(ozone_amount(zz) - ozone_amount(zzp));
+  cs_real_t uo3  = cs::abs(ozone_amount(zz) - ozone_amount(zzp));
   cs_real_t duo3 = -ozone_gradient(zz);
   if (uo3 <= 0.01) {
     ao3  = xo[0] * pow(uo3 + xo[1], xo[2]) + xo[3];
