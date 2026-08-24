@@ -504,11 +504,11 @@ _init_version_info(void)
 
     snprintf(_conduit_info_string_[0], 31,
              "Conduit version: %s", conduit_version);
-    _conduit_info_string_[0][95] = '\0';
+    _conduit_info_string_[0][31] = '\0';
     snprintf(_conduit_info_string_[1], 31,
              "Conduit version: %s",
               CONDUIT_VERSION);
-    _conduit_info_string_[1][95] = '\0';
+    _conduit_info_string_[1][31] = '\0';
 
     _use_mpi = *use_mpi;
   }
@@ -840,7 +840,7 @@ _map_section_strided(fvm_element_t        type,
                      unsigned int        *elt_types,
                      unsigned int        *elt_sizes)
 {
-  int vertex_order[8];
+  int vertex_order[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
   const cs_lnum_t  stride = fvm_nodal_n_vertices_element[type];
 
