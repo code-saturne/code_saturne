@@ -1176,7 +1176,7 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
     for (int i = 0; i < cm->n_coals; i++) {
       char _rub[64] = "";
-      snprintf(_rub, sizeof(_rub), "%s%d", _prefix, i);
+      snprintf(_rub, 63, "%s%d", _prefix, i); _rub[63] = '\0';
       retval = _READ_REAL_VAL(_rub);
       if (retval == CS_RESTART_SUCCESS)
         cm->rhock[i] = dummy_real;

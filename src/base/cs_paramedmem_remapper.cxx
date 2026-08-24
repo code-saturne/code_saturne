@@ -808,9 +808,8 @@ void
 cs_paramedmem_remapper_translate(cs_paramedmem_remapper_t  *r,
                                  cs_real_t                  translation[3])
 {
-  CS_NO_WARN_IF_UNUSED(r);
-
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(r);
   CS_NO_WARN_IF_UNUSED(translation);
   bft_error(__FILE__, __LINE__, 0,
             _("This function cannot be called without "
@@ -843,9 +842,8 @@ cs_paramedmem_remapper_rotate(cs_paramedmem_remapper_t  *r,
                               cs_real_t                  axis[3],
                               cs_real_t                  angle)
 {
-  CS_NO_WARN_IF_UNUSED(r);
-
 #if !defined(HAVE_PARAMEDMEM) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(r);
   CS_NO_WARN_IF_UNUSED(invariant);
   CS_NO_WARN_IF_UNUSED(axis);
   CS_NO_WARN_IF_UNUSED(angle);

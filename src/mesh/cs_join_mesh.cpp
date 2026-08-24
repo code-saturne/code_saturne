@@ -1462,7 +1462,8 @@ cs_join_mesh_create(const char  *name)
     int  len = strlen(name);
 
     CS_MALLOC(new_mesh->name, len + 1, char);
-    strcpy(new_mesh->name, name);
+    strncpy(new_mesh->name, name, len);
+    new_mesh->name[len] = '\0';
 
   }
   else

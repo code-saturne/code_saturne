@@ -1138,14 +1138,14 @@ cs_combustion_read_data(void)
     for (int ige = 0; ige < cm->n_gas_el_comp; ige++) {
       if (fabs(cm->compog[igo][ige] -1.) < 1e-16) {
         char sbuf[151];
-        snprintf(sbuf, sizeof(sbuf), "%s %s +", nomcog[igo], nomcoe[ige]);
-        strcpy(nomcog[igo], sbuf);
+        snprintf(sbuf, 150, "%s %s +", nomcog[igo], nomcoe[ige]);
+        strncpy(nomcog[igo], sbuf, 150); nomcog[igo][150] = '\0';
       }
       else if (cm->compog[igo][ige] > 0) {
-        char sbuf[151];
-        snprintf(sbuf, sizeof(sbuf), "%s %6.3f %s +",
+        char sbuf[256];
+        snprintf(sbuf, 256, "%s %6.3f %s +",
                  nomcog[igo], cm->compog[igo][ige], nomcoe[ige]);
-        strcpy(nomcog[igo], sbuf);
+        strncpy(nomcog[igo], sbuf, 150); nomcog[igo][150] = '\0';
       }
     }
 
@@ -1153,10 +1153,10 @@ cs_combustion_read_data(void)
     nomcog[igp][0] = '\0';
     for (int ige = 0; ige < cm->n_gas_el_comp; ige++) {
       if (cm->compog[igp][ige] > 0) {
-        char sbuf[151];
-        snprintf(sbuf, sizeof(sbuf), "%s %6.3f %s +",
+        char sbuf[256];
+        snprintf(sbuf, 256, "%s %6.3f %s +",
                  nomcog[igp], cm->compog[igp][ige], nomcoe[ige]);
-        strcpy(nomcog[igp], sbuf);
+        strncpy(nomcog[igp], sbuf, 150); nomcog[igp][150] = '\0';
       }
     }
 

@@ -727,7 +727,8 @@ cs_sys_coupling_add_cplbc(cs_sys_cpl_t        *sys_coupling,
   else {
     size_t _l = strlen(element_name);
     CS_MALLOC(cplbc->element_name, _l + 1, char);
-    strcpy(cplbc->element_name, element_name);
+    strncpy(cplbc->element_name, element_name, _l);
+    cplbc->element_name[_l] = '\0';
   }
 
   cplbc->sys_elt_idx[0] = c0;
