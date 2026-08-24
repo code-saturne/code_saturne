@@ -265,11 +265,11 @@ _create_remapper(const char                        *name,
 
   r->ntsteps = ito.size();
   CS_MALLOC(r->iter_order, r->ntsteps, int *);
-  for (int ii = 0; ii < ito.size(); ii++)
+  for (size_t ii = 0; ii < ito.size(); ii++)
     CS_MALLOC(r->iter_order[ii], 2, int);
   CS_MALLOC(r->time_steps, r->ntsteps, cs_real_t);
 
-  for (int ii = 0; ii < ito.size(); ii++) {
+  for (size_t ii = 0; ii < ito.size(); ii++) {
     r->iter_order[ii][0] = ito[ii].first;
     r->iter_order[ii][1] = ito[ii].second;
     r->time_steps[ii]    = t2s[ii];
@@ -294,10 +294,10 @@ _create_remapper(const char                        *name,
   // Set the interpolation type (P0P0 or P1P0) based on source_fields type
   CS_MALLOC(r->interp_method, 5, char);
   if (r->source_fields[0]->getTypeOfField() == MEDCoupling::ON_CELLS) {
-    r->interp_method = "P0P0";
+    strcpy(r->interp_method, "P0P0");
   }
   else if (r->source_fields[0]->getTypeOfField() == MEDCoupling::ON_NODES) {
-    r->interp_method = "P1P0";
+    strcpy(r->interp_method, "P1P0");
   }
 
   // REduced file mesh: to improve the interpolation performance,
@@ -581,6 +581,7 @@ _cs_medcoupling_remapper_destroy(cs_medcoupling_remapper_t *r)
 {
   CS_FREE(r->name);
   CS_FREE(r->medfile_path);
+  CS_FREE(r->interp_method);
 
   for (int i = 0; i < r->n_fields; i++) {
     CS_FREE(r->field_names[i]);

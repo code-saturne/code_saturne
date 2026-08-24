@@ -5314,7 +5314,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t    *connect,
   if (solid == nullptr)
     return;
 
-    cs_timer_t t0 = cs_timer_time();
+  cs_timer_t t0 = cs_timer_time();
 
   // Estimate the number of values to output
 

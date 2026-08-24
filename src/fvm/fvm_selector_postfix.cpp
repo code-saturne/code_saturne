@@ -2659,7 +2659,7 @@ _eval_box(const fvm_selector_postfix_t  *pf,
           const double                   coords[],
           size_t                        *i)
 {
-  double val[12];
+  double val[12] = {0.};
   int j;
   int n_vals; /* number of box coefficients */
   bool  retval = false;

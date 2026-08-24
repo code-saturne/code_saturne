@@ -1173,11 +1173,10 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
   if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
     cs_coal_model_t  *cm = cs_glob_coal_model;
     const char *_prefix = "coal_density";
-    int _len = strlen(_prefix) + 10;
 
     for (int i = 0; i < cm->n_coals; i++) {
       char _rub[64] = "";
-      snprintf(_rub, _len, "%s%d", _prefix, i);
+      snprintf(_rub, sizeof(_rub), "%s%d", _prefix, i);
       retval = _READ_REAL_VAL(_rub);
       if (retval == CS_RESTART_SUCCESS)
         cm->rhock[i] = dummy_real;
