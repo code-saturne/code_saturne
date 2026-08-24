@@ -1409,13 +1409,8 @@ _rad_transfer_solve(int bc_type[])
 
     // OK here, since tempk is an array_2d (nrphas, n_cells), but
     // here we work on the first block of size "n_cells".
-    // operator [] (1d), is usable by all arrays, even multi-d, and does
-    // not use md location compute.
-    // () operators do use the md position and hence would not work here.
-    // For cell_id in [0,n_cells-1], tempk[cell_id] is the same as
-    // tempk(0, cell_id)
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      tempk[cell_id] = cvara_scalt[cell_id] + xptk;
+      tempk(0, cell_id) = cvara_scalt[cell_id] + xptk;
     });
 
   }
@@ -1686,7 +1681,7 @@ _rad_transfer_solve(int bc_type[])
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         rhs[cell_id] =  3.0 * ckg[cell_id]
-                            * cs_math_pow4(tempk[cell_id])
+                            * cs_math_pow4(tempk(0, cell_id))
                             * agi(gg_id, cell_id)
                             * cell_vol[cell_id];
       });
@@ -1806,11 +1801,11 @@ _rad_transfer_solve(int bc_type[])
           && pm_flag[CS_COMBUSTION_EBU] == -1) {
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
           int_emi[cell_id] =   -4.0 * ckg[cell_id]
-                             * c_stefan * cs_math_pow4(tempk[cell_id]);
+                             * c_stefan * cs_math_pow4(tempk(0, cell_id));
 
           int_rad_ist[cell_id] =  -16.0 * dcp[cell_id] * ckg[cell_id]
                                  * c_stefan
-                                 * cs_math_pow3(tempk[cell_id]);
+                                 * cs_math_pow3(tempk(0, cell_id));
         });
       }
       else {
@@ -1876,7 +1871,7 @@ _rad_transfer_solve(int bc_type[])
                && pm_flag[CS_COMBUSTION_EBU] == -1) {
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
           rhs[cell_id] = c_stefan * ckg[cell_id]
-                                  * cs_math_pow4(tempk[cell_id])
+                                  * cs_math_pow4(tempk(0, cell_id))
                                   * agi(gg_id, cell_id)
                                   * cell_vol[cell_id]
                                   * onedpi;

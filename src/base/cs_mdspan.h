@@ -276,6 +276,7 @@ public:
     cs_lnum_t i /*!<[in] Index of value to get */
   )
   {
+    static_assert(N == 1, "Only available for array of rank 1");
 #if defined(CS_ARRAY_DBG_BOUNDS)
     check_bounds_(i);
 #endif
@@ -297,6 +298,7 @@ public:
     cs_lnum_t i /*!<[in] Index of value to get */
   ) const
   {
+    static_assert(N == 1, "Only available for array of rank 1");
 #if defined(CS_ARRAY_DBG_BOUNDS)
     check_bounds_(i);
 #endif
