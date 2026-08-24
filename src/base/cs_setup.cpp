@@ -2984,6 +2984,10 @@ _init_user(void)
    * call by user to cs_mobile_structures_add_n_int_structures */
   if (cs_glob_ale != CS_ALE_NONE)
     cs_mobile_structures_setup();
+
+  /* Gas Mixture : Finalize setup after all are created by GUI, options or user */
+  if (cs_glob_physical_model_flag[CS_GAS_MIX] != -1)
+    cs_gas_mix_setup_finalize();
 }
 
 /*----------------------------------------------------------------------------*/

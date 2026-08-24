@@ -106,13 +106,13 @@
  * Static global variables
  *============================================================================*/
 
+/* Max number of gases */
+static constexpr int max_n_species =
+  static_cast<int>(cs_gas_mix_y_type::n_gases);
+
 /* main gas mix options and associated pointer */
 
-static cs_gas_mix_t _gas_mix = {
-  .n_species = 0,
-  .n_species_solved = 0,
-  .species_to_field_id = nullptr
-};
+static cs_gas_mix_t _gas_mix;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -168,14 +168,18 @@ const cs_gas_mix_t  *cs_glob_gas_mix = &_gas_mix;
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_mu_lambda(const char                       *name,
-                   const cs_real_t                   tk,
-                   const cs_gas_mix_species_prop_t   spro,
-                   cs_real_t                        *mu,
-                   cs_real_t                        *lambda)
+_compute_mu_lambda
+(
+  const cs_gas_mix_y_type           name,
+  const cs_real_t                   tk,
+  const cs_real_t                   mu_a,
+  const cs_real_t                   mu_b,
+  const cs_real_t                   lambda_a,
+  const cs_real_t                   lambda_b,
+  cs_real_t&                        mu,
+  cs_real_t&                        lambda
+)
 {
-  cs_real_t _mu;
-  cs_real_t _lambda;
   const cs_real_t tkelvin = cs_physical_constants_celsius_to_kelvin;
 
   /*  The viscosity law  and conductivity expressionfor each species is
@@ -194,41 +198,48 @@ _compute_mu_lambda(const char                       *name,
    *      mu = mu_a .(tk) + mu_b, with t in (°K)
    *      lambda = lambda_a .(tk) + lambda_b, with t (°K) */
 
-  if (strcmp(name, "y_h2o_g") == 0) {
-    _mu     = spro.mu_a    *(tk-tkelvin) + spro.mu_b;
-    _lambda = spro.lambda_a*(tk-tkelvin) + spro.lambda_b;
-  }
-  else if (strcmp(name, "y_he") == 0) {
-    _mu     = spro.mu_a     * pow(tk/tkelvin, 0.7);
-    _lambda = spro.lambda_a * pow(tk/tkelvin, 0.7);
-  }
-  else if (strcmp(name, "y_h2") == 0) {
-    _mu     = spro.mu_a     * (tk-tkelvin) + spro.mu_b;
-    _lambda = spro.lambda_a * tk + spro.lambda_b;
-  }
-  else if (strcmp(name, "y_co2") == 0) {
-    _mu     = spro.mu_a     * tk + spro.mu_b;
-    _lambda = spro.lambda_a * tk + spro.lambda_b;
-  }
-  else if (strcmp(name, "y_no2") == 0) {
-    _mu     = spro.mu_a     * tk + spro.mu_b;
-    _lambda = spro.lambda_a * tk + spro.lambda_b;
-  }
-  else if (   strcmp(name, "y_o2") == 0
-           || strcmp(name, "y_n2") == 0) {
-    _mu     = spro.mu_a     * tk + spro.mu_b;
-    _lambda = spro.lambda_a * tk + spro.lambda_b;
-  }
-  else {
-    _mu = -1;
-    _lambda = -1;
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: no predefined properties for field %s."),
-              __func__, name);
-  }
+  switch (name) {
 
-  *mu = _mu;
-  *lambda = _lambda;
+  case cs_gas_mix_y_type::h2o:
+    mu     = mu_a    *(tk-tkelvin) + mu_b;
+    lambda = lambda_a*(tk-tkelvin) + lambda_b;
+    break;
+
+  case cs_gas_mix_y_type::he:
+    mu     = mu_a     * pow(tk/tkelvin, 0.7);
+    lambda = lambda_a * pow(tk/tkelvin, 0.7);
+    break;
+
+  case cs_gas_mix_y_type::h2:
+    mu     = mu_a     * (tk-tkelvin) + mu_b;
+    lambda = lambda_a * tk + lambda_b;
+    break;
+
+  case cs_gas_mix_y_type::co2:
+    mu     = mu_a     * tk + mu_b;
+    lambda = lambda_a * tk + lambda_b;
+    break;
+
+  case cs_gas_mix_y_type::no2:
+    mu     = mu_a     * tk + mu_b;
+    lambda = lambda_a * tk + lambda_b;
+    break;
+
+  case cs_gas_mix_y_type::o2:
+    [[fallthrough]];
+  case cs_gas_mix_y_type::n2:
+    mu     = mu_a     * tk + mu_b;
+    lambda = lambda_a * tk + lambda_b;
+    break;
+
+  default:
+    mu = -1;
+    lambda = -1;
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: no predefined properties for field %d."),
+              __func__, static_cast<int>(name));
+    break;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -259,20 +270,21 @@ _compute_mu_lambda(const char                       *name,
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_mu_lambda_suth(const cs_real_t                  tk,
-                        const cs_gas_mix_species_prop_t  spro,
-                        cs_real_t                        *mu,
-                        cs_real_t                        *lambda)
+_compute_mu_lambda_suth
+(
+  const cs_real_t  tk,
+  const cs_real_t  smu,
+  const cs_real_t  slam,
+  const cs_real_t  muref,
+  const cs_real_t  lamref,
+  const cs_real_t  trefmu,
+  const cs_real_t  treflam,
+  cs_real_t&       mu,
+  cs_real_t&       lambda
+)
 {
-  const cs_real_t smu = spro.smu;
-  const cs_real_t slam = spro.slam;
-  const cs_real_t muref = spro.muref;
-  const cs_real_t lamref = spro.lamref;
-  const cs_real_t trefmu = spro.trefmu;
-  const cs_real_t treflam = spro.treflam;
-
-  *mu =  muref * pow(tk / trefmu, 1.5) * ((trefmu+smu) / (tk+smu));
-  *lambda = lamref * pow(tk / treflam, 1.5) * ((treflam+slam) / (tk+slam));
+  mu =  muref * pow(tk / trefmu, 1.5) * ((trefmu+smu) / (tk+smu));
+  lambda = lamref * pow(tk / treflam, 1.5) * ((treflam+slam) / (tk+slam));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -372,7 +384,7 @@ _map_field(const cs_field_t *f)
   if (is_solved)
     _gas_mix.n_species_solved += 1;
 
-  CS_REALLOC(_gas_mix.species_to_field_id, _gas_mix.n_species, int);
+  _gas_mix.species_to_field_id.reshape(_gas_mix.n_species);
 
   /* If we need to insert a solved variable with non-solved fields
      already mapped, shift the non-solved field map positions */
@@ -381,6 +393,7 @@ _map_field(const cs_field_t *f)
     _gas_mix.species_to_field_id[i] = _gas_mix.species_to_field_id[i-1];
 
   _gas_mix.species_to_field_id[insert_id] = f->id;
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -564,6 +577,111 @@ _set_predefined_property(cs_field_t  *f)
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize setup by creating all data structure and doing final checks
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_setup_finalize(void)
+{
+  if (_gas_mix.n_species < 1)
+    return;
+
+  /* Check that we only have 1 deduced field ! */
+  if ((_gas_mix.n_species - _gas_mix.n_species_solved) > 1)
+    bft_error(__FILE__,__LINE__,0,
+              _("%s: No more than 1 deduced species can be used for a gas mixture.\n"),
+              __func__);
+
+  /* TODO: This should move to the declaration step, where the user needs
+   * to explicitely declare the chosen Gas ==> Being name dependent will lead
+   * to issues with user defined models, and its better to directly use
+   * field ids which are not name/label dependent */
+
+  _gas_mix.gas_type.reshape(_gas_mix.n_species);
+  for (int i = 0; i < _gas_mix.n_species; i++) {
+    _gas_mix.gas_type[i] = cs_gas_mix_y_type::unknown;
+
+    cs_field_t *f = cs_field(_gas_mix.species_to_field_id[i]);
+    if (strcmp(f->name, "y_h2o_g") == 0) {
+      _gas_mix.gas_type[i] = cs_gas_mix_y_type::h2o;
+    }
+    else if (strcmp(f->name, "y_he") == 0) {
+      _gas_mix.gas_type[i] = cs_gas_mix_y_type::he;
+    }
+    else if (strcmp(f->name, "y_h2") == 0) {
+      _gas_mix.gas_type[i] = cs_gas_mix_y_type::h2;
+    }
+    else if (strcmp(f->name, "y_co2") == 0) {
+      _gas_mix.gas_type[i] = cs_gas_mix_y_type::co2;
+    }
+    else if (strcmp(f->name, "y_no2") == 0) {
+      _gas_mix.gas_type[i] = cs_gas_mix_y_type::no2;
+    }
+    else if (strcmp(f->name, "y_o2") == 0) {
+      _gas_mix.gas_type[i] = cs_gas_mix_y_type::o2;
+    }
+    else if (strcmp(f->name, "y_n2") == 0) {
+      _gas_mix.gas_type[i] = cs_gas_mix_y_type::n2;
+    }
+  }
+
+  /* Sanity checks for gases definitions! */
+  int _n_uknown_gases = 0;
+  for (int i = 0; i < _gas_mix.n_species; i++) {
+    cs_field_t *f = cs_field(_gas_mix.species_to_field_id[i]);
+    if (_gas_mix.gas_type[i] == cs_gas_mix_y_type::unknown) {
+      cs_log_warning(_("%s : Species #%d linked to field \"%s\" does not "
+                       "correspond to a predefined species.\n"),
+                     __func__, i, f->name);
+      _n_uknown_gases += 1;
+    }
+  }
+  if (_n_uknown_gases > 0)
+    bft_error(__FILE__,__LINE__,0,
+              _("%d species do not have a defined type, please check log files.\n"));
+
+  const int f_id0 = _gas_mix.species_to_field_id[0];
+  int k_id = cs_gas_mix_get_field_key();
+  for (int i = 0; i < _gas_mix.n_species; i++) {
+    cs_field_t *f = cs_field(_gas_mix.species_to_field_id[i]);
+    f->set_ns_owner(f_id0);
+
+    _gas_mix.mol_mas.reshape(_gas_mix.n_species);
+    _gas_mix.cp.reshape(_gas_mix.n_species);
+    _gas_mix.vol_dif.reshape(_gas_mix.n_species);
+    _gas_mix.mu_a.reshape(_gas_mix.n_species);
+    _gas_mix.mu_b.reshape(_gas_mix.n_species);
+    _gas_mix.lambda_a.reshape(_gas_mix.n_species);
+    _gas_mix.lambda_b.reshape(_gas_mix.n_species);
+    _gas_mix.muref.reshape(_gas_mix.n_species);
+    _gas_mix.lamref.reshape(_gas_mix.n_species);
+    _gas_mix.trefmu.reshape(_gas_mix.n_species);
+    _gas_mix.treflam.reshape(_gas_mix.n_species);
+    _gas_mix.smu.reshape(_gas_mix.n_species);
+    _gas_mix.slam.reshape(_gas_mix.n_species);
+
+    cs_gas_mix_species_prop_t s_k;
+    cs_field_get_key_struct(f, k_id, &s_k);
+
+    _gas_mix.mol_mas[i]  = s_k.mol_mas;
+    _gas_mix.cp[i]       = s_k.cp;
+    _gas_mix.vol_dif[i]  = s_k.vol_dif;
+    _gas_mix.mu_a[i]     = s_k.mu_a;
+    _gas_mix.mu_b[i]     = s_k.mu_b;
+    _gas_mix.lambda_a[i] = s_k.lambda_a;
+    _gas_mix.lambda_b[i] = s_k.lambda_b;
+    _gas_mix.muref[i]    = s_k.muref;
+    _gas_mix.lamref[i]   = s_k.lamref;
+    _gas_mix.trefmu[i]   = s_k.trefmu;
+    _gas_mix.treflam[i]  = s_k.treflam;
+    _gas_mix.smu[i]      = s_k.smu;
+    _gas_mix.slam[i]     = s_k.slam;
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -973,6 +1091,14 @@ cs_gas_mix_physical_properties(void)
   cs_real_t *cpro_cp = CS_F_(cp)->val;
   cs_real_t *cpro_cv = nullptr;
 
+  // Local values
+  const int n_species_solved = _gas_mix.n_species_solved;
+  const int n_species_total  = _gas_mix.n_species;
+
+  // Get species fractions values
+  const int species_f_id0 = _gas_mix.species_to_field_id[0];
+  cs_span_2d<cs_real_t> cvar_s_yk = cs_field_by_id(species_f_id0)->get_ns_val_s(0);
+
   if (cs_field_by_name_try("isobaric_heat_capacity") != nullptr &&
       cs_glob_fluid_properties->icv >= 0)
     cpro_cv = cs_field_by_name("isobaric_heat_capacity")->val;
@@ -1006,6 +1132,18 @@ cs_gas_mix_physical_properties(void)
 
   cs_real_t *y_d = f->val;
   cs_field_get_key_struct(f, k_id, &s_d);
+  int spe_id_d = -1;
+  for (int spe_id = 0; spe_id < n_species_total; spe_id++) {
+    if (f->id == _gas_mix.species_to_field_id[spe_id]) {
+      spe_id_d = spe_id;
+      break;
+    }
+  }
+  if (spe_id_d < 0)
+    bft_error(__FILE__,__LINE__,0,
+              _("%s: Deduced mass fraction specied id not found.\n"),
+              __func__);
+
   /* Storage the previous value of the deduced mass fraction ya_d */
   cs_array_real_copy(n_cells_ext, y_d, f->val_pre);
 
@@ -1061,6 +1199,10 @@ cs_gas_mix_physical_properties(void)
   // else if (cs_glob_velocity_pressure_model->idilat == 2)
   //  cvar_pr = CS_F_(p)->val;
 
+  // Get molar mass of species
+  auto yk_mol_mass = _gas_mix.mol_mas.view();
+  auto yk_cp = _gas_mix.cp.view();
+
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
 
@@ -1086,17 +1228,10 @@ cs_gas_mix_physical_properties(void)
     steam_binary_diffusion[c_id] = x_0;
 
     /* Mass fraction array of the different species */
-    for (int spe_id = 0; spe_id < _gas_mix.n_species_solved; spe_id++) {
-      const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
-      const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
-      const cs_real_t *cvar_yk = f_spe->val;
-
-      cs_gas_mix_species_prop_t s_k;
-      cs_field_get_key_struct(f_spe, k_id, &s_k);
-
-      y_d[c_id] -= cvar_yk[c_id];
-      mix_mol_mas[c_id] += cvar_yk[c_id]/s_k.mol_mas;
-      mol_mas_ncond[c_id] += cvar_yk[c_id] / s_k.mol_mas;
+    for (int spe_id = 0; spe_id < n_species_solved; spe_id++) {
+      y_d[c_id] -= cvar_s_yk(spe_id, c_id);
+      mix_mol_mas[c_id] += cvar_s_yk(spe_id, c_id)/yk_mol_mass[spe_id];
+      mol_mas_ncond[c_id] += cvar_s_yk(spe_id, c_id) / yk_mol_mass[spe_id];
     }
 
     // Clipping
@@ -1107,7 +1242,8 @@ cs_gas_mix_physical_properties(void)
     mix_mol_mas[c_id] = x_1/mix_mol_mas[c_id];
     mol_mas_ncond[c_id] = (x_1 - y_d[c_id])/mol_mas_ncond[c_id];
 
-    for (int spe_id = 0; spe_id < _gas_mix.n_species_solved + 1; spe_id++) {
+    // Loop on solved species then use the deduced species just afterwards
+    for (int spe_id = 0; spe_id < _gas_mix.n_species_solved; spe_id++) {
       /* Mixture specific heat function of species specific heat (cpk)
        * and mass fraction of each gas species (yk), as below:
        *             -----------------------------
@@ -1122,31 +1258,17 @@ cs_gas_mix_physical_properties(void)
        *      - CS_GAS_MIX = CS_GAS_MIX_AIR_HELIUM or
        *        CS_GAS_MIX_AIR_HYDROGEN, a noncondensable gas
        *      - CS_GAS_MIX > CS_GAS_MIX_AIR_STEAM, a condensable gas (steam) */
-      const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
-      const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
-      if (spe_id == _gas_mix.n_species_solved)
-        f_spe = f;
-      const cs_real_t *cvar_yk = f_spe->val;
-
-      cs_gas_mix_species_prop_t s_k;
-      cs_field_get_key_struct(f_spe, k_id, &s_k);
-      cpro_cp[c_id] += cvar_yk[c_id]*s_k.cp;
+      cpro_cp[c_id] += cvar_s_yk(spe_id, c_id)*yk_cp[spe_id];
     }
+    // deduced field contribution to Cp
+    cpro_cp[c_id] += y_d[c_id]*s_d.cp;
+
     /* Mixture isochoric specific heat */
     if (cs_glob_velocity_pressure_model->idilat == 2 &&
         cs_glob_fluid_properties->icv >= 0) {
-      for (int spe_id = 0; spe_id < _gas_mix.n_species_solved + 1; spe_id++) {
-        const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
-        const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
-        if (spe_id == _gas_mix.n_species_solved)
-          f_spe = f;
-
-        cs_gas_mix_species_prop_t s_k;
-        cs_field_get_key_struct(f_spe, k_id, &s_k);
-        /* cv = cp - R */
-        cpro_cv[c_id] = cpro_cp[c_id]
-          - cs_physical_constants_r / mix_mol_mas[c_id] ;
-      }
+      /* cv = cp - R */
+      cpro_cv[c_id] = cpro_cp[c_id]
+        - cs_physical_constants_r / mix_mol_mas[c_id] ;
     }
   }
 
@@ -1187,94 +1309,76 @@ cs_gas_mix_physical_properties(void)
    * mixture with or without condensable gas */
 
   /* Loop on all species */
-  for (int spe_id = 0; spe_id < _gas_mix.n_species_solved + 1; spe_id++) {
+  /* TODO: use local arrays to store s_j and field name or identifiers,
+   *       so as to avoid querying them for each field for each cell. */
+  auto yk_types = _gas_mix.gas_type.view();
 
-    const cs_field_t *f_spe = f;
-    if (spe_id < _gas_mix.n_species_solved) {
-      const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
-      f_spe = cs_field_by_id(f_spe_id);
-    }
+  auto yk_mu_a = _gas_mix.mu_a.view();
+  auto yk_mu_b = _gas_mix.mu_b.view();
+  auto yk_lam_a = _gas_mix.lambda_a.view();
+  auto yk_lam_b = _gas_mix.lambda_b.view();
 
-    cs_gas_mix_species_prop_t s_i;
-    const cs_real_t *cvar_yi = f_spe->val;
-    cs_field_get_key_struct(f_spe, k_id, &s_i);
+  auto yk_smu     = _gas_mix.smu.view();
+  auto yk_slam    = _gas_mix.slam.view();
+  auto yk_muref   = _gas_mix.muref.view();
+  auto yk_lamref  = _gas_mix.lamref.view();
+  auto yk_trefmu  = _gas_mix.trefmu.view();
+  auto yk_treflam = _gas_mix.treflam.view();
 
-    cs_real_t  mu_i, lambda_i,  mu_j, lambda_j;
+  constexpr cs_real_t sqrt8 = sqrt(8.0);
 
-    const int ivsuth = cs_glob_fluid_properties->ivsuth;
-    if (ivsuth == 1) {
-      if (   (strcmp(f_spe->name, "y_he")    != 0)
-          && (strcmp(f_spe->name, "y_h2")    != 0)
-          && (strcmp(f_spe->name, "y_o2")    != 0)
-          && (strcmp(f_spe->name, "y_n2")    != 0)
-          && (strcmp(f_spe->name, "y_co2")    != 0)
-          && (strcmp(f_spe->name, "y_no2")    != 0)
-          && (strcmp(f_spe->name, "y_h2o_g") != 0)   )
-        bft_error(__FILE__, __LINE__, 0,
-                  _("%s: no predefined properties for field %s."),
-                  __func__, f_spe->name);
-    }
+  const int ivsuth = cs_glob_fluid_properties->ivsuth;
 
-    /* TODO: use local arrays to store s_j and field name or identifiers,
-     *       so as to avoid querying them for each field for each cell. */
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+    cs_real_t mu_spe[max_n_species];
+    cs_real_t lam_spe[max_n_species];
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
-
+    /* First loop to compute mu/lambda for all species */
+    for (int spe_id = 0; spe_id < n_species_solved + 1; spe_id++) {
       if (ivsuth == 0)
-        _compute_mu_lambda(f_spe->name, temp[c_id] + t_add, s_i,
-                           &mu_i, &lambda_i);
+        _compute_mu_lambda(yk_types[spe_id], temp[c_id] + t_add,
+                           yk_mu_a[spe_id], yk_mu_b[spe_id],
+                           yk_lam_a[spe_id], yk_lam_b[spe_id],
+                           mu_spe[spe_id], lam_spe[spe_id]);
       else
-        _compute_mu_lambda_suth(temp[c_id] + t_add, s_i,
-                                &mu_i, &lambda_i);
+        _compute_mu_lambda_suth(temp[c_id] + t_add,
+                                yk_smu[spe_id], yk_slam[spe_id],
+                                yk_muref[spe_id], yk_lamref[spe_id],
+                                yk_trefmu[spe_id], yk_treflam[spe_id],
+                                mu_spe[spe_id], lam_spe[spe_id]);
+    }
 
+    for (int s_id_i = 0; s_id_i < n_species_solved + 1; s_id_i++) {
       cs_real_t xsum_mu = 0.0, xsum_lambda = 0.0;
+      for (int s_id_j = 0; s_id_j < n_species_solved + 1; s_id_j++) {
 
-      for (int s_id = 0; s_id < _gas_mix.n_species_solved + 1; s_id++) {
-
-        const cs_field_t *f_s = f;
-        if (s_id < _gas_mix.n_species_solved) {
-          const int f_s_id = _gas_mix.species_to_field_id[s_id];
-          f_s = cs_field_by_id(f_s_id);
-        }
-
-        cs_gas_mix_species_prop_t s_j;
-        const cs_real_t *cvar_yj = f_s->val;
-        cs_field_get_key_struct(f_s, k_id, &s_j);
-
-        if (ivsuth == 0)
-          _compute_mu_lambda(f_s->name, temp[c_id] + t_add, s_j,
-                             &mu_j, &lambda_j);
-        else
-          _compute_mu_lambda_suth(temp[c_id] + t_add, s_j,
-                                  &mu_j, &lambda_j);
+        cs_real_t denom = sqrt8 * sqrt(1.0 + yk_mol_mass[s_id_i]/yk_mol_mass[s_id_j]);
+        cs_real_t quad_r_mol_mass
+          = sqrt(sqrt(yk_mol_mass[s_id_j]/yk_mol_mass[s_id_i]));
 
         const cs_real_t phi_mu
-          =   (1.0/sqrt(8.0))
-            * pow(1.0 + s_i.mol_mas/s_j.mol_mas, -0.5)
-            * pow(1.0 + pow(mu_i/mu_j, 0.5)
-            * pow(s_j.mol_mas/s_i.mol_mas, 0.25), 2);
+          = cs::pow2(1.0 + sqrt(mu_spe[s_id_i]/mu_spe[s_id_j]) * quad_r_mol_mass)
+          / denom;
 
         const cs_real_t phi_lambda
-          =   (1.0/sqrt(8.0))
-            * pow(1.0 + s_i.mol_mas/s_j.mol_mas, -0.5)
-            * pow(1.0 + pow(lambda_i/lambda_j, 0.5)
-            * pow(s_j.mol_mas / s_i.mol_mas, 0.25), 2);
+          = cs::pow2(1.0 + sqrt(lam_spe[s_id_i]/lam_spe[s_id_j]) * quad_r_mol_mass)
+          / denom;
 
-        const cs_real_t x_k = cvar_yj[c_id]*mix_mol_mas[c_id]/s_j.mol_mas;
+        const cs_real_t x_k = cvar_s_yk(s_id_j, c_id) * mix_mol_mas[c_id]
+                            / yk_mol_mass[s_id_j];
         xsum_mu += x_k * phi_mu;
         xsum_lambda += x_k * phi_lambda;
       }
 
       /* Mixture viscosity defined as function of the scalars
          ----------------------------------------------------- */
-      const cs_real_t x_k
-        = cvar_yi[c_id]*mix_mol_mas[c_id]/s_i.mol_mas;
-      cpro_viscl[c_id] = cpro_viscl[c_id] + x_k * mu_i / xsum_mu;
+      const cs_real_t x_k = cvar_s_yk(s_id_i, c_id)*mix_mol_mas[c_id]/yk_mol_mass[s_id_i];
 
-      lambda[c_id] += x_k * lambda_i / xsum_lambda;
+      cpro_viscl[c_id] += x_k * mu_spe[s_id_i] / xsum_mu;
+      lambda[c_id] += x_k * lam_spe[s_id_i] / xsum_lambda;
+    }
 
-    } //loop on cells
-  } // end of loop on species
+  } //loop on cells
 
   /* Dynamic viscosity and conductivity coefficient
    * the physical properties filled for the gas mixture */
@@ -1293,6 +1397,9 @@ cs_gas_mix_physical_properties(void)
   const cs_real_t patm = 101320.0;
 
   /* Steam binary diffusion */
+  auto yk_vol_dif = _gas_mix.vol_dif.view();
+  const cs_real_t yd_mol_mas = s_d.mol_mas;
+  const cs_real_t yd_vol_dif  = s_d.vol_dif;
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
 
@@ -1300,19 +1407,12 @@ cs_gas_mix_physical_properties(void)
     const cs_real_t ratio_tkpr = pow(temp[c_id] + t_add, 1.75)/pressure;
 
     for (int spe_id = 0; spe_id < _gas_mix.n_species_solved; spe_id++) {
-      const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
-      const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
-
-      const cs_real_t *cvar_yi = f_spe->val;
-      cs_gas_mix_species_prop_t s_i;
-      cs_field_get_key_struct(f_spe, k_id, &s_i);
-
-      const cs_real_t y_k = cvar_yi[c_id];
-      const cs_real_t x_k = y_k * mix_mol_mas[c_id] / s_i.mol_mas;
+      const cs_real_t y_k = cvar_s_yk(spe_id, c_id);
+      const cs_real_t x_k = y_k * mix_mol_mas[c_id] / yk_mol_mass[spe_id];
       const cs_real_t xmab
-        = sqrt(2.0/( 1.0 / (s_d.mol_mas*1000.0) +1.0 / (s_i.mol_mas*1000.0)));
+        = sqrt(2.0/( 1.0 / (yd_mol_mas*1000.0) +1.0 / (yk_mol_mass[spe_id]*1000.0)));
       const cs_real_t xvab
-        = pow(pow(s_d.vol_dif, 1.0/3.0) + pow(s_i.vol_dif, 1.0/3.0), 2.0);
+        = pow(pow(yd_vol_dif, 1.0/3.0) + pow(yk_vol_dif[spe_id], 1.0/3.0), 2.0);
       const cs_real_t a1 = 1.43e-7 / (xmab * xvab) * patm;
       steam_binary_diffusion[c_id] += x_k / (a1 * ratio_tkpr);
       x_ncond_tot += x_k;
@@ -1340,7 +1440,20 @@ cs_gas_mix_physical_properties(void)
 void
 cs_gas_mix_finalize(void)
 {
-  CS_FREE(_gas_mix.species_to_field_id);
+  _gas_mix.species_to_field_id.clear();
+  _gas_mix.mol_mas.clear();
+  _gas_mix.cp.clear();
+  _gas_mix.vol_dif.clear();
+  _gas_mix.mu_a.clear();
+  _gas_mix.mu_b.clear();
+  _gas_mix.lambda_a.clear();
+  _gas_mix.lambda_b.clear();
+  _gas_mix.muref.clear();
+  _gas_mix.lamref.clear();
+  _gas_mix.trefmu.clear();
+  _gas_mix.treflam.clear();
+  _gas_mix.smu.clear();
+  _gas_mix.slam.clear();
   _gas_mix.n_species = 0;
 }
 

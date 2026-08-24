@@ -59,16 +59,66 @@ typedef enum {
 
 } cs_gas_mix_type_t;
 
+/* Known gases
+   ----------- */
+/*! Enum for gas types used in mixtures */
+enum class cs_gas_mix_y_type {
+  h2o,     /*!< Water vapor (H2O) */
+  he,      /*!< Helium (He) */
+  h2,      /*!< Hydrogen (H2) */
+  co2,     /*!< CO2 */
+  no2,     /*!< NO2 */
+  o2,      /*!< Oxygen (O2)*/
+  n2,      /*!< Nitrogen (N2) */
+  n_gases, /*!< Number of predefined gases */
+  unknown  /*!< Uknown gas -> Used for error detection */
+};
+
 /* Gas mix descriptor
    ------------------ */
 
-typedef struct {
+/*! Structure containing the data related to a gas mixture */
+typedef struct cs_gas_mix_t{
 
-  int    n_species;             /*!< number of species in the gas mix */
-  int    n_species_solved;      /*!< number of species which
-                                  are solved variables */
-  int   *species_to_field_id;   /*!< species to field mapping
-                                  (solved variables first) */
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Default constructor
+   */
+  /*--------------------------------------------------------------------------*/
+
+  cs_gas_mix_t() = default;
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Default destructor
+   */
+  /*--------------------------------------------------------------------------*/
+
+  ~cs_gas_mix_t() = default;
+
+  /* Members */
+
+  int n_species {0};        /*!< number of species in the gas mix */
+  int n_species_solved {0}; /*!< number of species which
+                                 are solved variables */
+
+  cs_array<int> species_to_field_id; /*!< species to field mapping
+                                          (solved variables first) */
+  cs_array<cs_gas_mix_y_type> gas_type; /*!< Type of predefined gas */
+
+  cs_array<double>  mol_mas;   /*!< molar mass */
+  cs_array<double>  cp;        /*!< specific heat at constant pressure */
+  cs_array<double>  vol_dif;   /*!< volume diffusion */
+  cs_array<double>  mu_a;      /*!< dynamic viscosity a */
+  cs_array<double>  mu_b;      /*!< dynamic viscosity a */
+  cs_array<double>  lambda_a;  /*!< thermal conductivity a */
+  cs_array<double>  lambda_b;  /*!< thermal conductivity b */
+  cs_array<double>  muref;     /*!< ref. viscosity for Sutherland law */
+  cs_array<double>  lamref;    /*!< ref. thermal conductivity for Sutherland law */
+  cs_array<double>  trefmu;    /*!< ref. temperature for viscosity in Sutherland law */
+  cs_array<double>  treflam;   /*!< ref. temperature for conductivity Sutherland law */
+  cs_array<double>  smu;       /*!< Sutherland temperature for viscosity */
+  cs_array<double>  slam;      /*!< Sutherland temperature for conductivity */
 
 } cs_gas_mix_t;
 
@@ -105,6 +155,15 @@ extern const cs_gas_mix_t  *cs_glob_gas_mix;
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Finalize setup by creating all data structure and doing final checks
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_setup_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*
