@@ -7490,7 +7490,7 @@ cs_anisotropic_left_diffusion_vector
         bldfrp = cs::max(df_limiter[c_id], 0.);
 
       const cs_rreal_t *diipbv = diipb[face_id];
-      cs_real_t pipr[3], fluxi[3];
+      cs_real_t pipr[3], fluxi[3] = {0, 0, 0};
 
       for (cs_lnum_t k = 0; k < 3; k++) {
         cs_real_t pir  =   _pvar[c_id][k]/relaxp

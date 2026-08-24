@@ -270,12 +270,14 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
 
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
-  cs_real_t aux1, aux1m, aux2, aux3, aux3m, aux4,
-            aux44, aux5, aux6, aux7, aux8,
-            aux9, aux10, aux11;
+  cs_real_t aux1 = 0., aux2 = 0., aux3 = 0., aux4 = 0., aux5 = 0., aux7 = 0.;
+  cs_real_t aux1m, aux3m, aux44, aux6, aux8, aux9, aux10, aux11;
   cs_real_t ter1f[n_phases], ter2f[n_phases], ter3f[n_phases];
-  cs_real_t ter1p, ter2p[n_phases], ter3p[n_phases], ter4p, ter5p, ter6p[n_phases];
-  cs_real_t ter1x, ter2x[n_phases], ter3x[n_phases], ter4x, ter5x, ter6x[n_phases];
+  cs_real_t ter1p, ter2p[n_phases], ter3p[n_phases], ter4p, ter5p;
+  cs_real_t ter6p[n_phases];
+  cs_real_t ter1x, ter2x[n_phases], ter3x[n_phases], ter4x, ter5x;
+  cs_real_t ter6x[n_phases];
+
   // Terms of the reduction matrix
   cs_real_t p11[n_phases], p21[n_phases], p22, p31[n_phases], p32, p33;
   // Terms of the covariance matrix for the Gauss vector
@@ -402,7 +404,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
   cs_real_t taup_rm[3] = {0., 0., 0.};
 
   cs_real_t displ_r[3];
-  cs_real_t trans_m[3][3];
+  cs_real_t trans_m[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
   /* resolve SDEs*/
   for (int phase_id = 0; phase_id < n_phases; phase_id++) {
@@ -1039,13 +1041,13 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
                                       const cs_real_3_t               force_p,
                                       const cs_real_3_t               beta)
 {
-
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
   cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
   if (cell_id < 0)
     return;
+
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
 
@@ -1168,7 +1170,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
   cs_real_t force_p_r[3] = {force_p[0], force_p[1], force_p[2]};
 
   cs_real_t displ_r[3];
-  cs_real_t trans_m[3][3];
+  cs_real_t trans_m[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
   /* resolve SDEs*/
   if (cs_glob_lagr_time_scheme->interpol_field == 1) {
@@ -1956,19 +1958,19 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
   cs_lagr_boundary_interactions_t  *bi = cs_glob_lagr_boundary_interactions;
 
   /* Hydrodynamic drag and torque on a deposited particle     */
-  cs_real_t drag_force[3];
-  cs_real_t drag_torque[3];
+  cs_real_t drag_force[3] = {0, 0, 0};
+  cs_real_t drag_torque[3] = {0, 0, 0};
 
   /* Lift force and torque on a deposited particle   */
-  cs_real_t lift_force[1];
-  cs_real_t lift_torque[3];
+  cs_real_t lift_force[1] = {0};
+  cs_real_t lift_torque[3] = {0, 0, 0};
 
   /* Gravity force and torque on a deposited particle   */
-  cs_real_t grav_force[3];
-  cs_real_t grav_torque[3];
+  cs_real_t grav_force[3] = {0, 0, 0};
+  cs_real_t grav_torque[3] = {0, 0, 0};
 
   /* Adhesion force and torque on a deposited particle   */
-  cs_real_t adhes_torque[3];
+  cs_real_t adhes_torque[3] = {0, 0, 0};
 
   /* Map field arrays */
   const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
