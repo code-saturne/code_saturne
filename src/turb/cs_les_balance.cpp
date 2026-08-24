@@ -381,8 +381,7 @@ _les_balance_laplacian(cs_real_t   *wa,
   cs_real_t *coefaf = bc_coeffs_loc.af;
   cs_real_t *coefbf = bc_coeffs_loc.bf;
 
-  const cs_real_t visc = 1., pimp = 0., qimp = 0.; // hext = -1;
-  //cs_real_t a, b;
+  constexpr cs_real_t visc = 1.;
 
   ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
     cs_real_t hint = visc / b_dist[face_id];
@@ -390,16 +389,9 @@ _les_balance_laplacian(cs_real_t   *wa,
     if (   type == 0
         && (   bc_type[face_id] == CS_SMOOTHWALL
             || bc_type[face_id] == CS_ROUGHWALL) ) {
-      /*cs_boundary_conditions_set_dirichlet_scalar(&a,
-                                                  &coefaf[face_id],
-                                                  &b,
-                                                  &coefbf[face_id],
-                                                  pimp,
-                                                  hint,
-                                                  hext);
-      */
+      /* cs_boundary_conditions_set_dirichlet_scalar */
 
-      coefaf[face_id] = -hint*pimp;
+      coefaf[face_id] = 0.;   // hint*pimp, with pimp == 0
       coefbf[face_id] =  hint;
 
       coefa[face_id] = coefaf[face_id];
@@ -407,16 +399,7 @@ _les_balance_laplacian(cs_real_t   *wa,
 
     }
     else {
-      /*
-      cs_boundary_conditions_set_neumann_scalar(&a,
-                                                &coefaf[face_id],
-                                                &b,
-                                                &coefbf[face_id],
-                                                qimp,
-                                                hint);
-      */
-
-      coefaf[face_id] = qimp;
+      coefaf[face_id] = 0.;   // qimp;
       coefbf[face_id] = 0.;
 
       coefa[face_id] = coefaf[face_id];
@@ -424,6 +407,23 @@ _les_balance_laplacian(cs_real_t   *wa,
 
     }
   });
+
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
+  cs_equation_param_t _eqp = *eqp;
+  _eqp.iconv = 0; /* only diffusion */
+  _eqp.theta = 1.;
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     nullptr,
+     &bc_coeffs_loc,
+     1.,         // inc
+     &_eqp,
+     true, true, // gradient and flux values
+     0, nullptr, // hyd_p_flag && f_ext
+     nullptr,    // gweight
+     nullptr,    // weighb (aniso)
+     wa);
 
   ctx.wait();
 
@@ -440,11 +440,6 @@ _les_balance_laplacian(cs_real_t   *wa,
                     i_visc,
                     b_visc);
   c_visc.clear(); // Free memory block now
-
-  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(CS_F_(vel));
-  cs_equation_param_t _eqp = *eqp;
-  _eqp.iconv = 0; /* only diffusion */
-  _eqp.theta = 1.;
 
   /* Compute boundary face value */
 
