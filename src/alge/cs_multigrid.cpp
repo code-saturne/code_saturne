@@ -197,9 +197,10 @@ typedef struct _cs_multigrid_info_t {
 
 typedef struct _cs_multigrid_level_info_t {
 
+  char                 aggr_type[64];       /* Aggregation type */
   unsigned long long   n_ranks[4];          /* Number of ranks for this level:
                                                [last, min, max, total] */
-  unsigned long long   n_g_rows[4];        /* Global number of rows
+  unsigned long long   n_g_rows[4];         /* Global number of rows
                                                (last, min, max, total) */
   unsigned long long   n_elts[3][4];        /* Mean number of rows,
                                                rows + ghosts, and entries
@@ -805,12 +806,20 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
       continue;
 
     cs_log_strpad(tmp_s[0], _("Number of rows:"), 34, 64);
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("  Grid level %d:\n"
-                    "    %s %12llu %12llu %12llu\n"),
-                  i, tmp_s[0],
-                  lv_info->n_g_rows[3] / n_lv_builds,
-                  lv_info->n_g_rows[1], lv_info->n_g_rows[2]);
+    if (strlen(lv_info->aggr_type) == 0)
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("  Grid level %d:\n"
+                      "    %s %12llu %12llu %12llu\n"),
+                    i, tmp_s[0],
+                    lv_info->n_g_rows[3] / n_lv_builds,
+                    lv_info->n_g_rows[1], lv_info->n_g_rows[2]);
+    else
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("  Grid level %d (%s):\n"
+                      "    %s %12llu %12llu %12llu\n"),
+                    i, lv_info->aggr_type, tmp_s[0],
+                    lv_info->n_g_rows[3] / n_lv_builds,
+                    lv_info->n_g_rows[1], lv_info->n_g_rows[2]);
 
     if (mg->caller_n_ranks == 1) {
       cs_log_strpad(tmp_s[1], _("Number of entries:"), 34, 64);
@@ -2453,6 +2462,8 @@ _setup_hierarchy(void             *context,
 
   while (add_grid) {
 
+    char aggr_type[64] = "";
+
     n_g_rows_prev = n_g_rows;
     n_coarse_ranks_prev = n_coarse_ranks;
 
@@ -2489,7 +2500,8 @@ _setup_hierarchy(void             *context,
                           mg->merge_stride,
                           mg->merge_mean_threshold,
                           mg->merge_glob_threshold,
-                          mg->p0p1_relax);
+                          mg->p0p1_relax,
+                          aggr_type);
     }
 
     bool symmetric = true;
@@ -2576,6 +2588,8 @@ _setup_hierarchy(void             *context,
       mg_lv_info->n_elts[0][0] = n_rows;
       mg_lv_info->n_elts[1][0] = n_cols_ext;
       mg_lv_info->n_elts[2][0] = n_entries;
+      if (strlen(aggr_type) > 0)
+        strncpy(mg_lv_info->aggr_type, aggr_type, 64);
 
     } /* end adding grid */
 

@@ -28,7 +28,7 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C and C++ library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <chrono>
@@ -72,6 +72,7 @@
 #include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "base/cs_algorithm.h"
+#include "base/cs_atomic.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
@@ -116,7 +117,7 @@
   P0 Galerkin coarse mesh matrix are rescaled by a parameter, which takes
   into account the mesh spacing ratio between the fine and coarse mesh in
   the vicinity of the coarse mesh cell boundaries.
-  THis is detailed in \cite MeFoH09 .
+  This is detailed in \cite MeFoH09 .
 */
 
 /*----------------------------------------------------------------------------*/
@@ -164,12 +165,16 @@ static double _grid_diag_dom_clip_factor = -1.; // Use positive value to enable.
 
 cs_real_t _penalization_threshold = 1e4;
 
- /* Threshold under which diagonal dominant rows are ignored in the
-    aggregation scheme (assuming that dominance allows strong enough
-    convergence for those rows by itself). Y Notay recommends using
-    a value of 5. */
+/* Threshold under which diagonal dominant rows are ignored in the
+   aggregation scheme (assuming that dominance allows strong enough
+   convergence for those rows by itself). Y Notay recommends using
+   a value of 5. */
 
 cs_real_t _dd_threshold_pw = 5;
+
+/* ALgorithm variant settings */
+
+static char _match_edges_variant = 'd';
 
 /* Names for coarsening options */
 
@@ -3003,7 +3008,7 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
  * \brief Compute coarse to fine grid adjacency.
  *
  * This serial version is faster than the general one for single-thread runs,
- * as is does not require atomics or synchronoization.
+ * as is does not require atomics or synchronization.
  *
  * An included scan operation might be run in parallel, depending on
  * the dispatch contexct.
@@ -3218,26 +3223,7 @@ _coarse_to_fine_adjacency_msr(cs_dispatch_context  &ctx,
   ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     cs_lnum_t jj = f_c_row[ii];
     if (jj > -1) {
-      cs_lnum_t kk;
-      /* Atomic fetch and add (kk = value of cf_r_shift[jj] before increment) */
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
-      kk = atomicAdd(&(cf_r_shift[jj]), (cs_lnum_t)1);
-#else
-      /* On CPU,
-         We could write this as: {kk = *r_shift; (*r_shift++);} but use the
-         syntax below in case this helps the compiler.
-         C++ `std::atomic_ref` would be nice here, but requires C++20 support.
-         An alternative in many cases would be to use gcc or clang
-         `__atomic_fetch_add` builtins, also available in older versions. */
-  #if 1
-      cs_lnum_t &r_shift = cf_r_shift[jj];
-      #pragma omp atomic capture
-      kk = r_shift++;
-  #else
-      kk = __atomic_fetch_add(&(cf_r_shift[jj]), (cs_lnum_t)1,
-                              __ATOMIC_RELAXED);
-  #endif
-#endif
+      cs_lnum_t kk = cs::atomic::fetch_add(&(cf_r_shift[jj]), (cs_lnum_t)1);
       kk += c_f_row_index[jj];
       c_f_row_ids[kk] = ii;
     }
@@ -5080,8 +5066,7 @@ _automatic_aggregation_dx_msr_v1(const cs_grid_t       *f,
 }
 
 /*----------------------------------------------------------------------------
- * Build a coarse grid level from the previous level using
- * an automatic criterion, using a MSR matrix adjacency.
+ * Compute aggregation criterion using a MSR matrix adjacency.
  *
  * The agg_base_strength array allocated by this function must
  * be freed by the caller.
@@ -5249,7 +5234,7 @@ _aggr_strenght_dx_msr
 
 /*----------------------------------------------------------------------------
  * Build a coarse grid level from the previous level using
- * an automatic criterion, using a MSR matrix adjacency.
+ * an automatic criterion, using an MSR matrix adjacency.
  *
  * parameters:
  *   f                    <-- Fine grid structure
@@ -5689,16 +5674,103 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
   return c_n_rows;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Try to aggregate 2 cells, using atomic operations.
+ *
+ * This operation is non-deteministic when used in a parallel
+ * contex, as aggregation success may depend on which edge is aggregated
+ * first.
+ *
+ * Note that the i_aggr and j_aggr arguments could be recomputed
+ * here, but have usually been tested before, so we avoid additional
+ * reads in the aggr_row array by passing them here.
+ *
+ * \param[in]       i            first row
+ * \param[in]       j            second row
+ * \param[in]       i_aggr       aggr_row[i] before call
+ * \param[in]       j_aggr       aggr_row[j] before call
+ * \param[in]       max_count    max aggregation count
+ * \param[in, out]  aggr_row     aggregation row (lowest) array
+ * \param[in]       aggr_count   aggregation count for a given row
+ *
+ * \return  true if aggregated, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE static inline bool
+_try_to_aggregate_ij_nd(cs_lnum_t   i,
+                        cs_lnum_t   j,
+                        cs_lnum_t   i_aggr,
+                        cs_lnum_t   j_aggr,
+                        int         max_count,
+                        cs_lnum_t   aggr_row[],
+                        int         aggr_count[])
+{
+  bool aggregated = false;
+
+  if (i_aggr > -1 && j_aggr < -1 ) {
+    if (  cs::atomic::fetch_add(&(aggr_count[i_aggr]), 1)
+        < max_count) {
+      if (cs::atomic::compare_exchange(&(aggr_row[j]), j_aggr, i_aggr))
+        aggregated = true;
+    }
+    if (aggregated == false) // Another thread got there first, so drop update.
+      cs::atomic::fetch_add(&(aggr_count[i_aggr]), -1);
+  }
+  else if (i_aggr < -1 && j_aggr > -1) {
+    if (  cs::atomic::fetch_add(&(aggr_count[j_aggr]), 1)
+        < max_count) {
+      if (cs::atomic::compare_exchange(&(aggr_row[i]), i_aggr, j_aggr))
+        aggregated = true;
+    }
+    if (aggregated == false) // Another thread got there first, so drop update.
+      cs::atomic::fetch_add(&(aggr_count[j_aggr]), -1);
+  }
+  else if (i_aggr < -1 && j_aggr < -1) {
+    if (i > j) { // swap to aggregate to lowest
+      cs_lnum_t k = j;
+      j = i; i = k;
+    }
+    if (cs::atomic::compare_exchange(&(aggr_row[i]), i_aggr, i)) {
+      // Since we associated a coarse row id with row i, we
+      // do not cancel the aggregation even if another thread
+      // brings the counter too high, as additional threads may
+      // already have used that reference.
+      // For example the current thread (a) assigns i to row i,
+      // thread (b) assigns j to k before (a) has the time
+      // to do this, and concurently (c) assigns l to i;
+      // In such cases, the aggregation of i and j should fail, but we
+      // cannot risk removing the association of i: it becomes a singleton,
+      // and will hopefully be associated with other rows later.
+      if (cs::atomic::compare_exchange(&(aggr_row[j]), j_aggr, i)) {
+        aggregated = true;
+        cs::atomic::fetch_add(&(aggr_count[i]), 1);
+      }
+    }
+  }
+
+  return aggregated;
+}
+
 /*----------------------------------------------------------------------------
  * Find preferred neighbor for aggregation.
+ *
+ * When aggr_singleton is true, a row whose neighbors are all already
+ * aggregated will be connected to the neighbor with strongest criteria.
+ * This may lead to not respecting a maximum aggregation count, so may
+ * be deactivated.
  *
  * parameters:
  *   ctx                  <-- associated dispatch context
  *   level                <-- fine grid level (for logging)
+ *   aggr_threshold       <-- Aggregation threshold
+ *   aggr_singleton       <-- Aggregate rows when all neighbors aggregated ?
  *   n_rows               <-- Number of rows
  *   row_index            <-- MSR row index
  *   col_id               <-- MSR column id
  *   aggr_strength        <-- Base aggregation strength
+ *   aggr_count           <-> Row aggregation count
  *   aggr_row             <-- Aggregation row
  *   preferred_neighbor   <-- Preferred neighbor after this pass
  *----------------------------------------------------------------------------*/
@@ -5707,6 +5779,7 @@ static void
 _find_preferred_neighbor(cs_dispatch_context   &ctx,
                          int                    level,
                          float                  aggr_threshold,
+                         bool                   aggr_singleton,
                          cs_lnum_t              n_rows,
                          const cs_lnum_t       *row_index,
                          const cs_lnum_t       *col_id,
@@ -5722,8 +5795,10 @@ _find_preferred_neighbor(cs_dispatch_context   &ctx,
 
   ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
 
-    if (aggr_row[ii] != -2)
+    if (aggr_row[ii] > -1) {
+      preferred_neighbor[ii] = -1;
       return;
+    }
 
     cs_lnum_t aggr_col_unaggr = -2, aggr_col_aggr = -2;
     float max_weight_unaggr = 0, max_weight_aggr = 0;
@@ -5740,14 +5815,14 @@ _find_preferred_neighbor(cs_dispatch_context   &ctx,
          algorithm). */
 
       if (jj < 0 || jj >= n_rows)
-        return;
+        continue;
 
       cs_lnum_t jj_a = aggr_row[jj];
 
       /* If a row is penalized, pass */
 
       if (jj_a == -1)
-        return;
+        continue;
 
       float aggr_crit = aggr_strength[ix0];
 
@@ -5776,7 +5851,12 @@ _find_preferred_neighbor(cs_dispatch_context   &ctx,
       // Note that no others will use this item as their
       // strongest_neighbor since they are already aggregated.
       // So this is deterministic behavior.
-      aggr_row[ii] = aggr_row[aggr_col_aggr];
+      // But it may lead to not respecting a maximum count.
+      if (aggr_singleton)
+        aggr_row[ii] = aggr_row[aggr_col_aggr];
+      // No need to set preferred neighbor here, as it must
+      // have been set in previous passes, and is not needed
+      // for this row anymore.
     }
     else if (aggr_col_unaggr != -2) {
       // set the preferred neighbor in the unagg group
@@ -5802,32 +5882,70 @@ _find_preferred_neighbor(cs_dispatch_context   &ctx,
 }
 
 /*----------------------------------------------------------------------------
- * Match edges given a preferred neighbor info.
+ * Match edges given preferred neighbor info.
+ *
+ * This stage handles "perfect matches", where both matched rows have each
+ * other as a preferred neighbor.
  *
  * parameters:
  *   ctx                   <-- associated dispatch context
  *   n_rows                <-- Number of rows
  *   preferred_neighbor    <-- Preferred neighbor id
+ *   aggr_count            <-> Row aggregation count
  *   aggr_row              <-> Row aggregation id
  *----------------------------------------------------------------------------*/
 
 static void
-_match_edge(cs_dispatch_context   &ctx,
-            cs_lnum_t              n_rows,
-            const cs_lnum_t       *preferred_neighbor,
-            cs_lnum_t             *aggr_row)
+_match_edges(cs_dispatch_context   &ctx,
+             cs_lnum_t              n_rows,
+             const cs_lnum_t       *preferred_neighbor,
+             short int             *aggr_count,
+             cs_lnum_t             *aggr_row)
 {
-  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
-    if (aggr_row[ii] != -2)
-      return;
+  /* Ginkgo-like variant. We should use relaxed loads and stores,
+     but assume this is the default behavior. */
 
-    cs_lnum_t jj = preferred_neighbor[ii];
-    if (    jj > -1 && preferred_neighbor[jj] == ii
-        &&  ii < jj) {
-      aggr_row[ii] = ii;
-      aggr_row[jj] = ii;
-    }
-  });
+  if (_match_edges_variant == 'g') {
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+
+      cs_lnum_t i_aggr = aggr_row[i];
+      if (i_aggr != -2)
+        return;
+
+      cs_lnum_t j = preferred_neighbor[i];
+      if (    j > -1 && preferred_neighbor[j] == i
+          &&  i <= j) {
+        assert(aggr_row[j] == i || aggr_row[j] < 0);
+        aggr_row[i] = i;
+        aggr_row[j] = i;
+        aggr_count[i] += 1;
+      }
+    });
+
+  }
+
+  /* This variant should be equivalent to the previous one, as long as both
+     rows associated to a given edge are initially unaggregated: in this
+     variant, each thread sets the aggr_row values of the rows it handles,
+     and lets the threads associated with the associated row handle theirs. */
+
+  else if (_match_edges_variant == 'd') {
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      if (aggr_row[i] != -2)
+        return;
+
+      cs_lnum_t j = preferred_neighbor[i];
+      if (j > -1 && preferred_neighbor[j] == i) {
+        cs_lnum_t k = cs::min(i, j);
+        aggr_row[i] = k;
+        if (j != i && i == k)
+          aggr_count[i] += 1;
+      }
+    });
+
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -5835,16 +5953,13 @@ _match_edge(cs_dispatch_context   &ctx,
  *
  * parameters:
  *   ctx                   <-- associated dispatch context
- *   coarsening_type       <-- Coarsening type
- *   max_aggregation       <-- Max fine cells per coarse cell
- *   coarsening_type       <-- Coarsening type
- *   max_aggregation       <-- Max fine cells per coarse cell
+ *   level                 <-- current level (for logging)
+ *   max_aggregation       <-- Max fine rows per coarse row
  *   n_rows                <-- Number of rows
  *   row_index             <-- MSR row index
  *   col_id                <-- MSR column id
  *   aggr_strength         <-- Base aggregation strength
- *   c_cardinality         <-- Row cardinality (valence)
- *   c_aggr_count          <-- Coarse aggregate count
+ *   aggr_count            <-> Row aggregation count
  *   intermediate_aggr_row --> Intermediate aggragation for deterministic
  *                             algorithm, aggr_row for nondeterministic.
  *   aggr_row              --> Row aggregation id
@@ -5853,10 +5968,12 @@ _match_edge(cs_dispatch_context   &ctx,
 static void
 _assign_to_aggregate(cs_dispatch_context   &ctx,
                      int                    level,
+                     int                    max_aggregation,
                      cs_lnum_t              n_rows,
                      const cs_lnum_t       *row_index,
                      const cs_lnum_t       *col_id,
                      float                 *aggr_strength,
+                     short int             *aggr_count,
                      cs_lnum_t             *intermediate_aggr_row,
                      cs_lnum_t             *aggr_row)
 {
@@ -5885,8 +6002,13 @@ _assign_to_aggregate(cs_dispatch_context   &ctx,
         continue;
 
       float aggr_crit = aggr_strength[ix0];
+      /* Note: setting aggr_crit = -jj instead seems to
+         reduce excessive clustering (i.e. higher max aggregation
+         counts), although the aggregation strengh then becomes
+         arbitrary. */
 
       if (   aggr_row[jj] > -1
+          && aggr_count[jj] < max_aggregation
           && max_weight_aggr <= aggr_crit) {
         if (   max_weight_aggr < aggr_crit
             || jj > preferred_aggr) {
@@ -5904,11 +6026,73 @@ _assign_to_aggregate(cs_dispatch_context   &ctx,
     }
   });
 
-  // Copy intermediate aggregation array to main aggregation array
-  if (intermediate_aggr_row != aggr_row) {
+  // Now cancel aggregations leading to a too high count,
+  // keeping the best fits.
+
+  if (max_aggregation > -1) {
+
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
-      aggr_row[ii] = intermediate_aggr_row[ii];
+
+      short int r_max = max_aggregation - aggr_count[ii];
+
+      if (aggr_row[ii] != ii && r_max > 0)
+        return;
+
+      cs_lnum_t row_s_id = row_index[ii];
+      cs_lnum_t row_e_id = row_index[ii+1];
+
+      // Assume 20 candidate neighbors max at a time, others dropped.
+      constexpr size_t n_loc_max = 20;
+      size_t n_loc_add = 0;
+      cs_lnum_t aggr_add[n_loc_max];
+      float aggr_add_s[n_loc_max];
+
+      for (cs_lnum_t ix0 = row_s_id;
+           ix0 < row_e_id && n_loc_add < n_loc_max;
+           ix0++) {
+        cs_lnum_t jj = col_id[ix0];
+        if (jj >= n_rows)
+          continue;
+
+        if (aggr_row[jj] == -2 && intermediate_aggr_row[jj] == ii) {
+          aggr_add[n_loc_add] = jj;
+          aggr_add_s[n_loc_add] = aggr_strength[ix0];
+          n_loc_add ++;
+        }
+      }
+
+      // Keep strongest candidates.
+      while (r_max > 0 && n_loc_add > 0) {
+        float crit_max = aggr_add_s[0];
+        size_t k_max = 0;
+        for (size_t k = 1; k < n_loc_add; k++) {
+          if (aggr_add_s[k] > crit_max) {
+            crit_max = aggr_add_s[k];
+            k_max = k;
+          }
+        }
+        aggr_row[aggr_add[k_max]] = ii;
+        aggr_count[ii] += 1;
+        r_max -= 1;
+        // Swap k_max value (not needed anymore) with last one
+        aggr_add[k_max] = aggr_add[n_loc_add-1];
+        aggr_add_s[k_max] = aggr_add_s[n_loc_add-1];
+        n_loc_add--;
+      }
+
     });
+
+  }
+
+  else {
+
+    // Copy intermediate aggregation array to main aggregation array
+    if (intermediate_aggr_row != aggr_row) {
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        aggr_row[ii] = intermediate_aggr_row[ii];
+      });
+    }
+
   }
 
   if (cs_glob_timer_kernels_flag > 0) {
@@ -5923,12 +6107,58 @@ _assign_to_aggregate(cs_dispatch_context   &ctx,
 }
 
 /*----------------------------------------------------------------------------
- * Match edges given a preferred neighbor info.
+ * Reorder aggregation so that coarse rows appear in the order of the
+ * smallest associated fine rows.
  *
  * parameters:
  *   ctx                   <-- associated dispatch context
- *   n_rows                <-- Number of rows
+ *   f_n_rows              <-- Number of fine rows
  *   aggr_row              <-> Row aggregation id
+ *   f_o2h                 --- work array
+ *----------------------------------------------------------------------------*/
+
+static void
+_reorder_aggr(cs_dispatch_context   &ctx,
+              cs_lnum_t              f_n_rows,
+              cs_lnum_t             *aggr_row,
+              cs_lnum_t             *f_o2n)
+{
+  ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+    f_o2n[i] = i;
+  });
+
+  ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+    cs_lnum_t j = aggr_row[i];
+    if (j > i) {
+      cs_lnum_t k = f_o2n[j];
+      while (k > i) {
+        bool done = cs::atomic::compare_exchange(&(f_o2n[k]), k, i);
+        if (done)
+          k = i;
+        else  // read again, as another process may have set this
+          k = f_o2n[i];
+      }
+    }
+  });
+
+  ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+    cs_lnum_t j = aggr_row[i];
+    if (j > -1) {
+      cs_lnum_t k = f_o2n[j];
+      aggr_row[i] = k;
+    }
+  });
+}
+
+/*----------------------------------------------------------------------------
+ * Reorder and compact aggregation (fine to coarse) map.
+ *
+ * parameters:
+ *   ctx                   <-- associated dispatch context
+ *   f_n_rows              <-- Number of fine rows
+ *   aggr_row              <-> Row aggregation id
+ *   tmp_size              <-- optional temporary memory size
+ *   tmp_storage           --- optional temporary memory
  *
  * return:
  *   number of coarse rows
@@ -5936,29 +6166,66 @@ _assign_to_aggregate(cs_dispatch_context   &ctx,
 
 static cs_lnum_t
 _aggr_to_coarse(cs_dispatch_context   &ctx,
-                cs_lnum_t              n_rows,
-                cs_lnum_t             *aggr_row)
+                cs_lnum_t              f_n_rows,
+                cs_lnum_t             *aggr_row,
+                size_t                 tmp_size = 0,
+                void                  *tmp_storage = nullptr)
 {
-  cs_array<cs_lnum_t> a_count(n_rows+1, ctx.alloc_mode());
-  a_count.zero(ctx);
+  size_t _tmp_size = tmp_size;
+  void   *_tmp_storage = tmp_storage;
+  cs_lnum_t *_r_idx = nullptr, *r_idx = nullptr;
 
-  cs_lnum_t *idx = a_count.data();
+  // Use or allocate temporary storage
+  if (tmp_size > f_n_rows * sizeof(cs_lnum_t)) {
+    r_idx = reinterpret_cast<cs_lnum_t *>(tmp_storage);
 
-  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+    // Update remaining part ot temporary storage
+    constexpr cs_lnum_t align_size = 16;
+    cs_lnum_t n0 = cs_align(f_n_rows, align_size);
+    if (tmp_size > n0*sizeof(cs_lnum_t)) {
+      _tmp_size -= n0*sizeof(cs_lnum_t);
+      _tmp_storage = r_idx + n0;
+    }
+    else {
+      _tmp_size = 0;
+      _tmp_storage = nullptr;
+    }
+  }
+  else {
+    CS_MALLOC_HD(_r_idx, f_n_rows+1, cs_lnum_t, ctx.alloc_mode());
+    r_idx = _r_idx;
+  }
+
+  // Reorder aggregation
+  {
+    cs_lnum_t *f_o2n = r_idx;  // Use same woring array.
+
+    _reorder_aggr(ctx, f_n_rows, aggr_row, f_o2n);
+  }
+
+  // Flag aggregation rows
+
+  ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
     cs_lnum_t j = aggr_row[i];
-    if (j > -1)
-      idx[aggr_row[j]] = 1;
+    if (j == -2) {       // Remaining rows becom singletons
+      aggr_row[i] = i;
+      j = i;
+    }
+    r_idx[i] = (j == i) ? 1 : 0;
   });
 
-  cs::algorithm::count_to_index(ctx, n_rows, idx);
+  cs::algorithm::count_to_index(ctx, f_n_rows, r_idx,
+                                _tmp_size, _tmp_storage);
 
-  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+  ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
     cs_lnum_t j = aggr_row[i];
     if (j > -1)
-      aggr_row[i] = idx[j];
+      aggr_row[i] = r_idx[j];
   });
 
-  const cs_lnum_t nc = _get_host_value(ctx, idx + n_rows);
+  const cs_lnum_t nc = _get_host_value(ctx, r_idx + f_n_rows);
+
+  CS_FREE(_r_idx);
 
   return nc;
 }
@@ -6000,7 +6267,7 @@ _automatic_aggregation_dx_msr_pgm
 
   const int npass_max = 10;
   const float threshold_base_factor = 6;
-  const float max_unassigned_ratio = 1./10;
+  const float max_unassigned_ratio = 1./(10*max_aggregation);
 
   const cs_lnum_t f_n_rows = f->n_rows;
 
@@ -6010,6 +6277,7 @@ _automatic_aggregation_dx_msr_pgm
   }
 
   cs_real_t epsilon = 1.e-6;
+  bool force_aggr_singleton = false;
 
   short int  *c_cardinality = nullptr;
   float      *aggr_strength = nullptr;
@@ -6021,23 +6289,22 @@ _automatic_aggregation_dx_msr_pgm
   const cs_real_t penalization_threshold = (f->level == 0) ?
     _penalization_threshold : -1;
 
-  const cs_lnum_t f_nnz
-    = _aggr_strenght_dx_msr(f,
-                            coarsening_type,
-                            penalization_threshold,
-                            aggr_row,
-                            aggr_strength);
+  // const cs_lnum_t f_nnz =
+  _aggr_strenght_dx_msr(f,
+                        coarsening_type,
+                        penalization_threshold,
+                        aggr_row,
+                        aggr_strength);
 
   /* Access matrix MSR vectors */
 
   const cs_lnum_t  *row_index, *col_id;
 
-  _matrix_get_msr_arrays_host(f->matrix,
-                              f->level,
-                              &row_index,
-                              &col_id,
-                              nullptr,
-                              nullptr);
+  cs_matrix_get_msr_arrays(f->matrix,
+                           &row_index,
+                           &col_id,
+                           nullptr,
+                           nullptr);
 
   CS_PROFILE_MARK_LINE();
 
@@ -6048,8 +6315,14 @@ _automatic_aggregation_dx_msr_pgm
 
   cs_lnum_t *preferred_neighbor;
   CS_MALLOC_HD(preferred_neighbor, f_n_rows, cs_lnum_t, ctx.alloc_mode());
+
   ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
     preferred_neighbor[i] = -2;
+
+    if (f_c_row[i] == -2)
+      c_aggr_count[i] = 1;
+    else // (if f_c_row[ii] == -1)
+      c_aggr_count[i] = 0;
   });
 
   CS_PROFILE_MARK_LINE();
@@ -6072,6 +6345,7 @@ _automatic_aggregation_dx_msr_pgm
     _find_preferred_neighbor(ctx,
                              f->level,
                              aggr_threshold,
+                             force_aggr_singleton,
                              f_n_rows,
                              row_index,
                              col_id,
@@ -6079,7 +6353,7 @@ _automatic_aggregation_dx_msr_pgm
                              aggr_row,
                              preferred_neighbor);
 
-    _match_edge(ctx, f_n_rows, preferred_neighbor, aggr_row);
+    _match_edges(ctx, f_n_rows, preferred_neighbor, c_aggr_count, aggr_row);
 
     /* Count unaggregated */
 
@@ -6100,7 +6374,7 @@ _automatic_aggregation_dx_msr_pgm
     n_unaggr_prev = n_unaggr;
 
     if (verbosity > 3) {
-      bft_printf("       pass %d; n_unaggegated = %ld/%ld;\n",
+      bft_printf("       pass %d; n_unaggregated = %ld/%ld;\n",
                  iter, (long)n_unaggr, (long)f_n_rows);
     }
   }
@@ -6111,10 +6385,12 @@ _automatic_aggregation_dx_msr_pgm
 
     _assign_to_aggregate(ctx,
                          f->level,
+                         max_aggregation,
                          f_n_rows,
                          row_index,
                          col_id,
                          aggr_strength,
+                         c_aggr_count,
                          intermediate_aggr_row,
                          aggr_row);
 
@@ -6131,6 +6407,321 @@ _automatic_aggregation_dx_msr_pgm
   CS_FREE(c_cardinality);
   CS_FREE(c_aggr_count);
   CS_FREE(preferred_neighbor);
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d:   %s (level %d -> %d)", cs_glob_rank_id, __func__,
+           f->level, f->level+1);
+    printf(", total = %ld\n", elapsed.count());
+  }
+
+  return c_n_rows;
+}
+
+/*----------------------------------------------------------------------------
+ * Build a coarse grid level from the previous level using
+ * an automatic criterion, using a MSR matrix adjacency.
+ *
+ * This is a parallel, non-deterministic version of the base algorithm.
+ *
+ * parameters:
+ *   f                    <-- Fine grid structure
+ *   coarsening_type      <-- Coarsening type
+ *   max_aggregation      <-- Max fine cells per coarse cell
+ *   relaxation_parameter <-- P0/P1 relaxation factor
+ *   verbosity            <-- Verbosity level
+ *   f_c_row              --> Fine row -> coarse row mapping
+ *
+ * return:
+ *   number of coarse rows
+ *----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_automatic_aggregation_dx_msr_nd(const cs_grid_t       *f,
+                                 cs_grid_coarsening_t   coarsening_type,
+                                 cs_lnum_t              max_aggregation,
+                                 double                 relaxation_parameter,
+                                 int                    verbosity,
+                                 cs_lnum_t             *f_c_row)
+{
+  CS_PROFILE_FUNC_RANGE();
+
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  // Use constant threshold factor instead of cardinality from previous
+  // code versions
+  const int npass_max = 10;
+
+  const cs_lnum_t f_n_rows = f->n_rows;
+  const cs_lnum_t f_n_faces = f->n_faces;
+  const float threshold_base_factor = 6;
+
+  cs_real_t epsilon = 1.e-6;
+
+  float  *aggr_strength = nullptr;
+
+  /* Precompute base aggregation strength */
+
+  const cs_real_t penalization_threshold = (f->level == 0) ?
+    _penalization_threshold : -1;
+
+  const cs_lnum_t f_nnz
+    = _aggr_strenght_dx_msr(f,
+                            coarsening_type,
+                            penalization_threshold,
+                            f_c_row,
+                            aggr_strength);
+
+  /* Access matrix MSR vectors */
+
+  const cs_lnum_t  *row_index, *col_id;
+
+  cs_matrix_get_msr_arrays(f->matrix,
+                           &row_index,
+                           &col_id,
+                           nullptr,
+                           nullptr);
+
+  cs_dispatch_context ctx;
+  if (f->alloc_mode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+  cs_alloc_mode_t amode = ctx.alloc_mode();
+
+  CS_PROFILE_MARK_LINE();
+
+  /* Allocate working arrays */
+
+  cs_array<int> c_aggr_count(f_n_rows, amode);
+  cs_array<cs_lnum_t> f_row_id(f_nnz, amode);
+  cs_array<cs_lnum_t> ag_queue(f_nnz, amode);
+
+  CS_PROFILE_MARK_LINE();
+
+  ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+    if (f_c_row[ii] == -2)
+      c_aggr_count[ii] = 1;
+    else // (if f_c_row[ii] == -1) in case of penalization
+      c_aggr_count[ii] = 0;
+  });
+
+  int ncoarse = 8, inc_nei = 0;
+  int _max_aggregation = 1;
+
+  /* Passes */
+
+  if (verbosity > 3)
+    bft_printf("\n     %s:\n", __func__);
+
+  int npass = 1;
+
+  /* Use a simple distribution for now. Perhaps a more complex range
+     computation could lead to better work balance between threads,
+     as rows with low ids will tend to get more work than rows
+     with high ids, given that we consider the upper triangular part */
+
+  if (_max_aggregation < max_aggregation)
+    _max_aggregation++;
+
+  if (verbosity > 3) {
+    bft_printf("       pass 1; r_n_faces = %ld;"
+               " aggr_count = %ld\n",
+               (long)f_n_faces, (long)f_n_rows);
+  }
+
+  /* Loop on non-eliminated faces */
+
+  float ag_threshold = 1. - epsilon;
+  if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX)
+    ag_threshold = cs_math_pow2(  (1. - epsilon)
+                                * pow(relaxation_parameter, npass));
+
+  ag_threshold /= cs_math_pow2(threshold_base_factor);
+
+  ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+
+    cs_lnum_t row_s_id = row_index[ii];
+    cs_lnum_t row_e_id = row_index[ii+1];
+    for (cs_lnum_t ix0 = row_s_id; ix0 < row_e_id; ix0++) {
+
+      f_row_id[ix0] = ii;
+      ag_queue[ix0] = -1;
+
+      cs_lnum_t jj = col_id[ix0];
+
+      /* Only consider faces in upper triangular part, as
+         each face (graph edge) should appear once each for
+         triangular part in the matrix.
+
+         Also exclude aggregation on parallel or periodic boundary, so as
+         not to coarsen the grid across those boundaries (which would
+         change the communication pattern and require a more complex
+         algorithm), and even across "artificial" local thread boundaries,
+         for simpler multithreading.
+
+         So we ignore this entry if jj < ii, or if jj is outside
+         the [t_s_id, t_e_id[ bounds. Since ii >= t_s_id, this
+         simplifies to the test below. */
+
+      if (jj < ii || jj >= f_n_rows)
+        continue;
+
+      cs_lnum_t ii_c = f_c_row[ii];
+      cs_lnum_t jj_c = f_c_row[jj];
+
+      /* If both rows are already aggregated or one is penalized, pass */
+
+      if (ii_c == -1 || jj_c == -1 || (ii_c >= 0 && jj_c >= 0))
+        continue;
+
+      cs_real_t aggr_crit = aggr_strength[ix0];
+
+      bool aggregate = false;
+
+      if (aggr_crit > ag_threshold)
+        aggregate = _try_to_aggregate_ij_nd(ii, jj, ii_c, jj_c,
+                                            _max_aggregation +1,
+                                            f_c_row,
+                                            c_aggr_count);
+
+      if (aggregate == false)
+        ag_queue[ix0] = ix0;
+
+    }  /* Loop on columns */
+
+  });  /* Loop on rows */
+
+  CS_PROFILE_MARK_LINE();
+
+  /* Other passes */
+
+  size_t      tmp_size = 0;
+  void       *tmp_storage = nullptr;
+  cs_lnum_t   queue_size_prev = f_nnz;
+
+  for (npass = 2; npass <= npass_max; npass++) {
+
+    // Compact ag_queue
+
+    cs_lnum_t queue_size
+      = cs::algorithm::select_if_gt(ctx,
+                                    queue_size_prev,
+                                    -1,
+                                    ag_queue.data(),
+                                    tmp_size,
+                                    tmp_storage);
+
+    /* Exit loop on passes if aggregation is sufficient
+       (note that each thread may loop independently). */
+
+    struct cs_int_n<2> rd;
+    struct cs_reduce_sum_ni<2> reducer;
+    ctx.parallel_for_reduce(f_n_rows, rd, reducer, [=] CS_F_HOST_DEVICE
+                            (cs_lnum_t ii, cs_int_n<2> &res)
+    {
+      res.i[0] = (f_c_row[ii] == -2) ? 1 : 0;
+      res.i[1] = (f_c_row[ii] == ii) ? 1 : 0;
+    });
+    ctx.wait();
+
+    cs_lnum_t n_unaggr = rd.i[0];
+    cs_lnum_t c_n_rows = rd.i[1];
+
+    if (   n_unaggr == 0
+        || (c_n_rows + n_unaggr)*ncoarse < f_n_rows
+        || queue_size == 0) {
+      break;
+    }
+
+    if (verbosity > 3) {
+      bft_printf("       pass %d; unaggr_edges = %ld;"
+                 " unaggr_rows = %ld\n",
+                 npass, (long)queue_size, (long)n_unaggr);
+    }
+
+    if (_max_aggregation < max_aggregation)
+      _max_aggregation++;
+
+    inc_nei += 1;
+
+    ag_threshold = 1. - epsilon;
+    if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX)
+      ag_threshold = cs_math_pow2(  (1. - epsilon)
+                                  * pow(relaxation_parameter, npass));
+
+    ag_threshold /= cs_math_pow2(threshold_base_factor + inc_nei);
+
+    /* Loop on non-eliminated faces (i.e. "aggregation queue").
+
+       Faces adjacent to penalized rows, or row on parallel boundaries,
+       were already excluded from the aggregation queue in the first pass,
+       so we do not need to test for those anymore. */
+
+    ctx.parallel_for(queue_size, [=] CS_F_HOST_DEVICE (cs_lnum_t idx) {
+
+      cs_lnum_t ix0 = ag_queue[idx];
+
+      cs_lnum_t ii = f_row_id[ix0];
+      cs_lnum_t jj = col_id[ix0];
+
+      /* If both cells are already aggregated, pass */
+
+      cs_lnum_t ii_c = f_c_row[ii];
+      cs_lnum_t jj_c = f_c_row[jj];
+
+      if (ii_c >= 0 && jj_c >= 0) {
+        ag_queue[idx] = -1;
+        return;
+      }
+
+      cs_real_t aggr_crit = aggr_strength[ix0];
+
+      bool aggregate = false;
+
+      if (aggr_crit > ag_threshold)
+        aggregate = _try_to_aggregate_ij_nd(ii, jj, ii_c, jj_c,
+                                            _max_aggregation +1,
+                                            f_c_row,
+                                            c_aggr_count);
+
+      /* Place faces where no merging occurs back in queue */
+
+      if (aggregate)
+        ag_queue[idx] = -1;
+      else
+        ag_queue[idx] = ix0;
+
+    }); /* Loop on aggregation queue */
+
+    queue_size_prev = queue_size;
+
+  } /* Loop on passes */
+
+  /* Now compact aggregate
+     (try to reuse f_row_id as work array if needed) */
+
+  cs_lnum_t c_n_rows = _aggr_to_coarse(ctx,
+                                       f_n_rows,
+                                       f_c_row,
+                                       f_nnz*sizeof(cs_lnum_t),
+                                       f_row_id.data());
+
+  CS_PROFILE_MARK_LINE();
+
+  /* Free working arrays;
+     cs_array objects would be cleared automatically by their destructor
+     but we do so explicitely here so that timers include this. */
+
+  ag_queue.clear();
+  f_row_id.clear();
+  c_aggr_count.clear();
+  CS_FREE(aggr_strength);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -9403,6 +9994,7 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
  *                                  merging should be applied
  *   relaxation_parameter       <-- P0/P1 relaxation factor
  *   discard_mesh_association   <-- If true, discard mesh association info
+ *   aggr_type                  --> aggregation type string
  *
  * returns:
  *   coarse grid structure
@@ -9417,7 +10009,8 @@ cs_grid_coarsen(cs_grid_t            *f,
                 int                   merge_stride,
                 int                   merge_rows_mean_threshold,
                 cs_gnum_t             merge_rows_glob_threshold,
-                double                relaxation_parameter)
+                double                relaxation_parameter,
+                char                  aggr_type[64])
 {
 #if CS_PROFILING == CS_PROFILING_NVTX
   char nvtx_name[48];
@@ -9462,6 +10055,8 @@ cs_grid_coarsen(cs_grid_t            *f,
    *           legacy (v9.0 and older) criteria.
    * - 2:      For CS_GRID_COARSENING_SPD_DX or CS_GRID_COARSENING_CONV_DIFF_DX,
    *           use PGM (parallel graph matching) algorithm.
+   * - 3:      For CS_GRID_COARSENING_SPD_DX or CS_GRID_COARSENING_CONV_DIFF_DX,
+   *           use parallel non-deterministic algorithm.
    * - others: default
    */
 
@@ -9580,7 +10175,7 @@ cs_grid_coarsen(cs_grid_t            *f,
       || coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
     /* Performance still seems slightly better for the legacy version
        of the "DX" aggregation algorithm in single-threaded mode
-       compared to the MSR-based version. */
+       expected to the MSR-based version. */
     if (   f->use_faces
         && (fine_matrix_type != CS_MATRIX_MSR || cs_glob_n_threads == 1)
         && msr_gather == false) {
@@ -9606,6 +10201,13 @@ cs_grid_coarsen(cs_grid_t            *f,
                                                       c->relaxation,
                                                       verbosity,
                                                       c->coarse_row);
+      else if (spd_dx_variant == 3)
+        c->n_rows = _automatic_aggregation_dx_msr_nd(f,
+                                                     coarsening_type,
+                                                     aggregation_limit,
+                                                     c->relaxation,
+                                                     verbosity,
+                                                     c->coarse_row);
       else
         c->n_rows = _automatic_aggregation_dx_msr(f,
                                                   coarsening_type,
@@ -9852,7 +10454,8 @@ cs_grid_coarsen(cs_grid_t            *f,
                                     0, // merge_stride,
                                     0, // merge_rows_mean_threshold,
                                     0, //merge_rows_glob_threshold,
-                                    relaxation_parameter);
+                                    relaxation_parameter,
+                                    aggr_type);
 
     /* Project coarsening */
 
@@ -9915,6 +10518,43 @@ cs_grid_coarsen(cs_grid_t            *f,
       _verify_matrix(f);
     _verify_matrix(c);
   }
+
+  switch(coarsening_type) {
+  case CS_GRID_COARSENING_SPD_DX:
+    {
+      if (spd_dx_variant == 2)
+        snprintf(aggr_type, 64, _("SPD DX (PGM), max %d, relax %4.3f"),
+                 aggregation_limit, relaxation_parameter);
+      else if (spd_dx_variant == 3)
+        snprintf(aggr_type, 64, _("SPD DX, max %d, relax %4.3f"),
+                 aggregation_limit, relaxation_parameter);
+      else
+        snprintf(aggr_type, 64, _("SPD DX, max %d, relax %4.3f"),
+                 aggregation_limit, relaxation_parameter);
+    }
+    break;
+  case CS_GRID_COARSENING_SPD_MX:
+    {
+      snprintf(aggr_type, 64, _("SPD MX, max %d, relax %4.3f"),
+               aggregation_limit, relaxation_parameter);
+    }
+    break;
+  case CS_GRID_COARSENING_SPD_PW:
+    {
+      snprintf(aggr_type, 64, _("SPD PW, max %d, relax %4.3f"),
+               aggregation_limit, relaxation_parameter);
+    }
+    break;
+  case CS_GRID_COARSENING_CONV_DIFF_DX:
+    {
+      snprintf(aggr_type, 64, _("SPD PW, max %d, relax %4.3f"),
+               aggregation_limit, relaxation_parameter);
+    }
+    break;
+  default:
+    break;
+  }
+  aggr_type[63] = '\0';
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point

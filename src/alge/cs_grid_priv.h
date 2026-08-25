@@ -421,6 +421,7 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
  *   merge_rows_glob_threshold  <-- global number of rows under which
  *                                  merging should be applied
  *   relaxation_parameter       <-- P0/P1 relaxation factor
+ *   aggr_type                  --> aggregation type string
  *
  * returns:
  *   coarse grid structure
@@ -435,7 +436,8 @@ cs_grid_coarsen(cs_grid_t            *f,
                 int                   merge_stride,
                 int                   merge_rows_mean_threshold,
                 cs_gnum_t             merge_rows_glob_threshold,
-                double                relaxation_parameter);
+                double                relaxation_parameter,
+                char                  aggr_type[64]);
 
 /*----------------------------------------------------------------------------
  * Create coarse grid with only one row per rank from fine grid.
