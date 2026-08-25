@@ -488,32 +488,32 @@ _splmi(int        n,
 
     /* calculate first values for al and be by 3-point difference */
     if (cs::abs(delta[0]) < eps)
-      al[0] =  (  pow((h[0] + h[1]), 2.0) * y[1]
+      al[0] =  (  cs::pow2((h[0] + h[1])) * y[1]
                 - pow (h[0], 2.0) * y[2]
                 - h[1] * (2.0 * h[0] + h[1]) * y[0])
               / (h[1] * (h[0] + h[1]) * (y[1] - y[0]));
 
     for (int i = 1; i < nm1; i++) {
       if (cs::abs(delta[0]) < eps)
-        al[i] =  (  pow(h[i - 1], 2.0) * y[i + 1]
-                  + (pow(h[i], 2.0) - pow(h[i - 1], 2.0)) * y[i]
-                  -  pow(h[i], 2.0) * y[i - 1])
+        al[i] =  (  cs::pow2(h[i - 1]) * y[i + 1]
+                  + (cs::pow2(h[i]) - cs::pow2(h[i - 1])) * y[i]
+                  -  cs::pow2(h[i]) * y[i - 1])
                 / (h[i - 1] * (h[i] + h[i - 1]) * (y[i + 1] - y[i]));
     }
 
     int nm2 = n - 2;
     for (int i = 0; i < nm2; i++) {
       if (cs::abs(delta[0]) < eps)
-        be[i] = (pow(h[i], 2.0) * y[i + 2]
-                 + (pow(h[i + 1], 2.0) - pow(h[i], 2.0)) * y[i + 1]
-                 - pow(h[i + 1], 2.0) * y[i])
+        be[i] = (cs::pow2(h[i]) * y[i + 2]
+                 + (cs::pow2(h[i + 1]) - cs::pow2(h[i])) * y[i + 1]
+                 - cs::pow2(h[i + 1]) * y[i])
                 / (h[i + 1] * (h[i] + h[i + 1]) * (y[i + 1] - y[i]));
     }
 
     if (cs::abs(delta[0]) < eps) {
       be[n - 2] =  (  h[n - 3] * (2.0 * h[n - 2] + h[n - 3]) * y[n - 1]
-                    - pow((h[n - 2] + h[n - 3]), 2.0) * y[n - 2]
-                    + pow(h[n - 2], 2.0) * y[n - 3])
+                    - cs::pow2((h[n - 2] + h[n - 3])) * y[n - 2]
+                    + cs::pow2(h[n - 2]) * y[n - 3])
                   / (h[n - 3] * (h[n - 2] + h[n - 3]) * (y[n - 1] - y[n - 2]));
     }
 
@@ -523,11 +523,11 @@ _splmi(int        n,
           && 2.0 * al[i] + be[i] > 3.0
           && al[i] + 2.0 * be[i] > 3.0) {
 
-        cs_real_t phi = al[i] -   pow((2.0 * al[i] + be[i] - 3.0), 2.0)
+        cs_real_t phi = al[i] -   cs::pow2((2.0 * al[i] + be[i] - 3.0))
                                 / (al[i] + be[i] - 2.0) / 3.0;
 
         if (phi < 0.0) {
-          cs_real_t ti = 3.0 / sqrt(pow(al[i], 2.0) + pow(be[i], 2.0));
+          cs_real_t ti = 3.0 / sqrt(cs::pow2(al[i]) + cs::pow2(be[i]));
           al[i] = ti * al[i];
           be[i] = ti * be[i];
         }
@@ -537,7 +537,7 @@ _splmi(int        n,
     /* Calculate spline coefficients */
 
     for (int i = 0; i < nm1; i++) {
-      d[i] = (al[i] + be[i] - 2.0) * delta[i] / (pow(h[i], 2.0));
+      d[i] = (al[i] + be[i] - 2.0) * delta[i] / (cs::pow2(h[i]));
       c[i] = (3.0 - 2.0 * al[i] - be[i]) * delta[i] / (h[i]);
       b[i] = al[i] * delta[i];
       if (b[i] * delta[i] < 0.0) {
@@ -1093,7 +1093,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
 
     for (int j = 0; j < m; j++) {
       cs_glob_rad_transfer_params->wq[j]
-        = 2.0 * xl / ((1.0 - pow(z[j], 2.0)) * cs::pow2(pp[j]));
+        = 2.0 * xl / ((1.0 - cs::pow2(z[j])) * cs::pow2(pp[j]));
       cs_glob_rad_transfer_params->wq[n - j + 1]
         = cs_glob_rad_transfer_params->wq[j];
     }
@@ -1132,7 +1132,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
         }
       }
     }
-    cs_real_t kpt4dv =  kp * pow(teloc[iel], 4.0)
+    cs_real_t kpt4dv =  kp * cs::pow4(teloc[iel])
                            * cs_glob_mesh_quantities->cell_vol[iel];
     sum1 += kpt4dv * teloc[iel];
     sum2 += kpt4dv;

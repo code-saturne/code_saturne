@@ -364,7 +364,7 @@ _mo_phim_s(cs_real_t  z,
       else if (x < 10.) {
         cs_real_t a = 7.9;
 
-        return a - 4.25/x + 1./pow(x,2.);
+        return a - 4.25/x + 1./cs::pow2(x);
       }
       else {
         cs_real_t a = 0.7485;
@@ -383,7 +383,7 @@ _mo_phim_s(cs_real_t  z,
       else if (x < 10.) {
         cs_real_t a = 7.85;
 
-        return a - 4.25/x + 1./pow(x,2.);
+        return a - 4.25/x + 1./cs::pow2(x);
       }
       else {
         cs_real_t a = 0.7435;
@@ -614,7 +614,7 @@ _mo_psim_s(cs_real_t              z,
           cs_real_t b = 4.8;
           cs_real_t c = 4.1;
 
-          return a*log(2.*x) + 4.25/x - 0.5/pow(x,2.) - log(2.*x0) - b*x0 - c;
+          return a*log(2.*x) + 4.25/x - 0.5/cs::pow2(x) - log(2.*x0) - b*x0 - c;
         }
         else {
           cs_real_t a = 0.7485;
@@ -637,7 +637,7 @@ _mo_psim_s(cs_real_t              z,
         cs_real_t b = 4.7;
         cs_real_t c = 4.15;
 
-        return a*log(2.*x) + 4.25/x - 0.5/pow(x,2.) - log(2.*x0) - b*x0 - c;
+        return a*log(2.*x) + 4.25/x - 0.5/cs::pow2(x) - log(2.*x0) - b*x0 - c;
       }
       else {
         cs_real_t a = 0.7435;
@@ -709,8 +709,8 @@ _mo_psih_s(cs_real_t              z,
       cs_real_t d = 0.35;
 
       /* Note: prt should be 1. to be coherent with Hartogensis */
-      return prt*log(z/z0) + pow((1. + 2./3. * a * x),3./2.)
-        + b*(x - c/d)*exp(-d*x) - pow((1. + 2./3. * a * x0),3./2.)
+      return prt*log(z/z0) + cs::pow3ov2((1. + 2./3. * a * x))
+        + b*(x - c/d)*exp(-d*x) - cs::pow3ov2((1. + 2./3. * a * x0))
         - b*(x0 - c/d)*exp(-d*x0);
     }
 
@@ -748,7 +748,7 @@ _mo_psim_u(cs_real_t              z,
       cs_real_t x0 = pow((1. - b*z0*dlmo), e);
 
       return log(z/z0) - 2.*log((1. + x)/(1. + x0))
-            - log((1. + pow(x,2.))/(1. + pow(x0,2.)))
+            - log((1. + cs::pow2(x))/(1. + cs::pow2(x0)))
             + 2.*atan(x) - 2.*atan(x0);
     }
 
@@ -760,7 +760,7 @@ _mo_psim_u(cs_real_t              z,
       cs_real_t x0 = pow((1. - b*z0*dlmo), e);
 
       return log(z/z0) - 2.*log((1. + x)/(1. + x0))
-        - log((1. + pow(x,2.))/(1. + pow(x0,2.))) + 2.*atan(x) - 2.*atan(x0);
+        - log((1. + cs::pow2(x))/(1. + cs::pow2(x0))) + 2.*atan(x) - 2.*atan(x0);
     }
 
   case CS_ATMO_UNIV_FN_CARL:
@@ -770,10 +770,12 @@ _mo_psim_u(cs_real_t              z,
       cs_real_t x = pow((1. - b*z*dlmo), e);
       cs_real_t x0 = pow((1. - b*z0*dlmo), e);
 
-      return log(z/z0) - 1.5*log((1. + x + pow(x,2.))/3.)
-        + pow(3., 0.5)*atan((1. + 2.*x)/pow(3., 0.5))
-        + 1.5*log((1. + x0 + pow(x0,2.))/3.)
-        - pow(3., 0.5)*atan((1. + 2.*x0)/pow(3., 0.5));
+      constexpr cs_real_t c_sqrt_3 = sqrt(3.0);
+
+      return log(z/z0) - 1.5*log((1. + x + cs::pow2(x))/3.)
+        + c_sqrt_3*atan((1. + 2.*x)/c_sqrt_3)
+        + 1.5*log((1. + x0 + cs::pow2(x0))/3.)
+        - c_sqrt_3*atan((1. + 2.*x0)/c_sqrt_3);
     }
 
   default:
@@ -4533,7 +4535,7 @@ _wgs84_to_l93(cs_real_t   lon_deg,
   };
 
   auto m = [e](cs_real_t phi) {
-    return cos(phi) / sqrt(1 - pow(e*sin(phi), 2));
+    return cos(phi) / sqrt(1 - cs::pow2(e*sin(phi)));
   };
 
   // Compute constants
@@ -4665,10 +4667,10 @@ _wgs84_to_utm(cs_real_t  lon_deg,
   // helper function for the calculation of the meridian arc
   auto _meridian_arc = [=](cs_real_t  phi)
   {
-    return a * ((1 - e2 / 4 - 3 * pow(e2, 2) / 64 - 5 * pow(e2, 3) / 256) * phi
-    - (3 * e2 / 8 + 3 * pow(e2, 2) / 32 + 45 * pow(e2, 3) / 1024) * sin(2 * phi)
-    + (15 * pow(e2, 2) / 256 + 45 * pow(e2, 3) / 1024) * sin(4 * phi)
-    - (35 * pow(e2, 3) / 3072) * sin(6 * phi));
+    return a * ((1 - e2 / 4 - 3 * cs::pow2(e2) / 64 - 5 * cs::pow3(e2) / 256) * phi
+    - (3 * e2 / 8 + 3 * cs::pow2(e2) / 32 + 45 * cs::pow3(e2) / 1024) * sin(2 * phi)
+    + (15 * cs::pow2(e2) / 256 + 45 * cs::pow3(e2) / 1024) * sin(4 * phi)
+    - (35 * cs::pow3(e2) / 3072) * sin(6 * phi));
   };
 
   // Longitude of central meridian for this zone
@@ -4691,13 +4693,13 @@ _wgs84_to_utm(cs_real_t  lon_deg,
   cs_real_t m = _meridian_arc(lat_rad);
 
   // Easting (x)
-  *x =   k0 * n * (a + (1 - t + c) * pow(a, 3) / 6.0
+  *x =   k0 * n * (a + (1 - t + c) * cs::pow3(a) / 6.0
        + (5 - 18 * t + t * t + 72 * c - 58 * e_prime2) * pow(a, 5) / 120.0)
        + 500000.0;
 
   // northing (y)
-  *y =   k0 * (m + n * tan_lat * (pow(a, 2) / 2.0
-       + (5 - t + 9 * c + 4 * c * c) * pow(a, 4) / 24.0
+  *y =   k0 * (m + n * tan_lat * (cs::pow2(a) / 2.0
+       + (5 - t + 9 * c + 4 * c * c) * cs::pow4(a) / 24.0
        + (61 - 58 * t + t * t + 600 * c - 330 * e_prime2) * pow(a, 6) / 720.0));
 
   // False northing for southern hemisphere
@@ -4755,10 +4757,10 @@ _utm_to_wgs84(cs_real_t  easting,
   // Series expansion for footprint latitude
   cs_real_t e1 = (1 - std::sqrt(1 - e2)) / (1 + std::sqrt(1 - e2));
 
-  cs_real_t j1 = (3.0 / 2.0) * e1 - (27.0 / 32.0) * std::pow(e1, 3);
-  cs_real_t j2 = (21.0 / 16.0) * e1 * e1 - (55.0 / 32.0) * std::pow(e1, 4);
-  cs_real_t j3 = (151.0 / 96.0) * std::pow(e1, 3);
-  cs_real_t j4 = (1097.0 / 512.0) * std::pow(e1, 4);
+  cs_real_t j1 = (3.0 / 2.0) * e1 - (27.0 / 32.0) * cs::pow3(e1);
+  cs_real_t j2 = (21.0 / 16.0) * e1 * e1 - (55.0 / 32.0) * cs::pow4(e1);
+  cs_real_t j3 = (151.0 / 96.0) * cs::pow3(e1);
+  cs_real_t j4 = (1097.0 / 512.0) * cs::pow4(e1);
 
   cs_real_t fp = mu + j1 * std::sin(2 * mu)
                     + j2 * std::sin(4 * mu)
@@ -4773,18 +4775,18 @@ _utm_to_wgs84(cs_real_t  easting,
   cs_real_t c1 = e2 / (1 - e2) * cosfp * cosfp;
   cs_real_t t1 = tanfp * tanfp;
   cs_real_t n1 = a / std::sqrt(1 - e2 * sinfp * sinfp);
-  cs_real_t r1 = a * (1 - e2) / std::pow(1 - e2 * sinfp * sinfp, 1.5);
+  cs_real_t r1 = a * (1 - e2) / cs::pow3ov2(1 - e2 * sinfp * sinfp);
   cs_real_t d = x / (n1 * k0);
 
   cs_real_t lat = fp - (n1 * tanfp / r1) *
     (d * d / 2
-     - (5 + 3 * t1 + 10 * c1 - 4 * c1 * c1 - 9 * e2 / (1 - e2)) * std::pow(d, 4) / 24
+     - (5 + 3 * t1 + 10 * c1 - 4 * c1 * c1 - 9 * e2 / (1 - e2)) * cs::pow4(d) / 24
      +   (  61 + 90 * t1 + 298 * c1 + 45 * t1 * t1
           - 252 * e2 / (1 - e2) - 3 * c1 * c1)
        * std::pow(d, 6) / 720);
 
   cs_real_t lon = lambda0
-    + (d - (1 + 2 * t1 + c1) * std::pow(d, 3) / 6
+    + (d - (1 + 2 * t1 + c1) * cs::pow3(d) / 6
        + (5 - 2 * c1 + 28 * t1 - 3 * c1 * c1
           + 8 * e2 / (1 - e2) + 24 * t1 * t1) * std::pow(d, 5) / 120) / cosfp;
 

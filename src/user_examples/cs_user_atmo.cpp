@@ -119,7 +119,7 @@ cs_user_atmo_1d_rad_prf([[maybe_unused]] cs_real_t   preray[],
     /* nc not known above the meshed domain
        droplets radius is assumed of mean volume radius = 5 microns */
     ncray[k]
-      = 1.e-6*(3.0*romray[k]*qlray[k])/(4.0*cs_math_pi*1.e3*pow(5.e-6, 3.0));
+      = 1.e-6*(3.0*romray[k]*qlray[k])/(4.0*cs_math_pi*1.e3*cs::pow3(5.e-6));
 
     // similarly, aerosol concentration not known
     aeroso[k] = aeroso[0]*exp(-(zray[k]-50.0) / 1.25e3);

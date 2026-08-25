@@ -179,9 +179,9 @@ cs_air_dxsath(cs_real_t  th,
     c1 = 271.68;
     ps = a1 + (b1 * th)/(c1 + th);
     pv = exp(ps);
-    grpim =  b1 *   c1 / pow(c1 + th,2.);
+    grpim =  b1 *   c1 / cs::pow2(c1 + th);
 
-    dxsath = 0.622 * pv * p0 * grpim /pow(p0 - pv,2.);
+    dxsath = 0.622 * pv * p0 * grpim /cs::pow2(p0 - pv);
 
   }
 
@@ -194,9 +194,9 @@ cs_air_dxsath(cs_real_t  th,
     c1 = 239.78;
     ps = a1 + (b1 * th)/(c1 + th);
     pv = exp(ps);
-    grpim =  b1 *   c1 / pow(c1 + th,2.);
+    grpim =  b1 *   c1 / cs::pow2(c1 + th);
 
-    dxsath =0.622 * pv * p0 * grpim /pow(p0 - pv,2.);
+    dxsath =0.622 * pv * p0 * grpim /cs::pow2(p0 - pv);
 
   }
 
@@ -222,13 +222,13 @@ cs_air_dxsath(cs_real_t  th,
     py = Ay *tt / (1. + tt );
     py10 = pow( 10., py );
     g1 = a1 * tt / (1. + tt);
-    g1pr = a1 / (T0 * pow(1. + tt, 2.) );
+    g1pr = a1 / (T0 * cs::pow2(1. + tt) );
     g2 = - A2 * log10(1. + tt );
     g2pr = - A2 /(T0 * log(10.)*(1. + tt));
     g3 = A3 *(1. - 1. /px10);
     g3pr = A3 * Ax * log(10.) / (T0 * px10);
     g4 = A4 *(py10 - 1.);
-    g4pr = A4 * Ay * log (10.) * py10 / (T0* pow(1. + tt, 2.));
+    g4pr = A4 * Ay * log (10.) * py10 / (T0* cs::pow2(1. + tt));
     ps = A0 + g1 + g2 + g3 + g4;
     pspr = g1pr + g2pr + g3pr + g4pr;
     pv = pow(10., ps) *100.;

@@ -349,11 +349,9 @@ cs_coal_mass_transfer(void)
 
       // Calculation of coxck such as: Se = coxck * Xck**(2/3)
 
-      constexpr cs_real_t c_2ov3 = 2./3.;
-
       cs_real_t coxck = 0.;
       if (xuash > eps_cp) {
-        coxck = pi * diam20_2 * pow(rho20/(rhock*xuash), c_2ov3);
+        coxck = pi * diam20_2 * cs::pow2ov3(rho20/(rhock*xuash));
       }
 
       // Calculation of cpro_cght[c_id] = - coxck*Xdftoto*PPARO2*Xnp < 0
@@ -441,11 +439,9 @@ cs_coal_mass_transfer(void)
 
         // Calculation of coxck such as: Se = coxck * Xck**(2/3)
 
-        constexpr cs_real_t c_2ov3 = 2./3.;
-
         cs_real_t coxck = 0.;
         if (xuash > eps_cp) {
-          coxck = pi * diam20_2 * pow(rho20/(rhock*xuash), c_2ov3);
+          coxck = pi * diam20_2 * cs::pow2ov3(rho20/(rhock*xuash));
         }
 
         // Calculation of cpro_cght[c_id] = - coxck*Xdftoto*PPRCO2*Xnp < 0
@@ -535,11 +531,9 @@ cs_coal_mass_transfer(void)
 
         // Calculation of coxck such as: Se = coxck * Xck**(2/3)
 
-        constexpr cs_real_t c_2ov3 = 2./3.;
-
         cs_real_t coxck = 0.;
         if (xuash > eps_cp) {
-          coxck = pi * diam20_2 * pow(rho20/(rhock*xuash), c_2ov3);
+          coxck = pi * diam20_2 * cs::pow2ov3(rho20/(rhock*xuash));
         }
 
         // Calculation of cpro_cght[c_id] = - coxck*Xdftoto*PPRCO2*Xnp < 0

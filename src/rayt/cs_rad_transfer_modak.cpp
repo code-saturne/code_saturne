@@ -162,7 +162,7 @@ _pentag(cs_real_t  argfpe)
     zz = argfpe;
   }
   else if (argfpe >= 3.0) {
-    zs = 6.0 / pow(argfpe, 4.0);
+    zs = 6.0 / cs::pow4(argfpe);
     zz = argfpe + 1.0;
   }
   else if (argfpe >= 2.0) {
@@ -171,9 +171,9 @@ _pentag(cs_real_t  argfpe)
     zz = argfpe + 2.0;
   }
   else {
-    zs  = (  1.0 / pow(argfpe + 2.0, 4.0)
-           + 1.0 / pow(argfpe + 1.0, 4.0)
-           + 1.0 / pow(argfpe      , 4.0)) * 6.0;
+    zs  = (  1.0 / cs::pow4(argfpe + 2.0)
+           + 1.0 / cs::pow4(argfpe + 1.0)
+           + 1.0 / cs::pow4(argfpe      )) * 6.0;
     zz  = argfpe + 3.0;
   }
 

@@ -230,7 +230,7 @@ _ke_hyd_diam(double   uref2,
   }
 
   *k   = *ustar2 / sqrt(cs_turb_cmu);
-  *eps = pow(*ustar2, 1.5) / (cs_turb_xkappa*dh*0.1);
+  *eps = cs::pow3ov2(*ustar2) / (cs_turb_xkappa*dh*0.1);
 }
 
 /*----------------------------------------------------------------------------
@@ -260,7 +260,7 @@ _ke_turb_intensity(double   uref2,
                    double  *eps)
 {
   *k   = 1.5*uref2*t_intensity*t_intensity;
-  *eps = 10.0*pow(cs_turb_cmu, 0.75)*pow(*k, 1.5)/(cs_turb_xkappa*dh);
+  *eps = 10.0*cs::pow3ov4(cs_turb_cmu)*cs::pow3ov2(*k)/(cs_turb_xkappa*dh);
 }
 
 /*----------------------------------------------------------------------------*

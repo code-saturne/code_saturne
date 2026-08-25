@@ -209,11 +209,11 @@ _gaussian(const cs_mesh_t             *m,
      const cs_real_t xvart = cvar_vart[c_id];
      const cs_real_t tliq = xvart*pow(pp/ps, rscp); // liquid temperature
      const cs_real_t qsl = cs_air_yw_sat(tliq-tkelvi, pp); // saturated vapor content
-     const cs_real_t alpha = (clatev*qsl/(rvap*pow(tliq,2)))*pow(pp/ps, rscp);
+     const cs_real_t alpha = (clatev*qsl/(rvap*cs::pow2(tliq)))*pow(pp/ps, rscp);
      const cs_real_t var_q_tl = a_coeff *
-                                (  pow(dqsd(c_id, 0) - alpha * dtlsd(c_id, 0), 2)
-                                 + pow(dqsd(c_id, 1) - alpha * dtlsd(c_id, 1), 2)
-                                 + pow(dqsd(c_id, 2) - alpha * dtlsd(c_id, 2), 2)  );
+                                (  cs::pow2(dqsd(c_id, 0) - alpha * dtlsd(c_id, 0))
+                                 + cs::pow2(dqsd(c_id, 1) - alpha * dtlsd(c_id, 1))
+                                 + cs::pow2(dqsd(c_id, 2) - alpha * dtlsd(c_id, 2))  );
 
      const cs_real_t sig_flu = fmax(sqrt(var_q_tl), 1e-30);
      const cs_real_t qwt = cvar_totwt[c_id]; // total water content
@@ -224,12 +224,12 @@ _gaussian(const cs_mesh_t             *m,
 
      // FIXME MF : put in input of the global function...
      cs_real_t yw_liq
-       =   (sig_flu /(1.0 + qsl*pow(clatev, 2)/(rvap*cp0*pow(tliq, 2))))
-         * (nebdia[c_id]*q1 + exp(-pow(q1, 2)/2.0)/sqrt(2.0*cs_math_pi));
+       =   (sig_flu /(1.0 + qsl*cs::pow2(clatev)/(rvap*cp0*cs::pow2(tliq))))
+         * (nebdia[c_id]*q1 + exp(-cs::pow2(q1)/2.0)/sqrt(2.0*cs_math_pi));
      yw_liq   = fmax(yw_liq, 0.0);
      nn[c_id] = nebdia[c_id] - (  nebdia[c_id]*q1
-                                + exp(-pow(q1, 2)/2.0)/sqrt(2.0*cs_math_pi))
-                                * exp(-pow(q1, 2)/2.0)/sqrt(2.0*cs_math_pi);
+                                + exp(-cs::pow2(q1)/2.0)/sqrt(2.0*cs_math_pi))
+                                * exp(-cs::pow2(q1)/2.0)/sqrt(2.0*cs_math_pi);
 
      // go back to all or nothing
      if (qwt < yw_liq) {
@@ -245,7 +245,7 @@ _gaussian(const cs_mesh_t             *m,
 
        /* TODO input ?
         * 0 if unsaturated air parcel */
-       yw_liq = deltaq / (1.0 + qsl*pow(clatev, 2)/(rvap*cp0*pow(tliq, 2)));
+       yw_liq = deltaq / (1.0 + qsl*cs::pow2(clatev)/(rvap*cp0*cs::pow2(tliq)));
      }
 
      // Celcius temperature of the air parcel

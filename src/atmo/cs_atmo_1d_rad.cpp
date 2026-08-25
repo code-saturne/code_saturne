@@ -466,7 +466,7 @@ ray_ozone_absorption(const cs_real_t x)
   const cs_real_t ao3vis = a * x / (1.0 + (b + c * x) * x);
 
   const cs_real_t ao3uv  = d * x / pow(1.0 + e * x, f)
-                         + g * x / (1.0 + pow(h * x, 3.0));
+                         + g * x / (1.0 + cs::pow3(h * x));
 
   return ao3vis + ao3uv;
 }
@@ -1335,8 +1335,8 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
 
         // Effective radius
         if (ncray[i] > epsc && qlray[i] > epsc) {
-          req = 1.0e3 * pow(  (3.0 * romray[i] * qlray[i])
-                              / (4.0 * pi * ncray[i]), 1.0 / 3.0)
+          req = 1.0e3 * cbrt(  (3.0 * romray[i] * qlray[i])
+                              / (4.0 * pi * ncray[i]))
             * exp(sigc * sigc);
         }
         else {
@@ -2536,7 +2536,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
 
     qv0[k] = qvray[k] * corp * sqrt(cort);
     rov[k] = romray[k] * qv0[k];
-    qco2[k] = at_1d_rad->conco2 * pow(corp, 0.75) * pow(cort, 0.325);
+    qco2[k] = at_1d_rad->conco2 * cs::pow3ov4(corp) * pow(cort, 0.325);
     roco2[k] = romray[k] * qco2[k];
     qc[k] =   qvray[k] * qvray[k] * corp
             * exp(1800.0 * (1.0 / (temray[k] + tkelvi) - 1.0 / 296.0))

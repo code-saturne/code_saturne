@@ -530,15 +530,15 @@ _compute_convective_exch_resistances(cs_lnum_t face_id,
     = cs_field_by_name_try("ground_air_resistance");
 
   cs_real_t eta_ext_coef = plant_opt->h_canopy
-    * pow(plant_opt->cdrag_leaf
+    * cbrt(plant_opt->cdrag_leaf
     * plant_opt->leaf_area_index
     / (plant_opt->h_canopy
-    * 2*pow(plant_opt->canopy_mix_l,2)),1./3.);
+    * 2*cs::pow2(plant_opt->canopy_mix_l)));
 
   cs_real_t u_star_ground = u_star_atm->val[face_id] * exp(-eta_ext_coef);;
 
-  cs_real_t u_star_plant = pow(pow(u_star_atm->val[face_id],2)
-    - pow(u_star_ground,2),0.5);
+  cs_real_t u_star_plant = sqrt( cs::pow2(u_star_atm->val[face_id])
+                              - cs::pow2(u_star_ground));
 
   cs_real_t canopy_exch_height = plant_opt->h_canopy
     * (1+log(1-exp(-eta_ext_coef)) / 2 / eta_ext_coef);
@@ -647,10 +647,10 @@ _compute_stomatal_conductance(cs_lnum_t ground_id,
     * plant_opt->temp_ref_co2));
 
   cs_real_t eta_ext_coef = plant_opt->h_canopy
-    * pow(plant_opt->cdrag_leaf
+    * cbrt(plant_opt->cdrag_leaf
     * plant_opt->leaf_area_index
     / (plant_opt->h_canopy
-    * 2. * pow(plant_opt->canopy_mix_l,2.)),1./3.);
+    * 2. * cs::pow2(plant_opt->canopy_mix_l)));
 
   cs_real_t rv = -1./plant_opt->k_eddy_hc
     * exp(eta_ext_coef)*plant_opt->h_canopy/eta_ext_coef
@@ -676,9 +676,9 @@ _compute_stomatal_conductance(cs_lnum_t ground_id,
     * (1. + plant_opt->gamma_1*(leaf_temp->val[ground_id]
     - plant_opt->tem_ref_pho
     + cs_physical_constants_celsius_to_kelvin)
-    + plant_opt->gamma_2*pow(leaf_temp->val[ground_id]
+    + plant_opt->gamma_2*cs::pow2(leaf_temp->val[ground_id]
     + cs_physical_constants_celsius_to_kelvin
-    - plant_opt->tem_ref_pho,2));
+    - plant_opt->tem_ref_pho));
 
   cs_real_t vlmax = plant_opt->vlmaxref
     * exp(plant_opt->ea_vlmax/cs_physical_constants_r
@@ -721,12 +721,12 @@ _compute_stomatal_conductance(cs_lnum_t ground_id,
     / (leaf_temp->val[ground_id]
     + cs_physical_constants_celsius_to_kelvin )));
 
-  cs_real_t discr_j = (pow(plant_opt->alpha_pho*photo_active_rad
-    + jlmax,2.) - 4.*photo_active_rad*plant_opt->theta_pho
+  cs_real_t discr_j = (cs::pow2(plant_opt->alpha_pho*photo_active_rad
+    + jlmax) - 4.*photo_active_rad*plant_opt->theta_pho
     * plant_opt->alpha_pho*jlmax);
 
   cs_real_t j = (plant_opt->alpha_pho*photo_active_rad + jlmax
-    - pow(discr_j,0.5))/2./plant_opt->theta_pho;
+    - sqrt(discr_j))/2./plant_opt->theta_pho;
 
   cs_real_t gco2_previous = gco2->val[ground_id];
 

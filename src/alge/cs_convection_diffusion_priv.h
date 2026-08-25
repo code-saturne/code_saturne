@@ -310,7 +310,7 @@ cs_nvd_vof_scheme_scalar(cs_nvd_type_t     limiter,
       blend = 1.;
     } else {
       ratio = dotp/denom;
-      blend = cs_math_fmin(1., pow(ratio, .5));
+      blend = cs_math_fmin(1., sqrt(ratio));
     }
 
     /* Blending */
@@ -354,7 +354,7 @@ cs_nvd_vof_scheme_scalar(cs_nvd_type_t     limiter,
       blend = 1.;
     } else {
       ratio = dotp/denom;
-      blend = cs_math_fmin(1., pow(ratio, 2.));
+      blend = cs_math_fmin(1., cs::pow2(ratio));
     }
 
     /* Blending */
@@ -377,7 +377,7 @@ cs_nvd_vof_scheme_scalar(cs_nvd_type_t     limiter,
       blend = 1.;
     } else {
       ratio = dotp/denom;
-      blend = cs_math_fmin(1., pow(ratio, 4.));
+      blend = cs_math_fmin(1., cs::pow4(ratio));
     }
 
     /* Blending */

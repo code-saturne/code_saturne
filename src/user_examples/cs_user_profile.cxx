@@ -270,9 +270,9 @@ _create_1d_sample_(user_profile_t  *profile,
       else {
         cs_real_t f_val_norm = 0.0;
         for (int j = 0; j < f_dim; j++)
-          f_val_norm += pow(f->val[f_dim * c_id + j], 2.0);
+          f_val_norm += cs::pow2(f->val[f_dim * c_id + j]);
 
-        f_val_norm = pow(f_val_norm, 0.5);
+        f_val_norm = sqrt(f_val_norm);
         f_val      = f_val_norm;
       }
 
@@ -344,12 +344,12 @@ _compute_sample_moment(cs_real_t *sample,
 
   /* Compute sample variance */
   for (cs_lnum_t iel = 0; iel < n_elts_sample; iel++)
-    variance += w_n[iel] * pow(sample[iel] - mu, 2.0);
+    variance += w_n[iel] * cs::pow2(sample[iel] - mu);
 
   /* Sum over all MPI ranks */
   cs::parall::sum(variance);
 
-  sigma = pow(variance, 1.0 / 2.0);
+  sigma = sqrt(variance);
 
   /* Update sample moment */
   moment[0] = mu;
@@ -527,7 +527,7 @@ _compute_histogram(user_histogram_t  *histogram,
      - Scott rule */
   cs_real_t bandwidth = 0.0;
 
-  bandwidth = sigma * pow(24.0 * pow(3.14, 0.5) / n_gelts_sample, 1.0 / 3.0);
+  bandwidth = sigma * cbrt(24.0 * sqrt(3.14) / n_gelts_sample);
 
   _fill_histogram_classes_u_bandwidth(histogram,
                                       sample,
@@ -561,7 +561,7 @@ _compute_histogram(user_histogram_t  *histogram,
   /*AMISE-optimal bandwith, known as Freedman and Diaconis rule [freedman1981]:
    * see OpenTurns*/
   bandwidth_update
-    = IQR / (2 * 0.75) * pow(24.0 * pow(3.14, 0.5) / n_gelts_sample, 1.0 / 3.0);
+    = IQR / (2 * 0.75) * cbrt(24.0 * sqrt(3.14) / n_gelts_sample);
 
   if (bandwidth_update > cs_dbl_epsilon) {
     n_bins = (cs_lnum_t)((max - min) / (bandwidth_update));
@@ -599,7 +599,7 @@ _compute_histogram(user_histogram_t  *histogram,
     IQR     = histogram->Q3 - histogram->Q1;
 
     bandwidth_update = IQR / (2 * 0.75)
-                       * pow(24.0 * pow(3.14, 0.5) / n_gelts_sample, 1.0 / 3.0);
+                       * cbrt(24.0 * sqrt(3.14) / n_gelts_sample);
 
     n_bins = n_bins_max;
     min    = histogram->min;
@@ -774,7 +774,7 @@ _calculate_min_max_dir(user_profile_t  *profile)
   }
 
   cs_real_t i_v_norm;
-  i_v_norm = pow(pow(i_v[0], 2.0) + pow(i_v[1], 2.0) + pow(i_v[2], 2.0), 0.5);
+  i_v_norm = cs_math_3_norm(i_v);
 
   // Normalized i_v_n
   i_v[0]   = i_v[0] / i_v_norm;

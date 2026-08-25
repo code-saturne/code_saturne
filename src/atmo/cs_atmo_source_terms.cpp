@@ -312,7 +312,7 @@ _compute_radius_volumic_droplets(const cs_lnum_t  n_cells,
     const cs_real_t qliq = cpro_liqwt[c_id];
     if (qliq >= 1e-8) {
       nc = fmax(nc, 1.0);
-      r3[c_id] = pow(0.75/cs_math_pi*(rho*qliq)/(rho_water*nc*conversion), (1.0/3));
+      r3[c_id] = cbrt(0.75/cs_math_pi*(rho*qliq)/(rho_water*nc*conversion));
     }
     else {
       r3[c_id] = 0.0;
@@ -364,7 +364,7 @@ _compute_deposition_vel(const cs_real_t tempc,
   const cs_real_t temp = tempc + cs_physical_constants_celsius_to_kelvin;
 
   const cs_real_t muair = 1.83e-5*(416.16/(temp+120.0))
-                        * (pow(temp/296.16, 1.50));
+                        * (cs::pow3ov2(temp/296.16));
 
   const cs_real_t nuair = muair/rom;
   const cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
@@ -380,8 +380,8 @@ _compute_deposition_vel(const cs_real_t tempc,
   const cs_real_t raero = 1.0 / (ather * ustar * cfnns);
 
   const cs_real_t st    = wg*ustar/(9.81*arecep);
-  const cs_real_t ceimp = pow(st/(st+alpha), 2.);
-  const cs_real_t ceint = 2.0*(pow(rcloudvolmoy/arecep, 2.));
+  const cs_real_t ceimp = cs::pow2(st/(st+alpha));
+  const cs_real_t ceint = 2.0*(cs::pow2(rcloudvolmoy/arecep));
 
   // Fog or cloud droplet deposition
   if (ustar > 0.0) {
@@ -444,7 +444,7 @@ _compute_gradient(const cs_mesh_t                *m,
   //taup g, with taup = cuning * d^2 * rhop / (18 * mu) ...
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    sed_vel[c_id] = 1.19e8 * pow(r3[c_id], 2.0);
+    sed_vel[c_id] = 1.19e8 * cs::pow2(r3[c_id]);
 
   // take into account deposition if enabled
   if (at_opt->deposition_model > 0) {
@@ -504,18 +504,18 @@ _compute_gradient(const cs_mesh_t                *m,
     local_field[c_id] = cpro_rho[c_id]                 // mass density of the air kg/m3
                       * cpro_liqwt[c_id]               // total liquid water content kg/kg
                       * sed_vel[c_id]                  // deposition velocity m/s
-                      * exp(5*pow(at_opt->sigc, 2.0)); // coefficient coming from log-norm
+                      * exp(5*cs::pow2(at_opt->sigc)); // coefficient coming from log-norm
                                                        // law of the droplet spectrum
 
   _gradient_homogeneous_neumann_sca(local_field, grad1);
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    local_field[c_id] = cpro_rho[c_id]               // mass density of the air kg/m3
-                      * cvar_ntdrp[c_id]             // total liquid water content kg/kg
-                      * sed_vel[c_id]                // deposition velocity m/s
-                      * exp(-pow(at_opt->sigc, 2.0)); // coefficient coming from log-norm
-                                                     // law of the droplet spectrum
+    local_field[c_id] = cpro_rho[c_id]                // mass density of the air kg/m3
+                      * cvar_ntdrp[c_id]              // total liquid water content kg/kg
+                      * sed_vel[c_id]                 // deposition velocity m/s
+                      * exp(-cs::pow2(at_opt->sigc)); // coefficient coming from log-norm
+                                                      // law of the droplet spectrum
 
   _gradient_homogeneous_neumann_sca(local_field, grad2);
 
@@ -1356,10 +1356,10 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
           // 1.1  Model of Pruppacher and Klett (1997)
           if (modnuc == 1) {
             const cs_real_t cons2 = pow(constc, 2./(constk+2.));
-            const cs_real_t cons3 = pow(0.01*(  aa1*vel[c_id][2]
-                                              + aa4*cpro_rad_cool[c_id]), 3./2.);
+            const cs_real_t cons3 = cs::pow3ov2( 0.01*(  aa1*vel[c_id][2]
+                                               + aa4*cpro_rad_cool[c_id]));
             const cs_real_t cons4
-              = (2.*cs_math_pi*rhowater*aa2*pow(aa3, 3./2.)*constk*fbeta);
+              = (2.*cs_math_pi*rhowater*aa2*cs::pow3ov2(aa3)*constk*fbeta);
             nuc = cons2*pow(cons3/cons4, constk/(constk + 2.));
           }
 
@@ -1374,10 +1374,10 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
               yy = _hypgeo(constmu, constk/2, constk/2 + 3./2,
                         -constbeta*cs_math_pow2(sursat));
               const cs_real_t cons1
-                = pow(0.01*(aa1*vel[c_id][2] + aa4*cpro_rad_cool[c_id]), 3./2);
+                = cs::pow3ov2(0.01*(aa1*vel[c_id][2] + aa4*cpro_rad_cool[c_id]));
               const cs_real_t cons2
                 = (2*constk*constc*cs_math_pi*rhowater*aa2*fbeta
-                   *pow(aa3, 3.0/2));
+                   *cs::pow3ov2(aa3));
 
               sursat = pow((cons1/cons2)/yy, 1./(constk + 2.));
             }
@@ -1462,9 +1462,9 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
             const cs_real_t coefb = mmh2o*numcb/(dencb*rhowater);
 
             /* supersaturation [-] */
-            cs_real_t sursat1 = (2./sqrt(coefb))*(pow(coefa/3./rayonm1, 1.5));
-            cs_real_t sursat2 = (2./sqrt(coefb))*(pow(coefa/3./rayonm2, 1.5));
-            cs_real_t sursat3 = (2./sqrt(coefb))*(pow(coefa/3./rayonm3, 1.5));
+            cs_real_t sursat1 = (2./sqrt(coefb))*(cs::pow3ov2(coefa/3./rayonm1));
+            cs_real_t sursat2 = (2./sqrt(coefb))*(cs::pow3ov2(coefa/3./rayonm2));
+            cs_real_t sursat3 = (2./sqrt(coefb))*(cs::pow3ov2(coefa/3./rayonm3));
 
             /* standard deviation function */
             cs_real_t foncf1 = 0.5*exp(2.5*cs_math_pow2(log(sigaero1)));
@@ -1499,23 +1499,23 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
 
             /* coefficient eta - Ntot [m^(-3)] */
             const cs_real_t coefeta1
-              = pow(coefavg, 1.5)/(2*cs_math_pi*rhowater*aa2*ntotal1*1.e6);
+              = cs::pow3ov2(coefavg)/(2*cs_math_pi*rhowater*aa2*ntotal1*1.e6);
             const cs_real_t coefeta2
-              = pow(coefavg, 1.5)/(2*cs_math_pi*rhowater*aa2*ntotal2*1.e6);
+              = cs::pow3ov2(coefavg)/(2*cs_math_pi*rhowater*aa2*ntotal2*1.e6);
             const cs_real_t coefeta3
-              = pow(coefavg, 1.5)/(2*cs_math_pi*rhowater*aa2*ntotal3*1.e6);
+              = cs::pow3ov2(coefavg)/(2*cs_math_pi*rhowater*aa2*ntotal3*1.e6);
 
             /* max supersaturation (smax) */
-            cs_real_t x_tp1 = foncf1*pow(coefzeta/coefeta1, 1.5);
-            cs_real_t x_tp2 = pow((sursat1*sursat1)/(coefeta1+3*coefzeta), 0.75);
+            cs_real_t x_tp1 = foncf1*cs::pow3ov2(coefzeta/coefeta1);
+            cs_real_t x_tp2 = cs::pow3ov4((sursat1*sursat1)/(coefeta1+3*coefzeta));
             cs_real_t smax1 = (x_tp1 + foncg1*x_tp2)/sursat1/sursat1;
 
-            x_tp1 = foncf2*pow(coefzeta/coefeta2, 1.5);
-            x_tp2 = pow((sursat2*sursat2)/(coefeta2+3*coefzeta), 0.75);
+            x_tp1 = foncf2*cs::pow3ov2(coefzeta/coefeta2);
+            x_tp2 = cs::pow3ov4((sursat2*sursat2)/(coefeta2+3*coefzeta));
             cs_real_t smax2 = (x_tp1 + foncg2*x_tp2)/sursat2/sursat2;
 
-            x_tp1 = foncf3*(pow(coefzeta/coefeta3, 1.5));
-            x_tp2 = pow((sursat3*sursat3)/(coefeta3+3*coefzeta), 0.75);
+            x_tp1 = foncf3*(cs::pow3ov2(coefzeta/coefeta3));
+            x_tp2 = cs::pow3ov4((sursat3*sursat3)/(coefeta3+3*coefzeta));
             cs_real_t smax3 = (x_tp1 + foncg3*x_tp2)/sursat3/sursat3;
 
             cs_real_t smax = 1.0/sqrt(smax3 + smax2 + smax1);

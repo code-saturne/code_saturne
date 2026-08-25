@@ -116,7 +116,7 @@ cs_user_scaling_elec
       double yelec = cvar_curre1[iel] / cvar_prop[iel];
       double zelec = cvar_curre2[iel] / cvar_prop[iel];
 
-      w1[iel] = pow(xelec * xelec + yelec * yelec + zelec * zelec, 0.5);
+      w1[iel] = sqrt(xelec * xelec + yelec * yelec + zelec * zelec);
       amex = cs::min(amex, w1[iel]);
       aiex = cs::max(amex, w1[iel]);
     }
@@ -170,12 +170,12 @@ cs_user_scaling_elec
           double rayo =   elec_opt->restrike_point[0] * xyzcen[iel][0]
                         - elec_opt->restrike_point[1] * xyzcen[iel][1];
           double denom
-            = pow(  elec_opt->restrike_point[0] * elec_opt->restrike_point[0]
-                  + elec_opt->restrike_point[1] * elec_opt->restrike_point[1], 0.5);
+            = sqrt(  elec_opt->restrike_point[0] * elec_opt->restrike_point[0]
+                  + elec_opt->restrike_point[1] * elec_opt->restrike_point[1]);
           rayo /= denom;
           rayo += (xyzcen[iel][2] - elec_opt->restrike_point[2]
                  * xyzcen[iel][2] - elec_opt->restrike_point[2]);
-          rayo = pow(rayo, 0.5);
+          rayo = sqrt(rayo);
 
           double posi = elec_opt->restrike_point[0] * xyzcen[iel][0];
 
@@ -245,7 +245,7 @@ cs_user_scaling_elec
     }
     cs::parall::min(dtj);
 
-    double cpmx = pow(cdtj * dtj, 0.5);
+    double cpmx = sqrt(cdtj * dtj);
     coepot = cpmx;
 
     if (cs_glob_time_step->nt_cur > 3) {

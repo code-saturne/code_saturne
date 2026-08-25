@@ -147,7 +147,8 @@ cs_turbulence_htles(void)
 
   const cs_real_t *w_dist =  cs_field("wall_distance")->val;
 
-  const double d2s3 = 2./3.;
+  constexpr double sqrt_d2s3 = sqrt(2./3.);
+  constexpr cs_real_t c_3_pow_1ov6 = pow(3.0, 1.0/6.0);
 
   cs_real_t *mean_omg = nullptr;
   cs_real_t *kwsst_f1 = nullptr;
@@ -231,18 +232,18 @@ cs_turbulence_htles(void)
     cs_real_t xfs = 1.0;
     if (cs_glob_turb_hybrid_model->ishield == 1) {
       cs_real_t xdist  = cs::max(w_dist[c_id], cs_math_epzero);
-      cs_real_t xsik   = 45.0 * pow(xnu, 0.75)/(pow(xpsi0*xepsm, 0.25)*xdist);
-      cs_real_t xsid   = pow(3.0, 1.0/6.0)*xdmax/xdist;
+      cs_real_t xsik   = 45.0 * cs::pow3ov4(xnu)/(cs::qdrt(xpsi0*xepsm)*xdist);
+      cs_real_t xsid   = c_3_pow_1ov6*xdmax/xdist;
       xfs = 1.0 - tanh(cs::max(pow(xsik, 8.0),pow(xsid, 6.0)));
     }
 
     /* Analytic energy ratio r */
     cs_real_t xbt0   = cs_turb_chtles_bt0;
     cs_real_t xdelta = cbrt(cell_f_vol[c_id]);
-    cs_real_t xus = xum + sqrt(d2s3)*sqrt(xkt);
+    cs_real_t xus = xum + sqrt_d2s3*sqrt(xkt);
     cs_real_t xwc = cs::min(cs_math_pi/dt[c_id], xus*cs_math_pi/xdelta);
-    cs_real_t xrk = 1.0/xbt0 * pow(xus/sqrt(xkt), d2s3)
-      *pow(xwc*xkt/(xpsi0*xepsm), -d2s3);
+    cs_real_t xrk = 1.0/xbt0 * cs::pow2ov3(xus/sqrt(xkt))
+                  / cs::pow2ov3(xwc*xkt/(xpsi0*xepsm));
 
     /* Energy ratio */
     cs_real_t xr = 1.0;
@@ -517,10 +518,11 @@ cs_htles_initialization(void) {
           vtx2_id = vtx2_edg1_id;
 
           /* Coordinates and length of the edge between vtx1 and vtx2 */
-          cnx = m->vtx_coord[vtx1_id*3 + 0] - m->vtx_coord[vtx2_id*3 + 0];
-          cny = m->vtx_coord[vtx1_id*3 + 1] - m->vtx_coord[vtx2_id*3 + 1];
-          cnz = m->vtx_coord[vtx1_id*3 + 2] - m->vtx_coord[vtx2_id*3 + 2];
-          cs_real_t dxyz = sqrt(pow(cnx,2) + pow(cny, 2) + pow(cnz, 2));
+          cs_real_t cnxyz[3] =
+           { m->vtx_coord[vtx1_id*3 + 0] - m->vtx_coord[vtx2_id*3 + 0],
+             m->vtx_coord[vtx1_id*3 + 1] - m->vtx_coord[vtx2_id*3 + 1],
+             m->vtx_coord[vtx1_id*3 + 2] - m->vtx_coord[vtx2_id*3 + 2] };
+          cs_real_t dxyz = cs_math_3_norm(cnxyz);
 
           /* Delta_max of the cell */
           dmax = cs::max(dmax, dxyz);

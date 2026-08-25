@@ -223,8 +223,7 @@ cs_user_les_inflow_advanced
                               + (1.0 - exp(-yplus/20.0)) *4.5
                               / (1. + 4.0*yplus/r_fro);
       const cs_real_t eplus =  (1.0/kappa)
-                              / pow((  cs_math_pow4(yplus)
-                                     + cs_math_pow4(15.)), 0.25);
+                              / cs::qdrt(cs::pow4(yplus) + cs::pow4(15.));
 
       /* Arrays are filled with dimensionnal stats */
       vel_l[i][0] = uplus * utau;
