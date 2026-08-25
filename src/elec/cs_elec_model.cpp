@@ -2055,7 +2055,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
       cs_parall_min(1, CS_DOUBLE, &dtj);
       bft_printf("DTJ %15.8E\n", dtj);
 
-      double cpmx = pow(cdtj * dtj, 0.5);
+      double cpmx = sqrt(cdtj * dtj);
       coepot = cpmx;
 
       if (cs_glob_time_step->nt_cur > 2) {

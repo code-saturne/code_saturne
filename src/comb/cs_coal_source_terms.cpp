@@ -679,7 +679,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
                           * cpro_ghco2[c_id];
               if (cm->ihth2o == 1)
                 smbrs1 += wmole[ih2o]/wmolat[cs_coal_atom_id_c]*cpro_ghh2o[c_id];
-              smbrs1 *= pow(cvara_coke[c_id], 2./3.);
+              smbrs1 *= cs::pow2ov3(cvara_coke[c_id]);
             }
 
             // relaxation to drop velocity
@@ -933,7 +933,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
       cs_real_t gamhet = 0;
       if (cvara_xckcl[c_id] > cs_coal_epsilon) {
         gamhet =   crom[c_id]*cpro_cght[c_id]
-                 * (          pow(cvara_xckcl[c_id], 2./3.)
+                 * (          cs::pow2ov3(cvara_xckcl[c_id])
                     + 2./3. * (cvar_xckcl[c_id]-cvara_xckcl[c_id])
                             / cbrt(cvara_xckcl[c_id]));
       }
@@ -977,7 +977,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
         cs_real_t gamhet = 0;
         if (cvara_xckcl[c_id] > cs_coal_epsilon) {
           gamhet =   crom[c_id]*cpro_ghco2[c_id]
-                 * (          pow(cvara_xckcl[c_id], 2./3.)
+                 * (          cs::pow2ov3(cvara_xckcl[c_id])
                     + 2./3. * (cvar_xckcl[c_id]-cvara_xckcl[c_id])
                             / cbrt(cvara_xckcl[c_id]));
         }
@@ -1031,7 +1031,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
         cs_real_t gamhet = 0;
         if (cvara_xckcl[c_id] >cs_coal_epsilon) {
           gamhet =   crom[c_id]*cpro_ghh2o[c_id]
-                 * (          pow(cvara_xckcl[c_id], 2./3.)
+                 * (          cs::pow2ov3(cvara_xckcl[c_id])
                     + 2./3. * (cvar_xckcl[c_id]-cvara_xckcl[c_id])
                             / cbrt(cvara_xckcl[c_id]));
         }
@@ -1194,7 +1194,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         if (cvara_xckcl[c_id] > cs_coal_epsilon) {
           w1[c_id] -=  crom[c_id]*cpro_cght[c_id]
-                       * (   pow(cvara_xckcl[c_id], 2./3.)
+                       * (   cs::pow2ov3(cvara_xckcl[c_id])
                           + 2./3.*(cvar_xckcl[c_id] - cvara_xckcl[c_id])
                                  / cbrt(cvara_xckcl[c_id]));
         }
@@ -1226,7 +1226,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         if (cvara_xckcl[c_id] > cs_coal_epsilon) {
           w1[c_id] -=  crom[c_id]*cpro_ghco2[c_id]
-                       * (   pow(cvara_xckcl[c_id], 2./3.)
+                       * (   cs::pow2ov3(cvara_xckcl[c_id])
                           + 2./3.*(cvar_xckcl[c_id] - cvara_xckcl[c_id])
                                  / cbrt(cvara_xckcl[c_id]));
         }
@@ -1258,7 +1258,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         if (cvara_xckcl[c_id] > cs_coal_epsilon) {
           w1[c_id] -=  crom[c_id]*cpro_ghh2o[c_id]
-                       * (   pow(cvara_xckcl[c_id], 2./3.)
+                       * (   cs::pow2ov3(cvara_xckcl[c_id])
                           + 2./3.*(cvar_xckcl[c_id] - cvara_xckcl[c_id])
                                  / cbrt(cvara_xckcl[c_id]));
         }
@@ -1436,22 +1436,22 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
         cs_real_t anmr2 = 0.5*(anmr0+anmr1);
         int iterch = 0;
         cs_real_t fn2 = 1.;
-        cs_real_t fn0 = -0.5                                     * pow(anmr0, 3)
-                       + (     xcom     + xo2m - pow(xkcequ, 2)) * pow(anmr0, 2)
+        cs_real_t fn0 = -0.5                                     * cs::pow3(anmr0)
+                       + (     xcom     + xo2m - cs::pow2(xkcequ)) * cs::pow2(anmr0)
                        - (  .5*xcom  + 2.*xo2m)*xcom             * anmr0
-                       +   pow(xcom, 2) * xo2m;
-        cs_real_t fn1 = -0.5                                     * pow(anmr1, 3)
-                       + (     xcom     + xo2m - pow(xkcequ, 2)) * pow(anmr1, 2)
+                       +   cs::pow2(xcom) * xo2m;
+        cs_real_t fn1 = -0.5                                     * cs::pow3(anmr1)
+                       + (     xcom     + xo2m - cs::pow2(xkcequ)) * cs::pow2(anmr1)
                        - (  .5*xcom  + 2.*xo2m)*xcom             * anmr1
-                       +   pow(xcom, 2) * xo2m;
+                       +   cs::pow2(xcom) * xo2m;
 
         if (xo2m > 1.e-6) {
           while (iterch < itermx && fn2 > errch) {
             anmr2 = 0.5*(anmr0+anmr1);
-            fn2 = -0.5                                   * pow(anmr2, 3)
-                   + (   xcom   + xo2m - pow(xkcequ, 2)) * pow(anmr2, 2)
+            fn2 = -0.5                                   * cs::pow3(anmr2)
+                   + (   xcom   + xo2m - cs::pow2(xkcequ)) * cs::pow2(anmr2)
                    - (.5*xcom +2.*xo2m)*xcom             * anmr2
-                   + pow(xcom, 2) * xo2m;
+                   + cs::pow2(xcom) * xo2m;
             if (fn0*fn2 > 0.) {
               anmr0 = anmr2;
               fn0 = fn2;
@@ -1495,7 +1495,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
 
       if (xco2eq > xxco2) {
         // oxydation
-        xden = xkp * sqh2o * pow(xxo2, 0.25);
+        xden = xkp * sqh2o * cs::qdrt(xxo2);
       }
       else {
         // dissociation
@@ -1570,7 +1570,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
         cs_real_t aux = 0.;
         for (int class_id = 0; class_id < cm->nclacp; class_id++) {
           aux +=  crom[c_id] * cpro_ghco2a[class_id][c_id]
-                * pow(cvara_xck[class_id][c_id], 2./3.) * cell_f_vol[c_id];
+                * cs::pow2ov3(cvara_xck[class_id][c_id]) * cell_f_vol[c_id];
 
         }
 
@@ -1708,7 +1708,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           cs_real_t gamhet;
           if (cvara_xck[class_id][c_id] > cs_coal_epsilon) {
             gamhet =   crom[c_id]*cpro_gmhet[class_id][c_id]
-                     * (  pow(cvara_xck[class_id][c_id], 2./3.)
+                     * (  cs::pow2ov3(cvara_xck[class_id][c_id])
                         + 2./3. * (  cvar_xck[class_id][c_id]
                                    - cvara_xck[class_id][c_id])
                                 / cbrt(cvara_xck[class_id][c_id]));
@@ -1752,7 +1752,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
             cs_real_t gamhet;
             if (cvara_xck[class_id][c_id] > cs_coal_epsilon) {
               gamhet =  crom[c_id]*cpro_ghco2a[class_id][c_id]
-                       * (  pow(cvara_xck[class_id][c_id], 2./3.)
+                       * (  cs::pow2ov3(cvara_xck[class_id][c_id])
                           + 2./3. * (  cvar_xck[class_id][c_id]
                                      - cvara_xck[class_id][c_id])
                                   / cbrt(cvara_xck[class_id][c_id]));
@@ -1806,7 +1806,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
             cs_real_t gamhet;
             if (cvara_xck[class_id][c_id] > cs_coal_epsilon) {
               gamhet =   crom[c_id]*cpro_ghh2oa[class_id][c_id]
-                       * (  pow(cvara_xck[class_id][c_id], 2./3.)
+                       * (  cs::pow2ov3(cvara_xck[class_id][c_id])
                           + 2./3. * (  cvar_xck[class_id][c_id]
                                      - cvara_xck[class_id][c_id])
                                   / cbrt(cvara_xck[class_id][c_id]));
@@ -1956,7 +1956,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           gmdev2[coal_id] +=   cpro_gmdv2[class_id][c_id] * crom[c_id]
                              * cvara_xch[class_id][c_id];
           gmhet[coal_id] +=    cpro_gmhet[class_id][c_id]  * crom[c_id]
-                             * pow(cvara_xck[class_id][c_id], 2./3.);
+                             * cs::pow2ov3(cvara_xck[class_id][c_id]);
         }
 
         for (int coal_id = 0; coal_id < cm->n_coals; coal_id++) {
@@ -2001,7 +2001,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
         cs_real_t aux2 =   cell_f_vol[c_id] * crom[c_id]
                          * cpro_exp2[c_id] * cvara_yhcn[c_id]
                          * wmno / wmhcn;
-        cs_real_t aux3 =   cell_f_vol[c_id] * pow(crom[c_id], 1.5)
+        cs_real_t aux3 =   cell_f_vol[c_id] * cs::pow3ov2(crom[c_id])
                          * cpro_exp3[c_id]  * cpro_yn2[c_id];
 
         smbrs[c_id] += - aux1*cvara_var[c_id] + aux2 + aux3;
@@ -2244,11 +2244,11 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           if (cvara_xck[class_id][c_id] > cs_coal_epsilon) {
             // Reaction rate of the heterogeneous combustion
             gmhet[coal_id] +=     cpro_gmhet[class_id][c_id] * crom[c_id]
-                                * pow(  cvara_xck[class_id][c_id]
+                                * cs::pow2ov3(  cvara_xck[class_id][c_id]
                                       * (  (1./(mckcl2/mckcl1 + 1.))
                                            * cm->yhcnc1[coal_id]
                                          + (1./(mckcl1/mckcl2 + 1.))
-                                           * cm->yhcnc2[coal_id]), 2./3.);
+                                           * cm->yhcnc2[coal_id]));
           }
         }
 
@@ -2379,7 +2379,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
 
         // Coefficient of thermal NO
         //FIXME why is the N mass fraction not converted to a molar fraction ?
-        cs_real_t aux3 =   cell_f_vol[c_id] * pow(crom[c_id], 1.5)
+        cs_real_t aux3 =   cell_f_vol[c_id] * cs::pow3ov2(crom[c_id])
                          * cpro_exp3[c_id] * cpro_yn2[c_id];
 
         cpro_fnoth[c_id] = aux3;
@@ -2540,10 +2540,9 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
             // Reaction rate of the heterogeneous combustion
             gmhet[coal_id]
               +=  cpro_gmhet[class_id][c_id] * crom[c_id]
-                * pow(  cvara_xck[class_id][c_id]
+                * cs::pow2ov3(  cvara_xck[class_id][c_id]
                       * (  (1./(mckcl2/mckcl1+1.))*cm->ynoch1[coal_id]
-                         + (1./(mckcl1/mckcl2+1.))*cm->ynoch2[coal_id]),
-                        2./3.);
+                         + (1./(mckcl1/mckcl2+1.))*cm->ynoch2[coal_id]));
           }
 
         } // loop on coals

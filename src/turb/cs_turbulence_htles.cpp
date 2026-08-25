@@ -426,8 +426,6 @@ cs_htles_initialization(void) {
   cs_lnum_t vtx_start, vtx_end;
   cs_lnum_t cpt_edg_cell;
 
-  cs_real_t cnx, cny, cnz;
-
   cs_array_2d<cs_lnum_t> vtx1_edg_per_cells(n_cells, max_edg_per_cells);
   cs_array_2d<cs_lnum_t> vtx2_edg_per_cells(n_cells, max_edg_per_cells);
   cs_array<cs_lnum_t> cpt_edg_per_cells(n_cells);

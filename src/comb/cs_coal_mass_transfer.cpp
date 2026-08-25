@@ -330,7 +330,7 @@ cs_coal_mass_transfer(void)
 
       cs_real_t diacka = cpro_diam2[c_id]/diam20;
       if (diacka > eps_cp) {
-        cs_real_t xdfext =   2.53e-7*(pow(cpro_temp2[c_id], 0.750))
+        cs_real_t xdfext =   2.53e-7*(cs::pow3ov4(cpro_temp2[c_id]))
                            / cpro_diam2[c_id] * 2.;
         cs_real_t xdfext_2 = xdfext*xdfext;
         cs_real_t xdfchi_2 = xdfchi*xdfchi;
@@ -420,7 +420,7 @@ cs_coal_mass_transfer(void)
 
         cs_real_t diacka = cpro_diam2[c_id]/diam20;
         if (diacka > eps_cp) {
-          cs_real_t xdfext =   2.53e-7*(pow(cpro_temp2[c_id], 0.750))
+          cs_real_t xdfext =   2.53e-7*(cs::pow3ov4(cpro_temp2[c_id]))
                              / cpro_diam2[c_id] * 2.;
           cs_real_t xdfext_2 = xdfext*xdfext;
           cs_real_t xdfchi_2 = xdfchi*xdfchi;
@@ -512,7 +512,7 @@ cs_coal_mass_transfer(void)
 
         cs_real_t diacka = cpro_diam2[c_id]/diam20;
         if (diacka > eps_cp) {
-          cs_real_t xdfext =   2.53e-7*(pow(cpro_temp2[c_id], 0.750))
+          cs_real_t xdfext =   2.53e-7*(cs::pow3ov4(cpro_temp2[c_id]))
                              / cpro_diam2[c_id] * 2.;
           cs_real_t xdfext_2 = xdfext*xdfext;
           cs_real_t xdfchi_2 = xdfchi*xdfchi;
