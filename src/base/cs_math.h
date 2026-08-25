@@ -752,6 +752,96 @@ pow2(double  x)
   return x*x;
 }
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the quadratic root of a real value
+ *
+ * \return the quadratic root of the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename T>
+CS_F_HOST_DEVICE inline T
+qdrt
+(
+  T x /*!<[in] value */
+)
+{
+  return sqrt(sqrt(x));
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the power (2/3) of a real value
+ *
+ * \return x^(2/3) with x the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename T>
+CS_F_HOST_DEVICE inline T
+pow2ov3
+(
+  T x /*!<[in] value */
+)
+{
+  return cbrt(x*x);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the power (4/3) of a real value
+ *
+ * \return x^(4/3) with x the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename T>
+CS_F_HOST_DEVICE inline T
+pow4ov3
+(
+  T x /*!<[in] value */
+)
+{
+  return cbrt(x*x*x*x);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the power (3/2) of a real value
+ *
+ * \return x^(3/2) with x the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename T>
+CS_F_HOST_DEVICE inline T
+pow3ov2
+(
+  T x /*!<[in] value */
+)
+{
+  return sqrt(x*x*x);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the power (3/4) of a real value
+ *
+ * \return x^(3/4) with x the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename T>
+CS_F_HOST_DEVICE inline T
+pow3ov4
+(
+  T x /*!<[in] value */
+)
+{
+  return qdrt(x*x*x);
+}
+
 } // namespace cs
 
 #endif // defined(__cplusplus)
