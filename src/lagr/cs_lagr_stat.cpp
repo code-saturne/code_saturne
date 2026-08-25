@@ -2880,7 +2880,7 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t &p_set,
   cs_lnum_t dt_mult = (cs_glob_time_step->is_local) ? 1 : 0;
 
   /* Increment statistic in the ending cell when a single subiter is made
-   * and the starting cell when a cell-wie-integration is considered */
+   * and the starting cell when a cell-wise-integration is considered */
   cs_lnum_t cell_id;
   if (cs_glob_lagr_time_scheme->cell_wise_integ == 0)
     cell_id = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
