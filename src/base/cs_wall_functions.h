@@ -288,7 +288,7 @@ _uplus(cs_real_t yp,
 {
   cs_real_t uplus, f_blend;
 
-  f_blend = exp(-0.25*cuv*pow(yp,3));
+  f_blend = exp(-0.25*cuv*cs::pow3(yp));
   uplus   = f_blend*yp + (log(yp)/ka +B)*(1.-exp(-pow(yp/y0,n)))*(1-f_blend);
 
   return uplus;
@@ -312,13 +312,13 @@ _dupdyp(cs_real_t yp,
 {
   cs_real_t dupdyp;
 
-  dupdyp = exp(-0.25*cuv*pow(yp,3))
-   - 0.75*cuv*pow(yp,3.)*exp(-0.25*cuv*pow(yp,3.))
-   + n*(1.-exp(-0.25*cuv*pow(yp,3.)))*(pow(yp,n-1.)/pow(y0,n))
+  dupdyp = exp(-0.25*cuv*cs::pow3(yp))
+   - 0.75*cuv*cs::pow3(yp)*exp(-0.25*cuv*cs::pow3(yp))
+   + n*(1.-exp(-0.25*cuv*cs::pow3(yp)))*(pow(yp,n-1.)/pow(y0,n))
       *exp(-pow(yp/y0,n))*((1./ka)*log(yp)+B)
-   + 0.75*cuv*pow(yp,2.)*exp(-0.25*cuv*pow(yp,3.))
+   + 0.75*cuv*cs::pow2(yp)*exp(-0.25*cuv*cs::pow3(yp))
          *(1.-exp(-pow(yp/y0,n)))*((1./ka)*log(yp)+B)
-   + (1./ka/yp)*(1.-exp(-pow(yp/y0,n)))*(1-exp(-0.25*cuv*pow(yp,3.)));
+   + (1./ka/yp)*(1.-exp(-pow(yp/y0,n)))*(1-exp(-0.25*cuv*cs::pow3(yp)));
 
   return dupdyp;
 }
@@ -1086,9 +1086,9 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  l_visc,
 
   } else {
     yp2 = sqrt(cs_turb_xkappa*1000./prt);
-    (*yplim)   = pow(1000./prl, 1./3.);
+    (*yplim)   = cbrt(1000./prl);
 
-    a2 = 15.*pow(prl, 2./3.);
+    a2 = 15.*cs::pow2ov3(prl);
 
     if (yplus >= (*yplim) && yplus < yp2) {
       tplus = a2 - 500./((yplus+dplus)*(yplus+dplus));
