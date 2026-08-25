@@ -4055,6 +4055,8 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
       /* assert if there is still particles to track and if so propage them*/
       if (cur_part_state == CS_LAGR_PART_TO_SYNC) {
 
+        cs_lnum_t c_id_preloc = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
+
         /* Main particle displacement stage */
         cur_part_state = _local_propagation(p_set,
                                             events,
@@ -4071,17 +4073,20 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                                             vagaus,
                                             &n_new_particles);
 
-        if(displacement_step_id == max_perio_or_rank_crossed -1) {
+        if(displacement_step_id >= max_perio_or_rank_crossed -1
+            && cur_part_state == CS_LAGR_PART_TO_SYNC_NEXT) {
           cs_real_t  *particle_coord
             = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
-          cs_lnum_t cell_id = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
+
+          p_set.attr_lnum(p_id, CS_LAGR_CELL_ID) = c_id_preloc;
+          cs_real_t *cell_cen = fvq->cell_cen[c_id_preloc];
+
           _manage_error(failsafe_mode,
                        p_set,
                        p_id,
                        CS_LAGR_TRACKING_ERR_MAX_LOOPS);
 
-          p_info->state = CS_LAGR_PART_TREATED;
-          cs_real_t *cell_cen = fvq->cell_cen[cell_id];
+          cur_part_state = CS_LAGR_PART_TREATED;
 
           p_set.attr_lnum(p_id, CS_LAGR_TR_REPOSITION) += 1;
 
@@ -4089,6 +4094,15 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
             p_info->start_coords[k] = cell_cen[k];
             particle_coord[k] = cell_cen[k];
           }
+
+          /* The last face is no longer meaningful after forcing the
+           * particle back into the previous local cell.*/
+          p_info->last_face_id = -1;
+
+
+          /* The remaining trajectory is abandoned only for the current
+           * displacement stage.*/
+          p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
         }
         p_info->state = cur_part_state;
 

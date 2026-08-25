@@ -517,6 +517,9 @@ _vol_fraction(const void                 *input,
 
       cs_real_t p_weight = p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT);
 
+      if (cell_id < 0 || cell_id >= n_elts)
+        continue;
+
       cs_real_t vol = cs_glob_mesh_quantities->cell_vol[cell_id];
 
       vals[cell_id] += diam*diam*diam * cs_math_pi / 6.0 * p_weight / vol;
@@ -543,6 +546,9 @@ _vol_fraction(const void                 *input,
           cell_id = p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID);
 
         cs_real_t p_weight = p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT);
+
+        if (cell_id < 0 || cell_id >= n_elts)
+          continue;
 
         cs_real_t vol = cs_glob_mesh_quantities->cell_vol[cell_id];
 
