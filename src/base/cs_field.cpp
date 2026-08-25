@@ -393,6 +393,7 @@ _field_create(const char   *name,
   f->val_pre = nullptr;
 
   f->_vals = nullptr;
+  f->_grad = nullptr;
 
   f->grad = nullptr;
 
@@ -405,6 +406,7 @@ _field_create(const char   *name,
   f->ns_idx  = 0;
   f->ns_owner = -1;
   f->_ns_vals = nullptr;
+  f->_ns_grad = nullptr;
 
   /* Mark key values as not set */
 
@@ -887,6 +889,8 @@ cs_field_create(const char   *name,
   for (int i = 0; i < f->n_time_vals; i++)
     f->_vals[i] = new cs_array_2d<cs_real_t>(); // empty container;
 
+  f->_grad = new cs_array_2d<cs_real_t>(); // empty container;
+
   return f;
 }
 
@@ -1026,6 +1030,8 @@ cs_field_find_or_create(const char   *name,
     for (int i = 0; i < f->n_time_vals; i++)
       f->_vals[i] = new cs_array_2d<cs_real_t>(); // empty container;
 
+    f->_grad = new cs_array_2d<cs_real_t>(); // empty container;
+
   }
 
   return f;
@@ -1161,6 +1167,38 @@ cs_field_allocate_values(cs_field_t  *f)
       for (int ii = 0; ii < f->n_time_vals; ii++) {
         f->_vals[ii]->zero(ctx);
       }
+    }
+    ctx.wait();
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate arrays for field gradients.
+ *
+ * \param[in, out]  f  pointer to field structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_allocate_gradients(cs_field_t  *f)
+{
+  assert(f != nullptr);
+
+  if (f->owner()) {
+
+    /* Update sizes and pointers' addresses. */
+    f->update_size();
+
+    /* Initialization */
+
+    cs_dispatch_context ctx;
+    if (f->is_series_owner()) {
+      f->_ns_grad->zero(ctx);
+    }
+    else {
+      f->_grad->zero(ctx);
     }
     ctx.wait();
 
@@ -1550,28 +1588,6 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
               f->name, f->location_id);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate arrays for field gradient.
- *
- * \param[in, out]  f  pointer to field structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_field_allocate_gradient(cs_field_t  *f)
-{
-  assert(f != nullptr);
-
-  if (f->is_owner) {
-
-    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
-
-    /* Initialization */
-
-    f->grad = _add_val(n_elts[2], 3*f->dim, f->grad);
-  }
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1653,7 +1669,7 @@ void
 cs_field_destroy_all(void)
 {
   for (int i = 0; i < _n_fields; i++) {
-    cs_field_t  *f = _fields[i];
+    cs_field_t *f = _fields[i];
     if (f->is_owner) {
       if (f->_vals != nullptr) {
         for (int ii = 0; ii < f->n_time_vals; ii++)
@@ -1662,14 +1678,14 @@ cs_field_destroy_all(void)
       if (f->_ns_vals != nullptr) {
         for (int ii = 0; ii < f->n_time_vals; ii++)
           delete f->_ns_vals[ii];
+
       }
+      delete f->_ns_grad;
+      delete f->_grad;
     }
     CS_FREE(f->vals);
     CS_FREE(f->_vals);
     CS_FREE(f->_ns_vals);
-
-    if (f->grad != nullptr)
-      CS_FREE(f->grad);
 
     if (f->bc_coeffs != nullptr) {
       CS_FREE(f->bc_coeffs->icodcl);
@@ -4600,14 +4616,7 @@ cs_field_t::get_grad_s
               _("%s: Field \"%s\" is not a scalar and has dimension %d\n"),
               __func__, this->name, this->dim);
 
-  if (this->grad == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: Field \"%s\" does not contain a gradient member\n"),
-              __func__, this->name);
-
-  return cs_span_2d<cs_real_t>(this->grad,
-                               this->_vals[0]->extent(0),
-                               3);
+  return this->_grad->view();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -4863,7 +4872,7 @@ cs_field_t::get_ns_val_v
   /* Object is cs_array_3d, hence 'view()' already returns a cs_span_3d
    * with correct dimensions.
    */
- return  _fields[this->ns_owner]->_ns_vals[time_id]->view();
+ return _fields[this->ns_owner]->_ns_vals[time_id]->view();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4900,6 +4909,38 @@ cs_field_t::get_ns_val_t
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return a 2D span view of field gradients. If the field is not a scalar
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span_2d<cs_real_t>(:,3) view of field gradients.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span_3d<cs_real_t>
+cs_field_t::get_ns_grad_s
+(
+  void
+) const
+{
+  if (3*this->dim != 3)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a scalar and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->_ns_vals == nullptr && this->is_series_owner())
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not associated to a multidimensional "
+                "series.\n"),
+              __func__, this->name);
+
+  /* Object is cs_array_3d, hence 'view()' already returns a cs_span_3d
+   * with correct dimensions.
+   */
+ return _fields[this->ns_owner]->_ns_grad->view();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get the allocation mode of the values array.
  *
  * \return cs_alloc_mode_t corresponding to the used allocation mode.
@@ -4927,6 +4968,9 @@ cs_field_t::update_public_pointers()
   for (int i = 0; i < this->n_time_vals; i++) {
     this->vals[i] = this->_vals[i]->data();
   }
+
+  /* Update grad pointer */
+  this->grad = this->_grad->data();
 
   /* Update val and val_pre pointers */
   this->val = this->_vals[0]->data();
@@ -4979,6 +5023,12 @@ cs_field_t::update_size
                                                 this->dim,
                                                 -1); /* keep old values */
 
+    /* Reallocate all necessary gradients */
+    this->_ns_grad->reshape_and_copy(this->ns_size,
+                                     new_size,
+                                     3*this->dim,
+                                     -1); /* keep old values */
+
     /* The map_to_ns_data calls update_public_pointers */
     this->map_to_ns_data();
 
@@ -4992,6 +5042,9 @@ cs_field_t::update_size
     }
     else
       this->_vals[time_id]->reshape(new_size, this->dim);
+
+    /* Reallocate all necessary gradients */
+    this->_grad->reshape(new_size, 3*this->dim);
 
     /* Update pointers */
     this->update_public_pointers();
@@ -5017,6 +5070,7 @@ cs_field_t::clear
     }
     else {
       this->_ns_vals[time_id]->clear();
+      this->_ns_grad->clear();
     }
 
     this->map_to_ns_data();
@@ -5028,6 +5082,8 @@ cs_field_t::clear
     }
     else
       this->_vals[time_id]->clear();
+
+    this->_grad->clear();
 
     this->update_public_pointers();
   }
@@ -5130,6 +5186,9 @@ cs_field_t::initialize_sub_fields
   for (int i = 0; i < this->n_time_vals; i++)
     this->_ns_vals[i] = new cs_array_3d<cs_real_t>();
 
+  /* Creation of _ns_grad */
+  this->_ns_grad = new cs_array_3d<cs_real_t>();
+
   /* if no sub-fields exit function */
   if (n_sub_fields == 0)
     return;
@@ -5168,6 +5227,13 @@ cs_field_t::map_to_ns_data()
                                 ofield->_ns_vals[i]->extent(1),
                                 ofield->_ns_vals[i]->extent(2));
   }
+
+  /* Do the same for gradients */
+  this->_grad->set_empty();
+  this->_grad->set_alloc_mode(ofield->_ns_grad->mode());
+  this->_grad->update_data(ofield->_ns_grad->sub_array(this->ns_idx),
+                           ofield->_ns_grad->extent(1),
+                           ofield->_ns_grad->extent(2));
 
   this->update_public_pointers();
 }

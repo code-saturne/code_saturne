@@ -498,6 +498,12 @@ public:
     const int time_id = 0
   ) const;
 
+  cs_span_3d<cs_real_t>
+  get_ns_grad_s
+  (
+    void
+  ) const;
+
   /* State update methods
      -------------------- */
 
@@ -528,6 +534,8 @@ public:
 
   cs_array_2d<cs_real_t> **_vals;
   cs_array_3d<cs_real_t> **_ns_vals;
+  cs_array_2d<cs_real_t> *_grad;
+  cs_array_3d<cs_real_t> *_ns_grad;
 
   CS_F_HOST_DEVICE
   void
@@ -823,6 +831,16 @@ void
 cs_field_allocate_values(cs_field_t  *f);
 
 /*----------------------------------------------------------------------------
+ * Allocate arrays for field gradients.
+ *
+ * parameters:
+ *   f <-- pointer to field structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_allocate_gradients(cs_field_t  *f);
+
+/*----------------------------------------------------------------------------
  * Remap arrays for sub-field values.
  *
  * parameters:
@@ -899,16 +917,6 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
 void
 cs_field_init_bc_coeffs(cs_field_t  *f);
-
-/*----------------------------------------------------------------------------
- * Allocate arrays for field gradient.
- *
- * parameters:
- *   f <-- pointer to field structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_field_allocate_gradient(cs_field_t  *f);
 
 /*----------------------------------------------------------------------------
  * Set current field values to the given constant.

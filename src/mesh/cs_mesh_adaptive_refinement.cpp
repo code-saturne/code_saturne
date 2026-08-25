@@ -1307,7 +1307,7 @@ cs_adaptive_refinement_update_gradients(void)
   /* Velocity field is always interpolated using P1
    * to reconstruct mass flux at newly created internal
    * faces */
-  cs_field_allocate_gradient(fv);
+  cs_field_allocate_gradients(fv);
 
   cs_real_33_t *gradu = (cs_real_33_t *)fv->grad;
   cs_field_gradient_vector(fv,
@@ -1330,7 +1330,7 @@ cs_adaptive_refinement_update_gradients(void)
     if (   field_loc_type == CS_MESH_LOCATION_CELLS
         && f->id != fv->id
         && (interpolation_type == 1 || f->grad != nullptr)) {
-      cs_field_allocate_gradient(f);
+      cs_field_allocate_gradients(f);
 
       switch (f->dim) {
       case 1:
