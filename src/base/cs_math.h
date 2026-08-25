@@ -740,16 +740,53 @@ clamp(const float x,
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline float
-pow2(float  x)
+template<typename T>
+CS_F_HOST_DEVICE inline T
+pow2(T  x)
 {
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
   return x*x;
 }
 
-CS_F_HOST_DEVICE inline double
-pow2(double  x)
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the cube of a given (float or double) value
+ *
+ * \return the cube of the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename T>
+CS_F_HOST_DEVICE inline T
+pow3
+(
+  T x
+)
 {
-  return x*x;
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
+  return x*x*x;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the 4-th pwoer of a given (float or double) value
+ *
+ * \return the 4-th power of the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename T>
+CS_F_HOST_DEVICE inline T
+pow4
+(
+  T x
+)
+{
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
+  return x*x*x*x;
 }
 
 /*--------------------------------------------------------------------------*/
