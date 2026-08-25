@@ -62,6 +62,7 @@ cs_array.h \
 cs_array_reduce.h \
 cs_assert.h \
 cs_aster_coupling.h \
+cs_atomic.h \
 cs_base.h \
 cs_base_accel.h \
 cs_block_dist.h \

@@ -39,6 +39,7 @@
 #include "base/cs_base_accel.h"
 #include "base/cs_math.h"
 
+#include "base/cs_atomic.h"
 #include "base/cs_dispatch.h"
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -255,6 +256,52 @@ _cs_dispatch_test(void)
   CS_FREE(a1);
 }
 
+/*----------------------------------------------------------------------------
+ * Test atomics class.
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_dispatch_atomics_test(void)
+{
+  const cs_lnum_t n = 20;
+
+  //cs_dispatch_context ctx(cs_device_context(), {});
+  cs_dispatch_context ctx;
+
+  // cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
+#if defined(HAVE_ACCEL)
+  // cs_device_context &d_ctx = static_cast<cs_device_context&>(ctx);
+#endif
+
+  for (int i = 0; i < 2; i++) {
+
+    if (i == 1) {
+      ctx.set_use_gpu(false);
+      ctx.set_n_min_per_cpu_thread(5);
+    }
+
+    cs_alloc_mode_t amode = ctx.alloc_mode();
+    cs_lnum_t *a;
+    CS_MALLOC_HD(a, n, cs_lnum_t, amode);
+
+    ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      a[ii] = ii;
+    });
+
+    ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      cs_lnum_t jj = cs::atomic::fetch_add(&(a[ii]), 1);
+      assert(jj == ii);
+      bool r = cs::atomic::compare_exchange(&(a[ii]), ii, 100);
+      assert(r == false);
+      r = cs::atomic::compare_exchange(&(a[ii]), jj+1, 100);
+      assert(r == true);
+      assert(a[ii] == 100);
+    });
+
+    ctx.wait();
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 
 static inline CS_F_HOST_DEVICE void
@@ -350,6 +397,7 @@ main(int argc, char *argv[])
 
   _cs_dispatch_test();
   _cs_dispatch_function_pointer_test();
+  _cs_dispatch_atomics_test();
 
   exit(EXIT_SUCCESS);
 }
