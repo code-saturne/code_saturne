@@ -770,7 +770,7 @@ _mo_psim_u(cs_real_t              z,
       cs_real_t x = pow((1. - b*z*dlmo), e);
       cs_real_t x0 = pow((1. - b*z0*dlmo), e);
 
-      constexpr cs_real_t c_sqrt_3 = sqrt(3.0);
+      constexpr cs_real_t c_sqrt_3 = 1.7320508075688772; // sqrt(3.0) (sqrt not constexpr);
 
       return log(z/z0) - 1.5*log((1. + x + cs::pow2(x))/3.)
         + c_sqrt_3*atan((1. + 2.*x)/c_sqrt_3)

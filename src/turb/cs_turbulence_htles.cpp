@@ -147,8 +147,8 @@ cs_turbulence_htles(void)
 
   const cs_real_t *w_dist =  cs_field("wall_distance")->val;
 
-  constexpr double sqrt_d2s3 = sqrt(2./3.);
-  constexpr cs_real_t c_3_pow_1ov6 = pow(3.0, 1.0/6.0);
+  constexpr double sqrt_d2s3 = 0.816496580928; // sqrt(2./3.) (sqrt not constexpr);
+  constexpr cs_real_t c_3_pow_1ov6 = 1.2009369551760027; // pow(3.0, 1.0/6.0) (pow not constexpr);
 
   cs_real_t *mean_omg = nullptr;
   cs_real_t *kwsst_f1 = nullptr;
