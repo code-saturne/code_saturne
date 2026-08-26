@@ -896,7 +896,7 @@ cs_les_mu_t_wale(void)
     cs_real_t sinv = pow(s, 2.5) + pow(sd, 1.25);
     cs_real_t con = 0;
     if (sinv > 0)
-      con = sqrt(2.) * pow(sd, 1.5)/sinv;
+      con = sqrt(2.) * cs::pow3ov2(sd)/sinv;
 
     if (!s_eq.empty())
       s_eq[c_id] = con;

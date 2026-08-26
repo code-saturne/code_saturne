@@ -954,7 +954,7 @@ cs_turbulence_ke(int              phase_id,
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       w10[c_id] = -w10[c_id]/volume[c_id]/cvara_ep[c_id];
-      w10[c_id] = tanh(pow(fabs(w10[c_id]), 1.5));
+      w10[c_id] = tanh(cs::pow3ov2(fabs(w10[c_id])));
       cs_real_t xcr_m1 = 1.;
       /* HTLES method */
       if (hybrid_turb == CS_HYBRID_HTLES)

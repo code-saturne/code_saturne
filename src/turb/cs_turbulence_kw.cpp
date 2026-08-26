@@ -1028,7 +1028,7 @@ cs_turbulence_kw(int phase_id)
         cs_real_t xbeta  = xxf1 * ckwbt1 + (1. - xxf1)*ckwbt2;
         cs_real_t xdist  = cs::max(w_dist[c_id], cs_math_epzero);
         cs_real_t xlt    = sqrt(xk) / (cmu*xw);
-        cs_real_t xdelta = pow(cell_f_vol[c_id], 1./3.);
+        cs_real_t xdelta = cbrt(cell_f_vol[c_id]);
 
         if (hybrid_turb == CS_HYBRID_DES)
           /* Detached Eddy Simulation - DES - mode */
@@ -1039,7 +1039,7 @@ cs_turbulence_kw(int phase_id)
           cs_real_t xrd =   (visct + xnu)
                           / (ro * xs2pw2 * cs_math_pow2(xkappa)
                                          * cs_math_pow2(xdist));
-          xfd    = 1. - tanh(pow(8.*xrd, 3));
+          xfd    = 1. - tanh(cs::pow3(8.*xrd));
         }
 
         cs_real_t xdiff  = cs::max(xlt - (cddes * xdelta), 0.);
@@ -1097,10 +1097,10 @@ cs_turbulence_kw(int phase_id)
         cs_real_t lvkmin =   csas
                            * sqrt(  csas_eta2 * xkappa
                                   / ((xbeta/cmu)-xgamma))
-                           * pow(volume[c_id], 1./3.);
+                           * cbrt(volume[c_id]);
         cs_real_t lvk = xkappa*sqrt(xsij2 / d2uidxi2[c_id]);
         cs_real_t lvksas = cs::max(lvkmin, lvk);
-        cs_real_t lmod = sqrt(xk)/(pow(cmu,0.25)*xw);
+        cs_real_t lmod = sqrt(xk)/(cs::qdrt(cmu)*xw);
 
         cs_real_t xqsas = fmax(  ro * csas_eta2 * xkappa * xsij2
                                * cs_math_pow2(lmod/lvksas)

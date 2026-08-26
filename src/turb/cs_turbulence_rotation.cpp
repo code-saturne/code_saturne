@@ -375,12 +375,12 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
       xk = cs::max(cvara_k[c_id], 1.e-15);
       xe = cs::max(cvara_ep[c_id], 1.e-15);
       rotild = xe/wtilde/xk;
-      brtild[c_id] = -brtild[c_id]*xk/xe/pow(stilde,3.);
+      brtild[c_id] = -brtild[c_id]*xk/xe/cs::pow3(stilde);
 
       /* Variable C_eps_2 coefficient of Cazalbou */
 
       ce2rc[c_id] =   cs_turb_ccaze2 + (cs_turb_ccaze2 - 1.)
-                    / (1. + cs_turb_ccaza*pow(rotild,1.5))
+                    / (1. + cs_turb_ccaza*cs::pow3ov2(rotild))
                     + cs_turb_ccaze2*cs_turb_ccazsc*stilde*xk/xe
                     * (  tanh(cs_turb_ccazb*brtild[c_id] + cs_turb_ccazc)
                        - cs_turb_ccazd);

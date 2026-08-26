@@ -611,7 +611,7 @@ _rij_echo(int              phase_id,
     cromo = f_rho->val;
 
   const cs_real_t d2s3 = 2./3;
-  const cs_real_t cmu075 = pow(cs_turb_cmu, 0.75);
+  const cs_real_t cmu075 = cs::pow3ov4(cs_turb_cmu);
 
   /* Calculation in the orthogonal straight cells in corresponding walls
    * ------------------------------------------------------------------- */
@@ -702,7 +702,7 @@ _rij_echo(int              phase_id,
 
     const cs_real_t distxn = cs::max(w_dist[c_id], cs_math_epzero); //FIXME
     const cs_real_t tke = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
-    cs_real_t bb =   cmu075 * pow(tke, 1.5)
+    cs_real_t bb =   cmu075 * cs::pow3ov2(tke)
                    / (xkappa * cvara_ep[c_id] * distxn);
     bb = cs::min(bb, 1.0);
 
@@ -4030,7 +4030,7 @@ cs_turbulence_rij(int phase_id)
       /* Magnitude and unit vector of the Alpha gradient */
       cs_real_t xnal[3];
       cs_real_t xnoral = cs_math_3_norm(grad.sub_array(c_id));
-      if (xnoral <= cs_math_epzero / pow(cell_f_vol[c_id], c_1ov3)) {
+      if (xnoral <= cs_math_epzero / cbrt(cell_f_vol[c_id])) {
         for (int i = 0; i < 3; i++)
           xnal[i] = 0.;
       }
@@ -4385,7 +4385,7 @@ cs_turbulence_rij(int phase_id)
       const cs_real_t delta = xlesfl * cs::min(pow(ales*cell_vol[c_id], bles),
                                                xkappa * w_dist[c_id]);
       cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
-      cvar_ep[c_id] = pow(tke, 1.5) / delta; //TODO: add constant ?
+      cvar_ep[c_id] = cs::pow3ov2(tke) / delta; //TODO: add constant ?
     });
     ctx.wait();
 
@@ -4480,8 +4480,6 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   const cs_real_t *bmasfl = cs_field(iflmab)->val;
 
   const cs_real_t d1s2 = 0.50;
-  const cs_real_t d1s4 = 0.25;
-  const cs_real_t d3s2 = 1.50;
   const cs_real_t uref = cs_glob_turb_ref_values->uref;
 
   /* Resolving the equation of alpha
@@ -4542,11 +4540,11 @@ cs_turbulence_rij_solve_alpha(int        f_id,
       const cs_real_t xnu = viscl[c_id] / crom[c_id];
 
       /* Integral length scale */
-      const cs_real_t xllke = pow(xk, d3s2) / cvara_ep[c_id];
+      const cs_real_t xllke = cs::pow3ov2(xk) / cvara_ep[c_id];
 
       /* Kolmogorov length scale */
       const cs_real_t xllkmg =   xceta
-                               * pow(cs_math_pow3(xnu)/cvara_ep[c_id], d1s4);
+                               * cs::qdrt(cs_math_pow3(xnu)/cvara_ep[c_id]);
 
       /* Durbin length scale */
       const cs_real_t xlldrb = c_durbin_l*cs::max(xllke, xllkmg);
@@ -4697,8 +4695,8 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
     const cs_real_t tr_ii = cs_math_pow2(0.02 * uref);
     const cs_real_t k = 0.5 * (3. * tr_ii);  /* trace of tensor with
                                                 tr_ii diagonal) */
-    const cs_real_t ep = pow(k, 1.5) * cs_turb_cmu / almax;
-    const cs_real_t omg = pow(k, 0.5) / almax;
+    const cs_real_t ep = cs::pow3ov2(k) * cs_turb_cmu / almax;
+    const cs_real_t omg = sqrt(k) / almax;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cvar_rij[c_id][0] = tr_ii;

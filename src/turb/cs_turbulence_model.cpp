@@ -2198,7 +2198,7 @@ cs_clip_turbulent_fluxes(int  flux_id,
     }
 
     for (cs_lnum_t i = 0; i < 3; i++) {
-      flsq = pow(rot_rit[i],2);
+      flsq = cs::pow2(rot_rit[i]);
       maj = eigval[i]*cvar_tt[cell_id];
       if ((flsq > 1.0e-12) && (flsq > maj)) {
         rot_rit[i] = rot_rit[i]*sqrt(maj/flsq);

@@ -143,7 +143,7 @@ cs_turbulence_init_by_ref_quantities(void)
 
     if (uref >= 0.) {
       k_ini = 1.5 * cs_math_pow2(0.02*uref);
-      ep_ini = pow(k_ini, 1.5) * cs_turb_cmu / almax;
+      ep_ini = cs::pow3ov2(k_ini) * cs_turb_cmu / almax;
     }
 
     ctx.parallel_for(n_cells_ext, CS_LAMBDA (cs_lnum_t e_id) {
@@ -185,7 +185,7 @@ cs_turbulence_init_by_ref_quantities(void)
       /* classical eps = k^1.5/Cmu/almax and omega = eps/Cmu/k;
          values always positive, so no need to clip */
       k_ini = 1.5 * cs_math_pow2(0.02*uref);
-      omg_ini = pow(k_ini, 0.5) / almax;
+      omg_ini = sqrt(k_ini) / almax;
     }
 
     ctx.parallel_for(n_cells_ext, CS_LAMBDA (cs_lnum_t e_id) {

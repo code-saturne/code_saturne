@@ -547,9 +547,9 @@ _solve_eq_fbr_al(const int         istprv,
     const cs_real_t x_nu = viscl[i]/crom[i];
 
     if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
-      const cs_real_t ll_ke = pow(x_k, 1.5)/x_e;
+      const cs_real_t ll_ke = cs::pow3ov2(x_k)/x_e;
       const cs_real_t ll_min
-        = cs_turb_cv2fet*pow(cs_math_pow3(x_nu)/x_e, 0.25);
+        = cs_turb_cv2fet*cs::qdrt(cs_math_pow3(x_nu)/x_e);
       l2 = cs_math_pow2(cs_turb_cv2fcl*cs::max(ll_ke, ll_min));
     }
     else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
@@ -557,16 +557,16 @@ _solve_eq_fbr_al(const int         istprv,
       /* HTLES method */
         const cs_real_t x_psi  = htles_psi[i];
         const cs_real_t x_r    = htles_r[i];
-        const cs_real_t ll_ke  = pow(x_k, 1.5)/(x_psi*x_e);
-        const cs_real_t ll_min = pow(x_r, 1.5)
-          * cs_turb_cpalet*pow(cs_math_pow3(x_nu)/(x_psi*x_e), 0.25);
+        const cs_real_t ll_ke  = cs::pow3ov2(x_k)/(x_psi*x_e);
+        const cs_real_t ll_min = cs::pow3ov2(x_r)
+          * cs_turb_cpalet*cs::qdrt(cs_math_pow3(x_nu)/(x_psi*x_e));
         l2 =   cs_math_pow2(cs_turb_cpalcl)
             * (cs_math_pow2(ll_ke) + cs_math_pow2(ll_min));
       }
       else {
-        const cs_real_t ll_ke = pow(x_k, 1.5)/x_e;
+        const cs_real_t ll_ke = cs::pow3ov2(x_k)/x_e;
         const cs_real_t ll_min
-          = cs_turb_cpalet*pow(cs_math_pow3(x_nu)/x_e, 0.25);
+          = cs_turb_cpalet*cs::qdrt(cs_math_pow3(x_nu)/x_e);
         l2 =   cs_math_pow2(cs_turb_cpalcl)
             * (cs_math_pow2(ll_ke) + cs_math_pow2(ll_min));
       }
