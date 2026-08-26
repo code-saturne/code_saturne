@@ -794,6 +794,8 @@ qdrt
   T x /*!<[in] value */
 )
 {
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
   return sqrt(sqrt(x));
 }
 
@@ -812,6 +814,8 @@ pow2ov3
   T x /*!<[in] value */
 )
 {
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
   return cbrt(x*x);
 }
 
@@ -830,6 +834,8 @@ pow4ov3
   T x /*!<[in] value */
 )
 {
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
   return cbrt(x*x*x*x);
 }
 
@@ -848,6 +854,8 @@ pow3ov2
   T x /*!<[in] value */
 )
 {
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
   return sqrt(x*x*x);
 }
 
@@ -866,6 +874,8 @@ pow3ov4
   T x /*!<[in] value */
 )
 {
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
   return qdrt(x*x*x);
 }
 
