@@ -1410,10 +1410,11 @@ _pressure_correction_fv(int                   iterns,
 
     ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       coefa_dp[f_id] += coefa_p[f_id];
-      /* Note: Af should be recomputed as "hint * A" instead */
-      coefaf_dp[f_id] += coefaf_p[f_id];
       coefb_dp[f_id] = coefb_p[f_id];
       coefbf_dp[f_id] = coefbf_p[f_id];
+      const cs_real_t _hint = (coefb_p[f_id] < 1.) ?
+                              coefbf_p[f_id] / (1. - coefb_p[f_id]) : 0.;
+      coefaf_dp[f_id] = -_hint * coefa_dp[f_id];
     });
 
     ctx.wait();
