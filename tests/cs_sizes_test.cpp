@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits>
 
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
@@ -37,29 +38,36 @@
 
 /*---------------------------------------------------------------------------*/
 
-/*---------------------------------------------------------------------------*/
-
 int
-main (int argc, char *argv[])
+main([[maybe_unused]] int argc,
+     [[maybe_unused]] char *argv[])
 {
-  CS_UNUSED(argc);
-  CS_UNUSED(argv);
-
-  int i, j;
   int rank_id[] = {0, 1024, 2048, 4095};
   int n_ranks = 4096;
   cs_gnum_t n_g_ents[] = {500, 1100000000, 2200000000,5400000000};
 
   cs_block_dist_info_t bi;
 
-  for (i = 0; i < 4; i++) {
+  constexpr cs_lnum_t max_lnum = std::numeric_limits<cs_lnum_t>::max();
+  constexpr cs_gnum_t max_gnum = std::numeric_limits<cs_gnum_t>::max();
+  constexpr cs_lnum_t min_lnum = std::numeric_limits<cs_lnum_t>::min();
+  constexpr cs_gnum_t min_gnum = std::numeric_limits<cs_gnum_t>::min();
+
+  bft_printf("Max size for cs_gnum_t: %lu\n"
+             "Min size for cs_gnum_t: %ld\n"
+             "Max size for cs_lnum_t: %lu\n"
+             "Min size for cs_lnum_t: %ld\n",
+             (unsigned long)max_gnum, (long)min_gnum,
+             (unsigned long)max_lnum, (long)min_lnum);
+
+  for (int i = 0; i < 4; i++) {
 
     int64_t g_ent_id = 0;
     int l_rank_id = 0;
 
     bft_printf("\ntest for n_g_ents = %llu\n",
                (unsigned long long)(n_g_ents[i]));
-    for (j = 0; j < 4; j++) {
+    for (int j = 0; j < 4; j++) {
       bi = cs_block_dist_compute_sizes(rank_id[j],
                                        n_ranks,
                                        0,

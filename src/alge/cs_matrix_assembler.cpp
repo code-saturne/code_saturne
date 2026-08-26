@@ -36,6 +36,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -3310,12 +3311,14 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
 #if defined(HAVE_MPI)
 
-      /* Case where coefficient is handled by other rank */
+      /* Case where coefficient is handled by another rank */
 
       if (g_r_id < ma->l_range[0] || g_r_id >= ma->l_range[1]) {
 
+        constexpr cs_gnum_t max_gnum = std::numeric_limits<cs_gnum_t>::max();
+
         s_g_row_id[j] = ma->l_range[1];
-        s_g_col_id[j] = 0;
+        s_g_col_id[j] = max_gnum;         // Out of range for local filtering.
 
         cs_lnum_t e_r_id = _g_id_binary_find(ma->coeff_send_n_rows,
                                              g_r_id,
