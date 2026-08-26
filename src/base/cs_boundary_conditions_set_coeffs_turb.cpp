@@ -2082,11 +2082,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           /* Use of wall functions */
           if (yplus > cs_math_epzero) {
             const cs_real_t pimp_turb
-              = 5 * pow(uk, 4) * romc / (xkappa * visclc * yplus);
+              = 5 * cs::pow4(uk) * romc / (xkappa * visclc * yplus);
 
             /* Blending function, from JF Wald PhD (2016) */
-            const cs_real_t fct_bl = exp( - 0.674e-3 * pow(yplus, 3) );
-            const cs_real_t fep    = exp( - pow(0.25 * (yplus + dplus), 1.5) );
+            const cs_real_t fct_bl = exp( - 0.674e-3 * cs::pow3(yplus) );
+            const cs_real_t fep    = exp( - cs::pow3ov2(0.25 * (yplus + dplus)) );
             const cs_real_t dep    = 1.0 - exp(-pow((yplus + dplus)/9.0, 2.1));
 
             /* Je comprend pas: pimp est calculé à partir de fct_bl
@@ -2190,11 +2190,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
             = 2 * visclc / romc * cvar_k[c_id] / (distbf * distbf);
 
           if (yplus > cs_math_epzero) {
-            const cs_real_t pimp_turb = 5 * pow(uk, 4) * romc
+            const cs_real_t pimp_turb = 5 * cs::pow4(uk) * romc
                                         / (xkappa * visclc * yplus);
 
             /* Blending between wall and homogeneous layer */
-            const cs_real_t fep  = exp(- pow(0.25 * (yplus + dplus), 1.5));
+            const cs_real_t fep  = exp(- cs::pow3ov2(0.25 * (yplus + dplus)));
             const cs_real_t dep  = 1.0 - exp(- pow((yplus + dplus) / 9.0, 2.1));
             pimp = fep * pimp_lam + (1.0 - fep) * dep * pimp_turb;
           }
@@ -2745,11 +2745,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
             if (yplus > cs_math_epzero) {
               const cs_real_t pimp_turb
-                = 5 * pow(uk, 4) * romc / (xkappa * visclc * (yplus + 2 * dplus));
+                = 5 * cs::pow4(uk) * romc / (xkappa * visclc * (yplus + 2 * dplus));
 
               /* Blending between wall and homogeneous layer
                  from JF Wald PhD (2016) */
-              const cs_real_t fep  = exp(- pow(0.25 * (yplus + dplus), 1.5));
+              const cs_real_t fep  = exp(- cs::pow3ov2(0.25 * (yplus + dplus)));
               const cs_real_t dep  = 1.0 - exp(- pow((yplus + dplus) / 9.0, 2.1));
               pimp = fep * pimp_lam + (1.0 - fep) * dep * pimp_turb;
             }
@@ -2791,7 +2791,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
             else {
               /* Use of wall functions */
               if (iuntur == 1)
-                pimp =   0.5 * cfnnk / (cfnne * pow(uk, 3)) * cl * xkappa
+                pimp =   0.5 * cfnnk / (cfnne * cs::pow3(uk)) * cl * xkappa
                  * (  coefa_rij[f_id][0] + coefb_rij[f_id][0][0] * rijipb[f_id][0]
                     + coefa_rij[f_id][1] + coefb_rij[f_id][1][1] * rijipb[f_id][1]
                     + coefa_rij[f_id][2] + coefb_rij[f_id][2][2] * rijipb[f_id][2])
@@ -3140,7 +3140,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
              between high and low Reynolds meshes */
 
           const cs_real_t gammap
-            = - 0.01 * pow(yplus+2*dplus, 4) / (1.0 + 5.0 * (yplus+2*dplus));
+            = - 0.01 * cs::pow3(yplus+2*dplus) / (1.0 + 5.0 * (yplus+2*dplus));
 
           pimp = pimp_lam * exp(gammap) + exp(1.0/gammap) * pimp_turb;
         }
@@ -3170,13 +3170,13 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         if (yplus > cs_math_epzero) {
 
           const cs_real_t pimp_turb = distbf*4*cs_math_pow3(uk)*romc*romc /
-            (sqrcmu*xkappa*visclc*visclc*pow(yplus+2*dplus, 2));
+            (sqrcmu*xkappa*visclc*visclc*cs::pow2(yplus+2*dplus));
 
           /* Use gamma function of Kader to weight
              between high and low Reynolds meshes */
 
           const cs_real_t gammap
-            = -0.01 * pow(yplus+2*dplus, 4) / (1 + 5 *(yplus+2*dplus));
+            = -0.01 * cs::pow4(yplus+2*dplus) / (1 + 5 *(yplus+2*dplus));
 
           pimp = pimp_lam * exp(gammap) + exp(1.0/gammap) * pimp_turb;
         }

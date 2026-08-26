@@ -1984,7 +1984,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
         paxm1ax = rd2.r[1];   // < E.dx^(k-1)-E.0; E.dx^k -E.0 >
 
         if (   nadxkm1 > 1e-30*rnorm2
-            && (nadxk*nadxkm1-pow(paxm1ax,2)) > 1e-30*rnorm2)
+            && (nadxk*nadxkm1-cs::pow2(paxm1ax)) > 1e-30*rnorm2)
           beta =   (paxkrk*paxm1ax - nadxk*paxm1rk)
                  / (nadxk*nadxkm1-cs_math_pow2(paxm1ax));
         else

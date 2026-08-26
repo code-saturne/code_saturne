@@ -399,7 +399,7 @@ cs_wall_distance(int iterns)
     if (wall_dist[c_id] < 0.0) {
       res.i[0] = 1;
       res.r[0] = wall_dist[c_id];
-      wall_dist[c_id] = cs_math_epzero * pow(cell_f_vol[c_id], 1.0/3.0);
+      wall_dist[c_id] = cs_math_epzero * cbrt(cell_f_vol[c_id]);
     }
   });
 
@@ -493,7 +493,7 @@ cs_wall_distance(int iterns)
           if (wall_dist[c_id] < 0.0) {
             res.i[0] = 1;
             res.r[0] = wall_dist[c_id];
-            wall_dist[c_id] = cs_math_epzero * pow(cell_f_vol[c_id], 1.0/3.0);
+            wall_dist[c_id] = cs_math_epzero * cbrt(cell_f_vol[c_id]);
           }
         });
 

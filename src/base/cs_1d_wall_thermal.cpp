@@ -1128,7 +1128,7 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
   al[0] = 0.;
   bl[0] += rcp/dtpt1d*2*zz[0] + xlmbt1/(zz[1]-zz[0]) - h2
          + eps*cs_physical_constants_stephan
-         * pow(_1d_wall_thermal.local_models[ii].t[0],3.);
+         * cs::pow3(_1d_wall_thermal.local_models[ii].t[0]);
   dl[0] += f3;
   bl[n-1] += rcp/dtpt1d*2*(_1d_wall_thermal.local_models[ii].eppt1d-zz[n-1])
            + xlmbt1/(zz[n-1]-zz[n-2]) - h5;

@@ -1197,7 +1197,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
                            voidf_grad.data<cs_real_3_t>());
 
   /* Stabilization factor */
-  const cs_real_t delta = 1.e-8/pow(tot_vol/n_g_cells,(1./3.));
+  const cs_real_t delta = 1.e-8/cbrt(tot_vol/n_g_cells);
 
   /* Compute the max of flux/Surf over the entire domain */
   cs_real_t maxfluxsurf;

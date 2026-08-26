@@ -1362,8 +1362,6 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
   const cs_lnum_t  *i_f2v_idx = mesh->i_face_vtx_idx;
   const cs_lnum_t  *b_f2v_idx = mesh->b_face_vtx_idx;
 
-  const cs_real_t one_over_3 = 1./3.;
-
   const cs_real_t *b_face_surf = (const cs_real_t *)mq->b_face_surf;
   const cs_real_t *i_face_surf = (const cs_real_t *)mq->i_face_surf;
 
@@ -1580,7 +1578,7 @@ _neighborhood_reduce_optimized(cs_mesh_t             *mesh,
          At double boundary no risk of spurious mode
          (the cell is basically alone). */
 
-      cs_real_t l1 = pow(cell_vol[c_id], one_over_3);
+      cs_real_t l1 = cbrt(cell_vol[c_id]);
 
       cs_real_t aspect_r = 6.*l1*l1/sum_s;
 
