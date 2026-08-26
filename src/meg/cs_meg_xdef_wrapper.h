@@ -34,10 +34,6 @@
 #include "base/cs_base.h"
 #include "mesh/cs_mesh_location.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -107,7 +103,6 @@ cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t  type,
 /*
  * \brief Wrapper function allowing to call MEG functions by xdef structres.
  * This is done by using the cs_xdef_analytic_function type.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -137,6 +132,4 @@ cs_meg_xdef_eval_func_wrapper(int              location_id,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif
+#endif // CS_MEG_XDEF_WRAPPER_H

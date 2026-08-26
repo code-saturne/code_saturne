@@ -27,6 +27,8 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "base/cs_defs.h"
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -38,8 +40,6 @@
 #include "base/cs_ibm.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 typedef void
 (cs_ibm_volume_func_t)(const cs_lnum_t    c_id,
@@ -62,7 +62,7 @@ typedef void
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_meg_boundary_function
 (
   const char       *zone_name,  /*!<[in]  name of a boundary zone */
@@ -82,7 +82,7 @@ cs_meg_boundary_function
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_meg_volume_function
 (
   const char      *zone_name,    /*!<[in] name of a volume zone */
@@ -102,7 +102,7 @@ cs_meg_volume_function
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_meg_initialization
 (
   const char      *zone_name,  /*!<[in]  name of a volume zone */
@@ -122,7 +122,7 @@ cs_meg_initialization
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_meg_source_terms
 (
   const char      *zone_name,   /*!<[in]  name of a volume zone */
@@ -141,7 +141,7 @@ cs_meg_source_terms
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_meg_fsi_struct
 (
   const char       *object_type, /*!<[in] name of object type */
@@ -156,7 +156,7 @@ cs_meg_fsi_struct
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_meg_post_activate(void);
 
 /*----------------------------------------------------------------------------*/
@@ -165,7 +165,7 @@ cs_meg_post_activate(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_meg_post_profiles
 (
   const char   *name,       /*!<[in]      name of matching profile */
@@ -180,7 +180,7 @@ cs_meg_post_profiles
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_meg_post_calculator
 (
   const char      *name,     /*!<[in] function name */
@@ -199,7 +199,7 @@ cs_meg_post_calculator
  */
 /*----------------------------------------------------------------------------*/
 
-cs_cutcell_func_t *
+extern "C" cs_cutcell_func_t *
 cs_meg_ibm_func_by_name
 (
   const char *object_name /*!<[in] name of the object */
@@ -215,14 +215,12 @@ cs_meg_ibm_func_by_name
  */
 /*----------------------------------------------------------------------------*/
 
-cs_ibm_volume_func_t *
+extern "C" cs_ibm_volume_func_t *
 cs_meg_ibm_volume_func_by_name
 (
   const char *object_name, /*!<[in] Name of the immersed object */
   const char *gui_var_name /*!<[in] Name of the variable */
 );
-
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -234,7 +232,7 @@ cs_meg_ibm_volume_func_by_name
  */
 /*----------------------------------------------------------------------------*/
 
-cs_ibm_fsi_func_t *
+extern "C" cs_ibm_fsi_func_t *
 cs_meg_ibm_fsi_func_by_name
 (
   const char *object_name, /*!<[in] Name of the immersed object */
@@ -242,7 +240,5 @@ cs_meg_ibm_fsi_func_by_name
 );
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MEG_PROTOTYPES_H */
