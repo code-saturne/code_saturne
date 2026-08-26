@@ -1540,7 +1540,7 @@ cs_turbulence_ke(int              phase_id,
 
     const cs_lagr_source_terms_t  *lag_st = cs_glob_lagr_source_terms;
 
-    if (lag_st->ltsdyn == 1) {
+    if (lag_st->has_twoway_dyn == 1) {
 
       cs_real_t *lag_st_k = cs_field("lagr_st_k")->val;
       cs_real_t *lag_st_i = cs_field("lagr_st_imp_velocity")->val;

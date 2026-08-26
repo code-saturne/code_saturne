@@ -3477,7 +3477,7 @@ _solve_epsilon(int              phase_id,
   /* Second order is not taken into account  */
 
   if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
-      && (cs_glob_lagr_source_terms->ltsdyn == 1)) {
+      && (cs_glob_lagr_source_terms->has_twoway_dyn == 1)) {
 
     const cs_real_t ce4 = cs_turb_ce4;
 
@@ -4127,7 +4127,7 @@ cs_turbulence_rij(int phase_id)
   /* Second order is not taken into account  */
 
   if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
-      && cs_glob_lagr_source_terms->ltsdyn == 1) {
+      && cs_glob_lagr_source_terms->has_twoway_dyn == 1) {
     const cs_real_6_t *lagr_st_rij
       = (const cs_real_6_t *)cs_field_try("lagr_st_rij")->val;
 

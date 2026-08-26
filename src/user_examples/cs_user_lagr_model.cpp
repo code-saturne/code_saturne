@@ -346,7 +346,7 @@ cs_user_lagr_model(void)
     /* (default off: 0; on: 1)  */
     /* (useful if ICCVFG = 0)    */
 
-    cs_glob_lagr_source_terms->ltsdyn = 0;
+    cs_glob_lagr_source_terms->has_twoway_dyn = 0;
 
     /* two-way coupling for mass,
        (if physical_model = CS_LAGR_PHYS_HEAT and solve_mass = 1)
@@ -355,7 +355,7 @@ cs_user_lagr_model(void)
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
         && (   cs_glob_lagr_specific_physics->solve_mass == 1
             || cs_glob_lagr_specific_physics->solve_diameter == 1))
-      cs_glob_lagr_source_terms->ltsmas = 0;
+      cs_glob_lagr_source_terms->has_twoway_mass = 0;
 
     /* two-way coupling for thermal scalar
        (if physical_model = CS_LAGR_PHYS_HEAT and solve_mass = 1,
@@ -366,7 +366,7 @@ cs_user_lagr_model(void)
     if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->solve_temperature == 1)
         || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL)
-      cs_glob_lagr_source_terms->ltsthe = 0;
+      cs_glob_lagr_source_terms->has_twoway_thermal = 0;
 
   }
 

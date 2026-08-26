@@ -1210,7 +1210,7 @@ cs_turbulence_kw(int phase_id)
 
     const cs_real_t ce4 = cs_turb_ce4;
 
-    if (lag_st->ltsdyn == 1) {
+    if (lag_st->has_twoway_dyn == 1) {
 
       auto lag_st_k = cs_field("lagr_st_k")->get_val_s();
       auto lag_st_i = cs_field("lagr_st_imp_velocity")->get_val_s();

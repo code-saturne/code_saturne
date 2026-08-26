@@ -1982,7 +1982,7 @@ _pressure_correction_fv(int                   iterns,
   /* Lagrangian source terms */
 
   if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
-      && cs_glob_lagr_source_terms->ltsmas == 1) {
+      && cs_glob_lagr_source_terms->has_twoway_mass == 1) {
 
     cs_real_t *t_st_p = cs_field_by_name("lagr_st_pressure")->val;
 

@@ -700,13 +700,17 @@ typedef struct {
   /*! activation (=1) or not (=0) of the two-way coupling on the dynamics
     of the continuous phase.
     Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING and \ref iccvfg = 0 */
-  int  ltsdyn;
+  int  has_twoway_dyn{0};
+  [[deprecated("renamed to has_twoway_dyn")]] \
+  int& ltsdyn{has_twoway_dyn};
 
   /*! activation (=1) or not (=0) of the two-way coupling on the mass.
     Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING,
     \ref cs_lagr_model_t::physical_model "physical_model" = 1 and
     \ref cs_lagr_specific_physics_t::solve_mass "solve_mass" = 1 */
-  int  ltsmas;
+  int  has_twoway_mass{0};
+  [[deprecated("renamed to has_twoway_mass")]] \
+  int& ltsmas{has_twoway_mass};
 
   /*  if \ref physical_model = 1 and \ref solve_temperature = 1, \ref ltsthe
    activates (=1) or not (=0) the two-way coupling on temperature.
@@ -714,7 +718,14 @@ typedef struct {
    two-way coupling on the eulerian variables related to pulverised
    coal combustion.
    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING */
-  int  ltsthe;
+  int  has_twoway_thermal{0};
+  [[deprecated("renamed to has_twoway_thermal")]] \
+  int& ltsthe{has_twoway_thermal};
+
+  /*! activation (=1) or not (=0) of the two-way coupling on evaporation.
+    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING,
+    and \ref cs_lagr_model_t::physical_model "physical_model" = CS_LAGR_PHYS_CTWR */
+  int  has_twoway_evap{0};
 
   /*! number of absolute time steps (including the restarts)
     after which a time-average of the two-way coupling source terms is
@@ -729,47 +740,50 @@ typedef struct {
     flows (\ref cs_lagr_time_scheme_t::isttio "isttio"=0).
     Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING and
     \ref cs_lagr_time_scheme_t::isttio "isttio"=1 */
-  int  nstits;
+  int  nstits{0};
 
   /*! number of time steps for source terms accumulations */
-  int  npts;
+  int  npts{0};
 
   /*! number of cells, whose volumetric rate DODO
       (concentration ?)is greater than 0.8 */
-  int  ntxerr;
+  int  ntxerr{0};
 
   /*! maximum volumetric concentration reached */
-  cs_real_t      vmax;
+  cs_real_t      vmax{0.};
 
   /*! maximum mass concentration reached */
-  cs_real_t      tmamax;
+  cs_real_t      tmamax{0.};
 
   /* volume occupied by the particles in each cell*/
-  cs_real_t     *volp;
+  cs_real_t     *volp{nullptr};
 
   /* mass of particle in each cell*/
-  cs_real_t     *volm;
+  cs_real_t     *volm{nullptr};
 
   /* Langrangian source term for the pressure over one time step */
-  cs_real_t     *t_st_p;
+  cs_real_t     *t_st_p{nullptr};
 
   /* explicit Langrangian source term for the velocity over one time step */
-  cs_real_3_t   *t_st_vel;
+  cs_real_3_t   *t_st_vel{nullptr};
 
   /* implicit Langrangian source term for the velocity over one time step */
-  cs_real_t     *t_st_imp_vel;
+  cs_real_t     *t_st_imp_vel{nullptr};
 
   /* Langrangian source term for the TKE over one time step */
-  cs_real_t     *t_st_k;
+  cs_real_t     *t_st_k{nullptr};
 
   /* Langrangian source term for the Reynolds tensor over one time step */
-  cs_real_6_t   *t_st_rij;
+  cs_real_6_t   *t_st_rij{nullptr};
 
   /* explicit Langrangian source term for the temperature over one time step */
-  cs_real_t     *t_st_t_e;
+  cs_real_t     *t_st_t_e{nullptr};
 
   /* implicit Langrangian source term for the temperature over one time step */
-  cs_real_t     *t_st_t_i;
+  cs_real_t     *t_st_t_i{nullptr};
+
+  /* Langrangian source term for evaporation over one time step */
+  cs_real_t     *t_st_evap{nullptr};
 
 } cs_lagr_source_terms_t;
 

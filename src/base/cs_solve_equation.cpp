@@ -1490,7 +1490,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   /* Lagrangien (couplage retour thermique)
    * Ordre 2 non pris en compte */
   if ((cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) &&
-      (cs_glob_lagr_source_terms->ltsthe == 1)) {
+      (cs_glob_lagr_source_terms->has_twoway_thermal == 1)) {
 
     if (   is_thermal_model_field
         && (th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE)) {

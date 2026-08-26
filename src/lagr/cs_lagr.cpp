@@ -284,24 +284,7 @@ static cs_lagr_time_step_t _cs_glob_lagr_time_step
      .ttclag = 0.};
 
 /* Lagrangian source terms structure and associated pointer */
-static cs_lagr_source_terms_t _cs_glob_lagr_source_terms
-  = {.ltsdyn = 0,
-     .ltsmas = 0,
-     .ltsthe = 0,
-     .nstits = 0,
-     .npts = 0,
-     .ntxerr = 0,
-     .vmax = 0,
-     .tmamax = 0,
-     .volp = nullptr,
-     .volm = nullptr,
-     .t_st_p = nullptr,
-     .t_st_vel = nullptr,
-     .t_st_imp_vel = nullptr,
-     .t_st_k = nullptr,
-     .t_st_rij = nullptr,
-     .t_st_t_e = nullptr,
-     .t_st_t_i = nullptr};
+static cs_lagr_source_terms_t _cs_glob_lagr_source_terms = {};
 
 cs_lagr_source_terms_t *cs_glob_lagr_source_terms
 = &_cs_glob_lagr_source_terms;

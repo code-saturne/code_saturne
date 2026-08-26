@@ -533,7 +533,7 @@ cs_lagr_car(int                         iprev,
     /* Add particle back effect seen by mean fluid velocity
      * (two way coupling terms)
      * ==================================================== */
-    if (   cs_glob_lagr_source_terms->ltsdyn == 1
+    if (   cs_glob_lagr_source_terms->has_twoway_dyn == 1
         && cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
         && cs_glob_time_step->nt_cur > cs_glob_time_step->nt_prev) {
 

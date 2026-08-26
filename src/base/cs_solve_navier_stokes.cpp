@@ -2968,7 +2968,7 @@ _velocity_prediction(const cs_mesh_t             *m,
      For the time being, we do not try this.
   */
 
-  if (   cs_glob_lagr_source_terms->ltsdyn == 1
+  if (   cs_glob_lagr_source_terms->has_twoway_dyn == 1
       && cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
     const cs_real_3_t *lagr_st_vel

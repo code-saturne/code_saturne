@@ -957,7 +957,7 @@ _lagich(cs_lagr_particle_set_t  &p_set,
 
   /* If thermal return coupling  */
 
-  if (cs_glob_lagr_source_terms->ltsthe == 1) {
+  if (cs_glob_lagr_source_terms->has_twoway_thermal == 1) {
 
     coef = 1.0 / cs_glob_lagr_time_scheme->t_order;
 
@@ -1106,7 +1106,7 @@ _lagich(cs_lagr_particle_set_t  &p_set,
 
     /* Thermal return coupling */
 
-    if (cs_glob_lagr_source_terms->ltsthe == 1) {
+    if (cs_glob_lagr_source_terms->has_twoway_thermal == 1) {
       *cpgd1 = *cpgd1 + coef * aux1;
       *cpgd2 = *cpgd2 + coef * aux2;
     }
@@ -1177,7 +1177,7 @@ _lagich(cs_lagr_particle_set_t  &p_set,
     gamhet = aux1 * aux2 * skglob;
 
   /* Thermal return coupling */
-  if (cs_glob_lagr_source_terms->ltsthe == 1)
+  if (cs_glob_lagr_source_terms->has_twoway_thermal == 1)
     *cpght = *cpght + coef * gamhet;
 
   /* Compute 0.5(MO2/MC)*(HO2(Tp)-HO2(TF))

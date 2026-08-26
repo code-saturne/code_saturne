@@ -485,9 +485,9 @@ cs_lagr_log_setup(void)
          "    mass return coupling:              %s\n"
          "    thermal return coupling:           %s\n"),
        cs_glob_lagr_source_terms->nstits,
-       _status(cs_glob_lagr_source_terms->ltsdyn),
-       _status(cs_glob_lagr_source_terms->ltsmas),
-       _status(cs_glob_lagr_source_terms->ltsthe));
+       _status(cs_glob_lagr_source_terms->has_twoway_dyn),
+       _status(cs_glob_lagr_source_terms->has_twoway_mass),
+       _status(cs_glob_lagr_source_terms->has_twoway_thermal));
   }
 
   cs_log_printf

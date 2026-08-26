@@ -347,7 +347,7 @@ cs_ctwr_volume_mass_injection_packing_dof_func
   cs_real_t p0 = fp->p0;
 
   /* Fields necessary for humid atmosphere model */
-  cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
+  cs_field_t *meteo_pressure = cs_field_try("meteo_pressure");
 
   cs_real_t *rho_h = nullptr;
   cs_real_3_t *vel_h = nullptr;
@@ -502,7 +502,7 @@ cs_ctwr_volume_mass_injection_evap_rain_dof_func
   cs_real_t p0 = fp->p0;
 
   /* Fields necessary for humid atmosphere model */
-  cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
+  cs_field_t *meteo_pressure = cs_field_try("meteo_pressure");
 
   cs_real_t *rho = nullptr;
   cs_real_t *rho_h = nullptr;
@@ -929,12 +929,12 @@ cs_ctwr_source_term(int              f_id,
   cs_real_t sigma  = air_prop->sigma;
 
   /* Fields necessary for humid atmosphere model */
-  cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
+  cs_field_t *meteo_pressure = cs_field_try("meteo_pressure");
 
   cs_real_t *lagr_injection_profile = nullptr;
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)
     lagr_injection_profile =
-      cs_field_by_name_try("lagr_injection_profile")->val;
+      cs_field_try("lagr_injection_profile")->val;
 
   if (evap_model != CS_CTWR_NONE) {
 
@@ -1471,7 +1471,7 @@ cs_ctwr_source_term(int              f_id,
       cs_lnum_t ncel    = cs_glob_mesh->n_cells;
 
       /* verifying if a mass source term is activated in the Lagrangian module*/
-      if (cs_glob_lagr_source_terms->ltsmas == 1) {
+      if (cs_glob_lagr_source_terms->has_twoway_mass == 1) {
         cs_real_t *lag_st_m = cs_field_by_name("lagr_st_pressure")->val;
         for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
           /* Since there is only evaporation accounting for a liquid - gas phase
@@ -1485,7 +1485,20 @@ cs_ctwr_source_term(int              f_id,
                a function of the local humidity (and thus ym_w)*/
             // FIXME it is kept as it was coded but the mass source terms must
             // be written on mass equation and not on ym_w
-            exp_st[cell_id] += lag_st_m[cell_id];
+            exp_st[cell_id] += lag_st_m[cell_id] * cell_f_vol[cell_id];
+          }
+        }
+      }
+      else {
+        if (cs_glob_lagr_source_terms->has_twoway_evap == 1) {
+          cs_field_t *f_st_evap = cs_field_try("lagr_st_evaporation");
+          if (f_st_evap != nullptr) {
+            cs_real_t *lag_st_evap = f_st_evap->val;
+            for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
+              if (f_id == (CS_F_(ym_w)->id)) {
+                exp_st[cell_id] += lag_st_evap[cell_id] * cell_f_vol[cell_id];
+              }
+            }
           }
         }
       }
@@ -1503,7 +1516,7 @@ cs_ctwr_source_term(int              f_id,
     // cs_real_3_t *vg_lim_p = (cs_real_3_t *)cs_field_by_name(vg_lim_name)->val;
 
     /* Droplets velocity relaxation time */
-    // cs_field_t *cfld_taup = cs_field_by_name_try("ym_l_r_drift_tau");
+    // cs_field_t *cfld_taup = cs_field_try("ym_l_r_drift_tau");
     // cs_real_t *cpro_taup = nullptr;
     // if (cfld_taup != nullptr)
     //   cpro_taup = cfld_taup->val;

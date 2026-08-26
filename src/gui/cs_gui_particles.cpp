@@ -285,13 +285,13 @@ cs_gui_particles_model(void)
                               (&cs_glob_lagr_source_terms->nstits));
 
     cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "dynamic"),
-                               (&cs_glob_lagr_source_terms->ltsdyn));
+                               (&cs_glob_lagr_source_terms->has_twoway_dyn));
 
     cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "mass"),
-                               (&cs_glob_lagr_source_terms->ltsmas));
+                               (&cs_glob_lagr_source_terms->has_twoway_mass));
 
     cs_gui_node_get_status_int(cs_tree_node_get_child(tn, "thermal"),
-                               (&cs_glob_lagr_source_terms->ltsthe));
+                               (&cs_glob_lagr_source_terms->has_twoway_thermal));
   }
 
   /* Numerical modeling */
@@ -466,9 +466,10 @@ cs_gui_particles_model(void)
 
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
     bft_printf("--nstits = %i\n", cs_glob_lagr_source_terms->nstits);
-    bft_printf("--ltsdyn = %i\n", cs_glob_lagr_source_terms->ltsdyn);
-    bft_printf("--ltsmas = %i\n", cs_glob_lagr_source_terms->ltsmas);
-    bft_printf("--ltsthe = %i\n", cs_glob_lagr_source_terms->ltsthe);
+    bft_printf("--has_twoway_dyn = %i\n", cs_glob_lagr_source_terms->has_twoway_dyn);
+    bft_printf("--has_twoway_mass = %i\n", cs_glob_lagr_source_terms->has_twoway_mass);
+    bft_printf("--has_twoway_thermal = %i\n", cs_glob_lagr_source_terms->has_twoway_thermal);
+    bft_printf("--has_twoway_evap = %i\n", cs_glob_lagr_source_terms->has_twoway_evap);
   }
 
   bft_printf("--nordre = %i\n", cs_glob_lagr_time_scheme->t_order);

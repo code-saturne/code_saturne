@@ -237,9 +237,10 @@ cs_lagr_options_definition(int         is_restart,
   lagr_time_scheme->isttio = 0;
 
   cs_glob_lagr_source_terms->nstits = 1;
-  cs_glob_lagr_source_terms->ltsdyn = 0;
-  cs_glob_lagr_source_terms->ltsmas = 0;
-  cs_glob_lagr_source_terms->ltsthe = 0;
+  cs_glob_lagr_source_terms->has_twoway_dyn = 0;
+  cs_glob_lagr_source_terms->has_twoway_mass = 0;
+  cs_glob_lagr_source_terms->has_twoway_thermal = 0;
+  cs_glob_lagr_source_terms->has_twoway_evap = 0;
 
   cs_glob_lagr_boundary_interactions->nombrd = nullptr;
 
@@ -424,13 +425,13 @@ cs_lagr_options_definition(int         is_restart,
            "so first-order scheme will be used.\n"));
     }
 
-    if (cs_glob_lagr_source_terms->ltsthe == 1)
+    if (cs_glob_lagr_source_terms->has_twoway_thermal == 1)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in Lagrangian module"),
          _("Lagrangian transport of coal particles is not implemented with\n"
            "thermal return coupling (cs_glob_lagr_source_terms->ltsthe = %d)\n"),
-         cs_glob_lagr_source_terms->ltsthe);
+         cs_glob_lagr_source_terms->has_twoway_thermal);
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
@@ -542,7 +543,7 @@ cs_lagr_options_definition(int         is_restart,
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
                                   "cs_glob_lagr_source_terms->ltsdyn",
-                                  cs_glob_lagr_source_terms->ltsdyn,
+                                  cs_glob_lagr_source_terms->has_twoway_dyn,
                                   0, 2);
 
     if (     lagr_model->physical_model == CS_LAGR_PHYS_HEAT
@@ -551,7 +552,7 @@ cs_lagr_options_definition(int         is_restart,
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("in Lagrangian module"),
                                     "cs_glob_lagr_source_terms->ltsmas",
-                                    cs_glob_lagr_source_terms->ltsmas,
+                                    cs_glob_lagr_source_terms->has_twoway_mass,
                                     0, 2);
     }
 
@@ -559,12 +560,18 @@ cs_lagr_options_definition(int         is_restart,
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("in Lagrangian module"),
                                     "cs_glob_lagr_source_terms->ltsmas",
-                                    cs_glob_lagr_source_terms->ltsmas,
+                                    cs_glob_lagr_source_terms->has_twoway_mass,
                                     0, 2);
-
+      cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                    _("in Lagrangian module"),
+                                    "cs_glob_lagr_source_terms->has_twoway_evap",
+                                    cs_glob_lagr_source_terms->has_twoway_evap,
+                                    0, 2);
     }
-    else
-      cs_glob_lagr_source_terms->ltsmas = 0;
+    else {
+      cs_glob_lagr_source_terms->has_twoway_mass = 0;
+      cs_glob_lagr_source_terms->has_twoway_evap = 0;
+    }
 
     if (   (   lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->solve_temperature == 1)
@@ -573,7 +580,7 @@ cs_lagr_options_definition(int         is_restart,
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("in Lagrangian module"),
                                     "cs_glob_lagr_source_terms->ltsthe",
-                                    cs_glob_lagr_source_terms->ltsthe,
+                                    cs_glob_lagr_source_terms->has_twoway_thermal,
                                     0, 2);
 
     }
@@ -583,26 +590,26 @@ cs_lagr_options_definition(int         is_restart,
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("in Lagrangian module"),
                                     "cs_glob_lagr_source_terms->ltsthe",
-                                    cs_glob_lagr_source_terms->ltsthe,
+                                    cs_glob_lagr_source_terms->has_twoway_thermal,
                                     0, 2);
 
     }
     else
-      cs_glob_lagr_source_terms->ltsthe = 0;
+      cs_glob_lagr_source_terms->has_twoway_thermal = 0;
 
-    if (cs_glob_lagr_source_terms->ltsdyn == 1 && *iccvfg == 1)
+    if (cs_glob_lagr_source_terms->has_twoway_dyn == 1 && *iccvfg == 1)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in Lagrangian module"),
          _("The return coupling on the flow field is activated\n"
            "(cs_glob_lagr_source_terms->ltsdyn = %d)\n"
            "but the carrier field is frozen (iccvfg = %d)?\n"),
-         cs_glob_lagr_source_terms->ltsdyn,
+         cs_glob_lagr_source_terms->has_twoway_dyn,
          *iccvfg);
 
-    if (   cs_glob_lagr_source_terms->ltsdyn != 1
-        && cs_glob_lagr_source_terms->ltsthe != 1
-        && cs_glob_lagr_source_terms->ltsmas != 1)
+    if (   cs_glob_lagr_source_terms->has_twoway_dyn != 1
+        && cs_glob_lagr_source_terms->has_twoway_thermal != 1
+        && cs_glob_lagr_source_terms->has_twoway_mass != 1)
       cs_parameters_error
         (CS_WARNING,
          _("in Lagrangian module"),
@@ -611,15 +618,15 @@ cs_lagr_options_definition(int         is_restart,
            "  cs_glob_lagr_source_terms->ltsdyn = %d\n"
            "  cs_glob_lagr_source_terms->ltsthe = %d\n"
            "  cs_glob_lagr_source_terms->ltsmas = %d\n"),
-         cs_glob_lagr_source_terms->ltsdyn,
-         cs_glob_lagr_source_terms->ltsthe,
-         cs_glob_lagr_source_terms->ltsmas);
+         cs_glob_lagr_source_terms->has_twoway_dyn,
+         cs_glob_lagr_source_terms->has_twoway_thermal,
+         cs_glob_lagr_source_terms->has_twoway_mass);
 
   }
   else {
-    cs_glob_lagr_source_terms->ltsdyn = 0;
-    cs_glob_lagr_source_terms->ltsmas = 0;
-    cs_glob_lagr_source_terms->ltsthe = 0;
+    cs_glob_lagr_source_terms->has_twoway_dyn = 0;
+    cs_glob_lagr_source_terms->has_twoway_mass = 0;
+    cs_glob_lagr_source_terms->has_twoway_thermal = 0;
   }
 
   if (cs_glob_lagr_stat_options->idstnt < 1)
@@ -822,7 +829,7 @@ cs_lagr_options_definition(int         is_restart,
   irf = -1;
 
   /* Dynamics: velocity + turbulence */
-  if (cs_glob_lagr_source_terms->ltsdyn == 1) {
+  if (cs_glob_lagr_source_terms->has_twoway_dyn == 1) {
 
     bool have_previous = (lagr_time_scheme->cell_wise_integ == 1);
     _define_st_field("lagr_st_velocity", 3, have_previous);
@@ -863,11 +870,17 @@ cs_lagr_options_definition(int         is_restart,
          "cs_glob_lagr_time_scheme->t_order == 2");
 
   /* Mass: associated to pressure equation  */
-  if (cs_glob_lagr_source_terms->ltsmas == 1)
+  if (cs_glob_lagr_source_terms->has_twoway_mass == 1)
     _define_st_field("lagr_st_pressure", 1, false);
 
+  /* Evaporation source term (for species, when mass is disabled under CTWR) */
+  if (   cs_glob_lagr_source_terms->has_twoway_evap == 1
+      && lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+    _define_st_field("lagr_st_evaporation", 1, false);
+  }
+
   /* Thermal model */
-  if (cs_glob_lagr_source_terms->ltsthe == 1) {
+  if (cs_glob_lagr_source_terms->has_twoway_thermal == 1) {
 
     if ((lagr_model->physical_model == CS_LAGR_PHYS_HEAT
           /* Temperature */

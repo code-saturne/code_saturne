@@ -115,16 +115,18 @@ cs_lagr_coupling_initialize(void)
   cs_real_t    *t_st_k = nullptr;
   cs_real_t    *t_st_t_e = nullptr;
   cs_real_t    *t_st_t_i = nullptr;
+  cs_real_t    *t_st_evap = nullptr;
   cs_real_t    *volp = nullptr;
   cs_real_t    *volm = nullptr;
 
-  cs_field_t *f_st_p = cs_field_by_name_try("lagr_st_pressure");
-  cs_field_t *f_st_vel = cs_field_by_name_try("lagr_st_velocity");
-  cs_field_t *f_st_imp_vel = cs_field_by_name_try("lagr_st_imp_velocity");
-  cs_field_t *f_st_rij = cs_field_by_name_try("lagr_st_rij");
-  cs_field_t *f_st_k = cs_field_by_name_try("lagr_st_k");
-  cs_field_t *f_st_t_e = cs_field_by_name_try("lagr_st_temperature");
-  cs_field_t *f_st_t_i = cs_field_by_name_try("lagr_st_imp_temperature");
+  cs_field_t *f_st_p = cs_field_try("lagr_st_pressure");
+  cs_field_t *f_st_vel = cs_field_try("lagr_st_velocity");
+  cs_field_t *f_st_imp_vel = cs_field_try("lagr_st_imp_velocity");
+  cs_field_t *f_st_rij = cs_field_try("lagr_st_rij");
+  cs_field_t *f_st_k = cs_field_try("lagr_st_k");
+  cs_field_t *f_st_t_e = cs_field_try("lagr_st_temperature");
+  cs_field_t *f_st_t_i = cs_field_try("lagr_st_imp_temperature");
+  cs_field_t *f_st_evap = cs_field_try("lagr_st_evaporation");
 
   bool is_time_averaged = (   cs_glob_lagr_time_scheme->isttio == 1
                            && lag_st->npts > 0);
@@ -135,7 +137,7 @@ cs_lagr_coupling_initialize(void)
   cs_array_real_fill_zero(n_cells_ext, volp);
   cs_array_real_fill_zero(n_cells_ext, volm);
 
-  if (lag_st->ltsdyn == 1) {
+  if (lag_st->has_twoway_dyn == 1) {
     /* Momentum source terms
        ===================== */
     if (is_time_averaged) {
@@ -178,7 +180,7 @@ cs_lagr_coupling_initialize(void)
 
   /* Mass source terms
      ================= */
-  if (    lag_st->ltsmas == 1
+  if (    lag_st->has_twoway_mass == 1
       && (   cs_glob_lagr_specific_physics->solve_mass == 1
           || cs_glob_lagr_specific_physics->solve_diameter == 1
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
@@ -194,7 +196,7 @@ cs_lagr_coupling_initialize(void)
   /* Thermal source terms
      ==================== */
 
-  if (lag_st->ltsthe == 1) {
+  if (lag_st->has_twoway_thermal == 1) {
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
         && cs_glob_lagr_const_dim->nlayer > 1)
       bft_error(__FILE__, __LINE__, 0,
@@ -218,6 +220,16 @@ cs_lagr_coupling_initialize(void)
       cs_array_real_fill_zero(n_cells_ext, t_st_t_i);
     }
   }
+
+  /* Evaporation source term (for species, when mass is disabled under CTWR) */
+  if (f_st_evap != nullptr) {
+    if (is_time_averaged)
+      CS_MALLOC_HD(t_st_evap, n_cells_ext, cs_real_t, cs_alloc_mode);
+    else
+      t_st_evap = f_st_evap->val;
+    cs_array_real_fill_zero(n_cells_ext, t_st_evap);
+  }
+
   lag_st->t_st_p = t_st_p;
   lag_st->t_st_vel= t_st_vel;
   lag_st->t_st_imp_vel = t_st_imp_vel;
@@ -225,6 +237,7 @@ cs_lagr_coupling_initialize(void)
   lag_st->t_st_k = t_st_k;
   lag_st->t_st_t_e = t_st_t_e;
   lag_st->t_st_t_i = t_st_t_i;
+  lag_st->t_st_evap = t_st_evap;
   lag_st->volp = volp;
   lag_st->volm = volm;
 }
@@ -287,6 +300,7 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
   cs_real_t    *t_st_k = lag_st->t_st_k;
   cs_real_t    *t_st_t_e = lag_st->t_st_t_e;
   cs_real_t    *t_st_t_i = lag_st->t_st_t_i;
+  cs_real_t    *t_st_evap = lag_st->t_st_evap;
   cs_real_t    *volp = lag_st->volp;
   cs_real_t    *volm = lag_st->volm;
 
@@ -326,7 +340,7 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
   /* Momentum source terms
      ===================== */
 
-  if (lag_st->ltsdyn == 1) {
+  if (lag_st->has_twoway_dyn == 1) {
 
     cs_real_t prev_p_diam = p_set.attr_n_real(p_id, 1, CS_LAGR_DIAMETER);
 
@@ -374,7 +388,7 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
   /* Mass source terms
      ================= */
 
-  if (    lag_st->ltsmas == 1
+  if (    lag_st->has_twoway_mass == 1
       && (   cs_glob_lagr_specific_physics->solve_mass == 1
           || cs_glob_lagr_specific_physics->solve_diameter == 1
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
@@ -382,10 +396,14 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
       t_st_p[c_id] += - p_stat_w * (p_mass - prev_p_mass) / dtp * dvol * rel_dt;
   }
 
+  if (t_st_evap != nullptr) {
+      t_st_evap[c_id] += - p_stat_w * (p_mass - prev_p_mass) / dtp * dvol * rel_dt;
+  }
+
   /* Thermal source terms
      ==================== */
 
-  if (   lag_st->ltsthe == 1
+  if (   lag_st->has_twoway_thermal == 1
       && (  (    cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->solve_temperature == 1)
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
@@ -445,6 +463,7 @@ cs_lagr_coupling_finalize(void)
   cs_real_3_t  *t_st_vel = lag_st->t_st_vel;
   cs_real_t    *t_st_imp_vel = lag_st->t_st_imp_vel;
   cs_real_6_t  *t_st_rij = lag_st->t_st_rij;
+  cs_real_t    *t_st_evap = lag_st->t_st_evap;
   cs_real_t    *t_st_k = lag_st->t_st_k;
   cs_real_t    *t_st_t_e = lag_st->t_st_t_e;
   cs_real_t    *t_st_t_i = lag_st->t_st_t_i;
@@ -467,7 +486,7 @@ cs_lagr_coupling_finalize(void)
   const cs_real_t tvmax = 0.8;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
-  if (cs_glob_lagr_source_terms->ltsdyn == 1) {
+  if (cs_glob_lagr_source_terms->has_twoway_dyn == 1) {
     cs_real_3_t *vel = (cs_real_3_t *)extra->vel->val;
     if (extra->itytur == 2 || extra->itytur == 4 ||
         extra->itytur == 5 || extra->iturb == CS_TURB_K_OMEGA) {
@@ -537,15 +556,17 @@ cs_lagr_coupling_finalize(void)
   cs_real_t   *st_k       =  nullptr;
   cs_real_t   *st_t_e     =  nullptr;
   cs_real_t   *st_t_i     =  nullptr;
+  cs_real_t   *st_evap    =  nullptr;
 
   if (is_time_averaged) {
-    cs_field_t *f_st_p = cs_field_by_name_try("lagr_st_pressure");
-    cs_field_t *f_st_vel = cs_field_by_name_try("lagr_st_velocity");
-    cs_field_t *f_st_imp_vel = cs_field_by_name_try("lagr_st_imp_velocity");
-    cs_field_t *f_st_rij = cs_field_by_name_try("lagr_st_rij");
-    cs_field_t *f_st_k = cs_field_by_name_try("lagr_st_k");
-    cs_field_t *f_st_t_e = cs_field_by_name_try("lagr_st_temperature");
-    cs_field_t *f_st_t_i = cs_field_by_name_try("lagr_st_imp_temperature");
+    cs_field_t *f_st_p = cs_field_try("lagr_st_pressure");
+    cs_field_t *f_st_vel = cs_field_try("lagr_st_velocity");
+    cs_field_t *f_st_imp_vel = cs_field_try("lagr_st_imp_velocity");
+    cs_field_t *f_st_rij = cs_field_try("lagr_st_rij");
+    cs_field_t *f_st_k = cs_field_try("lagr_st_k");
+    cs_field_t *f_st_t_e = cs_field_try("lagr_st_temperature");
+    cs_field_t *f_st_t_i = cs_field_try("lagr_st_imp_temperature");
+    cs_field_t *f_st_evap = cs_field_try("lagr_st_evaporation");
 
     if (f_st_p != nullptr) {
       st_p = f_st_p->val;
@@ -556,7 +577,7 @@ cs_lagr_coupling_finalize(void)
       }
 
       /* Save TIME AVERAGED thermal power of rain if needed for post-processing */
-      cs_field_t *f_evap_rate_rain = cs_field_by_name_try("evaporation_rate_rain");
+      cs_field_t *f_evap_rate_rain = cs_field_try("evaporation_rate_rain");
       if (f_evap_rate_rain != nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           f_evap_rate_rain->val[c_id] = st_p[c_id];
@@ -613,10 +634,26 @@ cs_lagr_coupling_finalize(void)
       }
 
       /* Save TIME AVERAGED thermal power of rain if needed for post-processing */
-      cs_field_t *f_th_power_rain = cs_field_by_name_try("thermal_power_rain");
+      cs_field_t *f_th_power_rain = cs_field_try("thermal_power_rain");
       if (f_th_power_rain != nullptr) {
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           f_th_power_rain->val[c_id] = st_t_e[c_id];
+      }
+    }
+
+    if (f_st_evap != nullptr) {
+      st_evap = f_st_evap->val;
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        st_evap[c_id]
+          = (t_st_evap[c_id] + (lag_st->npts - 1.0) * st_evap[c_id])
+          / lag_st->npts;
+      }
+
+      /* Save TIME AVERAGED evaporation rate of rain if needed for post-processing */
+      cs_field_t *f_evap_rate_rain = cs_field_try("evaporation_rate_rain");
+      if (f_evap_rate_rain != nullptr) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          f_evap_rate_rain->val[c_id] = st_evap[c_id];
       }
     }
 
@@ -650,14 +687,30 @@ cs_lagr_coupling_finalize(void)
     if (t_st_t_i != st_t_i)
       CS_FREE(t_st_t_i);
 
+    if (t_st_evap != st_evap && t_st_evap != nullptr)
+      CS_FREE(t_st_evap);
+
   }
 
   else {
     /* Save thermal power of rain if needed for post-processing */
-    cs_field_t *f_th_power_rain = cs_field_by_name_try("thermal_power_rain");
+    cs_field_t *f_th_power_rain = cs_field_try("thermal_power_rain");
     if (f_th_power_rain != nullptr && t_st_t_e != nullptr) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         f_th_power_rain->val[c_id] = t_st_t_e[c_id];
+    }
+
+    /* Save evaporation rate of rain if needed for post-processing */
+    cs_field_t *f_evap_rate_rain = cs_field_try("evaporation_rate_rain");
+    if (f_evap_rate_rain != nullptr) {
+      if (t_st_p != nullptr) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          f_evap_rate_rain->val[c_id] = t_st_p[c_id];
+      }
+      else if (t_st_evap != nullptr) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          f_evap_rate_rain->val[c_id] = t_st_evap[c_id];
+      }
     }
 
   }
