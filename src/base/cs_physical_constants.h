@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -116,36 +112,27 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-/* Physical constants */
+/* Physical constants
+   ------------------ */
 
-#if  (defined(__NVCC__) && defined(__CUDA_ARCH__)) \
-  || (defined(__HIPCC__) && defined(__HIP_DEVICE_COMPILE__)) \
-  || defined(SYCL_LANGUAGE_VERSION) \
-  || defined(HAVE_OPENMP_TARGET)
+/*! Ideal gas constant (\f$J.mol^{-1}.K^{-1}\f$) */
+static constexpr double cs_physical_constants_r = 8.31446261815324;
 
-/* On GPU, global variables are usually not accessible. */
+/*! Boltzmann constant (\f$J.K^{-1}\f$) */
+static constexpr double cs_physical_constants_kb = 1.380649e-23;
 
-#define cs_physical_constants_r 8.31446261815324
-#define cs_physical_constants_kb 1.380649e-23
-#define cs_physical_constants_celsius_to_kelvin 273.15
-#define cs_physical_constants_stephan 5.6703e-8
-#define cs_physical_constants_avogadro 6.02214076e23
+/*! Conversion from Celsius to Kelvin: 275.15   */
+static constexpr double cs_physical_constants_celsius_to_kelvin = 273.15;
 
-#else
+/*! Stephan constant for the radiative module \f$\sigma\f$ in
+   \f$W.m^{-2}.K^{-4}\f$ */
+static constexpr double cs_physical_constants_stephan = 5.6703e-8;
 
-/* General constants accessible on CPU */
+/*! Avogadro constant (mole definition) \f$N_A\f$ in \f$mol^{-1}\f$ */
+static constexpr double cs_physical_constants_avogadro = 6.02214076e23;
 
-extern const double cs_physical_constants_r; /* Ideal gas constant (J/mol/K) */
-extern const double cs_physical_constants_kb; /* Boltzmann constant (J/K) */
-extern const double cs_physical_constants_celsius_to_kelvin; /* Celsius to
-                                                                Kelvin*/
-extern const double cs_physical_constants_stephan; /* Stephan constant
-                                                     (W/m2/K4)*/
-extern const double cs_physical_constants_avogadro; /* Avogadro constant
-                                                       (1/mol) */
-#endif
-
-/* Pointer to main physical constants structure */
+/* Pointer to global acceleration (gravity and Coriolis)
+   related main physical constants structure */
 
 extern const cs_physical_constants_t  *cs_glob_physical_constants;
 
@@ -190,7 +177,5 @@ void
 cs_fluid_properties_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_PHYSICAL_CONSTANTS_H */

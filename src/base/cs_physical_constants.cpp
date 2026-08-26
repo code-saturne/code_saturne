@@ -359,7 +359,8 @@
  * Static global variables
  *============================================================================*/
 
-/* main physical constants structure and associated pointer */
+/* Global acceleration (gravity and Coriolis)
+   related main physical constants structure */
 
 static cs_physical_constants_t _physical_constants = {
   .gravity = {0., 0., 0},
@@ -432,27 +433,6 @@ extern const double cs_physical_constants_stephan;
 extern const double cs_physical_constants_avogadro;
 
 #endif
-
-/*! Ideal gas constant (\f$J.mol^{-1}.K^{-1}\f$) */
-
-const double cs_physical_constants_r = 8.31446261815324;
-
-/*! Boltzmann constant (\f$J.K^{-1}\f$) */
-
-const double cs_physical_constants_kb = 1.380649e-23;
-
-/*! Conversion from Celsius to Kelvin: 275.15   */
-
-const double cs_physical_constants_celsius_to_kelvin = 273.15;
-
-/*! Stephan constant for the radiative module \f$\sigma\f$ in
-   \f$W.m^{-2}.K^{-4}\f$ */
-
-const double cs_physical_constants_stephan = 5.6703e-8;
-
-/*! Avogadro constant (mole definition) \f$N_A\f$ in \f$mol^{-1}\f$ */
-
-const double cs_physical_constants_avogadro = 6.02214076e23;
 
 /* Other physical constants/properties */
 

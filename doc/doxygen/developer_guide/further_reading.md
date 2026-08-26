@@ -486,9 +486,8 @@ double f(int n, double x[], double y[])
 }
   ```
 
-- Modern C strongly recommends functions be described by a _prototype_
-  (i.e. interface), declared before defining or calling functions.
-  - C++ requires this absolutely.
+- C++ requires that functions be described by a _prototype_
+  declared before defining or calling functions.
   - A function prototype resembles its header, ended by a semicolon (`;`).
 - For the previous example, the matching prototype is:
   ```{.cpp}
@@ -502,16 +501,20 @@ double f(int n, double x[], double y[]);
 Prototypes are usually grouped in `header` files, inserted locally using the
 `#include` preprocessor directive.
 
+- Some functions may be declared `inline`, in which case the definion
+  and prototype are combined.
 - If the `static` qualifier is prefixed to a function
   declaration, that function is defined locally only
-  - In this case, prototypes are not necessary (functions referenced by others
-     must appear first).
+  - In this case, prototypes are not necessary either (but such functions must
+    appear before those referenceing them).
   - Functions with the same name may be used in different files with no risk.
 - Using `static inline`, the function body is copied at each call
   - Avoids call overhead for short functions, leads to larger code.
-  - `inline` without `static` is tricky: see a more complete C course, or avoid it.
+  - `inline` without `static` is tricky in C, but preferred in C++,
+    as it allows the compiler deciding whether the function is actually inlined
+    ar handled as a standard function, based on its own heuristics.
 - In code_saturne, some simple computation functions are defined as
-  `static inline`;
+  `inline` or `static inline`;
   - Their definition appear in header (`.h`) files in this case
   - See for example \ref cs_math.h.
 
@@ -585,6 +588,19 @@ void g(void) {
   ...
 }
 ```
+
+### C and C++ linkage
+
+In C++, the actual name of a function in the library is "mangled", as
+it is extended with characters describing its return and argument types
+(this is how C++ can manage multiple functions with the same name but
+different argument types).
+
+Using `extern "C"` in C++ tells the C++ compiler to generate C-linkable code,
+with no [name mangling](https://en.wikipedia.org/wiki/Name_mangling).
+Code enclosed in these sections uses C linkage, which
+was useful until code_saturne 9.1, where C/C++ compatibility
+was maintaned.
 
 ### C function pointers
 
@@ -679,21 +695,6 @@ on several rules.
 code_saturne defines several preprocessor macros, among which the following:
   - \ref CS_F_(fname): access to field structure of field with
     canonical name `name`.
-
-Two macros of special importance are:
-  - \ref BEGIN_C_DECLS
-    - Expands to
-      ```extern "C" {```
-
-  - \ref END_C_DECLS
-    - Expands to
-      ```}```
-
-Using `extern "C"` in C++ tells the C++ compiler to generate C-linkable code,
-with no [name mangling](https://en.wikipedia.org/wiki/Name_mangling).
-Code enclosed in these sections uses C linkage, which
-was useful until code_saturne 9.1, where C/C++ compatibility
-was maintaned.
 
 ### Preprocessors in various programming languages
 
