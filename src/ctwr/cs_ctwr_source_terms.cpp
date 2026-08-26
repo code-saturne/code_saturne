@@ -1015,7 +1015,7 @@ cs_ctwr_source_term(int              f_id,
         /* Humid air temperature equation */
         else if (f_id == (CS_F_(t)->id)) {
           /* Because the writing is in a non-conservative form */
-          cs_real_t l_imp_st = vol_mass_source * cp_h;
+          cs_real_t l_imp_st = 0.;
           cs_real_t l_exp_st = 0.;
           cs_real_t le_f = _lewis_factor(evap_model, molmassrat,
               x[cell_id], x_s_tl);
@@ -1028,29 +1028,82 @@ cs_ctwr_source_term(int              f_id,
           }
 
           if (x[cell_id] <= x_s_th) {
-            /* Implicit and explicit terms for temperature T */
-            l_imp_st += vol_beta_x_ai * (le_f * cp_h
-                + (x_s_tl - x[cell_id]) * cp_v
-                / (1. + x[cell_id]));
-            l_exp_st += l_imp_st * (coef * (t_l_p[cell_id] + t_shift)
-                - f_var[cell_id]);
-          }
-          else {
-            /* Implicit and explicit terms for temperature T */
-            l_imp_st +=   vol_beta_x_ai
-              * (  le_f * cp_h + (x_s_tl - x_s_th) * cp_l
-                  / (1. + x[cell_id]));
-            l_exp_st +=   vol_beta_x_ai
+            /* Implicit and explicit terms for temperature T
+             *
+             * New formulation, undersaturated air:
+             *
+             * ST^h = beta_ai [
+             *          le_f * cp_h * (T_l - T_h)
+             *        + (hv0 + cp_v * T_l) * (x_s_tl - x)
+             *        ]
+             *
+             * Rewritten as:
+             *
+             * ST^h = B - A * T_h
+             *
+             * with:
+             *
+             * A = beta_ai * le_f * cp_h
+             *
+             * B = beta_ai * [
+             *        le_f * cp_h * T_l
+             *      + (hv0 + cp_v * T_l) * (x_s_tl - x)
+             *     ]
+             */
+
+            cs_real_t dx = x_s_tl - x[cell_id];
+
+            l_imp_st += vol_beta_x_ai * (le_f * cp_h + cp_v * dx);
+
+            l_exp_st += vol_beta_x_ai
               * (  le_f * cp_h * coef * (t_l_p[cell_id] + t_shift)
-                  +   (x_s_tl - x_s_th)
-                  * (cp_v * coef * (t_l_p[cell_id] + t_shift))
-                  / (1. + x[cell_id]))
+                 + dx * coef
+                 * (cp_v * (t_l_p[cell_id] + t_shift)))
               - l_imp_st * f_var[cell_id];
           }
-          /* If humid atmosphere model, temperature is liquid potential
-           * temperature theta_l */
-          if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-           // l_exp_st -= l_imp_st * coef * (hv0 / cp_d) * yw_liq->val[cell_id];
+          else {
+            /* Implicit and explicit terms for temperature T
+             *
+             * New formulation, saturated air:
+             *
+             * ST^h = beta_ai [
+             *          le_f * cp_h * (T_l - T_h)
+             *        + (hv0 + cp_v * T_l) * (x_s_tl - x_s_th)
+             *        ]
+             *
+             * Rewritten as:
+             *
+             * ST^h = B - A * T_h
+             *
+             * with:
+             *
+             * A = beta_ai * le_f * cp_h
+             *
+             * B = beta_ai * [
+             *        le_f * cp_h * T_l
+             *      + (hv0 + cp_v * T_l) * (x_s_tl - x_s_th)
+             *     ]
+             */
+
+            cs_real_t dx = x_s_tl - x_s_th;
+
+            l_imp_st += vol_beta_x_ai * (le_f * cp_h + cp_l * dx);
+
+            l_exp_st += vol_beta_x_ai
+              * (  le_f * cp_h * coef * (t_l_p[cell_id] + t_shift)
+                 + dx * coef
+                 * (hv0
+                       //Conversion Celsius to Kelvin for CTWR Model
+                       //FIXME Atmo
+                       + (cp_v - cp_l) * cs_physical_constants_celsius_to_kelvin
+                       + cp_v * (t_l_p[cell_id] + t_shift)))
+              - l_imp_st * f_var[cell_id];
+
+            /* If humid atmosphere model, temperature is liquid potential
+             * temperature theta_l */
+            if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+              //l_exp_st -= l_imp_st * coef * (hv0 / cp_d) * yw_liq->val[cell_id];
+            }
           }
 
           imp_st[cell_id] += cs::max(l_imp_st, 0.);
@@ -1184,7 +1237,7 @@ cs_ctwr_source_term(int              f_id,
           /* Humid air temperature equation */
           else if (f_id == (CS_F_(t)->id)) {
             /* Because the writing is in a non-conservative form */
-            cs_real_t l_imp_st = vol_mass_source * cp_h;
+            cs_real_t l_imp_st = 0.;
             cs_real_t l_exp_st = 0.;
 
             cs_real_t coef = 1.;
@@ -1197,23 +1250,33 @@ cs_ctwr_source_term(int              f_id,
 
             if (x[cell_id] <= x_s_th) {
               /* Implicit and explicit terms for temperature T */
-              l_imp_st += vol_beta_x_ai * (le_f * cp_h
-                                           + (x_s_tl - x[cell_id]) * cp_v
-                                             / (1. + x[cell_id]));
-              l_exp_st = l_imp_st * (coef * (t_l_r[cell_id] + t_shift)
-                                     - f_var[cell_id]);
-            }
+             cs_real_t dx = x_s_tl - x[cell_id];
+
+              l_imp_st += vol_beta_x_ai * (le_f * cp_h + cp_v * dx);
+
+              l_exp_st += vol_beta_x_ai
+                      * (le_f * cp_h * coef * (t_l_r[cell_id] + t_shift)
+                        + dx * coef * (cp_v * (t_l_r[cell_id] + t_shift)))
+                        - l_imp_st * f_var[cell_id];
+           }
             else {
               /* Implicit and explicit terms for temperature T */
-              l_imp_st += vol_beta_x_ai * (le_f * cp_h + (x_s_tl - x_s_th) * cp_l
-                  / (1. + x[cell_id]));
-              l_exp_st =   vol_beta_x_ai
-                         * (  le_f * cp_h * coef * (t_l_r[cell_id] + t_shift)
-                            + (x_s_tl - x_s_th)
-                               * (cp_v * coef * (t_l_r[cell_id] + t_shift ))
-                               / (1. + x[cell_id]))
-                         - l_imp_st * f_var[cell_id];
-            }
+              cs_real_t dx = x_s_tl - x_s_th;
+
+              l_imp_st += vol_beta_x_ai * (le_f * cp_h + cp_l * dx);
+
+              l_exp_st += vol_beta_x_ai
+                 * (le_f * cp_h * coef * (t_l_r[cell_id] + t_shift)
+                   + dx * coef
+                   * (hv0
+                       //Conversion Celsius to Kelvin for CTWR Model
+                       //FIXME Atmo
+                       + (cp_v - cp_l) * cs_physical_constants_celsius_to_kelvin
+                       + cp_v * (t_l_r[cell_id] + t_shift)))
+                   - l_imp_st * f_var[cell_id];
+
+
+           }
             /* If humid atmosphere model, temperature is liquid potential
              * temperature theta_l */
             if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
