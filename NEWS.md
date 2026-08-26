@@ -1,5 +1,10 @@
 ﻿Master (not on release branches yet)
 ------------------------------------
+### User changes:
+
+- Introduce dedicated math functions in `cs` namespace to ease use and improve
+  performances: qdrt (quadratic root), pow3ov2 (x^{3/2}), pow3ov4 (x^{3/4})
+  and pow2ov3 (x^{2/3}).
 
 ### Architectural changes:
 
