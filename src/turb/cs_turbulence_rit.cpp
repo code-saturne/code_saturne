@@ -146,8 +146,9 @@ _turb_flux_st(const char          *name,
   const cs_real_3_t *xuta = (const cs_real_3_t *)f_ut->val_pre;
 
   cs_real_t *cpro_beta = nullptr;
-  if (cs_field_try("thermal_expansion") != nullptr)
-    cpro_beta = cs_field_try("thermal_expansion")->val;
+  cs_field_t *f_beta = cs_field_try("thermal_expansion");
+  if (f_beta != nullptr)
+    cpro_beta = f_beta->val;
 
   const cs_real_t *cvar_tt = nullptr, *cvara_tt = nullptr, *cvar_al = nullptr;
 

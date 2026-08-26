@@ -934,7 +934,7 @@ cs_ctwr_source_term(int              f_id,
   cs_real_t *lagr_injection_profile = nullptr;
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)
     lagr_injection_profile =
-      cs_field_try("lagr_injection_profile")->val;
+      cs_field("lagr_injection_profile")->val;
 
   if (evap_model != CS_CTWR_NONE) {
 

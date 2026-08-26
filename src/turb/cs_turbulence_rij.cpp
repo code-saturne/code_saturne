@@ -4129,7 +4129,7 @@ cs_turbulence_rij(int phase_id)
   if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
       && cs_glob_lagr_source_terms->has_twoway_dyn == 1) {
     const cs_real_6_t *lagr_st_rij
-      = (const cs_real_6_t *)cs_field_try("lagr_st_rij")->val;
+      = (const cs_real_6_t *)cs_field("lagr_st_rij")->val;
 
     cs_real_t *lag_st_i = cs_field("lagr_st_imp_velocity")->val;
 
