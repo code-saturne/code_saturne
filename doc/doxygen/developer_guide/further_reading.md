@@ -96,7 +96,7 @@ double
 <tr><td>
 Basic math functions
 <td>
-```{.c}
+```{.cpp}
 (a)cos  (a)sin  (a)tan
 cosh  sinh  tanh
 exp  log
@@ -107,7 +107,7 @@ a%b
 <tr><td>
 Logical expressions
 <td>
-```{.c}
+```{.cpp}
 &&  ||  !
 <  >  <=  >=  ==  !=
 ==  !=
@@ -115,14 +115,14 @@ Logical expressions
 <tr><td>
 Function call
 <td>
-```{.c}
+```{.cpp}
 x = f(y);
 g(a);
 ```
 <tr><td>
 Conditional
 <td>
-```{.c}
+```{.cpp}
 if (expr) {
   operations;
 }
@@ -130,7 +130,7 @@ if (expr) {
 <tr><td>
 Simple loops
 <td>
-```{.c}
+```{.cpp}
 for (i = 0; i < n; i++) {
   y /= 2.;
   z = x + i + y*5.;
@@ -139,7 +139,7 @@ for (i = 0; i < n; i++) {
 <tr><td>
 Complex loops
 <td>
-```{.c}
+```{.cpp}
 while (expr) {
   operations
 }
@@ -147,7 +147,7 @@ while (expr) {
 <tr><td>
 Loop control
 <td>
-```{.c}
+```{.cpp}
 for (i = 0; i < n; i++) {
   if (ignore_condition)
     continue;
@@ -158,7 +158,7 @@ for (i = 0; i < n; i++) {
 <tr><td>
 Variable declaration and initialization
 <td>
-```{.c}
+```{.cpp}
 int i, j,
     k = 0, l = 1;
 double a = 1.;
@@ -166,7 +166,7 @@ double a = 1.;
 <tr><td>
 Array declaration and initialization
 <td>
-```{.c}
+```{.cpp}
 int tab[2][3] = {{1, 2, 3},
                  {4, 5, 6}};
 printf("%d", tab[1][0]); // 4
@@ -184,7 +184,7 @@ C variable declarations
 
 A variable may be initialized upon its declaration:
 
-```{.c}
+```{.cpp}
 double a[4] = {1, 2, 3, 4};
 double b[] = {1, 2, 3, 4};
 double matrix[3][4] = {{1., 0., 0., 0.},
@@ -229,7 +229,7 @@ Understanding pointers is essential in C, and still very useful in C++.
 - Prefixing `&` to a variable obtains a reference (pointer) to that variable.
 
 A simple example is best:
-```{.c}
+```{.cpp}
 double x;
 double a = 1.0, b = 2.0; // variables
 double *p = NULL;
@@ -257,7 +257,7 @@ restrictive, or include additional metadata.
 - In addition to the following example, check the tutorial at:
   https://boredzo.org/pointers/
 
-```{.c}
+```{.cpp}
 double x;
 double a[3] = {1.0, 2.0, 3.0};
 double *p = a;            // p points to beginning of a
@@ -277,7 +277,7 @@ Character strings do not have a dedicated type in C:
 - Strings end when a character with code 0 (`\0`) is encountered
 
 Pointers may be _cast_ from one type to another. For example:
-```{.c}
+```{.cpp}
 int a[3][3] = {{11, 12, 13},
                {21, 22, 23},
                {31, 32, 33}};
@@ -292,7 +292,7 @@ We will refer to other sources to detail usage of structures in code_saturne,
 focusing here on specific aspects.
 
 - Some structures are defined directly in a header (`.h`) file
-  ```{.c}
+  ```{.cpp}
 typedef struct {
   int       n;           /* number of elements */
   double   *val;         /* list of element values */
@@ -303,14 +303,14 @@ typedef struct {
     file including the header
 
 - Other structures are defined in in a source (`.c`) file
-  ```{.c}
+  ```{.cpp}
 typedef struct _cs_opaque_t {
   int       n;           /* number of elements */
   double   *val;         /* list of element values */
 };
   ```
   with a matching entry in a header (`.h`) file
-  ```{.c}
+  ```{.cpp}
 typedef struct _cs_opaque_t cs_opaque_t;
   ```
   - Such structures may be used normally inside the source file, but their members
@@ -418,7 +418,7 @@ A variable declaration may specify one or more `const` attributes.
 
 - A  `const` attribute indicates the function may not modify this variable
   - For a pointer, be careful where `const` is placed:
-  ```{.c}
+  ```{.cpp}
 const double a[];       /* cannot modify
                            content of a */
 const double *b;        /* same with b */
@@ -475,7 +475,7 @@ Like most programming languages, C allows grouping statements in functions.
     `void` is used to indicate this.
   - A function body contains the actual instructions of the function
 - The following example function returns the dot product of 2 arrays
-  ```{.c}
+  ```{.cpp}
 double f(int n, double x[], double y[])
 {
   int i;
@@ -491,7 +491,7 @@ double f(int n, double x[], double y[])
   - C++ requires this absolutely.
   - A function prototype resembles its header, ended by a semicolon (`;`).
 - For the previous example, the matching prototype is:
-  ```{.c}
+  ```{.cpp}
 double f(int n, double x[], double y[]);
   ```
 - Only parameter types are required to match in the definition  and prototype,
@@ -530,7 +530,7 @@ Prototypes are usually grouped in `header` files, inserted locally using the
     rather than to adopt a copy-paste programming style...
 
 - A function is called by providing its name and arguments
-  ```{.c}
+  ```{.cpp}
 r = f(3, x, y); // returns r
 g(x);           // returns no value
 s = h();        // takes no argument
@@ -542,7 +542,7 @@ s = h();        // takes no argument
     unchanged in the calling code
 
 Example of call by value semantics:
-```{.c}
+```{.cpp}
 /* callee function */
 void f(double x, double y[2]) {
   x = x/2;
@@ -624,10 +624,10 @@ Explicit memory allocation operations return pointers
     - they also may crash _Valgrind_, but can be detected with the
       _AddressSanitizer_ tools.
 
-C Preprocessing
----------------
+C++ Preprocessing
+-----------------
 
-Before the C compilation proper, a first stage replaces character sequences based
+Before the C++ compilation proper, a first stage replaces character sequences based
 on several rules.
 
  - It is called the _preprocessor_
@@ -647,14 +647,14 @@ on several rules.
   * For C++, use `g++ -dM -E -x c++ - < /dev/null`
 
 - One of the main uses of the preprocessor is conditional compilation
-  ```{.c}
+  ```{.cpp}
 #if defined (HAVE_MPI)
 ...
 #endif
   ```
 
 - To disable code containing comments, nothing beats:
-  ```{.c}
+  ```{.cpp}
 #if 0
 ...
 #endif
@@ -663,7 +663,18 @@ on several rules.
   - This avoids comment nesting issues, and some editors such as _vim_
     even colorize the block as a comment.
 
-### C Preprocessor macros in code_saturne
+- Note also than in C++20, a
+  [<version>](https://en.cppreference.com/cpp/utility/feature_test)
+  header can be explicitely included and defines many finer-grained feature macros.
+  In case it is available with lower version of the standard (i.e. with partial
+  support), it can be included using:
+  ```{.cpp}
+#if __has_include(<version>)
+#include <version>
+#endif
+  ```
+
+### Preprocessor macros in code_saturne
 
 code_saturne defines several preprocessor macros, among which the following:
   - \ref CS_F_(fname): access to field structure of field with
@@ -760,7 +771,7 @@ The C scoping rules also allow definition of global variables.
   are used, as placing them in a structure would be cumbersome for C/Fortran
   interoperability.
 
-```{.c}
+```{.cpp}
 (int) cs_glob_n_ranks                            // cs_defs.h
 (int) cs_glob_rank_id                            // cs_defs.h
 
@@ -788,19 +799,19 @@ Some ambiguous constructions lead to what is called _undefined behavior_.
     are followed.
 
 - Example: incorrect character string usage
-  ```{.c}
+  ```{.cpp}
 char *p = "code_saturne"; // forbidden in C++.
 p[0] = 'C'; // undefined behavior due to above
             // (but works with most compilers)
   ```
 - Correct character string usage
-  ```{.c}
+  ```{.cpp}
 char p[] = "code_saturne"; // array, not just pointer
 p[0] = 'C'; // OK
   ```
 
 - Example: division by zero
-  ```{.c}
+  ```{.cpp}
 int x = 1;
 return x/0; // undefined behavior
   ```
@@ -809,13 +820,13 @@ return x/0; // undefined behavior
   - this detected by _Address Sanitizer_, but not by _Valgrind_:
      as `arr` is declared as a local array, it is instanciated on the _stack_,
      not the _heap_.
-  ```{.c}
+  ```{.cpp}
 int arr[4] = {0, 1, 2, 3};
 int j = arr[5]; // stack buffer overflow
   ```
 
 - Example: out of scope return value
-  ```{.c}
+  ```{.cpp}
   *double badarray(void) {
     double t[] = {0, 1, 2};
     return t;  // memory location freed on return
@@ -825,7 +836,7 @@ int j = arr[5]; // stack buffer overflow
 - Example: undefined (or not always defined) return value
   - Very easy to avoid, as current compilers emit a warning.
   - You check compiler warnings, of course ?
-  ```{.c}
+  ```{.cpp}
 int
 f(int x)
 {
@@ -836,7 +847,7 @@ f(int x)
   ```
 
 - Example: incrementation before/after use (note 84) C11 standard?
-  ```{.c}
+  ```{.cpp}
 printf("%d %d\n",
        ++n, pow(2, n));  /* is n incremented
                             before or after
@@ -874,7 +885,7 @@ In a few rare places, we use _decorators_
 - In the following example, the `__attribute__` decorator is used to specify
   that the function behaves like `printf` regarding its arguments, so as to
   benefit from compiler argument checking
-  ```{.c}
+  ```{.cpp}
 #if defined(__GNUC__)
 int
 bft_printf(const char  *const format,
