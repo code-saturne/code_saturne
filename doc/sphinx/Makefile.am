@@ -43,19 +43,22 @@ sphinxdir = $(pkgdatadir)/doc/sphinx
 install-data-local:
 	@if test -x "$(SPHINXBUILD)" > /dev/null 2>&1; then \
 	  echo "Generating Sphinx documentation..."; \
-	  if [ -f "$(top_builddir)/doc/doxygen/src/xml/index.xml" ]; then \
-	    echo "Generating API RST from Doxygen XML..."; \
-	    python3 $(srcdir)/generate_rst.py $(top_srcdir) $(top_builddir); \
-	    python3 $(srcdir)/generate_toctree.py $(top_srcdir) $(top_builddir); \
-	    $(SPHINXBUILD) -c ${srcdir} -b html $(top_builddir)/doc/sphinx $(DESTDIR)$(pkgdatadir)/doc/sphinx/html \
+	  $(SPHINXBUILD) -b html $(top_builddir)/doc/sphinx $(DESTDIR)$(pkgdatadir)/doc/sphinx/html \
+	    -C \
+	    --conf-dir $(srcdir) \
 	    -d $(top_builddir)/doc/sphinx/.doctrees \
 	    -D breathe_projects.code_saturne=$(top_builddir)/doc/doxygen/src/xml; \
-	    echo "Sphinx documentation installed."; \
-	  else \
-	    echo "Doxygen XML not found, skipping API documentation generation."; \
-	  fi \
+	  echo "Sphinx documentation installed."; \
 	else \
 	  echo "sphinx-build not found, skipping Sphinx documentation."; \
+	fi
+
+sphinx-doc:
+	if [ -f "$(top_builddir)/doc/doxygen/src/xml/index.xml" ]; then \
+	  echo "Generating API RST from Doxygen XML..."; \
+	  python3 $(srcdir)/generate_rst.py $(top_srcdir) $(top_builddir); \
+	else \
+	  echo "Doxygen XML not found, skipping API RST generation."; \
 	fi
 
 clean-local:
