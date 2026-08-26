@@ -1203,6 +1203,11 @@ cs_field_allocate_gradients(cs_field_t  *f)
     ctx.wait();
 
   }
+
+  /* Link public grad pointer
+   * Done here to avoid memory problems when cs_field_allocate_gradients
+   * is not called. (All code_saturne computations without AMR). */
+  f->grad = f->_grad->data();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -4968,9 +4973,6 @@ cs_field_t::update_public_pointers()
   for (int i = 0; i < this->n_time_vals; i++) {
     this->vals[i] = this->_vals[i]->data();
   }
-
-  /* Update grad pointer */
-  this->grad = this->_grad->data();
 
   /* Update val and val_pre pointers */
   this->val = this->_vals[0]->data();
