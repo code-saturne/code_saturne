@@ -61,6 +61,7 @@
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
+#include "base/cs_profiling.h"
 #include "base/cs_random.h"
 #include "base/cs_rotation.h"
 #include "base/cs_search.h"
@@ -138,6 +139,9 @@ cs_lagr_car(int                         iprev,
             cs_real_2_t                 tempct,
             cs_real_3_t                 beta)
 {
+
+  CS_PROFILE_FUNC_RANGE();
+
   /* Particles management */
 
   int cell_wise_integ = cs_glob_lagr_time_scheme->cell_wise_integ;

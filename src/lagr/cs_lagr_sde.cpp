@@ -49,6 +49,7 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
+#include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_random.h"
 #include "base/cs_rotation.h"
@@ -255,6 +256,8 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
                                        const cs_real_3_t               force_p,
                                        const cs_real_3_t               beta)
 {
+
+  CS_PROFILE_FUNC_RANGE();
 
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
@@ -1041,6 +1044,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
                                       const cs_real_3_t               force_p,
                                       const cs_real_3_t               beta)
 {
+  CS_PROFILE_FUNC_RANGE();
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
   cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);

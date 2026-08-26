@@ -74,6 +74,7 @@
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
 #include "base/cs_post_default.h"
+#include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "rayt/cs_rad_transfer.h"
 #include "base/cs_random.h"
@@ -1668,6 +1669,9 @@ cs_get_lagr_extra_module(void)
 void
 cs_lagr_solve_initialize(const cs_real_t  *dt)
 {
+
+  CS_PROFILE_FUNC_RANGE();
+
   CS_UNUSED(dt);
 
   /* For frozen field:
@@ -1722,6 +1726,9 @@ void
 cs_lagr_solve_time_step(const int         itypfb[],
                         const cs_real_t  *dt)
 {
+
+  CS_PROFILE_FUNC_RANGE();
+
   static int ipass = 0;
   const cs_time_step_t *ts = cs_glob_time_step;
   const cs_mesh_t *mesh = cs_glob_mesh;

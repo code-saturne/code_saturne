@@ -67,6 +67,7 @@
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_porous_model.h"
+#include "base/cs_profiling.h"
 #include "base/cs_random.h"
 #include "base/cs_rotation.h"
 #include "base/cs_search.h"
@@ -3805,6 +3806,8 @@ _finalize_displacement(cs_lagr_particle_set_t &p_set)
 void
 cs_lagr_tracking_initialize(void)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   /* Initialize particle set */
 
   cs_lagr_particle_set_create();
@@ -3849,6 +3852,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                               cs_lnum_t        particle_range[2],
                               const bool       resol_sde)
 {
+  CS_PROFILE_FUNC_RANGE();
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   int  displacement_step_id = 0;

@@ -57,6 +57,7 @@
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
+#include "base/cs_profiling.h"
 #include "base/cs_mem.h"
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_tracking.h"
@@ -144,6 +145,7 @@ compute_particle_covariance_gradient(int          phase_id,
                                      cs_real_3_t *grad_cov_skp[9],
                                      cs_real_3_t *grad_cov_sk[6])
 {
+  CS_PROFILE_FUNC_RANGE();
   assert (cs_glob_lagr_model->cs_used == 0);
 
   cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
@@ -267,6 +269,8 @@ compute_anisotropic_prop(int            iprev,
                          cs_real_4_t   *anisotropic_euler )
 
 {
+  CS_PROFILE_FUNC_RANGE();
+
   int cell_wise_integ = cs_glob_lagr_time_scheme->cell_wise_integ;
   cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
 
@@ -526,6 +530,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                                   cs_real_3_t   *grad_lagr_time,
                                   cs_real_4_t   *anisotropic_euler)
 {
+  CS_PROFILE_FUNC_RANGE();
   /* TODO compute cell properties in coherence with iprev */
   cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
