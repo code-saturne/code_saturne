@@ -44,8 +44,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -99,7 +97,5 @@ cs_matrix_petsc_get_coeffs(const cs_matrix_t  *matrix);
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MATRIX_PETSC_PRIV_H */

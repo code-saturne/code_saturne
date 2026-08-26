@@ -39,10 +39,6 @@
 #include "alge/cs_matrix.h"
 #include "alge/cs_sles.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -147,7 +143,7 @@ typedef struct _cs_sles_hypre_t  cs_sles_hypre_t;
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_hypre_t *
+extern "C" cs_sles_hypre_t *
 cs_sles_hypre_define(int                          f_id,
                      const char                  *name,
                      cs_sles_hypre_type_t         solver_type,
@@ -173,7 +169,7 @@ cs_sles_hypre_define(int                          f_id,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_hypre_t *
+extern "C" cs_sles_hypre_t *
 cs_sles_hypre_create(cs_sles_hypre_type_t         solver_type,
                      cs_sles_hypre_type_t         precond_type,
                      cs_sles_hypre_setup_hook_t  *setup_hook,
@@ -187,7 +183,7 @@ cs_sles_hypre_create(cs_sles_hypre_type_t         solver_type,
  *                (actual type: cs_sles_hypre_t  **)
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_hypre_destroy(void  **context);
 
 /*----------------------------------------------------------------------------
@@ -203,7 +199,7 @@ cs_sles_hypre_destroy(void  **context);
  *   (actual type: cs_sles_hypre_t  *)
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 cs_sles_hypre_copy(const void  *context);
 
 /*----------------------------------------------------------------------------
@@ -217,7 +213,7 @@ cs_sles_hypre_copy(const void  *context);
  *   verbosity <-- verbosity level
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_hypre_setup(void               *context,
                     const char         *name,
                     const cs_matrix_t  *a,
@@ -247,7 +243,7 @@ cs_sles_hypre_setup(void               *context,
  *   convergence state
  *----------------------------------------------------------------------------*/
 
-cs_sles_convergence_state_t
+extern "C" cs_sles_convergence_state_t
 cs_sles_hypre_solve(void                *context,
                     const char          *name,
                     const cs_matrix_t   *a,
@@ -274,7 +270,7 @@ cs_sles_hypre_solve(void                *context,
  *               (actual type: cs_sles_hypre_t  *)
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_hypre_free(void  *context);
 
 /*----------------------------------------------------------------------------*/
@@ -295,7 +291,7 @@ cs_sles_hypre_free(void  *context);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+extern "C" bool
 cs_sles_hypre_error_post_and_abort(cs_sles_t                    *sles,
                                    cs_sles_convergence_state_t   state,
                                    const cs_matrix_t            *a,
@@ -311,7 +307,7 @@ cs_sles_hypre_error_post_and_abort(cs_sles_t                    *sles,
  *   log_type <-- log type
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_hypre_log(const void  *context,
                   cs_log_t     log_type);
 
@@ -325,7 +321,7 @@ cs_sles_hypre_log(const void  *context,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_hypre_set_n_max_iter(cs_sles_hypre_t   *context,
                              int                n_max_iter);
 
@@ -341,7 +337,7 @@ cs_sles_hypre_set_n_max_iter(cs_sles_hypre_t   *context,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_hypre_set_host_device(cs_sles_hypre_t   *context,
                               int                use_device);
 
@@ -355,7 +351,7 @@ cs_sles_hypre_set_host_device(cs_sles_hypre_t   *context,
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_sles_hypre_get_host_device(const cs_sles_hypre_t   *context);
 
 /*----------------------------------------------------------------------------*/
@@ -366,11 +362,9 @@ cs_sles_hypre_get_host_device(const cs_sles_hypre_t   *context);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_hypre_library_info(cs_log_t  log_type);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_SLES_HYPRE_H */

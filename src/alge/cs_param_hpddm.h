@@ -33,8 +33,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*!
   \file cs_param_hpddm.h
 
@@ -140,7 +138,5 @@ void
 cs_param_hpddm_log(const char *name, const cs_param_hpddm_t *hpddmp);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_PARAM_HPDDM_H */

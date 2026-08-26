@@ -42,10 +42,6 @@
 #include "mesh/cs_mesh_bad_cells.h"
 #include "mesh/cs_mesh_quantities.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  *  User function prototypes
  *============================================================================*/
@@ -59,7 +55,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_1d_wall_thermal_setup(void);
 
 /*----------------------------------------------------------------------------*/
@@ -76,7 +72,7 @@ cs_user_1d_wall_thermal_setup(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_1d_wall_thermal(int iappel);
 
 /*----------------------------------------------------------------------------*/
@@ -102,7 +98,7 @@ cs_user_1d_wall_thermal(int iappel);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_atmo_1d_rad_prf(cs_real_t   preray[],
                         cs_real_t   temray[],
                         cs_real_t   romray[],
@@ -132,7 +128,7 @@ cs_user_atmo_1d_rad_prf(cs_real_t   preray[],
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_boundary_conditions_setup(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
@@ -174,7 +170,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_boundary_conditions(cs_domain_t  *domain,
                             int           bc_type[]);
 
@@ -222,7 +218,7 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_boundary_conditions_ale(cs_domain_t  *domain,
                                 int           bc_type[],
                                 int           ale_bc_type[],
@@ -247,7 +243,7 @@ cs_user_boundary_conditions_ale(cs_domain_t  *domain,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_saturne_coupling(void);
 
 /*----------------------------------------------------------------------------*/
@@ -259,7 +255,7 @@ cs_user_saturne_coupling(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_syrthes_coupling(void);
 
 /*----------------------------------------------------------------------------*/
@@ -274,7 +270,7 @@ cs_user_syrthes_coupling(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_syrthes_coupling_volume_h(int               coupling_id,
                                   const char       *syrthes_name,
                                   cs_lnum_t         n_elts,
@@ -289,7 +285,7 @@ cs_user_syrthes_coupling_volume_h(int               coupling_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_cathare_coupling(void);
 
 /*! \file cs_user_electric_scaling.cpp */
@@ -308,7 +304,7 @@ cs_user_cathare_coupling(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_scaling_elec(const cs_mesh_t             *mesh,
                      const cs_mesh_quantities_t  *mesh_quantities,
                      cs_real_t                   *dt);
@@ -349,7 +345,7 @@ cs_user_scaling_elec(const cs_mesh_t             *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_extra_operations_initialize(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
@@ -363,7 +359,7 @@ cs_user_extra_operations_initialize(cs_domain_t  *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_extra_operations(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
@@ -377,7 +373,7 @@ cs_user_extra_operations(cs_domain_t  *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_extra_operations_finalize(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
@@ -412,7 +408,7 @@ cs_user_extra_operations_finalize(cs_domain_t  *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_fsi_structure_define(int                 is_restart,
                              int                 n_structs,
                              int                *plot,
@@ -441,7 +437,7 @@ cs_user_fsi_structure_define(int                 is_restart,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_fsi_structure_values(int                    n_structs,
                              const cs_time_step_t  *ts,
                              const cs_real_t        xstreq[][3],
@@ -469,7 +465,7 @@ cs_user_fsi_structure_values(int                    n_structs,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_fsi_structure_num(cs_domain_t                *domain,
                           int                         structure_num[],
                           cs_mobile_structure_type_t  structure_typ[]);
@@ -485,7 +481,7 @@ cs_user_fsi_structure_num(cs_domain_t                *domain,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_fsi_external_displacement(const cs_domain_t  *domain,
                                   const cs_real_3_t  *b_stress,
                                   cs_real_3_t        *disaple);
@@ -506,7 +502,7 @@ cs_user_fsi_external_displacement(const cs_domain_t  *domain,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_fsi_external_cvg(const cs_domain_t *domain,
                          const cs_real_t    epsilon,
                          int               *cvg_status,
@@ -540,7 +536,7 @@ cs_user_fsi_external_cvg(const cs_domain_t *domain,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_head_losses(const cs_zone_t  *zone,
                     cs_real_t         cku[][6]);
 
@@ -567,7 +563,7 @@ cs_user_head_losses(const cs_zone_t  *zone,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_hgn_thermo_relax_time(const cs_mesh_t  *mesh,
                               const cs_real_t  *alpha_eq,
                               const cs_real_t  *y_eq,
@@ -598,7 +594,7 @@ cs_user_hgn_thermo_relax_time(const cs_mesh_t  *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_initial_conditions(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
@@ -615,7 +611,7 @@ cs_user_initial_conditions(cs_domain_t  *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_initialization(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
@@ -634,7 +630,7 @@ cs_user_initialization(cs_domain_t  *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_mesh_input(void);
 
 /*----------------------------------------------------------------------------*/
@@ -643,7 +639,7 @@ cs_user_mesh_input(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_mesh_cartesian_define(void);
 
 /*----------------------------------------------------------------------------*/
@@ -652,7 +648,7 @@ cs_user_mesh_cartesian_define(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_join(void);
 
 /*----------------------------------------------------------------------------*/
@@ -661,7 +657,7 @@ cs_user_join(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_periodicity(void);
 
 /*----------------------------------------------------------------------------*/
@@ -670,7 +666,7 @@ cs_user_periodicity(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_mesh_warping(void);
 
 /*----------------------------------------------------------------------------*/
@@ -681,7 +677,7 @@ cs_user_mesh_warping(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_mesh_boundary(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
@@ -692,7 +688,7 @@ cs_user_mesh_boundary(cs_mesh_t  *mesh);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_mesh_modify(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
@@ -703,7 +699,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_mesh_smoothe(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
@@ -716,7 +712,7 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_mesh_save(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
@@ -728,7 +724,7 @@ cs_user_mesh_save(cs_mesh_t  *mesh);
 */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
                            cs_mesh_quantities_t  *mesh_quantities);
 
@@ -742,7 +738,7 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
 */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
                             cs_mesh_quantities_t  *mesh_quantities);
 
@@ -762,7 +758,7 @@ cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_paramedmem_define_couplings(void);
 
 /*----------------------------------------------------------------------------*/
@@ -771,7 +767,7 @@ cs_user_paramedmem_define_couplings(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_paramedmem_define_meshes(void);
 
 /*----------------------------------------------------------------------------*/
@@ -780,7 +776,7 @@ cs_user_paramedmem_define_meshes(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_paramedmem_define_fields(void);
 
 /*----------------------------------------------------------------------------*/
@@ -802,7 +798,7 @@ cs_user_paramedmem_define_fields(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_model(void);
 
 /*----------------------------------------------------------------------------*/
@@ -821,7 +817,7 @@ cs_user_model(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_parameters(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------*/
@@ -840,7 +836,7 @@ cs_user_parameters(cs_domain_t *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_linear_solvers(void);
 
 /*----------------------------------------------------------------------------*/
@@ -853,7 +849,7 @@ cs_user_linear_solvers(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_time_moments(void);
 
 /*----------------------------------------------------------------------------*/
@@ -864,7 +860,7 @@ cs_user_time_moments(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_internal_coupling(void);
 
 /*----------------------------------------------------------------------------*/
@@ -878,7 +874,7 @@ cs_user_internal_coupling(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_finalize_setup(cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------*/
@@ -897,7 +893,7 @@ cs_user_finalize_setup(cs_domain_t *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_numbering(void);
 
 /*----------------------------------------------------------------------------*/
@@ -906,7 +902,7 @@ cs_user_numbering(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_partition(void);
 
 /*----------------------------------------------------------------------------*/
@@ -915,7 +911,7 @@ cs_user_partition(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_parallel_io(void);
 
 /*----------------------------------------------------------------------------*/
@@ -924,7 +920,7 @@ cs_user_parallel_io(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_matrix_tuning(void);
 
 /*----------------------------------------------------------------------------*/
@@ -943,7 +939,7 @@ cs_user_matrix_tuning(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_physical_properties(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
@@ -966,7 +962,7 @@ cs_user_physical_properties(cs_domain_t  *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_physical_properties_h_to_t(cs_domain_t      *domain,
                                    const cs_zone_t  *z,
                                    bool              z_local,
@@ -993,7 +989,7 @@ cs_user_physical_properties_h_to_t(cs_domain_t      *domain,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
                                    const cs_zone_t  *z,
                                    bool              z_local,
@@ -1011,7 +1007,7 @@ cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_physical_properties_turb_viscosity(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
@@ -1030,7 +1026,7 @@ cs_user_physical_properties_turb_viscosity(cs_domain_t  *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_physical_properties_td_pressure(cs_real_t  *td_p);
 
 /*----------------------------------------------------------------------------*/
@@ -1055,7 +1051,7 @@ cs_user_physical_properties_td_pressure(cs_real_t  *td_p);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_porosity(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
@@ -1075,7 +1071,7 @@ cs_user_porosity(cs_domain_t  *domain);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_postprocess_writers(void);
 
 /*----------------------------------------------------------------------------*/
@@ -1088,7 +1084,7 @@ cs_user_postprocess_writers(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_postprocess_meshes(void);
 
 /*----------------------------------------------------------------------------*/
@@ -1099,7 +1095,7 @@ cs_user_postprocess_meshes(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_postprocess_probes(void);
 
 /*----------------------------------------------------------------------------*/
@@ -1128,7 +1124,7 @@ cs_user_postprocess_probes(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_postprocess_values(const char            *mesh_name,
                            int                    mesh_id,
                            int                    cat_id,
@@ -1155,7 +1151,7 @@ cs_user_postprocess_values(const char            *mesh_name,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_postprocess_activate(int     nt_max_abs,
                              int     nt_cur_abs,
                              double  t_cur_abs);
@@ -1189,7 +1185,7 @@ cs_user_postprocess_activate(int     nt_max_abs,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_rad_transfer_absorption(const int  bc_type[],
                                 cs_real_t  ck[]);
 
@@ -1214,7 +1210,7 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_rad_transfer_net_flux(const int        itypfb[],
                               const cs_real_t  twall[],
                               const cs_real_t  qincid[],
@@ -1289,7 +1285,7 @@ cs_user_rad_transfer_net_flux(const int        itypfb[],
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_radiative_transfer_bcs(cs_domain_t      *domain,
                                const int         bc_type[],
                                int               isothp[],
@@ -1324,7 +1320,7 @@ cs_user_radiative_transfer_bcs(cs_domain_t      *domain,
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_user_solver_set(void);
 
 /*----------------------------------------------------------------------------*/
@@ -1336,7 +1332,7 @@ cs_user_solver_set(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_solver(const cs_mesh_t             *mesh,
                const cs_mesh_quantities_t  *mesh_quantities);
 
@@ -1435,7 +1431,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_source_terms(cs_domain_t  *domain,
                      int           f_id,
                      cs_real_t    *st_exp,
@@ -1460,7 +1456,7 @@ cs_user_source_terms(cs_domain_t  *domain,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_time_table(void);
 
 /*----------------------------------------------------------------------------*/
@@ -1479,7 +1475,7 @@ cs_user_time_table(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_turbomachinery(void);
 
 /*----------------------------------------------------------------------------*/
@@ -1488,7 +1484,7 @@ cs_user_turbomachinery(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_turbomachinery_rotor(void);
 
 /*----------------------------------------------------------------------------*/
@@ -1497,7 +1493,7 @@ cs_user_turbomachinery_rotor(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_turbomachinery_set_rotation_velocity(void);
 
 /*----------------------------------------------------------------------------*/
@@ -1608,7 +1604,7 @@ cs_user_turbomachinery_set_rotation_velocity(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_wall_condensation(int  iappel);
 
 /*----------------------------------------------------------------------------*/
@@ -1625,11 +1621,9 @@ cs_user_wall_condensation(int  iappel);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_zones(void);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_PROTOTYPES_H */

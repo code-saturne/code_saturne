@@ -35,10 +35,6 @@
 
 #include "alge/cs_matrix.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -59,14 +55,14 @@ BEGIN_C_DECLS
  * Initialize PETSc if needed
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_petsc_ensure_init(void);
 
 /*----------------------------------------------------------------------------
  * Finalize PETSc
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_petsc_finalize(void);
 
 /*----------------------------------------------------------------------------*/
@@ -82,7 +78,7 @@ cs_matrix_petsc_finalize(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
                          const char   *type_name);
 
@@ -102,7 +98,7 @@ cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_matrix_petsc_add_scal_row_values(const cs_lnum_t                n_cols,
                                     const cs_gnum_t                row_g_id,
                                     const cs_gnum_t               *col_g_ids,
@@ -110,7 +106,5 @@ cs_matrix_petsc_add_scal_row_values(const cs_lnum_t                n_cols,
                                     void                          *matrix_p);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_MATRIX_PETSC_H */

@@ -35,8 +35,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*!
   \file cs_param_sles_setup.h
 
@@ -145,7 +143,5 @@ cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
 #endif
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_PARAM_SLES_SETUP_H */

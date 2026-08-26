@@ -35,8 +35,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*!
  * \file cs_param_saddle.h
 
@@ -895,7 +893,5 @@ void
 cs_param_saddle_log(const cs_param_saddle_t  *saddlep);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_PARAM_SADDLE_H */

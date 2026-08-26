@@ -35,10 +35,6 @@
 #include "alge/cs_matrix.h"
 #include "alge/cs_sles.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -91,7 +87,7 @@ typedef struct _cs_sles_amgx_t  cs_sles_amgx_t;
  *   pointer to newly created AmgX solver info object.
  *----------------------------------------------------------------------------*/
 
-cs_sles_amgx_t *
+extern "C" cs_sles_amgx_t *
 cs_sles_amgx_define(int          f_id,
                     const char  *name);
 
@@ -106,7 +102,7 @@ cs_sles_amgx_define(int          f_id,
  *   pointer to newly created solver info object.
  *----------------------------------------------------------------------------*/
 
-cs_sles_amgx_t *
+extern "C" cs_sles_amgx_t *
 cs_sles_amgx_create(void);
 
 /*----------------------------------------------------------------------------
@@ -122,7 +118,7 @@ cs_sles_amgx_create(void);
  *   (actual type: cs_sles_amgx_t  *)
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 cs_sles_amgx_copy(const void  *context);
 
 /*----------------------------------------------------------------------------
@@ -133,7 +129,7 @@ cs_sles_amgx_copy(const void  *context);
  *                (actual type: cs_sles_amgx_t  **)
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_amgx_destroy(void  **context);
 
 /*----------------------------------------------------------------------------*/
@@ -148,7 +144,7 @@ cs_sles_amgx_destroy(void  **context);
  */
 /*----------------------------------------------------------------------------*/
 
-const char *
+extern "C" const char *
 cs_sles_amgx_get_config(void  *context);
 
 /*----------------------------------------------------------------------------*/
@@ -164,7 +160,7 @@ cs_sles_amgx_get_config(void  *context);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_amgx_set_config(void        *context,
                         const char  *config);
 
@@ -180,7 +176,7 @@ cs_sles_amgx_set_config(void        *context,
  */
 /*----------------------------------------------------------------------------*/
 
-const char *
+extern "C" const char *
 cs_sles_amgx_get_config_file(void  *context);
 
 /*----------------------------------------------------------------------------*/
@@ -196,7 +192,7 @@ cs_sles_amgx_get_config_file(void  *context);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_amgx_set_config_file(void        *context,
                              const char  *path);
 
@@ -213,7 +209,7 @@ cs_sles_amgx_set_config_file(void        *context,
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+extern "C" bool
 cs_sles_amgx_get_use_device(void  *context);
 
 /*----------------------------------------------------------------------------*/
@@ -228,7 +224,7 @@ cs_sles_amgx_get_use_device(void  *context);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_amgx_set_use_device(void  *context,
                             bool   use_device);
 
@@ -244,7 +240,7 @@ cs_sles_amgx_set_use_device(void  *context,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_amgx_set_flags(void  *context,
                        int    flags);
 
@@ -258,7 +254,7 @@ cs_sles_amgx_set_flags(void  *context,
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_sles_amgx_get_flags(void  *context);
 
 /*----------------------------------------------------------------------------
@@ -272,7 +268,7 @@ cs_sles_amgx_get_flags(void  *context);
  *   verbosity <-- verbosity level
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_amgx_setup(void               *context,
                    const char         *name,
                    const cs_matrix_t  *a,
@@ -307,7 +303,7 @@ cs_sles_amgx_setup(void               *context,
  *   convergence state
  *----------------------------------------------------------------------------*/
 
-cs_sles_convergence_state_t
+extern "C" cs_sles_convergence_state_t
 cs_sles_amgx_solve(void                *context,
                    const char          *name,
                    const cs_matrix_t   *a,
@@ -334,7 +330,7 @@ cs_sles_amgx_solve(void                *context,
  *               (actual type: cs_sles_amgx_t  *)
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_amgx_free(void  *context);
 
 /*----------------------------------------------------------------------------
@@ -346,7 +342,7 @@ cs_sles_amgx_free(void  *context);
  *   log_type <-- log type
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_amgx_log(const void  *context,
                  cs_log_t     log_type);
 
@@ -358,11 +354,9 @@ cs_sles_amgx_log(const void  *context,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_amgx_library_info(cs_log_t  log_type);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_SLES_AMGX_H */

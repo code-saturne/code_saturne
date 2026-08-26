@@ -33,8 +33,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*!
   \file cs_saddle_solver_setup.h
 
@@ -69,7 +67,5 @@ void
 cs_saddle_solver_setup_sles(void);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_SADDLE_SOLVER_SETUP_H */

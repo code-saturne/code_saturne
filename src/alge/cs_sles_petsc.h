@@ -35,10 +35,6 @@
 #include "alge/cs_matrix.h"
 #include "alge/cs_sles.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -99,7 +95,7 @@ typedef struct _cs_sles_petsc_t  cs_sles_petsc_t;
  *   ksp     <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_user_sles_petsc_hook(void   *context,
                         void   *ksp);
 
@@ -111,7 +107,7 @@ cs_user_sles_petsc_hook(void   *context,
  * Initialize PETSc if needed (calls cs_matrix_petsc_ensure_init).
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_petsc_init(void);
 
 /*----------------------------------------------------------------------------*/
@@ -146,7 +142,7 @@ cs_sles_petsc_init(void);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_petsc_t *
+extern "C" cs_sles_petsc_t *
 cs_sles_petsc_define(int                          f_id,
                      const char                  *name,
                      const char                  *matrix_type,
@@ -170,7 +166,7 @@ cs_sles_petsc_define(int                          f_id,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_petsc_t *
+extern "C" cs_sles_petsc_t *
 cs_sles_petsc_create(const char                  *matrix_type,
                      cs_sles_petsc_setup_hook_t  *setup_hook,
                      void                        *context);
@@ -188,7 +184,7 @@ cs_sles_petsc_create(const char                  *matrix_type,
  */
 /*----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 cs_sles_petsc_copy(const void  *context);
 
 /*----------------------------------------------------------------------------*/
@@ -200,7 +196,7 @@ cs_sles_petsc_copy(const void  *context);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_petsc_destroy(void  **context);
 
 /*----------------------------------------------------------------------------*/
@@ -215,7 +211,7 @@ cs_sles_petsc_destroy(void  **context);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_petsc_setup(void               *context,
                     const char         *name,
                     const cs_matrix_t  *a,
@@ -246,7 +242,7 @@ cs_sles_petsc_setup(void               *context,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_convergence_state_t
+extern "C" cs_sles_convergence_state_t
 cs_sles_petsc_solve(void                *context,
                     const char          *name,
                     const cs_matrix_t   *a,
@@ -274,7 +270,7 @@ cs_sles_petsc_solve(void                *context,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_petsc_free(void  *context);
 
 /*----------------------------------------------------------------------------*/
@@ -295,7 +291,7 @@ cs_sles_petsc_free(void  *context);
  */
 /*----------------------------------------------------------------------------*/
 
-bool
+extern "C" bool
 cs_sles_petsc_error_post_and_abort(cs_sles_t                    *sles,
                                    cs_sles_convergence_state_t   state,
                                    const cs_matrix_t            *a,
@@ -312,7 +308,7 @@ cs_sles_petsc_error_post_and_abort(cs_sles_t                    *sles,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_petsc_log(const void  *context,
                   cs_log_t     log_type);
 
@@ -323,7 +319,7 @@ cs_sles_petsc_log(const void  *context,
  * \param[in]  ksp     Krylov SubSpace structure
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_petsc_log_setup(void  *ksp);
 
 /*----------------------------------------------------------------------------*/
@@ -340,7 +336,7 @@ cs_sles_petsc_log_setup(void  *ksp);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_petsc_set_cvg_criteria(const void      *context,
                                double           rtol,
                                double           atol,
@@ -359,7 +355,7 @@ cs_sles_petsc_set_cvg_criteria(const void      *context,
  */
 /*----------------------------------------------------------------------------*/
 
-const char *
+extern "C" const char *
 cs_sles_petsc_get_mat_type(void  *context);
 
 /*----------------------------------------------------------------------------*/
@@ -370,11 +366,9 @@ cs_sles_petsc_get_mat_type(void  *context);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_sles_petsc_library_info(cs_log_t  log_type);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* CS_SLES_PETSC_H */
