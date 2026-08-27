@@ -80,7 +80,8 @@ compare_exchange(T  *address,
 {
   // GPU version
   #if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
-  return = (atomicCAS(&(*address)), compare, value) ? : true : false;
+  T old = atomicCAS(&(*address), compare, value);
+  return  (old == compare) ? true : false;
 
   // CPU version, C++20
   #elif __cpp_lib_atomic_ref >= 201806L  // or __cplusplus >= 202002L
