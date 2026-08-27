@@ -1759,7 +1759,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_elts,
       for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
 
         length_scale(elt_id, coo_id)
-          =    pow(1.5*rij_l[elt_id][coo_id], 1.5)
+          =    cs::pow3ov2(1.5*rij_l[elt_id][coo_id])
              / eps_l[elt_id];
 
         length_scale(elt_id, coo_id)
@@ -1800,7 +1800,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_elts,
         }
 
         length_scale(elt_id, coo_id)
-          = pow(1.5*rij_l[elt_id][coo_id], 1.5) / eps_l[elt_id];
+          = cs::pow3ov2(1.5*rij_l[elt_id][coo_id]) / eps_l[elt_id];
 
         length_scale(elt_id, coo_id)
           = 0.5*length_scale(elt_id, coo_id);

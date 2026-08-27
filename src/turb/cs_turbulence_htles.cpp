@@ -234,7 +234,7 @@ cs_turbulence_htles(void)
       cs_real_t xdist  = cs::max(w_dist[c_id], cs_math_epzero);
       cs_real_t xsik   = 45.0 * cs::pow3ov4(xnu)/(cs::qdrt(xpsi0*xepsm)*xdist);
       cs_real_t xsid   = c_3_pow_1ov6*xdmax/xdist;
-      xfs = 1.0 - tanh(cs::max(pow(xsik, 8.0),pow(xsid, 6.0)));
+      xfs = 1.0 - tanh(cs::max(cs::powN<8>(xsik),cs::powN<6>(xsid)));
     }
 
     /* Analytic energy ratio r */

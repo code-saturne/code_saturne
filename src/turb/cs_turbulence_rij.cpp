@@ -4016,8 +4016,6 @@ cs_turbulence_rij(int phase_id)
                              1,      /* inc */
                              grad.data<cs_real_3_t>());
 
-    constexpr cs_real_t c_1ov3 = 1./3.;
-
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
       /* Velocity magnitude */
