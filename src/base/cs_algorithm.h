@@ -125,6 +125,33 @@ count_to_index(cs_dispatch_context  &ctx,
                void                 *tmp_storage = nullptr);
 
 /*--------------------------------------------------------------------------*/
+/*
+ * Select and compact elements whose values are greater than a given number.
+ *
+ * If temporary storage is provided by the caller, it will be used
+ * it its size is sufficient, avoiding the overhead of local
+ * memory allocation. This is useful only for device code.
+ *
+ * \param[in]       ctx          associated dispatch context
+ * \param[in]       n            number of elements
+ * \param[in]       c            cutoff value to compare to
+ * \param[in, out]  a            elements in, selected elements out
+ * \param           tmp_size     optional temporary memory size
+ * \param           tmp_storage  optional temporary memory
+ *
+ * \return  number of selected elements
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_lnum_t
+select_if_gt(cs_dispatch_context  &ctx,
+             cs_lnum_t             n,
+             cs_lnum_t             c,
+             cs_lnum_t             a[],
+             size_t                tmp_size = 0,
+             void                 *tmp_storage = nullptr);
+
+/*--------------------------------------------------------------------------*/
 /*!
  * \brief Sum a local counter.
  *
