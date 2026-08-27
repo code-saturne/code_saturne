@@ -720,6 +720,101 @@ clamp(const float x,
   return fminf(xmax, fmaxf(xmin, x));
 }
 
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the N-th power of a given real value
+ *
+ * \return the N-th power of the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<int N, typename T>
+CS_F_HOST_DEVICE inline T
+powN(T x)
+{
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
+  static_assert(N > 0, "This function cannot be called with power less than 1");
+
+  if constexpr (N > 1)
+    return x*powN<N-1, T>(x);
+
+  return x;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the (N/2)-th power of a given real value
+ *
+ * \return the (N/2)-th power of the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<int N, typename T>
+CS_F_HOST_DEVICE inline T
+powNov2(T x)
+{
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
+  static_assert(N > 0, "This function cannot be called with power less than 1");
+
+  // If N is an even int, fallback to direct power function
+  if constexpr (N % 2 == 0)
+    return powN<N/2>(x);
+
+  return sqrt(powN<N>(x));
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the (N/3)-th power of a given real value
+ *
+ * \return the (N/3)-th power of the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<int N, typename T>
+CS_F_HOST_DEVICE inline T
+powNov3(T x)
+{
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
+  static_assert(N > 0, "This function cannot be called with power less than 1");
+
+  // If N is a multiple of 3, fallback to direct power function
+  if constexpr (N % 3 == 0)
+    return powN<N/3>(x);
+
+  return cbrt(powN(x));
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the (N/4)-th power of a given real value
+ *
+ * \return the (N/4)-th power of the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<int N, typename T>
+CS_F_HOST_DEVICE inline T
+powNov4(T x)
+{
+  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
+                "This function is only available for double or float type");
+  static_assert(N > 0, "This function cannot be called with power less than 1");
+
+  // If N is a multiple of 4, fallback to direct power function
+  if constexpr (N % 4 == 0)
+    return powN<N/4>(x);
+  // Else if N is even, fallback to power (N/2) (one less sqrt call)
+  else if constexpr (N % 2 == 0)
+    return sqrt(powN<N/2>(x));
+
+  return sqrt(sqrt(powN(x)));
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the square of a real value.
