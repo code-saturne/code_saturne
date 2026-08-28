@@ -3176,15 +3176,41 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t   *nsp,
         CS_CDO_OMP_ASSERT(cb->loc->n_rows == cm->n_fc + 1);
 
         if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
+          // Cell-Cell
           for (short int k = 0; k < 3; k++)
             eb->unsteady_term[3*n_faces + 3*c_id + k] += tptyc * cm->vol_c *
               (p_cur[3*cm->n_fc + k] - p_pre[3*cm->n_fc + k]);
         }
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Not implemented yet.", func_name);
 
-      } // End of time part
+        else {
+
+          const cs_sdm_t *mass_mat = mass_hodge->matrix;
+          /* Update rhs with csys->mat*p^n */
+
+          for (short int i = 0; i < cm->n_fc; i++) {
+
+            const cs_lnum_t f_id = cm->f_ids[i];
+            for(short int j = 0; j < cm->n_fc + 1 ; j++) {
+
+              const cs_real_t m_val = tptyc * mass_mat->val[(cm->n_fc + 1)*i+j];
+
+              for (short int k = 0; k < 3; k++)
+                eb->unsteady_term[3*f_id + k] += m_val*
+                  (p_cur[3*i + k] - p_pre[3*i + k]);
+            }
+          }
+
+          for(short int j = 0; j < cm->n_fc + 1 ; j++) {
+
+            const cs_real_t m_val = tptyc *
+              mass_mat->val[(cm->n_fc + 1)*cm->n_fc + j];
+
+            for (short int k = 0; k < 3; k++)
+              eb->unsteady_term[3*n_faces + 3*c_id + k] += m_val*
+                (p_cur[3*i + k] - p_pre[3*i + k]);
+          }
+        }
+      } /* End of time contribution */
 
       // Set p_theta
       switch (eqp->time_scheme) {
