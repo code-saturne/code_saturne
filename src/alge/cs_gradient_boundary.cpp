@@ -272,7 +272,7 @@ _gradient_boundary_iprime_lsq_s
       var_iprime[f_idx] = 0.;
       if (var_iprime_flux != nullptr)
         var_iprime_flux[f_idx] = 0.;
-      if (i_face_surf[f_id] < DBL_MIN) return;
+      if (b_face_surf[f_id] < DBL_MIN) return;
     }
 
     /* No reconstruction needed if I and I' are coincident' */
