@@ -200,6 +200,29 @@ cs_compute_wvf(short int                 f,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Update the computation of the inertia tensor with the contribution
+ *         of a tetrahedron
+ *
+ * \param[in]      x1       1st vertex coordinate
+ * \param[in]      x2       2nd vertex coordinate
+ * \param[in]      x3       3rd vertex coordinate
+ * \param[in]      x4       4th vertex coordinate
+ * \param[in]      center   center used for the computation
+ * \param[in]      vol      volume of the tetrahedron
+ * \param[in, out] tensor   inertia tensor to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_compute_add_tetra_to_inertia3(const cs_real_t    x1[3],
+                                 const cs_real_t    x2[3],
+                                 const cs_real_t    x3[3],
+                                 const cs_real_t    x4[3],
+                                 const cs_real_t    center[3],
+                                 cs_real_t          vol,
+                                 cs_real_33_t       tensor);
 
 /*----------------------------------------------------------------------------*/
 /*!
