@@ -203,6 +203,8 @@ cs_compute_corr_grad_lin(const cs_mesh_t       *m,
   cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict cell_cen =
+    (const cs_real_3_t *)fvq->cell_cen;
   const cs_real_3_t *restrict i_face_normal =
     (const cs_real_3_t *)fvq->i_face_normal;
   const cs_real_3_t *restrict b_face_normal =
@@ -237,9 +239,12 @@ cs_compute_corr_grad_lin(const cs_mesh_t       *m,
 
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
-        cs_real_t flux = i_face_cog[face_id][i] * i_face_normal[face_id][j];
-        corr_grad_lin[cell_id1][i][j] += flux;
-        corr_grad_lin[cell_id2][i][j] -= flux;
+        cs_real_t fluxi = (i_face_cog[face_id][i] - cell_cen[cell_id1][i])
+                        * i_face_normal[face_id][j];
+        cs_real_t fluxj = (i_face_cog[face_id][i] - cell_cen[cell_id2][i])
+                        * i_face_normal[face_id][j];
+        corr_grad_lin[cell_id1][i][j] += fluxi;
+        corr_grad_lin[cell_id2][i][j] -= fluxj;
       }
     }
   }
@@ -249,7 +254,8 @@ cs_compute_corr_grad_lin(const cs_mesh_t       *m,
     cs_lnum_t cell_id = b_face_cells[face_id];
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
-        cs_real_t flux = b_face_cog[face_id][i] * b_face_normal[face_id][j];
+        cs_real_t flux = (b_face_cog[face_id][i] - cell_cen[cell_id][i])
+                       * b_face_normal[face_id][j];
         corr_grad_lin[cell_id][i][j] += flux;
       }
     }
@@ -260,7 +266,7 @@ cs_compute_corr_grad_lin(const cs_mesh_t       *m,
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
-          cs_real_t flux = fvq->c_w_face_cog[cell_id*3+i]
+          cs_real_t flux = (fvq->c_w_face_cog[cell_id*3+i]-cell_cen[cell_id][i])
                            * fvq->c_w_face_normal[cell_id*3+j];
           corr_grad_lin[cell_id][i][j] += flux;
         }
