@@ -2516,10 +2516,19 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
-  const int *restrict c_disable_flag = fvq->c_disable_flag;
-  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+
+  const cs_lnum_t *restrict c2f = nullptr;
+  const int *restrict c_disable_flag = nullptr;
+  cs_lnum_t has_dc = 0;
+  const cs_real_t *restrict i_face_surf = nullptr;
+  const cs_real_t *restrict b_face_surf = nullptr;
+  if (is_porous) {
+    c2f = ma->cell_i_faces;
+    c_disable_flag = fvq->c_disable_flag;
+    has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+    i_face_surf = fvq->i_face_surf;
+    b_face_surf = fvq->b_face_surf;
+  }
 
   cs_cocg_6_t  *restrict cocgb = nullptr, *restrict cocg = nullptr;
 
@@ -2598,7 +2607,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
                            cell_cen[c_id1][2] - cell_cen[c_id][2]};
 
         if (is_porous)
-          if (i_face_surf[ma->cell_i_faces[i]] < DBL_MIN) continue;
+          if (i_face_surf[c2f[i]] < DBL_MIN) continue;
         cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
         _cocg[0] += dc[0] * dc[0] * ddc;
@@ -2675,20 +2684,30 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
   /* The cocg term for interior cells only changes if the mesh does */
 
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    if (has_dc*c_disable_flag[has_dc*c_id] < 1) {
-      cs_math_6_gauss_inverse_in_place(cocg[c_id]);
-    } else {
-      cocg[c_id][0] = 0.5;
-      cocg[c_id][1] = 0.5;
-      cocg[c_id][2] = 0.5;
-      cocg[c_id][3] = 0.0;
-      cocg[c_id][4] = 0.0;
-      cocg[c_id][5] = 0.0;
-    }
-  });
+  if (is_porous) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      if (has_dc*c_disable_flag[has_dc*c_id] < 1) {
+        cs_math_6_gauss_inverse_in_place(cocg[c_id]);
+      }
+      else {
+        cocg[c_id][0] = 0.5;
+        cocg[c_id][1] = 0.5;
+        cocg[c_id][2] = 0.5;
+        cocg[c_id][3] = 0.0;
+        cocg[c_id][4] = 0.0;
+        cocg[c_id][5] = 0.0;
+      }
+    });
 
-  ctx.wait();
+    ctx.wait();
+  }
+  else {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cs_math_6_gauss_inverse_in_place(cocg[c_id]);
+    });
+
+    ctx.wait();
+  }
 
   cs_mem_advise_set_read_mostly(cocg);
   cs_mem_advise_set_read_mostly(cocgb);
@@ -2737,8 +2756,14 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_lnum_t *restrict c2f = nullptr;
+  const cs_real_t *restrict i_face_surf = nullptr;
+  const cs_real_t *restrict b_face_surf = nullptr;
+  if (is_porous) {
+    c2f = ma->cell_i_faces;
+    i_face_surf = fvq->i_face_surf;
+    b_face_surf = fvq->b_face_surf;
+  }
 
 #if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
@@ -2880,7 +2905,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
            cidx++) {
 
         if (is_porous)
-          if (i_face_surf[ma->cell_i_faces[cidx]] < DBL_MIN) continue;
+          if (i_face_surf[c2f[cidx]] < DBL_MIN) continue;
 
         cs_lnum_t jj = cell_cells_e[cidx];
 
@@ -3274,15 +3299,21 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_lnum_t *restrict cell_cells_idx = m->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_lst = m->cell_cells_lst;
 
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_mesh_adjacencies_t *ma = nullptr;
+  const cs_lnum_t *restrict c2f = nullptr;
+  const cs_real_t *restrict i_face_surf = nullptr;
+  const cs_real_t *restrict b_face_surf = nullptr;
+  if (is_porous_f) {
+    ma = cs_glob_mesh_adjacencies;
+    c2f = ma->cell_i_faces;
+    i_face_surf = fvq->i_face_surf;
+    b_face_surf = fvq->b_face_surf;
+  }
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
@@ -3507,7 +3538,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
         cs_lnum_t jj = cell_cells_lst[cidx];
 
         if (is_porous_f)
-          if (i_face_surf[ma->cell_i_faces[cidx]] < DBL_MIN) continue;
+          if (i_face_surf[c2f[cidx]] < DBL_MIN) continue;
 
         /* Note: replaced the expressions:
          *  a) ptmid = 0.5 * (cell_cen[jj] - cell_cen[ii])
@@ -6810,8 +6841,6 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
   const cs_lnum_t n_cells     = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
@@ -6823,8 +6852,16 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+  const cs_mesh_adjacencies_t *ma = nullptr;
+  const cs_lnum_t *restrict c2f = nullptr;
+  const cs_real_t *restrict b_face_surf = nullptr;
+  const cs_real_t *restrict i_face_surf = nullptr;
+  if (is_porous) {
+    ma = cs_glob_mesh_adjacencies;
+    c2f = ma->cell_i_faces;
+    b_face_surf = fvq->b_face_surf;
+    i_face_surf = fvq->i_face_surf;
+  }
 
 #if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
@@ -6966,7 +7003,7 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
         if (is_porous)
-          if (i_face_surf[ma->cell_i_faces[cidx]] < DBL_MIN) return;
+          if (i_face_surf[c2f[cidx]] < DBL_MIN) return;
 
         cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
@@ -7795,7 +7832,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
              r_grad);
         else {
           if (f_i_poro_duq_0 == nullptr)
-            _lsq_scalar_gradient_hyd_p<0>
+            _lsq_scalar_gradient_hyd_p<false>
               (mesh,
                fvq,
                halo_type,
@@ -7805,7 +7842,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
                c_weight,
                r_grad);
           else
-            _lsq_scalar_gradient_hyd_p<1>
+            _lsq_scalar_gradient_hyd_p<true>
               (mesh,
                fvq,
                halo_type,
@@ -7820,21 +7857,21 @@ _gradient_scalar(cs_dispatch_context           &ctx,
       else {
         if (compute_bounds == false) {
           if (f_i_poro_duq_0 == nullptr)
-            _lsq_scalar_gradient<0>(mesh,
-                                    fvq,
-                                    halo_type,
-                                    var,
-                                    val_f,
-                                    c_weight,
-                                    r_grad);
+            _lsq_scalar_gradient<false>(mesh,
+                                        fvq,
+                                        halo_type,
+                                        var,
+                                        val_f,
+                                        c_weight,
+                                        r_grad);
           else
-            _lsq_scalar_gradient<1>(mesh,
-                                    fvq,
-                                    halo_type,
-                                    var,
-                                    val_f,
-                                    c_weight,
-                                    r_grad);
+            _lsq_scalar_gradient<true>(mesh,
+                                       fvq,
+                                       halo_type,
+                                       var,
+                                       val_f,
+                                       c_weight,
+                                       r_grad);
         }
         else {
           _lsq_scalar_gradient_gather<true>(mesh,
@@ -8071,25 +8108,25 @@ _gradient_vector(const char                     *var_name,
                                         r_grad);
       else {
         if (f_i_poro_duq_0 == nullptr)
-          _lsq_strided_gradient<3, 0>(ctx,
-                                      mesh,
-                                      madj,
-                                      fvq,
-                                      halo_type,
-                                      var,
-                                      val_f,
-                                      c_weight,
-                                      r_grad);
+          _lsq_strided_gradient<3, false>(ctx,
+                                          mesh,
+                                          madj,
+                                          fvq,
+                                          halo_type,
+                                          var,
+                                          val_f,
+                                          c_weight,
+                                          r_grad);
         else
-          _lsq_strided_gradient<3, 1>(ctx,
-                                      mesh,
-                                      madj,
-                                      fvq,
-                                      halo_type,
-                                      var,
-                                      val_f,
-                                      c_weight,
-                                      r_grad);
+          _lsq_strided_gradient<3, true>(ctx,
+                                         mesh,
+                                         madj,
+                                         fvq,
+                                         halo_type,
+                                         var,
+                                         val_f,
+                                         c_weight,
+                                         r_grad);
       }
 
       if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
@@ -8285,25 +8322,25 @@ _gradient_tensor(const char                 *var_name,
                                         r_grad);
       else {
         if (f_i_poro_duq_0 == nullptr)
-          _lsq_strided_gradient<6, 0>(ctx,
-                                      mesh,
-                                      madj,
-                                      fvq,
-                                      halo_type,
-                                      var,
-                                      val_f,
-                                      c_weight,
-                                      r_grad);
+          _lsq_strided_gradient<6, false>(ctx,
+                                          mesh,
+                                          madj,
+                                          fvq,
+                                          halo_type,
+                                          var,
+                                          val_f,
+                                          c_weight,
+                                          r_grad);
         else
-          _lsq_strided_gradient<6, 1>(ctx,
-                                      mesh,
-                                      madj,
-                                      fvq,
-                                      halo_type,
-                                      var,
-                                      val_f,
-                                      c_weight,
-                                      r_grad);
+          _lsq_strided_gradient<6, true>(ctx,
+                                         mesh,
+                                         madj,
+                                         fvq,
+                                         halo_type,
+                                         var,
+                                         val_f,
+                                         c_weight,
+                                         r_grad);
       }
 
       if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
@@ -8833,9 +8870,9 @@ cs_gradient_get_cell_cocg_lsq(const cs_mesh_t               *m,
 
   if (_cocg == nullptr) {
     if (f_i_poro_duq_0 == nullptr)
-      _compute_cell_cocg_lsq<0>(m, extended, fvq, gq);
+      _compute_cell_cocg_lsq<false>(m, extended, fvq, gq);
     else
-      _compute_cell_cocg_lsq<1>(m, extended, fvq, gq);
+      _compute_cell_cocg_lsq<true>(m, extended, fvq, gq);
   }
 
   /* Set pointers */

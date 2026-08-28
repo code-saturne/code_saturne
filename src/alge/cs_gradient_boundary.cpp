@@ -268,6 +268,13 @@ _gradient_boundary_iprime_lsq_s
     cs_lnum_t f_id = (face_ids != nullptr) ? face_ids[f_idx] : f_idx;
     cs_lnum_t c_id = b_face_cells[f_id];
 
+    if (is_porous) {
+      var_iprime[f_idx] = 0.;
+      if (var_iprime_flux != nullptr)
+        var_iprime_flux[f_idx] = 0.;
+      if (i_face_surf[f_id] < DBL_MIN) return;
+    }
+
     /* No reconstruction needed if I and I' are coincident' */
 
     if (  cs_math_3_square_norm(diipb[f_id])
@@ -496,10 +503,10 @@ _gradient_boundary_iprime_lsq_s
 
     for (cs_lnum_t i = s_id_b; i < e_id_b; i++) {
 
-      if (is_porous)
-        if (b_face_surf[f_id] < DBL_MIN) continue;
-
       cs_lnum_t c_f_id = cell_b_faces[i];
+
+      if (is_porous)
+        if (b_face_surf[c_f_id] < DBL_MIN) continue;
 
       cs_real_t a = bc_coeff_a[c_f_id];
       cs_real_t b = bc_coeff_b[c_f_id];
