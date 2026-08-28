@@ -410,6 +410,10 @@ _set_key(cs_equation_param_t *eqp,
     }
     break;
 
+  case CS_EQKEY_HODGE_TIME_COEF:
+    eqp->time_hodgep.coef = atof(keyval);
+    break;
+
   case CS_EQKEY_HODGE_REAC_ALGO:
     if (strcmp(keyval, "voronoi") == 0)
       eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
