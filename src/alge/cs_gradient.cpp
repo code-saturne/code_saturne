@@ -2597,9 +2597,8 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
                            cell_cen[c_id1][1] - cell_cen[c_id][1],
                            cell_cen[c_id1][2] - cell_cen[c_id][2]};
 
-        cs_lnum_t f_id_ij = ma->cell_i_faces[i];
         if (is_porous)
-          if (i_face_surf[f_id_ij] < DBL_MIN) continue;
+          if (i_face_surf[ma->cell_i_faces[i]] < DBL_MIN) continue;
         cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
         _cocg[0] += dc[0] * dc[0] * ddc;
@@ -2880,9 +2879,8 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
            cidx < cell_cells_e_idx[ii+1];
            cidx++) {
 
-        cs_lnum_t f_id_ij = ma->cell_i_faces[cidx];
         if (is_porous)
-          if (i_face_surf[f_id_ij] < DBL_MIN) continue;
+          if (i_face_surf[ma->cell_i_faces[cidx]] < DBL_MIN) continue;
 
         cs_lnum_t jj = cell_cells_e[cidx];
 
@@ -3508,10 +3506,8 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
         cs_lnum_t jj = cell_cells_lst[cidx];
 
-        cs_lnum_t f_id_ij = ma->cell_i_faces[cidx];
-
         if (is_porous_f)
-          if (i_face_surf[f_id_ij] < DBL_MIN) continue;
+          if (i_face_surf[ma->cell_i_faces[cidx]] < DBL_MIN) continue;
 
         /* Note: replaced the expressions:
          *  a) ptmid = 0.5 * (cell_cen[jj] - cell_cen[ii])
@@ -6969,7 +6965,9 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
-        cs_lnum_t f_id_ij = ma->cell_i_faces[cidx];
+        if (is_porous)
+          if (i_face_surf[ma->cell_i_faces[cidx]] < DBL_MIN) return;
+
         cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
         for (cs_lnum_t kk = 0; kk < stride; kk++) {

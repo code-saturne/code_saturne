@@ -318,9 +318,8 @@ cs_gradient_boundary_iprime_lsq_s
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
 
-        cs_lnum_t f_id_ij = cell_i_faces[i];
         if (is_porous)
-          if (i_face_surf[f_id_ij] < DBL_MIN) continue;
+          if (i_face_surf[cell_i_faces[i]] < DBL_MIN) continue;
 
         cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
 
@@ -338,6 +337,7 @@ cs_gradient_boundary_iprime_lsq_s
         cs_real_t pfac = var_j - var_i;
 
         if (hyd_p_flag == 1) {
+          cs_lnum_t f_id_ij = cell_i_faces[i];
 
           cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
                                                            cell_cen[c_id],
@@ -380,9 +380,8 @@ cs_gradient_boundary_iprime_lsq_s
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
 
-        cs_lnum_t f_id_ij = cell_i_faces[i];
         if (is_porous)
-          if (i_face_surf[f_id_ij] < DBL_MIN) continue;
+          if (i_face_surf[cell_i_faces[i]] < DBL_MIN) continue;
 
         cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
 
@@ -403,6 +402,7 @@ cs_gradient_boundary_iprime_lsq_s
         cs_real_t pfac = (var_j - var_i);
 
         if (hyd_p_flag == 1) {
+          cs_lnum_t f_id_ij = cell_i_faces[i];
 
           cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
                                                            cell_cen[c_id],
@@ -464,9 +464,8 @@ cs_gradient_boundary_iprime_lsq_s
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
 
-        cs_lnum_t f_id_ij = cell_i_faces[i];
         if (is_porous)
-          if (i_face_surf[f_id_ij] < DBL_MIN) continue;
+          if (i_face_surf[cell_i_faces[i]] < DBL_MIN) continue;
 
         cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
 
