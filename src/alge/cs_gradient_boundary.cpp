@@ -571,12 +571,21 @@ _gradient_boundary_iprime_lsq_s
     cs_real_t a00 = cocg[1]*cocg[2] - cocg[4]*cocg[4];
     cs_real_t a01 = cocg[4]*cocg[5] - cocg[3]*cocg[2];
     cs_real_t a02 = cocg[3]*cocg[4] - cocg[1]*cocg[5];
+
+    cs_real_t det = (cocg[0]*a00 + cocg[3]*a01 + cocg[5]*a02);
+    if (det < DBL_MIN) {
+      cocg[0] += 1.e-3; cocg[1] += 1.e-3; cocg[2] += 1.e-3;
+      a00 = cocg[1]*cocg[2] - cocg[4]*cocg[4];
+      a01 = cocg[4]*cocg[5] - cocg[3]*cocg[2];
+      a02 = cocg[3]*cocg[4] - cocg[1]*cocg[5];
+      det = (cocg[0]*a00 + cocg[3]*a01 + cocg[5]*a02);
+    }
+
     cs_real_t a11 = cocg[0]*cocg[2] - cocg[5]*cocg[5];
     cs_real_t a12 = cocg[3]*cocg[5] - cocg[0]*cocg[4];
     cs_real_t a22 = cocg[0]*cocg[1] - cocg[3]*cocg[3];
 
-    cs_real_t det = (cocg[0]*a00 + cocg[3]*a01 + cocg[5]*a02);
-    cs_real_t det_inv = (det > 0.) ? 1. / det : 0.;
+    cs_real_t det_inv = 1. / det;
 
     cs_real_t grad[3];
 
