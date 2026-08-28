@@ -733,8 +733,8 @@ template<int N, typename T>
 CS_F_HOST_DEVICE inline T
 powN(T x)
 {
-  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
-                "This function is only available for double or float type");
+  static_assert(std::is_floating_point_v<T>,
+                "This function is only available for floating point types");
   static_assert(N > 0, "This function cannot be called with power less than 1");
 
   if constexpr (N > 1)
@@ -755,8 +755,8 @@ template<int N, typename T>
 CS_F_HOST_DEVICE inline T
 powNov2(T x)
 {
-  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
-                "This function is only available for double or float type");
+  static_assert(std::is_floating_point_v<T>,
+                "This function is only available for floating point types");
   static_assert(N > 0, "This function cannot be called with power less than 1");
 
   // If N is an even int, fallback to direct power function
@@ -778,8 +778,8 @@ template<int N, typename T>
 CS_F_HOST_DEVICE inline T
 powNov3(T x)
 {
-  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
-                "This function is only available for double or float type");
+  static_assert(std::is_floating_point_v<T>,
+                "This function is only available for floating point types");
   static_assert(N > 0, "This function cannot be called with power less than 1");
 
   // If N is a multiple of 3, fallback to direct power function
@@ -801,8 +801,8 @@ template<int N, typename T>
 CS_F_HOST_DEVICE inline T
 powNov4(T x)
 {
-  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
-                "This function is only available for double or float type");
+  static_assert(std::is_floating_point_v<T>,
+                "This function is only available for floating point types");
   static_assert(N > 0, "This function cannot be called with power less than 1");
 
   // If N is a multiple of 4, fallback to direct power function
@@ -829,8 +829,8 @@ template<typename T>
 CS_F_HOST_DEVICE inline T
 pow2(T  x)
 {
-  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
-                "This function is only available for double or float type");
+  static_assert(std::is_floating_point_v<T>,
+                "This function is only available for floating point types");
   return x*x;
 }
 
@@ -849,8 +849,8 @@ pow3
   T x
 )
 {
-  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
-                "This function is only available for double or float type");
+  static_assert(std::is_floating_point_v<T>,
+                "This function is only available for floating point types");
   return x*x*x;
 }
 
@@ -869,9 +869,30 @@ pow4
   T x
 )
 {
-  static_assert((std::is_same_v<T,double> || std::is_same_v<T,float>),
-                "This function is only available for double or float type");
+  static_assert(std::is_floating_point_v<T>,
+                "This function is only available for floating point types");
   return x*x*x*x;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the 5-th pwoer of a given (float or double) value
+ *
+ * \return the 5-th power of the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename T>
+CS_F_HOST_DEVICE inline T
+pow5
+(
+  T x
+)
+{
+  static_assert(std::is_floating_point_v<T>,
+                "This function is only available for floating point types");
+  T x2 = x*x;
+  return x2*x2*x;
 }
 
 /*--------------------------------------------------------------------------*/
