@@ -2553,8 +2553,6 @@ cs_cdofb_prescribed_smooth_wall_n_weak_t_neumann(
   std::memset(cb->values, 0, 6 * sizeof(double));
   double *x_dir  = cb->values;
 
-  cs_sdm_t *m = csys->mat;
-  cs_sdm_block_t *bd = m->block_desc;
   cs_sdm_t *b_ff = csys->mat->get_block(bf, bf);
   assert(b_ff->n_rows == b_ff->n_cols && b_ff->n_rows == 3);
 
@@ -3185,7 +3183,8 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t   *nsp,
         else {
 
           const cs_sdm_t *mass_mat = mass_hodge->matrix;
-          /* Update rhs with csys->mat*p^n */
+
+          // Update rhs with csys->mat*p^n
 
           for (short int i = 0; i < cm->n_fc; i++) {
 
@@ -3199,7 +3198,6 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t   *nsp,
                   (p_cur[3*i + k] - p_pre[3*i + k]);
             }
           }
-
           for(short int j = 0; j < cm->n_fc + 1 ; j++) {
 
             const cs_real_t m_val = tptyc *
@@ -3207,10 +3205,10 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t   *nsp,
 
             for (short int k = 0; k < 3; k++)
               eb->unsteady_term[3*n_faces + 3*c_id + k] += m_val*
-                (p_cur[3*i + k] - p_pre[3*i + k]);
+                (p_cur[3*cm->n_fc + k] - p_pre[3*cm->n_fc + k]);
           }
         }
-      } /* End of time contribution */
+      } // End of time contribution
 
       // Set p_theta
       switch (eqp->time_scheme) {
