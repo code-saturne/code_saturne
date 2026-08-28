@@ -141,12 +141,6 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
   }
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the values of a scalar at boundary face I' positions
@@ -174,6 +168,7 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
  * \param[in]   ctx             Reference to dispatch context
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
+ * \param[in]   f_i_poro_duq_0  pointer to field for porous model
  * \param[in]   n_faces         number of faces at which to compute values
  * \param[in]   face_ids        ids of boundary faces at which to compute
  *                              values, or null for all
@@ -194,38 +189,27 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
 /*----------------------------------------------------------------------------*/
 
 template <bool is_porous>
-void
-cs_gradient_boundary_iprime_lsq_s
+static void
+_gradient_boundary_iprime_lsq_s
 (
-  cs_dispatch_context           &ctx,
-  const cs_mesh_t               *m,
-  const cs_mesh_quantities_t    *fvq,
-  cs_lnum_t                      n_faces,
-  const cs_lnum_t               *face_ids,
-  cs_halo_type_t                 halo_type,
-  double                         clip_coeff,
-  int                            hyd_p_flag,
-  cs_real_t                      f_ext[][3],
-  cs_real_t                     *df_limiter,
-  const cs_field_bc_coeffs_t    *bc_coeffs,
-  const cs_real_t                c_weight[],
-  const cs_real_t                var[],
-  cs_real_t           *restrict  var_iprime,
-  cs_real_t                      var_iprime_flux[]
+  cs_dispatch_context                &ctx,
+  const cs_mesh_t                    *m,
+  const cs_mesh_quantities_t         *fvq,
+  [[maybe_unused]] const cs_field_t  *f_i_poro_duq_0,
+  cs_lnum_t                           n_faces,
+  const cs_lnum_t                    *face_ids,
+  cs_halo_type_t                      halo_type,
+  double                              clip_coeff,
+  int                                 hyd_p_flag,
+  cs_real_t                           f_ext[][3],
+  cs_real_t                          *df_limiter,
+  const cs_field_bc_coeffs_t         *bc_coeffs,
+  const cs_real_t                     c_weight[],
+  const cs_real_t                     var[],
+  cs_real_t                *restrict  var_iprime,
+  cs_real_t                           var_iprime_flux[]
 )
 {
-  CS_PROFILE_FUNC_RANGE();
-
-  std::chrono::high_resolution_clock::time_point t_start, t_stop;
-
-  if (cs_glob_timer_kernels_flag > 0)
-    t_start = std::chrono::high_resolution_clock::now();
-
-  /* Initialization */
-
-  if (n_faces <= 0)
-    return;
-
   assert(var_iprime != nullptr || var_iprime_flux != nullptr);
 
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -267,10 +251,9 @@ cs_gradient_boundary_iprime_lsq_s
   const cs_real_t *bc_coeff_b = bc_coeffs->b;
 
   /* Additional terms due to porosity */
-  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
-  cs_real_t *i_poro_duq_0 = nullptr;
-  cs_real_t *i_poro_duq_1 = nullptr;
-  cs_real_t *b_poro_duq = nullptr;
+  const cs_real_t *i_poro_duq_0 = nullptr;
+  const cs_real_t *i_poro_duq_1 = nullptr;
+  const cs_real_t *b_poro_duq = nullptr;
 
   if (f_i_poro_duq_0 != nullptr) {
     i_poro_duq_0 = f_i_poro_duq_0->val;
@@ -651,6 +634,128 @@ cs_gradient_boundary_iprime_lsq_s
     var_iprime[f_idx] = var_ip;
 
   });
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the values of a scalar at boundary face I' positions
+ *         using least-squares interpolation.
+ *
+ * This assumes ghost cell values for the variable (var) are up-to-date.
+ *
+ * A simple limiter is applied to ensure the maximum principle is preserved
+ * (using non-reconstructed values in case of non-homogeneous Neumann
+ * conditions).
+ *
+ * \remark
+ *
+ * To compute the values at I', we only need the gradient along II', so
+ * in most cases, we could simply assume a Neumann BC for a given face.
+ *
+ * We still use the provided BC's when possible, for the following cases:
+ * - Given a non-uniform Dirichlet condition and a non-orthogonal mesh,
+ *   the Dirichlet values at face centers (shifted by II' relative to I')
+ *   can convey a portion of the information of the gradient along II'.
+ * - For cells with multiple boundary faces, information from faces whose
+ *   normals are not orthogonal to II' can also provide a significant
+ *   contribution to the normal.
+ *
+ * \param[in]   ctx             Reference to dispatch context
+ * \param[in]   m               pointer to associated mesh structure
+ * \param[in]   fvq             pointer to associated finite volume quantities
+ * \param[in]   n_faces         number of faces at which to compute values
+ * \param[in]   face_ids        ids of boundary faces at which to compute
+ *                              values, or null for all
+ * \param[in]   halo_type       halo (cell neighborhood) type
+ * \param[in]   clip_coeff      clipping (limiter) coefficient
+ *                              (no limiter if < 0)
+ * \param[in]   hyd_p_flag      flag for hydrostatic pressure
+ * \param[in]   f_ext           exterior force generating pressure
+ * \param[in]   df_limiter      diffusion clipping (limiter) field
+ *                              (no limiter if nullptr)
+ * \param[in]   bc_coeffs       boundary condition structure, or null
+ * \param[in]   c_weight        cell variable weight, or null
+ * \param[in]   var             variable values et cell centers
+ * \param[out]  var_iprime      variable values et face iprime locations
+ * \param[out]  var_iprime_flux variable values at face iprime locations
+                                for flux, or nullptr if not needed
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_boundary_iprime_lsq_s
+(
+  cs_dispatch_context           &ctx,
+  const cs_mesh_t               *m,
+  const cs_mesh_quantities_t    *fvq,
+  cs_lnum_t                      n_faces,
+  const cs_lnum_t               *face_ids,
+  cs_halo_type_t                 halo_type,
+  double                         clip_coeff,
+  int                            hyd_p_flag,
+  cs_real_t                      f_ext[][3],
+  cs_real_t                     *df_limiter,
+  const cs_field_bc_coeffs_t    *bc_coeffs,
+  const cs_real_t                c_weight[],
+  const cs_real_t                var[],
+  cs_real_t           *restrict  var_iprime,
+  cs_real_t                      var_iprime_flux[]
+)
+{
+  CS_PROFILE_FUNC_RANGE();
+
+  std::chrono::high_resolution_clock::time_point t_start, t_stop;
+
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  /* Initialization */
+
+  if (n_faces <= 0)
+    return;
+
+  const cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
+
+  if (f_i_poro_duq_0 == nullptr)
+    _gradient_boundary_iprime_lsq_s<false>(ctx,
+                                           m,
+                                           fvq,
+                                           f_i_poro_duq_0,
+                                           n_faces,
+                                           face_ids,
+                                           halo_type,
+                                           clip_coeff,
+                                           hyd_p_flag,
+                                           f_ext,
+                                           df_limiter,
+                                           bc_coeffs,
+                                           c_weight,
+                                           var,
+                                           var_iprime,
+                                           var_iprime_flux);
+  else
+    _gradient_boundary_iprime_lsq_s<true>(ctx,
+                                          m,
+                                          fvq,
+                                          f_i_poro_duq_0,
+                                          n_faces,
+                                          face_ids,
+                                          halo_type,
+                                          clip_coeff,
+                                          hyd_p_flag,
+                                          f_ext,
+                                          df_limiter,
+                                          bc_coeffs,
+                                          c_weight,
+                                          var,
+                                          var_iprime,
+                                          var_iprime_flux);
 
   if (cs_glob_timer_kernels_flag > 0) {
     ctx.wait();
@@ -663,46 +768,6 @@ cs_gradient_boundary_iprime_lsq_s
     printf(" = %ld\n", elapsed.count());
   }
 }
-
-template void
-cs_gradient_boundary_iprime_lsq_s<false>
-(
-  cs_dispatch_context           &ctx,
-  const cs_mesh_t               *m,
-  const cs_mesh_quantities_t    *fvq,
-  cs_lnum_t                      n_faces,
-  const cs_lnum_t               *face_ids,
-  cs_halo_type_t                 halo_type,
-  double                         clip_coeff,
-  int                            hyd_p_flag,
-  cs_real_t                      f_ext[][3],
-  cs_real_t                     *df_limiter,
-  const cs_field_bc_coeffs_t    *bc_coeffs,
-  const cs_real_t                c_weight[],
-  const cs_real_t                var[],
-  cs_real_t           *restrict  var_iprime,
-  cs_real_t                      var_iprime_flux[]
-);
-
-template void
-cs_gradient_boundary_iprime_lsq_s<true>
-(
-  cs_dispatch_context           &ctx,
-  const cs_mesh_t               *m,
-  const cs_mesh_quantities_t    *fvq,
-  cs_lnum_t                      n_faces,
-  const cs_lnum_t               *face_ids,
-  cs_halo_type_t                 halo_type,
-  double                         clip_coeff,
-  int                            hyd_p_flag,
-  cs_real_t                      f_ext[][3],
-  cs_real_t                     *df_limiter,
-  const cs_field_bc_coeffs_t    *bc_coeffs,
-  const cs_real_t                c_weight[],
-  const cs_real_t                var[],
-  cs_real_t           *restrict  var_iprime,
-  cs_real_t                      var_iprime_flux[]
-);
 
 /*----------------------------------------------------------------------------*/
 /*!

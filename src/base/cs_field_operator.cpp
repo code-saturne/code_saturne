@@ -890,51 +890,29 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
     bc_coeffs = f->bc_coeffs;
   }
 
-  /* Presence of porosity */
-  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
-
   /* With least-squares gradient, we can use a cheaper, boundary-only
      reconstruction */
 
   if (gradient_type == CS_GRADIENT_LSQ) {
 
     cs_real_t climgr = (eqp->imligr < 0) ? -1.0 : eqp->climgr;
-
     cs_dispatch_context  ctx;
 
-    if (f_i_poro_duq_0 == nullptr)
-      cs_gradient_boundary_iprime_lsq_s<0>(ctx,
-                                           m,
-                                           fvq,
-                                           n_faces,
-                                           face_ids,
-                                           halo_type,
-                                           climgr,
-                                           false,   // hyd_p_flag
-                                           nullptr, // f_ext
-                                           nullptr,
-                                           bc_coeffs,
-                                           c_weight,
-                                           var,
-                                           var_iprime,
-                                           nullptr);
-    else
-      cs_gradient_boundary_iprime_lsq_s<1>(ctx,
-                                           m,
-                                           fvq,
-                                           n_faces,
-                                           face_ids,
-                                           halo_type,
-                                           climgr,
-                                           false,   // hyd_p_flag
-                                           nullptr, // f_ext
-                                           nullptr,
-                                           bc_coeffs,
-                                           c_weight,
-                                           var,
-                                           var_iprime,
-                                           nullptr);
-
+    cs_gradient_boundary_iprime_lsq_s(ctx,
+                                      m,
+                                      fvq,
+                                      n_faces,
+                                      face_ids,
+                                      halo_type,
+                                      climgr,
+                                      false,   // hyd_p_flag
+                                      nullptr, // f_ext
+                                      nullptr,
+                                      bc_coeffs,
+                                      c_weight,
+                                      var,
+                                      var_iprime,
+                                      nullptr);
     ctx.wait();
 
   }

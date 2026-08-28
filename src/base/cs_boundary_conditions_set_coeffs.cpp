@@ -4495,38 +4495,21 @@ cs_boundary_conditions_update_bc_coeff_face_values
       /* val_ip and val_ip_lim is the same exept if we applied
          a diffusion limiter  */
 
-      if (f_i_poro_duq_0 == nullptr)
-        cs_gradient_boundary_iprime_lsq_s<0>(ctx,
-                                             m,
-                                             mq,
-                                             n_b_faces,
-                                             nullptr,
-                                             halo_type,
-                                             b_rc_clip_factor,
-                                             hyd_p_flag,
-                                             f_ext,
-                                             df_limiter,
-                                             bc_coeffs,
-                                             c_weight,
-                                             pvar,
-                                             val_ip_grad,
-                                             val_ip_flux);
-      else
-        cs_gradient_boundary_iprime_lsq_s<1>(ctx,
-                                             m,
-                                             mq,
-                                             n_b_faces,
-                                             nullptr,
-                                             halo_type,
-                                             b_rc_clip_factor,
-                                             hyd_p_flag,
-                                             f_ext,
-                                             df_limiter,
-                                             bc_coeffs,
-                                             c_weight,
-                                             pvar,
-                                             val_ip_grad,
-                                             val_ip_flux);
+      cs_gradient_boundary_iprime_lsq_s(ctx,
+                                        m,
+                                        mq,
+                                        n_b_faces,
+                                        nullptr,
+                                        halo_type,
+                                        b_rc_clip_factor,
+                                        hyd_p_flag,
+                                        f_ext,
+                                        df_limiter,
+                                        bc_coeffs,
+                                        c_weight,
+                                        pvar,
+                                        val_ip_grad,
+                                        val_ip_flux);
 
     }
     else if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {

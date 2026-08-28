@@ -1783,13 +1783,6 @@ cs_internal_coupling_update_bc_coeffs_s
     CS_MALLOC_HD(var_distant_d, n_distant, cs_real_t, cs_alloc_mode);
   }
 
-  /* Presence of porosity */
-  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
-  cs_lnum_t is_porous = 0;
-  if (f_i_poro_duq_0 != nullptr) {
-    is_porous = 1;
-  }
-
   const cs_lnum_t *restrict b_face_cells = mesh->b_face_cells;
   cs_real_t *bc_coeff_a = bc_coeffs->a;
   cs_real_t *bc_coeff_b = bc_coeffs->b;
@@ -1812,39 +1805,21 @@ cs_internal_coupling_update_bc_coeffs_s
 
     if (iter > 0) {
       if (w_stride <= 1) {
-        if (f_i_poro_duq_0 != nullptr)
-          cs_gradient_boundary_iprime_lsq_s<0>(ctx,
-                                               mesh,
-                                               cs_glob_mesh_quantities,
-                                               n_distant,
-                                               faces_distant,
-                                               halo_type,
-                                               clip_coeff,
-                                               hyd_p_flag,
-                                               f_ext,
-                                               df_limiter,
-                                               bc_coeffs,
-                                               c_weight,
-                                               var,
-                                               var_tosend,
-                                               var_distant_d);
-        else
-          cs_gradient_boundary_iprime_lsq_s<1>(ctx,
-                                               mesh,
-                                               cs_glob_mesh_quantities,
-                                               n_distant,
-                                               faces_distant,
-                                               halo_type,
-                                               clip_coeff,
-                                               hyd_p_flag,
-                                               f_ext,
-                                               df_limiter,
-                                               bc_coeffs,
-                                               c_weight,
-                                               var,
-                                               var_tosend,
-                                               var_distant_d);
-
+        cs_gradient_boundary_iprime_lsq_s(ctx,
+                                          mesh,
+                                          cs_glob_mesh_quantities,
+                                          n_distant,
+                                          faces_distant,
+                                          halo_type,
+                                          clip_coeff,
+                                          hyd_p_flag,
+                                          f_ext,
+                                          df_limiter,
+                                          bc_coeffs,
+                                          c_weight,
+                                          var,
+                                          var_tosend,
+                                          var_distant_d);
       }
       else {
         assert(w_stride == 6);

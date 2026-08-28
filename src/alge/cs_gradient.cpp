@@ -9099,38 +9099,21 @@ cs_gradient_scalar(const char                    *var_name,
       CS_MALLOC_HD(val_f_hmg, n_b_faces, cs_real_t, cs_alloc_mode);
 
       /* Compute var_iprime (val_f = var_iprime for hmg Neumann) */
-      if (f_i_poro_duq_0 == nullptr)
-        cs_gradient_boundary_iprime_lsq_s<0>(ctx,
-                                             mesh,
-                                             fvq,
-                                             n_b_faces,
-                                             nullptr,
-                                             halo_type,
-                                             -1,
-                                             hyd_p_flag,
-                                             f_ext,
-                                             nullptr,
-                                             bc_coeffs,
-                                             c_weight,
-                                             var,
-                                             val_f_hmg,
-                                             nullptr);
-      else
-        cs_gradient_boundary_iprime_lsq_s<1>(ctx,
-                                             mesh,
-                                             fvq,
-                                             n_b_faces,
-                                             nullptr,
-                                             halo_type,
-                                             -1,
-                                             hyd_p_flag,
-                                             f_ext,
-                                             nullptr,
-                                             bc_coeffs,
-                                             c_weight,
-                                             var,
-                                             val_f_hmg,
-                                             nullptr);
+      cs_gradient_boundary_iprime_lsq_s(ctx,
+                                        mesh,
+                                        fvq,
+                                        n_b_faces,
+                                        nullptr,
+                                        halo_type,
+                                        -1,
+                                        hyd_p_flag,
+                                        f_ext,
+                                        nullptr,
+                                        bc_coeffs,
+                                        c_weight,
+                                        var,
+                                        val_f_hmg,
+                                        nullptr);
 
       /* Pre computed boundary face value */
       bc_coeffs->val_f = val_f_hmg;
@@ -9160,38 +9143,21 @@ cs_gradient_scalar(const char                    *var_name,
         CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_t, cs_alloc_mode);
         CS_MALLOC_HD(val_ip, n_b_faces, cs_real_t, amode);
 
-        if (f_i_poro_duq_0 == nullptr)
-          cs_gradient_boundary_iprime_lsq_s<0>(ctx,
-                                               mesh,
-                                               fvq,
-                                               n_b_faces,
-                                               nullptr,
-                                               halo_type,
-                                               -1,
-                                               hyd_p_flag,
-                                               f_ext,
-                                               nullptr,
-                                               bc_coeffs,
-                                               c_weight,
-                                               var,
-                                               val_ip,
-                                               nullptr);
-        else
-          cs_gradient_boundary_iprime_lsq_s<1>(ctx,
-                                               mesh,
-                                               fvq,
-                                               n_b_faces,
-                                               nullptr,
-                                               halo_type,
-                                               -1,
-                                               hyd_p_flag,
-                                               f_ext,
-                                               nullptr,
-                                               bc_coeffs,
-                                               c_weight,
-                                               var,
-                                               val_ip,
-                                               nullptr);
+        cs_gradient_boundary_iprime_lsq_s(ctx,
+                                          mesh,
+                                          fvq,
+                                          n_b_faces,
+                                          nullptr,
+                                          halo_type,
+                                          -1,
+                                          hyd_p_flag,
+                                          f_ext,
+                                          nullptr,
+                                          bc_coeffs,
+                                          c_weight,
+                                          var,
+                                          val_ip,
+                                          nullptr);
 
         cs_real_t *coefa = bc_coeffs->a;
         cs_real_t *coefb = bc_coeffs->b;
