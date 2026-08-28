@@ -1126,6 +1126,175 @@ _compute_hodge_cost(const int       n_ent,
   } /* End of loop on I entities */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute stabilization matrix for mass matrix
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] stab    pointer to a local matrix to build
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cdofb_mass_stab(const cs_cell_mesh_t *cm,
+                 cs_cell_builder_t    *cb,
+                 cs_sdm_t             *stab)
+{
+  assert(cm != nullptr && cb != nullptr);
+  assert(stab != nullptr);
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ));
+
+  const short int c = cm->n_fc; /* current cell's location in the matrix */
+  constexpr cs_real_t c_1ov3 = 1./3.;
+
+  const cs_lnum_t n_cols = cm->n_fc + 1;
+  stab->init(n_cols);
+
+  /* Compute stabilization */
+  cs_real_t *inertia_val = cb->values;                /* size = n_fc */
+  cs_real_t *inertia_pqi_dq = cb->values + cm->n_fc;     /* size = n_fc */
+  cs_real_t *grad_grad_i  = cb->values + 2 * cm->n_fc; /* size = n_fc */
+
+  /* here: pq = meas_f * n_fc; dq = (x_f-x_c) */
+
+  const cs_real_t ovc  = 1.0 / cm->vol_c;
+  const cs_real_t ovc2 = ovc * ovc;
+
+  /* Initialize the geometrical quantities related to this Hodge operator */
+
+  cs_real_3_t *pq = cb->vectors;
+  cs_real_3_t *dq = cb->vectors + cm->n_fc;
+
+  cs_real_33_t* pyr_inertia_tensor = nullptr;
+
+  CS_MALLOC(pyr_inertia_tensor, cm->n_fc, cs_real_33_t);
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+    const cs_nvec3_t deq = cm->dedge[f];
+    const cs_quant_t pfq = cm->face[f];
+
+    /* Quantities are not signed by default */
+    for (int k = 0; k < 3; k++) {
+      dq[f][k] = cm->f_sgn[f] * deq.meas * deq.unitv[k];
+      pq[f][k] = cm->f_sgn[f] * pfq.meas * pfq.unitv[k];
+    }
+    const double  hf_coef = c_1ov3 * cm->hfc[f];
+    const int  start = cm->f2e_idx[f];
+    const int  end = cm->f2e_idx[f+1];
+    const short int n_vf = end - start; /* #vertices (=#edges) */
+    const short int *f2e_ids = cm->f2e_ids + start;
+
+    const double  *tef = cm->tef + start;
+
+    for(int i = 0; i < 3; i++)
+      for (int j = 0; j < 3; j++)
+        pyr_inertia_tensor[f][i][j] = 0.0;
+
+    /* Compute the pyramid inertia tensor */
+    for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+
+      /* Edge-related variables */
+      const short int e0  = f2e_ids[e];
+      const short int v0 = cm->e2v_ids[2*e0];
+      const short int v1 = cm->e2v_ids[2*e0+1];
+
+      cs_compute_add_tetra_to_inertia3(cm->xv+3*v0,
+                                       cm->xv+3*v1,
+                                       pfq.center,
+                                       cm->xc,
+                                       cm->xc,
+                                       hf_coef * tef[e],
+                                       pyr_inertia_tensor[f]);
+    }
+
+  } /* Loop on cell faces */
+
+
+  /*==========================================================================
+   *     Compute Sum_pfc (s_u.s_v nfc.integral_pfc(r x r).nfc)
+   * ========================================================================*/
+
+  /* Initialize the upper right part of the discrete Hodge op and store useful
+     quantities */
+
+  for (short int fi = 0; fi < cm->n_fc; fi++) {
+    const cs_real_t pqi[3] = { pq[fi][0], pq[fi][1], pq[fi][2] };
+    const cs_real_t dqi[3] = { dq[fi][0], dq[fi][1], dq[fi][2] };
+
+    const cs_real_t pqi_dqi = _dp3(pqi, dqi);
+
+    const cs_real_t hfi2 = cm->hfc[fi]*cm->hfc[fi];
+
+    const cs_quant_t pfq_i = cm->face[fi];
+
+    inertia_val[fi] = 0;
+    for (int p = 0; p < 3; p++) {
+      inertia_val[fi] += pfq_i.unitv[p]*pfq_i.unitv[p]
+                       * pyr_inertia_tensor[fi][p][p]/hfi2;
+      for (int q = p+1; q < 3; q++)
+        inertia_val[fi] += 2.0*pfq_i.unitv[p]*pfq_i.unitv[q]
+                         *pyr_inertia_tensor[fi][p][q]/hfi2;
+    }
+
+    cs_real_t *si = stab->val + fi * n_cols;
+
+    /* diagonal term: (1 - 2* (pq_i*dq_i / c) ) */
+    si[fi] =  inertia_val[fi]*(1.0 - 2. * pqi_dqi * ovc);
+  }
+
+  /* Build the upper right part of the discrete operator */
+
+  for (short int fi = 0; fi < cm->n_fc; fi++) {
+    /* Compute pqi_dq =  (pq_i*dq_k) */
+    for (short int fk = 0; fk < cm->n_fc; fk++) {
+      inertia_pqi_dq[fk] = inertia_val[fk]*_dp3(pq[fi], dq[fk]);
+    }
+
+    for (short int fj = 0; fj < cm->n_fc; fj++) {
+      grad_grad_i[fj] = 0.;
+      for (short int fk = 0; fk < cm->n_fc; fk++) {
+        /* grad_grad_ij = ((pq_i*dq_k)) * (pq_j*dq_k) */
+        grad_grad_i[fj] += inertia_pqi_dq[fk] * _dp3(pq[fj], dq[fk]);
+      }
+    }
+
+    cs_real_t *si = stab->val + fi * n_cols;
+
+    /* diagonal term : grad_grad_ii / (c*c) */
+    si[fi] += grad_grad_i[fi] * ovc2;
+
+    /* Compute the extra-diagonal terms
+     *  -  (pq_j*dq_i / c) -  (pq_i*dq_j / c) +
+     * stab_ij/(c*c)
+     */
+
+    for (short int fj = fi + 1; fj < cm->n_fc; fj++) {
+      si[fj] += grad_grad_i[fj] * ovc2;
+      si[fj] -= (inertia_val[fi]*_dp3(pq[fj], dq[fi]) + inertia_pqi_dq[fj]) * ovc;
+    }
+
+    /* Compute fi-c term: - sum_k  (kro_ik - (pq_i*dq_k / c) ) */
+    si[c] = -inertia_val[fi];
+    for (short int fk = 0; fk < cm->n_fc; fk++) {
+      si[c] += inertia_pqi_dq[fk] * ovc;
+    }
+  } /* Loop on rows (entities i) */
+
+  /* C-C term: sum_i  3 * beta_i * (pq_i * pq_i) / (pq_i * dq_i)
+   *         = sum_i 1 */
+  cs_real_t *sc = stab->val + c * n_cols;
+
+  for (short int fi = 0; fi < cm->n_fc; fi++) {
+    sc[c] += inertia_val[fi];
+  }
+
+  stab->symmetrize_ur();
+  CS_FREE(pyr_inertia_tensor);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1902,6 +2071,72 @@ cs_hodge_fb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
 
   return true;
 }
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a local Hodge operator on a given cell which is equivalent of
+ *         a mass matrix. It relies on a CO+ST algo. and is specific to CDO-Fb
+ *         schemes.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_hodge_fb_cost_get_mass(const cs_cell_mesh_t     *cm,
+                          cs_hodge_t               *hodge,
+                          cs_cell_builder_t        *cb)
+{
+  assert(hodge != nullptr);
+  assert(hodge->param->type == CS_HODGE_TYPE_FB);
+  assert(hodge->param->algo == CS_HODGE_ALGO_COST);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ));
+
+  const int n_cols = cm->n_fc + 1;
+  constexpr cs_real_t c_1ov3 = 1./3.;
+  constexpr cs_real_t c_27o64 = 27./64.;
+  constexpr cs_real_t c_37o64 = 1.0 - c_27o64;
+
+  /* Initialize the local matrix related to this discrete Hodge operator */
+
+  cs_sdm_t  *hmat = hodge->matrix;
+  hmat->init(n_cols);
+
+  /* cell-cell entry (cell-face and face-cell block are nullptr) */
+
+  cs_real_3_t *pq = cb->vectors;
+  cs_real_3_t *dq = cb->vectors + cm->n_fc;
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+    const cs_nvec3_t deq = cm->dedge[f];
+    const cs_quant_t pfq = cm->face[f];
+
+    for (int k = 0; k < 3; k++) {
+      dq[f][k] = deq.meas * deq.unitv[k];
+      pq[f][k] = pfq.meas * pfq.unitv[k];
+    }
+
+    const cs_real_t pvol = c_1ov3*_dp3(pq[f], dq[f]);
+    hmat->val[f*(n_cols + 1)] = c_37o64*pvol;
+    hmat->val[cm->n_fc*(n_cols + 1)] += c_27o64*pvol;
+  }
+
+  _cdofb_mass_stab(cm, cb, cb->aux);
+
+  if (hodge->param->coef > cs_math_zero_threshold)
+    *cb->aux *= hodge->param->coef;
+
+  *hmat += *cb->aux;
+
+  return true;
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!

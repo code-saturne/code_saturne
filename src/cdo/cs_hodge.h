@@ -485,6 +485,26 @@ cs_hodge_fb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
                                cs_cell_builder_t        *cb);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief  Build a local Hodge operator on a given cell which is equivalent of
+ *         a mass matrix. It relies on a CO+ST algo. and is specific to CDO-Fb
+ *         schemes.
+ *         The discrete Hodge operator is stored in hodge->matrix
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_hodge_fb_cost_get_mass(const cs_cell_mesh_t     *cm,
+                          cs_hodge_t               *hodge,
+                          cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build a local stiffness matrix using the generic COST algo.
  *         The computed matrix is stored in cb->loc and the related discrete
