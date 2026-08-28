@@ -1781,34 +1781,32 @@ cs_turbomachinery_resize_cell_fields(void)
 
       }
 
-      /* grad not yet handled as cs_array => Hence it is based
-       * on "is_owner" and not "owner()"
+      /* grad is now handled as cs_array => Hence it is based
+       * on "owner()"
        */
-      if (f->is_owner) {
-        if (f->grad != nullptr) {
+      if (f->owner()) {
 
-          CS_REALLOC(f->grad, _n_cells*f->dim*3, cs_real_t);
+        f->_grad->reshape(_n_cells, 3*f->dim);
 
-          if (halo != nullptr) {
-            cs_halo_sync_var_strided(halo,
-                                     CS_HALO_EXTENDED,
-                                     f->grad,
-                                     3*f->dim);
+        if (halo != nullptr) {
+          cs_halo_sync_var_strided(halo,
+                                   CS_HALO_EXTENDED,
+                                   f->grad,
+                                   3*f->dim);
 
-            if (f->dim == 1)
-              cs_halo_perio_sync_var_vect(halo,
-                                          CS_HALO_EXTENDED,
-                                          f->grad,
-                                          3);
-            else if (f->dim == 3)
-              cs_halo_perio_sync_var_tens(halo,
-                                          CS_HALO_EXTENDED,
-                                          f->grad);
-            else if (f->dim == 6)
-              cs_halo_perio_sync_var_sym_tens_grad(halo,
-                                                   CS_HALO_EXTENDED,
-                                                   f->grad);
-          }
+          if (f->dim == 1)
+            cs_halo_perio_sync_var_vect(halo,
+                                        CS_HALO_EXTENDED,
+                                        f->grad,
+                                        3);
+          else if (f->dim == 3)
+            cs_halo_perio_sync_var_tens(halo,
+                                        CS_HALO_EXTENDED,
+                                        f->grad);
+          else if (f->dim == 6)
+            cs_halo_perio_sync_var_sym_tens_grad(halo,
+                                                 CS_HALO_EXTENDED,
+                                                 f->grad);
         }
       }
     }
