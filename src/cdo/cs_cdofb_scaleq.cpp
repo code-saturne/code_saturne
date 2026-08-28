@@ -1005,7 +1005,7 @@ cs_cdofb_scaleq_init_context(cs_equation_param_t    *eqp,
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.type = CS_HODGE_TYPE_FB;
   eqc->mass_hodgep.algo = CS_HODGE_ALGO_COST;
-  eqc->mass_hodgep.coef = c_1ov3;
+  eqc->mass_hodgep.coef = eqp->time_hodgep.coef;
 
   eqc->get_mass_matrix = nullptr;
   eqc->mass_hodge      = nullptr;
@@ -1918,11 +1918,10 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
          *       >> Update the cellwise system with the time matrix */
 
         /* Update rhs with csys->mat*p^n */
-
-        double  *time_pn = cb->values;
-        mass_mat->matvec(csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
-          csys->rhs[i] += tpty_coef*time_pn[i];
+          for (int j = 0; j < csys->n_dofs; j++)
+            csys->rhs[i] += tpty_coef*mass_mat->val[csys->n_dofs*i+j]
+                          * csys->val_n[i];
 
         /* Update the cellwise system with the time matrix */
 
@@ -2266,10 +2265,10 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
         /* Update rhs with mass_mat*p^n */
 
-        double  *time_pn = cb->values;
-        mass_mat->matvec(csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
-          csys->rhs[i] += tpty_coef*time_pn[i];
+          for (int j = 0; j < csys->n_dofs; j++)
+            csys->rhs[i] += tpty_coef*mass_mat->val[csys->n_dofs*i+j]
+                          * csys->val_n[i];
 
         /* Update the cellwise system with the time matrix */
 
