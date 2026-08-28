@@ -1186,23 +1186,23 @@ _compute_fb_mass_stab(const cs_cell_mesh_t *cm,
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ));
 
-  const short int c = cm->n_fc; /* current cell's location in the matrix */
+  const short int c = cm->n_fc; // current cell's location in the matrix
   constexpr cs_real_t c_1ov3 = 1./3.;
 
   const cs_lnum_t n_cols = cm->n_fc + 1;
   stab->init(n_cols);
 
-  /* Compute stabilization */
-  cs_real_t *inertia_val = cb->values;                /* size = n_fc */
-  cs_real_t *inertia_pqi_dq = cb->values + cm->n_fc;     /* size = n_fc */
-  cs_real_t *grad_grad_i  = cb->values + 2 * cm->n_fc; /* size = n_fc */
+  // Compute stabilization
+  cs_real_t *inertia_val = cb->values;                // size = n_fc
+  cs_real_t *inertia_pqi_dq = cb->values + cm->n_fc;     // size = n_fc
+  cs_real_t *grad_grad_i  = cb->values + 2 * cm->n_fc; // size = n_fc
 
-  /* here: pq = meas_f * n_fc; dq = (x_f-x_c) */
+  // here: pq = meas_f * n_fc; dq = (x_f-x_c)
 
   const cs_real_t ovc  = 1.0 / cm->vol_c;
   const cs_real_t ovc2 = ovc * ovc;
 
-  /* Initialize the geometrical quantities related to this Hodge operator */
+  // Initialize the geometrical quantities related to this Hodge operator
 
   cs_real_3_t *pq = cb->vectors;
   cs_real_3_t *dq = cb->vectors + cm->n_fc;
@@ -1215,7 +1215,7 @@ _compute_fb_mass_stab(const cs_cell_mesh_t *cm,
     const cs_nvec3_t deq = cm->dedge[f];
     const cs_quant_t pfq = cm->face[f];
 
-    /* Quantities are not signed by default */
+    // Quantities are not signed by default
     for (int k = 0; k < 3; k++) {
       dq[f][k] = cm->f_sgn[f] * deq.meas * deq.unitv[k];
       pq[f][k] = cm->f_sgn[f] * pfq.meas * pfq.unitv[k];
@@ -1223,7 +1223,7 @@ _compute_fb_mass_stab(const cs_cell_mesh_t *cm,
     const double  hf_coef = c_1ov3 * cm->hfc[f];
     const int  start = cm->f2e_idx[f];
     const int  end = cm->f2e_idx[f+1];
-    const short int n_vf = end - start; /* #vertices (=#edges) */
+    const short int n_vf = end - start; // #vertices (=#edges)
     const short int *f2e_ids = cm->f2e_ids + start;
 
     const double  *tef = cm->tef + start;
@@ -1232,10 +1232,10 @@ _compute_fb_mass_stab(const cs_cell_mesh_t *cm,
       for (int j = 0; j < 3; j++)
         pyr_inertia_tensor[f][i][j] = 0.0;
 
-    /* Compute the pyramid inertia tensor */
-    for (short int e = 0; e < n_vf; e++) { /* Loop on face edges */
+    // Compute the pyramid inertia tensor
+    for (short int e = 0; e < n_vf; e++) { // Loop on face edges
 
-      /* Edge-related variables */
+      // Edge-related variables
       const short int e0  = f2e_ids[e];
       const short int v0 = cm->e2v_ids[2*e0];
       const short int v1 = cm->e2v_ids[2*e0+1];
@@ -1249,14 +1249,14 @@ _compute_fb_mass_stab(const cs_cell_mesh_t *cm,
                                        pyr_inertia_tensor[f]);
     }
 
-  } /* Loop on cell faces */
+  } // Loop on cell faces
 
-  /*==========================================================================
-   *     Compute Sum_pfc (s_u.s_v nfc.integral_pfc(r x r).nfc)
-   * ========================================================================*/
+  //=========================================================================
+  //     Compute Sum_pfc (s_u.s_v nfc.integral_pfc(r x r).nfc)
+  // ========================================================================
 
-  /* Initialize the upper right part of the discrete Hodge op and store useful
-     quantities */
+  // Initialize the upper right part of the discrete Hodge op and store useful
+  //   quantities
 
   for (short int fi = 0; fi < cm->n_fc; fi++) {
     const cs_real_t pqi[3] = { pq[fi][0], pq[fi][1], pq[fi][2] };
@@ -1279,50 +1279,52 @@ _compute_fb_mass_stab(const cs_cell_mesh_t *cm,
 
     cs_real_t *si = stab->val + fi * n_cols;
 
-    /* diagonal term: (1 - 2* (pq_i*dq_i / c) ) */
+    // diagonal term: (inertia_tensor_i/hfi2)*(1 - 2* (pq_i*dq_i / c) )
     si[fi] =  inertia_val[fi]*(1.0 - 2. * pqi_dqi * ovc);
   }
 
-  /* Build the upper right part of the discrete operator */
+  // Build the upper right part of the discrete operator
 
   for (short int fi = 0; fi < cm->n_fc; fi++) {
-    /* Compute pqi_dq =  (pq_i*dq_k) */
+    // Compute inertia_pqi_dq_k =  inertial_tensor_k/hfk2*(pq_i*dq_k)
     for (short int fk = 0; fk < cm->n_fc; fk++) {
       inertia_pqi_dq[fk] = inertia_val[fk]*_dp3(pq[fi], dq[fk]);
     }
 
     for (short int fj = 0; fj < cm->n_fc; fj++) {
       grad_grad_i[fj] = 0.;
+
+      //grad_grad_ij = sum_k{(inertia_tensor_k/hfk2*(pq_i*dq_k)*(pq_j*dq_k)}
       for (short int fk = 0; fk < cm->n_fc; fk++) {
-        /* grad_grad_ij = ((pq_i*dq_k)) * (pq_j*dq_k) */
         grad_grad_i[fj] += inertia_pqi_dq[fk] * _dp3(pq[fj], dq[fk]);
       }
     }
 
     cs_real_t *si = stab->val + fi * n_cols;
 
-    /* diagonal term : grad_grad_ii / (c*c) */
+    // diagonal term : grad_grad_ii / (c*c)
     si[fi] += grad_grad_i[fi] * ovc2;
 
-    /* Compute the extra-diagonal terms
-     *  -  (pq_j*dq_i / c) -  (pq_i*dq_j / c) +
-     * stab_ij/(c*c)
-     */
+    // Compute the extra-diagonal terms
+    //  -  (inertia_tensor_i/hfi2*pq_j*dq_i / c)
+    //  -  (inertia_tensor_j/hfj2*pq_i*dq_j / c) + grad_grad_ij/(c*c)
+
 
     for (short int fj = fi + 1; fj < cm->n_fc; fj++) {
       si[fj] += grad_grad_i[fj] * ovc2;
       si[fj] -= (inertia_val[fi]*_dp3(pq[fj], dq[fi]) + inertia_pqi_dq[fj]) * ovc;
     }
 
-    /* Compute fi-c term: - sum_k  (kro_ik - (pq_i*dq_k / c) ) */
+    // Compute fi-c term:
+    // - inertia_tensor_i/hfi2
+    // + sum_k(inertia_tensor_k/hfk2*pq_i*dq_k / c )
     si[c] = -inertia_val[fi];
     for (short int fk = 0; fk < cm->n_fc; fk++) {
       si[c] += inertia_pqi_dq[fk] * ovc;
     }
-  } /* Loop on rows (entities i) */
+  } // Loop on rows (entities i)
 
-  /* C-C term: sum_i  3 * beta_i * (pq_i * pq_i) / (pq_i * dq_i)
-   *         = sum_i 1 */
+  // C-C term: = sum_i{fi_c term} = sum_i(inertia_tensor_i/hfi2)
   cs_real_t *sc = stab->val + c * n_cols;
 
   for (short int fi = 0; fi < cm->n_fc; fi++) {
@@ -1332,7 +1334,6 @@ _compute_fb_mass_stab(const cs_cell_mesh_t *cm,
   stab->symmetrize_ur();
   CS_FREE(pyr_inertia_tensor);
 }
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
