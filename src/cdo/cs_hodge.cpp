@@ -230,6 +230,45 @@ _check_vector_hodge(cs_lnum_t                c_id,
   cs_log_printf(CS_LOG_DEFAULT, "%s: err = % -5.3e\n", __func__, print_val);
 
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check the coherency of the values of a mass stabilization matrix
+ *
+ * \param[in] c_id       current cell id
+ * \param[in] sloc       pointer to a cs_sdm_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_mass_stab(cs_lnum_t             c_id,
+                 const cs_sdm_t       *sloc)
+{
+  if (c_id % CS_HODGE_MODULO != 0 || sloc == nullptr)
+    return;
+
+  cs_log_printf(CS_LOG_DEFAULT, ">> Local mass stabilization matrix");
+  sloc->dump(c_id);
+
+  double  print_val = 0.;
+
+  for (int i = 0 ; i < sloc->n_rows; i++) {
+    double  rsum = 0.;
+    const cs_real_t  *rval = sloc->val + i*sloc->n_rows;
+    for (cs_lnum_t j = 0; j < sloc->n_rows; j++)
+      rsum += rval[j];
+
+    print_val += fabs(rsum);
+
+    if (rsum > 100*cs_dbl_epsilon) {
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT, " %s: row %d Row sum = %5.3e > 0 !\n",
+                    __func__, i, rsum);
+    }
+
+  }
+  cs_log_printf(CS_LOG_DEFAULT, " %s: err = % -5.3e\n", __func__, print_val);
+}
 #endif  /* DEBUG */
 
 /*----------------------------------------------------------------------------*/
@@ -1138,9 +1177,9 @@ _compute_hodge_cost(const int       n_ent,
 /*----------------------------------------------------------------------------*/
 
 static void
-_cdofb_mass_stab(const cs_cell_mesh_t *cm,
-                 cs_cell_builder_t    *cb,
-                 cs_sdm_t             *stab)
+_compute_fb_mass_stab(const cs_cell_mesh_t *cm,
+                      cs_cell_builder_t    *cb,
+                      cs_sdm_t             *stab)
 {
   assert(cm != nullptr && cb != nullptr);
   assert(stab != nullptr);
@@ -1211,7 +1250,6 @@ _cdofb_mass_stab(const cs_cell_mesh_t *cm,
     }
 
   } /* Loop on cell faces */
-
 
   /*==========================================================================
    *     Compute Sum_pfc (s_u.s_v nfc.integral_pfc(r x r).nfc)
@@ -2127,7 +2165,11 @@ cs_hodge_fb_cost_get_mass(const cs_cell_mesh_t     *cm,
     hmat->val[cm->n_fc*(n_cols + 1)] += c_27o64*pvol;
   }
 
-  _cdofb_mass_stab(cm, cb, cb->aux);
+  _compute_fb_mass_stab(cm, cb, cb->aux);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
+  _check_mass_stab(cm->c_id, cb->aux);
+#endif
 
   if (hodge->param->coef > cs_math_zero_threshold)
     *cb->aux *= hodge->param->coef;
@@ -2136,7 +2178,6 @@ cs_hodge_fb_cost_get_mass(const cs_cell_mesh_t     *cm,
 
   return true;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
