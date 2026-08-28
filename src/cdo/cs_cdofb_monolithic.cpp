@@ -1390,12 +1390,23 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
           acc->val[4 * k] += ptyc;
         }
       }
-      else
-        bft_error(__FILE__,
-                  __LINE__,
-                  0,
-                  "Only diagonal time treatment available so far.\n");
+      else {
+        double  ptyc = cb->tpty_val * inv_dtcur;
+        const cs_sdm_t *mass_mat = mass_hodge->matrix;
 
+        for (short int i = 0; i < cm->n_fc + 1; i++) {
+          for(short int j = 0; j < cm->n_fc + 1; j++) {
+            cs_sdm_t *bij = csys->mat->get_block(i, j);
+            assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+
+            const cs_real_t m_val = ptyc*mass_mat->val[(cm->n_fc + 1)*i+j];
+            for (int k = 0; k < 3; k++) {
+              bij->val[4*k] += m_val;
+              csys->rhs[3*i + k] += m_val*csys->val_n[3*i + k];
+            }
+          }
+        }
+      }
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
         csys->dump("\n>> Cell system matrix after unsteady term");
