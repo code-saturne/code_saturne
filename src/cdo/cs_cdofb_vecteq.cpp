@@ -2251,19 +2251,20 @@ cs_cdofb_vecteq_init_context(cs_equation_param_t    *eqp,
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.type = CS_HODGE_TYPE_FB;
   eqc->mass_hodgep.algo = CS_HODGE_ALGO_COST;
-  eqc->mass_hodgep.coef = 1./3.;
+  eqc->mass_hodgep.coef = eqp->time_hodgep.coef;
 
   eqc->get_mass_matrix = nullptr;
   eqc->mass_hodge      = nullptr;
 
   if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) {
 
-    eqc->get_mass_matrix = cs_hodge_fb_get;
-    eqc->mass_hodge      = cs_hodge_init_context(connect,
-                                            nullptr,
-                                            &(eqc->mass_hodgep),
-                                            false,  /* tensor ? */
-                                            false); /* eigen ? */
+    eqc->mass_hodgep.inv_pty  = false;
+    eqc->get_mass_matrix = cs_hodge_fb_cost_get_mass;
+    eqc->mass_hodge     = cs_hodge_init_context(connect,
+                                                nullptr,
+                                                &(eqc->mass_hodgep),
+                                                false,  /* tensor ? */
+                                                false); /* eigen ? */
 
     if (eqp->verbosity > 1) {
       cs_log_printf(CS_LOG_SETUP,
