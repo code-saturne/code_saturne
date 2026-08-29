@@ -143,5 +143,41 @@ extern "C" void
 cs_turbulence_rij_compute_rusanov(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute, once per time step, the exact Riemann interface state
+ *        for the coupled {u, R} system on every interior and boundary
+ *        face, and store it in the shared fields "i_velocity",
+ *        "i_reynolds_stress", "b_velocity", "b_reynolds_stress"
+ *        (these fields are created in cs_setup.cpp when
+ *        rij_discretization_scheme == CS_RIJ_SCHEME_GODUNOV).
+ */
+/*----------------------------------------------------------------------------*/
+
+extern "C" void
+cs_turbulence_rij_godunov_interface_states(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute, once per time step, the exact Riemann interface state
+ *        for the scalar system on every interior and boundary face.
+ */
+/*----------------------------------------------------------------------------*/
+
+extern "C" void
+cs_turbulence_rij_godunov_interface_states_scalar(cs_field_t *f);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the exact Riemann divergence of R flux.
+ */
+/*----------------------------------------------------------------------------*/
+
+extern "C" void
+cs_turbulence_rij_godunov_div_rij_flux(const cs_real_t  crom[],
+                                       const cs_real_t  brom[],
+                                       cs_real_3_t     *tflmas,
+                                       cs_real_3_t     *tflmab);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_TURBULENCE_RIJ_H */

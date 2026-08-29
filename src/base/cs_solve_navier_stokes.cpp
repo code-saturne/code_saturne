@@ -100,6 +100,7 @@
 #include "base/cs_time_step.h"
 #include "base/cs_turbomachinery.h"
 #include "turb/cs_turbulence_model.h"
+#include "turb/cs_turbulence_rij.h"
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_vof.h"
 #include "base/cs_volume_mass_injection.h"
@@ -718,10 +719,13 @@ _face_diff_vel(const cs_mesh_t             *m,
                         w1,
                         viscf, viscb);
 
-      /* When using Rij-epsilon model with the option irijnu=1, the face
-       * viscosity for the Matrix (viscfi and viscbi) is increased */
+      /* When using Rij-epsilon model with the implicit viscosity
+       * discretization scheme, the face viscosity for the Matrix
+       * (viscfi and viscbi) is increased */
+      const int rij_scheme
+        = cs_glob_turb_rans_model->rij_discretization_scheme;
       if (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
-          && cs_glob_turb_rans_model->irijnu == 1) {
+          && rij_scheme == CS_RIJ_SCHEME_IMPLICIT_VISCOSITY) {
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           w1[c_id] = viscl[c_id] + idifft*visct[c_id];
         });
@@ -750,10 +754,13 @@ _face_diff_vel(const cs_mesh_t             *m,
                                            (cs_real_33_t*)viscf,
                                            viscb);
 
-      /* When using Rij-epsilon model with the option irijnu=1, the face
-       * viscosity for the Matrix (viscfi and viscbi) is increased */
+      /* When using Rij-epsilon model with the implicit viscosity
+       * discretization scheme, the face viscosity for the Matrix
+       * (viscfi and viscbi) is increased */
+      const int rij_scheme
+        = cs_glob_turb_rans_model->rij_discretization_scheme;
       if (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
-          && cs_glob_turb_rans_model->irijnu == 1) {
+          && rij_scheme == CS_RIJ_SCHEME_IMPLICIT_VISCOSITY) {
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           w1[c_id] = viscl[c_id] + idifft*visct[c_id];
 
@@ -778,8 +785,10 @@ _face_diff_vel(const cs_mesh_t             *m,
   /* If no diffusion, viscosity is set to 0. */
   else {
 
+    const int rij_scheme
+      = cs_glob_turb_rans_model->rij_discretization_scheme;
     if (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
-        && cs_glob_turb_rans_model->irijnu == 1) {
+        && rij_scheme == CS_RIJ_SCHEME_IMPLICIT_VISCOSITY) {
       ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
         viscf[face_id] = 0.;
         viscfi[face_id] = 0.;
@@ -850,27 +859,44 @@ _div_rij(const cs_mesh_t     *m,
   /* Reynolds Stress Models */
   if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
 
-    const cs_field_t *f_rij = CS_F_(rij);
-    eqp = cs_field_get_equation_param_const(f_rij);
+    /* GODUNOV scheme: exact Riemann solver for the
+     * div(R) term of the momentum equation, consistent with the
+     * scheme used for the Rij transport equation itself (see
+     * cs_turbulence_rij.cpp,
+     * rij_discretization_scheme == CS_RIJ_SCHEME_GODUNOV branch).
+     * Fills tflmas/tflmab directly so the existing
+     * cs_tensor_divergence(...) call right after this block is
+     * reused unchanged. */
+    const int rij_scheme
+      = cs_glob_turb_rans_model->rij_discretization_scheme;
+    if (rij_scheme == CS_RIJ_SCHEME_GODUNOV) {
 
-    // FIXME we should pass bc_coeffs and use it...
-    cs_field_bc_coeffs_t bc_coeffs_ts_loc;
-    cs_field_bc_coeffs_shallow_copy(f_rij->bc_coeffs, &bc_coeffs_ts_loc);
+      cs_turbulence_rij_godunov_div_rij_flux(crom, brom, tflmas, tflmab);
+    }
+    else {
 
-    bc_coeffs_ts_loc.a = f_rij->bc_coeffs->ad;
-    bc_coeffs_ts_loc.b = f_rij->bc_coeffs->bd;
+      const cs_field_t *f_rij = CS_F_(rij);
+      eqp = cs_field_get_equation_param_const(f_rij);
 
-    cs_tensor_face_flux(m, mq,
-                        -1, 1, 0, 1, 1,
-                        eqp,
-                        crom, brom,
-                        (const cs_real_6_t *)f_rij->val,
-                        &bc_coeffs_ts_loc,
-                        tflmas, tflmab);
+      // FIXME we should pass bc_coeffs and use it...
+      cs_field_bc_coeffs_t bc_coeffs_ts_loc;
+      cs_field_bc_coeffs_shallow_copy(f_rij->bc_coeffs, &bc_coeffs_ts_loc);
 
-    bc_coeffs_ts_loc.a = nullptr;
-    bc_coeffs_ts_loc.b = nullptr;
-    cs_field_bc_coeffs_free_copy(f_rij->bc_coeffs, &bc_coeffs_ts_loc);
+      bc_coeffs_ts_loc.a = f_rij->bc_coeffs->ad;
+      bc_coeffs_ts_loc.b = f_rij->bc_coeffs->bd;
+
+      cs_tensor_face_flux(m, mq,
+                          -1, 1, 0, 1, 1,
+                          eqp,
+                          crom, brom,
+                          (const cs_real_6_t *)f_rij->val,
+                          &bc_coeffs_ts_loc,
+                          tflmas, tflmab);
+
+      bc_coeffs_ts_loc.a = nullptr;
+      bc_coeffs_ts_loc.b = nullptr;
+      cs_field_bc_coeffs_free_copy(f_rij->bc_coeffs, &bc_coeffs_ts_loc);
+    }
   }
 
   /* Baglietto et al. quadratic k-epislon model */
@@ -1887,6 +1913,12 @@ _velocity_prediction(const cs_mesh_t             *m,
   cs_lnum_t n_b_faces = m->n_b_faces;
   cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
+  const int rij_scheme
+    = cs_glob_turb_rans_model->rij_discretization_scheme;
+
+  if (rij_scheme == CS_RIJ_SCHEME_GODUNOV)
+    cs_turbulence_rij_godunov_interface_states();
+
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   const cs_real_t *cell_f_vol = mq->cell_vol;
@@ -1945,7 +1977,9 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   /* Add Rusanov */
   cs_real_t *ipro_rusanov = nullptr;
-  if (cs_glob_turb_rans_model->irijnu == 2)
+  const int rij_scheme_rus
+    = cs_glob_turb_rans_model->rij_discretization_scheme;
+  if (rij_scheme_rus == CS_RIJ_SCHEME_RUSANOV)
     ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
 
   /* Density for the unsteady term (at time n);
@@ -2715,7 +2749,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   /* Add Rusanov
      ----------- */
 
-  if (cs_glob_turb_rans_model->irijnu == 2) {
+  if (rij_scheme == CS_RIJ_SCHEME_RUSANOV) {
 
     const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
 
@@ -3005,6 +3039,75 @@ _velocity_prediction(const cs_mesh_t             *m,
     });
   }
 
+  /* GODUNOV scheme: explicit convective correction
+   * for the velocity equation's own advective term (u . grad(u)),
+   * using the SAME precomputed Riemann interface state
+   * ("i_velocity"/"b_velocity", filled once per time step by
+   * cs_turbulence_rij_godunov_interface_states -- see
+   * cs_solve_all.cpp) as the Rij transport equation and the momentum
+   * equation's div(R) term.
+   *
+   * Without this, only div(R) would be Godunov-consistent while the
+   * velocity's own advection would still use the standard scheme's
+   * interface value -- an inconsistency between the two terms of the
+   * SAME equation.
+   *
+   * Deferred-correction form, driven by the actual physical mass flux
+   * (imasfl/bmasfl), exactly as for R's own convection in
+   * cs_turbulence_rij.cpp -- see the integration notes for the sign
+   * convention derivation (mirrors: smbr plays directly the role that
+   * "rhs" plus a subsequent "rhs -= divru" plays there).
+   */
+  if (rij_scheme == CS_RIJ_SCHEME_GODUNOV) {
+
+    const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *) m->i_face_cells;
+
+    const cs_real_3_t *i_vel =
+      (const cs_real_3_t *) cs_field("i_velocity")->val;
+    const cs_real_3_t *b_vel =
+      (const cs_real_3_t *) cs_field("b_velocity")->val;
+
+    const cs_real_3_t *c_vel = (const cs_real_3_t *) CS_F_(vel)->val;
+
+    cs_dispatch_sum_type_t i_sum_type =
+      ctx.get_parallel_for_i_faces_sum_type(m);
+    cs_dispatch_sum_type_t b_sum_type =
+      ctx.get_parallel_for_b_faces_sum_type(m);
+
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+      cs_lnum_t c_id_l = i_face_cells[face_id][0];
+      cs_lnum_t c_id_r = i_face_cells[face_id][1];
+
+      cs_real_3_t flux_l, flux_r;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        flux_l[i] =
+          - (i_vel[face_id][i] - c_vel[c_id_l][i]) * imasfl[face_id];
+        flux_r[i] =
+            (i_vel[face_id][i] - c_vel[c_id_r][i]) * imasfl[face_id];
+      }
+      if (c_id_l < n_cells)
+        cs_dispatch_sum<3>(smbr[c_id_l], flux_l, i_sum_type);
+      if (c_id_r < n_cells)
+        cs_dispatch_sum<3>(smbr[c_id_r], flux_r, i_sum_type);
+    });
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+      cs_lnum_t c_id_l = b_face_cells[face_id];
+
+      cs_real_3_t flux_l;
+      for (cs_lnum_t i = 0; i < 3; i++)
+        flux_l[i] =
+          - (b_vel[face_id][i] - c_vel[c_id_l][i]) * bmasfl[face_id];
+
+      if (c_id_l < n_cells)
+        cs_dispatch_sum<3>(smbr[c_id_l], flux_l, b_sum_type);
+    });
+
+    ctx.wait();
+  }
+
   /* Cancel RHS in disabled cells in case spurious terms were added
      by "generic" code */
 
@@ -3052,6 +3155,16 @@ _velocity_prediction(const cs_mesh_t             *m,
     eqp_loc.idifft = -1;
     eqp_loc.iwgrec = 0;
     eqp_loc.blend_st = 0; //  Warning, may be overwritten if a field
+
+    /* GODUNOV scheme: the explicit convective correction has already
+     * been added to smbr above (Riemann-based, using the same
+     * i_velocity/b_velocity interface state as R's own convection and
+     * div(R)). The standard convective operator MUST be disabled here,
+     * or convection would be assembled twice for the velocity
+     * equation as well -- same double-counting risk as for R (see
+     * GODUNOV scheme notes in cs_turbulence_rij.cpp). */
+    if (rij_scheme == CS_RIJ_SCHEME_GODUNOV)
+      eqp_loc.iconv = 0;
 
     /* Warning: in case of convergence estimators, eswork gives the estimator
        of the predicted velocity */
@@ -3714,6 +3827,9 @@ cs_solve_navier_stokes(const int        iterns,
   const cs_equation_param_t *eqp_u
     = cs_field_get_equation_param_const(CS_F_(vel));
 
+  const int rij_scheme
+    = cs_glob_turb_rans_model->rij_discretization_scheme;
+
   int nbrcpl = cs_sat_coupling_n_couplings();
 
   cs_dispatch_context ctx, ctx_c;
@@ -3918,7 +4034,7 @@ cs_solve_navier_stokes(const int        iterns,
 
   bool irijnu_1 = false;
   if (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
-      && cs_glob_turb_rans_model->irijnu == 1)
+      && rij_scheme == CS_RIJ_SCHEME_IMPLICIT_VISCOSITY)
     irijnu_1 = true;
 
   if (eqp_u->verbosity > 0)

@@ -194,18 +194,22 @@
         coupled solving of Rij
         - 1: true (default)
         - 0: false
-  \var  cs_turb_rans_model_t::irijnu
-        pseudo eddy viscosity in the matrix of momentum equation to partially
-        implicit \f$ \divv \left( \rho \tens{R} \right) \f$
-        - 1: true
-        - 0: false (default)
+  \var  cs_turb_rans_model_t::rij_discretization_scheme
+        Discretization scheme for Reynolds stress tensor:
+        - 0: CS_RIJ_SCHEME_DEFAULT (false, default)
+        - 1: CS_RIJ_SCHEME_IMPLICIT_VISCOSITY: pseudo eddy viscosity in the
+             matrix of momentum equation to partially implicit
+             \f$ \divv \left( \rho \tens{R} \right) \f$
+        - 2: CS_RIJ_SCHEME_RUSANOV (Rusanov)
+        - 3: CS_RIJ_SCHEME_GODUNOV (Godunov)
         The goal is to improve the stability of the calculation.
-        The usefulness of \ref irijnu = 1 has however not been
-        clearly demonstrated.\n Since the system is solved in
+        The usefulness of option 1 has however
+        not been clearly demonstrated.\n Since the system is solved in
         incremental form, this extra turbulent viscosity does
         not change the final solution for steady flows. However,
-        for unsteady flows, the parameter \ref cs_equation_param_t::nswrsm "nswrsm"
-        should be increased.\n Useful if and only if \ref order =
+        for unsteady flows, the parameter
+        \ref cs_equation_param_t::nswrsm "nswrsm" should be increased.\n
+        Useful if and only if \ref order =
         CS_TURB_SECOND_ORDER (\f$R_{ij}-\epsilon\f$ model).
   \var  cs_turb_rans_model_t::irijrb
         accurate treatment of \f$ \tens{R} \f$ at the boundary
@@ -364,7 +368,9 @@ _turb_rans_model =
   .ikecou     =    0,
   .reinit_turb=    1,
   .irijco     =    1, /* Coupled version of DRSM models */
-  .irijnu     =    0,
+  .rij_discretization_scheme = 0,
+  .verbosity  =    0,
+  .source_time_stepping = CS_TURB_RIJ_SOURCE_TS_IMEX,
   .irijrb     =    0,
   .irijec     =    0,
   .iclsyr     =    1,
@@ -1607,7 +1613,10 @@ cs_turb_model_log_setup(void)
                   _("    uref:             %14.5e (Characteristic velocity)\n"
                     "    reinit_turb:      %14d (Advanced re-init)\n"
                     "    irijco:           %14d (Coupled resolution)\n"
-                    "    irijnu:           %14d (1: Stabilization, 2: Rusanov)\n"
+                    "    rij_discret_sch:  %14d\n"
+                    "                      (1: Stab, 2: Rusanov, 3: Godunov)\n"
+                    "    source_time_step: %14d\n"
+                    "                      (0: Standard, 1: Exp, 2: Var tau)\n"
                     "    irijrb:           %14d (Reconstruct at boundaries)\n"
                     "    has_buoyant_term: %14d (Account for gravity)\n"
                     "    iclsyr:           %14d (Symmetry implicitation)\n"
@@ -1619,7 +1628,8 @@ cs_turb_model_log_setup(void)
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->reinit_turb,
                   cs_glob_turb_rans_model->irijco,
-                  cs_glob_turb_rans_model->irijnu,
+                  cs_glob_turb_rans_model->rij_discretization_scheme,
+                  cs_glob_turb_rans_model->source_time_stepping,
                   cs_glob_turb_rans_model->irijrb,
                   cs_glob_turb_rans_model->has_buoyant_term,
                   cs_glob_turb_rans_model->iclsyr,

@@ -1530,9 +1530,11 @@ cs_atmo_init_variables_1(void)
 
   /* Force Rij Matrix stabilisation for all atmospheric models
      --------------------------------------------------------- */
-  if (   cs_glob_turb_rans_model->irijnu == 0
-      && cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
-   cs_get_glob_turb_rans_model()->irijnu = 1;
+  if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
+    cs_turb_rans_model_t *rans_mdl = cs_get_glob_turb_rans_model();
+    if (rans_mdl->rij_discretization_scheme == CS_RIJ_SCHEME_DEFAULT)
+      rans_mdl->rij_discretization_scheme = CS_RIJ_SCHEME_IMPLICIT_VISCOSITY;
+  }
 
   /* Some allocation and mapping for meteo...
      ---------------------------------------- */

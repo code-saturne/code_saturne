@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -3226,7 +3227,10 @@ _additional_fields_stage_3(void)
 
   /* Rusanov flux */
 
-  if (cs_glob_turb_rans_model->irijnu == 2) {
+  const int rij_scheme
+    = cs_glob_turb_rans_model->rij_discretization_scheme;
+
+  if (rij_scheme == CS_RIJ_SCHEME_RUSANOV) {
     cs_field_create("i_rusanov_diff",
                     CS_FIELD_EXTENSIVE,
                     CS_MESH_LOCATION_INTERIOR_FACES,
@@ -3242,7 +3246,19 @@ _additional_fields_stage_3(void)
 
   /* Godunov scheme flux */
 
-  if (cs_glob_turb_rans_model->irijnu == 3) {
+  if (rij_scheme == CS_RIJ_SCHEME_GODUNOV) {
+
+    cs_field_create("algo:i_rij_z1",
+                    CS_FIELD_EXTENSIVE,
+                    CS_MESH_LOCATION_INTERIOR_FACES,
+                    1,
+                    false);
+
+    cs_field_create("algo:b_rij_z1",
+                    CS_FIELD_EXTENSIVE,
+                    CS_MESH_LOCATION_BOUNDARY_FACES,
+                    1,
+                    false);
 
     cs_field_create("i_velocity",
                     CS_FIELD_EXTENSIVE,
@@ -3267,6 +3283,63 @@ _additional_fields_stage_3(void)
                     CS_MESH_LOCATION_BOUNDARY_FACES,
                     6,
                     false);
+
+    /* Interface-state fields for scalars with DFM model activated:
+     * create i_<field_name> and b_<field_name> fields,
+     * plus variance and turbulent flux extensions, computed alongside
+     * {u, R} for exact Riemann solvers. */
+    const int n_fields = cs_field_n_fields();
+    for (int i = 0; i < n_fields; i++) {
+      cs_field_t *f = cs_field_by_id(i);
+      int t_flux_model = f->get_key_int("variance_turb_flux_model");
+      int t_flux_model_type = t_flux_model / 10;
+      if (t_flux_model_type >= 1) {
+        std::string name_i = std::string("i_") + f->name;
+        std::string name_b = std::string("b_") + f->name;
+        std::string name_i_var = std::string("i_") + f->name + "_variance";
+        std::string name_b_var = std::string("b_") + f->name + "_variance";
+        std::string name_i_flux =
+          std::string("i_") + f->name + "_turbulent_flux";
+        std::string name_b_flux =
+          std::string("b_") + f->name + "_turbulent_flux";
+
+        cs_field_create(name_i.c_str(),
+                        CS_FIELD_EXTENSIVE,
+                        CS_MESH_LOCATION_INTERIOR_FACES,
+                        1,
+                        false);
+
+        cs_field_create(name_b.c_str(),
+                        CS_FIELD_EXTENSIVE,
+                        CS_MESH_LOCATION_BOUNDARY_FACES,
+                        1,
+                        false);
+
+        cs_field_create(name_i_var.c_str(),
+                        CS_FIELD_EXTENSIVE,
+                        CS_MESH_LOCATION_INTERIOR_FACES,
+                        1,
+                        false);
+
+        cs_field_create(name_b_var.c_str(),
+                        CS_FIELD_EXTENSIVE,
+                        CS_MESH_LOCATION_BOUNDARY_FACES,
+                        1,
+                        false);
+
+        cs_field_create(name_i_flux.c_str(),
+                        CS_FIELD_EXTENSIVE,
+                        CS_MESH_LOCATION_INTERIOR_FACES,
+                        3,
+                        false);
+
+        cs_field_create(name_b_flux.c_str(),
+                        CS_FIELD_EXTENSIVE,
+                        CS_MESH_LOCATION_BOUNDARY_FACES,
+                        3,
+                        false);
+      }
+    }
 
   }
 

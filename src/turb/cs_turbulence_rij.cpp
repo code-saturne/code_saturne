@@ -34,6 +34,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -81,6 +82,7 @@
 #include "base/cs_turbomachinery.h"
 #include "turb/cs_turbulence_bc.h"
 #include "turb/cs_turbulence_model.h"
+#include "turb/cs_turbulence_rit.h"
 #include "base/cs_volume_mass_injection.h"
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_wall_functions.h"
@@ -1175,6 +1177,49 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   const int *c_is_solid = cs_solid_zone_flag(cs_glob_mesh);
 
+  /* source_time_stepping: gather the pointers needed for the exact
+   * frozen-tau source-step integration (Rotta + Monin + buoyancy),
+   * restricted to CS_F_(t) + its DFM turbulent-flux field both
+   * existing. Left nullptr/inert (source_time_stepping forced to 0 in effect)
+   * if either is missing, or if crij2 != 0 (SSG/LRR rapid term active
+   * -- source_time_stepping currently only supports pure Rotta). */
+  const int st_scheme = cs_glob_turb_rans_model->source_time_stepping;
+  const bool source_time_stepping_active =
+    (st_scheme != CS_TURB_RIJ_SOURCE_TS_IMEX);
+  const cs_field_t *f_temp = source_time_stepping_active ?
+    CS_F_(t) : nullptr;
+  const cs_field_t *f_qtheta = (f_temp != nullptr) ?
+    cs_field_by_composite_name_try(f_temp->name, "turbulent_flux") : nullptr;
+  const cs_field_t *f_var = (f_temp != nullptr) ?
+    cs_field_get_variance(f_temp) : nullptr;
+
+  if (source_time_stepping_active) {
+    assert(f_temp != nullptr);
+    assert(f_qtheta != nullptr);
+    assert(f_var != nullptr);
+  }
+
+  const int krvarfl = cs_field_key_id("variance_dissipation");
+  const cs_real_t ctheta = source_time_stepping_active ?
+    1. / f_var->get_key_double(krvarfl) : 1.;
+
+  const cs_real_3_t *c_qtheta = nullptr;
+  const cs_real_t   *c_theta2 = nullptr;
+  const cs_real_t   *cpro_beta = nullptr;
+  const cs_real_t ceps2 = cs_turb_ce2;
+  const cs_real_t *dt = nullptr;
+
+  if (source_time_stepping_active) {
+    c_qtheta = (const cs_real_3_t *) f_qtheta->val_pre;
+    c_theta2 = f_var->val_pre;
+
+    const cs_field_t *f_beta = cs_field_try("thermal_expansion");
+    if (f_beta != nullptr)
+      cpro_beta = f_beta->val;
+
+    dt = CS_F_(dt)->val;
+  }
+
   /* Production, Pressure-Strain correlation, dissipation
    * ---------------------------------------------------- */
 
@@ -1187,10 +1232,42 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
         return;  /* return from lambda function == continue in loop */
     }
 
-    cs_real_t impl_drsm[6][6];
+    cs_real_t impl_drsm[6][6] = {0};
 
     cs_real_t k_prod = 0.5 * cs_math_6_trace(prod[c_id]);
     cs_real_t tke = 0.5 * cs_math_6_trace(cvara_var[c_id]);
+
+    /* source_time_stepping: exact frozen-tau integration of the Rotta +
+     * Monin + buoyancy source subsystem for this cell, computed once
+     * and reused for all six ij components below. r_source[ij] holds
+     * the resulting (phiij1+epsij) EXPLICIT rhs contribution, i.e.
+     * (R_exact(dt)[ij] - R_pre[ij]) / dt, matching exactly the units
+     * and role of the standard phiij1+epsij it replaces -- see the
+     * corresponding integration notes on why this form (rather than a
+     * literal two-step field update) fits the existing single-solve
+     * architecture without touching val/val_pre. */
+    cs_real_t r_source[6] = {0., 0., 0., 0., 0., 0.};
+    if (source_time_stepping_active) {
+      const cs_real_t beta_c = (cpro_beta != nullptr) ?
+        cpro_beta[c_id] : 0.;
+      cs_real_6_t r1;
+      cs_real_3_t qtheta1;
+      cs_real_t theta2_1, eps1;
+      if (st_scheme == CS_TURB_RIJ_SOURCE_TS_VAR_TAU)
+        cs_turbulence_rit_source_step_variable_tau(
+          crij1, ctheta, ceps2, cs_turb_ce3, beta_c, grav,
+          dt[c_id], cvara_var[c_id], c_qtheta[c_id],
+          c_theta2[c_id], cvara_ep[c_id],
+          r1, qtheta1, &theta2_1, &eps1);
+      else
+        cs_turbulence_rit_source_step_frozen_tau(
+          crij1, ctheta, ceps2, beta_c, grav, dt[c_id],
+          cvara_var[c_id], c_qtheta[c_id], c_theta2[c_id],
+          cvara_ep[c_id],
+          r1, qtheta1, &theta2_1, &eps1);
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        r_source[ij] = (r1[ij] - cvara_var[c_id][ij]) / dt[c_id];
+    }
 
     cs_real_t m_aij[3][3], m_sij[3][3], m_omij[3][3];
 
@@ -1232,7 +1309,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
                                m_sij[2][1],
                                m_sij[2][0]};
 
-    if (coupled_components != 0) {
+    if (coupled_components != 0 && st_scheme != CS_TURB_RIJ_SOURCE_TS_CONVEXP) {
       /* Compute inverse matrix of R^n
          (scaling by tr(R) for numerical stability) */
       cs_real_t matrn[6];
@@ -1261,7 +1338,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       /* Linear constant */
       cs_real_t impl_lin_cst = eigen_max * (1.0 - crij2); /* Production + Phi2 */
 
-    cs_real_t implmat2add[3][3];
+      cs_real_t implmat2add[3][3];
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
           cs_lnum_t ij = t2v[i][j];
@@ -1294,9 +1371,31 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
       /* Explicit terms */
       cs_real_t pij = (1.-crij2) * prod[c_id][t2v[j][i]];
-      cs_real_t phiij1 = -cvara_ep[c_id]*crij1*m_aij[j][i];
+
+      /* source_time_stepping: for source_time_stepping != 0, the full Rotta
+       * source term (return-to-isotropy phiij1 together with the isotropic
+       * dissipation epsij -- together they exactly reconstruct
+       * -CR/tau*R + 2(CR-1)/(3tau)*k*I, restricted to crij2==0/pure
+       * Rotta) is integrated exactly (source_time_stepping==1) or via Gauss
+       * quadrature (source_time_stepping==2) in cs_turbulence_rit.cpp instead,
+       * and must not be assembled here as well. phiij2 (rapid part)
+       * is left untouched -- it is identically zero for crij2==0
+       * anyway, the only case currently supported with
+       * source_time_stepping != 0. pij (production) is unaffected by
+       * source_time_stepping: it is part of the convective substep (already
+       * Godunov-consistent via prod[], see GODUNOV scheme notes), not the
+       * source substep. */
+      cs_real_t phiij1, epsij;
+      if (cs_glob_turb_rans_model->source_time_stepping
+          == CS_TURB_RIJ_SOURCE_TS_IMEX) {
+        phiij1 = -cvara_ep[c_id]*crij1*m_aij[j][i];
+        epsij = -d2s3*crijeps*cvara_ep[c_id]*st_deltaij[ij];
+      }
+      else {
+        phiij1 = r_source[ij];
+        epsij = 0.;
+      }
       cs_real_t phiij2 = d2s3*crij2*k_prod*st_deltaij[ij];
-      cs_real_t epsij = -d2s3*crijeps*cvara_ep[c_id]*st_deltaij[ij];
 
       /* save the pressure correlation  term for Rij
        * ----------------------------------------------
@@ -1404,7 +1503,14 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   /* Buoyancy source term
    * -------------------- */
 
-  if (cs_glob_turb_rans_model->has_buoyant_term == 1)
+  /* source_time_stepping: for source_time_stepping != 0, the buoyancy coupling
+   * term in R's equation (-beta_theta*(g⊗q_theta + q_theta⊗g)) is handled
+   * by the source-step integration in cs_turbulence_rit.cpp instead,
+   * to avoid double-counting. Restricted to _pre_solve_lrr (Rotta) --
+   * source_time_stepping is not currently supported with SSG/EBRSM. */
+  if (   cs_glob_turb_rans_model->has_buoyant_term == 1
+      && cs_glob_turb_rans_model->source_time_stepping
+         == CS_TURB_RIJ_SOURCE_TS_IMEX)
     _gravity_st_rij(f_rij, up_rhop, grav, st_prv_id, c_st_prv, fimp, rhs);
 
   /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
@@ -1606,6 +1712,8 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const cs_turb_model_type_t model
     = (cs_turb_model_type_t)cs_glob_turb_model->model;
 
+  const int st_scheme = cs_glob_turb_rans_model->source_time_stepping;
+
   const int t2v[3][3] = _T2V;
   const int iv2t[6] = _IV2T;
   const int jv2t[6] = _JV2T;
@@ -1660,7 +1768,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     cs_real_t alpha3 = 1.;
 
     cs_real_t matrot[3][3] = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
-    cs_real_t impl_drsm[6][6];
+    cs_real_t impl_drsm[6][6] = {0};
 
     /* EBRSM: compute the magnitude of the Alpha gradient */
 
@@ -1754,7 +1862,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
       }
     }
 
-    if (coupled_components != 0) {
+    if (coupled_components != 0 && st_scheme != CS_TURB_RIJ_SOURCE_TS_CONVEXP) {
 
       /* Computation of implicit components */
       cs_real_t st_sij[6] = {m_sij[0][0],
@@ -1863,7 +1971,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
       }
 
-    } /* end if irijco != 0 */
+    } /* end if coupled_components != 0 && ... */
 
     /* Rotating frame of reference => "absolute" vorticity */
 
@@ -2153,6 +2261,8 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
   const cs_real_t *cvara_omg = f_omg->val_pre;
   const cs_real_6_t *cvara_var = (const cs_real_6_t *)f_rij->val_pre;
 
+  const int st_scheme = cs_glob_turb_rans_model->source_time_stepping;
+
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param_const(f_rij);
 
@@ -2249,7 +2359,7 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
       return; // return from lambda function == continue in loop
 
     cs_real_t matrot[3][3] = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
-    cs_real_t impl_drsm[6][6];
+    cs_real_t impl_drsm[6][6] = {0};
 
     cs_real_t m_rij[3][3], xprod[3][3];
     cs_real_t m_aij[3][3], m_sij[3][3], m_omij[3][3];
@@ -2337,7 +2447,7 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
       }
     }
 
-    if (coupled_components != 0) {
+    if (coupled_components != 0 && st_scheme != CS_TURB_RIJ_SOURCE_TS_CONVEXP) {
 
       /* Computation of implicit components */
       cs_real_t st_sij[6] = {m_sij[0][0],
@@ -2399,7 +2509,7 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
        * A.R = M.R + R.M^t */
       cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
 
-    } /* end if irijco != 0 */
+    } /* end if coupled_components != 0 && ... */
 
     /* Rotating frame of reference => "absolute" vorticity */
 
@@ -3385,6 +3495,41 @@ _solve_epsilon(int              phase_id,
 
   cs_real_t *cvar_ep = f_eps->val;
 
+  /* source_time_stepping: same gathering as in _pre_solve_lrr -- see the
+   * corresponding comment there for the exact rationale/requirements. */
+  const int st_scheme = cs_glob_turb_rans_model->source_time_stepping;
+  const bool source_time_stepping_active =
+    (st_scheme != CS_TURB_RIJ_SOURCE_TS_IMEX);
+  const cs_field_t *f_temp = source_time_stepping_active ?
+    CS_F_(t) : nullptr;
+  const cs_field_t *f_qtheta = (f_temp != nullptr) ?
+    cs_field_by_composite_name_try(f_temp->name, "turbulent_flux") : nullptr;
+  const cs_field_t *f_var = (f_temp != nullptr) ?
+    cs_field_get_variance(f_temp) : nullptr;
+
+  if (source_time_stepping_active) {
+    assert(f_temp != nullptr);
+    assert(f_qtheta != nullptr);
+    assert(f_var != nullptr);
+  }
+
+  const int krvarfl = cs_field_key_id("variance_dissipation");
+  const cs_real_t ctheta = source_time_stepping_active ?
+    1. / f_var->get_key_double(krvarfl) : 1.;
+
+  const cs_real_3_t *c_qtheta = nullptr;
+  const cs_real_t   *c_theta2 = nullptr;
+  const cs_real_t   *cpro_beta = nullptr;
+
+  if (source_time_stepping_active) {
+    c_qtheta = (const cs_real_3_t *) f_qtheta->val_pre;
+    c_theta2 = f_var->val_pre;
+
+    const cs_field_t *f_beta = cs_field_try("thermal_expansion");
+    if (f_beta != nullptr)
+      cpro_beta = f_beta->val;
+  }
+
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
   int iflmas =  f_vel->get_key_int(kimasf);
@@ -3616,9 +3761,42 @@ _solve_epsilon(int              phase_id,
       if (w1[c_id] < 0.)
         fimp[c_id] -= w1[c_id] / cvara_ep[c_id];
 
-      /* Dissipation (implicit) */
-      rhs[c_id]  -= crom_vol * ceps2 * cs_math_pow2(cvara_ep[c_id]) / tke;
-      fimp[c_id] += ceps2 * crom_vol / xttke * thetap;
+      /* Dissipation (implicit)
+       *
+       * source_time_stepping: for source_time_stepping != 0, the destruction
+       * term (and, since eps1_is below is computed by the same call that
+       * already accounts for the general source subsystem, the buoyancy
+       * contribution too -- pure destruction only for
+       * source_time_stepping==1, per the Ceps3=Ceps4=0 restriction) is
+       * injected as an explicit rhs contribution
+       * (crom_vol/dt*(eps_exact(dt)-eps_pre)), exactly mirroring how R's
+       * Rotta source is injected in _pre_solve_lrr -- see the corresponding
+       * integration notes. */
+      if (cs_glob_turb_rans_model->source_time_stepping
+          == CS_TURB_RIJ_SOURCE_TS_IMEX) {
+        rhs[c_id]  -= crom_vol * ceps2 * cs_math_pow2(cvara_ep[c_id]) / tke;
+        fimp[c_id] += ceps2 * crom_vol / xttke * thetap;
+      }
+      else if (source_time_stepping_active && c_theta2 != nullptr) {
+        const cs_real_t beta_c = (cpro_beta != nullptr) ?
+          cpro_beta[c_id] : 0.;
+        cs_real_6_t r1;
+        cs_real_3_t qtheta1;
+        cs_real_t theta2_1, eps1;
+        if (st_scheme == CS_TURB_RIJ_SOURCE_TS_VAR_TAU)
+          cs_turbulence_rit_source_step_variable_tau(
+            cs_turb_crij1, ctheta, ceps2, cs_turb_ce3, beta_c, grav,
+            dt[c_id], cvara_rij[c_id], c_qtheta[c_id], c_theta2[c_id],
+            cvara_ep[c_id],
+            r1, qtheta1, &theta2_1, &eps1);
+        else
+          cs_turbulence_rit_source_step_frozen_tau(
+            cs_turb_crij1, ctheta, ceps2, beta_c, grav, dt[c_id],
+            cvara_rij[c_id], c_qtheta[c_id], c_theta2[c_id],
+            cvara_ep[c_id],
+            r1, qtheta1, &theta2_1, &eps1);
+        rhs[c_id] += crom_vol/dt[c_id] * (eps1 - cvara_ep[c_id]);
+      }
     });
 
   }
@@ -3641,7 +3819,13 @@ _solve_epsilon(int              phase_id,
    * ------------- */
 
   /* FIXME use beta ... WARNING */
-  if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
+  /* source_time_stepping: for source_time_stepping != 0, the buoyancy
+   * contribution to epsilon (Ceps3/Ceps4 closure) is handled by the
+   * source-step integration in cs_turbulence_rit.cpp instead of the standard
+   * model below, to avoid double-counting. */
+  if (   cs_glob_turb_rans_model->has_buoyant_term == 1
+      && cs_glob_turb_rans_model->source_time_stepping
+         == CS_TURB_RIJ_SOURCE_TS_IMEX) {
 
     /* Extrapolation of source terms (2nd order in time) */
     if (st_prv_id > -1)
@@ -3796,6 +3980,7 @@ cs_turbulence_rij(int phase_id)
 
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
   const cs_turb_rans_model_t *turb_rans_model = cs_glob_turb_rans_model;
+  const int rij_scheme = cs_glob_turb_rans_model->rij_discretization_scheme;
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
@@ -4088,24 +4273,185 @@ cs_turbulence_rij(int phase_id)
   /* Compute the production term for Rij
    * ----------------------------------- */
 
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+  if (rij_scheme != CS_RIJ_SCHEME_GODUNOV) {
 
-    /* Pij = - (Rik dUj/dXk + dUi/dXk Rkj)
-     * Pij is stored as (P11, P22, P33, P12, P23, P13) */
-    for (cs_lnum_t ij = 0; ij < 6; ij++) {
-      cs_lnum_t i = iv2t[ij];
-      cs_lnum_t j = jv2t[ij];
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-      prod(c_id, ij) = - (  cvara_rij[c_id][t2v[i][0]] * gradv(c_id, j, 0)
-                          + cvara_rij[c_id][t2v[i][1]] * gradv(c_id, j, 1)
-                          + cvara_rij[c_id][t2v[i][2]] * gradv(c_id, j, 2)
-                          + gradv(c_id, i, 0) * cvara_rij[c_id][t2v[0][j]]
-                          + gradv(c_id, i, 1) * cvara_rij[c_id][t2v[1][j]]
-                          + gradv(c_id, i, 2) * cvara_rij[c_id][t2v[2][j]]);
-    }
+      /* Pij = - (Rik dUj/dXk + dUi/dXk Rkj)
+       * Pij is stored as (P11, P22, P33, P12, P23, P13) */
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
 
-  });
-  ctx.wait();
+        prod(c_id, ij) = - (  cvara_rij[c_id][t2v[i][0]] * gradv(c_id, j, 0)
+                            + cvara_rij[c_id][t2v[i][1]] * gradv(c_id, j, 1)
+                            + cvara_rij[c_id][t2v[i][2]] * gradv(c_id, j, 2)
+                            + gradv(c_id, i, 0) * cvara_rij[c_id][t2v[0][j]]
+                            + gradv(c_id, i, 1) * cvara_rij[c_id][t2v[1][j]]
+                            + gradv(c_id, i, 2) * cvara_rij[c_id][t2v[2][j]]);
+      }
+
+    });
+    ctx.wait();
+  }
+
+  /* GODUNOV scheme: exact Riemann solver.
+   *
+   * Both the convective term (added to rhs at the end of this block)
+   * and the "displaced" interfacial production term (overwriting prod,
+   * replacing the standard gradient-based formula above) are built
+   * from the SAME precomputed Riemann interface state (fields
+   * "i_velocity"/"i_reynolds_stress"/"b_velocity"/"b_reynolds_stress",
+   * filled once per time step by
+   * cs_turbulence_rij_godunov_interface_states, called from
+   * cs_solve_all.cpp before cs_solve_navier_stokes()). The Riemann
+   * problem itself is NOT recomputed here -- only read -- so that this
+   * equation's production/convection and the momentum equation's
+   * div(R) term (cs_solve_navier_stokes.cpp, _div_rij) are guaranteed
+   * to use the same discrete interface value.
+   *
+   * GODUNOV scheme notes (mandatory companion change, a few dozen lines below,
+   * where eqp_loc is built for the tensor equation solve): iconv MUST
+   * be set to 0, or the standard convective operator will be
+   * assembled a second time on top of the explicit contribution added
+   * to rhs here.
+   */
+  else {
+
+    cs_array_real_fill_zero(6 * n_cells_ext, (cs_real_t *)prod.data<cs_real_6_t>());
+
+    cs_real_6_t *divru;
+    CS_MALLOC(divru, n_cells_ext, cs_real_6_t);
+    cs_array_real_fill_zero(6 * n_cells_ext, (cs_real_t *)divru);
+
+    /* Read the Riemann interface state precomputed once, before both
+     * consumers, by cs_turbulence_rij_godunov_interface_states (see
+     * cs_solve_all.cpp) -- NOT recomputed here. This guarantees
+     * consistency between this equation's own convection/production
+     * and the momentum equation's div(R) term, which reads the same
+     * fields (see _div_rij / _rij_godunov_div_rij_flux in
+     * cs_solve_navier_stokes.cpp). */
+    const cs_real_3_t *c_vel = (const cs_real_3_t *)CS_F_(vel)->val;
+    const cs_real_6_t *c_rij = (const cs_real_6_t *)CS_F_(rij)->val;
+
+    const cs_real_3_t *i_vel_g =
+      (const cs_real_3_t *) cs_field("i_velocity")->val;
+    const cs_real_6_t *i_rij_g =
+      (const cs_real_6_t *) cs_field("i_reynolds_stress")->val;
+    const cs_real_3_t *b_vel_g =
+      (const cs_real_3_t *) cs_field("b_velocity")->val;
+    const cs_real_6_t *b_rij_g =
+      (const cs_real_6_t *) cs_field("b_reynolds_stress")->val;
+
+    const cs_lnum_2_t *restrict i_face_cells
+      = (const cs_lnum_2_t *)m->i_face_cells;
+    const cs_lnum_t *restrict b_face_cells
+      = (const cs_lnum_t *)m->b_face_cells;
+    const cs_real_3_t *restrict i_face_normal_g
+      = (const cs_real_3_t *restrict)fvq->i_face_normal;
+    const cs_real_3_t *restrict b_face_normal_g
+      = (const cs_real_3_t *restrict)fvq->b_face_normal;
+
+    const int has_disable_flag_g = fvq->has_disable_flag;
+    int *c_disable_flag_g = fvq->c_disable_flag;
+
+    cs_real_6_t *pij_g = prod.data<cs_real_6_t>();
+
+    cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+    cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+      const cs_lnum_t c_id_l = i_face_cells[face_id][0];
+      const cs_lnum_t c_id_r = i_face_cells[face_id][1];
+
+      cs_real_t dvol_l = 0;
+      int ind = has_disable_flag_g * c_id_l;
+      if (1 - (has_disable_flag_g * c_disable_flag_g[ind]) == 1)
+        dvol_l = 1.0/cell_f_vol[c_id_l];
+
+      cs_real_t dvol_r = 0;
+      ind = has_disable_flag_g * c_id_r;
+      if (1 - (has_disable_flag_g * c_disable_flag_g[ind]) == 1)
+        dvol_r = 1.0/cell_f_vol[c_id_r];
+
+      const cs_real_3_t &vel_face = i_vel_g[face_id];
+      const cs_real_6_t &rij_face = i_rij_g[face_id];
+
+      /* Interfacial ("displaced") production:
+       * (u_f - u_c) x (Rf.S) + (Rf.S) x (u_f - u_c), S not normalized. */
+      cs_real_3_t ris;
+      cs_math_sym_33_3_product(rij_face, i_face_normal_g[face_id], ris);
+
+      cs_real_6_t pflux_l, pflux_r;
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        pflux_l[ij] = - dvol_l * ( (vel_face[i] - c_vel[c_id_l][i]) * ris[j]
+                                  + ris[i] * (vel_face[j] - c_vel[c_id_l][j]));
+        pflux_r[ij] =   dvol_r * ( (vel_face[i] - c_vel[c_id_r][i]) * ris[j]
+                                  + ris[i] * (vel_face[j] - c_vel[c_id_r][j]));
+      }
+      if (c_id_l < n_cells)
+        cs_dispatch_sum<6>(pij_g[c_id_l], pflux_l, i_sum_type);
+      if (c_id_r < n_cells)
+        cs_dispatch_sum<6>(pij_g[c_id_r], pflux_r, i_sum_type);
+
+      /* Convective correction (deferred-correction form, driven by the
+       * actual physical mass flux imasfl, consistent with how any
+       * other transported quantity is convected in code_saturne):
+       * (R_f - R_c) x mass_flux. */
+      cs_real_6_t cflux_l, cflux_r;
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cflux_l[ij] =   (rij_face[ij] - c_rij[c_id_l][ij]) * imasfl[face_id];
+        cflux_r[ij] = - (rij_face[ij] - c_rij[c_id_r][ij]) * imasfl[face_id];
+      }
+      if (c_id_l < n_cells)
+        cs_dispatch_sum<6>(divru[c_id_l], cflux_l, i_sum_type);
+      if (c_id_r < n_cells)
+        cs_dispatch_sum<6>(divru[c_id_r], cflux_r, i_sum_type);
+    });
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+      const cs_lnum_t c_id_l = b_face_cells[face_id];
+
+      cs_real_t dvol_l = 0;
+      int ind = has_disable_flag_g * c_id_l;
+      if (1 - (has_disable_flag_g * c_disable_flag_g[ind]) == 1)
+        dvol_l = 1.0/cell_f_vol[c_id_l];
+
+      const cs_real_3_t &vel_face = b_vel_g[face_id];
+      const cs_real_6_t &rij_face = b_rij_g[face_id];
+
+      cs_real_3_t ris;
+      cs_math_sym_33_3_product(rij_face, b_face_normal_g[face_id], ris);
+
+      cs_real_6_t pflux_l;
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        pflux_l[ij] = - dvol_l * ( (vel_face[i] - c_vel[c_id_l][i]) * ris[j]
+                                  + ris[i] * (vel_face[j] - c_vel[c_id_l][j]));
+      }
+      if (c_id_l < n_cells)
+        cs_dispatch_sum<6>(pij_g[c_id_l], pflux_l, b_sum_type);
+
+      cs_real_6_t cflux_l;
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        cflux_l[ij] = (rij_face[ij] - c_rij[c_id_l][ij]) * bmasfl[face_id];
+      if (c_id_l < n_cells)
+        cs_dispatch_sum<6>(divru[c_id_l], cflux_l, b_sum_type);
+    });
+
+    ctx.wait();
+
+    /* rhs -= div(R⊗u) */
+    cs_axpy(n_cells*6, -1, (cs_real_t *)divru, (cs_real_t *)rhs.data());
+
+    CS_FREE(divru);
+  }
+
 
   /* Compute the density gradient for buoyant terms
    * ---------------------------------------------- */
@@ -4256,7 +4602,7 @@ cs_turbulence_rij(int phase_id)
   cs_real_66_t *cofbfp = (cs_real_66_t *)f_rij->bc_coeffs->bf;
 
   /* Add Rusanov fluxes */
-  if (cs_glob_turb_rans_model->irijnu == 2) {
+  if (rij_scheme == CS_RIJ_SCHEME_RUSANOV) {
     cs_real_t *ipro_rusanov = cs_field("i_rusanov_diff")->val;
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       viscf[face_id] = cs::max(0.5 * ipro_rusanov[face_id],
@@ -4316,6 +4662,16 @@ cs_turbulence_rij(int phase_id)
   eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
   eqp_loc.theta = thetv;
   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
+
+  /* GODUNOV scheme notes: the explicit convective contribution has already
+   * been added to rhs above (Riemann-based divru). The standard
+   * convective operator MUST be disabled here, or convection would be
+   * assembled twice (once explicitly above, once implicitly/explicitly
+   * here) -- this exact double-counting was the cause of a real
+   * regression (reduced mixing-layer growth rate) in a previous
+   * iteration of this scheme. */
+  if (rij_scheme == CS_RIJ_SCHEME_GODUNOV)
+    eqp_loc.iconv = 0;
 
   cs_equation_iterative_solve_tensor(cs_glob_time_step_options->idtvar,
                                      f_rij->id,
@@ -5319,7 +5675,9 @@ cs_turbulence_rij_anisotropic_mu_t
 void
 cs_turbulence_rij_compute_rusanov(void)
 {
-  if (cs_glob_turb_rans_model->irijnu != 2)
+  const int rij_scheme
+    = cs_glob_turb_rans_model->rij_discretization_scheme;
+  if (rij_scheme != CS_RIJ_SCHEME_RUSANOV)
     return;
 
   const cs_mesh_t *m = cs_glob_mesh;
@@ -5396,4 +5754,1309 @@ cs_turbulence_rij_compute_rusanov(void)
   ctx.wait();
 }
 
+/*----------------------------------------------------------------------------
+ * GODUNOV scheme -- exact Riemann solver for the
+ * coupled {u, R} system, used to compute the Riemann state.
+ *
+ * Time level: ->val for both velocity and Rij (see integration README).
+ *----------------------------------------------------------------------------*/
+
+static cs_real_t
+_rij_godunov_h1(cs_real_t z)
+{
+  if (z >= 0 && z <= 1)
+    return 1 - sqrt(z);
+  else if (z >= 1)
+    return (1. - z) / sqrt(2 * (1. + z));
+  else {
+    if (cs_glob_turb_rans_model->verbosity >= 2) {
+      static int _warn_count = 0;
+      if (_warn_count < 10) {
+        _warn_count++;
+        bft_printf("Warning in _rij_godunov_h1: z has to be positive.\n");
+        if (_warn_count == 10) {
+          bft_printf("Warning in _rij_godunov_h1: "
+                     "further warnings will be silenced.\n");
+        }
+      }
+    }
+    return -1;
+  }
+}
+
+static cs_real_t
+_rij_godunov_dh1(cs_real_t z)
+{
+  if (z >= 0 && z <= 1.)
+    return -1. / (2 * sqrt(z));
+  else if (z > 1)
+    return -1. / sqrt(2)
+      * ((1. - z) / (2 * (1. + z)*sqrt(1.+z)) + 1. / sqrt(1. + z));
+  else {
+    if (cs_glob_turb_rans_model->verbosity >= 2) {
+      static int _warn_count = 0;
+      if (_warn_count < 10) {
+        _warn_count++;
+        bft_printf("Warning in _rij_godunov_dh1: z has to be positive.\n");
+        if (_warn_count == 10) {
+          bft_printf("Warning in _rij_godunov_dh1: "
+                     "further warnings will be silenced.\n");
+        }
+      }
+    }
+    return -1;
+  }
+}
+
+static cs_real_t
+_rij_godunov_phi_z(cs_real_t z,
+                   cs_real_t u_r,
+                   cs_real_t u_l,
+                   cs_real_t r_r,
+                   cs_real_t r_l)
+{
+  return (u_r - u_l - _rij_godunov_h1(r_l * z / r_r) * sqrt(2 * r_r)
+          - _rij_godunov_h1(z) * sqrt(2 * r_l))
+    / (sqrt(2 * r_r) + sqrt(2 * r_l));
+}
+
+static cs_real_t
+_rij_godunov_dphi_z(cs_real_t z,
+                    cs_real_t u_r,
+                    cs_real_t u_l,
+                    cs_real_t r_r,
+                    cs_real_t r_l)
+{
+  return -(r_l / r_r * _rij_godunov_dh1(r_l * z / r_r) * sqrt(2 * r_r)
+           + _rij_godunov_dh1(z) * sqrt(2 * r_l))
+    / (sqrt(2 * r_l) + sqrt(2 * r_r));
+}
+
+static cs_real_t
+_rij_godunov_newton_solver(cs_real_t z,
+                           cs_real_t un_r,
+                           cs_real_t un_l,
+                           cs_real_t rnn_r,
+                           cs_real_t rnn_l,
+                           cs_real_t tol,
+                           int       max_iter)
+{
+  cs_real_t z_star = z;
+  cs_real_t phi_z = 1.;
+  int i;
+  for (i = 0; i < max_iter && fabs(phi_z) >= tol; i++) {
+    phi_z = _rij_godunov_phi_z(z_star, un_r, un_l, rnn_r, rnn_l);
+    z_star -= phi_z / _rij_godunov_dphi_z(z_star, un_r, un_l, rnn_r, rnn_l);
+  }
+  if (i >= max_iter-1) {
+    if (cs_glob_turb_rans_model->verbosity >= 2) {
+      static int _warn_count = 0;
+      if (_warn_count < 10) {
+        _warn_count++;
+        bft_printf("Warning: Newton solver for the Rij Riemann "
+                   "problem did not\n"
+                   "  converge after %d iterations.\n"
+                   "  z=%e, un_r=%e, un_l=%e, rnn_l=%e, rnn_r=%e, "
+                   "tol=%e, z_star=%e, phi(z)=%e\n",
+                   max_iter, z, un_r, un_l, rnn_l, rnn_r, tol,
+                   z_star, phi_z);
+        if (_warn_count == 10) {
+          bft_printf("Warning: Newton solver warnings silenced.\n");
+        }
+      }
+    }
+  }
+  return z_star;
+}
+
+static cs_real_t
+_rij_godunov_hybrid_solver(cs_real_t z,
+                           cs_real_t un_r,
+                           cs_real_t un_l,
+                           cs_real_t rnn_r,
+                           cs_real_t rnn_l,
+                           cs_real_t tol,
+                           int       max_iter)
+{
+  cs_real_t z_star = z;
+  while (_rij_godunov_phi_z(z_star, un_r, un_l, rnn_r, rnn_l) > 0)
+    z_star *= 0.5;
+  return _rij_godunov_newton_solver(z_star, un_r, un_l, rnn_r, rnn_l,
+                                     tol, max_iter);
+}
+
+static cs_real_t
+_rij_godunov_wave1(cs_real_t z1,
+                   cs_real_t un,
+                   cs_real_t rnn,
+                   cs_real_t un_star,
+                   cs_real_t rnn_star)
+{
+  if (z1 < 1)
+    return un - sqrt(2.*rnn);
+  else
+    return 0.5*(un + un_star) - sqrt(rnn + rnn_star);
+}
+
+static cs_real_t
+_rij_godunov_wave9(cs_real_t z9,
+                   cs_real_t un,
+                   cs_real_t rnn,
+                   cs_real_t un_star,
+                   cs_real_t rnn_star)
+{
+  if (z9 > 1)
+    return un + sqrt(2.*rnn);
+  else
+    return 0.5*(un + un_star) + sqrt(rnn + rnn_star);
+}
+
+static cs_real_t
+_rij_godunov_riemann(const cs_real_t    *n,
+                      const cs_real_3_t  c_vel_l,
+                      const cs_real_6_t  c_rij_l,
+                      const cs_real_3_t  c_vel_r,
+                      const cs_real_6_t  c_rij_r,
+                      cs_real_3_t        f_vel,
+                      cs_real_6_t        f_rij)
+{
+  const int iv2t[6] = _IV2T;
+  const int jv2t[6] = _JV2T;
+
+  cs_real_t un_l = cs_math_3_dot_product(c_vel_l, n);
+  cs_real_t un_r = cs_math_3_dot_product(c_vel_r, n);
+
+  cs_real_t rnn_l = cs_math_3_sym_33_3_dot_product(n, c_rij_l, n);
+  cs_real_t rnn_r = cs_math_3_sym_33_3_dot_product(n, c_rij_r, n);
+
+  cs_real_3_t rin_l;
+  cs_math_sym_33_3_product(c_rij_l, n, rin_l);
+  cs_real_3_t rin_r;
+  cs_math_sym_33_3_product(c_rij_r, n, rin_r);
+
+  cs_real_3_t qin_l;
+  cs_real_3_t qin_r;
+  for (cs_lnum_t i = 0; i < 3; i++) {
+    qin_l[i] = rin_l[i] / rnn_l;
+    qin_r[i] = rin_r[i] / rnn_r;
+  }
+
+  cs_real_t relaminarization_g =
+    -(sqrt(2*rnn_r) + sqrt(2*rnn_l) - un_r + un_l);
+
+  if (relaminarization_g >= 0) {
+
+    cs_real_t lambda_1       = un_l - sqrt(2*rnn_l);
+    cs_real_t lambda_1_relam = un_l + sqrt(2*rnn_l);
+    cs_real_t lambda_9_relam = un_r - sqrt(2*rnn_r);
+    cs_real_t lambda_9       = un_r + sqrt(2*rnn_r);
+
+    cs_real_3_t ui_relam_1;
+    for (cs_lnum_t i = 0; i < 3; i++)
+      ui_relam_1[i] = c_vel_l[i] + qin_l[i] * sqrt(2.*rnn_l);
+
+    cs_real_3_t ui_relam_9;
+    for (cs_lnum_t i = 0; i < 3; i++)
+      ui_relam_9[i] = c_vel_r[i] - qin_r[i] * sqrt(2.*rnn_r);
+
+    cs_real_6_t rij_relam_1;
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      cs_lnum_t i = iv2t[ij];
+      cs_lnum_t j = jv2t[ij];
+      rij_relam_1[ij] = c_rij_l[ij] - qin_l[i] * qin_l[j] * rnn_l;
+    }
+    cs_real_6_t rij_relam_9;
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      cs_lnum_t i = iv2t[ij];
+      cs_lnum_t j = jv2t[ij];
+      rij_relam_9[ij] = c_rij_r[ij] - qin_r[i] * qin_r[j] * rnn_r;
+    }
+
+    if (lambda_1 >= 0) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        f_vel[i] = c_vel_l[i];
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        f_rij[ij] = c_rij_l[ij];
+    }
+    else if (lambda_1 < 0 && lambda_1_relam > 0) {
+      cs_real_t un  = 0.5*(un_l + sqrt(2*rnn_l));
+      cs_real_t rnn = 0.5*un*un;
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_l[ij] - qin_l[i] * qin_l[j] * (rnn_l - rnn);
+      }
+      for (cs_lnum_t i = 0; i < 3; i++)
+        f_vel[i] = c_vel_l[i] + qin_l[i] * (sqrt(2.*rnn_l) - sqrt(2.*rnn));
+    }
+    else if (lambda_1_relam <= 0 && lambda_9_relam >= 0) {
+      cs_real_t d_dlambda = 1. / (lambda_9_relam - lambda_1_relam);
+      for (cs_lnum_t i = 0; i < 3; i++)
+        f_vel[i] = d_dlambda
+          * (  lambda_9_relam * ui_relam_1[i]
+             - lambda_1_relam * ui_relam_9[i]);
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        f_rij[ij] = d_dlambda
+          * (  lambda_9_relam * rij_relam_1[ij]
+             - lambda_1_relam * rij_relam_9[ij]);
+    }
+    else if (lambda_9_relam < 0 && lambda_9 > 0) {
+      cs_real_t un  = 0.5*(un_r - sqrt(2*rnn_r));
+      cs_real_t rnn = 0.5*un*un;
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_r[ij] - qin_r[i] * qin_r[j] * (rnn_r - rnn);
+      }
+      for (cs_lnum_t i = 0; i < 3; i++)
+        f_vel[i] = c_vel_r[i] - qin_r[i] * (sqrt(2.*rnn_r) - sqrt(2.*rnn));
+    }
+    else {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        f_vel[i] = c_vel_r[i];
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        f_rij[ij] = c_rij_r[ij];
+    }
+
+    return 1.0;
+  }
+
+  cs_real_t z1 = _rij_godunov_hybrid_solver(1., un_r, un_l, rnn_r, rnn_l,
+                                             1e-10, 10000);
+
+  cs_real_t z9      = rnn_r / (rnn_l * z1);
+  cs_real_t d_z9     = (rnn_l * z1) / rnn_r;
+  cs_real_t un_star  = un_l + _rij_godunov_h1(z1) * sqrt(2 * rnn_l);
+  cs_real_t rnn_star = z1 * rnn_l;
+
+  cs_real_t lambda_1 = _rij_godunov_wave1(z1, un_l, rnn_l, un_star, rnn_star);
+  cs_real_t lambda_9 = _rij_godunov_wave9(z9, un_r, rnn_r, un_star, rnn_star);
+
+  cs_real_t lambda_1_star = un_star - sqrt(2*rnn_star);
+  cs_real_t lambda_9_star = un_star + sqrt(2*rnn_star);
+
+  cs_real_t lambda_2_3   = un_star - sqrt(rnn_star);
+  cs_real_t lambda_4_5_6 = un_star;
+  cs_real_t lambda_7_8   = un_star + sqrt(rnn_star);
+
+  if (lambda_1 > 0) {
+    for (cs_lnum_t i = 0; i < 3; i++)
+      f_vel[i] = c_vel_l[i];
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      f_rij[ij] = c_rij_l[ij];
+  }
+  else if (lambda_1 <= 0 && lambda_2_3 > 0) {
+    if (z1 <= 1 && lambda_1_star > 0) {
+      cs_real_t un  = 0.5*(un_l + sqrt(2*rnn_l));
+      cs_real_t rnn = 0.5*un*un;
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_l[ij] - qin_l[i] * qin_l[j] * (rnn_l - rnn);
+      }
+      for (cs_lnum_t i = 0; i < 3; i++)
+        f_vel[i] = c_vel_l[i] + qin_l[i] * (sqrt(2.*rnn_l) - sqrt(2.*rnn));
+    }
+    else {
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_l[ij] + (z1-1) * qin_l[i] * qin_l[j] * rnn_l;
+      }
+      for (cs_lnum_t i = 0; i < 3; i++)
+        f_vel[i] = c_vel_l[i] + _rij_godunov_h1(z1) * sqrt(2.*rnn_l) * qin_l[i];
+    }
+  }
+  else if (lambda_2_3 <= 0 && lambda_7_8 >= 0) {
+    cs_real_3_t u_state_1;
+    cs_real_3_t u_state_4;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      u_state_1[i] = c_vel_l[i]
+        + _rij_godunov_h1(z1) * sqrt(2.*rnn_l) * qin_l[i];
+      u_state_4[i] = c_vel_r[i]
+        - _rij_godunov_h1(d_z9) * sqrt(2.*rnn_r) * qin_r[i];
+    }
+    cs_real_6_t rij_state_1;
+    cs_real_6_t rij_state_4;
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      cs_lnum_t i = iv2t[ij];
+      cs_lnum_t j = jv2t[ij];
+      rij_state_1[ij] = c_rij_l[ij] + (z1-1)  * qin_l[i] * qin_l[j] * rnn_l;
+      rij_state_4[ij] = c_rij_r[ij] + (d_z9-1)* qin_r[i] * qin_r[j] * rnn_r;
+    }
+    cs_real_3_t rin_state_1;
+    cs_real_3_t rin_state_4;
+    cs_math_sym_33_3_product(rij_state_1, n, rin_state_1);
+    cs_math_sym_33_3_product(rij_state_4, n, rin_state_4);
+    cs_real_3_t rin_state_2_3;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      f_vel[i] = 0.5 * (u_state_1[i] + u_state_4[i]
+                         + (rin_state_1[i] - rin_state_4[i]) / sqrt(rnn_star));
+      rin_state_2_3[i] = 0.5 * (rin_state_1[i] + rin_state_4[i]
+                                 + sqrt(rnn_star)
+                                   * (u_state_1[i] - u_state_4[i]));
+    }
+    if (lambda_4_5_6 > 0) {
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = rij_state_1[ij]
+          - (1./rnn_star) * (rin_state_1[i]*rin_state_1[j]
+                              - rin_state_2_3[i]*rin_state_2_3[j]);
+      }
+    }
+    else {
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = rij_state_4[ij]
+          - (1./rnn_star) * (rin_state_4[i]*rin_state_4[j]
+                              - rin_state_2_3[i]*rin_state_2_3[j]);
+      }
+    }
+  }
+  else if (lambda_7_8 < 0 && lambda_9 >= 0) {
+    if (z9 >= 1 && lambda_9_star < 0) {
+      cs_real_t un  = 0.5*(un_r - sqrt(2*rnn_r));
+      cs_real_t rnn = 0.5*un*un;
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_r[ij] - qin_r[i] * qin_r[j] * (rnn_r - rnn);
+      }
+      for (cs_lnum_t i = 0; i < 3; i++)
+        f_vel[i] = c_vel_r[i] - qin_r[i] * (sqrt(2.*rnn_r) - sqrt(2.*rnn));
+    }
+    else {
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_r[ij] + (d_z9-1) * qin_r[i] * qin_r[j] * rnn_r;
+      }
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        f_vel[i] = c_vel_r[i]
+          - _rij_godunov_h1(d_z9) * sqrt(2.*rnn_r) * qin_r[i];
+      }
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < 3; i++)
+      f_vel[i] = c_vel_r[i];
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      f_rij[ij] = c_rij_r[ij];
+  }
+
+  return z1;
+}
+
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Exact Riemann solver for the coupled {u, R, T, q_theta}
+ *        system: thermal extension of _rij_godunov_riemann.
+ *
+ * Temperature, temperature variance and turbulent heat flux are
+ * transported through EXACTLY the same wave structure as {u, R}
+ * (same lambda_1/.../lambda_9 wave speeds, same z1/z9 solved via the
+ * same hybrid solver) -- they do not introduce new characteristic
+ * fields of their own; they are carried as additional Riemann
+ * invariants riding along the existing 1-, 2-3-4-, and 5-fields,
+ * exactly as R_n./R_.. already are for the dynamic-only system. This
+ * is a direct port of the historical, validated implementation (see
+ * integration notes), only renamed to match this file's naming
+ * convention and reusing the already-defined h1/hybrid_solver/wave1/
+ * wave9 helpers -- no change to the underlying mathematics.
+ *
+ * \param[in]   n             unit face normal
+ * \param[in]   c_vel_l       left velocity
+ * \param[in]   c_rij_l       left Rij
+ * \param[in]   c_vel_r       right velocity
+ * \param[in]   c_rij_r       right Rij
+ * \param[in]   c_temp_l      left temperature
+ * \param[in]   c_var_temp_l  left temperature variance
+ * \param[in]   c_qtheta_l    left turbulent heat flux
+ * \param[in]   c_temp_r      right temperature
+ * \param[in]   c_var_temp_r  right temperature variance
+ * \param[in]   c_qtheta_r    right turbulent heat flux
+ * \param[out]  f_vel         interface velocity
+ * \param[out]  f_rij         interface Rij
+ * \param[out]  f_temp        interface temperature
+ * \param[out]  f_var_temp    interface temperature variance
+ * \param[out]  f_qtheta      interface turbulent heat flux
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rit_godunov_riemann(const cs_real_t   *n,
+                     const cs_real_3_t  c_vel_l,
+                     const cs_real_6_t  c_rij_l,
+                     const cs_real_3_t  c_vel_r,
+                     const cs_real_6_t  c_rij_r,
+                     cs_real_t          c_temp_l,
+                     cs_real_t          c_var_temp_l,
+                     const cs_real_3_t  c_qtheta_l,
+                     cs_real_t          c_temp_r,
+                     cs_real_t          c_var_temp_r,
+                     const cs_real_3_t  c_qtheta_r,
+                     cs_real_t          z1,
+                     cs_real_3_t        f_vel,
+                     cs_real_6_t        f_rij,
+                     cs_real_t         *f_temp,
+                     cs_real_t         *f_var_temp,
+                     cs_real_3_t        f_qtheta)
+{
+  const int iv2t[6] = _IV2T;
+  const int jv2t[6] = _JV2T;
+
+  cs_real_t un_l = cs_math_3_dot_product(c_vel_l, n);
+  cs_real_t un_r = cs_math_3_dot_product(c_vel_r, n);
+
+  cs_real_t rnn_l = cs_math_3_sym_33_3_dot_product(n, c_rij_l, n);
+  cs_real_t rnn_r = cs_math_3_sym_33_3_dot_product(n, c_rij_r, n);
+
+  cs_real_t qqthetan_l = cs_math_3_dot_product(c_qtheta_l, n) / rnn_l;
+  cs_real_t qqthetan_r = cs_math_3_dot_product(c_qtheta_r, n) / rnn_r;
+
+  cs_real_3_t rin_l;
+  cs_math_sym_33_3_product(c_rij_l, n, rin_l);
+  cs_real_3_t rin_r;
+  cs_math_sym_33_3_product(c_rij_r, n, rin_r);
+
+  cs_real_3_t qin_l;
+  cs_real_3_t qin_r;
+  for (cs_lnum_t i = 0; i < 3; i++) {
+    qin_l[i] = rin_l[i] / rnn_l;
+    qin_r[i] = rin_r[i] / rnn_r;
+  }
+
+  cs_real_t relaminarization_g =
+    -(sqrt(2*rnn_r) + sqrt(2*rnn_l) - un_r + un_l);
+
+  if (relaminarization_g >= 0) {
+
+    cs_real_t lambda_1       = un_l - sqrt(2*rnn_l);
+    cs_real_t lambda_1_relam = un_l + sqrt(2*rnn_l);
+    cs_real_t lambda_9_relam = un_r - sqrt(2*rnn_r);
+    cs_real_t lambda_9       = un_r + sqrt(2*rnn_r);
+
+    cs_real_t temp_relam_1 = c_temp_l + qqthetan_l * sqrt(2*rnn_l);
+    cs_real_t var_temp_relam_1 =
+      c_var_temp_l - qqthetan_l * qqthetan_l * rnn_l;
+
+    cs_real_t temp_relam_9 = c_temp_r - qqthetan_r * sqrt(2*rnn_r);
+    cs_real_t var_temp_relam_9 =
+      c_var_temp_r - qqthetan_r * qqthetan_r * rnn_r;
+
+    cs_real_3_t ui_relam_1;
+    cs_real_3_t qtheta_relam_1;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      ui_relam_1[i] = c_vel_l[i] + qin_l[i] * sqrt(2.*rnn_l);
+      qtheta_relam_1[i] = c_qtheta_l[i] - qqthetan_l * rin_l[i];
+    }
+    cs_real_3_t ui_relam_9;
+    cs_real_3_t qtheta_relam_9;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      ui_relam_9[i] = c_vel_r[i] - qin_r[i] * sqrt(2.*rnn_r);
+      qtheta_relam_9[i] = c_qtheta_r[i] - qqthetan_r * rin_r[i];
+    }
+
+    cs_real_6_t rij_relam_1;
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      cs_lnum_t i = iv2t[ij];
+      cs_lnum_t j = jv2t[ij];
+      rij_relam_1[ij] = c_rij_l[ij] - qin_l[i] * qin_l[j] * rnn_l;
+    }
+    cs_real_6_t rij_relam_9;
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      cs_lnum_t i = iv2t[ij];
+      cs_lnum_t j = jv2t[ij];
+      rij_relam_9[ij] = c_rij_r[ij] - qin_r[i] * qin_r[j] * rnn_r;
+    }
+
+    if (lambda_1 >= 0) {
+      *f_temp = c_temp_l;
+      *f_var_temp = c_var_temp_l;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        f_vel[i] = c_vel_l[i];
+        f_qtheta[i] = c_qtheta_l[i];
+      }
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        f_rij[ij] = c_rij_l[ij];
+    }
+    else if (lambda_1 < 0 && lambda_1_relam > 0) {
+      cs_real_t un  = 0.5*(un_l + sqrt(2*rnn_l));
+      cs_real_t rnn = 0.5*un*un;
+
+      *f_temp = c_temp_l + qqthetan_l * (sqrt(2.*rnn_l) - sqrt(2.*rnn));
+      *f_var_temp =
+        c_var_temp_l - qqthetan_l * qqthetan_l * (rnn_l - rnn);
+
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_l[ij] - qin_l[i] * qin_l[j] * (rnn_l - rnn);
+      }
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        f_vel[i] = c_vel_l[i] + qin_l[i] * (sqrt(2.*rnn_l) - sqrt(2.*rnn));
+        f_qtheta[i] = c_qtheta_l[i] - qqthetan_l * qin_l[i]*(rnn_l - rnn);
+      }
+    }
+    else if (lambda_1_relam <= 0 && lambda_9_relam >= 0) {
+      cs_real_t d_dlambda = 1. / (lambda_9_relam - lambda_1_relam);
+
+      *f_temp = d_dlambda
+        * (  lambda_9_relam * temp_relam_1
+           - lambda_1_relam * temp_relam_9);
+      *f_var_temp = d_dlambda
+        * (  lambda_9_relam * var_temp_relam_1
+           - lambda_1_relam * var_temp_relam_9);
+
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        f_vel[i] = d_dlambda
+          * (  lambda_9_relam * ui_relam_1[i]
+             - lambda_1_relam * ui_relam_9[i]);
+        f_qtheta[i] = d_dlambda
+          * (  lambda_9_relam * qtheta_relam_1[i]
+             - lambda_1_relam * qtheta_relam_9[i]);
+      }
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        f_rij[ij] = d_dlambda
+          * (  lambda_9_relam * rij_relam_1[ij]
+             - lambda_1_relam * rij_relam_9[ij]);
+    }
+    else if (lambda_9_relam < 0 && lambda_9 > 0) {
+      cs_real_t un  = 0.5*(un_r - sqrt(2*rnn_r));
+      cs_real_t rnn = 0.5*un*un;
+
+      *f_temp = c_temp_r - qqthetan_r * (sqrt(2.*rnn_r) - sqrt(2.*rnn));
+      *f_var_temp =
+        c_var_temp_r - qqthetan_r * qqthetan_r * (rnn_r - rnn);
+
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_r[ij] - qin_r[i] * qin_r[j] * (rnn_r - rnn);
+      }
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        f_vel[i] = c_vel_r[i] - qin_r[i] * (sqrt(2.*rnn_r) - sqrt(2.*rnn));
+        f_qtheta[i] = c_qtheta_r[i] - qqthetan_r * qin_r[i]*(rnn_r - rnn);
+      }
+    }
+    else {
+      *f_temp = c_temp_r;
+      *f_var_temp = c_var_temp_r;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        f_vel[i] = c_vel_r[i];
+        f_qtheta[i] = c_qtheta_r[i];
+      }
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        f_rij[ij] = c_rij_r[ij];
+    }
+
+    return;
+  }
+
+  cs_real_t z9      = rnn_r / (rnn_l * z1);
+  cs_real_t d_z9     = (rnn_l * z1) / rnn_r;
+  cs_real_t un_star  = un_l + _rij_godunov_h1(z1) * sqrt(2 * rnn_l);
+  cs_real_t rnn_star = z1 * rnn_l;
+
+  cs_real_t lambda_1 = _rij_godunov_wave1(z1, un_l, rnn_l, un_star, rnn_star);
+  cs_real_t lambda_9 = _rij_godunov_wave9(z9, un_r, rnn_r, un_star, rnn_star);
+
+  cs_real_t lambda_1_star = un_star - sqrt(2*rnn_star);
+  cs_real_t lambda_9_star = un_star + sqrt(2*rnn_star);
+
+  cs_real_t lambda_2_3   = un_star - sqrt(rnn_star);
+  cs_real_t lambda_4_5_6 = un_star;
+  cs_real_t lambda_7_8   = un_star + sqrt(rnn_star);
+
+  if (lambda_1 > 0) {
+    *f_temp = c_temp_l;
+    *f_var_temp = c_var_temp_l;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      f_vel[i] = c_vel_l[i];
+      f_qtheta[i] = c_qtheta_l[i];
+    }
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      f_rij[ij] = c_rij_l[ij];
+  }
+  else if (lambda_1 <= 0 && lambda_2_3 > 0) {
+    if (z1 <= 1 && lambda_1_star > 0) {
+      cs_real_t un  = 0.5*(un_l + sqrt(2*rnn_l));
+      cs_real_t rnn = 0.5*un*un;
+
+      *f_temp = c_temp_l + qqthetan_l * (sqrt(2.*rnn_l) - sqrt(2.*rnn));
+      *f_var_temp =
+        c_var_temp_l - qqthetan_l * qqthetan_l * (rnn_l - rnn);
+
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_l[ij] - qin_l[i] * qin_l[j] * (rnn_l - rnn);
+      }
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        f_vel[i] = c_vel_l[i] + qin_l[i] * (sqrt(2.*rnn_l) - sqrt(2.*rnn));
+        f_qtheta[i] = c_qtheta_l[i] - qqthetan_l * qin_l[i]*(rnn_l - rnn);
+      }
+    }
+    else {
+      *f_temp = c_temp_l + _rij_godunov_h1(z1) * qqthetan_l * sqrt(2.*rnn_l);
+      *f_var_temp =
+        c_var_temp_l + (z1-1) * qqthetan_l * qqthetan_l * rnn_l;
+
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_l[ij] + (z1-1) * qin_l[i] * qin_l[j] * rnn_l;
+      }
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        f_vel[i] = c_vel_l[i] + _rij_godunov_h1(z1) * sqrt(2.*rnn_l) * qin_l[i];
+        f_qtheta[i] = c_qtheta_l[i] + (z1-1) * qqthetan_l * rin_l[i];
+      }
+    }
+  }
+  else if (lambda_2_3 <= 0 && lambda_7_8 >= 0) {
+    cs_real_3_t u_state_1;
+    cs_real_3_t u_state_4;
+    cs_real_t temp_state_1, temp_state_4;
+    cs_real_t var_temp_state_1, var_temp_state_4;
+    cs_real_3_t qtheta_state_1, qtheta_state_4;
+
+    temp_state_1 = c_temp_l
+      + _rij_godunov_h1(z1) * qqthetan_l * sqrt(2.*rnn_l);
+    var_temp_state_1 =
+      c_var_temp_l + (z1-1) * qqthetan_l * qqthetan_l * rnn_l;
+
+    temp_state_4 = c_temp_r
+      - _rij_godunov_h1(d_z9) * qqthetan_r * sqrt(2.*rnn_r);
+    var_temp_state_4 =
+      c_var_temp_r + (d_z9-1) * qqthetan_r * qqthetan_r * rnn_r;
+
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      u_state_1[i] = c_vel_l[i]
+        + _rij_godunov_h1(z1) * sqrt(2.*rnn_l) * qin_l[i];
+      u_state_4[i] = c_vel_r[i]
+        - _rij_godunov_h1(d_z9) * sqrt(2.*rnn_r) * qin_r[i];
+      qtheta_state_1[i] = c_qtheta_l[i] + (z1-1) * qqthetan_l * rin_l[i];
+      qtheta_state_4[i] = c_qtheta_r[i] + (d_z9-1) * qqthetan_r * rin_r[i];
+    }
+
+    cs_real_6_t rij_state_1;
+    cs_real_6_t rij_state_4;
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      cs_lnum_t i = iv2t[ij];
+      cs_lnum_t j = jv2t[ij];
+      rij_state_1[ij] = c_rij_l[ij] + (z1-1)  * qin_l[i] * qin_l[j] * rnn_l;
+      rij_state_4[ij] = c_rij_r[ij] + (d_z9-1)* qin_r[i] * qin_r[j] * rnn_r;
+    }
+
+    cs_real_3_t rin_state_1;
+    cs_real_3_t rin_state_4;
+    cs_math_sym_33_3_product(rij_state_1, n, rin_state_1);
+    cs_math_sym_33_3_product(rij_state_4, n, rin_state_4);
+
+    cs_real_t qqthetan_1 = cs_math_3_dot_product(qtheta_state_1, n) / rnn_star;
+    cs_real_t qqthetan_4 = cs_math_3_dot_product(qtheta_state_4, n) / rnn_star;
+    cs_real_t qqthetan_2_3;
+
+    cs_real_3_t rin_state_2_3;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      f_vel[i] = 0.5 * (u_state_1[i] + u_state_4[i]
+                         + (rin_state_1[i] - rin_state_4[i]) / sqrt(rnn_star));
+      rin_state_2_3[i] = 0.5 * (rin_state_1[i] + rin_state_4[i]
+                                 + sqrt(rnn_star)
+                                   * (u_state_1[i] - u_state_4[i]));
+    }
+    *f_temp = 0.5 * (temp_state_1 + temp_state_4
+                      + (qqthetan_1 - qqthetan_4) * sqrt(rnn_star));
+    qqthetan_2_3 = 0.5 * (qqthetan_1 + qqthetan_4
+                           + sqrt(rnn_star) * (temp_state_1 - temp_state_4));
+
+    if (lambda_4_5_6 > 0) {
+      *f_var_temp = var_temp_state_1
+        - (qqthetan_1*qqthetan_1 - qqthetan_2_3*qqthetan_2_3) * rnn_star;
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        f_qtheta[i] = qtheta_state_1[i]
+          - (qqthetan_1*rin_state_1[i] - qqthetan_2_3*rin_state_2_3[i]);
+
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = rij_state_1[ij]
+          - (1./rnn_star) * (rin_state_1[i]*rin_state_1[j]
+                              - rin_state_2_3[i]*rin_state_2_3[j]);
+      }
+    }
+    else {
+      *f_var_temp = var_temp_state_4
+        - (qqthetan_4*qqthetan_4 - qqthetan_2_3*qqthetan_2_3) * rnn_star;
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        f_qtheta[i] = qtheta_state_4[i]
+          - (qqthetan_4*rin_state_4[i] - qqthetan_2_3*rin_state_2_3[i]);
+
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = rij_state_4[ij]
+          - (1./rnn_star) * (rin_state_4[i]*rin_state_4[j]
+                              - rin_state_2_3[i]*rin_state_2_3[j]);
+      }
+    }
+  }
+  else if (lambda_7_8 < 0 && lambda_9 >= 0) {
+    if (z9 >= 1 && lambda_9_star < 0) {
+      cs_real_t un  = 0.5*(un_r - sqrt(2*rnn_r));
+      cs_real_t rnn = 0.5*un*un;
+
+      *f_temp = c_temp_r - qqthetan_r * (sqrt(2.*rnn_r) - sqrt(2.*rnn));
+      *f_var_temp =
+        c_var_temp_r - qqthetan_r * qqthetan_r * (rnn_r - rnn);
+
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_r[ij] - qin_r[i] * qin_r[j] * (rnn_r - rnn);
+      }
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        f_vel[i] = c_vel_r[i] - qin_r[i] * (sqrt(2.*rnn_r) - sqrt(2.*rnn));
+        f_qtheta[i] = c_qtheta_r[i] - qqthetan_r * qin_r[i]*(rnn_r - rnn);
+      }
+    }
+    else {
+      *f_temp = c_temp_r
+        - _rij_godunov_h1(d_z9) * qqthetan_r * sqrt(2.*rnn_r);
+      *f_var_temp =
+        c_var_temp_r + (d_z9-1) * qqthetan_r * qqthetan_r * rnn_r;
+
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        f_rij[ij] = c_rij_r[ij] + (d_z9-1) * qin_r[i] * qin_r[j] * rnn_r;
+      }
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        f_vel[i] = c_vel_r[i]
+          - _rij_godunov_h1(d_z9) * sqrt(2.*rnn_r) * qin_r[i];
+        f_qtheta[i] = c_qtheta_r[i] + (d_z9-1) * qqthetan_r * rin_r[i];
+      }
+    }
+  }
+  else {
+    *f_temp = c_temp_r;
+    *f_var_temp = c_var_temp_r;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      f_vel[i] = c_vel_r[i];
+      f_qtheta[i] = c_qtheta_r[i];
+    }
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      f_rij[ij] = c_rij_r[ij];
+  }
+}
+
+static void
+_rij_godunov_boundary_state(int                 bc_type,
+                             const cs_real_t    *n,
+                             const cs_real_3_t   c_vel,
+                             const cs_real_6_t   c_rij,
+                             const cs_real_3_t   coefa_vel,
+                             const cs_real_33_t  coefb_vel,
+                             const cs_real_6_t   coefa_rij,
+                             const cs_real_66_t  coefb_rij,
+                             cs_real_3_t         vel_ext,
+                             cs_real_6_t         rij_ext)
+{
+  const int iv2t[6] = _IV2T;
+  const int jv2t[6] = _JV2T;
+
+  if (bc_type == CS_INLET) {
+
+    cs_real_3_t vel_bc;
+    cs_math_33_3_product(coefb_vel, c_vel, vel_bc);
+    for (cs_lnum_t i = 0; i < 3; i++)
+      vel_ext[i] = coefa_vel[i] + vel_bc[i];
+
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      cs_real_t s = 0.;
+      for (cs_lnum_t kl = 0; kl < 6; kl++)
+        s += coefb_rij[ij][kl] * c_rij[kl];
+      rij_ext[ij] = coefa_rij[ij] + s;
+    }
+  }
+  else if (bc_type == CS_SYMMETRY) {
+
+    cs_real_t un = cs_math_3_dot_product(c_vel, n);
+    for (cs_lnum_t i = 0; i < 3; i++)
+      vel_ext[i] = c_vel[i] - 2. * un * n[i];
+
+    cs_real_3_t rin;
+    cs_math_sym_33_3_product(c_rij, n, rin);
+    cs_real_t rnn = cs_math_3_dot_product(rin, n);
+
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      cs_lnum_t i = iv2t[ij];
+      cs_lnum_t j = jv2t[ij];
+      rij_ext[ij] = c_rij[ij]
+        - 2.*rin[i]*n[j] - 2.*rin[j]*n[i] + 4.*rnn*n[i]*n[j];
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < 3; i++)
+      vel_ext[i] = c_vel[i];
+    for (cs_lnum_t ij = 0; ij < 6; ij++)
+      rij_ext[ij] = c_rij[ij];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Thermal extension of _rij_godunov_boundary_state: builds the
+ *        exterior state for {u, R, T, q_theta} at a boundary face.
+ *
+ * The {u, R} part is delegated to _rij_godunov_boundary_state
+ * unchanged. For CS_INLET, temperature and temperature variance use
+ * the same general (coefa + coefb . cell_value) reconstruction as R;
+ * the turbulent heat flux, a vector like velocity, uses the same
+ * matrix form as coefb_vel. For CS_SYMMETRY, temperature and its
+ * variance (scalars) are extrapolated (zero-gradient, the standard
+ * choice for a scalar at a symmetry plane), while q_theta is mirrored
+ * like a vector (odd normal component, even tangential components),
+ * exactly as velocity is. Any other boundary type: constant
+ * extrapolation, as for {u, R}.
+ *
+ * \param[in]   bc_type        boundary condition type for this face
+ * \param[in]   n              unit face normal
+ * \param[in]   c_vel          interior cell velocity
+ * \param[in]   c_rij          interior cell Rij
+ * \param[in]   c_temp         interior cell temperature
+ * \param[in]   c_var_temp     interior cell temperature variance
+ * \param[in]   c_qtheta       interior cell turbulent heat flux
+ * \param[in]   coefa_vel      velocity boundary coefficient a
+ * \param[in]   coefb_vel      velocity boundary coefficient b
+ * \param[in]   coefa_rij      Rij boundary coefficient a
+ * \param[in]   coefb_rij      Rij boundary coefficient b
+ * \param[in]   coefa_temp     temperature boundary coefficient a
+ * \param[in]   coefb_temp     temperature boundary coefficient b
+ * \param[in]   coefa_var_temp temperature variance boundary coefficient a
+ * \param[in]   coefb_var_temp temperature variance boundary coefficient b
+ * \param[in]   coefa_qtheta   turbulent heat flux boundary coefficient a
+ * \param[in]   coefb_qtheta   turbulent heat flux boundary coefficient b
+ * \param[out]  vel_ext        exterior velocity state
+ * \param[out]  rij_ext        exterior Rij state
+ * \param[out]  temp_ext       exterior temperature state
+ * \param[out]  var_temp_ext   exterior temperature variance state
+ * \param[out]  qtheta_ext     exterior turbulent heat flux state
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rit_godunov_boundary_state(int                 bc_type,
+                             const cs_real_t    *n,
+                             const cs_real_3_t   c_vel,
+                             const cs_real_6_t   c_rij,
+                             cs_real_t           c_temp,
+                             cs_real_t           c_var_temp,
+                             const cs_real_3_t   c_qtheta,
+                             const cs_real_3_t   coefa_vel,
+                             const cs_real_33_t  coefb_vel,
+                             const cs_real_6_t   coefa_rij,
+                             const cs_real_66_t  coefb_rij,
+                             cs_real_t           coefa_temp,
+                             cs_real_t           coefb_temp,
+                             cs_real_t           coefa_var_temp,
+                             cs_real_t           coefb_var_temp,
+                             const cs_real_3_t   coefa_qtheta,
+                             const cs_real_33_t  coefb_qtheta,
+                             cs_real_3_t         vel_ext,
+                             cs_real_6_t         rij_ext,
+                             cs_real_t          *temp_ext,
+                             cs_real_t          *var_temp_ext,
+                             cs_real_3_t         qtheta_ext)
+{
+  _rij_godunov_boundary_state(bc_type, n, c_vel, c_rij,
+                               coefa_vel, coefb_vel, coefa_rij, coefb_rij,
+                               vel_ext, rij_ext);
+
+  if (bc_type == CS_INLET) {
+
+    *temp_ext = coefa_temp + coefb_temp * c_temp;
+    *var_temp_ext = coefa_var_temp + coefb_var_temp * c_var_temp;
+
+    cs_real_3_t qtheta_bc;
+    cs_math_33_3_product(coefb_qtheta, c_qtheta, qtheta_bc);
+    for (cs_lnum_t i = 0; i < 3; i++)
+      qtheta_ext[i] = coefa_qtheta[i] + qtheta_bc[i];
+  }
+  else if (bc_type == CS_SYMMETRY) {
+
+    *temp_ext = c_temp;
+    *var_temp_ext = c_var_temp;
+
+    cs_real_t qn = cs_math_3_dot_product(c_qtheta, n);
+    for (cs_lnum_t i = 0; i < 3; i++)
+      qtheta_ext[i] = c_qtheta[i] - 2. * qn * n[i];
+  }
+  else {
+    *temp_ext = c_temp;
+    *var_temp_ext = c_var_temp;
+    for (cs_lnum_t i = 0; i < 3; i++)
+      qtheta_ext[i] = c_qtheta[i];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief div(R) contribution (momentum equation) from the exact
+ *        Riemann solver, filling face-based tensor-flux buffers with
+ *        the SAME layout/convention as cs_tensor_face_flux, so that
+ *        the existing cs_tensor_divergence(m, 1, tflmas, tflmab,
+ *        cpro_divr) call in _div_rij can be reused unchanged.
+ *
+ * \param[in]   crom    density at cells
+ * \param[in]   brom    density at boundary faces
+ * \param[out]  tflmas  interior face tensor flux (contracted with n)
+ * \param[out]  tflmab  boundary face tensor flux (contracted with n)
+ */
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute, once per time step, the exact Riemann interface state
+ *        for the coupled {u, R} system on every interior and boundary
+ *        face, and store it in the shared fields "i_velocity",
+ *        "i_reynolds_stress", "b_velocity", "b_reynolds_stress"
+ *        (these fields are created in cs_setup.cpp when
+ *        rij_discretization_scheme == CS_RIJ_SCHEME_GODUNOV).
+ *
+ * Both the momentum equation's div(R) term (_div_rij, this file) and
+ * the Rij transport equation's own convection + production terms
+ * (cs_turbulence_rij.cpp) read from these fields rather than
+ * recomputing the Riemann problem themselves. This guarantees that
+ * every operator that needs an "interface R" or "interface u" uses
+ * the SAME discrete value -- consistency between operators, by
+ * construction, rather than each operator using whatever state
+ * happens to be freshest at its own point in the time step.
+ *
+ * Called once from cs_solve_all.cpp, before cs_solve_navier_stokes(),
+ * i.e. before either consumer has updated its own field for this time
+ * step -- so ->val for both velocity and Rij, read here, is
+ * unambiguously "the fully converged state from the end of the
+ * previous time step" for both fields alike.
+ */
+/*----------------------------------------------------------------------------*/
+
+static const cs_real_3_t qtheta_zero = {0., 0., 0.};
+static const cs_real_33_t qtheta_zero_33 = {{0., 0., 0.},
+                                            {0., 0., 0.},
+                                            {0., 0., 0.}};
+
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_godunov_interface_states(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_t   *b_face_cells = m->b_face_cells;
+
+  const cs_real_3_t *i_face_u_normal
+    = (const cs_real_3_t *)mq->i_face_u_normal;
+  const cs_real_3_t *b_face_u_normal
+    = (const cs_real_3_t *)mq->b_face_u_normal;
+
+  const cs_real_3_t *c_vel = (const cs_real_3_t *)CS_F_(vel)->val;
+  const cs_real_6_t *c_rij = (const cs_real_6_t *)CS_F_(rij)->val;
+
+  const cs_real_3_t *coefa_vel =
+    (const cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
+  const cs_real_33_t *coefb_vel =
+    (const cs_real_33_t *)CS_F_(vel)->bc_coeffs->b;
+  const cs_real_6_t *coefa_rij =
+    (const cs_real_6_t *)CS_F_(rij)->bc_coeffs->a;
+  const cs_real_66_t *coefb_rij =
+    (const cs_real_66_t *)CS_F_(rij)->bc_coeffs->b;
+
+  const int *bc_type = cs_glob_bc_type;
+
+  cs_real_3_t *i_vel = (cs_real_3_t *) cs_field("i_velocity")->val;
+  cs_real_6_t *i_rij
+    = (cs_real_6_t *) cs_field("i_reynolds_stress")->val;
+  cs_real_3_t *b_vel = (cs_real_3_t *) cs_field("b_velocity")->val;
+  cs_real_6_t *b_rij
+    = (cs_real_6_t *) cs_field("b_reynolds_stress")->val;
+
+  cs_real_t *i_z1 = cs_field("algo:i_rij_z1")->val;
+  cs_real_t *b_z1 = cs_field("algo:b_rij_z1")->val;
+
+  cs_dispatch_context ctx;
+
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+    cs_lnum_t c_id_l = i_face_cells[face_id][0];
+    cs_lnum_t c_id_r = i_face_cells[face_id][1];
+
+    const cs_real_t *n = i_face_u_normal[face_id];
+
+    i_z1[face_id] = _rij_godunov_riemann(n,
+                                         c_vel[c_id_l], c_rij[c_id_l],
+                                         c_vel[c_id_r], c_rij[c_id_r],
+                                         i_vel[face_id], i_rij[face_id]);
+  });
+
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+    cs_lnum_t c_id = b_face_cells[face_id];
+
+    const cs_real_t *n = b_face_u_normal[face_id];
+
+    cs_real_3_t vel_ext;
+    cs_real_6_t rij_ext;
+
+    _rij_godunov_boundary_state(bc_type[face_id], n,
+                                 c_vel[c_id], c_rij[c_id],
+                                 coefa_vel[face_id], coefb_vel[face_id],
+                                 coefa_rij[face_id], coefb_rij[face_id],
+                                 vel_ext, rij_ext);
+
+    b_z1[face_id] = _rij_godunov_riemann(n,
+                                         c_vel[c_id], c_rij[c_id],
+                                         vel_ext, rij_ext,
+                                         b_vel[face_id], b_rij[face_id]);
+  });
+
+  ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute, once per time step, the exact Riemann interface state
+ *        for the scalar system on every interior and boundary face.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_godunov_interface_states_scalar(cs_field_t *f)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_t   *b_face_cells = m->b_face_cells;
+
+  const cs_real_3_t *i_face_u_normal
+    = (const cs_real_3_t *)mq->i_face_u_normal;
+  const cs_real_3_t *b_face_u_normal
+    = (const cs_real_3_t *)mq->b_face_u_normal;
+
+  const cs_real_3_t *c_vel = (const cs_real_3_t *)CS_F_(vel)->val;
+  const cs_real_6_t *c_rij = (const cs_real_6_t *)CS_F_(rij)->val;
+
+  cs_real_3_t *i_vel = (cs_real_3_t *) cs_field("i_velocity")->val;
+  cs_real_6_t *i_rij
+    = (cs_real_6_t *) cs_field("i_reynolds_stress")->val;
+  cs_real_3_t *b_vel = (cs_real_3_t *) cs_field("b_velocity")->val;
+  cs_real_6_t *b_rij
+    = (cs_real_6_t *) cs_field("b_reynolds_stress")->val;
+
+  const cs_real_t *i_z1 = cs_field("algo:i_rij_z1")->val;
+  const cs_real_t *b_z1 = cs_field("algo:b_rij_z1")->val;
+
+  std::string i_name = std::string("i_") + f->name;
+  std::string b_name = std::string("b_") + f->name;
+  std::string i_var_name = std::string("i_") + f->name + "_variance";
+  std::string b_var_name = std::string("b_") + f->name + "_variance";
+  std::string i_tf_name = std::string("i_") + f->name + "_turbulent_flux";
+  std::string b_tf_name = std::string("b_") + f->name + "_turbulent_flux";
+
+  cs_real_t   *i_temp = cs_field(i_name.c_str())->val;
+  cs_real_t   *b_temp = cs_field(b_name.c_str())->val;
+  cs_real_t   *i_var_temp = cs_field(i_var_name.c_str())->val;
+  cs_real_t   *b_var_temp = cs_field(b_var_name.c_str())->val;
+  cs_real_3_t *i_qtheta = (cs_real_3_t *)cs_field(i_tf_name.c_str())->val;
+  cs_real_3_t *b_qtheta = (cs_real_3_t *)cs_field(b_tf_name.c_str())->val;
+
+  const cs_real_t *c_temp = f->val;
+  const cs_real_3_t *c_qtheta = nullptr;
+  const cs_field_t *f_qtheta =
+    cs_field_by_composite_name_try(f->name, "turbulent_flux");
+  if (f_qtheta != nullptr)
+    c_qtheta = (const cs_real_3_t *)f_qtheta->val;
+
+  const cs_real_t *c_var_temp = nullptr;
+  const cs_field_t *f_var_temp = cs_field_get_variance(f);
+  if (f_var_temp != nullptr)
+    c_var_temp = f_var_temp->val;
+
+  /* Retrieve BC boundary coefficients */
+  const cs_real_t  *coefa_temp = f->bc_coeffs->a;
+  const cs_real_t  *coefb_temp = f->bc_coeffs->b;
+  const cs_real_t  *coefa_var_temp =
+    (f_var_temp != nullptr) ? f_var_temp->bc_coeffs->a : nullptr;
+  const cs_real_t  *coefb_var_temp =
+    (f_var_temp != nullptr) ? f_var_temp->bc_coeffs->b : nullptr;
+  const cs_real_3_t  *coefa_qtheta = (f_qtheta != nullptr) ?
+    (const cs_real_3_t *)f_qtheta->bc_coeffs->a : nullptr;
+  const cs_real_33_t *coefb_qtheta = (f_qtheta != nullptr) ?
+    (const cs_real_33_t *)f_qtheta->bc_coeffs->b : nullptr;
+
+  const int *bc_type = cs_glob_bc_type;
+  const cs_real_3_t *coefa_vel
+    = (const cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
+  const cs_real_33_t *coefb_vel
+    = (const cs_real_33_t *)CS_F_(vel)->bc_coeffs->b;
+  const cs_real_6_t *coefa_rij
+    = (const cs_real_6_t *)CS_F_(rij)->bc_coeffs->a;
+  const cs_real_66_t *coefb_rij =
+    (const cs_real_66_t *)CS_F_(rij)->bc_coeffs->b;
+
+  cs_dispatch_context ctx;
+
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    const cs_lnum_t c_id_l = i_face_cells[face_id][0];
+    const cs_lnum_t c_id_r = i_face_cells[face_id][1];
+
+    const cs_real_t *n = i_face_u_normal[face_id];
+
+    _rit_godunov_riemann(n,
+                          c_vel[c_id_l], c_rij[c_id_l],
+                          c_vel[c_id_r], c_rij[c_id_r],
+                          c_temp[c_id_l],
+                          c_var_temp ? c_var_temp[c_id_l] : 0.,
+                          c_qtheta ? c_qtheta[c_id_l] : qtheta_zero,
+                          c_temp[c_id_r],
+                          c_var_temp ? c_var_temp[c_id_r] : 0.,
+                          c_qtheta ? c_qtheta[c_id_r] : qtheta_zero,
+                          i_z1[face_id],
+                          i_vel[face_id], i_rij[face_id],
+                          &i_temp[face_id],
+                          i_var_temp ? &i_var_temp[face_id] : nullptr,
+                          i_qtheta ? i_qtheta[face_id] : nullptr);
+  });
+
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    const cs_lnum_t c_id = b_face_cells[face_id];
+
+    const cs_real_t *n = b_face_u_normal[face_id];
+
+    cs_real_3_t vel_ext;
+    cs_real_6_t rij_ext;
+    cs_real_t temp_ext = 0., var_temp_ext = 0.;
+    cs_real_3_t qtheta_ext = {0., 0., 0.};
+
+    _rit_godunov_boundary_state(bc_type[face_id], n,
+                                 c_vel[c_id], c_rij[c_id],
+                                 c_temp[c_id],
+                                 c_var_temp ? c_var_temp[c_id] : 0.,
+                                 c_qtheta ? c_qtheta[c_id] : qtheta_zero,
+                                 coefa_vel[face_id], coefb_vel[face_id],
+                                 coefa_rij[face_id], coefb_rij[face_id],
+                                 coefa_temp[face_id], coefb_temp[face_id],
+                                 coefa_var_temp ?
+                                   coefa_var_temp[face_id] : 0.,
+                                 coefb_var_temp ?
+                                   coefb_var_temp[face_id] : 0.,
+                                 coefa_qtheta ?
+                                   coefa_qtheta[face_id] : qtheta_zero,
+                                 coefb_qtheta ?
+                                   coefb_qtheta[face_id] : qtheta_zero_33,
+                                 vel_ext, rij_ext, &temp_ext, &var_temp_ext,
+                                 qtheta_ext);
+
+    _rit_godunov_riemann(n,
+                          c_vel[c_id], c_rij[c_id],
+                          vel_ext, rij_ext,
+                          c_temp[c_id],
+                          c_var_temp ? c_var_temp[c_id] : 0.,
+                          c_qtheta ? c_qtheta[c_id] : qtheta_zero,
+                          temp_ext, var_temp_ext, qtheta_ext,
+                          b_z1[face_id],
+                          b_vel[face_id], b_rij[face_id],
+                          &b_temp[face_id],
+                          b_var_temp ? &b_var_temp[face_id] : nullptr,
+                          b_qtheta ? b_qtheta[face_id] : nullptr);
+  });
+
+  ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief div(R) contribution (momentum equation), reading the
+ *        precomputed interface state (see
+ *        cs_turbulence_rij_godunov_interface_states) rather than
+ *        recomputing the Riemann problem. Fills tflmas/tflmab with
+ *        the SAME layout/convention as cs_tensor_face_flux, so that
+ *        the existing cs_tensor_divergence(m, 1, tflmas, tflmab,
+ *        cpro_divr) call in _div_rij can be reused unchanged.
+ *
+ * \param[in]   crom    density at cells
+ * \param[in]   brom    density at boundary faces
+ * \param[out]  tflmas  interior face tensor flux (contracted with n)
+ * \param[out]  tflmab  boundary face tensor flux (contracted with n)
+ */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the exact Riemann divergence of R flux.
+ *
+ * \param[in]   crom    density at cells
+ * \param[in]   brom    density at boundary faces
+ * \param[out]  tflmas  interior face tensor flux (contracted with n)
+ * \param[out]  tflmab  boundary face tensor flux (contracted with n)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_godunov_div_rij_flux(const cs_real_t  crom[],
+                                       const cs_real_t  brom[],
+                                       cs_real_3_t     *tflmas,
+                                       cs_real_3_t     *tflmab)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+
+  const cs_real_3_t *i_face_normal = (const cs_real_3_t *)mq->i_face_normal;
+  const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
+
+  const cs_real_t *weight = mq->weight;
+
+  const cs_real_6_t *i_rij =
+    (const cs_real_6_t *) cs_field("i_reynolds_stress")->val;
+  const cs_real_6_t *b_rij =
+    (const cs_real_6_t *) cs_field("b_reynolds_stress")->val;
+
+  cs_dispatch_context ctx;
+
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+    cs_lnum_t c_id_l = i_face_cells[face_id][0];
+    cs_lnum_t c_id_r = i_face_cells[face_id][1];
+
+    /* Face-interpolated density, as in the standard cs_tensor_face_flux
+     * treatment (weight = geometric interpolation factor). */
+    cs_real_t w = weight[face_id];
+    cs_real_t rho_f = w * crom[c_id_l] + (1. - w) * crom[c_id_r];
+
+    cs_real_3_t rin;
+    cs_math_sym_33_3_product(i_rij[face_id], i_face_normal[face_id], rin);
+
+    for (cs_lnum_t i = 0; i < 3; i++)
+      tflmas[face_id][i] = rho_f * rin[i];
+  });
+
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+    cs_real_t rho_f = brom[face_id];
+
+    cs_real_3_t rin;
+    cs_math_sym_33_3_product(b_rij[face_id], b_face_normal[face_id], rin);
+
+    for (cs_lnum_t i = 0; i < 3; i++)
+      tflmab[face_id][i] = rho_f * rin[i];
+  });
+
+  ctx.wait();
+}

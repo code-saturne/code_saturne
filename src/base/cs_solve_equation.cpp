@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -314,6 +315,115 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   if (f_produc != nullptr)
     produc = f_produc->val;
 
+  /* GODUNOV scheme: for CS_RIJ_SCHEME_GODUNOV, the mechanical
+   * production of variance is already captured by the exact Riemann
+   * interface state (i_temperature / i_turbulent_heat_flux, shared
+   * with the qtheta equation), and must NOT be recomputed from the
+   * standard cell-centered gradient (which would double-count it, as
+   * with pij for R). Only the SOURCE of "prod" changes below (single
+   * face-loop assembly here, instead of -2 grad(T).qtheta); the
+   * downstream positivity/implicit-stabilization logic is unchanged.
+   */
+  cs_real_t *prod_godunov = nullptr;
+  const int rij_scheme
+    = cs_glob_turb_rans_model->rij_discretization_scheme;
+  if (   rij_scheme == CS_RIJ_SCHEME_GODUNOV
+      && variance_turb_flux_model_type >= 1) {
+
+    const cs_mesh_t *m = cs_glob_mesh;
+    const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+    const cs_lnum_2_t *restrict i_face_cells
+      = (const cs_lnum_2_t *) m->i_face_cells;
+    const cs_lnum_t *restrict b_face_cells
+      = (const cs_lnum_t *) m->b_face_cells;
+    const cs_real_3_t *restrict i_face_normal
+      = (const cs_real_3_t *) mq->i_face_normal;
+    const cs_real_3_t *restrict b_face_normal
+      = (const cs_real_3_t *) mq->b_face_normal;
+
+    const int has_disable_flag = mq->has_disable_flag;
+    int *c_disable_flag = mq->c_disable_flag;
+
+    std::string i_name = std::string("i_") + f_fm->name;
+    std::string b_name = std::string("b_") + f_fm->name;
+    std::string i_tf_name =
+      std::string("i_") + f_fm->name + "_turbulent_flux";
+    std::string b_tf_name =
+      std::string("b_") + f_fm->name + "_turbulent_flux";
+
+    const cs_real_t *i_temp =
+      cs_field(i_name.c_str())->val;
+    const cs_real_t *b_temp =
+      cs_field(b_name.c_str())->val;
+    const cs_real_3_t *i_qtheta =
+      (const cs_real_3_t *) cs_field(i_tf_name.c_str())->val;
+    const cs_real_3_t *b_qtheta =
+      (const cs_real_3_t *) cs_field(b_tf_name.c_str())->val;
+
+    const cs_real_t *c_temp = f_fm->val;
+
+    CS_MALLOC_HD(prod_godunov, n_cells_ext, cs_real_t, cs_alloc_mode);
+    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, 0., prod_godunov);
+
+    cs_dispatch_sum_type_t i_sum_type =
+      ctx.get_parallel_for_i_faces_sum_type(m);
+    cs_dispatch_sum_type_t b_sum_type =
+      ctx.get_parallel_for_b_faces_sum_type(m);
+
+    /* Production rate: -2 (q_theta,f . S) (T_f - T_c) / V, built from
+     * the same interface state consumed by the qtheta equation. */
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+      const cs_lnum_t c_id_l = i_face_cells[face_id][0];
+      const cs_lnum_t c_id_r = i_face_cells[face_id][1];
+
+      cs_real_t dvol_l = 0.;
+      int ind = has_disable_flag * c_id_l;
+      if (1 - (has_disable_flag * c_disable_flag[ind]) == 1)
+        dvol_l = 1.0/cell_f_vol[c_id_l];
+
+      cs_real_t dvol_r = 0.;
+      ind = has_disable_flag * c_id_r;
+      if (1 - (has_disable_flag * c_disable_flag[ind]) == 1)
+        dvol_r = 1.0/cell_f_vol[c_id_r];
+
+      const cs_real_t qn_f =
+        cs_math_3_dot_product(i_qtheta[face_id], i_face_normal[face_id]);
+
+      const cs_real_t flux_l =
+        -2.0 * dvol_l * qn_f * (i_temp[face_id] - c_temp[c_id_l]);
+      const cs_real_t flux_r =
+         2.0 * dvol_r * qn_f * (i_temp[face_id] - c_temp[c_id_r]);
+
+      if (c_id_l < n_cells)
+        cs_dispatch_sum(&prod_godunov[c_id_l], flux_l, i_sum_type);
+      if (c_id_r < n_cells)
+        cs_dispatch_sum(&prod_godunov[c_id_r], flux_r, i_sum_type);
+    });
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+      const cs_lnum_t c_id_l = b_face_cells[face_id];
+
+      cs_real_t dvol_l = 0.;
+      int ind = has_disable_flag * c_id_l;
+      if (1 - (has_disable_flag * c_disable_flag[ind]) == 1)
+        dvol_l = 1.0/cell_f_vol[c_id_l];
+
+      const cs_real_t qn_f =
+        cs_math_3_dot_product(b_qtheta[face_id], b_face_normal[face_id]);
+
+      const cs_real_t flux_l =
+        -2.0 * dvol_l * qn_f * (b_temp[face_id] - c_temp[c_id_l]);
+
+      if (c_id_l < n_cells)
+        cs_dispatch_sum(&prod_godunov[c_id_l], flux_l, b_sum_type);
+    });
+
+    ctx.wait();
+  }
+
   /* NB: diffusivity is clipped to 0 because in LES, it might be negative.
    * Problematic
    * for the variance even if it is strange to use variance and LES...
@@ -327,8 +437,9 @@ _production_and_dissipation_terms(const cs_field_t  *f,
         = (const cs_real_3_t *)cs_field_by_composite_name(f_fm->name,
                                                           "turbulent_flux")->val;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        const cs_real_t prod = - 2 * cs_math_3_dot_product(grad[c_id],
-                                                           xut[c_id]);
+        const cs_real_t prod = (prod_godunov != nullptr) ?
+          prod_godunov[c_id] :
+          - 2 * cs_math_3_dot_product(grad[c_id], xut[c_id]);
         if (f_produc != nullptr)
           produc[c_id] = prod;
 
@@ -359,7 +470,9 @@ _production_and_dissipation_terms(const cs_field_t  *f,
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t cprovol = xcpp[c_id] * cell_f_vol[c_id] * crom[c_id];
         /* Special time stepping to ensure positivity of the variance */
-        const cs_real_t prod = -2.*cs_math_3_dot_product(grad[c_id], xut[c_id]);
+        const cs_real_t prod = (prod_godunov != nullptr) ?
+          prod_godunov[c_id] :
+          -2.*cs_math_3_dot_product(grad[c_id], xut[c_id]);
         if (f_produc != nullptr )
           produc[c_id] = prod;
 
@@ -425,57 +538,156 @@ _production_and_dissipation_terms(const cs_field_t  *f,
     cvara_omg = CS_F_(omg)->val_pre;
   }
 
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+  /* source_time_stepping: gather pointers needed for the exact frozen-tau
+   * source-step integration of theta2 (f is the variance field itself
+   * here; f_fm is the associated scalar, i.e. temperature). Requires
+   * f_fm to be the thermal model field, its DFM turbulent-flux field
+   * to exist, and pure Rotta closure (crij2 == 0) -- see the identical
+   * requirement/error in _pre_solve_lrr and _turb_flux_st. */
+  const int st_scheme = cs_glob_turb_rans_model->source_time_stepping;
+  const bool source_time_stepping_active_pdt =
+    (st_scheme != CS_TURB_RIJ_SOURCE_TS_IMEX);
+  const bool use_source_stepping =
+       source_time_stepping_active_pdt
+    && (f_fm == cs_thermal_model_field())
+    && fabs(cs_turb_crij2) < 1e-300;
 
-    cs_real_t xe = 0., xk = 0., alpha_theta = 1.;
+  const cs_field_t *f_qtheta_pdt = nullptr;
+  const cs_real_3_t *c_qtheta_pdt = nullptr;
+  const cs_real_t *cpro_beta_pdt = nullptr;
+  const cs_real_t *grav_pdt = nullptr;
+  const cs_real_t *dt_pdt = nullptr;
 
-    if (model_itytur == 2 || model_itytur == 5) {
-      xk = cvara_k[c_id];
-      xe = cvara_ep[c_id];
-    }
-    else if (model_itytur == 3) {
-      xk = 0.5 * (cvara_rij[c_id][0] + cvara_rij[c_id][1] + cvara_rij[c_id][2]);
-      if (model_turb == CS_TURB_RIJ_OMEGA)
-        xe = cmu*xk*cvara_omg[c_id];
-      else
+  if (use_source_stepping) {
+    f_qtheta_pdt =
+      cs_field_by_composite_name_try(f_fm->name, "turbulent_flux");
+    if (f_qtheta_pdt == nullptr)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: source_time_stepping != 0 requires a DFM\n"
+                "turbulent-flux field for temperature.", __func__);
+    c_qtheta_pdt = (const cs_real_3_t *) f_qtheta_pdt->val_pre;
+
+    const cs_field_t *f_beta_pdt = cs_field_try("thermal_expansion");
+    if (f_beta_pdt != nullptr)
+      cpro_beta_pdt = f_beta_pdt->val;
+
+    grav_pdt = cs_glob_physical_constants->gravity;
+    dt_pdt = CS_F_(dt)->val;
+  }
+
+  if (use_source_stepping) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+      cs_real_t xe = 0., xk = 0., alpha_theta = 1.;
+
+      if (model_itytur == 2 || model_itytur == 5) {
+        xk = cvara_k[c_id];
         xe = cvara_ep[c_id];
-      /* Implicit term -1/Rh * Eps/k * Variance
-       *  with
-       * Rh = R = 0.8 for SGDH
-       * Rh = (1-alpha_T) * Pr + R * alpha_T
-       * with - R = 0.5
-       *      - alpha_T = 1.0 for GGDH/DFM/AFM */
-    }
-    else if (model_turb == CS_TURB_K_OMEGA) {
-      xk = cvara_k[c_id];
-      xe = cmu*xk*cvara_omg[c_id];
-    }
+      }
+      else if (model_itytur == 3) {
+        xk = 0.5 * (cvara_rij[c_id][0] + cvara_rij[c_id][1]
+                    + cvara_rij[c_id][2]);
+        if (model_turb == CS_TURB_RIJ_OMEGA)
+          xe = cmu*xk*cvara_omg[c_id];
+        else
+          xe = cvara_ep[c_id];
+      }
+      else if (model_turb == CS_TURB_K_OMEGA) {
+        xk = cvara_k[c_id];
+        xe = cmu*xk*cvara_omg[c_id];
+      }
 
-    if (cvar_al != nullptr)
-      alpha_theta = cvar_al[c_id];
+      if (cvar_al != nullptr)
+        alpha_theta = cvar_al[c_id];
 
-    cs_real_t prdtl = viscl[c_id] * xcpp[c_id];
-    if (ifcvsl > -1)
-      prdtl /= cpro_viscls[c_id];
-    else
-      prdtl /= visls_0;
+      cs_real_t prdtl = viscl[c_id] * xcpp[c_id];
+      if (ifcvsl > -1)
+        prdtl /= cpro_viscls[c_id];
+      else
+        prdtl /= visls_0;
 
-    const cs_real_t xr = (1.0 - alpha_theta)*prdtl + alpha_theta*rvarfl;
-    const cs_real_t cprovol = xcpp[c_id] * crom[c_id] * cell_f_vol[c_id];
-    const cs_real_t dissip_freq = xe / (xk * xr);
-    const cs_real_t dissip = dissip_freq * cvara_var[c_id];
-    if (f_dissip != nullptr)
-      cvar_dissip[c_id] = dissip;
+      const cs_real_t xr = (1.0 - alpha_theta)*prdtl + alpha_theta*rvarfl;
+      const cs_real_t cprovol = xcpp[c_id] * crom[c_id] * cell_f_vol[c_id];
+      const cs_real_t dissip_freq = xe / (xk * xr);
+      const cs_real_t dissip = dissip_freq * cvara_var[c_id];
+      if (f_dissip != nullptr)
+        cvar_dissip[c_id] = dissip;
 
-    /* The diagonal receives eps/Rk, (*theta possibly) */
-    fimp[c_id] += dissip_freq * cprovol * thetap;
-    /* The right hand side receives the dissipation */
-    rhs[c_id] -= dissip * cprovol;
-  });
+      /* source_time_stepping: inject the exact source-step increment for
+       * theta2, in the SAME rate-times-cprovol form as the standard
+       * dissipation term below -- crucially INCLUDING the xcpp (Cp)
+       * factor via cprovol, since this equation is treated as an
+       * energy equation (exactly matching "dissip*cprovol" just
+       * above; omitting Cp here would be a severe, easy-to-miss
+       * magnitude error). C_theta = 1/rvarfl, consistent with
+       * dissip_freq above (same rvarfl, same homogeneous assumption). */
+      const cs_real_t beta_c = (cpro_beta_pdt != nullptr) ?
+        cpro_beta_pdt[c_id] : 0.;
+      cs_real_6_t r1_pdt;
+      cs_real_3_t qtheta1_pdt;
+      cs_real_t theta2_1_pdt, eps1_pdt;
+      if (st_scheme == CS_TURB_RIJ_SOURCE_TS_VAR_TAU)
+        cs_turbulence_rit_source_step_variable_tau(
+          cs_turb_crij1, 1./rvarfl, cs_turb_ce2, cs_turb_ce3, beta_c,
+          grav_pdt, dt_pdt[c_id], cvara_rij[c_id], c_qtheta_pdt[c_id],
+          cvara_var[c_id], xe, r1_pdt, qtheta1_pdt, &theta2_1_pdt, &eps1_pdt);
+      else
+        cs_turbulence_rit_source_step_frozen_tau(
+          cs_turb_crij1, 1./rvarfl, cs_turb_ce2, beta_c, grav_pdt,
+          dt_pdt[c_id], cvara_rij[c_id], c_qtheta_pdt[c_id], cvara_var[c_id],
+          xe, r1_pdt, qtheta1_pdt, &theta2_1_pdt, &eps1_pdt);
+      rhs[c_id] += cprovol/dt_pdt[c_id] * (theta2_1_pdt - cvara_var[c_id]);
+    });
+  }
+  else {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+      cs_real_t xe = 0., xk = 0., alpha_theta = 1.;
+
+      if (model_itytur == 2 || model_itytur == 5) {
+        xk = cvara_k[c_id];
+        xe = cvara_ep[c_id];
+      }
+      else if (model_itytur == 3) {
+        xk = 0.5 * (cvara_rij[c_id][0] + cvara_rij[c_id][1]
+                    + cvara_rij[c_id][2]);
+        if (model_turb == CS_TURB_RIJ_OMEGA)
+          xe = cmu*xk*cvara_omg[c_id];
+        else
+          xe = cvara_ep[c_id];
+      }
+      else if (model_turb == CS_TURB_K_OMEGA) {
+        xk = cvara_k[c_id];
+        xe = cmu*xk*cvara_omg[c_id];
+      }
+
+      if (cvar_al != nullptr)
+        alpha_theta = cvar_al[c_id];
+
+      cs_real_t prdtl = viscl[c_id] * xcpp[c_id];
+      if (ifcvsl > -1)
+        prdtl /= cpro_viscls[c_id];
+      else
+        prdtl /= visls_0;
+
+      const cs_real_t xr = (1.0 - alpha_theta)*prdtl + alpha_theta*rvarfl;
+      const cs_real_t cprovol = xcpp[c_id] * crom[c_id] * cell_f_vol[c_id];
+      const cs_real_t dissip_freq = xe / (xk * xr);
+      const cs_real_t dissip = dissip_freq * cvara_var[c_id];
+      if (f_dissip != nullptr)
+        cvar_dissip[c_id] = dissip;
+
+      /* The diagonal receives eps/Rk, (*theta possibly) */
+      fimp[c_id] += dissip_freq * cprovol * thetap;
+      /* The right hand side receives the dissipation */
+      rhs[c_id] -= dissip * cprovol;
+    });
+  }
 
   ctx.wait();
 
   CS_FREE(grad);
+  CS_FREE(prod_godunov);
 }
 
 /*----------------------------------------------------------------------------
@@ -602,13 +814,13 @@ _diffusion_terms_scalar(const cs_field_t           *f,
     const cs_real_t ctheta = f->get_key_double(kctheta);
 
     if (turb_model->model != CS_TURB_RIJ_EPSILON_EBRSM) {
-      cs_field_t * f_vis = cs_field_by_name("anisotropic_turbulent_viscosity");
+      cs_field_t * f_vis = cs_field("anisotropic_turbulent_viscosity");
       visten = (cs_real_6_t *)f_vis->val;
     }
     /* EBRSM and (GGDH or AFM) */
     else {
       cs_field_t * f_vis
-        = cs_field_by_name("anisotropic_turbulent_viscosity_scalar");
+        = cs_field("anisotropic_turbulent_viscosity_scalar");
       visten = (cs_real_6_t *)f_vis->val;
     }
 
@@ -795,14 +1007,14 @@ _diffusion_terms_vector(const cs_field_t            *f,
     const cs_real_t ctheta = f->get_key_double(kctheta);
 
     if (turb_model->model != CS_TURB_RIJ_EPSILON_EBRSM) {
-      cs_field_t * f_vis = cs_field_by_name("anisotropic_turbulent_viscosity");
+      cs_field_t * f_vis = cs_field("anisotropic_turbulent_viscosity");
       visten = (cs_real_6_t *)f_vis->val;
     }
 
     /* EBRSM and (GGDH or AFM) */
     else {
       cs_field_t * f_vis
-        = cs_field_by_name("anisotropic_turbulent_viscosity_scalar");
+        = cs_field("anisotropic_turbulent_viscosity_scalar");
       visten = (cs_real_6_t *)f_vis->val;
     }
 
@@ -1257,7 +1469,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* Compute cv */
 
-    cs_field_t *f_cv = cs_field_by_name_try("isobaric_heat_capacity");
+    cs_field_t *f_cv = cs_field("isobaric_heat_capacity");
     if (f_cv != nullptr) {
       cs_thermal_model_cv(f_cv->val);
       cs_array_copy<cs_real_t>(n_cells, f_cv->val, xcvv);
@@ -1274,7 +1486,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     if (th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
-      const cs_field_t *f_t = cs_field_by_name_try("temperature");
+      const cs_field_t *f_t = cs_field("temperature");
 
       if (f_t != nullptr) {
         temp  = f_t->val;
@@ -1282,8 +1494,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
       }
 
       if (th_cf_model->ieos == CS_EOS_MOIST_AIR) {
-        const cs_field_t *f_yv = cs_field_by_name_try("yv");
-        const cs_field_t *f_yw = cs_field_by_name_try("yw");
+        const cs_field_t *f_yv = cs_field("yv");
+        const cs_field_t *f_yw = cs_field("yw");
 
         if (f_yv != nullptr) {
           cpro_yv = f_yv->val;
@@ -1356,7 +1568,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     if (th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
         //|| th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) { TODO
-      cs_field_t *f_cflt = cs_field_by_name_try("cfl_t");
+      cs_field_t *f_cflt = cs_field("cfl_t");
 
       if (f_cflt != nullptr) {
         cs_real_t *cflt = f_cflt->val;
@@ -1416,8 +1628,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
       if ((isca_ih21 <= ivar) && (ivar <= isca_ih2nl))
         cs_coal_rad_transfer_st(f, rhs, fimp);
 
-      if (f == cs_field_by_name_try("x_c_h")) {
-        const cs_real_t *cpro_tsre1 = cs_field_by_name("rad_st")->val;
+      if (f == cs_field("x_c_h")) {
+        const cs_real_t *cpro_tsre1 = cs_field("rad_st")->val;
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           rhs[c_id] += volume[c_id]*cpro_tsre1[c_id];
         });
@@ -1426,8 +1638,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
           char f_rad[64], f_xp[64];
           snprintf(f_xp, 64, "x_p_%02d", icla+1); f_xp[63] = '\0';
           snprintf(f_rad, 64, "rad_st_%02d", icla+2); f_rad[63] = '\0';
-          const cs_real_t *cpro_tsre = cs_field_by_name_try(f_rad)->val;
-          const cs_real_t *cpro_x2icla = cs_field_by_name_try(f_xp)->val;
+          const cs_real_t *cpro_tsre = cs_field(f_rad)->val;
+          const cs_real_t *cpro_x2icla = cs_field(f_xp)->val;
           ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
             rhs[c_id] -= volume[c_id]*cpro_tsre[c_id]*cpro_x2icla[c_id];
           });
@@ -1475,7 +1687,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     if (iscacp == 2) {
       if (th_cf_model->ieos == CS_EOS_GAS_MIX) {
         cs_array_copy<cs_real_t>(n_cells,
-            cs_field_by_name("isobaric_heat_capacity")->val, xcpp);
+            cs_field("isobaric_heat_capacity")->val, xcpp);
       } else {
         cs_real_t rair = fluid_props->r_pg_cnst;
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1494,8 +1706,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     if (   is_thermal_model_field
         && (th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE)) {
-      cs_real_t *ste = cs_field_by_name("lagr_st_temperature")->val;
-      cs_real_t *sti = cs_field_by_name("lagr_st_imp_temperature")->val;
+      cs_real_t *ste = cs_field("lagr_st_temperature")->val;
+      cs_real_t *sti = cs_field("lagr_st_imp_temperature")->val;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         rhs[c_id] += ste[c_id] * cell_f_vol[c_id];
         fimp[c_id] += cs::max(sti[c_id], 0.0) * cell_f_vol[c_id];
@@ -1505,7 +1717,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
      * term */
     if (   is_thermal_model_field
         && th_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
-      cs_real_t *ste = cs_field_by_name("lagr_st_temperature")->val;
+      cs_real_t *ste = cs_field("lagr_st_temperature")->val;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         rhs[c_id] += ste[c_id] * cell_f_vol[c_id];
       });
@@ -1695,8 +1907,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
   }
 
   /* Add Rusanov fluxes */
-  if (cs_glob_turb_rans_model->irijnu == 2) {
-    cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
+  const int rij_scheme_rus
+    = cs_glob_turb_rans_model->rij_discretization_scheme;
+  if (rij_scheme_rus == CS_RIJ_SCHEME_RUSANOV) {
+    cs_real_t *ipro_rusanov = cs_field("i_rusanov_diff")->val;
     ctx.parallel_for(m->n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       viscf[face_id] += 0.5 * ipro_rusanov[face_id];
     });
@@ -1729,6 +1943,98 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const int kbmasf = cs_field_key_id_try("boundary_mass_flux_id");
   const int iflmab = f->get_key_int(kbmasf);
   cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+
+  /* GODUNOV scheme: explicit deferred-correction
+   * convection for T and its variance, from the exact Riemann
+   * interface state (i_temperature/i_temperature_variance, shared
+   * with the {u,R} and q_theta equations). Unlike q_theta, T's own
+   * convective term (u.grad(T)) and the variance's convective term
+   * are pure advection -- no cross-production here, that is entirely
+   * handled by _production_and_dissipation_terms (variance) and by
+   * the qtheta equation itself.
+   *
+   * The standard convective operator is disabled around the final solve call
+   * below (save/force/restore of eqp->iconv, since eqp here is a
+   * direct mutable pointer into the field's own persistent parameters,
+   * not a local copy), or convection would be assembled twice, exactly
+   * as for R and q_theta. */
+  bool is_temp_variance = false;
+  if (itspdv == 1 && iscavr > 0
+      && cs_field_by_id(iscavr) == cs_thermal_model_field())
+    is_temp_variance = true;
+
+  const int rij_sch
+    = cs_glob_turb_rans_model->rij_discretization_scheme;
+  const bool use_rit_convection =
+    (rij_sch == CS_RIJ_SCHEME_GODUNOV)
+    && (is_thermal_model_field || is_temp_variance);
+
+  int saved_iconv = eqp->iconv;
+
+  if (use_rit_convection) {
+
+    if (f->get_key_int("variance_turb_flux_model") / 10 >= 1)
+      cs_turbulence_rij_godunov_interface_states_scalar(f);
+
+    std::string i_field_name = std::string("i_") + f->name;
+    std::string b_field_name = std::string("b_") + f->name;
+
+    const cs_real_t *i_phi = cs_field(i_field_name.c_str())->val;
+    const cs_real_t *b_phi = cs_field(b_field_name.c_str())->val;
+    const cs_real_t *c_phi = f->val;
+
+    const cs_lnum_2_t *restrict i_face_cells
+      = (const cs_lnum_2_t *) m->i_face_cells;
+    const cs_lnum_t *restrict b_face_cells
+      = (const cs_lnum_t *) m->b_face_cells;
+
+    cs_real_t *divphi;
+    CS_MALLOC_HD(divphi, n_cells_ext, cs_real_t, cs_alloc_mode);
+    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, 0., divphi);
+
+    cs_dispatch_sum_type_t i_sum_type =
+      ctx.get_parallel_for_i_faces_sum_type(m);
+    cs_dispatch_sum_type_t b_sum_type =
+      ctx.get_parallel_for_b_faces_sum_type(m);
+
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+      const cs_lnum_t c_id_l = i_face_cells[face_id][0];
+      const cs_lnum_t c_id_r = i_face_cells[face_id][1];
+
+      const cs_real_t flux_l =
+         (i_phi[face_id] - c_phi[c_id_l]) * imasfl[face_id];
+      const cs_real_t flux_r =
+        -(i_phi[face_id] - c_phi[c_id_r]) * imasfl[face_id];
+
+      if (c_id_l < n_cells)
+        cs_dispatch_sum(&divphi[c_id_l], flux_l, i_sum_type);
+      if (c_id_r < n_cells)
+        cs_dispatch_sum(&divphi[c_id_r], flux_r, i_sum_type);
+    });
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+      const cs_lnum_t c_id_l = b_face_cells[face_id];
+
+      const cs_real_t flux_l =
+        (b_phi[face_id] - c_phi[c_id_l]) * bmasfl[face_id];
+
+      if (c_id_l < n_cells)
+        cs_dispatch_sum(&divphi[c_id_l], flux_l, b_sum_type);
+    });
+
+    ctx.wait();
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      rhs[c_id] -= xcpp[c_id] * divphi[c_id];
+    });
+    ctx.wait();
+
+    CS_FREE(divphi);
+
+    eqp->iconv = 0;
+  }
 
   if (iscdri > 0)
     cs_drift_convective_flux(f,
@@ -1843,6 +2149,13 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      xcpp,
                                      nullptr);
 
+  /* GODUNOV scheme: restore the field's own iconv setting, forced to
+   * 0 above only for the duration of this solve (eqp is a direct
+   * mutable pointer into the field's persistent equation parameters,
+   * not a local copy). */
+  if (use_rit_convection)
+    eqp->iconv = saved_iconv;
+
   CS_FREE(dpvar);
 
   /* May be allocated in _diffusion_terms_scalar */
@@ -1855,7 +2168,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (   is_thermal_model_field
       && th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
-    cs_real_t *tempk = cs_field_by_name("temperature")->val;
+    cs_real_t *tempk = cs_field("temperature")->val;
 
     /* Perfect gas, compute temperature from the internal energy */
 
@@ -1902,7 +2215,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
    * finalize number of droplets due to nucleation for humid atmosphere */
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
-      cs_atmo_aerosol_nuclea(cs_field_by_name("number_of_droplets"),
+      cs_atmo_aerosol_nuclea(cs_field("number_of_droplets"),
                              crom);
 
   /* Explicit balance
@@ -2290,15 +2603,17 @@ cs_solve_equation_vector(cs_field_t       *f,
   }
 
   /* Add Rusanov fluxes */
-  if (cs_glob_turb_rans_model->irijnu == 2) {
-    cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
+  const int rij_scheme_rus
+    = cs_glob_turb_rans_model->rij_discretization_scheme;
+  if (rij_scheme_rus == CS_RIJ_SCHEME_RUSANOV) {
+    cs_real_t *ipro_rusanov = cs_field("i_rusanov_diff")->val;
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       viscf[face_id] += 0.5 * ipro_rusanov[face_id];
     });
 
     const cs_nreal_3_t *restrict b_face_u_normal
       = fvq->b_face_u_normal;
-    cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
+    cs_real_t *bpro_rusanov = cs_field("b_rusanov_diff")->val;
     // cs_real_3_t  *coefap = (cs_real_3_t *)f->bc_coeffs->a;
     // cs_real_33_t *coefbp = (cs_real_33_t *)f->bc_coeffs->b;
     // cs_real_3_t  *cofafp = (cs_real_3_t *)f->bc_coeffs->af;

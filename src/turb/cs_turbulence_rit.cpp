@@ -32,6 +32,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -99,6 +100,1168 @@
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * source_time_stepping -- exact exponential integration of the frozen-tau
+ * Rotta-Monin/buoyancy source subsystem (thesis Chapter 6, Section
+ * "Exact solution of the frozen-time-scale source subsystem").
+ *
+ * Restricted to pure Rotta closure (crij2 == 0): the "rapid" pressure-
+ * strain contribution is not part of this source step and is left to
+ * the standard treatment (identically zero for crij2 == 0 anyway).
+ *
+ * See the engine definition further below for the actual resonance
+ * handling (built from a single J(dt;rate) primitive, robust through
+ * every resonance without a separate branch for each one).
+ *----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Overflow-safe exp(): clamps its argument to [-700, 700] before
+ *        calling the standard exp().
+ *
+ * All the closed-form kernels below assume tau = k/eps > 0 and CR > 1,
+ * as required for a physically well-posed Rotta-Monin source step. A
+ * transient, purely numerical excursion of R or epsilon outside their
+ * realizable range elsewhere in the solve (e.g. a momentarily negative
+ * k or eps before the next clipping pass) can make tau non-positive or
+ * near-zero, which turns one of the many rate*dt exponents below into
+ * a large positive value and makes the plain exp() overflow to inf,
+ * raising SIGFPE (observed in practice after ~900 time steps of an
+ * otherwise-converged run). Clamping the exponent is a deliberately
+ * blunt safeguard -- it does not attempt to fix the underlying
+ * transient realizability excursion, only to prevent it from crashing
+ * the whole run; exp(700) ~ 1e304 is already far outside any physical
+ * source-step magnitude, so the clamp has no effect in the normal,
+ * well-posed regime.
+ */
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Overflow-safe exponential.
+ *
+ * The argument is limited before calling exp(). This protects exp() itself,
+ * but all callers must still check their complete result with isfinite().
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_safe_exp(cs_real_t x)
+{
+  const cs_real_t x_limited = fmax(-700., fmin(700., x));
+  return exp(x_limited);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Numerically robust (exp(x) - 1)/x, with limit 1 at x = 0.
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_expm1_ratio(cs_real_t x)
+{
+  if (fabs(x) < 1.e-6)
+    return 1. + x*(0.5 + x*(1./6. + x*(1./24. + x/120.)));
+
+  return expm1(x)/x;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Numerically robust log(1 + w)/w, with limit 1 at w = 0.
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_log1p_ratio(cs_real_t w)
+{
+  if (fabs(w) < 1.e-6)
+    return 1. + w*(-0.5 + w*(1./3. + w*(-0.25 + w/5.)));
+
+  return log1p(w)/w;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief 8-point Gauss-Legendre quadrature on [0, t].
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename F>
+static inline cs_real_t
+_rij_source_gauss8(cs_real_t t, F&& f)
+{
+  static const cs_real_t gx[8] = {
+    -0.960289856497536, -0.796666477413627,
+    -0.525532409916329, -0.183434642495650,
+     0.183434642495650,  0.525532409916329,
+     0.796666477413627,  0.960289856497536
+  };
+
+  static const cs_real_t gw[8] = {
+    0.101228536290376, 0.222381034453374,
+    0.313706645877887, 0.362683783378362,
+    0.362683783378362, 0.313706645877887,
+    0.222381034453374, 0.101228536290376
+  };
+
+  if (t <= 0.)
+    return 0.;
+
+  const cs_real_t half_t = 0.5*t;
+  cs_real_t sum = 0.;
+
+  for (int i = 0; i < 8; i++) {
+    const cs_real_t s = half_t*(1. + gx[i]);
+    const cs_real_t value = f(s);
+
+    if (!isfinite(value))
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: non-finite quadrature integrand:\n"
+                "  t     = % .17e\n"
+                "  node  = %d\n"
+                "  s     = % .17e\n"
+                "  value = % .17e\n",
+                __func__, t, i, s, value);
+
+    sum += gw[i]*value;
+  }
+
+  const cs_real_t result = half_t*sum;
+
+  if (!isfinite(result))
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: non-finite quadrature result:\n"
+              "  t      = % .17e\n"
+              "  sum    = % .17e\n"
+              "  result = % .17e\n",
+              __func__, t, sum, result);
+
+  return result;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prescribed time scale and dissipative clock.
+ *
+ * The time scale satisfies
+ *
+ *   d tau/dt = a_co - gamma_0*tau.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_source_time_stepping_tau_chi(cs_real_t   t,
+                              cs_real_t   a_co,
+                              cs_real_t   gamma_0,
+                              cs_real_t   tau0,
+                              cs_real_t  *tau_t,
+                              cs_real_t  *chi_t)
+{
+  if (!isfinite(t)
+      || !isfinite(a_co)
+      || !isfinite(gamma_0)
+      || !isfinite(tau0)
+      || t < 0.
+      || tau0 <= 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: invalid tau/chi input:\n"
+              "  t       = % .17e\n"
+              "  a_co    = % .17e\n"
+              "  gamma_0 = % .17e\n"
+              "  tau0    = % .17e\n",
+              __func__, t, a_co, gamma_0, tau0);
+
+  if (fabs(gamma_0) < 1.e-14) {
+    *tau_t = tau0 + a_co*t;
+
+    if (*tau_t <= 0. || !isfinite(*tau_t))
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: non-positive affine time scale:\n"
+                "  t     = % .17e\n"
+                "  tau0  = % .17e\n"
+                "  a_co  = % .17e\n"
+                "  tau_t = % .17e\n",
+                __func__, t, tau0, a_co, *tau_t);
+
+    if (fabs(a_co) < 1.e-14)
+      *chi_t = t/tau0;
+    else
+      *chi_t = log1p(a_co*t/tau0)/a_co;
+  }
+  else {
+    const cs_real_t gamma_t = gamma_0*t;
+    const cs_real_t e_minus = _safe_exp(-gamma_t);
+
+    *tau_t = e_minus
+             * (tau0 + a_co*t*_expm1_ratio(gamma_t));
+
+    const cs_real_t z =
+      t*_expm1_ratio(gamma_t)/tau0;
+
+    const cs_real_t log_arg = 1. + a_co*z;
+
+    if (!isfinite(log_arg) || log_arg <= 0.)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: invalid logarithm argument in chi:\n"
+                "  t       = % .17e\n"
+                "  tau0    = % .17e\n"
+                "  a_co    = % .17e\n"
+                "  gamma_0 = % .17e\n"
+                "  z       = % .17e\n"
+                "  1+a_co*z= % .17e\n",
+                __func__, t, tau0, a_co, gamma_0, z, log_arg);
+
+    *chi_t = z*_log1p_ratio(a_co*z);
+  }
+
+  if (!isfinite(*tau_t)
+      || !isfinite(*chi_t)
+      || *tau_t <= 0.
+      || *chi_t < 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: invalid tau/chi result:\n"
+              "  t       = % .17e\n"
+              "  tau0    = % .17e\n"
+              "  a_co    = % .17e\n"
+              "  gamma_0 = % .17e\n"
+              "  tau_t   = % .17e\n"
+              "  chi_t   = % .17e\n",
+              __func__, t, tau0, a_co, gamma_0, *tau_t, *chi_t);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief J(dt; rate) = integral_0^dt exp(rate*chi(s)) ds.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_source_time_stepping_ja(cs_real_t dt,
+                         cs_real_t tau0,
+                         cs_real_t a_co,
+                         cs_real_t gamma_0,
+                         cs_real_t rate)
+{
+  if (dt <= 0.)
+    return 0.;
+
+  if (!isfinite(dt)
+      || !isfinite(tau0)
+      || !isfinite(a_co)
+      || !isfinite(gamma_0)
+      || !isfinite(rate)
+      || tau0 <= 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: invalid J input:\n"
+              "  dt      = % .17e\n"
+              "  tau0    = % .17e\n"
+              "  a_co    = % .17e\n"
+              "  gamma_0 = % .17e\n"
+              "  rate    = % .17e\n",
+              __func__, dt, tau0, a_co, gamma_0, rate);
+
+  if (fabs(a_co) < 1.e-12 && fabs(gamma_0) < 1.e-12) {
+    const cs_real_t exponent = rate*dt/tau0;
+
+    if (!isfinite(exponent) || exponent > 600.)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: excessive frozen-tau exponent:\n"
+                "  dt       = % .17e\n"
+                "  tau0     = % .17e\n"
+                "  rate     = % .17e\n"
+                "  exponent = % .17e\n",
+                __func__, dt, tau0, rate, exponent);
+
+    const cs_real_t result =
+      dt*_expm1_ratio(exponent);
+
+    if (!isfinite(result))
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: non-finite frozen-tau J:\n"
+                "  dt       = % .17e\n"
+                "  tau0     = % .17e\n"
+                "  rate     = % .17e\n"
+                "  exponent = % .17e\n"
+                "  J        = % .17e\n",
+                __func__, dt, tau0, rate, exponent, result);
+
+    return result;
+  }
+
+  return _rij_source_gauss8(
+    dt,
+    [=](cs_real_t s) -> cs_real_t {
+      cs_real_t tau_s;
+      cs_real_t chi_s;
+
+      _source_time_stepping_tau_chi(s,
+                                    a_co,
+                                    gamma_0,
+                                    tau0,
+                                    &tau_s,
+                                    &chi_s);
+
+      const cs_real_t exponent = rate*chi_s;
+
+      if (!isfinite(exponent) || exponent > 600.)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: excessive variable-tau exponent:\n"
+                  "  s        = % .17e\n"
+                  "  tau_s    = % .17e\n"
+                  "  chi_s    = % .17e\n"
+                  "  rate     = % .17e\n"
+                  "  exponent = % .17e\n",
+                  __func__, s, tau_s, chi_s, rate, exponent);
+
+      return _safe_exp(exponent);
+    });
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Derivative of J with respect to its rate.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_source_time_stepping_dja_drate(cs_real_t dt,
+                                cs_real_t tau0,
+                                cs_real_t a_co,
+                                cs_real_t gamma_0,
+                                cs_real_t rate)
+{
+  if (dt <= 0.)
+    return 0.;
+
+  if (!isfinite(dt)
+      || !isfinite(tau0)
+      || !isfinite(a_co)
+      || !isfinite(gamma_0)
+      || !isfinite(rate)
+      || tau0 <= 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: invalid dJ/d(rate) input:\n"
+              "  dt      = % .17e\n"
+              "  tau0    = % .17e\n"
+              "  a_co    = % .17e\n"
+              "  gamma_0 = % .17e\n"
+              "  rate    = % .17e\n",
+              __func__, dt, tau0, a_co, gamma_0, rate);
+
+  if (fabs(a_co) < 1.e-12 && fabs(gamma_0) < 1.e-12) {
+    const cs_real_t exponent = rate*dt/tau0;
+
+    if (!isfinite(exponent) || exponent > 600.)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: excessive dJ/d(rate) exponent:\n"
+                "  dt       = % .17e\n"
+                "  tau0     = % .17e\n"
+                "  rate     = % .17e\n"
+                "  exponent = % .17e\n",
+                __func__, dt, tau0, rate, exponent);
+
+    if (fabs(exponent) < 1.e-6) {
+      const cs_real_t x2 = exponent*exponent;
+
+      return dt*dt/tau0
+             * (0.5
+                + exponent/3.
+                + x2/8.
+                + x2*exponent/30.
+                + x2*x2/144.);
+    }
+
+    const cs_real_t result =
+      tau0/(rate*rate)
+      * (_safe_exp(exponent)*(exponent - 1.) + 1.);
+
+    if (!isfinite(result))
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: non-finite frozen-tau dJ/d(rate):\n"
+                "  dt       = % .17e\n"
+                "  tau0     = % .17e\n"
+                "  rate     = % .17e\n"
+                "  exponent = % .17e\n"
+                "  result   = % .17e\n",
+                __func__, dt, tau0, rate, exponent, result);
+
+    return result;
+  }
+
+  return _rij_source_gauss8(
+    dt,
+    [=](cs_real_t s) -> cs_real_t {
+      cs_real_t tau_s;
+      cs_real_t chi_s;
+
+      _source_time_stepping_tau_chi(s,
+                                    a_co,
+                                    gamma_0,
+                                    tau0,
+                                    &tau_s,
+                                    &chi_s);
+
+      const cs_real_t exponent = rate*chi_s;
+
+      if (!isfinite(exponent) || exponent > 600.)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: excessive dJ/d(rate) quadrature exponent:\n"
+                  "  s        = % .17e\n"
+                  "  tau_s    = % .17e\n"
+                  "  chi_s    = % .17e\n"
+                  "  rate     = % .17e\n"
+                  "  exponent = % .17e\n",
+                  __func__, s, tau_s, chi_s, rate, exponent);
+
+      return chi_s*_safe_exp(exponent);
+    });
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief F_b(dt) = J(dt; (C_R - C_theta)/2).
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_source_time_stepping_Fb(cs_real_t dt,
+               cs_real_t tau0,
+               cs_real_t a_co,
+               cs_real_t gamma_0,
+               cs_real_t cr,
+               cs_real_t ctheta)
+{
+  return _source_time_stepping_ja(dt,
+                        tau0,
+                        a_co,
+                        gamma_0,
+                        0.5*(cr - ctheta));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief L_k(dt) = J(dt; 1 - (C_R + C_theta)/2).
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_source_time_stepping_Lk(cs_real_t dt,
+               cs_real_t tau0,
+               cs_real_t a_co,
+               cs_real_t gamma_0,
+               cs_real_t cr,
+               cs_real_t ctheta)
+{
+  return _source_time_stepping_ja(dt,
+                        tau0,
+                        a_co,
+                        gamma_0,
+                        1. - 0.5*(cr + ctheta));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief H_k(dt).
+ *
+ * For gamma_0 = 0, use the algebraic difference-of-J identity.
+ * For gamma_0 != 0, use the defining quadrature.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_source_time_stepping_hk(cs_real_t dt,
+                         cs_real_t tau0,
+                         cs_real_t a_co,
+                         cs_real_t gamma_0,
+                         cs_real_t cr,
+                         cs_real_t ctheta)
+{
+  const cs_real_t buoyancy_diff = 0.5*(cr - ctheta);
+  const cs_real_t kinetic_rate  = 1. - 0.5*(cr + ctheta);
+  const cs_real_t gamma_scale   = fmax(1., fabs(gamma_0));
+
+  if (fabs(gamma_0) <= 1.e-12*gamma_scale) {
+    const cs_real_t denom = a_co + buoyancy_diff;
+    const cs_real_t scale =
+      fmax(1., fmax(fabs(a_co), fabs(buoyancy_diff)));
+
+    if (fabs(denom) > 1.e-10*scale) {
+      const cs_real_t upper =
+        _source_time_stepping_ja(dt,
+                       tau0,
+                       a_co,
+                       gamma_0,
+                       kinetic_rate + denom);
+
+      const cs_real_t lower =
+        _source_time_stepping_ja(dt,
+                       tau0,
+                       a_co,
+                       gamma_0,
+                       kinetic_rate);
+
+      const cs_real_t result = tau0/denom*(upper - lower);
+
+      if (!isfinite(result))
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: non-finite algebraic H_k:\n"
+                  "  dt              = % .17e\n"
+                  "  tau0            = % .17e\n"
+                  "  a_co            = % .17e\n"
+                  "  gamma_0         = % .17e\n"
+                  "  buoyancy_diff   = % .17e\n"
+                  "  kinetic_rate    = % .17e\n"
+                  "  denom           = % .17e\n"
+                  "  upper           = % .17e\n"
+                  "  lower           = % .17e\n"
+                  "  H_k             = % .17e\n",
+                  __func__, dt, tau0, a_co, gamma_0,
+                  buoyancy_diff, kinetic_rate, denom,
+                  upper, lower, result);
+
+      return result;
+    }
+
+    return tau0
+           * _source_time_stepping_dja_drate(dt,
+                                             tau0,
+                                             a_co,
+                                             gamma_0,
+                                             kinetic_rate);
+  }
+
+  return _rij_source_gauss8(
+    dt,
+    [=](cs_real_t s) -> cs_real_t {
+      cs_real_t tau_s;
+      cs_real_t chi_s;
+
+      _source_time_stepping_tau_chi(s,
+                                    a_co,
+                                    gamma_0,
+                                    tau0,
+                                    &tau_s,
+                                    &chi_s);
+
+      const cs_real_t fb_s =
+        _source_time_stepping_Fb(s,
+                       tau0,
+                       a_co,
+                       gamma_0,
+                       cr,
+                       ctheta);
+
+      const cs_real_t result =
+        _safe_exp(kinetic_rate*chi_s)*fb_s;
+
+      if (!isfinite(result))
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: non-finite H_k integrand:\n"
+                  "  s            = % .17e\n"
+                  "  tau_s        = % .17e\n"
+                  "  chi_s        = % .17e\n"
+                  "  kinetic_rate = % .17e\n"
+                  "  F_b          = % .17e\n"
+                  "  result       = % .17e\n",
+                  __func__, s, tau_s, chi_s,
+                  kinetic_rate, fb_s, result);
+
+      return result;
+    });
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Common source-step engine for frozen and prescribed variable tau.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_source_time_stepping_engine(cs_real_t          cr,
+                   cs_real_t          ctheta,
+                   cs_real_t          ceps2,
+                   cs_real_t          a_co,
+                   cs_real_t          gamma_0,
+                   bool               variable_tau_mode,
+                   cs_real_t          beta,
+                   const cs_real_t    grav[3],
+                   cs_real_t          dt,
+                   const cs_real_6_t  r0,
+                   const cs_real_3_t  qtheta0,
+                   cs_real_t          theta2_0,
+                   cs_real_t          eps0,
+                   cs_real_6_t        r1,
+                   cs_real_3_t        qtheta1,
+                   cs_real_t         *theta2_1,
+                   cs_real_t         *eps1)
+{
+  const int iv2t[6] = {0, 1, 2, 0, 1, 0};
+  const int jv2t[6] = {0, 1, 2, 1, 2, 2};
+
+  const cs_real_t k0 = 0.5*(r0[0] + r0[1] + r0[2]);
+
+  if (!isfinite(cr)
+      || !isfinite(ctheta)
+      || !isfinite(ceps2)
+      || !isfinite(a_co)
+      || !isfinite(gamma_0)
+      || !isfinite(beta)
+      || !isfinite(dt)
+      || !isfinite(k0)
+      || !isfinite(eps0)
+      || !isfinite(theta2_0)
+      || !isfinite(qtheta0[0])
+      || !isfinite(qtheta0[1])
+      || !isfinite(qtheta0[2])
+      || !isfinite(grav[0])
+      || !isfinite(grav[1])
+      || !isfinite(grav[2])
+      || dt < 0.
+      || k0 <= 0.
+      || eps0 <= 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: invalid source_time_stepping input state:\n"
+              "  variable_tau = %d\n"
+              "  cr           = % .17e\n"
+              "  ctheta       = % .17e\n"
+              "  ceps2        = % .17e\n"
+              "  a_co         = % .17e\n"
+              "  gamma_0      = % .17e\n"
+              "  beta         = % .17e\n"
+              "  dt           = % .17e\n"
+              "  k0           = % .17e\n"
+              "  eps0         = % .17e\n"
+              "  theta2_0     = % .17e\n"
+              "  R0           = [% .17e, % .17e, % .17e,\n"
+              "                  % .17e, % .17e, % .17e]\n"
+              "  qtheta0      = [% .17e, % .17e, % .17e]\n"
+              "  grav         = [% .17e, % .17e, % .17e]\n",
+              __func__, variable_tau_mode ? 1 : 0,
+              cr, ctheta, ceps2, a_co, gamma_0, beta,
+              dt, k0, eps0, theta2_0,
+              r0[0], r0[1], r0[2], r0[3], r0[4], r0[5],
+              qtheta0[0], qtheta0[1], qtheta0[2],
+              grav[0], grav[1], grav[2]);
+
+  if (dt == 0.) {
+    for (int ij = 0; ij < 6; ij++)
+      r1[ij] = r0[ij];
+
+    for (int i = 0; i < 3; i++)
+      qtheta1[i] = qtheta0[i];
+
+    *theta2_1 = theta2_0;
+    *eps1 = eps0;
+    return;
+  }
+
+  const cs_real_t tau0 = k0/eps0;
+
+  if (!isfinite(tau0) || tau0 <= 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: invalid initial time scale:\n"
+              "  k0   = % .17e\n"
+              "  eps0 = % .17e\n"
+              "  tau0 = % .17e\n",
+              __func__, k0, eps0, tau0);
+
+  const cs_real_t qg0 =
+    cs_math_3_dot_product(qtheta0, grav);
+
+  const cs_real_t g2 =
+    cs_math_3_dot_product(grav, grav);
+
+  cs_real_t tau_dt;
+  cs_real_t chi_dt;
+
+  if (!variable_tau_mode) {
+    tau_dt = tau0;
+    chi_dt = dt/tau0;
+  }
+  else {
+    _source_time_stepping_tau_chi(dt,
+                                  a_co,
+                                  gamma_0,
+                                  tau0,
+                                  &tau_dt,
+                                  &chi_dt);
+  }
+
+  if (!isfinite(tau_dt)
+      || !isfinite(chi_dt)
+      || tau_dt <= 0.
+      || chi_dt < 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: invalid end-of-step trajectory:\n"
+              "  variable_tau = %d\n"
+              "  dt           = % .17e\n"
+              "  tau0         = % .17e\n"
+              "  tau_dt       = % .17e\n"
+              "  chi_dt       = % .17e\n"
+              "  a_co         = % .17e\n"
+              "  gamma_0      = % .17e\n",
+              __func__, variable_tau_mode ? 1 : 0,
+              dt, tau0, tau_dt, chi_dt, a_co, gamma_0);
+
+  const cs_real_t fb_dt =
+    _source_time_stepping_Fb(dt,
+                   tau0,
+                   a_co,
+                   gamma_0,
+                   cr,
+                   ctheta);
+
+  if (!isfinite(fb_dt))
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: non-finite F_b:\n"
+              "  dt      = % .17e\n"
+              "  tau0    = % .17e\n"
+              "  chi_dt  = % .17e\n"
+              "  cr      = % .17e\n"
+              "  ctheta  = % .17e\n"
+              "  F_b     = % .17e\n",
+              __func__, dt, tau0, chi_dt, cr, ctheta, fb_dt);
+
+  const cs_real_t theta_decay =
+    _safe_exp(-ctheta*chi_dt);
+
+  const cs_real_t qtheta_decay =
+    _safe_exp(-0.5*(cr + ctheta)*chi_dt);
+
+  *theta2_1 = theta2_0*theta_decay;
+
+  for (int i = 0; i < 3; i++)
+    qtheta1[i] =
+      qtheta_decay
+      * (qtheta0[i] - beta*theta2_0*fb_dt*grav[i]);
+
+  const cs_real_t lk_dt =
+    _source_time_stepping_Lk(dt,
+                   tau0,
+                   a_co,
+                   gamma_0,
+                   cr,
+                   ctheta);
+
+  const cs_real_t hk_dt =
+    _source_time_stepping_hk(dt,
+                             tau0,
+                             a_co,
+                             gamma_0,
+                             cr,
+                             ctheta);
+
+  if (!isfinite(lk_dt) || !isfinite(hk_dt))
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: non-finite kinetic-energy kernel:\n"
+              "  dt      = % .17e\n"
+              "  tau0    = % .17e\n"
+              "  chi_dt  = % .17e\n"
+              "  cr      = % .17e\n"
+              "  ctheta  = % .17e\n"
+              "  a_co    = % .17e\n"
+              "  gamma_0 = % .17e\n"
+              "  L_k     = % .17e\n"
+              "  H_k     = % .17e\n",
+              __func__, dt, tau0, chi_dt, cr, ctheta,
+              a_co, gamma_0, lk_dt, hk_dt);
+
+  const cs_real_t k_decay =
+    _safe_exp(-chi_dt);
+
+  const cs_real_t k_bracket =
+      k0
+    - beta*qg0*lk_dt
+    + beta*beta*theta2_0*g2*hk_dt;
+
+  const cs_real_t k_dt = k_decay*k_bracket;
+
+  if (!isfinite(k_bracket)
+      || !isfinite(k_dt)
+      || k_dt <= 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: invalid kinetic energy after source step:\n"
+              "  k0        = % .17e\n"
+              "  k_bracket = % .17e\n"
+              "  k_decay   = % .17e\n"
+              "  k_dt      = % .17e\n"
+              "  tau0      = % .17e\n"
+              "  chi_dt    = % .17e\n"
+              "  qg0       = % .17e\n"
+              "  g2        = % .17e\n"
+              "  beta      = % .17e\n"
+              "  theta2_0  = % .17e\n"
+              "  L_k       = % .17e\n"
+              "  H_k       = % .17e\n",
+              __func__, k0, k_bracket, k_decay, k_dt,
+              tau0, chi_dt, qg0, g2, beta, theta2_0,
+              lk_dt, hk_dt);
+
+  const cs_real_t r_decay =
+    _safe_exp(-cr*chi_dt);
+
+  const cs_real_t k_hom_bracket =
+      k0
+    - beta*fb_dt*qg0
+    + 0.5*beta*beta*fb_dt*fb_dt*theta2_0*g2;
+
+  const cs_real_t k_hom =
+    r_decay*k_hom_bracket;
+
+  const cs_real_t isotropic_correction =
+    (2./3.)*(k_dt - k_hom);
+
+  if (!isfinite(k_hom_bracket)
+      || !isfinite(k_hom)
+      || !isfinite(isotropic_correction))
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: invalid homogeneous Rij correction:\n"
+              "  r_decay             = % .17e\n"
+              "  F_b                 = % .17e\n"
+              "  k_hom_bracket       = % .17e\n"
+              "  k_hom               = % .17e\n"
+              "  isotropic_correction= % .17e\n",
+              __func__, r_decay, fb_dt, k_hom_bracket,
+              k_hom, isotropic_correction);
+
+  for (int ij = 0; ij < 6; ij++) {
+    const int i = iv2t[ij];
+    const int j = jv2t[ij];
+
+    const cs_real_t heat_flux_gravity_tensor =
+      qtheta0[i]*grav[j] + grav[i]*qtheta0[j];
+
+    const cs_real_t gravity_tensor =
+      grav[i]*grav[j];
+
+    r1[ij] =
+        r_decay*r0[ij]
+      - beta*r_decay*fb_dt*heat_flux_gravity_tensor
+      + beta*beta*r_decay*fb_dt*fb_dt
+        * theta2_0*gravity_tensor;
+
+    if (i == j)
+      r1[ij] += isotropic_correction;
+
+    if (!isfinite(r1[ij]))
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: non-finite Reynolds-stress component:\n"
+                "  ij     = %d\n"
+                "  i      = %d\n"
+                "  j      = %d\n"
+                "  R0_ij  = % .17e\n"
+                "  R1_ij  = % .17e\n"
+                "  F_b    = % .17e\n"
+                "  decay  = % .17e\n",
+                __func__, ij, i, j, r0[ij], r1[ij], fb_dt, r_decay);
+  }
+
+  for (int i = 0; i < 3; i++) {
+    if (!isfinite(qtheta1[i]))
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: non-finite turbulent heat flux:\n"
+                "  i          = %d\n"
+                "  qtheta0_i  = % .17e\n"
+                "  qtheta1_i  = % .17e\n"
+                "  F_b        = % .17e\n"
+                "  decay      = % .17e\n",
+                __func__, i, qtheta0[i], qtheta1[i],
+                fb_dt, qtheta_decay);
+  }
+
+  if (!isfinite(*theta2_1))
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: non-finite temperature variance:\n"
+              "  theta2_0 = % .17e\n"
+              "  theta2_1 = % .17e\n"
+              "  decay    = % .17e\n",
+              __func__, theta2_0, *theta2_1, theta_decay);
+
+  if (variable_tau_mode)
+    *eps1 = k_dt/tau_dt;
+  else
+    *eps1 = eps0*_safe_exp(-ceps2*chi_dt);
+
+  if (cs_glob_turb_rans_model->verbosity >= 2) {
+    bft_printf(
+      "\n"
+      "================ SOURCE_TIME_STEPPING DEBUG ================\n"
+      "function             = %s\n"
+      "mode                 = %d\n"
+      "variable_tau_mode    = %d\n"
+      "dt                   = %.17e\n"
+      "cr                   = %.17e\n"
+      "ctheta               = %.17e\n"
+      "ceps2                = %.17e\n"
+      "a_co                 = %.17e\n"
+      "gamma_0              = %.17e\n"
+      "beta                 = %.17e\n"
+      "gravity              = (%.17e, %.17e, %.17e)\n"
+      "R0                   = (%.17e, %.17e, %.17e, "
+                               "%.17e, %.17e, %.17e)\n"
+      "qtheta0              = (%.17e, %.17e, %.17e)\n"
+      "theta2_0             = %.17e\n"
+      "eps0                 = %.17e\n"
+      "k0                   = %.17e\n"
+      "qtheta0_dot_g        = %.17e\n"
+      "gravity_squared      = %.17e\n"
+      "tau0                 = %.17e\n"
+      "tau_dt               = %.17e\n"
+      "chi_dt               = %.17e\n"
+      "Fb_dt                = %.17e\n"
+      "Lk_dt                = %.17e\n"
+      "Hk_dt                = %.17e\n"
+      "k_decay              = %.17e\n"
+      "r_decay              = %.17e\n"
+      "k_hom                = %.17e\n"
+      "k_dt                 = %.17e\n"
+      "isotropic_correction = %.17e\n"
+      "R1                   = (%.17e, %.17e, %.17e, "
+                               "%.17e, %.17e, %.17e)\n"
+      "trace_R1_over_2      = %.17e\n"
+      "qtheta1              = (%.17e, %.17e, %.17e)\n"
+      "theta2_1             = %.17e\n"
+      "eps1                 = %.17e\n"
+      "eps1_times_tau_dt    = %.17e\n"
+      "trace_error          = %.17e\n"
+      "epsilon_tau_error    = %.17e\n"
+      "finite_state         = %d\n"
+      "===================================================\n\n",
+      __func__,
+      variable_tau_mode ? 2 : 1,
+      variable_tau_mode ? 1 : 0,
+      dt,
+      cr,
+      ctheta,
+      ceps2,
+      a_co,
+      gamma_0,
+      beta,
+      grav[0],
+      grav[1],
+      grav[2],
+      r0[0],
+      r0[1],
+      r0[2],
+      r0[3],
+      r0[4],
+      r0[5],
+      qtheta0[0],
+      qtheta0[1],
+      qtheta0[2],
+      theta2_0,
+      eps0,
+      k0,
+      qg0,
+      g2,
+      tau0,
+      tau_dt,
+      chi_dt,
+      fb_dt,
+      lk_dt,
+      hk_dt,
+      k_decay,
+      r_decay,
+      k_hom,
+      k_dt,
+      isotropic_correction,
+      r1[0],
+      r1[1],
+      r1[2],
+      r1[3],
+      r1[4],
+      r1[5],
+      0.5*(r1[0] + r1[1] + r1[2]),
+      qtheta1[0],
+      qtheta1[1],
+      qtheta1[2],
+      *theta2_1,
+      *eps1,
+      (*eps1)*tau_dt,
+      0.5*(r1[0] + r1[1] + r1[2]) - k_dt,
+      variable_tau_mode ? ((*eps1)*tau_dt - k_dt) : 0.,
+      (   isfinite(tau0)
+       && isfinite(tau_dt)
+       && isfinite(chi_dt)
+       && isfinite(fb_dt)
+       && isfinite(lk_dt)
+       && isfinite(hk_dt)
+       && isfinite(k_dt)
+       && isfinite(r1[0])
+       && isfinite(r1[1])
+       && isfinite(r1[2])
+       && isfinite(r1[3])
+       && isfinite(r1[4])
+       && isfinite(r1[5])
+       && isfinite(qtheta1[0])
+       && isfinite(qtheta1[1])
+       && isfinite(qtheta1[2])
+       && isfinite(*theta2_1)
+       && isfinite(*eps1)) ? 1 : 0);
+
+    bft_printf_flush();
+  }
+
+  if (!isfinite(*eps1) || *eps1 <= 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: invalid epsilon after source step:\n"
+              "  variable_tau = %d\n"
+              "  eps0         = % .17e\n"
+              "  eps1         = % .17e\n"
+              "  k_dt         = % .17e\n"
+              "  tau_dt       = % .17e\n"
+              "  chi_dt       = % .17e\n"
+              "  ceps2        = % .17e\n",
+              __func__, variable_tau_mode ? 1 : 0,
+              eps0, *eps1, k_dt, tau_dt, chi_dt, ceps2);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prescribed variable-time-scale integration of the
+ *        Rotta-Monin/buoyancy source subsystem over one time step.
+ *
+ * This function is used for source_time_stepping == 2.
+ *
+ * The prescribed time scale satisfies
+ *
+ *   d tau/dt = a_co - gamma_0*tau,
+ *
+ * with
+ *
+ *   a_co    = Ceps2 - 1,
+ *
+ *   gamma_0 = (1-Ceps3)*beta*(qtheta0.g)/k0.
+ *
+ * The corresponding dissipative clock is
+ *
+ *   chi(t) = integral_0^t ds/tau(s).
+ *
+ * The closure is restricted to:
+ *
+ *   - pure Rotta pressure-strain closure, crij2 == 0;
+ *   - linear epsilon-buoyancy closure, Ceps4 == 0.
+ *
+ * \param[in]   cr        Rotta constant C_R
+ * \param[in]   ctheta    thermal relaxation ratio C_theta
+ * \param[in]   ceps2     epsilon destruction constant Ceps2
+ * \param[in]   ceps3     linear epsilon-buoyancy constant Ceps3
+ * \param[in]   beta      thermal expansion coefficient
+ * \param[in]   grav      gravity vector
+ * \param[in]   dt        time step
+ * \param[in]   r0        Rij at the beginning of the time step
+ * \param[in]   qtheta0   turbulent heat flux at the beginning of the step
+ * \param[in]   theta2_0  temperature variance at the beginning of the step
+ * \param[in]   eps0      dissipation at the beginning of the step
+ * \param[out]  r1        Rij at the end of the time step
+ * \param[out]  qtheta1   turbulent heat flux at the end of the step
+ * \param[out]  theta2_1  temperature variance at the end of the step
+ * \param[out]  eps1      dissipation at the end of the step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rit_source_step_frozen_tau(cs_real_t          cr,
+                                         cs_real_t          ctheta,
+                                         cs_real_t          ceps2,
+                                         cs_real_t          beta,
+                                         const cs_real_t    grav[3],
+                                         cs_real_t          dt,
+                                         const cs_real_6_t  r0,
+                                         const cs_real_3_t  qtheta0,
+                                         cs_real_t          theta2_0,
+                                         cs_real_t          eps0,
+                                         cs_real_6_t        r1,
+                                         cs_real_3_t        qtheta1,
+                                         cs_real_t         *theta2_1,
+                                         cs_real_t         *eps1)
+{
+  _source_time_stepping_engine(cr,
+                     ctheta,
+                     ceps2,
+                     0.,
+                     0.,
+                     false,
+                     beta,
+                     grav,
+                     dt,
+                     r0,
+                     qtheta0,
+                     theta2_0,
+                     eps0,
+                     r1,
+                     qtheta1,
+                     theta2_1,
+                     eps1);
+}
+
+
+void
+cs_turbulence_rit_source_step_variable_tau(cs_real_t          cr,
+                                           cs_real_t          ctheta,
+                                           cs_real_t          ceps2,
+                                           cs_real_t          ceps3,
+                                           cs_real_t          beta,
+                                           const cs_real_t    grav[3],
+                                           cs_real_t          dt,
+                                           const cs_real_6_t  r0,
+                                           const cs_real_3_t  qtheta0,
+                                           cs_real_t          theta2_0,
+                                           cs_real_t          eps0,
+                                           cs_real_6_t        r1,
+                                           cs_real_3_t        qtheta1,
+                                           cs_real_t         *theta2_1,
+                                           cs_real_t         *eps1)
+{
+  const cs_real_t k0 =
+    0.5*(r0[0] + r0[1] + r0[2]);
+
+  const cs_real_t qg0 =
+    cs_math_3_dot_product(qtheta0, grav);
+
+  if (!isfinite(k0) || k0 <= 0.)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: invalid k0 before gamma_0 evaluation:\n"
+              "  k0 = % .17e\n",
+              __func__, k0);
+
+  const cs_real_t a_co = ceps2 - 1.;
+
+  const cs_real_t gamma_0 =
+    (1. - ceps3)*beta*qg0/k0;
+
+  if (!isfinite(gamma_0))
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: non-finite gamma_0:\n"
+              "  ceps3   = % .17e\n"
+              "  beta    = % .17e\n"
+              "  qg0     = % .17e\n"
+              "  k0      = % .17e\n"
+              "  gamma_0 = % .17e\n",
+              __func__, ceps3, beta, qg0, k0, gamma_0);
+
+  _source_time_stepping_engine(cr,
+                     ctheta,
+                     ceps2,
+                     a_co,
+                     gamma_0,
+                     true,
+                     beta,
+                     grav,
+                     dt,
+                     r0,
+                     qtheta0,
+                     theta2_0,
+                     eps0,
+                     r1,
+                     qtheta1,
+                     theta2_1,
+                     eps1);
+}
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the turbulent flux source terms
@@ -149,6 +1312,53 @@ _turb_flux_st(const char          *name,
   cs_field_t *f_beta = cs_field_try("thermal_expansion");
   if (f_beta != nullptr)
     cpro_beta = f_beta->val;
+
+  /* source_time_stepping: R and epsilon AT THE START OF THE TIME STEP
+   * (val_pre), consistent with q_theta_pre/theta2_pre (xuta/cvara_tt
+   * above) -- NOT cvar_rij/cvar_ep (->val) just above, which already
+   * hold this time step's updated values (R and epsilon are solved
+   * before q_theta in the standard segregated order). The exact
+   * source-step integration requires all four quantities to start
+   * from the SAME state N. */
+  const int st_scheme = cs_glob_turb_rans_model->source_time_stepping;
+  const bool source_time_stepping_active =
+    (st_scheme != CS_TURB_RIJ_SOURCE_TS_IMEX);
+  const cs_real_6_t *cvara_rij = source_time_stepping_active ?
+    (const cs_real_6_t *)CS_F_(rij)->val_pre : nullptr;
+  const cs_real_t *cvara_ep = source_time_stepping_active ?
+    CS_F_(eps)->val_pre : nullptr;
+  const cs_real_t *dt = source_time_stepping_active ?
+    CS_F_(dt)->val : nullptr;
+
+  if (source_time_stepping_active) {
+    assert(f_tv != nullptr);
+  }
+
+  const int krvarfl = cs_field_key_id("variance_dissipation");
+  const cs_real_t ctheta = source_time_stepping_active ?
+    1. / f_tv->get_key_double(krvarfl) : 1.;
+
+  /* source_time_stepping: C_theta is derived exclusively from rvarfl (the
+   * SAME relation used for theta2's own dissipation rate just above,
+   * epsilon_theta = epsilon/(k*rvarfl)*theta2 => tau_theta = rvarfl*tau
+   * => C_theta = tau/tau_theta = 1/rvarfl, exact for the homogeneous
+   * case alpha_theta == 1, i.e. non-EBRSM).
+   *
+   * IMPORTANT: this deliberately does NOT involve c1trit (the model
+   * constant otherwise used for q_theta's own relaxation rate,
+   * c1trit/xttdrbt below). The exact source-step trajectory computed
+   * by cs_turbulence_rit_source_step_frozen_tau internally uses the
+   * document's own consistent relaxation rate (CR+Ctheta)/(2*tau),
+   * derived from crij1 and this same Ctheta -- it does NOT blend with
+   * or partially reuse c1trit. c1trit is therefore left UNUSED for
+   * the relaxation term when source_time_stepping != 0 (the whole phiit_relax
+   * term is replaced, not adjusted): whatever value c1trit is set to
+   * in the case setup has no effect on the source step in that
+   * configuration. If c1trit differs substantially from
+   * (crij1+1/rvarfl)/2, this reflects a genuine modeling choice
+   * difference between code_saturne's general DFM closure and the
+   * pure Rotta-Monin theory source_time_stepping implements -- not a bug to be
+   * silently reconciled. */
 
   const cs_real_t *cvar_tt = nullptr, *cvara_tt = nullptr, *cvar_al = nullptr;
 
@@ -244,6 +1454,30 @@ _turb_flux_st(const char          *name,
     xrij[2][0] = cvar_rij[c_id][5];
     xrij[2][1] = cvar_rij[c_id][4];
     xrij[2][2] = cvar_rij[c_id][2];
+
+    /* source_time_stepping: exact frozen-tau source-step integration,
+     * computed once per cell (all four quantities together, from the
+     * SAME state-N inputs cvara_rij/xuta/cvara_tt/cvara_ep), and
+     * reused below for phiit_relax (relaxation+buoyancy combined --
+     * buoyancy_i is left at 0 for source_time_stepping != 0, its
+     * contribution is already folded in here). */
+    cs_real_3_t qtheta1 = {0., 0., 0.};
+    if (source_time_stepping_active && cvara_tt != nullptr) {
+      const cs_real_t beta_c = (cpro_beta != nullptr) ? cpro_beta[c_id] : 0.;
+      cs_real_6_t r1;
+      cs_real_t theta2_1, eps1;
+      if (st_scheme == CS_TURB_RIJ_SOURCE_TS_VAR_TAU)
+        cs_turbulence_rit_source_step_variable_tau(
+          cs_turb_crij1, ctheta, cs_turb_ce2, cs_turb_ce3, beta_c,
+          grav, dt[c_id],
+          cvara_rij[c_id], xuta[c_id], cvara_tt[c_id], cvara_ep[c_id],
+          r1, qtheta1, &theta2_1, &eps1);
+      else
+        cs_turbulence_rit_source_step_frozen_tau(
+          cs_turb_crij1, ctheta, cs_turb_ce2, beta_c, grav, dt[c_id],
+          cvara_rij[c_id], xuta[c_id], cvara_tt[c_id], cvara_ep[c_id],
+          r1, qtheta1, &theta2_1, &eps1);
+    }
 
     cs_real_t prdtl = viscl[c_id]*xcpp[c_id];
     if (viscls != nullptr)
@@ -354,8 +1588,21 @@ _turb_flux_st(const char          *name,
     /* Phi_T for other models */
     else {
       for (cs_lnum_t i = 0; i < 3; i++) {
-        /* */
-        phiith[i] = - c1trit / xttdrbt * xuta[c_id][i]
+        /* source_time_stepping: the Monin relaxation piece
+         * (-c1trit/xttdrbt * xuta[i], matching the document's
+         * -(CR+Ctheta)/(2tau) * theta'u' term) is isolated here so it
+         * can be neutralized under source_time_stepping != 0 (handled instead
+         * by the exact/quadrature source-step integration in this file)
+         * without touching the rapid-redistribution pieces below
+         * (c2trit, c4trit), which are a separate closure mechanism,
+         * unrelated to the frozen/variable-tau source step, and are
+         * therefore left untouched regardless of source_time_stepping. */
+        const cs_real_t phiit_relax =
+          (st_scheme == CS_TURB_RIJ_SOURCE_TS_IMEX) ?
+          - c1trit / xttdrbt * xuta[c_id][i] :
+          (qtheta1[i] - xuta[c_id][i]) / dt[c_id];
+
+        phiith[i] = phiit_relax
                     + c2trit * cs_math_3_dot_product( gradv[c_id][i], xuta[c_id])
                     + c4trit * (-xrij[0][i] * gradt[c_id][0]
                                 -xrij[1][i] * gradt[c_id][1]
@@ -374,9 +1621,16 @@ _turb_flux_st(const char          *name,
          if (f_phi_ut != nullptr) /* Save it if needed */
            phi_ut[c_id][i] = phiit[i];
 
+         /* source_time_stepping: drop the c1trit/xttdrbt implicit
+          * stabilization when the corresponding explicit relaxation
+          * term (phiit_relax above) has itself been dropped. */
+         const cs_real_t c1_impl_term =
+           (cs_glob_turb_rans_model->source_time_stepping == 0) ?
+           c1trit/xttdrbt : 0.;
+
          cs_real_t imp_term
            =   cell_f_vol[c_id] * crom[c_id]
-             * (      alpha  * (c1trit/xttdrbt - c2trit*gradv[c_id][i][i])
+             * (      alpha  * (c1_impl_term - c2trit*gradv[c_id][i][i])
                  // TODO All the following matrix can be implicit
                 + (1.-alpha) * (xxc1*xnal[i]*xnal[i]/xttdrbw));
 
@@ -403,9 +1657,14 @@ _turb_flux_st(const char          *name,
         prod_by_scal_grad_ut[c_id][i] = prod_by_scal_grad_i;
 
       /* Production term due to the gravity */
+      /* source_time_stepping: this is the primary buoyancy mechanism for
+       * q_theta (matches the document's -beta_theta*theta2*g term
+       * exactly); handled by the source-step integration instead when
+       * source_time_stepping != 0. */
       cs_real_t buoyancy_i = 0.;
       if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
-          && has_buoyant_term == 1)
+          && has_buoyant_term == 1
+          && cs_glob_turb_rans_model->source_time_stepping == 0)
         buoyancy_i = -grav[i] * cpro_beta[c_id] * cvara_tt[c_id];
 
       if (buo_ut != nullptr) /* Save it if needed */
@@ -425,7 +1684,26 @@ _turb_flux_st(const char          *name,
         prod_ut[c_id][i] = prod_by_vel_grad_i + prod_by_scal_grad_i
                          + buoyancy_i - dissip_i;
 
-      rhs_ut[c_id][i] += (  prod_by_vel_grad_i + prod_by_scal_grad_i
+      /* GODUNOV scheme: for CS_RIJ_SCHEME_GODUNOV, the mechanical
+       * production terms (by mean velocity gradient and by mean
+       * temperature gradient) are already captured by the exact
+       * Riemann interface state, added explicitly as cross terms in
+       * _solve_rit's divqtheta assembly (built from i_velocity,
+       * i_reynolds_stress, i_temperature, i_turbulent_heat_flux).
+       * Adding the standard gradient-based values here as well would
+       * double-count them, exactly as pij for R. Diagnostics
+       * (prod_by_vel_grad_ut, prod_by_scal_grad_ut, prod_ut just
+       * above) are left showing the standard gradient-based value for
+       * reference; only the contribution actually added to rhs_ut is
+       * zeroed here. */
+      const int rij_scheme
+        = cs_glob_turb_rans_model->rij_discretization_scheme;
+      const cs_real_t mech_prod_vel =
+        (rij_scheme == CS_RIJ_SCHEME_GODUNOV) ? 0. : prod_by_vel_grad_i;
+      const cs_real_t mech_prod_scal =
+        (rij_scheme == CS_RIJ_SCHEME_GODUNOV) ? 0. : prod_by_scal_grad_i;
+
+      rhs_ut[c_id][i] += (  mech_prod_vel + mech_prod_scal
                           + buoyancy_i + phiit[i] - dissip_i)
                         * cell_f_vol[c_id]*crom[c_id];
 
@@ -898,6 +2176,9 @@ _solve_rit(const cs_field_t     *f,
   if (st_prv_id > -1)
     c_st_prv = (cs_real_3_t *)cs_field(st_prv_id)->val;
 
+  const int rij_scheme
+    = cs_glob_turb_rans_model->rij_discretization_scheme;
+
   cs_real_t _visls_0 = -1;
   const cs_real_t *viscls = nullptr;
   {
@@ -1061,7 +2342,7 @@ _solve_rit(const cs_field_t     *f,
   }
 
   /* Add Rusanov fluxes */
-  if (cs_glob_turb_rans_model->irijnu == 2) {
+  if (rij_scheme == CS_RIJ_SCHEME_RUSANOV) {
     cs_real_t *ipro_rusanov = cs_field("i_rusanov_diff")->val;
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       viscf[face_id] = cs::max(viscf[face_id], 0.5 * ipro_rusanov[face_id]);
@@ -1104,6 +2385,137 @@ _solve_rit(const cs_field_t     *f,
   eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
   eqp_loc.theta = thetv;
   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
+
+  /* GODUNOV scheme: explicit convection + cross-production
+   * of q_theta itself, from the continuous equation
+   *   d_t q_theta + u.grad(q_theta) + grad(u).q_theta + R.grad(T) = ...
+   * Godunov deferred-correction form, built from the exact Riemann
+   * interface state shared with the {u,R} and T/variance equations
+   * (i_velocity, i_reynolds_stress, i_temperature,
+   * i_turbulent_heat_flux). iconv is disabled below so that the
+   * standard convective operator is not assembled a second time on
+   * top of this explicit contribution -- same rationale as
+   * GODUNOV scheme notes for R in cs_turbulence_rij.cpp. */
+  if (rij_scheme == CS_RIJ_SCHEME_GODUNOV) {
+
+    const cs_lnum_2_t *restrict i_face_cells
+      = (const cs_lnum_2_t *)m->i_face_cells;
+    const cs_lnum_t *restrict b_face_cells
+      = (const cs_lnum_t *)m->b_face_cells;
+    const cs_real_3_t *restrict i_face_normal_g
+      = (const cs_real_3_t *)mq->i_face_normal;
+    const cs_real_3_t *restrict b_face_normal_g
+      = (const cs_real_3_t *)mq->b_face_normal;
+
+    const cs_real_3_t *c_vel_g = (const cs_real_3_t *)CS_F_(vel)->val;
+    const cs_real_t   *c_temp_g = f->val;
+
+    std::string i_name = std::string("i_") + f->name;
+    std::string b_name = std::string("b_") + f->name;
+    std::string i_tf_name =
+      std::string("i_") + f->name + "_turbulent_flux";
+    std::string b_tf_name =
+      std::string("b_") + f->name + "_turbulent_flux";
+
+    const cs_real_t *i_temp_g =
+      cs_field(i_name.c_str())->val;
+    const cs_real_t *b_temp_g =
+      cs_field(b_name.c_str())->val;
+    const cs_real_3_t *i_qtheta_g =
+      (const cs_real_3_t *)cs_field(i_tf_name.c_str())->val;
+    const cs_real_3_t *b_qtheta_g =
+      (const cs_real_3_t *)cs_field(b_tf_name.c_str())->val;
+    const cs_real_3_t *i_vel_g =
+      (const cs_real_3_t *) cs_field("i_velocity")->val;
+    const cs_real_3_t *b_vel_g =
+      (const cs_real_3_t *) cs_field("b_velocity")->val;
+    const cs_real_6_t *i_rij_g =
+      (const cs_real_6_t *) cs_field("i_reynolds_stress")->val;
+    const cs_real_6_t *b_rij_g =
+      (const cs_real_6_t *) cs_field("b_reynolds_stress")->val;
+
+    cs_real_3_t *divqtheta;
+    CS_MALLOC_HD(divqtheta, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    cs_arrays_set_value<cs_real_t, 1>(3*n_cells_ext, 0., (cs_real_t *)divqtheta);
+
+    cs_dispatch_sum_type_t i_sum_type_g =
+      ctx.get_parallel_for_i_faces_sum_type(m);
+    cs_dispatch_sum_type_t b_sum_type_g =
+      ctx.get_parallel_for_b_faces_sum_type(m);
+
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+      const cs_lnum_t c_id_l = i_face_cells[face_id][0];
+      const cs_lnum_t c_id_r = i_face_cells[face_id][1];
+
+      const cs_real_t qn_f =
+        cs_math_3_dot_product(i_qtheta_g[face_id], i_face_normal_g[face_id]);
+
+      cs_real_3_t rin_f;
+      cs_math_sym_33_3_product(i_rij_g[face_id], i_face_normal_g[face_id], rin_f);
+
+      const cs_real_t dtheta_l = i_temp_g[face_id] - c_temp_g[c_id_l];
+      const cs_real_t dtheta_r = i_temp_g[face_id] - c_temp_g[c_id_r];
+
+      cs_real_3_t flux_q_l, flux_q_r;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+
+        flux_q_l[i] =
+            (i_qtheta_g[face_id][i] - xut[c_id_l][i]) * imasfl[face_id]
+          + rin_f[i] * dtheta_l
+          + qn_f * (i_vel_g[face_id][i] - c_vel_g[c_id_l][i]);
+
+        flux_q_r[i] =
+          -(  (i_qtheta_g[face_id][i] - xut[c_id_r][i]) * imasfl[face_id]
+            + rin_f[i] * dtheta_r
+            + qn_f * (i_vel_g[face_id][i] - c_vel_g[c_id_r][i]));
+      }
+
+      if (c_id_l < n_cells)
+        cs_dispatch_sum<3>(divqtheta[c_id_l], flux_q_l, i_sum_type_g);
+      if (c_id_r < n_cells)
+        cs_dispatch_sum<3>(divqtheta[c_id_r], flux_q_r, i_sum_type_g);
+    });
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+
+      const cs_lnum_t c_id_l = b_face_cells[face_id];
+
+      const cs_real_t qn_f =
+        cs_math_3_dot_product(b_qtheta_g[face_id], b_face_normal_g[face_id]);
+
+      cs_real_3_t rin_f;
+      cs_math_sym_33_3_product(b_rij_g[face_id], b_face_normal_g[face_id], rin_f);
+
+      const cs_real_t dtheta = b_temp_g[face_id] - c_temp_g[c_id_l];
+
+      cs_real_3_t flux_q;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        flux_q[i] =
+            (b_qtheta_g[face_id][i] - xut[c_id_l][i]) * bmasfl[face_id]
+          + rin_f[i] * dtheta
+          + qn_f * (b_vel_g[face_id][i] - c_vel_g[c_id_l][i]);
+      }
+
+      if (c_id_l < n_cells)
+        cs_dispatch_sum<3>(divqtheta[c_id_l], flux_q, b_sum_type_g);
+    });
+
+    ctx.wait();
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        rhs_ut(c_id, i) -= divqtheta[c_id][i];
+    });
+    ctx.wait();
+
+    CS_FREE(divqtheta);
+
+    /* GODUNOV scheme notes: the standard convective operator MUST be
+     * disabled, or convection would be assembled twice for q_theta as
+     * well -- same double-counting risk as for R and T. */
+    eqp_loc.iconv = 0;
+  }
 
   cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                      1, // init
@@ -1395,4 +2807,3 @@ cs_turbulence_rit_div(const int        field_id,
   ctx.wait();
 }
 
-/*----------------------------------------------------------------------------*/

@@ -108,6 +108,32 @@ enum {
 };
 
 /*----------------------------------------------------------------------------
+ * Schemes for Rij discretization
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_RIJ_SCHEME_DEFAULT = 0,
+  CS_RIJ_SCHEME_IMPLICIT_VISCOSITY = 1,
+  CS_RIJ_SCHEME_RUSANOV = 2,
+  CS_RIJ_SCHEME_GODUNOV = 3
+
+} cs_rij_scheme_t;
+
+/*----------------------------------------------------------------------------
+ * Schemes for Rij/Rit source time stepping
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_TURB_RIJ_SOURCE_TS_CONVEXP = -1,  /* Convection full explicit */
+  CS_TURB_RIJ_SOURCE_TS_IMEX = 0,      /* Standard implicit/explicit */
+  CS_TURB_RIJ_SOURCE_TS_EXPONENTIAL = 1, /* Exact exponential integration */
+  CS_TURB_RIJ_SOURCE_TS_VAR_TAU = 2    /* Variable tau(t) trajectory */
+
+} cs_turb_rij_source_ts_t;
+
+/*----------------------------------------------------------------------------
  * hybrid models
  *----------------------------------------------------------------------------*/
 
@@ -247,11 +273,35 @@ typedef struct {
   int           irijco;       /* coupled solving of Rij
                                  - 1: true
                                  - 0: false (default) */
-  int           irijnu;       /* pseudo eddy viscosity in the matrix of momentum
-                                 equation to partially implicit div(rho R)
-                                 - 0: false (default)
-                                 - 1: true
-                                 - 2: Rusanov fluxes */
+  int           rij_discretization_scheme{0}; /* Rij discretization scheme:
+                                 - 0: CS_RIJ_SCHEME_DEFAULT
+                                      (false, default)
+                                 - 1: CS_RIJ_SCHEME_IMPLICIT_VISCOSITY
+                                      (true)
+                                 - 2: CS_RIJ_SCHEME_RUSANOV (Rusanov)
+                                 - 3: CS_RIJ_SCHEME_GODUNOV
+                                      (exact Godunov) */
+  [[deprecated("renamed to rij_discretization_scheme")]] \
+  int&          irijnu{rij_discretization_scheme};
+  int           verbosity;    /* verbosity level for Rij / Rit schemes
+                                 - 0: silent
+                                 - 1: moderate (default)
+                                 - >= 2: active logs on all cells */
+  int           source_time_stepping{0};
+                               /* treatment of the Rotta-Monin source step
+                                 (return-to-isotropy, thermal relaxation,
+                                 Boussinesq buoyancy) for the Reynolds-stress,
+                                 turbulent-heat-flux, temperature-variance,
+                                 and epsilon equations, once mean-gradient
+                                 production and diffusion have been handled
+                                 elsewhere. Requires:
+                                 rij_discret_sch == CS_RIJ_SCHEME_GODUNOV
+                                 and, for now, pure Rotta closure
+                                 (crij2 == 0).
+                                 - CS_TURB_RIJ_SOURCE_TS_CONVEXP (-1)
+                                 - CS_TURB_RIJ_SOURCE_TS_IMEX (0, default)
+                                 - CS_TURB_RIJ_SOURCE_TS_EXPONENTIAL (1)
+                                 - CS_TURB_RIJ_SOURCE_TS_VAR_TAU (2) */
   int           irijrb;       /* accurate treatment of R at the boundary (see
                                  \ref cs_boundary_condition_set_coeffs)
                                  - 1: true

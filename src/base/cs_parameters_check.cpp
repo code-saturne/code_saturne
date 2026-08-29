@@ -2317,6 +2317,23 @@ cs_parameters_check(void)
 
   }
 
+  /* source_time_stepping check */
+  if (   cs_glob_turb_rans_model->source_time_stepping
+         != CS_TURB_RIJ_SOURCE_TS_IMEX
+      && fabs(cs_turb_crij2) > 1e-300) {
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: source_time_stepping != 0 requires pure Rotta closure\n"
+              "(cs_turb_crij2 == 0).", __func__);
+  }
+
+  if (   cs_glob_turb_rans_model->source_time_stepping
+         == CS_TURB_RIJ_SOURCE_TS_VAR_TAU
+      && fabs(cs_turb_ce4) > 1e-300) {
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: source_time_stepping == CS_TURB_RIJ_SOURCE_TS_VAR_TAU\n"
+              "requires cs_turb_ce4 == 0.", __func__);
+  }
+
   /* In Lagrangian with two-way coupling, k-omega SST is forbidden (not
      properly implemented) */
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
@@ -2503,11 +2520,12 @@ cs_parameters_check(void)
 
   /* checks for RSM models */
   if (turb_model->order == CS_TURB_SECOND_ORDER) {
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                  _("while reading input data"),
-                                  "cs_glob_turb_rans_model->irijnu",
-                                  cs_glob_turb_rans_model->irijnu,
-                                  0, 4);
+    cs_parameters_is_in_range_int(
+      CS_ABORT_DELAYED,
+      _("while reading input data"),
+      "cs_glob_turb_rans_model->rij_discretization_scheme",
+      cs_glob_turb_rans_model->rij_discretization_scheme,
+      0, 4);
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("while reading input data"),
