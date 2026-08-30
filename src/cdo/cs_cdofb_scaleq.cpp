@@ -1010,7 +1010,7 @@ cs_cdofb_scaleq_init_context(cs_equation_param_t    *eqp,
 
   if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) {
 
-    eqc->get_mass_matrix = cs_hodge_fb_get;
+    eqc->get_mass_matrix = cs_hodge_fb_cost_get_mass;
     eqc->mass_hodge      = cs_hodge_init_context(connect,
                                             nullptr,
                                             &(eqc->mass_hodgep),
