@@ -786,7 +786,7 @@ powNov3(T x)
   if constexpr (N % 3 == 0)
     return powN<N/3>(x);
 
-  return cbrt(powN(x));
+  return cbrt(powN<N>(x));
 }
 
 /*--------------------------------------------------------------------------*/
@@ -812,7 +812,7 @@ powNov4(T x)
   else if constexpr (N % 2 == 0)
     return sqrt(powN<N/2>(x));
 
-  return sqrt(sqrt(powN(x)));
+  return sqrt(sqrt(powN<N>(x)));
 }
 
 /*----------------------------------------------------------------------------*/
