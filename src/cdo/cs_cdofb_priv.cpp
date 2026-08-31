@@ -233,7 +233,8 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
   } /* Switch on the formulation */
 
   /* Set the function pointer for advection_main */
-  if (cs_equation_param_has_diffusion(eqp)) {
+  if (   cs_equation_param_has_diffusion(eqp)
+      || cs_equation_param_has_face_mass(eqp)) {
     eqc->advection_main = cs_cdofb_advection;
   }
   else {

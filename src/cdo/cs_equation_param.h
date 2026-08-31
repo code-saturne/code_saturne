@@ -1437,6 +1437,35 @@ cs_equation_param_has_time(const cs_equation_param_t *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Ask if the parameters of the equation has face inertia
+ *
+ * \param[in] eqp  pointer to a \ref cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_face_mass(const cs_equation_param_t *eqp)
+{
+  assert(eqp != NULL);
+  bool has_face_mass = false;
+
+  if (cs_equation_param_has_time(eqp)) {
+    if (   eqp->time_hodgep.algo == CS_HODGE_ALGO_COST
+        && !(eqp->do_lumping))
+      has_face_mass = true;
+  }
+
+  if (cs_equation_param_has_reaction(eqp)) {
+    if (eqp->reaction_hodgep.algo == CS_HODGE_ALGO_COST)
+      has_face_mass = true;
+  }
+  return has_face_mass;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Ask if the parameters of the equation needs a source term
  *
  * \param[in] eqp  pointer to a \ref cs_equation_param_t
