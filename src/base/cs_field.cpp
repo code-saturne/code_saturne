@@ -979,7 +979,7 @@ cs_field_find_or_create(const char   *name,
     bool type_mismatch = false;
     int type_mask =   CS_FIELD_VARIABLE | CS_FIELD_PROPERTY
                     | CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR
-                    | CS_FIELD_CDO;
+                    | CS_FIELD_USER | CS_FIELD_CDO;
     if ((f->type & type_mask) != (type_flag & type_mask))
       type_mismatch = true;
 
