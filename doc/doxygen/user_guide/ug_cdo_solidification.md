@@ -33,7 +33,7 @@ Introduction
 ============
 
 Modelling phase changes between a solid and liquid phase is possible
-with code_saturne. Historically, this module has been developped for
+with code_saturne. Historically, this module has been developed for
 modelling the solidification process, hence the name "solidification"
 module. Nevertheless, the melting of a solid is also possible.
 

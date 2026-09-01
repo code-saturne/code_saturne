@@ -608,16 +608,16 @@
 
   Subsonic input example with density and velocity.
 
-  Two of three characteristics are incoming: two informations must be provided,
-  third is deduced by a scenario of 2-contact and 3-relaxation in the field.
+  Two of three characteristics are incoming: two pieces of information must be provided,
+  the third is deduced by a scenario of 2-contact and 3-relaxation in the field.
   Here we choose to give (rho, U).
 
   Example of a subsonic inlet (density, velocity)
 
-  2 characteristcs out ot 3 enter: both informations should be provided
-  the third is deducted by a scenario of 2-contact and 3-relaxation
+  2 characteristics out of 3 enter: both pieces of information should be provided,
+  the third is deduced by a scenario of 2-contact and 3-relaxation
   in the domain.
-  Here, whe choose to give (rho, U).
+  Here, we choose to give (rho, U).
 
   \snippet cs_user_boundary_conditions-compressible.cpp example_3
 
@@ -625,9 +625,9 @@
 
   Subsonic outlet example
 
-  1 characteristic out of 3 exits: 1 information must be given
+  1 characteristic out of 3 exits: 1 piece of information must be given,
   the 2 others are deduced by a 2-contact and 3-relaxation in the domain.
-  Here we choose to definer P.
+  Here we choose to define P.
 
   Turbulence and user scalars take a zero flux.
 
