@@ -1736,7 +1736,7 @@ Periodicity
 
 The rotational periodicity treatment is possible only in *Frozen
 Rotor*. However, the interface plane between rotor and stator
-must match in the azimutal $\theta$ direction:
+must match in the azimuthal $\theta$ direction:
   - \f$\theta_{min}^{rotor}(z)=\theta_{min}^{stator}(z),\quad\theta_{max}^{rotor}(z)=\theta_{max}^{stator}(z)\f$
 
 for all \f$z\f$ through the rotation axis direction.
@@ -1762,13 +1762,13 @@ As mentioned above, when a rotor/stator interface boundary exists (in
 particular for the *unsteady rotor/stator* model), boundary faces
 are joined by the solver during the computation, based on the current
 rotor position. It is thus important to be aware that the success of
-a joining operation is strongly dependant on the
+a joining operation is strongly dependent on the
 \underline quality of the mesh at the interface. More precisely,
 the refinement must be as similar as possible at both sides of the
 interface. Moreover, it is reminded that the tolerance parameter of
 a joining is a fraction of the shortest edge linked with a vertex of
 a joined face. Consequently, cells with high aspect ratios where the
-refinement in the azimutal \f$\theta\f$ direction is much coarser than
+refinement in the azimuthal \f$\theta\f$ direction is much coarser than
 those in one of the two others can also lead to a joining failure.
 In particular, the user should be careful to avoid elongated
 viscous layer type cells in curved areas such as a rotor-stator interface.
@@ -1776,10 +1776,10 @@ viscous layer type cells in curved areas such as a rotor-stator interface.
 If the meshes at both sides of the interface are very different
 such that the joining fails, advanced joining parameters are
 available. However, modifying the mesh is more likely to
-succeed. The introduction of a somekind of buffer cells layer on
+succeed. The introduction of some kind of buffer cells layer on
 both sides of the interface should be very valuable. Ideally, each
 of the two layers should have the same refinement and a constant
-azimutal step (this latter recommandation is relevant only for
+azimuthal step (this latter recommendation is relevant only for
 *unsteady rotor/stator* model).
 
 Alternative rotor/stator coupling

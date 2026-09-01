@@ -47,7 +47,7 @@
 
   The rotational periodicity treatment is possible only in <I>Frozen Rotor</I>.
   However, the interface plane between rotor and stator must match in the
-  azimutal \f$\theta\f$ direction:
+  azimuthal \f$\theta\f$ direction:
   \f$\theta_{\text{min}}^{\text{rotor}}(z)=\theta_{\text{min}}^{\text{stator}}(z),\quad\theta_{\text{max}}^{\text{rotor}}(z)=\theta_{\text{max}}^{\text{stator}}(z)\f$
   for all <I>z</I> through the rotation axis direction.
 
@@ -55,7 +55,7 @@
 
    - <I>Transient rotor/stator</I>: in the input mesh(es), the interface
    between rotor and stator domains has to be composed of
-   <I>boundary faces</I>. Then the inteface boundary faces are joined during
+   <I>boundary faces</I>. Then the interface boundary faces are joined during
    the computation and transformed into internal faces, as the preprocessing
    step can do in usual calculations. The classical way to fulfill this
    requirement is to provide <I>separate meshes</I> for each rotor or stator
@@ -63,7 +63,7 @@
    as they are topologically disjoint.
 
    - <I>Frozen Rotor</I>: the interface can be composed of boundary
-   faces (then the inteface boundary faces are joint at the beginning of
+   faces (then the interface boundary faces are joined at the beginning of
    the computation and turn into internal faces) or internal faces.
 
   \section tbm_data_setting Data setting
@@ -100,18 +100,18 @@
 
   \snippet cs_user_turbomachinery.cpp user_tbm_set_linear_rotation_velocity
 
-  \section tbm_user_bpg User recomandations
+  \section tbm_user_bpg User recommendations
 
-  \subsection tbm_user_bpg_mesh Meshing recomandations at interface
+  \subsection tbm_user_bpg_mesh Meshing recommendations at interface
 
-  As mentioned above, when a rotor/stator inteface boundary exists (in particular
+  As mentioned above, when a rotor/stator interface boundary exists (in particular
   for the CS_TURBOMACHINERY_TRANSIENT model), it is then joined by the solver
   during the computation. It is thus important to be aware that the success of
-  a joining operation is strongly dependant on the <I>quality of the mesh at the
+  a joining operation is strongly dependent on the <I>quality of the mesh at the
   interface</I>. More precisely, the refinement must be as similar as possible
   on both sides of the interface. Moreover, it is reminded that the tolerance
   parameter of a joining is a fraction of the shortest edge linked with a vertex
-  to join. Consequently, cells where the refinement in the azimutal \f$\theta\f$
+  to join. Consequently, cells where the refinement in the azimuthal \f$\theta\f$
   direction is much coarser than those in one of the two others can also lead
   to a joining failure. In particular, the user should be wary of boundary
   layers.
@@ -123,7 +123,7 @@
   modifying the mesh is more likely to succeed. The introduction of some kind of
   buffer cells layer on both sides of the interface is strongly recommended.
   Ideally, each of the two layers should have the same refinement and a constant
-  azimutal step (this latter recommandation is relevant only for
+  azimuthal step (this latter recommendation is relevant only for
   CS_TURBOMACHINERY_TRANSIENT model).
 
   \subsection tbm_user_bpg_cpl Alternative rotor/stator coupling
