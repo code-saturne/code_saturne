@@ -647,43 +647,76 @@ _aggregation_stats_log(const cs_grid_t  *f,
 
   const cs_lnum_t *c_coarse_row = (const cs_lnum_t *)(c->coarse_row);
 
+  cs_dispatch_context ctx;
+  if (f->alloc_mode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+  cs_alloc_mode_t amode = ctx.alloc_mode();
+
   cs_lnum_t *c_aggr_count;
 
-  CS_MALLOC(c_aggr_count, c_n_rows, cs_lnum_t);
-  for (cs_lnum_t i = 0; i < c_n_rows; i++)
-    c_aggr_count[i] = 0;
+  CS_MALLOC_HD(c_aggr_count, c_n_rows, cs_lnum_t, amode);
+  cs_arrays_set_zero<cs_lnum_t, 1>(ctx, c_n_rows, c_aggr_count);
 
-  for (cs_lnum_t i = 0; i < f_n_rows; i++) {
+  ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
     cs_lnum_t j = c_coarse_row[i];
     if (j > -1)
-      c_aggr_count[j] += 1;
-  }
+      cs::atomic::fetch_add(&(c_aggr_count[j]), (cs_lnum_t)1);
+  });
 
-  cs_lnum_t aggr_min = f->n_rows, aggr_max = 0;
-  cs_gnum_t aggr_tot = 0;
+  struct cs_int_n<3> rd;
+  struct cs_reduce_min_max_sum_ni<1> reducer;
 
-  for (cs_lnum_t i = 0; i < c_n_rows; i++) {
-    aggr_min = cs::min(aggr_min, c_aggr_count[i]);
-    aggr_max = cs::max(aggr_max, c_aggr_count[i]);
-    aggr_tot += c_aggr_count[i];
-  }
+  ctx.parallel_for_reduce(c_n_rows, rd, reducer,
+    [=] CS_F_HOST_DEVICE (cs_lnum_t i, cs_int_n<3> &res)
+  {
+    cs_lnum_t ac = c_aggr_count[i];
+    res.i[0] = ac;
+    res.i[1] = ac;
+    res.i[2] = ac;
+  });
+
+  ctx.wait();
+
+  cs_lnum_t aggr_min = rd.i[0], aggr_max = rd.i[1];
+  cs_gnum_t aggr_tot = rd.i[2];
 
 #if defined(HAVE_MPI)
   if (f->comm != MPI_COMM_NULL) {
-    cs_lnum_t _aggr_min = aggr_min, _aggr_max = aggr_max;
-    cs_gnum_t _tot[2] = {aggr_tot, c_n_rows_g}, tot[2] = {0, 0};
-    MPI_Allreduce(&_aggr_min, &aggr_min, 1, CS_MPI_LNUM, MPI_MIN, f->comm);
-    MPI_Allreduce(&_aggr_max, &aggr_max, 1, CS_MPI_LNUM, MPI_MAX, f->comm);
-    MPI_Allreduce(&_tot, &tot, 2, CS_MPI_GNUM, MPI_SUM, f->comm);
+    cs_gnum_t tot[2] = {aggr_tot, c_n_rows_g};
+    MPI_Allreduce(MPI_IN_PLACE, &aggr_min, 1, CS_MPI_LNUM, MPI_MIN, f->comm);
+    MPI_Allreduce(MPI_IN_PLACE, &aggr_max, 1, CS_MPI_LNUM, MPI_MAX, f->comm);
+    MPI_Allreduce(MPI_IN_PLACE, &tot, 2, CS_MPI_GNUM, MPI_SUM, f->comm);
     aggr_tot = tot[0];
     c_n_rows_g = tot[1];
   }
+#endif
+
+  cs_gnum_t n_unaggr = 0;
+  if (aggr_min == 1) {
+    ctx.parallel_for_reduce_sum(c_n_rows, n_unaggr, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t i,
+                                 CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &_n_unaggr)
+    {
+      if (c_aggr_count[i] == 1)
+        _n_unaggr += 1;
+    });
+
+    ctx.wait();
+  }
+
+#if defined(HAVE_MPI)
+  if (f->comm != MPI_COMM_NULL)
+    MPI_Allreduce(MPI_IN_PLACE, &n_unaggr, 1, CS_MPI_GNUM, MPI_SUM, f->comm);
 #endif
 
   if (c_n_rows_g > 0)  // May be locally 0 in case of grid merging
     bft_printf("       aggregation min = %ld; max = %ld; mean = %8.2f\n",
                (long)aggr_min, (long)aggr_max,
                (double)aggr_tot/(double)c_n_rows_g);
+  if (n_unaggr > 0)
+    bft_printf("       n unaggregated: %lu\n",
+               (unsigned long)n_unaggr);
 
   cs_lnum_t aggr_count = aggr_max - aggr_min + 1;
 
@@ -694,15 +727,15 @@ _aggregation_stats_log(const cs_grid_t  *f,
     bft_printf("       histogram\n");
 
     cs_lnum_t *histogram;
-    CS_MALLOC(histogram, aggr_count, cs_lnum_t);
-    for (cs_lnum_t i = 0; i < aggr_count; i++)
-      histogram[i] = 0;
-    for (cs_lnum_t ic = 0; ic < c_n_rows; ic++) {
+    CS_MALLOC_HD(histogram, aggr_count, cs_lnum_t, ctx.alloc_mode(true));
+    cs_arrays_set_zero<cs_lnum_t, 1>(ctx, aggr_count, histogram);
+    ctx.parallel_for(c_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ic) {
       for (cs_lnum_t i = 0; i < aggr_count; i++) {
         if (c_aggr_count[ic] == aggr_min + i)
-          histogram[i] += 1;
+          cs::atomic::fetch_add(&(histogram[i]), (cs_lnum_t)1);
       }
-    }
+    });
+    ctx.wait();
 #if defined(HAVE_MPI)
     if (f->comm != MPI_COMM_NULL)
       MPI_Allreduce(MPI_IN_PLACE, histogram, aggr_count, CS_MPI_LNUM, MPI_SUM,
@@ -714,6 +747,7 @@ _aggregation_stats_log(const cs_grid_t  *f,
                  (long)(aggr_min + i), epsp);
     }
     CS_FREE(histogram);
+
   }
 
   CS_FREE(c_aggr_count);
@@ -6010,13 +6044,14 @@ _assign_to_aggregate(cs_dispatch_context   &ctx,
          counts), although the aggregation strengh then becomes
          arbitrary. */
 
-      if (   aggr_row[jj] > -1
-          && aggr_count[jj] < max_aggregation
+      cs_lnum_t kk = aggr_row[jj];
+      if (   kk > -1
+          && aggr_count[kk] < max_aggregation
           && max_weight_aggr <= aggr_crit) {
         if (   max_weight_aggr < aggr_crit
             || jj > preferred_aggr) {
           max_weight_aggr = aggr_crit;
-          preferred_aggr = jj;
+          preferred_aggr = kk;
         }
       }
     }
@@ -6097,6 +6132,137 @@ _assign_to_aggregate(cs_dispatch_context   &ctx,
     }
 
   }
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+    std::chrono::microseconds elapsed
+      = std::chrono::duration_cast
+          <std::chrono::microseconds>(t_stop - t_start);
+    printf("%d:   %s (level %d)", cs_glob_rank_id, __func__, level);
+    printf(" = %ld\n", elapsed.count());
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Try reassigning some rows to singletons.
+ *
+ * parameters:
+ *   ctx                   <-- associated dispatch context
+ *   level                 <-- current level (for logging)
+ *   n_rows                <-- Number of rows
+ *   row_index             <-- MSR row index
+ *   col_id                <-- MSR column id
+ *   aggr_strength         <-- Base aggregation strength
+ *   aggr_count            <-> Row aggregation count
+ *   preferred_singleton   --- Work array.
+ *   aggr_row              --> Row aggregation id
+ *----------------------------------------------------------------------------*/
+
+static void
+_reassign_to_singleton(cs_dispatch_context   &ctx,
+                       int                    level,
+                       cs_lnum_t              n_rows,
+                       const cs_lnum_t       *row_index,
+                       const cs_lnum_t       *col_id,
+                       float                 *aggr_strength,
+                       int                   *aggr_count,
+                       cs_lnum_t             *preferred_singleton,
+                       cs_lnum_t             *aggr_row)
+{
+  CS_PROFILE_FUNC_RANGE();
+
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    t_start = std::chrono::high_resolution_clock::now();
+
+  /* Check for neighboring singletons */
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+
+    preferred_singleton[ii] = -2;
+
+    /* Aggregation "roots" are not considered, as this would complicate
+       aggregation updates. */
+
+    cs_lnum_t aggr_id = aggr_row[ii];
+    if (aggr_id < 0 || aggr_id == ii)
+      return;
+
+    /* Do not replace a singleton with another one */
+
+    if (aggr_count[aggr_id] < 3)
+      return;
+
+    float  max_weight_single = 0;
+    cs_lnum_t preferred_single = -2;
+
+    cs_lnum_t row_s_id = row_index[ii];
+    cs_lnum_t row_e_id = row_index[ii+1];
+    for (cs_lnum_t ix0 = row_s_id; ix0 < row_e_id; ix0++) {
+      cs_lnum_t jj = col_id[ix0];
+      if (jj >= n_rows || aggr_row[jj] != -2)
+        continue;
+
+      float aggr_crit = aggr_strength[ix0];
+      if (aggr_crit > max_weight_single) {
+        max_weight_single = aggr_crit;
+        preferred_single = jj;
+      }
+    }
+
+    if (preferred_single != -2)
+      preferred_singleton[ii] = preferred_single;
+
+  });
+
+  // Now match singletons.
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+
+    cs_lnum_t aggr_id = aggr_row[ii];
+
+    if (aggr_id == -2)
+      aggr_id = ii;
+    else if (aggr_id == -1)
+      return;
+
+    if (aggr_count[aggr_id] != 1)
+      return;
+
+    float  max_weight_aggr = 0;
+    cs_lnum_t preferred_aggr = -2;
+
+    cs_lnum_t row_s_id = row_index[ii];
+    cs_lnum_t row_e_id = row_index[ii+1];
+    for (cs_lnum_t ix0 = row_s_id; ix0 < row_e_id; ix0++) {
+      cs_lnum_t jj = col_id[ix0];
+      if (jj >= n_rows)
+        continue;
+
+      if (preferred_singleton[jj] != ii)
+        continue;
+
+      float aggr_crit = aggr_strength[ix0];
+      if (aggr_crit > max_weight_aggr) {
+        max_weight_aggr = aggr_crit;
+        preferred_aggr = jj;
+      }
+    }
+
+    if (preferred_aggr != -2) {
+      cs_lnum_t kk = aggr_row[preferred_aggr];
+      if (aggr_row[kk] != kk)
+        return;
+
+      cs::atomic::fetch_add(&(aggr_count[kk]), (int)-1);
+
+      aggr_row[ii] = ii;
+      aggr_row[preferred_aggr] = ii;
+      aggr_count[ii] += 1;
+    }
+
+  });
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -6270,7 +6436,7 @@ _automatic_aggregation_dx_msr_pgm
 
   const int npass_max = 10;
   const float threshold_base_factor = 6;
-  const float max_unassigned_ratio = 1./(10*max_aggregation);
+  const float max_unassigned_ratio = 1./(20*max_aggregation);
 
   const cs_lnum_t f_n_rows = f->n_rows;
 
@@ -6280,7 +6446,8 @@ _automatic_aggregation_dx_msr_pgm
   }
 
   cs_real_t epsilon = 1.e-6;
-  bool force_aggr_singleton = false;
+  bool force_aggr_singleton = true;
+  constexpr bool reset_singletons_to_unaggr = false;
 
   short int  *c_cardinality = nullptr;
   float      *aggr_strength = nullptr;
@@ -6366,6 +6533,13 @@ _automatic_aggregation_dx_msr_pgm
                                 (cs_lnum_t ii,
                                  CS_DISPATCH_REDUCER_TYPE(cs_lnum_t) &_n_unaggr)
     {
+      if (reset_singletons_to_unaggr) {
+        if (aggr_row[ii] == ii) {
+          if (c_aggr_count[ii] == 1)
+            aggr_row[ii] = -2;
+        }
+      }
+
       if (aggr_row[ii] == -2)
         _n_unaggr += 1;
     });
@@ -6456,6 +6630,9 @@ _automatic_aggregation_dx_msr_nd(const cs_grid_t       *f,
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
+
+  // If true, try to reassign a neighboring row to singletons.
+  const bool reassing_to_singletons = true;
 
   // Use constant threshold factor instead of cardinality from previous
   // code versions
@@ -6628,6 +6805,9 @@ _automatic_aggregation_dx_msr_nd(const cs_grid_t       *f,
     ctx.parallel_for_reduce(f_n_rows, rd, reducer, [=] CS_F_HOST_DEVICE
                             (cs_lnum_t ii, cs_int_n<2> &res)
     {
+      // Mark singletons due to data races as free again.
+      if (f_c_row[ii] == ii && c_aggr_count[ii] == 1)
+        f_c_row[ii] = -2;
       res.i[0] = (f_c_row[ii] == -2) ? 1 : 0;
       res.i[1] = (f_c_row[ii] == ii) ? 1 : 0;
     });
@@ -6705,6 +6885,22 @@ _automatic_aggregation_dx_msr_nd(const cs_grid_t       *f,
     queue_size_prev = queue_size;
 
   } /* Loop on passes */
+
+  if (reassing_to_singletons) {
+    /* Reuse ag_queue as work arrray */
+    cs_lnum_t *preferred_singleton
+      = reinterpret_cast<cs_lnum_t *>(ag_queue.data());
+
+    _reassign_to_singleton(ctx,
+                           f->level,
+                           f_n_rows,
+                           row_index,
+                           col_id,
+                           aggr_strength,
+                           c_aggr_count,
+                           preferred_singleton,
+                           f_c_row);
+  }
 
   /* Now compact aggregate
      (try to reuse f_row_id as work array if needed) */

@@ -297,6 +297,33 @@ struct cs_reduce_min_max_sum_nr {
   }
 };
 
+// n min_max_sum (int)
+
+template<size_t stride>
+struct cs_reduce_min_max_sum_ni {
+  using T = cs_int_n<3*stride>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    static constexpr cs_lnum_t i_min = std::numeric_limits<cs_lnum_t>::min();
+    static constexpr cs_lnum_t i_max = std::numeric_limits<cs_lnum_t>::max();
+    for (size_t i = 0; i < stride; i++) {
+      a.i[i] = i_max;
+      a.i[stride + i] = i_min;
+      a.i[2*stride + i] = 0.;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(T &a, const T &b) const {
+    for (size_t i = 0; i < stride; i++) {
+      a.i[i] = cs::min(a.i[i], b.i[i]);
+      a.i[stride + i] = cs::max(a.i[stride + i], b.i[stride + i]);
+      a.i[2*stride + i] += b.i[2*stride + i];
+    }
+  }
+};
+
 // Min (1 real), max (1 real) and sum (1 int)
 
 struct cs_reduce_min1float_max1float_sum1int {
