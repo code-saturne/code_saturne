@@ -5709,6 +5709,40 @@ _try_to_aggregate_ij_nd(cs_lnum_t   i,
 {
   bool aggregated = false;
 
+  /* If none of the rows are aggregated, pick one (preferrentially
+     the lowest one) as aggregate.
+
+     We will not cancel the aggregation even if we are not able to
+     aggregate j with i when another thread brings the counter too
+     high or matches j with another row, as additional threads may
+     already have used that reference.
+     For example the current thread (a) assigns i to row i,
+     thread (b) assigns j to k before (a) has the time to do this,
+     and concurently (c) assigns l to i;
+     In such cases, the aggregation of i and j should fail, but we
+     cannot risk removing the association of i: it becomes a singleton,
+     and will hopefully be associated with other rows later. */
+
+  if (i_aggr < -1 && j_aggr < -1) {
+    if (i > j) { // swap to aggregate to lowest
+      cs_lnum_t k = j;
+      j = i; i = k;
+    }
+    if (cs::atomic::compare_exchange(&(aggr_row[i]), i_aggr, i)) {
+      i_aggr = i;
+    }
+    else if (cs::atomic::compare_exchange(&(aggr_row[j]), j_aggr, j)) {
+      j_aggr = j;
+    }
+  }
+
+  if (i_aggr < -1 && j_aggr > -1) {
+    // Swap to simplify code path.
+    cs_lnum_t k = j, k_aggr = j_aggr;
+    j = i; j_aggr = i_aggr;
+    i = k; i_aggr = k_aggr;
+  }
+
   if (i_aggr > -1 && j_aggr < -1 ) {
     if (  cs::atomic::fetch_add(&(aggr_count[i_aggr]), 1)
         < max_count) {
@@ -5717,37 +5751,6 @@ _try_to_aggregate_ij_nd(cs_lnum_t   i,
     }
     if (aggregated == false) // Another thread got there first, so drop update.
       cs::atomic::fetch_add(&(aggr_count[i_aggr]), -1);
-  }
-  else if (i_aggr < -1 && j_aggr > -1) {
-    if (  cs::atomic::fetch_add(&(aggr_count[j_aggr]), 1)
-        < max_count) {
-      if (cs::atomic::compare_exchange(&(aggr_row[i]), i_aggr, j_aggr))
-        aggregated = true;
-    }
-    if (aggregated == false) // Another thread got there first, so drop update.
-      cs::atomic::fetch_add(&(aggr_count[j_aggr]), -1);
-  }
-  else if (i_aggr < -1 && j_aggr < -1) {
-    if (i > j) { // swap to aggregate to lowest
-      cs_lnum_t k = j;
-      j = i; i = k;
-    }
-    if (cs::atomic::compare_exchange(&(aggr_row[i]), i_aggr, i)) {
-      // Since we associated a coarse row id with row i, we
-      // do not cancel the aggregation even if another thread
-      // brings the counter too high, as additional threads may
-      // already have used that reference.
-      // For example the current thread (a) assigns i to row i,
-      // thread (b) assigns j to k before (a) has the time
-      // to do this, and concurently (c) assigns l to i;
-      // In such cases, the aggregation of i and j should fail, but we
-      // cannot risk removing the association of i: it becomes a singleton,
-      // and will hopefully be associated with other rows later.
-      if (cs::atomic::compare_exchange(&(aggr_row[j]), j_aggr, i)) {
-        aggregated = true;
-        cs::atomic::fetch_add(&(aggr_count[i]), 1);
-      }
-    }
   }
 
   return aggregated;
@@ -7007,10 +7010,7 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
                              &d_val,
                              &x_val);
 
-  const cs_lnum_t   *cell_face = grid->cell_face;
-
-  double anmin = HUGE_VAL, anmax = -HUGE_VAL;
-  double rmin = HUGE_VAL, rmax = -HUGE_VAL;
+  const cs_lnum_t  *cell_face = (xa0 != nullptr) ? grid->cell_face : nullptr;
 
   // For top-level grid, cell_face accessible through matrix.
   if (interp == 1 && xa0 != nullptr && cell_face == nullptr) {
@@ -7027,13 +7027,17 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
       cell_face = nullptr;
   }
 
-  if (interp == 0 || cell_face == nullptr) {
-    rmin = 0; rmax = 0;
-  }
+  cs_dispatch_context ctx;
 
   /* Evaluate matrix anisotropy */
 
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+  struct cs_double_n<4> rd;
+  struct cs_reduce_min_max_nr<2> reducer;
+
+  ctx.parallel_for_reduce
+    (n_rows, rd, reducer,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t ii, cs_double_n<4> &res)
+  {
     const cs_lnum_t s_id = row_index[ii];
     const cs_lnum_t e_id = row_index[ii+1];
 
@@ -7046,16 +7050,22 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
 
       if (cell_face != nullptr) {
         cs_real_t v_o_v0 = v / xa0[cell_face[r_idx]];
-        rmin = cs::min(rmin, v_o_v0);
-        rmax = cs::max(rmax, v_o_v0);
+        res.r[0] = cs::min(res.r[0], v_o_v0);
+        res.r[2] = cs::max(res.r[2], v_o_v0);
       }
     }
 
     w3 = w4 / w3;
-    if (w3 < anmin)
-      anmin = w3;
-    else if (w3 > anmax)
-      anmax = w3;
+    res.r[1] = w3;
+    res.r[3] = w3;
+  });
+  ctx.wait();
+
+  double rmin = rd.r[0], rmax = rd.r[2];
+  double anmin = rd.r[1], anmax = rd.r[3];
+
+  if (cell_face == nullptr) {
+    rmin = 0; rmax = 0;
   }
 
 #if defined(HAVE_MPI)

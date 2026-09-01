@@ -50,8 +50,10 @@
 
 #include "fvm/fvm_io_num.h"
 
+#include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "alge/cs_blas.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_file.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
@@ -166,21 +168,18 @@ _diag_dom_diag_contrib(const cs_real_t  *restrict da,
                        cs_lnum_t         n_rows,
                        cs_lnum_t         n_cols_ext)
 {
-  cs_lnum_t  ii;
+  cs_dispatch_context ctx;
 
   if (da != nullptr) {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++)
-      dd[ii] = fabs(da[ii]);
-    for (ii = n_rows; ii < n_cols_ext; ii++)
-      dd[ii] = 0.0;
+    ctx.parallel_for(n_cols_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      if (ii < n_rows)
+        dd[ii] = cs::abs(da[ii]);
+      else
+        dd[ii] = 0.0;
+    });
   }
-  else {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_cols_ext; ii++)
-      dd[ii] = 0.0;
-  }
-
+  else
+    cs_arrays_set_zero<cs_real_t, 1>(ctx, n_cols_ext, dd);
 }
 
 /*----------------------------------------------------------------------------
@@ -240,27 +239,25 @@ _diag_dom_diag_normalize(const cs_real_t  *restrict da,
                          cs_real_t        *restrict dd,
                          cs_lnum_t         n_rows)
 {
-  cs_lnum_t  ii;
+  cs_dispatch_context ctx;
 
   if (da != nullptr) {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++) {
-      if (fabs(da[ii]) > 1.e-18)
-        dd[ii] /= fabs(da[ii]);
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      if (cs::abs(da[ii]) > 1.e-18)
+        dd[ii] /= cs::abs(da[ii]);
       else if (dd[ii] > -1.e-18)
         dd[ii] = -1.e18;
       else
         dd[ii] = 0;
-    }
+    });
   }
   else {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       if (dd[ii] > -1.e-18)
         dd[ii] = -1.e18;
       else
         dd[ii] = 0;
-    }
+    });
   }
 }
 
@@ -553,45 +550,46 @@ _diag_dom_dist(const cs_matrix_t  *matrix,
 
   cs_lnum_t  n_rows = ms->n_rows;
 
+  cs_dispatch_context ctx;
+
   /* diagonal contribution */
 
   _diag_dom_diag_contrib(mc->d_val, dd, ms->n_rows, ms->n_cols_ext);
 
   /* extra-diagonal contribution */
 
-  if (mc->e_val != nullptr) {
+  for (int i = 0; i < 2; i++) {
 
-    const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+    const cs_lnum_t *row_index = nullptr;
+    const cs_real_t *val = nullptr;
 
-#   pragma omp parallel for
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-      const cs_real_t *restrict m_row = mc->e_val + ms_e->row_index[ii];
-      cs_lnum_t n_cols = ms_e->row_index[ii+1] - ms_e->row_index[ii];
-      cs_real_t sii = 0.0;
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-        sii -= fabs(m_row[jj]);
-      dd[ii] += sii;
+    if (i == 0 && mc->e_val != nullptr) {
+      const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+      row_index = ms_e->row_index;
+      val = mc->e_val;
+    }
+    else if (i == 1 && mc->h_val != nullptr) {
+      const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
+      row_index = ms_h->row_index;
+      val = mc->h_val;
     }
 
-  }
-
-  if (mc->h_val != nullptr) {
-
-    const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
-
-#   pragma omp parallel for
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-      const cs_real_t *restrict m_row = mc->h_val + ms_h->row_index[ii];
-      cs_lnum_t n_cols = ms_h->row_index[ii+1] - ms_h->row_index[ii];
-      cs_real_t sii = 0.0;
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-        sii -= fabs(m_row[jj]);
-      dd[ii] += sii;
+    if (row_index != nullptr) {
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        const cs_real_t *restrict m_row = val + row_index[ii];
+        cs_lnum_t n_cols = row_index[ii+1] - row_index[ii];
+        cs_real_t sii = 0.0;
+        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+          sii -= cs::abs(m_row[jj]);
+        dd[ii] += sii;
+      });
     }
 
   }
 
   _diag_dom_diag_normalize(mc->d_val, dd, n_rows);
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------
@@ -1786,7 +1784,7 @@ _frobenius_norm(const cs_matrix_t  *m)
         static_cast<const cs_matrix_struct_dist_t *>(m->structure);
       const auto ms_e   = static_cast<const cs_matrix_struct_csr_t *>(&(ms->e));
       const auto mc = static_cast<const cs_matrix_coeff_t  *>(m->coeffs);
-      cs_lnum_t n_vals = ms_e->row_index[m->n_rows];
+      cs_lnum_t n_vals = cs_get_host_value(&(ms_e->row_index[m->n_rows]));
       double d_mult = (m->eb_size == 1) ? m->db_size : 1;
       retval = _dot_xx(m, d_stride*m->n_rows, mc->d_val);
       retval += d_mult * _dot_xx(m, e_stride*n_vals, mc->e_val);
