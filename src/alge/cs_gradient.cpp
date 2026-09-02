@@ -2523,6 +2523,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
   const cs_real_t *restrict i_face_surf = nullptr;
   const cs_real_t *restrict b_face_surf = nullptr;
   if (is_porous) {
+    cs_mesh_adjacencies_update_cell_i_faces();
     c2f = ma->cell_i_faces;
     c_disable_flag = fvq->c_disable_flag;
     has_dc = fvq->has_disable_flag; /* Has cells disabled? */
