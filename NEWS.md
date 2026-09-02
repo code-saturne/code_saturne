@@ -3,6 +3,9 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix `resource_name` detection when only the batch system is defined for the
+  `code_saturne submit` command.
+
 - Gas combustion: fix possible memory corruption when n_gas_species > 1.
 
 - Fix usage of `cs_user_scripts.py` with Python 3.13 and above.
