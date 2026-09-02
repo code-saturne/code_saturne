@@ -3,6 +3,9 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix `resource_name` detection when only the batch system is defined for the
+  `code_saturne submit` command.
+
 - Atmo: fix bug in chemistry boundary conditions and initialization using
   chemisty file.
 
