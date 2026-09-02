@@ -832,15 +832,15 @@ _cs_rad_transfer_sol(int                        gg_id,
            * Increment absorption and emission for Atmo on the fly */
 
           if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
-
+            const int atmo_ir_id = rt_params->atmo_ir_id;
             ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
               cs_real_t aa = radiance[cell_id] * domegat;
-              int_rad_domega[cell_id]  += aa;
+              int_rad_domega[cell_id] += aa;
               /* Absorption */
               int_abso[cell_id] += ck_u_d[cell_id] * aa;
               /* No emission in solar bands
                * TODO: transfer from direct to diffuse solar? */
-              if (gg_id == rt_params->atmo_ir_id) {
+              if (gg_id == atmo_ir_id) {
                 /* Emmission */
                 int_emi[cell_id] -=   ck_u_d[cell_id]
                                     * c_stefan * domegat * onedpi
