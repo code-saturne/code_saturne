@@ -519,6 +519,8 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
        or (not resource_name in run_conf.sections
            and not specific_resource_name in run_conf.sections):
         resource_name = i_c['batch']
+        if resource_name:
+            resource_name = resource_name.lower()
         if resource_name and r_c['run_id']:
             specific_resource_name = resource_name + "/run_id=" + r_c['run_id'].lower()
         if not resource_name \

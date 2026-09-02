@@ -3,6 +3,9 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix `resource_name` detection when only the batch system is defined for the
+  `code_saturne submit` command.
+
 - Fix memory leak in 1D thermal postprocessing function
 
 - Gas combustion: fix possible memory corruption when n_gas_species > 1.
