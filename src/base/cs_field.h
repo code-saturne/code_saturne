@@ -517,6 +517,9 @@ public:
   );
 
   void
+  update_gradient_size();
+
+  void
   clear
   (
     const int time_id = -1
@@ -534,8 +537,8 @@ public:
 
   cs_array_2d<cs_real_t> **_vals;
   cs_array_3d<cs_real_t> **_ns_vals;
-  cs_array_2d<cs_real_t> *_grad;
-  cs_array_3d<cs_real_t> *_ns_grad;
+  cs_array_3d<cs_real_t> *_grad;
+  cs_array_4d<cs_real_t> *_ns_grad;
 
   CS_F_HOST_DEVICE
   void
@@ -646,6 +649,10 @@ public:
   CS_F_HOST
   void
   map_to_ns_data(void);
+
+  CS_F_HOST
+  void
+  map_to_ns_gradient(void);
 
 };
 
@@ -849,6 +856,16 @@ cs_field_allocate_gradients(cs_field_t  *f);
 
 void
 cs_field_remap_sub_fields_data(const int owner_id);
+
+/*----------------------------------------------------------------------------
+ * Remap gradient arrays arrays for sub-field values.
+ *
+ * parameters:
+ *   owner_id <-- id of owner field structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_remap_sub_fields_gradient(const int owner_id);
 
 /*----------------------------------------------------------------------------
  * Map existing value arrays to field descriptor.

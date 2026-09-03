@@ -1779,34 +1779,64 @@ cs_turbomachinery_resize_cell_fields(void)
           }
         }
 
-      }
-
       /* grad is now handled as cs_array => Hence it is based
        * on "owner()"
        */
-      if (f->owner()) {
+        // We only update gradient if object is allocated, hence size != 0;
+        if (f->_grad->size() != 0)  {
+          /* The function also updates the public pointers */
+          f->update_gradient_size();
 
-        f->_grad->reshape(_n_cells, 3*f->dim);
+          if (halo != nullptr) {
+            cs_halo_sync_var_strided(halo,
+                                     CS_HALO_EXTENDED,
+                                     f->grad,
+                                     3*f->dim);
 
-        if (halo != nullptr) {
-          cs_halo_sync_var_strided(halo,
-                                   CS_HALO_EXTENDED,
-                                   f->grad,
-                                   3*f->dim);
+            if (f->dim == 1)
+              cs_halo_perio_sync_var_vect(halo,
+                                          CS_HALO_EXTENDED,
+                                          f->grad,
+                                          3);
+            else if (f->dim == 3)
+              cs_halo_perio_sync_var_tens(halo,
+                                          CS_HALO_EXTENDED,
+                                          f->grad);
+            else if (f->dim == 6)
+              cs_halo_perio_sync_var_sym_tens_grad(halo,
+                                                   CS_HALO_EXTENDED,
+                                                   f->grad);
+          }
 
-          if (f->dim == 1)
-            cs_halo_perio_sync_var_vect(halo,
-                                        CS_HALO_EXTENDED,
-                                        f->grad,
-                                        3);
-          else if (f->dim == 3)
-            cs_halo_perio_sync_var_tens(halo,
-                                        CS_HALO_EXTENDED,
-                                        f->grad);
-          else if (f->dim == 6)
-            cs_halo_perio_sync_var_sym_tens_grad(halo,
-                                                 CS_HALO_EXTENDED,
-                                                 f->grad);
+          /* Remap sub-fields gradients */
+          if (f->has_sub_fields()) {
+            cs_field_remap_sub_fields_gradient(f->id);
+            if (halo != nullptr) {
+              for (int sf_id = 0; sf_id < n_fields; sf_id++) {
+                cs_field_t *sf = cs_field_by_id(sf_id);
+                if (sf->is_sub_field_of(f_id)) {
+                  cs_halo_sync_var_strided(halo,
+                                           CS_HALO_EXTENDED,
+                                           sf->grad,
+                                           3*sf->dim);
+
+                  if (f->dim == 1)
+                    cs_halo_perio_sync_var_vect(halo,
+                                                CS_HALO_EXTENDED,
+                                                sf->grad,
+                                                3);
+                  else if (f->dim == 3)
+                    cs_halo_perio_sync_var_tens(halo,
+                                                CS_HALO_EXTENDED,
+                                                sf->grad);
+                  else if (f->dim == 6)
+                    cs_halo_perio_sync_var_sym_tens_grad(halo,
+                                                         CS_HALO_EXTENDED,
+                                                         sf->grad);
+                }
+              }
+            }
+          }
         }
       }
     }
