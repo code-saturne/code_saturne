@@ -92,6 +92,7 @@
       <tab type="user" visible="yes" url="[none]" title="Numerical Parameters"/> -->
       <tab type="user" visible="yes" url="@ref cs_ug_troubleshooting" title="What if a calculation fails ?"/>
       <tab type="user" visible="yes" url="@ref bpg_analysis_of_results" title="Analysis of the results"/>
+      <tab type="user" visible="yes" url="@ref ug_bpg_vnv_test_case" title="Creation of a V&amp;V test case"/>
     </tab>
 
     <!-- Section 6: Installation -->
