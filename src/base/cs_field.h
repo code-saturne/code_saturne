@@ -504,6 +504,18 @@ public:
     void
   ) const;
 
+  cs_span_4d<cs_real_t>
+  get_ns_grad_v
+  (
+    void
+  ) const;
+
+  cs_span_4d<cs_real_t>
+  get_ns_grad_t
+  (
+    void
+  ) const;
+
   /* State update methods
      -------------------- */
 

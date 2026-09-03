@@ -4828,10 +4828,10 @@ cs_field_t::get_ns_vals_t
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a 1D span view of field values. If the field is not a scalar
+ * \brief Return a 2D span view of field values. If the field is not a scalar
  *        a fatal error is provoked.
  *
- * \return  cs_span<cs_real_t> view of field values.
+ * \return  cs_span_2d<cs_real_t> view of field values.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4862,10 +4862,10 @@ cs_field_t::get_ns_val_s
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a 2D span view of field values. If the field is not a vector
+ * \brief Return a 3D span view of field values. If the field is not a vector
  *        a fatal error is provoked.
  *
- * \return  cs_span_2d<cs_real_t>(:,3) view of field values.
+ * \return  cs_span_3d<cs_real_t>(:,:,3) view of field values.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4894,10 +4894,10 @@ cs_field_t::get_ns_val_v
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a 2D span view of field values. If the field is not a tensor
+ * \brief Return a 3D span view of field values. If the field is not a tensor
  *        a fatal error is provoked.
  *
- * \return  cs_span_2d<cs_real_t>(:,6) view of field values.
+ * \return  cs_span_3d<cs_real_t>(:,:,6) view of field values.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4926,10 +4926,10 @@ cs_field_t::get_ns_val_t
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a 2D span view of field gradients. If the field is not a scalar
+ * \brief Return a 3D span view of field gradients. If the field is not a scalar
  *        a fatal error is provoked.
  *
- * \return  cs_span_2d<cs_real_t>(:,3) view of field gradients.
+ * \return  cs_span_3d<cs_real_t>(:,:,3) view of field gradients.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4950,14 +4950,76 @@ cs_field_t::get_ns_grad_s
                 "series.\n"),
               __func__, this->name);
 
-  /* Object is cs_array_3d, hence 'view()' already returns a cs_span_3d
-   * with correct dimensions.
-   */
-  // Reshape since _grad is of shape (ncelet, 1, 3) => (ncelet, 3)
+  // Reshape since _ns_grad is of shape (nfields, ncelet, 1, 3) =>
+  // (nfields, ncelet, 3)
   cs_field_t *f_owner = _fields[this->ns_owner];
   const cs_lnum_t n_fields = f_owner->_ns_grad->extent(0);
   const cs_lnum_t n_vals = f_owner->_ns_grad->extent(1);
   return f_owner->_ns_grad->get_mdspan(n_fields, n_vals, 3);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 4D span view of vector field gradients. If the field is not a
+ *        vector a fatal error is provoked.
+ *
+ * \return  cs_span_4d<cs_real_t>(:,:,3,3) view of field gradients.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span_4d<cs_real_t>
+cs_field_t::get_ns_grad_v
+(
+  void
+) const
+{
+  if (this->dim != 3)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a vector and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->_ns_vals == nullptr && this->is_series_owner())
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not associated to a multidimensional "
+                "series.\n"),
+              __func__, this->name);
+
+  /* Object is cs_array_4d, hence 'view()' already returns a cs_span_4d
+   * with correct dimensions.
+   */
+  return _fields[this->ns_owner]->_ns_grad->view();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 4D span view of symmetric tensor field gradients. If the
+ *        field is not a symmetric tensor a fatal error is provoked.
+ *
+ * \return  cs_span_4d<cs_real_t>(:,:,6,3) view of field gradients.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span_4d<cs_real_t>
+cs_field_t::get_ns_grad_t
+(
+  void
+) const
+{
+  if (this->dim != 6)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a tensor and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->_ns_vals == nullptr && this->is_series_owner())
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not associated to a multidimensional "
+                "series.\n"),
+              __func__, this->name);
+
+  /* Object is cs_array_4d, hence 'view()' already returns a cs_span_4d
+   * with correct dimensions.
+   */
+  return _fields[this->ns_owner]->_ns_grad->view();
 }
 
 /*----------------------------------------------------------------------------*/
