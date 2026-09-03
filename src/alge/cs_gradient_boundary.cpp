@@ -741,9 +741,15 @@ _gradient_boundary_iprime_lsq_strided
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-  const cs_lnum_t *restrict cell_i_faces = (is_porous) ? ma->cell_i_faces : nullptr;
-  const cs_real_t *restrict i_face_surf = (is_porous) ? fvq->i_face_surf : nullptr;
-  const cs_real_t *restrict b_face_surf = (is_porous) ? fvq->b_face_surf : nullptr;
+  const cs_lnum_t *restrict cell_i_faces = nullptr;
+  const cs_real_t *restrict i_face_surf = nullptr;
+  const cs_real_t *restrict b_face_surf = nullptr;
+  if (is_porous) {
+    cs_mesh_adjacencies_update_cell_i_faces();
+    cell_i_faces = ma->cell_i_faces;
+    i_face_surf = fvq->i_face_surf;
+    b_face_surf = fvq->b_face_surf;
+  }
 
 #if (B_DIRECTION_LSQ == CS_IF_LSQ)
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
