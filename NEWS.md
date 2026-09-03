@@ -23,6 +23,11 @@
 
 ### Numerics:
 
+- Turbulence: add Godunov-type solver options and exact time-integration
+  schemes for second-order transport source terms, based on the publications:
+  * Bennoura Bouchiba, Ferrand, Hérard (2025). ESAIM: M2AN, 59(5), 2639-2683.
+  * Bennoura Bouchiba, Ferrand, Hérard (2026). Comput. Math. Appl., 221, 60-81.
+
 - Change the default settings for the SLES solver in CDO schemes
   * Move to K-cycle as preconditioner of a GCR (Previously it was a
     Jacobi as preconditioner)
