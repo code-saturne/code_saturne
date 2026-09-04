@@ -408,6 +408,7 @@ _count_to_index_inplace_cuda(cudaStream_t  stream,
  */
 /*--------------------------------------------------------------------------*/
 
+#if CUDART_VERSION >= 12'03'0
 static cs_lnum_t
 _select_if_gt_cuda(cudaStream_t  stream,
                    cs_lnum_t     n,
@@ -457,6 +458,7 @@ _select_if_gt_cuda(cudaStream_t  stream,
 
   return *r_host;
 }
+#endif
 
 #endif
 
@@ -661,10 +663,12 @@ select_if_gt(cs_dispatch_context      &ctx,
              [[maybe_unused]] void    *tmp_storage)
 {
 #if defined(HAVE_CUDA)
+#if CUDART_VERSION >= 12'03'0
   if (ctx.use_gpu()) {
     return _select_if_gt_cuda(ctx.stream(), n, c, a,
                               tmp_size, tmp_storage);
   }
+#endif
 #endif
 
 #if defined(HAVE_HIP)
