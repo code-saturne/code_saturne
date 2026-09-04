@@ -5762,7 +5762,7 @@ cs_turbulence_rij_compute_rusanov(void)
  * Time level: ->val for both velocity and Rij (see integration README).
  *----------------------------------------------------------------------------*/
 
-static cs_real_t
+static CS_F_HOST_DEVICE cs_real_t
 _rij_godunov_h1(cs_real_t z)
 {
   if (z >= 0 && z <= 1)
@@ -5770,6 +5770,7 @@ _rij_godunov_h1(cs_real_t z)
   else if (z >= 1)
     return (1. - z) / sqrt(2 * (1. + z));
   else {
+#ifndef __CUDA_ARCH__
     if (cs_glob_turb_rans_model->verbosity >= 2) {
       static int _warn_count = 0;
       if (_warn_count < 10) {
@@ -5781,11 +5782,12 @@ _rij_godunov_h1(cs_real_t z)
         }
       }
     }
+#endif
     return -1;
   }
 }
 
-static cs_real_t
+static CS_F_HOST_DEVICE cs_real_t
 _rij_godunov_dh1(cs_real_t z)
 {
   if (z >= 0 && z <= 1.)
@@ -5794,6 +5796,7 @@ _rij_godunov_dh1(cs_real_t z)
     return -1. / sqrt(2)
       * ((1. - z) / (2 * (1. + z)*sqrt(1.+z)) + 1. / sqrt(1. + z));
   else {
+#ifndef __CUDA_ARCH__
     if (cs_glob_turb_rans_model->verbosity >= 2) {
       static int _warn_count = 0;
       if (_warn_count < 10) {
@@ -5805,11 +5808,12 @@ _rij_godunov_dh1(cs_real_t z)
         }
       }
     }
+#endif
     return -1;
   }
 }
 
-static cs_real_t
+static CS_F_HOST_DEVICE cs_real_t
 _rij_godunov_phi_z(cs_real_t z,
                    cs_real_t u_r,
                    cs_real_t u_l,
@@ -5821,7 +5825,7 @@ _rij_godunov_phi_z(cs_real_t z,
     / (sqrt(2 * r_r) + sqrt(2 * r_l));
 }
 
-static cs_real_t
+static CS_F_HOST_DEVICE cs_real_t
 _rij_godunov_dphi_z(cs_real_t z,
                     cs_real_t u_r,
                     cs_real_t u_l,
@@ -5833,7 +5837,7 @@ _rij_godunov_dphi_z(cs_real_t z,
     / (sqrt(2 * r_l) + sqrt(2 * r_r));
 }
 
-static cs_real_t
+static CS_F_HOST_DEVICE cs_real_t
 _rij_godunov_newton_solver(cs_real_t z,
                            cs_real_t un_r,
                            cs_real_t un_l,
@@ -5850,6 +5854,7 @@ _rij_godunov_newton_solver(cs_real_t z,
     z_star -= phi_z / _rij_godunov_dphi_z(z_star, un_r, un_l, rnn_r, rnn_l);
   }
   if (i >= max_iter-1) {
+#ifndef __CUDA_ARCH__
     if (cs_glob_turb_rans_model->verbosity >= 2) {
       static int _warn_count = 0;
       if (_warn_count < 10) {
@@ -5866,11 +5871,12 @@ _rij_godunov_newton_solver(cs_real_t z,
         }
       }
     }
+#endif
   }
   return z_star;
 }
 
-static cs_real_t
+static CS_F_HOST_DEVICE cs_real_t
 _rij_godunov_hybrid_solver(cs_real_t z,
                            cs_real_t un_r,
                            cs_real_t un_l,
@@ -5886,7 +5892,7 @@ _rij_godunov_hybrid_solver(cs_real_t z,
                                      tol, max_iter);
 }
 
-static cs_real_t
+static CS_F_HOST_DEVICE cs_real_t
 _rij_godunov_wave1(cs_real_t z1,
                    cs_real_t un,
                    cs_real_t rnn,
@@ -5899,7 +5905,7 @@ _rij_godunov_wave1(cs_real_t z1,
     return 0.5*(un + un_star) - sqrt(rnn + rnn_star);
 }
 
-static cs_real_t
+static CS_F_HOST_DEVICE cs_real_t
 _rij_godunov_wave9(cs_real_t z9,
                    cs_real_t un,
                    cs_real_t rnn,
@@ -5912,7 +5918,7 @@ _rij_godunov_wave9(cs_real_t z9,
     return 0.5*(un + un_star) + sqrt(rnn + rnn_star);
 }
 
-static cs_real_t
+static CS_F_HOST_DEVICE cs_real_t
 _rij_godunov_riemann(const cs_real_t    *n,
                       const cs_real_3_t  c_vel_l,
                       const cs_real_6_t  c_rij_l,
@@ -6186,7 +6192,7 @@ _rij_godunov_riemann(const cs_real_t    *n,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static CS_F_HOST_DEVICE void
 _rit_godunov_riemann(const cs_real_t   *n,
                      const cs_real_3_t  c_vel_l,
                      const cs_real_6_t  c_rij_l,
@@ -6555,7 +6561,7 @@ _rit_godunov_riemann(const cs_real_t   *n,
   }
 }
 
-static void
+static CS_F_HOST_DEVICE void
 _rij_godunov_boundary_state(int                 bc_type,
                              const cs_real_t    *n,
                              const cs_real_3_t   c_vel,
@@ -6650,7 +6656,7 @@ _rij_godunov_boundary_state(int                 bc_type,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static CS_F_HOST_DEVICE void
 _rit_godunov_boundary_state(int                 bc_type,
                              const cs_real_t    *n,
                              const cs_real_3_t   c_vel,

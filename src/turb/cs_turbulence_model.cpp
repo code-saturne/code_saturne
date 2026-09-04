@@ -357,28 +357,7 @@ const cs_turb_ref_values_t  *cs_glob_turb_ref_values = &_turb_ref_values;
 
 /* RANS turbulence model structure and associated pointer */
 
-static cs_turb_rans_model_t
-_turb_rans_model =
-{
-  .irccor     =    0,
-  .itycor     = -999,
-  .idirsm     =    0,
-  .igrhok     =    0,
-  .has_buoyant_term = 1,
-  .ikecou     =    0,
-  .reinit_turb=    1,
-  .irijco     =    1, /* Coupled version of DRSM models */
-  .rij_discretization_scheme = 0,
-  .verbosity  =    0,
-  .source_time_stepping = CS_TURB_RIJ_SOURCE_TS_IMEX,
-  .irijrb     =    0,
-  .irijec     =    0,
-  .iclsyr     =    1,
-  .iclptr     =    0,
-  .ikwcln     =    1,
-  .xlomlg     = -1e13,
-  .dissip_buo_mdl = 0
-};
+static cs_turb_rans_model_t _turb_rans_model;
 
 const cs_turb_rans_model_t  *cs_glob_turb_rans_model = &_turb_rans_model;
 

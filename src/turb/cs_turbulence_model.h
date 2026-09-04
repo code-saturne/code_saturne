@@ -235,7 +235,7 @@ typedef struct {
 /* RANS turbulence model descriptor */
 /*----------------------------------*/
 
-typedef struct {
+typedef struct cs_turb_rans_model_t {
 
   int           irccor;       /* activation of rotation/curvature correction for
                                  an eddy viscosity turbulence models
@@ -327,6 +327,29 @@ typedef struct {
                               /* Turbulent dissipation buoyant production model
                                  0: Default: Production term clipped to 0
                                  1: For EM-RSM */
+
+  /* Constructor to bind reference and set defaults */
+  cs_turb_rans_model_t()
+    : irccor(0),
+      itycor(-999),
+      idirsm(0),
+      igrhok(0),
+      has_buoyant_term(1),
+      ikecou(0),
+      reinit_turb(1),
+      irijco(1),
+      rij_discretization_scheme(0),
+      irijnu(rij_discretization_scheme),
+      verbosity(0),
+      source_time_stepping(0),
+      irijrb(0),
+      irijec(0),
+      iclsyr(1),
+      iclptr(0),
+      ikwcln(1),
+      xlomlg(-1e13),
+      dissip_buo_mdl(0)
+  {}
 } cs_turb_rans_model_t;
 
 /* LES turbulence model descriptor */
