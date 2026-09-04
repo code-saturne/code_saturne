@@ -5793,7 +5793,7 @@ _rij_godunov_dh1(cs_real_t z)
   if (z >= 0 && z <= 1.)
     return -1. / (2 * sqrt(z));
   else if (z > 1)
-    return -1. / sqrt(2)
+    return -1. / sqrt(2.)
       * ((1. - z) / (2 * (1. + z)*sqrt(1.+z)) + 1. / sqrt(1. + z));
   else {
 #ifndef __CUDA_ARCH__
