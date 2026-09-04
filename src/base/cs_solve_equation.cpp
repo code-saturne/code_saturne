@@ -1568,7 +1568,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     if (th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
         //|| th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) { TODO
-      cs_field_t *f_cflt = cs_field("cfl_t");
+      cs_field_t *f_cflt = cs_field_try("cfl_t");
 
       if (f_cflt != nullptr) {
         cs_real_t *cflt = f_cflt->val;
