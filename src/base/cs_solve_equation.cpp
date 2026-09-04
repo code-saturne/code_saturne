@@ -1469,7 +1469,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* Compute cv */
 
-    cs_field_t *f_cv = cs_field("isobaric_heat_capacity");
+    cs_field_t *f_cv = cs_field_try("isobaric_heat_capacity");
     if (f_cv != nullptr) {
       cs_thermal_model_cv(f_cv->val);
       cs_array_copy<cs_real_t>(n_cells, f_cv->val, xcvv);
@@ -1486,7 +1486,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     if (th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
 
-      const cs_field_t *f_t = cs_field("temperature");
+      const cs_field_t *f_t = cs_field_try("temperature");
 
       if (f_t != nullptr) {
         temp  = f_t->val;
@@ -1494,8 +1494,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
       }
 
       if (th_cf_model->ieos == CS_EOS_MOIST_AIR) {
-        const cs_field_t *f_yv = cs_field("yv");
-        const cs_field_t *f_yw = cs_field("yw");
+        const cs_field_t *f_yv = cs_field_try("yv");
+        const cs_field_t *f_yw = cs_field_try("yw");
 
         if (f_yv != nullptr) {
           cpro_yv = f_yv->val;
@@ -1628,7 +1628,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       if ((isca_ih21 <= ivar) && (ivar <= isca_ih2nl))
         cs_coal_rad_transfer_st(f, rhs, fimp);
 
-      if (f == cs_field("x_c_h")) {
+      if (f == cs_field_try("x_c_h")) {
         const cs_real_t *cpro_tsre1 = cs_field("rad_st")->val;
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           rhs[c_id] += volume[c_id]*cpro_tsre1[c_id];
@@ -1638,8 +1638,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
           char f_rad[64], f_xp[64];
           snprintf(f_xp, 64, "x_p_%02d", icla+1); f_xp[63] = '\0';
           snprintf(f_rad, 64, "rad_st_%02d", icla+2); f_rad[63] = '\0';
-          const cs_real_t *cpro_tsre = cs_field(f_rad)->val;
-          const cs_real_t *cpro_x2icla = cs_field(f_xp)->val;
+          const cs_real_t *cpro_tsre = cs_field_try(f_rad)->val;
+          const cs_real_t *cpro_x2icla = cs_field_try(f_xp)->val;
           ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
             rhs[c_id] -= volume[c_id]*cpro_tsre[c_id]*cpro_x2icla[c_id];
           });
