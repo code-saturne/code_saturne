@@ -576,6 +576,10 @@ _production_and_dissipation_terms(const cs_field_t  *f,
   }
 
   if (use_source_stepping) {
+    const cs_real_t crij1 = cs_turb_crij1;
+    const cs_real_t ce2   = cs_turb_ce2;
+    const cs_real_t ce3   = cs_turb_ce3;
+
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
       cs_real_t xe = 0., xk = 0., alpha_theta = 1.;
@@ -628,12 +632,12 @@ _production_and_dissipation_terms(const cs_field_t  *f,
       cs_real_t theta2_1_pdt, eps1_pdt;
       if (st_scheme == CS_TURB_RIJ_SOURCE_TS_VAR_TAU)
         cs_turbulence_rit_source_step_variable_tau(
-          cs_turb_crij1, 1./rvarfl, cs_turb_ce2, cs_turb_ce3, beta_c,
+          crij1, 1./rvarfl, ce2, ce3, beta_c,
           grav_pdt, dt_pdt[c_id], cvara_rij[c_id], c_qtheta_pdt[c_id],
           cvara_var[c_id], xe, r1_pdt, qtheta1_pdt, &theta2_1_pdt, &eps1_pdt);
       else
         cs_turbulence_rit_source_step_frozen_tau(
-          cs_turb_crij1, 1./rvarfl, cs_turb_ce2, beta_c, grav_pdt,
+          crij1, 1./rvarfl, ce2, beta_c, grav_pdt,
           dt_pdt[c_id], cvara_rij[c_id], c_qtheta_pdt[c_id], cvara_var[c_id],
           xe, r1_pdt, qtheta1_pdt, &theta2_1_pdt, &eps1_pdt);
       rhs[c_id] += cprovol/dt_pdt[c_id] * (theta2_1_pdt - cvara_var[c_id]);
