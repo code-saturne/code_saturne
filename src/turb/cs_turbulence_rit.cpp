@@ -1321,6 +1321,9 @@ _turb_flux_st(const char          *name,
    * source-step integration requires all four quantities to start
    * from the SAME state N. */
   const int st_scheme = cs_glob_turb_rans_model->source_time_stepping;
+  const cs_real_t ce2   = cs_turb_ce2;
+  const cs_real_t ce3   = cs_turb_ce3;
+  const int rij_scheme = cs_glob_turb_rans_model->rij_discretization_scheme;
   const bool source_time_stepping_active =
     (st_scheme != CS_TURB_RIJ_SOURCE_TS_IMEX);
   const cs_real_6_t *cvara_rij = source_time_stepping_active ?
@@ -1468,13 +1471,13 @@ _turb_flux_st(const char          *name,
       cs_real_t theta2_1, eps1;
       if (st_scheme == CS_TURB_RIJ_SOURCE_TS_VAR_TAU)
         cs_turbulence_rit_source_step_variable_tau(
-          cs_turb_crij1, ctheta, cs_turb_ce2, cs_turb_ce3, beta_c,
+          crij1, ctheta, ce2, ce3, beta_c,
           grav, dt[c_id],
           cvara_rij[c_id], xuta[c_id], cvara_tt[c_id], cvara_ep[c_id],
           r1, qtheta1, &theta2_1, &eps1);
       else
         cs_turbulence_rit_source_step_frozen_tau(
-          cs_turb_crij1, ctheta, cs_turb_ce2, beta_c, grav, dt[c_id],
+          crij1, ctheta, ce2, beta_c, grav, dt[c_id],
           cvara_rij[c_id], xuta[c_id], cvara_tt[c_id], cvara_ep[c_id],
           r1, qtheta1, &theta2_1, &eps1);
     }
@@ -1625,8 +1628,7 @@ _turb_flux_st(const char          *name,
           * stabilization when the corresponding explicit relaxation
           * term (phiit_relax above) has itself been dropped. */
          const cs_real_t c1_impl_term =
-           (cs_glob_turb_rans_model->source_time_stepping == 0) ?
-           c1trit/xttdrbt : 0.;
+           (st_scheme == 0) ? c1trit/xttdrbt : 0.;
 
          cs_real_t imp_term
            =   cell_f_vol[c_id] * crom[c_id]
@@ -1664,7 +1666,7 @@ _turb_flux_st(const char          *name,
       cs_real_t buoyancy_i = 0.;
       if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
           && has_buoyant_term == 1
-          && cs_glob_turb_rans_model->source_time_stepping == 0)
+          && st_scheme == 0)
         buoyancy_i = -grav[i] * cpro_beta[c_id] * cvara_tt[c_id];
 
       if (buo_ut != nullptr) /* Save it if needed */
@@ -1696,8 +1698,6 @@ _turb_flux_st(const char          *name,
        * above) are left showing the standard gradient-based value for
        * reference; only the contribution actually added to rhs_ut is
        * zeroed here. */
-      const int rij_scheme
-        = cs_glob_turb_rans_model->rij_discretization_scheme;
       const cs_real_t mech_prod_vel =
         (rij_scheme == CS_RIJ_SCHEME_GODUNOV) ? 0. : prod_by_vel_grad_i;
       const cs_real_t mech_prod_scal =
