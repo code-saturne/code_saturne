@@ -147,7 +147,7 @@ enum {
 
 };
 
-/* turbulence model general options descriptor */
+/*! turbulence model general options descriptor */
 /*---------------------------------------------*/
 
 struct cs_turb_model_t {
@@ -160,14 +160,18 @@ struct cs_turb_model_t {
    */
   /*--------------------------------------------------------------------------*/
 
+  /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
   DISABLE_WARNING_PUSH
   DISABLE_WARNING(-Wdeprecated-declarations)
+  /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
   cs_turb_model_t(){}
 
+  /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
   DISABLE_WARNING_POP
+  /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-  int  model{-999};/*! turbulence model
+  int  model{-999};/*!< turbulence model
                      - CS_TURB_NONE: no turbulence model (laminar flow)
                      - CS_TURB_MIXING_LENGTH: mixing length model
                      - CS_TURB_K_EPSILON: standard k-epsilon model
@@ -192,11 +196,11 @@ struct cs_turb_model_t {
                      - CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model */
 
   [[deprecated("Use model instead")]]
-  int& iturb{model};
+  int& iturb{model};    /*!< Deprecated, use `model` instead */
 
-  int  itytur{-999};    /* class of turbulence model (integer value
+  int  itytur{-999};    /*!< class of turbulence model (integer value
                         model/10) */
-  int  hybrid_turb{0};  /*! Type of Hybrid Turbulence Model
+  int  hybrid_turb{0};  /*!< Type of Hybrid Turbulence Model
                             - CS_HYBRID_NONE:  No model
                             - CS_HYBRID_DES:   Detached Eddy Simulation
                             - CS_HYBRID_DDES:  Delayed Detached Eddy
@@ -204,18 +208,18 @@ struct cs_turb_model_t {
                             - CS_HYBRID_SAS:   Scale Adaptive Model
                             - CS_HYBRID_HTLES: Hybrid Temporal Large
                                                Eddy Simulation */
-  int  type{-1};  /*! Type of turbulence modelling:
+  int  type{-1};  /*!< Type of turbulence modelling:
                      - CS_TURB_NONE: No model
                      - CS_TURB_RANS: RANS modelling
                      - CS_TURB_LES: LES modelling
                      - CS_TURB_HYBRID: RANS -- LES modelling */
-  int  order{-1}; /*! Order of the turbulence model:
+  int  order{-1}; /*!< Order of the turbulence model:
                      - CS_TURB_ALGEBRAIC: 0th order algebraik model
                      - CS_TURB_FIRST_ORDER: 1st order Eddy Viscosity
                                             type models
                      - CS_TURB_SECOND_ORDER: 2nd order Differential
                                              Reynolds Stress type models */
-  int  high_low_re{-1}; /*! High or Low Reynolds number model:
+  int  high_low_re{-1}; /*!< High or Low Reynolds number model:
                           - CS_TURB_HIGH_RE
                           - CS_TURB_LOW_RE
                           - CS_TURB_HIGH_LOW_RE */
