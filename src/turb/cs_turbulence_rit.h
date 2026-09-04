@@ -474,7 +474,7 @@ _source_time_stepping_engine(cs_real_t          cr,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline CS_F_HOST_DEVICE void
+inline CS_F_HOST_DEVICE void
 cs_turbulence_rit_source_step_frozen_tau(cs_real_t          cr,
                                          cs_real_t          ctheta,
                                          cs_real_t          ceps2,
@@ -515,7 +515,7 @@ cs_turbulence_rit_source_step_frozen_tau(cs_real_t          cr,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline CS_F_HOST_DEVICE void
+inline CS_F_HOST_DEVICE void
 cs_turbulence_rit_source_step_variable_tau(cs_real_t          cr,
                                            cs_real_t          ctheta,
                                            cs_real_t          ceps2,
