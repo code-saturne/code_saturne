@@ -1310,6 +1310,17 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
                                m_sij[2][1],
                                m_sij[2][0]};
 
+    cs_real_t matrot[3][3] = {0.};
+    /* Rotating frame of reference => "absolute" vorticity */
+    if (icorio == 1) {
+      const cs_rotation_t *r = rotation + 1;
+      cs_rotation_add_coriolis_t(r, 1., matrot);
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          m_omij[i][j] -= matrot[i][j];
+      }
+    }
+
     if (coupled_components != 0 && st_scheme != CS_TURB_RIJ_SOURCE_TS_CONVEXP) {
       /* Compute inverse matrix of R^n
          (scaling by tr(R) for numerical stability) */
@@ -1343,7 +1354,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
           cs_lnum_t ij = t2v[i][j];
-          implmat2add[i][j] =   (1.0 - crij2) * m_omij[i][j]
+          implmat2add[i][j] =   (1.0 - crij2) * gradv[c_id][i][j]
+                                - ccorio * matrot[i][j]
                                 + impl_lin_cst * st_deltaij[ij]
                                 + impl_id_cst * d1s2 * oo_matrn[ij]
                                 + ceps_impl * oo_matrn[ij];
@@ -1353,17 +1365,6 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       /* Compute the 6x6 matrix A which verifies
        * A.R = M.R + R.M^t */
       cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
-    }
-
-    /* Rotating frame of reference => "absolute" vorticity */
-    if (icorio == 1) {
-      cs_real_t matrot[3][3];
-      const cs_rotation_t *r = rotation + 1;
-      cs_rotation_add_coriolis_t(r, 1., matrot);
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        for (cs_lnum_t j = 0; j < 3; j++)
-          m_omij[i][j] -= matrot[i][j];
-      }
     }
 
     for (cs_lnum_t ij = 0; ij < 6; ij++) {
@@ -1464,6 +1465,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
       /* Coriolis contribution in the Phi1 term: (1-C2/2)Gij */
       if (icorio == 1) {
+        // FIXME why this multiplication is not done if icorio != 1
+        // the result of w2 is therefore not homogeneous to rhs...
         for (cs_lnum_t ij = 0; ij < 6; ij++)
           w2(c_id, ij) *= crom[c_id] * cell_f_vol[c_id] * (1.-0.5*crij2);
       }
