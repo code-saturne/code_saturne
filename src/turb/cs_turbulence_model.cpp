@@ -2222,9 +2222,11 @@ cs_clip_turbulent_fluxes(int  flux_id,
 
     if (iclip > 0) {
       cs_math_33_3_product(eigvect, rot_rit, cvar_rit[cell_id]);
-      cvar_clip_rit[cell_id][0] = cvar_rit[cell_id][0] - rit[0];
-      cvar_clip_rit[cell_id][1] = cvar_rit[cell_id][1] - rit[1];
-      cvar_clip_rit[cell_id][2] = cvar_rit[cell_id][2] - rit[2];
+      if (cvar_clip_rit != nullptr) {
+        cvar_clip_rit[cell_id][0] = cvar_rit[cell_id][0] - rit[0];
+        cvar_clip_rit[cell_id][1] = cvar_rit[cell_id][1] - rit[1];
+        cvar_clip_rit[cell_id][2] = cvar_rit[cell_id][2] - rit[2];
+      }
     }
   }
 
