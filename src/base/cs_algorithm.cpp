@@ -408,7 +408,6 @@ _count_to_index_inplace_cuda(cudaStream_t  stream,
  */
 /*--------------------------------------------------------------------------*/
 
-#if CUDART_VERSION >= 12'03'0
 static cs_lnum_t
 _select_if_gt_cuda(cudaStream_t  stream,
                    cs_lnum_t     n,
@@ -438,14 +437,25 @@ _select_if_gt_cuda(cudaStream_t  stream,
   cs_algorithm_greater_than select_op(c);
 
   CS_CUDA_CHECK(cub::DeviceSelect::If(nullptr, tmp_storage_size,
-                                      a, r_device, n, select_op, stream));
+                                      a,
+#if CUDART_VERSION < 12'03'0
+  // Cuda 12 allows single pointer, in Cuda11 we have to specify an in and out
+  // pointers. Once CUDA11 support is dropped, this could be removed
+                                      a,
+
+#endif
+                                      r_device, n, select_op, stream));
   CS_CUDA_CHECK(cudaGetLastError());
 
   if (tmp_storage_size > tmp_size_caller)
     CS_MALLOC_HD(tmp_storage, tmp_storage_size, unsigned char, CS_ALLOC_DEVICE);
 
   CS_CUDA_CHECK(cub::DeviceSelect::If(tmp_storage, tmp_storage_size,
-                                      a, r_device, n, select_op, stream));
+                                      a,
+#if CUDART_VERSION < 12'03'0
+                                      a,
+#endif
+                                      r_device, n, select_op, stream));
   CS_CUDA_CHECK(cudaGetLastError());
 
   CS_CUDA_CHECK(cudaMemcpyAsync(r_host, r_device, sizeof(cs_lnum_t),
@@ -458,7 +468,6 @@ _select_if_gt_cuda(cudaStream_t  stream,
 
   return *r_host;
 }
-#endif
 
 #endif
 
@@ -663,12 +672,10 @@ select_if_gt(cs_dispatch_context      &ctx,
              [[maybe_unused]] void    *tmp_storage)
 {
 #if defined(HAVE_CUDA)
-#if CUDART_VERSION >= 12'03'0
   if (ctx.use_gpu()) {
     return _select_if_gt_cuda(ctx.stream(), n, c, a,
                               tmp_size, tmp_storage);
   }
-#endif
 #endif
 
 #if defined(HAVE_HIP)
