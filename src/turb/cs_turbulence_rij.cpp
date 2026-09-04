@@ -1168,6 +1168,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   const cs_real_t crij2 = cs_turb_crij2;
   const cs_real_t crijeps = cs_turb_crij_eps;
   const cs_real_t csrij  = cs_turb_csrij;
+  const cs_real_t ce3 = cs_turb_ce3;
 
   const int t2v[3][3] = _T2V;
   const int iv2t[6] = _IV2T;
@@ -1255,7 +1256,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       cs_real_t theta2_1, eps1;
       if (st_scheme == CS_TURB_RIJ_SOURCE_TS_VAR_TAU)
         cs_turbulence_rit_source_step_variable_tau(
-          crij1, ctheta, ceps2, cs_turb_ce3, beta_c, grav,
+          crij1, ctheta, ceps2, ce3, beta_c, grav,
           dt[c_id], cvara_var[c_id], c_qtheta[c_id],
           c_theta2[c_id], cvara_ep[c_id],
           r1, qtheta1, &theta2_1, &eps1);
@@ -1386,8 +1387,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
        * Godunov-consistent via prod[], see GODUNOV scheme notes), not the
        * source substep. */
       cs_real_t phiij1, epsij;
-      if (cs_glob_turb_rans_model->source_time_stepping
-          == CS_TURB_RIJ_SOURCE_TS_IMEX) {
+      if (st_scheme == CS_TURB_RIJ_SOURCE_TS_IMEX) {
         phiij1 = -cvara_ep[c_id]*crij1*m_aij[j][i];
         epsij = -d2s3*crijeps*cvara_ep[c_id]*st_deltaij[ij];
       }
@@ -3498,6 +3498,8 @@ _solve_epsilon(int              phase_id,
   /* source_time_stepping: same gathering as in _pre_solve_lrr -- see the
    * corresponding comment there for the exact rationale/requirements. */
   const int st_scheme = cs_glob_turb_rans_model->source_time_stepping;
+  const cs_real_t crij1 = cs_turb_crij1;
+  const cs_real_t ce3   = cs_turb_ce3;
   const bool source_time_stepping_active =
     (st_scheme != CS_TURB_RIJ_SOURCE_TS_IMEX);
   const cs_field_t *f_temp = source_time_stepping_active ?
@@ -3772,8 +3774,7 @@ _solve_epsilon(int              phase_id,
        * (crom_vol/dt*(eps_exact(dt)-eps_pre)), exactly mirroring how R's
        * Rotta source is injected in _pre_solve_lrr -- see the corresponding
        * integration notes. */
-      if (cs_glob_turb_rans_model->source_time_stepping
-          == CS_TURB_RIJ_SOURCE_TS_IMEX) {
+      if (st_scheme == CS_TURB_RIJ_SOURCE_TS_IMEX) {
         rhs[c_id]  -= crom_vol * ceps2 * cs_math_pow2(cvara_ep[c_id]) / tke;
         fimp[c_id] += ceps2 * crom_vol / xttke * thetap;
       }
@@ -3785,13 +3786,13 @@ _solve_epsilon(int              phase_id,
         cs_real_t theta2_1, eps1;
         if (st_scheme == CS_TURB_RIJ_SOURCE_TS_VAR_TAU)
           cs_turbulence_rit_source_step_variable_tau(
-            cs_turb_crij1, ctheta, ceps2, cs_turb_ce3, beta_c, grav,
+            crij1, ctheta, ceps2, ce3, beta_c, grav,
             dt[c_id], cvara_rij[c_id], c_qtheta[c_id], c_theta2[c_id],
             cvara_ep[c_id],
             r1, qtheta1, &theta2_1, &eps1);
         else
           cs_turbulence_rit_source_step_frozen_tau(
-            cs_turb_crij1, ctheta, ceps2, beta_c, grav, dt[c_id],
+            crij1, ctheta, ceps2, beta_c, grav, dt[c_id],
             cvara_rij[c_id], c_qtheta[c_id], c_theta2[c_id],
             cvara_ep[c_id],
             r1, qtheta1, &theta2_1, &eps1);
@@ -6745,11 +6746,6 @@ _rit_godunov_boundary_state(int                 bc_type,
  */
 /*----------------------------------------------------------------------------*/
 
-static const cs_real_3_t qtheta_zero = {0., 0., 0.};
-static const cs_real_33_t qtheta_zero_33 = {{0., 0., 0.},
-                                            {0., 0., 0.},
-                                            {0., 0., 0.}};
-
 /*----------------------------------------------------------------------------*/
 
 void
@@ -6918,6 +6914,7 @@ cs_turbulence_rij_godunov_interface_states_scalar(cs_field_t *f)
     const cs_lnum_t c_id_r = i_face_cells[face_id][1];
 
     const cs_real_t *n = i_face_u_normal[face_id];
+    const cs_real_t qtheta_zero[3] = {0., 0., 0.};
 
     _rit_godunov_riemann(n,
                           c_vel[c_id_l], c_rij[c_id_l],
@@ -6939,6 +6936,10 @@ cs_turbulence_rij_godunov_interface_states_scalar(cs_field_t *f)
     const cs_lnum_t c_id = b_face_cells[face_id];
 
     const cs_real_t *n = b_face_u_normal[face_id];
+    const cs_real_t qtheta_zero[3] = {0., 0., 0.};
+    const cs_real_t qtheta_zero_33[3][3] = {{0., 0., 0.},
+                                            {0., 0., 0.},
+                                            {0., 0., 0.}};
 
     cs_real_3_t vel_ext;
     cs_real_6_t rij_ext;
