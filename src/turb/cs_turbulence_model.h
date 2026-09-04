@@ -225,112 +225,111 @@ struct cs_turb_model_t {
                           - CS_TURB_HIGH_LOW_RE */
 };
 
-/* Reference values for turbulence structure and associated pointer */
+/*! Reference values for turbulence structure and associated pointer */
 /*------------------------------------------------------------------*/
 
 typedef struct {
 
-  double        almax;        /* characteristic macroscopic length of the
-                                 domain */
-  double        uref;         /* characteristic flow velocity */
+  double        almax; /*!< characteristic macroscopic length of the
+                          domain */
+  double        uref;  /*!< characteristic flow velocity */
 
 } cs_turb_ref_values_t;
 
-/* RANS turbulence model descriptor */
+/*! RANS turbulence model descriptor */
 /*----------------------------------*/
 
 typedef struct cs_turb_rans_model_t {
 
-  int           irccor;       /* activation of rotation/curvature correction for
-                                 an eddy viscosity turbulence models
-                                 - 0: false
-                                 - 1: true */
-  int           itycor;       /* type of rotation/curvature correction for an
-                                 eddy viscosity turbulence models
-                                 - 1: Cazalbou correction (default when irccor=1
-                                      and itytur=2 or 5)
-                                 - 2: Spalart-Shur correction (default when
-                                      irccor=1 and iturb=60 or 70) */
-  int           idirsm;       /* turbulent diffusion model for second moment
-                                 closure
-                                 - 0: scalar diffusivity (Shir model, default)
-                                 - 1: tensorial diffusivity (Daly and Harlow
-                                      model) */
-  int           igrhok;       /* take (2/3 rho grad k) in the momentum
-                                 equation
-                                 - 1: true
-                                 - 0: false (default) */
-  int           has_buoyant_term;
-                              /* take buoyant term in k-epsilon or Rij-epsilon
-                               * models
-                                 - 1: true (default if rho is variable)
-                                 - 0: false
-                                 Useful if and only if RANS models are activated
-                                 and gravity is non-zero. */
-  int           ikecou;       /* partially coupled version of
-                                 k-epsilon (only for iturb=20)
-                                 - 1: true (default)
-                                 - 0: false */
-  int           reinit_turb;  /* Advanced re-init for EBRSM and k-omega models
-                                 - 1: true (default)
-                                 - 0: false */
-  int           irijco;       /* coupled solving of Rij
-                                 - 1: true
-                                 - 0: false (default) */
-  int           rij_discretization_scheme{0}; /* Rij discretization scheme:
-                                 - 0: CS_RIJ_SCHEME_DEFAULT
-                                      (false, default)
-                                 - 1: CS_RIJ_SCHEME_IMPLICIT_VISCOSITY
-                                      (true)
-                                 - 2: CS_RIJ_SCHEME_RUSANOV (Rusanov)
-                                 - 3: CS_RIJ_SCHEME_GODUNOV
-                                      (exact Godunov) */
+  int     irccor;       /*!< activation of rotation/curvature correction for
+                           an eddy viscosity turbulence models
+                           - 0: false
+                           - 1: true */
+  int     itycor;       /*!< type of rotation/curvature correction for an
+                           eddy viscosity turbulence models
+                           - 1: Cazalbou correction (default when irccor=1
+                                and itytur=2 or 5)
+                           - 2: Spalart-Shur correction (default when
+                                irccor=1 and iturb=60 or 70) */
+  int     idirsm;       /*!< turbulent diffusion model for second moment
+                           closure
+                           - 0: scalar diffusivity (Shir model, default)
+                           - 1: tensorial diffusivity (Daly and Harlow
+                                model) */
+  int     igrhok;       /*!< take (2/3 rho grad k) in the momentum
+                           equation
+                           - 1: true
+                           - 0: false (default) */
+
+  int     has_buoyant_term; /*!< take buoyant term in k-epsilon or Rij-epsilon
+                             * models
+                               - 1: true (default if rho is variable)
+                               - 0: false
+                               Useful if and only if RANS models are activated
+                               and gravity is non-zero. */
+  int     ikecou;       /*!< partially coupled version of
+                           k-epsilon (only for iturb=20)
+                           - 1: true (default)
+                           - 0: false */
+  int     reinit_turb;  /*!< Advanced re-init for EBRSM and k-omega models
+                           - 1: true (default)
+                           - 0: false */
+  int     irijco;       /*!< coupled solving of Rij
+                           - 1: true
+                           - 0: false (default) */
+  int     rij_discretization_scheme{0}; /*!< Rij discretization scheme:
+                                           - 0: CS_RIJ_SCHEME_DEFAULT
+                                                (false, default)
+                                           - 1: CS_RIJ_SCHEME_IMPLICIT_VISCOSITY
+                                                (true)
+                                           - 2: CS_RIJ_SCHEME_RUSANOV (Rusanov)
+                                           - 3: CS_RIJ_SCHEME_GODUNOV
+                                                (exact Godunov) */
   [[deprecated("renamed to rij_discretization_scheme")]] \
-  int&          irijnu{rij_discretization_scheme};
-  int           verbosity;    /* verbosity level for Rij / Rit schemes
-                                 - 0: silent
-                                 - 1: moderate (default)
-                                 - >= 2: active logs on all cells */
-  int           source_time_stepping{0};
-                               /* treatment of the Rotta-Monin source step
-                                 (return-to-isotropy, thermal relaxation,
-                                 Boussinesq buoyancy) for the Reynolds-stress,
-                                 turbulent-heat-flux, temperature-variance,
-                                 and epsilon equations, once mean-gradient
-                                 production and diffusion have been handled
-                                 elsewhere. Requires:
-                                 rij_discret_sch == CS_RIJ_SCHEME_GODUNOV
-                                 and, for now, pure Rotta closure
-                                 (crij2 == 0).
-                                 - CS_TURB_RIJ_SOURCE_TS_CONVEXP (-1)
-                                 - CS_TURB_RIJ_SOURCE_TS_IMEX (0, default)
-                                 - CS_TURB_RIJ_SOURCE_TS_EXPONENTIAL (1)
-                                 - CS_TURB_RIJ_SOURCE_TS_VAR_TAU (2) */
-  int           irijrb;       /* accurate treatment of R at the boundary (see
-                                 \ref cs_boundary_condition_set_coeffs)
-                                 - 1: true
-                                 - 0: false (default) */
-  int           irijec;       /* wall echo term of R
-                                 - 1: true
-                                 - 0: false (default) */
-  int           iclsyr;       /* partial implicitation of symmetry BCs of R
-                                 - 1: true (default)
-                                 - 0: false */
-  int           iclptr;       /* partial implicitation of wall BCs of R
-                                 - 1: true
-                                 - 0: false (default) */
-  int           ikwcln;       /* Wall boundary condition on omega in k-omega SST
-                                 0: Deprecated Neumann boundary condition
-                                 1: Dirichlet boundary condition consistent
-                                    with Menter's
-                                    original model: w_wall = 60*nu/(beta*d**2) */
+  int&    irijnu{rij_discretization_scheme}; /*!< Deprecated */
+  int     verbosity;    /*!< verbosity level for Rij / Rit schemes
+                           - 0: silent
+                           - 1: moderate (default)
+                           - >= 2: active logs on all cells */
+  int     source_time_stepping{0};
+                         /*!< treatment of the Rotta-Monin source step
+                           (return-to-isotropy, thermal relaxation,
+                           Boussinesq buoyancy) for the Reynolds-stress,
+                           turbulent-heat-flux, temperature-variance,
+                           and epsilon equations, once mean-gradient
+                           production and diffusion have been handled
+                           elsewhere. Requires:
+                           rij_discret_sch == CS_RIJ_SCHEME_GODUNOV
+                           and, for now, pure Rotta closure
+                           (crij2 == 0).
+                           - CS_TURB_RIJ_SOURCE_TS_CONVEXP (-1)
+                           - CS_TURB_RIJ_SOURCE_TS_IMEX (0, default)
+                           - CS_TURB_RIJ_SOURCE_TS_EXPONENTIAL (1)
+                           - CS_TURB_RIJ_SOURCE_TS_VAR_TAU (2) */
+  int     irijrb;       /*!< accurate treatment of R at the boundary (see
+                           \ref cs_boundary_condition_set_coeffs)
+                           - 1: true
+                           - 0: false (default) */
+  int     irijec;       /*!< wall echo term of R
+                           - 1: true
+                           - 0: false (default) */
+  int     iclsyr;       /*!< partial implicitation of symmetry BCs of R
+                           - 1: true (default)
+                           - 0: false */
+  int     iclptr;       /*!< partial implicitation of wall BCs of R
+                           - 1: true
+                           - 0: false (default) */
+  int     ikwcln;       /*!< Wall boundary condition on omega in k-omega SST
+                           0: Deprecated Neumann boundary condition
+                           1: Dirichlet boundary condition consistent
+                              with Menter's
+                              original model: w_wall = 60*nu/(beta*d**2) */
 
-  double        xlomlg;       /* mixing length */
+  double  xlomlg;       /*!< mixing length */
 
-  int           dissip_buo_mdl;
-                              /* Turbulent dissipation buoyant production model
-                                 0: Default: Production term clipped to 0
-                                 1: For EM-RSM */
+  int     dissip_buo_mdl; /*!< Turbulent dissipation buoyant production model
+                               0: Default: Production term clipped to 0
+                               1: For EM-RSM */
 
   /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
   DISABLE_WARNING_PUSH
