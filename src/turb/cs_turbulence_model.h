@@ -332,6 +332,11 @@ typedef struct cs_turb_rans_model_t {
                                  0: Default: Production term clipped to 0
                                  1: For EM-RSM */
 
+  /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+  DISABLE_WARNING_PUSH
+  DISABLE_WARNING(-Wdeprecated-declarations)
+  /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
   /* Constructor to bind reference and set defaults */
   cs_turb_rans_model_t()
     : irccor(0),
@@ -354,6 +359,10 @@ typedef struct cs_turb_rans_model_t {
       xlomlg(-1e13),
       dissip_buo_mdl(0)
   {}
+  /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+  DISABLE_WARNING_POP
+  /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 } cs_turb_rans_model_t;
 
 /* LES turbulence model descriptor */
