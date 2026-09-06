@@ -1977,7 +1977,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   if (use_rit_convection) {
 
-    if (f->get_key_int("variance_turb_flux_model") / 10 >= 1)
+    if (f->get_key_int("turbulent_flux_model") / 10 >= 1)
       cs_turbulence_rij_godunov_interface_states_scalar(f);
 
     std::string i_field_name = std::string("i_") + f->name;

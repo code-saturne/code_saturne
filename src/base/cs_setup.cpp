@@ -3291,7 +3291,9 @@ _additional_fields_stage_3(void)
     const int n_fields = cs_field_n_fields();
     for (int i = 0; i < n_fields; i++) {
       cs_field_t *f = cs_field_by_id(i);
-      int t_flux_model = f->get_key_int("variance_turb_flux_model");
+      if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      int t_flux_model = f->get_key_int("turbulent_flux_model");
       int t_flux_model_type = t_flux_model / 10;
       if (t_flux_model_type >= 1) {
         std::string name_i = std::string("i_") + f->name;
