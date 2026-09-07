@@ -1130,7 +1130,7 @@ cs_gas_mix_physical_properties(void)
   else
     f = cs_field_by_name("y_o2");
 
-  cs_real_t *y_d = f->val;
+  cs_span<cs_real_t> y_d = f->get_val_s();
   cs_field_get_key_struct(f, k_id, &s_d);
   int spe_id_d = -1;
   for (int spe_id = 0; spe_id < n_species_total; spe_id++) {
@@ -1145,7 +1145,7 @@ cs_gas_mix_physical_properties(void)
               __func__);
 
   /* Storage the previous value of the deduced mass fraction ya_d */
-  cs_array_real_copy(n_cells_ext, y_d, f->val_pre);
+  cs_array_real_copy(n_cells_ext, y_d.data(), f->val_pre);
 
   cs_thermal_model_t *thm = cs_get_glob_thermal_model();
 
@@ -1484,18 +1484,18 @@ cs_gas_mix_initialization(void)
 
   /* Initializations
      ---------------- */
-  cs_real_t *cvar_ther = nullptr;
+  cs_span<cs_real_t> cvar_ther;
 
   /* Specific heat value */
-  cs_real_t *cpro_cp = CS_F_(cp)->val;
+  cs_span<cs_real_t> cpro_cp = CS_F_(cp)->get_val_s();
 
-  cs_real_t *cpro_cv = nullptr;
-  if (cs_field_by_name_try("isobaric_heat_capacity") != nullptr &&
+  cs_span<cs_real_t> cpro_cv;
+  if (cs_field_try("isobaric_heat_capacity") != nullptr &&
       cs_glob_fluid_properties->icv >= 0)
-    cpro_cv = cs_field_by_name("isobaric_heat_capacity")->val;
+    cpro_cv = cs_field("isobaric_heat_capacity")->get_val_s();
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
-    cvar_ther = cs_thermal_model_field()->val;
+    cvar_ther = cs_thermal_model_field()->get_val_s();
 
   /* Deduced species (h2o_g) with steam gas
    * or Helium or Hydrogen  with noncondensable gases */
@@ -1513,7 +1513,7 @@ cs_gas_mix_initialization(void)
   else
     f = cs_field_by_name("y_o2");
 
-  cs_real_t *y_d = f->val;
+  cs_span<cs_real_t> y_d = f->get_val_s();
   cs_field_get_key_struct(f, k_id, &s_d);
 
   cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
@@ -1552,7 +1552,7 @@ cs_gas_mix_initialization(void)
     if ((y_d[c_id] > 1.0) || (y_d[c_id] < 0.0))
       iok++;
 
-    y_d[c_id] = cs::min(cs::max(y_d[c_id], 0.0), 1.0);
+    y_d[c_id] = cs::clamp(y_d[c_id], 0.0, 1.0);
 
     // specific heat (Cp_m0) of the gas mixture
     cpro_cp[c_id] += y_d[c_id]*s_d.cp;
@@ -1570,7 +1570,7 @@ cs_gas_mix_initialization(void)
     vol_d += cell_vol[c_id]*(y_d[c_id]/s_d.mol_mas)*mix_mol_mas[c_id];
 
     /* Initialize Cv */
-   if (cpro_cv != nullptr)
+   if (!cpro_cv.empty())
      cpro_cv[c_id] = cpro_cp[c_id]
        - cs_physical_constants_r / mix_mol_mas[c_id];
 
