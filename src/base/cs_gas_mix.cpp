@@ -642,7 +642,8 @@ cs_gas_mix_setup_finalize(void)
   }
   if (_n_uknown_gases > 0)
     bft_error(__FILE__,__LINE__,0,
-              _("%d species do not have a defined type, please check log files.\n"));
+              _("%d species do not have a defined type, please check log files.\n"),
+              _n_uknown_gases);
 
   const int f_id0 = _gas_mix.species_to_field_id[0];
   int k_id = cs_gas_mix_get_field_key();
