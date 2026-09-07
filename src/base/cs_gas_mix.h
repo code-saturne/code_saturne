@@ -106,19 +106,19 @@ typedef struct cs_gas_mix_t{
                                           (solved variables first) */
   cs_array<cs_gas_mix_y_type> gas_type; /*!< Type of predefined gas */
 
-  cs_array<double>  mol_mas;   /*!< molar mass */
-  cs_array<double>  cp;        /*!< specific heat at constant pressure */
-  cs_array<double>  vol_dif;   /*!< volume diffusion */
-  cs_array<double>  mu_a;      /*!< dynamic viscosity a */
-  cs_array<double>  mu_b;      /*!< dynamic viscosity a */
-  cs_array<double>  lambda_a;  /*!< thermal conductivity a */
-  cs_array<double>  lambda_b;  /*!< thermal conductivity b */
-  cs_array<double>  muref;     /*!< ref. viscosity for Sutherland law */
-  cs_array<double>  lamref;    /*!< ref. thermal conductivity for Sutherland law */
-  cs_array<double>  trefmu;    /*!< ref. temperature for viscosity in Sutherland law */
-  cs_array<double>  treflam;   /*!< ref. temperature for conductivity Sutherland law */
-  cs_array<double>  smu;       /*!< Sutherland temperature for viscosity */
-  cs_array<double>  slam;      /*!< Sutherland temperature for conductivity */
+  cs_array<cs_real_t>  mol_mas;   /*!< molar mass */
+  cs_array<cs_real_t>  cp;        /*!< specific heat at constant pressure */
+  cs_array<cs_real_t>  vol_dif;   /*!< volume diffusion */
+  cs_array<cs_real_t>  mu_a;      /*!< dynamic viscosity a */
+  cs_array<cs_real_t>  mu_b;      /*!< dynamic viscosity a */
+  cs_array<cs_real_t>  lambda_a;  /*!< thermal conductivity a */
+  cs_array<cs_real_t>  lambda_b;  /*!< thermal conductivity b */
+  cs_array<cs_real_t>  muref;     /*!< ref. viscosity for Sutherland law */
+  cs_array<cs_real_t>  lamref;    /*!< ref. thermal conductivity for Sutherland law */
+  cs_array<cs_real_t>  trefmu;    /*!< ref. temperature for viscosity in Sutherland law */
+  cs_array<cs_real_t>  treflam;   /*!< ref. temperature for conductivity Sutherland law */
+  cs_array<cs_real_t>  smu;       /*!< Sutherland temperature for viscosity */
+  cs_array<cs_real_t>  slam;      /*!< Sutherland temperature for conductivity */
 
 } cs_gas_mix_t;
 
@@ -128,19 +128,19 @@ typedef struct cs_gas_mix_t{
 
 typedef struct {
 
-  double  mol_mas;   /* molar mass */
-  double  cp;        /* specific heat at constant pressure */
-  double  vol_dif;   /* volume diffusion */
-  double  mu_a;      /* dynamic viscosity a */
-  double  mu_b;      /* dynamic viscosity a */
-  double  lambda_a;  /* thermal conductivity a */
-  double  lambda_b;  /* thermal conductivity b */
-  double  muref;     /* ref. viscosity for Sutherland law */
-  double  lamref;    /* ref. thermal conductivity for Sutherland law */
-  double  trefmu;    /* ref. temperature for viscosity in Sutherland law */
-  double  treflam;   /* ref. temperature for conductivity Sutherland law */
-  double  smu;       /* Sutherland temperature for viscosity */
-  double  slam;      /* Sutherland temperature for conductivity */
+  cs_real_t  mol_mas;   /* molar mass */
+  cs_real_t  cp;        /* specific heat at constant pressure */
+  cs_real_t  vol_dif;   /* volume diffusion */
+  cs_real_t  mu_a;      /* dynamic viscosity a */
+  cs_real_t  mu_b;      /* dynamic viscosity a */
+  cs_real_t  lambda_a;  /* thermal conductivity a */
+  cs_real_t  lambda_b;  /* thermal conductivity b */
+  cs_real_t  muref;     /* ref. viscosity for Sutherland law */
+  cs_real_t  lamref;    /* ref. thermal conductivity for Sutherland law */
+  cs_real_t  trefmu;    /* ref. temperature for viscosity in Sutherland law */
+  cs_real_t  treflam;   /* ref. temperature for conductivity Sutherland law */
+  cs_real_t  smu;       /* Sutherland temperature for viscosity */
+  cs_real_t  slam;      /* Sutherland temperature for conductivity */
 
 } cs_gas_mix_species_prop_t;
 
