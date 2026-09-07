@@ -153,12 +153,16 @@ struct cs_atmo_option_t {
    */
   /*--------------------------------------------------------------------------*/
 
+  /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
   DISABLE_WARNING_PUSH
   DISABLE_WARNING(-Wdeprecated-declarations)
+  /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
   cs_atmo_option_t(){}
 
+  /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
   DISABLE_WARNING_POP
+  /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
   /* Space and time reference of the run */
   /*! Starting year */

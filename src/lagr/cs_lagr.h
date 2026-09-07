@@ -444,12 +444,16 @@ struct cs_lagr_specific_physics_t {
    */
   /*--------------------------------------------------------------------------*/
 
+  /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
   DISABLE_WARNING_PUSH
   DISABLE_WARNING(-Wdeprecated-declarations)
+  /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
   cs_lagr_specific_physics_t(){}
 
+  /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
   DISABLE_WARNING_POP
+  /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
   /*  activation (=1) or not (=0) of an evolution equation on the particle
       temperature seen (in degrees Celsius).
