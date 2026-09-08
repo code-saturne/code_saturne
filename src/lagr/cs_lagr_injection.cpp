@@ -1287,16 +1287,15 @@ cs_lagr_injection(int        time_id,
 
               cs_lnum_t i = p_id + n_inject - p_set.n_particles;
 
-              cs_lnum_t event_id = events->n_events;
               events->n_events += 1;
 
-              if (event_id >= events->n_events_max) {
+              if (events->n_events >= events->n_events_max) {
                 /* flush events */
                 cs_lagr_stat_update_event(events,
                                           CS_LAGR_STAT_GROUP_TRACKING_EVENT);
                 events->n_events = 0;
-                event_id = 0;
               }
+              cs_lnum_t event_id = events->n_events;
 
               cs_lagr_event_init_from_particle(events, &p_set, event_id, p_id);
 
