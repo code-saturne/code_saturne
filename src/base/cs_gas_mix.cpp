@@ -1326,7 +1326,7 @@ cs_gas_mix_physical_properties(void)
   auto yk_trefmu  = _gas_mix.trefmu.view();
   auto yk_treflam = _gas_mix.treflam.view();
 
-  constexpr cs_real_t sqrt8 = sqrt(8.0);
+  const cs_real_t sqrt8 = sqrt(8.0);
 
   const int ivsuth = cs_glob_fluid_properties->ivsuth;
 
