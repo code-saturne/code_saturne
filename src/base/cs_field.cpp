@@ -421,40 +421,6 @@ _field_create(const char   *name,
   return f;
 }
 
-/*----------------------------------------------------------------------------*
- * allocate and initialize a field values array.
- *
- * parameters:
- *   n_elts  <-- number of associated elements
- *   dim     <-- associated dimension
- *   val_old <-- pointer to previous array in case of reallocation
- *               (usually nullptr)
- *
- * returns  pointer to new field values.
- *----------------------------------------------------------------------------*/
-
-static cs_real_t *
-_add_val(cs_lnum_t   n_elts,
-         int         dim,
-         cs_real_t  *val_old)
-{
-  cs_real_t  *val = val_old;
-
-  CS_REALLOC_HD(val, n_elts*dim, cs_real_t, cs_alloc_mode);
-
-  /* Initialize field. This should not be necessary, but when using
-     threads with Open MP, this should help ensure that the memory will
-     first be touched by the same core that will later operate on
-     this memory, usually leading to better core/memory affinity. */
-
-  const cs_lnum_t _n_elts = dim * n_elts;
-# pragma omp parallel for if (_n_elts > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < _n_elts; ii++)
-    val[ii] = 0.0;
-
-  return val;
-}
-
 /*----------------------------------------------------------------------------
  * Find an id matching a key or define a new key and associated id.
  *

@@ -43,9 +43,7 @@
 #include <float.h>
 #endif
 
-#if defined(__cplusplus)
 #include <limits>
-#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
