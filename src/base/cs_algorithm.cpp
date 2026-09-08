@@ -283,7 +283,7 @@ _select_if_gt_omp(int        n_threads,
         e_id -= (t_e_id - n_select);
         assert(e_id >= s_id);
       }
-      if (e_id > s_id > 0) {
+      if (e_id - s_id > 0) {
         size_t nb = (e_id-s_id)*sizeof(cs_lnum_t);
         cs_lnum_t *dst = &a[s_id];
         cs_lnum_t *src = &a[t_s_id];
@@ -314,7 +314,7 @@ _select_if_gt_omp(int        n_threads,
           assert(s_id <= n_select);
           t_s_id += n_shift;
         }
-        if (e_id > s_id > 0) {
+        if (e_id - s_id > 0) {
           size_t nb = (e_id-s_id)*sizeof(cs_lnum_t);
           cs_lnum_t *dst = &a[s_id];
           cs_lnum_t *src = &a[t_s_id];
