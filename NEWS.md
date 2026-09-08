@@ -3,6 +3,8 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix in Lagrangian module: correct event calculation for stats.
+
 - Fix `resource_name` detection when only the batch system is defined for the
   `code_saturne submit` command.
 
