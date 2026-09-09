@@ -31,6 +31,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_aster_coupling.h"
 #include "base/cs_base.h"
 #include "base/cs_mobile_structures.h"
 #include "cdo/cs_domain.h"
@@ -174,6 +175,26 @@ cs_gui_mobile_mesh_internal_structures(cs_real_t  xmstru[][3][3],
 void
 cs_gui_mobile_mesh_bc_structures(int                        *idfstr,
                                  cs_mobile_structure_type_t *idftyp);
+
+/*-----------------------------------------------------------------------------
+ * Retrieve code_aster coupling parameters.
+ *
+ * Called once at initialization.
+ *
+ * parameters:
+ * disp_acce_algo <-- Displacement acceleration algorithm
+ * disp_relax_coef <-- Displacement relaxation coefficient
+ * disp_pred_algo <-- Displacement prediction algorithm
+ * disp_pred_alpha <-- Displacement prediction alpha
+ * disp_pred_beta <-- Displacement prediction beta
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_get_aster_parameters(cs_acceleration_t &disp_acce_algo,
+                                        double            &disp_relax_coef,
+                                        cs_prediction_t   &disp_pred_algo,
+                                        double            &disp_pred_alpha,
+                                        double            &disp_pred_beta);
 
 /*----------------------------------------------------------------------------*/
 

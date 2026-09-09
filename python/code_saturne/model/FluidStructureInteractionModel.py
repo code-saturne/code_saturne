@@ -39,12 +39,13 @@ import unittest
 # Application modules import
 # -------------------------------------------------------------------------------
 
-from code_saturne.model.XMLvariables import  Model, Variables
-from code_saturne.model.XMLmodel     import  ModelTest
+from code_saturne.model.XMLvariables import Model, Variables
+from code_saturne.model.XMLmodel import ModelTest
 
 # -------------------------------------------------------------------------------
 # Constants class
 # -------------------------------------------------------------------------------
+
 
 class Constants:
     """
@@ -63,14 +64,15 @@ class Constants:
     # raise Exception, "Cannot reassign constant a"
     const.a = 20
     """
+
     def __getattr__(self, attr):
         """
         Get an attributs
         """
         try:
             return self.__dict__[attr]
-        except(KeyError):
-            raise AttributeError('A instance has no attribute %s' % attr)
+        except KeyError:
+            raise AttributeError("A instance has no attribute %s" % attr)
 
     def __setattr__(self, attr, value):
         """
@@ -81,22 +83,33 @@ class Constants:
         else:
             self.__dict__[attr] = value
 
+
 # -------------------------------------------------------------------------------
 # Constant class
 # -------------------------------------------------------------------------------
 
 const = Constants()
 
-const.max_iterations_implicitation           = 'max_iterations_implicitation'
-const.implicitation_precision                = 'implicitation_precision'
-const.displacement_prediction_alpha          = 'displacement_prediction_alpha'
-const.displacement_prediction_beta           = 'displacement_prediction_beta'
-const.stress_prediction_alpha                = 'stress_prediction_alpha'
-const.monitor_point_synchronisation          = 'monitor_point_synchronisation'
+const.max_iterations_implicitation = "max_iterations_implicitation"
+const.implicitation_precision = "implicitation_precision"
+const.displacement_prediction_alpha = "displacement_prediction_alpha"
+const.displacement_prediction_beta = "displacement_prediction_beta"
+const.stress_prediction_alpha = "stress_prediction_alpha"
+const.monitor_point_synchronisation = "monitor_point_synchronisation"
+# specific to code_aster
+const.displacement_prediction_method_ca = "displacement_prediction_method_ca"
+const.displacement_prediction_alpha_ca = "displacement_prediction_alpha_ca"
+const.displacement_prediction_beta_ca = "displacement_prediction_beta_ca"
+const.displacement_acceleration_method_ca = "displacement_acceleration_method_ca"
+const.displacement_relaxation_coefficient_ca = "displacement_relaxation_coefficient_ca"
+const.verbosity_ca = "verbosity"
+const.visualization_ca = "visualization"
+
 
 # -------------------------------------------------------------------------------
 # Mobile Mesh model class
 # -------------------------------------------------------------------------------
+
 
 class FluidStructureInteractionModel(Model):
     """
@@ -109,16 +122,23 @@ class FluidStructureInteractionModel(Model):
         """
         self.case = case
 
-        self.__node_models = case.xmlGetNode('thermophysical_models')
-        self.__node_ale    = self.__node_models.xmlInitChildNode('ale_method')
+        self.__node_models = case.xmlGetNode("thermophysical_models")
+        self.__node_ale = self.__node_models.xmlInitChildNode("ale_method")
 
         self.__defaults = {}
-        self.__defaults[const.max_iterations_implicitation]  = 1
-        self.__defaults[const.implicitation_precision]  = 1e-05
+        self.__defaults[const.max_iterations_implicitation] = 1
+        self.__defaults[const.implicitation_precision] = 1e-05
         self.__defaults[const.displacement_prediction_alpha] = 0.5
-        self.__defaults[const.displacement_prediction_beta] = 0
-        self.__defaults[const.stress_prediction_alpha] = 2
-        self.__defaults[const.monitor_point_synchronisation] = 'off'
+        self.__defaults[const.displacement_prediction_beta] = 0.0
+        self.__defaults[const.stress_prediction_alpha] = 2.0
+        self.__defaults[const.monitor_point_synchronisation] = "off"
+        self.__defaults[const.displacement_prediction_method_ca] = "none"
+        self.__defaults[const.displacement_prediction_alpha_ca] = 0.0
+        self.__defaults[const.displacement_prediction_beta_ca] = 0.0
+        self.__defaults[const.displacement_acceleration_method_ca] = "none"
+        self.__defaults[const.displacement_relaxation_coefficient_ca] = 1.0
+        self.__defaults[const.verbosity_ca] = 1
+        self.__defaults[const.visualization_ca] = 1
 
     # ------------------------------------------------------------------
     # MaxIterations
@@ -138,8 +158,9 @@ class FluidStructureInteractionModel(Model):
         """
         Get value of maximum of iteration if implicitation from xml file.
         """
-        return self.__getIntData(const.max_iterations_implicitation,
-                                 self.setMaxIterations)
+        return self.__getIntData(
+            const.max_iterations_implicitation, self.setMaxIterations
+        )
 
     # ------------------------------------------------------------------
     # Precision
@@ -158,8 +179,7 @@ class FluidStructureInteractionModel(Model):
         """
         Get value of precision of implicitation from xml file.
         """
-        return self.__getDoubleData(const.implicitation_precision,
-                                    self.setPrecision)
+        return self.__getDoubleData(const.implicitation_precision, self.setPrecision)
 
     # ------------------------------------------------------------------
     # DisplacementPredictionAlpha
@@ -170,6 +190,7 @@ class FluidStructureInteractionModel(Model):
         """
         Set value of isplacement prediction alpha into xml file.
         """
+        self.isFloat(value)
         self.__node_ale.xmlSetData(const.displacement_prediction_alpha, value)
 
     @Variables.noUndo
@@ -177,8 +198,30 @@ class FluidStructureInteractionModel(Model):
         """
         Get value of displacement prediction alpha from xml file.
         """
-        return self.__getDoubleData(const.displacement_prediction_alpha,
-                                    self.setDisplacementPredictionAlpha)
+        return self.__getDoubleData(
+            const.displacement_prediction_alpha, self.setDisplacementPredictionAlpha
+        )
+
+    @Variables.undoLocal
+    def setDisplacementPredictionAlphaCA(self, value):
+        """
+        Set value of isplacement prediction alpha into xml file.
+        """
+        self.isFloat(value)
+
+        node_ast = self.__getCodeAsterCouplingNode()
+
+        node_ast.xmlSetData(const.displacement_prediction_alpha_ca, value)
+
+    @Variables.noUndo
+    def getDisplacementPredictionAlphaCA(self):
+        """
+        Get value of displacement prediction alpha from xml file.
+        """
+        return self.__getCodeAsterDoubleData(
+            const.displacement_prediction_alpha_ca,
+            self.getDisplacementPredictionAlphaCA,
+        )
 
     # ------------------------------------------------------------------
     # DisplacementPredictionBeta
@@ -189,6 +232,7 @@ class FluidStructureInteractionModel(Model):
         """
         Set value of isplacement prediction beta into xml file.
         """
+        self.isFloat(value)
         self.__node_ale.xmlSetData(const.displacement_prediction_beta, value)
 
     @Variables.noUndo
@@ -196,8 +240,29 @@ class FluidStructureInteractionModel(Model):
         """
         Get value of displacement prediction beta from xml file.
         """
-        return self.__getDoubleData(const.displacement_prediction_beta,
-                                    self.setDisplacementPredictionBeta)
+        return self.__getDoubleData(
+            const.displacement_prediction_beta, self.setDisplacementPredictionBeta
+        )
+
+    @Variables.undoLocal
+    def setDisplacementPredictionBetaCA(self, value):
+        """
+        Set value of isplacement prediction beta into xml file.
+        """
+        self.isFloat(value)
+
+        node_ast = self.__getCodeAsterCouplingNode()
+
+        node_ast.xmlSetData(const.displacement_prediction_beta_ca, value)
+
+    @Variables.noUndo
+    def getDisplacementPredictionBetaCA(self):
+        """
+        Get value of displacement prediction beta from xml file.
+        """
+        return self.__getCodeAsterDoubleData(
+            const.displacement_prediction_beta_ca, self.setDisplacementPredictionBetaCA
+        )
 
     # ------------------------------------------------------------------
     # StressPredictionAlpha
@@ -215,8 +280,9 @@ class FluidStructureInteractionModel(Model):
         """
         Get value of stress prediction alpha from xml file.
         """
-        return self.__getDoubleData(const.stress_prediction_alpha,
-                                    self.setStressPredictionAlpha)
+        return self.__getDoubleData(
+            const.stress_prediction_alpha, self.setStressPredictionAlpha
+        )
 
     # ------------------------------------------------------------------
     # Structure time plots
@@ -234,60 +300,171 @@ class FluidStructureInteractionModel(Model):
         """
         Get activation status of structure time plots from xml file.
         """
-        return self.__getOnOffXML(const.monitor_point_synchronisation,
-                                  self.setInternalStructuresTimePlot)
+        return self.__getOnOffXML(
+            const.monitor_point_synchronisation, self.setInternalStructuresTimePlot
+        )
+
+    # ------------------------------------------------------------------
+    # Displacement acceleration method
+    # ------------------------------------------------------------------
+
+    @Variables.undoLocal
+    def setDisplacementAccelerationMethodCA(self, method):
+        """
+        Set the displacement acceleration method.
+
+        Accepted values:
+        - none
+        - relaxation
+        - aitken
+        """
+        self.isInList(method, ("none", "relaxation", "aitken"))
+
+        node_ast = self.__getCodeAsterCouplingNode()
+        node_ast.xmlSetData(const.displacement_acceleration_method_ca, method)
+
+    @Variables.noUndo
+    def getDisplacementAccelerationMethodCA(self):
+        """
+        Get the displacement acceleration method.
+
+        If absent, initialise it with the default method.
+        """
+        method = self.__getCodeAsterStringData(
+            const.displacement_acceleration_method_ca,
+            self.setDisplacementAccelerationMethodCA,
+        )
+
+        self.isInList(method, ("none", "relaxation", "aitken"))
+
+        return method
+
+    # ------------------------------------------------------------------
+    # Displacement relaxation coefficient
+    # ------------------------------------------------------------------
+
+    @Variables.undoLocal
+    def setDisplacementRelaxationCoefficientCA(self, value):
+        """
+        Set the fixed displacement relaxation coefficient.
+        """
+        self.isGreaterOrEqual(value, 0.0)
+        self.isLowerOrEqual(value, 1.0)
+
+        node_ast = self.__getCodeAsterCouplingNode()
+        node_ast.xmlSetData(const.displacement_relaxation_coefficient_ca, value)
+
+    @Variables.noUndo
+    def getDisplacementRelaxationCoefficientCA(self):
+        """
+        Get the fixed displacement relaxation coefficient.
+        """
+        return self.__getCodeAsterDoubleData(
+            const.displacement_relaxation_coefficient_ca,
+            self.setDisplacementRelaxationCoefficientCA,
+        )
+
+    # ------------------------------------------------------------------
+    # Displacement prediction method
+    # ------------------------------------------------------------------
+
+    @Variables.undoLocal
+    def setDisplacementPredictionMethodCA(self, method):
+        """
+        Set the displacement prediction method.
+
+        Accepted values:
+        - none
+        - explicit_euler
+        - adams_bashforth
+        - user
+        """
+        self.isInList(
+            method,
+            (
+                "none",
+                "explicit_euler",
+                "adams_bashforth",
+                "user",
+            ),
+        )
+
+        node_ast = self.__getCodeAsterCouplingNode()
+        node_ast.xmlSetData(const.displacement_prediction_method_ca, method)
+
+    @Variables.noUndo
+    def getDisplacementPredictionMethodCA(self):
+        """
+        Get the displacement prediction method.
+
+        If absent, initialise it with the default method.
+        """
+        method = self.__getCodeAsterStringData(
+            const.displacement_prediction_method_ca,
+            self.setDisplacementPredictionMethodCA,
+        )
+
+        self.isInList(
+            method,
+            (
+                "none",
+                "explicit_euler",
+                "adams_bashforth",
+                "user",
+            ),
+        )
+
+        return method
 
     # ------------------------------------------------------------------
     # code_aster log verbosity
     # ------------------------------------------------------------------
 
     @Variables.undoLocal
-    def setAstVerbosity(self, value):
+    def setVerbosityCA(self, value):
         """
-        Set code_aster logging level in xml file.
+        Set the code_aster logging level.
         """
-        node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
-        if not node_ast:
-            node_ast = self.__node_ale.xmlInitChildNode("code_aster_coupling")
-        node_ast.xmlSetData("verbosity", value)
+        self.isInt(value)
+
+        node_ast = self.__getCodeAsterCouplingNode()
+
+        node_ast.xmlSetData(const.verbosity_ca, value)
 
     @Variables.noUndo
-    def getAstVerbosity(self):
+    def getVerbosityCA(self):
         """
-        Get code_aster logging level from xml file.
+        Get the code_aster logging level.
+
+        If absent, initialise it with its default value.
         """
-        node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
-        if node_ast:
-            s = node_ast.xmlGetChildString("verbosity")
-            if s:
-                return int(s)
-        return 1  # default
+        return self.__getCodeAsterIntData(const.verbosity_ca, self.setVerbosityCA)
 
     # ------------------------------------------------------------------
     # code_aster visualization
     # ------------------------------------------------------------------
 
     @Variables.undoLocal
-    def setAstVisualization(self, value):
+    def setVisualizationCA(self, value):
         """
-        Set code_aster logging level in xml file.
+        Set the code_aster visualization level.
         """
-        node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
-        if not node_ast:
-            node_ast = self.__node_ale.xmlInitChildNode("code_aster_coupling")
-        node_ast.xmlSetData("visualization", value)
+        self.isInt(value)
+
+        node_ast = self.__getCodeAsterCouplingNode()
+
+        node_ast.xmlSetData(const.visualization_ca, value)
 
     @Variables.noUndo
-    def getAstVisualization(self):
+    def getVisualizationCA(self):
         """
-        Get code_aster logging level from xml file.
+        Get the code_aster visualization level.
+
+        If absent, initialise it with its default value.
         """
-        node_ast = self.__node_ale.xmlGetChildNode('code_aster_coupling')
-        if node_ast:
-            s = node_ast.xmlGetChildString("visualization")
-            if s:
-                return int(s)
-        return 1  # default
+        return self.__getCodeAsterIntData(
+            const.visualization_ca, self.setVisualizationCA
+        )
 
     # ------------------------------------------------------------------
     # Helper functions
@@ -323,20 +500,77 @@ class FluidStructureInteractionModel(Model):
             setFunction(value)
         return value
 
+    def __getCodeAsterDoubleData(self, name, setFunction):
+        """
+        Read a real value from the code_aster_coupling XML node.
+
+        If the value does not exist, write and return its default value.
+        """
+        value = None
+
+        node_ast = self.__node_ale.xmlGetChildNode("code_aster_coupling")
+
+        if node_ast:
+            value = node_ast.xmlGetChildDouble(name)
+
+        if value is None or value == "":
+            value = self.__defaults[name]
+            setFunction(value)
+
+        return value
+
+    def __getCodeAsterStringData(self, name, setFunction):
+        """
+        Read a string from the code_aster_coupling XML node.
+
+        If the value does not exist, write and return its default value.
+        """
+        value = None
+
+        node_ast = self.__node_ale.xmlGetChildNode("code_aster_coupling")
+
+        if node_ast:
+            value = node_ast.xmlGetChildString(name)
+
+        if value is None or value == "":
+            value = self.__defaults[name]
+            setFunction(value)
+
+        return value
+
+    def __getCodeAsterIntData(self, name, setFunction):
+        """
+        Read an integer from the code_aster_coupling XML node.
+
+        If the value does not exist, write and return its default value.
+        """
+        value = None
+
+        node_ast = self.__node_ale.xmlGetChildNode("code_aster_coupling")
+
+        if node_ast:
+            value = node_ast.xmlGetChildString(name)
+
+        if value is None or value == "":
+            value = self.__defaults[name]
+            setFunction(value)
+
+        return int(value)
+
     def __setOnOffXML(self, name, value):
         """
         Set value of 'on'/'off' xml attribute
         """
-        Model().isInList(value, [ 'on', 'off'])
+        Model().isInList(value, ["on", "off"])
         xmlNode = self.__node_ale.xmlInitNode(name)
-        xmlNode['status'] = value
+        xmlNode["status"] = value
 
     def __getOnOffXML(self, name, setFunction):
         """
         Get value of 'on'/'off' xml attribut
         """
-        node = self.__node_ale.xmlInitNode(name, 'status')
-        value = node['status']
+        node = self.__node_ale.xmlInitNode(name, "status")
+        value = node["status"]
 
         return self.__getDefaultDataIfNone(value, name, setFunction)
 
@@ -346,9 +580,17 @@ class FluidStructureInteractionModel(Model):
         """
         return self.__node_ale
 
+    def __getCodeAsterCouplingNode(self):
+        """
+        Return the code_aster coupling XML node, creating it if needed.
+        """
+        return self.__node_ale.xmlInitChildNode("code_aster_coupling")
+
+
 # -------------------------------------------------------------------------------
 # FluidStructureInteraction test case
 # -------------------------------------------------------------------------------
+
 
 class FluidStructureInteractionTestCase(ModelTest):
     """
@@ -361,8 +603,7 @@ class FluidStructureInteractionTestCase(ModelTest):
         """
         model = None
         model = FluidStructureInteractionModel(self.case)
-        assert model != None, 'Could not instantiate '
-
+        assert model != None, "Could not instantiate "
 
     def checkGetandSetPrecision(self):
         """Check whether the FluidStructureInteraction class could be set and get precision"""
@@ -375,11 +616,12 @@ class FluidStructureInteractionTestCase(ModelTest):
                     </implicitation_precision>
                 </ale_method>"""
 
-        assert mdl.getNodeALE() == self.xmlNodeFromString(doc), \
-            'Could not set fluid structure interaction precision'
-        assert mdl.getPrecision() == 0.001, \
-            'Could not get fluid structure interaction precision'
-
+        assert mdl.getNodeALE() == self.xmlNodeFromString(
+            doc
+        ), "Could not set fluid structure interaction precision"
+        assert (
+            mdl.getPrecision() == 0.001
+        ), "Could not get fluid structure interaction precision"
 
     def checkGetandSetMaxIterations(self):
         """Check whether the FluidStructureInteraction class could be set and get max iterations"""
@@ -392,11 +634,12 @@ class FluidStructureInteractionTestCase(ModelTest):
                 </max_iterations_implicitation>
                 </ale_method>"""
 
-        assert mdl.getNodeALE() == self.xmlNodeFromString(doc), \
-            'Could not set fluid structure interaction max iterations'
-        assert mdl.getMaxIterations() == 99, \
-            'Could not get fluid structure interaction max iteration'
-
+        assert mdl.getNodeALE() == self.xmlNodeFromString(
+            doc
+        ), "Could not set fluid structure interaction max iterations"
+        assert (
+            mdl.getMaxIterations() == 99
+        ), "Could not get fluid structure interaction max iteration"
 
     def checkGetAndSetAdvancedViewFeatures(self):
         """Check whether the FluidStructureInteraction class could be set and get advanced view features"""
@@ -405,7 +648,7 @@ class FluidStructureInteractionTestCase(ModelTest):
         mdl.setStressPredictionAlpha(42.0)
         mdl.setDisplacementPredictionBeta(42.42)
         mdl.setDisplacementPredictionAlpha(42.4242)
-        mdl.setMonitorPointSynchronisation('on')
+        mdl.setInternalStructuresTimePlot("on")
 
         doc = """<ale_method status="off">
                 <stress_prediction_alpha>
@@ -420,16 +663,21 @@ class FluidStructureInteractionTestCase(ModelTest):
                 <monitor_point_synchronisation status="on"/>
                 </ale_method>"""
 
-        assert mdl.getNodeALE() == self.xmlNodeFromString(doc), \
-            'Could not set fluid structure interaction advanced view features'
-        assert mdl.getStressPredictionAlpha() == 42.0, \
-            'Could not get fluid structure interaction stress prediction alpha'
-        assert mdl.getDisplacementPredictionBeta() == 42.42, \
-            'Could not get fluid structure interaction displacement prediction beta'
-        assert mdl.getDisplacementPredictionAlpha() == 42.4242, \
-            'Could not get fluid structure interaction displacement prediction alpha'
-        assert mdl.getMonitorPointSynchronisation() == 'on', \
-            'Could not get fluid structure interaction monitor point synchronisation'
+        assert mdl.getNodeALE() == self.xmlNodeFromString(
+            doc
+        ), "Could not set fluid structure interaction advanced view features"
+        assert (
+            mdl.getStressPredictionAlpha() == 42.0
+        ), "Could not get fluid structure interaction stress prediction alpha"
+        assert (
+            mdl.getDisplacementPredictionBeta() == 42.42
+        ), "Could not get fluid structure interaction displacement prediction beta"
+        assert (
+            mdl.getDisplacementPredictionAlpha() == 42.4242
+        ), "Could not get fluid structure interaction displacement prediction alpha"
+        assert (
+            mdl.getInternalStructuresTimePlot() == "on"
+        ), "Could not get fluid structure interaction monitor point synchronisation"
 
 
 def suite():
@@ -447,6 +695,7 @@ def runTest():
     print("FluidStructureInteractionTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())
+
 
 # -------------------------------------------------------------------------------
 # End

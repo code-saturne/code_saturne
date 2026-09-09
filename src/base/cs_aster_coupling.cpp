@@ -67,6 +67,7 @@
 #include "base/cs_dispatch.h"
 #include "base/cs_interface.h"
 #include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_paramedmem_coupling_utils.h"
@@ -112,12 +113,6 @@ typedef struct {
 } ple_coupling_mpi_set_info_t;
 
 #endif
-
-typedef enum {
-  None,
-  Relaxation,
-  Aitken,
-} cs_acceleration_t;
 
 /* Main code_aster coupling structure */
 
@@ -170,13 +165,12 @@ struct _cs_aster_coupling_t {
   cs_real_t
     *bstress_pred; /* Predicted boundary stress at current sub-iteration */
 
-  cs_real_t aexxst; /*!< coefficient for the predicted displacement */
-  cs_real_t bexxst; /*!< coefficient for the predicted displacement */
-  cs_real_t rexxst; /*!< coefficient for the relaxation displacement */
+  cs_prediction_t disp_pred_algo; /*!< predicted displacement method */
+  cs_real_t disp_pred_alpha; /*!< coefficient for the predicted displacement */
+  cs_real_t disp_pred_beta;  /*!< coefficient for the predicted displacement */
 
-  cs_acceleration_t pred_disp;
-
-  cs_real_t cfopre; /*!< coefficient for the predicted boundary stress */
+  cs_acceleration_t disp_acce_algo; /*!< acceleration displacement method */
+  cs_real_t disp_rela_coeff; /*!< coefficient for the relaxation displacement */
 
   cs_real_t *tmp[3]; /* Temporary array */
 
@@ -295,11 +289,24 @@ struct _cs_aster_coupling_t {
   /*----------------------------------------------------------------------------*/
 
   void
-  set_coefficients(cs_real_t aexxst_, cs_real_t bexxst_, cs_real_t cfopre_)
+  set_prediction(cs_prediction_t method, cs_real_t alpha, cs_real_t beta)
   {
-    aexxst = aexxst_;
-    bexxst = bexxst_;
-    cfopre = cfopre_;
+    disp_pred_algo  = method;
+    disp_pred_alpha = alpha;
+    disp_pred_beta  = beta;
+  }
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Set coefficient for prediction
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  set_acceleration(cs_acceleration_t method, cs_real_t coeff)
+  {
+    disp_acce_algo  = method;
+    disp_rela_coeff = coeff;
   }
 };
 
@@ -494,6 +501,10 @@ _pred(cs_real_t       *valpre,
   if (n < 1)
     return;
 
+  assert(val1 != nullptr);
+  assert(val2 != nullptr);
+  assert(valpre != nullptr);
+
   /* Update prediction array */
   const cs_lnum_t size = 3 * n;
   cs_dispatch_context ctx;
@@ -521,8 +532,15 @@ _pred(cs_real_t       *valpre,
  *----------------------------------------------------------------------------*/
 
 static cs_real_t
-_dinorm(cs_real_t *vect1, cs_real_t *vect2, cs_lnum_t nbpts)
+_dinorm(const cs_real_t *vect1, const cs_real_t *vect2, cs_lnum_t nbpts)
 {
+  if (nbpts <= 0) {
+    return 0.0;
+  }
+
+  assert(vect1 != nullptr);
+  assert(vect2 != nullptr);
+
   cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   /* Compute the norm of the difference */
@@ -555,32 +573,47 @@ _dinorm(cs_real_t *vect1, cs_real_t *vect2, cs_lnum_t nbpts)
  *----------------------------------------------------------------------------*/
 
 static cs_real_t
-_aitken(const cs_real_t *dp_k,
-        const cs_real_t *dp_km,
-        const cs_real_t *d_kp,
-        const cs_real_t *d_k)
+_aitken(const cs_real_t *d_curr,
+        const cs_real_t *d_prev,
+        const cs_real_t *dp_curr,
+        const cs_real_t *dp_prev,
+        cs_real_t        omega_prev)
 {
-  cs_aster_coupling_t *cpl  = cs_glob_ast_coupling;
-  const cs_lnum_t    size = 3 * cpl->n_vertices;
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
-  cs_real_t *tmp0 = cpl->tmp[0], *tmp1 = cpl->tmp[1], *tmp2 = cpl->tmp[2];
+  const cs_lnum_t size = 3 * cpl->n_vertices;
 
-  /* Note that for vertices, vertices at shared parallel boundaries
-   will appear multiple tiles, so have a higher "weight" than
-   others, but the effect on the global direction should be minor,
-   so we avoid a more complex test here */
+  cs_real_t *r_curr  = cpl->tmp[0];
+  cs_real_t *r_prev  = cpl->tmp[1];
+  cs_real_t *delta_r = cpl->tmp[2];
 
-  /* difference */
-  cs_array_difference(size, dp_k, dp_km, tmp0);
-  cs_array_difference(size, d_kp, dp_k, tmp1);
-  cs_array_difference(size, d_k, dp_km, tmp2);
+  /*
+   * Current and previous fixed-point residuals:
+   *
+   * r_k = d_k - dp_{k-1}
+   * r_{k-1} = d_{k-1} - dp_{k-2}
+   *
+   * The exact indices must match the array history used
+   * by the calling routine.
+   */
 
-  cs_array_real_padd(size, tmp2, tmp1);
+  cs_array_difference(size, d_curr, dp_curr, r_curr);
 
-  cs_real_t xx, xy;
-  cs_gdot_xx_xy(size, tmp1, tmp0, &xx, &xy);
+  cs_array_difference(size, d_prev, dp_prev, r_prev);
 
-  return xy / xx;
+  cs_array_difference(size, r_curr, r_prev, delta_r);
+
+  cs_real_t denominator, numerator;
+  cs_gdot_xx_xy(size, delta_r, r_prev, &denominator, &numerator);
+
+  const cs_real_t tolerance = 100.0 * cs_math_epzero;
+
+  if (denominator <= tolerance)
+    return omega_prev;
+
+  cs_real_t omega = -omega_prev * numerator / denominator;
+
+  return cs::max(0.0, cs::min(1.0, omega));
 }
 
 /*----------------------------------------------------------------------------
@@ -691,10 +724,8 @@ cs_aster_coupling_n_couplings(void)
 /*!
  * \brief Initial exchange with code_aster.
  *
- * \param[in]  nalimx  maximum number of Noneation iterations of
- *                     the structure displacement
- * \param[in]  epalim  relative precision of Noneation of
- *                     the structure displacement
+ * \param[in]  nalimx  maximum number of iterations the structure displacement
+ * \param[in]  epalim  relative precision of the structure displacement
  */
 /*----------------------------------------------------------------------------*/
 
@@ -746,14 +777,19 @@ cs_aster_coupling_initialize(int nalimx, cs_real_t epalim)
   cpl->dtref  = ts->dt_ref; /* reference time step */
   cpl->epsilo = epalim;     /* scheme convergence threshold */
 
-  cpl->aexxst = 1.0;
-  cpl->bexxst = 0.5;
-  cpl->rexxst = 1.0; /* No relaxation by default */
-  cpl->pred_disp = None; /* No relaxation by default */
-  cpl->cfopre = 2.0;
+  // Displacement acceleration
+  cpl->disp_acce_algo  = cs_acceleration_t::None;
+  cpl->disp_rela_coeff = 1.0;
+
+  // Displacement prediction
+  cpl->disp_pred_algo  = cs_prediction_t::None;
+  cpl->disp_pred_alpha = 0.0;
+  cpl->disp_pred_beta  = 0.0;
 
   cpl->icv1 = 0;
   cpl->icv2 = 0;
+  cpl->rcv1 = 0.0;
+  cpl->rcv2 = 0.0;
   cpl->lref = 0.;
 
   cpl->s_it_id = 0; /* Sub-iteration id */
@@ -886,21 +922,38 @@ cs_aster_coupling_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set coefficient for prediction
+ * \brief Set coefficient for displacement prediction
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_aster_coupling_set_coefficients(cs_real_t aexxst,
-                                   cs_real_t bexxst,
-                                   cs_real_t cfopre)
+cs_aster_coupling_set_prediction(cs_prediction_t method,
+                                 cs_real_t       alpha,
+                                 cs_real_t       beta)
 {
   cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl == nullptr)
     return;
 
-  cpl->set_coefficients(aexxst, bexxst, cfopre);
+  cpl->set_prediction(method, alpha, beta);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set coefficient for displacement acceleration
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_aster_coupling_set_acceleration(cs_acceleration_t method, cs_real_t coeff)
+{
+  cs_aster_coupling_t *cpl = cs_glob_ast_coupling;
+
+  if (cpl == nullptr)
+    return;
+
+  cpl->set_acceleration(method, coeff);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1160,6 +1213,10 @@ cs_aster_coupling_exchange_time_step(cs_real_t c_dt[])
 
   /* Reset sub-iteration count */
   cpl->s_it_id = 0;
+  cpl->icv1    = 0;
+  cpl->icv2    = 0;
+  cpl->rcv1    = 0.0;
+  cpl->rcv2    = 0.0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1207,37 +1264,8 @@ cs_aster_coupling_send_bstress(void)
 
   const cs_lnum_t n_faces = cpl->n_faces;
 
-  /* Prediction ared defined in Fabien Huvelin PhD*/
-  constexpr bool use_pred = false;
-  cs_real_t c1, c2;
-  if (cpl->s_it_id == 0 and use_pred) {
-    /* Explicit synchrone prediction */
-    c1 = cpl->cfopre;
-    c2 = 1.0 - cpl->cfopre;
-    _pred(cpl->bstress_pred,
-          cpl->bstress_curr,
-          cpl->bstress_prev,
-          nullptr,
-          c1,
-          c2,
-          0.0,
-          n_faces);
-  }
-  else {
-    /* None prediction */
-    c1 = 1.0;
-    c2 = 0.0;
-    cs_array_copy(3 * n_faces, cpl->bstress_curr, cpl->bstress_pred);
-  }
-
-  if (verbosity > 0)
-    bft_printf("--------------------------------------\n"
-               "Boundary stress prediction coefficients\n"
-               " C1: %4.2le\n"
-               " C2: %4.2le\n"
-               "--------------------------------------\n\n",
-               c1,
-               c2);
+  // No prediction
+  cs_array_copy(3 * n_faces, cpl->bstress_curr, cpl->bstress_pred);
 
   /* Send boundary stress */
 
@@ -1327,7 +1355,7 @@ cs_aster_coupling_evaluate_cvg(void)
 
     /* compute icv */
 
-    cpl->rcv1 = _dinorm(cpl->xast_curr[0], cpl->xast_curr[1], cpl->n_vertices) /
+    cpl->rcv1 = _dinorm(cpl->xast_curr[0], cpl->xsat_pred[1], cpl->n_vertices) /
                 cpl->lref;
     cpl->rcv2 = _dinorm(cpl->xsat_pred[0], cpl->xsat_pred[1], cpl->n_vertices) /
                 cpl->lref;
@@ -1419,10 +1447,10 @@ cs_aster_coupling_save_values(void)
   const cs_lnum_t n_vertices = cpl->n_vertices;
   const cs_lnum_t nb_faces   = cpl->n_faces;
 
-  /* record efforts */
+  /* record stress */
   cs_array_copy(3 * nb_faces, cpl->bstress_pred, cpl->bstress_prev);
 
-  /* record dynamic data */
+  /* record velocity */
   cs_array_copy(3 * n_vertices, cpl->vast_prev, cpl->vast_pprev);
   cs_array_copy(3 * n_vertices, cpl->vast_curr, cpl->vast_prev);
 
@@ -1465,48 +1493,58 @@ cs_aster_coupling_compute_displacement(cs_real_t disp[][3])
 
   /* Prediction ared defined in Fabien Huvelin PhD*/
 
-  constexpr bool use_pred = false;
   /* separate prediction for explicit/None cases */
-  if (cpl->s_it_id == 0 && use_pred) {
-    /* Adams-Bashforth scheme of order 2 if aexxst = 1, bexxst = 0.5 */
-    /* Euler explicit scheme of order 1 if aexxst = 1, bexxst = 0 */
-    const cs_real_t dt_curr = cs_glob_time_step->dt[0];
-    const cs_real_t dt_prev = cs_glob_time_step->dt[1];
+  if (cpl->s_it_id == 0) {
+    if (cpl->disp_pred_algo == cs_prediction_t::None) {
+      c1 = 1.0;
+      c2 = 0.0;
+      c3 = 0.0;
 
-    c1 = 1.;
-    c2 = dt_curr * (cpl->aexxst + cpl->bexxst * dt_curr / dt_prev);
-    c3 = -cpl->bexxst * dt_curr * dt_curr / dt_prev;
-    _pred(cpl->xsat_pred[0],
-          cpl->xast_curr[0],
-          cpl->vast_prev,
-          cpl->vast_pprev,
-          c1,
-          c2,
-          c3,
-          n_vertices);
-  }
-  else {
-    /* rexxst could be defined differently to have a better convergence */
-    cs_real_t rexxst;
-    if (cpl->pred_disp == Aitken) {
-      rexxst = _aitken(cpl->xsat_pred[0],
-                       cpl->xsat_pred[1],
-                       cpl->xast_curr[0],
-                       cpl->xast_curr[1]);
-    }
-    else if (cpl->pred_disp == None) {
-      rexxst = 1.0;
+      cs_array_copy(3 * n_vertices, cpl->xast_curr[0], cpl->xsat_pred[0]);
     }
     else {
-      rexxst = cpl->rexxst;
+      const cs_real_t dt_curr = cs_glob_time_step->dt[0];
+      const cs_real_t dt_prev = cs_glob_time_step->dt[1];
+
+      c1 = 1.;
+      c2 = dt_curr *
+           (cpl->disp_pred_alpha + cpl->disp_pred_beta * dt_curr / dt_prev);
+      c3 = -cpl->disp_pred_beta * dt_curr * dt_curr / dt_prev;
+      _pred(cpl->xsat_pred[0],
+            cpl->xast_curr[0],
+            cpl->vast_prev,
+            cpl->vast_pprev,
+            c1,
+            c2,
+            c3,
+            n_vertices);
     }
-    c1 = rexxst;
-    c2 = 1. - rexxst;
-    c3 = 0.;
+  }
+  else {
+    /* disp_rela_coeff could be defined differently to have a better convergence
+     */
+    cs_real_t relaxation_coeff;
+    if (cpl->disp_acce_algo == cs_acceleration_t::Aitken && cpl->s_it_id > 1) {
+      relaxation_coeff = _aitken(cpl->xsat_pred[0],
+                                 cpl->xsat_pred[1],
+                                 cpl->xast_curr[0],
+                                 cpl->xast_curr[1],
+                                 cpl->disp_rela_coeff);
+    }
+    else if (cpl->disp_acce_algo == cs_acceleration_t::Relaxation) {
+      relaxation_coeff = cpl->disp_rela_coeff;
+    }
+    else {
+      relaxation_coeff = 1.0;
+    }
+    cpl->disp_rela_coeff = relaxation_coeff;
+    c1                   = relaxation_coeff;
+    c2                   = 1. - relaxation_coeff;
+    c3                   = 0.;
 
     cs_array_copy(3 * n_vertices, cpl->xsat_pred[0], cpl->xsat_pred[1]);
 
-    if (cpl->pred_disp == None) {
+    if (cpl->disp_acce_algo == cs_acceleration_t::None) {
       cs_array_copy(3 * n_vertices, cpl->xast_curr[0], cpl->xsat_pred[0]);
     }
     else {
@@ -1527,15 +1565,26 @@ cs_aster_coupling_compute_displacement(cs_real_t disp[][3])
                "*********************************\n\n",
                cpl->s_it_id);
 
-    bft_printf("--------------------------------------------\n"
-               "Displacement prediction coefficients\n"
-               " C1: %4.2le\n"
-               " C2: %4.2le\n"
-               " C3: %4.2le\n"
-               "--------------------------------------------\n\n",
-               c1,
-               c2,
-               c3);
+    if (cpl->s_it_id == 0) {
+      bft_printf("--------------------------------------------\n"
+                 "Displacement prediction coefficients\n"
+                 " C1: %4.2le\n"
+                 " C2: %4.2le\n"
+                 " C3: %4.2le\n"
+                 "--------------------------------------------\n\n",
+                 c1,
+                 c2,
+                 c3);
+    }
+    else {
+      bft_printf("--------------------------------------------\n"
+                 "Displacement acceleration coefficients\n"
+                 " C1: %4.2le\n"
+                 " C2: %4.2le\n"
+                 "--------------------------------------------\n\n",
+                 c1,
+                 c2);
+    }
   }
 
   /* Set in disp the values of prescribed displacements */

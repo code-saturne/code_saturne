@@ -104,6 +104,65 @@ enum ale_boundary_nature
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Convert a GUI string to a displacement acceleration algorithm.
+ *----------------------------------------------------------------------------*/
+
+static cs_acceleration_t
+_displacement_acceleration_from_string(const char *name)
+{
+  if (name == nullptr || name[0] == '\0')
+    return cs_acceleration_t::None;
+
+  if (strcmp(name, "none") == 0)
+    return cs_acceleration_t::None;
+
+  if (strcmp(name, "relaxation") == 0)
+    return cs_acceleration_t::Relaxation;
+
+  if (strcmp(name, "aitken") == 0)
+    return cs_acceleration_t::Aitken;
+
+  bft_error(__FILE__,
+            __LINE__,
+            0,
+            "Invalid displacement acceleration method \"%s\".",
+            name);
+
+  return cs_acceleration_t::None;
+}
+
+/*----------------------------------------------------------------------------
+ * Convert a GUI string to a displacement prediction algorithm.
+ *----------------------------------------------------------------------------*/
+
+static cs_prediction_t
+_displacement_prediction_from_string(const char *name)
+{
+  if (name == nullptr || name[0] == '\0')
+    return cs_prediction_t::None;
+
+  if (strcmp(name, "none") == 0)
+    return cs_prediction_t::None;
+
+  if (strcmp(name, "explicit_euler") == 0)
+    return cs_prediction_t::Euler_Explicit;
+
+  if (strcmp(name, "adams_bashforth") == 0)
+    return cs_prediction_t::Adams_Bashforth;
+
+  if (strcmp(name, "user") == 0)
+    return cs_prediction_t::User;
+
+  bft_error(__FILE__,
+            __LINE__,
+            0,
+            "Invalid displacement prediction method \"%s\".",
+            name);
+
+  return cs_prediction_t::None;
+}
+
 /*-----------------------------------------------------------------------------
  * Return value for ALE method
  *
@@ -1125,6 +1184,179 @@ cs_gui_mobile_mesh_bc_structures(int                        *idfstr,
       e_struct++;
     }
   }
+}
+
+/*-----------------------------------------------------------------------------
+ * Retrieve code_aster coupling parameters.
+ *
+ * Called once at initialization.
+ *
+ * parameters:
+ * disp_acce_algo <-- Displacement acceleration algorithm
+ * disp_relax_coef <-- Displacement relaxation coefficient
+ * disp_pred_algo <-- Displacement prediction algorithm
+ * disp_pred_alpha <-- Displacement prediction alpha
+ * disp_pred_beta <-- Displacement prediction beta
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mobile_mesh_get_aster_parameters(cs_acceleration_t &disp_acce_algo,
+                                        double            &disp_relax_coef,
+                                        cs_prediction_t   &disp_pred_algo,
+                                        double            &disp_pred_alpha,
+                                        double            &disp_pred_beta)
+{
+  /*
+   * Initialise all output parameters.
+   *
+   * These values are also valid if the code_aster coupling node
+   * is absent from the XML tree.
+   */
+
+  disp_acce_algo  = cs_acceleration_t::None;
+  disp_relax_coef = 1.0;
+
+  disp_pred_algo  = cs_prediction_t::None;
+  disp_pred_alpha = 0.0;
+  disp_pred_beta  = 0.0;
+
+  cs_tree_node_t *tn_ast =
+    cs_tree_get_node(cs_glob_tree,
+                     "thermophysical_models/ale_method/code_aster_coupling");
+
+  if (tn_ast == nullptr)
+    return;
+
+  /*
+   * Displacement acceleration method.
+   */
+
+  cs_tree_node_t *tn_method =
+    cs_tree_node_get_child(tn_ast, "displacement_acceleration_method_ca");
+
+  if (tn_method != nullptr) {
+    const char *method_name = cs_tree_node_get_value_str(tn_method);
+
+    disp_acce_algo = _displacement_acceleration_from_string(method_name);
+  }
+
+  /*
+   * Fixed displacement relaxation coefficient.
+   */
+
+  cs_gui_node_get_child_real(tn_ast,
+                             "displacement_relaxation_coefficient_ca",
+                             &disp_relax_coef);
+
+  /*
+   * Displacement prediction method.
+   */
+
+  tn_method =
+    cs_tree_node_get_child(tn_ast, "displacement_prediction_method_ca");
+
+  if (tn_method != nullptr) {
+    const char *method_name = cs_tree_node_get_value_str(tn_method);
+
+    disp_pred_algo = _displacement_prediction_from_string(method_name);
+  }
+
+  /*
+   * Displacement prediction coefficients.
+   */
+
+  cs_gui_node_get_child_real(tn_ast,
+                             "displacement_prediction_alpha_ca",
+                             &disp_pred_alpha);
+
+  cs_gui_node_get_child_real(tn_ast,
+                             "displacement_prediction_beta_ca",
+                             &disp_pred_beta);
+
+  /*
+   * Enforce consistency between the selected acceleration method
+   * and its coefficient.
+   */
+
+  if (disp_acce_algo != cs_acceleration_t::Relaxation)
+    disp_relax_coef = 1.0;
+
+  /*
+   * Enforce the predefined displacement prediction coefficients.
+   *
+   * Values read from XML are used only for the User method.
+   */
+
+  switch (disp_pred_algo) {
+    case cs_prediction_t::None:
+      disp_pred_alpha = 0.0;
+      disp_pred_beta  = 0.0;
+      break;
+
+    case cs_prediction_t::Euler_Explicit:
+      disp_pred_alpha = 1.0;
+      disp_pred_beta  = 0.0;
+      break;
+
+    case cs_prediction_t::Adams_Bashforth:
+      disp_pred_alpha = 1.0;
+      disp_pred_beta  = 0.5;
+      break;
+
+    case cs_prediction_t::User:
+      /*
+       * Keep the values read from the XML tree.
+       */
+      break;
+  }
+
+#if _XML_DEBUG_
+
+  const char *acceleration_name = "none";
+
+  switch (disp_acce_algo) {
+    case cs_acceleration_t::None:
+      acceleration_name = "none";
+      break;
+    case cs_acceleration_t::Relaxation:
+      acceleration_name = "relaxation";
+      break;
+    case cs_acceleration_t::Aitken:
+      acceleration_name = "aitken";
+      break;
+  }
+
+  const char *prediction_name = "none";
+
+  switch (disp_pred_algo) {
+    case cs_prediction_t::None:
+      prediction_name = "none";
+      break;
+    case cs_prediction_t::Euler_Explicit:
+      prediction_name = "explicit_euler";
+      break;
+    case cs_prediction_t::Adams_Bashforth:
+      prediction_name = "adams_bashforth";
+      break;
+    case cs_prediction_t::User:
+      prediction_name = "user";
+      break;
+  }
+
+  bft_printf("==> %s\n", __func__);
+
+  bft_printf("displacement_acceleration_method_ca: %s\n"
+             "displacement_relaxation_coefficient_ca: %g\n"
+             "displacement_prediction_method_ca: %s\n"
+             "displacement_prediction_alpha_ca: %g\n"
+             "displacement_prediction_beta_ca: %g\n",
+             acceleration_name,
+             disp_relax_coef,
+             prediction_name,
+             disp_pred_alpha,
+             disp_pred_beta);
+
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

@@ -47,6 +47,19 @@
 
 typedef struct _cs_aster_coupling_t cs_aster_coupling_t;
 
+enum class cs_acceleration_t {
+  None,
+  Relaxation,
+  Aitken,
+};
+
+enum class cs_prediction_t {
+  None,
+  Euler_Explicit,
+  Adams_Bashforth,
+  User,
+};
+
 /*============================================================================
  * Global variable definitions
  *============================================================================*/
@@ -91,14 +104,23 @@ cs_aster_coupling_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set coefficient for prediction
+ * \brief Set coefficient for displacement prediction
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_aster_coupling_set_coefficients(cs_real_t aexxst,
-                                   cs_real_t bexxst,
-                                   cs_real_t cfopre);
+cs_aster_coupling_set_prediction(cs_prediction_t method,
+                                 cs_real_t       alpha,
+                                 cs_real_t       beta);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set coefficient for displacement acceleration
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_aster_coupling_set_acceleration(cs_acceleration_t method, cs_real_t coeff);
 
 /*----------------------------------------------------------------------------*/
 /*!

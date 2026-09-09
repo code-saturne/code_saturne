@@ -832,8 +832,22 @@ cs_mobile_structures_initialize(void)
     cs_aster_coupling_initialize(cs_glob_mobile_structures_n_iter_max,
                                  cs_glob_mobile_structures_i_eps);
 
-    /* Set coefficient for prediction */
-    cs_aster_coupling_set_coefficients(ms->aexxst, ms->bexxst, ms->cfopre);
+    double            disp_relax_coef, disp_pred_alpha, disp_pred_beta;
+    cs_prediction_t   disp_pred_algo;
+    cs_acceleration_t disp_acce_algo;
+    cs_gui_mobile_mesh_get_aster_parameters(disp_acce_algo,
+                                            disp_relax_coef,
+                                            disp_pred_algo,
+                                            disp_pred_alpha,
+                                            disp_pred_beta);
+
+    /* Set coefficient for displacement acceleration */
+    cs_aster_coupling_set_acceleration(disp_acce_algo, disp_relax_coef);
+
+    /* Set coefficient for displacement prediction */
+    cs_aster_coupling_set_prediction(disp_pred_algo,
+                                     disp_pred_alpha,
+                                     disp_pred_beta);
 
     /* Send geometric information to code_aster */
     cs_aster_coupling_geometry(n_ast_faces, face_ids, almax);
