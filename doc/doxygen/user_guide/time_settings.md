@@ -74,3 +74,57 @@ Subpage
 
 Checkpoint/Restart
 ==================
+
+This page indicates if a computation resumes from a previous one.
+
+\image html gui_restart.png
+
+## Restart from checkpoint
+
+- **Off**: start a new computation without restarting from a checkpoint.
+- **On**: restart the computation from a user-selected checkpoint directory
+  located in a `<case>/RESU/<run_id>` folder.
+- **Automatic**: automatically select a checkpoint directory from the available
+  `<run_id>` directories located in the `<case>/RESU/` folder.
+
+## Determine restart behavior relative to the mesh: 
+
+- **Unmodified** (disable preprocessing): read mesh directly from the restart
+  checkpoint directory, with no additional preprocessing.
+- **Different mesh** (interpolate): execute standard import or generation and
+preprocessing steps, interpolating field data from the restart checkpoint mesh.
+- **Rebuild same mesh**: Do not use mesh in restart checkpoint directory even if
+  present, importing and/or reprocessing mesh as for initial run. This can be
+  useful when saving the mesh modified by preprocessing was disabled in the
+  previous run (presumably to save disk space or I/O time for large runs), and
+  applying the same preprocessing steps will rebuild the mesh matching the other
+  restart files.
+- **Automatic** (unmodified if present): same as **Unmodified** if
+  `restart/mesh_input.csm` is present, **Rebuild same mesh** otherwise
+
+In complex cases where the `restart/mesh_input.csm` file does not match the
+other files in the restart directory, but a matching `mesh_input.csm` can be
+located or generated, placing it in the matching checkpoint directory post-hoc
+is suggested. An alternative is also to use the `cs_restart_map_set_mesh_input`
+user_defined function to specify the path of the file which should be used,
+combined with the **Different Mesh** option above (as the path defined through
+the user function will override the default one).
+
+## Calculation on frozen dynamic
+
+When this option is enabled, the thermal evolution and species transport are
+computed while keeping the velocity, pressure, and turbulence fields constant.
+
+## Advanced options
+
+- **Read auxiliary restart file**: when disabled, additional restart data are
+  not read from the auxiliary restart file, including the time step, reference
+  point, mass fluxes, boundary condition coefficients, extrapolated source
+  terms, time moments, and fields associated with specific physical models.
+
+- **Frequency of restart checkpoints**: controls how often restart files are
+  generated. Available options are:
+  - **Never**
+  - **At the end of the computation**
+  - **Four restart checkpoints** (default)
+  - **User-defined frequency**
