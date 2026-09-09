@@ -534,10 +534,6 @@ _pred(cs_real_t       *valpre,
 static cs_real_t
 _dinorm(const cs_real_t *vect1, const cs_real_t *vect2, cs_lnum_t nbpts)
 {
-  if (nbpts <= 0) {
-    return 0.0;
-  }
-
   assert(vect1 != nullptr);
   assert(vect2 != nullptr);
 
@@ -564,6 +560,11 @@ _dinorm(const cs_real_t *vect1, const cs_real_t *vect2, cs_lnum_t nbpts)
     norm = val[0], rescale = val[1];
   }
 #endif
+
+  // rescale < 1 if no vertices
+  if (rescale <= 0.5) {
+    return 0.0;
+  }
 
   return sqrt(norm / rescale);
 }
