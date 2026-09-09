@@ -342,9 +342,9 @@ _update_pressure_temperature_idilat_2(cs_lnum_t  n_cells_ext)
 
   cs_real_t *cvar_pr = CS_F_(p)->val;
   const cs_real_t *cvara_pr = CS_F_(p)->val_pre;
-  if (   cs_glob_cf_model-> ieos == CS_EOS_IDEAL_GAS
-      || cs_glob_cf_model-> ieos == CS_EOS_GAS_MIX
-      || cs_glob_cf_model-> ieos == CS_EOS_MOIST_AIR) {
+  if (   cs_glob_cf_model-> eos_model == CS_EOS_IDEAL_GAS
+      || cs_glob_cf_model-> eos_model == CS_EOS_GAS_MIX
+      || cs_glob_cf_model-> eos_model == CS_EOS_MOIST_AIR) {
     if (   cs_glob_thermal_model->thermal_variable
         == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
       cs_field_t *temp = cs_field_by_name_try("temperature");

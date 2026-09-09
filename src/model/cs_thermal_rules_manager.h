@@ -182,10 +182,10 @@ public:
   requires_kinetic_st_fields(int  has_kinetic_st) const;
 
   bool
-  requires_moist_air_field(int  ieos) const;
+  requires_moist_air_field(int  eos_model) const;
 
   bool
-  requires_compressible_fields(int  ieos,
+  requires_compressible_fields(int  eos_model,
                                int  thermal_var) const;
 
   // Get additional fields

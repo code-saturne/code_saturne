@@ -313,7 +313,7 @@
 
   \var  cs_fluid_properties_t::xmasmr
         molar mass of the perfect gas in \f$kg/mol\f$
-        (if \ref cstphy::ieos "ieos"=1)
+        (if \ref cstphy::eos_model "eos_model"=1)
 
         Always useful.
 

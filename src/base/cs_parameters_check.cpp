@@ -1508,14 +1508,16 @@ cs_parameters_check(void)
            "real number but it has value %f\n"),
          cs_glob_fluid_properties->viscv0);
 
-    if (cs_glob_cf_model->ieos < 1 || cs_glob_cf_model->ieos > 4)
+    if (   cs_glob_cf_model->eos_model < CS_EOS_IDEAL_GAS
+        || cs_glob_cf_model->eos_model > CS_EOS_HOMOGENEOUS_TWO_PHASE)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in the compressible module"),
          _("IEOS must be an integer between 1 and 3 but it has\n"
-           "a value of %d\n"), cs_glob_cf_model->ieos);
+           "a value of %d\n"), cs_glob_cf_model->eos_model);
 
-    if (cs_glob_cf_model->ieos == 2 && cs_glob_cf_model->gammasg < 1)
+    if (   cs_glob_cf_model->eos_model == CS_EOS_STIFFENED_GAS
+        && cs_glob_cf_model->gammasg < 1)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in the compressible module"),
@@ -1523,7 +1525,7 @@ cs_parameters_check(void)
            "must be a real number superior to 1 but it has a value of %f\n"),
          cs_glob_cf_model->gammasg);
 
-    if (   cs_glob_cf_model->ieos == 1
+    if (   cs_glob_cf_model->eos_model == CS_EOS_IDEAL_GAS
         && cs_glob_fluid_properties->cp0 < cs_glob_fluid_properties->cv0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
@@ -1534,7 +1536,8 @@ cs_parameters_check(void)
            "CV0 = %f\n"),
          cs_glob_fluid_properties->cp0, cs_glob_fluid_properties->cv0);
 
-    if (  (cs_glob_cf_model->ieos == 1 || cs_glob_cf_model->ieos == 3)
+    if (  (   cs_glob_cf_model->eos_model == CS_EOS_IDEAL_GAS
+           || cs_glob_cf_model->eos_model == CS_EOS_GAS_MIX)
         && fabs(cs_glob_cf_model->psginf) > 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
@@ -1581,7 +1584,7 @@ cs_parameters_check(void)
    * Verification for idilat compressible scheme
    *--------------------------------------------------------------------------*/
   if (cs_glob_velocity_pressure_model->idilat == 2 &&
-      cs_glob_cf_model->ieos > 0 &&
+      cs_glob_cf_model->eos_model != CS_EOS_NONE &&
       cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
     cs_parameters_error
       (CS_ABORT_DELAYED,

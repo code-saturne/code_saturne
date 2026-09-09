@@ -1289,7 +1289,7 @@ cs_parameters_define_auxiliary_fields(void)
   /* Condition "ieos_moist_air"
    * yv: mass fraction of water vapor. */
 
-  if (th_cf_model->ieos == CS_EOS_MOIST_AIR) {
+  if (th_cf_model->eos_model == CS_EOS_MOIST_AIR) {
     const auto *fields = frm->get_fields("Thermal", "ieos_moist_air");
     if (fields != nullptr) {
       for (const auto &rule : *fields)
@@ -1301,10 +1301,10 @@ cs_parameters_define_auxiliary_fields(void)
    * algo:pressure_gradient, algo:pressure_increment_gradient,
    * isobaric_heat_capacity. */
 
-  if (th_cf_model->ieos != CS_EOS_NONE) {
+  if (th_cf_model->eos_model != CS_EOS_NONE) {
     if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
         || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY
-        || th_cf_model->ieos == CS_EOS_GAS_MIX) {
+        || th_cf_model->eos_model == CS_EOS_GAS_MIX) {
 
       const auto *fields = frm->get_fields("Thermal",
                              "ieos_not_none_and_temp_or_energy");
@@ -1315,7 +1315,7 @@ cs_parameters_define_auxiliary_fields(void)
     }
 
     /* For gas mix: variable rho, Cp, Cv */
-    if (th_cf_model->ieos == CS_EOS_GAS_MIX) {
+    if (th_cf_model->eos_model == CS_EOS_GAS_MIX) {
       fluid_pro->ivivar = 1;
       fluid_pro->icp = 0;
       fluid_pro->icv = 0;

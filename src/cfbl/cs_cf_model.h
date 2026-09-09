@@ -46,21 +46,24 @@
 
 typedef struct {
 
-  int           ieos;         /* indicator of equation of state */
+  int           eos_model{-1};   /* indicator of equation of state */
 
-  int           ithvar;       /* indicator for thermodynamic
+  [[deprecated("Use eos_model instead")]]
+  int&          ieos{eos_model}; /*!< Deprecated, use `eos_model` instead */
+
+  int           ithvar{10000};  /* indicator for thermodynamic
                                  variables initialization */
 
-  int           icfgrp;       /* indicator for hydrostatic balance
+  int           icfgrp{1};      /* indicator for hydrostatic balance
                                  in boundary conditions */
 
-  double        psginf;       /* stiffened gas limit pressure (zero in
+  double        psginf{0.};     /* stiffened gas limit pressure (zero in
                                  perfect gas) (Pa) for single phase model */
 
-  double        gammasg;      /* stiffened gas polytropic coefficient,
+  double        gammasg{1.4};   /* stiffened gas polytropic coefficient,
                                  (dimensionless) for single phase model */
 
-  int           hgn_relax_eq_st;  /* source term step:
+  int           hgn_relax_eq_st{-1};  /* source term step:
                                      - -1 disabled
                                      -  0 enabled */
 

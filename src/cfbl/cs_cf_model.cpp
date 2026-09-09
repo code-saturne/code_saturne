@@ -86,7 +86,7 @@
   Members of these fluid properties are publicly accessible, to allow for
   concise syntax, as they are expected to be used in many places.
 
-  \var  cs_cf_model_t::ieos
+  \var  cs_cf_model_t::eos_model
         indicator of equation of state
         -  CS_EOS_IDEAL_GAS: ideal gas with a constant adiabatic coefficient
         -  CS_EOS_STIFFENED_GAS: stiffened gas
@@ -159,15 +159,7 @@
 
 /* main compressible model structure */
 
-static cs_cf_model_t  _cf_model =
-{
-  .ieos            = -1,
-  .ithvar          = 10000,
-  .icfgrp          = 1,
-  .psginf          = 0.,
-  .gammasg         = 1.4,
-  .hgn_relax_eq_st = -1
-};
+static cs_cf_model_t  _cf_model;
 
 const cs_cf_model_t  *cs_glob_cf_model = &_cf_model;
 
@@ -451,7 +443,7 @@ cs_cf_initialize(void)
   /* Compute variable Cv in order to have a correct initialization
      of the total energy (computed in inivar by a call to a thermodynamic
      function), now that initial gas mixture composition is known.
-     Note that the only eos with a variable Cv is the ideal gas mix (ieos=3). */
+     Note that the only eos with a variable Cv is the ideal gas mix (eos_model=3). */
 
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
   if (fluid_props->icv > -1) {

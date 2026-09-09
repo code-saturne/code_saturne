@@ -489,18 +489,18 @@ cs_thermal_rules_manager::requires_kinetic_st_fields
 
 bool
 cs_thermal_rules_manager::requires_moist_air_field
-  (int  ieos) const
+  (int  eos_model) const
 {
   // CS_EOS_MOIST_AIR = 2
-  return (ieos == 2 && conditional_fields_.count("moist_air") > 0);
+  return (eos_model == 2 && conditional_fields_.count("moist_air") > 0);
 }
 
 bool
 cs_thermal_rules_manager::requires_compressible_fields
-(int  ieos,
+(int  eos_model,
  int  thermal_var) const
 {
-  return (ieos != 0 && (thermal_var == 1 || thermal_var == 3) &&
+  return (eos_model != 0 && (thermal_var == 1 || thermal_var == 3) &&
           conditional_fields_.count("compressible") > 0);
 }
 

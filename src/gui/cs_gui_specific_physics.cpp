@@ -885,7 +885,7 @@ cs_gui_physical_model_select(void)
       if (cs_gui_strcmp(model_value, "constant_gamma")) {
         cs_glob_physical_model_flag[CS_COMPRESSIBLE] = 0;
         cs_cf_model_t *cf_mdl = cs_get_glob_cf_model();
-        cf_mdl->ieos = 1;
+        cf_mdl->eos_model = 1;
       }
       else
         bft_error(__FILE__, __LINE__, 0,

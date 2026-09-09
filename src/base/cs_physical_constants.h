@@ -91,7 +91,7 @@ typedef struct {
   double        rvsra;        /* ratio gas constant h2o / dry air */
   double        clatev;       /* latent heat of evaporation */
   double        xmasmr;       /* molar mass of the perfect gas in kg/mol
-                                 (if ieos=1) */
+                                 (if eos_model=1) */
   int           ipthrm;       /* uniform variable thermodynamic pressure for the
                                  low-Mach algorithm */
   double        pther;        /* uniform thermodynamic pressure for the low-Mach

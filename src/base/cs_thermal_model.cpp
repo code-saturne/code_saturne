@@ -307,7 +307,7 @@ cs_thermal_model_gamma_d_c_square(const cs_real_t  cp[],
   /*  Local variables */
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const int ieos = cs_glob_cf_model->ieos;
+  const int eos_model = cs_glob_cf_model->eos_model;
   const cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
   const cs_fluid_properties_t *phys_prop = cs_glob_fluid_properties;
 
@@ -332,21 +332,21 @@ cs_thermal_model_gamma_d_c_square(const cs_real_t  cp[],
   /* no specific eos : the pressure equation is a Poisson equation */
 
   /* Ideal gas mixtures TODO : in case of solving enthalpy, variable cp*/
-  if (ieos == CS_EOS_GAS_MIX) {
+  if (eos_model == CS_EOS_GAS_MIX) {
     cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       gdc2[c_id] = mult * mix_mol_mas[c_id]
       / ((temp[c_id] + t_add)* cs_physical_constants_r);
       });
   }
-  else if (ieos == CS_EOS_IDEAL_GAS) {
+  else if (eos_model == CS_EOS_IDEAL_GAS) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       gdc2[c_id] = mult / (rair * (temp[c_id] + t_add));
     });
   }
 
   /* Ideal gas mixture (only water accounted for). TODO : other gases */
-  else if (ieos == CS_EOS_MOIST_AIR) {
+  else if (eos_model == CS_EOS_MOIST_AIR) {
     /* B, C are the Antoine's law constants */
     const cs_real_t B = 17.438;
     const cs_real_t C = 239.78;
@@ -693,7 +693,7 @@ cs_thermal_model_add_kst(cs_real_t  smbrs[])
         cs_real_t *meteo_p = cs_field_by_name("meteo_pressure")->val;
         cs_real_t *mol_mass = nullptr;
         cs_real_t *cpro_cp = nullptr;
-        if (cs_glob_cf_model->ieos == CS_EOS_GAS_MIX) {
+        if (cs_glob_cf_model->eos_model == CS_EOS_GAS_MIX) {
           mol_mass = cs_field_by_name("mix_mol_mas")->val;
           cpro_cp = CS_F_(cp)->val;
         }
@@ -882,7 +882,7 @@ cs_eos_predicted_rho(void)
     if (thm->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
       t_add = cs_physical_constants_celsius_to_kelvin;
   }
-  else if (cs_glob_cf_model->ieos == CS_EOS_GAS_MIX) {
+  else if (cs_glob_cf_model->eos_model == CS_EOS_GAS_MIX) {
     var_th = cs_field_by_name("tempk")->val;
   }
   else if (thm->thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
@@ -890,13 +890,13 @@ cs_eos_predicted_rho(void)
     mult = cs_glob_fluid_properties->cp0;
   }
 
-  if (cs_glob_cf_model->ieos == CS_EOS_IDEAL_GAS) {
+  if (cs_glob_cf_model->eos_model == CS_EOS_IDEAL_GAS) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cvar_rho[c_id] = mult * (cvar_pr[c_id] + p0)
                       / (r_pg_cnst * (var_th[c_id] + t_add));
     });
   }
-  else if (cs_glob_cf_model->ieos == CS_EOS_GAS_MIX) {
+  else if (cs_glob_cf_model->eos_model == CS_EOS_GAS_MIX) {
     cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cvar_rho[c_id] = (cvar_pr[c_id] + p0) * mix_mol_mas[c_id]
@@ -904,7 +904,7 @@ cs_eos_predicted_rho(void)
     });
   }
 
-  /* TODO other ieos values ... */
+  /* TODO other eos_model values ... */
   ctx.wait(); // needed for CPU cs_solve_equation.c
 }
 
@@ -927,7 +927,7 @@ cs_thermal_model_cv(cs_real_t  *xcvv)
 
   cs_dispatch_context ctx;
 
-  if (cs_glob_cf_model->ieos == CS_EOS_MOIST_AIR) {
+  if (cs_glob_cf_model->eos_model == CS_EOS_MOIST_AIR) {
     /* get useful arrays and constants */
     cs_real_t *yw = cs_field_by_name("yw")->val;
     cs_real_t *yv = cs_field_by_name("yv")->val;
@@ -940,7 +940,7 @@ cs_thermal_model_cv(cs_real_t  *xcvv)
                    + (yw[c_id] - yv[c_id]) * cvl;
     });
   }
-  else if (cs_glob_cf_model->ieos == CS_EOS_IDEAL_GAS) {
+  else if (cs_glob_cf_model->eos_model == CS_EOS_IDEAL_GAS) {
     cs_real_t r_pg_cnst = phys_pro->r_pg_cnst;
     if (phys_pro->icp > 0) {
       cs_real_t *cp = CS_F_(cp)->val;
@@ -955,9 +955,9 @@ cs_thermal_model_cv(cs_real_t  *xcvv)
       });
     }
   }
-  else if (cs_glob_cf_model->ieos == CS_EOS_GAS_MIX) { /*Pas de calcul de cv*/
+  else if (cs_glob_cf_model->eos_model == CS_EOS_GAS_MIX) { /*Pas de calcul de cv*/
     return;
-  } else { /* quid when ieos = CS_EOS_MOIST_AIR */
+  } else { /* quid when eos_model = CS_EOS_MOIST_AIR */
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       xcvv[c_id] = 1.;
     });

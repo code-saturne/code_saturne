@@ -431,13 +431,13 @@ _init_variable_fields(void)
 
   /* In case ideal gas mix specific physics was enabled by the user
      together with the compressible module, the equation of state
-     indicator is reset to the approprate value automatically (ieos=3)
+     indicator is reset to the approprate value automatically (eos_model=3)
      and the user is warned. */
   if (   cs_glob_physical_model_flag[CS_GAS_MIX] >= 0
       && cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
-      && cs_glob_cf_model->ieos != CS_EOS_GAS_MIX) {
+      && cs_glob_cf_model->eos_model != CS_EOS_GAS_MIX) {
     cs_cf_model_t *cf_model = cs_get_glob_cf_model();
-    cf_model->ieos = CS_EOS_GAS_MIX;
+    cf_model->eos_model = CS_EOS_GAS_MIX;
     cs_parameters_error
       (CS_WARNING,
        _("initial data verification"),
@@ -446,7 +446,7 @@ _init_variable_fields(void)
          "The compressible and gas mix models are  enabled but the selected\n"
          "equation of state is not ideal gas mix.\n"
          "\n"
-         "cs_glob_cf_model->ieos is forced to CS_EOS_GAS_MIX.\n"));
+         "cs_glob_cf_model->eos_model is forced to CS_EOS_GAS_MIX.\n"));
   }
 
   /* Enable VoF model if free surface or mass transfer modeling enabled */
@@ -523,7 +523,7 @@ _create_variable_fields(void)
     // compressible algorithm
     if (pm_flag[CS_COMPRESSIBLE] >= 0
         || (cs_glob_velocity_pressure_model->idilat == 2
-            && cs_glob_cf_model->ieos != CS_EOS_NONE))
+            && cs_glob_cf_model->eos_model != CS_EOS_NONE))
       eqp->istat = 1;
     else
       eqp->istat = 0;

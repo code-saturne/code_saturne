@@ -1446,7 +1446,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
         rhs[c_id] += (pther - pthera) / dt[c_id]*cell_f_vol[c_id];
       });
     }
-    else if (th_cf_model->ieos != CS_EOS_NONE) {
+    else if (th_cf_model->eos_model != CS_EOS_NONE) {
       const cs_field_t *f_p = CS_F_(p);
       const cs_real_t *cvar_pr = f_p->val;
       const cs_real_t *cvara_pr = f_p->val_pre;
@@ -1464,7 +1464,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   const cs_real_t *temp = nullptr, *tempa = nullptr, *cpro_yw = nullptr;
   cs_real_t *cpro_yv = nullptr, *xcvv = nullptr;
-  if (   th_cf_model->ieos != CS_EOS_NONE
+  if (   th_cf_model->eos_model != CS_EOS_NONE
       && is_thermal_model_field
       && (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
           || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY)) {
@@ -1497,7 +1497,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
         tempa = f_t->val_pre;
       }
 
-      if (th_cf_model->ieos == CS_EOS_MOIST_AIR) {
+      if (th_cf_model->eos_model == CS_EOS_MOIST_AIR) {
         const cs_field_t *f_yv = cs_field_try("yv");
         const cs_field_t *f_yw = cs_field_try("yw");
 
@@ -1579,7 +1579,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
         /* Only implemented for the ideal gas equation of state. */
 
-        if (th_cf_model->ieos == CS_EOS_IDEAL_GAS) {
+        if (th_cf_model->eos_model == CS_EOS_IDEAL_GAS) {
           const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
           const int kimasf = cs_field_key_id_try("inner_mass_flux_id");
@@ -1689,7 +1689,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
     }
 
     if (iscacp == 2) {
-      if (th_cf_model->ieos == CS_EOS_GAS_MIX) {
+      if (th_cf_model->eos_model == CS_EOS_GAS_MIX) {
         cs_array_copy<cs_real_t>(n_cells,
             cs_field("isobaric_heat_capacity")->val, xcpp);
       } else {
@@ -2176,7 +2176,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* Perfect gas, compute temperature from the internal energy */
 
-    if (th_cf_model->ieos == CS_EOS_IDEAL_GAS) {
+    if (th_cf_model->eos_model == CS_EOS_IDEAL_GAS) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         tempk[c_id] = cvar_var[c_id] / xcvv[c_id];
       });
@@ -2185,7 +2185,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     /* Humid air module */
 
-    else if (th_cf_model->ieos == CS_EOS_MOIST_AIR) {
+    else if (th_cf_model->eos_model == CS_EOS_MOIST_AIR) {
       /* TODO Other Antoine law coefficients */
 
       /* Case of no saturation in previous iteration;

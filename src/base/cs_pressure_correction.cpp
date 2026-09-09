@@ -877,7 +877,7 @@ _pressure_correction_fv(int                   iterns,
   /* Compressible scheme implicit part;
      Getting the thermal parameters */
 
-  int ieos = cs_glob_cf_model->ieos;
+  int eos_model = cs_glob_cf_model->eos_model;
   int thermal_variable = cs_glob_thermal_model->thermal_variable;
   int kinetic_st = cs_glob_thermal_model->has_kinetic_st;
 
@@ -918,7 +918,7 @@ _pressure_correction_fv(int                   iterns,
 
 
       /* Get mass fractions if needed */
-      if (ieos == CS_EOS_MOIST_AIR) {
+      if (eos_model == CS_EOS_MOIST_AIR) {
         yw = cs_field_by_name("yw")->val;
         yv = cs_field_by_name("yv")->val;
       }
@@ -1938,7 +1938,7 @@ _pressure_correction_fv(int                   iterns,
   /* Source term associated to the mass aggregation */
 
   if ((idilat == 2 || idilat == 3) && compressible_flag != 3) {
-    if (ieos == CS_EOS_NONE) { // If no particular EOS is set
+    if (eos_model == CS_EOS_NONE) { // If no particular EOS is set
       if (vp_param->itpcol == 1 && eqp_u->theta < 1.) {
         cs_real_t *imasfla
           = cs_field_by_id(f_p->get_key_int(kimasf))->val_pre;
@@ -2690,7 +2690,7 @@ _pressure_correction_fv(int                   iterns,
   /* Transformation of volume fluxes into mass fluxes */
 
   /* Update the density when solving the Helmholtz equation */
-  if (idilat == 2 && ieos != CS_EOS_NONE) {
+  if (idilat == 2 && eos_model != CS_EOS_NONE) {
     cs_real_t *cpro_rho_mass = cs_field_by_name("density_mass")->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t drop = (  _coef * cvar_pr[c_id] - (_coef - 1.) * cvara_pr[c_id]
@@ -2712,7 +2712,7 @@ _pressure_correction_fv(int                   iterns,
   /* Correction of the temperature and yv after the pressure */
   if (   idilat == 2
       && thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY
-      && ieos == CS_EOS_MOIST_AIR) {
+      && eos_model == CS_EOS_MOIST_AIR) {
     /* Last argument is the method used, 1 for the newton, 2 for the
      * pressure increment (explicit correction)*/
     cvar_th = CS_F_(t)->val;
@@ -2730,7 +2730,7 @@ _pressure_correction_fv(int                   iterns,
   CS_FREE(pk1);
 
   /* Save some information */
-  if (idilat == 2 && ieos != CS_EOS_NONE) {
+  if (idilat == 2 && eos_model != CS_EOS_NONE) {
     /* CFL conditions related to the pressure equation */
     cs_real_t *cflp = nullptr;
     cs_field_t *f_cflp = cs_field_by_name_try("algo:cfl_p");

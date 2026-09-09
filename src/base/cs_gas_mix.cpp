@@ -1297,7 +1297,7 @@ cs_gas_mix_physical_properties(void)
   }
   /* For compressible flows, the density is computed afterwards */
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0
-      && cs_glob_cf_model->ieos == -1) {
+      && cs_glob_cf_model->eos_model == -1) {
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
       cpro_rho[c_id]

@@ -301,7 +301,7 @@ cs_cf_thermo_gamma(cs_real_t *cp,
                    cs_lnum_t l_size)
 {
   /*  Local variables */
-  int ieos = cs_glob_cf_model->ieos;
+  int eos_model = cs_glob_cf_model->eos_model;
 
   /*  Gamma is supposed to be superior or equal to 1.
       It is computed at each call, even if this may seem costly,
@@ -310,7 +310,7 @@ cs_cf_thermo_gamma(cs_real_t *cp,
 
   /* single ideal gas - constant gamma
      or ideal gas mix - gamma for the mixture */
-  if (ieos == CS_EOS_IDEAL_GAS || ieos == CS_EOS_GAS_MIX) {
+  if (eos_model == CS_EOS_IDEAL_GAS || eos_model == CS_EOS_GAS_MIX) {
     for (cs_lnum_t ii = 0; ii < l_size; ii++) {
       gamma[ii] = cp[ii]/cv[ii];
       if (gamma[ii] < 1.)
@@ -323,7 +323,7 @@ cs_cf_thermo_gamma(cs_real_t *cp,
     }
   }
   /* stiffened gas - constant gamma (parameter of the law) */
-  else if (ieos == CS_EOS_STIFFENED_GAS) {
+  else if (eos_model == CS_EOS_STIFFENED_GAS) {
     for (cs_lnum_t ii = 0; ii < l_size; ii++)
       gamma[ii] = cs_glob_cf_model->gammasg;
   }
