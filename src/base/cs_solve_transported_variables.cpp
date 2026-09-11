@@ -53,6 +53,7 @@
 #include "cfbl/cs_cf_model.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_gas_mix.h"
 #include "base/cs_mem.h"
 #include "cfbl/cs_hgn_source_terms_step.h"
 #include "mesh/cs_mesh.h"
@@ -532,6 +533,13 @@ cs_solve_transported_variables(int iterns)
                                b_visc);
 
   } /* End of loop on user-defined scalars */
+
+  /* gas mixture : update the deduced species fraction to ensure that sum
+   * of all fractions is equal to 1.
+   */
+
+  if (cs_glob_physical_model_flag[CS_GAS_MIX] > -1)
+    cs_gas_mix_update_deduced_fraction();
 
   /* Atmospheric gaseous chemistry
      Resolution of chemical evolution of species */
