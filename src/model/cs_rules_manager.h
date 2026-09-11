@@ -49,12 +49,24 @@
  * Class definition
  *============================================================================*/
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Define a base rules manager class
+ */
+/*--------------------------------------------------------------------------*/
+
 class cs_rules_manager {
 public:
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Base constructor, raises an error if input rules file is not found.
+   */
+  /*--------------------------------------------------------------------------*/
+
   cs_rules_manager
   (
-    const char *rules_xml_name
+    const char *rules_xml_name /*!<[in] name of rules xml file */
   )
   {
     /* Create tree */
@@ -79,6 +91,12 @@ public:
                 "Cannot load %s: %s\n", rules_xml_name, rules_path);
   }
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Base destructor
+   */
+  /*--------------------------------------------------------------------------*/
+
   ~cs_rules_manager()
   {
     if (rules_tree_ != nullptr)
@@ -86,15 +104,30 @@ public:
   }
 
 protected:
-  /* Members */
-  cs_tree_node_t *rules_tree_{nullptr};
 
+  /* ------- */
+  /* Members */
+  /* ------- */
+  cs_tree_node_t *rules_tree_{nullptr}; /*!< tree structure containing rules */
+
+  /* ------- */
   /* Methods */
+  /* ------- */
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Convert string to int
+   *
+   * \return int value, if string is a nullptr then return default value
+   */
+  /*--------------------------------------------------------------------------*/
+
   static inline int
   _atoi_safe
   (
-    const char *s,
-    int def = 0
+    const char *s,      /*!<[in] input string to convert to int */
+    int         def = 0 /*!<[in] default value to return is string not
+                                 convertible */
   )
   {
     if (s == nullptr || s[0] == '\0')
@@ -103,11 +136,20 @@ protected:
     return atoi(s);
   }
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Convert string to double
+   *
+   * \return double value, if string is a nullptr then return default value
+   */
+  /*--------------------------------------------------------------------------*/
+
   static inline double
   _atof_safe
   (
-    const char *s,
-    double def = 0.0
+    const char *s,        /*!<[in] input string to convert to int */
+    double      def = 0.0 /*!<[in] default value to return is string not
+                                   convertible */
   )
   {
     if (s == nullptr || s[0] == '\0')
@@ -115,11 +157,20 @@ protected:
 
     return atof(s);
   }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Compare two strings
+   *
+   * \return true if both strings are equal, false otherwise
+   */
+  /*--------------------------------------------------------------------------*/
+
   static inline bool
   _strcmp
   (
-    const char *s1,
-    const char *s2
+    const char *s1, /*!<[in] First string to compare */
+    const char *s2  /*!<[in] Second string to compare */
   )
   {
     if (s1 == nullptr || s2 == nullptr)
