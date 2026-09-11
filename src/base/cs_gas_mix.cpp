@@ -1442,6 +1442,7 @@ void
 cs_gas_mix_finalize(void)
 {
   _gas_mix.species_to_field_id.clear();
+  _gas_mix.gas_type.clear();
   _gas_mix.mol_mas.clear();
   _gas_mix.cp.clear();
   _gas_mix.vol_dif.clear();
