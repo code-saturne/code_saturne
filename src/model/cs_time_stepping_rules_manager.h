@@ -148,8 +148,7 @@ public:
 
   // Check if theta should be auto-initialized
   bool
-  should_auto_init_theta(const char  *property_name,
-                         double       current_theta) const;
+  should_auto_init_theta(double       current_theta) const;
 
   /*--------------------------------------------------------------------------
    * Getters for cs_gui.cpp

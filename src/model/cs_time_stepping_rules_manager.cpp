@@ -363,7 +363,6 @@ cs_time_stepping_rules_manager::get_time_step_limits() const
 bool
 cs_time_stepping_rules_manager::should_auto_init_theta
 (
-  const char  *property_name,
   double       current_theta
 ) const
 {
