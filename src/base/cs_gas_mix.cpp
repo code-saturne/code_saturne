@@ -572,6 +572,89 @@ _set_predefined_property(cs_field_t  *f)
   cs_field_set_key_struct(f, k_id, &gmp);
 }
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Fill Cp polynomial coefficient for the gases.
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+static void
+_set_cp_polynomial_coefficients
+(
+  cs_gas_mix_y_type  gas_type, /*!<[in] Predefined gas type (enum) */
+  cs_span<cs_real_t> gas_acp   /*!<[in,out] Array of coefficients to fill */
+)
+{
+  switch (gas_type) {
+  case cs_gas_mix_y_type::o2:
+    gas_acp[0] = 946.79;
+    gas_acp[1] = -0.5083;
+    gas_acp[2] = 0.0019;
+    gas_acp[3] = -2e-6;
+    gas_acp[4] = 9e-10;
+    gas_acp[5] = -1e-13;
+    break;
+
+  case cs_gas_mix_y_type::n2 :
+    gas_acp[0] = 1097.2;
+    gas_acp[1] = -0.4842;
+    gas_acp[2] = 0.0012;
+    gas_acp[3] = -9e-7;
+    gas_acp[4] = 3e-10;
+    gas_acp[5] = -4e-14;
+    break;
+
+  case cs_gas_mix_y_type::he :
+    gas_acp[0] = 5194.;
+    gas_acp[1] = 0.;
+    gas_acp[2] = 0.;
+    gas_acp[3] = 0.;
+    gas_acp[4] = 0.;
+    gas_acp[5] = 0.;
+    break;
+
+  case cs_gas_mix_y_type::co2 :
+    gas_acp[0] = 846. ;
+    gas_acp[1] = 0.;
+    gas_acp[2] = 0.;
+    gas_acp[3] = 0.;
+    gas_acp[4] = 0.;
+    gas_acp[5] = 0.;
+    break;
+
+  case cs_gas_mix_y_type::no2 :
+    gas_acp[0] = 804.;
+    gas_acp[1] = 0.;
+    gas_acp[2] = 0.;
+    gas_acp[3] = 0.;
+    gas_acp[4] = 0.;
+    gas_acp[5] = 0.;
+    break;
+
+  case cs_gas_mix_y_type::h2 :
+    gas_acp[0] = 11443;
+    gas_acp[1] = 17.934;
+    gas_acp[2] = -0.0377;
+    gas_acp[3] = 4e-5;
+    gas_acp[4] = -2e-8;
+    gas_acp[5] = 3e-12;
+    break;
+
+  case cs_gas_mix_y_type::h2o :
+    gas_acp[0] = 1892.;
+    gas_acp[1] = -0.529;
+    gas_acp[2] = 0.0019;
+    gas_acp[3] = -1e-6;
+    gas_acp[4] = 4e-10;
+    gas_acp[5] = -5e-14;
+    break;
+
+  default:
+    break;
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -645,25 +728,26 @@ cs_gas_mix_setup_finalize(void)
               _("%d species do not have a defined type, please check log files.\n"),
               _n_uknown_gases);
 
+  // Set correct sizes for arrays
+  _gas_mix.mol_mas.reshape(_gas_mix.n_species);
+  _gas_mix.cp.reshape(_gas_mix.n_species);
+  _gas_mix.vol_dif.reshape(_gas_mix.n_species);
+  _gas_mix.mu_a.reshape(_gas_mix.n_species);
+  _gas_mix.mu_b.reshape(_gas_mix.n_species);
+  _gas_mix.lambda_a.reshape(_gas_mix.n_species);
+  _gas_mix.lambda_b.reshape(_gas_mix.n_species);
+  _gas_mix.muref.reshape(_gas_mix.n_species);
+  _gas_mix.lamref.reshape(_gas_mix.n_species);
+  _gas_mix.trefmu.reshape(_gas_mix.n_species);
+  _gas_mix.treflam.reshape(_gas_mix.n_species);
+  _gas_mix.smu.reshape(_gas_mix.n_species);
+  _gas_mix.slam.reshape(_gas_mix.n_species);
+
   const int f_id0 = _gas_mix.species_to_field_id[0];
   int k_id = cs_gas_mix_get_field_key();
   for (int i = 0; i < _gas_mix.n_species; i++) {
     cs_field_t *f = cs_field(_gas_mix.species_to_field_id[i]);
     f->set_ns_owner(f_id0);
-
-    _gas_mix.mol_mas.reshape(_gas_mix.n_species);
-    _gas_mix.cp.reshape(_gas_mix.n_species);
-    _gas_mix.vol_dif.reshape(_gas_mix.n_species);
-    _gas_mix.mu_a.reshape(_gas_mix.n_species);
-    _gas_mix.mu_b.reshape(_gas_mix.n_species);
-    _gas_mix.lambda_a.reshape(_gas_mix.n_species);
-    _gas_mix.lambda_b.reshape(_gas_mix.n_species);
-    _gas_mix.muref.reshape(_gas_mix.n_species);
-    _gas_mix.lamref.reshape(_gas_mix.n_species);
-    _gas_mix.trefmu.reshape(_gas_mix.n_species);
-    _gas_mix.treflam.reshape(_gas_mix.n_species);
-    _gas_mix.smu.reshape(_gas_mix.n_species);
-    _gas_mix.slam.reshape(_gas_mix.n_species);
 
     cs_gas_mix_species_prop_t s_k;
     cs_field_get_key_struct(f, k_id, &s_k);
@@ -681,6 +765,17 @@ cs_gas_mix_setup_finalize(void)
     _gas_mix.treflam[i]  = s_k.treflam;
     _gas_mix.smu[i]      = s_k.smu;
     _gas_mix.slam[i]     = s_k.slam;
+  }
+
+  /* Allocate only if needed */
+  if (_gas_mix.use_polynomial_cp()) {
+    _gas_mix.acp.reshape(_gas_mix.n_species, _gas_mix.cp_poly_d() );
+
+    auto gas_types = _gas_mix.gas_type.view_1d();
+    auto gas_acp = _gas_mix.acp.view_2d();
+    for (int i = 0; i < _gas_mix.n_species; i++) {
+      _set_cp_polynomial_coefficients(gas_types[i], gas_acp.sub_view(i));
+    }
   }
 }
 
@@ -1098,7 +1193,7 @@ cs_gas_mix_physical_properties(void)
 
   // Get species fractions values
   const int species_f_id0 = _gas_mix.species_to_field_id[0];
-  cs_span_2d<cs_real_t> cvar_s_yk = cs_field_by_id(species_f_id0)->get_ns_val_s(0);
+  cs_span_2d<cs_real_t> cvar_ns_yk = cs_field_by_id(species_f_id0)->get_ns_val_s(0);
 
   if (cs_field_by_name_try("isobaric_heat_capacity") != nullptr &&
       cs_glob_fluid_properties->icv >= 0)
@@ -1150,6 +1245,9 @@ cs_gas_mix_physical_properties(void)
 
   cs_thermal_model_t *thm = cs_get_glob_thermal_model();
 
+  // Constant to know if we need T <-> h conversion
+  bool need_t_to_h_conversion = false;
+
   /* In compressible, the density is updated after the pressure step */
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
 
@@ -1168,8 +1266,10 @@ cs_gas_mix_physical_properties(void)
       if (thm->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
         t_add = cs_physical_constants_celsius_to_kelvin;
     }
-    else
+    else {
       temp = cs_field_by_name("tempk")->val;
+      need_t_to_h_conversion = true;
+    }
     CS_MALLOC(lambda, n_cells_ext, cs_real_t);
   }
   else {
@@ -1204,6 +1304,8 @@ cs_gas_mix_physical_properties(void)
   auto yk_mol_mass = _gas_mix.mol_mas.view();
   auto yk_cp = _gas_mix.cp.view();
 
+  const bool use_poly_cp = _gas_mix.use_polynomial_cp();
+
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
 
@@ -1230,9 +1332,9 @@ cs_gas_mix_physical_properties(void)
 
     /* Mass fraction array of the different species */
     for (int spe_id = 0; spe_id < n_species_solved; spe_id++) {
-      y_d[c_id] -= cvar_s_yk(spe_id, c_id);
-      mix_mol_mas[c_id] += cvar_s_yk(spe_id, c_id)/yk_mol_mass[spe_id];
-      mol_mas_ncond[c_id] += cvar_s_yk(spe_id, c_id) / yk_mol_mass[spe_id];
+      y_d[c_id] -= cvar_ns_yk(spe_id, c_id);
+      mix_mol_mas[c_id] += cvar_ns_yk(spe_id, c_id)/yk_mol_mass[spe_id];
+      mol_mas_ncond[c_id] += cvar_ns_yk(spe_id, c_id) / yk_mol_mass[spe_id];
     }
 
     // Clipping
@@ -1243,26 +1345,110 @@ cs_gas_mix_physical_properties(void)
     mix_mol_mas[c_id] = x_1/mix_mol_mas[c_id];
     mol_mas_ncond[c_id] = (x_1 - y_d[c_id])/mol_mas_ncond[c_id];
 
-    // Loop on solved species then use the deduced species just afterwards
-    for (int spe_id = 0; spe_id < _gas_mix.n_species_solved; spe_id++) {
-      /* Mixture specific heat function of species specific heat (cpk)
-       * and mass fraction of each gas species (yk), as below:
-       *             -----------------------------
-       * - noncondensable gases and the mass fraction deduced:
-       *             cp_m[c_id] = Sum( yk.cpk)_k[0, n_species_solved]
-       *                        + y_d.cp_d
-       *             -----------------------------
-       * remark:
-       * TODO : mettre à jour cette description
-       *   The mass fraction is deduced depending of the
-       *    modelling chosen by the user, with:
-       *      - CS_GAS_MIX = CS_GAS_MIX_AIR_HELIUM or
-       *        CS_GAS_MIX_AIR_HYDROGEN, a noncondensable gas
-       *      - CS_GAS_MIX > CS_GAS_MIX_AIR_STEAM, a condensable gas (steam) */
-      cpro_cp[c_id] += cvar_s_yk(spe_id, c_id)*yk_cp[spe_id];
+    // TODO:: Check for thermal model as  well (Enthalpy VS Temperature !)
+    if (use_poly_cp) {
+      cs_real_t Tpow[6];
+
+      cs_span_2d<cs_real_t> yk_acp = _gas_mix.acp.view_2d();
+
+      if (need_t_to_h_conversion) {
+        constexpr cs_real_t Tmin = 200.;
+        constexpr cs_real_t Tmax = 2000.;
+
+        cs_real_t Ta = Tmin, Tb = Tmax;
+        cs_real_t Twork, hwork;
+
+        constexpr int n_iter_max = 100;
+        constexpr cs_real_t eps_h = 1.;
+
+        bool dicho_cvg = false;
+        // TODO: Check if a newton solver is not faster instead of dichotomy ?
+        // Same with using current temperature with a +/- 10% (or 20%) for example
+        for (int k = 0; k < n_iter_max; k++) {
+          Twork = 0.5 * (Ta + Tb);
+          hwork = 0.;
+          Tpow[0] = Twork;
+          Tpow[1] = cs::powN<2>(Twork);
+          Tpow[2] = cs::powN<3>(Twork);
+          Tpow[3] = cs::powN<4>(Twork);
+          Tpow[4] = cs::powN<5>(Twork);
+          Tpow[5] = cs::powN<6>(Twork);
+
+          for (int spe_id = 0; spe_id < _gas_mix.n_species_solved + 1; spe_id++) {
+            cs_real_t hi =  yk_acp(spe_id,0) * Tpow[0]
+                         + (yk_acp(spe_id,1) * Tpow[1] / 2.)
+                         + (yk_acp(spe_id,2) * Tpow[2] / 3.)
+                         + (yk_acp(spe_id,3) * Tpow[3] / 4.)
+                         + (yk_acp(spe_id,4) * Tpow[4] / 5.)
+                         + (yk_acp(spe_id,5) * Tpow[5] / 6.) ;
+            hwork += cvar_ns_yk(spe_id, c_id) * hi;
+          }
+          cs_real_t delta_h = hwork - cvar_enth[c_id];
+          if (cs::abs(delta_h) < eps_h) {
+            dicho_cvg = true;
+            break;
+          }
+
+          if (delta_h < 0)
+            Ta = Twork;
+          else
+            Tb = Twork;
+        }
+
+        if (!dicho_cvg)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Dichotomy for computation of T failed."
+                      "Verify that the gas temperature is between 200K and 2000K.\n"));
+
+        /* Update TempK here */
+        temp[c_id] = Twork;
+      }
+      else {
+        Tpow[0] = temp[c_id];
+        Tpow[1] = cs::powN<2>(temp[c_id]);
+        Tpow[2] = cs::powN<3>(temp[c_id]);
+        Tpow[3] = cs::powN<4>(temp[c_id]);
+        Tpow[4] = cs::powN<5>(temp[c_id]);
+        Tpow[5] = cs::powN<6>(temp[c_id]);
+      }
+
+      /* Mixture Cp computation */
+      cpro_cp[c_id] = 0.;
+      // Since we have converged for Twork, we can reuse the Tpow array here
+      // instead of recomputing the different powers of Twork!
+      // Cpi = dhi / dT;
+      for (int spe_id = 0; spe_id < _gas_mix.n_species_solved + 1; spe_id++) {
+        cs_real_t cpi = yk_acp(spe_id, 0)
+                      + yk_acp(spe_id, 1) * Tpow[0]
+                      + yk_acp(spe_id, 2) * Tpow[1]
+                      + yk_acp(spe_id, 3) * Tpow[2]
+                      + yk_acp(spe_id, 4) * Tpow[3]
+                      + yk_acp(spe_id, 5) * Tpow[4];
+
+        cpro_cp[c_id] += cvar_ns_yk(spe_id, c_id) * cpi;
+      }
+
     }
-    // deduced field contribution to Cp
-    cpro_cp[c_id] += y_d[c_id]*s_d.cp;
+    else {
+      // Loop on solved species + deduced field (species are ordered that way)
+      for (int spe_id = 0; spe_id < _gas_mix.n_species_solved + 1; spe_id++) {
+        /* Mixture specific heat function of species specific heat (cpk)
+         * and mass fraction of each gas species (yk), as below:
+         *             -----------------------------
+         * - noncondensable gases and the mass fraction deduced:
+         *             cp_m[c_id] = Sum( yk.cpk)_k[0, n_species_solved]
+         *                        + y_d.cp_d
+         *             -----------------------------
+         * remark:
+         * TODO : mettre à jour cette description
+         *   The mass fraction is deduced depending of the
+         *    modelling chosen by the user, with:
+         *      - CS_GAS_MIX = CS_GAS_MIX_AIR_HELIUM or
+         *        CS_GAS_MIX_AIR_HYDROGEN, a noncondensable gas
+         *      - CS_GAS_MIX > CS_GAS_MIX_AIR_STEAM, a condensable gas (steam) */
+        cpro_cp[c_id] += cvar_ns_yk(spe_id, c_id)*yk_cp[spe_id];
+      }
+    }
 
     /* Mixture isochoric specific heat */
     if (cs_glob_velocity_pressure_model->idilat == 2 &&
@@ -1289,7 +1475,9 @@ cs_gas_mix_physical_properties(void)
    *         p0            : atmos. pressure (Pa)
    *         pther         : pressure (Pa) integrated on the
    *                         fluid domain */
-  if (cvar_enth != nullptr) {
+  // If we use the polynomial formula for Cp, then temperature
+  // is evaluated in the iterative process
+  if (cvar_enth != nullptr && !(use_poly_cp)) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
       // Evaluate the temperature thanks to the enthalpy
       temp[c_id] = cvar_enth[c_id]/ cpro_cp[c_id];
@@ -1365,7 +1553,7 @@ cs_gas_mix_physical_properties(void)
           = cs::pow2(1.0 + sqrt(lam_spe[s_id_i]/lam_spe[s_id_j]) * quad_r_mol_mass)
           / denom;
 
-        const cs_real_t x_k = cvar_s_yk(s_id_j, c_id) * mix_mol_mas[c_id]
+        const cs_real_t x_k = cvar_ns_yk(s_id_j, c_id) * mix_mol_mas[c_id]
                             / yk_mol_mass[s_id_j];
         xsum_mu += x_k * phi_mu;
         xsum_lambda += x_k * phi_lambda;
@@ -1373,7 +1561,7 @@ cs_gas_mix_physical_properties(void)
 
       /* Mixture viscosity defined as function of the scalars
          ----------------------------------------------------- */
-      const cs_real_t x_k = cvar_s_yk(s_id_i, c_id)*mix_mol_mas[c_id]/yk_mol_mass[s_id_i];
+      const cs_real_t x_k = cvar_ns_yk(s_id_i, c_id)*mix_mol_mas[c_id]/yk_mol_mass[s_id_i];
 
       cpro_viscl[c_id] += x_k * mu_spe[s_id_i] / xsum_mu;
       lambda[c_id] += x_k * lam_spe[s_id_i] / xsum_lambda;
@@ -1395,7 +1583,7 @@ cs_gas_mix_physical_properties(void)
     cs_array_real_copy(n_cells, cpro_viscl, cpro_vyk);
   }
 
-  const cs_real_t patm = 101320.0;
+  constexpr cs_real_t patm = 101320.0;
 
   /* Steam binary diffusion */
   auto yk_vol_dif = _gas_mix.vol_dif.view();
@@ -1408,7 +1596,7 @@ cs_gas_mix_physical_properties(void)
     const cs_real_t ratio_tkpr = pow(temp[c_id] + t_add, 1.75)/pressure;
 
     for (int spe_id = 0; spe_id < _gas_mix.n_species_solved; spe_id++) {
-      const cs_real_t y_k = cvar_s_yk(spe_id, c_id);
+      const cs_real_t y_k = cvar_ns_yk(spe_id, c_id);
       const cs_real_t x_k = y_k * mix_mol_mas[c_id] / yk_mol_mass[spe_id];
       const cs_real_t xmab
         = sqrt(2.0/( 1.0 / (yd_mol_mas*1000.0) +1.0 / (yk_mol_mass[spe_id]*1000.0)));
@@ -1443,6 +1631,7 @@ cs_gas_mix_finalize(void)
 {
   _gas_mix.species_to_field_id.clear();
   _gas_mix.gas_type.clear();
+  _gas_mix.acp.clear();
   _gas_mix.mol_mas.clear();
   _gas_mix.cp.clear();
   _gas_mix.vol_dif.clear();
@@ -1549,6 +1738,19 @@ cs_gas_mix_initialization(void)
   }
 
   /* Finalization and check */
+  const bool use_poly_cp = _gas_mix.use_polynomial_cp();
+  cs_span_2d<cs_real_t> yk_acp;
+  cs_span_2d<cs_real_t> cvar_ns_yk;
+  if (use_poly_cp) {
+    const int species_f_id0 = _gas_mix.species_to_field_id[0];
+    yk_acp = _gas_mix.acp.view_2d();
+    cvar_ns_yk = cs_field_by_id(species_f_id0)->get_ns_val_s(0);
+  }
+
+  /* In case of solving enthalpy, initialize with mixture cp */
+  cs_thermal_model_t *thm = cs_get_glob_thermal_model();
+  const bool needs_enthalpy = (thm->thermal_variable == CS_THERMAL_MODEL_ENTHALPY);
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
 
     if ((y_d[c_id] > 1.0) || (y_d[c_id] < 0.0))
@@ -1556,14 +1758,51 @@ cs_gas_mix_initialization(void)
 
     y_d[c_id] = cs::clamp(y_d[c_id], 0.0, 1.0);
 
-    // specific heat (Cp_m0) of the gas mixture
-    cpro_cp[c_id] += y_d[c_id]*s_d.cp;
+    if (use_poly_cp) {
+      //TODO::GPU : Check once we port this section if it is possible
+      //to precompute outside of the kernel or not (since same value).
+      cs_real_t Tpow[6];
+      Tpow[0] = t0;
+      Tpow[1] = cs::powN<2>(t0);
+      Tpow[2] = cs::powN<3>(t0);
+      Tpow[3] = cs::powN<4>(t0);
+      Tpow[4] = cs::powN<5>(t0);
+      Tpow[5] = cs::powN<6>(t0);
 
-    /* In case of solving enthalpy, initialize with mixture cp */
-    cs_thermal_model_t *thm = cs_get_glob_thermal_model();
+      // Compute Enthalpy
+      if (needs_enthalpy) {
+        // We enter this condition if thermal model is Enthalpy!
+        // Hence "cvar_ther" is enthalpy field values
+        cvar_ther[c_id] = 0.;
+        for (int spe_id = 0; spe_id < _gas_mix.n_species_solved + 1; spe_id++) {
+          cs_real_t hi =  yk_acp(spe_id, 0) * Tpow[0]
+                       + (yk_acp(spe_id, 1) * Tpow[1] / 2.)
+                       + (yk_acp(spe_id, 2) * Tpow[2] / 3.)
+                       + (yk_acp(spe_id, 3) * Tpow[3] / 4.)
+                       + (yk_acp(spe_id, 4) * Tpow[4] / 5.)
+                       + (yk_acp(spe_id, 5) * Tpow[5] / 6.);
+          cvar_ther[c_id] += cvar_ns_yk(spe_id, c_id) * hi;
+        }
+      }
+      // Update Cp
+      cpro_cp[c_id] = 0.;
+      for (int spe_id = 0; spe_id < _gas_mix.n_species_solved + 1; spe_id++) {
+        cs_real_t cpi =  yk_acp(spe_id, 0)
+                      + (yk_acp(spe_id, 1) * Tpow[0])
+                      + (yk_acp(spe_id, 2) * Tpow[1])
+                      + (yk_acp(spe_id, 3) * Tpow[2])
+                      + (yk_acp(spe_id, 4) * Tpow[3])
+                      + (yk_acp(spe_id, 5) * Tpow[4]);
+        cpro_cp[c_id] += cvar_ns_yk(spe_id, c_id) * cpi;
+      }
+    }
+    else {
+      // specific heat (Cp_m0) of the gas mixture
+      cpro_cp[c_id] += y_d[c_id]*s_d.cp;
 
-    if (thm->thermal_variable == CS_THERMAL_MODEL_ENTHALPY)
-      cvar_ther[c_id] = cpro_cp[c_id]*t0;
+      if (needs_enthalpy)
+        cvar_ther[c_id] = cpro_cp[c_id]*t0;
+    }
 
     mix_mol_mas[c_id] += y_d[c_id]/s_d.mol_mas;
     mix_mol_mas[c_id]  = 1.0/mix_mol_mas[c_id];
@@ -1606,6 +1845,52 @@ cs_gas_mix_initialization(void)
                 "In the case where the values read in the restart file"
                 "are incorrect, they may be modified with"
                 "cs_user_initialization.c or with the interface."), iok);
+}
+
+*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update the deduced species fraction based on the solved species
+ *        fractions, since the sum must be equal to 1, and fractions between
+ *        0 and 1.
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_update_deduced_fraction()
+{
+  // If not deduced fields nothing to do
+  if (_gas_mix.n_species_solved == _gas_mix.n_species)
+    return;
+
+  const int n_species_solved = _gas_mix.n_species_solved;
+
+  // Get species fractions values
+  const int species_f_id0 = _gas_mix.species_to_field_id[0];
+  cs_span_2d<cs_real_t> cvar_ns_yk = cs_field_by_id(species_f_id0)->get_ns_val_s(0);
+
+  const int f_yd_id = _gas_mix.species_to_field_id[_gas_mix.n_species - 1];
+  cs_span<cs_real_t> cvar_yd = cs_field(f_yd_id)->get_val_s();
+
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    cvar_yd[c_id] = 1.;
+    for (int spe_id = 0; spe_id < n_species_solved; spe_id++)
+      cvar_yd[c_id] -= cvar_ns_yk(spe_id, c_id);
+
+    cvar_yd[c_id] = cs::clamp(cvar_yd[c_id], 0., 1.);
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Activate polynomial formula for Cp
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_use_cp_polynomial_formula()
+{
+  _gas_mix.polynomial_cp_activate();
 }
 
 /*----------------------------------------------------------------------------*/

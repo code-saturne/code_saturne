@@ -78,6 +78,7 @@ enum class cs_gas_mix_y_type {
    ------------------ */
 
 /*! Structure containing the data related to a gas mixture */
+
 typedef struct cs_gas_mix_t{
 
   /*--------------------------------------------------------------------------*/
@@ -96,7 +97,9 @@ typedef struct cs_gas_mix_t{
 
   ~cs_gas_mix_t() = default;
 
+  /* ------- */
   /* Members */
+  /* ------- */
 
   int n_species {0};        /*!< number of species in the gas mix */
   int n_species_solved {0}; /*!< number of species which
@@ -105,6 +108,8 @@ typedef struct cs_gas_mix_t{
   cs_array<int> species_to_field_id; /*!< species to field mapping
                                           (solved variables first) */
   cs_array<cs_gas_mix_y_type> gas_type; /*!< Type of predefined gas */
+
+  cs_array_2d<cs_real_t> acp;     /*!< Polynomial coefficients used for Cp calculation */
 
   cs_array<cs_real_t>  mol_mas;   /*!< molar mass */
   cs_array<cs_real_t>  cp;        /*!< specific heat at constant pressure */
@@ -119,6 +124,58 @@ typedef struct cs_gas_mix_t{
   cs_array<cs_real_t>  treflam;   /*!< ref. temperature for conductivity Sutherland law */
   cs_array<cs_real_t>  smu;       /*!< Sutherland temperature for viscosity */
   cs_array<cs_real_t>  slam;      /*!< Sutherland temperature for conductivity */
+
+  /* ------- */
+  /* Methods */
+  /* ------- */
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Check if a polynomial formula for Cp is used.
+   *
+   * \return True if used, false otherwise
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  bool use_polynomial_cp
+  () const
+  {
+    return (_cp_poly_d > 1);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get polynomial degree. Currently is either 1 or 6
+   *
+   * \return value of Cp polynomial degree
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  int
+  cp_poly_d
+  () const
+  {
+    return _cp_poly_d;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Activate the Cp polynomial Cp formula
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  void
+  polynomial_cp_activate()
+  {
+    // Currently only degree 6 is handled, could be changed in the future
+    _cp_poly_d = 6;
+  }
+
+private:
+  int _cp_poly_d {1}; /*!< Polynomial degree used for Cp calculation */
 
 } cs_gas_mix_t;
 
@@ -274,6 +331,26 @@ cs_gas_mix_initialization(void);
 
 void
 cs_gas_mix_physical_properties(void);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Update the deduced species fraction based on the solved species
+ *        fractions, since the sum must be equal to 1, and fractions between
+ *        0 and 1.
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_update_deduced_fraction(void);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Activate polynomial formula for Cp
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_gas_mix_use_cp_polynomial_formula(void);
 
 /*----------------------------------------------------------------------------*/
 
