@@ -1847,7 +1847,7 @@ cs_gas_mix_initialization(void)
                 "cs_user_initialization.c or with the interface."), iok);
 }
 
-*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 /*!
  * \brief Update the deduced species fraction based on the solved species
  *        fractions, since the sum must be equal to 1, and fractions between

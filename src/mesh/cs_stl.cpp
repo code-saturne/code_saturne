@@ -214,9 +214,11 @@ _triangle_box_intersect(const cs_real_t  box_extents[6],
 
   // Width of the box, center of the box
   cs_real_t h[3], c[3];
-  h[0] = 0.5*(box_extents[3]-box_extents[0]);
-  h[1] = 0.5*(box_extents[4]-box_extents[1]);
-  h[2] = 0.5*(box_extents[5]-box_extents[2]);
+  /* Fluid box is slightly increased above 0.5 to avoid issues if
+   * a STL face is exactly on the BB */
+  h[0] = 0.500001*(box_extents[3]-box_extents[0]);
+  h[1] = 0.500001*(box_extents[4]-box_extents[1]);
+  h[2] = 0.500001*(box_extents[5]-box_extents[2]);
 
   c[0] = box_extents[0] + h[0];
   c[1] = box_extents[1] + h[1];
