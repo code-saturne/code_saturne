@@ -78,55 +78,6 @@ _rule_manager_finalize(void)
 }
 
 /*============================================================================
- * Static helpers
- *============================================================================*/
-
-inline bool
-cs_time_stepping_rules_manager::_strcmp(const char *s1, const char *s2)
-{
-  if (s1 == nullptr || s2 == nullptr)
-    return false;
-  return (std::strcmp(s1, s2) == 0);
-}
-
-/*============================================================================
- * Constructor
- *============================================================================*/
-
-cs_time_stepping_rules_manager::cs_time_stepping_rules_manager
-  (const char  *rules_xml_path)
-  : rules_tree_(nullptr)
-{
-  // Load the XML file
-  rules_tree_ = cs_tree_node_create("");
-  cs_tree_xml_read(rules_tree_, rules_xml_path);
-
-  if (rules_tree_ == nullptr) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("Could not load TimeSteppingRules.xml from path: %s\n"),
-              rules_xml_path);
-  }
-
-  // Parse the different sections
-  parse_definitions_();
-  parse_theta_schemes_();
-  parse_defaults_();
-  parse_validation_rules_();
-  parse_mappings_();
-  parse_automatic_settings_();
-}
-
-/*============================================================================
- * Destructor
- *============================================================================*/
-
-cs_time_stepping_rules_manager::~cs_time_stepping_rules_manager()
-{
-  if (rules_tree_ != nullptr)
-    cs_tree_node_free(&rules_tree_);
-}
-
-/*============================================================================
  * Parse Definitions
  *============================================================================*/
 
@@ -624,18 +575,8 @@ cs_time_stepping_rules_manager*
 cs_get_time_stepping_rules_manager()
 {
   if (g_timestep_rules_manager == nullptr) {
-    // Search for TimeSteppingRules.xml in the installation directory
-    char rules_path[1024];
-    const char *install_prefix = cs_base_get_pkgdatadir();
-    snprintf(rules_path, 1024, "%s/model/TimeSteppingRules.xml", install_prefix);
-
-    // Check if the file exists
-    if (!cs_file_isreg(rules_path)) {
-      // Otherwise, search in the current directory
-      snprintf(rules_path, 1024, "TimeSteppingRules.xml");
-    }
-
-    g_timestep_rules_manager = new cs_time_stepping_rules_manager(rules_path);
+    g_timestep_rules_manager =
+      new cs_time_stepping_rules_manager("TimeSteppingRules.xml");
 
     cs_base_at_finalize(_rule_manager_finalize);
   }

@@ -65,21 +65,7 @@ cs_turbulence_rules_manager *
 cs_get_turbulence_rules_manager(bool  no_instanciate)
 {
   if (g_rules_manager == nullptr && no_instanciate == false) {
-    char rules_path[1024];
-
-    const char *datadir = cs_base_get_pkgdatadir();
-    snprintf(rules_path, 1024, "%s/model/TurbulenceRules.xml", datadir);
-    FILE *test_file = fopen(rules_path, "r");
-
-    if (test_file != nullptr) {
-      fclose(test_file);
-    }
-    else {
-      cs_log_warning("TurbulenceRules.xml not found\n");
-      snprintf(rules_path, 1024, "TurbulenceRules.xml");
-    }
-
-    g_rules_manager = new cs_turbulence_rules_manager(rules_path);
+    g_rules_manager = new cs_turbulence_rules_manager("TurbulenceRules.xml");
   }
 
   return g_rules_manager;
@@ -88,13 +74,6 @@ cs_get_turbulence_rules_manager(bool  no_instanciate)
 /*============================================================================
  * Private methods
  *============================================================================*/
-
-bool
-cs_turbulence_rules_manager::_strcmp(const char *s1, const char *s2)
-{
-  if (s1 == nullptr || s2 == nullptr) return false;
-  return strcmp(s1, s2) == 0;
-}
 
 void
 cs_turbulence_rules_manager::parse_model_groups_()
@@ -385,35 +364,6 @@ cs_turbulence_rules_manager::parse_validation_rules_check_()
 /*============================================================================
  * Constructor & Destructor
  *============================================================================*/
-
-cs_turbulence_rules_manager::cs_turbulence_rules_manager
-(
-   const char  *rules_xml_path
-)
-  : rules_tree_(nullptr)
-{
-  rules_tree_ = cs_tree_node_create("");
-  cs_tree_xml_read(rules_tree_, rules_xml_path);
-
-  if (rules_tree_ == nullptr) {
-    bft_error(__FILE__, __LINE__, 0,
-              "Impossible de charger TurbulenceRules.xml: %s", rules_xml_path);
-  }
-
-  parse_model_groups_();
-  parse_validation_rules_();
-  parse_model_requirements_();
-  build_model_enum_map_();
-  parse_numerical_parameters_();
-  parse_validation_rules_check_();
-}
-
-cs_turbulence_rules_manager::~cs_turbulence_rules_manager()
-{
-  if (rules_tree_ != nullptr) {
-    cs_tree_node_free(&rules_tree_);
-  }
-}
 
 /*============================================================================
  * Getters for cs_gui.cpp

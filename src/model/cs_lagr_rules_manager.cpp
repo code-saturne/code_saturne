@@ -116,26 +116,6 @@ cs_lagr_rules_manager::parse_rules_()
 }
 
 /*============================================================================
- * Constructor / Destructor
- *============================================================================*/
-
-cs_lagr_rules_manager::cs_lagr_rules_manager(const char *rules_xml_path)
-{
-  rules_tree_ = cs_tree_node_create("");
-  cs_tree_xml_read(rules_tree_, rules_xml_path);
-  if (rules_tree_ == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
-              "Cannot load LagrangianRules.xml: %s", rules_xml_path);
-  parse_rules_();
-}
-
-cs_lagr_rules_manager::~cs_lagr_rules_manager()
-{
-  if (rules_tree_ != nullptr)
-    cs_tree_node_free(&rules_tree_);
-}
-
-/*============================================================================
  * Public methods
  *============================================================================*/
 
@@ -223,12 +203,7 @@ cs_lagr_rules_manager *
 cs_get_lagr_rules_manager(void)
 {
   if (_g_lagr_rules_manager == nullptr) {
-    const char *datadir = cs_base_get_pkgdatadir();
-    char path[1024];
-    snprintf(path, sizeof(path) - 1,
-             "%s/model/LagrangianRules.xml", datadir);
-    path[sizeof(path) - 1] = '\0';
-    _g_lagr_rules_manager = new cs_lagr_rules_manager(path);
+    _g_lagr_rules_manager = new cs_lagr_rules_manager("LagrangianRules.xml");
     cs_base_at_finalize(_rule_manager_finalize);
   }
   return _g_lagr_rules_manager;

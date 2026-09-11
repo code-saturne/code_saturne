@@ -42,7 +42,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_tree.h"
+#include "model/cs_rules_manager.h"
 
 /*============================================================================
  * Structure definitions
@@ -79,10 +79,8 @@ struct cs_time_stepping_constraint_t {
  * Class definition
  *============================================================================*/
 
-class cs_time_stepping_rules_manager {
+class cs_time_stepping_rules_manager : public cs_rules_manager {
 private:
-  cs_tree_node_t *rules_tree_;
-
   /*--------------------------------------------------------------------------
    * Maps for cs_parameters.cpp
    *--------------------------------------------------------------------------*/
@@ -106,11 +104,6 @@ private:
   std::map<int, std::string> enum_to_extrap_method_;
   std::map<int, std::string> enum_to_source_order_;
 
-  // Helper
-  static inline bool
-  _strcmp(const char  *s1,
-          const char  *s2);
-
   // Parsing methods
   void parse_definitions_();
   void parse_theta_schemes_();
@@ -121,9 +114,19 @@ private:
 
 public:
 
-  // Constructor & Destructor
-  cs_time_stepping_rules_manager(const char *rules_xml_path);
-  ~cs_time_stepping_rules_manager();
+  // Constructor
+  cs_time_stepping_rules_manager
+  (
+    const char *rules_xml_name
+  ) : cs_rules_manager(rules_xml_name)
+  {
+    // Parse the different sections
+    parse_definitions_();
+    parse_theta_schemes_();
+    parse_defaults_();
+    parse_validation_rules_();
+    parse_mappings_();
+  }
 
   /*--------------------------------------------------------------------------
    * Getters for cs_parameters.cpp

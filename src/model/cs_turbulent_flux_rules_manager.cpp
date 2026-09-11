@@ -75,17 +75,6 @@ _rule_manager_finalize(void)
 }
 
 /*============================================================================
- * Static helper methods
- *============================================================================*/
-
-inline int
-cs_turbulent_flux_rules_manager::_atoi_safe(const char *s, int def)
-{
-  if (s == nullptr || s[0] == '\0') return def;
-  return atoi(s);
-}
-
-/*============================================================================
  * Private methods
  *============================================================================*/
 
@@ -147,28 +136,6 @@ cs_turbulent_flux_rules_manager::parse_rules_()
     rules_by_model_[r.model_name]    = r;
     rules_by_value_[r.numeric_value] = r;
   }
-}
-
-/*============================================================================
- * Constructor / Destructor
- *============================================================================*/
-
-cs_turbulent_flux_rules_manager::cs_turbulent_flux_rules_manager
-  (const char *rules_xml_path)
-{
-  rules_tree_ = cs_tree_node_create("");
-  cs_tree_xml_read(rules_tree_, rules_xml_path);
-  if (rules_tree_ == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
-              "Cannot load TurbulentFluxRules.xml: %s", rules_xml_path);
-
-  parse_rules_();
-}
-
-cs_turbulent_flux_rules_manager::~cs_turbulent_flux_rules_manager()
-{
-  if (rules_tree_ != nullptr)
-    cs_tree_node_free(&rules_tree_);
 }
 
 /*============================================================================
@@ -247,13 +214,7 @@ cs_turbulent_flux_rules_manager *
 cs_get_turbulent_flux_rules_manager(void)
 {
   if (_instance == nullptr) {
-    const char *datadir = cs_base_get_pkgdatadir();
-    char path[1024];
-    snprintf(path, sizeof(path) - 1,
-             "%s/model/TurbulentFluxRules.xml", datadir);
-    path[sizeof(path) - 1] = '\0';
-    _instance = new cs_turbulent_flux_rules_manager(path);
-
+    _instance = new cs_turbulent_flux_rules_manager("TurbulentFluxRules.xml");
     cs_base_at_finalize(_rule_manager_finalize);
   }
 

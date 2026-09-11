@@ -38,6 +38,7 @@ AM_LDFLAGS =
 
 csmodel_includedir=$(pkgincludedir)/model
 csmodel_include_HEADERS = \
+cs_rules_manager.h \
 cs_turbulence_rules_manager.h \
 cs_thermal_rules_manager.h \
 cs_time_stepping_rules_manager.h \

@@ -42,7 +42,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_tree.h"
+#include "model/cs_rules_manager.h"
 
 /*============================================================================
  * Structure definitions
@@ -72,20 +72,16 @@ struct cs_turb_flux_rule_t {
  * Class definition
  *============================================================================*/
 
-class cs_turbulent_flux_rules_manager {
-private:
-  cs_tree_node_t *rules_tree_;
-  std::map<std::string, cs_turb_flux_rule_t> rules_by_model_;
-  std::map<int, cs_turb_flux_rule_t>         rules_by_value_;
-
-  void parse_rules_();
-  cs_turb_flux_field_t parse_field_(cs_tree_node_t *field_node);
-
-  static inline int _atoi_safe(const char *s, int def = 0);
-
+class cs_turbulent_flux_rules_manager : public cs_rules_manager
+{
 public:
-  cs_turbulent_flux_rules_manager(const char *rules_xml_path);
-  ~cs_turbulent_flux_rules_manager();
+  cs_turbulent_flux_rules_manager
+  (
+    const char *rules_xml_name
+  ) : cs_rules_manager(rules_xml_name)
+  {
+    parse_rules_();
+  }
 
   /* Obtain rule fro a given model (ex: "DFM") */
   const cs_turb_flux_rule_t *
@@ -111,6 +107,13 @@ public:
   /* Check if a model created an alpha field (EB-*) */
   bool
   creates_alpha_field(const std::string  &model_name) const;
+private:
+  std::map<std::string, cs_turb_flux_rule_t> rules_by_model_;
+  std::map<int, cs_turb_flux_rule_t>         rules_by_value_;
+
+  void parse_rules_();
+  cs_turb_flux_field_t parse_field_(cs_tree_node_t *field_node);
+
 };
 
 /*============================================================================

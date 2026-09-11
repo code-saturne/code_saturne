@@ -48,6 +48,12 @@
 #include "cs_boundary_conditions_rules_manager.h"
 
 /*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+static cs_boundary_conditions_rules_manager *instance = nullptr;
+
+/*============================================================================
  * Private methods
  *============================================================================*/
 
@@ -108,31 +114,6 @@ cs_boundary_conditions_rules_manager::parse_rules_()
 }
 
 /*============================================================================
- * Constructor / Destructor
- *============================================================================*/
-
-cs_boundary_conditions_rules_manager::cs_boundary_conditions_rules_manager
-(
-  const char  *rules_xml_path
-)
-  : default_icodcl_(1)
-{
-  rules_tree_ = cs_tree_node_create("");
-  cs_tree_xml_read(rules_tree_, rules_xml_path);
-  if (rules_tree_ == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
-              "Cannot load BoundaryConditionsRules.xml: %s",
-              rules_xml_path);
-  parse_rules_();
-}
-
-cs_boundary_conditions_rules_manager::~cs_boundary_conditions_rules_manager()
-{
-  if (rules_tree_ != nullptr)
-    cs_tree_node_free(&rules_tree_);
-}
-
-/*============================================================================
  * Public methods
  *============================================================================*/
 
@@ -171,14 +152,9 @@ cs_boundary_conditions_rules_manager::get_legacy_type
 cs_boundary_conditions_rules_manager *
 cs_get_boundary_conditions_rules_manager(bool  no_instanciate)
 {
-  static cs_boundary_conditions_rules_manager *instance = nullptr;
   if (instance == nullptr && no_instanciate == false) {
-    const char *datadir = cs_base_get_pkgdatadir();
-    char path[1024];
-    snprintf(path, sizeof(path) - 1,
-             "%s/model/BoundaryConditionsRules.xml", datadir);
-    path[sizeof(path) - 1] = '\0';
-    instance = new cs_boundary_conditions_rules_manager(path);
+    instance =
+      new cs_boundary_conditions_rules_manager("BoundaryConditionsRules.xml");
   }
   return instance;
 }

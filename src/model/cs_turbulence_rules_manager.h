@@ -38,7 +38,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_tree.h"
+#include "model/cs_rules_manager.h"
 
 /*============================================================================
  * Structure definitions for Output module
@@ -63,10 +63,9 @@ struct cs_boundary_var_config_t {
  * Class definition
  *============================================================================*/
 
-class cs_turbulence_rules_manager {
-private:
-  cs_tree_node_t *rules_tree_;
+class cs_turbulence_rules_manager : public cs_rules_manager {
 
+private:
   /*-------------------------------------------------------------------------
    * Maps for cs_gui.cpp
    *-------------------------------------------------------------------------*/
@@ -103,9 +102,6 @@ private:
   std::map<std::string, std::vector<std::string>> output_tensor_component_names_;
   std::map<std::string, std::string> output_defaults_;
 
-  // Helper
-  static inline bool _strcmp(const char *s1, const char *s2);
-
   // Parsing methods
   void parse_model_groups_();
   void parse_validation_rules_();
@@ -122,9 +118,19 @@ private:
 
 public:
 
-  // Constructor & Destructor
-  cs_turbulence_rules_manager(const char *rules_xml_path);
-  ~cs_turbulence_rules_manager();
+  // Constructor
+  cs_turbulence_rules_manager
+  (
+    const char *rules_xml_name
+  ) : cs_rules_manager(rules_xml_name)
+  {
+    parse_model_groups_();
+    parse_validation_rules_();
+    parse_model_requirements_();
+    build_model_enum_map_();
+    parse_numerical_parameters_();
+    parse_validation_rules_check_();
+  }
 
   /*-------------------------------------------------------------------------
    * Getters for cs_gui.cpp

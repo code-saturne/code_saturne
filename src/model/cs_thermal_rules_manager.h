@@ -42,7 +42,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_tree.h"
+#include "model/cs_rules_manager.h"
 
 /*============================================================================
  * Structure definitions
@@ -84,10 +84,8 @@ struct cs_thermal_constraint_t {
  * Class definition
  *============================================================================*/
 
-class cs_thermal_rules_manager {
+class cs_thermal_rules_manager : public cs_rules_manager {
 private:
-  cs_tree_node_t *rules_tree_;
-
   /*--------------------------------------------------------------------------
    * Maps for cs_parameters.cpp
    *--------------------------------------------------------------------------*/
@@ -143,10 +141,6 @@ private:
 
   std::map<std::string, std::string> defaults_;
 
-  // Helper
-  static inline bool
-  _strcmp(const char *s1, const char *s2);
-
   // Parsing methods
   void
   parse_definitions_();
@@ -166,8 +160,18 @@ private:
 public:
 
   // Constructor & Destructor
-  cs_thermal_rules_manager(const char *rules_xml_path);
-  ~cs_thermal_rules_manager();
+  cs_thermal_rules_manager
+  (
+    const char *rules_xml_name
+  ) : cs_rules_manager(rules_xml_name)
+  {
+    // Parse the different sections
+    parse_definitions_();
+    parse_validation_rules_();
+    parse_validations_();
+    parse_defaults_();
+    parse_mappings_();
+  }
 
   /*--------------------------------------------------------------------------
    * Getters for cs_parameters.cpp

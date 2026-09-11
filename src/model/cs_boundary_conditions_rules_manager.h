@@ -36,7 +36,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_tree.h"
+#include "model/cs_rules_manager.h"
 
 /*============================================================================
  * Structure definitions
@@ -60,19 +60,23 @@ struct cs_bc_legacy_entry_t {
  * Class definition
  *============================================================================*/
 
-class cs_boundary_conditions_rules_manager {
+class cs_boundary_conditions_rules_manager : public cs_rules_manager {
 private:
-  cs_tree_node_t *rules_tree_;
 
   std::map<std::string, cs_bc_code_entry_t>  bc_code_map_;
   std::map<std::string, cs_bc_legacy_entry_t> legacy_map_;
-  int default_icodcl_;
+  int default_icodcl_{1};
 
   void parse_rules_();
 
 public:
-  cs_boundary_conditions_rules_manager(const char *rules_xml_path);
-  ~cs_boundary_conditions_rules_manager();
+  cs_boundary_conditions_rules_manager
+  (
+    const char *rules_xml_name
+  ) : cs_rules_manager(rules_xml_name)
+  {
+    parse_rules_();
+  }
 
   /* Get icodcl for a given boundary type flag name */
   int

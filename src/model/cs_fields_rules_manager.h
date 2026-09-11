@@ -42,7 +42,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_tree.h"
+#include "model/cs_rules_manager.h"
 
 /*============================================================================
  * Structure definitions
@@ -87,9 +87,8 @@ struct cs_field_creation_entry_t {
  * Class definition
  *============================================================================*/
 
-class cs_fields_rules_manager {
+class cs_fields_rules_manager : public cs_rules_manager {
 private:
-  cs_tree_node_t *rules_tree_;
 
   /* Champs par module et condition */
   /* module_name -> liste de regles */
@@ -99,13 +98,14 @@ private:
   void parse_modules_();
   cs_field_creation_rule_t parse_field_(cs_tree_node_t *field_node);
 
-  static inline bool _strcmp(const char *s1, const char *s2);
-  static inline int  _atoi_safe(const char *s, int def = 0);
-  static inline double _atof_safe(const char *s, double def = 0.0);
-
 public:
-  cs_fields_rules_manager(const char *rules_xml_path);
-  ~cs_fields_rules_manager();
+  cs_fields_rules_manager
+  (
+    const char *rules_xml_name
+  ) : cs_rules_manager(rules_xml_name)
+  {
+    parse_modules_();
+  }
 
   /* =========================================================
    * GETTERS POUR cs_setup.cpp et cs_parameters.cpp

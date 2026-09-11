@@ -36,7 +36,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_tree.h"
+#include "model/cs_rules_manager.h"
 
 /*============================================================================
  * Structure definitions
@@ -60,9 +60,8 @@ struct cs_lagr_phys_model_t {
  * Class definition
  *============================================================================*/
 
-class cs_lagr_rules_manager {
+class cs_lagr_rules_manager : public cs_rules_manager {
 private:
-  cs_tree_node_t *rules_tree_;
 
   std::map<std::string, cs_lagr_coupling_mode_t> coupling_modes_;
   std::map<std::string, cs_lagr_phys_model_t>    phys_models_;
@@ -71,8 +70,13 @@ private:
   void parse_rules_();
 
 public:
-  cs_lagr_rules_manager(const char *rules_xml_path);
-  ~cs_lagr_rules_manager();
+  cs_lagr_rules_manager
+  (
+    const char *rules_xml_name
+  ) : cs_rules_manager(rules_xml_name)
+  {
+    parse_rules_();
+  }
 
   /* Get coupling mode int value from name */
   int get_coupling_mode(const std::string &name) const;

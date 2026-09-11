@@ -56,51 +56,10 @@
 #include "cs_thermal_rules_manager.h"
 
 /*============================================================================
- * Static helpers
+ * Static global variable (singleton instance)
  *============================================================================*/
 
-inline bool
-cs_thermal_rules_manager::_strcmp(const char *s1, const char *s2)
-{
-  if (s1 == nullptr || s2 == nullptr)
-    return false;
-  return (std::strcmp(s1, s2) == 0);
-}
-
-/*============================================================================
- * Constructor
- *============================================================================*/
-
-cs_thermal_rules_manager::cs_thermal_rules_manager(const char *rules_xml_path)
-  : rules_tree_(nullptr)
-{
-  // Load the XML file (as cs_turbulence_rules_manager)
-  rules_tree_ = cs_tree_node_create("");
-  cs_tree_xml_read(rules_tree_, rules_xml_path);
-
-  if (rules_tree_ == nullptr) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: Could not load ThermalRules.xml from path: %s\n"),
-              rules_xml_path);
-  }
-
-  // Parse the different sections
-  parse_definitions_();
-  parse_validation_rules_();
-  parse_validations_();
-  parse_defaults_();
-  parse_mappings_();
-}
-
-/*============================================================================
- * Destructor
- *============================================================================*/
-
-cs_thermal_rules_manager::~cs_thermal_rules_manager()
-{
-  if (rules_tree_ != nullptr)
-    cs_tree_node_free(&rules_tree_);
-}
+static cs_thermal_rules_manager *_g_thermal_rules_manager = nullptr;
 
 /*============================================================================
  * Parse Definitions
@@ -789,24 +748,11 @@ cs_thermal_rules_manager::get_default_double(const char *key) const
  * Singleton
  *============================================================================*/
 
-static cs_thermal_rules_manager *_g_thermal_rules_manager = nullptr;
-
 cs_thermal_rules_manager*
 cs_get_thermal_rules_manager(bool  no_instanciate)
 {
   if (_g_thermal_rules_manager == nullptr  && no_instanciate == false) {
-    // Search for ThermalRules.xml in the installation directory
-    char rules_path[1024];
-    const char *install_prefix = cs_base_get_pkgdatadir();
-    snprintf(rules_path, 1024, "%s/model/ThermalRules.xml", install_prefix);
-
-    // Check if the file exists
-    if (!cs_file_isreg(rules_path)) {
-      // Otherwise, search in the current directory
-      snprintf(rules_path, 1024, "ThermalRules.xml");
-    }
-
-    _g_thermal_rules_manager = new cs_thermal_rules_manager(rules_path);
+    _g_thermal_rules_manager = new cs_thermal_rules_manager("ThermalRules.xml");
   }
   return _g_thermal_rules_manager;
 }

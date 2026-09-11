@@ -37,7 +37,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_tree.h"
+#include "model/cs_rules_manager.h"
 
 /*============================================================================
  * Structure definitions
@@ -69,10 +69,9 @@ struct cs_elec_property_t {
  * Class definition
  *============================================================================*/
 
-class cs_elec_rules_manager {
+class cs_elec_rules_manager : public cs_rules_manager {
 
 private:
-  cs_tree_node_t *rules_tree_;
 
   std::map<std::string, cs_elec_joule_model_t>  joule_models_;
   std::map<std::string, cs_elec_arc_model_t>    arc_models_;
@@ -84,8 +83,13 @@ private:
   void parse_rules_();
 
 public:
-  cs_elec_rules_manager(const char  *rules_xml_path);
-  ~cs_elec_rules_manager();
+  cs_elec_rules_manager
+  (
+    const char  *rules_xml_name
+  ) : cs_rules_manager(rules_xml_name)
+  {
+    parse_rules_();
+  }
 
   /* Get ieljou value from joule model name */
   int

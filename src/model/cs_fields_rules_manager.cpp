@@ -75,61 +75,8 @@ _rule_manager_finalize(void)
 }
 
 /*============================================================================
- * Static helpers
- *============================================================================*/
-
-inline bool
-cs_fields_rules_manager::_strcmp(const char *s1, const char *s2)
-{
-  if (s1 == nullptr || s2 == nullptr) return false;
-  return (std::strcmp(s1, s2) == 0);
-}
-
-inline int
-cs_fields_rules_manager::_atoi_safe(const char *s, int def)
-{
-  if (s == nullptr) return def;
-  return atoi(s);
-}
-
-inline double
-cs_fields_rules_manager::_atof_safe(const char *s, double def)
-{
-  if (s == nullptr) return def;
-  return atof(s);
-}
-
-/*============================================================================
  * Class member function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Constructor
- *----------------------------------------------------------------------------*/
-
-cs_fields_rules_manager::cs_fields_rules_manager(const char *rules_xml_path)
-  : rules_tree_(nullptr)
-{
-  rules_tree_ = cs_tree_node_create("");
-  cs_tree_xml_read(rules_tree_, rules_xml_path);
-
-  if (rules_tree_ == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
-              "Error: Could not load FieldsRules.xml from: %s\n",
-              rules_xml_path);
-
-  parse_modules_();
-}
-
-/*----------------------------------------------------------------------------
- * Destructor
- *----------------------------------------------------------------------------*/
-
-cs_fields_rules_manager::~cs_fields_rules_manager()
-{
-  if (rules_tree_ != nullptr)
-    cs_tree_node_free(&rules_tree_);
-}
 
 /*----------------------------------------------------------------------------
  * Parse a single Field node
@@ -309,21 +256,7 @@ cs_fields_rules_manager *
 cs_get_fields_rules_manager(void)
 {
   if (g_fields_manager == nullptr) {
-    char rules_path[1024];
-    const char *datadir = cs_base_get_pkgdatadir();
-    snprintf(rules_path, 1024, "%s/model/FieldsRules.xml", datadir);
-
-    FILE *test_file = fopen(rules_path, "r");
-    if (test_file != nullptr) {
-      fclose(test_file);
-    }
-    else {
-      cs_log_warning("FieldsRules.xml not found in %s\n", rules_path);
-      snprintf(rules_path, 1024, "FieldsRules.xml");
-    }
-
-    g_fields_manager = new cs_fields_rules_manager(rules_path);
-
+    g_fields_manager = new cs_fields_rules_manager("FieldsRules.xml");
     cs_base_at_finalize(_rule_manager_finalize);
   }
   return g_fields_manager;
