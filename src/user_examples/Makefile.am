@@ -74,6 +74,7 @@ cs_user_boundary_conditions-medcoupling_remapper_2d.cpp \
 cs_user_boundary_conditions-notebook.cpp \
 cs_user_boundary_conditions-pulverized_coal.cpp \
 cs_user_boundary_conditions-time_table.cpp \
+cs_user_boundary_conditions-iwf.cpp \
 cs_user_coupling-saturne.cpp \
 cs_user_coupling-syrthes.cpp \
 cs_user_electric_scaling.cpp \
@@ -151,6 +152,7 @@ cs_user_postprocess-boundary_pressure_profile.cpp \
 cs_user_postprocess-profiles.cpp \
 cs_user_postprocess-probes-interpolate.cpp \
 cs_user_postprocess-sfc.cpp \
+cs_user_postprocess-iwf.cpp \
 cs_user_radiative_transfer.cpp \
 cs_user_radiative_transfer_bcs.cpp \
 cs_user_solver-heat-equation.cpp \

@@ -121,6 +121,18 @@ static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
  * \param[out]    tetmin        minimum local ustar value
  * \param[out]    tplumx        maximum local tplus value
  * \param[out]    tplumn        minimum local tplus value
+ *
+ * When the processed scalar is the thermal field, this helper consumes the
+ * per-face IWF result and replaces the standard internal exchange coefficient
+ * by the equivalent IWF coefficient, unless the user imposed one explicitly.
+ * This coupling to the code_saturne assembly is an integration choice; the
+ * physical IWF model consumed here comes from the reference below.
+ *
+ * \par Source of the IWF model consumed by this integration helper
+ * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
+ * Indoor turbulent airflow modelling with a new integral buoyant wall
+ * function. International Journal of Heat and Fluid Flow 117, 110130.
+ * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
  */
 /*----------------------------------------------------------------------------*/
 
@@ -167,6 +179,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   const int ifcvsl = f_sc->get_key_int(kivisl);
   const int thermal_variable = cs_glob_thermal_model->thermal_variable;
   const cs_field_t *f_th = cs_thermal_model_field();
+  const bool iwf_configured_locally
+    = cs_wall_functions_iwf_n_faces() > 0;
 
   const cs_real_t cp0 = fluid_props->cp0;
   const cs_real_t cv0 = fluid_props->cv0;
@@ -370,6 +384,10 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
   cs_real_t *hint, *yptp;
   cs_real_t *h_int_tot = f_sc->bc_coeffs->h_int_tot;
+  cs_gnum_t n_iwf_thermal = 0;
+  cs_gnum_t n_iwf_user_override = 0;
+  cs_real_t iwf_user_h_min = cs_math_big_r;
+  cs_real_t iwf_user_h_max = -cs_math_big_r;
   CS_MALLOC(hint, n_b_faces, cs_real_t);
   CS_MALLOC(yptp, n_b_faces, cs_real_t);
 
@@ -521,9 +539,46 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       hflui = hint[f_id];
     }
 
+    if (f_sc == f_th && iwf_configured_locally) {
+      cs_wall_functions_iwf_result_t iwf_result = {};
+      if (   cs_wall_functions_iwf_get_result(f_id, &iwf_result)
+          && iwf_result.active) {
+        if (icodcl_sc[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF) {
+          n_iwf_user_override += 1;
+          iwf_user_h_min = cs::min(iwf_user_h_min, hflui);
+          iwf_user_h_max = cs::max(iwf_user_h_max, hflui);
+        }
+        else {
+          hflui = iwf_result.h_int;
+          yptp[f_id] = hflui / prdtl * distbf / rkl / turb_schmidt;
+          n_iwf_thermal += 1;
+        }
+      }
+    }
+
     h_int_tot[f_id] = hflui;
 
   } /* End loop en boundary faces */
+
+  if (f_sc == f_th) {
+    cs_gnum_t iwf_counts[2] = {n_iwf_thermal, n_iwf_user_override};
+    cs_parall_counter(iwf_counts, 2);
+    cs_parall_min(1, CS_REAL_TYPE, &iwf_user_h_min);
+    cs_parall_max(1, CS_REAL_TYPE, &iwf_user_h_max);
+    if (iwf_counts[0] + iwf_counts[1] > 0)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "IWF thermal coefficients: native=%llu "
+                    "user_override=%llu",
+                    (unsigned long long)iwf_counts[0],
+                    (unsigned long long)iwf_counts[1]);
+    if (iwf_counts[1] > 0)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " imposed_h=[%g %g].\n",
+                    iwf_user_h_min,
+                    iwf_user_h_max);
+    else if (iwf_counts[0] > 0)
+      cs_log_printf(CS_LOG_DEFAULT, ".\n");
+  }
 
   /* internal coupling */
   if (eqp_sc->icoupl > 0) {
@@ -1360,6 +1415,10 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   const cs_lnum_t nt_cur = cs_glob_time_step->nt_cur;
   const cs_lnum_t nt_max = cs_glob_time_step->nt_max;
 
+  cs_gnum_t n_iwf_faces = cs_wall_functions_iwf_n_faces();
+  cs_parall_counter(&n_iwf_faces, 1);
+  const bool iwf_configured = n_iwf_faces > 0;
+
   /* Initializations
      =============== */
 
@@ -1601,6 +1660,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   const cs_turbomachinery_model_t turbomachinery_model
     = cs_turbomachinery_get_model();
+
+  if (iwf_configured)
+    cs_wall_functions_iwf_compute(rcodcl1_th);
 
   /* Pointers to specific fields */
   cs_real_t *byplus = nullptr, *bdplus = nullptr, *bdlmo = nullptr;
@@ -1890,6 +1952,25 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                &cfnnk,
                                &cfnne,
                                &dlmo);
+
+    cs_wall_functions_iwf_result_t iwf_result = {};
+    if (   iwf_configured
+        && cs_wall_functions_iwf_get_result(f_id, &iwf_result)
+        && iwf_result.active) {
+      uet = iwf_result.u_tau;
+      uk = iwf_result.u_tau;
+      yplus = iwf_result.u_tau * distbf / xnuii;
+
+      if (utau > cs_math_epzero) {
+        ypup = yplus * iwf_result.u_tau / utau;
+        cofimp = 1. + cs_math_pow2(iwf_result.u_tau) * distbf
+                       / ((xnuii + xnuit) * utau);
+      }
+      else {
+        ypup = 0.;
+        cofimp = 0.;
+      }
+    }
 
     /* Dimensionless velocity, recomputed and therefore may
        take stability into account */
