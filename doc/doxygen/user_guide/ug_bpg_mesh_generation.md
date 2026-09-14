@@ -108,7 +108,7 @@ plane of the face with the line defined by the centres of the neighboring cells
 - optimal value: 0
 - maximal value: try to keep the point O within the face
 - creating non-conformal meshes and refining the mesh may modify the value of
-the centring deviation (Figure 6)
+the centering deviation (Figure 6)
 
 \image html bpg_mesh/Fig4_bpg_mesh_generation.png "Figure 4: remarkable points" width=30%
 
