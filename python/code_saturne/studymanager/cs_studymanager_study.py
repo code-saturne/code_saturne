@@ -2922,7 +2922,7 @@ class Studies(object):
                     self.reporting('    - Done for study '+ case.study)
 
                 # open new report figure file
-                dest = os.path.join(self.__dest, case.study, "POST") 
+                dest = os.path.join(self.__dest, case.study, "POST")
                 doc = Report(dest, report_fig, self.__pdflatex)
 
                 # retrieve study_object from index
