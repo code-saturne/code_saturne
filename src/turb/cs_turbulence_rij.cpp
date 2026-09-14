@@ -4702,24 +4702,12 @@ cs_turbulence_rij(int phase_id)
   /* Solve Scale Variable (Epsilon or Omega)
    * --------------------------------------- */
 
-  if (turb_model->model == CS_TURB_RIJ_OMEGA) {
-    cs_array<cs_real_t> _rhs(n_cells_ext, cs_alloc_mode);
-    cs_array<cs_real_t> _fimp(n_cells_ext, cs_alloc_mode);
+  if (turb_model->model != CS_TURB_LES_TAUSGS) {
+    if (turb_model->model == CS_TURB_RIJ_OMEGA) {
+      cs_array<cs_real_t> _rhs(n_cells_ext, cs_alloc_mode);
+      cs_array<cs_real_t> _fimp(n_cells_ext, cs_alloc_mode);
 
-    _solve_omega(phase_id,
-                 prod.data<cs_real_6_t>(),
-                 up_rhop.data<cs_real_3_t>(),
-                 grav,
-                 viscf,
-                 viscb,
-                 _rhs,
-                 _fimp);
-  }
-  else if (turb_model->model != CS_TURB_LES_TAUSGS) {
-    cs_array<cs_real_t> _rhs(n_cells_ext, cs_alloc_mode);
-    cs_array<cs_real_t> _fimp(n_cells_ext, cs_alloc_mode);
-
-    _solve_epsilon(phase_id,
+      _solve_omega(phase_id,
                    prod.data<cs_real_6_t>(),
                    up_rhop.data<cs_real_3_t>(),
                    grav,
@@ -4727,8 +4715,34 @@ cs_turbulence_rij(int phase_id)
                    viscb,
                    _rhs,
                    _fimp);
+    }
+    else {
+      cs_array<cs_real_t> _rhs(n_cells_ext, cs_alloc_mode);
+      cs_array<cs_real_t> _fimp(n_cells_ext, cs_alloc_mode);
+
+      _solve_epsilon(phase_id,
+                     prod.data<cs_real_6_t>(),
+                     up_rhop.data<cs_real_3_t>(),
+                     grav,
+                     viscf,
+                     viscb,
+                     _rhs,
+                     _fimp);
+    }
+
+    /* Clipping
+     * -------- */
+
+    cs_turbulence_rij_clip(phase_id, n_cells);
+
   }
   else {
+
+    /* Clipping (before algebraic computation of epsilon)
+     * -------- */
+
+    cs_turbulence_rij_clip(phase_id, n_cells);
+
     const cs_real_t ales = cs_turb_ales;
     const cs_real_t bles = cs_turb_bles;
     const cs_real_t xlesfl = cs_turb_xlesfl;
@@ -4752,13 +4766,10 @@ cs_turbulence_rij(int phase_id)
 
     // FIXME: using current to previous inside a time step
     // is bad practice, as it drops info on the previous time step.
+    // This trick is done because here epsilon is a property
+    // and no current to previous is called elsewhere
     cs_field_current_to_previous(CS_F_(eps));
   }
-
-  /* Clipping
-   * -------- */
-
-  cs_turbulence_rij_clip(phase_id, n_cells);
 
   if (cs_glob_timer_kernels_flag > 0) {
     ctx.wait();
