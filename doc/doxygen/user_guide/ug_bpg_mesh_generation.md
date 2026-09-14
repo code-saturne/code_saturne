@@ -53,13 +53,13 @@ requirements.
 
 ### Extrusion at inlet and outlet boundaries for tetrahedral meshes
 
-With tetrahedral meshes, it is mandatory to apply an extrusion of at least 1
+With tetrahedral meshes, it is necessary to apply an extrusion of at least 1
 cell at inlet and outlet boundaries to prevent non physical behavior near
 these boundaries. This will generate layers of orthogonal prisms, add them to
 the rest of the mesh and preserve all group of boundary faces and cells.
 The thickness of the cells should be similar to the size of tetrahedra near the
-boundary face. The extrusion step can be done in the graphical user interface
-(ref) and in user source file (ref).
+boundary face. The extrusion step can be defined either in the GUI or in
+the `cs_user_mesh_modifiy` user source file.
 
 ### Mesh alignment
 
@@ -86,7 +86,8 @@ avoid the risk of losing particles).
 
 - Creating non-conformal meshes may lead to warped faces.
 
-\image html bpg_mesh/Fig2_bpg_mesh_generation.png "Figure 2: a warped face, coloured in red" width=20%
+\image html bpg_mesh/Fig2_bpg_mesh_generation.png "Figure 2: a warped face,
+colored in red" width=20%
 
 #### Aspect ratio
 
@@ -98,11 +99,11 @@ even more, depending on the physical phenomena considered).
 
 \image html bpg_mesh/Fig3_bpg_mesh_generation.png "Figure 3: aspect ratio L/h" width=20%
 
-#### Centring deviation
+#### Centering deviation
 
-The centring deviation for a given face of a cell, it is the distance between
-the centre of the face F and the point O, defined as the intersection of the
-plane of the face with the line defined by the centres of the neighbouring cells
+The centering deviation for a given face of a cell is the distance between
+the center of the face F and the point O, defined as the intersection of the
+plane of the face with the line defined by the centres of the neighboring cells
 (Figure 4, Figure 5):
 - optimal value: 0
 - maximal value: try to keep the point O within the face
@@ -111,15 +112,15 @@ the centring deviation (Figure 6)
 
 \image html bpg_mesh/Fig4_bpg_mesh_generation.png "Figure 4: remarkable points" width=30%
 
-\image html bpg_mesh/Fig5_bpg_mesh_generation.png "Figure 5: centring deviation (intersection outside of the face)" width=20%
+\image html bpg_mesh/Fig5_bpg_mesh_generation.png "Figure 5: centering deviation (intersection outside of the face)" width=20%
 
-\image html bpg_mesh/Fig6_bpg_mesh_generation.png "Figure 6: examples of modification of the centring deviation: improvement due to refinement (left), degradation due to refinement (centre), degradation on a non-conformal mesh (right)"
+\image html bpg_mesh/Fig6_bpg_mesh_generation.png "Figure 6: examples of modification of the centering deviation: improvement due to refinement (left), degradation due to refinement (centre), degradation on a non-conformal mesh (right)"
 
 #### Non-orthogonality angle
 
-The non-orthogonality angle is between the normal to a face and, for internal
-faces, the line joining the centre of the neighbouring cells or, for boundary
-faces, the line joining the centre of the face to the centre of the neighbouring
+The non-orthogonality angle is the angle between the normal to a face and, for internal
+faces, the line joining the centre of the neighboring cells or, for boundary
+faces, the line joining the centre of the face to the centre of the neighboring
 cell (Figure 7):
 - optimal value: 0
 - usual values: lower than 15° for hexahedra and lower than 45° for tetrahedra
@@ -127,7 +128,7 @@ cell (Figure 7):
 the solver when it is located away from regions where the gradients of the
 variables are large (for example non-orthogonality should be avoided near
 walls). Creating non-conformal meshes may generate very large angles of
-non-orthogonality. The maximal value that is supported depends on the physical
+non-orthogonality. The maximum value that is supported depends on the physical
 phenomena that are considered.
 
 \image html bpg_mesh/Fig7_bpg_mesh_generation.png "Figure 7: non-orthogonality angle (left) and effect of non-conformal meshes (right)"
@@ -135,7 +136,7 @@ phenomena that are considered.
 #### Maximal weighting
 
 The maximal weighting (|distance FJ’/ distance I’J’|) for internal faces, with
-I’ and J’ standing for the projection of I and J (centres of the neighbouring
+I’ and J’ standing for the projection of I and J (centres of the neighboring
 cells) on the line normal to their common face and containing the centre F of
 the face (Figure 4); the accuracy my decrease if the weighting is too large:
 - optimal value: 0.5
@@ -151,17 +152,32 @@ about 1 irregular mesh where cells are alternatively long and short as on Figure
 
 \image html bpg_mesh/Fig8_bpg_mesh_generation.png "Figure 8: example of an irregular mesh to avoid" width=40%
 
-#### non-conformal meshes
+### Mesh joining
 
-A non conformal mesh is created by joining two meshes along a common surface on
-which all the vertices or all the edges of the two initial meshes do not match.
-On the joining surface, edges of one of the original meshes cross faces of the
-other mesh and/or vertices of one of the original meshes fall inside a cell face
-of the other (“hanging nodes”). The conformal joining operation modifies the
-underlying structure so that such meshes may be used (Figure 9).
+Multiple meshes may be joined and assembled into a single mesh, and faces lying
+on a common surface may be joined, whether their interfaces are conformal
+(i.e. their vertices are coincident) or not.
 
-- Avoid conformal joining for LES (LES is sensitive to local modifications of
-the discretisation which can lead to unphysical energy in the flowfield).
+#### Non-conformal meshes and conformal joining
+
+When non-conformal faces are joined,  they are subdivided into conforming
+faces shared with adjacent cells, based on the subdivision of their edges along
+their intersections, and addition of vertices if necessary. Very small edges
+are avoided by merging their vertices, based on a geometric tolerance.
+
+This operation thus modifies the underlying structure so as to obtain closed
+polyhedra with conformal faces(Figure 9). Thus initially non-conforming
+hexahedral meshes effectively are transformed inti conforming polyhedral meshes.
+
+\image html bpg_mesh/Fig9_bpg_mesh_generation.png "Figure 9: examples of non-conformal meshes"
+
+\image html bpg_mesh/Fig10_bpg_mesh_generation.png "Figure 10: examples of non-conformal meshes – coarsening ratio 2 cells / 3 cells (left), 1 cell / 2 cells (right)" width=50%
+
+** recommendations **
+
+- Avoid conformal joining for LES (as LES is sensitive to local jumps in cell
+  size and modifications of the discretization which can lead to non-physical
+  energy in the flow field).
 - If several successive layers of conformal joining is used to coarsen, it is
 advised to use a coarsening ratio of 2 cells / 3 cells rather than 1 cell / 2
 cells (Figure 10). This is particularly important if the turbulence level is low
@@ -170,35 +186,19 @@ and if the main direction of the flow is normal to the conformal joining surface
 perturbations that could appear because of the checkerboard structure of the
 mesh).
 - For the other cases of conformal joining, the coarsening ratio should be kept
-of the order of 1 cell / 2 cell and below 1 cell / 5 cells (if it is essential
-to joins a single cell to more than 5 cells, it is advisable to do it in several
-steps/layers or to rethink the mesh structure; otherwise, it may be necessary to
+of the order of 1 cell / 2 cell and below 1 cell / 5 cells (if needed, use several
+steps/layers or redesign the mesh); otherwise, it may be necessary to
 use an upwind convection scheme to stabilize the computation, bearing in mind
-that the accuracy of the results maybe be reduced and LES turbulence modelling
+that the accuracy of the results maybe be reduced and LES turbulence modeling
 will most probably be unreliable).
-- If too many non-conformal joining interfaces are required, it may be wise to
-envisage an unstructured mesh consisting of tetrahedra.
-
-Remarq: The “conformal joining” transforms a “non-conformal” association of
-meshes about a surface into a “conformal” composite mesh; the structure of the
-initial meshes is modified (faces are divided and vertices are added) so that
-the final composite mesh “conforms” to the following fundamental property that
-is used to apply collocated finite volume flux based techniques: “any internal
-face has exactly two neighbouring cells”. Thus hexahedral meshes effectively
-become polyhedral meshes.
-
-\image html bpg_mesh/Fig9_bpg_mesh_generation.png "Figure 9: examples of non-conformal meshes"
-
-\image html bpg_mesh/Fig10_bpg_mesh_generation.png "Figure 10: examples of non-conformal meshes – coarsening ratio 2 cells / 3 cells (left), 1 cell / 2 cells (right)" width=50%
-
-### Conformal joining
-
-- Avoid the conformal joining (!): the technique may be very useful if not other
-options are available, but it must not be considered as a “magic trick” to use
-everywhere (it may deteriorate the results).
+- If too many non-conformal joining interfaces are needed, it may be wise to
+contemplate an unstructured mesh consisting of tetrahedra.
+  * Joining non-conforming meshes may locally degrade their quality along
+    joining interfaces, while using tetrahedra will lead to lower quality
+    cells overall, but perhaps with a better "minimum cell quality".
 - Where possible choose plane interfaces in which the joining meshes map onto
 each other exactly. The meshes that should be joined should rest as exactly as
-possible on the same geometrical surface, with as little overlapping or chink as
+possible on the same geometrical surface, with as little overlapping or gaps as
 possible.
 - Place conformal joining interfaces that may produce non-orthogonal mesh cells
 as far as possible from the regions of interest (and away from regions with
@@ -207,12 +207,35 @@ large gradients of the variables, in particular).
 let code_saturne decide which elements should be joined (on the basis of
 geometry-based criteria). However, it is advised to use group names to
 explicitly identify the faces that must be joined so as to speed up the process
-and to avoid the possibility for the code to choose to join faces that should
-not be joined.
+and improve the robustness of the joining operation proper.
 - As much as possible, differentiate between the faces associated with the each
 conformal joining interface. In doing so avoid the use of the group name already
 associated with the boundary conditions (this makes the completion of the
 joining process much easier to check).
+
+#### Mesh joining checks
+
+- Check the logs and visualize the joined mesh to ensure that there is no face
+or portion of face that was not joined correctly. Such faces will remain as
+boundary faces, so will appear as such. Also, if all faces of a given group
+should be joined, only interior faces of that group should appear after a
+successful joining operation, so the log should not list boundary faces in
+that group.
+- In the presence of residual un-joined boundary faces or sub-faces, it is
+possible to set a slip boundary condition on such residual portions of faces.
+However, it remains necessary to visualize them to make sure that they may not
+create any perturbation in the flow. For example, Figure 12 illustrates how
+portions of joined faces may remain and produce small steps (two meshes of the
+same circular-section pipe are considered; their refinement is different; they are
+joined along a cross section perpendicular to the pipe 3 axis). More clearly,
+one may think of a mesh approximating the circular section by an octagon and a
+coarser mesh for which the refinement only allows to approximate the circular
+section by an hexagon: the joining of these two sections creates residual
+portions of faces that introduce irregularities of the surface if the code does
+not manage to detect that the vertices shall be displaced locally to avoid this
+artefact.
+
+\image html bpg_mesh/Fig12_bpg_mesh_generation.png "Figure 12: example of conformal joining potentially leading to residual boundary faces" width=50%
 
 ### Predefined mesh patterns
 
@@ -232,37 +255,11 @@ dedicated section).
 acquired through previous studies on similar geometries and from the size of the
 structures of the flow that shall be resolved.
 - Use at least 5 cells between two facing walls (with less than 5 cells, the
-fluid will go through, but the modelling will be too coarse to account for
+fluid will go through, but the modeling will be too coarse to account for
 anything but for the mass conservation; if this situation is not local
 (associated with a singularity of the geometry), one should envisage to change
 the wall boundary into a slip boundary and to add a head loss source term
 accounting for the wall friction.
-
-### Verify the conformal joining
-
-- Visualize the joined mesh to ensure that there is no face or portion of face
-that should have been joined and that has not. Such a face will have kept the
-group name it received before the joining stage: hence, it will be all the
-easier to visualize it as its group name will be different from that of other
-sets of boundary faces. It is important to understand that a face or a portion
-of face that should have but has not been joined becomes a boundary face (in
-particular, if it has the same colour as wall faces and if no specific action is
-taken by the user, it will be dealt with as a wall, and hence as an obstacle).
-- Check for possible un-joined portions of faces. It is possible to set a slip
-boundary condition on such residual portions of faces. However, it remains
-necessary to visualize them to make sure that they may not create any
-perturbation in the flow. For example, Figure 12 illustrates how portions of
-joined faces may remain and produce small steps (two meshes of the same
-circular-section pipe are considered; their refinement is different; they are
-joined along a cross section perpendicular to the pipe 3 axis). More clearly,
-one may think of a mesh approximating the circular section by an octagon and a
-coarser mesh for which the refinement only allows to approximate the circular
-section by an hexagon: the joining of these two sections creates residual
-portions of faces that introduce irregularities of the surface if the code does
-not manage to detect that the vertices shall be displaced locally to avoid this
-artefact.
-
-\image html bpg_mesh/Fig12_bpg_mesh_generation.png "Figure 12: example of conformal joining potentially leading to residual boundary faces" width=50%
 
 ## Specific modelling
 
@@ -303,6 +300,6 @@ developed turbulence and with a turbulent Reynolds number
 \f$Re_t = (L_T/\eta)\f$ large enough, typically superior to 1000). One should
 select a mesh size of the order of (or smaller than) \f$L_T/10\f$ (with cells
 smaller than the Kolmogorov length-scale, the simulation effectively becomes a
-direct simulation). It is not always easy to respect this criterion, since the
+direct simulation). It is not always easy to honor this criterion, since the
 integral scale may be very small (for example: in a channel flow, the integral
 scale is proportional to the distance to the wall...).
