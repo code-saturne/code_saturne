@@ -376,8 +376,9 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
   cs_alloc_mode_t amode = CS_ALLOC_HOST_DEVICE;
 
   if (sizeof(int) != sizeof(cs_lnum_t)) {
-    CS_MALLOC_HD(_row_index, n_rows, int, amode);
-    for (cs_lnum_t i = 0; i < n_rows; i++)
+    cs_lnum_t index_size = n_rows+1;
+    CS_MALLOC_HD(_row_index, index_size, int, amode);
+    for (cs_lnum_t i = 0; i < index_size; i++)
       _row_index[i] = a_row_index[i];
     row_index = _row_index;
   }
@@ -418,11 +419,21 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
 
   cs_gnum_t n_g_rows = n_rows;
   partition_offsets[0] = 0;
-  MPI_Allgather(&n_g_rows, 1, CS_MPI_GNUM, &partition_offsets[1], 1, CS_MPI_GNUM,
-                _amgx_comm);
-  for (cs_lnum_t i = 2; i < n_ranks + 1; i++) {
-    partition_offsets[i] += partition_offsets[i-1];
+
+#if defined(HAVE_MPI)
+  if (n_ranks > 1) {
+    MPI_Allgather(&n_g_rows, 1, CS_MPI_GNUM, &partition_offsets[1], 1, CS_MPI_GNUM,
+                  _amgx_comm);
+    for (cs_lnum_t i = 2; i < n_ranks + 1; i++) {
+      partition_offsets[i] += partition_offsets[i-1];
+    }
   }
+  else
+    partition_offsets[1] = n_g_rows;
+#else
+  partition_offsets[1] = n_g_rows;
+#endif
+  
   n_g_rows = partition_offsets[n_ranks];
 
   const int b_size = cs_matrix_get_diag_block_size(a);
@@ -435,7 +446,7 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
   if (amode_row_index < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory(const_cast<int *>(row_index), (n_rows+1)*sizeof(int));
   if (amode < CS_ALLOC_HOST_DEVICE_PINNED)
-    AMGX_pin_memory(col_gid, a_row_index[n_rows]*sizeof(int));
+    AMGX_pin_memory(col_gid, a_row_index[n_rows]*sizeof(cs_gnum_t));
   if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory(const_cast<cs_real_t *>(a_val),
                     a_row_index[n_rows]*b_mem_size);
@@ -460,12 +471,33 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
               "AMGX_distribution_set_partition_data", retval, err_str);
   }
 
-  retval = AMGX_matrix_upload_distributed(sd->matrix,
-                                          n_g_rows, n_rows, nnz,
-                                          db_size, db_size,
-                                          row_index, col_gid,
-                                          a_val, a_d_val,
-                                          dist);
+  if (cs_glob_n_ranks == 1) {
+
+    retval = AMGX_matrix_upload_all(sd->matrix,
+                                    n_rows,
+                                    nnz,
+                                    db_size,
+                                    db_size,
+                                    row_index,
+                                    a_col_id,
+                                    a_val,
+                                    a_d_val);
+
+  }
+  else {
+
+    retval = AMGX_matrix_upload_distributed(sd->matrix,
+                                            n_g_rows,
+                                            n_rows,
+                                            nnz,
+                                            db_size,
+                                            db_size,
+                                            row_index,
+                                            col_gid,
+                                            a_val,
+                                            a_d_val,
+                                            dist);
+  }
 
   if (retval != AMGX_RC_OK) {
     AMGX_get_error_string(retval, err_str, 4096);
