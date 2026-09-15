@@ -3,6 +3,8 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix illegal read in VoF balance log function.
+
 - Fix in Lagrangian module: correct event calculation for stats.
 
 - Fix `resource_name` detection when only the batch system is defined for the

@@ -857,11 +857,6 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
     b_massflux = b_massflux_abs;
   }
 
-  if (icorio == 1 || iturbo > CS_TURBOMACHINERY_NONE) {
-    CS_FREE(i_massflux_abs);
-    CS_FREE(b_massflux_abs);
-  }
-
   /* Unsteady term and mass budget */
 
   if (cs_log_default_is_active()) {
@@ -896,6 +891,11 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
                   _("   ** VOF model, mass balance: %12.4e\n\n"),
                   glob_m_budget);
 
+  }
+
+  if (icorio == 1 || iturbo > CS_TURBOMACHINERY_NONE) {
+    CS_FREE(i_massflux_abs);
+    CS_FREE(b_massflux_abs);
   }
 
 }
