@@ -2099,6 +2099,8 @@ _convert_inhouse_solver(cs_param_amg_inhouse_solver_t  solver)
     return CS_SLES_TS_B_GAUSS_SEIDEL;
   case CS_PARAM_AMG_INHOUSE_L1_JACOBI:
     return CS_SLES_L1_JACOBI;
+  case CS_PARAM_AMG_INHOUSE_CHEBYSHEV:
+    return CS_SLES_CHEBYSHEV;
   case CS_PARAM_AMG_INHOUSE_R_JACOBI:
     return CS_SLES_R_JACOBI;
   case CS_PARAM_AMG_INHOUSE_SRJ2:

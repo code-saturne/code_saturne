@@ -188,6 +188,7 @@ const char *cs_sles_it_type_name[]
      N_("Relaxed Jacobi"),
      N_("Scheduled-relaxation Jacobi, M=2"),
      N_("Scheduled-relaxation Jacobi, M=3"),
+     N_("Chebyshev"),
      N_("Truncated forward Gauss-Seidel"),
      N_("Truncated backwards Gauss-Seidel"),
 };

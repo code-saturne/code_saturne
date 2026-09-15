@@ -846,6 +846,8 @@ cs_param_amg_get_inhouse_solver_name(cs_param_amg_inhouse_solver_t  solver)
     return "Backward Gauss-Seidel smoother";
   case CS_PARAM_AMG_INHOUSE_L1_JACOBI:
     return "L1-Jacobi smoother";
+  case CS_PARAM_AMG_INHOUSE_CHEBYSHEV:
+    return "Chebyshev smoother";
   case CS_PARAM_AMG_INHOUSE_R_JACOBI:
     return "Weighted relaxed Jacobi smoother";
   case CS_PARAM_AMG_INHOUSE_SRJ2:

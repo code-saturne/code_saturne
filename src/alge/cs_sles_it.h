@@ -78,6 +78,8 @@ typedef enum {
   CS_SLES_SRJ2,                /*!< Scheduled relaxed Jacobi smoother, M=2 */
   CS_SLES_SRJ3,                /*!< Scheduled relaxed Jacobi smoother, M=3 */
 
+  CS_SLES_CHEBYSHEV,           /*!< Chebyshev smoother, M=3 */
+
   CS_SLES_TS_F_GAUSS_SEIDEL,   /*!< Truncated forward Gauss-Seidel smoother */
   CS_SLES_TS_B_GAUSS_SEIDEL,   /*!< Truncated backward Gauss-Seidel smoother */
 

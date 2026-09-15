@@ -909,6 +909,165 @@ _l1_jacobi(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using Chebyshev.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- linear equation matrix
+ *   diag_block_size <-- diagonal block size
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_chebyshev(cs_sles_it_t              *c,
+           const cs_matrix_t         *a,
+           cs_lnum_t                  diag_block_size,
+           cs_sles_it_convergence_t  *convergence,
+           const cs_real_t           *rhs,
+           cs_real_t                 *vx_ini,
+           cs_real_t                 *vx,
+           size_t                     aux_size,
+           void                      *aux_vectors)
+{
+  CS_PROFILE_FUNC_RANGE();
+
+  assert(c->setup_data !=nullptr);
+  assert(c->setup_data->ad_inv != nullptr);
+  assert(diag_block_size == 1);
+
+  cs_real_t *_aux_vectors = nullptr;
+  cs_real_t *rk = nullptr, *dk = nullptr, *adk = nullptr, *tmp = nullptr;
+
+  unsigned n_iter = 0;
+
+  cs_dispatch_context ctx;
+
+#if defined(HAVE_ACCEL)
+  bool local_stream;
+  cs_stream_t stream;
+  cs_sles_it_set_exec_location(ctx, a, local_stream, stream);
+#endif
+
+  /* Allocate or map work arrays
+     --------------------------- */
+
+  assert(c->setup_data != nullptr);
+
+  const cs_real_t beta = 1.0;
+
+  const cs_real_t alpha = 0.15 * beta;
+
+  const cs_real_t theta = 0.5 * (beta + alpha);
+  const cs_real_t delta = 0.5 * (beta - alpha);
+  const cs_real_t sigma = theta / delta;
+
+  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+
+  {
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+    const size_t n_wa = 3; // rk, dk, A*dk
+    const size_t wa_size = CS_SIMD_SIZE(n_cols);
+
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, ctx.alloc_mode());
+    else
+      _aux_vectors = (cs_real_t *)aux_vectors;
+
+    rk = _aux_vectors;
+    dk = _aux_vectors + wa_size;
+    adk = _aux_vectors + 2*wa_size;
+  }
+
+  cs_real_t rho_k = 1.0 / sigma;
+  cs_real_t rho_o = rho_k;
+
+  /* First iteration simplified if vx == 0
+     ------------------------------------- */
+
+  if (vx_ini != vx) {
+    assert(vx_ini == nullptr);
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      cs_real_t r0 = ad_inv[ii] * rhs[ii];
+
+      vx[ii] = 0.0;
+      rk[ii] = r0;
+      dk[ii] = r0 / theta;
+    });
+
+  }
+  else {
+    cs_real_t *avx = adk; // Use same memory location
+    cs_matrix_vector_multiply(ctx, a, vx, avx);
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      cs_real_t r0 = ad_inv[ii] * (rhs[ii] - avx[ii]);
+
+      // vx = vx_ini
+      rk[ii] = r0;
+      dk[ii] = r0 / theta;
+    });
+  }
+
+  /* Current iteration
+     ----------------- */
+
+  for (n_iter = 1; n_iter < convergence->n_iterations_max; n_iter++) {
+
+    // adk = A * d_k-1
+    cs_matrix_vector_multiply(ctx, a, dk, adk);
+
+    // rho_k = 1/ (2 sigma - rho_k-1)
+    rho_o = rho_k;
+    rho_k = 1.0 / (2.0 * sigma - rho_k);
+
+    const cs_real_t rhok_rhoo = rho_k*rho_o;
+    const cs_real_t rhok_ov_2_delta = 2.0 *rho_k / delta;
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      // u_k = u_k-1 + d_k-1
+      vx[ii] += dk[ii];
+
+      // r_k = r_k-1 - QA d_k-1
+      rk[ii] -= ad_inv[ii] * adk[ii];
+
+      // d_k = rho_k rho_k-1 d_k-1 + 2 rho_k r_k / delta
+      dk[ii] = rhok_rhoo * dk[ii] + rhok_ov_2_delta *rk[ii];
+    });
+
+  }
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+    // u_k = u_k-1 + d_k-1
+    vx[ii] += dk[ii];
+  });
+
+  ctx.wait();
+  if (_aux_vectors != aux_vectors)
+    CS_FREE(_aux_vectors);
+
+  convergence->n_iterations = n_iter;
+
+#if defined(HAVE_ACCEL)
+  cs_sles_it_restore_exec_location(local_stream);
+#endif
+
+  return CS_SLES_MAX_ITERATION;
+}
+
+
+/*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using Process-local Gauss-Seidel.
  *
  * parameters:
@@ -1743,6 +1902,8 @@ cs_multigrid_smoother_create(cs_sles_it_type_t      smoother_type,
     [[fallthrough]];
   case CS_SLES_L1_JACOBI:
     [[fallthrough]];
+  case CS_SLES_CHEBYSHEV:
+    [[fallthrough]];
   case CS_SLES_R_JACOBI:
     [[fallthrough]];
   case CS_SLES_SRJ2:
@@ -1951,6 +2112,18 @@ cs_multigrid_smoother_setup(void               *context,
 #if defined(HAVE_ACCEL)
     c->on_device = on_device;
 #endif
+    break;
+
+  case CS_SLES_CHEBYSHEV:
+    if (diag_block_size == 1) {
+      c->solve = _chebyshev;
+      block_nn_inverse = true;
+      l1_inverse = true;
+    }
+    else {
+      bft_error(__FILE__, __LINE__, 0,
+                "Block-diagonal Chebyshev smoother not implemented yet");
+    }
     break;
 
   case CS_SLES_P_GAUSS_SEIDEL:
