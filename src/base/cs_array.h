@@ -1555,19 +1555,32 @@ public:
 
   CS_F_HOST_DEVICE
   void
-  clear()
+  clear
+  (
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE) &&\
+ !defined(__CUDA_ARCH__) && \
+ !defined(SYCL_LANGUAGE_VERSION) && \
+ !defined(__HIP_DEVICE_COMPILE__)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
   {
     if (_owner) {
       // Avoid compiler warnings. If device, object cannot be owner...
 #if   !defined(__CUDA_ARCH__) && \
       !defined(SYCL_LANGUAGE_VERSION) &&  \
       !defined(__HIP_DEVICE_COMPILE__)
-      CS_FREE(_span::_data);
+      constexpr char _ptr_name[] = "cs::array._data";
+      cs_mem_free(_span::_data, _ptr_name, file_name, line_number);
 #endif
     }
-    else {
-      _span::set_data_ptr(nullptr);
-    }
+    _span::set_data_ptr(nullptr);
     _span::_size = 0;
     for (int i = 0; i < N; i++) {
       _span::_offset[i] = 0;
@@ -2245,7 +2258,7 @@ private:
     const int   line_number /*!<[in] Caller line (for log) */
   )
   {
-    const char *_ptr_name = "cs::array._data";
+    constexpr char _ptr_name[] = "cs::array._data";
     _span::_data = static_cast<T *>(cs_mem_malloc_hd(_mode,
                                                      _span::_size,
                                                      sizeof(T),
