@@ -565,6 +565,13 @@ cs_user_parameters([[maybe_unused]] cs_domain_t  *domain)
     cs_equation_param_t *eqp_fv = cs_equation_param_by_name("Eq_FV_like");
 
     cs_equation_param_set(eqp_fv, CS_EQKEY_HODGE_TIME_ALGO, "voronoi");
+
+    /* The other choice */
+
+    cs_equation_param_t *eqp_fb = cs_equation_param_by_name("Eq_FB");
+
+    cs_equation_param_set(eqp_fb, CS_EQKEY_HODGE_TIME_ALGO, "cost");
+    cs_equation_param_set(eqp_fb, CS_EQKEY_HODGE_TIME_COEF, "1");
   }
   /*! [param_cdo_time_hodge] */
 
