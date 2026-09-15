@@ -303,10 +303,11 @@ template<size_t stride>
 struct cs_reduce_min_max_sum_ni {
   using T = cs_int_n<3*stride>;
 
+  static constexpr cs_lnum_t i_min = std::numeric_limits<cs_lnum_t>::min();
+  static constexpr cs_lnum_t i_max = std::numeric_limits<cs_lnum_t>::max();
+
   CS_F_HOST_DEVICE void
   identity(T &a) const {
-    static constexpr cs_lnum_t i_min = std::numeric_limits<cs_lnum_t>::min();
-    static constexpr cs_lnum_t i_max = std::numeric_limits<cs_lnum_t>::max();
     for (size_t i = 0; i < stride; i++) {
       a.i[i] = i_max;
       a.i[stride + i] = i_min;
