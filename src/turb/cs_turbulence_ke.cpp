@@ -1723,7 +1723,6 @@ cs_turbulence_ke(int              phase_id,
                       nullptr,  // xcpp
                       nullptr,  // weightf
                       nullptr,  // weightb
-                      0,        // icvflb: boundary convective flux with upwind
                       nullptr,  // icvfli
                       usexpk);
 
@@ -1790,8 +1789,7 @@ cs_turbulence_ke(int              phase_id,
                       nullptr,
                       nullptr,
                       nullptr,
-                      0, /* boundary convective flux with upwind */
-                      nullptr,
+                      nullptr,  /* icvfli */
                       usexpe);
 
     if (eqp_eps->verbosity >= 2) {
@@ -1962,8 +1960,7 @@ cs_turbulence_ke(int              phase_id,
                                      nullptr,
                                      nullptr,
                                      nullptr,
-                                     0, /* boundary convective upwind flux */
-                                     nullptr,
+                                     nullptr,  /* icvfli */
                                      tinstk,
                                      smbrk,
                                      cvar_k,
@@ -2046,8 +2043,7 @@ cs_turbulence_ke(int              phase_id,
                                      nullptr,
                                      nullptr,
                                      nullptr,
-                                     0, /* boundary convective upwind flux */
-                                     nullptr,
+                                     nullptr, /* icvfli */
                                      tinste,
                                      smbre,
                                      cvar_ep,

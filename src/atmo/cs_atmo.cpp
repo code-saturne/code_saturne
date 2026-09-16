@@ -3328,8 +3328,7 @@ cs_atmo_z_ground_compute(void)
                                        nullptr,
                                        nullptr,
                                        nullptr,
-                                       0, /* icvflb (upwind) */
-                                       nullptr,
+                                       nullptr, /* icvfli (upwind) */
                                        rovsdt,
                                        rhs,
                                        f->val,

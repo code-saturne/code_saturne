@@ -634,11 +634,8 @@ cs_runge_kutta_staging_potential(cs_dispatch_context          &ctx,
  *                               of tensor diffusion
  * \param[in]      weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]      icvflb        global indicator of boundary convection flux
- *                                - 0 upwind scheme at all boundary faces
- *                                - 1 imposed flux at some boundary faces
  * \param[in]      icvfli        boundary face indicator array of convection flux
- *                                - 0 upwind scheme
+ *                                - 0 upwind scheme (true everywhere if null)
  *                                - 1 imposed flux
  * \param[in]      pvar          solved variable (current time step)
  * \param[in]      xcpp          array of specific heat (Cp)
@@ -661,8 +658,7 @@ cs_runge_kutta_stage_complete_scalar_rhs
    cs_real_t                    viscel[][6],
    const cs_real_t              weighf[][2],
    const cs_real_t              weighb[],
-   int                          icvflb,
-   const int                    icvfli[],
+   const int                   *icvfli,
    cs_real_t                    pvar[],
    const cs_real_t              xcpp[]);
 
@@ -717,11 +713,8 @@ cs_runge_kutta_stage_complete_scalar_rhs
  *                               of tensor diffusion
  * \param[in]      weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]      icvflb        global indicator of boundary convection flux
- *                                - 0 upwind scheme at all boundary faces
- *                                - 1 imposed flux at some boundary faces
  * \param[in]      icvfli        boundary face indicator array of convection flux
- *                                - 0 upwind scheme
+ *                                - 0 upwind scheme (true everywhere if null)
  *                                - 1 imposed flux
  * \param[in]      pvar          solved velocity (current time step)
  * \param[in]      rhs_pvar    pointer to high level rhs array
@@ -746,8 +739,7 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
                                   cs_real_t                    viscel[][6],
                                   const cs_real_t              weighf[][2],
                                   const cs_real_t              weighb[],
-                                  int                          icvflb,
-                                  const int                    icvfli[],
+                                  const int                   *icvfli,
                                   cs_real_t                    pvar[][stride])
 {
   // Sanity check
@@ -792,7 +784,6 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
                       viscel,
                       weighf,
                       weighb,
-                      icvflb,
                       icvfli,
                       nullptr,
                       nullptr,
@@ -814,7 +805,6 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
                       viscel,
                       weighf,
                       weighb,
-                      icvflb,
                       icvfli,
                       (cs_real_6_t *)rhs);
 

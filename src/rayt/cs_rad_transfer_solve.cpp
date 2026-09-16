@@ -817,8 +817,7 @@ _cs_rad_transfer_sol(int                        gg_id,
                                              nullptr,
                                              nullptr,
                                              nullptr,
-                                             0, /* icvflb (upwind) */
-                                             nullptr,
+                                             nullptr, /* icvfli (upwind) */
                                              rovsdt,
                                              rhs,
                                              radiance,

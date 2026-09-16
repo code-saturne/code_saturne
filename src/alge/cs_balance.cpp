@@ -312,11 +312,8 @@ cs_balance_initialize(void)
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
@@ -340,7 +337,6 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             xcpp[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
-                  int                         icvflb,
                   const int                   icvfli[],
                   cs_real_t                   rhs[])
 {
@@ -356,7 +352,7 @@ cs_balance_scalar(int                         idtvar,
                     c_visc,
                     xcpp,
                     weighf, weighb,
-                    icvflb, icvfli,
+                    icvfli,
                     rhs,
                     nullptr, nullptr);
 }
@@ -419,11 +415,8 @@ cs_balance_scalar(int                         idtvar,
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  * \param[in,out] i_flux        interior flux (or nullptr)
@@ -449,8 +442,7 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             xcpp[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
-                  int                         icvflb,
-                  const int                   icvfli[],
+                  const int                  *icvfli,
                   cs_real_t                   rhs[],
                   cs_real_2_t                 i_flux[],
                   cs_real_t                   b_flux[])
@@ -532,10 +524,8 @@ cs_balance_scalar(int                         idtvar,
   if (imucpp == 0) {
     if (idtvar < 0) {
       cs_convection_diffusion_steady_scalar
-        (f, eqp_loc,
-         icvflb, inc,
+        (f, eqp_loc, inc,
          pvar, pvara,
-         icvfli,
          bc_coeffs,
          i_massflux, b_massflux,
          i_visc, b_visc,
@@ -543,7 +533,6 @@ cs_balance_scalar(int                         idtvar,
     }
     else
       cs_convection_diffusion_scalar(f, eqp_loc,
-                                     icvflb,
                                      inc,
                                      imasac,
                                      _pvar,
@@ -558,11 +547,8 @@ cs_balance_scalar(int                         idtvar,
     /* The convective part is multiplied by Cp for the temperature */
     if (idtvar < 0) {
       cs_convection_diffusion_steady_scalar
-        (f, eqp_loc,
-         false, /* icvflb */
-         inc,
+        (f, eqp_loc, inc,
          _pvar, pvara,
-         nullptr, /* icvfli */
          bc_coeffs,
          i_massflux, b_massflux,
          i_visc, b_visc,
@@ -673,11 +659,8 @@ cs_balance_scalar(int                         idtvar,
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
  */
@@ -702,8 +685,7 @@ cs_balance_vector(int                         idtvar,
                   cs_real_6_t                 c_visc[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
-                  int                         icvflb,
-                  const int                   icvfli[],
+                  const int                  *icvfli,
                   cs_real_3_t                 i_pvar[],
                   cs_real_3_t                 b_pvar[],
                   cs_real_3_t                 smbr[])
@@ -728,7 +710,6 @@ cs_balance_vector(int                         idtvar,
     cs_convection_diffusion_vector(idtvar,
                                    f_id,
                                    eqp_loc,
-                                   icvflb,
                                    inc,
                                    ivisep,
                                    imasac,
@@ -755,7 +736,6 @@ cs_balance_vector(int                         idtvar,
       cs_convection_diffusion_vector(idtvar,
                                      f_id,
                                      eqp_loc,
-                                     icvflb,
                                      inc,
                                      ivisep,
                                      imasac,
@@ -866,11 +846,8 @@ cs_balance_vector(int                         idtvar,
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
@@ -892,7 +869,6 @@ cs_balance_tensor(int                         idtvar,
                   cs_real_6_t                 c_visc[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
-                  int                         icvflb,
                   [[maybe_unused]] const int  icvfli[],
                   cs_real_6_t                 rhs[])
 {
@@ -916,7 +892,6 @@ cs_balance_tensor(int                         idtvar,
     cs_convection_diffusion_tensor(idtvar,
                                    f_id,
                                    eqp_loc,
-                                   icvflb,
                                    inc,
                                    imasac,
                                    pvar,
@@ -937,7 +912,6 @@ cs_balance_tensor(int                         idtvar,
       cs_convection_diffusion_tensor(idtvar,
                                      f_id,
                                      eqp_loc,
-                                     icvflb,
                                      inc,
                                      imasac,
                                      pvar,

@@ -336,7 +336,6 @@ _lageqp(cs_real_t   *velocityl,
                                      nullptr,         /* viscel */
                                      nullptr,         /* weighf */
                                      nullptr,         /* weighb */
-                                     0,               /* icvflb (all upwind) */
                                      nullptr,         /* icvfli */
                                      rovsdt,
                                      smbrs,

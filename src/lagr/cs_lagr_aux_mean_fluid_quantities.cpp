@@ -749,8 +749,6 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                         i_visc.data(),
                         b_visc.data());
 
-      cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
-
       cs_array_2d<cs_real_t> _div_mu_gradvel;
       cs_real_3_t *div_mu_gradvel = nullptr;
       cs_field_t *f_visc_forces
@@ -788,8 +786,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                         nullptr,
                         nullptr,
                         nullptr,
-                        0,
-                        nullptr,
+                        nullptr, /* icvfli */
                         nullptr,
                         nullptr,
                         div_mu_gradvel);

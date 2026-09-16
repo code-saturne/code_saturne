@@ -290,8 +290,7 @@ cs_dilatable_scalar_diff_st(int iterns)
                       xcpp,
                       nullptr,  /* weighf */
                       nullptr,  /* weighb */
-                      0,     /* icvflb; upwind scheme */
-                      nullptr,
+                      nullptr,  /* icvfli; upwind scheme */
                       cpro_tsscal);
   } /* end loop on fields */
 }

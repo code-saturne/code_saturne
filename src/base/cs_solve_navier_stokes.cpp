@@ -3123,15 +3123,15 @@ _velocity_prediction(const cs_mesh_t             *m,
   /* Solver parameters
      ----------------- */
 
-  int icvflb = 0;
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
-    icvflb = 1;
-
   cs_field_t *iestot = cs_field_by_name_try("est_error_tot_2");
 
   cs_real_3_t *eswork = nullptr;
   if (iespre != nullptr)
     CS_MALLOC_HD(eswork, n_cells_ext, cs_real_3_t, cs_alloc_mode_device);
+
+  int *icvfli = nullptr;
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
+    icvfli = cs_cf_boundary_conditions_get_icvfli();
 
   if (iappel == 1) {
     /* Store fimp as the velocity matrix is stored in codtiv call */
@@ -3169,8 +3169,6 @@ _velocity_prediction(const cs_mesh_t             *m,
     /* Warning: in case of convergence estimators, eswork gives the estimator
        of the predicted velocity */
 
-    int *icvfli = cs_cf_boundary_conditions_get_icvfli();
-
     cs_runge_kutta_integrator_t *rk_u = nullptr;
 
     if (eqp_u->rk_def.rk_id > -1) {
@@ -3194,7 +3192,6 @@ _velocity_prediction(const cs_mesh_t             *m,
                                              nullptr,
                                              nullptr,
                                              nullptr,
-                                             icvflb,
                                              icvfli,
                                              vel);
         rk_u->solve_stage(ctx, (cs_real_t*)vel);
@@ -3228,7 +3225,6 @@ _velocity_prediction(const cs_mesh_t             *m,
                                        nullptr,
                                        nullptr,
                                        nullptr,
-                                       icvflb,
                                        icvfli,
                                        fimp,
                                        smbr,
@@ -3315,7 +3311,6 @@ _velocity_prediction(const cs_mesh_t             *m,
                                          nullptr,
                                          nullptr,
                                          nullptr,
-                                         icvflb,
                                          nullptr,
                                          fimpcp,
                                          smbr,
@@ -3370,8 +3365,6 @@ _velocity_prediction(const cs_mesh_t             *m,
     eqp_loc.epsilo = -1;
     eqp_loc.epsrsm = -1;
 
-    int *icvfli = cs_cf_boundary_conditions_get_icvfli();
-
     cs_balance_vector(idtva0,
                       CS_F_(vel)->id,
                       imasac,
@@ -3390,7 +3383,6 @@ _velocity_prediction(const cs_mesh_t             *m,
                       nullptr,
                       nullptr,
                       nullptr,
-                      icvflb,
                       icvfli,
                       nullptr,
                       nullptr,
@@ -3627,8 +3619,7 @@ _hydrostatic_pressure_prediction(cs_real_t        grdphd[][3],
                                      nullptr,   /* viscel */
                                      nullptr,   /* weighf */
                                      nullptr,   /* weighb */
-                                     0,      /* icvflb (upwind conv. flux) */
-                                     nullptr,   /* icvfli */
+                                     nullptr,   /* icvfli (upwind conv. flux) */
                                      rovsdt,
                                      rhs,
                                      prhyd, dpvar,

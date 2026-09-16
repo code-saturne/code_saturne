@@ -1134,7 +1134,6 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
                                      nullptr, /* viscel */
                                      nullptr, /* weighf */
                                      nullptr, /* weighb */
-                                     0,    /* icvflv */
                                      nullptr, /* icvfli */
                                      (cs_real_33_t *)fimp,
                                      smbr,

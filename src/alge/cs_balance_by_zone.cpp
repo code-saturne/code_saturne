@@ -584,21 +584,18 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   cs_array_2d<cs_real_t> i_flux(n_bi_faces_sel, 2, amode);
   cs_array<cs_real_t> b_flux(n_bb_faces_sel, amode);
-  cs_array<int> icvfli(n_bb_faces_sel, amode);
 
   i_flux.zero();
   b_flux.zero();
-  cs_arrays_set_value<int, 1>(n_bb_faces_sel, 0, icvfli.data());
 
   cs_convection_diffusion_scalar_at_faces(f,
                                           *eqp,
-                                          0, // icvflb
                                           n_bi_faces_sel,
                                           n_bb_faces_sel,
                                           bi_face_sel_ids,
                                           bb_face_sel_ids,
                                           f->val,
-                                          icvfli.data(),
+                                          nullptr,
                                           f->bc_coeffs,
                                           i_mass_flux,
                                           b_mass_flux,
@@ -1666,21 +1663,18 @@ cs_flux_through_surface(const char         *scalar_name,
 
   cs_array_2d<cs_real_t> i_flux(n_i_faces_sel, 2, amode);
   cs_array<cs_real_t> b_flux(n_b_faces_sel, amode);
-  cs_array<int> icvfli(n_b_faces_sel, amode);
 
   i_flux.zero();
   b_flux.zero();
-  cs_arrays_set_value<int, 1>(n_b_faces_sel, 0, icvfli.data());
 
   cs_convection_diffusion_scalar_at_faces(f,
                                           *eqp,
-                                          0, // icvflb
                                           n_i_faces_sel,
                                           n_b_faces_sel,
                                           i_face_sel_ids,
                                           b_face_sel_ids,
                                           f->val,
-                                          icvfli.data(),
+                                          nullptr,
                                           f->bc_coeffs,
                                           i_mass_flux,
                                           b_mass_flux,

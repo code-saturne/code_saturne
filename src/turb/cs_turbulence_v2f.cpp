@@ -611,8 +611,7 @@ _solve_eq_fbr_al(const int         istprv,
                                      nullptr,
                                      nullptr,
                                      nullptr,
-                                     0,  /* boundary convective upwind flux */
-                                     nullptr,
+                                     nullptr, /* icvfli */
                                      rovsdt,
                                      rhs,
                                      cvar_var,
@@ -1020,8 +1019,7 @@ _solve_eq_phi(const int           istprv,
                                      nullptr,
                                      nullptr,
                                      nullptr,
-                                     0,   /* boundary convective upwind flux */
-                                     nullptr,
+                                     nullptr, /* icvfli */
                                      rovsdt,
                                      rhs,
                                      cvar_phi,

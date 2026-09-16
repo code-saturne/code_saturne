@@ -2078,7 +2078,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                                viscce,
                                                weighf,
                                                weighb,
-                                               0,       // icvflb
                                                nullptr, //icvfli
                                                cvar_var,
                                                xcpp);
@@ -2144,7 +2143,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      viscce,
                                      weighf,
                                      weighb,
-                                     0,       // icvflb,
                                      nullptr, // icvfli
                                      fimp,
                                      rhs,
@@ -2700,7 +2698,6 @@ cs_solve_equation_vector(cs_field_t       *f,
                                            viscce,
                                            weighf,
                                            weighb,
-                                           0,        //icvflb
                                            nullptr,  //icvfli
                                            cvar_var);
       rk_p->solve_stage(ctx, (cs_real_t *)cvar_var);
@@ -2733,8 +2730,7 @@ cs_solve_equation_vector(cs_field_t       *f,
                                      viscce,
                                      weighf,
                                      weighb,
-                                     0,  // icvflb,
-                                     nullptr,
+                                     nullptr, // icvfli
                                      fimp,
                                      rhs,
                                      cvar_var,

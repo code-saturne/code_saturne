@@ -636,8 +636,7 @@ cs_turbulence_sa(void)
                                      nullptr,
                                      nullptr,
                                      nullptr,
-                                     0, /* boundary convective upwind flux */
-                                     nullptr,
+                                     nullptr, /* icvfli */
                                      imp_sa,
                                      rhs_sa,
                                      cvar_nusa,

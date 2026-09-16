@@ -3063,8 +3063,6 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
  * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
  * \param[in]   prod      work array for production (without
  *                        rho volume)
- * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
- * \param[in]   grav      gravity
  * \param[in]   viscf     visc*surface/dist at internal faces
  * \param[in]   viscb     visc*surface/dist at edge faces
  * \param[out]  rhs       right hand side
@@ -3075,8 +3073,6 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
 static void
 _solve_omega(int              phase_id,
              const cs_real_t  prod[][6],
-             const cs_real_t  up_rhop[][3],
-             const cs_real_t  grav[],
              cs_real_t        viscf[],
              cs_real_t        viscb[],
              cs_real_t        rhs[],
@@ -3415,8 +3411,7 @@ _solve_omega(int              phase_id,
                                      nullptr,
                                      nullptr,
                                      nullptr,
-                                     0,  /* boundary convective upwind flux */
-                                     nullptr,
+                                     nullptr, /* icvfli */
                                      fimp,
                                      rhs,
                                      cvar_omg,
@@ -3943,8 +3938,7 @@ _solve_epsilon(int              phase_id,
                                      viscce.data<cs_real_6_t>(),
                                      weighf.data<cs_real_2_t>(),
                                      weighb,
-                                     0,  /* boundary convective upwind flux */
-                                     nullptr,
+                                     nullptr, /* icvfli */
                                      fimp,
                                      rhs,
                                      cvar_ep,
@@ -4658,9 +4652,6 @@ cs_turbulence_rij(int phase_id)
 
   cs_solid_zone_set_zero_on_cells(6, rhs);
 
-  /* All boundary convective flux with upwind */
-  int icvflb = 0;
-
   cs_equation_param_t eqp_loc = *eqp;
   eqp_loc.istat  = -1;
   eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
@@ -4693,8 +4684,7 @@ cs_turbulence_rij(int phase_id)
                                      viscce.data<cs_real_6_t>(),
                                      weighf.data<cs_real_2_t>(),
                                      weighb,
-                                     icvflb,
-                                     nullptr,
+                                     nullptr, /* icvfli */
                                      fimp.data<cs_real_66_t>(),
                                      rhs.data<cs_real_6_t>(),
                                      cvar_rij);
@@ -4709,8 +4699,6 @@ cs_turbulence_rij(int phase_id)
 
       _solve_omega(phase_id,
                    prod.data<cs_real_6_t>(),
-                   up_rhop.data<cs_real_3_t>(),
-                   grav,
                    viscf,
                    viscb,
                    _rhs,
@@ -4988,8 +4976,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                                      nullptr,
                                      nullptr,
                                      nullptr,
-                                     0, /* boundary convective upwind flux */
-                                     nullptr,
+                                     nullptr, /* icvfli */
                                      fimp,
                                      rhs,
                                      cvar_al,
@@ -5841,8 +5828,6 @@ _rij_godunov_phi_z(cs_real_t z,
 
 static CS_F_HOST_DEVICE cs_real_t
 _rij_godunov_dphi_z(cs_real_t z,
-                    cs_real_t u_r,
-                    cs_real_t u_l,
                     cs_real_t r_r,
                     cs_real_t r_l)
 {
@@ -5865,7 +5850,7 @@ _rij_godunov_newton_solver(cs_real_t z,
   int i;
   for (i = 0; i < max_iter && fabs(phi_z) >= tol; i++) {
     phi_z = _rij_godunov_phi_z(z_star, un_r, un_l, rnn_r, rnn_l);
-    z_star -= phi_z / _rij_godunov_dphi_z(z_star, un_r, un_l, rnn_r, rnn_l);
+    z_star -= phi_z / _rij_godunov_dphi_z(z_star, rnn_r, rnn_l);
   }
   if (i >= max_iter-1) {
 #ifndef __CUDA_ARCH__

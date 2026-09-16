@@ -1405,8 +1405,7 @@ cs_compute_porosity_from_scan(void)
                                        nullptr,
                                        nullptr,
                                        nullptr,
-                                       0, /* icvflb (upwind) */
-                                       nullptr,
+                                       nullptr, /* icvfli (upwind) */
                                        rovsdt,
                                        rhs,
                                        pvar,
@@ -1558,8 +1557,7 @@ cs_compute_porosity_from_scan(void)
                                          nullptr,
                                          nullptr,
                                          nullptr,
-                                         0, /* icvflb (upwind) */
-                                         nullptr,
+                                         nullptr, /* icvfli (upwind) */
                                          rovsdt,
                                          rhs,
                                          pvar,
@@ -1736,8 +1734,7 @@ cs_compute_porosity_from_scan(void)
                                        nullptr,
                                        nullptr,
                                        nullptr,
-                                       0, /* icvflb (upwind) */
-                                       nullptr,
+                                       nullptr, /* icvfli (upwind) */
                                        rovsdt,
                                        rhs,
                                        pvar,

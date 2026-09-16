@@ -1740,8 +1740,6 @@ cs_vof_solve_void_fraction(int  iterns)
   /* Solving void fraction */
   int iescap = 0;
   int imucpp = 0;
-  /* All boundary convective flux with upwind */
-  int icvflb = 0;
   cs_real_t normp = -1.0;
 
   cs_equation_param_t eqp_loc = *eqp_vol;
@@ -1767,7 +1765,6 @@ cs_vof_solve_void_fraction(int  iterns)
                                      i_visc, b_visc,
                                      nullptr, /* viscel */
                                      nullptr, nullptr, /* weighf, weighb */
-                                     icvflb,
                                      nullptr, /* icvfli */
                                      rovsdt,
                                      smbrs,

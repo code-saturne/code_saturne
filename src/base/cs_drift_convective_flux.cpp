@@ -560,7 +560,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                         i_visc, b_visc,
                         nullptr, nullptr, /* secvif, secvib */
                         nullptr, nullptr, nullptr,
-                        0, nullptr, /* icvflb, icvfli */
+                        nullptr, /* icvfli */
                         nullptr, nullptr,
                         dudt.data<cs_real_3_t>());
 

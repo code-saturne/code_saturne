@@ -1903,9 +1903,6 @@ _reconstruction_check_bounds_strided
  *
  * \param[in]     f             pointer to field
  * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -1916,7 +1913,7 @@ _reconstruction_check_bounds_strided
  * \param[in]     b_face_ids    boundary face ids (assemble == false)
  * \param[in]     pvar          solved variable
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true at all faces if null)
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
@@ -1937,7 +1934,6 @@ static void
 _convection_diffusion_scalar_rc_grad
   (const cs_field_t           *f,
    const cs_equation_param_t  &eqp,
-   bool                        icvflb,
    int                         inc,
    int                         imasac,
    cs_lnum_t                   n_i_face_ids,
@@ -1945,7 +1941,7 @@ _convection_diffusion_scalar_rc_grad
    const cs_lnum_t            *i_face_ids,
    const cs_lnum_t            *b_face_ids,
    const cs_real_t            *restrict pvar,
-   const int                   icvfli[],
+   const int                  *icvfli,
    cs_field_bc_coeffs_t       *bc_coeffs,
    const cs_real_t             i_massflux[],
    const cs_real_t             b_massflux[],
@@ -1957,7 +1953,7 @@ _convection_diffusion_scalar_rc_grad
    cs_real_t         *restrict b_flux)
 {
   const int ircflp = eqp.ircflu;
-  const int ircflb = (ircflp > 0  && icvflb && is_thermal == false) ?
+  const int ircflb = (ircflp > 0 && icvfli != nullptr && is_thermal == false) ?
     eqp.b_diff_flux_rc : 0;
   const int ischcp = eqp.ischcv;
   const int isstpp = eqp.isstpc;
@@ -2417,11 +2413,11 @@ _convection_diffusion_scalar_rc_grad
      ================================ */
 
   // TODO: distinguish val_f_diff, flux_diff and val_f_conv, flux_conv
-   const cs_real_t *val_f_g = bc_coeffs->val_f;
-   const cs_real_t *flux_d = bc_coeffs->flux_diff;
+  const cs_real_t *val_f_g = bc_coeffs->val_f;
+  const cs_real_t *flux_d = bc_coeffs->flux_diff;
 
-   /* Boundary convective flux are all computed with an upwind scheme */
-  if (icvflb == false || is_thermal) {
+  /* Boundary convective flux are all computed with an upwind scheme */
+  if (icvfli == nullptr || is_thermal) {
 
     // Named lambda function may be used in different loop types
 
@@ -2495,15 +2491,21 @@ _convection_diffusion_scalar_rc_grad
   /* Boundary convective flux is imposed at some faces
      (tagged in icvfli array) */
 
-  else if (icvflb && is_thermal == false) {
-
-    if (f == nullptr)
-      bft_error(__FILE__, __LINE__, 0,
-                _("%s: invalid value of icvflb when not a field."), __func__);
+  else { // icvfli != nullptr && is_thermal == false
 
     /* Retrieve the value of the convective flux to be imposed */
-    cs_real_t *coface = f->bc_coeffs->ac;
-    cs_real_t *cofbce = f->bc_coeffs->bc;
+    const cs_real_t *coface = nullptr, *cofbce = nullptr;
+
+    if (f != nullptr) {
+      if (f->bc_coeffs != nullptr) {
+        coface = f->bc_coeffs->ac;
+        cofbce = f->bc_coeffs->bc;
+      }
+    }
+    if (coface == nullptr && m->n_b_faces > 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: icvfli only usable with a field\n"
+                  "with bc_coeffs ac and bc values."), __func__);
 
     // Named lambda function may be used in different loop types
 
@@ -2894,9 +2896,6 @@ _diffusion_scalar
  *
  * \param[in]     f_id          pointer to field, or nullptr
  * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -2908,7 +2907,7 @@ _diffusion_scalar
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true at all faces if null)
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     val_f         boundary face value for gradient
@@ -2924,7 +2923,6 @@ static void
 _convection_scalar
   (const cs_field_t           *f,
    const cs_equation_param_t  &eqp,
-   bool                        icvflb,
    int                         inc,
    int                         imasac,
    cs_lnum_t                   n_i_face_ids,
@@ -2942,7 +2940,7 @@ _convection_scalar
    cs_real_t         *restrict b_flux)
 {
   const int ircflp = eqp.ircflu;
-  const int ircflb = (ircflp > 0  && icvflb && is_thermal == false) ?
+  const int ircflb = (ircflp > 0  && icvfli != nullptr && is_thermal == false) ?
     eqp.b_diff_flux_rc : 0;
   const int ischcp = eqp.ischcv;
   const int isstpp = eqp.isstpc;
@@ -3721,7 +3719,7 @@ _convection_scalar
    const cs_real_t *val_f_g = bc_coeffs->val_f;
 
    /* Boundary convective flux are all computed with an upwind scheme */
-  if (icvflb == false || is_thermal) {
+  if (icvfli == nullptr || is_thermal) {
 
     // Named lambda function may be used in different loop types
 
@@ -3790,11 +3788,11 @@ _convection_scalar
   /* Boundary convective flux is imposed at some faces
      (tagged in icvfli array) */
 
-  else if (icvflb && is_thermal == false) {
+  else if (icvfli != nullptr && is_thermal == false) {
 
     if (f == nullptr)
       bft_error(__FILE__, __LINE__, 0,
-                _("%s: invalid value of icvflb when not a field."), __func__);
+                _("%s: invalid value of icvfli when not a field."), __func__);
 
     /* Retrieve the value of the convective flux to be imposed */
     cs_real_t *coface = f->bc_coeffs->ac;
@@ -3921,9 +3919,6 @@ _convection_scalar
  * \param[in]     f             pointer to current field, or nullptr
  * \param[in]     name          pointer to associated field or array name
  * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -3931,7 +3926,7 @@ _convection_scalar
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true at all faces if null)
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary conditions structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
@@ -3956,7 +3951,6 @@ _convection_diffusion_unsteady_strided
    const cs_field_t            *f,
    const char                  *var_name,
    const cs_equation_param_t   &eqp,
-   int                          icvflb,
    int                          inc,
    int                          imasac,
    cs_real_t                  (*pvar)[stride],
@@ -4771,7 +4765,7 @@ _convection_diffusion_unsteady_strided
   }
 
   /* Boundary convective fluxes are all computed with an upwind scheme */
-  else if (icvflb == 0) {
+  else if (icvfli == nullptr) {
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
@@ -4832,7 +4826,7 @@ _convection_diffusion_unsteady_strided
   }
 
   /* Boundary convective flux imposed at some faces (tags in icvfli array) */
-  else if (icvflb == 1) {
+  else if (icvfli != nullptr) {
 
     /* Retrieve the value of the convective flux to be imposed */
     if (f_id != -1) {
@@ -4841,7 +4835,7 @@ _convection_diffusion_unsteady_strided
     }
     else {
       bft_error(__FILE__, __LINE__, 0,
-                _("invalid value of icvflb and f_id"));
+                _("invalid value of icvfli and f_id"));
     }
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
@@ -5352,16 +5346,13 @@ cs_beta_limiter_building(int                   f_id,
  *
  * \param[in]     f             pointer to field, or null
  * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true at all faces if null)
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
@@ -5380,7 +5371,6 @@ cs_beta_limiter_building(int                   f_id,
 void
 cs_convection_diffusion_scalar(const cs_field_t           *f,
                                const cs_equation_param_t   eqp,
-                               int                         icvflb,
                                int                         inc,
                                int                         imasac,
                                const cs_real_t            *restrict pvar,
@@ -5397,7 +5387,7 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
 {
   if (_convection_diffusion_scheme_version == 90) {
     bool prev_scheme = cs_convection_diffusion_scalar_v9
-                         (f, eqp, icvflb, inc, imasac,
+                         (f, eqp, inc, imasac,
                           pvar, icvfli, bc_coeffs,
                           i_massflux, b_massflux, i_visc, b_visc,
                           c_weight,
@@ -5424,7 +5414,7 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
 
     if (i_flux == nullptr)
       _convection_diffusion_scalar_rc_grad<false, true, false>
-        (f, eqp, icvflb, inc, imasac,
+        (f, eqp, inc, imasac,
          m->n_i_faces, m->n_b_faces, nullptr, nullptr,
          pvar,
          icvfli,
@@ -5434,7 +5424,7 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
          rhs, i_flux, b_flux);
     else
       _convection_diffusion_scalar_rc_grad<false, true, true>
-        (f, eqp, icvflb, inc, imasac,
+        (f, eqp, inc, imasac,
          m->n_i_faces, m->n_b_faces, nullptr, nullptr,
          pvar,
          icvfli,
@@ -5469,7 +5459,7 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
     if (eqp.iconv) {
       if (i_flux == nullptr)
         _convection_scalar<false, true, false>
-          (f, eqp, icvflb, inc, imasac,
+          (f, eqp, inc, imasac,
            m->n_i_faces, m->n_b_faces, nullptr, nullptr,
            pvar,
            icvfli,
@@ -5478,7 +5468,7 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
            rhs, i_flux, b_flux);
       else
         _convection_scalar<false, true, true>
-          (f, eqp, icvflb, inc, imasac,
+          (f, eqp, inc, imasac,
            m->n_i_faces, m->n_b_faces, nullptr, nullptr,
            pvar,
            icvfli,
@@ -5577,7 +5567,6 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
 
     _convection_diffusion_scalar_rc_grad<true, true, false>
       (f, eqp,
-       false, /* icvflb */
        inc, imasac,
        m->n_i_faces, m->n_b_faces, nullptr, nullptr,
        pvar,
@@ -5603,7 +5592,6 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
     if (eqp.iconv) {
       _convection_scalar<true, true, false>
         (f, eqp,
-         false, /* icvflb */
          inc, imasac,
          m->n_i_faces, m->n_b_faces, nullptr, nullptr,
          pvar,
@@ -5639,16 +5627,13 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
  *
  * \param[in]     f             pointer to field, or null
  * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     n_i_faces     number of interior faces
  * \param[in]     n_b_faces     number of boundary faces
  * \param[in]     i_face_ids    interior face ids
  * \param[in]     b_face_ids    boundary face ids
  * \param[in]     pvar          solved variable
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true at all faces if null)
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
@@ -5669,13 +5654,12 @@ cs_convection_diffusion_scalar_at_faces
 (
   const cs_field_t           *f,
   const cs_equation_param_t   eqp,
-  int                         icvflb,
   cs_lnum_t                   n_i_faces,
   cs_lnum_t                   n_b_faces,
   const cs_lnum_t            *i_face_ids,
   const cs_lnum_t            *b_face_ids,
   const cs_real_t            *restrict pvar,
-  const int                   icvfli[],
+  const int                  *icvfli,
   cs_field_bc_coeffs_t       *bc_coeffs,
   const cs_real_t             i_massflux[],
   const cs_real_t             b_massflux[],
@@ -5712,7 +5696,7 @@ cs_convection_diffusion_scalar_at_faces
   if (eqp.iconv) {
     if (xcpp == nullptr)
       _convection_scalar<false, false, true>
-        (f, eqp, icvflb, inc1, imasac0,
+        (f, eqp, inc1, imasac0,
          n_i_faces, n_b_faces, i_face_ids, b_face_ids,
          pvar,
          icvfli,
@@ -5721,7 +5705,7 @@ cs_convection_diffusion_scalar_at_faces
          nullptr, i_flux, b_flux);
     else
       _convection_scalar<true, false, true>
-        (f, eqp, icvflb, inc1, imasac0,
+        (f, eqp, inc1, imasac0,
          n_i_faces, n_b_faces, i_face_ids, b_face_ids,
          pvar,
          icvfli,
@@ -5755,16 +5739,13 @@ cs_convection_diffusion_scalar_at_faces
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
  * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true at all faces if null)
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
@@ -5778,11 +5759,10 @@ void
 cs_face_convection_scalar(int                         idtvar,
                           int                         f_id,
                           const cs_equation_param_t   eqp,
-                          int                         icvflb,
                           int                         inc,
                           cs_real_t         *restrict pvar,
                           const cs_real_t   *restrict pvara,
-                          const int                   icvfli[],
+                          const int                  *icvfli,
                           cs_field_bc_coeffs_t       *bc_coeffs,
                           const cs_real_t             i_massflux[],
                           const cs_real_t             b_massflux[],
@@ -5828,7 +5808,7 @@ cs_face_convection_scalar(int                         idtvar,
       cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), pvar);
 
     _convection_scalar<false, false, true>
-      (f, eqp, icvflb, inc, 0,
+      (f, eqp, inc, 0,
        m->n_i_faces, m->n_b_faces, nullptr, nullptr,
        pvar,
        icvfli,
@@ -5842,7 +5822,7 @@ cs_face_convection_scalar(int                         idtvar,
        ---------------------------------------------------------------------- */
 
     cs_face_convection_steady_scalar
-      (f, eqp, icvflb, inc,
+      (f, eqp, inc,
        pvar, pvara,
        icvfli,
        bc_coeffs,
@@ -6206,9 +6186,6 @@ cs_convection_anisotropic_leff_diffusion_secvis
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
  * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -6221,7 +6198,7 @@ cs_convection_anisotropic_leff_diffusion_secvis
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true at all faces if null)
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary conditions structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
@@ -6242,13 +6219,12 @@ void
 cs_convection_diffusion_vector(int                         idtvar,
                                int                         f_id,
                                const cs_equation_param_t   eqp,
-                               int                         icvflb,
                                int                         inc,
                                int                         ivisep,
                                int                         imasac,
                                cs_real_3_t       *restrict pvar,
                                const cs_real_3_t *restrict pvara,
-                               const int                   icvfli[],
+                               const int                  *icvfli,
                                cs_field_bc_coeffs_t       *bc_coeffs,
                                const cs_real_t             i_massflux[],
                                const cs_real_t             b_massflux[],
@@ -6262,7 +6238,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 {
   if (_convection_diffusion_scheme_version == 90) {
     bool prev_scheme = cs_convection_diffusion_vector_v9
-                         (idtvar, f_id, eqp, icvflb, inc, ivisep, imasac,
+                         (idtvar, f_id, eqp, inc, ivisep, imasac,
                           pvar, pvara, icvfli, bc_coeffs,
                           i_massflux, b_massflux, i_visc, b_visc,
                           i_secvis, b_secvis, i_pvar, b_pvar, rhs);
@@ -6400,7 +6376,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       porous_vel = true;
     if (porous_vel == false)
       _convection_diffusion_unsteady_strided<3, false>
-        (ctx, f, var_name, eqp, icvflb, inc, imasac,
+        (ctx, f, var_name, eqp, inc, imasac,
          pvar, pvara,
          icvfli,
          bc_coeffs,
@@ -6409,7 +6385,7 @@ cs_convection_diffusion_vector(int                         idtvar,
          i_pvar, b_pvar, grad, bounds, rhs);
     else
       _convection_diffusion_unsteady_strided<3, true>
-        (ctx, f, var_name, eqp, icvflb, inc, imasac,
+        (ctx, f, var_name, eqp, inc, imasac,
          pvar, pvara,
          icvfli,
          bc_coeffs,
@@ -6420,9 +6396,8 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   else {
     cs_convection_diffusion_steady_strided<3>
-      (f, var_name, eqp, icvflb, inc,
+      (f, var_name, eqp, inc,
        pvar, pvara,
-       icvfli,
        bc_coeffs,
        i_massflux, b_massflux,
        i_visc, b_visc,
@@ -6482,9 +6457,6 @@ cs_convection_diffusion_vector(int                         idtvar,
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
  * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -6506,7 +6478,6 @@ void
 cs_convection_diffusion_tensor(int                          idtvar,
                                int                          f_id,
                                const cs_equation_param_t    eqp,
-                               int                          icvflb,
                                int                          inc,
                                int                          imasac,
                                cs_real_6_t        *restrict pvar,
@@ -6520,7 +6491,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
 {
   if (_convection_diffusion_scheme_version == 90) {
     bool prev_scheme = cs_convection_diffusion_tensor_v9
-                         (idtvar, f_id, eqp, icvflb, inc, imasac,
+                         (idtvar, f_id, eqp, inc, imasac,
                           pvar, pvara, bc_coeffs,
                           i_massflux, b_massflux, i_visc, b_visc, rhs);
     if (prev_scheme)
@@ -6631,9 +6602,8 @@ cs_convection_diffusion_tensor(int                          idtvar,
      ------------------------------- */
 
   if (idtvar >= 0) {
-    assert(icvflb == 0);
     _convection_diffusion_unsteady_strided<6, false>
-      (ctx, f, var_name, eqp, 0, inc, imasac,
+      (ctx, f, var_name, eqp, inc, imasac,
        pvar, pvara,
        nullptr, // icvfli,
        bc_coeffs,
@@ -6643,8 +6613,8 @@ cs_convection_diffusion_tensor(int                          idtvar,
   }
   else {
     cs_convection_diffusion_steady_strided<6>
-      (f, var_name, eqp, icvflb, inc,
-       pvar, pvara, nullptr,
+      (f, var_name, eqp, inc,
+       pvar, pvara,
        bc_coeffs,
        i_massflux, b_massflux,
        i_visc, b_visc,

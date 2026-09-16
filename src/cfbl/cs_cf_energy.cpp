@@ -984,9 +984,6 @@ cs_cf_energy(int f_sc_id)
 
   /* idtvar = 1  => unsteady */
 
-  /* Impose boundary convective at some faces (face indicator icvfli) */
-  int icvflb = 1;
-
   cs_field_bc_coeffs_t *bc_coeffs_sc = f_sc->bc_coeffs;
 
   cs_equation_param_t eqp_loc = *eqp_e;
@@ -1014,7 +1011,6 @@ cs_cf_energy(int f_sc_id)
                                      i_visc, b_visc,
                                      nullptr,   /* viscel */
                                      nullptr, nullptr, /* weighf, weighb */
-                                     icvflb,
                                      icvfli,
                                      rovsdt,
                                      rhs,

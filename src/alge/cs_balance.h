@@ -110,11 +110,8 @@ cs_balance_initialize(void);
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
@@ -138,7 +135,6 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             xcpp[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
-                  int                         icvflb,
                   const int                   icvfli[],
                   cs_real_t                   rhs[]);
 
@@ -200,11 +196,8 @@ cs_balance_scalar(int                         idtvar,
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  * \param[in,out] i_flux        interior flux (or nullptr)
@@ -230,7 +223,6 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             xcpp[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
-                  int                         icvflb,
                   const int                   icvfli[],
                   cs_real_t                   rhs[],
                   cs_real_2_t                 i_flux[],
@@ -298,11 +290,8 @@ cs_balance_scalar(int                         idtvar,
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
  */
@@ -327,7 +316,6 @@ cs_balance_vector(int                         idtvar,
                   cs_real_6_t                 viscel[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
-                  int                         icvflb,
                   const int                   icvfli[],
                   cs_real_3_t                 i_pvar[],
                   cs_real_3_t                 b_pvar[],
@@ -380,11 +368,8 @@ cs_balance_vector(int                         idtvar,
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
@@ -406,7 +391,6 @@ cs_balance_tensor(int                         idtvar,
                   cs_real_6_t                 viscel[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
-                  int                         icvflb,
                   const int                   icvfli[],
                   cs_real_6_t                 rhs[]);
 

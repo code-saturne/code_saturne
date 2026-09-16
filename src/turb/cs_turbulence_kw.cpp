@@ -663,7 +663,6 @@ cs_turbulence_kw(int phase_id)
                       viscf,
                       viscb);
 
-    int icvflb = 0;
     int ivisep = 0;
 
     cs_equation_param_t eqp_u_loc = *eqp_u;
@@ -691,7 +690,6 @@ cs_turbulence_kw(int phase_id)
                       nullptr,
                       nullptr,
                       nullptr,
-                      icvflb,
                       nullptr,
                       nullptr,
                       nullptr,
@@ -1435,8 +1433,7 @@ cs_turbulence_kw(int phase_id)
                       nullptr,
                       nullptr,
                       nullptr,
-                      0, /* boundary convective upwind flux */
-                      nullptr,
+                      nullptr, /* icvfli */
                       w5);
 
     if (eqp_k->verbosity >= 2) {
@@ -1495,8 +1492,7 @@ cs_turbulence_kw(int phase_id)
                       nullptr,
                       nullptr,
                       nullptr,
-                      0, /* boundary convective upwind flux */
-                      nullptr,
+                      nullptr, /* icvfli */
                       w6);
 
     if (eqp_w->verbosity >= 2) {
@@ -1633,8 +1629,7 @@ cs_turbulence_kw(int phase_id)
                                      nullptr,
                                      nullptr,
                                      nullptr,
-                                     0, /* boundary convective upwind flux */
-                                     nullptr,
+                                     nullptr, /* icvfli */
                                      tinstk,
                                      smbrk,
                                      cvar_k,
@@ -1696,8 +1691,7 @@ cs_turbulence_kw(int phase_id)
                                      nullptr,
                                      nullptr,
                                      nullptr,
-                                     0, /* boundary convective upwind flux */
-                                     nullptr,
+                                     nullptr, /* icvfli */
                                      tinstw,
                                      smbrw,
                                      cvar_omg,

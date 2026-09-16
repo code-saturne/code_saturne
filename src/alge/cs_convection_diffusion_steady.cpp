@@ -1304,17 +1304,11 @@ _sync_strided_gradient_halo(const cs_mesh_t         *m,
  *
  * \param[in]     f             pointer to field, or null
  * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
- *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
@@ -1332,11 +1326,9 @@ cs_convection_diffusion_steady_scalar
 (
   const cs_field_t           *f,
   const cs_equation_param_t  &eqp,
-  bool                        icvflb,
   int                         inc,
   const cs_real_t   *restrict pvar,
   const cs_real_t   *restrict pvara,
-  const int                   icvfli[],
   const cs_field_bc_coeffs_t *bc_coeffs,
   const cs_real_t             i_massflux[],
   const cs_real_t             b_massflux[],
@@ -1403,8 +1395,6 @@ cs_convection_diffusion_steady_scalar
   char var_name[64];
 
   int w_stride = 1;
-
-  cs_real_t *coface = nullptr, *cofbce = nullptr;
 
   cs_real_3_t *grad;
   cs_real_3_t *gradup = nullptr;
@@ -1934,218 +1924,149 @@ cs_convection_diffusion_steady_scalar
      ======================================================================*/
 
   /* Boundary convective flux are all computed with an upwind scheme */
-  if (icvflb == false || xcpp != nullptr) {
 
-    h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+  h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-      cs_lnum_t ii = b_face_cells[face_id];
+    cs_lnum_t ii = b_face_cells[face_id];
 
-      cs_real_t cpi = 1.0;
-      if (xcpp != nullptr)
-        cpi = xcpp[ii];
+    cs_real_t cpi = 1.0;
+    if (xcpp != nullptr)
+      cpi = xcpp[ii];
 
-      cs_real_t fluxi = 0.;
-      cs_real_t pir, pipr;
+    cs_real_t fluxi = 0.;
+    cs_real_t pir, pipr;
 
-      cs_real_t bldfrp = (cs_real_t) ircflb;
-      /* Local limitation of the reconstruction */
-      if (df_limiter != nullptr && ircflb > 0)
-        bldfrp = cs::max(df_limiter[ii], 0.);
+    cs_real_t bldfrp = (cs_real_t) ircflb;
+    /* Local limitation of the reconstruction */
+    if (df_limiter != nullptr && ircflb > 0)
+      bldfrp = cs::max(df_limiter[ii], 0.);
 
-      cs_b_cd_steady(bldfrp,
-                     relaxp,
-                     diipb[face_id],
-                     grad[ii],
+    cs_b_cd_steady(bldfrp,
+                   relaxp,
+                   diipb[face_id],
+                   grad[ii],
+                   pvar[ii],
+                   pvara[ii],
+                   &pir,
+                   &pipr);
+
+    /* Compute face value for gradient and diffusion for the
+       steady case (relaxation value in iprime) */
+    cs_real_t val_f_steady = inc * coefap[face_id] + coefbp[face_id] * pipr;
+    cs_real_t flux_steady = inc * cofafp[face_id] + cofbfp[face_id] * pipr;
+
+    cs_b_upwind_flux(iconvp,
+                     1.,
+                     1,
+                     bc_type[face_id],
                      pvar[ii],
-                     pvara[ii],
-                     &pir,
-                     &pipr);
-
-      /* Compute face value for gradient and diffusion for the
-         steady case (relaxation value in iprime) */
-      cs_real_t val_f_steady = inc * coefap[face_id] + coefbp[face_id] * pipr;
-      cs_real_t flux_steady = inc * cofafp[face_id] + cofbfp[face_id] * pipr;
-
-      cs_b_upwind_flux(iconvp,
-                       1.,
-                       1,
-                       bc_type[face_id],
-                       pvar[ii],
-                       pir,
-                       val_f_steady,
-                       b_massflux[face_id],
-                       cpi,
-                       &fluxi);
-
-      cs_b_diff_flux(idiffp,
-                     1., /* thetap */
-                     flux_steady,
-                     b_visc[face_id],
+                     pir,
+                     val_f_steady,
+                     b_massflux[face_id],
+                     cpi,
                      &fluxi);
 
-      rhs[ii] -= fluxi;
+    cs_b_diff_flux(idiffp,
+                   1., /* thetap */
+                   flux_steady,
+                   b_visc[face_id],
+                   &fluxi);
 
-    });
+    rhs[ii] -= fluxi;
 
-    /* The scalar is internal_coupled and an implicit contribution
-     * is required */
-    if (icoupl > 0) {
-      //TODO update BCs
-      /* Prepare data for sending */
-      CS_MALLOC(pvar_distant, n_distant, cs_real_t);
+  });
 
-      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-        cs_lnum_t face_id = faces_distant[ii];
-        cs_lnum_t jj = b_face_cells[face_id];
-        cs_real_t pip, pipr;
+  /* The scalar is internal_coupled and an implicit contribution
+   * is required */
+  if (icoupl > 0) {
+    //TODO update BCs
+    /* Prepare data for sending */
+    CS_MALLOC(pvar_distant, n_distant, cs_real_t);
 
-        cs_real_t bldfrp = (cs_real_t) ircflb;
-        /* Local limitation of the reconstruction */
-        if (df_limiter != nullptr && ircflb > 0)
-          bldfrp = cs::max(df_limiter[jj], 0.);
-
-        cs_b_cd_steady(bldfrp,
-                       relaxp,
-                       diipb[face_id],
-                       grad[jj],
-                       pvar[jj],
-                       pvara[jj],
-                       &pip,
-                       &pipr);
-        pvar_distant[ii] = pipr;
-      }
-
-      /* Receive data */
-      CS_MALLOC(pvar_local, n_local, cs_real_t);
-      cs_internal_coupling_exchange_var(cpl,
-                                        1, /* Dimension */
-                                        pvar_distant,
-                                        pvar_local);
-
-      /* Exchange diffusion limiter */
-      if (df_limiter != nullptr) {
-        CS_MALLOC(df_limiter_local, n_local, cs_real_t);
-        cs_internal_coupling_exchange_var(cpl,
-                                          1, /* Dimension */
-                                          df_limiter,
-                                          df_limiter_local);
-      }
-
-      /* Flux contribution */
-      assert(f != nullptr);
-      cs_real_t *hintp = f->bc_coeffs->h_int_tot;
-      cs_real_t *hextp = f->bc_coeffs->rcodcl2;
-      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-        cs_lnum_t face_id = faces_local[ii];
-        cs_lnum_t jj = b_face_cells[face_id];
-        cs_real_t surf = b_face_surf[face_id];
-        cs_real_t pip, pipr, pjpr;
-        cs_real_t fluxi = 0.;
-
-        cs_real_t bldfrp = (cs_real_t) ircflb;
-        /* Local limitation of the reconstruction */
-        if (df_limiter != nullptr && ircflb > 0)
-          bldfrp = cs::max(cs::min(df_limiter_local[ii],
-                                   df_limiter[jj]),
-                           0.);
-
-        cs_b_cd_steady(bldfrp,
-                       relaxp,
-                       diipb[face_id],
-                       grad[jj],
-                       pvar[jj],
-                       pvara[jj],
-                       &pip,
-                       &pipr);
-
-        pjpr = pvar_local[ii];
-
-        cs_real_t hint = hintp[face_id];
-        cs_real_t hext = hextp[face_id];
-        cs_real_t heq = _calc_heq(hint, hext)*surf;
-
-        cs_b_diff_flux_coupling(idiffp,
-                                pipr,
-                                pjpr,
-                                heq,
-                                &fluxi);
-
-        rhs[jj] -= thetap * fluxi;
-      };
-
-      CS_FREE(pvar_local);
-      /* Sending structures are no longer needed */
-      CS_FREE(pvar_distant);
-      if (df_limiter != nullptr)
-        CS_FREE(df_limiter_local);
-    }
-
-    /* Boundary convective flux is imposed at some faces
-       (tagged in icvfli array) */
-  }
-  else if (icvflb && xcpp == nullptr) {
-
-    /* Retrieve the value of the convective flux to be imposed */
-    if (f_id != -1) {
-      coface = f->bc_coeffs->ac;
-      cofbce = f->bc_coeffs->bc;
-    }
-    else {
-      bft_error(__FILE__, __LINE__, 0,
-                _("invalid value of icvflb and f_id"));
-    }
-
-    h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-
-      cs_lnum_t ii = b_face_cells[face_id];
-
-      cs_real_t fluxi = 0.;
-      cs_real_t pir, pipr;
+    for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+      cs_lnum_t face_id = faces_distant[ii];
+      cs_lnum_t jj = b_face_cells[face_id];
+      cs_real_t pip, pipr;
 
       cs_real_t bldfrp = (cs_real_t) ircflb;
       /* Local limitation of the reconstruction */
       if (df_limiter != nullptr && ircflb > 0)
-        bldfrp = cs::max(df_limiter[ii], 0.);
+        bldfrp = cs::max(df_limiter[jj], 0.);
 
       cs_b_cd_steady(bldfrp,
                      relaxp,
                      diipb[face_id],
-                     grad[ii],
-                     pvar[ii],
-                     pvara[ii],
-                     &pir,
+                     grad[jj],
+                     pvar[jj],
+                     pvara[jj],
+                     &pip,
+                     &pipr);
+      pvar_distant[ii] = pipr;
+    }
+
+    /* Receive data */
+    CS_MALLOC(pvar_local, n_local, cs_real_t);
+    cs_internal_coupling_exchange_var(cpl,
+                                      1, /* Dimension */
+                                      pvar_distant,
+                                      pvar_local);
+
+    /* Exchange diffusion limiter */
+    if (df_limiter != nullptr) {
+      CS_MALLOC(df_limiter_local, n_local, cs_real_t);
+      cs_internal_coupling_exchange_var(cpl,
+                                        1, /* Dimension */
+                                        df_limiter,
+                                        df_limiter_local);
+    }
+
+    /* Flux contribution */
+    assert(f != nullptr);
+    cs_real_t *hintp = f->bc_coeffs->h_int_tot;
+    cs_real_t *hextp = f->bc_coeffs->rcodcl2;
+    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+      cs_lnum_t face_id = faces_local[ii];
+      cs_lnum_t jj = b_face_cells[face_id];
+      cs_real_t surf = b_face_surf[face_id];
+      cs_real_t pip, pipr, pjpr;
+      cs_real_t fluxi = 0.;
+
+      cs_real_t bldfrp = (cs_real_t) ircflb;
+      /* Local limitation of the reconstruction */
+      if (df_limiter != nullptr && ircflb > 0)
+        bldfrp = cs::max(cs::min(df_limiter_local[ii],
+                                 df_limiter[jj]),
+                         0.);
+
+      cs_b_cd_steady(bldfrp,
+                     relaxp,
+                     diipb[face_id],
+                     grad[jj],
+                     pvar[jj],
+                     pvara[jj],
+                     &pip,
                      &pipr);
 
-      /* Compute face value for gradient and diffusion for the
-         steady case (relaxation value in iprime) */
-        cs_real_t val_f_steady = inc * coefap[face_id] + coefbp[face_id] * pipr;
-        cs_real_t flux_steady = inc * cofafp[face_id] + cofbfp[face_id] * pipr;
+      pjpr = pvar_local[ii];
 
-        cs_b_imposed_conv_flux(iconvp,
-                               1.,
-                               1,
-                               inc,
-                               bc_type[face_id],
-                               icvfli[face_id],
-                               pvar[ii],
-                               pir,
-                               pipr,
-                               coface[face_id],
-                               cofbce[face_id],
-                               b_massflux[face_id],
-                               1., /* xcpp */
-                               val_f_steady,
-                               &fluxi);
+      cs_real_t hint = hintp[face_id];
+      cs_real_t hext = hextp[face_id];
+      cs_real_t heq = _calc_heq(hint, hext)*surf;
 
-        cs_b_diff_flux(idiffp,
-                       1., /* thetap */
-                       flux_steady,
-                       b_visc[face_id],
-                       &fluxi);
+      cs_b_diff_flux_coupling(idiffp,
+                              pipr,
+                              pjpr,
+                              heq,
+                              &fluxi);
 
-      rhs[ii] -= fluxi;
+      rhs[jj] -= thetap * fluxi;
+    };
 
-    });
+    CS_FREE(pvar_local);
+    /* Sending structures are no longer needed */
+    CS_FREE(pvar_distant);
+    if (df_limiter != nullptr)
+      CS_FREE(df_limiter_local);
   }
 
   /* Free memory */
@@ -2165,9 +2086,6 @@ cs_convection_diffusion_steady_scalar
  *
  * \param[in]     f_id          pointer to field id, or nullptr
  * \param[in]     eqp           equation parameters
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
@@ -2189,11 +2107,10 @@ cs_face_convection_steady_scalar
 (
   const cs_field_t           *f,
   const cs_equation_param_t   eqp,
-  int                         icvflb,
   int                         inc,
   cs_real_t         *restrict pvar,
   const cs_real_t   *restrict pvara,
-  const int                   icvfli[],
+  const int                  *icvfli,
   const cs_field_bc_coeffs_t *bc_coeffs,
   const cs_real_t             i_massflux[],
   const cs_real_t             b_massflux[],
@@ -2700,7 +2617,7 @@ cs_face_convection_steady_scalar
     ======================================================================*/
 
   /* Boundary convective flux are all computed with an upwind scheme */
-  if (icvflb == 0) {
+  if (icvfli == nullptr) {
 
     h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
@@ -2741,7 +2658,7 @@ cs_face_convection_steady_scalar
   /* Boundary convective flux is imposed at some faces
      (tagged in icvfli array) */
   }
-  else if (icvflb == 1) {
+  else if (icvfli != nullptr) {
 
     /* Retrieve the value of the convective flux to be imposed */
     if (f_id != -1) {
@@ -2750,7 +2667,7 @@ cs_face_convection_steady_scalar
     }
     else {
       bft_error(__FILE__, __LINE__, 0,
-                _("invalid value of icvflb and f_id"));
+                _("invalid value of icvfli and f_id"));
     }
 
     h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
@@ -2839,17 +2756,11 @@ cs_face_convection_steady_scalar
  * \param[in]      f             pointer to field, or nullptr
  * \param[in]      name          pointer to associated field or array name
  * \param[in]      eqp           equation parameters
- * \param[in]      icvflb        global indicator of boundary convection flux
- *                                - 0 upwind scheme at all boundary faces
- *                                - 1 imposed flux at some boundary faces
- * \param[in]     inc            indicator
+ * \param[in]      inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
  * \param[in]      pvar          solved velocity (current time step)
  * \param[in]      pvara         solved velocity (previous time step)
- * \param[in]      icvfli        boundary face indicator array of convection flux
- *                                - 0 upwind scheme
- *                                - 1 imposed flux
  * \param[in]      bc_coeffs     boundary conditions structure for the variable
  * \param[in]      i_massflux    mass flux at interior faces
  * \param[in]      b_massflux    mass flux at boundary faces
@@ -2870,11 +2781,9 @@ cs_convection_diffusion_steady_strided
   cs_field_t                   *f,
   const char                   *var_name,
   const cs_equation_param_t    &eqp,
-  int                           icvflb,
   int                           inc,
   cs_real_t                   (*pvar)[stride],
   const cs_real_t             (*pvara)[stride],
-  const int                     icvfli[],
   const cs_field_bc_coeffs_t   *bc_coeffs,
   const cs_real_t               i_massflux[],
   const cs_real_t               b_massflux[],
@@ -2919,7 +2828,6 @@ cs_convection_diffusion_steady_strided
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
-  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
@@ -2940,9 +2848,6 @@ cs_convection_diffusion_steady_strided
     i_f_face_factor = fvq->i_f_face_factor;
     b_f_face_factor = fvq->b_f_face_factor;
   }
-
-  const var_t *coface = nullptr;
-  const b_t *cofbce = nullptr;
 
   cs_dispatch_context ctx;
   ctx.set_use_gpu(false);  /* steady case not ported to GPU */
@@ -3358,171 +3263,76 @@ cs_convection_diffusion_steady_strided
      ======================================================================*/
 
   /* Boundary convective flux are all computed with an upwind scheme */
-  if (icvflb == 0) {
 
-    h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+  h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-      cs_lnum_t ii = b_face_cells[face_id];
+    cs_lnum_t ii = b_face_cells[face_id];
 
-      var_t fluxi;
-      for (cs_lnum_t isou =  0; isou < stride; isou++) {
-        fluxi[isou] = 0;
-      }
-      var_t pir, pipr, _val_f, _flux_d;
-      var_t _pi, _pia;
-      for (int i = 0; i < stride; i++) {
-        _pi[i]  = pvar[ii][i];
-        _pia[i] = pvara[ii][i];
-      }
-
-      /* Scaling due to mass balance in porous modelling */
-      if (b_f_face_factor != nullptr) {
-        const cs_nreal_t *n = i_face_u_normal[face_id];
-        cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
-        cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pia);
-      }
-
-      cs_real_t bldfrp = (cs_real_t) ircflb;
-      /* Local limitation of the reconstruction */
-      if (df_limiter != nullptr && ircflb > 0)
-        bldfrp = cs::max(df_limiter[ii], 0.);
-
-      cs_b_cd_steady_strided<stride>(bldfrp,
-                                     relaxp,
-                                     diipb[face_id],
-                                     (const cs_real_3_t *)grad[ii],
-                                     _pi,
-                                     _pia,
-                                     pir,
-                                     pipr);
-
-      /* Compute face value for gradient and diffusion for the
-         steady case (relaxation value in iprime) */
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        _val_f[i] = inc * coefa[face_id][i];
-        _flux_d[i] = inc * cofaf[face_id][i];
-
-        for (cs_lnum_t j = 0; j < stride; j++) {
-          _val_f[i] += coefb[face_id][j][i] * pipr[j];
-          _flux_d[i] += cofbf[face_id][j][i] * pipr[j];
-        }
-      }
-
-      cs_b_upwind_flux_strided<stride>(iconvp,
-                                       1., /* thetap */
-                                       1, /* imasac */
-                                       bc_type[face_id],
-                                       _pi,
-                                       pir,
-                                       b_massflux[face_id],
-                                       _val_f,
-                                       fluxi);
-
-      cs_b_diff_flux_strided<stride>(idiffp,
-                                     1., /* thetap */
-                                     b_visc[face_id],
-                                     _flux_d,
-                                     fluxi);
-
-      for (cs_lnum_t isou = 0; isou < stride; isou++) {
-        rhs[ii][isou] -= fluxi[isou];
-      } /* isou */
-
-    });
-
-  }
-
-  /* Boundary convective flux imposed at some faces (tags in icvfli array) */
-
-  else if (icvflb == 1 && icvfli != nullptr) {
-
-    /* Retrieve the value of the convective flux to be imposed */
-    if (f != nullptr) {
-      coface = (const var_t *)(f->bc_coeffs->ac);
-      cofbce = (const b_t *)(f->bc_coeffs->bc);
+    var_t fluxi;
+    for (cs_lnum_t isou =  0; isou < stride; isou++) {
+      fluxi[isou] = 0;
     }
-    else {
-      bft_error(__FILE__, __LINE__, 0,
-                _("invalid value of icvflb and f_id"));
+    var_t pir, pipr, _val_f, _flux_d;
+    var_t _pi, _pia;
+    for (int i = 0; i < stride; i++) {
+      _pi[i]  = pvar[ii][i];
+      _pia[i] = pvara[ii][i];
     }
 
-    h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+    /* Scaling due to mass balance in porous modelling */
+    if (b_f_face_factor != nullptr) {
+      const cs_nreal_t *n = i_face_u_normal[face_id];
+      cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
+      cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pia);
+    }
 
-      cs_lnum_t ii = b_face_cells[face_id];
+    cs_real_t bldfrp = (cs_real_t) ircflb;
+    /* Local limitation of the reconstruction */
+    if (df_limiter != nullptr && ircflb > 0)
+      bldfrp = cs::max(df_limiter[ii], 0.);
 
-      var_t fluxi, pir, pipr, _val_f, flux;
+    cs_b_cd_steady_strided<stride>(bldfrp,
+                                   relaxp,
+                                   diipb[face_id],
+                                   (const cs_real_3_t *)grad[ii],
+                                   _pi,
+                                   _pia,
+                                   pir,
+                                   pipr);
 
-      for (cs_lnum_t isou =  0; isou < stride; isou++) {
-        fluxi[isou] = 0;
+    /* Compute face value for gradient and diffusion for the
+       steady case (relaxation value in iprime) */
+    for (cs_lnum_t i = 0; i < stride; i++) {
+      _val_f[i] = inc * coefa[face_id][i];
+      _flux_d[i] = inc * cofaf[face_id][i];
+
+      for (cs_lnum_t j = 0; j < stride; j++) {
+        _val_f[i] += coefb[face_id][j][i] * pipr[j];
+        _flux_d[i] += cofbf[face_id][j][i] * pipr[j];
       }
-      var_t _pi, _pia;
+    }
 
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        _pi[i]  = pvar[ii][i];
-        _pia[i] = pvara[ii][i];
-      }
-
-      /* Scaling due to mass balance in porous modelling */
-      if (b_f_face_factor != nullptr) {
-        const cs_nreal_t *n = b_face_u_normal[face_id];
-        cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
-        cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pia);
-      }
-
-      cs_real_t bldfrp = (cs_real_t) ircflb;
-      /* Local limitation of the reconstruction */
-      if (df_limiter != nullptr && ircflb > 0)
-        bldfrp = cs::max(df_limiter[ii], 0.);
-
-      cs_b_cd_steady_strided<stride>(bldfrp,
-                                     relaxp,
-                                     diipb[face_id],
-                                     grad[ii],
-                                     _pi,
-                                     _pia,
-                                     pir,
-                                     pipr);
-
-      /* Compute face value for gradient and diffusion for the
-         steady case (relaxation value in iprime) */
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        _val_f[i] = inc * coefa[face_id][i];
-        flux[i] = inc * cofaf[face_id][i];
-
-        for (cs_lnum_t j = 0; j < stride; j++) {
-          _val_f[i] += coefb[face_id][j][i] * pipr[j];
-          flux[i] += cofbf[face_id][j][i] * pipr[j];
-        }
-      }
-
-      cs_b_imposed_conv_flux_strided<stride>(iconvp,
-                                             1., /* thetap */
-                                             1., /* imasac */
-                                             inc,
-                                             bc_type[face_id],
-                                             icvfli[face_id],
-                                             pvar[ii],
-                                             pir,
-                                             pipr,
-                                             coface[face_id],
-                                             cofbce[face_id],
-                                             b_massflux[face_id],
-                                             _val_f,
-                                             fluxi);
-
-      cs_b_diff_flux_strided<stride>(idiffp,
+    cs_b_upwind_flux_strided<stride>(iconvp,
                                      1., /* thetap */
-                                     b_visc[face_id],
-                                     flux,
+                                     1, /* imasac */
+                                     bc_type[face_id],
+                                     _pi,
+                                     pir,
+                                     b_massflux[face_id],
+                                     _val_f,
                                      fluxi);
 
-      for (cs_lnum_t isou = 0; isou < stride; isou++) {
-        rhs[ii][isou] -= fluxi[isou];
-      }
+    cs_b_diff_flux_strided<stride>(idiffp,
+                                   1., /* thetap */
+                                   b_visc[face_id],
+                                   _flux_d,
+                                   fluxi);
 
-    });
+    for (cs_lnum_t isou = 0; isou < stride; isou++) {
+      rhs[ii][isou] -= fluxi[isou];
+    } /* isou */
 
-  }
+  });
 
   /* Free memory */
   CS_FREE(grdpa);
@@ -3536,11 +3346,9 @@ cs_convection_diffusion_steady_strided
   cs_field_t                   *f,
   const char                   *var_name,
   const cs_equation_param_t    &eqp,
-  int                           icvflb,
   int                           inc,
   cs_real_t                   (*pvar)[3],
   const cs_real_t             (*pvara)[3],
-  const int                     icvfli[],
   const cs_field_bc_coeffs_t   *bc_coeffs,
   const cs_real_t               i_massflux[],
   const cs_real_t               b_massflux[],
@@ -3556,11 +3364,9 @@ cs_convection_diffusion_steady_strided
   cs_field_t                   *f,
   const char                   *var_name,
   const cs_equation_param_t    &eqp,
-  int                           icvflb,
   int                           inc,
   cs_real_t                   (*pvar)[6],
   const cs_real_t             (*pvara)[6],
-  const int                     icvfli[],
   const cs_field_bc_coeffs_t   *bc_coeffs,
   const cs_real_t               i_massflux[],
   const cs_real_t               b_massflux[],

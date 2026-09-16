@@ -189,11 +189,8 @@
  *                               of tensor diffusion
  * \param[in]      weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]      icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]      icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in, out] fimp          \f$ \tens{f_s}^{imp} \f$
  * \param[in, out] rhs           Right hand side \f$ \vect{Rhs}^k \f$
@@ -226,8 +223,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                                   cs_real_t             viscel[][6],
                                   const cs_real_t       weighf[][2],
                                   const cs_real_t       weighb[],
-                                  int                   icvflb,
-                                  const int             icvfli[],
+                                  const int            *icvfli,
                                   cs_real_t             fimp[][stride][stride],
                                   cs_real_t             rhs[][stride],
                                   cs_real_t             pvar[][stride],
@@ -441,7 +437,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                         viscel,
                         weighf,
                         weighb,
-                        icvflb,
                         icvfli,
                         (cs_real_3_t *)i_pvar,
                         (cs_real_3_t *)b_pvar,
@@ -462,7 +457,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                         viscel,
                         weighf,
                         weighb,
-                        icvflb,
                         icvfli,
                         (cs_real_6_t *)rhs);
 
@@ -546,7 +540,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                       viscel,
                       weighf,
                       weighb,
-                      icvflb,
                       icvfli,
                       nullptr,
                       nullptr,
@@ -567,7 +560,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                       viscel,
                       weighf,
                       weighb,
-                      icvflb,
                       icvfli,
                       (cs_real_6_t *)rhs);
 
@@ -895,7 +887,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                           viscel,
                           weighf,
                           weighb,
-                          icvflb,
                           icvfli,
                           nullptr,
                           nullptr,
@@ -916,7 +907,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                           viscel,
                           weighf,
                           weighb,
-                          icvflb,
                           icvfli,
                           (cs_real_6_t *)adxk);
       CS_PROFILE_MARK_LINE();
@@ -1105,7 +1095,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                         viscel,
                         weighf,
                         weighb,
-                        icvflb,
                         icvfli,
                         (cs_real_3_t *)i_pvar,
                         (cs_real_3_t *)b_pvar,
@@ -1126,7 +1115,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                         viscel,
                         weighf,
                         weighb,
-                        icvflb,
                         icvfli,
                         (cs_real_6_t *)rhs);
 
@@ -1234,7 +1222,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                       viscel,
                       weighf,
                       weighb,
-                      icvflb,
                       icvfli,
                       nullptr,
                       nullptr,
@@ -1379,11 +1366,8 @@ _equation_iterative_solve_strided(int                   idtvar,
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in]     rovsdt        \f$ f_s^{imp} \f$
  * \param[in]     rhs           Right hand side \f$ Rhs^k \f$
@@ -1416,8 +1400,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    cs_real_6_t           viscel[],
                                    const cs_real_2_t     weighf[],
                                    const cs_real_t       weighb[],
-                                   int                   icvflb,
-                                   const int             icvfli[],
+                                   const int            *icvfli,
                                    const cs_real_t       rovsdt[],
                                    cs_real_t             rhs[],
                                    cs_real_t             pvar[],
@@ -1635,7 +1618,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       xcpp,
                       weighf,
                       weighb,
-                      icvflb,
                       icvfli,
                       rhs,
                       i_flux_0,
@@ -1701,7 +1683,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                     xcpp,
                     weighf,
                     weighb,
-                    icvflb,
                     icvfli,
                     rhs,
                     i_flux_k,
@@ -1946,7 +1927,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                         xcpp,
                         weighf,
                         weighb,
-                        icvflb,
                         icvfli,
                         adxk,
                         nullptr,
@@ -2095,7 +2075,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       xcpp,
                       weighf,
                       weighb,
-                      icvflb,
                       icvfli,
                       rhs,
                       i_flux_k,
@@ -2175,7 +2154,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     cs_face_convection_scalar(idtvar,
                               f_id,
                               eqp_loc,
-                              icvflb,
                               inc,
                               dpvar,
                               pvara,
@@ -2246,7 +2224,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                         xcpp,
                         weighf,
                         weighb,
-                        icvflb,
                         icvfli,
                         rhs,
                         nullptr,
@@ -2380,11 +2357,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               of tensor diffusion
  * \param[in]      weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]      icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]      icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in, out] fimp          \f$ \tens{f_s}^{imp} \f$
  * \param[in, out] rhs           Right hand side \f$ \vect{Rhs}^k \f$
@@ -2416,8 +2390,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    cs_real_t             viscel[][6],
                                    const cs_real_2_t     weighf[],
                                    const cs_real_t       weighb[],
-                                   int                   icvflb,
-                                   const int             icvfli[],
+                                   const int            *icvfli,
                                    cs_real_t             fimp[][3][3],
                                    cs_real_t             rhs[][3],
                                    cs_real_t             pvar[][3],
@@ -2444,7 +2417,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                        viscel,
                                        weighf,
                                        weighb,
-                                       icvflb,
                                        icvfli,
                                        fimp,
                                        rhs,
@@ -2526,11 +2498,8 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]     icvflb        global indicator of boundary convection flux
- *                               - 0 upwind scheme at all boundary faces
- *                               - 1 imposed flux at some boundary faces
  * \param[in]     icvfli        boundary face indicator array of convection flux
- *                               - 0 upwind scheme
+ *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
  * \param[in,out] fimp          \f$ \tens{f_s}^{imp} \f$
  * \param[in,out] rhs           Right hand side \f$ \vect{Rhs}^k \f$
@@ -2555,8 +2524,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                                    cs_real_t                   viscel[][6],
                                    const cs_real_2_t           weighf[],
                                    const cs_real_t             weighb[],
-                                   int                         icvflb,
-                                   const int                   icvfli[],
+                                   const int                  *icvfli,
                                    cs_real_t                   fimp[][6][6],
                                    cs_real_t                   rhs[][6],
                                    cs_real_t                   pvar[][6])
@@ -2582,7 +2550,6 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                                        viscel,
                                        weighf,
                                        weighb,
-                                       icvflb,
                                        icvfli,
                                        fimp,
                                        rhs,

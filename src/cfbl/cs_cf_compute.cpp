@@ -411,7 +411,6 @@ _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
                       nullptr,   /* viscel */
                       nullptr,   /* weighf */ // rvoid a voir
                       nullptr,   /* weighb */
-                      0,      /* icvflb */
                       icvfli,
                       nullptr, /* i_pvar */
                       nullptr, /* b_pvar */
@@ -968,7 +967,6 @@ cs_cf_convective_mass_flux(int  iterns)
                                      i_visc, b_visc,
                                      nullptr,   /* viscel */
                                      nullptr, nullptr, /* weighf, weighb */
-                                     0,      /* icvflb (upwind conv. flux) */
                                      nullptr,   /* icvfli */
                                      rovsdt,
                                      smbrs,

@@ -349,7 +349,6 @@ cs_wall_distance(int iterns)
 
   /* All boundary convective flux with upwind */
 
-  int icvflb = 0;
   cs_real_t normp = -1.0;
 
   cs_equation_param_t eqp_loc = *eqp_wd;
@@ -376,7 +375,6 @@ cs_wall_distance(int iterns)
                                      nullptr, /* viscel */
                                      nullptr, /* weightf */
                                      nullptr, /* weighb */
-                                     icvflb,
                                      nullptr, /* icvfli */
                                      rovsdt,
                                      rhs,
@@ -470,7 +468,6 @@ cs_wall_distance(int iterns)
                                            nullptr, /* viscel */
                                            nullptr, /* weightf */
                                            nullptr, /* weighb */
-                                           icvflb,
                                            nullptr, /* icvfli */
                                            rovsdt,
                                            rhs,
@@ -971,9 +968,6 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   /* Solving
      ------- */
 
-  /* All boundary convective flux with upwind */
-  int icvflb = 0;
-
   /* There are some Dirichlet BCs */
   int ndircp = 1;
 
@@ -1005,7 +999,6 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                                      i_mass_flux, b_mass_flux,
                                      nullptr, nullptr,
                                      nullptr,
-                                     icvflb,
                                      nullptr,
                                      rovsdp,
                                      smbdp,

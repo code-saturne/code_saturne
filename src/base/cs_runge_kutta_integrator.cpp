@@ -274,8 +274,7 @@ cs_runge_kutta_stage_complete_scalar_rhs
    cs_real_t                    viscel[][6],
    const cs_real_t              weighf[][2],
    const cs_real_t              weighb[],
-   int                          icvflb,
-   const int                    icvfli[],
+   const int                   *icvfli,
    cs_real_t                    pvar[],
    const cs_real_t              xcpp[])
 {
@@ -316,7 +315,6 @@ cs_runge_kutta_stage_complete_scalar_rhs
                     xcpp,
                     weighf,
                     weighb,
-                    icvflb,
                     icvfli,
                     rhs,
                     nullptr,

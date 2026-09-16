@@ -180,9 +180,6 @@ cs_rad_transfer_pun(int                          iband,
   int iescap = 0;
   int imucpp = 0;
 
-  /* all boundary convective flux with upwind */
-  int icvflb = 0;
-
   /* Reset arrays before solve */
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     theta4[cell_id] = 0.0;
@@ -232,8 +229,7 @@ cs_rad_transfer_pun(int                          iband,
                                      nullptr,
                                      nullptr,
                                      nullptr,
-                                     icvflb,
-                                     nullptr,
+                                     nullptr, /* icvfli (all upwind) */
                                      rovsdt,
                                      smbrs,
                                      theta4,
