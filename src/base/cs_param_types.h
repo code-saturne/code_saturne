@@ -644,12 +644,12 @@ struct cs_param_psteady_t {
    * value. Negative value means this option is diable.
    */
 
-  double atol {1e-5};
-  double rtol {1e-8};
+  double atol{ 1e-4 };
+  double rtol{ 1e-4 };
 
-  int n_cvg_iter {2};
+  int n_cvg_iter{ 4 };
 
-  int n_time_step_solve {1};
+  int n_time_step_solve{ 2 };
 
   double tol_pred_adam {1e-2};
 };

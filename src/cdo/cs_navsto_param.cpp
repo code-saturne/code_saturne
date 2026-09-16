@@ -236,11 +236,11 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
   nsp->nl_cvg_param.atol = 1e-5;
   nsp->nl_cvg_param.dtol = 1e3;
 
-  nsp->psteady_cvg_param.rtol              = 1e-5;
-  nsp->psteady_cvg_param.atol              = 1e-8;
-  nsp->psteady_cvg_param.n_cvg_iter        = 2;
-  nsp->psteady_cvg_param.n_time_step_solve = 1;
-  nsp->psteady_cvg_param.tol_pred_adam     = 1e-2;
+  nsp->psteady_cvg_param.rtol              = 1.0e-4;
+  nsp->psteady_cvg_param.atol              = 1.0e-4;
+  nsp->psteady_cvg_param.n_cvg_iter        = 4;
+  nsp->psteady_cvg_param.n_time_step_solve = 2;
+  nsp->psteady_cvg_param.tol_pred_adam     = 1.0e-2;
 
   nsp->anderson_param.n_max_dir = 6;
   nsp->anderson_param.starting_iter = 3;
