@@ -249,7 +249,6 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
   assert(bc_map != nullptr);
   assert(cdoq != nullptr);
   assert(val_c != nullptr);
-  assert(values != nullptr);
 
   /* Update */
   bc_map->update();
@@ -274,6 +273,7 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
   /* Get field's variable id */
 
   assert(val_c->location_id == CS_MESH_LOCATION_CELLS);
+  assert(n_bfaces == 0 || values != nullptr);
 
   /* Allocate working array */
   cs_real_t *distant_var = nullptr, *local_var = nullptr;
