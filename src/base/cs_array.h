@@ -1219,14 +1219,7 @@ public:
   CS_F_HOST_DEVICE
   array()
   {
-#if !defined(__CUDA_ARCH__) && \
-    !defined(SYCL_LANGUAGE_VERSION) && \
-    !defined(__HIP_DEVICE_COMPILE__)
-    _mode = cs_alloc_mode;
-#else
-    // use default and avoid compiler warnings
-    _mode = CS_ALLOC_HOST_DEVICE_SHARED;
-#endif
+    _mode = default_alloc_mode();
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1426,14 +1419,7 @@ public:
     _span(data, indices...),
     _owner(false)
   {
-#if !defined(__CUDA_ARCH__) && \
-    !defined(SYCL_LANGUAGE_VERSION) && \
-    !defined(__HIP_DEVICE_COMPILE__)
-    _mode = cs_alloc_mode;
-#else
-    // use default and avoid compiler warnings
-    _mode = CS_ALLOC_HOST_DEVICE_SHARED;
-#endif
+    _mode = default_alloc_mode();
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1452,14 +1438,7 @@ public:
     _span(data, dims),
     _owner(false)
   {
-#if !defined(__CUDA_ARCH__) && \
-    !defined(SYCL_LANGUAGE_VERSION) && \
-    !defined(__HIP_DEVICE_COMPILE__)
-    _mode = cs_alloc_mode;
-#else
-    // use default and avoid compiler warnings
-    _mode = CS_ALLOC_HOST_DEVICE_SHARED;
-#endif
+    _mode = default_alloc_mode();
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1560,9 +1539,7 @@ public:
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
   __has_builtin(__builtin_FILE) &&\
- !defined(__CUDA_ARCH__) && \
- !defined(SYCL_LANGUAGE_VERSION) && \
- !defined(__HIP_DEVICE_COMPILE__)
+  !defined(CS_DEVICE_COMPILE)
     const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
     const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
 #else
@@ -1573,9 +1550,7 @@ public:
   {
     if (_owner) {
       // Avoid compiler warnings. If device, object cannot be owner...
-#if   !defined(__CUDA_ARCH__) && \
-      !defined(SYCL_LANGUAGE_VERSION) &&  \
-      !defined(__HIP_DEVICE_COMPILE__)
+#if !defined(CS_DEVICE_COMPILE)
       constexpr char _ptr_name[] = "cs::array._data";
       cs_mem_free(_span::_data, _ptr_name, file_name, line_number);
 #endif
@@ -1651,14 +1626,13 @@ public:
       s *= dims[i];
 
     if (s != _span::_size) {
-#if !defined(__CUDA_ARCH__) && \
-    !defined(SYCL_LANGUAGE_VERSION) && \
-    !defined(__HIP_DEVICE_COMPILE__)
+#if !defined(CS_DEVICE_COMPILE)
       bft_error(__FILE__, __LINE__, 0,
                 _("%s: requested span has total size of %d instead of %d "
                   "for this array.\n"),
                 __func__, s, _span::_size);
 #else
+      assert(0);
       return mdspan<T,_N_,_L_>();
 #endif
     }
@@ -1706,13 +1680,7 @@ public:
     _span::set_size_(tmp);
     _span::set_data_ptr(nullptr);
     _owner = false;
-#if !defined(__CUDA_ARCH__) && \
-    !defined(SYCL_LANGUAGE_VERSION) && \
-    !defined(__HIP_DEVICE_COMPILE__)
-    _mode = cs_alloc_mode;
-#else
-    _mode = CS_ALLOC_HOST_DEVICE_SHARED;
-#endif
+    _mode = default_alloc_mode();
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2223,6 +2191,27 @@ public:
     });
   }
 
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get default allocation mode for the array
+   *
+   * \return cs_alloc_mode on CPU, CS_ALLOC_HOST_DEVICE_SHARED on GPU
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  static inline
+  cs_alloc_mode_t
+  default_alloc_mode()
+  {
+#if defined(CS_DEVICE_COMPILE)
+    // For GPUs we cannot use "cs_alloc_mode", hence the hard-coded value
+    return CS_ALLOC_HOST_DEVICE_SHARED;
+#else
+    return cs_alloc_mode;
+#endif
+  }
+
 private:
 
   /*--------------------------------------------------------------------------*/
@@ -2309,6 +2298,7 @@ private:
     _span::set_to_val(ctx, tmp_nan);
     ctx.wait();
   }
+
   /*===========================================================================
    * Private members
    *==========================================================================*/
