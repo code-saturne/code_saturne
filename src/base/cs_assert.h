@@ -62,11 +62,19 @@
  */
 /*----------------------------------------------------------------------------*/
 
+#if defined(CS_DEVICE_COMPILE)
+
+#define cs_assert(expr) \
+if (!(expr)) __assert_fail(# expr, __FILE__, __LINE__, __func__)
+
+#else
+
 # define cs_assert(expr)                                       \
 if (!(expr)) bft_error(__FILE__, __LINE__, 0,                  \
                        "Assertion failed in function %s: %s",  \
                        __func__, # expr)
 
+#endif
 /*----------------------------------------------------------------------------*/
 
 #endif /* CS_ASSERT_H */
