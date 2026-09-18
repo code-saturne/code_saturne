@@ -1278,12 +1278,12 @@ _slope_test_gradient_strided
 
 template <cs_lnum_t stride, typename T>
 static void
-_upwind_gradient_strided(cs_dispatch_context          &ctx,
-                         const int                     inc,
-                         const cs_field_bc_coeffs_t   *bc_coeffs,
-                         const cs_real_t               i_massflux[],
-                         const cs_real_t               b_massflux[],
-                         const cs_real_t               pvar[][stride],
+cs_upwind_gradient_strided(cs_dispatch_context          &ctx,
+                           const int                     inc,
+                           const cs_field_bc_coeffs_t   *bc_coeffs,
+                           const cs_real_t               i_massflux[],
+                           const cs_real_t               b_massflux[],
+                           const cs_real_t               pvar[][stride],
                          T                             grdpa[][stride][3])
 {
   cs_real_t *coefap = bc_coeffs->a;
@@ -1365,24 +1365,24 @@ _upwind_gradient_strided(cs_dispatch_context          &ctx,
   _sync_strided_gradient_halo(m, CS_HALO_STANDARD, ctx.use_gpu(), grdpa);
 }
 
-template static void
-_upwind_gradient_strided(cs_dispatch_context          &ctx,
-                         const int                     inc,
-                         const cs_field_bc_coeffs_t   *bc_coeffs,
-                         const cs_real_t               i_massflux[],
-                         const cs_real_t               b_massflux[],
-                         const cs_real_t               pvar[][3],
-                         cs_real_t          (*restrict grdpa)[3][3]);
+template void
+cs_upwind_gradient_strided(cs_dispatch_context          &ctx,
+                           const int                     inc,
+                           const cs_field_bc_coeffs_t   *bc_coeffs,
+                           const cs_real_t               i_massflux[],
+                           const cs_real_t               b_massflux[],
+                           const cs_real_t               pvar[][3],
+                           cs_real_t          (*restrict grdpa)[3][3]);
 
 
-template static void
-_upwind_gradient_strided(cs_dispatch_context          &ctx,
-                         const int                     inc,
-                         const cs_field_bc_coeffs_t   *bc_coeffs,
-                         const cs_real_t               i_massflux[],
-                         const cs_real_t               b_massflux[],
-                         const cs_real_t               pvar[][6],
-                         cs_real_t          (*restrict grdpa)[6][3]);
+template void
+cs_upwind_gradient_strided(cs_dispatch_context          &ctx,
+                           const int                     inc,
+                           const cs_field_bc_coeffs_t   *bc_coeffs,
+                           const cs_real_t               i_massflux[],
+                           const cs_real_t               b_massflux[],
+                           const cs_real_t               pvar[][6],
+                           cs_real_t          (*restrict grdpa)[6][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -6614,13 +6614,13 @@ _convection_diffusion_unsteady_strided
         }
       });
 
-      _upwind_gradient_strided(ctx,
-                               inc,
-                               bc_coeffs,
-                               i_massflux,
-                               b_massflux,
-                               pvar,
-                               gradup);
+      cs_upwind_gradient_strided(ctx,
+                                 inc,
+                                 bc_coeffs,
+                                 i_massflux,
+                                 b_massflux,
+                                 pvar,
+                                 gradup);
     }
 
   }
