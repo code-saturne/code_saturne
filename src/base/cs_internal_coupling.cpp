@@ -1273,8 +1273,9 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   int idiffp = 0;
 
   if (eqp->icoupl > 0) {
-    bft_printf("INTERNAL COUPLING of %s, add contribution to the matrix.\n",
-        f->name);
+    if (eqp->verbosity >= 2)
+      bft_printf("INTERNAL COUPLING of %s, add contribution to the matrix.\n",
+          f->name);
     thetap = eqp->theta;
     idiffp = eqp->idiff;
   }
