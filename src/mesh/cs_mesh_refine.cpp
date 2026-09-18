@@ -2475,7 +2475,7 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
   /* Parallel synchronization */
 
   if (cs_glob_n_ranks > 1) {
-    n_g_edges = cs_mesh_algorithm_sync_edges_flag(m, v2v,
+    n_g_edges = cs::mesh::sync_edges_flag(m, v2v,
                                                   e_v_idx+1, g_edges_num);
     _sync_i_faces_flag(m,
                        f_v_idx + m->n_b_faces + 1,
@@ -5530,10 +5530,10 @@ _o2n_idx_update_cell_arrays(cs_mesh_t        *m,
   /* Update global numbering */
 
   m->n_g_cells
-    = cs_mesh_algorithm_o2n_idx_update_global_num(n_c_ini,
-                                                  m->n_g_cells,
-                                                  o2n_idx,
-                                                  &(m->global_cell_num));
+    = cs::mesh::o2n_idx_update_global_num(n_c_ini,
+                                          m->n_g_cells,
+                                          o2n_idx,
+                                          &(m->global_cell_num));
   m->n_cells = n_new;
   m->n_cells_with_ghosts = n_new;
 
@@ -5611,10 +5611,10 @@ _o2n_idx_update_i_face_arrays(cs_mesh_t        *m,
   /* Update global numbering */
 
   m->n_g_i_faces
-    = cs_mesh_algorithm_o2n_idx_update_global_num(n_old,
-                                                  m->n_g_i_faces,
-                                                  o2n_idx,
-                                                  &(m->global_i_face_num));
+    = cs::mesh::o2n_idx_update_global_num(n_old,
+                                          m->n_g_i_faces,
+                                          o2n_idx,
+                                          &(m->global_i_face_num));
 
   m->n_i_faces = n_new;
   m->i_face_vtx_connect_size = m->i_face_vtx_idx[n_new];
@@ -5666,10 +5666,10 @@ _o2n_idx_update_b_face_arrays(cs_mesh_t        *m,
   /* Update global numbering */
 
   m->n_g_b_faces
-    = cs_mesh_algorithm_o2n_idx_update_global_num(n_old,
-                                                  m->n_g_b_faces,
-                                                  o2n_idx,
-                                                  &(m->global_b_face_num));
+    = cs::mesh::o2n_idx_update_global_num(n_old,
+                                          m->n_g_b_faces,
+                                          o2n_idx,
+                                          &(m->global_b_face_num));
   m->n_b_faces = n_new;
   m->b_face_vtx_connect_size = m->b_face_vtx_idx[n_new];
 }
@@ -6082,11 +6082,11 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     CS_REALLOC(m->global_vtx_num, n_vtx_new, cs_gnum_t);
 
   _build_edge_vertices(m, v2v, n_add_vtx[0], e_v_idx, g_edges_num);
-  cs_mesh_algorithm_build_add_vertices_gnum(m,
-                                            n_edges,
-                                            n_g_edges,
-                                            e_v_idx,
-                                            g_edges_num);
+  cs::mesh::build_add_vertices_gnum(m,
+                                    n_edges,
+                                    n_g_edges,
+                                    e_v_idx,
+                                    g_edges_num);
 
   CS_FREE(g_edges_num);
 
@@ -6108,10 +6108,12 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   CS_FREE(b_face_cen_o);
   CS_FREE(i_face_cen_o);
 
-  cs_mesh_algorithm_build_add_vertices_gnum(m, m->n_b_faces, m->n_g_b_faces,
-                                            f_v_idx, m->global_b_face_num);
-  cs_mesh_algorithm_build_add_vertices_gnum(m, m->n_i_faces, m->n_g_i_faces,
-                         f_v_idx + m->n_b_faces, m->global_i_face_num);
+  cs::mesh::build_add_vertices_gnum(m, m->n_b_faces, m->n_g_b_faces,
+                                    f_v_idx, m->global_b_face_num);
+
+  cs::mesh::build_add_vertices_gnum(m, m->n_i_faces, m->n_g_i_faces,
+                                    f_v_idx + m->n_b_faces,
+                                    m->global_i_face_num);
 
   _build_cell_vertices(m,
                        c2f,
@@ -6124,8 +6126,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   CS_FREE(cell_cen_o);
 
-  cs_mesh_algorithm_build_add_vertices_gnum(m, m->n_cells, m->n_g_cells,
-                                            c_v_idx, m->global_cell_num);
+  cs::mesh::build_add_vertices_gnum(m, m->n_cells, m->n_g_cells,
+                                    c_v_idx, m->global_cell_num);
 
   /* Update counts */
 

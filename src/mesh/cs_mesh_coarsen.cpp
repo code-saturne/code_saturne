@@ -1016,7 +1016,7 @@ _merge_i_faces(cs_mesh_t       *m,
   /* Update global numbering */
 
   m->n_g_i_faces
-    = cs_mesh_algorithm_n2o_update_global_num(n_new, n2o,
+    = cs::mesh::n2o_update_global_num(n_new, n2o,
                                               &(m->global_i_face_num));
 
   m->n_i_faces = n_new;
@@ -1279,7 +1279,7 @@ _merge_b_faces(cs_mesh_t       *m,
   /* Update global numbering */
 
   m->n_g_b_faces
-    = cs_mesh_algorithm_n2o_update_global_num(n_new, n2o,
+    = cs::mesh::n2o_update_global_num(n_new, n2o,
                                               &(m->global_b_face_num));
 
   m->n_b_faces = n_new;
@@ -1733,7 +1733,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   cs_lnum_t *i_face_n2o_pre = nullptr;
 
-  cs_mesh_algorithm_merge_cells(m, n_c_new, c_o2n, &i_face_n2o_pre);
+  cs::mesh::merge_cells(m, n_c_new, c_o2n, &i_face_n2o_pre);
 
   /* Flag merged cells (> 0 for merged cells) */
 

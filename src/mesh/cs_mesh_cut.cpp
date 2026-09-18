@@ -147,7 +147,9 @@ struct _cut_data {
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Remove cells in the solid region
+ * \brief Remove invalid cells based on geometric criteria:
+ *        cells in solid regions, cells with a low parent-to-child
+ *        volume ratio, and highly warped cells.
  *
  * \param[in, out]  mesh            pointer to mesh structure
  * \param[in]       mq_old          pointer to primal mesh_quantities structure
@@ -163,7 +165,7 @@ struct _cut_data {
  */
 /*----------------------------------------------------------------------------*/
 
-static void _remove_cells_in_solid_part
+static void _remove_invalid_cells
   (cs_mesh_t                   *mesh,
    const cs_mesh_quantities_t  *mq_old,
    const cs_lnum_t              n_cells_origin,
@@ -418,7 +420,7 @@ static void _remove_cells_in_solid_part
 
 /*----------------------------------------------------------------------------*/
 /*
- * Update a global numbering array.
+ * \brief Update a global numbering array.
  *
  * Since the algorithm only creates new unique entities, a simple scan is
  * enough.
@@ -1288,10 +1290,10 @@ _update_i_face_connectivity(cs_mesh_t        *mesh,
   /* Update global numbering */
 
   mesh->n_g_i_faces
-    = cs_mesh_algorithm_o2n_idx_update_global_num(mesh->n_i_faces,
-                                                  mesh->n_g_i_faces,
-                                                  i_face_o2n_idx,
-                                                  &(mesh->global_i_face_num));
+    = cs::mesh::o2n_idx_update_global_num(mesh->n_i_faces,
+                                          mesh->n_g_i_faces,
+                                          i_face_o2n_idx,
+                                          &(mesh->global_i_face_num));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1389,10 +1391,10 @@ _update_b_face_connectivity(cs_mesh_t        *mesh,
   mesh->b_face_family = _b_face_family;
 
   mesh->n_g_b_faces
-    = cs_mesh_algorithm_o2n_idx_update_global_num(mesh->n_b_faces,
-                                                  mesh->n_g_b_faces,
-                                                  b_face_o2n_idx,
-                                                  &(mesh->global_b_face_num));
+    = cs::mesh::o2n_idx_update_global_num(mesh->n_b_faces,
+                                          mesh->n_g_b_faces,
+                                          b_face_o2n_idx,
+                                          &(mesh->global_b_face_num));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2414,8 +2416,8 @@ _cut_edges(const cs_stl_mesh_t    *stl_mesh,
     CS_MALLOC(g_edges_num, n_edges, cs_gnum_t);
 
   if (cs_glob_n_ranks > 1) {
-    n_g_edges = cs_mesh_algorithm_sync_edges_flag(mesh, v2v,
-                                                  e_v_idx+1, g_edges_num);
+    n_g_edges = cs::mesh::sync_edges_flag(mesh, v2v,
+                                          e_v_idx+1, g_edges_num);
   }
   else
     n_g_edges = n_edges;
@@ -2443,11 +2445,11 @@ _cut_edges(const cs_stl_mesh_t    *stl_mesh,
     CS_REALLOC(mesh->global_vtx_num, n_vtx_new, cs_gnum_t);
 
   _build_edge_vertices(mesh, v2v, intx, n_add_vtx, e_v_idx, g_edges_num);
-  cs_mesh_algorithm_build_add_vertices_gnum(mesh,
-                                            n_edges,
-                                            n_g_edges,
-                                            e_v_idx,
-                                            g_edges_num);
+  cs::mesh::build_add_vertices_gnum(mesh,
+                                    n_edges,
+                                    n_g_edges,
+                                    e_v_idx,
+                                    g_edges_num);
 
   bft_printf(" New vertices of the IBM interface inserted on the main mesh\n");
   bft_printf("   Number of new vertices added: %d\n", n_add_vtx);
@@ -3742,7 +3744,7 @@ cs_mesh_cut_edges_by_stl(const char  *stl_file_name,
   cs_lnum_t *v2v_idx = v2v->idx;
   cs_lnum_t n_edges = v2v_idx[n_vtx];
 
-  cs_adjacency_t *f2e = cs_mesh_algorithm_build_f2e_connect(mesh, v2v);
+  cs_adjacency_t *f2e = cs::mesh::build_f2e_connect(mesh, v2v);
   cs_adjacency_t *c2f = cs_mesh_adjacency_c2f(mesh, 1);
   cs_adjacency_t *c2e = cs_adjacency_compose(n_edges, c2f, f2e);
 
@@ -4038,15 +4040,15 @@ cs_mesh_cut_edges_by_stl(const char  *stl_file_name,
   if (remove_cells) {
     bft_printf(" Start to remove the solid part of the mesh\n");
 
-    _remove_cells_in_solid_part(mesh,
-                                mq_old,
-                                n_cells_old,
-                                v2v,
-                                c2e,
-                                edge_v0,
-                                cell_flag_inconsistency,
-                                n2o_cells,
-                                vertex_sign);
+    _remove_invalid_cells(mesh,
+                          mq_old,
+                          n_cells_old,
+                          v2v,
+                          c2e,
+                          edge_v0,
+                          cell_flag_inconsistency,
+                          n2o_cells,
+                          vertex_sign);
 
     cs_mesh_quantities_destroy(mq_old);
 

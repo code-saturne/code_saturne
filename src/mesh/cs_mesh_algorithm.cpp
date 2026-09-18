@@ -122,8 +122,8 @@ _update_i_face_arrays(cs_mesh_t        *m,
   /* Update global numbering */
 
   m->n_g_i_faces
-    = cs_mesh_algorithm_n2o_update_global_num(n_new, f_n2o,
-                                              &(m->global_i_face_num));
+    = cs::mesh::n2o_update_global_num(n_new, f_n2o,
+                                      &(m->global_i_face_num));
 
   m->n_i_faces = n_new;
 
@@ -242,6 +242,9 @@ _add_f2e_entry(cs_lnum_t             shift,
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
+namespace cs {
+namespace mesh {
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -260,9 +263,9 @@ _add_f2e_entry(cs_lnum_t             shift,
  *----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_algorithm_n2o_update_global_num(cs_lnum_t          n_new,
-                                        const cs_lnum_t    n2o[],
-                                        cs_gnum_t        **global_num)
+n2o_update_global_num(cs_lnum_t          n_new,
+                      const cs_lnum_t    n2o[],
+                      cs_gnum_t        **global_num)
 {
   cs_gnum_t n_g_new = n_new;
 
@@ -298,10 +301,10 @@ cs_mesh_algorithm_n2o_update_global_num(cs_lnum_t          n_new,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_algorithm_merge_cells(cs_mesh_t       *m,
-                              cs_lnum_t        n_new,
-                              const cs_lnum_t  c_o2n[],
-                              cs_lnum_t       *i_f_n2o[])
+merge_cells(cs_mesh_t       *m,
+            cs_lnum_t        n_new,
+            const cs_lnum_t  c_o2n[],
+            cs_lnum_t       *i_f_n2o[])
 {
   const cs_lnum_t n_old = m->n_cells;
 
@@ -329,9 +332,9 @@ cs_mesh_algorithm_merge_cells(cs_mesh_t       *m,
   /* Update global numbering */
 
   m->n_g_cells
-    = cs_mesh_algorithm_n2o_update_global_num(n_new,
-                                              c_n2o,
-                                              &(m->global_cell_num));
+    = cs::mesh::n2o_update_global_num(n_new,
+                                      c_n2o,
+                                      &(m->global_cell_num));
 
   CS_FREE(c_n2o);
 
@@ -438,10 +441,10 @@ cs_mesh_algorithm_merge_cells(cs_mesh_t       *m,
 /*----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_algorithm_o2n_idx_update_global_num(cs_lnum_t          n_old,
-                                            cs_gnum_t          n_g_old,
-                                            const cs_lnum_t    o2n_idx[],
-                                            cs_gnum_t        **global_num)
+o2n_idx_update_global_num(cs_lnum_t          n_old,
+                          cs_gnum_t          n_g_old,
+                          const cs_lnum_t    o2n_idx[],
+                          cs_gnum_t        **global_num)
 {
   cs_gnum_t n_g_new = o2n_idx[n_old];
 
@@ -494,11 +497,11 @@ cs_mesh_algorithm_o2n_idx_update_global_num(cs_lnum_t          n_old,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_algorithm_build_add_vertices_gnum(cs_mesh_t       *m,
-                                          cs_lnum_t        n_elts,
-                                          cs_gnum_t        n_g_elts,
-                                          const cs_lnum_t  elt_v_idx[],
-                                          const cs_gnum_t  g_elt_num[])
+build_add_vertices_gnum(cs_mesh_t       *m,
+                        cs_lnum_t        n_elts,
+                        cs_gnum_t        n_g_elts,
+                        const cs_lnum_t  elt_v_idx[],
+                        const cs_gnum_t  g_elt_num[])
 {
   cs_gnum_t n_g_add_vtx = 0;
 
@@ -573,10 +576,10 @@ cs_mesh_algorithm_build_add_vertices_gnum(cs_mesh_t       *m,
 /*----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_algorithm_sync_edges_flag(const cs_mesh_t        *m,
-                                  const cs_adjacency_t   *v2v,
-                                  cs_lnum_t               e_v_flag[],
-                                  cs_gnum_t              *g_edges_num)
+sync_edges_flag(const cs_mesh_t        *m,
+                const cs_adjacency_t   *v2v,
+                cs_lnum_t               e_v_flag[],
+                cs_gnum_t              *g_edges_num)
 {
   const cs_lnum_t n_vertices = v2v->n_elts;
   const cs_lnum_t n_edges = v2v->idx[v2v->n_elts];
@@ -652,8 +655,8 @@ cs_mesh_algorithm_sync_edges_flag(const cs_mesh_t        *m,
 /*----------------------------------------------------------------------------*/
 
 cs_adjacency_t *
-cs_mesh_algorithm_build_f2e_connect(const cs_mesh_t      *m,
-                                    const cs_adjacency_t *v2v)
+build_f2e_connect(const cs_mesh_t      *m,
+                  const cs_adjacency_t *v2v)
 {
   assert(v2v != nullptr);
 
@@ -718,5 +721,8 @@ cs_mesh_algorithm_build_f2e_connect(const cs_mesh_t      *m,
 
   return f2e;
 }
+
+} // namespace mesh
+} // namespace cs
 
 /*----------------------------------------------------------------------------*/

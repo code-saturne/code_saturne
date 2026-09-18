@@ -975,7 +975,7 @@ cs_cdo_connect_build(cs_mesh_t *mesh,
 
   cs_adjacency_t *v2v_e   = cs_mesh_adjacency_v2v(mesh);
   const cs_lnum_t n_edges = v2v_e->idx[n_vertices];
-  connect->f2e            = cs_mesh_algorithm_build_f2e_connect(mesh, v2v_e);
+  connect->f2e            = cs::mesh::build_f2e_connect(mesh, v2v_e);
 
   /* Build the edge --> vertices connectivity */
 

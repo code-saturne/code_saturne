@@ -2,7 +2,7 @@
 #define __CS_MESH_ALGORITHM_H__
 
 /*============================================================================
- * Mesh refinement.
+ * Various mesh base algorithms.
  *============================================================================*/
 
 /*
@@ -36,8 +36,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -45,6 +43,9 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+namespace cs {
+namespace mesh {
 
 /*=============================================================================
  * Public function prototypes
@@ -64,9 +65,9 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_algorithm_n2o_update_global_num(cs_lnum_t          n_new,
-                                        const cs_lnum_t    n2o[],
-                                        cs_gnum_t        **global_num);
+n2o_update_global_num(cs_lnum_t          n_new,
+                      const cs_lnum_t    n2o[],
+                      cs_gnum_t        **global_num);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -83,10 +84,10 @@ cs_mesh_algorithm_n2o_update_global_num(cs_lnum_t          n_new,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_algorithm_merge_cells(cs_mesh_t       *m,
-                              cs_lnum_t        n_new,
-                              const cs_lnum_t  c_o2n[],
-                              cs_lnum_t       *i_f_n2o[]);
+merge_cells(cs_mesh_t       *m,
+            cs_lnum_t        n_new,
+            const cs_lnum_t  c_o2n[],
+            cs_lnum_t       *i_f_n2o[]);
 
 /*----------------------------------------------------------------------------
  *
@@ -103,10 +104,10 @@ cs_mesh_algorithm_merge_cells(cs_mesh_t       *m,
  *----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_algorithm_o2n_idx_update_global_num(cs_lnum_t          n_old,
-                                            cs_gnum_t          n_g_old,
-                                            const cs_lnum_t    o2n_idx[],
-                                            cs_gnum_t        **global_num);
+o2n_idx_update_global_num(cs_lnum_t          n_old,
+                          cs_gnum_t          n_g_old,
+                          const cs_lnum_t    o2n_idx[],
+                          cs_gnum_t        **global_num);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -129,11 +130,11 @@ cs_mesh_algorithm_o2n_idx_update_global_num(cs_lnum_t          n_old,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_algorithm_build_add_vertices_gnum(cs_mesh_t       *m,
-                                          cs_lnum_t        n_elts,
-                                          cs_gnum_t        n_g_elts,
-                                          const cs_lnum_t  elt_v_idx[],
-                                          const cs_gnum_t  g_elt_num[]);
+build_add_vertices_gnum(cs_mesh_t       *m,
+                        cs_lnum_t        n_elts,
+                        cs_gnum_t        n_g_elts,
+                        const cs_lnum_t  elt_v_idx[],
+                        const cs_gnum_t  g_elt_num[]);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -150,10 +151,10 @@ cs_mesh_algorithm_build_add_vertices_gnum(cs_mesh_t       *m,
 /*----------------------------------------------------------------------------*/
 
 cs_gnum_t
-cs_mesh_algorithm_sync_edges_flag(const cs_mesh_t        *m,
-                                  const cs_adjacency_t   *v2v,
-                                  cs_lnum_t               e_v_flag[],
-                                  cs_gnum_t              *g_edges_num);
+sync_edges_flag(const cs_mesh_t        *m,
+                const cs_adjacency_t   *v2v,
+                cs_lnum_t               e_v_flag[],
+                cs_gnum_t              *g_edges_num);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -168,11 +169,12 @@ cs_mesh_algorithm_sync_edges_flag(const cs_mesh_t        *m,
 /*----------------------------------------------------------------------------*/
 
 cs_adjacency_t *
-cs_mesh_algorithm_build_f2e_connect(const cs_mesh_t      *m,
-                                    const cs_adjacency_t *v2v);
+build_f2e_connect(const cs_mesh_t      *m,
+                  const cs_adjacency_t *v2v);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+} // namespace mesh
+} // namespace cs
 
 #endif /* __CS_MESH_ALGORITHM_H__ */
