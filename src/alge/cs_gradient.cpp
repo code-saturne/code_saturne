@@ -10473,6 +10473,20 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
 /*----------------------------------------------------------------------------
  * Determine gradient type by legacy "imrgra" value
  *
+ * The mapping is as follows:
+ *
+ * - 0: Green-Gauss with iterative reconstruction
+ *      (\ref CS_GRADIENT_GREEN_ITER)
+ * - 1: Least-squares (\ref CS_GRADIENT_LSQ), standard neighborhood)
+ * - 2, 3: Least-squares (\ref CS_GRADIENT_LSQ), extended neighborhood)
+ * - 4: Green-Gauss with least-squares face values (\ref CS_GRADIENT_GREEN_LSQ),
+ *      standard neighborhood
+ * - 5, 6: Green-Gauss with least-squares face values (\ref CS_GRADIENT_GREEN_LSQ),
+ *      extended neighborhood
+ * - 7: Green-Gauss with vertex-based face values (\ref CS_GRADIENT_GREEN_VTX);
+ *      Not usable for gradient with external forces (e.g. pressure)
+ * - 8: Green-Gauss with renormalization (\ref CS_GRADIENT_GREEN_R)
+ *
  * parameters:
  *   imrgra         <-- gradient option numerical code
  *   gradient_type  --> gradient type

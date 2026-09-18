@@ -25,7 +25,7 @@
 Analyzing the output
 ====================
 
-Checking the convergence
+Checking the convergence {#cs_ug_output_check_convergence}
 ------------------------
 
 Checking the convergence is difficult to automate, but code_saturne
@@ -58,7 +58,7 @@ For each solved variable, it provides:
   chosen solver type, and may be converted to an "equivalent" cost estimation
   in some cases).
 - The normalized residual.
-- The *time drift*;\n
+- The *time drift*;\n <a name="cs_ug_output_time_drift"></a>
   For a given variable \f$ \varia \f$ this is usually the following term:
 
   \f[
