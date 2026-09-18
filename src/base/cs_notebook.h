@@ -42,6 +42,33 @@ cs_notebook_load_from_file(void);
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief Define a notebook entry
+ *
+ * Directly creates an entry in the notebook structure, independently of
+ * the GUI.
+ *
+ * \param[in] name         name of the entry
+ * \param[in] description  optional description (or nullptr)
+ * \param[in] val          associated initial value
+ * \param[in] uncertain    flag indicating if it is an uncertain input/output
+ * \param[in] editable     flag indicating if the value can be modified
+ * \param[in] restart      flag indicating if the value is read at restart
+ * \param[in] log          flag indicating if the value is output in the
+                           default log file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_parameter_add(const char  *name,
+                          const char  *description,
+                          cs_real_t    val,
+                          int          uncertain,
+                          bool         editable,
+                          bool         restart,
+                          bool         log);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Check if a parameter value is present.
  *
  * \param[in]   name      name of the parameter
