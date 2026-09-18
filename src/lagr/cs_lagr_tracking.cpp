@@ -2617,7 +2617,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
       }
 
       /*
-        adimensional distance estimation of face intersection
+        dimensionless distance estimation of face intersection
         (2 if no chance of intersection)
       */
 
@@ -2636,7 +2636,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
       n_in += n_crossings[0];
       n_out += n_crossings[1];
 
-      /* Store the nearest intesection from the O point...*/
+      /* Store the nearest intersection from the O point...*/
       if (t < adist_min && t >= 0) {
         exit_face = face_id;
         if (i >= n_cell_i_faces)
