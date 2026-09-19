@@ -1433,7 +1433,7 @@ cs_halo_state_destroy(cs_halo_state_t  **halo_state)
 /*!
  * \brief Get pointer to default halo state structure.
  *
- * \return]  halo  pointer to pointer to cs_halo structure to destroy.
+ * \return  pointer to pointer to default halo state structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1441,6 +1441,22 @@ cs_halo_state_t *
 cs_halo_state_get_default(void)
 {
   return _halo_state;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set variable location for halo state.
+ *
+ * \param[in, out]  hs          pointer to pointer to halo state structure.
+ * \param[in, out]  alloc_mode  allocation mode (variable location) to set.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_state_set_var_location(cs_halo_state_t  *hs,
+                               cs_alloc_mode_t   alloc_mode)
+{
+  hs->var_location = alloc_mode;
 }
 
 /*----------------------------------------------------------------------------

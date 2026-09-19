@@ -917,126 +917,115 @@ _coarsen_face_cell(const cs_grid_t    *fine,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Send prepared coarsening ids (based on halo send lists) and receive
- * similar values to a cell coarsening array halo.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a section id array for halo elements.
  *
- * parameters:
- *   halo          <->  pointer to halo structure
- *   coarse_send   <->  values defined on halo send lists
- *   coarse_row    <->  pointer to local row coarsening array
- *                      whose halo values are to be received
- *----------------------------------------------------------------------------*/
+ * A section id is encoded as:
+ * (domain_idx*2 + halo_type) * tr_mult + tr_id
+ * With tr_mult = halo->n_transforms + 1.
+ *
+ * \param [in, out]  ctx  parallel     dispatch context
+ * \param[in]        halo              pointer to halo structure
+ * \param[in]        s_or_r            's' for send halo, 'r' for receive halo
+ * \param[out]       halo_section_id   id of halo section for each elemnent
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
-_exchange_halo_coarsening(const cs_halo_t  *halo,
-                          cs_lnum_t         coarse_send[],
-                          cs_lnum_t         coarse_row[])
+_halo_get_rank_and_tr_id(cs_dispatch_context  &ctx,
+                         const cs_halo_t      *halo,
+                         char                  s_or_r,
+                         cs_lnum_t            *halo_section_id)
 {
-  int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
+  const int n_c_domains = halo->n_c_domains;
+  const int tr_mult = halo->n_transforms + 1;
 
-#if defined(HAVE_MPI)
+  const cs_lnum_t *index = (s_or_r == 's') ?
+    halo->send_index : halo->index;
+  const cs_lnum_t *perio_lst = (s_or_r == 's') ?
+    halo->send_perio_lst : halo->perio_lst;
 
-  if (cs_glob_n_ranks > 1) {
+  int n_sections = tr_mult*2*n_c_domains;
+  cs_lnum_t *ht_start_end_id;
+  CS_MALLOC_HD(ht_start_end_id, n_sections+1, cs_lnum_t, ctx.alloc_mode(true));
 
-    int  request_count = 0;
-    const int  local_rank = cs_glob_rank_id;
+  /* Proceed halo section by halo section */
 
-    MPI_Request _request[128];
-    MPI_Request *request = _request;
-    MPI_Status _status[128];
-    MPI_Status *status = _status;
+  for (int domain_id = 0; domain_id < n_c_domains; domain_id++) {
 
-    /* Allocate if necessary */
+    /* Extended and standard halo sections */
 
-    if (halo->n_c_domains*2 > 128) {
-      CS_MALLOC(request, halo->n_c_domains*2, MPI_Request);
-      CS_MALLOC(status, halo->n_c_domains*2, MPI_Status);
-    }
+    for (int halo_id = 0; halo_id < 2; halo_id++) {
 
-    /* Receive data from distant ranks */
+      cs_lnum_t *start_end_id =   ht_start_end_id
+                                + (domain_id*2 + halo_id)*tr_mult;
 
-    for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+      start_end_id[0] = index[domain_id*2 + halo_id];
 
-      cs_lnum_t start = halo->index[2*rank_id];
-      cs_lnum_t length = halo->index[2*rank_id + 2] - halo->index[2*rank_id];
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        MPI_Irecv(coarse_row + halo->n_local_elts + start,
-                  length,
-                  CS_MPI_LNUM,
-                  halo->c_domain_rank[rank_id],
-                  halo->c_domain_rank[rank_id],
-                  cs_glob_mpi_comm,
-                  &(request[request_count++]));
-
-      }
+      if (tr_mult == 1)
+        start_end_id[1] = index[(domain_id+1)*2 + halo_id];
       else
-        local_rank_id = rank_id;
+        start_end_id[1] = perio_lst[4*domain_id + 2*halo_id];
 
-    }
+      /* Now handle periodic cells transformation by transformation */
 
-    /* We wait for posting all receives (often recommended) */
+      for (int tr_id = 0; tr_id < halo->n_transforms; tr_id++) {
+        int tr_shift = 4*(n_c_domains*tr_id + domain_id) + 2*halo_id;
 
-    // MPI_Barrier(comm);
-
-    /* Send data to distant ranks */
-
-    for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-      /* If this is not the local rank */
-
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
-        cs_lnum_t start = halo->send_index[2*rank_id];
-        cs_lnum_t length =   halo->send_index[2*rank_id + 2]
-                           - halo->send_index[2*rank_id];
-
-        MPI_Isend(coarse_send + start,
-                  length,
-                  CS_MPI_LNUM,
-                  halo->c_domain_rank[rank_id],
-                  local_rank,
-                  cs_glob_mpi_comm,
-                  &(request[request_count++]));
-
+        start_end_id[tr_id*2 + 2] = perio_lst[tr_shift];
+        start_end_id[tr_id*2 + 3] =   start_end_id[tr_id*2 + 2]
+                                    + perio_lst[tr_shift + 1];
       }
 
     }
 
-    /* Wait for all exchanges */
+  }
 
-    MPI_Waitall(request_count, request, status);
-
-    if (request != _request) {
-      CS_FREE(request);
-      CS_FREE(status);
+  if (ctx.use_gpu() == false) {
+    for (int i = 0; i < n_sections; i++) {
+      cs_lnum_t s_id = ht_start_end_id[i];
+      cs_lnum_t e_id = ht_start_end_id[i+1];
+      for (cs_lnum_t j = s_id; j < e_id; j++)
+        halo_section_id[j] = i;
     }
   }
 
-#endif /* defined(HAVE_MPI) */
+#if defined(HAVE_ACCEL)
 
-  /* Copy local values in case of periodicity */
+  else {
 
-  if (halo->n_c_domains > 0 && halo->n_transforms > 0) {
+    const int n_elts = (s_or_r == 's') ?
+      halo->n_send_elts[1] : halo->n_elts[1];
 
-    if (local_rank_id > -1) {
+    cs_sync_h2d(ht_start_end_id);
 
-      cs_lnum_t *_coarse_row
-        = coarse_row + halo->n_local_elts + halo->index[2*local_rank_id];
+    // Specific binary search so as to find id in range.
 
-      cs_lnum_t start = halo->send_index[2*local_rank_id];
-      cs_lnum_t length =   halo->send_index[2*local_rank_id + 2]
-                         - halo->send_index[2*local_rank_id];
+    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      cs_lnum_t start_id = 0;
+      cs_lnum_t end_id = n_sections;
+      cs_lnum_t mid_id = (end_id -start_id) / 2;
+      while (start_id < end_id) {
+        if (ht_start_end_id[mid_id+1] < i)
+          start_id = mid_id + 1;
+        else if (ht_start_end_id[mid_id] > i)
+          end_id = mid_id - 1;
+        else
+          break;
+        mid_id = start_id + ((end_id -start_id) / 2);
+      }
+      if (   ht_start_end_id[mid_id] > i
+          || ht_start_end_id[mid_id+1] <= i)
+        mid_id = -1;
+    });
 
-#     pragma omp parallel for if(length > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < length; i++)
-        _coarse_row[i] = coarse_send[start + i];
-
-    }
-
+    ctx.wait();
   }
+
+#endif
+
+  CS_FREE(ht_start_end_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -1069,6 +1058,12 @@ _coarsen_halo(const cs_grid_t   *f,
   const int n_sections = f_halo->n_transforms + 1;
   const int n_f_send = f_halo->n_send_elts[1]; /* Size of full list */
 
+  cs_dispatch_context ctx;
+  if (f->alloc_mode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+  bool use_gpu = ctx.use_gpu();
+
   c_halo = cs_halo_create_from_ref(f_halo);
 
   c->halo = c_halo;
@@ -1082,16 +1077,20 @@ _coarsen_halo(const cs_grid_t   *f,
   c_halo->n_send_elts[0] = 0;
   c_halo->n_send_elts[1] = 0;
 
-# pragma omp parallel for if(f->n_cols_ext > CS_THR_MIN)
-  for (cs_lnum_t ii = f->n_rows; ii < f->n_cols_ext; ii++)
-    coarse_row[ii] = -1;
+  {
+    cs_lnum_t *coarse_row_halo = coarse_row + f->n_rows;
+    cs_arrays_set_value<cs_lnum_t, 1>(ctx,
+                                      f->n_cols_ext - f->n_rows,
+                                      -1,
+                                      coarse_row_halo);
+  }
 
   /* Allocate and initialize counters */
 
-  cs_lnum_t *start_end_id, *sub_num, *coarse_send;
+  cs_lnum_t *start_end_id, *sub_num, *coarse_send_ini;
   CS_MALLOC(start_end_id, n_sections*2, cs_lnum_t);
   CS_MALLOC(sub_num, c_n_rows + 1, cs_lnum_t);
-  CS_MALLOC(coarse_send, n_f_send, cs_lnum_t);
+  CS_MALLOC_HD(coarse_send_ini, n_f_send, cs_lnum_t, ctx.alloc_mode(true));
 
   /* Sub_num values shifted by 1, so 0 can be used for handling
      of removed (penalized) rows) */
@@ -1101,9 +1100,41 @@ _coarsen_halo(const cs_grid_t   *f,
   for (cs_lnum_t ii = 1; ii <= c_n_rows; ii++)
     sub_num[ii] = -1;
 
-# pragma omp parallel for if(n_f_send > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_f_send; ii++)
-    coarse_send[ii] = -1;
+  {
+    const cs_lnum_t *send_list = f_halo->send_list;
+
+#if defined(HAVE_ACCEL)
+    if (ctx.use_gpu())
+      send_list = cs_get_device_ptr_const(send_list);
+#endif
+
+    ctx.parallel_for(n_f_send, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      coarse_send_ini[ii] = coarse_row[send_list[ii]] + 1;
+    });
+    ctx.wait();
+
+    if (use_gpu)
+      cs_sync_d2h(coarse_send_ini);
+  }
+
+  /* Directly build halo send buffer */
+
+  cs_lnum_t *coarse_send
+    = static_cast<cs_lnum_t *>(cs_halo_sync_pack_init_state(f_halo,
+                                                            CS_HALO_STANDARD,
+                                                            CS_LNUM_TYPE,
+                                                            1,
+                                                            nullptr,
+                                                            nullptr));
+
+#if defined(HAVE_ACCEL)
+
+  if (use_gpu) {
+    cs_halo_state_t *hs = cs_halo_state_get_default();
+    cs_halo_state_set_var_location(hs, cs_check_device_ptr(coarse_row));
+  }
+
+#endif
 
   /* Counting and marking pass */
   /*---------------------------*/
@@ -1149,7 +1180,7 @@ _coarsen_halo(const cs_grid_t   *f,
       for (cs_lnum_t ii = start_id; ii < end_id; ii++) {
         assert(   f_halo->send_list[ii] >= 0
                && f_halo->send_list[ii] < f_halo->n_local_elts);
-        cs_lnum_t jj = coarse_row[f_halo->send_list[ii]] + 1;
+        cs_lnum_t jj = coarse_send_ini[ii];
         if (sub_num[jj] == -1) {
           sub_num[jj] = sub_count;
           sub_count += 1;
@@ -1173,7 +1204,7 @@ _coarsen_halo(const cs_grid_t   *f,
       /* Reset sub_num for next section or domain */
 
       for (cs_lnum_t ii = start_id; ii < end_id; ii++)
-        sub_num[coarse_row[f_halo->send_list[ii]] + 1] = -1;
+        sub_num[coarse_send_ini[ii]] = -1;
       sub_num[0] = -2;
 
     }
@@ -1188,9 +1219,13 @@ _coarsen_halo(const cs_grid_t   *f,
   /* Exchange and update coarsening list halo */
   /*------------------------------------------*/
 
-  _exchange_halo_coarsening(f_halo, coarse_send, coarse_row);
+#if defined(HAVE_ACCEL)
+  if (use_gpu)
+    cs_sync_h2d(coarse_send);
+#endif
 
-  CS_FREE(coarse_send);
+  cs_halo_sync_start(f_halo, coarse_row, nullptr);
+  cs_halo_sync_wait(f_halo, coarse_row, nullptr);
 
   /* Proceed halo section by halo section */
 
@@ -1434,7 +1469,7 @@ _coarsen_halo(const cs_grid_t   *f,
 
   /* Free memory */
 
-  CS_FREE(coarse_send);
+  CS_FREE(coarse_send_ini);
   CS_FREE(sub_num);
   CS_FREE(start_end_id);
 
@@ -5118,7 +5153,7 @@ _automatic_aggregation_dx_msr_v1(const cs_grid_t       *f,
  *----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_aggr_strenght_dx_msr
+_aggr_strength_dx_msr
 (
   const cs_grid_t       *g,
   cs_grid_coarsening_t   coarsening_type,
@@ -5316,7 +5351,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
     _penalization_threshold : -1;
 
   const cs_lnum_t f_nnz
-    = _aggr_strenght_dx_msr(f,
+    = _aggr_strength_dx_msr(f,
                             coarsening_type,
                             penalization_threshold,
                             f_c_row,
@@ -6460,7 +6495,7 @@ _automatic_aggregation_dx_msr_pgm
     _penalization_threshold : -1;
 
   // const cs_lnum_t f_nnz =
-  _aggr_strenght_dx_msr(f,
+  _aggr_strength_dx_msr(f,
                         coarsening_type,
                         penalization_threshold,
                         aggr_row,
@@ -6652,7 +6687,7 @@ _automatic_aggregation_dx_msr_nd(const cs_grid_t       *f,
     _penalization_threshold : -1;
 
   const cs_lnum_t f_nnz
-    = _aggr_strenght_dx_msr(f,
+    = _aggr_strength_dx_msr(f,
                             coarsening_type,
                             penalization_threshold,
                             f_c_row,
