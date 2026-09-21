@@ -1031,7 +1031,7 @@ _cut_cells(cs_mesh_t             *mesh,
           bft_printf("sub_face_vtx_lst --> ");
           for (cs_lnum_t k = v0; k < v1; k++)
             bft_printf("%d ", sub_face_vtx_lst[k]);
-          bftprintf("\n");
+          bft_printf("\n");
 #endif
 
           /* Compare the circulation of the cycle with the sub face.
