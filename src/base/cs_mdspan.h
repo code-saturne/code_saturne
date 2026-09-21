@@ -679,6 +679,21 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Check if object data is located on device or not
+   *
+   * \return true if data is on device, false otherwise.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  inline bool
+  data_on_device()
+  {
+    return cs_mem_is_device_ptr(_data);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Check if object is empty or not
    *
    * \return true if size = 0 and false otherwise
@@ -1396,13 +1411,11 @@ protected:
       }
       concatenate_char(err, closeb);
 
-#if !defined(__CUDA_ARCH__) && \
-    !defined(SYCL_LANGUAGE_VERSION) && \
-    !defined(__HIP_DEVICE_COMPILE__)
+#if !defined(CS_DEVICE_COMPILE)
       bft_error(__FILE__,__LINE__,0,"%s\n", err);
 #else
       const char *empty_str = " ";
-      __assert_fail(err, empty_str, 0, empty_str);
+      __assert_fail(err, __FILE__, __LINE__, __func__);
 #endif
     }
     return out_of_bounds;

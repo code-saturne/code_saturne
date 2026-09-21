@@ -938,8 +938,7 @@ cs_halo_sync
   cs_mdspan_r<T, N>&     span       /*!<[in,out] reference to mdspan_r */
 )
 {
-  bool on_device = cs_mem_is_device_ptr(span.data());
-  cs_halo_sync<T, N>(halo, sync_mode, on_device, span);
+  cs_halo_sync<T, N>(halo, sync_mode, span.data_on_device(), span);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -963,8 +962,7 @@ cs_halo_sync
   cs_mdspan_r<T, N>&     span  /*!<[in,out] reference to mdspan_r */
 )
 {
-  bool on_device = cs_mem_is_device_ptr(span.data());
-  cs_halo_sync<T, N>(halo, CS_HALO_STANDARD, on_device, span);
+  cs_halo_sync<T, N>(halo, CS_HALO_STANDARD, span.data_on_device(), span);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1158,7 +1156,7 @@ cs_halo_sync_r
   static_assert(N == 1 || N == 2,
                 "Only possible for arrays of dim 1 or 2.");
 
-  bool on_device = cs_mem_is_device_ptr(span.data());
+  bool on_device = span.data_on_device();
   int stride = (N == 1) ? 1 : span.extent(1);
 
   if (stride == 3) {
