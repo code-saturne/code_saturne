@@ -86,8 +86,7 @@ avoid the risk of losing particles).
 
 - Creating non-conformal meshes may lead to warped faces.
 
-\image html bpg_mesh/Fig2_bpg_mesh_generation.png "Figure 2: a warped face,
-colored in red" width=20%
+\image html bpg_mesh/Fig2_bpg_mesh_generation.png "Figure 2: a warped face, colored in red" width=20%
 
 #### Aspect ratio
 
