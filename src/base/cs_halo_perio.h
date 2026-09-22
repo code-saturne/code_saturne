@@ -193,6 +193,25 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t      *halo,
                                      cs_halo_type_t        sync_mode,
                                      T                     var[]);
 
+
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real tensor (symmetric interleaved) between
+ * periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   ctx       <-> dispatch context
+ *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   var       <-> symmetric tensor to update (6 values per elt)
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_perio_sync_var_sym_tens(const cs_halo_t      *halo,
+                                cs_dispatch_context  &ctx,
+                                cs_halo_type_t        sync_mode,
+                                T                     var[]);
+
 /*----------------------------------------------------------------------------*/
 
 #endif /* CS_HALO_PERIO_H */

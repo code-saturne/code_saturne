@@ -191,9 +191,9 @@ _apply_tensor_rotation(const cs_real_t   matrix[3][4],
  *----------------------------------------------------------------------------*/
 
 template <typename T>
-static void
-_apply_sym_tensor_rotation(cs_real_t   matrix[3][4],
-                           T          *tensor)
+CS_F_HOST_DEVICE static inline void
+_apply_sym_tensor_rotation(const cs_real_t   matrix[3][4],
+                           T                  *tensor)
 {
   cs_lnum_t  i, j, k, l;
 
@@ -917,6 +917,108 @@ cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
 }
 
 /*----------------------------------------------------------------------------
+ * Synchronize values for a real tensor (symmetric interleaved) between
+ * periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   ctx       <-> dispatch context
+ *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   var       <-> symmetric tensor to update (6 values per elt)
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_perio_sync_var_sym_tens(const cs_halo_t      *halo,
+                                cs_dispatch_context  &ctx,
+                                cs_halo_type_t        sync_mode,
+                                T                     var[])
+{
+  if (halo == nullptr || sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  if (halo->n_rotations == 0)
+    return;
+
+  const int n_transforms = halo->n_transforms;
+  const cs_lnum_t n_elts = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = halo->periodicity;
+
+  constexpr int n_bounds_max = 8;
+  const int n_h = (sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
+
+  assert(halo != nullptr);
+
+  for (int t_id = 0; t_id < n_transforms; t_id++) {
+
+    const cs_lnum_t shift = 4 * halo->n_c_domains * t_id;
+
+    const fvm_periodicity_type_t perio_type =
+      fvm_periodicity_get_type(periodicity, t_id);
+
+    if (perio_type < FVM_PERIODICITY_ROTATION)
+      continue;
+
+    cs_real_t matrix[3][4];
+    fvm_periodicity_get_matrix(periodicity, t_id, matrix);
+
+    cs_lnum_t bounds[2][n_bounds_max];
+
+    int idx = 0;
+    const int idx_e = halo->n_c_domains * n_h;
+
+    while (idx < idx_e) {
+
+      int n_bounds = 0;
+      cs_lnum_t n = 0;
+
+      while (idx < idx_e && n_bounds < n_bounds_max) {
+
+        const int rank_id = idx / n_h;
+        const int h_shift = (idx % n_h) * 2;
+
+        const cs_lnum_t start =
+          halo->perio_lst[shift + 4 * rank_id + h_shift];
+
+        const cs_lnum_t count =
+          halo->perio_lst[shift + 4 * rank_id + h_shift + 1];
+
+        if (count > 0) {
+          bounds[0][n_bounds] = start;
+          bounds[1][n_bounds] = count;
+
+          n += count;
+          n_bounds++;
+        }
+
+        idx++;
+      }
+
+      if (n == 0)
+        continue;
+
+      ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t idxb) mutable {
+
+        cs_lnum_t i = idxb;
+        int k = 0;
+
+        while (k < n_bounds && i >= bounds[1][k]) {
+          i -= bounds[1][k];
+          k++;
+        }
+
+        if (k >= n_bounds)
+          return;
+
+        i += bounds[0][k];
+
+        _apply_sym_tensor_rotation(matrix, var + 6 * (n_elts + i));
+      });
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Synchronize values for a real gradient of a tensor (symmetric interleaved)
  * between periodic cells.
  *
@@ -1113,5 +1215,16 @@ cs_halo_perio_sync_var_sym_tens_grad<double>(const cs_halo_t      *halo,
                                              cs_halo_type_t        sync_mode,
                                              double                var[]);
 
+template void
+cs_halo_perio_sync_var_sym_tens<float>(const cs_halo_t      *halo,
+                                       cs_dispatch_context  &ctx,
+                                       cs_halo_type_t        sync_mode,
+                                       float                 var[]);
+
+template void
+cs_halo_perio_sync_var_sym_tens<double>(const cs_halo_t      *halo,
+                                       cs_dispatch_context  &ctx,
+                                       cs_halo_type_t        sync_mode,
+                                       double                var[]);
 
 /*----------------------------------------------------------------------------*/

@@ -777,6 +777,7 @@ _pre_vector_multiply_sync_x_end(const cs_matrix_t   *matrix,
                                     matrix->db_size);
       else if (matrix->db_size == 6)
         cs_halo_perio_sync_var_sym_tens(matrix->halo,
+                                        ctx,
                                         CS_HALO_STANDARD,
                                         x);
       ctx.wait();
