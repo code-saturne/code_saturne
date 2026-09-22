@@ -1,7 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-
 #-------------------------------------------------------------------------------
-
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2026 EDF S.A.
@@ -19,41 +17,15 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
 #-------------------------------------------------------------------------------
 
-# Sphinx documentation sources (to be distributed)
 sphinxdir = $(pkgdatadir)/doc/sphinx
 
-# dist_sphinx_DATA = \
-# conf.py \
-# index.rst \
-# section_advanced_modeling.rst \
-# section_api.rst \
-# section_basic_modeling.rst \
-# section_developer_guide.rst \
-# section_model.rst \
-# section_running_computation.rst \
-# section_studymanager.rst \
-# section_user_examples.rst \
-# generate_rst.py \
-# generate_toctree.py
-
-# Install Sphinx doc if sphinx-build is available
-install-data-local:
-	@if test -x "$(SPHINXBUILD)" > /dev/null 2>&1; then \
-	  echo "Generating Sphinx documentation..."; \
-	  $(SPHINXBUILD) -b html $(top_builddir)/doc/sphinx $(DESTDIR)$(pkgdatadir)/doc/sphinx/html \
-	    -C \
-	    --conf-dir $(srcdir) \
-	    -d $(top_builddir)/doc/sphinx/.doctrees \
-	    -D breathe_projects.code_saturne=$(top_builddir)/doc/doxygen/src/xml; \
-	  echo "Sphinx documentation installed."; \
-	else \
-	  echo "sphinx-build not found, skipping Sphinx documentation."; \
-	fi
-
+# Generate RST files from Doxygen XML and copy static files
 sphinx-doc:
+	echo "Copying static Sphinx files to builddir..."; \
+	cp $(srcdir)/index.rst $(top_builddir)/doc/sphinx/; \
+	cp $(srcdir)/section_*.md $(top_builddir)/doc/sphinx/; \
 	if [ -f "$(top_builddir)/doc/doxygen/src/xml/index.xml" ]; then \
 	  echo "Generating API RST from Doxygen XML..."; \
 	  python3 $(srcdir)/generate_rst.py $(top_srcdir) $(top_builddir); \
@@ -61,6 +33,36 @@ sphinx-doc:
 	  echo "Doxygen XML not found, skipping API RST generation."; \
 	fi
 
-clean-local:
-	rm -rf _build
+# Generate Sphinx HTML documentation (RST from Doxygen XML + sphinx-build)
+html-local: sphinx-doc
+	@if test -x "$(SPHINXBUILD)" > /dev/null 2>&1; then \
+	  echo "Generating Sphinx documentation..."; \
+	  builddir="$(abs_top_builddir)" $(SPHINXBUILD) -b html $(top_builddir)/doc/sphinx \
+	    $(top_builddir)/doc/sphinx/html \
+	    -c $(srcdir) \
+	    -d $(top_builddir)/doc/sphinx/.doctrees \
+	    -D breathe_projects.code_saturne=$(abs_top_builddir)/doc/doxygen/src/xml; \
+	  echo "Sphinx documentation generated."; \
+	else \
+	  echo "sphinx-build not found, skipping Sphinx documentation."; \
+	fi
 
+# Install only if HTML already generated
+install-data-local:
+	@if test -d "$(top_builddir)/doc/sphinx/html"; then \
+	  $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)/doc/sphinx"; \
+	  cp -R $(top_builddir)/doc/sphinx/html \
+	    $(DESTDIR)$(pkgdatadir)/doc/sphinx/; \
+	  echo "Sphinx documentation installed."; \
+	else \
+	  echo "Sphinx HTML not found, skipping install. Run 'make doc' first."; \
+	fi
+
+# Clean generated files
+clean-local:
+	rm -rf $(top_builddir)/doc/sphinx/html \
+	       $(top_builddir)/doc/sphinx/.doctrees \
+	       $(top_builddir)/doc/sphinx/api \
+	       $(top_builddir)/doc/sphinx/_build \
+	       $(top_builddir)/doc/sphinx/index.rst \
+	       $(top_builddir)/doc/sphinx/section_*.rst

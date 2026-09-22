@@ -26,7 +26,7 @@ project = 'code_saturne'
 
 # Breathe is optionnal - only if Doxygen XML is available
 builddir = os.environ.get("builddir", "")
-doxygen_xml = os.path.join(builddir, "docs/doxygen/src/xml/") if builddir else ""
+doxygen_xml = os.path.join(builddir, "doc/doxygen/src/xml/") if builddir else ""
 doxygen_available = builddir and os.path.exists(
     os.path.join(doxygen_xml, "index.xml"))
 
