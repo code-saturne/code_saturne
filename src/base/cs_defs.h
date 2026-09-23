@@ -948,15 +948,13 @@ concatenate_char
  */
 /*--------------------------------------------------------------------------*/
 
-template<class T,
-         class... Ts,
-         class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
+template<class T, class... Ts>
 CS_F_HOST_DEVICE
 inline
 constexpr bool
 any_eq
 (
-  const T     ref_val, /*!<[in] Reference value to compare to */
+  const T&    ref_val, /*!<[in] Reference value to compare to */
   const Ts... vals     /*!<[in] Parameter pack to compare to ref_val */
 )
 {
@@ -971,9 +969,7 @@ any_eq
  */
 /*--------------------------------------------------------------------------*/
 
-template<class T,
-         class... Ts,
-         class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
+template<class T, class... Ts>
 CS_F_HOST_DEVICE
 inline
 constexpr bool
@@ -994,9 +990,7 @@ all_eq
  */
 /*--------------------------------------------------------------------------*/
 
-template<class T,
-         class... Ts,
-         class = std::enable_if_t<(std::is_same_v<T, Ts> && ...)> >
+template<class T, class... Ts>
 CS_F_HOST_DEVICE
 inline
 constexpr bool
