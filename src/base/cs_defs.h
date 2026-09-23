@@ -800,6 +800,43 @@ struct are_integral<T, Args...> {
 template <typename... Args>
 struct always_true : std::true_type {};
 
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Utility template to check if two objects are comparable using the
+ *        == opeartor.
+ *
+ * \tparam[] T
+ * \tparam[] U
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class T, class U, class = void>
+struct is_eq_comparable : std::false_type {};
+
+/*----------------------------------------------------------------------------*/
+
+template<class T, class U>
+struct is_eq_comparable<T,
+                        U,
+                        std::void_t<decltype(   std::declval<T>()
+                                             == std::declval<U>())>
+                       > : std::true_type {};
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Utility template to check if a given type T is comparable with all
+ *        members of a parameters pack.
+ *
+ * \tparam[] T
+ * \tparam[] Ts
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class T, class... Ts>
+using all_eq_comparable =
+    std::conjunction<is_eq_comparable<T, Ts>...>;
+
 /*--------------------------------------------------------------------------*/
 /*!
  * \brief A swap method which is callable from GPU and not only CPU.
@@ -948,7 +985,8 @@ concatenate_char
  */
 /*--------------------------------------------------------------------------*/
 
-template<class T, class... Ts>
+template<class T, class... Ts,
+         std::enable_if_t<all_eq_comparable<T, Ts...>::value, int> = 0>
 CS_F_HOST_DEVICE
 inline
 constexpr bool
@@ -969,7 +1007,8 @@ any_eq
  */
 /*--------------------------------------------------------------------------*/
 
-template<class T, class... Ts>
+template<class T, class... Ts,
+         std::enable_if_t<all_eq_comparable<T, Ts...>::value, int> = 0>
 CS_F_HOST_DEVICE
 inline
 constexpr bool
@@ -990,7 +1029,8 @@ all_eq
  */
 /*--------------------------------------------------------------------------*/
 
-template<class T, class... Ts>
+template<class T, class... Ts,
+         std::enable_if_t<all_eq_comparable<T, Ts...>::value, int> = 0>
 CS_F_HOST_DEVICE
 inline
 constexpr bool
