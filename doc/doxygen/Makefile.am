@@ -33,6 +33,12 @@ user_guide developer_guide
 
 if HAVE_DOXYGEN
 
+# Copy some image subdirectories explicitely, as Doxygen still does
+# not correctly handle relative paths with <img> html tags, needed
+# instead of Mardown commands when size tags are needed.
+# IMAGE_SUBDIRS = bpg_mesh dg ug_catalyst
+IMAGE_SUBDIRS = ug_catalyst
+
 DOXYGENCMD = export TEXINPUTS="$(abs_top_srcdir)/doc/style/$(cs_tex_path_end)"; \
   srcdir="$(top_srcdir)" builddir="$(top_builddir)" ple_docdir="$(ple_docdir)" \
   PLE_DOX_SECTION="$(ple_dox_tag)" NEPTUNE_CFD="$(NEPTUNE_CFD)" \
@@ -52,6 +58,10 @@ doxygen-src:
 	if test "$(NEPTUNE_CFD)" = "neptune_cfd" ; then \
 	  cp $(top_builddir)/neptune_cfd/docs/doxygen/neptune.tag . ;\
 	fi ;\
+	$(MKDIR_P) src/images; \
+	for d in $(IMAGE_SUBDIRS) ; do \
+	  \cp -Rp $(top_srcdir)/doc/doxygen/images/$$d src/images/ ;\
+	done ; \
 	$(DOXYGENCMD) $(top_srcdir)/doc/doxygen/Doxyfile-src
 
 doxygen-ui:
@@ -104,6 +114,8 @@ install-html-local:
 		$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen/ui"; \
 	  \cp -R ui/html/*  $(DESTDIR)$(htmldir)/doxygen/ui/ ;\
 	fi ;\
+	$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen/images"; \
+	\cp -R src/images/* $(DESTDIR)$(htmldir)/doxygen/images/
 	$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen/src"; \
 	\cp -R src/html/* $(DESTDIR)$(htmldir)/doxygen/src/
 

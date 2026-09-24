@@ -53,12 +53,6 @@ the default EnSight format output):
 Preparing the Catalyst script
 ------------------------------
 
-<!--
-  Workaround for Doxygen issue #6783
-  (https://github.com/doxygen/doxygen/issues/6783), provided on that issue
-  by hannesduske on Nov 24, 2025: use <img> fallback path.
--->
-
 ### Step 1: setup visualization from code_saturne computation data
 
 Load post-hoc (i.e. classical) visualization data from a prior simulation
@@ -66,7 +60,7 @@ and prepare a visualization pipeline.
 
 <p><a class="anchor" id="fig_ug_catalyst_01_initial_pipeline"></a></p>
 <div class="image">
-<img src="ug_catalyst_01_initial_pipeline.png" width="95%" alt="" onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_01_initial_pipeline.png';">
+<img src="../images/ug_catalyst/ug_catalyst_01_initial_pipeline.png" width="95%" alt="" >
 <div class="caption">Initial Visualization</div>
 </div>
 
@@ -81,8 +75,7 @@ as *catalyst* (also the name of the writer format string) or
 
 <p><a class="anchor" id="ug_catalyst_02_rename_input"></a></p>
 <div class="image">
-<img src="ug_catalyst_02_rename_input.png" width="95%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_02_rename_input.png';">
+<img src="../images/ug_catalyst/ug_catalyst_02_rename_input.png" width="95%" alt="">
 <div class="caption">Renaming the pipeline input</div>
 </div>
 
@@ -104,8 +97,7 @@ in a later stage.
 
 <p><a class="anchor" id="fig_ug_catalyst_03_local_path"></a></p>
 <div class="image">
-<img src="ug_catalyst_03_local_path.png" width="95%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_03_local_path.png';">
+<img src="../images/ug_catalyst/ug_catalyst_03_local_path.png" width="95%" alt="">
 <div class="caption">Prune absolute path</div>
 </div>
 
@@ -127,8 +119,7 @@ the input of previously defined filters:
 
 <p><a class="anchor" id="fig_ug_catalyst_04_add_ghost_cells_1"></a></p>
 <div class="image">
-<img src="ug_catalyst_04_add_ghost_cells_1.png" width="95%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_04_add_ghost_cells_1.png';">
+<img src="../images/ug_catalyst/ug_catalyst_04_add_ghost_cells_1.png" width="95%" alt="">
 <div class="caption">Insert ghost cells filter</div>
 </div>
 
@@ -137,8 +128,7 @@ following will appear:
 
 <p><a class="anchor" id="fig_ug_catalyst_05_add_ghost_cells_2"></a></p>
 <div class="image">
-<img src="ug_catalyst_05_add_ghost_cells_2.png" width="30%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_05_add_ghost_cells_2.png';">
+<img src="../images/ug_catalyst/ug_catalyst_05_add_ghost_cells_2.png" width="30%" alt="">
 <div class="caption">Insert ghost cells dialog</div>
 </div>
 
@@ -161,8 +151,7 @@ as well as .csv data.
 
 <p><a class="anchor" id="fig_ug_catalyst_06_extractor_1"></a></p>
 <div class="image">
-<img src="ug_catalyst_06_extractor_1.png" width="90%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_06_extractor_1.png';">
+<img src="../images/ug_catalyst/ug_catalyst_06_extractor_1.png" width="95%" alt="">
 <div class="caption">Define extractor</div>
 </div>
 
@@ -177,8 +166,7 @@ on user preferences.
 
 <p><a class="anchor" id="fig_ug_catalyst_07_extractor_2"></a></p>
 <div class="image">
-<img src="ug_catalyst_07_extractor_2.png" width="90%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_07_extractor_2.png';">
+<img src="../images/ug_catalyst/ug_catalyst_07_extractor_2.png" width="95%" alt="">
 <div class="caption">Extractor dialog</div>
 </div>
 
@@ -190,8 +178,7 @@ in the menu location for this option:
 
 <p><a class="anchor" id="fig_ug_catalyst_08_save_state_1"></a></p>
 <div class="image">
-<img src="ug_catalyst_08_save_state_1.png" width="90%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_08_save_state_1.png';">
+<img src="../images/ug_catalyst/ug_catalyst_08_save_state_1.png" width="95%" alt="">
 <div class="caption">Save Catalyst state</div>
 </div>
 
@@ -199,8 +186,7 @@ A first dialog allows selecting the filename and output location:
 
 <p><a class="anchor" id="fig_ug_catalyst_09_save_state_2"></a></p>
 <div class="image">
-<img src="ug_catalyst_09_save_state_2.png" width="80%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_09_save_state_2.png';">
+<img src="../images/ug_catalyst/ug_catalyst_09_save_state_2.png" width="80%" alt="">
 <div class="caption">Catalyst state file dialog</div>
 </div>
 
@@ -213,8 +199,7 @@ In some complex cases, using a Python-defined in the *Global Trigger* option  ma
 
 <p><a class="anchor" id="fig_ug_catalyst_10_save_state_3"></a></p>
 <div class="image">
-<img src="ug_catalyst_10_save_state_3.png" width="40%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_10_save_state_3.png';">
+<img src="../images/ug_catalyst/ug_catalyst_10_save_state_3.png" width="40%" alt="">
 <div class="caption">Catalyst state settings dialog</div>
 </div>
 
@@ -229,8 +214,7 @@ or filter and view settings may be done here.
 
 <p><a class="anchor" id="fig_ug_catalyst_20_alternative_cleanup"></a></p>
 <div class="image">
-<img src="ug_catalyst_20_alternative_cleanup.png" width="80%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_20_alternative_cleanup.png';">
+<img src="../images/ug_catalyst/ug_catalyst_20_alternative_cleanup.png" width="80%" alt="">
 <div class="caption">Direct edit of Catalyst script</div>
 </div>
 
@@ -247,8 +231,7 @@ than post-hoc output while keeping a low output data volume. In this example, we
 
 <p><a class="anchor" id="fig_ug_catalyst_30_add_cs_writer"></a></p>
 <div class="image">
-<img src="ug_catalyst_30_add_cs_writer.png" width="85%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_30_add_cs_writer.png';">
+<img src="../images/ug_catalyst/ug_catalyst_30_add_cs_writer.png" width="85%" alt="">
 <div class="caption">Add code_saturne Catalyst writer</div>
 </div>
 
@@ -256,10 +239,22 @@ Once the writer is created, do not forget to associate it with the needed meshes
 
 <p><a class="anchor" id="fig_ug_catalyst_31_associate_cs_mesh"></a></p>
 <div class="image">
-<img src="ug_catalyst_31_associate_cs_mesh.png" width="85%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_31_associate_cs_mesh.png';">
+<img src="../images/ug_catalyst/ug_catalyst_31_associate_cs_mesh.png" width="85%" alt="">
 <div class="caption">Associate postprocessing mesh to Catalyst</div>
 </div>
+
+### Catalyst writer options and implmentation selection
+
+With Catalyst 2, several additional options are available:
+
+- Structure organizes the output hierarchy to match that used when
+  generating the Catalyst script:
+  * **Multi-bloc (legacy)** matches the output of legacy mesh format readers,
+    such as the default EnSight readers.
+  * **Partitioned Dataset** matches the output of more recent mesh readers.
+
+- Implementation type allows choosing between ParaView (the default), a Catalyst
+  stub, or Catalyst 1 if available.
 
 Generated output
 ----------------
@@ -275,8 +270,7 @@ the first output appears as follows:
 
 <p><a class="anchor" id="fig_ug_catalyst_40_stream_lines_50"></a></p>
 <div class="image">
-<img src="ug_catalyst_stream_lines1_000050.png" width="90%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_stream_lines1_000050_v0.png';">
+<img src="../images/ug_catalyst/ug_catalyst_stream_lines1_000050.png" width="90%" alt="">
 <div class="caption">Catalyst output at 50 time steps</div>
 </div>
 
@@ -285,7 +279,7 @@ horizontal. This positioning is quite sensitive to the render window size, so
 forcing some color legend properties in ParaView instead of keeping the defaults may
 be recommended. Forcing the size of the render view in Catalyst to the size
 of the view in the ParaView GUI may also help. Here, we force the orientation
-of the colorbar in ParaView.
+of the color bar in ParaView.
 
 Also, some transparency artifacts appear in the middle of the
 domain. We may notice that in the initial pipeline setup, as shown in the
@@ -310,8 +304,7 @@ on 2 MPI ranks, the first output appears as follows:
 
 <p><a class="anchor" id="fig_ug_catalyst_40_stream_lines_50"></a></p>
 <div class="image">
-<img src="ug_catalyst_stream_lines1_000050.png" width="90%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_stream_lines1_000050_v0.png';">
+<img src="../images/ug_catalyst/ug_catalyst_stream_lines1_000050.png" width="90%" alt="">
 <div class="caption">Catalyst output at 50 time steps</div>
 </div>
 
@@ -320,8 +313,7 @@ progressed:
 
 <p><a class="anchor" id="fig_ug_catalyst_41_stream_lines_200"></a></p>
 <div class="image">
-<img src="ug_catalyst_stream_lines1_000200.png" width="90%" alt=""
-onerror="this.onerror.null; this.src='../images/ug_catalyst/ug_catalyst_stream_lines1_000200.png';">
+<img src="../images/ug_catalyst/ug_catalyst_stream_lines1_000200.png" width="90%" alt="">
 <div class="caption">Catalyst output at 200 time steps</div>
 </div>
 
@@ -381,7 +373,7 @@ to override the python script directory.
 When working on a Catalyst Python script, using Catalyst Replay
 often allows testing changes in that script with a much smaller turnaround
 time than running the simulation each time, so may be quite useful
-for this purpuse.
+for this purpose.
 
 Studies with multiple meshes
 ============================
@@ -462,6 +454,37 @@ Note that Kitware ParaView builds are based on MPICH, while those of
 the Salome platform use OpenMPI, so in many cases, using such binaries
 may be possible as long as the associated MPI library matches or is
 compatible with the one used by code_saturne.
+
+The `CATALYST_IMPLEMENTATION_NAME` environment variable may be used to override
+the GUI-based implmentation type selection, with the following possible values:
+  * `paraview` (default)
+  * `stub`
+  * `legacy` (legacy Catalyst, a.k.a. Catalyst1). This is not a standard
+    Catalyst value, but a code_saturne extension, allowing to revert
+    to Catalyst1 if needed.
+
+Temporarily disabling Catalyst
+------------------------------
+
+In some cases, it may be useful to completely disable Catalyst output,
+for example when running a study or test suite using Catalyst output on a
+build with no Catalyst support.
+
+Also, when running code_saturne under case under a debugger, loading
+ParaView Catalyst may be very slow, especially when using Valgrind,
+so disabling Catalyst can be very useful if the issue is unrelated to
+in-situ post processing.
+
+To do this without requiring a change of setup, `CATALYST_IMPLEMENTATION_NAME`
+may be set to `stub`, though this will still load a (lighter) library.
+
+In code_saturne, following additional options are supported
+  * `ensight` (Ensight Gold)
+  * `med` (MED)
+  * `CGNS`
+
+This allows generating output using the associated format instead of
+using Catalyst, which may be useful for debugging.
 
 Additional resources
 ====================
