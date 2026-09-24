@@ -61,7 +61,7 @@
     \e i.e. adding <tt> cs_glob_mesh-> </tt> in front of the name of the
     variable.
   - For a more concise syntax, defining a local \c m or \c mesh variable is recommended:
-    \code{.c}
+    \code{.cpp}
     const cs_mesh_t *m = cs_glob_mesh;
     \endcode
     so that the shorter name of the local variable may be used.
@@ -105,7 +105,7 @@
     \e i.e. adding <tt> cs_glob_mesh_quantities-> </tt> in front of the name of
     the variable.
   - For a more concise syntax, defining a local \c mq variable is recommended:
-    \code{.c}
+    \code{.cpp}
     const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
     \endcode
     so that the shorter name of the local variable may be used.
@@ -115,18 +115,18 @@
 
   C code                                       |  Description
   -------------------------------------------- | -------------
-   <tt> cs_glob_mesh_quantities->b_sym_flag    |  Symmetry flag for boundary faces
-   <tt> cs_glob_mesh_quantities->cell_cen      |  Cell center coordinates
-   <tt> cs_glob_mesh_quantities->i_face_normal |  Surface normal of interior faces
-   <tt> cs_glob_mesh_quantities->b_face_normal |  Surface normal of border faces
-   <tt> cs_glob_mesh_quantities->i_face_cog    |  Center of gravity of interior faces
-   <tt> cs_glob_mesh_quantities->b_face_cog    |  Center of gravity of border faces
-   <tt> cs_glob_mesh_quantities->cell_vol      |  Cell volume
-   <tt> cs_glob_mesh_quantities->i_face_surf   |  Surface of interior faces
-   <tt> cs_glob_mesh_quantities->b_face_surf   |  Surface of boundary faces
-   <tt> cs_glob_mesh_quantities->i_dist        |  Distance between the cell center and \n the center of gravity of interior faces
-   <tt> cs_glob_mesh_quantities->b_dist        |  Distance between the cell center and \n the center of gravity of border faces
-   <tt> cs_glob_mesh_quantities->weight        |  Interior faces weighting factor
+   <tt> cs_glob_mesh_quantities->b_sym_flag    </tt> |  Symmetry flag for boundary faces
+   <tt> cs_glob_mesh_quantities->cell_cen      </tt> |  Cell center coordinates
+   <tt> cs_glob_mesh_quantities->i_face_normal </tt> |  Surface normal of interior faces
+   <tt> cs_glob_mesh_quantities->b_face_normal </tt> |  Surface normal of border faces
+   <tt> cs_glob_mesh_quantities->i_face_cog    </tt> |  Center of gravity of interior faces
+   <tt> cs_glob_mesh_quantities->b_face_cog    </tt> |  Center of gravity of border faces
+   <tt> cs_glob_mesh_quantities->cell_vol      </tt> |  Cell volume
+   <tt> cs_glob_mesh_quantities->i_face_surf   </tt> |  Surface of interior faces
+   <tt> cs_glob_mesh_quantities->b_face_surf   </tt> |  Surface of boundary faces
+   <tt> cs_glob_mesh_quantities->i_dist        </tt> |  Distance between the cell center and \n the center of gravity of interior faces
+   <tt> cs_glob_mesh_quantities->b_dist        </tt> |  Distance between the cell center and \n the center of gravity of border faces
+   <tt> cs_glob_mesh_quantities->weight        </tt> |  Interior faces weighting factor
 
 */
 // _____________________________________________________________________________
@@ -165,7 +165,7 @@
       <em>ϕ</em>). This can be made either <em>via</em> the
       interface or by declaring that scalar using
       `cs_parameters_add_variable_variance` in
-      \ref cs_user_parameters.c.
+      \ref cs_user_parameters.cpp.
 
  \par Accessing variables and properties in C:
 
@@ -287,10 +287,11 @@ rather than in a field over all mesh cells.
 - This is the case for the specific heat <em>C<sub>p</sub></em>.
 
   - If <em>C<sub>p</sub></em> is constant, it is based on the reference
-    value \ref cs_glob_fluid_properties->cp0.\n
-    When this is the case, \ref cs_glob_fluid_properties->icp should remain set to 0.\n
+    value \ref cs_fluid_properties_t::cp0 "cs_glob_fluid_properties->cp0".\n
+    When this is the case, \ref cs_fluid_properties_t::icp "cs_glob_fluid_properties->icp"
+    should remain set to 0.\n
     When <tt>icp</tt> is initialized to 1 (by the GUI, or in
-    \ref cs_user_parameters.c, it is automatically reset to the id of
+    \ref cs_user_parameters.cpp, it is automatically reset to the id of
     the  cell-based property field referenced in the above table.
 
 - This is the same for the dynamic diffusivity <em>K</em> of each scalar.
@@ -303,15 +304,15 @@ rather than in a field over all mesh cells.
     the base scalar field's \ref diffusivity_id key (accessible using
     \ref cs_field_key_id("diffusivity_id")).\n
     For example, for a scalar field <tt>f</tt>:\n
-    <tt> int k_f_id = \ref cs_field_get_key_int(f, \ref cs_field_key_id("diffusivity_id")); \n
-    cs_field_t *kf = \ref cs_field_by_id(k_f_id); </tt>
+    <tt> int k_f_id = f->get_key_int("diffusivity_id"); \n
+    cs_field_t *kf = cs_field_by_id(k_f_id); </tt>
 
   \section cs_var_dico_refs Reference physical values
 
   Reference physical values represent either the fluid properties if they are
   constant, either simple mean values for the initialization if properties are
   variable and defined in \ref cs_user_physical_properties.
-  Reference values can be set in the GUI or in \ref cs_user_parameters.c.
+  Reference values can be set in the GUI or in \ref cs_user_parameters.cpp.
 
    C code                                                                                                          | Description
   ---------------------------------------------------------------------------------------------------------------- | -----------

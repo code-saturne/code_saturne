@@ -193,7 +193,7 @@ formats or visualization tools that do not support polygonal or polyhedral
 elements. In such cases, these elements can be discarded or automatically
 subdivided into supported element types.
 
-## In_situ output with ParaView Catalyst
+## In-situ output with ParaView Catalyst
 
 For the proper use of a Catalyst writer, see the detailed
 [step-by step instructions and recommendations](@ref cs_ug_catalyst).

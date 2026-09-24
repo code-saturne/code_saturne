@@ -63,14 +63,14 @@ a third-degree polynomial law may produce negative density values).
   and the value associated to the field's \ref diffusivity_ref keyword.
   To assign a variable value to <em>C<sub>p</sub></em>, the user **must** specify
   it in the GUI (with a user law) or set \ref cs_fluid_properties_t::icp to
-  1 for \ref cs_glob_fluid_properties in \ref cs_user_parameters.c,
+  1 for \ref cs_glob_fluid_properties in \ref cs_user_parameters.cpp,
   and assign a value for each cell to the array `cpro_cp` which can be
   accessed through \ref CS_F_(cp)->val.
 
 - In the same manner, to have a variable dynamic diffusivity for a given
   scalar}, the user **must** specify it in the GUI (with a user law)
   or set that field's \ref diffusivity_id keyword to a value > -1
-  in \ref cs_user_parameters.c before assigning values to the matching field.
+  in \ref cs_user_parameters.cpp before assigning values to the matching field.
 
 - For variable (in space) properties, it is always possible to assign a value
   in the GUI and overwrite it in \ref cs_user_physical_properties.
@@ -144,10 +144,10 @@ The tensor representing the pressure drops is supposed to be symmetric and posit
 \anchor fig_gui_head_loss_coeffs
 \image html gui_head_loss_coeffs.png "Head loss coefficients"
 
-In the user sources, two files can be of use: \ref cs_user_zones.c
-(called at the computation start) to define volume zones and \ref cs_user_head_losses.c
+In the user sources, two files can be of use: \ref cs_user_zones.cpp
+(called at the computation start) to define volume zones and \ref cs_user_head_losses.cpp
 (called at each iteration) to specify the values of the head losses coefficients.
-As usual, volume zones defined with the GUI are available in \ref cs_user_head_losses.c.
+As usual, volume zones defined with the GUI are available in \ref cs_user_head_losses.cpp.
 
 Source terms
 ============
@@ -166,7 +166,7 @@ The example is valid for a velocity component, for a turbulent variable
 (\f$k\f$, \f$\varepsilon$, $R_{ij}\f$, \f$\omega\f$, \f$\varphi\f$ or \f$\overline{f}\f$)
 and for a scalar (or for the average of the square of the fluctuations
 of a scalar), because the syntax of the \ref cs_user_source_terms function
-in the cs_user_source_terms.c file is similar.
+in the cs_user_source_terms.cpp file is similar.
 
 For user scalars
 ----------------

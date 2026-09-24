@@ -60,7 +60,7 @@ namespace algorithm {
  * \brief Binary search for a given local id in a given array of
  *        ordered local ids, when the id might not be present.
  *
- * \param[in]  l_id_array size  array_size
+ * \param[in]  l_id_array_size  array_size
  * \param[in]  l_id             local id to search for
  * \param[in]  l_id_array       ordered unique local ids array
  *

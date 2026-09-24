@@ -97,7 +97,7 @@ point for beginers.
 Case settings for CDO/HHO schemes
 =============
 
-To set-up a CDO computation, one has to update the cs_user_parameters.c file and
+To set-up a CDO computation, one has to update the cs_user_parameters.cpp file and
 edit successively the following functions
     - \ref cs_user_model,
     - \ref cs_user_parameters

@@ -73,9 +73,8 @@ For definitions using the legacy finite-volume scheme (i.e. not using CDO),
 the \ref cs_user_boundary_conditions (in C) may be used.
 
 For more details about the treatment of boundary conditions, the user
-may refer to the theoretical and computer documentation [@theory] of the
-function `cs_boundary_condition_set_coeffs` (for wall conditions, see `clptur`)
-(to access this document on a workstation, use `code_saturne info –guide theory`).
+may refer to the [theoretical](@ref theory) and user documentation of the
+`cs_boundary_condition_set_coeffs` function (for wall conditions, see `clptur`).
 
 From the user point of view, the boundary conditions are fully defined
 by the arrays specifying the boundary type and conditions
@@ -427,7 +426,7 @@ filled as follows:
     `icodcl[face_id] == 1`, but with a wall exchange coefficient calculated from
     a theoretical law. Therefore, the values of
     `f->bc_coeffs->rcodcl1[face_id]` and
-    `f->bc_coeffs->rcodcl2[face_id]` must be specified: see [@theory].
+    `f->bc_coeffs->rcodcl2[face_id]` must be specified: see [theory](@ref theory).
 
 - If `f->bc_coeffs->icodcl[face_id] == 5`: friction condition, for rough wall
   faces with friction. This condition can not be applied to the pressure.
@@ -558,14 +557,14 @@ The influence of mesh velocity on boundary conditions for fluid modeling is
 managed and modeled in code_saturne as follows (using array names from
 \ref cs_user_boundary_conditions_ale):
 
-- If `ale_bc_type[face_id]` = \ref CS_BOUNDARY_ALE_FIXED: the face is motionless;
+- If `ale_bc_type[face_id]` = \ref CS_BOUNDARY_ALE_FIXED, the face is motionless;
   mesh velocity equals 0.
 
-- If `ale_bc_type[face_id]` = \ref CS_BOUNDARY_ALE_IMPOSED_VEL: tangential mesh
+- If `ale_bc_type[face_id]` = \ref CS_BOUNDARY_ALE_IMPOSED_VEL, tangential mesh
   velocity is modeled as a sliding wall velocity in fluid boundary conditions
   unless a value for fluid sliding wall velocity has been specified.
 
-- If `ale_bc_type[face_id]` = \ref CS_BOUNDARY_ALE_SLIDING: tangential mesh
+- If `ale_bc_type[face_id]` = \ref CS_BOUNDARY_ALE_SLIDING, tangential mesh
   velocity is not taken into account in fluid boundary conditions.
 
 - If `impale[vtx_id] = 1 for all vertices of a boundary face: tangential mesh
@@ -606,10 +605,10 @@ Specific physical models such as dispersed phase, atmospheric flows,
 gas combustion, pulverized fuel combustion, electric arcs models, and
 compressible flows can be activated using the GUI (select the Calculation
 features), or by using the \ref cs_user_model function of the
-cs_user_parameters.c file (called only during the calculation initialization).
+\ref cs_user_parameters.cpp file (called only during the calculation initialization).
 
 Without the GUI, the user can activate the different modules by setting the
-indicators \ref cs_glob_physical_model_flag in the cs_user_model function, (see
+indicators \ref cs_glob_physical_model_flag in the \ref cs_user_model function, (see
 [Base model related options examples](@ref cs_user_parameters_h_cs_user_model)
 for some examples)
 
@@ -618,9 +617,9 @@ time.*
 
 In the framework of the gas combustion modeling, users may impose
 their own enthalpy-temperature tabulation (conversion law). The `use_janaf`
-indicator must be set to 0 in this case (the default value being 1) and the name
-of the tabulation file defined through the **ficfpp** variable (see
-[Specific physical model activation (cs_user_model) examples](@ref cs_user_parameters_cpp)).
+member of \ref cs_glob_combustion_gas_model must be set to `false` in this case (the default value being 1) and the name of the tabulation file defined
+by calling the \ref cs_combustion_gas_set_thermochemical_data_file function.
+[Specific physical model activation (cs_user_model) examples](@ref cs_user_parameters_h_cs_user_model)).
 For more details, the user may refer to the following note
 (thermochemical files).
 
@@ -974,7 +973,7 @@ For more details about the different parameters and some examples, the user may 
 Prescribing particle boundary conditions
 ========================================
 
-In the framework of the multiphase Lagrangian modelling, the management of the boundary conditions concerns the particle behaviour when there is an interaction between its trajectory and a boundary face. These boundary conditions may be imposed independently of those concerning the Eulerian fluid phase (but they are of course generally consistent). The boundary condition zones are actually redefined by the Lagrangian module ([boundary zones](@ref cs_user_lagr_boundary_conditions_h_zones)), and a type of particle behaviour is associated with each one. The boundary conditions related to particles can be defined in the Graphical User Interface (GUI) or in the \ref cs_user_lagr_boundary_conditions.c} file. More advanced user-defined boundary conditions can be prescribed in the \ref cs_user_lagr_in function from \ref cs_user_lagr_particle.c}.
+In the framework of the multiphase Lagrangian modelling, the management of the boundary conditions concerns the particle behaviour when there is an interaction between its trajectory and a boundary face. These boundary conditions may be imposed independently of those concerning the Eulerian fluid phase (but they are of course generally consistent). The boundary condition zones are actually redefined by the Lagrangian module ([boundary zones](@ref cs_user_lagr_boundary_conditions_h_zones)), and a type of particle behaviour is associated with each one. The boundary conditions related to particles can be defined in the Graphical User Interface (GUI) or in the \ref cs_user_lagr_boundary_conditions.cpp} file. More advanced user-defined boundary conditions can be prescribed in the \ref cs_user_lagr_in function from \ref cs_user_lagr_particle.cpp}.
 
 Use of the GUI
 --------------
@@ -1016,7 +1015,7 @@ Nusselt number see \ref cs_user_lagr_module_thermal_relaxation for examples.
 
 When the **compressible module** is activated, it is recommended to:
     - use the option _time step variable in time and uniform in space_ (idtvar=1) with a maximum
-      Courant number of 0.4 (\ref coumax = 0.4): these choices must be written in \ref cs_user_parameters.c
+      Courant number of 0.4 (\ref coumax = 0.4): these choices must be written in \ref cs_user_parameters.cpp
       or specified with the **GUI**
     - keep the convective numerical schemes proposed by default _i.e._: upwind scheme
 
@@ -1030,7 +1029,7 @@ the user has to fill in without the **GUI**.
 Initialization of the options of the variables
 ==============================================
 
-When the GUI is not being used, the function \ref cs_user_parameters in \ref cs_user_parameters.c
+When the GUI is not being used, the function \ref cs_user_parameters in \ref cs_user_parameters.cpp
 must be completed by the user.\n This function allows to activate the compressible (see \ref cs_user_parameters_h_cs_user_model)
 module and to specify the molecular viscosity (ivivar see \ref cs_user_parameters_h_param_fluid_properties),
 
@@ -1067,7 +1066,7 @@ Management of variable physical properties
 Without the **GUI**, all of the laws governing the physical properties of the fluid
 (molecular viscosity, molecular volumetric viscosity, molecular thermal conductivity and
 molecular dynamic diffusivity of the user-defined scalars) can be specified in the function \ref cs_user_physical_properties of
-the \ref cs_user_physical_properties.c file.
+the \ref cs_user_physical_properties.cpp file.
 
 The user should check that the defined laws are valid for
 the whole variation range of the variables. Moreover, as only the perfect gas with a constant
@@ -1087,8 +1086,8 @@ For some examples we can see:
 
 \page advanced_electric_arcs Electric arcs module
 
-The electric module is composed of a Joule effect module (\ref CS JOULE EFFECT)
-and an electric arcs module (\ref CS ELECTRIC ARCS).
+The electric module is composed of a Joule effect module (\ref CS_JOULE_EFFECT)
+and an electric arcs module (\ref CS_ELECTRIC_ARCS).
 
 The Joule effect module is designed to take into account that effect (for instance in glass
 furnaces) with real or complex potential in the enthalpy equation. The Laplace forces are not
@@ -1105,19 +1104,19 @@ Activating the electric arcs module
 The electric arcs module is activated either:
 
  - in the Graphical User Interface _GUI_: __Calculation features__ --> __Electrical arcs__, the user can choose between _Joule Effect_ for _joule model_ and _Joule Effect_ and _Laplace Forces_ for electric arc
- - or in the user function \ref cs_user_model in cs_user_parameters.c file, by setting the \ref cs_glob_physical_model_flag[\ref CS_ELECTRIC_ARCS] or \ref cs_glob_physical_model_flag[\ref CS_JOULE_EFFECT] parameter to a non-null value.
+ - or in the user function \ref cs_user_model in cs_user_parameters.cpp file, by setting the \ref cs_glob_physical_model_flag[\ref CS_ELECTRIC_ARCS] or \ref cs_glob_physical_model_flag[\ref CS_JOULE_EFFECT] parameter to a non-null value.
 
 Initialization of the variables
 ===============================
 
-The function \re cs_user_initialization allows the user to initialize some of the specific physics variables prompted via \ref cs_user_model. It is called only during the initialization of the calculation. As usual,the user has access to many geometric variables so that the zones can be treated separately if needed (see [Electric arcs example](@ref user_initialization_electric_arcs)).
+The function \ref cs_user_initialization allows the user to initialize some of the specific physics variables prompted via \ref cs_user_model. It is called only during the initialization of the calculation. As usual,the user has access to many geometric variables so that the zones can be treated separately if needed (see [Electric arcs example](@ref user_initialization_electric_arcs)).
 
 The values of potential and its constituents are initialized if required.
 
 It should be noted that the enthalpy is relevant.
 
- - For the _electric arcs_ module, the _enthalpy_ value is taken from the temperature
- of reference \ref t0 (given in \ref cs_user_parameters.cpp)
+- For the _electric arcs_ module, the _enthalpy_ value is taken from the
+ reference temperature `t0` member of \ref cs_glob_fluid_properties (which may be set in \ref cs_user_parameters.cpp)
  from the temperature-enthalpy tables supplied in the data file **dp_ELE**.
  The user must not intervene here.
 
@@ -1138,12 +1137,12 @@ in the function \ref cs_user_physical_properties.
 
 The user should ensure that the defined variation laws are valid for the whole range of
 variables. Particular care should be taken with non-linear laws (for example, a
- \f$3^{rd}\f$ degree polynomial law giving negative values of density)
+ \f$3^{rd}\f$ degree polynomial law giving negative values of density).
 
 \warning
  In the _electric module_, all of the physical properties are considered as variables
- and are therefore stored using the  cs_field API. \ref cp0, \ref viscls0 and \ref viscl0
- are not used
+ and are therefore stored using the  cs_field API. The `cp0`, `viscls0`, and
+ `viscl0` members of \ref cs_glob_fluid_properties are not used.
 
 For the Joule effect, the user is required to supply the physical properties in the
 function. Examples are given which are to be adapted by the user. If the temperature is
@@ -1213,7 +1212,7 @@ Finally, a test is performed to check if the offset is zero or if a boundary
 code saturne-code saturne coupling
 ==================================
 
-The user function \ref cs_user_saturne_coupling in \ref cs_user_coupling.c is
+The user function \ref cs_user_saturne_coupling in \ref cs_user_coupling.cpp is
 used to couple *code_saturne* with itself.
 
 Such couplings allow explicit exchange of boundary conditions and source terms,
@@ -1228,7 +1227,7 @@ given coupled domain see [examples](@ref cs_user_coupling_h_cs_user_saturne_coup
 Fluid-Structure external coupling
 =================================
 
-The function \ref usaste belongs to the module dedicated to external
+The \ref cs_user_fsi_structure_num function belongs to the module dedicated to external
 Fluid-Structure coupling with *code_aster*. Here one defines the boundary
 faces coupled with *code_aster* and the fluid forces components which are
 given to structural calculation. When using external coupling with *code_aster*,
@@ -1245,7 +1244,7 @@ Setting options
 
 The **ALE module** may be activated through the Graphical User Interface (GUI)
 in the **Calculation features** section. It can also be activated
-in the \ref cs_user_model function in \ref cs_user_parameters.c.
+in the \ref cs_user_model function in \ref cs_user_parameters.cpp.
 See [ALE activation](@ref cs_user_parameters_h_cs_user_ale) for examples.
 
 
@@ -1262,7 +1261,7 @@ Mesh velocity boundary conditions
 
 These boundary conditions can be managed through the GUI, or using the
 \ref cs_user_boundary_conditions_ale  function in
-\ref cs_user_boundary_conditions.c file.
+\ref cs_user_boundary_conditions.cpp file.
 
 With the GUI, when the item **Deformable mesh** is selected
 in **Calculation features**, specific boundary condition types
@@ -1343,7 +1342,7 @@ general settings can be defined in the **Coupling parameters** page's
 
 Slightly finer control over these settings is also possible using the
 \ref cs_user_fsi_structure_define function from
-the \ref cs_user_fluid_structure_interaction.c file, as shown in the
+the \ref cs_user_fluid_structure_interaction.cpp file, as shown in the
 [examples](@ref cs_user_fluid_structure_interaction_h_internal) section.
 
 <!-- ======================================================================= -->
@@ -1518,8 +1517,8 @@ Boundary conditions based on several meteorological vertical profiles
 In some cases, especially when outputs of a mesoscale model are used, you
 need to build input boundary conditions from several meteorological vertical
 wind profiles. Cressman interpolation is then used to create the boundary
-conditions. The following files need to be put in the \texttt{DATA} directory:
-\item All *meteo* files giving the different vertical profiles of
+conditions. The following files need to be put in the `DATA` directory:
+ - All *meteo* files giving the different vertical profiles of
 prognostic variables (wind, temperature, turbulent kinetic energy and
 dissipation).
  - A file called imbrication_files_list.txt which is a list
@@ -1530,7 +1529,7 @@ interpolation is not used (for example: temperature, turbulent kinetic energy).
 This file must follow the rules indicated previously.
 
 The following files should be put in the SRC directory:
-  - The user source file cs_user_parameters.cpp. In this file, set
+ - The user source file cs_user_parameters.cpp. In this file, set
 the cressman_flag of each variable, for which the Cressman
 interpolation should be enabled, to *true*.
 
@@ -1545,7 +1544,7 @@ atmospheric application:
  - cs_user_parameters.cpp: to activate the Cressman interpolation.
    For example, it is used to impose inhomogeneous boundary conditions.
    [examples](@ref cs_user_parameters)
- - cs_user_extra_operations.c to generate vertical profiles for post processing.
+ - cs_user_extra_operations.cpp to generate vertical profiles for post processing.
    [examples](@ref cs_user_extra_operations_examples_mean_profiles)
  - cs_user_boundary_conditions.cpp: showq how to set up the boundary conditions and to set
    a heterogeneous roughness length... [examples](@ref atmospheric_examples)
@@ -1565,10 +1564,10 @@ could be a *scalar with drift* if wanted (aerosols for example).
 
 The simulations can be done using 2 different methods:
  - Prescribing a boundary condition code **total imposed mass flux** for
-some boundary faces using the cs_user_boundary_conditions.c user function.
+some boundary faces using the cs_user_boundary_conditions.cpp user function.
  - Using a scalar source term. In this case, the air inflow is not taken
    into account. The user has to add an explicit part to the equations
-   for the scalar through the cs_user_source_terms.c file. This is
+   for the scalar through the cs_user_source_terms.cpp file. This is
    done by selecting the cells and adding the source term \ref st_exp
    which equals to the air flux multiplied by the mass fraction, while the
    implicit part \ref st_imp is set to zero.
@@ -1596,15 +1595,14 @@ atmosphere at daily scale and the time evolution of ground surface temperature
 and humidity. Surface temperature is calculated with a prognostic equation
 whereas a 2-layers model is used to compute surface humidity.
 
-The parameter \ref cs_glob_atmo_option->ground_model in the file
-\ref cs_user_parameters.cpp needs to be equal to one to
-activate the model. Then, the source file \ref cs_atmo_groun_model.cpp  is used.
+The `ground_model` member in \ref cs_glob_atmo_option in the file
+\ref cs_user_parameters.cpp needs to be set to one to
+activate the model. Then, the source file \ref cs_atmo_ground_model.cpp  is used.
 
-Three variables need to be initialized in the file \ref cs_user_initialization.cpp: deep ground
-temperature, surface temperature and humidity.
+Three variables need to be initialized in the \ref cs_user_initialization.cpp file: deep ground temperature, surface temperature and humidity.
 
-The user needs to give the values of the model constants in the file
-\ref cs_user_parameters.cpp: roughness length, albedo, emissivity...
+The user needs to give the values of the model constants in the
+\ref cs_user_parameters.cpp file: roughness length, albedo, emissivity...
 
 In case of a 3D simulation domain, land use data has to be provided for the domain.
 Values of model constants for the land use categories have also to be
@@ -1705,7 +1703,7 @@ In some cases, results can be improved with the following modifications:
   avoid inflow and outflow on the same boundary zone (side of your domain).
   Another possibility is to use a cylindrical mesh.
 - To avoid inflow and outflow on the same boundary zone (side of your domain),
-  avoid the case of vertical profile in the input data \texttt{meteo} file with
+  avoid the case of vertical profile in the input data `meteo` file with
   changes of the sign of velocity of wind (\f$V_x\f$ or/and \f$V_y\f$).
 
 <!-- ======================================================================= -->
@@ -1746,11 +1744,11 @@ Rotor/stator interface
 
 Unsteady rotor/stator: in the input mesh(es), the
 interface between rotor and stator domains has to be composed of
-\underline boundary faces. Then the interface boundary faces are joined
+<u>boundary faces</u>. Then the interface boundary faces are joined
 during the computation and become internal faces, as is usual for
 mesh joining in the preprocessing stage. A simple way to ensure
 joining is not done prematurely is to provide
-\underline separated meshes for each rotor or stator domain.
+<u>separated meshes</u> for each rotor or stator domain.
   - *Frozen Rotor*: the interface can be composed of boundary
    faces (in which case the interface boundary faces are joined at
    the beginning of the computation) or of internal faces.
@@ -1763,7 +1761,7 @@ particular for the *unsteady rotor/stator* model), boundary faces
 are joined by the solver during the computation, based on the current
 rotor position. It is thus important to be aware that the success of
 a joining operation is strongly dependent on the
-\underline quality of the mesh at the interface. More precisely,
+<u>quality</u> of the mesh at the interface. More precisely,
 the refinement must be as similar as possible at both sides of the
 interface. Moreover, it is reminded that the tolerance parameter of
 a joining is a fraction of the shortest edge linked with a vertex of
@@ -1789,7 +1787,7 @@ If the meshes at both sides of the interface are very different and
 can not be modified, a fallback solution is to use the rotor/stator model
 based on the boundary conditions coupling.
 
-\Warning: Contrarily to the mesh joining approach, the
+\warning: Contrarily to the mesh joining approach, the
 boundary conditions coupling approach is not fully conservative.
 
 Turbomachinery dedicated postprocessing functions
@@ -1911,7 +1909,7 @@ M_{ij}=\alpha_{ij}-\widetilde{\beta}_{ij}\\
 \f]
 
 In the framework of LES, the total viscosity (molecular + sub-grid) in
-$kg.m^{-1}.s^{-1}$ may be written in \CS:
+$kg.m^{-1}.s^{-1}$ may be written in code_saturne:
 \f[
 \begin{array}{llll}
 \mu_{\text{total}}&=&\mu+\mu_{\text{sub-grid}} &

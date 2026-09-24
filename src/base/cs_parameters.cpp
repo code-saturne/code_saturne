@@ -290,8 +290,8 @@
         modified in \ref cs_user_physical_properties will keep being
         updated. Beware of non-consistencies if these properties would
         normally affect the dynamic field (modification of density for
-        instance).\n Useful if and only if \ref dimens::nscal "nscal"
-        \f$>\f$ 0 and the calculation is a restart.
+        instance).\n Useful if and only scalar fields are solved
+        and the calculation is a restart.
 
 */
 

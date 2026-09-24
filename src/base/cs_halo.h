@@ -784,8 +784,8 @@ cs_halo_dump(const cs_halo_t  *halo,
  * (id between 1 and n_local_elements) to ghost elements on distant ranks
  * (id between n_local_elements + 1 to n_local_elements_with_halo).
  *
- * \tparam[in]      Stride      number of (interlaced) values by entity
- * \tparam[in]      T           value type
+ * \tparam          Stride      number of (interlaced) values by entity
+ * \tparam          T           value type
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       sync_mode   synchronization mode (standard or extended)
@@ -817,8 +817,8 @@ cs_halo_sync(const cs_halo_t  *halo,
  * (id between 1 and n_local_elements) to ghost elements on distant ranks
  * (id between n_local_elements + 1 to n_local_elements_with_halo).
  *
- * \tparam[in]      Stride      number of (interlaced) values by entity
- * \tparam[in]      T           value type
+ * \tparam          Stride      number of (interlaced) values by entity
+ * \tparam          T           value type
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       on_device   run on accelerated device if possible
@@ -843,8 +843,8 @@ cs_halo_sync(const cs_halo_t  *halo,
  * \brief Update ghost cell values of an mdspan with layout right data storage.
  *        Only callable for mdspan with N = 1 or N = 2.
  *
- * \tparam[in] T value type
- * \tparam[in] N stride size
+ * \tparam     T value type
+ * \tparam     N stride size
  */
 /*--------------------------------------------------------------------------*/
 
@@ -900,8 +900,8 @@ cs_halo_sync
  *        and using the standard halo mode
  *        Only callable for mdspan with N = 1 or N = 2.
  *
- * \tparam[in] T value type
- * \tparam[in] N stride size
+ * \tparam     T value type
+ * \tparam     N stride size
  */
 /*--------------------------------------------------------------------------*/
 
@@ -924,8 +924,8 @@ cs_halo_sync
  *        as a device pointer.
  *        Only callable for mdspan with N = 1 or N = 2.
  *
- * \tparam[in] T value type
- * \tparam[in] N stride size
+ * \tparam     T value type
+ * \tparam     N stride size
  */
 /*--------------------------------------------------------------------------*/
 
@@ -949,8 +949,8 @@ cs_halo_sync
  *        as a device pointer.
  *        Only callable for mdspan with N = 1 or N = 2.
  *
- * \tparam[in] T value type
- * \tparam[in] N stride size
+ * \tparam  T  value type
+ * \tparam  N  stride size
  */
 /*--------------------------------------------------------------------------*/
 
@@ -974,7 +974,7 @@ cs_halo_sync
  * (id between 1 and n_local_elements) to ghost elements on distant ranks
  * (id between n_local_elements + 1 to n_local_elements_with_halo).
  *
- * \tparam[in]      T           value type
+ * \tparam  T  value type
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       sync_mode   synchronization mode (standard or extended)
@@ -1000,7 +1000,7 @@ cs_halo_sync_r(const cs_halo_t  *halo,
  * (id between 1 and n_local_elements) to ghost elements on distant ranks
  * (id between n_local_elements + 1 to n_local_elements_with_halo).
  *
- * \tparam[in]      T           value type
+ * \tparam  T  value type
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       on_device   run on accelerated device if possible
@@ -1023,7 +1023,7 @@ cs_halo_sync_r(const cs_halo_t  *halo,
  * (id between 1 and n_local_elements) to ghost elements on distant ranks
  * (id between n_local_elements + 1 to n_local_elements_with_halo).
  *
- * \tparam[in]      T           value type
+ * \tparam  T   value type
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       sync_mode   synchronization mode (standard or extended)
@@ -1049,7 +1049,7 @@ cs_halo_sync_r(const cs_halo_t  *halo,
  * (id between 1 and n_local_elements) to ghost elements on distant ranks
  * (id between n_local_elements + 1 to n_local_elements_with_halo).
  *
- * \tparam[in]      T           value type
+ * \tparam  T  value type
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       sync_mode   synchronization mode (standard or extended)
@@ -1073,7 +1073,7 @@ cs_halo_sync_r(const cs_halo_t  *halo,
  * (id between 1 and n_local_elements) to ghost elements on distant ranks
  * (id between n_local_elements + 1 to n_local_elements_with_halo).
  *
- * \tparam[in]      T           value type
+ * \tparam  T  value type
  *
  * \param[in]       halo        pointer to halo structure
  * \param[in]       sync_mode   synchronization mode (standard or extended)
@@ -1096,8 +1096,8 @@ cs_halo_sync_r(const cs_halo_t  *halo,
  *
  * Only callable for mdspan with N = 1 or N = 2.
  *
- * \tparam[in] T value type
- * \tparam[in] N stride size
+ * \tparam  T  value type
+ * \tparam  N  stride size
  */
 /*--------------------------------------------------------------------------*/
 
@@ -1139,8 +1139,8 @@ cs_halo_sync_r
  *
  * Only callable for mdspan with N = 1 or N = 2.
  *
- * \tparam[in] T value type
- * \tparam[in] N stride size
+ * \tparam  T  value type
+ * \tparam  N  stride size
  */
 /*--------------------------------------------------------------------------*/
 

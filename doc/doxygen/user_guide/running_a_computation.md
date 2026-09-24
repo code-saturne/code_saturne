@@ -79,7 +79,7 @@ prepare and run a standard case:
     available [user examples](@ref cs_user_examples);
     avoid copying unneeded sections from examples, as they make the code harder
     to read and maintain;
-  - all files with a .c, .f90, or. C++ extension in `SRC` will be compiled
+  - all files with a .c, .f90, .cpp, or .cxx extension in `SRC` will be compiled
     and linked with the code at execution;
   - avoid placing non-user files (modified or not) from the main code_saturne source
     tree in `SRC`, unless specifically provided by the core development team as a

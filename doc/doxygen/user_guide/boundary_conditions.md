@@ -70,7 +70,7 @@ Boundary conditions with LES
 
 ### Synthetic Eddy Method
 
-The \ref cs_user_les_inflow.c user-defined function allows to generate the
+The \ref cs_user_les_inflow.cpp user-defined function allows to generate the
 unsteady boundary conditions for the LES by the Synthetic Eddy
 Method.
 The basic principle of this method is illustrated in the following figure.
@@ -99,7 +99,7 @@ those provided by the Synthetic Eddy Method.
 
 In the current version of code_saturne, the Synthetic Eddy Method is not
 available through the GUI but only through the
-\ref cs_user_les_inflow.c user file.
+\ref cs_user_les_inflow.cpp user file.
 
 - \ref cs_user_les_inflow_define (required): define parameters of synthetic turbulence
   at LES inflow.

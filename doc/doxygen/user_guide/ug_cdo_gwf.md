@@ -62,8 +62,7 @@ concepts underpinning CDO schemes.
 
 * [**Article:** New Polyhedral Discretisation Methods applied to the Richards Equation: CDO Schemes in Code Saturne][BoFoM18] ([**HAL** preprint version][BoFoM18_hal])
 
-
-To set-up a GWF computation, one has to update the cs_user_parameters.c file and
+To set-up a GWF computation, one has to update the cs_user_parameters.cpp file and
 edit the function \ref cs_user_model at least in simple cases. In more complex
 cases, editing \ref cs_user_finalize_setup should be necessary.
 

@@ -120,7 +120,7 @@ an could easily be forgotten.
 
 When writing simple output to files, it is important to check for the
 local rank, and to avoid writing to a same file from multiple processors,
-unless dedicated features are used, such as the \ref cs_file.c functions.
+unless dedicated features are used, such as the \ref cs_file.cpp functions.
 
 ### Some notes about periodicity
 

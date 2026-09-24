@@ -680,7 +680,7 @@ namespace cs {
  *
  * This function is overloaded in cs_math.h for floating-point values.
  *
- * \tparam T value type
+ * \tparam  T value type
  *
  * \param[in]  a  value
  *
@@ -701,7 +701,7 @@ abs(const T  a)
  *
  * This function is overloaded in cs_math.h for floating-point values.
  *
- * \tparam T value type
+ * \tparam  T value type
  *
  * \param[in]  a   first value
  * \param[in]  b   second value
@@ -724,7 +724,7 @@ min(const T  a,
  *
  * This function is overloaded in cs_math.h for floating-point values.
  *
- * \tparam T value type
+ * \tparam  T value type
  *
  * \param[in]  a   first value
  * \param[in]  b   second value
@@ -747,7 +747,7 @@ max(const T  a,
  *
  * This function is overloaded in cs_math.h for floating-point values.
  *
- * \tparam T value type
+ * \tparam  T value type
  *
  * \param[in] x    initial value
  * \param[in] xmin min value for clamping
@@ -806,8 +806,8 @@ struct always_true : std::true_type {};
  * \brief Utility template to check if two objects are comparable using the
  *        == opeartor.
  *
- * \tparam[] T
- * \tparam[] U
+ * \tparam T
+ * \tparam U
  */
 /*--------------------------------------------------------------------------*/
 
@@ -828,8 +828,8 @@ struct is_eq_comparable<T,
  * \brief Utility template to check if a given type T is comparable with all
  *        members of a parameters pack.
  *
- * \tparam[] T
- * \tparam[] Ts
+ * \tparam T
+ * \tparam Ts
  */
 /*--------------------------------------------------------------------------*/
 
@@ -1051,7 +1051,7 @@ none_eq
 /*!
  * \brief Get the cs_datatype_t from a typename
  *
- * \tparam T : datatype
+ * \tparam  T  datatype
  */
 /*----------------------------------------------------------------------------*/
 
