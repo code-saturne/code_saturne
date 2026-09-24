@@ -1583,6 +1583,13 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Alpha constant for a realisable BC for R12 with the Rotta model */
     alpha_rnn = 1.0 / sqrt(cs_turb_crij_c0 + 2.0);
   }
+  else if (model == CS_TURB_RIJ_EPSILON_BFH) {
+    const cs_real_t beta2_ref = 0.137491; /* Reference BFH value near wall */
+    alpha_rnn = sqrt( cs_turb_crij_c0*(1.- 2.*beta2_ref)
+                    / ( (cs_turb_crij_c0 + 2.0 * (1. - beta2_ref))
+                      * (cs_turb_crij_c0 - 2.0 * beta2_ref)
+                      ));
+  }
   else {
     /* FIXME should be derive from the algebraic model */
     /* Alpha constant for a realisable BC for R12 with the SSG model */
@@ -1931,6 +1938,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       || model == CS_TURB_RIJ_OMEGA
       || model == CS_TURB_MIXING_LENGTH
       || model == CS_TURB_RIJ_EPSILON_LRR
+      || model == CS_TURB_RIJ_EPSILON_BFH
       || model == CS_TURB_RIJ_EPSILON_SSG
       || model == CS_TURB_SPALART_ALLMARAS)
      && (visctc > cs_math_epzero)
@@ -2620,7 +2628,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         if (   model == CS_TURB_RIJ_EPSILON_LRR
             || model == CS_TURB_RIJ_EPSILON_SSG
-            || model == CS_TURB_RIJ_EPSILON_BFH
             || (order == CS_TURB_SECOND_ORDER
               && icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED)) {
 
@@ -2730,7 +2737,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         }
 
         /* process only for smooth wall here after */
-        else if (   model == CS_TURB_RIJ_EPSILON_EBRSM
+        else if (   (   model == CS_TURB_RIJ_EPSILON_EBRSM
+                     || model == CS_TURB_RIJ_EPSILON_BFH)
                  && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
 
           cs_real_t pimp = 0.0;
@@ -2810,48 +2818,51 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
           }
 
-          /* Alpha */
+          /* Alpha (EBRSM only) */
 
-          cs_real_t *coefa_al = f_alpha->bc_coeffs->a;
-          cs_real_t *coefb_al = f_alpha->bc_coeffs->b;
-          cs_real_t *cofaf_al = f_alpha->bc_coeffs->af;
-          cs_real_t *cofbf_al = f_alpha->bc_coeffs->bf;
+          if (model == CS_TURB_RIJ_EPSILON_EBRSM) {
 
-          /* Dirichlet Boundary Condition
-             ---------------------------- */
+            cs_real_t *coefa_al = f_alpha->bc_coeffs->a;
+            cs_real_t *coefb_al = f_alpha->bc_coeffs->b;
+            cs_real_t *cofaf_al = f_alpha->bc_coeffs->af;
+            cs_real_t *cofbf_al = f_alpha->bc_coeffs->bf;
 
-          if (cs_glob_wall_functions->iwallf != CS_WALL_F_DISABLED) {
+            /* Dirichlet Boundary Condition
+               ---------------------------- */
 
-            if (yplus > cs_math_epzero) {
-              const cs_real_t ypsd  = 0.5 * (yplus + dplus);
+            if (cs_glob_wall_functions->iwallf != CS_WALL_F_DISABLED) {
 
-              const cs_real_t falpg
-                = 16. /cs_math_pow2(16 + 4.e-2 * ypsd)
-                * exp(- ypsd / (16. + 4.e-2*ypsd) );
+              if (yplus > cs_math_epzero) {
+                const cs_real_t ypsd  = 0.5 * (yplus + dplus);
 
-              const cs_real_t falpv
-                = 1.0 - exp(-(yplus + dplus) / (16. + 4.e-2*(yplus+dplus)));
+                const cs_real_t falpg
+                  = 16. /cs_math_pow2(16 + 4.e-2 * ypsd)
+                  * exp(- ypsd / (16. + 4.e-2*ypsd) );
 
-              pimp  = falpv - (yplus + dplus) * falpg;
+                const cs_real_t falpv
+                  = 1.0 - exp(-(yplus + dplus) / (16. + 4.e-2*(yplus+dplus)));
+
+                pimp  = falpv - (yplus + dplus) * falpg;
+              }
+              else {
+                pimp = 0.;
+              }
             }
             else {
               pimp = 0.;
             }
-          }
-          else {
-            pimp = 0.;
-          }
 
-          hint = 1.0 / distbf;
-          pimp = pimp * cfnne;
+            hint = 1.0 / distbf;
+            pimp = pimp * cfnne;
 
-          cs_boundary_conditions_set_dirichlet_scalar(coefa_al[f_id],
-                                                      cofaf_al[f_id],
-                                                      coefb_al[f_id],
-                                                      cofbf_al[f_id],
-                                                      pimp,
-                                                      hint,
-                                                      cs_math_infinite_r);
+            cs_boundary_conditions_set_dirichlet_scalar(coefa_al[f_id],
+                                                        cofaf_al[f_id],
+                                                        coefb_al[f_id],
+                                                        cofbf_al[f_id],
+                                                        pimp,
+                                                        hint,
+                                                        cs_math_infinite_r);
+          }
 
         }
 

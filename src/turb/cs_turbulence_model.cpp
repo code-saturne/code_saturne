@@ -971,6 +971,7 @@ double cs_turb_c1trit = 4.15;
 
 /*!
  * Coefficient of turbulent DFM flow model.
+ * TODO this term should be coherent with cs_turb_crij2 (3/5 for RDT)
  */
 double cs_turb_c2trit = 0.55;
 
@@ -1234,9 +1235,10 @@ cs_turb_compute_constants(int phase_id)
 
   if (cs::any_eq(cs_glob_turb_model->model,
                  CS_TURB_RIJ_EPSILON_LRR,
-                 CS_TURB_RIJ_EPSILON_SSG,
-                 CS_TURB_RIJ_EPSILON_BFH) )
+                 CS_TURB_RIJ_EPSILON_SSG) )
     f_eps->set_key_double(k_turb_schmidt, 1.22);
+  else if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
+    f_eps->set_key_double(k_turb_schmidt, 1.0 / 0.477000);
   else if (cs_glob_turb_model->model == CS_TURB_RIJ_OMEGA) {
     f_omg->set_key_double(k_turb_schmidt, 1./0.5);
     //TODO specify constants here
@@ -1256,7 +1258,8 @@ cs_turb_compute_constants(int phase_id)
   if (cs_glob_turb_rans_model->idirsm == 0)
     cs_turb_csrij = 0.11;
   else {
-    if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM)
+    if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM
+        || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
       cs_turb_csrij = 0.21;
     else
       cs_turb_csrij = 0.22;
@@ -1292,6 +1295,15 @@ cs_turb_compute_constants(int phase_id)
   cs_turb_csmago_max = cs_turb_csmago*cs_turb_csmago;
   cs_turb_csmago_min = 0.;
 
+  /* Rotta constant for BFH */
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH) {
+    cs_turb_crij_c0 = (2.974546 - 2.0) / 1.5; /* ~0.64969733 (equivalent to CR-1) */
+    cs_turb_crij1 = 1.5 * cs_turb_crij_c0 + 1.0; /* ~1.974546 */
+    cs_turb_ce1 = 1.44;
+    cs_turb_c1trit = 2.0; /* Thermal return-to-isotropy constant (C_theta) */
+    cs_turb_c3trit = cs_turb_crij3; /* C_theta3 = C_B (Eq. 38 of Ferrand et al. 2027) */
+  }
+
   /* In case of Rotta model (ie LRR + Cr2 = 0) compute
    * automatically the C0 constant */
   if ((cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_LRR) &&
@@ -1301,6 +1313,7 @@ cs_turb_compute_constants(int phase_id)
   if (cs::any_eq(cs_glob_turb_model->model,
                  CS_TURB_RIJ_EPSILON_SSG,
                  CS_TURB_RIJ_EPSILON_EBRSM,
+                 CS_TURB_RIJ_EPSILON_BFH,
                  CS_TURB_V2F_BL_V2K) )
     cs_turb_ce2 = 1.83;
 

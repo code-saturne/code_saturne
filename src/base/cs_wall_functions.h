@@ -378,7 +378,8 @@ cs_wall_functions_2scales_continuous(cs_real_t   rnnb,
   Re = sqrt(kinetic_en) * y / l_visc;
   g = exp(-Re/11.);
 
-  /* Comutation of uk*/
+  /* Computation of uk*/
+  //FIXME only for EVM
   *uk = sqrt( (1.-g) * sqrt(cs_turb_cmu) * kinetic_en
              + g * l_visc * vel/y);
 
@@ -488,6 +489,7 @@ cs_wall_functions_2scales_log(cs_real_t   l_visc,
   Re = sqrt(kinetic_en) * y / l_visc;
   g = exp(-Re/11.);
 
+  // FIXME only for EVM
   *uk = sqrt( (1.-g) * sqrt(cs_turb_cmu) * kinetic_en
             + g * l_visc * vel / y);
 
@@ -725,6 +727,8 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
 {
   double urplus, d_up, lmk15;
 
+  //FIXME this should be done for LRR only ?
+  // TODO do a blending with laminar part ?
   if (wf)
     *uk = sqrt(sqrt((1.-cs_turb_crij2)/cs_turb_crij1 * rnnb * kinetic_en));
 
@@ -885,6 +889,7 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
   Re = sqrt(kinetic_en) * (y + y0) / l_visc;
   g = exp(-Re/11.);
 
+  //FIXME only for EVM ?
   *uk = sqrt( (1.-g) * sqrt(cs_turb_cmu) * kinetic_en
             + g * l_visc * vel / (y + y0));
 

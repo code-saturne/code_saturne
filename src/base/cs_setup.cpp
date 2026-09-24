@@ -2285,6 +2285,7 @@ _additional_fields_stage_2(void)
       || (cs_glob_turb_model->itytur == 4 && cs_glob_turb_les_model->idries == 1)
       || cs_glob_turb_model->model == CS_TURB_K_OMEGA
       || cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS
+      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH
       || cs_glob_lagr_reentrained_model->iflow == 1
       || cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES)
     wdo->need_compute = 1;
@@ -3535,7 +3536,9 @@ _additional_fields_stage_3(void)
 
     f_atv->set_key_int(k_log, 0);
 
-    if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM && iggafm == 1) {
+    if ((    cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM
+          || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
+        && iggafm == 1) {
       cs_field_t *f_atvs
         = cs_field_create("anisotropic_turbulent_viscosity_scalar",
                           CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,

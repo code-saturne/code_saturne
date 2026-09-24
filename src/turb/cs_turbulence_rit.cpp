@@ -411,7 +411,7 @@ _turb_flux_st(const char          *name,
      * --------------------------------------------- */
 
     /* Dynamic model must impose dynamic part for the thermal model
-     * See BFH */
+     * See BFH (Ferrand et al. 2027, Eq. 35) */
     if (model == CS_TURB_RIJ_EPSILON_BFH) {
 
       cs_real_t beta2 = c2trit;
@@ -426,37 +426,30 @@ _turb_flux_st(const char          *name,
         beta2 = v_beta2[c_id];
 
       for (cs_lnum_t i = 0; i < 3; i++) {
-        /* Pope 1994:
-         * - 0.5 (C_theta / Tt - 2 alpha1 / Td) * T'u'i
-         *   with Tt the thermal time scale and Td the dynamique time scale
-         *
-         *   -2 alpha1 correspond to C1 (Rotta constant)
-         *
-         *   Rapid term writes:
-         *   beta2 (gradu + gradu^T - Pk / k Id)_ij T'u'j
-         *
-         *   Note that the last term is added to term proportional to u'T'
-         *   (in factor)
-         * */
-        cs_real_t factor = 0.5 * (c1trit / xttdrbt + crij1 /xttke)
-                         - beta2 *pk/tke;
+        /* Pressure-scrambling and dissipation term (Pope 1994, Ferrand et al. 2027 Eq. 35):
+         *   Pi_theta_i - eps_theta_i = - 0.5 * (C_theta / T_t + C_R / T_d) * u_i'theta'
+         *                            + 2 beta2 * S_ik * u_k'theta'
+         *                            + beta2 * (Pk / k) * u_i'theta'
+         *                            - C_B * B_theta_i
+         */
+        const cs_real_t factor = 0.5 * (c1trit / xttdrbt + crij1 / xttke)
+                                 - beta2 * pk / tke;
 
         phiit[i] = - factor * xuta[c_id][i];
         for (cs_lnum_t j = 0; j < 3; j++)
           phiit[i] += beta2
-            * (gradv[c_id][i][j]+gradv[c_id][j][i])* xuta[c_id][j];
+            * (gradv[c_id][i][j] + gradv[c_id][j][i]) * xuta[c_id][j];
 
-         if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
-             && has_buoyant_term == 1)
-           phiit[i] += c3trit*(cpro_beta[c_id] * grav[i] * cvar_tt[c_id]);
+        if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
+            && has_buoyant_term == 1)
+          phiit[i] += c3trit * (cpro_beta[c_id] * grav[i] * cvar_tt[c_id]);
 
-         if (f_phi_ut != nullptr) /* Save it if needed */
-           phi_ut[c_id][i] = phiit[i];
+        if (f_phi_ut != nullptr) /* Save it if needed */
+          phi_ut[c_id][i] = phiit[i];
 
-         cs_real_t imp_term = cell_f_vol[c_id] * crom[c_id] * factor;
+        const cs_real_t imp_term = cell_f_vol[c_id] * crom[c_id] * factor;
 
-         fimp[c_id][i][i] += cs::max(imp_term, 0);
-
+        fimp[c_id][i][i] += cs::max(imp_term, 0.0);
       }
 
     }

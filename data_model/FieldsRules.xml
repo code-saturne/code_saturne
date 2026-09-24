@@ -446,10 +446,12 @@
                Type="property" Location="cells"/>
       </Rule>
 
-      <!-- BFH: additional beta2 -->
+      <!-- BFH: additionnal fields -->
       <Rule Condition="model_eq_CS_TURB_RIJ_EPSILON_BFH">
-        <Description>beta2 coefficient for the Rij BFH model</Description>
+        <Description>Fields for Rij-epsilon BFH turbulence model</Description>
         <Field Name="algo:rij_beta2" Label="beta2" Dimension="1"
+               Type="property" Location="cells"/>
+        <Field Name="algo:cmu" Label="Cmu" Dimension="1"
                Type="property" Location="cells"/>
       </Rule>
 
