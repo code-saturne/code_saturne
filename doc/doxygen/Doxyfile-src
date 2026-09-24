@@ -341,7 +341,7 @@ OPTIMIZE_OUTPUT_SLICE  = NO
 #
 # Note see also the list of default file extension mappings.
 
-EXTENSION_MAPPING      = f90=FortranFree
+EXTENSION_MAPPING      =
 
 # If the MARKDOWN_SUPPORT tag is enabled then doxygen pre-processes all comments
 # according to the Markdown format, which allows for more readable
@@ -947,8 +947,7 @@ FILE_PATTERNS          = *.c \
                          *.hxx \
                          *.md \
                          *.dox \
-                         *.py \
-                         *.f90
+                         *.py
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -2303,10 +2302,7 @@ INCLUDE_FILE_PATTERNS  = *.h
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
 PREDEFINED             = HAVE_CONFIG_H=1 \
-                         "CS_PROCF(x,y)=x" \
                          CS_ENUMF_(e)=e \
-                         BEGIN_C_DECLS= \
-                         END_C_DECLS= \
                          HAVE_MPI \
                          __cplusplus
 
@@ -2317,8 +2313,7 @@ PREDEFINED             = HAVE_CONFIG_H=1 \
 # definition found in the source code.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-EXPAND_AS_DEFINED      = BEGIN_C_DECLS \
-                         END_C_DECLS
+EXPAND_AS_DEFINED      =
 
 # If the SKIP_FUNCTION_MACROS tag is set to YES then doxygen's preprocessor will
 # remove all references to function-like macros that are alone on a line, have
@@ -2471,7 +2466,7 @@ GROUP_GRAPHS           = YES
 # The default value is: NO.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-UML_LOOK               = YES
+UML_LOOK               = NO
 
 # If the UML_LOOK tag is enabled, the fields and methods are shown inside the
 # class node. If there are many fields or methods and many nodes the graph may
