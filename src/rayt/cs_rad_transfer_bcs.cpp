@@ -137,7 +137,7 @@ _set_internal_coupling_bcs(cs_internal_coupling_t  *cpl,
                                      &n_distant,
                                      &faces_distant);
 
-  for (cs_lnum_t i = 0; i < n_distant; i++) {
+  for (cs_lnum_t i = 0; i < n_local; i++) {
     cs_lnum_t face_id = faces_local[i];
     isothm[face_id] = CS_BOUNDARY_RAD_WALL_GRAY;
     xlamp[face_id] = -cs_math_big_r;
