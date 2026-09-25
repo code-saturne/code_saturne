@@ -57,6 +57,15 @@ typedef enum {
   CS_LAGR_PART_ERR
 } cs_lagr_tracking_state_t;
 
+/* Tracking step for cell-to-cell displacement */
+
+typedef enum {
+  CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER,       /*!< 0: Track deterministic virtual partner */
+  CS_LAGR_TRACK_STEP_STOCHASTIC_WALL_SYNC,  /*!< 1: Track stochastic particle to wall sync */
+  CS_LAGR_TRACK_STEP_STOCHASTIC_FINAL,      /*!< 2: Track stochastic particle to final location */
+  CS_LAGR_TRACK_STEP_COMPLETED              /*!< 3: Final location reached */
+} cs_lagr_track_step_t;
+
 /*=============================================================================
  * Global variables
  *============================================================================*/

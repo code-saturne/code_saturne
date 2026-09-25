@@ -151,11 +151,7 @@ typedef struct {
 
   cs_lagr_tracking_state_t  state;  /* current state */
 
-  int tracking_step_id;             /* 1 if cell_wise_integ == 0
-                                         if cell_wise_integ == 1
-                                       0 track deterministic ghost particle
-                                       1 track true stochastic integ particle
-                                       2 final location reached */
+  cs_lagr_track_step_t tracking_step_id; /* Current tracking step/phase */
 
 } cs_lagr_tracking_info_t;
 
@@ -1137,7 +1133,7 @@ _internal_treatment(cs_lagr_particle_set_t  &p_set,
            || internal_conditions->i_face_zone_id[face_id] == CS_LAGR_INLET) {
 
     particle_state = CS_LAGR_PART_OUT;
-    p_info->tracking_step_id = 2;
+    p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
 
     if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
       p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
@@ -1184,7 +1180,7 @@ _internal_treatment(cs_lagr_particle_set_t  &p_set,
       /* Specific treatment in case of particle resuspension modeling */
 
       particle_state = CS_LAGR_PART_TREATED;
-      p_info->tracking_step_id = 2;
+      p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
       if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
         p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
 
@@ -1400,7 +1396,7 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
       || b_type == CS_LAGR_DEPO1) {
 
     particle_state = CS_LAGR_PART_OUT;
-    p_info->tracking_step_id = 2;
+    p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
     if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
       p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
 
@@ -1419,7 +1415,7 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
 
   else if (b_type == CS_LAGR_DEPO2) {
 
-    p_info->tracking_step_id = 2;
+    p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
     if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
       p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
     cs_real_t *cell_cen = fvq->cell_cen[cell_id];
@@ -1447,14 +1443,14 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
       particle_state = CS_LAGR_PART_STUCK;
       if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
         p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
-      p_info->tracking_step_id = 2;
+      p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
 
     }
     else {
       particle_state = CS_LAGR_PART_TREATED;
       if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
         p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
-      p_info->tracking_step_id = 2;
+      p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
     }
 
     event_flag = event_flag | CS_EVENT_DEPOSITION;
@@ -1524,7 +1520,7 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
      /* Deposition criterion: E_kin > E_barr */
     if (energ > energt * 0.5 * particle_diameter) {
 
-      p_info->tracking_step_id = 2;
+      p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
       if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
         p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
       cs_real_t *cell_cen = fvq->cell_cen[cell_id];
@@ -1543,7 +1539,7 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
         particle_state = CS_LAGR_PART_STUCK;
         if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
           p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
-        p_info->tracking_step_id = 2;
+        p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
       }
 
       if (!cs_glob_lagr_model->clogging && cs_glob_lagr_model->resuspension > 0) {
@@ -1563,7 +1559,7 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
         particle_state = CS_LAGR_PART_TREATED;
         if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
           p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
-        p_info->tracking_step_id = 2;
+        p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
       }
 
       if (cs_glob_lagr_model->clogging) {
@@ -1614,7 +1610,7 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
           particle_state = CS_LAGR_PART_TREATED;
           if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
             p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
-          p_info->tracking_step_id = 2;
+          p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
         }
         else {
           cs_lnum_t cur_p_id = 0;
@@ -1758,7 +1754,7 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
           particle_state = CS_LAGR_PART_OUT;
           if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
             p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
-          p_info->tracking_step_id = 2;
+          p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
           p_set.n_part_dep += 1;
           p_set.weight_dep += particle_stat_weight;
 
@@ -2061,7 +2057,7 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
         particle_state = CS_LAGR_PART_OUT;
         if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
           p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
-        p_info->tracking_step_id = 2;
+        p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
 
         /* Recording for log/lagrangian.log */
         p_set.n_part_fou += 1;
@@ -2299,7 +2295,6 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
   /* Useful for cell_wise_integ == 1
    * when the deterministic virtual partner bounces back on a face */
   cs_real_t sum_t_intersect = 0.;
-  bool save_specific_face_interaction = false;
 
  /* trajectory step for (2nd order scheme)
   * 1: 1st order scheme or prediction step for second order moment
@@ -2380,7 +2375,8 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
     }
 
     cs_real_t dt_part = -1.;
-    if (p_info->tracking_step_id  == 0 && sum_t_intersect < cs_math_epzero) {
+    if (   p_info->tracking_step_id == CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER
+        && sum_t_intersect < cs_math_epzero) {
       /* Integration of deterministic virtual partner for cell_wise_integ
        * No new integration if the last face crossed this iteration is
        * is boundary condition resulting on a rebound*/
@@ -2455,7 +2451,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
         && fabs(disp[2] * inv_ref_length) < 1e-15) {
 
 
-      if (p_info->tracking_step_id == 0) {
+      if (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER) {
         /* deterministic virtual partner tracked */
         dt_part =   cs_glob_lagr_time_step->dtp
                   * p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME);
@@ -2478,28 +2474,23 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
                                    &cpgd2,
                                    &cpght,
                                    n_new_particles,
-                                   save_specific_face_interaction);
+                                   false /* loc_rebound */);
 
         p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1;
-        p_info->tracking_step_id = 1; /* now track stochastic particle */
+        p_info->tracking_step_id = CS_LAGR_TRACK_STEP_STOCHASTIC_FINAL;
       }
-      else if (p_info->tracking_step_id == 1) {
-        /* stochastic particle is currently tracked */
-        if (save_specific_face_interaction) {
-          /* Restart new deterministic virtual partner trajectory now that
-           * local effect of specific treatment are seen */
-          for (int i = 0; i < 3; i++)
-            prev_location[i] = particle_coord[i];
-          save_specific_face_interaction = false;
-          p_info->tracking_step_id = 0;
-          /* Update previous state */
-          cs_lagr_particles_current_to_previous(p_set, p_id);
-        }
-
-        else { /* stochastic particle final location reached */
-          particle_state = CS_LAGR_PART_TREATED;
-          p_info->tracking_step_id = 2;
-        }
+      else if (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_STOCHASTIC_WALL_SYNC) {
+        /* stochastic particle has reached the wall/boundary interaction point */
+        for (int i = 0; i < 3; i++)
+          prev_location[i] = particle_coord[i];
+        p_info->tracking_step_id = CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER;
+        /* Update previous state */
+        cs_lagr_particles_current_to_previous(p_set, p_id);
+      }
+      else if (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_STOCHASTIC_FINAL) {
+        /* stochastic particle final location reached */
+        particle_state = CS_LAGR_PART_TREATED;
+        p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
       }
 
       continue;
@@ -2679,7 +2670,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
     }
 
     bool specific_face_interaction = false;
-    int prev_tracking_step_id = p_info->tracking_step_id;
+    cs_lagr_track_step_t prev_tracking_step_id = p_info->tracking_step_id;
 
     if (lagr_model->deposition && exit_face >= 0) {
       cs_lnum_t b_face_id = p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID);
@@ -2694,11 +2685,11 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
     /* may be use for cell-wise integration when rebound at boundary occurs */
     sum_t_intersect += t_intersect * (1. - sum_t_intersect);
 
-    if (p_info->tracking_step_id == 0) {
+    if (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER) {
       /* we have tracked the deterministic virtual partner, the remaining time
        * is obtained thank to the linear interp. based on the previous state */
       remain_time = p_set.attr_real(p_id,
-                                               CS_LAGR_REMAINING_INTEG_TIME);
+                                    CS_LAGR_REMAINING_INTEG_TIME);
       dt_part = remain_time * sum_t_intersect * cs_glob_lagr_time_step->dtp;
     }
 
@@ -2840,47 +2831,41 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
     else if (exit_face < 0) {
       /* no face crossed with trajectography location corresponding
        * to the integrated position */
-      if (p_info->tracking_step_id == 1) {
-        /* stochastic particle is currently tracked */
-        if (save_specific_face_interaction) {
-          /* Restart new deterministic virtual partner trajectory now that
-           * local effect of specific treatment are seen */
-          for (int i = 0; i < 3; i++)
-            prev_location[i] = particle_coord[i];
-          save_specific_face_interaction = false;
-          p_info->tracking_step_id = 0;
-          sum_t_intersect = 0.;
-          /* Update previous state */
-          cs_lagr_particles_current_to_previous(p_set, p_id);
-        }
-
-        else { /* stochastic particle final location reached */
-          particle_state = CS_LAGR_PART_TREATED;
-          p_info->tracking_step_id = 2;
-        }
+      if (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_STOCHASTIC_WALL_SYNC) {
+        /* stochastic particle has finished reaching the sync position */
+        for (int i = 0; i < 3; i++)
+          prev_location[i] = particle_coord[i];
+        p_info->tracking_step_id = CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER;
+        sum_t_intersect = 0.;
+        /* Update previous state */
+        cs_lagr_particles_current_to_previous(p_set, p_id);
       }
-      else if (p_info->tracking_step_id == 0) {
-        /* the deterministic virtual partner remains in the cell the new
-         * location to track is the final stochastic particle position*/
+      else if (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_STOCHASTIC_FINAL) {
+        /* stochastic particle final location reached */
+        particle_state = CS_LAGR_PART_TREATED;
+        p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
+      }
+      else if (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER) {
+        /* the deterministic virtual partner remains in the cell: the new
+         * location to track is the final stochastic particle position */
         for (int i = 0; i < 3; i++)
           next_location[i] = particle_coord[i];
 
-        p_info->tracking_step_id = 1;
+        p_info->tracking_step_id = CS_LAGR_TRACK_STEP_STOCHASTIC_FINAL;
       }
     }
 
-    if (prev_tracking_step_id == 0) {
+    if (prev_tracking_step_id == CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER) {
       assert(dt_part >= 0);
 
-      /* FIXME improve condition */
-      /* Made to avoid spurious oscillation around specific points */
-      if (sum_t_intersect < 1./max_propagation_loops
-          && exit_face >= 0
-          && cell_id != save_old_cell_id) {
-        specific_face_interaction = true;
-      }
+      /* Avoid spurious oscillation around specific points */
+      bool is_micro_crossing = (sum_t_intersect < 1. / max_propagation_loops
+                                && exit_face >= 0
+                                && exit_face < mesh->n_i_faces
+                                && cell_id != save_old_cell_id);
 
       if (   !specific_face_interaction
+          && !is_micro_crossing
           && (cell_id != save_old_cell_id || exit_face < 0) ) {
         /* if no rebound nor leaving, nor deposition nor oscillation around a
          * given face.
@@ -2905,7 +2890,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
                                    &cpgd2,
                                    &cpght,
                                    n_new_particles,
-                                   save_specific_face_interaction);
+                                   false /* loc_rebound */);
 
         /* set back the new cell_id to the particle */
 
@@ -2957,14 +2942,9 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
                                      &cpgd2,
                                      &cpght,
                                      n_new_particles,
-                                     save_specific_face_interaction);
+                                     false /* loc_rebound */);
         }
       }
-
-      /* If we track the deterministic virtual partner and there is a rebound
-       * we track the stochastic particle so it sees the rebound condition */
-      if (specific_face_interaction && particle_state == CS_LAGR_PART_TO_SYNC)
-        save_specific_face_interaction = true;
 
       /* Increment quantities associated to the previous cell if required */
 
@@ -2987,7 +2967,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
                                      dt_incr /cs_glob_lagr_time_step->dtp);
 
       if (  (cell_id == save_old_cell_id && exit_face >= 0)
-          || specific_face_interaction) {
+          || is_micro_crossing) {
         /* save the incremented time but continue tracking virtual partner
          * until next face to avoid spurious oscillation around a face */
         dt_incremented_in_subiter = dt_part;
@@ -2995,7 +2975,16 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
         save_old_cell_id = p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID);
         p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID) = cell_id;
       }
+      else if (specific_face_interaction) {
+        /* If we track the deterministic virtual partner and there is a rebound
+         * we track the stochastic particle so it sees the rebound condition */
+        if (particle_state == CS_LAGR_PART_TO_SYNC)
+          p_info->tracking_step_id = CS_LAGR_TRACK_STEP_STOCHASTIC_WALL_SYNC;
 
+        dt_incremented_in_subiter = dt_part;
+        save_old_cell_id = p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID);
+        p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID) = cell_id;
+      }
       else {
         save_old_cell_id = p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID);
 
@@ -3003,27 +2992,22 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
         cs_lagr_particles_current_to_previous(p_set, p_id);
 
         /* update remaining time */
-        if (exit_face < 0) {
+        if (   exit_face < 0
+            || (1. - sum_t_intersect) < 1. / max_propagation_loops) {
           /* deterministic local partner has reached its final location no
            * new integration on the position occur */
           p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
           /* search directly the final stochastic particle location
            * without intermediate step */
-          save_specific_face_interaction = false;
+          p_info->tracking_step_id = CS_LAGR_TRACK_STEP_STOCHASTIC_FINAL;
         }
         else {
-          /*  continue tracking the deterministic virtual partner*/
+          /* continue tracking the deterministic virtual partner */
           remain_time = remain_time * (1. - sum_t_intersect);
 
           p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = remain_time;
         }
         sum_t_intersect = 0.;
-
-        /* temporary track stochastic particle to apply specific interaction
-         * on the stochastic particle */
-        if (save_specific_face_interaction)
-          p_info->tracking_step_id = 1;
-
       }
     }
   } /* End of while : local displacement */
@@ -3687,14 +3671,16 @@ _initialize_displacement(cs_lagr_particle_set_t  &p_set,
 
   if (cs_glob_lagr_time_scheme->cell_wise_integ == 1 && resol_sde)
   {
-    /* track ghost trajectory associated to deterministic virtual partner*/
+    /* track ghost trajectory associated to deterministic virtual partner */
     for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++)
-      _tracking_info(p_set, p_id)->tracking_step_id = 0;
+      _tracking_info(p_set, p_id)->tracking_step_id
+        = CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER;
   }
   else {
-    /* track trajectory associated directly to the stochastic particle*/
+    /* track trajectory associated directly to the stochastic particle */
     for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++)
-      _tracking_info(p_set, p_id)->tracking_step_id = 1;
+      _tracking_info(p_set, p_id)->tracking_step_id
+        = CS_LAGR_TRACK_STEP_STOCHASTIC_FINAL;
   }
   CS_FREE(rot_m);
 
