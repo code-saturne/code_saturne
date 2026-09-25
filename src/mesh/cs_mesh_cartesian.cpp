@@ -1276,7 +1276,7 @@ cs_mesh_cartesian_get_ncells(int  id,
 /*----------------------------------------------------------------------------*/
 
 static cs_gnum_t
-_ogrid_g_c(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t i, cs_gnum_t j)
+_ogrid_g_c(cs_gnum_t nx, cs_gnum_t i, cs_gnum_t j)
 {
   return i + (nx + 1) * j;
 }
@@ -1287,7 +1287,7 @@ _ogrid_g_c(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t i, cs_gnum_t j)
 /*----------------------------------------------------------------------------*/
 
 static cs_gnum_t
-_ogrid_g_o(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t nr, cs_gnum_t s, cs_gnum_t r)
+_ogrid_g_o(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t s, cs_gnum_t r)
 {
   cs_gnum_t n_gamma = 2 * nx + 2 * ny;
   cs_gnum_t n_center = (nx + 1) * (ny + 1);
@@ -1310,7 +1310,7 @@ _ogrid_g_o(cs_gnum_t nx, cs_gnum_t ny, cs_gnum_t nr, cs_gnum_t s, cs_gnum_t r)
       i_val = 0;
       j_val = 2 * nx + 2 * ny - s;
     }
-    return _ogrid_g_c(nx, ny, i_val, j_val);
+    return _ogrid_g_c(nx, i_val, j_val);
   }
   else {
     return n_center + (r - 1) * n_gamma + s;
@@ -1428,7 +1428,6 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
   if (mb->face_vertices == nullptr)
     CS_MALLOC(mb->face_vertices, 4*n_faces, cs_gnum_t);
 
-  cs_real_t r_core = mp->ogrid_r_core;
   cs_real_t r_outer = mp->ogrid_r_outer;
   cs_real_t q = mp->ogrid_r_prog;
 
@@ -1561,10 +1560,10 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
     for (cs_gnum_t j = 0; j < ny; j++) {
       for (cs_gnum_t i = 0; i <= nx; i++) {
         if (g_f_num >= g_f_num_min && g_f_num < g_f_num_max) {
-          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_c(nx, ny, i, j+1), k);
-          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_c(nx, ny, i, j+1), k+1);
-          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_c(nx, ny, i, j), k+1);
-          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_c(nx, ny, i, j), k);
+          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_c(nx, i, j+1), k);
+          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_c(nx, i, j+1), k+1);
+          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_c(nx, i, j), k+1);
+          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_c(nx, i, j), k);
 
           cs_gnum_t c_id1 = 0;
           cs_gnum_t c_id2 = 0;
@@ -1602,10 +1601,10 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
     for (cs_gnum_t j = 0; j <= ny; j++) {
       for (cs_gnum_t i = 0; i < nx; i++) {
         if (g_f_num >= g_f_num_min && g_f_num < g_f_num_max) {
-          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_c(nx, ny, i, j), k+1);
-          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_c(nx, ny, i+1, j), k+1);
-          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_c(nx, ny, i+1, j), k);
-          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_c(nx, ny, i, j), k);
+          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_c(nx, i, j), k+1);
+          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_c(nx, i+1, j), k+1);
+          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_c(nx, i+1, j), k);
+          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_c(nx, i, j), k);
 
           cs_gnum_t c_id1 = 0;
           cs_gnum_t c_id2 = 0;
@@ -1646,13 +1645,13 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
           cs_gnum_t sp = (s + 1) % n_gamma;
 
           mb->face_vertices[4 * f_id + 0] =
-            G_V(_ogrid_g_o(nx, ny, nr, s, r), k);
+            G_V(_ogrid_g_o(nx, ny, s, r), k);
           mb->face_vertices[4 * f_id + 1] =
-            G_V(_ogrid_g_o(nx, ny, nr, sp, r), k);
+            G_V(_ogrid_g_o(nx, ny, sp, r), k);
           mb->face_vertices[4 * f_id + 2] =
-            G_V(_ogrid_g_o(nx, ny, nr, sp, r), k+1);
+            G_V(_ogrid_g_o(nx, ny, sp, r), k+1);
           mb->face_vertices[4 * f_id + 3] =
-            G_V(_ogrid_g_o(nx, ny, nr, s, r), k+1);
+            G_V(_ogrid_g_o(nx, ny, s, r), k+1);
 
           cs_gnum_t c_id1 = 0;
           cs_gnum_t c_id2 = 0;
@@ -1679,10 +1678,10 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
     for (cs_gnum_t r = 0; r < nr; r++) {
       for (cs_gnum_t s = 0; s < n_gamma; s++) {
         if (g_f_num >= g_f_num_min && g_f_num < g_f_num_max) {
-          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_o(nx, ny, nr, s, r+1), k);
-          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_o(nx, ny, nr, s, r+1), k+1);
-          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_o(nx, ny, nr, s, r), k+1);
-          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_o(nx, ny, nr, s, r), k);
+          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_o(nx, ny, s, r+1), k);
+          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_o(nx, ny, s, r), k);
+          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_o(nx, ny, s, r), k+1);
+          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_o(nx, ny, s, r+1), k+1);
 
           cs_gnum_t sm = (s - 1 + n_gamma) % n_gamma;
           cs_gnum_t c_id1 = G_C(_ogrid_c_o(nx, ny, sm, r), k);
@@ -1705,10 +1704,10 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
     for (cs_gnum_t j = 0; j < ny; j++) {
       for (cs_gnum_t i = 0; i < nx; i++) {
         if (g_f_num >= g_f_num_min && g_f_num < g_f_num_max) {
-          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_c(nx, ny, i+1, j), k);
-          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_c(nx, ny, i+1, j+1), k);
-          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_c(nx, ny, i, j+1), k);
-          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_c(nx, ny, i, j), k);
+          mb->face_vertices[4 * f_id + 0] = G_V(_ogrid_g_c(nx, i+1, j), k);
+          mb->face_vertices[4 * f_id + 1] = G_V(_ogrid_g_c(nx, i+1, j+1), k);
+          mb->face_vertices[4 * f_id + 2] = G_V(_ogrid_g_c(nx, i, j+1), k);
+          mb->face_vertices[4 * f_id + 3] = G_V(_ogrid_g_c(nx, i, j), k);
 
           cs_gnum_t c_id1 = 0;
           cs_gnum_t c_id2 = 0;
@@ -1741,13 +1740,13 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
           cs_gnum_t sp = (s + 1) % n_gamma;
 
           mb->face_vertices[4 * f_id + 0] =
-            G_V(_ogrid_g_o(nx, ny, nr, s, r), k);
+            G_V(_ogrid_g_o(nx, ny, s, r), k);
           mb->face_vertices[4 * f_id + 1] =
-            G_V(_ogrid_g_o(nx, ny, nr, s, r+1), k);
+            G_V(_ogrid_g_o(nx, ny, s, r+1), k);
           mb->face_vertices[4 * f_id + 2] =
-            G_V(_ogrid_g_o(nx, ny, nr, sp, r+1), k);
+            G_V(_ogrid_g_o(nx, ny, sp, r+1), k);
           mb->face_vertices[4 * f_id + 3] =
-            G_V(_ogrid_g_o(nx, ny, nr, sp, r), k);
+            G_V(_ogrid_g_o(nx, ny, sp, r), k);
 
           cs_gnum_t c_id1 = 0;
           cs_gnum_t c_id2 = 0;
@@ -2019,19 +2018,19 @@ cs_mesh_cartesian_block_connectivity(int                 id,
               cs_real_t u = 0.0;
 
               /* Top sector */
-              if (y_norm == d) {
+              if (cs::abs(y_norm - d) < cs_math_epzero) {
                 u = x_norm / y_norm;
                 x_mapped = (1.0 - t) * a * u + t * sin(u * cs_math_pi / 4.0);
                 y_mapped = (1.0 - t) * a + t * cos(u * cs_math_pi / 4.0);
               }
               /* Bottom sector */
-              else if (-y_norm == d) {
+              else if (cs::abs(-y_norm - d) < cs_math_epzero) {
                 u = -x_norm / y_norm;
                 x_mapped = (1.0 - t) * a * u + t * sin(u * cs_math_pi / 4.0);
                 y_mapped = -((1.0 - t) * a + t * cos(u * cs_math_pi / 4.0));
               }
               /* Right sector */
-              else if (x_norm == d) {
+              else if (cs::abs(x_norm - d) < cs_math_epzero) {
                 u = y_norm / x_norm;
                 x_mapped = (1.0 - t) * a + t * cos(u * cs_math_pi / 4.0);
                 y_mapped = (1.0 - t) * a * u + t * sin(u * cs_math_pi / 4.0);
