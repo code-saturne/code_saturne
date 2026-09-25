@@ -71,7 +71,7 @@
   \typedef cs_all_to_all_t
         Opaque all-to-all distribution structure
 
-  \paragraph all_to_all_flags Using flags
+  \par Using flags
   \parblock
 
   Flags are defined as a sum (bitwise or) of constants, which may include

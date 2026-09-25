@@ -57,6 +57,9 @@ doxygen-src:
 	fi ;\
 	if test "$(NEPTUNE_CFD)" = "neptune_cfd" ; then \
 	  cp $(top_builddir)/neptune_cfd/docs/doxygen/neptune.tag . ;\
+	elif test ! -f neptune.tag ; then \
+	  echo "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>" \
+	    "<tagfile/>" > neptune.tag ;\
 	fi ;\
 	$(MKDIR_P) src/images; \
 	for d in $(IMAGE_SUBDIRS) ; do \
