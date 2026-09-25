@@ -3,6 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix crash due to incorrect loop for radiation with internal thermal coupling.
+
 - Fix `resource_name` detection when only the batch system is defined for the
   `code_saturne submit` command.
 
