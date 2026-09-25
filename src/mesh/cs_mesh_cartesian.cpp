@@ -1431,6 +1431,9 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
   cs_real_t r_outer = mp->ogrid_r_outer;
   cs_real_t q = mp->ogrid_r_prog;
 
+  const cs_real_t x_mid = 0.5 * (mp->params[0]->smin + mp->params[0]->smax);
+  const cs_real_t y_mid = 0.5 * (mp->params[1]->smin + mp->params[1]->smax);
+
   CS_REALLOC(mb->vertex_coords, 3*(_rank_v_offset + n_vertices), cs_real_t);
 
   cs_gnum_t g_v_num_min = _rank_v_range[0];
@@ -1527,8 +1530,8 @@ _cs_mesh_cartesian_block_connectivity_ogrid(cs_mesh_cartesian_params_t *mp,
             theta = 3.0 * cs_math_pi / 4.0 + (cs_real_t)p / (cs_real_t)ny * cs_math_pi / 2.0;
           }
 
-          cs_real_t x_ext = r_outer * cos(theta);
-          cs_real_t y_ext = r_outer * sin(theta);
+          cs_real_t x_ext = x_mid + r_outer * cos(theta);
+          cs_real_t y_ext = y_mid + r_outer * sin(theta);
 
           x_phys = (1.0 - eta_r) * x_int + eta_r * x_ext;
           y_phys = (1.0 - eta_r) * y_int + eta_r * y_ext;
