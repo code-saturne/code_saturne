@@ -176,7 +176,7 @@
 /*!
   \page user_initialization_pulverized_coal pulverized_coal example
 
-  As usual, one can access any field using the \ref field_get_val_s_by_name
+  As usual, one can access any field using the \ref cs_field_by_name
   function. \c cvar_*(iel) is the value of this variable in cell number \c iel.
   ONLY done if there is no restart computation
 

@@ -73,8 +73,9 @@ For definitions using the legacy finite-volume scheme (i.e. not using CDO),
 the \ref cs_user_boundary_conditions (in C) may be used.
 
 For more details about the treatment of boundary conditions, the user
-may refer to the [theoretical](@ref theory) and user documentation of the
-`cs_boundary_condition_set_coeffs` function (for wall conditions, see `clptur`).
+may refer to the [theory](@ref theory) guide and user documentation of the
+\ref cs_boundary_conditions_set_coeffs and
+\ref cs_boundary_conditions_set_coeffs_turb functions.
 
 From the user point of view, the boundary conditions are fully defined
 by the arrays specifying the boundary type and conditions
@@ -773,7 +774,10 @@ start, can be used to:
 Initialization of the radiation main parameters
 ===============================================
 
-The main radiation parameters can be initialized in the GUI or in the \ref cs_user_radiative_transfer_parameters user function (see [Initialization examples](@ref cs_user_radiative_transfer_h_cs_user_radiative_transfer_parameters)).
+The main radiation parameters can be initialized in the GUI or in the
+\ref cs_user_parameters user function
+(see [Initialization examples]
+(@ref cs_user_radiative_transfer_h_cs_user_radiative_transfer_parameters)).
 In the GUI, under the heading **Thermal models**, when one of the two thermal radiative transfers models is selected, see [Figure 1](@ref gui_rad_transf_do_params)
 additional items appear. The user is asked to choose the number of directions for angular discretization, to define the absorption coefficient and specify if the radiative calculation is restarted from a checkpoint or not;
 see [Figure 1](@ref gui_rad_transf_do_params) and [Figure 3](@ref gui_rad_transf_p1_params).  When **Advanced options** is selected for both models [Figure 2](@ref gui_rad_transf_do_advanced) and [Figure 4](@ref gui_rad_transf_p1_advanced)  appear, the user must fill the resolution frequency and verbosity levels. In addition, the activation of the radiative transfer leads to the creation of a **Surface solution control** item under the heading **Calculation control**, see [Figure 5](@ref gui_rad_transf_post_output), where radiative transfer variables can be selected to appear in the output log.
@@ -973,7 +977,18 @@ For more details about the different parameters and some examples, the user may 
 Prescribing particle boundary conditions
 ========================================
 
-In the framework of the multiphase Lagrangian modelling, the management of the boundary conditions concerns the particle behaviour when there is an interaction between its trajectory and a boundary face. These boundary conditions may be imposed independently of those concerning the Eulerian fluid phase (but they are of course generally consistent). The boundary condition zones are actually redefined by the Lagrangian module ([boundary zones](@ref cs_user_lagr_boundary_conditions_h_zones)), and a type of particle behaviour is associated with each one. The boundary conditions related to particles can be defined in the Graphical User Interface (GUI) or in the \ref cs_user_lagr_boundary_conditions.cpp} file. More advanced user-defined boundary conditions can be prescribed in the \ref cs_user_lagr_in function from \ref cs_user_lagr_particle.cpp}.
+In the framework of the multiphase Lagrangian modelling, the management of the
+boundary conditions concerns the particle behaviour when there is an interaction
+between its trajectory and a boundary face. These boundary conditions may be
+imposed independently of those concerning the Eulerian fluid phase (but they are
+of course generally consistent). The boundary condition zones are actually
+redefined by the Lagrangian module
+([boundary zones](@ref cs_user_lagr_boundary_conditions_h_zones)), and a type
+of particle behaviour is associated with each one. The boundary conditions
+related to particles can be defined in the Graphical User Interface (GUI)
+or in the \ref cs_user_lagr_boundary_conditions.cpp file. More advanced
+user-defined boundary conditions can be prescribed in the
+\ref cs_user_lagr_in function from \ref cs_user_lagr_particle.cpp.
 
 Use of the GUI
 --------------
@@ -1014,8 +1029,10 @@ Nusselt number see \ref cs_user_lagr_module_thermal_relaxation for examples.
 \page advanced_compressible Compressible module
 
 When the **compressible module** is activated, it is recommended to:
-    - use the option _time step variable in time and uniform in space_ (idtvar=1) with a maximum
-      Courant number of 0.4 (\ref coumax = 0.4): these choices must be written in \ref cs_user_parameters.cpp
+    - use the option _time step variable in time and uniform in space_
+      (idtvar=1) with a maximum Courant number of 0.4
+      (\ref cs_time_step_options_t::coumax "coumax" = 0.4):
+      these choices must be written in \ref cs_user_parameters.cpp
       or specified with the **GUI**
     - keep the convective numerical schemes proposed by default _i.e._: upwind scheme
 
@@ -1058,7 +1075,7 @@ the compressible module). Concerning pressure, density, temperature and specific
 The user may then initialize the desired variable pair
 (apart from temperature-energy) and the two other variables will be
 calculated automatically by giving the right value to the variable
-ithvar see \ref user_initialization_comp_s_init for example.
+ithvar see \ref user_initialization_compressible for example.
 
 Management of variable physical properties
 ==========================================
@@ -1161,7 +1178,8 @@ Boundary conditions can be handled in the GUI or in the cs_user_boundary_conditi
  In the \ref cs_user_boundary_conditions report, the main change from the users point of view concerns the
  specification of the boundary conditions of the potential, which isn't
  implied by default. The Dirichlet and Neumann conditions must be imposed
- explicitly using \ref icodcl and \ref rcodcl (as would be done for the classical scalar).
+ explicitly using \c icodcl and \c rcodcl (as would be done for the classical
+ scalar).
 
 Furthermore, if one wishes to slow down the power dissipation (Joule
 effect module) or the current (electric arcs module) from the imposed values,
@@ -1568,9 +1586,9 @@ some boundary faces using the cs_user_boundary_conditions.cpp user function.
  - Using a scalar source term. In this case, the air inflow is not taken
    into account. The user has to add an explicit part to the equations
    for the scalar through the cs_user_source_terms.cpp file. This is
-   done by selecting the cells and adding the source term \ref st_exp
+   done by selecting the cells and adding the source term \c st_exp
    which equals to the air flux multiplied by the mass fraction, while the
-   implicit part \ref st_imp is set to zero.
+   implicit part \c st_imp is set to zero.
 
 With the first method, the same problem of sources interactions appears, and
 moreover standard Dirichlet conditions should not be used (use
@@ -1616,14 +1634,17 @@ atmospheric layers and the surface radiative fluxes.
 
 The radiative exchange is computed separately for two wave lengths intervals
 
-- Calculation in the infrared spectral domain (file \ref rayir.f90)
-- Calculation in the spectral range of solar radiation (file \ref rayso.f90)
+- Calculation in the infrared spectral domain
+  (function \ref cs_atmo_1d_rad_compute_infrared)
+- Calculation in the spectral range of solar radiation
+  (function \ref cs_atmo_1d_rad_compute_solar)
 
 This 1D-radiative model is needed if the ground/atmosphere interaction model
 is activated.
 
-This model is activated if the parameter \ref radiative_model_1d is equal to one in the
-file cs_users_parameters.cpp.
+This model is activated if the parameter
+\ref cs_atmo_1d_rad_t::radiative_model_1d "radiative_model_1d" is equal to 1 in
+the file cs_user_parameters.cpp.
 
 Atmospheric main variables
 ==========================
@@ -1856,7 +1877,8 @@ Setup gravity and coriolis forces.
 Modification of the turbulent viscosity
 ---------------------------------------
 
-The \ref usvist user-defined subroutine can be used to modify the calculation
+The \ref cs_user_physical_properties_turb_viscosity user-defined function
+can be used to modify the calculation
 of the turbulent viscosity, *i.e.* <em>μ<sub>t</sub></em> in \f$kg.m^{-1}.s^{-1}\f$.
 The correspondig field, `turbulent_viscosity`, can be accessed by calling
 `field_get_val_s(ivisct, cpro_visct)`. The
@@ -1873,7 +1895,7 @@ seriously distort the results.
 Modification of the variable C of the dynamic LES model
 -------------------------------------------------------
 
-The \ref cs_user_physical_properties_smagorinsky_c user-defined
+The \ref cs_user_physical_properties user-defined
 function can be used to modify the calculation
 of the variable *C* of the LES sub-grid scale dynamic model.
 
@@ -1941,7 +1963,7 @@ filter). By default, the value calculated by the code is
 C=\frac{\widetilde{M_{ij}L{ij}}}{\widetilde{M_{kl}M_{kl}}}
 \f]
 
-The \ref cs_user_physical_properties_smagorinsky_c function (called at each
+The \ref cs_user_physical_properties function (called at each
 time step, only when this model is active) allows to modify this value. It is
 for example possible to compute the local average after having computed the
 \f[

@@ -42,7 +42,7 @@
   \section cavit_activ Activation of the model
 
   The module can be activated in \ref cs_user_model in
-  \ref cs_user_parameters.c as show below:
+  \ref cs_user_parameters.cpp as show below:
   \snippet cs_user_parameters-base.cpp enable_cavit
 
   Data structure is defined in \ref vof, \ref vof_mixture_properties and
@@ -54,7 +54,7 @@
   \section cavit_parameters Cavitation module specific parameters.
 
   When cavitation model is enabled, specific input parameters can be set in
-  \ref cs_user_parameters in \ref cs_user_parameters.c file as shown below:
+  \ref cs_user_parameters in \ref cs_user_parameters.cpp file as shown below:
 
   \subsection cavit_phprop Homogeneous mixture physical properties
 
@@ -71,7 +71,8 @@
   \subsection cavit_source Model parameters of the vaporization term (Merkle model)
 
   Merkle's model parameters should be set.
-  Merkle's model is based on a barotropic law for the density (see \ref cavitation.f90).
+  Merkle's model is based on a barotropic law for the density
+  (see \ref cs_vof.h).
   In that way, its principal parameter is the saturation pressure of the fluid,
   in \f$ kg/(m\cdot s^2)\f$. For instance, the saturation pressure of the water at twenty
   celcius degrees is set below:
@@ -94,10 +95,11 @@
 
   \snippet cs_user_parameters-base.cpp reboud_activ
 
-  Using an eddy-viscosity model (see \ref turbulence), this option is
+  Using an eddy-viscosity model
+  (see [turbulence models](@ref turbulence_models)), this option is
   recommended and is hence a default setting. Of course, this option has no
   effect for second moment closure or large eddy simulations. Note that the
-  coefficient mcav of the reboud correction (see \ref cavitation.f90) can also
+  coefficient mcav of the reboud correction (see \ref cs_vof.h) can also
   be adjusted in the \ref cs_user_parameters function.
 
   \subsection cavit_numerics Numerical options

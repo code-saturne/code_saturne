@@ -66,7 +66,6 @@
 
 struct cs_cdofb_ac_t : public cs::cdo_navsto_ac_ctx_t {
   /*!
-   * @}
    * @name Build stage
    * Additional members which corresponds to function pointers
    * @{
@@ -74,7 +73,7 @@ struct cs_cdofb_ac_t : public cs::cdo_navsto_ac_ctx_t {
 
   /*!
    * \var add_gravity_term
-   * \ref Compute and add the source term related to the gravity vector
+   * Compute and add the source term related to the gravity vector
    *      This can be the Boussinesq term or the hydrostatic term (rho*g)
    */
 

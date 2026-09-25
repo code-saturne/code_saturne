@@ -307,7 +307,7 @@ typedef struct cs_turb_rans_model_t {
                            - CS_TURB_RIJ_SOURCE_TS_EXPONENTIAL (1)
                            - CS_TURB_RIJ_SOURCE_TS_VAR_TAU (2) */
   int     irijrb;       /*!< accurate treatment of R at the boundary (see
-                           \ref cs_boundary_condition_set_coeffs)
+                           \ref cs_boundary_conditions_set_coeffs)
                            - 1: true
                            - 0: false (default) */
   int     irijec;       /*!< wall echo term of R

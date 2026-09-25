@@ -81,9 +81,6 @@
 
   \brief Field boundary condition descriptor (for variables)
 
-  \var cs_field_bc_coeffs_t::location_id
-       Id of matching location
-
   \var cs_field_bc_coeffs_t::icodcl
        Low-level BC type code
   \var cs_field_bc_coeffs_t::rcodcl1
@@ -1835,7 +1832,7 @@ cs_field_by_name_try(const char  *name)
 /*!
  * \brief Return a pointer to a field based on a composite name.
  *
- * The name is expected to be of the form <name_prefix>_<name_suffix>.
+ * The name is expected to be of the form \<name_prefix\>_\<name_suffix\>.
  *
  * \param[in]  name_prefix  first part of field name
  * \param[in]  name_suffix  second part of field name
@@ -1862,7 +1859,7 @@ cs_field_by_composite_name(const char  *name_prefix,
 /*!
  * \brief Return a pointer to a field based on a composite name if present.
  *
- * The name is expected to be of the form <name_prefix>_<name_suffix>.
+ * The name is expected to be of the form \<name_prefix\>_\<name_suffix\>.
  * If no field of the given name is defined, a null pointer is returned.
  *
  * \remark: in C++, we could simply have a cs_field_by_name_try template

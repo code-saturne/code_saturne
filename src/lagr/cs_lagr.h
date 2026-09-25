@@ -89,7 +89,9 @@ typedef enum {
   CS_LAGR_FOULING,       /*!< fouling (combustion) */
   CS_LAGR_BC_USER        /*!< user-defined */
 
-} cs_lagr_bc_type;
+} cs_lagr_bc_type_t;
+
+typedef cs_lagr_bc_type_t cs_lagr_bc_type;
 
 /*! Lagrangian injection condition types */
 /*---------------------------------------*/
@@ -199,9 +201,10 @@ typedef struct {
       \ref cs_lagr_stat_options_t::nstist "nstist")
       and calculate time-averaged two-way coupling source terms (from the
       time step \ref nstits).
-      Useful if \ref iilagr = CS_LAGR_ONEWAY_COUPLING
-      or \ref iilagr = CS_LAGR_TWOWAY_COUPLING
-      (if \ref iilagr = CS_LAGR_FROZEN_CONTINUOUS_PHASE,
+      Useful if \c iilagr = CS_LAGR_ONEWAY_COUPLING
+      or \c iilagr = CS_LAGR_TWOWAY_COUPLING
+      (if \c iilagr
+          = CS_LAGR_FROZEN_CONTINUOUS_PHASE,
       then \ref isttio=1 automatically) */
   int  isttio;
 
@@ -716,12 +719,13 @@ typedef struct {
   [[deprecated("renamed to has_twoway_mass")]] \
   int& ltsmas{has_twoway_mass};
 
-  /*  if \ref physical_model = 1 and \ref solve_temperature = 1, \ref ltsthe
-   activates (=1) or not (=0) the two-way coupling on temperature.
-   if \ref physical_model = 2, \ref ltsthe activates (=1) or not (=0) the
-   two-way coupling on the eulerian variables related to pulverised
-   coal combustion.
-   Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING */
+  /* if \ref cs_lagr_model_t::physical_model "physical_model" = 1 and
+     \ref cs_lagr_specific_physics_t::solve_temperature "solve_temperature" = 1,
+     \c ltsthe activates (=1) or not (=0) the two-way coupling on temperature.
+     if \ref cs_lagr_model_t::physical_model "physical_model" = 2,
+     \c ltsthe activates (=1) or not (=0) the two-way coupling on the eulerian
+     variables related to pulverised coal combustion.
+     Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING */
   int  has_twoway_thermal{0};
   [[deprecated("renamed to has_twoway_thermal")]] \
   int& ltsthe{has_twoway_thermal};

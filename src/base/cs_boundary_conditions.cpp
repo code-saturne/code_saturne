@@ -2575,9 +2575,8 @@ cs_boundary_conditions_compute([[maybe_unused]] int  bc_type[])
 /*!
  * \brief Automatic adjustments for boundary condition codes.
  *
- * Currently handles mapped inlets, after the call to \ref stdtcl.
- * As portions of stdtcl are migrated to C, they should be called here,
- * before mapped inlets.
+ * Currently handles mapped inlets, after the call to
+ * \ref cs_boundary_conditions_compute.
  *
  * \param[in]  bc_type  type of boundary for each face
  */

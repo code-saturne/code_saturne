@@ -177,10 +177,11 @@ int diffusivity_id;
   and specific heat. When using the Graphical Interface, \f$\lambda\f$ and
   \f$C_p\f$ are specified separately, and the matching molecular diffusivity
   is computed automatically.\n
-  With the compressible module, \ref diffusivity_ref (given in \ref uscfx2)
+  With the compressible module, \ref diffusivity_ref
+  (given in \ref cs_user_parameters)
   is directly the thermal conductivity \f$W.m^{-1}.K^{-1}\f$.\n
   With the electric module, for the Joule effect, the diffusivity is
-  specified by the user in \ref cs_user_physical_properties.c (even if
+  specified by the user in \ref cs_user_physical_properties.cpp (even if
   it is constant). For the electric arcs, it is calculated from the
   thermochemical data file.
 */

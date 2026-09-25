@@ -1949,7 +1949,7 @@ cs_mem_initialized(void)
  * Allocation couting and logging to trace file will be done if
  * both required by the cs_mem_init options and if file_name != nullptr.
  * If required but file_name == nullptr, it must be handled by the caller,
- * using \ref cs_mem_log_mem_op.
+ * using `cs_mem_log_mem_op`.
  *
  * \param [in] ni        number of elements.
  * \param [in] size      element size.

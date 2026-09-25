@@ -31,7 +31,7 @@
   \section radiat_activ Activation of the module
 
   The module can be activated in the \ref cs_user_model function in
-  \ref cs_user_parameters.c. The corresponding keyword is the
+  \ref cs_user_parameters.cpp. The corresponding keyword is the
   \ref cs_rad_transfer_params_t::type "type" member of the
   \ref cs_glob_rad_transfer_params structure.
 
@@ -44,15 +44,15 @@
   \section radiat_param Radiation module specific parameters.
 
   When the module is activated, its specific input parameters should be set in
-  the \ref cs_user_radiative_transfer_parameters function of the
-  \ref cs_user_radiative_transfer.c file.
+  the \ref cs_user_parameters function of the
+  \ref cs_user_parameters.cpp file.
 
   \section cs_user_radiative_transfer_h_cs_user_radiative_transfer_parameters Calculation options for the radiative transfer module.
 
   Radiative transfer parameters may be defined using the
-  \ref cs_user_radiative_transfer_parameters function.
+  \ref cs_user_parameters function.
 
-  \snippet cs_user_radiative_transfer.cpp cs_user_radiative_transfer_parameters
+  \snippet cs_user_parameters-base.cpp cs_user_radiative_transfer_parameters
 
   \section cs_user_radiative_transfer_h_boundary_conditions Radiative transfer boundary conditions
 
@@ -89,9 +89,10 @@ Therefore :
 
   \subsection bound_faces Boundary faces identification
 
-   Boundary faces may be identified using the \ref getfbr function,
+   Boundary faces may be identified using the
+   \ref cs_selector_get_b_face_list function,
    or preferrably, through boundary zones, defined using the
-   GUI or the \ref cs_user_zones function..
+   GUI or the \ref cs_user_zones function.
 
 \subsection init_fin Initialization and finalization
 
@@ -221,7 +222,7 @@ If the conduction flux is zero then the wall is adiabatic.
 \section abso_flux Absorption coefficient and net radiation flux
 
 The absorption coefficient and the net radiation flux for the radiative module
-can be defined in \ref cs_user_radiative_transfer.c through the
+can be defined in \ref cs_user_radiative_transfer.cpp through the
 \ref cs_user_rad_transfer_absorption
 and \ref cs_user_rad_transfer_net_flux subroutines.
 

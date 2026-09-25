@@ -88,7 +88,7 @@ typedef struct {
 
   /*! \var allow_no_op
    *  allow one to not call the solve function in some specific situations
-   *  Please refer to \ref _needs_solving for more details
+   *  Please refer to \c _needs_solving for more details
    */
 
   bool                       allow_no_op;

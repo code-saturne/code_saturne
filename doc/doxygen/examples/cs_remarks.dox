@@ -79,11 +79,4 @@
   For boundary faces, the array access functions \ref nodfbr and \ref ipnfbr
   are used in a similar fashion.
 
-  \section note_4 Note 4: modules
-  The user must not modify the existing modules in user source directories,
-  as this may break the code in more or less subtle fashion.
-  Developers modifying modules must recompile the whole code. As this may
-  not be possible for users (and in any case breaks versioning and quality
-  assurance), modules should be defined in \ref cs_user_modules.f90.
-
 */

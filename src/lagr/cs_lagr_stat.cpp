@@ -4118,7 +4118,7 @@ cs_lagr_stat_accumulator_define(const char                *name,
 /*!
  * \brief Define a time moment associated to particle statistics.
  *
- * This is similar to general time moments (see \ref cs_time_moment.c),
+ * This is similar to general time moments (see \ref cs_time_moment.cpp),
  * with restart, logging, and unsteady reinitialization behavior
  * aligned with other particle statistics.
  *

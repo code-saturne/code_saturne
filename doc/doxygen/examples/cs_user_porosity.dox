@@ -104,11 +104,11 @@
 
   As the OCCT libraries provide a C++ API, interfacing them with code_saturne
   requires a file written in C++, so the following example uses a
-  separate C++ file, \ref cs_cad_intersect.cxx to to most of the work.
+  separate C++ file, \c cs_cad_intersect.cxx to to most of the work.
   This file is also a user example, and may be improved or modified.
 
   To compile and link, additional compiler flags must be passed to code_saturne.
-  They may be defined in <_ref cs_user_scripts.py, and the following
+  They may be defined in \c cs_user_scripts.py, and the following
   values are recommended (adapting the paths to the local environment):
 
   \code{.py}
@@ -126,10 +126,10 @@
 
   \section user_poro_cad_proto Function prototypes.
 
-  As the prototypes for the \ref cs_cad_intersect.cxx are not part of the
-  defaul code_saturne installation, do not forget to include the
+  As the prototypes for the \c cs_cad_intersect.cxx are not part of the
+  default code_saturne installation, do not forget to include the
   \c cs_cad_intersect.h header in the Local headers section of
-  the cs_user_porosity.c file:
+  the cs_user_porosity.cpp file:
 
   \snippet cs_user_porosity-from_cad.cpp user_poro_cad_proto
 

@@ -66,7 +66,7 @@
  *
  *  In order to define the thermodynamical behaviour of the compressible
  *  homogeneous two-phase flow, an Equation Of States (EOS) has to be specified
- *  for both phases (see the file \ref cs_hgn_phase_thermo.c).
+ *  for both phases (see the file \ref cs_hgn_phase_thermo.cpp).
  *
  *  In the present file can be found the computation of the mixture properties:
  *    - pressure

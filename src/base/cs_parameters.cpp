@@ -133,7 +133,7 @@
         reconstruction of boundary scalars
         - 1: true
         - 0: false (default)
-        (see \ref cs_boundary_condition_set_coeffs,
+        (see \ref cs_boundary_conditions_set_coeffs,
         useful in case of wall conditions and/or coupling with Syrthes)
 */
 
@@ -171,7 +171,8 @@
              at the previous time step is used in the convective terms of the
              momentum equation, and the updated mass flow is used in the
              equations of turbulence and scalars. By default, \ref istmpf=2
-             is used in the case of a second-order time scheme (if \ref ischtp=2)
+             is used in the case of a second-order time scheme (if
+             \ref cs_time_scheme_t::time_order "time_order" = 2)
              and \ref istmpf = 1 otherwise.
 
   \var  cs_time_scheme_t::isno2t
@@ -186,7 +187,7 @@
              linear functions of the solved variable \f$\phi\f$ are expressed
              as second-order terms by interpolation (according to the formula
              \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
-             \f$\theta\f$ being given by the value of \ref theta associated
+             \f$\theta\f$ being given by the value of \f$\theta\f$ associated
              with the variable \f$\phi\f$); the other terms \f$S_e\f$ are
              expressed as second-order terms by extrapolation (according to the
              formula \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$,
@@ -196,7 +197,9 @@
              extrapolated according to the same formula as when \ref isno2t = 1,
              but with \f$\theta\f$= \ref thetsn = 1. By default, \ref isno2t
              is initialized to 1 (second-order) when the selected time scheme
-             is second-order (\ref ischtp = 2), otherwise to 0.
+             is second-order
+             (\ref cs_time_scheme_t::time_order "time_order" = 2),
+             otherwise to 0.
 
   \var  cs_time_scheme_t::isto2t
         \anchor isto2t
@@ -212,7 +215,7 @@
              expressed as second-order terms by interpolation (according to
              the formula
              \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
-             \f$\theta\f$ being given by the value of \ref theta associated
+             \f$\theta\f$ being given by the value of \f$\theta\f$ associated
              with the variable \f$\phi\f$); the other terms \f$S_e\f$ are
              expressed as second-order terms by extrapolation (according to
              the formula

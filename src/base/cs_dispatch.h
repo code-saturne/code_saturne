@@ -166,6 +166,8 @@ public:
 
 };
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 // Default implementation of parallel_for_i_faces based on parallel_for
 template <class Derived>
 template <class M, class F, class... Args>
@@ -207,6 +209,8 @@ bool cs_dispatch_context_mixin<Derived>::try_get_parallel_for_b_faces_sum_type
   st = CS_DISPATCH_SUM_SIMPLE;
   return true;
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*
  * cs_context to execute loops with OpenMP on the CPU

@@ -227,7 +227,7 @@ With no alias, using the absolute path is always an option.
 Using the bash interpreter, automatic code completion help may also be set up,
 using:
 
-'source <install_prefix>/etc/bash_completion.d/code_saturne`
+`source <install_prefix>/etc/bash_completion.d/code_saturne`
 
 This may also be defined in a file such as `$HOME/.bashrc` or `$HOME/.bash_profile`
 so as to be usable across sessions.
@@ -427,7 +427,7 @@ For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
 To build and use the GUI, PySide6 or PyQt5 (which in turn requires Qt 6 or 5)
 are required. Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
-and their role is given in a dedicated [section](@ref cs_install_list_ext_lib)).
+and their role is given in a dedicated [section](@ref cs_install_list_ext_lib).
 
 In practice, the code is known to build and function properly at least with the
 GNU compilers 8.3.0 and above (up to 15.x at this date), Intel compilers 19 and
@@ -516,8 +516,8 @@ default system path, and must be loaded using an environment module, or
 otherwise sourcing a specific `LD_LIBRARY_PATH` environment. Otherwise, the
 main script may fail due to "library not found" issues.
 
-Optional third-party libraries
-==============================
+Optional third-party libraries {#cs_install_list_ext_lib}
+======================================================
 
 In addition to an MPI library (for parallelism) and PySide or PyQt library
 (for the GUI), other libraries may be used for additional mesh format options,

@@ -322,7 +322,7 @@ cs_probe_set_create_from_segment(const char        *name,
 /*!
  * \brief Define a new set of probes from rank-local definition function.
  *
- * The local definition function given by the \ref p_define_func pointer
+ * The local definition function given by the \c p_define_func pointer
  * is called just before locating probes on the parent mesh, so this allows
  * building probe sets based on subsets of the computational mesh.
  *

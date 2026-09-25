@@ -98,6 +98,8 @@ const char *cs_face_to_vertex_type_name[] = {
   N_("Shepard interpolation (weight by inverse distance)"),
 };
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/

@@ -438,7 +438,8 @@ typedef struct {
    * matrix). This is a complementary step in the approximation of the Schur
    * complement.
    *
-   * By default, this is a copy of the \ref block11_sles_param with less
+   * By default, this is a copy of the
+   * \ref cs_param_saddle_t::block11_sles_param "block11_sles_param" with less
    * restrictive convergence criteria
    */
 
@@ -533,7 +534,8 @@ typedef struct {
    * matrix). This is a complementary step in the approximation of the Schur
    * complement.
    *
-   * By default, this is a copy of the \ref block11_sles_param with less
+   * By default, this is a copy of the
+   * \ref cs_param_saddle_t::block11_sles_param "block11_sles_param" with less
    * restrictive convergence criteria
    */
 
@@ -570,7 +572,8 @@ typedef struct {
    * matrix). This is a complementary step in the approximation of the Schur
    * complement.
    *
-   * By default, this is a copy of the \ref block11_sles_param with less
+   * By default, this is a copy of the
+   * \ref cs_param_saddle_t::block11_sles_param "block11_sles_param" with less
    * restrictive convergence criteria
    */
 

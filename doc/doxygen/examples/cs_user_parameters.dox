@@ -287,7 +287,8 @@
   on a different architecture or optimization level or with different options).
 
   Writing of auxiliary restart files may also be deactivated setting
-  \ref cs_glob_restart_auxiliary::write_auxiliary to 0,
+  \ref cs_restart_auxiliary_t::write_auxiliary
+  "cs_glob_restart_auxiliary->write_auxiliary" to 0,
 
   \snippet cs_user_parameters-base.cpp deactivate_aux_checkpoint_write
 
@@ -310,7 +311,7 @@
 
   Enforce existence of 'tplus' and 'tstar' fields, so that
   a Nusselt number may be computed using the
-  \ref post_boundary_nusselt subroutine.
+  \ref cs_function_boundary_nusselt function.
   When postprocessing this quantity is activated, those fields
   are present, but if we need to compute them in the
   \ref cs_user_extra_operations user subroutine without postprocessing them,
@@ -399,7 +400,8 @@
 
   \subsection cs_user_parameters_h_cdo_domain_boundary Domain boundary with CDO/HHO schemes
 
-  Several types of domain boundaries can be defined. There are gathered in \ref cs_domain_boundary_type_t
+  Several types of domain boundaries can be defined.
+  There are gathered in \ref cs_boundary_type_t
   The definition of the domain boundaries for CDO/HHO schemes can be specified
   as follows:
 
@@ -515,9 +517,9 @@
   Simple options may be set using the GUI, but more advanced settings,
   possible using the \ref cs_user_linear_solvers function
   are described in this section. It is also recommended to read
-  the documentation of \ref cs_sles.c (which is a solver definition
-  "container"), \ref cs_sles_it.c (iterative solvers, with available
-  types \ref cs_sles_it_type_t), and \ref cs_multigrid.c
+  the documentation of \ref cs_sles.cpp (which is a solver definition
+  "container"), \ref cs_sles_it.cpp (iterative solvers, with available
+  types \ref cs_sles_it_type_t), and \ref cs_multigrid.cpp
   (which are actual solver implementations). The API provided
   is extensible, so it is possible for a user to define other solvers
   or link to external solver libraries using this system,
@@ -695,7 +697,7 @@
   function may be used intead of \ref cs_sles_amgx_set_config_file.
   If neither is called, a defaut configuration is used.
 
-  The \ref cs_sles_amgx_set_pin_memory and \ref cs_sles_amgx_set_use_device
+  The \ref cs_sles_amgx_set_flags and \ref cs_sles_amgx_set_use_device
   functions may also be called to modify default behavior relative to
   using pinned memory and running on the device or host.
 

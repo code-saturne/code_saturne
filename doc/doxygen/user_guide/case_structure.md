@@ -274,7 +274,8 @@ practice is to:
   - Set a dummy boundary condition for the inlet (uniform velocity for instance)
     so as to define the appropriate zone.
 - With user-defined functions:
-  - set the proper velocity profile at inlet in \ref cs_user_boundary_conditions.f90.
+  - set the proper velocity profile at inlet in
+    \ref cs_user_boundary_conditions.cpp.
     The dummy velocity entered in the GUI will not be taken into account as it is
     superseded by this definition (but should appear as the initial value
     in the corresponding arrays).

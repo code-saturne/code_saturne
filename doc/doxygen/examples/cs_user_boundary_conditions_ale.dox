@@ -49,19 +49,19 @@
  One defines a code in the \c ale_bc_type array (of dimensions number of
  boundary faces). The available codes are:
 
- - \c ale_bc_type[face_id] = \ref CS_BOUNDARY_ALE_FIXED: the face \c face_id
+ - \c ale_bc_type[face_id] = \ref CS_BOUNDARY_ALE_FIXED : the face \c face_id
    is considered to be motionless. A zero Dirichlet boundary condition is
    automatically imposed on the mesh velocity. Moreover the displacement of
    corresponding vertices will automatically be set to 0, unless the user has
    modified the \c icodcl condition of the mesh velocity component.
 
- - \c ale_bc_type[face_id] = \ref CS_BOUNDARY_ALE_SLIDING: The mesh slides on
+ - \c ale_bc_type[face_id] = \ref CS_BOUNDARY_ALE_SLIDING : The mesh slides on
    the corresponding face \c face_id. The normal component of the mesh velocity
    is automatically set to 0. A homogeneous Neumann condition is automatically
    prescribed for the other components, as is the case for "Symmetry" fluid condition.
 
- - \c ale_bc_type[face_id] = \ref CS_BOUNDARY_ALE_IMPOSED_VEL: the mesh velocity
-   is imposed on face \c face_id. Thus, the mesh velocity's
+ - \c ale_bc_type[face_id] = \ref CS_BOUNDARY_ALE_IMPOSED_VEL :
+   the mesh velocity is imposed on face \c face_id. Thus, the mesh velocity's
    \c bc_coeffs->get_val_ext_v() values arrays need to be set.
 
  \subsection non_std_bc_ale For "non-standard" conditions

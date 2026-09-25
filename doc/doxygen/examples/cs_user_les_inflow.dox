@@ -45,7 +45,7 @@
   It can be used to set general options, such as the specific
   checkpoint/restart behavior, as in the following example:
 
-  \snippet cs_user_les_inflow-base.c set_restart
+  \snippet cs_user_les_inflow-base.cpp set_restart
 
   \subsection user_les_inflow_define_inlets Defining inlet properties
 
@@ -55,7 +55,7 @@
   For example, to use the Batten Method for boundary faces of
   a zone named INLET_1:
 
-  \snippet cs_user_les_inflow-base.c init_1
+  \snippet cs_user_les_inflow-base.cpp init_1
 
   And to use the Synthetic Eddy Method for boundary faces of
   a zone named INLET_2:
@@ -72,7 +72,7 @@
   The following example illustrates modifying values for the example
   zone named INLET_1:
 
-  \snippet cs_user_les_inflow-base.c update_1
+  \snippet cs_user_les_inflow-base.cpp update_1
 
   \subsection cs_user_les_inflow_example_1 Advanced LES inlet Example 1
 
@@ -81,7 +81,7 @@
   the statistics of the flow is provided for the other synthetic
   turbulence inlets).
 
-  \snippet cs_user_les_inflow-base.c example_1
+  \snippet cs_user_les_inflow-base.cpp example_1
 
   \subsection cs_user_les_inflow_example_2 Advanced LES Example 2
 
@@ -91,6 +91,6 @@
   the statistics of the flow is provided for the other synthetic
   turbulence inlets).
 
-  \snippet cs_user_les_inflow-base.c example_2
+  \snippet cs_user_les_inflow-base.cpp example_2
 
 */

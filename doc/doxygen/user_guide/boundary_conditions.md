@@ -36,7 +36,7 @@ Many [examples](@ref cs_user_boundary_conditions_examples) are provided.
 
 To define or re-define zone-based boundary condition values,
 the \ref cs_user_boundary_conditions_setup (or alternatively
-\ref cs_user_finalize_setup_wrapper) functions may be used.
+\ref cs_user_finalize_setup) functions may be used.
 
 Note that at walls and when using wall laws (which is the case with most
 turbulence models), the boundary values prescribed through Dirichlet
@@ -104,7 +104,7 @@ available through the GUI but only through the
 - \ref cs_user_les_inflow_define (required): define parameters of synthetic turbulence
   at LES inflow.
 - \ref cs_user_les_inflow_update (advanced): update of the characteristics of a given synthetic turbulence inlet.
-- \ref cs_user_les_inflow_advanced:
+- \ref cs_user_les_inflow_advanced :
   definition of mean velocity, Reynolds stresses and dissipation rate
   for each boundary face of the given synthetic turbulence inlet.
 
@@ -117,7 +117,7 @@ on the case (in particular the size of the inlet plane and the level
 of turbulence). As a general rule, the greater is the better since an
 insufficient number can lead to an intermittent signal while some numerical
 tests have shown that this parameter does not have a great influence
-beyond a threshold value. Given the inlet of size <em>h<up>2</up><em> of
+beyond a threshold value. Given the inlet of size <em>h</em><sup>2</sup> of
 a shear flow at a given Reynolds number \f$Re=u_\tau h/\nu\f$, an appropriate
 number of eddies can be evaluated by \f$(Re/50)^3\f$ (<em>Re</em> and
 50 approximates respectively the size, in wall unit, of the largest and

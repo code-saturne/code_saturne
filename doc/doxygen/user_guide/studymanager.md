@@ -121,7 +121,7 @@ Most command-line options are detailed here:
 - `--slurm-batch-wtime=TIME`: maximum computation time in hours per batch in
   SLURM batch mode (8 hours by default)
 - `--slurm-batch-arg=SLURM_BATCH_ARGS`: additional sbatch arguments (use
-  --slurm-batch-arg=<arg> to handle -- in argument)
+  `--slurm-batch-arg=<arg>` to handle -- in argument)
 - `--report` generate description report
 
 Examples
@@ -333,7 +333,7 @@ copied files in the __destination__ `RESU/<run_id>` directory.
 
 ### Notebook variables
 
-`<notebook>` allows passing key-value pairs (with real-values) matching \ref
+`<notebook>` allows passing key-value pairs (with real-values) matching
 notebook variables already defined in the case thanks to the GUI. This will
 override the values in the case's `setup.xml` with the provided values.
 * Key-values pairs are passed to the underlying `code_saturne run` command using
@@ -1050,8 +1050,8 @@ The less-than < and greater-than > symbols are among the five predefined
 entities of the XML specification that represent special characters.
 
 In order to have one of the five predefined entities rendered in any legend,
-title or axis label, use the string `&name;`. Refer to the following table for
-the name of the character to be rendered:
+title or axis label, use the string `&amp;name;`.
+Refer to the following table for the name of the character to be rendered:
 
 <table>
 <caption id="smgr_table_xml_spe_sym">Special symbols of the XML specification</caption>
@@ -1064,7 +1064,8 @@ the name of the character to be rendered:
 </table>
 
 For any of these predefined entities, the XML parser will first replace
-the string `&name;` by the character, which will then allow \f$ \mbox{\LaTeX} \f$
+the string `&amp;name;` by the character,
+which will then allow \f$ \mbox{\LaTeX} \f$
 (or Mathtext if \f$ \mbox{\LaTeX} \f$ is disabled) to process it.
 
 For example, in order to write \f$ \lambda<1 \f$ in a legend, the following

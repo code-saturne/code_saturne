@@ -227,10 +227,10 @@ user-defined functions, a collection of utility subroutines is provided.
 
 for example:
 
-* boundary conditions (c.f. `cs_user_boundary_conditions.f90`},
+* boundary conditions (c.f. \ref cs_user_boundary_conditions.cpp),
 * volume initialization (c.f. \ref cs_user_initialization, ...),
-* [zone](@ref sec_zones) definitions (cf. \ref cs_user_zones}),
-* advanced post-processing (c.f. \ref cs_user_postprocess.c,
+* [zone](@ref sec_zones) definitions (c.f. \ref cs_user_zones),
+* advanced post-processing (c.f. \ref cs_user_postprocess.cpp,
   \ref cs_user_extra_operations, ...),
 
 ### Selection criteria
@@ -272,11 +272,11 @@ Several examples of possible selections are given here:
 *  `cs_selector_get_cell_list("all[]", nlelt, lstelt)` selects all cells.
 
 The user may then use a loop on the selected elements.
-For instance, in the subroutine `cs_user_boundary_y_conditions` used to impose
-boundary  conditions, let us consider the boundary faces of color
+For instance, in the `cs_user_boundary_conditions` function used to impose
+boundary conditions, let us consider the boundary faces of color
 number 2 and which have the coordinate *X <= 0.01*
-(so that `call getfbr('2 and x <= 0.01', nlelt,lstelt)`);
-we can do a loop (`do ilelt = 1, nlelt`) and
-obtain `ifac = lstelt(ilelt)`.
+(so that `cs_selector_get_b_face_list("2 and x <= 0.01", &nlelt, lstelt)`);
+we can do a loop (`for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt++)`) and
+obtain `face_id = lstelt[ilelt]`.
 
 More examples are available in the [User examples](@ref cs_user_examples) section.

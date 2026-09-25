@@ -776,7 +776,7 @@ cs_field_create(const char   *name,
                 bool          has_previous);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a field descriptor.
  *
  * \param[in]  name_prefix   first part of field name
@@ -798,7 +798,7 @@ cs_field_create_by_composite_name(const char   *name_prefix,
                                   bool          has_previous);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return a field matching a given name and attributes,
  *        creating it if necessary.
  *
@@ -1037,10 +1037,10 @@ cs_field_t  *
 cs_field_by_name_try(const char *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return a pointer to a field based on a composite name.
  *
- * The name is expected to be of the form <name_prefix>_<name_suffix>.
+ * The name is expected to be of the form \<name_prefix\>_\<name_suffix\>.
  *
  * \param[in]  name_prefix  first part of field name
  * \param[in]  name_suffix  second part of field name
@@ -1054,10 +1054,10 @@ cs_field_by_composite_name(const char  *name_prefix,
                            const char  *name_suffix);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return a pointer to a field based on a composite name if present.
  *
- * The name is expected to be of the form <name_prefix>_<name_suffix>.
+ * The name is expected to be of the form \<name_prefix\>_\<name_suffix\>.
  * If no field of the given name is defined, nullptr is returned.
  *
  * \remark: in C++, we could simply have a cs_field_by_name_try template
@@ -1075,7 +1075,7 @@ cs_field_by_composite_name_try(const char  *name_prefix,
                                const char  *name_suffix);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return pointer to a field based on a double composite name if present.
  *
  * If no field of the given name is defined, a null pointer is returned.

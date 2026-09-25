@@ -136,9 +136,9 @@
   \ref cs_turbomachinery_coupling_add.
 
   If a coupling is defined and the rotation is not null in at least one of the
-  cases, \ref cstphy::icorio "icorio" determines the type of rotor/stator
-  coupling: icorio = 1 for a <I>Frozen Rotor</I> computation and icorio = 0 for
-  a sliding mesh approach.
+  cases, \ref cs_physical_constants_t::icorio "icorio" determines
+  the type of rotor/stator coupling: icorio = 1 for a <I>Frozen Rotor</I>
+  computation and icorio = 0 for a sliding mesh approach.
 
   \warning Contrary to the mesh joining approach, the code/code coupling
   approach is not fully conservative.

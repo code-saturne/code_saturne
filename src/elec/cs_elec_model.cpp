@@ -116,8 +116,8 @@
         will be tuned at each time step in order to reach a user-specified
         target dissipated power \ref puisim (Joule effect) or a user-specified
         target current intensity \ref couimp (electric arcs).\n The boundary
-        condition tuning is controlled by subroutines \ref elreca or
-        \ref cs_user_electric_scaling.
+        condition tuning is controlled by the \c elreca or
+        \ref cs_user_electric_scaling functions.
   \var  cs_elec_option_t::modrec
         Model for scaling
         - 1: volumic power for boundary conditions tuning,
@@ -138,7 +138,7 @@
         tuning for the potential.\n The target intensity will be reached
         if the boundary conditions are expressed using the variable
         \ref pot_diff or if the initial boundary conditions are multiplied by
-        the variable \ref coejou.\n
+        the variable \ref cs_elec_option_t::coejou "coejou".\n
         Useful with the electric arcs module if \ref ielcor = 1.
   \var  cs_elec_option_t::pot_diff
         Potential difference.\n
@@ -150,7 +150,7 @@
         intensity of current (electric arcs module). In order for the correct
         power or intensity to be reached, the boundary conditions for the
         potential must be expressed with \ref pot_diff . The tuning can be
-        controlled in \ref cs_user_electric_scaling.\n
+        controlled in \ref cs_user_electric_scaling .\n
         Useful if \ref ielcor = 1.
   \var  cs_elec_option_t::puisim
         Imposed power.\n
@@ -158,7 +158,7 @@
         for the calculations with boundary condition tuning for the potential.\n
         The target power will be reached if the boundary conditions are expressed
         using the variable \ref pot_diff or if the initial boundary conditions are
-        multiplied by the variable \ref coejou .
+        multiplied by the variable \ref cs_elec_option_t::coejou "coejou" .
         Useful with the Joule effect module if \ref ielcor = 1.
   \var  cs_elec_option_t::coejou
         coefficient for scaling

@@ -61,7 +61,7 @@
  *============================================================================*/
 
 /*!
- * \enum cs_macfb_navsto_boussinesq_type_t
+ * \typedef cs_macfb_navsto_boussinesq_type_t
  * \brief Type of algorithm to compute the Boussinesq approximation
  */
 

@@ -42,10 +42,14 @@
  *----------------------------------------------------------------------------*/
 
 // Suppress warnings of EOS header file
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 DISABLE_WARNING_PUSH
 DISABLE_WARNING(-Wcast-qual)
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 #include <EOS/API/EOS.hxx>
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 DISABLE_WARNING_POP
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 #include <EOS/API/EOS_Field.hxx>
 #include <EOS/API/EOS_Fields.hxx>
 #include <EOS/API/EOS_Error_Field.hxx>

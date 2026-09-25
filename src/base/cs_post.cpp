@@ -92,7 +92,7 @@
   \var  CS_POST_BOUNDARY_NR
         postprocess boundary without reconstruction
 
-  \enum cs_post_type_t
+  \typedef cs_post_type_t
 
   \brief Postprocessing input variable type
 

@@ -249,7 +249,8 @@ neighboring the wall must be greater than the thickness of the viscous
 sub-layer (at the wall, \f$y^+>2.5\f$ is required, and \f$30<y^+<100\f$ is
 preferable). If the mesh does not match this constraint, the results may
 be false (particularly if thermal phenomena are involved). For more details
-on these constraints, see the [iturb](@ref iturb) keyword.
+on these constraints, see the [turbulence models](@ref turbulence_models)
+section.
 
 Mesh joining {#sec_optpcs_join}
 ------------

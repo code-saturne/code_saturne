@@ -96,7 +96,7 @@ as shown in the [examples](@ref user_initialization_remapper_3d).
 
 - For calculations with constant and uniform time step
   the time step is equal to the reference time step
-  (\ref cs_glob_time_step->dt_ref in user functions).
+  (\ref cs_time_step_t::dt_ref "cs_glob_time_step->dt_ref" in user functions).
 
 - For calculations with a non-constant time step,
   the value the reference time step. In the case of a restart

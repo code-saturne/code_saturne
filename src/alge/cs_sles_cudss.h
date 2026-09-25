@@ -183,7 +183,7 @@ cs_sles_cudss_setup(void               *context,
  *
  * \warn The precision, r_norm, and n_iter parameters are ignored here.
  *       the matching configuration options should be set earlier, using
- *       the \ref cs_sles_cudss_set_config function
+ *       the \ref cs_sles_cudss_set_flags function
  *
  *
  * parameters:

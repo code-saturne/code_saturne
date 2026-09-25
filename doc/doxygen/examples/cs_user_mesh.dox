@@ -65,7 +65,7 @@
   \snippet cs_user_mesh-multiblock_cartesian.cpp mesh_multiblock_cartesian_1
 
   and also calling a joining operation to "glue" the different blocks, either
-  in the GUI or using \ref cs_user_join:
+  in the GUI or using \ref cs_user_join :
 
   \snippet cs_user_mesh-multiblock_cartesian.cpp mesh_multiblock_cartesian_join
 

@@ -217,7 +217,7 @@ The first parameter is a flag to describe the thermal model to consider. This
 flag can be built from the following tags (\ref cs_thermal_model_type_bit_t)
 
 - \ref CS_THERMAL_MODEL_STEADY
-- \ref CS_THERMAL_MODEL_NAVSTO_ADVECTION
+- \ref CS_THERMAL_MODEL_NAVSTO
 
 To specify the choice of the variable used in the thermal model (by default, the
 temperature in Kelvin). This can be modified by adding the tag

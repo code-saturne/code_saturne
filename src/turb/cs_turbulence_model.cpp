@@ -86,6 +86,7 @@
   syntax, as it is expected to be used in many places.
 
   \var  cs_turb_model_t::model
+        \anchor model
         turbulence model
         - CS_TURB_NONE: no turbulence model (laminar flow)
         - CS_TURB_MIXING_LENGTH: mixing length model
@@ -112,6 +113,7 @@
   \var  cs_turb_model_t::itytur
         class of turbulence model (integer value model/10, deprecated)
   \var  cs_turb_model_t::hybrid_turb
+        \anchor hybrid_turb
         Type of hybrid turbulence model
         - 0: No model
         - 1: Detached Eddy Simulation
@@ -125,6 +127,7 @@
         - CS_TURB_LES: LES
         - CS_TURB_HYBRID: Hybrid RANS-LES
   \var  cs_turb_model_t::order
+        \anchor order
         Order of the turbulence model:
         - CS_TURB_ALGEBRAIC: 0th order algebraic model
         - CS_TURB_FIRST_ORDER: 1st order Eddy Viscosity
@@ -213,7 +216,7 @@
         CS_TURB_SECOND_ORDER (\f$R_{ij}-\epsilon\f$ model).
   \var  cs_turb_rans_model_t::irijrb
         accurate treatment of \f$ \tens{R} \f$ at the boundary
-        (see \ref cs_boundary_condition_set_coeffs)
+        (see \ref cs_boundary_conditions_set_coeffs)
         - 1: true
         - 0: false (default)
   \var  cs_turb_rans_model_t::irijec

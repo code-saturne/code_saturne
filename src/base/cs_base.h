@@ -609,10 +609,10 @@ cs_base_finalize_sequence(void);
  *
  * Names are extracted from the working directory structure, which is expected
  * to be of the form:
- * <prefix>/study_name/case_name/RESU/run_id
+ * \<prefix\>/study_name/case_name/RESU/run_id
  *
  * or, in the case of a coupled run:
- * <prefix>/study_name/RESU_COUPLING/run_id/case_name
+ * \<prefix\>/study_name/RESU_COUPLING/run_id/case_name
  *
  * If some names cannot be queried, nullptr is returned.
  *

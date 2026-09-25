@@ -135,7 +135,8 @@
 /*!
  * @name Flags associated to the binary alloy model
  * Automatically set by the code if user functions are used
- * The following flags are set when calling \ref cs_solidification_set_functions
+ * The following flags are set when calling
+ * \ref cs_solidification_set_segr_functions
  * @{
  */
 

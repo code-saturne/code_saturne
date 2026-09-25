@@ -134,7 +134,7 @@
         - 1: true, its variation law be given either
         in the GUI, or in the user subroutine
         \ref cs_user_physical_properties .\n
-        See \ref physical_properties for more informations.
+        See \ref cs_user_physical_properties for more information.
         - 0: false, its value is the reference density
         \ref ro0.
 
@@ -143,7 +143,7 @@
            - 1: true, its variation law be given either
         in the GUI, or in the user subroutine
         \ref cs_user_physical_properties .\n
-        See \ref physical_properties for more informations.
+        See \ref cs_user_physical_properties for more information.
            - 0: false, its value is the reference molecular
         dynamic viscosity \ref viscl0
 
@@ -262,7 +262,8 @@
         Useful if \ref cs_thermal_model_t::thermal_variable
         "cs_glob_thermal_model->thermal_variable" != CS_THERMAL_MODEL_NONE,
         unless the user specifies the specific heat in the user subroutine
-        \ref cs_user_physical_properties (\ref cstphy::icp "icp" > 0) with the
+        \ref cs_user_physical_properties
+        (\ref cs_fluid_properties_t::icp "icp" > 0) with the
         compressible module or coal combustion, \ref cp0 is also needed even
         when there is no user scalar.
         \note None of the scalars from the specific physics is a

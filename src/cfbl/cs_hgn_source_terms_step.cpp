@@ -82,7 +82,7 @@
  *  Note that the energy, velocity and density remain constant throuh this
  *  fractional step but the pressure and the temperature depend on the
  *  fractions and thus evolve. They are updated at the end of the step
- *  using the thermodynamic relation defined in \ref cs_hgn_thermo.c.
+ *  using the thermodynamic relation defined in \ref cs_hgn_thermo.cpp.
 */
 
 /*============================================================================
@@ -104,7 +104,7 @@
  * Note that the energy, velocity and density remain constant throuh this
  * fractional step but the pressure and the temperature depend on the
  * fractions and thus evolve. They are updated at the end of the step
- * using the thermodynamic relation defined in \ref cs_hg_thermo.c.
+ * using the thermodynamic relation defined in \ref cs_hgn_thermo.cpp.
  *
  * \param[in]     m   pointer to mesh
  */

@@ -193,9 +193,9 @@ functions which will be able to access those elements.
 
 ### For specific models
 
-- \ref cs_user_atmospheric_model.f90
+- \ref cs_user_atmo.cpp
 
-  Contains several user subroutines used to define atmospheric
+  Contains several user functions used to define atmospheric
   model settings such as ground properties and 1-d atmospheric profiles.
 
 - \ref cs_user_lagr_model
@@ -271,19 +271,6 @@ Functions called during after time stepping
   allows handling operations required only at the end of the computation (such
   as some specific post-processing extracts), and possibly cleaning up and freeing
   structures used in the main \ref cs_user_extra_operations function.
-
-User-defined Fortran modules
-----------------------------
-
-When compiling user sources in a case's `SRC` directory, the order
-of compilation is not based on any dependency check. This is not
-an issue for additional user C or C++ code, but can be an issue
-for Fortran code with user-defined modules.
-
-If a file named `cs_user_modules.f90` is present, it
-will be compiled before any other Fortran file. So if needed,
-user-defined modules should be defined in that file, to ensure they
-are available in other user subroutines.
 
 Main variables and structures
 =============================

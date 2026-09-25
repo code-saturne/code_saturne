@@ -247,9 +247,8 @@ Non-linear Voller and Prakash model {#cs_ug_cdo_solidification_set_voller_nl}
 -----------------------------------
 
 The setting of the non-linear variant of the Voller and Prakash model relies
-on the main function as the linear one (i.e. \ref
-cs_solidification_set_voller_model or \ref
-cs_solidification_set_voller_model_no_velocity in a more specific situation).
+on the same function as the linear one (i.e. \ref
+cs_solidification_set_voller_model).
 
 ### Advanced usage
 

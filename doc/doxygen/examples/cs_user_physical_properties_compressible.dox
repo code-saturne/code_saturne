@@ -35,7 +35,8 @@
   \warning
 
   It is \b forbidden to modify turbulent viscosity \c visct here
-  (a specific subroutine is dedicated to that: \ref usvist)
+  (a specific function is dedicated to that:
+  \ref cs_user_physical_properties_turb_viscosity)
 
   - cs_glob_fluid_properties->icp = 1 must <b> have been specified </b>
      in \ref cs_user_parameters if we wish to define a variable specific heat
@@ -50,7 +51,7 @@
    - This function is called at the beginning of each time step
      Thus, <b> AT THE FIRST TIME STEP </b> (non-restart case), the only
      values initialized before this call are those defined
-       - in the GUI or \ref cs_user_parametersu (cs_user_parameters.cpp)
+       - in the GUI or \ref cs_user_parameters (cs_user_parameters.cpp)
           - density    (initialized at \c ro0)
           - viscosity  (initialized at \c viscl0)
        - in the GUI or \ref cs_user_initialization
@@ -84,7 +85,7 @@
 
   \ref cs_user_physical_properties and are not to be modified here.
 
-  \snippet cs_user_physical_properties-compressible.cpp compressible_properties_init
+  \snippet cs_user_physical_properties-compressible_flow.cpp compressible_properties_init
 
   \section example1_comp Molecular viscosity varying with temperature
 

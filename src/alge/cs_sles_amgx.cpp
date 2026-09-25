@@ -433,7 +433,7 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
 #else
   partition_offsets[1] = n_g_rows;
 #endif
-  
+
   n_g_rows = partition_offsets[n_ranks];
 
   const int b_size = cs_matrix_get_diag_block_size(a);

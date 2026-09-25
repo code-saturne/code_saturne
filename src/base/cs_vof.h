@@ -282,7 +282,8 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
  * _{\face}
  * \f]
  * Where \f$ C_{\gamma} \f$ is the drift flux factor defined with the variable
- * \ref cdrift, \f$ \vect n _{\face} \f$ the normal vector to the interface.
+ * \ref cs_vof_parameters_t::cdrift "cdrift", \f$ \vect n _{\face} \f$ the
+ * normal vector to the interface.
  * The gradient is computed using a centered scheme:
  * \f[
  * {\vect n _{\face}} = \dfrac{\left ( \grad \alpha \right ) _{\face}}

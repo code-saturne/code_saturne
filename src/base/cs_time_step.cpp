@@ -63,7 +63,7 @@
   \file cs_time_step.cpp
         base time step data.
 
-  \enum cs_time_step_type_t
+  \typedef cs_time_step_type_t
 
   \brief Time step type
 

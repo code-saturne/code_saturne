@@ -2231,7 +2231,7 @@ cs_les_synthetic_eddy_get_n_restart_structures(void)
 /*!
  * \brief Query behavior of the LES inflow module in case of restart.
  *
- * See \ref cs_les_synthetic_eddy_set_restart for details.
+ * See \ref cs_les_inflow_set_restart for details.
  *
  * \param[out]  allow_read   pointer to read flag, or nullptr
  * \param[out]  allow_write  pointer to write flag, or nullptr

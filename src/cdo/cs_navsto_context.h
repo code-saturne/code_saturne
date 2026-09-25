@@ -49,6 +49,7 @@ struct cdo_navsto_ctx_t {
   /*!
    * @name Main field variables
    * Fields for every main variable of the equation. Got from cs_navsto_system_t
+   * @{
    */
 
   /*! \var velocity
@@ -202,7 +203,7 @@ struct cdo_navsto_monolithic_ctx_t : public cdo_navsto_ctx_t {
 struct cdo_navsto_predco_ctx_t : public cdo_navsto_ctx_t {
   /*! \var coupling_context
 
-   *  Pointer to a \ref cs_navsto_projection_t_t (owned by
+   *  Pointer to a \ref cs_navsto_projection_t (owned by
    *  \ref cs_navsto_system_t) containing the settings related to a prjection
    *  or prediction/correction algorithm.
    */
@@ -223,12 +224,6 @@ struct cdo_navsto_predco_ctx_t : public cdo_navsto_ctx_t {
 
   /*! @} */
 };
-
-/*! \var coupling_context
- *  Pointer to a \ref cdo_navsto_ac_ctx_t (owned by \ref cs_navsto_system_t)
- *  containing the settings related to an artificial compressibility (AC)
- *  algorithm
- */
 
 struct cdo_navsto_ac_ctx_t : public cdo_navsto_ctx_t {
   /*! \var coupling_context

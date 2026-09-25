@@ -441,7 +441,7 @@ cs_blas_hip_scal(hipStream_t       stream,
                  const cs_real_t  *alpha,
                  cs_real_t        *x);
 
-#endif /* defined(__HIPCC__)
+#endif /* defined(__HIPCC__) */
 
 /*----------------------------------------------------------------------------*/
 

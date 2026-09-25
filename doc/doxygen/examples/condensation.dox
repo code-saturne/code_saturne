@@ -32,7 +32,6 @@
   Source terms modelling condensation inside the fluid domain
   on internal metal structures and at the
   boundaries can be set respectively through the subroutines
-  \ref cs_user_metal_structures_source_terms and
   \ref cs_user_wall_condensation.
 
   \section condens_h_metal_structures Source terms for condensation on internal metal structures
@@ -50,7 +49,7 @@
   \endcode
 
   The setting of the condensation source terms is then done in the
-  \ref cs_user_wall_consensation function, in addition to the
+  \ref cs_user_wall_condensation function, in addition to the
   other settings.
 
   The cells which are associated with the metal structures volume are
@@ -71,7 +70,7 @@
   \section condens_h_boundary Boundary source terms for condensation
 
   The condensation of steam on surfaces can be activated by adding the following lines
-  in function \ref cs_user_model of file \ref cs_user_parameters.c :
+  in function \ref cs_user_model of file \ref cs_user_parameters.cpp:
 
   \snippet cs_user_parameters-base.cpp wall_condensation
 

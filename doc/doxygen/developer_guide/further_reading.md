@@ -442,7 +442,7 @@ const double *const c;  /* can modify neither pointer
   - From a readability standpoint, we prefer the second syntax, as it is
     less cluttered.
     - There may still be relics of the first syntax in code_saturne, especially
-      in `src/gui`; choose more recent code examples, such as \ref cs_field.c;
+      in `src/gui`; choose more recent code examples, such as \ref cs_field.cpp;
   - It is strongly recommended to use `const` as much as possible
   - It can allow detecting unintentional variable modifications at compile time.
 
@@ -611,7 +611,7 @@ Generic functions may be called using _function pointers_
 - In practical terms, function pointers allow passing a function as an argument
   to a function
 - To illustrate this, let us look at the examples in \ref cs_post.h and in
-  \ref cs_user_postprocess.c.
+  \ref cs_user_postprocess.cpp.
   - ... not so hard, is it now ?
 
 Memory management

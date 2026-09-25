@@ -79,7 +79,7 @@
   \file cs_field_operator.cpp
         Field based algebraic operators.
 
-  \enum cs_field_interpolate_t
+  \typedef cs_field_interpolate_t
 
   \brief Field interpolation modes
 

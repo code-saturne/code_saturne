@@ -274,7 +274,8 @@ calculation restart, default values are then used.
 If the number of faces has been modified (for instance in case of
 modification of the mesh merging or of periodicity), reading
 the auxiliary restart file should be deactivated (in the GUI
-or setting \ref cs_glob_restart_auxiliary->read_auxiliary to `false`).
+or setting \ref cs_restart_auxiliary_t::read_auxiliary
+"cs_glob_restart_auxiliary->read_auxiliary" to `false`).
 
 Checkpoint files are binary, but their contents can be queried
 and dumpled using the `code_saturne bdump` command,
@@ -324,31 +325,36 @@ indicate a required argument, `[ ]` to indicate an optional argument).
 <table>
 <caption id="control_file_commands">control_file syntax</caption>
 <tr><th> command                          <th> arguments
-<tr><td> max_time_step                    <td> <time_step_number>
-<tr><td> max_time_value                   <td> <time_value>
-<tr><td> max_wall_time                    <td> <wall_time>
+<tr><td> max_time_step                    <td> &lt;time_step_number&gt;
+<tr><td> max_time_value                   <td> &lt;time_value&gt;
+<tr><td> max_wall_time                    <td> &lt;wall_time&gt;
 <tr><td>                                  <td>
-<tr><td> checkpoint_time_step             <td> <time_step_number>
-<tr><td> checkpoint_time_value            <td> <time_value>
-<tr><td> checkpoint_wall_time             <td> <wall_clock_time>
+<tr><td> checkpoint_time_step             <td> &lt;time_step_number&gt;
+<tr><td> checkpoint_time_value            <td> &lt;time_value&gt;
+<tr><td> checkpoint_wall_time             <td> &lt;wall_clock_time&gt;
 <tr><td>                                  <td>
-<tr><td> checkpoint_time_step_interval    <td> <time_step_interval>
-<tr><td> checkpoint_time_value_interval   <td> <time_interval>
-<tr><td> checkpoint_wall_time_interval    <td> <wall_time_interval>
+<tr><td> checkpoint_time_step_interval    <td> &lt;time_step_interval&gt;
+<tr><td> checkpoint_time_value_interval   <td> &lt;time_interval&gt;
+<tr><td> checkpoint_wall_time_interval    <td> &lt;wall_time_interval&gt;
 <tr><td>                                  <td>
-<tr><td> control_file_wtime_interval      <td> <wall_time_interval>
+<tr><td> control_file_wtime_interval      <td> &lt;wall_time_interval&gt;
 <tr><td>                                  <td>
 <tr><td> flush                            <td> [time_step_number]
 <tr><td>                                  <td>
-<tr><td> notebook_set                     <td> <parameter_name\> \<value>
+<tr><td> notebook_set
+    <td> &lt;parameter_name&gt; &lt;value&gt;
 <tr><td>                                  <td>
-<tr><td> postprocess_time_step            <td> <time_step_number> [writer_id]
-<tr><td> postprocess_time_value           <td> <time_step_value> [writer_id]
+<tr><td> postprocess_time_step
+    <td> &lt;time_step_number&gt; [writer_id]
+<tr><td> postprocess_time_value
+    <td> &lt;time_step_value&gt; [writer_id]
 <tr><td>                                  <td>
-<tr><td> time_moment_start_time_step      <td> <time_step_number> [time_moment_id]
-<tr><td> time_moment_start_time_value     <td> <time_step_value> [time_moment_id]
+<tr><td> time_moment_start_time_step
+    <td> &lt;time_step_number&gt; [time_moment_id]
+<tr><td> time_moment_start_time_value
+    <td> &lt;time_step_value&gt; [time_moment_id]
 <tr><td>                                  <td>
-<tr><td> time_step_limit                  <td> <time_step_count>
+<tr><td> time_step_limit                  <td> &lt;time_step_count&gt;
 </table>
 
 The `time_step_limit` differs from the `max_time_step` command,

@@ -579,6 +579,8 @@ _select_if_gt_serial(cs_lnum_t  n,
   return n_select;
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 namespace cs {
 namespace algorithm {
 

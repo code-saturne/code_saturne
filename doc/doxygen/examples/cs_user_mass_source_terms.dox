@@ -73,7 +73,7 @@ The value assigned to the pressure is the mass injection rate.
 For other variables, it is the injected value itself.
 Note that turbulence variable values based on a hydraulic diameter can
 and reference velocity easily be set using the
-\ref function cs_turbulence_inflow_volume_mass_injection_ke_hyd_diam.
+\ref cs_turbulence_inflow_volume_mass_injection_ke_hyd_diam.
 
 \subsection user_vol_inj_inlet_ana Advanced definitions
 
@@ -97,7 +97,7 @@ could be adapted to handle different variables (which avoids requiring a
 different function for each variable).
 
 Note that in an actual application, the mass balance can be checked
-using the \ref balance_by_zone_compute or \ref balance_by_zone_compute
+using the \ref cs_balance_by_zone_compute or \ref cs_balance_by_zone
 functions, so using a more complex injection function is useful
 only when trying to replicate the mass source terms user function
 behavior used in previous versions of code_saturne.

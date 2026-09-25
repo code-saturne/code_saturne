@@ -560,6 +560,6 @@ cs_blas_hip_scal(hipStream_t       stream,
   _scal<<<gridsize, blocksize, 0, stream>>>(n, alpha, x);
 }
 
-#endif /* defined(__HIPCC__)
+#endif /* defined(__HIPCC__) */
 
 /*----------------------------------------------------------------------------*/

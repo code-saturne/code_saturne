@@ -61,7 +61,7 @@
   function (\ref cs_user_boundary_conditions.cpp).
 
   As an alternative, the same definitions may be defined in
-  \ref cs_user_finalize_setup_wrapper (\ref cs_user_parameters), which is called
+  \ref cs_user_finalize_setup (\ref cs_user_parameters.cpp), which is called
   immediately after \ref cs_user_boundary_conditions_setup. Choosing one or the
   other should be based on the best balance for reability and maintainability,
 
@@ -257,7 +257,7 @@
   function (\ref cs_user_boundary_conditions.cpp).
 
   As an alternative, the same definitions may be defined in
-  \ref cs_user_finalize_setup_wrapper (\ref cs_user_parameters), which is called
+  \ref cs_user_finalize_setup (\ref cs_user_parameters.cpp), which is called
   immediately after \ref cs_user_boundary_conditions_setup. Choosing one or the
   other should be based on the best balance for reability and maintainability,
 
@@ -797,7 +797,7 @@
   Note that turbulence variables BC's are usually computed automatically,
   based on definitions using
   \ref cs_boundary_conditions_inlet_set_turbulence_hyd_diam
-  or \ref cs_boundary_conditions_inlet_set_turbulence_internsity.
+  or \ref cs_boundary_conditions_inlet_set_turbulence_intensity.
 
   This following examples show how user code con be defined in
   \ref cs_user_boundary_conditions_setup, so as to define inlet properties

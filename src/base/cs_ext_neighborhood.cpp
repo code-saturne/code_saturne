@@ -74,7 +74,7 @@
   \file cs_ext_neighborhood.cpp
         Extended cell neighborhood.
 
-  \enum cs_ext_neighborhood_type_t
+  \typedef cs_ext_neighborhood_type_t
 
   \brief Type of extended neighborhood associated with the mesh
 

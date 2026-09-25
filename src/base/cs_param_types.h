@@ -641,7 +641,7 @@ struct cs_param_psteady_t {
    *
    * \var tol_pred_adam
    * Use Adam-Bashford velocity prediction if residual is lower than the given
-   * value. Negative value means this option is diable.
+   * value. Negative value means this option is disabled.
    */
 
   double atol{ 1e-4 };
@@ -660,21 +660,8 @@ struct cs_param_psteady_t {
 
 struct cs_cdo_navsto_psteady_cvg_t {
   /*!
-   * \var atol
-   * Absolute tolerance under which the iterative process is stopped
-   *
-   * \var rtol
-   * Relative tolerance under which the iterative process is stopped
-   *
-   * \var n_cvg_iter
-   * Number of consecutively converged iterations before stopping the iterative
-   * process
-   *
    * \var n_cvg_iter_curr
-   * Number of iterations which have converged consecutively
-   *
-   * \var n_time_step_solve
-   * Solve Navier-Stokes equations every n_time_step_solve time step
+   * Number of iterations which have converged consecutively.
    */
 
   int n_cvg_iter_curr {0};

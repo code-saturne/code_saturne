@@ -89,7 +89,7 @@ Then right-click on the file named `REFERENCE/cs_user_parameters.c`
 and select **Copy to SRC**. Then, you can choose your favorite file
 editor to add in the function \ref cs_user_model the following lines.
 
-\snippet cs_user_parameters-cdo-laplacian.c param_cdo_laplacian_init
+\snippet cs_user_parameters-cdo-laplacian.cpp param_cdo_laplacian_init
 
 This first activates the CDO module (please refer to \ref
 cs_user_parameters_h_cdo_activation for more details) and then add a
@@ -105,9 +105,9 @@ Third step: Define the equation to solve {#sec_cdo_laplacian_finalize}
 =======================
 
 The last step corresponds to the modification of the function \ref
-cs_user_finalize_setup in the file cs_user_parameters.c
+cs_user_finalize_setup in the file cs_user_parameters.cpp
 
-\snippet cs_user_parameters-cdo-laplacian.c param_cdo_laplacian_finalize
+\snippet cs_user_parameters-cdo-laplacian.cpp param_cdo_laplacian_finalize
 
 After having retrieved the structure \ref cs_equation_param_t
 associated to the equation to solve, one first add a diffusion term
@@ -134,11 +134,11 @@ To go beyond
 
 In order to change the numerical settings related to an equation call
 the function \ref cs_equation_param_set inside the user function named
-\ref cs_user_parameters in the file \ref cs_user_parameters.c
+\ref cs_user_parameters in the file \ref cs_user_parameters.cpp
 
 Here are some examples of numerical settings:
 
-\snippet cs_user_parameters-cdo-condif.c param_cdo_numerics
+\snippet cs_user_parameters-cdo-condif.cpp param_cdo_numerics
 
 This relies on  a `key` `value` principle. The available keys are listed [here](\ref cs_equation_key_t)
 

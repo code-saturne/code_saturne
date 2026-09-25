@@ -39,7 +39,7 @@ as shown on the figures below.
 \image html gui_fluid_props.png "Physical properties - Fluid properties"
 
 Variable (in space and time) properties can be defined using a
-[formula editor](@ref cs_ug_meg_editor), described in a later section.
+[formula editor](@ref gui_user_law_editor), described in a later section.
 
 The validity of the variation laws is the user's responsibility, and
 should be verified, particularly when non-linear laws are defined (for instance,
@@ -195,7 +195,7 @@ By example if we have:
 
 We can define them directly in the GUI
 
-\anchor gui_user_scal_def_init
+\anchor gui_user_scal_def_init_vc
 \image html gui_user_scal_def_init.png "Transported species and scalars definition"
 
 \anchor gui_select_scalare_source_terms

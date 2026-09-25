@@ -81,7 +81,7 @@
 
   In addition to the HTML documentation, code_saturne is provided with a
   pdf document:
-    - a <a href="../../theory.pdf"><b>theory guide</b></a>,
+    - \anchor theory a <a href="../../theory.pdf"><b>theory guide</b></a>,
 
   \section main_components Base architecture
 

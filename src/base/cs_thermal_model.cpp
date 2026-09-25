@@ -92,8 +92,6 @@
            - 2: enthalpy
            - 3: total energy (only for compressible module)
            - 4: internal energy
-  \var  cs_thermal_model_t::itherm
-        \deprecated alias/old name for thermal_variable
 
   \var  cs_thermal_model_t::temperature_scale
         Temperature scale
@@ -103,8 +101,6 @@
         - 0: none
         - 1: Kelvin
         - 2: Celsius
-  \var  cs_thermal_model_t::itpscl
-        \deprecated alias/old name for temperature_scale
   \var  cs_thermal_model_t::has_kinetic_st
         Take kinetic source term in energy equation into account
         (see Amino, Flageul, Carissimo, Tiselj, Benhamadouche, Ferrand 2022)

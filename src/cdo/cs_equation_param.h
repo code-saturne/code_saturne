@@ -1031,7 +1031,7 @@ struct cs_equation_param_t {
  * iterative resolution of a linear system related to an equation. Most
  * iterative solver are not using this tolerance (the relative tolerance is
  * always used). PETSc solvers use this information for instance. Please refer
- * to \ref CS_EQKEY_SOLVER_RTOL\n
+ * to \ref CS_EQKEY_SOLVER_RTOL \n
  * - Example: "1e-14"
  *
  * \var CS_EQKEY_ITSOL_DTOL
@@ -1041,7 +1041,7 @@ struct cs_equation_param_t {
  * iterative resolution of a linear system related to an equation. Most
  * iterative solver are not using this tolerance (the relative tolerance is
  * always used). PETSc solvers use this information for instance. Please refer
- * to \ref CS_EQKEY_SOLVER_RTOL\n
+ * to \ref CS_EQKEY_SOLVER_RTOL \n
  * - Example: "1e3"
  *
  * \var CS_EQKEY_ITSOL_MAX_ITER

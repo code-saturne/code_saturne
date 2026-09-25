@@ -785,7 +785,7 @@ cs_user_paramedmem_define_fields(void);
  *
  * \brief User functions for input of calculation parameters.
  *
- * See \ref parameters for examples.
+ * See \ref cs_user_parameters.cpp for examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1019,7 +1019,7 @@ cs_user_physical_properties_turb_viscosity(cs_domain_t  *domain);
  * \ref cs_fluid_properties_t::ipthrm = 1).
  *
  * The density is then updated
- * (in \ref cs_compute_thermo_pressure_density.c) as:
+ * (in \ref cs_compute_thermo_pressure_density.cpp) as:
  * \f[\rho^{n+1} =\rho^{n} \cdot \frac{P_{th}^{n+1}}{P_{th}^{n}}\f].
  *
  * \param[in, out]  td_p  Updated value of the thermodynamic pressure

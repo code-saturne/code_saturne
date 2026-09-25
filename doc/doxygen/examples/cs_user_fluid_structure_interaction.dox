@@ -54,7 +54,7 @@
   Whether coupled structures are defined using the GUI or as above
   function, their association with boundary zones may be completed or
   modified in the \ref cs_user_fsi_structure_num function from
-  the \ref cs_user_fluid_structure_interaction.c file.
+  the \ref cs_user_fluid_structure_interaction.cpp file.
 
   In the following example, 2 different structures are each associated to
   a boundary group:
@@ -80,7 +80,7 @@
   \section cs_user_fluid_structure_interaction_h_internal  Internal structure parameters
 
   Various global and individual parameters associated to internal structures can
-  be controlled with functions from \ref cs_user_fluid_structure_interaction.c.
+  be controlled with functions from \ref cs_user_fluid_structure_interaction.cpp.
 
   \subsection cs_user_fluid_structure_interaction_h_usstr1_ex_1 Initial positions and parameters
 
@@ -90,7 +90,7 @@
   For each internal structure one can here define:
   - an initial velocity \c vstr0
   - an initial displacement \c xstr0 (i.e. \c xstr0 is the value of the
-    displacement \ref xstr compared to the initial mesh at time t=0)
+    displacement \c xstr compared to the initial mesh at time t=0)
   - a displacement compared to equilibrium \c xstreq.  \c xstreq is the
     initial displacement of the internal structure compared to its position
     at equilibrium; at each time step t and for a displacement \c xstr(t),

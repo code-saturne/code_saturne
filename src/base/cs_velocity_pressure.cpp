@@ -89,8 +89,9 @@
         Indicates whether the source terms in transposed gradient
         and velocity divergence should be taken into account in the
         momentum equation. In the compressible module, these terms
-        also account for the volume viscosity (cf. \ref ppincl::viscv0 "viscv0"
-        and \ref ppincl::iviscv "iviscv")
+        also account for the volume viscosity
+        (cf. \ref cs_fluid_properties_t::viscv0 "viscv0"
+        and \ref cs_fluid_properties_t::iviscv "iviscv")
         \f$\partial_i \left[(\kappa -2/3\,(\mu+\mu_t))\partial_k U_k  \right]
         +     \partial_j \left[ (\mu+\mu_t)\partial_i U_j \right]\f$:
         - 0: not taken into account,
@@ -145,7 +146,7 @@
         In the case of a stratified flow, the calculation cost is higher when
         the improved algorithm is used (about 30\% depending on the case)
         because the hydrostatic pressure must be recalculated at the outlet
-        boundary conditions: see \ref icalhy.\n
+        boundary conditions: see \ref icalhy .\n
         On meshes of insufficient quality, in order to
         improve the convergence, it may be useful to increase the number of
         iterations for the reconstruction of the pressure right-hand side,
@@ -166,6 +167,7 @@
         are taken into account.\n
 
   \var  cs_velocity_pressure_param_t::icalhy
+        \anchor icalhy
         compute the hydrostatic pressure in order to compute the Dirichlet
         conditions on the pressure at outlets
         - 1: calculation of the hydrostatic pressure at the outlet boundary
