@@ -70,6 +70,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_halo.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
@@ -211,9 +212,11 @@ _mat_vec_p_parcsr(cs_matrix_t  *matrix,
   }
   else {
     CS_MALLOC_HD(_t, n_rows, HYPRE_Real, amode);
-    for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
+    cs_dispatch_context ctx;
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (HYPRE_BigInt ii) {
       _t[ii] = x[ii];;
-    }
+    });
+    ctx.wait();
     HYPRE_IJVectorSetValues(coeffs->hx, n_rows, nullptr, _t);
   }
   if (sync)
