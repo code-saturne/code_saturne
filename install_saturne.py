@@ -243,7 +243,9 @@ class Package:
                                       limit=2, file=sys.stderr)
             print("")
             print("Failed downloading " + str(self.url))
-            pass
+            print("")
+            print("In case of Proxy-related issues, you may try downloading the file from a web browser and copy it here.")
+            sys.exit(1)
 
     #---------------------------------------------------------------------------
 
@@ -328,7 +330,7 @@ class Package:
         os.chdir(build_dir)
 
         configure = os.path.join(self.source_dir, 'configure')
-        if os.path.isfile(configure):
+        if os.path.isfile(configure) and self.name != 'HDF5':
 
             # Set command line for configure pass
 
@@ -508,12 +510,13 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.12.3",
-                    archive="hdf5-1.12.3.tar.bz2",
-                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.3/src/%s")
+                    version="1.14.6",
+                    archive="hdf5-1.14.6.tar.gz",
+                    url="https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.6/%s")
 
         p = self.packages['hdf5']
-        p.config_opts = "--enable-build-mode=production"
+        if self.mpicc:
+            p.config_opts = "-DHDF5_ENABLE_PARALLEL=ON"
 
         # CGNS library
 
@@ -521,22 +524,21 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgns",
-                    version="4.4.0",
-                    archive="CGNS-4.4.0.tar.gz",
-                    url="https://github.com/CGNS/CGNS/archive/v4.4.0.tar.gz")
+                    version="4.5.0",
+                    archive="CGNS-4.5.0.tar.gz",
+                    url="https://github.com/CGNS/CGNS/archive/v4.5.0.tar.gz")
 
         p = self.packages['cgns']
         p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
 
         # MED library
-        # Note: alternative address: https://www.code-saturne.org/releases/external/med-5.0.0.tar.bz2
 
         self.packages['med'] = \
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="5.0.0",
-                    archive="med-5.0.0.tar.bz2",
+                    version="6.0.1",
+                    archive="med-6.0.1.tar.gz",
                     url="https://files.salome-platform.org/Salome/medfile/%s")
 
         p = self.packages['med']
@@ -934,8 +936,10 @@ Check the setup file and some utilities presence.
             if hdf5.install_dir:
                 config_opts = config_opts + " --with-hdf5=" + hdf5.install_dir
                 med.config_opts += " --with-hdf5=" + hdf5.install_dir
-                cgns.config_opts += " -DCMAKE_PREFIX_PATH=" + hdf5.install_dir \
-                    + " -DHDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include"
+                cgns.config_opts += " -DCGNS_ENABLE_HDF5=ON -DHD5_DIR=" \
+                    + os.path.join(hdf5.install_dir, "cmake")
+                if os.path.isfile(os.path.join(hdf5.install_dir, 'bin', 'h5pcc')):
+                    cgns.config_opts += " -DHDF5_NEED_MPI=TRUE"
 
         # CGNS
 
