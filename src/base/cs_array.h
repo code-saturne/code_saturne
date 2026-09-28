@@ -2303,8 +2303,8 @@ private:
    * Private members
    *==========================================================================*/
 
-  bool            _owner {true};
-  cs_alloc_mode_t _mode;
+  bool            _owner {true}; /*!< Is the array owner of data ? */
+  cs_alloc_mode_t _mode;         /*!< Memory allocation mode */
 
 };
 

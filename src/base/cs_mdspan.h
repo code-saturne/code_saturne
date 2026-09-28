@@ -1425,10 +1425,10 @@ protected:
    * Private members
    *==========================================================================*/
 
-  cs_lnum_t   _extent[N] {0};
-  cs_lnum_t   _offset[N] {0};
-  cs_lnum_t   _size {0};
-  mutable T*  _data {nullptr};
+  cs_lnum_t   _extent[N] {0};  /*!< Array of extents for each dimension */
+  cs_lnum_t   _offset[N] {0};  /*!< Array of offsets for each dimension */
+  cs_lnum_t   _size {0};       /*!< Total size of the memory block */
+  mutable T*  _data {nullptr}; /*!< Internal raw data pointer */
 
 };
 
