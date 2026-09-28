@@ -1416,7 +1416,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelImplementC.addItem(self.tr("Stub"), 'stub', warn=no_catalyst2)
         self.modelImplementC.addItem(self.tr("Catalyst1 (legacy)"), 'legacy', warn=no_catalyst)
 
-        self.modelStructureC.addItem(self.tr("Multi-block (legacy)"), 'multiblock=1')
+        self.modelStructureC.addItem(self.tr("Multi-block"), 'multiblock=1')
         self.modelStructureC.addItem(self.tr("Partitioned Dataset"), 'multiblock=0')
 
         self.modelPolygon.addItem(self.tr("display"), 'display')

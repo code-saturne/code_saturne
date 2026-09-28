@@ -12,6 +12,12 @@ from paraview.simple import *
 #### disable automatic camera reset on 'Show'
 paraview.simple._DisableFirstRenderCameraReset()
 
+import vtk
+from mpi4py import MPI
+
+gc = vtk.vtkMultiProcessController.GetGlobalController()
+comm = vtk.vtkMPI4PyCommunicator.ConvertToPython(gc.GetCommunicator())
+
 # ----------------------------------------------------------------
 # setup views used in the visualization
 # ----------------------------------------------------------------
@@ -31,11 +37,11 @@ renderView1.Set(
 # ----------------------------------------------------------------
 
 # create a new 'EnSight Reader'
-catalyst = EnSightReader(registrationName='catalyst', CaseFileName='postprocessing/RESULTS_FLUID_DOMAIN.case')
-catalyst.CellArrays = ['Velocity', 'Pressure', 'k', 'epsilon', 'TempC', 'TurbVisc', 'CourantNb', 'FourierNb', 'total_pressure', 'Local_Time_Step', 'mpi_rank_id']
+catalyst_fluid_domain = EnSightReader(registrationName='catalyst_fluid_domain', CaseFileName='postprocessing/RESULTS_FLUID_DOMAIN.case')
+catalyst_fluid_domain.CellArrays = ['Velocity', 'Pressure', 'k', 'epsilon', 'TempC', 'TurbVisc', 'CourantNb', 'FourierNb', 'total_pressure', 'Local_Time_Step', 'mpi_rank_id']
 
 # create a new 'Ghost Cells'
-ghostCells1 = GhostCells(registrationName='GhostCells1', Input=catalyst)
+ghostCells1 = GhostCells(registrationName='GhostCells1', Input=catalyst_fluid_domain)
 
 # create a new 'Cell Data to Point Data'
 cellDatatoPointData1 = CellDatatoPointData(registrationName='CellDatatoPointData1', Input=ghostCells1)
@@ -192,6 +198,31 @@ pNG1.Writer.Set(
 # Catalyst options
 from paraview import catalyst
 options = catalyst.Options()
+
+def is_activated(controller):
+    global catalyst_fluid_domain
+    print_info(catalyst_fluid_domain)
+    from os.path import basename
+    from paraview import print_info
+    from paraview.catalyst import get_script_filename
+    timestep = controller.GetTimeStep()
+    # time = controller.GetTime()
+    print_info("'%s' activated for timestep %d." % (basename(get_script_filename()), timestep))
+    return True
+
+def catalyst_execute(info):
+    # global catalyst_fluid_domain
+    # global velocityLUT
+    r = catalyst_fluid_domain.CellData.GetArray('Velocity').GetRange(-1)
+    r_min = comm.allreduce([r[0]], op=MPI.MIN)[0]
+    r_max = comm.allreduce([r[1]], op=MPI.MAX)[0]
+    velocityLUT.Set(
+        RGBPoints=GenerateRGBPoints(
+            range_min=r_min,
+            range_max=r_max,
+        ),
+        ScalarRangeInitialized=1.0,
+    )
 
 # ------------------------------------------------------------------------------
 if __name__ == '__main__':
