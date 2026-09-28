@@ -763,7 +763,7 @@ cs_electrical_model_specific_initialization(void)
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
-  if (ieljou == 2 || ieljou == 4) {
+  if (cs::any_eq(ieljou, 2, 4)) {
     f = CS_F_(poti);
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->iconv  = 0;
@@ -798,7 +798,7 @@ cs_electrical_model_specific_initialization(void)
     if (f != nullptr)
       f->set_key_double(ksigmas, 0.7);
   }
-  if (ieljou == 2 || ieljou == 4) {
+  if (cs::any_eq(ieljou, 2, 4)) {
     f = CS_F_(poti);
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->blencv = 1.;
@@ -1449,7 +1449,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       bft_printf("-----------------------------------------\n");
     }
 
-    if (ieljou == 2 || ieljou == 4) {
+    if (cs::any_eq(ieljou, 2, 4)) {
       /* compute grad(potI) */
 
       cs_field_gradient_scalar(CS_F_(poti),
@@ -1735,7 +1735,7 @@ cs_elec_add_variable_fields(void)
     cs_add_model_field_indexes(f);
   }
 
-  if (ieljou == 2 || ieljou == 4) {
+  if (cs::any_eq(ieljou, 2, 4)) {
     int f_id = cs_variable_field_create("elec_pot_i", "POT_EL_I",
                                         CS_MESH_LOCATION_CELLS, 1);
     f = cs_field(f_id);
@@ -1850,7 +1850,7 @@ cs_elec_add_property_fields(void)
   }
 
   /* specific for joule effect */
-  if (ieljou == 2 || ieljou == 4) {
+  if (cs::any_eq(ieljou, 2, 4)) {
     f = cs_field_create("current_im",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
@@ -2033,8 +2033,7 @@ cs_elec_scaling_function(const cs_mesh_t             *mesh,
       _elec_option.elcou = elcou;
     }
 
-    if (   cs_glob_elec_option->modrec == 1
-        || cs_glob_elec_option->modrec == 2) {
+    if (cs::any_eq(cs_glob_elec_option->modrec, 1, 2)) {
       double dtj = 1.e15;
       double dtjm = dtj;
       double delhsh = 0.;
@@ -2419,7 +2418,7 @@ cs_elec_define_functions(void)
 
   int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
 
-  if (ieljou == 2 || ieljou == 4) {
+  if (cs::any_eq(ieljou, 2, 4)) {
     cs_function_t *f
       = cs_function_define_by_func("elec_pot_gradient_im",
                                    CS_MESH_LOCATION_CELLS,
@@ -2440,7 +2439,7 @@ cs_elec_define_functions(void)
   /* For Joule heating by direct conduction:
      imaginary component of the current density */
 
-  if (ieljou == 2 || ieljou == 4) {
+  if (cs::any_eq(ieljou, 2, 4)) {
     cs_function_t *f
       = cs_function_define_by_func("elec_current_im",
                                    CS_MESH_LOCATION_CELLS,
