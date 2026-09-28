@@ -461,8 +461,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   bool one_dir = false;
   cs_real_t muzero_cor = 0.;
   /* For direct solar radiation */
-  if ((gg_id == rt_params->atmo_dr_id)
-    || (gg_id == rt_params->atmo_dr_o3_id)) {
+  if (cs::any_eq(gg_id, rt_params->atmo_dr_id, rt_params->atmo_dr_o3_id)) {
     one_dir = true;
     domegat = cs_math_pi;
   }
@@ -474,8 +473,8 @@ _cs_rad_transfer_sol(int                        gg_id,
       + (cs_real_t)cs_glob_atmo_option->smin / 60.
       + (cs_real_t)cs_glob_atmo_option->ssec / 3600.;
 
-    if (   cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
-        || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE)
+    if (cs::any_eq(cs_glob_time_step_options->idtvar,
+                   CS_TIME_STEP_CONSTANT, CS_TIME_STEP_ADAPTIVE))
       utc += cs_glob_time_step->t_cur / 3600.;
 
     cs_real_t albedo, omega, fo, za;
@@ -491,8 +490,7 @@ _cs_rad_transfer_sol(int                        gg_id,
                                  &fo);
 
     /* For direct solar radiation */
-    if (   (gg_id == rt_params->atmo_dr_id)
-        || (gg_id == rt_params->atmo_dr_o3_id)) {
+    if (cs::any_eq(gg_id, rt_params->atmo_dr_id, rt_params->atmo_dr_o3_id)) {
 
       /* Zenithal angle:
        * muzero is almost cos(za),
@@ -672,9 +670,9 @@ _cs_rad_transfer_sol(int                        gg_id,
                          / cs_math_3_norm(grav);
 
             int atmo_ir_id = rt_params->atmo_ir_id;
-            bool diffuse_solar_ir_or_uv
-              = (   gg_id == rt_params->atmo_df_id
-                 || gg_id == rt_params->atmo_df_o3_id);
+            bool diffuse_solar_ir_or_uv = cs::any_eq(gg_id,
+                                                     rt_params->atmo_df_id,
+                                                     rt_params->atmo_df_o3_id);
             cs_real_t *radiance_op = nullptr;
 
             if (diffuse_solar_ir_or_uv) {
@@ -885,8 +883,8 @@ _cs_rad_transfer_sol(int                        gg_id,
              * TODO mind the sign? shall we put a minus?
              * Note: it assumes that downward dirs are done before upwards ones
              * */
-            if (   gg_id == rt_params->atmo_df_o3_id
-                || gg_id == rt_params->atmo_df_id)
+            if (cs::any_eq(gg_id,
+                           rt_params->atmo_df_o3_id, rt_params->atmo_df_id))
               f_qinspe->val[gg_id + face_id * stride] +=
                 f_albedo->val[face_id] * aa * radiance[cell_id];
           }
@@ -1051,8 +1049,7 @@ _compute_net_flux(cs_dispatch_context  &ctx,
                    [=] CS_F_HOST_DEVICE (cs_lnum_t ifac) {
 
     /* Wall faces */
-    if (   bc_type[ifac] == CS_SMOOTHWALL
-        || bc_type[ifac] == CS_ROUGHWALL)
+    if (cs::any_eq(bc_type[ifac], CS_SMOOTHWALL, CS_ROUGHWALL) )
       net_flux[ifac] = eps[ifac] * (  qincid[ifac]
                                     - c_stefan * cs_math_pow4(twall[ifac]));
 
@@ -1061,10 +1058,9 @@ _compute_net_flux(cs_dispatch_context  &ctx,
       net_flux[ifac] = 0.0;
 
     /* Inlet/Outlet    */
-    else if (   bc_type[ifac] == CS_INLET
-             || bc_type[ifac] == CS_CONVECTIVE_INLET
-             || bc_type[ifac] == CS_OUTLET
-             || bc_type[ifac] == CS_FREE_INLET) {
+    else if (cs::any_eq(bc_type[ifac],
+                        CS_INLET, CS_CONVECTIVE_INLET,
+                        CS_OUTLET, CS_FREE_INLET)) {
       if (rt_type == CS_RAD_TRANSFER_DOM)
         net_flux[ifac] = qincid[ifac] - cs_math_pi * coefap[ifac];
       else if (rt_type == CS_RAD_TRANSFER_P1)
@@ -1276,8 +1272,7 @@ _rad_transfer_solve(int bc_type[])
   cs_array<cs_real_t> twall(n_b_faces);
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-    if (   bc_type[ifac] == CS_SMOOTHWALL
-        || bc_type[ifac] == CS_ROUGHWALL)
+    if (cs::any_eq(bc_type[ifac], CS_SMOOTHWALL, CS_ROUGHWALL))
       twall[ifac]  = f_tempb->val[ifac] + xptk;
     else
       twall[ifac]  = 0.0;
@@ -2232,7 +2227,7 @@ _rad_transfer_solve(int bc_type[])
   /* Explicit conservative radiative source terms
    * ---------------------------------------------*/
 
-  if (idiver == 1 || idiver == 2) {
+  if (cs::any_eq(idiver, 1, 2)) {
 
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
     cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -2468,7 +2463,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   cs_array<cs_real_t> twall(n_b_faces);
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-    if (bc_type[ifac] == CS_SMOOTHWALL || bc_type[ifac] == CS_ROUGHWALL)
+    if (cs::any_eq(bc_type[ifac], CS_SMOOTHWALL, CS_ROUGHWALL))
       twall[ifac] = f_tempb->val[ifac] + xptk;
     else
       twall[ifac] = 0.0;

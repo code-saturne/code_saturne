@@ -212,9 +212,10 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
 
     /* Grey or black boundaries (reflecting or not,
        with fixed exterior temperature or conduction flux) */
-    else if (   rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
-             || rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T
-             || rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX) {
+    else if (cs::any_eq(rad_bc_code,
+                        CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T,
+                        CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T,
+                        CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX)) {
 
       /* Mark for logging */
       indtp[log_z_id] = rad_bc_code;
@@ -311,11 +312,11 @@ cs_rad_transfer_compute_wall_t(int         isothp[],
     }
 
     /* Max-Min */
-    if (   rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY
-        || rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
-        || rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T
-        || rad_bc_code == CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX
-        || rad_bc_code == CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX) {
+    if (cs::any_eq(rad_bc_code, CS_BOUNDARY_RAD_WALL_GRAY,
+                                CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T,
+                                CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T,
+                                CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX,
+                                CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX)) {
       if (tpmax <= twall[ifac]) {
         ifacmx = ifac;
         tpmax  = twall[ifac];
