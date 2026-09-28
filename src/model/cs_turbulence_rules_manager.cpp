@@ -170,9 +170,13 @@ cs_turbulence_rules_manager::build_model_enum_map_()
   model_enum_map_["Rij-epsilon"]       = CS_TURB_RIJ_EPSILON_LRR;
   model_enum_map_["Rij-SSG"]           = CS_TURB_RIJ_EPSILON_SSG;
   model_enum_map_["Rij-EBRSM"]         = CS_TURB_RIJ_EPSILON_EBRSM;
+  model_enum_map_["Rij-BFH"]           = CS_TURB_RIJ_EPSILON_BFH;
+  model_enum_map_["Rij-omega"]         = CS_TURB_RIJ_OMEGA;
   model_enum_map_["LES_Smagorinsky"]   = CS_TURB_LES_SMAGO_CONST;
   model_enum_map_["LES_dynamique"]     = CS_TURB_LES_SMAGO_DYN;
   model_enum_map_["LES_WALE"]          = CS_TURB_LES_WALE;
+  model_enum_map_["LES_KSGS"]          = CS_TURB_LES_KSGS;
+  model_enum_map_["LES_TAUSGS"]        = CS_TURB_LES_TAUSGS;
   model_enum_map_["v2f-phi"]           = CS_TURB_V2F_PHI;
   model_enum_map_["v2f-BL-v2/k"]       = CS_TURB_V2F_BL_V2K;
   model_enum_map_["k-omega-SST"]       = CS_TURB_K_OMEGA;
@@ -657,9 +661,13 @@ cs_turbulence_rules_manager::get_model_constant_name
     case 30: return "CS_TURB_RIJ_EPSILON_LRR";
     case 31: return "CS_TURB_RIJ_EPSILON_SSG";
     case 32: return "CS_TURB_RIJ_EPSILON_EBRSM";
+    case 33: return "CS_TURB_RIJ_OMEGA";
+    case 34: return "CS_TURB_RIJ_EPSILON_BFH";
     case 40: return "CS_TURB_LES_SMAGO_CONST";
     case 41: return "CS_TURB_LES_SMAGO_DYN";
     case 42: return "CS_TURB_LES_WALE";
+    case 43: return "CS_TURB_LES_KSGS";
+    case 44: return "CS_TURB_LES_TAUSGS";
     case 50: return "CS_TURB_V2F_PHI";
     case 51: return "CS_TURB_V2F_BL_V2K";
     case 60: return "CS_TURB_K_OMEGA";

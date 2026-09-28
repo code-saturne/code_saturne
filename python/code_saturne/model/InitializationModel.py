@@ -146,7 +146,7 @@ void_fraction = 0.;"""
 _k = 1.5*(0.02*uref)^2;
 k = _k;
 epsilon = _k^1.5*cmu/almax;"""
-        elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
+        elif turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-BFH'):
             formula = """trii   = (0.02*uref)^2;
 cmu = 0.09;
 r11 = trii;
@@ -157,6 +157,14 @@ r13 = 0.;
 r23 = 0.;
 k = 0.5*(r11+r22+r33);
 epsilon = k^1.5*cmu/almax;"""
+        elif turb_model == 'LES_TAUSGS':
+            formula = """trii   = (0.02*uref)^2;
+r11 = trii;
+r22 = trii;
+r33 = trii;
+r12 = 0.;
+r13 = 0.;
+r23 = 0.;"""
         elif turb_model == 'Rij-EBRSM':
             formula = """trii   = (0.02*uref)^2;
 cmu = 0.09;
@@ -226,7 +234,7 @@ omega = k^0.5/almax;"""
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
             req = [('k', "turbulent energy"),
                    ('epsilon', "turbulent dissipation")]
-        elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
+        elif turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-BFH'):
             req = [('r11', "Reynolds stress R11"),
                    ('r22', "Reynolds stress R22"),
                    ('r33', "Reynolds stress R33"),
@@ -234,6 +242,13 @@ omega = k^0.5/almax;"""
                    ('r23', "Reynolds stress R23"),
                    ('r13', "Reynolds stress R13"),
                    ('epsilon', "turbulent dissipation")]
+        elif turb_model == 'LES_TAUSGS':
+            req = [('r11', "Reynolds stress R11"),
+                   ('r22', "Reynolds stress R22"),
+                   ('r33', "Reynolds stress R33"),
+                   ('r12', "Reynolds stress R12"),
+                   ('r23', "Reynolds stress R23"),
+                   ('r13', "Reynolds stress R13")]
         elif turb_model == 'Rij-EBRSM':
             req = [('r11', "Reynolds stress R11"),
                    ('r22', "Reynolds stress R22"),

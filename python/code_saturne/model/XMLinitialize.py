@@ -1495,7 +1495,7 @@ class XMLinit(BaseXmlInit):
         # fix name of Reynolds stress tensor
         ntur = XMLThermoPhysicalModelNode.xmlGetNode('turbulence')
         if ntur:
-            if ntur['model'] in  ('Rij-SSG', 'Rij-epsilon', 'Rij-EBRSM'):
+            if ntur['model'] in  ('Rij-SSG', 'Rij-epsilon', 'Rij-EBRSM', 'Rij-BFH', 'Rij-omega', 'LES_TAUSGS'):
 
                 node = ntur.xmlGetNode('variable', name="r11")
                 if node:

@@ -328,6 +328,9 @@ class OutputVolumicVariablesModel(Variables, Model):
             "Rij-epsilon":      "second_order",
             "Rij-SSG":          "second_order",
             "Rij-EBRSM":        "second_order",
+            "Rij-BFH":          "second_order",
+            "Rij-omega":        "second_order",
+            "LES_TAUSGS":       "second_order",
             "v2f-phi":          "itytur_eq_5",
             "v2f-BL-v2/k":      "itytur_eq_5",
             "k-omega-SST":      "model_eq_CS_TURB_K_OMEGA",
@@ -335,6 +338,9 @@ class OutputVolumicVariablesModel(Variables, Model):
         }
         extra_condition_map = {
             "Rij-EBRSM":   "model_eq_CS_TURB_RIJ_EPSILON_EBRSM",
+            "Rij-BFH":     "model_eq_CS_TURB_RIJ_EPSILON_BFH",
+            "LES_TAUSGS":  "model_eq_CS_TURB_LES_TAUSGS_OR_KSGS",
+            "LES_KSGS":    "model_eq_CS_TURB_LES_TAUSGS_OR_KSGS",
             "v2f-phi":     "model_eq_CS_TURB_V2F_PHI",
             "v2f-BL-v2/k": "model_eq_CS_TURB_V2F_BL_V2K",
         }

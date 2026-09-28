@@ -292,7 +292,7 @@ epsilon = ustar2^1.5/(kappa*dh*0.1);"""
                 self.pushButtonTurb.setStyleSheet("background-color: green")
                 self.pushButtonTurb.setToolTip(result)
 
-        elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
+        elif turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-BFH'):
 
             exp = self.__boundary.getTurbFormula()
             if not exp:
@@ -323,6 +323,47 @@ r23 = 0;
                                     function_type = 'bnd',
                                     zone_name     = self.__boundary._label,
                                     variable_name = 'turbulence_rije',
+                                    expression    = exp,
+                                    required      = req,
+                                    symbols       = sym,
+                                    examples      = exa)
+
+            if dialog.exec():
+                result = dialog.get_result()
+                log.debug("slotFormulaTurb -> %s" % str(result))
+                self.__boundary.setTurbFormula(str(result))
+                self.pushButtonTurb.setStyleSheet("background-color: green")
+                self.pushButtonTurb.setToolTip(result)
+
+        elif turb_model == 'LES_TAUSGS':
+
+            exp = self.__boundary.getTurbFormula()
+            if not exp:
+                exp = self.__boundary.getDefaultTurbFormula(turb_model)
+
+            exa = exa_base + """
+d2s3 = 2/3;
+
+k = ustar2/sqrt(cmu);
+r11 = d2s3*k;
+r22 = d2s3*k;
+r33 = d2s3*k;
+r12 = 0;
+r13 = 0;
+r23 = 0;
+"""
+
+            req = [('r11', "Reynolds stress R11"),
+                   ('r22', "Reynolds stress R22"),
+                   ('r33', "Reynolds stress R33"),
+                   ('r12', "Reynolds stress R12"),
+                   ('r23', "Reynolds stress R13"),
+                   ('r13', "Reynolds stress R23")]
+
+            dialog = QMegEditorView(parent        = self,
+                                    function_type = 'bnd',
+                                    zone_name     = self.__boundary._label,
+                                    variable_name = 'turbulence_tausgs',
                                     expression    = exp,
                                     required      = req,
                                     symbols       = sym,

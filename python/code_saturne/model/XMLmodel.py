@@ -90,11 +90,18 @@ class XMLmodel(Variables):
             nodeList.append(nodeTurb.xmlGetNode('variable', name='k'))
             nodeList.append(nodeTurb.xmlGetNode('variable', name='epsilon'))
 
-        elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
+        elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM', 'Rij-BFH'):
             for var in ('rij', 'epsilon'):
                 nodeList.append(nodeTurb.xmlGetNode('variable', name=var))
             if model in ('Rij-EBRSM'):
                 nodeList.append(nodeTurb.xmlGetNode('variable', name='alpha'))
+
+        elif model == 'Rij-omega':
+            for var in ('rij', 'omega'):
+                nodeList.append(nodeTurb.xmlGetNode('variable', name=var))
+
+        elif model == 'LES_TAUSGS':
+            nodeList.append(nodeTurb.xmlGetNode('variable', name='rij'))
 
         elif model in ('v2f-BL-v2/k'):
             for var in ('k', 'epsilon', 'phi', 'alpha'):

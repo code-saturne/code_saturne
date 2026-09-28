@@ -163,9 +163,8 @@ class GGDHDelegate(QItemDelegate):
             self.modelCombo.addItem(self.tr("OFF"), "OFF")
         else:
             self.modelCombo.addItem(self.tr("SGDH"), "SGDH")
-            if TurbulenceModel(self.case).getTurbulenceModel() == "Rij-epsilon" or \
-               TurbulenceModel(self.case).getTurbulenceModel() == "Rij-SSG" or \
-               TurbulenceModel(self.case).getTurbulenceModel() == "Rij-EBRSM":
+            if TurbulenceModel(self.case).getTurbulenceModel() in \
+               ("Rij-epsilon", "Rij-SSG", "Rij-EBRSM", "Rij-BFH", "Rij-omega"):
                 self.modelCombo.addItem(self.tr("GGDH"), "GGDH")
                 self.modelCombo.addItem(self.tr("AFM"), "AFM")
                 self.modelCombo.addItem(self.tr("DFM"), "DFM")

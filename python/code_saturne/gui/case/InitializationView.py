@@ -337,6 +337,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
                               'Rij-epsilon',
                               'Rij-SSG',
                               'Rij-EBRSM',
+                              'Rij-BFH',
+                              'Rij-omega',
+                              'LES_TAUSGS',
                               'v2f-BL-v2/k',
                               'k-omega-SST',
                               'Spalart-Allmaras'):
@@ -673,8 +676,10 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
             turb_vname = 'turbulence_ke'
-        elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
+        elif turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-BFH'):
             turb_vname = 'turbulence_rije'
+        elif turb_model == 'LES_TAUSGS':
+            turb_vname = 'turbulence_tausgs'
         elif turb_model == 'Rij-EBRSM':
             turb_vname = 'turbulence_rij_ebrsm'
         elif turb_model == 'v2f-BL-v2/k':

@@ -208,7 +208,7 @@
         <Description>RSM (Reynolds stress tensor) models</Description>
         <DetailedDescription>
           The RSM models directly solve the 6 components of the Reynolds stress tensor Rij = u_i u_j (r11, r22, r33, r12, r13, r23).
-          Contrary to the k-epsilon models which assume an isotropic turbulent viscosity, the RSM models capture the anisotropy of the turbulence. Since the tenosrs are symmetrical, there are 6 independent components, which are solved in a coupled manner.
+          Contrary to the k-epsilon models which assume an isotropic turbulent viscosity, the RSM models capture the anisotropy of the turbulence. Since the tensors are symmetrical, there are 6 independent components, which are solved in a coupled manner.
           These models are more precise for flows with curvature, rotation, or strongly anisotropic turbulence.
         </DetailedDescription>
         <Field Name="rij"     Label="Rij"             Dimension="6"

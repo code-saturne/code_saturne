@@ -756,7 +756,7 @@ class InletBoundary(Boundary):
             formula = """k = 0.;
 epsilon = 0.;"""
 
-        elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
+        elif turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-BFH'):
             formula = """r11 = 0.;
 r22 = 0.;
 r33 = 0.;
@@ -764,6 +764,14 @@ r12 = 0.;
 r13 = 0.;
 r23 = 0.;
 epsilon = 0.;"""
+
+        elif turb_model == 'LES_TAUSGS':
+            formula = """r11 = 0.;
+r22 = 0.;
+r33 = 0.;
+r12 = 0.;
+r13 = 0.;
+r23 = 0.;"""
 
         elif turb_model == 'Rij-EBRSM':
             formula = """r11 = 0.;

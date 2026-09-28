@@ -143,7 +143,7 @@ class NumericalParamEquationModel(Model):
         default['rc_clip_factor'] = -1.;
 
         if TurbulenceModel(self.case).getTurbulenceModel() in \
-            ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
+            ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'LES_TAUSGS'):
             if name in self.UVW:
                 default['slope_test'] = 'off'
             if name == 'pressure':

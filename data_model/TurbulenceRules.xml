@@ -33,6 +33,7 @@
     <Value>LES_Smagorinsky</Value>
     <Value>LES_dynamique</Value>
     <Value>LES_WALE</Value>
+    <Value>LES_TAUSGS</Value>
     <Value>v2f-phi</Value>
     <Value>v2f-BL-v2/k</Value>
     <Value>k-omega-SST</Value>
@@ -148,6 +149,18 @@
     </NumericalParameters>
   </TurbulenceModel>
 
+  <TurbulenceModel Name="Rij-BFH">
+    <Enum>33</Enum>
+    <Description>Rij-epsilon BFH model</Description>
+    <NumericalParameters>
+      <WallFunction>
+        <DefaultType>2SCALES_LOG</DefaultType>
+        <YPlusLimit>10.88</YPlusLimit>
+      </WallFunction>
+      <DiffusionModel>ANISOTROPIC</DiffusionModel>
+    </NumericalParameters>
+  </TurbulenceModel>
+
   <TurbulenceModel Name="Rij-omega">
     <Enum>34</Enum>
     <Description>Rij-omega</Description>
@@ -187,6 +200,18 @@
   <TurbulenceModel Name="LES_WALE">
     <Enum>42</Enum>
     <Description>LES WALE model</Description>
+    <NumericalParameters>
+      <WallFunction>
+        <DefaultType>DISABLED</DefaultType>
+        <YPlusLimit>0.0</YPlusLimit>
+      </WallFunction>
+      <DiffusionModel>ISOTROPIC</DiffusionModel>
+    </NumericalParameters>
+  </TurbulenceModel>
+
+  <TurbulenceModel Name="LES_TAUSGS">
+    <Enum>44</Enum>
+    <Description>LES with transport of Tau_SGS</Description>
     <NumericalParameters>
       <WallFunction>
         <DefaultType>DISABLED</DefaultType>
@@ -252,6 +277,7 @@
     <Model>Rij-epsilon</Model>
     <Model>Rij-SSG</Model>
     <Model>Rij-EBRSM</Model>
+    <Model>Rij-BFH</Model>
     <Model>v2f-phi</Model>
     <Model>v2f-BL-v2/k</Model>
     <Model>k-omega-SST</Model>
@@ -262,12 +288,14 @@
     <Model>LES_Smagorinsky</Model>
     <Model>LES_dynamique</Model>
     <Model>LES_WALE</Model>
+    <Model>LES_TAUSGS</Model>
   </Group>
 
   <Group Name="RijModels">
     <Model>Rij-epsilon</Model>
     <Model>Rij-SSG</Model>
     <Model>Rij-EBRSM</Model>
+    <Model>Rij-BFH</Model>
   </Group>
 
   <Group Name="TwoEquations">
@@ -315,6 +343,12 @@
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
 
+  <Rule Type="RequiredComponents" Model="Rij-BFH">
+    <RequireVariable Name="rij"/>
+    <RequireVariable Name="epsilon"/>
+    <RequireProperty Name="turbulent_viscosity"/>
+  </Rule>
+
   <Rule Type="RequiredComponents" Model="Rij-omega">
     <RequireVariable Name="rij"/>
     <RequireVariable Name="omega"/>
@@ -357,6 +391,11 @@
   </Rule>
 
   <Rule Type="RequiredComponents" Model="LES_WALE">
+    <RequireProperty Name="turbulent_viscosity"/>
+  </Rule>
+
+  <Rule Type="RequiredComponents" Model="LES_TAUSGS">
+    <RequireVariable Name="rij"/>
     <RequireProperty Name="turbulent_viscosity"/>
   </Rule>
 

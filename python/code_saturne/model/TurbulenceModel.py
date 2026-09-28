@@ -80,17 +80,20 @@ class TurbulenceModel(Variables, Model):
                             'Rij-epsilon',
                             'Rij-SSG',
                             'Rij-EBRSM',
+                            'Rij-BFH',
                             'Rij-omega',
                             'v2f-BL-v2/k',
                             'k-omega-SST',
                             'Spalart-Allmaras',
                             'LES_Smagorinsky',
                             'LES_dynamique',
-                            'LES_WALE')
+                            'LES_WALE',
+                            'LES_TAUSGS')
 
         self.__turbLESmodel = ('LES_Smagorinsky',
                                'LES_dynamique',
-                               'LES_WALE')
+                               'LES_WALE',
+                               'LES_TAUSGS')
 
         self.__allVariables = ['r11',
                                'r22',
@@ -282,7 +285,7 @@ class TurbulenceModel(Variables, Model):
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
 
-        elif model_turb in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM', 'Rij-omega'):
+        elif model_turb in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM', 'Rij-BFH', 'Rij-omega'):
             # Rij is now considered as a tensor (vector of length 6,
             # since it is symmetric)
             lst = ['rij', 'epsilon']
@@ -308,7 +311,10 @@ class TurbulenceModel(Variables, Model):
             else:
                 self.__removeVariablesAndProperties([], 'smagorinsky_constant^2')
 
-            if self.node_lagr['model'] != "off":
+            if model_turb == 'LES_TAUSGS':
+                self.setNewVariable(self.node_turb, 'rij', label='Rij', dim='6')
+                self.__removeVariablesAndProperties(['rij'], 'smagorinsky_constant^2')
+            elif self.node_lagr['model'] != "off":
                 lst = ('k', 'epsilon')
                 for v in lst:
                     self.setNewVariable(self.node_turb, v, label=v)
@@ -606,7 +612,7 @@ class TurbulenceModel(Variables, Model):
             if self.node_lagr['model'] != "off":
                 nodeList.append(self.node_turb.xmlGetNode('variable', name='k'))
                 nodeList.append(self.node_turb.xmlGetNode('variable', name='epsilon'))
-        elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM', 'Rij-omega'):
+        elif model in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM', 'Rij-BFH', 'Rij-omega'):
             for var in ('r11', 'r22', 'r33',
                         'r12', 'r13', 'r23', 'epsilon'):
                 nodeList.append(self.node_turb.xmlGetNode('variable', name=var))

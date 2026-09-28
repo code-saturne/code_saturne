@@ -460,7 +460,7 @@ class DefineUserScalarsModel(Variables, Model):
         """Put turbulent flux model of an additional_scalar with name scalar_name"""
         lst = self.getScalarNameList() + self.getThermalScalarName()
 
-        if TurbulenceModel not in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
+        if TurbulenceModel not in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM', 'Rij-BFH', 'Rij-omega'):
             mdl = self.defaultScalarValues()['GGDH']
             for var in lst:
                 n = self.case.xmlGetNode('variable', name=var)
