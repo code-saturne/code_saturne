@@ -437,8 +437,7 @@ cs_turbulence_ke(int              phase_id,
   cs_real_t *cvar_ep  =  f_eps->val;
   cs_real_t *cvara_ep =  f_eps->val_pre;
   cs_real_t *cvara_phi = nullptr;
-  if (   model == CS_TURB_V2F_PHI
-      || model == CS_TURB_V2F_BL_V2K) {
+  if (cs::any_eq(model, CS_TURB_V2F_PHI, CS_TURB_V2F_BL_V2K)) {
     cvara_phi = f_phi->val_pre;
   }
   cs_real_t *cvara_al = nullptr;
@@ -851,8 +850,7 @@ cs_turbulence_ke(int              phase_id,
 
   /* Launder-Sharma k-epsilon model
     or Baglietto quadratic k-epsilon model */
-  if ( model == CS_TURB_K_EPSILON_LS
-    || model == CS_TURB_K_EPSILON_QUAD) {
+  if (cs::any_eq(model, CS_TURB_K_EPSILON_LS, CS_TURB_K_EPSILON_QUAD)) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t rho  = crom[c_id];
       cs_real_t xeps = cvar_ep[c_id];

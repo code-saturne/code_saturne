@@ -684,9 +684,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
   }
 
   cs_real_t *cvar_al = nullptr;
-  if (   (turb_flux_model == 11)
-      || (turb_flux_model == 21)
-      || (turb_flux_model == 31))
+  if (cs::any_eq(turb_flux_model, 11, 21, 31))
     cvar_al = cs_field_by_composite_name(f->name, "alpha")->val;
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
@@ -733,7 +731,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
     cs_real_t alpha_theta = 0, xpk = 0., xgk = 0;
     cs_real_t eta_ebafm = 0, xi_ebafm = 0, gamma_eb = 0;
 
-    if ((turb_flux_model == 11) || (turb_flux_model == 21)) {
+    if (cs::any_eq(turb_flux_model, 11, 21)) {
 
       alpha_theta = cvar_al[c_id];
 
@@ -910,9 +908,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
 
     /*  Extra diag part of the diffusion tensor
         for cs_convection_diffusion_solve.c */
-    if (   (turb_flux_model == 11)
-        || (turb_flux_model == 20)
-        || (turb_flux_model == 21)) {
+    if (cs::any_eq(turb_flux_model, 11, 20, 21)) {
       vistet[c_id][3] = crom[c_id]*ctheta*xtt*xrij[1][0];
       vistet[c_id][4] = crom[c_id]*ctheta*xtt*xrij[2][1];
       vistet[c_id][5] = crom[c_id]*ctheta*xtt*xrij[2][0];
@@ -1505,9 +1501,7 @@ cs_turbulence_rit_div(const int        field_id,
 
   cs_array_2d<cs_real_t> grad_al;
 
-  if (   (turb_flux_model == 11)
-      || (turb_flux_model == 21)
-      || (turb_flux_model == 31)) {
+  if (cs::any_eq(turb_flux_model, 11, 21, 31)) {
 
     grad_al.set_alloc_mode(cs_alloc_mode);
     grad_al.reshape(n_cells_ext, 3);
@@ -1530,7 +1524,7 @@ cs_turbulence_rit_div(const int        field_id,
   const cs_real_t mod_grav = cs_math_3_norm(grav);
   if (   (mod_grav > cs_math_epzero)
       && ((irovar > 0) || (idilat == 0))
-      && ((turb_flux_model_type == 2) || (turb_flux_model_type == 3))
+      && cs::any_eq(turb_flux_model_type, 2, 3)
       && rans_mdl->has_buoyant_term == 1) {
 
     f_tv = cs_field_get_variance(f);
@@ -1639,9 +1633,7 @@ cs_turbulence_rit_div(const int        field_id,
   /* Add the divergence of the thermal flux to the thermal transport equation
      ------------------------------------------------------------------------ */
 
-  if (   turb_flux_model == 11
-      || turb_flux_model_type == 2
-      || turb_flux_model_type == 3) {
+  if (turb_flux_model == 11 || cs::any_eq(turb_flux_model_type, 2, 3)) {
 
     cs_field_t *f_dut = cs_field_by_double_composite_name_try
                           ("algo:", f_ut->name, "_divergence");

@@ -271,8 +271,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
 
   const cs_equation_param_t *eqp = nullptr;
 
-  if (   cs_glob_turb_model->itytur == 2
-      || cs_glob_turb_model->itytur == 5
+  if (   cs::any_eq(cs_glob_turb_model->itytur, 2, 5)
       || cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
     eqp = cs_field_get_equation_param_const(CS_F_(k));
   }

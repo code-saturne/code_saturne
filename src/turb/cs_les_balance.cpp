@@ -387,8 +387,7 @@ _les_balance_laplacian(cs_real_t   *wa,
     cs_real_t hint = visc / b_dist[face_id];
 
     if (   type == 0
-        && (   bc_type[face_id] == CS_SMOOTHWALL
-            || bc_type[face_id] == CS_ROUGHWALL) ) {
+        && cs::any_eq(bc_type[face_id], CS_SMOOTHWALL, CS_ROUGHWALL) ) {
       /* cs_boundary_conditions_set_dirichlet_scalar */
 
       coefaf[face_id] = 0.;   // hint*pimp, with pimp == 0
@@ -521,8 +520,7 @@ _les_balance_laplacian(cs_real_t   *wa,
         for (cs_lnum_t jj = 0; jj < 3; jj++)
           coefbv[face_id][ii][jj] = 0.;
 
-        if (!(   bc_type[face_id] == CS_SMOOTHWALL
-              || bc_type[face_id] == CS_ROUGHWALL))
+        if (cs::none_eq(bc_type[face_id], CS_SMOOTHWALL, CS_ROUGHWALL))
             coefbv[face_id][ii][ii] = 1.;
     }
   });
@@ -620,8 +618,7 @@ _les_balance_compute_gradients(void)
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       coefas[face_id] = 0.;
 
-      if (   bc_type[face_id] == CS_SMOOTHWALL
-          || bc_type[face_id] == CS_ROUGHWALL)
+      if (cs::any_eq(bc_type[face_id], CS_SMOOTHWALL, CS_ROUGHWALL))
         coefbs[face_id] = 0.;
       else
         coefbs[face_id] = 1.;
@@ -3342,8 +3339,7 @@ cs_les_balance_compute_rij(void)
     /* Bc coeffs */
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       coefas[face_id] = 0.;
-      if (   bc_type[face_id] == CS_SMOOTHWALL
-          || bc_type[face_id] == CS_ROUGHWALL)
+      if (cs::any_eq(bc_type[face_id], CS_SMOOTHWALL, CS_ROUGHWALL))
         coefbs[face_id] = 0.;
       else
         coefbs[face_id] = 1.;
@@ -3870,8 +3866,7 @@ cs_les_balance_compute_tui(void)
       /* Bc coeffs */
       ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
         coefas[face_id] = 0.;
-        if (   bc_type[face_id] == CS_SMOOTHWALL
-            || bc_type[face_id] == CS_ROUGHWALL)
+        if (cs::any_eq(bc_type[face_id], CS_SMOOTHWALL, CS_ROUGHWALL))
           coefbs[face_id] = 0.;
         else
           coefbs[face_id] = 1.;

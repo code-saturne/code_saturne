@@ -1007,8 +1007,7 @@ cs_turbulence_kw(int phase_id)
 
     /* DES or DDES mode for k-w SST */
 
-    else if (   hybrid_turb == CS_HYBRID_DES
-             || hybrid_turb == CS_HYBRID_DDES) {
+    else if (cs::any_eq(hybrid_turb, CS_HYBRID_DES, CS_HYBRID_DDES)) {
 
       const cs_real_t cddes = cs_turb_cddes;
 
@@ -1177,8 +1176,7 @@ cs_turbulence_kw(int phase_id)
         cs_real_t ro = crom[c_id];
 
         cs_real_t fhybr;
-        if (   hybrid_turb == CS_HYBRID_DES
-            || hybrid_turb == CS_HYBRID_DDES)
+        if (cs::any_eq(hybrid_turb, CS_HYBRID_DES, CS_HYBRID_DDES))
           fhybr = w1[c_id];
         else if (hybrid_turb == CS_HYBRID_HTLES)
           fhybr = 1./(cmu*xw*htles_t[c_id]);

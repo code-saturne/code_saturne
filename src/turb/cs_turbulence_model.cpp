@@ -1112,28 +1112,24 @@ cs_turbulence_init_models(void)
      _turb_model.type = CS_TURB_RANS;
      _turb_model.order = CS_TURB_ALGEBRAIC;
   }
-  else if (   _turb_model.model == CS_TURB_K_EPSILON
-           || _turb_model.model == CS_TURB_K_EPSILON_LIN_PROD
-           || _turb_model.model == CS_TURB_K_EPSILON_LS
-           || _turb_model.model == CS_TURB_K_EPSILON_QUAD
-           || _turb_model.model == CS_TURB_V2F_PHI
-           || _turb_model.model == CS_TURB_V2F_BL_V2K
-           || _turb_model.model == CS_TURB_K_OMEGA
-           || _turb_model.model == CS_TURB_SPALART_ALLMARAS) {
+  else if (cs::any_eq(_turb_model.model,
+                      CS_TURB_K_EPSILON, CS_TURB_K_EPSILON_LIN_PROD,
+                      CS_TURB_K_EPSILON_LS, CS_TURB_K_EPSILON_QUAD,
+                      CS_TURB_V2F_PHI, CS_TURB_V2F_BL_V2K,
+                      CS_TURB_K_OMEGA, CS_TURB_SPALART_ALLMARAS) ) {
     _turb_model.type = CS_TURB_RANS;
     _turb_model.order = CS_TURB_FIRST_ORDER;
   }
-  else if (   _turb_model.model == CS_TURB_RIJ_EPSILON_LRR
-           || _turb_model.model == CS_TURB_RIJ_EPSILON_SSG
-           || _turb_model.model == CS_TURB_RIJ_EPSILON_BFH
-           || _turb_model.model == CS_TURB_RIJ_OMEGA
-           || _turb_model.model == CS_TURB_RIJ_EPSILON_EBRSM) {
+  else if (cs::any_eq(_turb_model.model,
+                      CS_TURB_RIJ_EPSILON_LRR, CS_TURB_RIJ_EPSILON_SSG,
+                      CS_TURB_RIJ_EPSILON_BFH, CS_TURB_RIJ_OMEGA,
+                      CS_TURB_RIJ_EPSILON_EBRSM) ) {
     _turb_model.type = CS_TURB_RANS;
     _turb_model.order = CS_TURB_SECOND_ORDER;
   }
-  else if (   _turb_model.model == CS_TURB_LES_SMAGO_CONST
-           || _turb_model.model == CS_TURB_LES_SMAGO_DYN
-           || _turb_model.model == CS_TURB_LES_WALE) {
+  else if (cs::any_eq(_turb_model.model,
+                      CS_TURB_LES_SMAGO_CONST, CS_TURB_LES_SMAGO_DYN,
+                      CS_TURB_LES_WALE) ) {
     _turb_model.type = CS_TURB_LES;
     _turb_model.order = CS_TURB_ALGEBRAIC;
   }
@@ -1150,10 +1146,9 @@ cs_turbulence_init_models(void)
     _turb_model.itytur = CS_TURB_TYPE_NONE;
   }
 
-  if (   _turb_model.model == CS_TURB_K_EPSILON_LS
-      || _turb_model.model == CS_TURB_V2F_PHI
-      || _turb_model.model == CS_TURB_V2F_BL_V2K
-      || _turb_model.model == CS_TURB_RIJ_EPSILON_EBRSM)
+  if (cs::any_eq(_turb_model.model,
+                 CS_TURB_K_EPSILON_LS, CS_TURB_V2F_PHI,
+                 CS_TURB_V2F_BL_V2K, CS_TURB_RIJ_EPSILON_EBRSM) )
     _turb_model.high_low_re = CS_TURB_LOW_RE;
   else if (_turb_model.model == CS_TURB_K_OMEGA)
     _turb_model.high_low_re = CS_TURB_HIGH_LOW_RE;
@@ -1237,9 +1232,10 @@ cs_turb_compute_constants(int phase_id)
   if (f_phi != nullptr)
     f_phi->set_key_double(k_turb_schmidt, 1.);
 
-  if (   cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_LRR
-      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_SSG
-      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
+  if (cs::any_eq(cs_glob_turb_model->model,
+                 CS_TURB_RIJ_EPSILON_LRR,
+                 CS_TURB_RIJ_EPSILON_SSG,
+                 CS_TURB_RIJ_EPSILON_BFH) )
     f_eps->set_key_double(k_turb_schmidt, 1.22);
   else if (cs_glob_turb_model->model == CS_TURB_RIJ_OMEGA) {
     f_omg->set_key_double(k_turb_schmidt, 1./0.5);
@@ -1302,9 +1298,10 @@ cs_turb_compute_constants(int phase_id)
       (cs::abs(cs_turb_crij2) < 1.e-12))
     cs_turb_crij_c0 = (cs_turb_crij1-1.0)*2.0/3.0;
 
-  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_SSG
-      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM
-      || cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K)
+  if (cs::any_eq(cs_glob_turb_model->model,
+                 CS_TURB_RIJ_EPSILON_SSG,
+                 CS_TURB_RIJ_EPSILON_EBRSM,
+                 CS_TURB_V2F_BL_V2K) )
     cs_turb_ce2 = 1.83;
 
   if (cs_glob_turb_model->model == CS_TURB_V2F_PHI) {
@@ -1548,10 +1545,9 @@ cs_turb_model_log_setup(void)
                   cs_glob_turb_rans_model->xlomlg);
 
   }
-  else if (   turb_model->model == CS_TURB_K_EPSILON
-           || turb_model->model == CS_TURB_K_EPSILON_LIN_PROD
-           || turb_model->model == CS_TURB_K_EPSILON_LS
-           || turb_model->model == CS_TURB_K_EPSILON_QUAD) {
+  else if (cs::any_eq(turb_model->model,
+                      CS_TURB_K_EPSILON, CS_TURB_K_EPSILON_LIN_PROD,
+                      CS_TURB_K_EPSILON_LS, CS_TURB_K_EPSILON_QUAD)) {
 
     cs_log_printf
       (CS_LOG_SETUP,
@@ -1638,9 +1634,10 @@ cs_turb_model_log_setup(void)
   }
   if (turb_model->type == CS_TURB_LES) {
 
-    if (   turb_model->model == CS_TURB_LES_SMAGO_CONST
-        || turb_model->model == CS_TURB_LES_SMAGO_DYN
-        || turb_model->model == CS_TURB_LES_KSGS)
+    if (cs::any_eq(turb_model->model,
+                   CS_TURB_LES_SMAGO_CONST,
+                   CS_TURB_LES_SMAGO_DYN,
+                   CS_TURB_LES_KSGS) )
       cs_log_printf(CS_LOG_SETUP,
                     _("    csmago:      %14.5e (Smagorinsky constant)\n"
                       "    xlesfl:      %14.5e (Filter with in a cell is)\n"
@@ -1849,10 +1846,9 @@ cs_turb_constants_log_setup(void)
                   cs_turbulence_model_name(
                     static_cast<cs_turb_model_type_t>(turb_model->model)));
 
-  if (   turb_model->model == CS_TURB_K_EPSILON
-      || turb_model->model == CS_TURB_K_EPSILON_LIN_PROD
-      || turb_model->model == CS_TURB_K_EPSILON_LS
-      || turb_model->model == CS_TURB_K_EPSILON_QUAD)
+  if (cs::any_eq(turb_model->model,
+                 CS_TURB_K_EPSILON, CS_TURB_K_EPSILON_LIN_PROD,
+                 CS_TURB_K_EPSILON_LS, CS_TURB_K_EPSILON_QUAD))
     cs_log_printf
       (CS_LOG_SETUP,
        _("    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
@@ -2098,8 +2094,7 @@ cs_turb_init_ref_quantities(void)
   if (_turb_ref_values.almax < 0)
     _turb_ref_values.almax = cbrt(mq->tot_vol);
 
-  if (   _turb_model.type == CS_TURB_RANS
-      || _turb_model.type == CS_TURB_HYBRID) {
+  if (cs::any_eq(_turb_model.type, CS_TURB_RANS, CS_TURB_HYBRID)) {
     cs_log_printf
       (CS_LOG_DEFAULT,
        _("\n"

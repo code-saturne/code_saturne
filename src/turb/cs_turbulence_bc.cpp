@@ -576,7 +576,7 @@ cs_turbulence_bc_init_pointers(void)
         int f_turbt = f->get_key_int(k_turbt) ;
         if (f_turbt / 10 == 3)
           n_sca_ut ++;
-        if (f_turbt == 11 || f_turbt == 21 || f_turbt == 31)
+        if (cs::any_eq(f_turbt, 11, 21, 31) )
           n_sca_alp_bl ++;
       }
     }
@@ -604,7 +604,7 @@ cs_turbulence_bc_init_pointers(void)
           _turb_bc_id.f_ut[n_sca_ut] = cs_field(fid_turbt);
           n_sca_ut ++;
         }
-        if (f_turbt == 11 || f_turbt == 21 || f_turbt == 31) {
+        if (cs::any_eq(f_turbt, 11, 21, 31) ) {
           int fid_turbt = f->get_key_int(k_f_turbt_alp_bl);
           _turb_bc_id.f_alp_bl_t[n_sca_alp_bl] = cs_field(fid_turbt);
           n_sca_alp_bl ++;

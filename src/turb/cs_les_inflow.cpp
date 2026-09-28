@@ -932,9 +932,8 @@ cs_les_volume_initialize(void)
     /* Rescaling of the synthetic fluctuations by the statistics */
     /*-----------------------------------------------------------*/
 
-    if (   inlet->type == CS_INFLOW_SEM
-        || inlet->type == CS_INFLOW_RANDOM
-        || inlet->type == CS_INFLOW_BATTEN)
+    if (cs::any_eq(inlet->type,
+                   CS_INFLOW_SEM, CS_INFLOW_RANDOM, CS_INFLOW_BATTEN) )
       cs_les_rescale_fluctuations(n_elts,
                                   rij_l.data<cs_real_6_t>(),
                                   fluctuations.data<cs_real_3_t>());
@@ -1096,9 +1095,8 @@ cs_les_inflow_compute(void)
     /* Rescaling of the synthetic fluctuations by the statistics */
     /*-----------------------------------------------------------*/
 
-    if (   inlet->type == CS_INFLOW_SEM
-        || inlet->type == CS_INFLOW_RANDOM
-        || inlet->type == CS_INFLOW_BATTEN)
+    if (cs::any_eq(inlet->type,
+                   CS_INFLOW_SEM, CS_INFLOW_RANDOM, CS_INFLOW_BATTEN))
       cs_les_rescale_fluctuations(n_elts,
                                   rij_l.data<cs_real_6_t>(),
                                   fluctuations.data<cs_real_3_t>());
@@ -1106,8 +1104,8 @@ cs_les_inflow_compute(void)
     /* Rescaling of the mass flow rate */
     /*---------------------------------*/
 
-    if (   inlet->type == CS_INFLOW_RANDOM || inlet->type == CS_INFLOW_BATTEN
-        || inlet->type == CS_INFLOW_SEM)
+    if (cs::any_eq(inlet->type,
+                   CS_INFLOW_RANDOM, CS_INFLOW_BATTEN, CS_INFLOW_SEM))
       _rescale_flowrate(n_elts,
                         elt_ids,
                         fluctuations.data<cs_real_3_t>());

@@ -364,8 +364,7 @@ _compute_up_rhop(int                 phase_id,
   /* We want to use the computed turbulent heat fluxes (when they exist)
      when we are not dealing with atmo cases */
   if (   (f_hf != nullptr && cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 1)
-      || turb_flux_model_type == 3
-      || turb_flux_model_type == 2 ) {
+      || cs::any_eq(turb_flux_model_type, 3, 2) ) {
 
     /* Using thermal fluxes
      * (only for thermal scalar for the moment) */
@@ -1023,11 +1022,11 @@ _gravity_st_epsilon(int              phase_id,
       time_scale = cs::max(time_scale, xttkmg);
 
       /* Calculation of the mixed time scale for EB thermal
-       *  flux models (Dehoux, 2017) */
-      if (  (turb_flux_model == 11)  /* EB-GGDH */
-         || (turb_flux_model == 21)  /* EB-AFM */
-         || (turb_flux_model == 31)) /* EB-DFM */ {
+       *  flux models (Dehoux, 2017)
+       *  Done for EB-GGDG (11), EB-AFM (21) and EB-DFM (31)
+       *  */
 
+      if (cs::any_eq(turb_flux_model,11, 21, 31)) {
         cs_real_t prdtl = viscl[c_id]*xcp;
         if (viscls != nullptr)
           prdtl /= viscls[c_id];
@@ -4538,8 +4537,8 @@ cs_turbulence_rij(int phase_id)
   cs_array_2d<cs_real_t> weighf(n_i_faces, 2, cs_alloc_mode);
   cs_array_2d<cs_real_t> viscce(n_cells_ext, 6, cs_alloc_mode);
 
-  if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR
-      || turb_model->model == CS_TURB_LES_TAUSGS) {
+  if (cs::any_eq(turb_model->model,
+                 CS_TURB_RIJ_EPSILON_LRR, CS_TURB_LES_TAUSGS)) {
     _pre_solve_lrr(f_rij, phase_id,
                    gradv.data<cs_real_33_t>(),
                    prod.data<cs_real_6_t>(),
@@ -5745,8 +5744,8 @@ cs_turbulence_rij_compute_rusanov(void)
     r_nn_0 *= cs_math_pow2(cvar_rho[c_id0]); // to have rho in it
 
     /* The part of U.n is already in the material upwind scheme */
-    if (   bc_type[face_id] == CS_SMOOTHWALL || bc_type[face_id] == CS_ROUGHWALL
-        || bc_type[face_id] == CS_SYMMETRY)
+    if (cs::any_eq(bc_type[face_id],
+                   CS_SMOOTHWALL, CS_ROUGHWALL, CS_SYMMETRY) )
       bpro_rusanov[face_id] = sqrt(2.*cs::abs(r_nn_0));
     else
       bpro_rusanov[face_id] = 0.;

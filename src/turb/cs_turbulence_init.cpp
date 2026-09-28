@@ -134,7 +134,7 @@ cs_turbulence_init_by_ref_quantities(void)
 
   cs_dispatch_context ctx;
 
-  if (turb_model->itytur == 2 || turb_model->itytur == 5) {
+  if (cs::any_eq(turb_model->itytur, 2, 5)) {
 
     cs_span<cs_real_t> cvar_k = CS_F_(k)->get_val_s();
     cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_val_s();
@@ -240,7 +240,7 @@ cs_turbulence_init_clip_and_verify(void)
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  if (turb_model->itytur == 2 || turb_model->itytur == 5) {
+  if (cs::any_eq(turb_model->itytur, 2, 5)) {
 
     cs_span<cs_real_t> cvar_k = CS_F_(k)->get_val_s();
     cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_val_s();
