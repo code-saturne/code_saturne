@@ -103,8 +103,8 @@ entities could lead to a high number of groups.
 ### NOPO/Simail (INRIA/Distene) {#sec_fmtdesc_des}
 <!-- -->
 
-This format is output by Simail, which was used heavily at EDF until
-a few years ago. code_saturne does not currently handle cylindrical or
+This format is output by Simail, which was used heavily at EDF in the 1990's
+and early 2000's. code_saturne does not handle cylindrical or
 spherical coordinates, but it seems that Simail always outputs meshes in
 Cartesian coordinates, even if points have been defined in another system.
 Most "classical" element types are available, except for pyramids.
@@ -175,9 +175,9 @@ for pyramids.
 ### GAMBIT neutral {#sec_fmtdesc_neu}
 <!-- -->
 
-This format may be produced by ANSYS GAMBIT meshing tool.
+This format was produced by ANSYS GAMBIT meshing tool.
 As this tool did not export meshes to other formats directly handled
-by the Preprocesso (though FLUENT itself may export files to the CGNS or
+by the Preprocessor (though FLUENT itself may export files to the CGNS or
 I-dead universal formats), it was deemed useful to enable the Preprocessor
 to directly read files in GAMBIT neutral format.
 
@@ -220,7 +220,7 @@ so we simply convert their numbers to group names.
 <tr><td> Zone selection    <td> part numbers interpreted as numbered groups
 <tr><td> Compatibility     <td> All files of this type
 <tr><td> Documentation     <td> on-line documentation, also available at:
-                                <a href="www3.ensight.com/EnSight10_Docs/UserManual.pdf">www3.ensight.com/EnSight10_Docs/UserManual.pdf</a>
+                                <a href="https://vis.lbl.gov/archive/NERSC/Software/ensight/doc/OnlineHelp/UM-C11.pdf">https://vis.lbl.gov/archive/NERSC/Software/ensight/doc/OnlineHelp/UM-C11.pdf"</a>
 </table>
 
 Mesh formats supported for input or output {#sec_formats_inout}
@@ -233,8 +233,8 @@ Initially defined by EDF R&D, this format *Modèle d'échanges de Données*,
 or *Model for Exchange of Data* has been defined and maintained through
 a working group comprising members of EDF R&D and CEA.
 This is the reference format for the
-[*SALOME*](http://www.salome-platform.org/) platform.
-This format is quite complete, allowing the definition of all "classical"
+[*SALOME*](https://www.salome-platform.org/) platform.
+This format is quite comprehensive, allowing the definition of all "classical"
 element types, in nodal or descending connectivity.
 It may handle polygonal faces and polyhedral cells,
 as well as the definition of structured meshes.
@@ -316,6 +316,8 @@ activated using a sub-option of the mesh selection, and allows obtaining
 zone selection information from meshes that do not have explicit
 boundary condition information but that are subdivided in appropriate zones or
 sections (which depends on the tool used to build the mesh).
+This is especially useful for volume regions, which are not supported by
+code_saturne, and seems upported by very few other tools.
 
 When outputting to CGNS, an unstructured connectivity is used for the calculation
 domain, with no face joining information or face boundary condition
@@ -329,7 +331,7 @@ choose between multiple CGNS bases (meshes in the code_saturne),
 so when outputting to CGNS, it may be necessary to output
 each post-processing mesh using a separate output.
 
-Note also that recent CGNS library versions (3.3.0 or 4.x) may require
+Note also that current CGNS library versions (3.3.0 or 4.x) may require
 running their `cgnsupdate` tool to allow reading older CGNS files, due to
 some internal changes.
 
@@ -345,7 +347,7 @@ some internal changes.
                                    in the mesh using mesh selection sub-options
 <tr><td> Input compatibility  <td> CGNS 2.5 or CGNS 3.1 and above (based on library version)
 <tr><td> Output compatibility <td> CGNS 3.1 and above (based on library version)
-<tr><td> Documentation        <td> [on-line documentation](https://cgns.github.io/CGNS_docs_current/index.html)
+<tr><td> Documentation        <td> <a href="https://cgns.github.io/CGNS_docs_current/index.html">on-line documentation</a>
 <tr><td> Parallel IO          <td> supported by CGNS (using HDF5 parallel IO) but not yet
                                    by code_saturne.
 </table>
@@ -393,11 +395,12 @@ and no groups are assigned.
 <tr><td> Zone selection    <td> possibility of defining element materials (not used), or
                                 interpret part number as group name if vertex IDs are
                                 given
-<tr><td> Compatibility     <td> files readable by EnSight 7.4 to 10.0, as well as tools
-                                based on the [VTK](http://www.vtk.org) library,
-                                especially [ParaView](http://www.paraview.org)
+<tr><td> Compatibility     <td> files readable by EnSight 7.4 to 11.0, as well as tools
+                                based on the <a href="https://www.vtk.org">VTK</a> library,
+                                especially <a href="https://www.paraview.org">ParaView</a>
 <tr><td> Documentation     <td> on-line documentation, also available at:
-                                <a href="www3.ensight.com/EnSight10_Docs/UserManual.pdf">www3.ensight.com/EnSight10_Docs/UserManual.pdf</a>
+                                <a href="https://vis.lbl.gov/archive/NERSC/Software/ensight/doc/OnlineHelp/UM-C11.pdf">https://vis.lbl.gov/archive/NERSC/Software/ensight/doc/OnlineHelp/UM-C11.pdf"</a>
+
 <tr><td> Parallel IO       <td> supported for binary output, using "direct" MPI-IO
 </table>
 
@@ -459,27 +462,18 @@ version tested is 2.0.23.
 Mesh formats supported for output {#sec_formats_out}
 ---------------------------------
 
-### ParaView/Catalyst {#sec_fmtdesc_catalyst}
+### ParaView Catalyst {#sec_fmtdesc_catalyst}
 <!-- -->
 
 This is not a "true" output format in the sense that output is not written
 directly to file, but is exported to the
-[Catalyst](https://www.paraview.org/in-situ/) co-processor.
+[Catalyst](https://kitware.github.io/paraview-catalyst/) co-processor.
 In turn, this co-processor will execute operations based on a
 special [ParaView](https://www.paraview.org) Python script, and directly generate
 output such as images or movies.
 
-Co-processing scripts may be generated under ParaView 4.2 or above, using initial
-output in another format (such as EnSight Gold). With ParaView 4.2 to 5.4,
-this required activating the CoProcessing plugin. With ParaView 5.5 and above,
-a "Generate Script" item can be found directly under the "Catalyst"
-menubar item.
-
-A code_saturne postprocessing writer will try to read a script named
-`<writer_name>.py`, which should be placed in a case's `DATA` directory.
-Using ParaView 5.5 or above, the root node (input) of the visualization
-pipeline should be renamed to that of the code_saturne writer so
-that the generated script can reference the input.
+More detail on ParaView Catalyst support and usage is provided
+in [step-by step instructions and recommendations](@ref cs_ug_catalyst).
 
 Note that this output is heavily dependent on ParaView.
 Some operations may work very well, while other,
@@ -490,11 +484,11 @@ similar operations may fail.
 <tr><td> File type         <td> co-processing
 <tr><td> Surface elements  <td> triangles, quadrangles, simple polygons
 <tr><td> Volume elements   <td> tetrahedra, pyramids, prisms, hexahedra, simple polyhedra
-<tr><td> compatibility     <td> Catalyst from [ParaView](http://paraview.org) 4.2
-                                or above (version 5.5 or above recommended)
+<tr><td> compatibility     <td> Catalyst from <a href="https://paraview.org">ParaView</a> 5.7
+                                or above (version 6.1 or above recommended)
 <tr><td> Documentation     <td> on-line documentation,
-                                [Kitware Wiki](http://paraview.org/Wiki/Main_Page), and
-                                [code_saturne Wiki](https://github.com/code-saturne/code_saturne/wiki/In-situ-postprocessing-with-ParaView-Catalyst)
+                                <a href="https://kitware.github.io/paraview-catalyst/">ParaView Catalyst</a>, and
+                                [step-by step instructions and recommendations](@ref cs_ug_catalyst)
 <tr><td> Parallel IO       <td> based on ParaView
 </table>
 
@@ -512,5 +506,5 @@ tools to transition from hexahedral to tetrahedral cells in the case
 of hybrid meshes. The user is encouraged to export to CGNS, which
 does not have this limitation.
 
-Tools related to the [__SALOME platform__](http://www.salome-platform.org/)
+Tools related to the [__SALOME platform__](https://www.salome-platform.org/)
 should preferably use SALOME's native MED format.
