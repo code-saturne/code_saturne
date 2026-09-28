@@ -161,22 +161,20 @@ cs_atmo_1d_rad_t *cs_glob_atmo_1d_rad = &_atmo_1d_rad;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Cloud fraction estimate (we take the maximum)
+ * \brief Compute cloud fraction and cloud liquid water transmission
  *----------------------------------------------------------------------------*/
 
 static inline void
-_cf_estimate(cs_real_t        &fn,
-             cs_real_t        &taul,
-             const cs_real_t  eps,
-             const cs_real_t  val_1,
-             const cs_real_t  val_2,
-             const cs_real_t  fnerir,
-             const cs_real_t  qqqqql)
+_compute_cloud_transmission(cs_real_t        &fn,
+                            cs_real_t        &taul,
+                            const cs_real_t  eps,
+                            const cs_real_t  fnerir,
+                            const cs_real_t  qqqqql)
 {
   fn = std::max(fn, fnerir);
   if (fn < eps) {
-    fn = val_1;
-    taul = val_2;
+    fn = 0.;
+    taul = 1.;
   }
   else
     taul = exp(-qqqqql / fn);
@@ -357,7 +355,8 @@ _compute_reflection_transmission(const cs_real_t pioc,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Computes ozone amount above a given altitude
+ * \brief Computes optic path for O3 above a given altitude
+ * TODO do a version for integral from z to z'
  *
  * \param[in] zh altitude
  */
@@ -2491,7 +2490,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
   cs_real_t fn = fnerir[k1];
   for (int k = k1; k <= kmray; k++) {
     // cloud fraction estimation (we take the maximum)
-    _cf_estimate(fn, taul, 1e-3, 0.0, 1.0, fnerir[k], qql[k]);
+    _compute_cloud_transmission(fn, taul, 1e-3, fnerir[k], qql[k]);
 
     _compute_ir_h2o_dimer_transmission
       (tauv, dtauv, qqv[k], qv0[k1], qqc[k], qc[k1], romray[k]);
@@ -2529,7 +2528,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
       qqqqco2 = qqco2[k] - qqqco2[i];
 
       // Cloud fraction estimation (we take the maximum)
-      _cf_estimate(fn, taul, 1e-3, 0.0, 1.0, fnerir[k], qqqql);
+      _compute_cloud_transmission(fn, taul, 1e-3, fnerir[k], qqqql);
 
       // Downward fluxes
       _compute_ir_h2o_dimer_transmission(tauv, dtauv, qqqqv, qv0[i], qqqqc,
@@ -2562,7 +2561,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
         qqqqc = qqqc[i] - qqc[k];
         qqqql = qqql[i] - qql[k];
         qqqqco2 = qqqco2[i] - qqco2[k];
-        _cf_estimate(fn, taul, 1e-3, 0.0, 1.0, fnerir[k], qqqql);
+        _compute_cloud_transmission(fn, taul, 1e-3, fnerir[k], qqqql);
 
         _compute_ir_h2o_dimer_transmission(tauv, dtauv, qqqqv, qv0[i],
                                            qqqqc, qc[i], romray[i]);
@@ -2593,7 +2592,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
       for (int ineb = k1; ineb <= kmray; ineb++)
         fn = std::max(fn, fnerir[ineb]);
 
-      _cf_estimate(fn, taul, 1e-3, 0.0, 1.0, fn, qqqql);
+      _compute_cloud_transmission(fn, taul, 1e-3, fn, qqqql);
 
       a3 -= (1.0 - (1.0 + fn * (taul - 1.0)) * (tauv - abco2)) * dt4[k];
     }
@@ -2642,7 +2641,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
       fn = fnerir[kk];
       for (int ineb = kk; ineb <= k; ineb++)
         fn = std::max(fn, fnerir[ineb]);
-      _cf_estimate(fn, taul, 1e-3, 0.0, 1.0, fn, qqqql);
+      _compute_cloud_transmission(fn, taul, 1e-3, fn, qqqql);
 
       a1 += dt4[kk] * (  (1.0 + fn * (taul - 1.0)) * (dabco2 - dtauv)
                        + taul * dul * (tauv - abco2));
@@ -2662,7 +2661,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
       fn = fnerir[kk];
       for (int ineb = k; ineb <= kk; ineb++)
         fn = std::max(fn, fnerir[ineb]);
-      _cf_estimate(fn, taul, 1e-3, 0.0, 1.0, fn, qqqql);
+      _compute_cloud_transmission(fn, taul, 1e-3, fn, qqqql);
 
       a2 += dt4[kk]*(  (1.0 + fn * (taul - 1.0)) * (dabco2-dtauv)
                        + taul * dul * (tauv - abco2));
@@ -2685,7 +2684,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
       for (int ineb = k1; ineb <= kmray; ineb++)
         fn = std::max(fn, fnerir[ineb]);
 
-      _cf_estimate(fn, taul, 1e-3, 0.0, 1.0, fn, qqqql);
+      _compute_cloud_transmission(fn, taul, 1e-3, fn, qqqql);
 
       a3 += dt4[kk] * ( (1.0 + fn * (taul - 1.0)) * (dabco2 - dtauv)
           + taul * dul * (tauv - abco2));
@@ -2707,7 +2706,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
     for (int ineb = k; ineb <= kmray; ineb++)
       fns = std::max(fns, fnerir[ineb]);
 
-    _cf_estimate(fns, tlsup, 1e-3, 0.0, 1.0, fns, qqqql);
+    _compute_cloud_transmission(fns, tlsup, 1e-3, fns, qqqql);
 
     // ground contribution transmitted by lower layers (0-z)
     qqqqv = qqqv[k];
@@ -2724,7 +2723,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
     cs_real_t fni = fnerir[k1];
     for (int ineb = k1; ineb <= k; ineb++)
       fni = std::max(fni, fnerir[ineb]);
-    _cf_estimate(fni, tlinfe, 1e-3, 0.0, 0.0, fni, qqqql);
+    _compute_cloud_transmission(fni, tlinfe, 1e-3, fni, qqqql);
 
     // contribution of the upward flux reflected by the ground
     qqqqv = qqqv[k] + xqqvinf;
@@ -2741,7 +2740,7 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
     cs_real_t tlsups;
     for (int ineb = k1; ineb <= kmray; ineb++)
       fnss = std::max(fnss, fnerir[ineb]);
-    _cf_estimate(fnss, tlsups, 1e-3, 0.0, 0.0, fnss, qqqql);
+    _compute_cloud_transmission(fnss, tlsups, 1e-3, fnss, qqqql);
 
     const cs_real_t term_1
       =   ((1.0 + fns*(tlsup - 1.0))
@@ -2758,8 +2757,13 @@ cs_atmo_1d_rad_compute_infrared(const int        ivertc,
     rayi[k] =  ctray * ( a1 - a2 + t4zt * term_1
                         -(1.0 - emis) * (a3 + t4zt * term_2));
 
-    ckup[k] = (dabcinfe - dtvinfe) / (tvinfe - abcinfe);
-    ckdown[k] = (dabcsup - dtvsup) / (tvsup - abcsup);
+    // Save for 3D: add cloud contribution rol / fnerir
+    cs_real_t ck_cloud = 0.0;
+    if (fnerir[k] > cs_math_epzero)
+      ck_cloud = rol[k] / fnerir[k];
+
+    ckup[k] = (dabcinfe - dtvinfe) / (tvinfe - abcinfe) + ck_cloud;
+    ckdown[k] = (dabcsup - dtvsup) / (tvsup - abcsup) + ck_cloud;
   }
 
   // Finalization: multiplication by sig
@@ -3314,6 +3318,16 @@ cs_atmo_1d_rad_source_term(void)
                                     fneray, romray, preray, aeroso,
                                     ground_temp[ii], ground_pressure[ii],
                                     ir_div.sub_view(ii), ncray);
+
+    // Write IR parameter dumps
+    if (atmo_1d_rad->verbosity >= 2) {
+      _dump_array_to_file("iru.txt",
+                          heuray, &_atmo_1d_rad.iru[ii * kmx], kmx);
+      _dump_array_to_file("ird.txt",
+                          heuray, &_atmo_1d_rad.ird[ii * kmx], kmx);
+      _dump_array_to_file("ir_div.txt",
+                          heuray, &atmo_1d_rad->ir_div[ii * kmx], kmx);
+    }
 
     // Short-wave: Sun
     cs_atmo_1d_rad_compute_solar(ii, k1, kmx-1, heuray,
