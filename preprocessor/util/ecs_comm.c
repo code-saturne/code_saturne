@@ -397,9 +397,12 @@ ecs_comm_write_section(const char  *name,
 
   /* Value type name */
 
-  if (n_values > 0) {
+  if (n_values > 0 || value_type != ECS_TYPE_void) {
 
     switch(value_type) {
+
+    case ECS_TYPE_void:
+      break;
 
     case ECS_TYPE_ecs_int_t:
 
