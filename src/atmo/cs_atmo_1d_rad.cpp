@@ -1080,7 +1080,6 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
   cs_array_2d<cs_real_t> pic(kmx+1, 8);
   cs_array_2d<cs_real_t> reft(kmx+1, 8);
   cs_array_2d<cs_real_t> upwf(kmx+1, 8);
-  cs_array_2d<cs_real_t> fabso3c(kmx+1, 2);
   cs_array_2d<cs_real_t> tra(kmx+1, 8);
   cs_array_2d<cs_real_t> trad(kmx+1, 8);
   cs_array_2d<cs_real_t> trat(kmx+1, 8);
@@ -1090,7 +1089,6 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
   cs_array_2d<cs_real_t> dowd(kmx+1, 8);
   cs_array_2d<cs_real_t> atln(kmx+1, 8);
   cs_array_2d<cs_real_t> absn(kmx+1, 8);
-  cs_array_2d<cs_real_t> ufso3c(kmx+1, 2);
 
   cs_array<cs_real_t> w0_sir(kmx);
   cs_array<cs_real_t> w0_suv(kmx);
@@ -1137,7 +1135,10 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
   int ibase = 0;
 
   constexpr cs_real_t epsc = 1.e-8;
-  constexpr cs_real_t z_ref = 0.647;
+
+  // Solar spectrum spectral fractions (Lacis & Hansen 1974)
+  constexpr cs_real_t f_suv = 0.6470; // Visible / UV (O3) band
+  constexpr cs_real_t f_sir = 0.3530; // Near-IR (H2O) band
 
   for (int k = 0; k <= kmray; k++) {
     w0_sir[k] = 0.;
@@ -1172,8 +1173,6 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     dddfsh2o[k] = 0.;
     if (has_aerosol)
       fneba[k] = 1.;
-    for (int n = 0; n < 2; n++)
-      fabso3c(k, n) = 0.;
     for (int n = 0; n < 8; n++) {
       dow(k, n)   = 0.;
       tau(k, n)   = 0.;
@@ -1262,15 +1261,10 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     // sqrt is not available at compile time.
     constexpr cs_real_t mui = 0.57735026918962576451; // 1.0 / sqrt(3.0);
 
-    //  3 -  albedos for O3 and Rayleigh diffusion
+    // 3 - Rayleigh diffusion for O3 band
     // Note LH74 equation (18)
-    constexpr cs_real_t rabar2 = 0.1440;
-    const cs_real_t rabar = 0.2190 / (1.0 + 0.8160 * muzero);
-    cs_real_t rrbar2s = 0.06850;
-    const cs_real_t rrbar = 0.280/(1.0 + 6.430*muzero);
-    // Note LH74: eq (15);
-    cs_real_t rbar
-      = rabar + (1.0 - rabar)*(1.0 - rabar2)*albe/(1.0 - rabar2*albe);
+    constexpr cs_real_t rrbar2s = 0.06850;
+    const cs_real_t rrbar = 0.280 / (1.0 + 6.430 * muzero);
 
     //  4 - addition of one level for solar radiation
     qqvtot = qqvinf + qqv[kmray];
@@ -1431,45 +1425,11 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
 
     tauc[kmray + 1] = 0.;
 
-    // 5.3 O3 absorption in presence of clouds
+    // 5.3 O3 absorption with adding method on all layers (LH 74)
 
-    // Calculation of the different albedos for O3 (LH 74)
-
-    // Asymmetry factor and SSA for liquid water
-    cs_real_t gasym = gco3[itop];
-    cs_real_t pioc  = pic_o3[itop];
-
-    // --- Calculation for cloudy layers ---
-    _compute_reflection_transmission(pioc, 0., gasym, 0.,
-                                     tauctot, 0.,
-                                     refx, trax, epsc, 0.,
-                                     mui, muzero_cor);
-    cs_real_t rabarc = refx;
-    cs_real_t tabarc = trax;
-
-    // LH74 equation (15)
-    cs_real_t rbarc = rabarc + tabarc * tabarc * albe / (1. - rabarc * albe);
-
-    // --- Calculation for aerosol layers ---
-    _compute_reflection_transmission(0., at_1d_rad->piaero_o3, 0.,
-                                     at_1d_rad->gaero_o3, 0.,
-                                     at_1d_rad->aod_o3_tot,
-                                     refx, trax, epsc, 0.,
-                                     mui, muzero_cor);
-
-    cs_real_t rabara = refx;
-    cs_real_t tabara = trax;
-
-    // Effective reflectance for aerosol layer
-    cs_real_t rbara = rabara + tabara * tabara * albe / (1. - rabara * albe);
-
-    // in case there is an aerosol layer above the cloud layer
-
-    if (has_aerosol && (iaero_top > itop)) {
-      itop   = iaero_top;
-      rbar   = rbara;
-      rrbar2s = rabara;
-    }
+    // In case there is an aerosol layer above the cloud layer
+    if (has_aerosol && iaero_top > itop)
+      itop = iaero_top;
 
     if (at_1d_rad->verbosity > 0) {
       bft_printf("1D Radiative Model: top of cloud/aerosol layer "
@@ -1477,86 +1437,10 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
                  zqq[itop], itop);
     }
 
-    // Calculation above the top of the cloud or aerosol layer
+    cs_real_t gasym = 0., pioc = 0.;
 
-    //calculation have to start at the first level
-    for (int l = itop; l <= kmray + 1; l++) {
-      const cs_real_t zq    = zqq[l];
-      cs_real_t zqp1;
-      if (l == kmray + 1)
-        zqp1 = zq;
-      else
-        zqp1 = zqq[l + 1];
-
-      // Ozone amount traversed by the direct solar beam
-      cs_real_t x   = m * ozone_amount(zq);
-      cs_real_t xp1 = m * ozone_amount(zqp1);
-
-      // Calculation of heat and radiation fluxes during cloudy sky
-      cs_real_t zbas = zqq[itop];
-      cs_real_t xstar =
-        m * ozone_amount(zbas) + mbar * (ozone_amount(zbas) - ozone_amount(zq));
-      cs_real_t xstarp1 =
-        m * ozone_amount(zbas) + mbar * (ozone_amount(zbas) - ozone_amount(zqp1));
-
-      // --- Cloudy sky absorption (index 0) ---
-      const cs_real_t dud1 = 1. / (1. - rrbar2s * albe);
-      fabso3c(l, 0) =
-        muzero * fo * ( ( ray_ozone_absorption(x)
-                        - ray_ozone_absorption(xp1)) * dud1
-                       + rbarc * (ray_ozone_absorption(xstarp1)
-                                  - ray_ozone_absorption(xstar)));
-
-      // Direct downward radiation
-      ddfso3[l] = muzero * fo * (z_ref - rrbar - ray_ozone_absorption(x));
-      // Diffuse downward radiation (Rayleigh factor)
-      dddfso3[l] = ddfso3[l] * (dud1 - 1.);
-      // Global downward radiation
-      dfso3[l] = ddfso3[l] * dud1;
-      // Upward diffuse radiation under cloudy sky
-      ufso3c(l, 0) =
-        muzero * fo * (z_ref - rrbar - ray_ozone_absorption(xstar)) * rbarc;
-
-      // Calculation of heat and radiation fluxes during  Clear sky
-      zbas = zqq[k1];
-      xstarp1 =   m * ozone_amount(zbas)
-                + mbar * (ozone_amount(zbas) - ozone_amount(zqp1));
-
-      xstar =   m * ozone_amount(zbas)
-              + mbar * (ozone_amount(zbas) - ozone_amount(zq));
-
-      fabso3c(l, 1) =
-        muzero * fo * (  (ray_ozone_absorption(x) - ray_ozone_absorption(xp1))
-                       * dud1
-                       + albe * dud1 * (ray_ozone_absorption(xstarp1)
-                                        - ray_ozone_absorption(xstar)));
-
-      // Upward diffuse radiation for clear sky
-      ufso3c(l, 1) =   muzero * fo
-                             * (z_ref - rrbar - ray_ozone_absorption(xstar))
-                             * albe * dud1;
-
-      // sum depending on cloud fraction
-      fabso3[l] =
-        fnebmax[k1] * fabso3c(l, 0) + (1. - fnebmax[k1]) * fabso3c(l, 1);
-
-      ufso3[l] =
-        fnebmax[k1] * ufso3c(l, 0) + (1. - fnebmax[k1]) * ufso3c(l, 1);
-
-      const cs_real_t dzx = ozone_gradient(zq);
-
-      const cs_real_t denom1 = (z_ref - rrbar - ray_ozone_absorption(x));
-      const cs_real_t denom2 = (z_ref - rrbar - ray_ozone_absorption(xstar));
-
-      if (l < kmray + 1) {
-        ckdown_suv_r[l] = d_ray_ozone_absorption(x, dzx) / denom1;
-        ckdown_suv_f[l] = d_ray_ozone_absorption(x, dzx) / denom1;
-        ckup_suv_f[l]   = d_ray_ozone_absorption(xstar, dzx) / denom2;
-      }
-    }
-
-    // Calculation under the top of the cloud or the aerosol layer, the adding
-    // Method with multiple diffusion is used
+    // 5.4 Calculation of reflection and transmission per layer,
+    // the adding method with multiple diffusion is used for the O3 band
 
     // Top boundary conditions
     tra(kmray+1, 0) = 1.;
@@ -1577,7 +1461,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
       gasym = gco3[l];
       pioc  = pic_o3[l];
 
-      //In the cloudy layers
+      // In the cloudy layers
       _compute_reflection_transmission(pioc, at_1d_rad->piaero_o3, gasym,
                                        at_1d_rad->gaero_o3,
                                        tauc[l], tauao3[l],
@@ -1587,7 +1471,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
       ref(l, 0) = fneray[l] * refx;
       tra(l, 0) = fneray[l] * trax;
 
-      //In the aerosol layers
+      // In the aerosol layers
       _compute_reflection_transmission(0., at_1d_rad->piaero_o3, 0.,
                                        at_1d_rad->gaero_o3, 0., tauao3[l],
                                        refx, trax,
@@ -1603,13 +1487,6 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     // Downward addition of layers
     for (int l = kmray; l >= k1; l--) {
       cs_real_t drtt1 = 1. / (1. - reft(l+1, 0) * ref(l, 0));
-
-      // Note:
-      // R(top->l) = R(top->l+1)
-      //           + T(top->l+1) R(l) T*(top->l+1) / (1 - R*(top->l+1)- R(l))
-      // Equations 34 of LH74
-      // Note R*(top->l) = R(top->l)
-      //      T*(top->l+1) = T(top->l+1)
 
       // Eq. (33) LH74: reflection from top to level l
       reft(l, 0) =   reft(l+1, 0)
@@ -1627,107 +1504,99 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
     refb(k0, 0) = ref(k0, 0);
 
     for (int l = k1; l <= kmray+1; l++) {
-      const cs_real_t dtrb1 = 1. -ref(l, 0) * refb(l-1, 0);
+      const cs_real_t dtrb1 = 1. - ref(l, 0) * refb(l-1, 0);
       refb(l, 0) = ref(l, 0) + tra(l, 0) * refb(l-1, 0) * tra(l, 0) / dtrb1;
 
       // Calculation of upward and downward fluxes and absorption
-      const cs_real_t dud1 = 1. -reft(l, 0) * refb(l-1, 0);
+      const cs_real_t dud1 = 1. - reft(l, 0) * refb(l-1, 0);
       // Direct
       dowd(l, 0) = trad(l, 0);
       // Diffuse
       dowf(l, 0) = trat(l, 0) / dud1 - trad(l, 0);
-      // Global == dowf(l,n) + dowd(l,n)
+      // Global == dowf(l,0) + dowd(l,0)
       dow(l, 0) = trat(l, 0) / dud1;
       upwf(l, 0) = refb(l-1, 0) * dow(l, 0);
       // Absorption from top to level l
       atln(l, 0) = 1. - reft(k1, 0) + upwf(l, 0) - dow(l, 0);
     }
 
-    // If there is a cloud
-    if (itop > k1) {
-      for (int l = k1; l < itop; l++) {
-        // addition of ozone absorption for heating in the
-        // layers when adding method is used
-        const cs_real_t zq   = zqq[l];
-        const cs_real_t zqp1 = zqq[l + 1];
-        const cs_real_t zbas = zqq[itop];
-        // Note LH74 compute absn as atln[idx_ln] - atln[idx_lp1_n]
-        // but can be simplified as:
-        // upwf[idx_ln] - dow[idx_ln] - upwf[idx_lp1_n] + dow[idx_lp1_n]
-        // absn[idx_ln] =   dow[idx_ln] * (refb(l-1,n) - 1.0)
-        //                - dow[idx_lp1_n] * (refb[idx_ln] - 1.0)
-        absn(l, 0) =   dow(l, 0) * (refb(l-1, 0) - 1.)
-                     - dow(l+1, 0) * (refb(l, 0) - 1.);
+    // Addition of ozone absorption for heating and flux calculation
+    // in all layers (adding method is active on all layers from k1 to kmray)
+    const cs_real_t dud1_s = 1.0 / (1.0 - rrbar2s * albe);
+    const cs_real_t zbas = zqq[itop];
+    const cs_real_t bas_ozone
+      = f_suv - ray_ozone_absorption(m * ozone_amount(zbas));
 
-        const cs_real_t x =    m * ozone_amount(zbas)
-                            + mbar * (ozone_amount(zq)-ozone_amount(zbas));
-        const cs_real_t xp1 =   m * ozone_amount(zbas)
-                              + mbar * (ozone_amount(zqp1) - ozone_amount(zbas));
-        const cs_real_t xstar = m * ozone_amount(zbas)
-          + mbar * (ozone_amount(zqq[k1]) - ozone_amount(zbas))
-          + mbar * (ozone_amount(zqq[k1]) - ozone_amount(zq));
-        const cs_real_t xstarp1 = m * ozone_amount(zbas)
-          + mbar * (ozone_amount(zqq[k1]) - ozone_amount(zbas))
-          + mbar * (ozone_amount(zqq[k1]) - ozone_amount(zqp1));
+    for (int l = k1; l <= kmray + 1; l++) {
+      const cs_real_t zq   = zqq[l];
+      const cs_real_t zqp1 = (l <= kmray) ? zqq[l + 1] : zqq[l];
 
-        // taking into account ozone absorption in
-        // the layers with clouds or aerosols
-        const cs_real_t bas_ozone
-          = (z_ref - ray_ozone_absorption(m*ozone_amount(zbas)));
-        const cs_real_t x_ozone
-          = ray_ozone_absorption(x) - ray_ozone_absorption(xp1);
-        const cs_real_t ozone
-          = (ray_ozone_absorption(xstarp1) - ray_ozone_absorption(xstar) );
+      absn(l, 0) =   dow(l, 0) * (refb(l - 1, 0) - 1.0)
+                   - ((l <= kmray) ? dow(l + 1, 0) * (refb(l, 0) - 1.0) : 0.0);
+
+      cs_real_t x, xp1, xstar, xstarp1;
+      if (itop == k1) {
+        xp1 = m * ozone_amount(zqp1);
+        x = m * ozone_amount(zq);
+        xstarp1 = m * ozone_amount(zbas)
+                + mbar * (ozone_amount(zbas) - ozone_amount(zqp1));
+        xstar   = m * ozone_amount(zbas)
+                + mbar * (ozone_amount(zbas) - ozone_amount(zq));
+      }
+      else {
+        if (l > itop) {
+          xp1 = m * ozone_amount(zqp1);
+          x = m * ozone_amount(zq);
+        }
+        else {
+          x   = m * ozone_amount(zbas)
+              + mbar * (ozone_amount(zq) - ozone_amount(zbas));
+          xp1 = m * ozone_amount(zbas)
+              + mbar * (ozone_amount(zqp1) - ozone_amount(zbas));
+        }
+        xstar   = m * ozone_amount(zbas)
+                + mbar * (ozone_amount(zqq[k1]) - ozone_amount(zbas))
+                + mbar * (ozone_amount(zqq[k1]) - ozone_amount(zq));
+        xstarp1 = m * ozone_amount(zbas)
+                + mbar * (ozone_amount(zqq[k1]) - ozone_amount(zbas))
+                + mbar * (ozone_amount(zqq[k1]) - ozone_amount(zqp1));
+      }
+
+      if (l <= kmray) {
         fabso3[l]
-          = muzero * fo * (x_ozone + bas_ozone * absn(l, 0) + rbar * ozone);
-        // fluxes calculation taking into account ozone absorption
-        // Direct
-        ddfso3[l]
-          = muzero * fo * (z_ref - rrbar - ray_ozone_absorption(x)) * dowd(l, 0);
+          = muzero * fo
+          * (  (ray_ozone_absorption(x) - ray_ozone_absorption(xp1)) * dud1_s
+             + bas_ozone * absn(l, 0)
+             + albe * dud1_s * (  ray_ozone_absorption(xstarp1)
+                                - ray_ozone_absorption(xstar)));
+      }
 
-        // Diffuse:
-        // two contributions: 1) transform direct into diffuse (dowf)
-        //                    2) diffuse coming from the top
-        dddfso3[l] =   muzero * fo * (z_ref - rrbar - ray_ozone_absorption(x))
-                     * (dowf(l, 0) +   dow(l, 0) * albe * rrbar2s
-                                     / (1. - rrbar2s * albe));
+      // Direct downward radiation
+      ddfso3[l]
+        = muzero * fo * (f_suv - rrbar - ray_ozone_absorption(x)) * dowd(l, 0);
 
-        // Global: dfso3 = ddfso3 + dddfso3  (we compute it via dow and factor)
-        dfso3[l] = muzero * fo * (z_ref - rrbar - ray_ozone_absorption(x) )
-                 * dow(l, 0) / (1. - rrbar2s * albe);
+      // Diffuse downward radiation
+      dddfso3[l] =   muzero * fo * (f_suv - rrbar - ray_ozone_absorption(x))
+                   * (dowf(l, 0) + dow(l, 0) * (dud1_s - 1.0));
 
-        // Upward (diffuse) radiation
-        ufso3[l] = muzero * fo
-                 * (z_ref - rrbar - ray_ozone_absorption(xstar) ) * upwf(l, 0);
+      // Global downward radiation: dfso3 = ddfso3 + dddfso3
+      dfso3[l] =   muzero * fo * (f_suv - rrbar - ray_ozone_absorption(x))
+                 * dow(l, 0) * dud1_s;
 
-        // gradient for absorption coefficient computation
+      // Upward diffuse radiation
+      ufso3[l] =   muzero * fo * (f_suv - rrbar - ray_ozone_absorption(xstar))
+                 * upwf(l, 0) * dud1_s;
+
+      if (l <= kmray) {
         const cs_real_t dzx = ozone_gradient(zq);
-
-        // absorption coefficient ckup and ckdown useful for 3D simulation
         ckdown_suv_r[l] = d_ray_ozone_absorption(x, dzx)
-                        / (z_ref - rrbar - ray_ozone_absorption(x) );
-        // optical depths must be changed to take into account transformation
-        // direct->diffuse under cloud top
+                        / (f_suv - rrbar - ray_ozone_absorption(x));
         ckdown_suv_f[l] = d_ray_ozone_absorption(x, dzx)
-                        / (z_ref - rrbar - ray_ozone_absorption(x) );
-        ckup_suv_f[l] = d_ray_ozone_absorption(xstar, dzx)
-                      / (z_ref - rrbar - ray_ozone_absorption(xstar) );
+                        / (f_suv - rrbar - ray_ozone_absorption(x));
+        ckup_suv_f[l]   = d_ray_ozone_absorption(xstar, dzx)
+                        / (f_suv - rrbar - ray_ozone_absorption(xstar));
       }
-
-      // Calculation of upward flux above cloud or
-      // aerosol layers taking into account
-      // the upward flux transmitted by cloud or aerosol layers
-      // if there is no cloud and no aerosol (itop == k1)
-      // this term must NOT be added
-      for (int l = itop; l <= kmray + 1; l++) {
-        const cs_real_t zq   = zqq[l];
-        const cs_real_t zbas = zqq[k1];
-        const cs_real_t xstar = m * ozone_amount(zbas)
-                              + mbar * (ozone_amount(zbas) - ozone_amount(zq));
-        ufso3[l] = muzero * fo
-                 * (z_ref - rrbar - ray_ozone_absorption(xstar) ) * upwf(itop, 0);
-      }
-    } // endif (itop > k1)
+    }
 
     // 6.4 Absorption by water vapor and liquid water (H20 band, SIR)
 
@@ -1936,10 +1805,10 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
       // the same expressions in 1D and 3D for the fluxes
       if (itop == k1) {
         dddfsh2o[i] = 0.;
-        dfsh2o[i] = fo * muzero * (0.353 - ray_sve(y));
+        dfsh2o[i] = fo * muzero * (f_sir - ray_sve(y));
         ufsh2o[i]
-          = fo * muzero * (0.353 - ray_sve(ystar)) * albe;
-        ddfsh2o[i] = fo * muzero * (0.353 - ray_sve(y));
+          = fo * muzero * (f_sir - ray_sve(ystar)) * albe;
+        ddfsh2o[i] = fo * muzero * (f_sir - ray_sve(y));
       }
 
       if (i < kmray + 1) {
@@ -1949,9 +1818,10 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
           romray[i] * (qvray[i] * corp * sqrt(tkelvi / (temray[i] + tkelvi)));
 
         // Absorption coefficients
-        ckdown_sir_r[i] = ray_sve_derivative(y, dy) / (0.353 - ray_sve(y));
-        ckdown_sir_f[i] = ray_sve_derivative(y, dy) / (0.353 - ray_sve(y));
-        ckup_sir_f[i] = ray_sve_derivative(ystar, dy) / (0.353 - ray_sve(ystar));
+        ckdown_sir_r[i] = ray_sve_derivative(y, dy) / (f_sir - ray_sve(y));
+        ckdown_sir_f[i] = ray_sve_derivative(y, dy) / (f_sir - ray_sve(y));
+        ckup_sir_f[i] = ray_sve_derivative(ystar, dy)
+                      / (f_sir - ray_sve(ystar));
       }
     }
 
