@@ -711,8 +711,7 @@ cs_coal_boundary_conditions(int  bc_type[])
 
         for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
           cs_lnum_t elt_id = elt_ids[elt_idx];
-          if (   bc_type[elt_id] == CS_INLET
-              || bc_type[elt_id] == CS_CONVECTIVE_INLET) {
+          if (cs::any_eq(bc_type[elt_id], CS_INLET, CS_CONVECTIVE_INLET)) {
 
             rcodcl1_xch[elt_id] = xch_in;
             rcodcl1_xck[elt_id] = 0;
@@ -746,8 +745,7 @@ cs_coal_boundary_conditions(int  bc_type[])
 
       for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
         cs_lnum_t elt_id = elt_ids[elt_idx];
-        if (   bc_type[elt_id] == CS_INLET
-            || bc_type[elt_id] == CS_CONVECTIVE_INLET) {
+        if (cs::any_eq(bc_type[elt_id], CS_INLET, CS_CONVECTIVE_INLET)) {
           rcodcl1_fm1[elt_id] = 0.;
           rcodcl1_fm2[elt_id] = 0.;
         }
@@ -796,8 +794,7 @@ cs_coal_boundary_conditions(int  bc_type[])
 
     for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
       cs_lnum_t elt_id = elt_ids[elt_idx];
-      if (   bc_type[elt_id] == CS_INLET
-          || bc_type[elt_id] == CS_CONVECTIVE_INLET) {
+      if (cs::any_eq(bc_type[elt_id], CS_INLET, CS_CONVECTIVE_INLET)) {
 
         if (rcodcl1_age != nullptr)        /* age */
           rcodcl1_age[elt_id] = 0.;
@@ -873,8 +870,7 @@ cs_coal_boundary_conditions(int  bc_type[])
         rcodcl1_v_p_z = f->bc_coeffs->rcodcl1;
 
         for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-          if (   bc_type[face_id] == CS_SMOOTHWALL
-              || bc_type[face_id] == CS_ROUGHWALL) {
+          if (cs::any_eq(bc_type[face_id], CS_SMOOTHWALL, CS_ROUGHWALL)) {
 
             icodcl_v_p_x[face_id] = 1;
             icodcl_v_p_y[face_id] = 1;

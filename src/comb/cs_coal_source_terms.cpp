@@ -147,8 +147,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
   const cs_real_t *cvara_omg = nullptr;
   const cs_real_6_t *cvara_rij = nullptr;
 
-  if (   cs_glob_turb_model->itytur == 2
-      || cs_glob_turb_model->itytur == 5) {
+  if (cs::any_eq(cs_glob_turb_model->itytur, 2, 5)) {
     cvara_k = CS_F_(k)->val_pre;
     cvara_ep = CS_F_(eps)->val_pre;
   }
@@ -164,9 +163,7 @@ _coal_fp2st(const cs_field_t  *fld_scal,
   /* Account for production and dissipation source terms by gradients
      ---------------------------------------------------------------- */
 
-  if (   cs_glob_turb_model->itytur == 2
-      || cs_glob_turb_model->itytur == 3
-      || cs_glob_turb_model->itytur == 5
+  if (   cs::any_eq(cs_glob_turb_model->itytur, 2, 3, 5)
       || cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
 
     // For lack of information on F1M+F2M, we take the same options as for F1M[0].
@@ -1887,7 +1884,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
   /* Source terms on Y_HCN and Y_NO */
 
   if (   (cm->ieqnox== 1 && cm->imdnox == 0 && cs_glob_time_step->nt_cur > 1)
-      && (fld_id == cm->iyhcn || fld_id == cm->iyno)) {
+      && cs::any_eq(fld_id, cm->iyhcn, cm->iyno)) {
 
     // Pointers to source terms
     const cs_real_t *cpro_exp1 = cs_field_by_id(cm->ighcn1)->val;
@@ -2013,7 +2010,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
   }  /* ieqnox == 1, imdnox == 0, nt_cur > 1, and fld_id in (iyhcn,  iyno) */
 
   if (   (cm->ieqnox== 1 && cm->imdnox == 1 && cs_glob_time_step->nt_cur > 1)
-      && (fld_id == cm->iyhcn || fld_id == cm->iyno || fld_id == cm->iynh3)) {
+      && cs::any_eq(fld_id, cm->iyhcn, cm->iyno, cm->iynh3)) {
 
     /* Source terms on Y_HCN and Y_NO */
 

@@ -1297,7 +1297,7 @@ cs_coal_read_data(void)
     int ichx1c_icha = cm->ichx1c[icha]-1;
     cm->wmole[ichx1c_icha]
       = cm->wmolat[iatc] + cm->chx1[icha]*cm->wmolat[iath];
-    if (cm->iy1ch[icha] == 0 || cm->iy1ch[icha] == 2) {
+    if (cs::any_eq(cm->iy1ch[icha], 0, 2) ) {
       for (int it = 0; it < cm->n_tab_points; it++) {
         cm->eh_gas_e[it][ichx1c_icha] = cm->eh_gas_e[it][ichx1];
       }
@@ -1324,7 +1324,7 @@ cs_coal_read_data(void)
     int ichx2c_icha = cm->ichx2c[icha]-1;
     cm->wmole[ichx2c_icha]
       = cm->wmolat[iatc] + cm->chx2[icha]*cm->wmolat[iath];
-    if (cm->iy2ch[icha] == 0 || cm->iy2ch[icha] == 2) {
+    if (cs::any_eq(cm->iy2ch[icha], 0, 2)) {
       for (int it = 0; it < cm->n_tab_points; it++) {
         cm->eh_gas_e[it][ichx2c_icha] = cm->eh_gas_e[it][ichx2];
       }
