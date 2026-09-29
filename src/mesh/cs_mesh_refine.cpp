@@ -846,7 +846,7 @@ public:
         s_id = i;
       }
     }
-    if (s_id < n_edges-1)
+    if (s_id < n_edges)
       build_interior_face_with_center_vertex(s_id, n_edges,
                                              c_n_i_faces,
                                              c_i_faces_size,
