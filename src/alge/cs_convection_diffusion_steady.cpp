@@ -1232,55 +1232,6 @@ _calc_heq(cs_real_t h1,
   return heq;
 }
 
-/*----------------------------------------------------------------------------
- * Synchronize strided gradient ghost cell values.
- *
- * template parameters:
- *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
- *
- * parameters:
- *   m              <-- pointer to associated mesh structure
- *   on_device,     <-- is data on device (GPU) ?
- *   halo_type      <-- halo type (extended or not)
- *   grad           --> gradient of a variable
- *----------------------------------------------------------------------------*/
-
-template <cs_lnum_t stride>
-static void
-_sync_strided_gradient_halo(const cs_mesh_t         *m,
-                            cs_halo_type_t           halo_type,
-                            [[maybe_unused]] bool    on_device,
-                            cs_real_t (*restrict grad)[stride][3])
-{
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_halo_sync_d(m->halo, halo_type, CS_REAL_TYPE, stride*3,
-                   (cs_real_t *)grad);
-  else
-#endif
-    cs_halo_sync(m->halo, halo_type, CS_REAL_TYPE, stride*3,
-                 (cs_real_t *)grad);
-
-  if (m->have_rotation_perio) {
-#if defined(HAVE_ACCEL)
-    if (on_device)
-      cs_sync_d2h((void  *)grad);
-#endif
-    if (stride == 1)
-      cs_halo_perio_sync_var_vect(m->halo, halo_type, (cs_real_t *)grad, 3);
-    else if (stride == 3)
-      cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
-    else if (stride == 6)
-      cs_halo_perio_sync_var_sym_tens_grad(m->halo,
-                                           halo_type,
-                                           (cs_real_t *)grad);
-#if defined(HAVE_ACCEL)
-    if (on_device)
-      cs_sync_h2d((void  *)grad);
-#endif
-  }
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add the explicit part of the convection/diffusion terms of a

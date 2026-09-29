@@ -768,8 +768,10 @@ _pre_vector_multiply_sync_x_end(const cs_matrix_t   *matrix,
     // FIXME: ensure this is done on the GPU.
 
     if (matrix->halo->n_transforms > 0) {
+      cs_dispatch_context ctx;
       if (matrix->db_size == 3)
         cs_halo_perio_sync_var_vect(matrix->halo,
+                                    ctx,
                                     CS_HALO_STANDARD,
                                     x,
                                     matrix->db_size);
@@ -777,6 +779,7 @@ _pre_vector_multiply_sync_x_end(const cs_matrix_t   *matrix,
         cs_halo_perio_sync_var_sym_tens(matrix->halo,
                                         CS_HALO_STANDARD,
                                         x);
+      ctx.wait();
     }
 
 #endif

@@ -68,7 +68,7 @@
  *============================================================================*/
 
 /* Table giving the Reynolds stress component for [i][j] */
-
+CS_F_HOST_DEVICE
 static const int _symt[3][3] = {{0, 3, 5},
                                 {3, 1, 4},
                                 {5, 4, 2}};
@@ -129,8 +129,8 @@ _apply_vector_transfo(const cs_real_t    matrix[3][4],
  *----------------------------------------------------------------------------*/
 
 template <typename T>
-static void
-_apply_vector_rotation(cs_real_t    matrix[3][4],
+CS_F_HOST_DEVICE static inline void
+_apply_vector_rotation(const cs_real_t    matrix[3][4],
                        T           *xyz)
 {
   cs_real_t  t[3];
@@ -154,9 +154,9 @@ _apply_vector_rotation(cs_real_t    matrix[3][4],
  *----------------------------------------------------------------------------*/
 
 template <typename T>
-static void
-_apply_tensor_rotation(cs_real_t   matrix[3][4],
-                       T          *tensor)
+CS_F_HOST_DEVICE static inline void
+_apply_tensor_rotation(const cs_real_t   matrix[3][4],
+                       T                 *tensor)
 {
   cs_lnum_t  i, j, k, l;
 
@@ -251,9 +251,9 @@ _apply_sym_tensor_rotation(cs_real_t   matrix[3][4],
  *----------------------------------------------------------------------------*/
 
 template <typename T>
-static void
-_apply_tensor3sym_rotation(cs_real_t   matrix[3][4],
-                           T          *tensor)
+CS_F_HOST_DEVICE static inline void
+_apply_tensor3sym_rotation(const cs_real_t   matrix[3][4],
+                           T                *tensor)
 {
   cs_lnum_t  i, j, k, p, q, r;
 
@@ -514,6 +514,115 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
   } /* End of loop on transformations */
 }
 
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real vector (interleaved) between periodic cells
+ * on host or accelerator device context.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   ctx       <-> execution dispatch context (CPU / CUDA / HIP / SYCL)
+ *   sync_mode <-- type of halo treatment (standard or extended)
+ *   var       <-> vector to update
+ *   incvar    <-- specifies the increment for the elements of var (must be 3)
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_perio_sync_var_vect(const cs_halo_t      *halo,
+                            cs_dispatch_context  &ctx,
+                            cs_halo_type_t        sync_mode,
+                            T                     var[],
+                            int                   incvar)
+{
+  if (halo == nullptr || sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  if (halo->n_rotations == 0)
+    return;
+
+  const int n_transforms = halo->n_transforms;
+  const cs_lnum_t n_elts = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = halo->periodicity;
+
+  constexpr int n_bounds_max = 8;
+  const int n_h = (sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
+
+  assert(halo != nullptr);
+  assert(incvar == 3);
+
+  for (int t_id = 0; t_id < n_transforms; t_id++) {
+
+    const fvm_periodicity_type_t perio_type =
+      fvm_periodicity_get_type(periodicity, t_id);
+
+    if (perio_type >= FVM_PERIODICITY_ROTATION) {
+
+      const cs_lnum_t shift = 4 * halo->n_c_domains * t_id;
+
+      cs_real_t matrix[3][4];
+      fvm_periodicity_get_matrix(periodicity, t_id, matrix);
+
+      int idx = 0;
+      const int idx_e = halo->n_c_domains * n_h;
+
+      while (idx < idx_e) {
+
+        cs_lnum_t bounds[2][n_bounds_max];
+        int n_bounds = 0;
+        cs_lnum_t n = 0;
+
+        while (idx < idx_e && n_bounds < n_bounds_max) {
+
+          const int rank_id = idx / n_h;
+          const int h_shift = (idx % n_h) * 2;
+
+          const cs_lnum_t start =
+            halo->perio_lst[shift + 4 * rank_id + h_shift];
+
+          const cs_lnum_t count =
+            halo->perio_lst[shift + 4 * rank_id + h_shift + 1];
+
+          if (count > 0) {
+            bounds[0][n_bounds] = start;
+            bounds[1][n_bounds] = count;
+
+            n += count;
+            n_bounds++;
+          }
+
+          idx++;
+        }
+
+        if (n > 0) {
+
+          ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t idxb) {
+
+            cs_lnum_t i = idxb;
+            int k = 0;
+
+            while (k < n_bounds && i >= bounds[1][k]) {
+              i -= bounds[1][k];
+              k++;
+            }
+
+            if (k >= n_bounds)
+              return;
+
+            i += bounds[0][k];
+
+            // Application de la rotation GPU sur la variable vectorielle
+            _apply_vector_rotation(matrix, var + (n_elts + i) * incvar);
+          });
+          ctx.wait();
+        }
+
+      } /* End of loop on ranks and halo types */
+
+    } /* End of rotation treatment */
+
+  } /* End of loop on transformations */
+}
+
 // Force instanciation
 
 template void
@@ -527,6 +636,21 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
                             cs_halo_type_t    sync_mode,
                             float             var[],
                             int               incvar);
+
+template void
+cs_halo_perio_sync_var_vect(const cs_halo_t      *halo,
+                            cs_dispatch_context  &ctx,
+                            cs_halo_type_t        sync_mode,
+                            double                var[],
+                            int                   incvar);
+
+template void
+cs_halo_perio_sync_var_vect(const cs_halo_t      *halo,
+                            cs_dispatch_context  &ctx,
+                            cs_halo_type_t        sync_mode,
+                            float                 var[],
+                            int                   incvar);
+
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real tensor (interleaved) between periodic cells.
@@ -598,6 +722,106 @@ cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
   } /* End of loop on transformations for the local rank */
 }
 
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real tensor (interleaved) between periodic cells
+ * (GPU / Dispatch context version).
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   ctx       <-> dispatch context (GPU/CPU runtime)
+ *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   var       <-> tensor to update
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_perio_sync_var_tens(const cs_halo_t      *halo,
+                            cs_dispatch_context  &ctx,
+                            cs_halo_type_t        sync_mode,
+                            T                     var[])
+{
+    if (halo == nullptr || sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  if (halo->n_rotations == 0)
+    return;
+
+  const int n_transforms = halo->n_transforms;
+  const cs_lnum_t n_elts = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = halo->periodicity;
+
+  constexpr int n_bounds_max = 8;
+  const int n_h = (sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
+
+  assert(halo != nullptr);
+
+  for (int t_id = 0; t_id < n_transforms; t_id++) {
+
+    const cs_lnum_t shift = 4 * halo->n_c_domains * t_id;
+
+    const fvm_periodicity_type_t perio_type =
+      fvm_periodicity_get_type(periodicity, t_id);
+
+    if (perio_type < FVM_PERIODICITY_ROTATION)
+      continue;
+
+    cs_real_t matrix[3][4];
+    fvm_periodicity_get_matrix(periodicity, t_id, matrix);
+
+    cs_lnum_t bounds[2][n_bounds_max];
+
+    int idx = 0;
+    const int idx_e = halo->n_c_domains * n_h;
+
+    while (idx < idx_e) {
+
+      int n_bounds = 0;
+      cs_lnum_t n = 0;
+
+      while (idx < idx_e && n_bounds < n_bounds_max) {
+
+        const int rank_id = idx / n_h;
+        const int h_shift = (idx % n_h) * 2;
+
+        const cs_lnum_t start = halo->perio_lst[shift + 4 * rank_id + h_shift];
+
+        const cs_lnum_t count
+          = halo->perio_lst[shift + 4 * rank_id + h_shift + 1];
+
+        if (count > 0) {
+          bounds[0][n_bounds] = start;
+          bounds[1][n_bounds] = count;
+
+          n += count;
+          n_bounds++;
+        }
+
+        idx++;
+      }
+
+      if (n == 0)
+        continue;
+
+      ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t idxb) {
+
+        cs_lnum_t i = idxb;
+        int k = 0;
+
+        while (i >= bounds[1][k]) {
+          i -= bounds[1][k];
+          k++;
+        }
+
+        assert(k < n_bounds);
+
+        i += bounds[0][k];
+
+        _apply_tensor_rotation(matrix, var + 9 * (n_elts + i));
+      });
+    }
+  }
+}
+
 // Force instanciation
 
 template void
@@ -609,6 +833,18 @@ template void
 cs_halo_perio_sync_var_tens(const cs_halo_t  *halo,
                             cs_halo_type_t    sync_mode,
                             float             var[]);
+
+template void
+cs_halo_perio_sync_var_tens(const cs_halo_t      *halo,
+                            cs_dispatch_context  &ctx,
+                            cs_halo_type_t        sync_mode,
+                            double                var[]);
+
+template void
+cs_halo_perio_sync_var_tens(const cs_halo_t      *halo,
+                            cs_dispatch_context  &ctx,
+                            cs_halo_type_t        sync_mode,
+                            float                 var[]);
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real tensor (symmetric interleaved) between
@@ -751,6 +987,108 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
   } /* End of loop on transformations for the local rank */
 }
 
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real gradient of a tensor (symmetric interleaved)
+ * between periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   ctx       <-> dispatch context
+ *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   var       <-> symmetric tensor gradient to update (18 values per elt)
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t      *halo,
+                                     cs_dispatch_context  &ctx,
+                                     cs_halo_type_t        sync_mode,
+                                     T                     var[])
+{
+  if (halo == nullptr || sync_mode == CS_HALO_N_TYPES)
+    return;
+
+  if (halo->n_rotations == 0)
+    return;
+
+  const int n_transforms = halo->n_transforms;
+  const cs_lnum_t n_elts = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = halo->periodicity;
+
+  constexpr int n_bounds_max = 8;
+  const int n_h = (sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
+
+  assert(halo != nullptr);
+
+  for (int t_id = 0; t_id < n_transforms; t_id++) {
+
+    const cs_lnum_t shift = 4 * halo->n_c_domains * t_id;
+
+    const fvm_periodicity_type_t perio_type =
+      fvm_periodicity_get_type(periodicity, t_id);
+
+    if (perio_type < FVM_PERIODICITY_ROTATION)
+      continue;
+
+    cs_real_t matrix[3][4];
+    fvm_periodicity_get_matrix(periodicity, t_id, matrix);
+
+    cs_lnum_t bounds[2][n_bounds_max];
+
+    int idx = 0;
+    const int idx_e = halo->n_c_domains * n_h;
+
+    while (idx < idx_e) {
+
+      int n_bounds = 0;
+      cs_lnum_t n = 0;
+
+      while (idx < idx_e && n_bounds < n_bounds_max) {
+
+        const int rank_id = idx / n_h;
+        const int h_shift = (idx % n_h) * 2;
+
+        const cs_lnum_t start =
+          halo->perio_lst[shift + 4 * rank_id + h_shift];
+
+        const cs_lnum_t count =
+          halo->perio_lst[shift + 4 * rank_id + h_shift + 1];
+
+        if (count > 0) {
+          bounds[0][n_bounds] = start;
+          bounds[1][n_bounds] = count;
+
+          n += count;
+          n_bounds++;
+        }
+
+        idx++;
+      }
+
+      if (n == 0)
+        continue;
+
+      ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t idxb) {
+
+        cs_lnum_t i = idxb;
+        int k = 0;
+
+        while (k < n_bounds && i >= bounds[1][k]) {
+          i -= bounds[1][k];
+          k++;
+        }
+
+        if (k >= n_bounds)
+          return;
+
+        i += bounds[0][k];
+
+        _apply_tensor3sym_rotation(matrix, var + 18 * (n_elts + i));
+      });
+    }
+  }
+}
+
 // Force instanciation
 
 template void
@@ -762,5 +1100,18 @@ template void
 cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
                                      cs_halo_type_t    sync_mode,
                                      float             var[]);
+
+template void
+cs_halo_perio_sync_var_sym_tens_grad<float>(const cs_halo_t      *halo,
+                                            cs_dispatch_context  &ctx,
+                                            cs_halo_type_t        sync_mode,
+                                            float                 var[]);
+
+template void
+cs_halo_perio_sync_var_sym_tens_grad<double>(const cs_halo_t      *halo,
+                                             cs_dispatch_context  &ctx,
+                                             cs_halo_type_t        sync_mode,
+                                             double                var[]);
+
 
 /*----------------------------------------------------------------------------*/

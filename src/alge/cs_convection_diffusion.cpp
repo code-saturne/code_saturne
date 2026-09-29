@@ -847,55 +847,6 @@ _beta_limiter_num(cs_field_t                 *f,
   ctx.wait();
 }
 
-/*----------------------------------------------------------------------------
- * Synchronize strided gradient ghost cell values.
- *
- * template parameters:
- *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
- *
- * parameters:
- *   m              <-- pointer to associated mesh structure
- *   on_device,     <-- is data on device (GPU) ?
- *   halo_type      <-- halo type (extended or not)
- *   grad           --> gradient of a variable
- *----------------------------------------------------------------------------*/
-
-template <cs_lnum_t stride, typename T>
-static void
-_sync_strided_gradient_halo(const cs_mesh_t         *m,
-                            cs_halo_type_t           halo_type,
-                            [[maybe_unused]] bool    on_device,
-                            T             (*restrict grad)[stride][3])
-{
-  cs_datatype_t datatype = cs_datatype_from_type<T>();
-
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_halo_sync_d(m->halo, halo_type, datatype, stride*3, (T *)grad);
-  else
-#endif
-    cs_halo_sync(m->halo, halo_type, datatype, stride*3, (T *)grad);
-
-  if (m->have_rotation_perio) {
-#if defined(HAVE_ACCEL)
-    if (on_device)
-      cs_sync_d2h((void  *)grad);
-#endif
-    if (stride == 1)
-      cs_halo_perio_sync_var_vect(m->halo, halo_type, (T *)grad, 3);
-    else if (stride == 3)
-      cs_halo_perio_sync_var_tens(m->halo, halo_type, (T *)grad);
-    else if (stride == 6)
-      cs_halo_perio_sync_var_sym_tens_grad(m->halo,
-                                           halo_type,
-                                           (T *)grad);
-#if defined(HAVE_ACCEL)
-    if (on_device)
-      cs_sync_h2d((void  *)grad);
-#endif
-  }
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the upwind gradient used in the slope tests, on host
@@ -10203,11 +10154,10 @@ cs_slope_test_gradient_strided
 
   /* Handle parallelism and periodicity */
 
-  if (m->halo != nullptr)
-    _sync_strided_gradient_halo<stride>(m,
-                                        CS_HALO_STANDARD,
-                                        use_gpu,
-                                        grdpa);
+  cs_gradient_halo_sync_r<stride>(m->halo,
+                                  CS_HALO_STANDARD,
+                                  use_gpu,
+                                  grdpa);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -10496,7 +10446,7 @@ cs_upwind_gradient_strided
   ctx.wait();
 
   /* Synchronization for parallelism or periodicity */
-  _sync_strided_gradient_halo(m, CS_HALO_STANDARD, ctx.use_gpu(), grdpa);
+  cs_gradient_halo_sync_r(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), grdpa);
 }
 
 template void

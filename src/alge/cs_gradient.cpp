@@ -493,75 +493,6 @@ _l2_norm_1(cs_dispatch_context  &ctx,
 }
 
 /*----------------------------------------------------------------------------
- * Synchronize strided gradient ghost cell values.
- *
- * template parameters:
- *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
- *
- * parameters:
- *   m              <-- pointer to associated halo structure
- *   halo_type      <-- halo type (extended or not)
- *   on_device      <-- run on accelerated device if possible
- *   grad           --> gradient of a variable
- *----------------------------------------------------------------------------*/
-
-template <cs_lnum_t stride, typename T>
-static void
-_sync_strided_gradient_halo(const cs_halo_t         *halo,
-                            cs_halo_type_t           halo_type,
-                            [[maybe_unused]] bool    on_device,
-                            T             (*restrict grad)[stride][3])
-{
-  if (halo == nullptr)
-    return;
-
-  cs_datatype_t datatype = cs_datatype_from_type<T>();
-
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_halo_sync_pack_d(halo, halo_type, datatype, stride*3,
-                        reinterpret_cast<T *>(grad),
-                        nullptr, nullptr);
-  else
-#endif
-    cs_halo_sync_pack(halo, halo_type, datatype, stride*3,
-                      reinterpret_cast<T *>(grad),
-                      nullptr, nullptr);
-
-  cs_halo_sync_start(halo, grad, nullptr);
-
-  cs_halo_sync_wait(halo, grad, nullptr);
-
-  if (halo->n_rotations == 0)
-    return;
-
-  /* Rotation if needed
-     ------------------ */
-
-  // TODO: implement this on GPU instead of syncing.
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_sync_d2h((void  *)grad);
-#endif
-
-  assert(datatype == CS_REAL_TYPE);  // TODO: use templated type below
-
-  if (stride == 1)
-    cs_halo_perio_sync_var_vect(halo, halo_type, (T *)grad, 3);
-  else if (stride == 3)
-    cs_halo_perio_sync_var_tens(halo, halo_type, (T *)grad);
-  else if (stride == 6)
-    cs_halo_perio_sync_var_sym_tens_grad(halo,
-                                         halo_type,
-                                         (T *)grad);
-
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_sync_h2d((void  *)grad);
-#endif
-}
-
-/*----------------------------------------------------------------------------
  * Compute the bounds of a scalar based on neighboring cell values.
  * This function deals with the standard or extended neighborhood.
  *
@@ -1728,7 +1659,7 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
 
   ctx.wait();
 
-  _sync_strided_gradient_halo(m->halo, CS_HALO_EXTENDED, ctx.use_gpu(), cor_mat);
+  cs_gradient_halo_sync_r(m->halo, CS_HALO_EXTENDED, ctx.use_gpu(), cor_mat);
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
     cs_real_t dvol;
@@ -5855,7 +5786,7 @@ _strided_gradient_clipping(cs_dispatch_context          &ctx,
 
   /* Synchronize the updated Gradient */
 
-  _sync_strided_gradient_halo(m->halo, halo_type, use_gpu, grad);
+  cs_gradient_halo_sync_r(m->halo, halo_type, use_gpu, grad);
 
   CS_FREE(_clip_factor);
 }
@@ -6156,7 +6087,7 @@ _initialize_strided_gradient
   /* Synchronize halos */
 
   ctx.wait();
-  _sync_strided_gradient_halo(m->halo, halo_type, ctx.use_gpu(), grad);
+  cs_gradient_halo_sync_r(m->halo, halo_type, ctx.use_gpu(), grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -6418,7 +6349,7 @@ _reconstruct_strided_gradient
 
   /* Periodicity and parallelism treatment */
 
-  _sync_strided_gradient_halo(m->halo, halo_type, on_device, grad);
+  cs_gradient_halo_sync_r(m->halo, halo_type, on_device, grad);
 
   if (cs_glob_timer_kernels_flag > 0) {
     t_stop = std::chrono::high_resolution_clock::now();
@@ -6703,7 +6634,7 @@ _iterative_strided_gradient
 
       /* Synchronize halos */
 
-      _sync_strided_gradient_halo(m->halo, halo_type, ctx.use_gpu(), grad);
+      cs_gradient_halo_sync_r(m->halo, halo_type, ctx.use_gpu(), grad);
 
       /* Convergence test (L2 norm) */
 
@@ -7086,7 +7017,7 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
 
   /* Synchronize halos */
 
-  _sync_strided_gradient_halo(m->halo, halo_type, on_device, grad);
+  cs_gradient_halo_sync_r(m->halo, halo_type, on_device, grad);
 
   if (cs_glob_timer_kernels_flag > 0)
     t_halo = std::chrono::high_resolution_clock::now();
@@ -7381,7 +7312,7 @@ _lsq_strided_gradient_gather(cs_dispatch_context         &ctx,
 
   /* Synchronize halos */
 
-  _sync_strided_gradient_halo(m->halo, halo_type, on_device, grad);
+  cs_gradient_halo_sync_r(m->halo, halo_type, on_device, grad);
 
   if (cs_glob_timer_kernels_flag > 0)
     t_halo = std::chrono::high_resolution_clock::now();
@@ -7620,8 +7551,8 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
 
   /* Synchronize halos */
 
-  _sync_strided_gradient_halo<stride>(m->halo, CS_HALO_EXTENDED, ctx.use_gpu(),
-                                      grad);
+  cs_gradient_halo_sync_r<stride>(m->halo, CS_HALO_EXTENDED, ctx.use_gpu(),
+                                  grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -10744,7 +10675,96 @@ cs_gradient_porosity_balance(int inc)
     ctx.wait();
 
   }
-
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize strided gradient ghost cell values.
+ *
+ * \tparam  stride  1 for scalars, 3 for vectors, 6 for symmetric tensors
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride, typename T>
+void
+cs_gradient_halo_sync_r
+(
+ const cs_halo_t         *halo,              /*!< pointer to associated halo */
+ cs_halo_type_t           halo_type,         /*!< halo type (extended or not) */
+ [[maybe_unused]] bool    on_device,         /*!< run on accelerated device ? */
+ T             (*restrict grad)[stride][3])  /*!< gradient of a variable */
+{
+  if (halo == nullptr)
+    return;
+
+  cs_datatype_t datatype = cs_datatype_from_type<T>();
+
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_halo_sync_pack_d(halo, halo_type, datatype, stride*3,
+                        reinterpret_cast<T *>(grad),
+                        nullptr, nullptr);
+  else
+#endif
+    cs_halo_sync_pack(halo, halo_type, datatype, stride*3,
+                      reinterpret_cast<T *>(grad),
+                      nullptr, nullptr);
+
+  cs_halo_sync_start(halo, grad, nullptr);
+
+  cs_halo_sync_wait(halo, grad, nullptr);
+
+  if (halo->n_rotations == 0)
+    return;
+
+  /* Rotation if needed
+     ------------------ */
+
+  cs_dispatch_context  ctx;
+  ctx.set_use_gpu(on_device);
+
+  assert(datatype == CS_REAL_TYPE);  // TODO: use templated type below
+
+  if (stride == 1)
+    cs_halo_perio_sync_var_vect(halo, ctx, halo_type, (T *)grad, 3);
+  else if (stride == 3)
+    cs_halo_perio_sync_var_tens(halo, ctx, halo_type, (T *)grad);
+  else if (stride == 6)
+    cs_halo_perio_sync_var_sym_tens_grad(halo, ctx, halo_type, (T *)grad);
+
+  ctx.wait();
+}
+
+// Force instanciation
+
+template void
+cs_gradient_halo_sync_r(const cs_halo_t         *halo,
+                        cs_halo_type_t           halo_type,
+                        [[maybe_unused]] bool    on_device,
+                        cs_real_t              (*restrict grad)[1][3]);
+
+template void
+cs_gradient_halo_sync_r(const cs_halo_t         *halo,
+                        cs_halo_type_t           halo_type,
+                        [[maybe_unused]] bool    on_device,
+                        cs_real_t              (*restrict grad)[3][3]);
+
+template void
+cs_gradient_halo_sync_r(const cs_halo_t         *halo,
+                        cs_halo_type_t           halo_type,
+                        [[maybe_unused]] bool    on_device,
+                        cs_real_t              (*restrict grad)[6][3]);
+
+template void
+cs_gradient_halo_sync_r(const cs_halo_t         *halo,
+                        cs_halo_type_t           halo_type,
+                        [[maybe_unused]] bool    on_device,
+                        float                  (*restrict grad)[1][3]);
+
+template void
+cs_gradient_halo_sync_r(const cs_halo_t         *halo,
+                        cs_halo_type_t           halo_type,
+                        [[maybe_unused]] bool    on_device,
+                        float                  (*restrict grad)[6][3]);
 
 /*----------------------------------------------------------------------------*/

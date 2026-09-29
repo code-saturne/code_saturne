@@ -528,6 +528,26 @@ cs_gradient_vector_synced_input(const char                  *var_name,
                                 T                            grad[][3][3],
                                 cs_real_t                   *bounds);
 
+/*----------------------------------------------------------------------------
+ * Synchronize strided gradient ghost cell values.
+ *
+ * template parameters:
+ *   stride        1 for scalars, 3 for vectors, 6 for symmetric tensors
+ *
+ * parameters:
+ *   m              <-- pointer to associated halo structure
+ *   halo_type      <-- halo type (extended or not)
+ *   on_device      <-- run on accelerated device if possible
+ *   grad           --> gradient of a variable
+ *----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride, typename T>
+void
+cs_gradient_halo_sync_r(const cs_halo_t         *halo,
+                        cs_halo_type_t           halo_type,
+                        [[maybe_unused]] bool    on_device,
+                        T             (*restrict grad)[stride][3]);
+
 /*----------------------------------------------------------------------------*/
 
 #endif /* CS_GRADIENT__ */

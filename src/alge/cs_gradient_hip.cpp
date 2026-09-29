@@ -1036,7 +1036,7 @@ cs_gradient_scalar_lsq_hip(const cs_mesh_t              *m,
   _compute_gradient_lsq_s<<<gridsize, blocksize, 0, stream>>>
     (n_cells, grad_d, cocg, rhsv);
 
-  cs_sync_scalar_gradient_halo_d(m, halo_type, grad_d);
+  cs_halo_sync_r(m->halo, halo_type, grad_d);
 
   CS_HIP_CHECK(hipStreamSynchronize(stream));
   CS_HIP_CHECK(hipGetLastError());
@@ -1272,7 +1272,7 @@ cs_gradient_strided_lsq_hip
   if (cs_glob_timer_kernels_flag > 0)
     CS_HIP_CHECK(hipEventRecord(e_b_correction, stream));
 
-  cs_sync_strided_gradient_halo_d(m, halo_type, grad_d);
+  cs_gradient_halo_sync_r(m->halo, halo_type, true, grad_d);
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_HIP_CHECK(hipEventRecord(e_halo, stream));
@@ -1570,7 +1570,7 @@ cs_gradient_strided_gg_r_hip
   if (cs_glob_timer_kernels_flag > 0)
     CS_HIP_CHECK(hipEventRecord(e_s_lincorr, stream));
 
-  cs_sync_strided_gradient_halo_d(m, halo_type, grad_d);
+  cs_halo_sync_r(m->halo, halo_type, true, grad_d);
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_HIP_CHECK(hipEventRecord(e_halo, stream));

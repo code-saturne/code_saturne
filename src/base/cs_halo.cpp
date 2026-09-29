@@ -2924,20 +2924,14 @@ cs_halo_sync_r(const cs_halo_t       *halo,
 
   /* Rotation if needed */
 
-  // TODO: implement this on GPU instead of syncing.
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_sync_d2h((void  *)val);
-#endif
-
   assert(datatype == CS_REAL_TYPE);  // TODO: use templated type below
 
-  cs_halo_perio_sync_var_vect(halo, sync_mode, (T *)val, 3);
+  cs_dispatch_context  ctx;
+  ctx.set_use_gpu(on_device);
 
-#if defined(HAVE_ACCEL)
-  if (on_device)
-    cs_sync_h2d((void  *)val);
-#endif
+  cs_halo_perio_sync_var_vect(halo, ctx, sync_mode, (T *)val, 3);
+
+  ctx.wait();
 }
 
 // Force instanciation
