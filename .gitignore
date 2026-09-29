@@ -214,5 +214,9 @@ Makefile.in
 
 # /tests/
 /src/TAGS
-doc/sphinx/api/
+
+#doc/sphinx/api/
 *~
+
+.gemini
+
