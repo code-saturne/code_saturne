@@ -1,0 +1,56 @@
+/ CHEMISTRY PROFILE FILE EXAMPLE
+/ (free comment lines)
+/---------------------------------------------------------
+/ The format of the file is important and is the following:
+/ --------------------------------------------------------
+/ year (integer), quantile (integer), hour (integer), minute (integer), second (dble precision) of the profile
+/ location of the concentration profile in the domain (x,y) in m (double precision)
+/ number of species (integer, negative for labels, positive for scalar indices)
+/ labels or indices of the species (strings or integers)
+/
+/ concentration profiles:
+/ number of levels (integer)
+/ for each level :
+/ altitude (m), concentration for each species (double precision)
+/
+/ NO EMPTY LINE AT THE END OF THE FILE
+/ ---------------------------------------------------------
+/ ---------------------------------------------------------
+/
+/ year, quantile, hour, minute, second of the profile:
+2014 150 12 0 0.0
+/
+/ location of the concentration profile in the domain (x,y):
+  0.0000E+00   0.0000E+00
+/
+/ number of species (negative for labels):
+-3
+/
+/ species labels:
+NO NO2 O3
+/
+/ concentration profiles: number of levels:
+2
+/
+/ for each level: altitude (m), concentration for each species:
+  1.00  4.137357E-03  2.5567129E-02  8.1724283E-02
+ 20.00  4.137357E-03  2.5567129E-02  8.1724283E-02
+/
+/ year, quantile, hour, minute, second of the profile:
+2014 150 13 0 0.0
+/
+/ location of the concentration profile in the domain (x,y):
+  0.0000E+00   0.0000E+00
+/
+/ number of species (negative for labels):
+-3
+/
+/ species labels:
+NO NO2 O3
+/
+/ concentration profiles: number of levels:
+2
+/
+/ for each level: altitude (m), concentration for each species:
+  1.00  4.500000E-03  2.4000000E-02  8.3000000E-02
+ 20.00  4.500000E-03  2.4000000E-02  8.3000000E-02

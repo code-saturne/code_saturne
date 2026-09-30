@@ -65,6 +65,7 @@
 
 #include "pprt/cs_physical_model.h"
 #include "atmo/cs_atmo.h"
+#include "atmo/cs_atmo_chemistry.h"
 #include "cdo/cs_param_cdo.h"
 #include "cdo/cs_thermal_system.h"
 #include "cfbl/cs_cf_model.h"
@@ -545,11 +546,17 @@ _gui_atmo_get_set_meteo_profile(void)
 
   int is_meteo_file = 0;
   int is_large_scale_meteo = 0;
+  int is_chemistry = 0;
 
   cs_gui_node_get_child_status_int(tn, "read_meteo_data",
                                    &is_meteo_file);
   cs_gui_node_get_child_status_int(tn, "large_scale_meteo",
                                    &is_large_scale_meteo);
+  cs_gui_node_get_child_status_int(tn, "activate_chemistry",
+                                   &is_chemistry);
+
+  if (is_chemistry)
+    cs_glob_atmo_chemistry->model = 1;
 
   if (is_meteo_file && !is_large_scale_meteo) {
     cs_glob_atmo_option->meteo_profile = 1;

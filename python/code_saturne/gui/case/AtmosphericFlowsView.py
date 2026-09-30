@@ -90,10 +90,8 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.pushButtonMeteoData.pressed.connect(self.__slotSearchMeteoData)
 
         self.radioButtonLargeScaleMeteo.clicked.connect(self.__slotButtonLargeScaleMeteo)
-        #TODO not yet connected
-        #self.groupBoxActChemistry.clicked[bool].connect(self.__slotGroupBoxActChemistry)
-        self.__slotGroupBoxActChemistry(False)
-        self.groupBoxActChemistry.setEnabled(False)
+        self.groupBoxActChemistry.clicked[bool].connect(
+            self.__slotGroupBoxActChemistry)
 
         self.comboBoxUstarOrdLMO.currentIndexChanged[int].connect(self.__slotComboBoxUstarOrDlmo)
         self.comboBoxUrefOrdLMO.currentIndexChanged[int].connect(self.__slotComboBoxUrefOrDlmo)
@@ -358,8 +356,6 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         if checked:
             status = 'on'
 
-        #TODO not yet activated
-        self.groupBoxActChemistry.setEnabled(False)
         self.groupBoxActChemistry.setChecked(checked)
         self.__model.setChemistryStatus(status)
 
