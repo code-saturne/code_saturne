@@ -10765,6 +10765,12 @@ template void
 cs_gradient_halo_sync_r(const cs_halo_t         *halo,
                         cs_halo_type_t           halo_type,
                         [[maybe_unused]] bool    on_device,
+                        float                  (*restrict grad)[3][3]);
+
+template void
+cs_gradient_halo_sync_r(const cs_halo_t         *halo,
+                        cs_halo_type_t           halo_type,
+                        [[maybe_unused]] bool    on_device,
                         float                  (*restrict grad)[6][3]);
 
 /*----------------------------------------------------------------------------*/
