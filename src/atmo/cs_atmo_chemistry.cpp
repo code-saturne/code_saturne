@@ -687,9 +687,120 @@ cs_atmo_read_aerosol(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Reads the chemistry profile data for the atmospheric chemistry
+ * \brief Compute day number of year (quantile) from year, month, day.
  *
- * \param[in] mode    if false reading of dimensions only else reading of data
+ * \param[in]  year   year
+ * \param[in]  month  month (1-12)
+ * \param[in]  day    day of month (1-31)
+ *
+ * \return  calendar day number (1-366)
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_comp_quantile(int year,
+               int month,
+               int day)
+{
+  static const int days_before_month[12] = {
+    0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
+  };
+  int leap = 0;
+  if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0))
+    leap = 1;
+  int quant = days_before_month[month - 1] + day;
+  if (month > 2)
+    quant += leap;
+  return quant;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read next non-empty, non-comment data line from file.
+ *
+ * Lines starting with '/' (after optional whitespace) and empty lines
+ * are skipped.
+ *
+ * \param[in, out] line     buffer to store the read line
+ * \param[in]      max_len  maximum buffer length
+ * \param[in, out] file     file pointer
+ *
+ * \return  pointer to the first non-whitespace character, or nullptr on EOF
+ */
+/*----------------------------------------------------------------------------*/
+
+static char *
+_read_next_data_line(char  *line,
+                     int    max_len,
+                     FILE  *file)
+{
+  while (fgets(line, max_len, file) != nullptr) {
+    char *s = line;
+    while (*s == ' ' || *s == '\t')
+      s++;
+    if (*s != '\0' && *s != '\n' && *s != '\r' && *s != '/')
+      return s;
+  }
+  return nullptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Clean numerical input line (replace delimiters and exponents).
+ *
+ * Trailing comments starting with '/' are truncated.
+ * Commas and tabs are replaced with spaces.
+ * Fortran exponents 'd' and 'D' are replaced with 'e'.
+ *
+ * \param[in, out] line  string to clean
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_clean_num_line(char *line)
+{
+  for (int i = 0; line[i] != '\0'; i++) {
+    if (line[i] == '/') {
+      line[i] = '\0';
+      break;
+    }
+    if (line[i] == ',' || line[i] == '\t')
+      line[i] = ' ';
+    if (line[i] == 'd' || line[i] == 'D')
+      line[i] = 'e';
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Clean string/label input line (replace delimiters, keep letters).
+ *
+ * Trailing comments starting with '/' are truncated.
+ * Commas and tabs are replaced with spaces.
+ *
+ * \param[in, out] line  string to clean
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_clean_str_line(char *line)
+{
+  for (int i = 0; line[i] != '\0'; i++) {
+    if (line[i] == '/') {
+      line[i] = '\0';
+      break;
+    }
+    if (line[i] == ',' || line[i] == '\t')
+      line[i] = ' ';
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reads the chemistry profile data for the atmospheric chemistry.
+ *
+ * \param[in] mode  0: reading of dimensions and counting time steps;
+ *                  1: reading actual data across all time steps
  */
 /*----------------------------------------------------------------------------*/
 
@@ -697,226 +808,461 @@ void
 cs_atmo_read_chemistry_profile(int mode)
 {
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
-  const int n_fields = cs_field_n_fields();
 
-  FILE *file = nullptr;
-  char chaine[100] = "";
-  static bool switch_to_labels;
-  int species_profiles_to_fid[_atmo_chem.n_species_profiles];
+  if (_atmo_chem.init_gas_with_lib) {
+    if (mode == 0) {
+      _atmo_chem.nt_step_profiles = 1;
+      _atmo_chem.n_z_profiles = 1;
+      _atmo_chem.n_species_profiles = _atmo_chem.n_species;
+      cs_atmo_chemistry_initialize_conc_profiles();
+    }
+    else {
+      const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+      const cs_real_t ro0 = (1e3 * phys_pro->ro0);
+
+      _atmo_chem.z_conc_profiles[0] = 0.0;
+      cs_atmo_aerosol_get_gas(_atmo_chem.conc_profiles);
+
+      for (int ii = 0; ii < _atmo_chem.n_species_profiles; ii++)
+        _atmo_chem.conc_profiles[ii] = _atmo_chem.conc_profiles[ii] / ro0;
+
+      _chem_initialize_species_profiles_to_fid(_atmo_chem.species_to_field_id);
+    }
+    return;
+  }
+
   const char *name = _atmo_chem.chem_conc_file_name;
+  if (name == nullptr)
+    name = "chemistry";
 
-  if (name != nullptr)
-    file = fopen(name, "r");
+  FILE *file = fopen(name, "r");
+  if (file == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Could not find chemistry concentration file \"%s\".\n"
+                "Check your DATA directory.\n"), name);
 
-  if (mode == 1) {
-
+  if (mode == 1)
     bft_printf("Reading concentration profiles data.\n");
+  else
+    bft_printf("Reading dimensions for concentration profiles.\n");
 
-    for (int itp = 0; itp < _atmo_chem.nt_step_profiles; itp++) {
+  int itp = -1;
+  char line[8192];
+  static bool switch_to_labels = false;
+  int *species_profiles_to_fid = nullptr;
 
-      int year, quant, hour, minute, second;
+  if (mode == 1 && _atmo_chem.n_species_profiles > 0)
+    CS_MALLOC(species_profiles_to_fid, _atmo_chem.n_species_profiles, int);
 
-      // read time
-      while (strcmp(chaine, "second") != 0)
-        fscanf(file, "%s", chaine);
-      fscanf(file, "%d %d %d %d %d",
-             &year, &quant, &hour, &minute, &second);
+  while (1) {
+    char *s = _read_next_data_line(line, sizeof(line), file);
+    if (s == nullptr)
+      break;
 
-      if (second < 0 || quant > 366)
+    itp++;
+
+    /* 1. Date and time of profile */
+    _clean_num_line(s);
+
+    /* Count whitespace-separated tokens on line */
+    int n_date_tokens = 0;
+    for (char *p = s; *p != '\0';) {
+      while (*p == ' ' || *p == '\t')
+        p++;
+      if (*p == '\0')
+        break;
+      n_date_tokens++;
+      while (*p != '\0' && *p != ' ' && *p != '\t')
+        p++;
+    }
+
+    int year = -1, month = -1, day = -1, quant = -1, hour = -1, minute = -1;
+    cs_real_t second = -1.0;
+
+    if (n_date_tokens == 6) {
+      if (sscanf(s, "%d %d %d %d %d %lf",
+                 &year, &month, &day, &hour, &minute, &second) != 6)
         cs_parameters_error
           (CS_ABORT_IMMEDIATE,
-           _("Error opening the chemistry profile file"),
-           _("verify input format (integer, real)\n"
-             "The computation will not be run"));
+           _("Error in the chemistry profile file:\n"),
+           _("Error in the date of chemistry profile file:\n"
+             "Check format: year, month, day, hour, minute, second."));
 
-      if (at_opt->syear < 0.0) {
-        at_opt->syear  = year;
-        at_opt->squant = quant;
-        at_opt->shour  = hour;
-        at_opt->smin   = minute;
-        at_opt->ssec   = (cs_real_t)second;
-      }
+      if (month < 1 || month > 12 || day < 1 || day > 31)
+        cs_parameters_error
+          (CS_ABORT_IMMEDIATE,
+           _("Error in the chemistry profile file:\n"),
+           _("Invalid date format (month > 12 or day > 31)."));
+      quant = _comp_quantile(year, month, day);
+    }
+    else if (n_date_tokens == 5) {
+      if (sscanf(s, "%d %d %d %d %lf",
+                 &year, &quant, &hour, &minute, &second) != 5)
+        cs_parameters_error
+          (CS_ABORT_IMMEDIATE,
+           _("Error in the chemistry profile file:\n"),
+           _("Error in the date of chemistry profile file:\n"
+             "Check format: year, quant, hour, minute, second."));
+    }
+    else {
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("Error in the chemistry profile file:\n"),
+         _("Error in the date of chemistry profile file:\n"
+           "Check format: year, quant, hour, minute, second."));
+    }
 
-      /* Compute the julian day for the starting day of the simulation
-       * (julian day at 12h) */
+    if (second < 0.0 || quant < 1 || quant > 366)
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("Error in the chemistry profile file:\n"),
+         _("Invalid date or time values in chemistry profile file."));
+
+    if (at_opt->syear < 0.0) {
+      at_opt->syear  = year;
+      at_opt->squant = quant;
+      at_opt->shour  = hour;
+      at_opt->smin   = minute;
+      at_opt->ssec   = second;
+    }
+
+    if (mode == 1) {
       const cs_real_t sjday
-        = at_opt->squant + ( ( 1461 * (at_opt->syear + 4800 + (1 - 14) / 12))/4
-                             + (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12
-                             - (3 * ((at_opt->syear + 4900 + (1-14)/12) / 100))/4
-                             + 1 - 32075 ) - 1;
+        = at_opt->squant
+        + ((1461 * (at_opt->syear + 4800 + (1 - 14) / 12)) / 4
+           + (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12
+           - (3 * ((at_opt->syear + 4900 + (1 - 14) / 12) / 100)) / 4
+           + 1 - 32075) - 1;
       const cs_real_t jday
-        = quant + (  (1461*(year+4800+(1-14)/12))/4
-                     + (367*(1-2-12*((1-14) / 12))) / 12
-                     - (3 * ((year+4900+(1-14)/12)/100)) / 4
-                     +  1-32075) - 1;
+        = quant
+        + ((1461 * (year + 4800 + (1 - 14) / 12)) / 4
+           + (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12
+           - (3 * ((year + 4900 + (1 - 14) / 12) / 100)) / 4
+           + 1 - 32075) - 1;
 
-      _atmo_chem.t_conc_profiles[itp] = (jday - sjday)*86400.0
-        + (hour - at_opt->shour)*3600.0
-        + (minute - at_opt->smin)*60.0  + (second - at_opt->ssec);
+      _atmo_chem.t_conc_profiles[itp]
+        = (jday - sjday) * 86400.0
+        + (hour - at_opt->shour) * 3600.0
+        + (minute - at_opt->smin) * 60.0 + (second - at_opt->ssec);
 
-      if (itp > 0)
-        if (_atmo_chem.t_conc_profiles[itp] < _atmo_chem.t_conc_profiles[itp-1])
-                  cs_parameters_error
-                    (CS_ABORT_IMMEDIATE,
-                     _("Error in the chemistry profile file:\n"),
-                     _("check that the chronogical order of"
-                       "the profiles are respected"));
-
-      while (strcmp(chaine, "domaine") != 0)
-        fscanf(file, "%s", chaine);
-
-      /* reading the position of the profile
-         -----------------------------------*/
-      fscanf(file, "%lf %lf",
-             &_atmo_chem.x_conc_profiles[itp],
-             &_atmo_chem.y_conc_profiles[itp]);
-
-      char labels[100] = "";
-
-      if (_atmo_chem.init_gas_with_lib) {
-
-        /* read the concentrations
-           ----------------------- */
-        const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
-        const cs_real_t ro0 = (1e3*phys_pro->ro0);
-
-        _atmo_chem.z_conc_profiles[0] = 0.0;
-        cs_atmo_aerosol_get_gas(_atmo_chem.conc_profiles);
-
-        for (int ii = 0; ii < _atmo_chem.n_species_profiles; ii++)
-          _atmo_chem.conc_profiles[ii] = _atmo_chem.conc_profiles[ii]/ro0;
-
+      if (itp > 0) {
+        if (_atmo_chem.t_conc_profiles[itp]
+            < _atmo_chem.t_conc_profiles[itp - 1])
+          cs_parameters_error
+            (CS_ABORT_IMMEDIATE,
+             _("Error in the chemistry profile file:\n"),
+             _("check that the chronological order of "
+               "the profiles is respected"));
       }
-      else {
-        if (_atmo_chem.n_species_profiles > 0) {
-          if (switch_to_labels) {
+    }
 
-            while (strcmp(chaine, "initialisées") != 0)
-              fscanf(file, "%s", chaine);
-            int nbchim = 0;
-            fscanf(file, "%d", &nbchim);
-            fscanf(file, "%s", chaine);
-            while (strcmp(chaine, "initialisées") != 0)
-              fscanf(file, "%s", chaine);
-            for (int ii = 0; ii < _atmo_chem.n_species_profiles; ii++) {
-              fscanf(file, "%s", labels);
-              if (strcmp(labels, "") == 0) {
-                cs_parameters_error
-                  (CS_ABORT_IMMEDIATE,
-                   _("ATMOSPHERIC CHEMISTRY FROM SPACK:\n"),
-                   _("Could not identify the given species label\n"
-                     "Given species label :%s"), labels);
-              }
-              else {
-                for (int f_id = 0; f_id < n_fields; f_id++) {
-                  const cs_field_t *f = cs_field_by_id(f_id);
-                  const char *f_label = cs_field_get_label(f);
-                  if (strcmp(labels, f_label) != 0)
-                    continue;
-                  species_profiles_to_fid[ii] = f_id;
-                }
+    /* 2. Position of profile */
+    s = _read_next_data_line(line, sizeof(line), file);
+    if (s == nullptr)
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("Error in the chemistry profile file:\n"),
+         _("Premature end of file while reading profile position."));
+
+    _clean_num_line(s);
+    cs_real_t x_pos = 0.0, y_pos = 0.0;
+    if (sscanf(s, "%lf %lf", &x_pos, &y_pos) < 2)
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("Error in the chemistry profile file:\n"),
+         _("Could not read (x, y) coordinates of the concentration profile."));
+
+    if (mode == 1) {
+      _atmo_chem.x_conc_profiles[itp] = x_pos;
+      _atmo_chem.y_conc_profiles[itp] = y_pos;
+    }
+
+    /* 3. Number of species */
+    s = _read_next_data_line(line, sizeof(line), file);
+    if (s == nullptr)
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("Error in the chemistry profile file:\n"),
+         _("Premature end of file while reading number of species."));
+
+    _clean_num_line(s);
+    int n_sp = 0;
+    if (sscanf(s, "%d", &n_sp) < 1)
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("Error in the chemistry profile file:\n"),
+         _("Could not read number of species in chemistry profile file."));
+
+    if (n_sp < 0) {
+      switch_to_labels = true;
+      n_sp = -n_sp;
+    }
+    else
+      switch_to_labels = false;
+
+    if (itp == 0) {
+      _atmo_chem.n_species_profiles = n_sp;
+    }
+    else {
+      if (n_sp != _atmo_chem.n_species_profiles)
+        cs_parameters_error
+          (CS_ABORT_IMMEDIATE,
+           _("Error in the chemistry profile file:\n"),
+           _("Inconsistent number of species across time steps."));
+    }
+
+    /* 4. Species identifiers */
+    if (_atmo_chem.n_species_profiles > 0) {
+      s = _read_next_data_line(line, sizeof(line), file);
+      if (s == nullptr)
+        cs_parameters_error
+          (CS_ABORT_IMMEDIATE,
+           _("Error in the chemistry profile file:\n"),
+           _("Premature end of file while reading species identifiers."));
+
+      if (switch_to_labels)
+        _clean_str_line(s);
+      else
+        _clean_num_line(s);
+
+      int offset = 0, n_bytes = 0;
+      const int n_fields = cs_field_n_fields();
+
+      for (int ii = 0; ii < _atmo_chem.n_species_profiles; ii++) {
+        if (switch_to_labels) {
+          char label[128] = "";
+          while (sscanf(s + offset, "%127s%n", label, &n_bytes) < 1) {
+            s = _read_next_data_line(line, sizeof(line), file);
+            if (s == nullptr)
+              cs_parameters_error
+                (CS_ABORT_IMMEDIATE,
+                 _("Error in the chemistry profile file:\n"),
+                 _("Premature end of file while reading species labels."));
+            _clean_str_line(s);
+            offset = 0;
+          }
+          offset += n_bytes;
+
+          if (mode == 1 && itp == 0) {
+            int found_fid = -1;
+            for (int f_id = 0; f_id < n_fields; f_id++) {
+              const cs_field_t *f = cs_field_by_id(f_id);
+              const char *f_label = cs_field_get_label(f);
+              if (strcmp(label, f_label) == 0) {
+                found_fid = f_id;
+                break;
               }
             }
-            _chem_initialize_species_profiles_to_fid
-              (species_profiles_to_fid);
+            if (found_fid < 0) {
+              cs_parameters_error
+                (CS_ABORT_IMMEDIATE,
+                 _("ATMOSPHERIC CHEMISTRY FROM SPACK:\n"),
+                 _("Could not identify the given species label\n"
+                   "Given species label: %s"), label);
+            }
+            species_profiles_to_fid[ii] = found_fid;
           }
-
-          int nbchmz = 0;
-          cs_real_t zconctemp[_atmo_chem.n_species_profiles+1];
-
-          while (strcmp(chaine, "concentrations") != 0)
-            fscanf(file, "%s", chaine);
-          fscanf(file, "%d", &nbchmz);
-
-          nbchmz = _atmo_chem.n_z_profiles;
-          const int size = nbchmz*_atmo_chem.nt_step_profiles;
-          for (int ii = 0; ii < _atmo_chem.n_z_profiles; ii++) {
-            for (int jj = 0; jj < _atmo_chem.n_species_profiles+1; jj++)
-              fscanf(file, "%lf", &zconctemp[jj]);
-            _atmo_chem.z_conc_profiles[ii] = zconctemp[0];
-
-            for (int kk = 1; kk < _atmo_chem.n_species_profiles+1; kk++)
-              _atmo_chem.conc_profiles[ii+(itp)*nbchmz+(kk-1)*size]
-                = zconctemp[kk];
+        }
+        else {
+          int sp_idx = 0;
+          while (sscanf(s + offset, "%d%n", &sp_idx, &n_bytes) < 1) {
+            s = _read_next_data_line(line, sizeof(line), file);
+            if (s == nullptr)
+              cs_parameters_error
+                (CS_ABORT_IMMEDIATE,
+                 _("Error in the chemistry profile file:\n"),
+                 _("Premature end of file while reading species indices."));
+            _clean_num_line(s);
+            offset = 0;
           }
-        } // fin test nespgi
+          offset += n_bytes;
 
-      } //fin test init_gas_with_lib
+          if (mode == 1 && itp == 0) {
+            if (sp_idx < 1 || sp_idx > _atmo_chem.n_species)
+              cs_parameters_error
+                (CS_ABORT_IMMEDIATE,
+                 _("ATMOSPHERIC CHEMISTRY:\n"),
+                 _("Invalid species index %d in profile file "
+                   "(must be 1 to %d)."),
+                 sp_idx, _atmo_chem.n_species);
+            species_profiles_to_fid[ii]
+              = _atmo_chem.species_to_field_id[sp_idx - 1];
+          }
+        }
+      }
 
-      /* logging and initialaze species profiles
-         --------------------------------------- */
+      if (mode == 1 && itp == 0)
+        _chem_initialize_species_profiles_to_fid(species_profiles_to_fid);
+    }
 
+    /* 5. Number of vertical levels */
+    s = _read_next_data_line(line, sizeof(line), file);
+    if (s == nullptr)
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("Error in the chemistry profile file:\n"),
+         _("Premature end of file while reading number of altitudes."));
+
+    _clean_num_line(s);
+    int nbchmz = 0;
+    if (sscanf(s, "%d", &nbchmz) < 1)
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("Error in the chemistry profile file:\n"),
+         _("Could not read number of altitudes in profile file."));
+
+    if (itp == 0) {
+      _atmo_chem.n_z_profiles = nbchmz;
+      if (_atmo_chem.n_z_profiles < 2)
+        cs_parameters_error
+          (CS_ABORT_IMMEDIATE,
+           _("Error in the chemistry profile file:\n"),
+           _("the number of concentrations measurements\n"
+             " must be larger than 2"));
+    }
+    else {
+      if (nbchmz != _atmo_chem.n_z_profiles)
+        cs_parameters_error
+          (CS_ABORT_IMMEDIATE,
+           _("Error in the chemistry profile file:\n"),
+           _("Inconsistent number of vertical levels across time steps."));
+    }
+
+    /* 6. Concentration data */
+    const int nbchmz_val = _atmo_chem.n_z_profiles;
+    const int n_sp_val = _atmo_chem.n_species_profiles;
+
+    if (mode == 0) {
+      for (int ii = 0; ii < nbchmz_val; ii++) {
+        s = _read_next_data_line(line, sizeof(line), file);
+        if (s == nullptr)
+          cs_parameters_error
+            (CS_ABORT_IMMEDIATE,
+             _("Error in the chemistry profile file:\n"),
+             _("Premature end of file while reading concentration levels."));
+        _clean_num_line(s);
+
+        int offset = 0, n_bytes = 0;
+        for (int jj = 0; jj < n_sp_val + 1; jj++) {
+          cs_real_t val = 0.0;
+          while (sscanf(s + offset, "%lf%n", &val, &n_bytes) < 1) {
+            s = _read_next_data_line(line, sizeof(line), file);
+            if (s == nullptr)
+              cs_parameters_error
+                (CS_ABORT_IMMEDIATE,
+                 _("Error in the chemistry profile file:\n"),
+                 _("Premature end of file while reading "
+                   "concentration levels."));
+            _clean_num_line(s);
+            offset = 0;
+          }
+          offset += n_bytes;
+        }
+      }
+    }
+    else {
+      const int size = nbchmz_val * _atmo_chem.nt_step_profiles;
+      cs_real_t *zconctemp = nullptr;
+      CS_MALLOC(zconctemp, n_sp_val + 1, cs_real_t);
+
+      for (int ii = 0; ii < nbchmz_val; ii++) {
+        s = _read_next_data_line(line, sizeof(line), file);
+        if (s == nullptr)
+          cs_parameters_error
+            (CS_ABORT_IMMEDIATE,
+             _("Error in the chemistry profile file:\n"),
+             _("Premature end of file while reading concentration levels."));
+        _clean_num_line(s);
+
+        int offset = 0, n_bytes = 0;
+        for (int jj = 0; jj < n_sp_val + 1; jj++) {
+          while (sscanf(s + offset, "%lf%n", &zconctemp[jj], &n_bytes) < 1) {
+            s = _read_next_data_line(line, sizeof(line), file);
+            if (s == nullptr)
+              cs_parameters_error
+                (CS_ABORT_IMMEDIATE,
+                 _("Error in the chemistry profile file:\n"),
+                 _("Premature end of file while reading "
+                   "concentration levels."));
+            _clean_num_line(s);
+            offset = 0;
+          }
+          offset += n_bytes;
+        }
+
+        _atmo_chem.z_conc_profiles[ii] = zconctemp[0];
+
+        for (int kk = 1; kk < n_sp_val + 1; kk++)
+          _atmo_chem.conc_profiles[ii + itp * nbchmz_val + (kk - 1) * size]
+            = zconctemp[kk];
+      }
+
+      CS_FREE(zconctemp);
+
+      /* Logging */
       if (itp == 0) {
         bft_printf("===================================================\n");
         bft_printf("Concentration profiles\n");
       }
 
       bft_printf("year, quant-day, hour, minute, second\n");
-      bft_printf("%d  %d  %d  %d  %d\n", year, quant, hour, minute, second);
-      bft_printf("t_conc_profiles: %10.4lf\n", _atmo_chem.t_conc_profiles[itp]);
+      bft_printf("%d  %d  %d  %d  %10.2lf\n",
+                 year, quant, hour, minute, second);
+      bft_printf("t_conc_profiles: %10.4lf\n",
+                 _atmo_chem.t_conc_profiles[itp]);
 
       bft_printf("\n");
-      const int nbchmz = _atmo_chem.n_z_profiles;
-      const int size = nbchmz*_atmo_chem.nt_step_profiles;
       bft_printf("zproc,");
-      for (int kk = 0; kk < _atmo_chem.n_species_profiles; kk++) {
-        cs_field_t *f = cs_field_by_id(species_profiles_to_fid[kk]);
+      for (int kk = 0; kk < n_sp_val; kk++) {
+        const int fid = _atmo_chem.species_profiles_to_field_id[kk];
+        const cs_field_t *f = cs_field_by_id(fid);
         const char *f_label = cs_field_get_label(f);
-        bft_printf(" %s,",f_label);
+        bft_printf(" %s,", f_label);
       }
       bft_printf("\n");
-      for (int ii = 0; ii < _atmo_chem.n_z_profiles; ii++) {
-        bft_printf("%10.2lf ",  _atmo_chem.z_conc_profiles[ii]);
-        for (int kk = 0; kk < _atmo_chem.n_species_profiles; kk++) {
-          bft_printf("%10.5lf ",
-                     _atmo_chem.conc_profiles[ii+(itp)*nbchmz+(kk)*size]);
-
+      for (int ii = 0; ii < nbchmz_val; ii++) {
+        bft_printf("%10.2lf ", _atmo_chem.z_conc_profiles[ii]);
+        for (int kk = 0; kk < n_sp_val; kk++) {
+          const int c_idx = ii + itp * nbchmz_val + kk * size;
+          bft_printf("%10.5le ", _atmo_chem.conc_profiles[c_idx]);
         }
         bft_printf("\n");
       }
+    }
+  }
 
-    } // end loop on time
+  if (mode == 0) {
+    if (itp < 0)
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("Error in the chemistry profile file:\n"),
+         _("No concentration profiles found in file."));
 
+    _atmo_chem.nt_step_profiles = itp + 1;
+    bft_printf("Reading dimensions for concentration profiles:\n"
+               "  Number of species:         %d\n"
+               "  Number of vertical levels: %d\n"
+               "  Number of time steps:      %d\n",
+               _atmo_chem.n_species_profiles,
+               _atmo_chem.n_z_profiles,
+               _atmo_chem.nt_step_profiles);
+
+    cs_atmo_chemistry_initialize_conc_profiles();
   }
   else {
-
-    _atmo_chem.nt_step_profiles = 1;
-    bft_printf("Reading dimensions for concentration profiles.\n");
-
-    if (_atmo_chem.init_gas_with_lib) {
-
-      _atmo_chem.n_z_profiles = 1;
-      _atmo_chem.n_species_profiles = _atmo_chem.n_species;
-      return;
-
-    }
-    else {
-      while (strcmp(chaine, "initialisées") != 0)
-        fscanf(file, "%s", chaine);
-      fscanf(file, "%d", &_atmo_chem.n_species_profiles);
-
-      if (_atmo_chem.n_species_profiles < 0) {
-        switch_to_labels = true;
-        _atmo_chem.n_species_profiles = -_atmo_chem.n_species_profiles;
-      }
-      else
-        switch_to_labels = false;
-
-      while (strcmp(chaine, "concentrations") != 0)
-        fscanf(file, "%s", chaine);
-      fscanf(file, "%d", &_atmo_chem.n_z_profiles);
-      if (_atmo_chem.n_z_profiles < 2)
-        cs_parameters_error
-                    (CS_ABORT_IMMEDIATE,
-                     _("Error in the chemistry profile file:\n"),
-                     _("the number of concentrations measurements\n"
-                       " must be larger than 2"));
-    }
-
+    if (itp + 1 != _atmo_chem.nt_step_profiles)
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("Error in the chemistry profile file:\n"),
+         _("Number of time steps read in mode 1 (%d) "
+           "does not match mode 0 (%d).\n"),
+         itp + 1, _atmo_chem.nt_step_profiles);
   }
 
-  if (file != nullptr)
-    fclose(file);
+  if (species_profiles_to_fid != nullptr)
+    CS_FREE(species_profiles_to_fid);
+
+  fclose(file);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1588,25 +1934,26 @@ cs_atmo_chemistry_initialize_conc_profiles(void)
   const int nespg   = _atmo_chem.n_species;
   const int _nbchmz = _atmo_chem.n_z_profiles;
   const int _nbchim = _atmo_chem.nt_step_profiles;
-  const int size    = _atmo_chem.n_species*_nbchmz*_nbchim;
+  const int n_sp    = cs::max(nespg, _atmo_chem.n_species_profiles);
+  const int size    = n_sp * _nbchmz * _nbchim;
 
-  if (_atmo_chem.conc_profiles == nullptr)
+  if (_atmo_chem.conc_profiles == nullptr && size > 0)
     CS_MALLOC(_atmo_chem.conc_profiles, size, cs_real_t);
 
-  if (_atmo_chem.z_conc_profiles == nullptr)
+  if (_atmo_chem.z_conc_profiles == nullptr && _nbchmz > 0)
     CS_MALLOC(_atmo_chem.z_conc_profiles, _nbchmz, cs_real_t);
 
-  if (_atmo_chem.t_conc_profiles == nullptr)
+  if (_atmo_chem.t_conc_profiles == nullptr && _nbchim > 0)
     CS_MALLOC(_atmo_chem.t_conc_profiles, _nbchim, cs_real_t);
 
-  if (_atmo_chem.x_conc_profiles == nullptr)
+  if (_atmo_chem.x_conc_profiles == nullptr && _nbchim > 0)
     CS_MALLOC(_atmo_chem.x_conc_profiles, _nbchim, cs_real_t);
 
-  if (_atmo_chem.y_conc_profiles == nullptr)
+  if (_atmo_chem.y_conc_profiles == nullptr && _nbchim > 0)
     CS_MALLOC(_atmo_chem.y_conc_profiles, _nbchim, cs_real_t);
 
-  if (_atmo_chem.conv_factor_jac == nullptr)
-    CS_MALLOC(_atmo_chem.conv_factor_jac, nespg*nespg, cs_real_t);
+  if (_atmo_chem.conv_factor_jac == nullptr && nespg > 0)
+    CS_MALLOC(_atmo_chem.conv_factor_jac, nespg * nespg, cs_real_t);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -3,6 +3,8 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix atmospheric chemistry reader.
+
 - Fix illegal read in VoF balance log function.
 
 - Fix in Lagrangian module: correct event calculation for stats.
