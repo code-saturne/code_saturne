@@ -92,6 +92,8 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.radioButtonLargeScaleMeteo.clicked.connect(self.__slotButtonLargeScaleMeteo)
         self.groupBoxActChemistry.clicked[bool].connect(
             self.__slotGroupBoxActChemistry)
+        self.comboBoxChemistryModel.currentIndexChanged[int].connect(
+            self.__slotComboBoxChemistryModel)
 
         self.comboBoxUstarOrdLMO.currentIndexChanged[int].connect(self.__slotComboBoxUstarOrDlmo)
         self.comboBoxUrefOrdLMO.currentIndexChanged[int].connect(self.__slotComboBoxUrefOrDlmo)
@@ -208,6 +210,22 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         # Initialize the widgets in groupBoxActChemistry
         isChemistryChecked = model.getChemistryStatus() == 'on'
         self.groupBoxActChemistry.setChecked(isChemistryChecked)
+        self.comboBoxChemistryModel.setEnabled(isChemistryChecked)
+        self.labelChemistryModel.setEnabled(isChemistryChecked)
+
+        self.comboBoxChemistryModel.addItem(
+            self.tr("Simplified (NOx-O3)"), "simplified")
+        self.comboBoxChemistryModel.addItem(
+            self.tr("CB05 (20 species)"), "cb05")
+        self.comboBoxChemistryModel.addItem(
+            self.tr("RACMS (52 species)"), "racms")
+        self.comboBoxChemistryModel.addItem(
+            self.tr("User-defined (SPACK)"), "spack")
+
+        chemModel = model.getChemistryModel()
+        idx = self.comboBoxChemistryModel.findData(chemModel)
+        if idx >= 0:
+            self.comboBoxChemistryModel.setCurrentIndex(idx)
 
         if isMeteoDataChecked == isLargeScaleMeteoChecked:
             if isMeteoDataChecked == True:
@@ -358,6 +376,17 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
         self.groupBoxActChemistry.setChecked(checked)
         self.__model.setChemistryStatus(status)
+        self.comboBoxChemistryModel.setEnabled(checked)
+        self.labelChemistryModel.setEnabled(checked)
+
+
+    @Slot(int)
+    def __slotComboBoxChemistryModel(self, index):
+        """
+        Called when chemistry model choice changes.
+        """
+        chemModel = self.comboBoxChemistryModel.itemData(index)
+        self.__model.setChemistryModel(chemModel)
 
     #--------------- Functions for the groupBox  MeteoDataFile-----------------
 

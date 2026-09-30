@@ -414,12 +414,38 @@ class AtmosphericFlowsModel(Variables, Model):
         Set Chemistry status to 'on' / 'off'.
         """
         self.isOnOff(status)
-        self.__node_atmos.xmlInitChildNode(self.act_chemistry)[self.status] = status
+        node = self.__node_atmos.xmlInitChildNode(self.act_chemistry)
+        node[self.status] = status
+
+        if status == 'on' and not node['model']:
+            node['model'] = 'simplified'
 
         if status == 'off':
             for tag in ['activate_chemistry']:
                 for node in self.case.xmlGetNodeList(tag):
                     node['status'] = "off"
+
+
+    @Variables.noUndo
+    def getChemistryModel(self):
+        """
+        Return the chemistry model name: 'simplified', 'cb05', 'racms', 'spack'.
+        """
+        node = self.__node_atmos.xmlInitChildNode(self.act_chemistry)
+        model = node['model']
+        if not model:
+            model = 'simplified'
+            node['model'] = model
+        return model
+
+
+    @Variables.undoLocal
+    def setChemistryModel(self, model):
+        """
+        Set the chemistry model name.
+        """
+        node = self.__node_atmos.xmlInitChildNode(self.act_chemistry)
+        node['model'] = model
 
     #-------------------------------------------------------------------------
     #-----------------Read meteo file------------------------------------------

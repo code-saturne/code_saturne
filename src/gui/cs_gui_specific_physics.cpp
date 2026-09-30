@@ -555,8 +555,31 @@ _gui_atmo_get_set_meteo_profile(void)
   cs_gui_node_get_child_status_int(tn, "activate_chemistry",
                                    &is_chemistry);
 
-  if (is_chemistry)
+  if (is_chemistry) {
     cs_glob_atmo_chemistry->model = 1;
+
+    cs_tree_node_t *tn_chem = cs_tree_node_get_child(tn, "activate_chemistry");
+    const char *chem_model = nullptr;
+    if (tn_chem != nullptr)
+      chem_model = cs_tree_node_get_tag(tn_chem, "model");
+
+    if (chem_model != nullptr) {
+      if (cs_gui_strcmp(chem_model, "simplified")
+          || cs_gui_strcmp(chem_model, "nox_o3")
+          || cs_gui_strcmp(chem_model, "1"))
+        cs_glob_atmo_chemistry->model = 1;
+      else if (cs_gui_strcmp(chem_model, "cb05")
+               || cs_gui_strcmp(chem_model, "2"))
+        cs_glob_atmo_chemistry->model = 2;
+      else if (cs_gui_strcmp(chem_model, "racms")
+               || cs_gui_strcmp(chem_model, "3"))
+        cs_glob_atmo_chemistry->model = 3;
+      else if (cs_gui_strcmp(chem_model, "spack")
+               || cs_gui_strcmp(chem_model, "user")
+               || cs_gui_strcmp(chem_model, "4"))
+        cs_glob_atmo_chemistry->model = 4;
+    }
+  }
 
   if (is_meteo_file && !is_large_scale_meteo) {
     cs_glob_atmo_option->meteo_profile = 1;

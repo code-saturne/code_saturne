@@ -137,6 +137,16 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_4">
       <item>
+       <widget class="QLabel" name="labelChemistryModel">
+        <property name="text">
+         <string>Model</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="comboBoxChemistryModel"/>
+      </item>
+      <item>
        <spacer name="horizontalSpacer_3">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
