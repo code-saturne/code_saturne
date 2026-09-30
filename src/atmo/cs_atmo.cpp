@@ -1453,7 +1453,7 @@ cs_atmo_fields_init0(void)
     }
 
     if (   xy_chem[0] >= cs_math_infinite_r*0.5
-        || xy_chem[0] >= cs_math_infinite_r*0.5)
+        || xy_chem[1] >= cs_math_infinite_r*0.5)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _(input_param_desc),
@@ -1978,7 +1978,7 @@ cs_atmo_bcond(void)
          conditions have not been treated earlier
          (eg, in cs_user_boundary_conditions) */
       for (int ii = 0; ii < at_chem->n_species_profiles; ii++) {
-        const int f_id = at_chem->species_to_field_id[ii];
+        const int f_id = at_chem->species_profiles_to_field_id[ii];
         cs_field_t *f = cs_field(f_id);
         if (f->bc_coeffs->rcodcl1[face_id] <= cs_math_infinite_r*0.5)
           continue;
