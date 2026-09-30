@@ -4054,6 +4054,35 @@ cs_atmo_log_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute day number of year (quantile) from year, month, day.
+ *
+ * \param[in]  year   year
+ * \param[in]  month  month (1-12)
+ * \param[in]  day    day of month (1-31)
+ *
+ * \return  calendar day number (1-366)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_atmo_comp_quantile(int year,
+                      int month,
+                      int day)
+{
+  static const int days_before_month[12] = {
+    0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
+  };
+  int leap = 0;
+  if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0))
+    leap = 1;
+  int quant = days_before_month[month - 1] + day;
+  if (month > 2)
+    quant += leap;
+  return quant;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reads the meteo profile data for the atmospheric
  *
  * \param[in]  mode     0: reading for dimensions and starting time only
@@ -4115,11 +4144,57 @@ cs_atmo_read_meteo_profile(int mode)
         line[i] = 'e';
     }
 
-    cs_real_t seconde = -1.0;
-    int year = -1, quant = -1, hour = -1, minute = -1;
-    sscanf(line, "%d %d %d %d %lf", &year, &quant, &hour, &minute, &seconde);
+    /* Count whitespace-separated tokens on line */
+    int n_date_tokens = 0;
+    for (char *p = line; *p != '\0';) {
+      while (*p == ' ' || *p == '\t')
+        p++;
+      if (*p == '\0')
+        break;
+      n_date_tokens++;
+      while (*p != '\0' && *p != ' ' && *p != '\t')
+        p++;
+    }
 
-    if (seconde < 0.0 || quant > 366)
+    cs_real_t seconde = -1.0;
+    int year = -1, month = -1, day = -1, quant = -1, hour = -1, minute = -1;
+
+    if (n_date_tokens == 6) {
+      if (sscanf(line, "%d %d %d %d %d %lf",
+                 &year, &month, &day, &hour, &minute, &seconde) != 6)
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("Meteorological profile data"),
+           _("Error in the date of meteo profile file:\n"
+             "Check format: year, month, day, hour, minute, second."));
+
+      if (month < 1 || month > 12 || day < 1 || day > 31)
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("Meteorological profile data"),
+           _("Invalid date format in meteo file "
+             "(month > 12 or day > 31)."));
+
+      quant = cs_atmo_comp_quantile(year, month, day);
+    }
+    else if (n_date_tokens == 5) {
+      if (sscanf(line, "%d %d %d %d %lf",
+                 &year, &quant, &hour, &minute, &seconde) != 5)
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("Meteorological profile data"),
+           _("Error in the date of meteo profile file:\n"
+             "Check format: year, quant, hour, minute, second."));
+    }
+    else {
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("Meteorological profile data"),
+         _("Error in the date of meteo profile file:\n"
+           "Check the format (integers, real) for the date."));
+    }
+
+    if (seconde < 0.0 || quant < 1 || quant > 366)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("Meteorological profile data"),

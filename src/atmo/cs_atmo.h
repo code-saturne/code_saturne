@@ -556,6 +556,23 @@ cs_atmo_hydrostatic_profiles_compute(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute day number of year (quantile) from year, month, day.
+ *
+ * \param[in]  year   year
+ * \param[in]  month  month (1-12)
+ * \param[in]  day    day of month (1-31)
+ *
+ * \return  calendar day number (1-366)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_atmo_comp_quantile(int year,
+                      int month,
+                      int day);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reads the meteo profile data for the atmospheric
  *
  * \param[in]  mode     0: reading for dimensions and starting time only

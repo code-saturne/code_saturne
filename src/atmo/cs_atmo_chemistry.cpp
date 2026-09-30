@@ -688,35 +688,6 @@ cs_atmo_read_aerosol(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute day number of year (quantile) from year, month, day.
- *
- * \param[in]  year   year
- * \param[in]  month  month (1-12)
- * \param[in]  day    day of month (1-31)
- *
- * \return  calendar day number (1-366)
- */
-/*----------------------------------------------------------------------------*/
-
-static int
-_comp_quantile(int year,
-               int month,
-               int day)
-{
-  static const int days_before_month[12] = {
-    0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
-  };
-  int leap = 0;
-  if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0))
-    leap = 1;
-  int quant = days_before_month[month - 1] + day;
-  if (month > 2)
-    quant += leap;
-  return quant;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Read next non-empty, non-comment data line from file.
  *
  * Lines starting with '/' (after optional whitespace) and empty lines
@@ -894,7 +865,7 @@ cs_atmo_read_chemistry_profile(int mode)
           (CS_ABORT_IMMEDIATE,
            _("Error in the chemistry profile file:\n"),
            _("Invalid date format (month > 12 or day > 31)."));
-      quant = _comp_quantile(year, month, day);
+      quant = cs_atmo_comp_quantile(year, month, day);
     }
     else if (n_date_tokens == 5) {
       if (sscanf(s, "%d %d %d %d %lf",
