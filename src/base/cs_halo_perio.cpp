@@ -67,12 +67,6 @@
  * Static global variables
  *============================================================================*/
 
-/* Table giving the Reynolds stress component for [i][j] */
-CS_F_HOST_DEVICE
-static const int _symt[3][3] = {{0, 3, 5},
-                                {3, 1, 4},
-                                {5, 4, 2}};
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -255,26 +249,26 @@ CS_F_HOST_DEVICE static inline void
 _apply_tensor3sym_rotation(const cs_real_t   matrix[3][4],
                            T                *tensor)
 {
-  cs_lnum_t  i, j, k, p, q, r;
+  constexpr int t2v[3][3] = {{0, 3, 5}, {3, 1, 4}, {5, 4, 2}};
 
   cs_real_t  t1[3][3][3], t2[3][3][3];
 
-  for (p = 0; p < 3; p++) {
-    for (q = 0; q < 3; q++) {
-      for (k = 0; k < 3; k++) {
+  for (cs_lnum_t p = 0; p < 3; p++) {
+    for (cs_lnum_t q = 0; q < 3; q++) {
+      for (cs_lnum_t k = 0; k < 3; k++) {
         t1[p][q][k] = 0.;
-        for (r = 0; r < 3; r++)
-          t1[p][q][k] += matrix[k][r] * tensor[3*_symt[p][q] + r];
+        for (cs_lnum_t r = 0; r < 3; r++)
+          t1[p][q][k] += matrix[k][r] * tensor[3*t2v[p][q] + r];
       }
     }
   }
 
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++) {
-      for (k = 0; k < 3; k++) {
+  for (cs_lnum_t i = 0; i < 3; i++) {
+    for (cs_lnum_t j = 0; j < 3; j++) {
+      for (cs_lnum_t k = 0; k < 3; k++) {
         t2[i][j][k] = 0.;
-        for (p = 0; p < 3; p++) {
-          for (q = 0; q < 3; q++)
+        for (cs_lnum_t p = 0; p < 3; p++) {
+          for (cs_lnum_t q = 0; q < 3; q++)
             t2[i][j][k] += matrix[i][p] * matrix[j][q] * t1[p][q][k];
         }
       }
@@ -283,10 +277,10 @@ _apply_tensor3sym_rotation(const cs_real_t   matrix[3][4],
 
   /* Output */
 
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++) {
-      for (k = 0; k < 3; k++)
-        tensor[3*_symt[i][j] + k] = t2[i][j][k];
+  for (cs_lnum_t i = 0; i < 3; i++) {
+    for (cs_lnum_t j = 0; j < 3; j++) {
+      for (cs_lnum_t k = 0; k < 3; k++)
+        tensor[3*t2v[i][j] + k] = t2[i][j][k];
     }
   }
 
