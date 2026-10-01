@@ -475,7 +475,7 @@ cs_lagr_log_setup(void)
 
   }
 
-  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
+  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
     cs_log_printf
       (CS_LOG_SETUP,
@@ -488,6 +488,12 @@ cs_lagr_log_setup(void)
        _status(cs_glob_lagr_source_terms->has_twoway_dyn),
        _status(cs_glob_lagr_source_terms->has_twoway_mass),
        _status(cs_glob_lagr_source_terms->has_twoway_thermal));
+
+    if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    evaporation return coupling:       %s\n"),
+         _status(cs_glob_lagr_source_terms->has_twoway_evap));
   }
 
   cs_log_printf
@@ -858,7 +864,7 @@ cs_lagr_log_iteration(void)
                       _("Reset of the source terms (Start of steady-state at:): %10d\n"),
                       cs_glob_lagr_source_terms->nstits);
 
-      else if (cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->nstist)
+      else
         cs_log_printf(CS_LOG_DEFAULT,
                       _("Number of iterations for the steady-state source terms:%10d\n"),
                       cs_glob_lagr_source_terms->npts);
