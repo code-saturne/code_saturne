@@ -504,8 +504,8 @@ _fb_solute_source_term
      One should have c_l >= c. Therefore, one takes cs::min(...,0) */
 
   for (short int f = 0; f < cm->n_fc; f++)
-    cb->values[f] = cs::min(csys->val_n[f] - cl_f[cm->f_ids[f]], 0);
-  cb->values[cm->n_fc] = cs::min(csys->val_n[cm->n_fc] - cl_c[cm->c_id], 0);
+    cb->values[f] = cs::min(csys->val_n[f] - cl_f[cm->f_ids[f]], 0.);
+  cb->values[cm->n_fc] = cs::min(csys->val_n[cm->n_fc] - cl_c[cm->c_id], 0.);
 
   /* Update the RHS with the diffusion contribution */
 
@@ -527,8 +527,8 @@ _fb_solute_source_term
      One should have c_l >= c. Therefore, one takes cs::min(...,0) */
 
   for (short int f = 0; f < cm->n_fc; f++)
-    cb->values[f] = cs::min(csys->val_n[f] - cl_f[cm->f_ids[f]], 0);
-  cb->values[cm->n_fc] = cs::min(csys->val_n[cm->n_fc] - cl_c[cm->c_id], 0);
+    cb->values[f] = cs::min(csys->val_n[f] - cl_f[cm->f_ids[f]], 0.);
+  cb->values[cm->n_fc] = cs::min(csys->val_n[cm->n_fc] - cl_c[cm->c_id], 0.);
 
   /* Update the RHS with the convection contribution */
 
@@ -1280,7 +1280,7 @@ _update_gl_legacy(const cs_mesh_t             *mesh,
 
       /* Make sure that the liquid fraction remains inside physical bounds */
 
-      gliq = cs::min(cs::max(0, gliq), 1.);
+      gliq = cs::min(cs::max(0., gliq), 1.);
 
       eta_new = 1/( gliq * (1-alloy->kp) + alloy->kp );
       break;
@@ -1295,7 +1295,7 @@ _update_gl_legacy(const cs_mesh_t             *mesh,
 
       /* Make sure that the liquid fraction remains inside physical bounds */
 
-      gliq = cs::min(cs::max(0, gliq), 1.);
+      gliq = cs::min(cs::max(0., gliq), 1.);
 
       eta_new = _get_eta(alloy, conc);
       break;
@@ -1416,7 +1416,7 @@ _update_gl_legacy_ast(const cs_mesh_t             *mesh,
 
     /* Make sure that the liquid fraction remains inside physical bounds */
 
-    gliq = cs::min(cs::max(0, gliq), 1.);
+    gliq = cs::min(cs::max(0., gliq), 1.);
 
     /* Relaxation if needed for the liquid fraction */
 
@@ -1632,7 +1632,7 @@ _update_gl_taylor([[maybe_unused]] const cs_mesh_t      *mesh,
 
         /* Make sure that the liquid fraction remains inside physical bounds */
 
-        gliq = cs::min(cs::max(0, gliq), 1.);
+        gliq = cs::min(cs::max(0., gliq), 1.);
 
         if (t_star > alloy->t_eut_sup)  /* Mushy or liquid */
           eta_new = 1/( gliq * (1-alloy->kp) + alloy->kp );
@@ -1668,7 +1668,7 @@ _update_gl_taylor([[maybe_unused]] const cs_mesh_t      *mesh,
 
       /* Make sure that the liquid fraction remains inside physical bounds */
 
-      gliq = cs::min(cs::max(0, gliq), 1.);
+      gliq = cs::min(cs::max(0., gliq), 1.);
 
       eta_new = 1/( gliq * (1-alloy->kp) + alloy->kp );
       break;
@@ -1697,7 +1697,7 @@ _update_gl_taylor([[maybe_unused]] const cs_mesh_t      *mesh,
 
         /* Make sure that the liquid fraction remains inside physical bounds */
 
-        gliq = cs::min(cs::max(0, gliq), 1.);
+        gliq = cs::min(cs::max(0., gliq), 1.);
 
         if (t_star > alloy->t_eut_inf)
           eta_new = 1/( gliq * (1-alloy->kp) + alloy->kp );
@@ -1715,7 +1715,7 @@ _update_gl_taylor([[maybe_unused]] const cs_mesh_t      *mesh,
 
         /* Make sure that the liquid fraction remains inside physical bounds */
 
-        gliq = cs::min(cs::max(0, gliq), 1.);
+        gliq = cs::min(cs::max(0., gliq), 1.);
 
         /* In this case Cl = C_eut = eta * Cbulk--> eta = C_eut/Cbulk */
 
@@ -1961,7 +1961,7 @@ _update_gl_binary_path(const cs_mesh_t             *mesh,
 
         /* Make sure that the liquid fraction remains inside physical bounds */
 
-        gliq = cs::min(cs::max(0, gliq), 1.);
+        gliq = cs::min(cs::max(0., gliq), 1.);
 
         if (gliq > 0) {
 
@@ -2005,7 +2005,7 @@ _update_gl_binary_path(const cs_mesh_t             *mesh,
 
           /* Make sure that the gliq remains inside physical bounds */
 
-          gliq = cs::min(cs::max(0, gliq), 1.);
+          gliq = cs::min(cs::max(0., gliq), 1.);
           if (gliq > 0) {        /* still in the mushy zone */
             eta_new = 1/( gliq * (1-alloy->kp) + alloy->kp );
             t_bulk[c_id] = t_solidus + 1e-6;
@@ -2033,7 +2033,7 @@ _update_gl_binary_path(const cs_mesh_t             *mesh,
 
             /* Make sure that the gliq remains inside physical bounds */
 
-            gliq = cs::min(cs::max(0, gliq), 1.);
+            gliq = cs::min(cs::max(0., gliq), 1.);
             if (gliq > 0)         /* remains on the eutectic plateau */
               t_bulk[c_id] = t_solidus;
 
@@ -2069,7 +2069,7 @@ _update_gl_binary_path(const cs_mesh_t             *mesh,
         else {
 
           gliq = gliq_pre + alloy->dgldC_eut*(c_star-conc_pre);
-          gliq    = cs::min(cs::max(0, gliq), 1.);
+          gliq    = cs::min(cs::max(0., gliq), 1.);
           eta_new = _get_eta(alloy, c_star);
           if (gliq > 0)
             t_bulk[c_id] = alloy->t_eut;
@@ -2118,7 +2118,7 @@ _update_gl_binary_path(const cs_mesh_t             *mesh,
       } /* End of switch on the previous state */
 
       /* Make sure that the liquid fraction remains inside physical bounds */
-      gliq = cs::min(cs::max(0, gliq), 1.);
+      gliq = cs::min(cs::max(0., gliq), 1.);
 
       eta_new = 1/( gliq * (1-alloy->kp) + alloy->kp );
       break;
@@ -2149,7 +2149,7 @@ _update_gl_binary_path(const cs_mesh_t             *mesh,
 
         /* Make sure that the liquid fraction remains inside physical bounds */
 
-        gliq = cs::min(cs::max(0, gliq), 1.);
+        gliq = cs::min(cs::max(0., gliq), 1.);
 
         if (t_star > alloy->t_eut_inf)
           eta_new = 1/( gliq * (1-alloy->kp) + alloy->kp );
@@ -2168,7 +2168,7 @@ _update_gl_binary_path(const cs_mesh_t             *mesh,
           alloy->dgldC_eut*(conc - conc_pre) + dgldT*(alloy->t_eut - temp_pre);
 
         /* Make sure that the liquid fraction remains inside physical bounds */
-        gliq = cs::min(cs::max(0, gliq), 1.);
+        gliq = cs::min(cs::max(0., gliq), 1.);
 
         eta_new = _get_eta(alloy, conc);
         break;
@@ -2210,7 +2210,7 @@ _update_gl_binary_path(const cs_mesh_t             *mesh,
 
         /* Make sure that the liquid fraction remains inside physical bounds */
 
-        gliq = cs::min(cs::max(0, gliq), 1.);
+        gliq = cs::min(cs::max(0., gliq), 1.);
 
         break;
 
