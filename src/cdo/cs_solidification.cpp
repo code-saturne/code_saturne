@@ -4304,6 +4304,8 @@ cs_solidification_set_segr_functions(cs_solidification_func_t  *vel_forcing,
 cs_solidification_t *
 cs_solidification_destroy_all(void)
 {
+  cs_glob_physical_model_flag[CS_SOLIDIFICATION] = 0;
+
   if (cs_solidification_structure == nullptr)
     return nullptr;
 
@@ -4386,7 +4388,7 @@ cs_solidification_destroy_all(void)
   if (solid->plot_state != nullptr)
     cs_time_plot_finalize(&solid->plot_state);
 
-  CS_FREE(solid);
+  CS_FREE(cs_solidification_structure);
 
   return nullptr;
 }
