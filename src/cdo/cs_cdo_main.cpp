@@ -399,6 +399,9 @@ _solve_steady_state_domain(cs_domain_t  *domain)
 
   cs_domain_extra_op(domain);
 
+  /* Global MPI reduction of variable clippings before user operations */
+  cs_log_iteration_clipping_reduce();
+
   /* User-defined extra operations */
 
   cs_user_extra_operations(domain);
@@ -1284,6 +1287,9 @@ cs_cdo_main(cs_domain_t   *domain)
     /* Predefined extra operations */
 
     cs_domain_extra_op(domain);
+
+    /* Global MPI reduction of variable clippings before user operations */
+    cs_log_iteration_clipping_reduce();
 
     /* User-defined extra operations */
 

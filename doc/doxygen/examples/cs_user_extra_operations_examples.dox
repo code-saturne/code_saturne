@@ -426,6 +426,21 @@
   \snippet cs_user_extra_operations-stopping_criterion.cpp extra_stopping_criterion
 
 */
+// __________________________________________________________________________
+/*!
+
+  \page cs_user_extra_operations_examples_clipping_p Variable clippings
+
+  \section cs_user_extra_operations_examples_clipping Variable clippings
+
+  This is an example of \ref cs_user_extra_operations to inspect variable
+  clippings at the end of each time step. The solving information structure
+  associated with each variable field contains the globally reduced clipping
+  counts and pre-clipping extrema.
+
+  \snippet cs_user_extra_operations-clipping.cpp extra_clipping
+
+*/
 // __________________________________________________________________________________
 /*!
 

@@ -49,6 +49,7 @@
 #include "base/cs_dispatch.h"
 #include "base/cs_fan.h"
 #include "base/cs_field.h"
+#include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_function.h"
 #include "base/cs_log.h"
@@ -158,6 +159,12 @@ static cs_gnum_t *_clips_count = nullptr;
 static double *_clips_vmin = nullptr;
 static double *_clips_vmax = nullptr;
 static cs_log_clip_t  *_clips = nullptr;
+
+static int        _clips_val_size_reduced = 0;
+static double    *_clips_vmin_reduced = nullptr;
+static double    *_clips_vmax_reduced = nullptr;
+static cs_gnum_t *_clips_count_reduced = nullptr;
+static bool       _clips_reduced = false;
 
 static cs_time_plot_t  *_l2_residual_plot = nullptr;
 
@@ -1461,6 +1468,81 @@ _add_clipping(int               name_id,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reduce clipping statistics across all MPI ranks and update
+ *        cs_solving_info_t for all associated fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_clipping_reduce(void)
+{
+  if (_clips_val_size == 0)
+    return;
+
+  if (_clips_reduced)
+    return;
+
+  _clips_reduced = true;
+
+  if (_clips_val_size > _clips_val_size_reduced) {
+    _clips_val_size_reduced = _clips_val_size;
+    CS_REALLOC(_clips_vmin_reduced, _clips_val_size_reduced, double);
+    CS_REALLOC(_clips_vmax_reduced, _clips_val_size_reduced, double);
+    CS_REALLOC(_clips_count_reduced, _clips_val_size_reduced * 2, cs_gnum_t);
+  }
+
+  memcpy(_clips_vmin_reduced, _clips_vmin, _clips_val_size * sizeof(double));
+  memcpy(_clips_vmax_reduced, _clips_vmax, _clips_val_size * sizeof(double));
+  memcpy(_clips_count_reduced, _clips_count,
+         _clips_val_size * 2 * sizeof(cs_gnum_t));
+
+  /* Group MPI operations */
+  cs_parall_min(_clips_val_size, CS_DOUBLE, _clips_vmin_reduced);
+  cs_parall_max(_clips_val_size, CS_DOUBLE, _clips_vmax_reduced);
+  cs_parall_sum(_clips_val_size * 2, CS_GNUM_TYPE, _clips_count_reduced);
+
+  /* Update cs_solving_info_t for all clipped fields */
+  for (int clip_id = 0; clip_id < _n_clips; clip_id++) {
+    int f_id = _clips[clip_id].f_id;
+    if (f_id < 0)
+      continue;
+
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (f == nullptr)
+      continue;
+
+    cs_solving_info_t *sinfo = cs_field_get_solving_info(f);
+    if (sinfo == nullptr)
+      continue;
+
+    int v_idx = _clips[clip_id].v_idx;
+    int dim = _clips[clip_id].dim;
+
+    assert(dim <= CS_SOLVING_INFO_MAX_DIM);
+
+    sinfo->n_clip_min = _clips_count_reduced[v_idx * 2];
+    sinfo->n_clip_max = _clips_count_reduced[v_idx * 2 + 1];
+
+    if (dim > 1) {
+      for (int i = 0; i < cs::min(dim, CS_SOLVING_INFO_MAX_DIM); i++) {
+        sinfo->min_pre_clip[i] = _clips_vmin_reduced[v_idx + i + 1];
+        sinfo->max_pre_clip[i] = _clips_vmax_reduced[v_idx + i + 1];
+        sinfo->n_clip_min_comp[i] = _clips_count_reduced[(v_idx + i + 1) * 2];
+        sinfo->n_clip_max_comp[i]
+          = _clips_count_reduced[(v_idx + i + 1) * 2 + 1];
+      }
+    }
+    else {
+      sinfo->min_pre_clip[0] = _clips_vmin_reduced[v_idx];
+      sinfo->max_pre_clip[0] = _clips_vmax_reduced[v_idx];
+      sinfo->n_clip_min_comp[0] = sinfo->n_clip_min;
+      sinfo->n_clip_max_comp[0] = sinfo->n_clip_max;
+    }
+  }
+}
+
 /*----------------------------------------------------------------------------
  * Main logging output of additional clippings
  *----------------------------------------------------------------------------*/
@@ -1470,8 +1552,6 @@ _log_clips(void)
 {
   int     clip_id;
   int     type_idx[] = {0, 0, 0};
-  double  *vmin = nullptr, *vmax = nullptr;
-  cs_gnum_t  *vcount = nullptr;
   size_t max_name_width = cs_log_strlen(_("field"));
   const int label_key_id = cs_field_key_id("label");
 
@@ -1480,21 +1560,12 @@ _log_clips(void)
   const char *_cat_name[] = {N_("field"), N_("value")};
   const char *_cat_prefix[] = {"a  ", "a   "};
 
-  /* Allocate working arrays */
+  /* Ensure parallel reduction and field info update are completed */
+  cs_log_iteration_clipping_reduce();
 
-  CS_MALLOC(vmin, _clips_val_size, double);
-  CS_MALLOC(vmax, _clips_val_size, double);
-  CS_MALLOC(vcount, _clips_val_size*2, cs_gnum_t);
-
-  memcpy(vmin, _clips_vmin, _clips_val_size*sizeof(double));
-  memcpy(vmax, _clips_vmax, _clips_val_size*sizeof(double));
-  memcpy(vcount, _clips_count, _clips_val_size*sizeof(cs_gnum_t)*2);
-
-  /* Group MPI operations if required */
-
-  cs_parall_min(_clips_val_size, CS_DOUBLE, vmin);
-  cs_parall_max(_clips_val_size, CS_DOUBLE, vmax);
-  cs_parall_sum(_clips_val_size*2, CS_GNUM_TYPE, vcount);
+  double     *vmin   = _clips_vmin_reduced;
+  double     *vmax   = _clips_vmax_reduced;
+  cs_gnum_t  *vcount = _clips_count_reduced;
 
   /* Fist loop on clippings for counting */
 
@@ -1616,10 +1687,6 @@ _log_clips(void)
 
   }
 
-  CS_FREE(vcount);
-  CS_FREE(vmax);
-  CS_FREE(vmin);
-
   cs_log_printf(CS_LOG_DEFAULT, "\n");
 }
 
@@ -1660,6 +1727,13 @@ cs_log_iteration_destroy_all(void)
     CS_FREE(_clips_vmin);
     CS_FREE(_clips_vmax);
     CS_FREE(_clips);
+  }
+
+  if (_clips_val_size_reduced > 0) {
+    _clips_val_size_reduced = 0;
+    CS_FREE(_clips_count_reduced);
+    CS_FREE(_clips_vmin_reduced);
+    CS_FREE(_clips_vmax_reduced);
   }
 
   if (_name_map != nullptr)
@@ -2172,11 +2246,33 @@ cs_log_iteration_clipping_field(int               f_id,
                                 cs_lnum_t         n_clip_min_comp[],
                                 cs_lnum_t         n_clip_max_comp[])
 {
-  const cs_field_t  *f = cs_field_by_id(f_id);
+  cs_field_t  *f = cs_field_by_id(f_id);
 
   _add_clipping(-1, f_id, f->dim,
                 n_clip_min, n_clip_max,
                 min_pre_clip, max_pre_clip, n_clip_min_comp, n_clip_max_comp);
+
+  /* Update solving_info with local values prior to reduction */
+  cs_solving_info_t *sinfo = cs_field_get_solving_info(f);
+  if (sinfo != nullptr) {
+    assert(f->dim <= CS_SOLVING_INFO_MAX_DIM);
+    sinfo->n_clip_min = n_clip_min;
+    sinfo->n_clip_max = n_clip_max;
+    for (int i = 0; i < cs::min(f->dim, CS_SOLVING_INFO_MAX_DIM); i++) {
+      sinfo->min_pre_clip[i] = (min_pre_clip != nullptr) ? min_pre_clip[i] : 0.;
+      sinfo->max_pre_clip[i] = (max_pre_clip != nullptr) ? max_pre_clip[i] : 0.;
+      sinfo->n_clip_min_comp[i] = (n_clip_min_comp != nullptr)
+                                  ? n_clip_min_comp[i] : 0;
+      sinfo->n_clip_max_comp[i] = (n_clip_max_comp != nullptr)
+                                  ? n_clip_max_comp[i] : 0;
+    }
+    if (f->dim == 1) {
+      if (n_clip_min_comp == nullptr)
+        sinfo->n_clip_min_comp[0] = n_clip_min;
+      if (n_clip_max_comp == nullptr)
+        sinfo->n_clip_max_comp[0] = n_clip_max;
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2190,16 +2286,27 @@ cs_log_iteration_prepare(void)
 {
   const int n_fields = cs_field_n_fields();
 
-  int si_k_id = cs_field_key_id("solving_info");
-
   for (int f_id = 0 ; f_id < n_fields ; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      auto *sinfo = static_cast<cs_solving_info_t *>(
-        cs_field_get_key_struct_ptr(f, si_k_id));
-      sinfo->n_it = -1;
+      cs_solving_info_t *sinfo = cs_field_get_solving_info(f);
+      if (sinfo != nullptr) {
+        sinfo->n_it = -1;
+        sinfo->n_clip_min = 0;
+        sinfo->n_clip_max = 0;
+        for (int i = 0; i < CS_SOLVING_INFO_MAX_DIM; i++) {
+          sinfo->n_clip_min_comp[i] = 0;
+          sinfo->n_clip_max_comp[i] = 0;
+          sinfo->min_pre_clip[i] = 0.;
+          sinfo->max_pre_clip[i] = 0.;
+        }
+      }
     }
   }
+
+  _clips_reduced = false;
+  if (_clips_count != nullptr && _clips_val_size_max > 0)
+    memset(_clips_count, 0, _clips_val_size_max * 2 * sizeof(cs_gnum_t));
 }
 
 /*----------------------------------------------------------------------------*/

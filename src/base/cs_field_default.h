@@ -33,6 +33,7 @@
 
 #include "base/cs_defs.h"
 #include "cdo/cs_equation_param.h"
+#include "base/cs_parameters.h"
 
 /*=============================================================================
  * Macro definitions
@@ -130,6 +131,36 @@ cs_field_get_equation_param(cs_field_t  *f);
 
 const cs_equation_param_t *
 cs_field_get_equation_param_const(const cs_field_t  *f);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to solving info structure for a given field.
+ *
+ * If the field is not a variable field, nullptr is returned.
+ *
+ * \param[in]  f  pointer to associated field
+ *
+ * \return pointer to solving info structure, or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solving_info_t *
+cs_field_get_solving_info(cs_field_t  *f);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return const-qualified pointer to solving info structure for a field.
+ *
+ * If the field is not a variable field, nullptr is returned.
+ *
+ * \param[in]  f  pointer to associated field
+ *
+ * \return const pointer to solving info structure, or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_solving_info_t *
+cs_field_get_solving_info_const(const cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
 /*

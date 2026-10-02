@@ -311,6 +311,64 @@ cs_field_get_equation_param_const(const cs_field_t  *f)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return pointer to solving info structure for a given field.
+ *
+ * If the field is not a variable field, nullptr is returned.
+ *
+ * \param[in]  f  pointer to associated field
+ *
+ * \return pointer to solving info structure, or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solving_info_t *
+cs_field_get_solving_info(cs_field_t  *f)
+{
+  assert(f != nullptr);
+  cs_solving_info_t *sinfo = nullptr;
+
+  static int k_id = -1;
+  if (k_id < 0)
+    k_id = cs_field_key_id_try("solving_info");
+
+  if (k_id >= 0 && (f->type & CS_FIELD_VARIABLE))
+    sinfo = reinterpret_cast<cs_solving_info_t *>
+              (cs_field_get_key_struct_ptr(f, k_id));
+
+  return sinfo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return const-qualified pointer to solving info structure for a field.
+ *
+ * If the field is not a variable field, nullptr is returned.
+ *
+ * \param[in]  f  pointer to associated field
+ *
+ * \return const pointer to solving info structure, or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_solving_info_t *
+cs_field_get_solving_info_const(const cs_field_t  *f)
+{
+  assert(f != nullptr);
+  const cs_solving_info_t *sinfo = nullptr;
+
+  static int k_id = -1;
+  if (k_id < 0)
+    k_id = cs_field_key_id_try("solving_info");
+
+  if (k_id >= 0 && (f->type & CS_FIELD_VARIABLE))
+    sinfo = reinterpret_cast<const cs_solving_info_t *>
+              (cs_field_get_key_struct_const_ptr(f, k_id));
+
+  return sinfo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief For a given field, returns field defined as its variance, if present.
  *
  * \param[in]  f  field

@@ -728,6 +728,9 @@ cs_time_stepping(void)
       cs_gui_balance_by_zone();
       cs_gui_pressure_drop_by_zone();
 
+      /* Global MPI reduction of variable clippings before user operations */
+      cs_log_iteration_clipping_reduce();
+
       cs_user_extra_operations(cs_glob_domain);
 
       if (cs_glob_les_balance->i_les_balance > 0)

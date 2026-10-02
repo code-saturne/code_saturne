@@ -46,6 +46,9 @@
  * Macro definitions
  *============================================================================*/
 
+/* Maximum dimension for solving information clipping arrays */
+#define CS_SOLVING_INFO_MAX_DIM 9
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -61,15 +64,25 @@ typedef cs_equation_param_t cs_var_cal_opt_t;
  * Structure of the solving info
  *----------------------------------------------------------------------------*/
 
-typedef struct {
+struct cs_solving_info_t {
 
-  int     n_it;
-  double  rhs_norm;
-  double  res_norm;
-  double  derive;
-  double  l2residual;
+  int        n_it;
+  double     rhs_norm;
+  double     res_norm;
+  double     derive;
+  double     l2residual;
 
-} cs_solving_info_t;
+  /* Clipping information (global MPI values after reduction) */
+  cs_gnum_t  n_clip_min;
+  cs_gnum_t  n_clip_max;
+  cs_gnum_t  n_clip_min_comp[CS_SOLVING_INFO_MAX_DIM];
+  cs_gnum_t  n_clip_max_comp[CS_SOLVING_INFO_MAX_DIM];
+  /*! Pre-clip minimum (valid only if n_clip_min > 0) */
+  cs_real_t  min_pre_clip[CS_SOLVING_INFO_MAX_DIM];
+  /*! Pre-clip maximum (valid only if n_clip_max > 0) */
+  cs_real_t  max_pre_clip[CS_SOLVING_INFO_MAX_DIM];
+
+};
 
 /*----------------------------------------------------------------------------
  * Boundary condition types

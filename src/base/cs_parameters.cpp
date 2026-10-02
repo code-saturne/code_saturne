@@ -527,6 +527,12 @@ static cs_solving_info_t _solving_info =
   0.,    /* res_norm: normed residual                        */
   0.,    /* derive: norm of the time derivative              */
   0.,    /* l2residual: L2 time residual                     */
+  0,     /* n_clip_min */
+  0,     /* n_clip_max */
+  {0, 0, 0, 0, 0, 0, 0, 0, 0},          /* n_clip_min_comp */
+  {0, 0, 0, 0, 0, 0, 0, 0, 0},          /* n_clip_max_comp */
+  {0., 0., 0., 0., 0., 0., 0., 0., 0.}, /* min_pre_clip */
+  {0., 0., 0., 0., 0., 0., 0., 0., 0.}  /* max_pre_clip */
 };
 
 /*============================================================================

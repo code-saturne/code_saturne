@@ -79,6 +79,7 @@ cs_user_coupling-syrthes.cpp \
 cs_user_electric_scaling.cpp \
 cs_user_extra_operations-balance_by_zone.cpp \
 cs_user_extra_operations-boundary_forces.cpp \
+cs_user_extra_operations-clipping.cpp \
 cs_user_extra_operations-force_temperature.cpp \
 cs_user_extra_operations-mean_profiles.cpp \
 cs_user_extra_operations-medcoupling_slice.cpp \

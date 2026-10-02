@@ -190,6 +190,16 @@ cs_log_iteration_clipping_field(int               f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Reduce clipping statistics across all MPI ranks and update
+ *        cs_solving_info_t for all associated fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_clipping_reduce(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Initialize structures used for logging for new iteration.
  */
 /*----------------------------------------------------------------------------*/
