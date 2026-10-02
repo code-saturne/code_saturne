@@ -18,7 +18,7 @@ To ensure contributions are compatible with this dual-licence model,
 code provided by authors not working for EDF or in the context
 of a collaborative project already including a similar agreement
 should sign a *Contributor Licencing Agreement*, for which a
-[model is provided here](docs/doxygen/developer_guide/EDF_Open_Source_CLA.pdf).
+[model is provided here](doc/doxygen/developer_guide/EDF_Open_Source_CLA.pdf).
 This ensures that both EDF and the contributing party each have full rights to
 use and distribute the contributed code under the licence of their choice.
 
@@ -28,13 +28,13 @@ external libraries, provided the dependency remains optional. This is an
 option for libraries providing significant features, not minor contributions.
 
 Minor changes such as simple bug fixes or typo corrections which do not imply
-copyright aspects can be provided direclty.
+copyright aspects can be provided directly.
 
 Coding practice
 ---------------
 
 Following the coding recommendations provided in the
-[developer guide](docs/doxygen/developer_guide) is essential, as ensuring
+[developer guide](doc/doxygen/developer_guide) is essential, as ensuring
 consistency with the existing code base will reduce the workload for code
 integration, and significantly increase the chances that code will actually
 be integrated.
