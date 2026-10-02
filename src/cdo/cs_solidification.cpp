@@ -1954,7 +1954,7 @@ _update_gl_binary_path(const cs_mesh_t             *mesh,
 
         _get_dgl_mushy(alloy, t_liquidus, conc_pre, &dgldT, &dgldC);
 
-        t_star = ( cpovL*temp + 1 + dgldT*t_liquidus + dgldC*(conc_pre-conc) ) /
+        t_star = ( cpovL*temp + dgldT*t_liquidus + dgldC*(conc_pre-conc) ) /
           ( cpovL + dgldT );
 
         gliq = 1 + (dgldT*(t_star - t_liquidus) + dgldC*(conc-conc_pre));
