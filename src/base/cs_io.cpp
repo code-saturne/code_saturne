@@ -2502,7 +2502,9 @@ cs_io_read_header(cs_io_t             *inp,
 
   assert(sizeof(unsigned long) == 8 || sizeof(unsigned long long) == 8);
 
-  if (header->n_vals != 0) {
+  if (   header->n_vals != 0
+      || (   inp->type_name[0] != '\0'
+          && inp->type_name[0] != ' ')) {
 
     const char *elt_type_name = inp->type_name;
 
