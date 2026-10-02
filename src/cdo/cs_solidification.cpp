@@ -2691,6 +2691,9 @@ _stefan_thermal_non_linearities(const cs_mesh_t              *mesh,
         delta_h = dh;
     }
 
+    // Parallel synchronization
+    cs_parall_max(1, CS_REAL_TYPE, &delta_h);
+
     iter++;
     if (solid->verbosity > 1 && cs_log_default_is_active())
       cs_log_printf(CS_LOG_DEFAULT,
