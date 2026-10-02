@@ -984,8 +984,8 @@ cs_user_physical_properties_h_to_t(cs_domain_t      *domain,
  *                           (contiguous) manner for this zone only;
  *                           if false, h and t are defined on the zone's parent
  *                           location (usually all cells or boundary faces)
- * \param[in]       h        temperature values
- * \param[in, out]  t        enthalpy values
+ * \param[in]       t        temperature values
+ * \param[in, out]  h        enthalpy values
  */
 /*----------------------------------------------------------------------------*/
 
