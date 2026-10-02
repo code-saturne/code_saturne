@@ -1998,7 +1998,7 @@ _update_gl_binary_path(const cs_mesh_t             *mesh,
              the mushy zone */
 
           c_star = conc_pre +
-            (dh - cp0*(temp-temp_pre) - dgldT*(t_solidus-temp_pre) )
+            (dh - cp0*(temp-temp_pre) - L*dgldT*(t_solidus-temp_pre) )
             / (L*dgldC);
 
           gliq = gliq_pre + dgldT*(temp-temp_pre) + dgldC*(c_star-conc_pre);
