@@ -618,28 +618,20 @@ _compute_enthalpy(const cs_cdo_quantities_t *cdoq,
 
   assert(temp != nullptr && g_l != nullptr && enthalpy != nullptr);
 
-  cs_real_t rho_c, cp_c;
-
-  bool rho_is_uniform = cs_property_is_uniform(rho);
-  bool cp_is_uniform = cs_property_is_uniform(cp);
+  const bool rho_is_uniform = cs_property_is_uniform(rho);
+  const bool cp_is_uniform = cs_property_is_uniform(cp);
 
   /* Use cell with id 0 to evaluate the properties */
-
-  if (rho_is_uniform)
-    rho_c = cs_property_get_cell_value(0, t_eval, rho);
-
-  if (cp_is_uniform)
-    cp_c = cs_property_get_cell_value(0, t_eval, cp);
+  const cs_real_t rho_c0 = cs_property_get_cell_value(0, t_eval, rho);
+  const cs_real_t cp_c0 = cs_property_get_cell_value(0, t_eval, cp);
 
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < cdoq->n_cells; c++) {
 
-    /* Retrieve the value of the properties in case of non uniformity */
-
-    if (!rho_is_uniform)
-      rho_c = cs_property_get_cell_value(c, t_eval, rho);
-    if (!cp_is_uniform)
-      cp_c = cs_property_get_cell_value(c, t_eval, cp);
+    const cs_real_t rho_c = (rho_is_uniform) ?
+      rho_c0 : cs_property_get_cell_value(c, t_eval, rho);
+    const cs_real_t cp_c = (cp_is_uniform) ?
+      cp_c0 : cs_property_get_cell_value(c, t_eval, cp);
 
     enthalpy[c] = rho_c *
       /* part linked to the variation of  | part linked to the phase change
@@ -2449,42 +2441,34 @@ _update_thm_stefan(const cs_mesh_t             *mesh,
   if (mesh->n_cells < 1)
     return;
 
-  cs_real_t  rho_c, rhoLovdt;
+  cs_solidification_t *solid = cs_solidification_structure;
 
-  cs_solidification_t  *solid = cs_solidification_structure;
-
-  const cs_real_t  Lovdt = solid->latent_heat/ts->dt[0];
-  const cs_real_t  *g_l = solid->g_l_field->val;
-  const cs_real_t  *g_l_pre = solid->g_l_field->val_pre;
-  const cs_real_t  *vol = cdoq->cell_vol;
-
-  bool  rho_is_uniform = cs_property_is_uniform(solid->mass_density);
+  const cs_real_t *vol = cdoq->cell_vol;
+  const cs_real_t *g_l = solid->g_l_field->val;
+  const cs_real_t *g_l_pre = solid->g_l_field->val_pre;
+  const cs_real_t Lovdt = solid->latent_heat/ts->dt[0];
 
   /* Use the first cell to set the value */
+  const cs_real_t rho_c0 = cs_property_get_cell_value(0,
+                                                      ts->t_cur,
+                                                      solid->mass_density);
 
-  if (rho_is_uniform) {
-    rho_c = cs_property_get_cell_value(0, ts->t_cur, solid->mass_density);
-    rhoLovdt = rho_c * Lovdt;
-  }
+  const bool rho_is_uniform = cs_property_is_uniform(solid->mass_density);
 
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < cdoq->n_cells; c++) {
-
-    /* Retrieve the value of the properties */
-
-    if (!rho_is_uniform) {
-      rho_c = cs_property_get_cell_value(c, ts->t_cur, solid->mass_density);
-      rhoLovdt = rho_c * Lovdt;
-    }
 
     if (connect->cell_flag[c] & CS_FLAG_SOLID_CELL) /* Tag as solid for all the
                                                        computation */
       continue; /* No update: 0 by default */
 
-    /* reaction_coef_array is set to zero. Only the source term is updated */
+    const cs_real_t rho_c = (rho_is_uniform) ?
+      rho_c0 : cs_property_get_cell_value(c, ts->t_cur, solid->mass_density);
 
+    /* reaction_coef_array is set to zero. Only the source term is updated */
     if (cs::abs(g_l[c] - g_l_pre[c]) > 0)
-      solid->thermal_source_term_array[c] = rhoLovdt*vol[c]*(g_l_pre[c]-g_l[c]);
+      solid->thermal_source_term_array[c]
+        = rho_c * Lovdt * vol[c] * (g_l_pre[c] - g_l[c]);
     else
       solid->thermal_source_term_array[c] = 0;
 
@@ -2514,23 +2498,17 @@ _update_gl_stefan(const cs_mesh_t             *mesh,
   if (mesh->n_cells < 1)
     return;
 
-  cs_real_t  cp_c, cpovL;
+  cs_solidification_t *solid = cs_solidification_structure;
+  cs_solidification_stefan_t *model
+    = static_cast<cs_solidification_stefan_t *>(solid->model_context);
 
-  cs_solidification_t  *solid = cs_solidification_structure;
-  cs_solidification_stefan_t  *model =
-    (cs_solidification_stefan_t *)solid->model_context;
+  const bool cp_is_uniform = cs_property_is_uniform(solid->cp);
 
-  bool  cp_is_uniform = cs_property_is_uniform(solid->cp);
-
-  cs_real_t  *temp = solid->temperature->val;
-  cs_real_t  *g_l = solid->g_l_field->val;
+  cs_real_t *temp = solid->temperature->val;
+  cs_real_t *g_l = solid->g_l_field->val;
 
   /* Use the first cell to set the value */
-
-  if (cp_is_uniform) {
-    cp_c = cs_property_get_cell_value(0, ts->t_cur, solid->cp);
-    cpovL = cp_c/solid->latent_heat;
-  }
+  const cs_real_t cp_c0 = cs_property_get_cell_value(0, ts->t_cur, solid->cp);
 
   /* Update g_l values in each cell as well as the cell state and the related
      count */
@@ -2538,34 +2516,28 @@ _update_gl_stefan(const cs_mesh_t             *mesh,
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < cdoq->n_cells; c++) {
 
-    /* Retrieve the value of the property */
-
-    if (!cp_is_uniform) {
-      cp_c = cs_property_get_cell_value(c, ts->t_cur, solid->cp);
-      cpovL = cp_c/solid->latent_heat;
-    }
-
     if (connect->cell_flag[c] & CS_FLAG_SOLID_CELL)
       continue;  /* Tag as solid during all the computation
                     => No update: 0 by default */
 
+    /* Retrieve the value of the property */
+    const cs_real_t cp_c = (cp_is_uniform) ?
+      cp_c0 : cs_property_get_cell_value(c, ts->t_cur, solid->cp);
+
     if (temp[c] > model->t_change) {
 
-      if (g_l[c] < 1) {  /* Not in a stable state */
+      if (g_l[c] < 1) { /* Not in a stable state */
 
         /* Compute a new g_l */
-
-        g_l[c] += cpovL * (temp[c] - model->t_change);
+        g_l[c] += cp_c/solid->latent_heat * (temp[c] - model->t_change);
         if (g_l[c] < 1) {
-
           temp[c] = model->t_change;
           solid->cell_state[c] = CS_SOLIDIFICATION_STATE_MUSHY;
-
         }
         else { /* Overshoot of the liquid fraction */
 
           solid->cell_state[c] = CS_SOLIDIFICATION_STATE_LIQUID;
-          temp[c] = model->t_change + 1./cpovL * (g_l[c] - 1);
+          temp[c] = model->t_change + solid->latent_heat/cp_c * (g_l[c] - 1);
           g_l[c] = 1.;
 
         }
@@ -2583,13 +2555,12 @@ _update_gl_stefan(const cs_mesh_t             *mesh,
       if (g_l[c] > 0) { /* Not in a stable state */
 
         /* Compute a new g_l */
-
-        g_l[c] += cpovL * (temp[c] - model->t_change);
+        g_l[c] += cp_c/solid->latent_heat * (temp[c] - model->t_change);
 
         if (g_l[c] < 0) {       /* Undershoot of the liquid fraction */
 
           solid->cell_state[c] = CS_SOLIDIFICATION_STATE_SOLID;
-          temp[c] = model->t_change + 1./cpovL * g_l[c];
+          temp[c] = model->t_change + solid->latent_heat/cp_c * g_l[c];
           g_l[c] = 0.;
 
         }
