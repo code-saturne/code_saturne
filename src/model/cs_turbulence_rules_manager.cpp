@@ -661,8 +661,8 @@ cs_turbulence_rules_manager::get_model_constant_name
     case 30: return "CS_TURB_RIJ_EPSILON_LRR";
     case 31: return "CS_TURB_RIJ_EPSILON_SSG";
     case 32: return "CS_TURB_RIJ_EPSILON_EBRSM";
-    case 33: return "CS_TURB_RIJ_OMEGA";
-    case 34: return "CS_TURB_RIJ_EPSILON_BFH";
+    case 33: return "CS_TURB_RIJ_EPSILON_BFH";
+    case 34: return "CS_TURB_RIJ_OMEGA";
     case 40: return "CS_TURB_LES_SMAGO_CONST";
     case 41: return "CS_TURB_LES_SMAGO_DYN";
     case 42: return "CS_TURB_LES_WALE";

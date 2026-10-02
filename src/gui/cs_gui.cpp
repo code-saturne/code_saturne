@@ -3033,8 +3033,15 @@ void cs_gui_initial_conditions(void)
               n_ini_vals = 2;
             }
             else if (   cs_gui_strcmp(model, "Rij-epsilon")
-                     || cs_gui_strcmp(model, "Rij-SSG")) {
+                     || cs_gui_strcmp(model, "Rij-SSG")
+                     || cs_gui_strcmp(model, "Rij-BFH")) {
               n_ini_vals = 7;
+            }
+            else if (cs_gui_strcmp(model, "Rij-omega")) {
+              n_ini_vals = 7;
+            }
+            else if (cs_gui_strcmp(model, "LES_TAUSGS")) {
+              n_ini_vals = 6;
             }
             else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
               n_ini_vals = 8;
@@ -3075,7 +3082,8 @@ void cs_gui_initial_conditions(void)
               }
             }
             else if (   cs_gui_strcmp(model, "Rij-epsilon")
-                     || cs_gui_strcmp(model, "Rij-SSG")) {
+                     || cs_gui_strcmp(model, "Rij-SSG")
+                     || cs_gui_strcmp(model, "Rij-BFH")) {
 
               cs_field_t *c_rij = cs_field_by_name_try("rij");
               cs_field_t *c_eps = cs_field_by_name("epsilon");
@@ -3089,6 +3097,35 @@ void cs_gui_initial_conditions(void)
                   _rij[drij] = _vals[drij];
 
                 c_eps->val[c_id] = _vals[6];
+              }
+            }
+            else if (cs_gui_strcmp(model, "Rij-omega")) {
+
+              cs_field_t *c_rij = cs_field_by_name_try("rij");
+              cs_field_t *c_ome = cs_field_by_name("omega");
+
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_real_t *_vals = ini_vals + n_ini_vals * e_id;
+
+                cs_lnum_t c_id = cell_ids[e_id];
+                cs_real_t *_rij = c_rij->val + 6*c_id;
+                for (int drij = 0; drij < 6; drij++)
+                  _rij[drij] = _vals[drij];
+
+                c_ome->val[c_id] = _vals[6];
+              }
+            }
+            else if (cs_gui_strcmp(model, "LES_TAUSGS")) {
+
+              cs_field_t *c_rij = cs_field_by_name_try("rij");
+
+              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                cs_real_t *_vals = ini_vals + n_ini_vals * e_id;
+
+                cs_lnum_t c_id = cell_ids[e_id];
+                cs_real_t *_rij = c_rij->val + 6*c_id;
+                for (int drij = 0; drij < 6; drij++)
+                  _rij[drij] = _vals[drij];
               }
             }
             else if (cs_gui_strcmp(model, "Rij-EBRSM")) {

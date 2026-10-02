@@ -2829,8 +2829,15 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
             n_bnd_vals = 2;
           }
           else if (   cs_gui_strcmp(model, "Rij-epsilon")
-                   || cs_gui_strcmp(model, "Rij-SSG")) {
+                   || cs_gui_strcmp(model, "Rij-SSG")
+                   || cs_gui_strcmp(model, "Rij-BFH")) {
             n_bnd_vals = 7;
+          }
+          else if (cs_gui_strcmp(model, "Rij-omega")) {
+            n_bnd_vals = 7;
+          }
+          else if (cs_gui_strcmp(model, "LES_TAUSGS")) {
+            n_bnd_vals = 6;
           }
           else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
             n_bnd_vals = 8;
@@ -2876,7 +2883,8 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
 
           }
           else if (   cs_gui_strcmp(model, "Rij-epsilon")
-                   || cs_gui_strcmp(model, "Rij-SSG")) {
+                   || cs_gui_strcmp(model, "Rij-SSG")
+                   || cs_gui_strcmp(model, "Rij-BFH")) {
 
             cs_meg_boundary_function(bz->name,
                                      bz->n_elts,
@@ -2902,6 +2910,62 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
                     = bnd_vals[bz->n_elts*ii + elt_id];
 
                 rcodcl1_eps[face_id] = bnd_vals[bz->n_elts*6 + elt_id];
+              }
+            }
+
+          }
+          else if (cs_gui_strcmp(model, "Rij-omega")) {
+
+            cs_meg_boundary_function(bz->name,
+                                     bz->n_elts,
+                                     bz->elt_ids,
+                                     face_cen,
+                                     "turbulence_rij_omega",
+                                     "formula",
+                                     bnd_vals);
+
+            cs_field_t *c_rij = cs_field_by_name("rij");
+            cs_field_t *c_ome = cs_field_by_name("omega");
+
+            if (c_rij->bc_coeffs != nullptr && c_ome->bc_coeffs != nullptr) {
+              cs_real_t *rcodcl1_rij = c_rij->bc_coeffs->rcodcl1;
+              cs_real_t *rcodcl1_ome = c_ome->bc_coeffs->rcodcl1;
+
+              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+                cs_lnum_t face_id = bz->elt_ids[elt_id];
+
+                /* Values are stored for rij components then omega */
+                for (cs_lnum_t ii = 0; ii < 6; ii++)
+                  rcodcl1_rij[ii*n_b_faces + face_id]
+                    = bnd_vals[bz->n_elts*ii + elt_id];
+
+                rcodcl1_ome[face_id] = bnd_vals[bz->n_elts*6 + elt_id];
+              }
+            }
+
+          }
+          else if (cs_gui_strcmp(model, "LES_TAUSGS")) {
+
+            cs_meg_boundary_function(bz->name,
+                                     bz->n_elts,
+                                     bz->elt_ids,
+                                     face_cen,
+                                     "turbulence_tausgs",
+                                     "formula",
+                                     bnd_vals);
+
+            cs_field_t *c_rij = cs_field_by_name("rij");
+
+            if (c_rij->bc_coeffs != nullptr) {
+              cs_real_t *rcodcl1_rij = c_rij->bc_coeffs->rcodcl1;
+
+              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+                cs_lnum_t face_id = bz->elt_ids[elt_id];
+
+                /* Values are stored for rij components */
+                for (cs_lnum_t ii = 0; ii < 6; ii++)
+                  rcodcl1_rij[ii*n_b_faces + face_id]
+                    = bnd_vals[bz->n_elts*ii + elt_id];
               }
             }
 
