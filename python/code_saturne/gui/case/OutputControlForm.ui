@@ -1581,7 +1581,7 @@
             <item>
              <widget class="QCheckBox" name="checkBoxSnapToCenter">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If several probes are located in the same cell,&lt;br/&gt;keep only the probe closest to the cell center.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Redundant probes are silently discared (and the matching&lt;br/&gt;columns will not appear in the output).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If several probes are located in the same cell,&lt;br/&gt;keep only the probe closest to the cell center.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Redundant probes are silently discarded (and the matching&lt;br/&gt;columns will not appear in the output).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>One probe per cell</string>
@@ -1706,10 +1706,10 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Remove the last added monitoring point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Delete the selected monitoring points.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="statusTip">
-               <string>Delet several lines if you want</string>
+               <string>Delete the selected monitoring points</string>
               </property>
               <property name="text">
                <string/>
@@ -1735,10 +1735,10 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Duplicate the selected monitoring point.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Duplicate the selected monitoring points.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="statusTip">
-               <string>Delet several lines if you want</string>
+               <string>Duplicate the selected monitoring points</string>
               </property>
               <property name="text">
                <string>Duplicate</string>
@@ -1760,10 +1760,10 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Import a list of monitoring points and their cooordinates from a CSV file.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Import monitoring points from a CSV file, one point per line:&lt;br/&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;x, y, z&lt;/b&gt; or &lt;b&gt;name, x, y, z&lt;/b&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="statusTip">
-               <string>Delet several lines if you want</string>
+               <string>Import monitoring points from a CSV file</string>
               </property>
               <property name="text">
                <string>Import from CSV</string>

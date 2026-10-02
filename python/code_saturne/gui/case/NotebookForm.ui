@@ -91,7 +91,7 @@
            </size>
           </property>
           <property name="statusTip">
-           <string>Delet several lines if you want</string>
+           <string>Delete the selected variable</string>
           </property>
           <property name="text">
            <string/>
@@ -116,11 +116,14 @@
             <height>16777215</height>
            </size>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Import notebook variables from a file, one variable per line:&lt;br/&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;name, value&lt;/b&gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Optional extra columns: OpenTurns (Yes/No), read at restart (Yes/No), print to log (Yes/No), description.&lt;br/&gt;Use commas in .csv files, spaces in .txt files.&lt;br/&gt;Variables that already exist are overwritten.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Example: t_inlet,300&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="statusTip">
-           <string>Delet several lines if you want</string>
+           <string>Import notebook variables from a CSV or text file</string>
           </property>
           <property name="text">
-           <string>import</string>
+           <string>Import</string>
           </property>
          </widget>
         </item>
