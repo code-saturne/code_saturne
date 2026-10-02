@@ -1915,7 +1915,7 @@ p, li { white-space: pre-wrap; }
        <item>
         <widget class="QGroupBox" name="groupBox">
          <property name="title">
-          <string>Oxidants caracterization</string>
+          <string>Oxidants characterization</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_11">
           <item row="0" column="0">
