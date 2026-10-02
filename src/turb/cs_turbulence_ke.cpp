@@ -407,7 +407,10 @@ cs_turbulence_ke(int              phase_id,
     grad_s = cs_array_2d<cs_real_t>(n_cells_ext, 3, cs_alloc_mode);
   }
   else if (model == CS_TURB_V2F_BL_V2K) {
-    e_term = cs_array<cs_real_t>(n_cells_ext, cs_alloc_mode);
+    cs_field_t *f_eterm = cs_field_try("algo:blv2k_eterm");
+    e_term = (f_eterm != nullptr)
+      ? cs_array<cs_real_t>(f_eterm->val, n_cells_ext)
+      : cs_array<cs_real_t>(n_cells_ext, cs_alloc_mode);
   }
 
   /* Map field arrays */
@@ -833,9 +836,14 @@ cs_turbulence_ke(int              phase_id,
   /* Cazalbou correction: the Ceps2 coefficient of destruction term of epsislon
      is modified by rotation and curvature */
 
-  /* Allocate an array for the modified Ceps2 coefficient */
+  /* Allocate an array for the modified Ceps2 coefficient.
+     If the algo:ce2 field exists, use its data buffer directly. */
+  cs_field_t *f_ce2 = cs_field_try("algo:ce2");
+
   cs_array<cs_real_t> ce1rc(n_cells, cs_alloc_mode);
-  cs_array<cs_real_t> ce2rc(n_cells, cs_alloc_mode);
+  cs_array<cs_real_t> ce2rc = (f_ce2 != nullptr)
+    ? cs_array<cs_real_t>(f_ce2->val, n_cells)
+    : cs_array<cs_real_t>(n_cells, cs_alloc_mode);
 
   /* Initialization of C_eps1 and C_eps2 k-epsilon models */
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1132,6 +1140,7 @@ cs_turbulence_ke(int              phase_id,
                     *cs_math_pow3(1.-cvara_al[c_id]);
 
     });
+
     ctx.wait();
 
   }
@@ -1386,7 +1395,7 @@ cs_turbulence_ke(int              phase_id,
 
         /* Implicit part */
         tinstk[c_id] += cell_f_vol[c_id] * rho
-          * ( 1./fmax(ttke, cs_math_epzero * ttmin)
+          * ( xeps / xk
             + cs::max(d2s3 * divu[c_id], 0.)
             + e_term[c_id]); /* Note that e_term is positive */
         /* Note that ce2rc is positive */

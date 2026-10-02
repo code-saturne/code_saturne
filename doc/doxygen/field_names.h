@@ -87,6 +87,12 @@
     So called production term in k-epsilon RANS models, cell-based field of dimension 1.
   - <tt> algo:k_buoyancy </tt>
     So called buoyancy term in k-epsilon RANS models, cell-based field of dimension 1.
+  - <tt> algo:ce2 </tt>
+    C_eps2 coefficient in k-epsilon and BL-v2/k RANS models,
+    cell-based field of dimension 1.
+  - <tt> algo:blv2k_eterm </tt>
+    E term (divided by k) in the BL-v2/k RANS model,
+    cell-based field of dimension 1.
   - <tt> algo:turbulent_flux_divergence </tt>
     Divergence of the turbulent flux in the energy equation, cell-based field of dimension 1.
 
