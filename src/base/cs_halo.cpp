@@ -1699,7 +1699,7 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
                        _hs->send_buffer_size,
                        1,   /* displacement unit */
                        MPI_INFO_NULL,
-                       MPI_COMM_WORLD,
+                       cs_glob_mpi_comm,
                        &(_hs->win));
 #endif
 #endif
