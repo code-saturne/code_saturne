@@ -2342,8 +2342,10 @@ cs_io_get_data_in_mem(const cs_io_t   *pp_io,
   *data = nullptr;
 
   if (pp_io->f != nullptr) {
-    *nb = cs_file_tell(pp_io->f);
+    size_t _nb = cs_file_tell(pp_io->f);
     *data = cs_file_in_memory_get_data(pp_io->f);
+    if (*data != nullptr) // rank 0
+      *nb = _nb;
   }
 }
 

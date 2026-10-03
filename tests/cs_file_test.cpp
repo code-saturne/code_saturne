@@ -97,6 +97,79 @@ _create_test_data(void)
 
 /*---------------------------------------------------------------------------*/
 
+static void
+_test_in_memory_file(void)
+{
+  cs_file_t *f = nullptr;
+  int *data = nullptr;
+  size_t data_size = 0;
+  int read_buf[64];
+
+  if (cs_glob_rank_id <= 0) {
+    data_size = 8 + cs_glob_n_ranks*3*2;
+    CS_MALLOC(data, data_size, int);
+    for (size_t i; i < data_size; i++)
+      data[i] = (int)i;
+  }
+
+#if defined(HAVE_MPI)
+  int mpi_flag = 0;
+  MPI_Comm comm = MPI_COMM_NULL;
+  MPI_Initialized(&mpi_flag);
+  if (mpi_flag != 0)
+    comm = MPI_COMM_WORLD;
+
+  f = cs_file_open("in_mem_test",
+                   CS_FILE_MODE_READ,
+                   CS_FILE_IN_MEMORY_SERIAL,
+                   MPI_INFO_NULL,
+                   comm,
+                   comm);
+#else
+  f = cs_file_open("in_mem_test",
+                   CS_FILE_MODE_READ,
+                   CS_FILE_IN_MEMORY_SERIAL);
+#endif
+
+  /* Transfer data (takes ownership */
+  cs_file_in_memory_transfer_data(f, data_size*sizeof(int), data);
+
+  memset(read_buf, 0, data_size*sizeof(int));
+
+  size_t n_read = cs_file_read_global(f, read_buf, sizeof(int), 3);
+  if (n_read != 3)
+    bft_error(__FILE__, __LINE__, 0, "In-memory file read mismatch.");
+  for (size_t i = 0; i < n_read; i++) {
+    if (read_buf[i] != (int)i)
+      bft_error(__FILE__, __LINE__, 0, "In-memory data content mismatch.");
+  }
+
+  n_read = cs_file_read_global(f, read_buf, sizeof(int), 5);
+  if (n_read != 5)
+    bft_error(__FILE__, __LINE__, 0, "In-memory file read mismatch.");
+  for (size_t i = 0; i < n_read; i++) {
+    if (read_buf[i] != 3 + (int)i)
+      bft_error(__FILE__, __LINE__, 0, "In-memory data content mismatch.");
+  }
+
+  cs_gnum_t range_start = cs::max(cs_glob_rank_id, 0)*3;
+  cs_gnum_t range[2] = {range_start+1, range_start+3+1};
+
+  n_read = cs_file_read_block(f, read_buf, sizeof(int), 2, range[0], range[1]);
+  if (n_read != 2*3)
+    bft_error(__FILE__, __LINE__, 0, "In-memory file read mismatch.");
+
+  int ref_start = 8 + range_start*2;
+  for (size_t i = 0; i < 3*2; i++) {
+    if (read_buf[i] != ref_start + (int)i)
+      bft_error(__FILE__, __LINE__, 0, "In-memory data content mismatch.");
+  }
+
+  f = cs_file_free(f);
+}
+
+/*---------------------------------------------------------------------------*/
+
 int
 main (int argc, char *argv[])
 {
@@ -146,6 +219,11 @@ main (int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+  if (size > 1) {
+    cs_glob_rank_id = rank;
+    cs_glob_n_ranks = size;
+  }
+
   block_start = rank * (30./size) + 1;
   block_end   = (rank + 1) * (30./size) + 1;
   if (rank == size - 1)
@@ -173,6 +251,7 @@ main (int argc, char *argv[])
   cs_mem_init(mem_trace_name);
 
   _create_test_data();
+  _test_in_memory_file();
 
   /* Loop on tests */
 
@@ -394,3 +473,5 @@ main (int argc, char *argv[])
 
   exit (EXIT_SUCCESS);
 }
+
+/*----------------------------------------------------------------------------*/

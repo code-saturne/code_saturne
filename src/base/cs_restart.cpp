@@ -246,6 +246,8 @@ _restart_finalize(void)
     cs_io_finalize(&_checkpoint_serialized_memory);
   if (_restart_serialized_memory != nullptr)
     cs_io_finalize(&_restart_serialized_memory);
+
+  _restart_present = -1;
 }
 
 /*----------------------------------------------------------------------------
@@ -2098,6 +2100,8 @@ cs_restart_set_from_memory_serialized(size_t   nb,
                                            nb, data);
 #endif
 
+  _restart_present = 1;
+
   if (_need_finalize == false) {
     _need_finalize = true;
     cs_base_at_finalize(_restart_finalize);
@@ -2170,9 +2174,11 @@ int
 cs_restart_present(void)
 {
   if (_restart_present < 0) {
+    if (_restart_serialized_memory != nullptr)
+      return 1;
+
     if (cs_glob_rank_id < 1) {
-      if (  _restart_serialized_memory != nullptr
-          || cs_file_isdir("restart"))
+      if (cs_file_isdir("restart"))
         _restart_present = 1;
       else
         _restart_present = 0;
@@ -2233,7 +2239,12 @@ cs_restart_create(const char         *name,
 
   /* Create 'checkpoint' directory or read from 'restart' directory */
 
-  if (cs_glob_rank_id < 1 && _restart_serialized_memory == nullptr) {
+  const bool in_memory
+    = (mode == CS_RESTART_MODE_WRITE)
+      ? (_checkpoint_serialized_memory != nullptr)
+      : (_restart_serialized_memory != nullptr);
+
+  if (cs_glob_rank_id < 1 && !in_memory) {
     if (mode == CS_RESTART_MODE_WRITE) {
       if (cs_file_mkdir_default(_path) != 0)
         bft_error(__FILE__, __LINE__, 0,
@@ -2265,8 +2276,7 @@ cs_restart_create(const char         *name,
   /* Following the addition of an extension, we check for READ mode
    * if a file exists without the extension */
 
-  if (   mode == CS_RESTART_MODE_READ
-      && _restart_serialized_memory == nullptr) {
+  if (mode == CS_RESTART_MODE_READ && !in_memory) {
 
     if (cs_file_isreg(_name) == 0 && cs_file_endswith(name, _extension)) {
       CS_FREE(_name);
@@ -2281,8 +2291,7 @@ cs_restart_create(const char         *name,
     }
 
   }
-  else if (   mode == CS_RESTART_MODE_WRITE
-           && _restart_serialized_memory == nullptr) {
+  else if (mode == CS_RESTART_MODE_WRITE && !in_memory) {
 
     /* Check if file already exists, and if so rename and delete if needed */
     int writer_id = _add_restart_multiwriter(name, _name);
