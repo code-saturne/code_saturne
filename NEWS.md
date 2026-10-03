@@ -3,6 +3,9 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix issues in parallel read/write of serialized in memory checkpoints,
+  (used only for serialized FMI state handling).
+
 - Fix atmospheric chemistry reader.
 
 - Fix illegal read in VoF balance log function.
