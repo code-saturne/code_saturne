@@ -576,6 +576,40 @@ _update_index_and_shift(cs_io_t             *inp,
   idx->size += 1;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if system is big endian.
+ *
+ * \return true if current architecture is big endian, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+_arch_is_big_endian(void)
+{
+  bool is_big_endian = true;
+
+  /* Check if system is "big-endian" or "little-endian" */
+
+  int int_endian = 0;
+  *((char *)(&int_endian)) = '\1';
+
+  if (int_endian == 1)
+    is_big_endian = false;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+
+  else {
+    int_endian = 0;
+    *((char *) (&int_endian) + sizeof(unsigned) - 1) = '\1';
+    assert(int_endian == 1);
+  }
+
+#endif
+
+  return is_big_endian;
+}
+
 /*----------------------------------------------------------------------------
  * Read header data from file.
  *
@@ -591,7 +625,8 @@ _file_read_header(cs_io_t      *cs_io,
   char header_data[128 + 24];
   cs_file_off_t header_vals[3];
 
-  char  base_header[] = "Code_Saturne I/O, BE, R0";
+  const char *base_header[2] = {"Code_Saturne I/O, BE, R0",
+                                "code_saturne I/O, LE, R0"};
 
   /* Check magic string */
 
@@ -602,15 +637,25 @@ _file_read_header(cs_io_t      *cs_io,
 
   /* If the format does not correspond, we have an error */
 
-  if (strncmp(header_data, base_header, 64) != 0) {
+  int endianness = -1;  // undetermined
+  if (strncmp(header_data, base_header[0], 64) == 0)
+    endianness = 0;
+  else if (strncmp(header_data, base_header[1], 64) == 0)
+    endianness = 1;
+  else {
     bft_error(__FILE__, __LINE__, 0,
               _("Error reading file: \"%s\".\n"
                 "File format is not the correct version.\n"
                 "The first 64 bytes expected contain:\n"
                 "\"%s\"\n"
+                "or\n"
+                "\"%s\"\n"
                 "The first 64 bytes read contain:\n"
                 "\"%s\"\n"),
-              cs_file_get_name(cs_io->f), base_header, header_data);
+              cs_file_get_name(cs_io->f),
+              base_header[0],
+              base_header[1],
+              header_data);
   }
 
   /* Copy magic string */
@@ -629,6 +674,19 @@ _file_read_header(cs_io_t      *cs_io,
                   "\"%s\" was read."),
                 cs_file_get_name(cs_io->f), magic_string, cs_io->contents);
   }
+
+  /* Automatically adjust endianness */
+
+  bool need_swap_endian = false;
+  if (_arch_is_big_endian()) {
+    if (endianness == 1)
+      need_swap_endian = true;
+  }
+  else {
+    if (endianness == 0)
+      need_swap_endian = true;
+  }
+  cs_file_set_swap_endian(cs_io->f, need_swap_endian);
 
   /* Now decode the sizes */
 
@@ -675,7 +733,8 @@ _file_open(cs_io_t           *cs_io,
 {
   cs_file_mode_t f_mode;
 
-  char  base_header[] = "Code_Saturne I/O, BE, R0";
+  const char *base_header[2] = {"Code_Saturne I/O, BE, R0",
+                                "code_saturne I/O, LE, R0"};
 
   /* Prepare file open */
 
@@ -739,7 +798,13 @@ _file_open(cs_io_t           *cs_io,
   cs_io->f = cs_file_open(name, f_mode, method);
 #endif
 
-  cs_file_set_big_endian(cs_io->f);
+  int endianness = 0;
+  if (method == CS_FILE_IN_MEMORY_SERIAL) {
+    if (_arch_is_big_endian() == false)
+      endianness = 1;
+  }
+  if (endianness == 0)
+    cs_file_set_big_endian(cs_io->f);
 
 #if defined(HAVE_MPI)
   cs_io->comm = comm;
@@ -759,7 +824,7 @@ _file_open(cs_io_t           *cs_io,
     size_t n_written = 0;
 
     memset(header_data, 0, sizeof(header_data));
-    strcpy(header_data, base_header);
+    strcpy(header_data, base_header[endianness]);
     strncpy(header_data + 64, magic_string, 64);
     header_data[127] = '\0';
 
@@ -839,7 +904,9 @@ _file_open_read_from_mem(cs_io_t           *cs_io,
   cs_io->f = cs_file_open(name, CS_FILE_MODE_READ, method);
 #endif
 
+#if 0  // In the current usage context, no need to change endiannes
   cs_file_set_big_endian(cs_io->f);
+#endif
 
   /* Transfer data */
   cs_file_in_memory_transfer_data(cs_io->f, nb, data);
@@ -3258,6 +3325,15 @@ cs_io_write_block_buffer(const char     *sec_name,
 
   _write_padding(outp->body_align, outp);
 
+  /* Echo needs to be called before write operation, as
+     cs_file_write_block_buffer is allowed to modify the buffer. */
+
+  if (n_vals != 0 && outp->echo > CS_IO_ECHO_HEADERS)
+    _echo_data(outp->echo, n_g_vals,
+               (global_num_start-1)*stride + 1,
+               (global_num_end -1)*stride + 1,
+               elt_type, elts);
+
   n_written = cs_file_write_block_buffer(outp->f,
                                           elts,
                                           cs_datatype_size[elt_type],
@@ -3275,12 +3351,6 @@ cs_io_write_block_buffer(const char     *sec_name,
     log->wtimes[1] += t_end - t_start;
     log->data_size[1] += n_written*cs_datatype_size[elt_type];
   }
-
-  if (n_vals != 0 && outp->echo > CS_IO_ECHO_HEADERS)
-    _echo_data(outp->echo, n_g_vals,
-               (global_num_start-1)*stride + 1,
-               (global_num_end -1)*stride + 1,
-               elt_type, elts);
 }
 
 /*----------------------------------------------------------------------------
