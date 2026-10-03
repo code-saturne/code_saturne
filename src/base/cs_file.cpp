@@ -865,19 +865,19 @@ _file_write_in_memory(cs_file_t   *f,
   size_t retval = 0;
 
   size_t  nb = size*ni;
+  size_t  offset = f->in_mem_size;
 
-  if  (f->offset + nb > f->in_mem_max_size) {
+  if  (offset + nb > f->in_mem_max_size) {
     if (f->in_mem_max_size == 0)
       f->in_mem_max_size = 2 << 15;
-    while (f->offset + nb > f->in_mem_max_size)
+    while (offset + nb > f->in_mem_max_size)
       f->in_mem_max_size *= 2;
     CS_REALLOC(f->in_mem_data, f->in_mem_max_size, unsigned char);
   }
 
   if (nb != 0) {
-    memcpy(f->in_mem_data + f->offset, buf, nb);
-    if (f->in_mem_size < f->offset + nb)
-      f->in_mem_size = f->offset + nb;
+    memcpy(f->in_mem_data + offset, buf, nb);
+    f->in_mem_size = offset + nb;
     retval = ni;
   }
 
@@ -1311,6 +1311,12 @@ _file_read_block_s(cs_file_t  *f,
         CS_MALLOC(counts, f->n_ranks, int);
     }
 
+    /* Keep track of base offset for serialized in memory case */
+
+    cs_file_off_t base_offset = f->offset;
+    if (f->method == CS_FILE_IN_MEMORY_SERIAL)
+      f->offset += (size_t)(global_num_end - global_num_start) * size;
+
     /* Exchange counts */
 
     MPI_Gather(&loc_count, 1, MPI_INT, counts, 1, MPI_INT, 0, f->comm);
@@ -1353,10 +1359,19 @@ _file_read_block_s(cs_file_t  *f,
         MPI_Send(_buf, counts[dist_rank]*_size, ent_type, dist_rank,
                  CS_FILE_MPI_TAG, f->comm);
 
+        /* Since "in memory" representation does not have its own position
+           pointer, update offset temporarily here. */
+        if (f->method == CS_FILE_IN_MEMORY_SERIAL)
+          f->offset += size * (size_t)counts[dist_rank];
+
       } /* End of loop on distant ranks */
 
       CS_FREE(_buf);
 
+      /* For "in memory" representation, restore offset to global value,
+         as it will be updated by the caller. */
+      if (f->method == CS_FILE_IN_MEMORY_SERIAL)
+        f->offset = base_offset;
     }
 
     /* Other ranks receive data from rank 0 */
@@ -2861,7 +2876,8 @@ cs_file_in_memory_transfer_data(cs_file_t  *f,
                                 void       *data)
 {
   assert(f != nullptr);
-  assert(f->method == CS_FILE_IN_MEMORY_SERIAL && f->rank == 0);
+  assert(f->method == CS_FILE_IN_MEMORY_SERIAL);
+  assert(f->rank == 0 || data == nullptr);
 
   CS_FREE(f->in_mem_data);
   f->in_mem_size = nb;
@@ -3038,9 +3054,10 @@ cs_file_read_global(cs_file_t  *f,
 #if defined(HAVE_MPI)
   if (f->comm != MPI_COMM_NULL) {
     long _retval = retval;
-    MPI_Bcast(buf, size*ni, MPI_BYTE, 0, f->comm);
     MPI_Bcast(&_retval, 1, MPI_LONG, 0, f->comm);
     retval = _retval;
+    if (_retval > 0)
+      MPI_Bcast(buf, size*retval, MPI_BYTE, 0, f->comm);
   }
 #endif
 
@@ -3355,6 +3372,7 @@ cs_file_write_block(cs_file_t   *f,
 {
   size_t retval = 0;
 
+  MPI_Barrier(MPI_COMM_WORLD);
   const size_t bufsize = (global_num_end - global_num_start)*stride*size;
 
   /* Copy contents to ensure buffer constedness if necessary */

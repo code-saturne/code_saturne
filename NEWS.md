@@ -3,6 +3,9 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix issues in parallel read/write of serialized in memory checkpoints,
+  (used only for serialized FMI state handling).
+
 - Fix crash due to incorrect loop for radiation with internal thermal coupling.
 
 - Fix `resource_name` detection when only the batch system is defined for the
