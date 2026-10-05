@@ -211,6 +211,13 @@ cs_halo_cuda_pack_send_buffer(const cs_halo_t   *halo,
     n_blocks = (n_send % block_size) ? n_send/block_size + 1 : n_send/block_size;
   }
 
+  /* An MPI rank may have an empty halo, for example when its MPI boundary
+     coincides with an internal coupling boundary. Return to avoid launching
+     a kernel with zero blocks */
+
+  if (n_blocks == 0)
+    return;
+
   if (data_type == CS_REAL_TYPE) {
 
     cs_real_t *buffer = (cs_real_t *)send_buffer;
