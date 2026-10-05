@@ -248,6 +248,35 @@ cs_sles_mumps_free(void  *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set keep_data option for MUMPS solver.
+ *
+ * If true, data (including analysis) is kept even when cs_sles_free is called,
+ * so the analysis stage is not recomputed between solves.
+ *
+ * \param[in, out] context    pointer to MUMPS solver info and context
+ * \param[in]      keep_data  true to keep data across calls
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_mumps_set_keep_data(cs_sles_mumps_t  *context,
+                            bool              keep_data);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query keep_data option for MUMPS solver.
+ *
+ * \param[in] context  pointer to MUMPS solver info and context
+ *
+ * \return true if data is kept across calls, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_sles_mumps_get_keep_data(const cs_sles_mumps_t  *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Destroy MUMPS linear system solver info and context.
  *
  * \param[in, out]  context  pointer to sparse direct solver info and context

@@ -102,8 +102,9 @@ cs_param_mumps_create(void)
   mumpsp->mem_coef = -1;            // No additional memory range
   mumpsp->block_analysis = 0;       // No clustered analysis
   mumpsp->ir_steps = 0;             // No iterative refinement
-  mumpsp->keep_ordering = false;   // Keep the initial ordering during all the
+  mumpsp->keep_ordering = false;    // Keep the initial ordering during all the
                                     // computation
+  mumpsp->keep_data = false;        // Keep analysis data across solves
 
   return mumpsp;
 }
@@ -133,6 +134,7 @@ cs_param_mumps_copy(const cs_param_mumps_t  *mumpsp)
   cpy->blr_threshold = mumpsp->blr_threshold;
   cpy->mem_coef = mumpsp->mem_coef;
   cpy->keep_ordering = mumpsp->keep_ordering;
+  cpy->keep_data = mumpsp->keep_data;
   cpy->block_analysis = mumpsp->block_analysis;
   cpy->ir_steps = mumpsp->ir_steps;
 
@@ -248,6 +250,9 @@ cs_param_mumps_log(const char              *name,
 
   cs_log_printf(CS_LOG_SETUP, "  * %s | Keep ordering:            %s\n",
                 name, cs_base_strtf(mumpsp->keep_ordering));
+
+  cs_log_printf(CS_LOG_SETUP, "  * %s | Keep data:                %s\n",
+                name, cs_base_strtf(mumpsp->keep_data));
 
   if (mumpsp->block_analysis > 1)
     cs_log_printf(CS_LOG_SETUP, "  * %s | Block_Size in analysis:   %d\n",

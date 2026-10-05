@@ -2088,6 +2088,49 @@ cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set keep_data option for MUMPS solver in SLES parameters.
+ *
+ * \param[in, out] slesp      pointer to a cs_param_sles_t structure
+ * \param[in]      keep_data  true to keep data across calls
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_mumps_set_keep_data(cs_param_sles_t  *slesp,
+                                  bool              keep_data)
+{
+  if (slesp == nullptr)
+    return;
+  if (slesp->context_param == nullptr)
+    cs_param_sles_mumps_reset(slesp);
+
+  cs_param_mumps_t *mumpsp =
+    static_cast<cs_param_mumps_t *>(slesp->context_param);
+  mumpsp->keep_data = keep_data;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query keep_data option for MUMPS solver in SLES parameters.
+ *
+ * \param[in] slesp  pointer to a cs_param_sles_t structure
+ *
+ * \return true if data is kept across calls, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_sles_mumps_get_keep_data(const cs_param_sles_t  *slesp)
+{
+  if (slesp == nullptr || slesp->context_param == nullptr)
+    return true;
+  const cs_param_mumps_t *mumpsp =
+    static_cast<const cs_param_mumps_t *>(slesp->context_param);
+  return mumpsp->keep_data;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and initialize a new context structure for the HPDDM
  *        settings.
  *

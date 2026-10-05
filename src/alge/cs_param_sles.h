@@ -593,6 +593,32 @@ cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set keep_data option for MUMPS solver in SLES parameters.
+ *
+ * \param[in, out] slesp      pointer to a cs_param_sles_t structure
+ * \param[in]      keep_data  true to keep data across calls
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_mumps_set_keep_data(cs_param_sles_t  *slesp,
+                                  bool              keep_data);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query keep_data option for MUMPS solver in SLES parameters.
+ *
+ * \param[in] slesp  pointer to a cs_param_sles_t structure
+ *
+ * \return true if data is kept across calls, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_sles_mumps_get_keep_data(const cs_param_sles_t  *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and initialize a new context structure for the HPDDM
  *        settings.
  *

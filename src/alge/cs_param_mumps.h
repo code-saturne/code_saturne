@@ -196,6 +196,8 @@ typedef struct {
 
   bool    keep_ordering;    /*!< Mutualization of the ordering step */
 
+  bool    keep_data;        /*!< Keep analysis data across solves */
+
   int     block_analysis;   /*!< Analysis is performed by block. Value of the
                                  block size. Not used if < 1 */
 

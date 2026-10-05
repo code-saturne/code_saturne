@@ -563,6 +563,8 @@ cs_sles_cudss_copy(const void  *context)
       cudssConfigGet(c->config, double_opts[i], &val, sizeof(double), &sw);
       cudssConfigSet(d->config, double_opts[i], &val, sizeof(double));
     }
+
+    d->keep_data = c->keep_data;
   }
 
   return d;
@@ -788,6 +790,9 @@ cs_sles_cudss_solve(void               *context,
     cs_sles_cudss_setup(c, name, a, verbosity);
     sd = c->setup_data;
     factorize = true;
+  }
+  else if (sd->need_update) {
+    cs_sles_cudss_setup(c, name, a, verbosity);
   }
 
   /* Vectors */
@@ -1100,5 +1105,43 @@ cs_sles_cudss_set_mpi_comm(cs_sles_cudss_t  *context,
 }
 
 #endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set keep_data option for cuDSS solver.
+ *
+ * If true, data (including analysis) is kept even when cs_sles_free is called,
+ * so the analysis stage is not recomputed between solves.
+ *
+ * \param[in, out] context    pointer to cuDSS solver info and context
+ * \param[in]      keep_data  true to keep data across calls
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_cudss_set_keep_data(cs_sles_cudss_t  *context,
+                            bool              keep_data)
+{
+  if (context != nullptr)
+    context->keep_data = keep_data;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query keep_data option for cuDSS solver.
+ *
+ * \param[in] context  pointer to cuDSS solver info and context
+ *
+ * \return true if data is kept across calls, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_sles_cudss_get_keep_data(const cs_sles_cudss_t  *context)
+{
+  if (context != nullptr)
+    return context->keep_data;
+  return false;
+}
 
 /*----------------------------------------------------------------------------*/
