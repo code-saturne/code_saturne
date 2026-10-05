@@ -1707,6 +1707,8 @@ _boundary_insert(cs_mesh_t           *mesh,
   if (mesh->n_g_b_faces != _n_g_b_faces)
     mesh->modified |= CS_MESH_MODIFIED;
 
+  cs_mesh_update_auxiliary(mesh);
+
   mesh->n_g_b_faces = _n_g_b_faces;
   mesh->n_g_i_faces = _n_g_i_faces;
 
