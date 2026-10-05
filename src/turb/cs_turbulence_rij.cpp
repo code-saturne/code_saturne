@@ -4695,8 +4695,7 @@ cs_turbulence_rij(int phase_id)
   cs_array_2d<cs_real_t> weighf(n_i_faces, 2, cs_alloc_mode);
   cs_array_2d<cs_real_t> viscce(n_cells_ext, 6, cs_alloc_mode);
 
-  if (cs::any_eq(turb_model->model,
-                 CS_TURB_RIJ_EPSILON_LRR, CS_TURB_LES_TAUSGS)) {
+  if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR) {
     _pre_solve_lrr(f_rij, phase_id,
                    gradv.data<cs_real_33_t>(),
                    prod.data<cs_real_6_t>(),
@@ -4710,7 +4709,8 @@ cs_turbulence_rij(int phase_id)
                    weighf.data<cs_real_2_t>(),
                    weighb);
   }
-  else if (turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
+  else if (turb_model->model == CS_TURB_RIJ_EPSILON_BFH
+      || turb_model->model == CS_TURB_LES_TAUSGS)
     _pre_solve_bfh(f_rij, phase_id,
                    gradv.data<cs_real_33_t>(),
                    prod.data<cs_real_6_t>(),

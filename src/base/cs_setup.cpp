@@ -991,7 +991,8 @@ _create_property_fields(void)
     }
 
     /* algo:rij_beta2: BFH only */
-    if (turb_model->model == CS_TURB_RIJ_EPSILON_BFH) {
+    if (turb_model->model == CS_TURB_RIJ_EPSILON_BFH
+        || turb_model->model == CS_TURB_LES_TAUSGS) {
       const auto *bfh_fields
         = frm2->get_fields("Properties",
                            "model_eq_CS_TURB_RIJ_EPSILON_BFH");
