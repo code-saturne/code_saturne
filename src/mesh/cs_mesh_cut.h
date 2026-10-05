@@ -46,7 +46,12 @@
 
 typedef struct {
   cs_real_t  poro_min;            /* Minimum cell porosity (default: 0.05) */
-  double     eps_corr_grad_lin;   /* Linear gradient correction tolerance (default: 0.1) */
+  double     eps_corr_grad_lin;   /* Linear gradient correction tolerance
+                                     (default: 0.1) */
+  int        verbosity;           /* Verbosity level:
+                                     0: quiet (default)
+                                     1: minimalist verbose mode
+                                     2: prints on loops */
 } cs_mesh_cut_options_t;
 
 extern cs_mesh_cut_options_t cs_glob_mesh_cut_options;

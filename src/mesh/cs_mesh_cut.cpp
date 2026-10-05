@@ -73,7 +73,8 @@
 
 cs_mesh_cut_options_t cs_glob_mesh_cut_options = {
   0.05,  /* poro_min */
-  0.1    /* eps_corr_grad_lin */
+  0.1,   /* eps_corr_grad_lin */
+  0      /* verbosity */
 };
 
 /*----------------------------------------------------------------------------*/
@@ -86,7 +87,6 @@ cs_mesh_cut_options_t cs_glob_mesh_cut_options = {
 
 constexpr cs_real_t _plane_tol = 1e-12;
 constexpr int       _default_family_id = 1;
-#define _DEBUG_ 0
 
 /*============================================================================
  * Local structure definitions
@@ -176,6 +176,8 @@ static void _remove_invalid_cells
    const cs_lnum_t              n2o_cells[],
    int                          vertex_sign[])
 {
+  const int verbosity = cs_glob_mesh_cut_options.verbosity;
+
   const cs_lnum_t *v2v_ids = v2v->ids;
   const cs_lnum_t *c2e_idx = c2e->idx;
   const cs_lnum_t *c2e_ids = c2e->ids;
@@ -262,11 +264,11 @@ static void _remove_invalid_cells
 
       sign_changed_prev = sign_changed;
 
-#if _DEBUG_
-      if (cs_glob_rank_id == 0 || cs_glob_rank_id == -1)
-        bft_printf("Propagation of sign: iteration %d : sign_changed = %d\n",
-                   n_iter, sign_changed);
-#endif
+      if (verbosity >= 1) {
+        if (cs_glob_rank_id == 0 || cs_glob_rank_id == -1)
+          bft_printf("Propagation of sign: iteration %d : sign_changed = %d\n",
+                     n_iter, sign_changed);
+      }
 
     }
 
@@ -360,18 +362,17 @@ static void _remove_invalid_cells
     if (error_grad_lin > eps_corr_grad_lin) {
       cell_flag[c_id] = 1;
       n_bad_grad_lin += 1;
-#if _DEBUG_
-      bft_printf("c_id = %d, err = %f\n"
-                 "corr_grad_lin = %f %f %f\n"
-                 "                %f %f %f\n"
-                 "                %f %f %f\n\n",
-                 c_id, error_grad_lin,
-                 corr_grad_lin_inv[c_id][0][0], corr_grad_lin_inv[c_id][0][1],
-                 corr_grad_lin_inv[c_id][0][2], corr_grad_lin_inv[c_id][1][0],
-                 corr_grad_lin_inv[c_id][1][1], corr_grad_lin_inv[c_id][1][2],
-                 corr_grad_lin_inv[c_id][2][0], corr_grad_lin_inv[c_id][2][1],
-                 corr_grad_lin_inv[c_id][2][2]);
-#endif
+      if (verbosity >= 2)
+        bft_printf("c_id = %d, err = %f\n"
+                   "corr_grad_lin = %f %f %f\n"
+                   "                %f %f %f\n"
+                   "                %f %f %f\n\n",
+                   c_id, error_grad_lin,
+                   corr_grad_lin_inv[c_id][0][0], corr_grad_lin_inv[c_id][0][1],
+                   corr_grad_lin_inv[c_id][0][2], corr_grad_lin_inv[c_id][1][0],
+                   corr_grad_lin_inv[c_id][1][1], corr_grad_lin_inv[c_id][1][2],
+                   corr_grad_lin_inv[c_id][2][0], corr_grad_lin_inv[c_id][2][1],
+                   corr_grad_lin_inv[c_id][2][2]);
     }
   }
 
@@ -742,6 +743,8 @@ _cut_cells(cs_mesh_t             *mesh,
            cs_lnum_t              _b_face_cells[],
            cs_lnum_t              _i_face_cells[][2])
 {
+  const int verbosity = cs_glob_mesh_cut_options.verbosity;
+
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   const cs_lnum_t *c2f_idx = c2f->idx;
@@ -905,9 +908,8 @@ _cut_cells(cs_mesh_t             *mesh,
       n_cycle++;
     }
 
-#if _DEBUG_
-    bft_printf("c_id = %d, n_cycle = %d\n", c_id, n_cycle);
-#endif
+    if (verbosity >= 2)
+      bft_printf("c_id = %d, n_cycle = %d\n", c_id, n_cycle);
 
     /* Check if sum of cycle_len = n_edge_in_cell */
     int sum = 0;
@@ -929,12 +931,11 @@ _cut_cells(cs_mesh_t             *mesh,
       for (cs_lnum_t j = 0; j < cycle_length; j++) {
         cs_lnum_t edge_id = reorder_edge_id[start_vtx + j];
 
-#if _DEBUG_
-        bft_printf("cycle_id = %d, j =%d, reorder_edge_id = %d, "
-                   "vtx_id = %d, c_id_new = %d\n",
-                   cycle_id, j, reorder_edge_id[start_vtx + j],
-                   e_v_idx[reorder_edge_id[start_vtx + j]], c_id_new);
-#endif
+        if (verbosity >= 2)
+          bft_printf("cycle_id = %d, j = %d, reorder_edge_id = %d, "
+                     "vtx_id = %d, c_id_new = %d\n",
+                     cycle_id, j, reorder_edge_id[start_vtx + j],
+                     e_v_idx[reorder_edge_id[start_vtx + j]], c_id_new);
 
         const cs_lnum_t v_id = e_v_idx[edge_id];
         vtx_ids[j] = e_v_idx[edge_id];
@@ -1019,20 +1020,20 @@ _cut_cells(cs_mesh_t             *mesh,
 
           }
 
-#if _DEBUG_
-          bft_printf("cycle = %d, c_id = %d, face_id = %d, sub_f_id = %d, "
-                     "all_vtx_sign_is_zero_or_one = %d, one = %d, "
-                     "minus one = %d, sub_face_in_cycle = %d \n",
-                     cycle_id, c_id, g_f_id, sub_f_id,
-                     all_vtx_sign_is_zero_or_one,
-                     all_vtx_sign_is_one,
-                     all_vtx_sign_is_minus_one,
-                     sub_face_in_cycle);
-          bft_printf("sub_face_vtx_lst --> ");
-          for (cs_lnum_t k = v0; k < v1; k++)
-            bft_printf("%d ", sub_face_vtx_lst[k]);
-          bft_printf("\n");
-#endif
+          if (verbosity >= 2) {
+            bft_printf("cycle = %d, c_id = %d, face_id = %d, sub_f_id = %d, "
+                       "all_vtx_sign_is_zero_or_one = %d, one = %d, "
+                       "minus one = %d, sub_face_in_cycle = %d \n",
+                       cycle_id, c_id, g_f_id, sub_f_id,
+                       all_vtx_sign_is_zero_or_one,
+                       all_vtx_sign_is_one,
+                       all_vtx_sign_is_minus_one,
+                       sub_face_in_cycle);
+            bft_printf("sub_face_vtx_lst --> ");
+            for (cs_lnum_t k = v0; k < v1; k++)
+              bft_printf("%d ", sub_face_vtx_lst[k]);
+            bft_printf("\n");
+          }
 
           /* Compare the circulation of the cycle with the sub face.
              For closed contour, the circulation need to be opposite */
@@ -1050,121 +1051,117 @@ _cut_cells(cs_mesh_t             *mesh,
           if (   sub_face_in_cycle
               && all_vtx_sign_is_zero_or_one
               && !(all_vtx_sign_is_zero)) {
-#if _DEBUG_
-            bft_printf("--> Update new cell :\n");
-#endif
+            if (verbosity >= 2)
+              bft_printf("--> Update new cell :\n");
             if (is_internal) {
               if (i_face_cells[f_id][0] == c_id)
                 _i_face_cells[sub_f_id][0] = n_cells + n_new_cells;
               else if (i_face_cells[f_id][1] == c_id)
                 _i_face_cells[sub_f_id][1] = n_cells + n_new_cells;
-#if _DEBUG_
-              bft_printf("ifacecell = %d %d, _i_face_cells = %d %d\n",
-                         i_face_cells[f_id][0], i_face_cells[f_id][1],
-                         _i_face_cells[sub_f_id][0], _i_face_cells[sub_f_id][1]);
-#endif
+              if (verbosity >= 2)
+                bft_printf("ifacecell = %d %d, _i_face_cells = %d %d\n",
+                           i_face_cells[f_id][0], i_face_cells[f_id][1],
+                           _i_face_cells[sub_f_id][0],
+                           _i_face_cells[sub_f_id][1]);
             }
             else {
               _b_face_cells[sub_f_id] = n_cells + n_new_cells;
-#if _DEBUG_
-              bft_printf("bfacecell = %d, _b_face_cells = %d\n",
-                         mesh->b_face_cells[f_id], _b_face_cells[sub_f_id]);
-#endif
+              if (verbosity >= 2)
+                bft_printf("bfacecell = %d, _b_face_cells = %d\n",
+                           mesh->b_face_cells[f_id],
+                           _b_face_cells[sub_f_id]);
             }
           }
           else {
 
             if (sub_face_in_cycle) {
-#if _DEBUG_
-              bft_printf("--> sub_face is in cycle, Keep standard cell :\n");
-#endif
+              if (verbosity >= 2)
+                bft_printf("--> sub_face is in cycle, Keep standard cell :\n");
               if (is_internal) {
-#if _DEBUG_
-                bft_printf("f_id = %d, sub_f_id = %d, i_face_cells = %d %d,"
-                           " _i_face_cells = %d %d\n",
-                           f_id, sub_f_id,
-                           i_face_cells[f_id][0], i_face_cells[f_id][1],
-                           _i_face_cells[sub_f_id][0], _i_face_cells[sub_f_id][1]);
-#endif
+                if (verbosity >= 2)
+                  bft_printf("f_id = %d, sub_f_id = %d, i_face_cells = %d %d,"
+                             " _i_face_cells = %d %d\n",
+                             f_id, sub_f_id,
+                             i_face_cells[f_id][0], i_face_cells[f_id][1],
+                             _i_face_cells[sub_f_id][0],
+                             _i_face_cells[sub_f_id][1]);
               }
               else {
-#if _DEBUG_
-                bft_printf("bfacecell = %d, _b_face_cells = %d\n",
-                           mesh->b_face_cells[f_id], _b_face_cells[sub_f_id]);
-#endif
+                if (verbosity >= 2)
+                  bft_printf("bfacecell = %d, _b_face_cells = %d\n",
+                             mesh->b_face_cells[f_id],
+                             _b_face_cells[sub_f_id]);
               }
             }
             else {
               if (all_vtx_sign_is_one) {
-#if _DEBUG_
-                bft_printf("--> sub_face is NOT in cycle, "
-                           "isolated face with vtx sign = 1\n");
-#endif
+                if (verbosity >= 2)
+                  bft_printf("--> sub_face is NOT in cycle, "
+                             "isolated face with vtx sign = 1\n");
                 if (is_internal) {
                   if (i_face_cells[f_id][0] == c_id)
                     _i_face_cells[sub_f_id][0] = n_cells + n_new_cells;
                   else if (i_face_cells[f_id][1] == c_id)
                     _i_face_cells[sub_f_id][1] = n_cells + n_new_cells;
-#if _DEBUG_
-                  bft_printf("f_id = %d, sub_f_id = %d, "
-                             "ifacecell = %d %d, _i_face_cells = %d %d\n",
-                             f_id, sub_f_id,
-                             i_face_cells[f_id][0], i_face_cells[f_id][1],
-                             _i_face_cells[sub_f_id][0],
-                             _i_face_cells[sub_f_id][1]);
-#endif
+                  if (verbosity >= 2)
+                    bft_printf("f_id = %d, sub_f_id = %d, "
+                               "ifacecell = %d %d, _i_face_cells = %d %d\n",
+                               f_id, sub_f_id,
+                               i_face_cells[f_id][0], i_face_cells[f_id][1],
+                               _i_face_cells[sub_f_id][0],
+                               _i_face_cells[sub_f_id][1]);
                 }
                 else {
                   _b_face_cells[sub_f_id] = n_cells + n_new_cells;
-#if _DEBUG_
-                  bft_printf("bfacecell = %d, _b_face_cells = %d\n",
-                             mesh->b_face_cells[f_id], _b_face_cells[sub_f_id]);
-#endif
+                  if (verbosity >= 2)
+                    bft_printf("bfacecell = %d, _b_face_cells = %d\n",
+                               mesh->b_face_cells[f_id],
+                               _b_face_cells[sub_f_id]);
 
                 }
               }
               else if (all_vtx_sign_is_minus_one) {
-#if _DEBUG_
-                bft_printf("--> sub_face is NOT in cycle, "
-                       "isolated face with vtx sign = -1\n");
-#endif
+                if (verbosity >= 2)
+                  bft_printf("--> sub_face is NOT in cycle, "
+                             "isolated face with vtx sign = -1\n");
                 if (is_internal) {
-#if _DEBUG_
-                  bft_printf("f_id = %d, sub_f_id = %d, "
-                             "i_face_cells = %d %d, _i_face_cells = %d %d\n",
-                             f_id, sub_f_id,
-                             i_face_cells[f_id][0], i_face_cells[f_id][1],
-                             _i_face_cells[sub_f_id][0],
-                             _i_face_cells[sub_f_id][1]);
-#endif
+                  if (i_face_cells[f_id][0] == c_id)
+                    _i_face_cells[sub_f_id][0] = n_cells + n_new_cells;
+                  else if (i_face_cells[f_id][1] == c_id)
+                    _i_face_cells[sub_f_id][1] = n_cells + n_new_cells;
+                  if (verbosity >= 2)
+                    bft_printf("f_id = %d, sub_f_id = %d, "
+                               "i_face_cells = %d %d, _i_face_cells = %d %d\n",
+                               f_id, sub_f_id,
+                               i_face_cells[f_id][0], i_face_cells[f_id][1],
+                               _i_face_cells[sub_f_id][0],
+                               _i_face_cells[sub_f_id][1]);
                 }
                 else {
-#if _DEBUG_
-                  bft_printf("bfacecell = %d, _b_face_cells = %d\n",
-                             mesh->b_face_cells[f_id], _b_face_cells[sub_f_id]);
-#endif
+                  if (verbosity >= 2)
+                    bft_printf("bfacecell = %d, _b_face_cells = %d\n",
+                               mesh->b_face_cells[f_id],
+                               _b_face_cells[sub_f_id]);
                 }
               }
               else {
-#if _DEBUG_
-                bft_printf("--> sub_face is NOT in cycle, keep standard, "
-                           "vtx sign is 0 or +1 :\n");
-#endif
+                if (verbosity >= 2)
+                  bft_printf("--> sub_face is NOT in cycle, keep standard, "
+                             "vtx sign is 0 or +1 :\n");
                 if (is_internal) {
-#if _DEBUG_
-                  bft_printf("f_id = %d, sub_f_id = %d, "
-                             "i_face_cells = %d %d, _i_face_cells = %d %d\n",
-                             f_id, sub_f_id,
-                             i_face_cells[f_id][0], i_face_cells[f_id][1],
-                             _i_face_cells[sub_f_id][0],
-                             _i_face_cells[sub_f_id][1]);
-#endif
+                  if (verbosity >= 2)
+                    bft_printf("f_id = %d, sub_f_id = %d, "
+                               "i_face_cells = %d %d, _i_face_cells = %d %d\n",
+                               f_id, sub_f_id,
+                               i_face_cells[f_id][0], i_face_cells[f_id][1],
+                               _i_face_cells[sub_f_id][0],
+                               _i_face_cells[sub_f_id][1]);
                 }
                 else {
-#if _DEBUG_
-                  bft_printf("bfacecell = %d, _b_face_cells = %d\n",
-                             mesh->b_face_cells[f_id], _b_face_cells[sub_f_id]);
-#endif
+                  if (verbosity >= 2)
+                    bft_printf("bfacecell = %d, _b_face_cells = %d\n",
+                               mesh->b_face_cells[f_id],
+                               _b_face_cells[sub_f_id]);
                 }
               }
             }
@@ -1480,6 +1477,8 @@ _cut_face(const cs_lnum_t  f_id,
           cs_lnum_t        light_edge_in_face_idx[],
           cs_lnum_t        light_edge_in_face[][2])
 {
+  const int verbosity = cs_glob_mesh_cut_options.verbosity;
+
   int n_intx_in_face = 0;
   int n_dark_edge_in_face = 0, n_light_edge_in_face = 0;
   int n_sub_face = 0;
@@ -1654,10 +1653,9 @@ _cut_face(const cs_lnum_t  f_id,
 
     } /* End test on intx */
     else {
-#if _DEBUG_
-      bft_printf("face_id = %d, edge_id = %d : NO_INTX --> continue\n",
-                 f_id, edge_id);
-#endif
+      if (verbosity >= 2)
+        bft_printf("face_id = %d, edge_id = %d : NO_INTX --> continue\n",
+                   f_id, edge_id);
     }
 
   } /* End loop face to edge */
@@ -1714,62 +1712,64 @@ _cut_face(const cs_lnum_t  f_id,
 
   /* Debug print */
 
-#if _DEBUG_
+  if (verbosity >= 2) {
 
-  // Global sub-faces for face f_id : [s_id, e_id)
-  cs_lnum_t s_id = face_o2n_idx[f_id];
-  cs_lnum_t e_id = face_o2n_idx[f_id+1];
+    // Global sub-faces for face f_id : [s_id, e_id)
+    cs_lnum_t s_id = face_o2n_idx[f_id];
+    cs_lnum_t e_id = face_o2n_idx[f_id+1];
 
-  // Global range connectivity for face f_id
-  cs_lnum_t v_beg = sub_face_vtx_idx[s_id];
-  cs_lnum_t v_end = sub_face_vtx_idx[e_id];
+    // Global range connectivity for face f_id
+    cs_lnum_t v_beg = sub_face_vtx_idx[s_id];
+    cs_lnum_t v_end = sub_face_vtx_idx[e_id];
 
-  cs_lnum_t n_sf = e_id - s_id;
-  cs_lnum_t n_vtx_face = v_end - v_beg;
+    cs_lnum_t n_sf = e_id - s_id;
+    cs_lnum_t n_vtx_face = v_end - v_beg;
 
-  printf("[face %d] subfaces: s_id=%d, e_id=%d (count=%d), "
-         "connect range: v_id=%d..%d (count=%d)\n",
-         f_id, s_id, e_id, n_sf,
-         v_beg, (v_end > 0 ? v_end - 1 : 0), n_vtx_face);
+    bft_printf("[face %d] subfaces: s_id=%d, e_id=%d (count=%d), "
+               "connect range: v_id=%d..%d (count=%d)\n",
+               f_id, s_id, e_id, n_sf,
+               v_beg, (v_end > 0 ? v_end - 1 : 0), n_vtx_face);
 
-  // Local sub face details
-  for (cs_lnum_t s = s_id; s < e_id; ++s) {
-    cs_lnum_t v0 = sub_face_vtx_idx[s];
-    cs_lnum_t v1 = sub_face_vtx_idx[s+1];
-    cs_lnum_t sf_local = s - s_id;
+    // Local sub face details
+    for (cs_lnum_t s = s_id; s < e_id; ++s) {
+      cs_lnum_t v0 = sub_face_vtx_idx[s];
+      cs_lnum_t v1 = sub_face_vtx_idx[s+1];
+      cs_lnum_t sf_local = s - s_id;
 
-    printf("  subface_local=%d (global=%d): vtx s_id=%d, e_id=%d -> ",
-           sf_local, s, v0, v1);
+      bft_printf("  subface_local=%d (global=%d): vtx s_id=%d, e_id=%d -> ",
+                 sf_local, s, v0, v1);
 
-    for (cs_lnum_t k = v0; k < v1; ++k)
-      printf("%d ", sub_face_vtx_lst[k]);
-    printf("\n");
+      for (cs_lnum_t k = v0; k < v1; ++k)
+        bft_printf("%d ", sub_face_vtx_lst[k]);
+      bft_printf("\n");
+    }
+
+    // Dark edges for the face
+
+    const cs_lnum_t de0 = dark_edge_in_face_idx[f_id];
+    const cs_lnum_t de1 = dark_edge_in_face_idx[f_id+1];
+    const cs_lnum_t n_de = de1 - de0;
+
+    if (de1 > de0) {
+      bft_printf("  dark_edges: s_id=%d, e_id=%d (count=%d): ",
+                 de0, de1, n_de);
+      for (cs_lnum_t i = de0; i < de1; ++i)
+        bft_printf("(%d,%d) ",
+                   dark_edge_in_face[i][0], dark_edge_in_face[i][1]);
+      bft_printf("\n");
+    }
+
+    // Light edges for the face
+
+    if (le1 > le0) {
+      bft_printf("  light_edges: s_id=%d, e_id=%d (count=%d): ",
+                 le0, le1, n_le);
+      for (cs_lnum_t i = le0; i < le1; ++i)
+        bft_printf("(%d,%d) ",
+                   light_edge_in_face[i][0], light_edge_in_face[i][1]);
+      bft_printf("\n");
+    }
   }
-
-  // Dark edges for the face
-
-  const cs_lnum_t de0 = dark_edge_in_face_idx[f_id];
-  const cs_lnum_t de1 = dark_edge_in_face_idx[f_id+1];
-  const cs_lnum_t n_de = de1 - de0;
-
-  if (de1 > de0) {
-    printf("  dark_edges: s_id=%d, e_id=%d (count=%d): ",
-           de0, de1, n_de);
-    for (cs_lnum_t i = de0; i < de1; ++i)
-      printf("(%d,%d) ", dark_edge_in_face[i][0], dark_edge_in_face[i][1]);
-    printf("\n");
-  }
-
-  // Light edges for the face
-
-  if (le1 > le0) {
-    printf("  light_edges: s_id=%d, e_id=%d (count=%d): ",
-           le0, le1, n_le);
-    for (cs_lnum_t i = le0; i < le1; ++i)
-      printf("(%d,%d) ", light_edge_in_face[i][0], light_edge_in_face[i][1]);
-    printf("\n");
-  }
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2163,6 +2163,8 @@ _cut_edges(const cs_stl_mesh_t    *stl_mesh,
            cs_lnum_t              c_cut[],
            int                   *cell_flag)
 {
+  const int verbosity = cs_glob_mesh_cut_options.verbosity;
+
   const cs_lnum_t n_vtx = mesh->n_vertices;
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
   cs_lnum_t *v2v_idx = v2v->idx;
@@ -2451,7 +2453,8 @@ _cut_edges(const cs_stl_mesh_t    *stl_mesh,
                                     e_v_idx,
                                     g_edges_num);
 
-  bft_printf(" New vertices of the IBM interface inserted on the main mesh\n");
+  bft_printf
+    (" New vertices of the IBM interface inserted on the main mesh\n");
   bft_printf("   Number of new vertices added: %d\n", n_add_vtx);
   bft_printf("   New total number of vertices: %d\n", n_vtx_new);
 
@@ -2525,19 +2528,18 @@ _cut_edges(const cs_stl_mesh_t    *stl_mesh,
           n_modified_vtx++;
         }
         else if (s0 != VTX_UNKNOWN && s1 != VTX_UNKNOWN && s0 != s1) {
-#if _DEBUG_
-          cs_log_printf
-            (CS_LOG_DEFAULT,
-             _("Inconsistency in vertex sign: "
-               "sign_v0 = %d and sign_v1 = %d should be the same. "
-               "Here, a solid region is connected to a fluid region, "
-               "whereas an STL surface should delimit the two regions. "
-               "This could indicate:\n"
-               "- a hole in the STL mesh\n"
-               "- the STL mesh is not included in the domain, "
-               "so no fluid–solid interface can exist on the boundaries."),
-             s0, s1);
-#endif
+          if (verbosity >= 1)
+            cs_log_printf
+              (CS_LOG_DEFAULT,
+               _("Inconsistency in vertex sign: "
+                 "sign_v0 = %d and sign_v1 = %d should be the same. "
+                 "Here, a solid region is connected to a fluid region, "
+                 "whereas an STL surface should delimit the two regions. "
+                 "This could indicate:\n"
+                 "- a hole in the STL mesh\n"
+                 "- the STL mesh is not included in the domain, "
+                 "so no fluid–solid interface can exist on the boundaries."),
+               s0, s1);
           inconsistency = true;
 
           /* Disable the cell with inconsistency sign */
@@ -3532,6 +3534,8 @@ cs_mesh_cut(cs_mesh_t       *mesh,
             const cs_real_t  p_normals[][3],
             const cs_real_t  p_origins[][3])
 {
+  const int verbosity = cs_glob_mesh_cut_options.verbosity;
+
   std::chrono::high_resolution_clock::time_point t0
     = std::chrono::high_resolution_clock::now();
 
@@ -3652,7 +3656,7 @@ cs_mesh_cut(cs_mesh_t       *mesh,
   std::chrono::microseconds te_update
     = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t2);
 
-  if (mesh->verbosity > 0) {
+  if (mesh->verbosity > 0 || verbosity > 0) {
 
     cs_mesh_print_element_counts(mesh,
                                  _("Mesh after cells cut"));
@@ -3695,6 +3699,8 @@ void
 cs_mesh_cut_edges_by_stl(const char  *stl_file_name,
                          cs_mesh_t   *mesh)
 {
+  const int verbosity = cs_glob_mesh_cut_options.verbosity;
+
   std::chrono::high_resolution_clock::time_point t0
     = std::chrono::high_resolution_clock::now();
 
@@ -4121,7 +4127,7 @@ cs_mesh_cut_edges_by_stl(const char  *stl_file_name,
     cs_mesh_adjacencies_finalize();
   }
 
-  if (mesh->verbosity > 0) {
+  if (mesh->verbosity > 0 || verbosity > 0) {
 
     cs_mesh_print_element_counts(mesh,
                                  _(" Mesh after cells cut"));

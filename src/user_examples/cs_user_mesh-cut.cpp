@@ -150,6 +150,7 @@ cs_user_mesh_modify([[maybe_unused]] cs_mesh_t  *mesh)
     /* Configure the mesh cutting options if needed */
     cs_glob_mesh_cut_options.poro_min = 0.02;
     cs_glob_mesh_cut_options.eps_corr_grad_lin = 0.05;
+    cs_glob_mesh_cut_options.verbosity = 1;
 
     /* Cut mesh edges by the given STL file */
     const char *stl_file_name = "obstacle.stl";
