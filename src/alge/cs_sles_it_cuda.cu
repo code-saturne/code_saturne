@@ -2078,9 +2078,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     stream = cs_cuda_get_stream(0);
   }
 
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-
-  size_t vec_size = n_cols * sizeof(cs_real_t);
 
   /* Prefetch in case it is needed; actually, the reported allocation
      mode may be incorrect if the array are sub-arrays of a greater allocation,
@@ -2092,19 +2091,21 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
     int device_id = cs_get_device_id();
 
-    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
-      _prefetch_h2d(vx, vec_size, device_id, stream_pf);
+    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx) {
+      size_t vx_size = n_cols * sizeof(cs_real_t);
+      _prefetch_h2d(vx, vx_size, device_id, stream_pf);
+    }
 
-    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-      _prefetch_h2d(rhs, vec_size, device_id, stream_pf);
+    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED) {
+      size_t rhs_size = n_rows * sizeof(cs_real_t);
+      _prefetch_h2d(rhs, rhs_size, device_id, stream_pf);
+    }
   }
 
   const cs_real_t  *__restrict__ ad
     =  cs_get_device_ptr_const(cs_matrix_get_diagonal(a));
   const cs_real_t *__restrict__ ad_inv
     = cs_get_device_ptr_const(c->setup_data->ad_inv);
-
-  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   double residual = -1.;
 
@@ -2320,9 +2321,8 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     stream = cs_cuda_get_stream(0);
   }
 
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-
-  size_t vec_size = n_cols * sizeof(cs_real_t);
 
   /* Prefetch in case it is needed; actually, the reported allocation
      mode may be incorrect if the array are sub-arrays of a greater allocation,
@@ -2334,19 +2334,21 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
     int device_id = cs_get_device_id();
 
-    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
-      _prefetch_h2d(vx, vec_size, device_id, stream_pf);
+    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx) {
+      size_t vx_size = n_cols * sizeof(cs_real_t);
+      _prefetch_h2d(vx, vx_size, device_id, stream_pf);
+    }
 
-    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-      _prefetch_h2d(rhs, vec_size, device_id, stream_pf);
+    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED) {
+      size_t rhs_size = n_rows * sizeof(cs_real_t);
+      _prefetch_h2d(rhs, rhs_size, device_id, stream_pf);
+    }
   }
 
   const cs_real_t  *__restrict__ ad
     = cs_get_device_ptr_const(cs_matrix_get_diagonal(a));
   const cs_real_t *__restrict__ ad_inv
     = cs_get_device_ptr_const(c->setup_data->ad_inv);
-
-  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   double residual = -1;
 
@@ -2573,8 +2575,6 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
   const cs_lnum_t n_rows = c->setup_data->n_rows;
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
 
-  size_t vec_size = n_cols * sizeof(cs_real_t);
-
   /* Prefetch in case it is needed; actually, the reported allocation
      mode may be incorrect if the array are sub-arrays of a greater allocation,
      such as for multigrid, but in this case no prefetching should be needed,
@@ -2585,11 +2585,15 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
     int device_id = cs_get_device_id();
 
-    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
-      _prefetch_h2d(vx, vec_size, device_id, stream_pf);
+    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx) {
+      size_t vx_size = n_cols * sizeof(cs_real_t);
+      _prefetch_h2d(vx, vx_size, device_id, stream_pf);
+    }
 
-    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-      _prefetch_h2d(rhs, vec_size, device_id, stream_pf);
+    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED) {
+      size_t rhs_size = n_rows * sizeof(cs_real_t);
+      _prefetch_h2d(rhs, rhs_size, device_id, stream_pf);
+    }
   }
 
   {
@@ -2752,8 +2756,6 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   const cs_lnum_t n_rows = c->setup_data->n_rows;
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
 
-  size_t vec_size = n_cols * sizeof(cs_real_t);
-
   /* Prefetch in case it is needed; actually, the reported allocation
      mode may be incorrect if the array are sub-arrays of a greater allocation,
      such as for multigrid, but in this case no prefetching should be needed,
@@ -2764,11 +2766,15 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
     int device_id = cs_get_device_id();
 
-    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx)
-      _prefetch_h2d(vx, vec_size, device_id, stream_pf);
+    if (amode_vx == CS_ALLOC_HOST_DEVICE_SHARED && vx_ini == vx) {
+      size_t vx_size = n_cols * sizeof(cs_real_t);
+      _prefetch_h2d(vx, vx_size, device_id, stream_pf);
+    }
 
-    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED)
-      _prefetch_h2d(rhs, vec_size, device_id, stream_pf);
+    if (amode_rhs == CS_ALLOC_HOST_DEVICE_SHARED) {
+      size_t rhs_size = n_rows * sizeof(cs_real_t);
+      _prefetch_h2d(rhs, rhs_size, device_id, stream_pf);
+    }
   }
 
   double  residual = -1;
