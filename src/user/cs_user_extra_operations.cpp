@@ -82,16 +82,6 @@ cs_user_extra_operations_initialize([[maybe_unused]] cs_domain_t   *domain)
 void
 cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 {
-  /* Example: inspect variable clippings from solving_info
-   *
-   *   const cs_field_t *f = cs_field_by_name("temperature");
-   *   const cs_solving_info_t *sinfo = cs_field_get_solving_info_const(f);
-   *   if (sinfo != nullptr && (sinfo->n_clip_min > 0 || sinfo->n_clip_max > 0))
-   *     bft_printf("Field %s: %llu clips to min, %llu clips to max\n",
-   *                f->name,
-   *                (unsigned long long)sinfo->n_clip_min,
-   *                (unsigned long long)sinfo->n_clip_max);
-   */
 }
 
 /*----------------------------------------------------------------------------*/
