@@ -2078,6 +2078,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     stream = cs_cuda_get_stream(0);
   }
 
+  assert(c->setup_data != nullptr);
+
   const cs_lnum_t n_rows = c->setup_data->n_rows;
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
 
@@ -2115,14 +2117,12 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   /* Allocate or map work arrays
      --------------------------- */
 
-  assert(c->setup_data != NULL);
-
-  cs_real_t *_aux_vectors = NULL;
+  cs_real_t *_aux_vectors = nullptr;
   if (n_cols > 0) {
     const size_t n_wa = 1;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (   aux_vectors == NULL
+    if (   aux_vectors == nullptr
         || cs_mem_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa)) {
       CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_DEVICE);
@@ -2183,7 +2183,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 #if HAVE_GRAPH_CAPTURE > 0
 
   cudaGraph_t graph;
-  cudaGraphExec_t graph_exec = NULL;
+  cudaGraphExec_t graph_exec = nullptr;
 
   /* Capture graph for a portion of kernels used here. */
 
@@ -2321,6 +2321,8 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     stream = cs_cuda_get_stream(0);
   }
 
+  assert(c->setup_data != nullptr);
+
   const cs_lnum_t n_rows = c->setup_data->n_rows;
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
 
@@ -2355,8 +2357,6 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   /* Allocate or map work arrays
      --------------------------- */
 
-  assert(c->setup_data != NULL);
-
   cs_real_t *_aux_vectors = nullptr;
   cs_real_t *__restrict__ rk = nullptr, *__restrict__ vxx = nullptr;
   cs_real_t *__restrict__ vx_k = vx;
@@ -2365,7 +2365,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     const size_t n_wa = 2;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (   aux_vectors == NULL
+    if (   aux_vectors == nullptr
         || cs_mem_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa)) {
       CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_DEVICE);
@@ -2559,8 +2559,6 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
     stream = cs_cuda_get_stream(0);
   }
 
-  assert(c->setup_data != NULL);
-
   cs_real_t  *_aux_vectors;
   cs_real_t  *__restrict__ rk, *__restrict__ vk, *__restrict__ wk;
   cs_real_t  *__restrict__ dk, *__restrict__ qk;
@@ -2570,7 +2568,7 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -2751,7 +2749,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     stream = cs_cuda_get_stream(0);
   }
 
-  assert(c->setup_data != NULL);
+  assert(c->setup_data != nullptr);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -2789,7 +2787,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
-  cs_real_t *_aux_vectors = NULL;
+  cs_real_t *_aux_vectors = nullptr;
   {
     const size_t n_wa = 1 + n_k_per_restart * 2;
     wa_size = CS_SIMD_SIZE(n_cols);
