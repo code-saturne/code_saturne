@@ -225,6 +225,138 @@ _secant_ter7p(double a,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the Cholesky decomposition of the (gamma, Gamma, Omega)
+ *        covariance system for single-phase flow and evaluate stochastic
+ *        particle velocity and position increments.
+ *
+ * Ordered as:
+ *   1. gamma : fluid velocity seen increment
+ *   2. Gamma : particle velocity increment
+ *   3. Omega : particle position increment
+ *
+ * \param[in]  p11          sqrt(<gamma^2>)
+ * \param[in]  gam_gagam    covariance <gamma, Gamma>
+ * \param[in]  gam_ome      covariance <gamma, Omega>
+ * \param[in]  gagam2       variance <Gamma^2>
+ * \param[in]  gagam_ome    covariance <Gamma, Omega>
+ * \param[in]  ome2         variance <Omega^2>
+ * \param[in]  vagaus_fluid Gaussian draw for fluid velocity seen
+ * \param[in]  vagaus_vel   Gaussian draw for particle velocity
+ * \param[in]  vagaus_pos   Gaussian draw for particle position
+ * \param[out] ter5p        stochastic velocity increment
+ * \param[out] ter5x        stochastic position increment
+ */
+/*----------------------------------------------------------------------------*/
+static inline void
+_lagr_sde_cholesky_increments(cs_real_t   p11,
+                              cs_real_t   gam_gagam,
+                              cs_real_t   gam_ome,
+                              cs_real_t   gagam2,
+                              cs_real_t   gagam_ome,
+                              cs_real_t   ome2,
+                              cs_real_t   vagaus_fluid,
+                              cs_real_t   vagaus_vel,
+                              cs_real_t   vagaus_pos,
+                              cs_real_t  *ter5p,
+                              cs_real_t  *ter5x)
+{
+  cs_real_t p21 = 0.0;
+  cs_real_t p31 = 0.0;
+
+  if (cs::abs(p11) > cs_math_epzero) {
+    p21 = gam_gagam / p11;
+    p31 = gam_ome   / p11;
+  }
+
+  cs_real_t p22 = gagam2 - cs_math_pow2(p21);
+  cs_real_t p32 = gagam_ome - p31 * p21;
+  cs_real_t p33 = ome2 - cs_math_pow2(p31);
+
+  p22 = sqrt(cs::max(0.0, p22));
+  p32 = (p22 > cs_math_epzero) ? (p32 / p22) : 0.0;
+
+  p33 -= cs_math_pow2(p32);
+  p33 = sqrt(cs::max(0.0, p33));
+
+  *ter5p = p21 * vagaus_fluid + p22 * vagaus_vel;
+  *ter5x = p31 * vagaus_fluid + p32 * vagaus_vel + p33 * vagaus_pos;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the Cholesky decomposition of the (gamma_k, Gamma, Omega)
+ *        covariance system for multi-phase flow and evaluate stochastic
+ *        particle velocity and position increments.
+ *
+ * \param[in]  n_phases         number of carrier fluid phases
+ * \param[in]  p11              array of sqrt(<gamma_k^2>)
+ * \param[in]  gam_gagam        array of <gamma_k, Gamma>
+ * \param[in]  gam_ome          array of <gamma_k, Omega>
+ * \param[in]  gagam2           variance <Gamma^2>
+ * \param[in]  gagam_ome        covariance <Gamma, Omega>
+ * \param[in]  ome2             variance <Omega^2>
+ * \param[in]  get_vagaus_phase accessor/lambda returning vagaus for phase k
+ * \param[in]  vagaus_vel       Gaussian draw for particle velocity
+ * \param[in]  vagaus_pos       Gaussian draw for particle position
+ * \param[out] ter5p            stochastic velocity increment
+ * \param[out] ter5x            stochastic position increment
+ */
+/*----------------------------------------------------------------------------*/
+template<typename VagausPhaseFunc>
+static inline void
+_lagr_sde_cholesky_increments(int              n_phases,
+                              const cs_real_t  p11[],
+                              const cs_real_t  gam_gagam[],
+                              const cs_real_t  gam_ome[],
+                              cs_real_t        gagam2,
+                              cs_real_t        gagam_ome,
+                              cs_real_t        ome2,
+                              VagausPhaseFunc  get_vagaus_phase,
+                              cs_real_t        vagaus_vel,
+                              cs_real_t        vagaus_pos,
+                              cs_real_t       *ter5p,
+                              cs_real_t       *ter5x)
+{
+  cs_real_t p22 = gagam2;
+  cs_real_t p32 = gagam_ome;
+  cs_real_t p33 = ome2;
+
+  cs_real_t d_vel = 0.0;
+  cs_real_t d_pos = 0.0;
+
+  for (int phase_id = 0; phase_id < n_phases; phase_id++) {
+    cs_real_t p21 = 0.0;
+    cs_real_t p31 = 0.0;
+
+    if (cs::abs(p11[phase_id]) > cs_math_epzero) {
+      p21 = gam_gagam[phase_id] / p11[phase_id];
+      p31 = gam_ome[phase_id]   / p11[phase_id];
+    }
+
+    p22 -= cs_math_pow2(p21);
+    p32 -= p31 * p21;
+    p33 -= cs_math_pow2(p31);
+
+    cs_real_t g_p = get_vagaus_phase(phase_id);
+    d_vel += p21 * g_p;
+    d_pos += p31 * g_p;
+  }
+
+  p22 = sqrt(cs::max(0.0, p22));
+  p32 = (p22 > cs_math_epzero) ? (p32 / p22) : 0.0;
+
+  p33 -= cs_math_pow2(p32);
+  p33 = sqrt(cs::max(0.0, p33));
+
+  d_vel += p22 * vagaus_vel;
+  d_pos += p32 * vagaus_vel + p33 * vagaus_pos;
+
+  *ter5p = d_vel;
+  *ter5x = d_pos;
+}
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Integration of SDEs by 1st order time scheme for one particle
  *  multiphase variant
  *
@@ -282,7 +414,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
   cs_real_t ter6x[n_phases];
 
   // Terms of the reduction matrix
-  cs_real_t p11[n_phases], p21[n_phases], p22, p31[n_phases], p32, p33;
+  cs_real_t p11[n_phases];
   // Terms of the covariance matrix for the Gauss vector
   cs_real_t gam2[n_phases];
   cs_real_t gam_gagam[n_phases], gagam2;
@@ -824,45 +956,19 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
           * (aux5 - aux2 * aux5b)
         );
 
-    /* Now we can compute the pij and then ter5p, ter5x
-    pij are the components of the matrix from the Cholesky decomposition of Cij
-    (covariance matrix of the Gauss vector) */
-
-    p22 = gagam2;
-    p32 = gagam_ome;
-    p33 = ome2;
-
-    for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-      if (cs::abs(p11[phase_id]) > cs_math_epzero) {
-        p21[phase_id] = gam_gagam[phase_id] / p11[phase_id];
-        p31[phase_id] = gam_ome[phase_id] / p11[phase_id];
-      } else {
-        p21[phase_id] = 0.;
-        p31[phase_id] = 0.;
-      }
-
-      p22 -= cs_math_pow2(p21[phase_id]);
-      p32 -= p31[phase_id] * p21[phase_id];
-      p33 -= cs_math_pow2(p31[phase_id]);
-    }
-
-    p22 = sqrt(cs::max(0.0, p22));
-
-    if (p22 > cs_math_epzero)
-      p32 /= p22;
-    else
-      p32 = 0.;
-
-    p33 -= cs_math_pow2(p32);
-    p33 = sqrt(cs::max(0.0, p33));
-    ter5p = 0.;
-    ter5x = 0.;
-    for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-      ter5p += p21[phase_id] * vagaus(phase_id, id);
-      ter5x += p31[phase_id] * vagaus(phase_id, id);
-    }
-    ter5p += p22 * vagaus(n_phases, id);
-    ter5x += p32 * vagaus(n_phases, id) + p33 * vagaus(n_phases + 1, id);
+    /* Now we can compute ter5p, ter5x via Cholesky decomposition */
+    _lagr_sde_cholesky_increments(n_phases,
+                                  p11,
+                                  gam_gagam,
+                                  gam_ome,
+                                  gagam2,
+                                  gagam_ome,
+                                  ome2,
+                                  [&vagaus, id](int p) { return vagaus(p, id); },
+                                  vagaus(n_phases, id),
+                                  vagaus(n_phases + 1, id),
+                                  &ter5p,
+                                  &ter5x);
 
     /* (2.3) Compute terms in the Brownian movement case */
     /* TODO: Warning based on the first carrier phase with N fluids */
@@ -1068,7 +1174,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
   cs_real_t ter1p, ter2p, ter3p, ter4p, ter5p;
   cs_real_t ter1x, ter2x, ter3x, ter4x, ter5x;
   // Terms of the reduction matrix
-  cs_real_t p11, p21, p22, p31, p32, p33;
+  cs_real_t p11;
   // Terms of the covariance matrix for the Gauss vector
   cs_real_t gam2;
   cs_real_t gam_gagam, gagam2;
@@ -1525,38 +1631,18 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
           * (aux5 - aux2 * aux5b)
         );
 
-    /* Now we can compute the pij and then ter5p, ter5x
-    pij are the components of the matrix from the Cholesky decomposition of Cij
-    (covariance matrix of the Gauss vector) */
-
-    p22 = gagam2;
-    p32 = gagam_ome;
-    p33 = ome2;
-
-    if (cs::abs(p11) > cs_math_epzero) {
-      p21 = gam_gagam / p11;
-      p31 = gam_ome / p11;
-    } else {
-      p21 = 0.;
-      p31 = 0.;
-    }
-
-    p22 -= cs_math_pow2(p21);
-    p32 -= p31 * p21;
-    p33 -= cs_math_pow2(p31);
-
-    p22 = sqrt(cs::max(0.0, p22));
-
-    if (p22 > cs_math_epzero)
-      p32 /= p22;
-    else
-      p32 = 0.;
-
-    p33 -= cs_math_pow2(p32);
-    p33 = sqrt(cs::max(0.0, p33));
-    ter5p = p21 * vagaus(0, id) + p22 * vagaus(1, id);
-    ter5x = p31 * vagaus(0, id)
-          + p32 * vagaus(1, id) + p33 * vagaus(2, id);
+    /* Now we can compute ter5p, ter5x via Cholesky decomposition */
+    _lagr_sde_cholesky_increments(p11,
+                                  gam_gagam,
+                                  gam_ome,
+                                  gagam2,
+                                  gagam_ome,
+                                  ome2,
+                                  vagaus(0, id),
+                                  vagaus(1, id),
+                                  vagaus(2, id),
+                                  &ter5p,
+                                  &ter5x);
 
     /* (2.3) Compute terms in the Brownian movement case */
     /* TODO: Warning based on the first carrier phase with N fluids */
@@ -2267,48 +2353,22 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
                          - taup * aux10
                          + (tlp + taup) * aux11) * aux8;
 
-      cs_real_t  p11, p21, p22, p31, p32, p33;
-
       /* --> Integral for the flow-seen velocity  */
-      p11   = sqrt(gama2 * aux6);
+      cs_real_t p11   = sqrt(gama2 * aux6);
       cs_real_t ter3f = p11 * vagaus[0][i0];
 
-      if (p11 > cs_math_epzero) {
-
-        p21    = omegam / p11;
-        p22    = omega2 - cs_math_pow2(p21);
-        p22    = sqrt(cs::max(0.0, p22));
-
-      }
-      else {
-
-        p21    = 0.0;
-        p22    = 0.0;
-
-      }
-
-      cs_real_t ter5x = p21 * vagaus[0][i0] + p22 * vagaus[1][i0];
-
-      /* --> Integral for particles velocity */
-
-      if (p11 > cs_math_epzero)
-        p31 = gagam / p11;
-
-      else
-        p31 = 0.0;
-
-      if (p22 > cs_math_epzero)
-        p32 = (gaome - p31 * p21) / p22;
-
-      else
-        p32 = 0.0;
-
-      p33 = grga2 - cs_math_pow2(p31) - cs_math_pow2(p32);
-      p33 = sqrt (cs::max(0.0, p33));
-
-      cs_real_t ter5p =   p31 * vagaus[0][i0]
-                        + p32 * vagaus[1][i0]
-                        + p33 * vagaus[2][i0];
+      cs_real_t ter5p = 0.0, ter5x = 0.0;
+      _lagr_sde_cholesky_increments(p11,
+                                    gagam,
+                                    omegam,
+                                    grga2,
+                                    gaome,
+                                    omega2,
+                                    vagaus[0][i0],
+                                    vagaus[1][i0],
+                                    vagaus[2][i0],
+                                    &ter5p,
+                                    &ter5x);
 
       /* --> trajectory  */
       depl[id] = ter1x + ter2x + ter3x + ter4x + ter5x;
@@ -3301,7 +3361,7 @@ _sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
   cs_real_t ter1f, ter2f, ter3f;
   cs_real_t ter1p, ter2p, ter3p, ter4p, ter5p;
   cs_real_t ter1x, ter2x, ter3x, ter4x, ter5x;
-  cs_real_t p11, p21, p22, p31, p32, p33;
+  cs_real_t p11;
   cs_real_t omega2, gama2, omegam;
   cs_real_t grga2, gagam, gaome;
 
@@ -3460,37 +3520,17 @@ _sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
         p11   = sqrt(gama2 * aux6);
         ter3f = p11 * vagaus(0, id);
 
-        if (p11 > cs_math_epzero) {
-
-          p21 = omegam / p11;
-          p22 = omega2 - cs_math_pow2(p21);
-          p22 = sqrt(cs::max(0.0, p22));
-
-        }
-        else {
-
-          p21 = 0.0;
-          p22 = 0.0;
-
-        }
-
-        ter5x = p21 * vagaus(0, id) + p22 * vagaus(1, id);
-
-        if (p11 > cs_math_epzero)
-          p31 = gagam / p11;
-        else
-          p31 = 0.0;
-
-        if (p22 > cs_math_epzero)
-          p32 = (gaome - p31 * p21) / p22;
-        else
-          p32 = 0.0;
-
-        p33 = grga2 - cs_math_pow2(p31) - cs_math_pow2(p32);
-        p33 = sqrt(cs::max(0.0, p33));
-        ter5p =   p31 * vagaus(0, id)
-                + p32 * vagaus(1, id)
-                + p33 * vagaus(2, id);
+        _lagr_sde_cholesky_increments(p11,
+                                      gagam,
+                                      omegam,
+                                      grga2,
+                                      gaome,
+                                      omega2,
+                                      vagaus(0, id),
+                                      vagaus(1, id),
+                                      vagaus(2, id),
+                                      &ter5p,
+                                      &ter5x);
 
         /* Update of the particle state-vector */
 
