@@ -1465,19 +1465,21 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
 
     gagam2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
 
-    gam_ome = ( (tlag_r(phase_id, id) - taup_r[id])
-        * (aux5 - aa)
-          - tlag_r(phase_id, id) * aux9
-          - taup_r[id] * aux10
-          + (tlag_r(phase_id, id) + taup_r[id]) * aux11)
-          * aux8;
-
-    gagam_ome = aux3 * (  (tlag_r(phase_id, id) - taup_r[id])
+    /* Covariance <gamma, Omega> (Eq. 144 in Minier & Peirano 2006) */
+    gam_ome = aux3 * (  (tlag_r(phase_id, id) - taup_r[id])
         * (1.0 - aux2)
                  - 0.5 * tlag_r(phase_id, id) * (1.0 - aux2 * aux2)
                  + cs_math_pow2(taup_r[id])
                  / (tlag_r(phase_id, id) + taup_r[id])
                  * (1.0 - aux1 * aux2)) * aux6;
+
+    /* Covariance <Gamma, Omega> (Eq. 145 in Minier & Peirano 2006) */
+    gagam_ome = ( (tlag_r(phase_id, id) - taup_r[id])
+        * (aux5 - aa)
+          - tlag_r(phase_id, id) * aux9
+          - taup_r[id] * aux10
+          + (tlag_r(phase_id, id) + taup_r[id]) * aux11)
+          * aux8;
 
     ome2 = aux7 * (aux7 * dt_part - 2.0
           * (tlag_r(phase_id, id) * aux5 - taup_r[id] * aa))
@@ -2267,9 +2269,13 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
 
       cs_real_t  p11, p21, p22, p31, p32, p33;
 
-      if (cs::abs(gama2) >cs_math_epzero) {
+      /* --> Integral for the flow-seen velocity  */
+      p11   = sqrt(gama2 * aux6);
+      cs_real_t ter3f = p11 * vagaus[0][i0];
 
-        p21    = omegam / sqrt (gama2);
+      if (p11 > cs_math_epzero) {
+
+        p21    = omegam / p11;
         p22    = omega2 - cs_math_pow2(p21);
         p22    = sqrt(cs::max(0.0, p22));
 
@@ -2282,11 +2288,6 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
       }
 
       cs_real_t ter5x = p21 * vagaus[0][i0] + p22 * vagaus[1][i0];
-
-      /* --> Integral for the flow-seen velocity  */
-
-      p11   = sqrt(gama2 * aux6);
-      cs_real_t ter3f = p11 * vagaus[0][i0];
 
       /* --> Integral for particles velocity */
 
@@ -3455,9 +3456,13 @@ _sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
                   + (tlag(phase_id, id) + taup[phase_id]) * aux11)
                 * aux8;
 
-        if (cs::abs(gama2) > cs_math_epzero) {
+        /* --> integral for the flow-seen velocity  */
+        p11   = sqrt(gama2 * aux6);
+        ter3f = p11 * vagaus(0, id);
 
-          p21 = omegam / sqrt(gama2);
+        if (p11 > cs_math_epzero) {
+
+          p21 = omegam / p11;
           p22 = omega2 - cs_math_pow2(p21);
           p22 = sqrt(cs::max(0.0, p22));
 
@@ -3470,10 +3475,6 @@ _sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
         }
 
         ter5x = p21 * vagaus(0, id) + p22 * vagaus(1, id);
-
-        /* --> integral for the flow-seen velocity  */
-        p11   = sqrt(gama2 * aux6);
-        ter3f = p11 * vagaus(0, id);
 
         if (p11 > cs_math_epzero)
           p31 = gagam / p11;
