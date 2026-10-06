@@ -371,8 +371,13 @@ _define_particle_datatype(const cs_lagr_attribute_map_t  *p_am)
   for (i = attr_start; i < attr_end; i++)
     cs_type[i] = CS_LNUM_TYPE;
 
-  attr_start = offsetof(cs_lagr_tracking_info_t, last_face_id);
-  attr_end = attr_start + sizeof(int);
+  attr_start = offsetof(cs_lagr_tracking_info_t, state);
+  attr_end = attr_start + sizeof(cs_lagr_tracking_state_t);
+  for (i = attr_start; i < attr_end; i++)
+    cs_type[i] = CS_INT_TYPE;
+
+  attr_start = offsetof(cs_lagr_tracking_info_t, tracking_step_id);
+  attr_end = attr_start + sizeof(cs_lagr_track_step_t);
   for (i = attr_start; i < attr_end; i++)
     cs_type[i] = CS_INT_TYPE;
 
