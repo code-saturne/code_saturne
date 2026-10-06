@@ -3,6 +3,8 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix Brownian motion Gaussian variable retrieval at 2nd order.
+
 - Fix issues in parallel read/write of serialized in memory checkpoints,
   (used only for serialized FMI state handling).
 

@@ -872,7 +872,7 @@ _lagr_compute_rv_gaussian(cs_lagr_particle_set_t     &p_set,
     }
     else {
       /* Get previously drawn _br_gaus */
-      cs_real_t *_br_gaus = p_set.attr_real_ptr(p_id, CS_LAGR_V_GAUSS);
+      cs_real_t *_br_gaus = p_set.attr_real_ptr(p_id, CS_LAGR_BR_GAUSS);
       for(int id = 0; id < 6; id++)
         br_gaus[id] = _br_gaus[id];
     }
