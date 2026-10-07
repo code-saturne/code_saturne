@@ -59,8 +59,8 @@ def getRestartInfo(package, results_dir=None, restart_path='*'):
 
     from code_saturne.base.cs_exec_environment import get_command_output, assemble_args
 
-    nt_names = ('nbre_pas_de_temps', 'ntcabs')
-    t_names = ('instant_precedent', 'ttcabs')
+    nt_names = ('nbre_pas_de_temps', 'ntcabs', 'cur_time_step')
+    t_names = ('instant_precedent', 'ttcabs', 'cur_time')
 
     results = []
 
