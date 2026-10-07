@@ -900,17 +900,9 @@ cs_atmo_read_chemistry_profile(int mode)
 
     if (mode == 1) {
       const cs_real_t sjday
-        = at_opt->squant
-        + ((1461 * (at_opt->syear + 4800 + (1 - 14) / 12)) / 4
-           + (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12
-           - (3 * ((at_opt->syear + 4900 + (1 - 14) / 12) / 100)) / 4
-           + 1 - 32075) - 1;
+        = cs_atmo_julian_day(at_opt->syear, at_opt->squant);
       const cs_real_t jday
-        = quant
-        + ((1461 * (year + 4800 + (1 - 14) / 12)) / 4
-           + (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12
-           - (3 * ((year + 4900 + (1 - 14) / 12) / 100)) / 4
-           + 1 - 32075) - 1;
+        = cs_atmo_julian_day(year, quant);
 
       _atmo_chem.t_conc_profiles[itp]
         = (jday - sjday) * 86400.0

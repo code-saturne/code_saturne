@@ -4083,6 +4083,30 @@ cs_atmo_comp_quantile(int year,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute astronomical Julian Day Number for a year and day-of-year.
+ *
+ * This implements the astronomical Julian Day Number (at 12:00 UTC) based on
+ * the Fliegel & Van Flandern (1968) algorithm adapted for day-of-year.
+ *
+ * \param[in]  year   calendar year
+ * \param[in]  quant  day of year (1-366)
+ *
+ * \return astronomical Julian Day Number (at 12:00 UTC)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_atmo_julian_day(int year,
+                   int quant)
+{
+  const int y = year + 4799;
+  const int jdn = quant + (1461 * y) / 4 - (3 * ((year + 4899) / 100)) / 4
+                  - 31739;
+  return (cs_real_t)jdn;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reads the meteo profile data for the atmospheric
  *
  * \param[in]  mode     0: reading for dimensions and starting time only
@@ -4214,17 +4238,11 @@ cs_atmo_read_meteo_profile(int mode)
 
     if (mode == 1) {
       /* Compute the julian day for the starting day of the simulation
-       * (julian day at 12h) */
+       * (julian day at 12h) and for current profile */
       const cs_real_t sjday
-        = at_opt->squant + ( ( 1461 * (at_opt->syear + 4800 + (1 - 14) / 12))/4
-                             + (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12
-                             - (3 * ((at_opt->syear + 4900 + (1-14)/12) / 100))/4
-                             + 1 - 32075 ) - 1;
+        = cs_atmo_julian_day(at_opt->syear, at_opt->squant);
       const cs_real_t jday
-        = quant + (  (1461*(year+4800+(1-14)/12))/4
-                     + (367*(1-2-12*((1-14) / 12))) / 12
-                     - (3 * ((year+4900+(1-14)/12)/100)) / 4
-                     +  1-32075) - 1;
+        = cs_atmo_julian_day(year, quant);
 
       at_opt->time_met[itp] = (jday - sjday)*86400.0
                             + (hour - at_opt->shour)*3600.0

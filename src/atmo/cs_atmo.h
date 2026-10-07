@@ -573,6 +573,21 @@ cs_atmo_comp_quantile(int year,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute astronomical Julian Day Number for a year and day-of-year.
+ *
+ * \param[in]  year   calendar year
+ * \param[in]  quant  day of year (1-366)
+ *
+ * \return astronomical Julian Day Number (at 12:00 UTC)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_atmo_julian_day(int year,
+                   int quant);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reads the meteo profile data for the atmospheric
  *
  * \param[in]  mode     0: reading for dimensions and starting time only

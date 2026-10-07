@@ -723,11 +723,7 @@ static int
 _yo2j(const cs_real_t year,
      const cs_real_t ordinal)
 {
-  int result = ordinal + ( (1461 * (year + 4800)) / 4
-                       -    30 - (3 * ((year + 4900) / 100)) / 4
-                       +     1 - 32075 ) - 1;
-
-  return result;
+  return (int)cs_atmo_julian_day((int)year, (int)ordinal);
 }
 
 /*----------------------------------------------------------------------------
