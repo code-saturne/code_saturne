@@ -226,6 +226,104 @@ _secant_ter7p(double a,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Discretization coefficients and analytical covariances for
+ *        the coupled (gamma, Gamma, Omega) SDE system along one spatial
+ *        direction (Minier & Peirano 2006, Tables 3 and 4).
+ */
+/*----------------------------------------------------------------------------*/
+struct cs_lagr_sde_step_coeffs_t {
+  /* Exponential relaxation factors */
+  cs_real_t exp_taup; /* exp(-dt / tau_p) */
+  cs_real_t exp_tlag; /* exp(-dt / T_L)   */
+
+  /* Deterministic integration coefficients (Table 4) */
+  cs_real_t a1; /* A_1 = tau_p * (1 - exp_taup) */
+  cs_real_t b1; /* B_1: position coefficient for fluid velocity seen */
+  cs_real_t c1; /* C_1 = dt - A_1 - B_1 */
+  cs_real_t d1; /* D_1: velocity coefficient for fluid velocity seen */
+  cs_real_t e1; /* E_1 = 1 - exp_taup */
+
+  /* Stochastic variances and covariances (Table 3, Eqs. 140-145) */
+  cs_real_t var_gam;           /* <gamma^2>, Eq. 140 */
+  cs_real_t var_ggam;          /* <Gamma^2>, Eq. 141 */
+  cs_real_t var_omega;         /* <Omega^2>, Eq. 142 */
+  cs_real_t cov_gam_ggam;      /* <gamma, Gamma>, Eq. 143 */
+  cs_real_t cov_gam_omega;     /* <gamma, Omega>, Eq. 144 */
+  cs_real_t cov_ggam_omega;    /* <Gamma, Omega>, Eq. 145 */
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute analytical discretization coefficients and covariances
+ *        for a single carrier component.
+ *
+ * \param[in]  dt_part  particle integration time step
+ * \param[in]  taup     particle relaxation time scale
+ * \param[in]  tlag     fluid Lagrangian integral time scale
+ * \param[in]  bx       diffusion coefficient (root of turbulent acceleration variance)
+ * \param[out] c        output coefficients structure
+ */
+/*----------------------------------------------------------------------------*/
+static inline void
+_lagr_sde_compute_step_coeffs(cs_real_t                    dt_part,
+                              cs_real_t                    taup,
+                              cs_real_t                    tlag,
+                              cs_real_t                    bx,
+                              cs_lagr_sde_step_coeffs_t   *c)
+{
+  const cs_real_t taup_ddt = taup / dt_part;
+  const cs_real_t tlag_ddt = tlag / dt_part;
+
+  c->exp_taup = exp(-dt_part / taup);
+  c->exp_tlag = exp(-dt_part / tlag);
+
+  c->a1 = taup * (1.0 - c->exp_taup);
+  c->e1 = 1.0 - c->exp_taup;
+
+  c->b1 = tlag * _secant_ter2x(taup_ddt, tlag_ddt);
+  c->c1 = dt_part - c->a1 - c->b1;
+  c->d1 = tlag_ddt * _secant_ter2p(taup_ddt, tlag_ddt);
+
+  const cs_real_t theta = tlag / (tlag - taup);
+  const cs_real_t b_sq = cs_math_pow2(bx);
+  const cs_real_t b_sq_theta = b_sq * theta;
+  const cs_real_t b_sq_theta2 = b_sq_theta * theta;
+
+  /* Auxiliary integrals */
+  const cs_real_t int_tlag = 0.5 * tlag * (1.0 - c->exp_tlag * c->exp_tlag);
+  const cs_real_t int_taup = 0.5 * taup * (1.0 - c->exp_taup * c->exp_taup);
+  const cs_real_t int_cross = (taup * tlag / (taup + tlag))
+                            * (1.0 - c->exp_taup * c->exp_tlag);
+
+  /* Variances and covariances (Minier & Peirano 2006, Eqs. 140-145) */
+  c->var_gam = b_sq * int_tlag;
+  c->cov_gam_ggam = b_sq_theta * (int_tlag - int_cross);
+  c->var_ggam = b_sq_theta2 * (int_tlag - 2.0 * int_cross + int_taup);
+
+  const cs_real_t tlag_1_m_exp = tlag * (1.0 - c->exp_tlag);
+  const cs_real_t taup_1_m_exp = c->a1;
+
+  c->cov_gam_omega = b_sq_theta * (
+      (tlag - taup) * (1.0 - c->exp_tlag)
+    - int_tlag
+    + (taup / (tlag + taup)) * int_cross);
+
+  c->cov_ggam_omega = b_sq_theta2 * (
+      (tlag - taup) * (tlag_1_m_exp - taup_1_m_exp)
+    - tlag * int_tlag
+    - taup * int_taup
+    + (tlag + taup) * int_cross);
+
+  c->var_omega = b_sq_theta2 * (
+      cs_math_pow2(tlag - taup) * dt_part
+    - 2.0 * (tlag - taup) * (tlag * tlag_1_m_exp - taup * taup_1_m_exp)
+    + tlag * tlag * int_tlag
+    + taup * taup * int_taup
+    - 2.0 * tlag * taup * int_cross);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the Cholesky decomposition of the (gamma, Gamma, Omega)
  *        covariance system for single-phase flow and evaluate stochastic
  *        particle velocity and position increments.
@@ -1167,23 +1265,12 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
 
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
-  cs_real_t aux1, aux2, aux3, aux4,
-            aux5, aux6, aux7, aux8,
-            aux9, aux10, aux11;
   cs_real_t ter1f, ter2f, ter3f;
   cs_real_t ter1p, ter2p, ter3p, ter4p, ter5p;
   cs_real_t ter1x, ter2x, ter3x, ter4x, ter5x;
-  // Terms of the reduction matrix
   cs_real_t p11;
-  // Terms of the covariance matrix for the Gauss vector
-  cs_real_t gam2;
-  cs_real_t gam_gagam, gagam2;
-  cs_real_t gam_ome, gagam_ome, ome2;
   cs_real_t tbrix1, tbrix2, tbriu;
-  cs_real_t ter7x, ter7p, ter7f;
-  ter7x = 0.;
-  ter7p = 0.;
-  ter7f = 0.;
+  cs_real_t ter7x = 0., ter7p = 0., ter7f = 0.;
 
   const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
 
@@ -1488,156 +1575,91 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
    * ======================================= */
 
   for (cs_lnum_t id = 0; id < 3; id++) {
-    gagam2 = 0.;
-    gagam_ome = 0.;
-    ome2 = 0.;
-
     /* Preliminary computation:
        ------------------------ */
 
-    /* velocity induced by a force by unit mass */
+    /* Velocity induced by a force by unit mass */
     cs_real_t v_lim = force_p_r[id] * taup_r[id];
 
-    /* Compute deterministic coefficients/terms
-       ---------------------------------------- */
+    /* Analytical coefficients and covariances (Minier & Peirano 2006) */
+    cs_lagr_sde_step_coeffs_t c;
+    _lagr_sde_compute_step_coeffs(dt_part,
+                                  taup_r[id],
+                                  tlag_r(phase_id, id),
+                                  bx(phase_id, id, nor-1),
+                                  &c);
 
-    cs_real_t taup_ddt = taup_r[id] / dt_part;
-    cs_real_t tlag_ddt = tlag_r(phase_id, id) / dt_part;
-    aux1 = exp(-dt_part / taup_r[id]);
-    aux2 = exp(-dt_part / tlag_r(phase_id, id));
-
-    cs_real_t aa = taup_r[id] * (1.0 - aux1);
-    cs_real_t ee = 1.0 - aux1;
-
-    /* --> first and second increment for particle velocity */
-    ter1p = old_part_vel_r[id] * aux1;
-    ter4p = v_lim * ee;
-
-    /* --> first and second increment for particle position */
-    ter1x = aa * old_part_vel_r[id];
-    ter4x = (dt_part - aa) * v_lim;
-
-    /* Integral for the particles velocity */
-    aux10 = 0.5 * taup_r[id] * (1.0 - aux1 * aux1);
-
+    /* Carrier fluid velocity seen mean drift */
     cs_real_t tci = piil_r(phase_id, id) * tlag_r(phase_id, id) + fluid_vel_r[id];
 
-    /* Compute deterministic coefficients/terms
-    ---------------------------------------- */
-
-    aux3  = tlag_r(phase_id, id) / (tlag_r(phase_id, id) - taup_r[id]);
-    aux4 = tlag_r(phase_id, id) / (tlag_r(phase_id, id) + taup_r[id]);
-
-    aux5 = tlag_r(phase_id, id) * (1.0 - aux2);
-    aux6 = cs_math_pow2(bx(phase_id, id, nor-1))
-      * tlag_r(phase_id, id);
-    aux7 = tlag_r(phase_id, id) - taup_r[id];
-    aux8 = cs_math_pow2(bx(phase_id, id, nor-1))
-      * cs_math_pow2(aux3);
-    /* --> trajectory terms */
-    cs_real_t bb = tlag_r(phase_id, id) * _secant_ter2x(taup_ddt, tlag_ddt);
-    cs_real_t cc = dt_part - aa - bb;
-
-    ter2f = tci * (1.0 - aux2);
-
-    /* Integral on flow velocity seen */
-    gam2  = 0.5 * (1.0 - aux2 * aux2);
-    p11   = sqrt(gam2 * aux6);
+    /* Flow-seen velocity terms (Table 4) */
+    ter1f = old_part_vel_seen_r[id] * c.exp_tlag;
+    ter2f = tci * (1.0 - c.exp_tlag);
+    p11   = sqrt(cs::max(0.0, c.var_gam));
     ter3f = p11 * vagaus(0, id);
 
-    /* Terms for particle velocity */
-    cs_real_t dd = tlag_ddt * _secant_ter2p(taup_ddt, tlag_ddt);
-    ter3p = tci * (ee - dd);
+    /* Particle velocity terms (Table 4) */
+    ter1p = old_part_vel_r[id] * c.exp_taup;
+    ter2p = old_part_vel_seen_r[id] * c.d1;
+    ter3p = tci * (c.e1 - c.d1);
+    ter4p = v_lim * c.e1;
 
-    /* Integral for the particles velocity */
-    aux9 = 0.5 * tlag_r(phase_id, id) * (1.0 - aux2 * aux2);
-    aux11 =   taup_r[id] * tlag_r(phase_id, id)
-            * (1.0 - aux1 * aux2)
-            / (taup_r[id] + tlag_r(phase_id, id));
+    /* Particle position terms (Table 4) */
+    ter1x = c.a1 * old_part_vel_r[id];
+    ter2x = c.b1 * old_part_vel_seen_r[id];
+    ter3x = c.c1 * tci;
+    ter4x = (dt_part - c.a1) * v_lim;
 
-    ter3x = cc * tci;
+    /* Additional drift terms when gradient of Tl is not negligible */
+    if (extra->iturb == 3 && cs::abs(beta[id]) > cs_math_epzero) {
+      const cs_real_t taup_ddt = taup_r[id] / dt_part;
+      const cs_real_t tlag_ddt = tlag_r(0, id) / dt_part;
+      const cs_real_t theta    = tlag_r(0, id) / (tlag_r(0, id) - taup_r[id]);
+      const cs_real_t harm_tl  = tlag_r(0, id) / (tlag_r(0, id) + taup_r[id]);
+      const cs_real_t aux5     = tlag_r(0, id) * (1.0 - c.exp_tlag);
+      const cs_real_t aux5b    = c.a1;
+      const cs_real_t diff_t   = tlag_r(0, id) - taup_r[id];
 
-    /* Flow-seen velocity terms */
-    ter1f = old_part_vel_seen_r[id] * aux2;
-
-    /* Terms for particle velocity */
-    ter2p = old_part_vel_seen_r[id] * dd;
-
-    /* Terms for particle position */
-    ter2x = old_part_vel_seen_r[id] * bb;
-
-    /* Compute the other terms for the covariance matrix of the Gauss vector */
-    gam_gagam = (aux9 - aux11) * (aux8 / aux3);
-
-    gagam2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
-
-    /* Covariance <gamma, Omega> (Eq. 144 in Minier & Peirano 2006) */
-    gam_ome = aux3 * (  (tlag_r(phase_id, id) - taup_r[id])
-        * (1.0 - aux2)
-                 - 0.5 * tlag_r(phase_id, id) * (1.0 - aux2 * aux2)
-                 + cs_math_pow2(taup_r[id])
-                 / (tlag_r(phase_id, id) + taup_r[id])
-                 * (1.0 - aux1 * aux2)) * aux6;
-
-    /* Covariance <Gamma, Omega> (Eq. 145 in Minier & Peirano 2006) */
-    gagam_ome = ( (tlag_r(phase_id, id) - taup_r[id])
-        * (aux5 - aa)
-          - tlag_r(phase_id, id) * aux9
-          - taup_r[id] * aux10
-          + (tlag_r(phase_id, id) + taup_r[id]) * aux11)
-          * aux8;
-
-    ome2 = aux7 * (aux7 * dt_part - 2.0
-          * (tlag_r(phase_id, id) * aux5 - taup_r[id] * aa))
-         + 0.5 * tlag_r(phase_id, id) * tlag_r(phase_id, id) * aux5
-         * (1.0 + aux2)
-         + 0.5 * taup_r[id] * taup_r[id] * aa * (1.0 + aux1)
-         - 2.0 * aux4 * tlag_r(phase_id, id)
-         * taup_r[id] * taup_r[id]
-               * (1.0 - aux1 * aux2);
-    ome2 = ome2 * aux8;
-
-    /* Additional terms when gradient of Tl is not negligible
-     * */
-    /* particle positions term */
-    cs_real_t aux5b = taup_r[id] * (1.0 - aux1);
-    ter7x = beta[id] * (
-        aux4 * cs_math_pow2(taup_r[id]) * dt_part
-      + cs_math_pow2(tlag_r(0, id)) * dt_part * aux2
-      - cs_math_pow3(tlag_r(0, id))*(1. - aux2)
-      + 0.5 * tlag_r(0, id) * (tlag_r(0, id) - 2. * taup_r[id])
-            * (dt_part - taup_r[id] * (1. - aux2))
-      + aux3 * taup_r[id] * (2. * tlag_r(0, id) - taup_r[id]) * (aux5 - aux5b)
-      - 0.25 * cs_math_pow3(tlag_r(0, id))
-             * _secant_ter7x(taup_ddt, 0.5*tlag_ddt)
-      - cs_math_pow2(aux4) * cs_math_pow3(taup_r[id]) * (1. - aux1*aux2)
+      ter7x = beta[id] * (
+          harm_tl * cs_math_pow2(taup_r[id]) * dt_part
+        + cs_math_pow2(tlag_r(0, id)) * dt_part * c.exp_tlag
+        - cs_math_pow3(tlag_r(0, id)) * (1.0 - c.exp_tlag)
+        + 0.5 * tlag_r(0, id) * (tlag_r(0, id) - 2.0 * taup_r[id])
+              * (dt_part - taup_r[id] * (1.0 - c.exp_tlag))
+        + theta * taup_r[id] * (2.0 * tlag_r(0, id) - taup_r[id]) * (aux5 - aux5b)
+        - 0.25 * cs_math_pow3(tlag_r(0, id))
+               * _secant_ter7x(taup_ddt, 0.5 * tlag_ddt)
+        - cs_math_pow2(harm_tl) * cs_math_pow3(taup_r[id]) * (1.0 - c.exp_taup * c.exp_tlag)
       );
 
-    /* particle velocity term */
-    ter7p = beta[id] * (
-      cs_math_pow2(taup_r[id]) * aux4 * (1. - aux1 * aux2)
-      - tlag_r(0, id) * dt_part * aux2
-      + 0.5 * tlag_r(0, id) * (tlag_r(0, id) - 2. * taup_r[id]) * (1. - aux1)
-      + taup_r[id] * aux3 * (2. * tlag_r(0, id) - taup_r[id]) * (aux2 - aux1)
-      - 0.25 * cs_math_pow3(tlag_r(0, id)) / dt_part
-             * _secant_ter7p(taup_ddt, 0.5*tlag_ddt)
+      ter7p = beta[id] * (
+        cs_math_pow2(taup_r[id]) * harm_tl * (1.0 - c.exp_taup * c.exp_tlag)
+        - tlag_r(0, id) * dt_part * c.exp_tlag
+        + 0.5 * tlag_r(0, id) * (tlag_r(0, id) - 2.0 * taup_r[id]) * (1.0 - c.exp_taup)
+        + taup_r[id] * theta * (2.0 * tlag_r(0, id) - taup_r[id]) * (c.exp_tlag - c.exp_taup)
+        - 0.25 * cs_math_pow3(tlag_r(0, id)) / dt_part
+               * _secant_ter7p(taup_ddt, 0.5 * tlag_ddt)
       );
 
-    /* velocity seen by the particle */
-    ter7f = beta[id] * (
-        tlag_r(0, id) * aux7 * (1. - (1. + dt_part / tlag_r(0, id)) * aux2)
-        - 0.5 *cs_math_pow2(aux5)
-        + cs_math_pow2(taup_r[id]) / (tlag_r(0, id) + taup_r[id])
-          * (aux5 - aux2 * aux5b)
-        );
+      ter7f = beta[id] * (
+          tlag_r(0, id) * diff_t * (1.0 - (1.0 + dt_part / tlag_r(0, id)) * c.exp_tlag)
+          - 0.5 * cs_math_pow2(aux5)
+          + cs_math_pow2(taup_r[id]) / (tlag_r(0, id) + taup_r[id])
+            * (aux5 - c.exp_tlag * aux5b)
+      );
+    } else {
+      ter7x = 0.0;
+      ter7p = 0.0;
+      ter7f = 0.0;
+    }
 
     /* Now we can compute ter5p, ter5x via Cholesky decomposition */
     _lagr_sde_cholesky_increments(p11,
-                                  gam_gagam,
-                                  gam_ome,
-                                  gagam2,
-                                  gagam_ome,
-                                  ome2,
+                                  c.cov_gam_ggam,
+                                  c.cov_gam_omega,
+                                  c.var_ggam,
+                                  c.cov_ggam_omega,
+                                  c.var_omega,
                                   vagaus(0, id),
                                   vagaus(1, id),
                                   vagaus(2, id),
@@ -1668,12 +1690,12 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
       cs_real_t ddbr = sqrt(2.0 * _k_boltz * tempf / (p_mass * taup_r[id]));
 
       cs_real_t tix2 =   cs_math_pow2((taup_r[id] * ddbr))
-        * (dt_part - taup_r[id] * (1.0 - aux1) * (3.0 - aux1) / 2.0);
+        * (dt_part - taup_r[id] * (1.0 - c.exp_taup) * (3.0 - c.exp_taup) / 2.0);
       cs_real_t tiu2 =   ddbr * ddbr * taup_r[id]
                        * (1.0 - exp(-2.0 * dt_part / taup_r[id])) / 2.0;
 
       cs_real_t tixiu  =
-        cs_math_pow2((ddbr * taup_r[id] * (1.0 - aux1))) / 2.0;
+        cs_math_pow2((ddbr * taup_r[id] * (1.0 - c.exp_taup))) / 2.0;
 
       tbrix2 = tix2 - (tixiu * tixiu) / tiu2;
 
@@ -2295,75 +2317,44 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
 
     for (cs_lnum_t id = 1; id < 3; id++) {
 
-      cs_lnum_t i0 = id-1; //FIXME strange
+      cs_lnum_t i0 = id-1;
 
       cs_real_t tci   = piilp[id] * tlp + vflui[id];
       cs_real_t v_lim = force_p_r[id] * taup;
-      cs_real_t aux1  = exp(-dt_part / taup);
-      cs_real_t aux2  = exp(-dt_part / tlp);
-      cs_real_t aux3  = tlp / (tlp - taup);
-      cs_real_t aux4  = tlp / (tlp + taup);
-      cs_real_t aux5  = tlp * (1.0 - aux2);
-      cs_real_t aux6  = bxp * bxp * tlp;
-      cs_real_t aux7  = tlp - taup;
-      cs_real_t aux8  = bxp * bxp * cs_math_pow2(aux3);
 
-      /* --> Terms for the trajectory   */
-      cs_real_t aa    = taup * (1.0 - aux1);
-      cs_real_t bb    = tlp * _secant_ter2x(taup/dt_part, tlp/dt_part);
-      cs_real_t cc    = dt_part - aa - bb;
-      cs_real_t ter1x = aa * vpart[id];
-      cs_real_t ter2x = bb * vvue[id];
-      cs_real_t ter3x = cc * tci;
-      cs_real_t ter4x = (dt_part - aa) * v_lim;
+      /* Analytical coefficients and covariances (Minier & Peirano 2006) */
+      cs_lagr_sde_step_coeffs_t c;
+      _lagr_sde_compute_step_coeffs(dt_part,
+                                    taup,
+                                    tlp,
+                                    bxp,
+                                    &c);
 
-      /* --> Terms for the flow-seen velocity     */
-      cs_real_t ter1f = vvue[id] * aux2;
-      cs_real_t ter2f = tci * (1.0 - aux2);
+      /* --> Terms for the trajectory (Table 4) */
+      cs_real_t ter1x = c.a1 * vpart[id];
+      cs_real_t ter2x = c.b1 * vvue[id];
+      cs_real_t ter3x = c.c1 * tci;
+      cs_real_t ter4x = (dt_part - c.a1) * v_lim;
 
-      /* --> Terms for the particles velocity     */
-      cs_real_t dd    = (tlp/dt_part)*_secant_ter2p(taup/dt_part, tlp/dt_part);
-      cs_real_t ee    = 1.0 - aux1;
-      cs_real_t ter1p = vpart[id] * aux1;
-      cs_real_t ter2p = vvue[id] * dd;
-      cs_real_t ter3p = tci * (ee - dd);
-      cs_real_t ter4p = v_lim * ee;
-
-      /* --> (2.3) Coefficients computation for the stochastic integrals:  */
-      cs_real_t gama2  = 0.5 * (1.0 - aux2 * aux2);
-      cs_real_t omegam = aux3 * ( (tlp - taup) * (1.0 - aux2)
-                                  - 0.5 * tlp * (1.0 - aux2 * aux2)
-                                  + cs_math_pow2(taup) / (tlp + taup)
-                                  * (1.0 - aux1 * aux2)
-                                  ) * aux6;
-      cs_real_t omega2 =   aux7
-                         * (aux7 * dt_part - 2.0 * (tlp * aux5 - taup * aa))
-                         + 0.5 * tlp * tlp * aux5 * (1.0 + aux2)
-                         + 0.5 * cs_math_pow2(taup) * aa * (1.0 + aux1)
-                         - 2.0 * aux4 * tlp * cs_math_pow2(taup) * (1.0 - aux1 * aux2);
-      omega2 *= aux8;
-
-      cs_real_t aux9  = 0.5 * tlp * (1.0 - aux2 * aux2);
-      cs_real_t aux10 = 0.5 * taup * (1.0 - aux1 * aux1);
-      cs_real_t aux11 = taup * tlp * (1.0 - aux1 * aux2) / (taup + tlp);
-      cs_real_t grga2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
-      cs_real_t gagam = (aux9 - aux11) * (aux8 / aux3);
-      cs_real_t gaome = (  (tlp - taup) * (aux5 - aa)
-                         - tlp * aux9
-                         - taup * aux10
-                         + (tlp + taup) * aux11) * aux8;
-
-      /* --> Integral for the flow-seen velocity  */
-      cs_real_t p11   = sqrt(gama2 * aux6);
+      /* --> Terms for the flow-seen velocity (Table 4) */
+      cs_real_t ter1f = vvue[id] * c.exp_tlag;
+      cs_real_t ter2f = tci * (1.0 - c.exp_tlag);
+      cs_real_t p11   = sqrt(cs::max(0.0, c.var_gam));
       cs_real_t ter3f = p11 * vagaus[0][i0];
+
+      /* --> Terms for the particles velocity (Table 4) */
+      cs_real_t ter1p = vpart[id] * c.exp_taup;
+      cs_real_t ter2p = vvue[id] * c.d1;
+      cs_real_t ter3p = tci * (c.e1 - c.d1);
+      cs_real_t ter4p = v_lim * c.e1;
 
       cs_real_t ter5p = 0.0, ter5x = 0.0;
       _lagr_sde_cholesky_increments(p11,
-                                    gagam,
-                                    omegam,
-                                    grga2,
-                                    gaome,
-                                    omega2,
+                                    c.cov_gam_ggam,
+                                    c.cov_gam_omega,
+                                    c.var_ggam,
+                                    c.cov_ggam_omega,
+                                    c.var_omega,
                                     vagaus[0][i0],
                                     vagaus[1][i0],
                                     vagaus[2][i0],
@@ -3343,91 +3334,35 @@ _sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
                                const cs_array_2d<cs_real_t>&   piil,
                                const cs_array_3d<cs_real_t>&   bx,
                                const cs_array_2d<cs_real_t>&   vagaus,
-                               const cs_real_t                 romp,
+                               const cs_real_6_t               brgaus,
                                const cs_real_3_t               force_p,
+                               const cs_real_3_t               beta,
+                               const cs_real_t                 romp,
                                const cs_real_t                 vislen[],
                                cs_lnum_t                      *n_new_particles)
 {
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
   int phase_id = 0;
 
-  /* Initializations*/
-
-  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
-
-  cs_real_t vitf = 0.0;
-
-  cs_real_t aux1, aux2, aux3, aux4, aux5, aux6, aux7, aux8, aux9, aux10, aux11;
-  cs_real_t ter1f, ter2f, ter3f;
-  cs_real_t ter1p, ter2p, ter3p, ter4p, ter5p;
-  cs_real_t ter1x, ter2x, ter3x, ter4x, ter5x;
-  cs_real_t p11;
-  cs_real_t omega2, gama2, omegam;
-  cs_real_t grga2, gagam, gaome;
-
   const cs_temperature_scale_t t_scl = cs_glob_thermal_model->temperature_scale;
-
-  const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
-  const cs_real_3_t *cvar_vel
-    = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
   /* Interface location between near-wall region */
   /* and core of the flow (normalized units) */
-
-  cs_real_t depint      = 100.0;
+  cs_real_t depint = 100.0;
 
   /* Tracking events if requested */
-
-  cs_lagr_event_set_t  *events = nullptr;
-
+  cs_lagr_event_set_t *events = nullptr;
   if (cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT))
     events = cs_lagr_event_set_boundary_interaction();
-
-  /* Loop on the particles
-   * Note: new particles will be integrated at the next time step, otherwise
-   * positions might be overwritten */
 
   int imposed_motion = p_set.flag(p_id, CS_LAGR_PART_IMPOSED_MOTION);
 
   if (! imposed_motion) {
 
-    /* use previous step for t_order == 1 or prediction step
-     * and current one for correction step */
-    cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
-
-    cs_real_t *old_part_vel      =
-      p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY);
-    cs_real_t *old_part_vel_seen =
-      p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY_SEEN);
-    cs_real_t *part_vel          =
-      p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
-    cs_real_t *part_vel_seen     =
-      p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
-    cs_real_t *part_coords       =
-      p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
-    cs_real_t *old_part_coords   =
-      p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_COORDS);
-
-    /* Fluid temperature computation depending on the type of flow  */
-    cs_real_t tempf;
-
-    if (   extra->temperature != nullptr
-        && t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
-      tempf = extra->temperature->val[cell_id] + tkelvi;
-
-    else if (   extra->temperature != nullptr
-             && t_scl == CS_TEMPERATURE_SCALE_KELVIN)
-      tempf = extra->temperature->val[cell_id];
-    else {
-      tempf = cs_glob_fluid_properties->t0;
-      if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
-        tempf += tkelvi;
-    }
-
     /* If y^+ is greater than the interface location,
-       the standard model is applied
+       the standard model is applied directly
        ============================================== */
-
     cs_lnum_t face_id = p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID);
     cs_real_t yplus = p_set.attr_real(p_id, CS_LAGR_YPLUS);
 
@@ -3438,121 +3373,44 @@ _sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
 
       p_set.attr_lnum(p_id, CS_LAGR_MARKO_VALUE) = CS_LAGR_COHERENCE_STRUCT_BULK;
 
-      for (cs_lnum_t id = 0; id < 3; id++) {
-
-        vitf = cvar_vel[cell_id][id];
-
-        /* Preliminary computations
-           ------------------------
-           compute II*TL+<u> and [(grad<P>/rhop+g)*tau_p+<Uf>] ?  */
-
-        cs_real_t tci = piil(phase_id, id) * tlag(phase_id, id) + vitf;
-        cs_real_t v_lim = force_p[id] * taup[phase_id];
-
-        /* Compute deterministic coefficients/terms
-           ---------------------------------------- */
-
-        aux1 = exp(-dt_part / taup[phase_id]);
-        aux2 = exp(-dt_part / tlag(phase_id, id));
-        aux3 = tlag(phase_id, id) / (tlag(phase_id, id) - taup[phase_id]);
-        aux4 = tlag(phase_id, id) / (tlag(phase_id, id) + taup[phase_id]);
-        aux5 = tlag(phase_id, id) * (1.0 - aux2);
-        aux6 = cs_math_pow2(bx(phase_id, id, nor-1)) * tlag(phase_id, id);
-        aux7 = tlag(phase_id, id) - taup[phase_id];
-        aux8 = cs_math_pow2(bx(phase_id, id, nor-1)) * cs_math_pow2(aux3);
-
-        /* --> trajectory terms */
-        cs_real_t aa = taup[phase_id] * (1.0 - aux1);
-        cs_real_t bb = tlag(phase_id, id)
-                     * _secant_ter2x(taup[phase_id]/dt_part, tlag(phase_id, id)/dt_part);
-        cs_real_t cc = dt_part - aa - bb;
-
-        ter1x = aa * old_part_vel[id];
-        ter2x = bb * old_part_vel_seen[id];
-        ter3x = cc * tci;
-        ter4x = (dt_part - aa) * v_lim;
-
-        /* --> flow-seen velocity terms   */
-        ter1f = old_part_vel_seen[id] * aux2;
-        ter2f = tci * (1.0 - aux2);
-
-        /* --> termes pour la vitesse des particules     */
-        cs_real_t dd = (tlag(phase_id, id)/dt_part)
-                     * _secant_ter2p(taup[phase_id]/dt_part, tlag(phase_id, id)/dt_part);
-        cs_real_t ee = 1.0 - aux1;
-
-        ter1p = old_part_vel[id] * aux1;
-        ter2p = old_part_vel_seen[id] * dd;
-        ter3p = tci * (ee - dd);
-        ter4p = v_lim * ee;
-
-        /* Coefficients computation for the stochastic integral */
-        /* Integral for particles position */
-        gama2  = 0.5 * (1.0 - aux2 * aux2);
-        omegam = aux3 * ( (tlag(phase_id, id) - taup[phase_id]) * (1.0 - aux2)
-                                - 0.5 * tlag(phase_id, id) * (1.0 - aux2 * aux2)
-                                + cs_math_pow2(taup[phase_id]) / (tlag(phase_id, id) + taup[phase_id])
-                                * (1.0 - aux1 * aux2)
-                                ) * aux6;
-        omega2 =  aux7 * (aux7 * dt_part - 2.0 * (tlag(phase_id, id) * aux5 - taup[phase_id] * aa))
-                 + 0.5 * tlag(phase_id, id) * tlag(phase_id, id) * aux5 * (1.0 + aux2)
-                 + 0.5 * taup[phase_id] * taup[phase_id] * aa * (1.0 + aux1)
-                 - 2.0 * aux4 * tlag(phase_id, id) * taup[phase_id] * taup[phase_id]
-                       * (1.0 - aux1 * aux2);
-        omega2 = aux8 * omega2;
-
-        /* --> integral for the particles velocity  */
-        aux9  = 0.5 * tlag(phase_id, id) * (1.0 - aux2 * aux2);
-        aux10 = 0.5 * taup[phase_id] * (1.0 - aux1 * aux1);
-        aux11 =   taup[phase_id] * tlag(phase_id, id)
-                * (1.0 - aux1 * aux2)
-                / (taup[phase_id] + tlag(phase_id, id));
-
-        grga2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
-        gagam = (aux9 - aux11) * (aux8 / aux3);
-        gaome = ( (tlag(phase_id, id) - taup[phase_id]) * (aux5 - aa)
-                  - tlag(phase_id, id) * aux9
-                  - taup[phase_id] * aux10
-                  + (tlag(phase_id, id) + taup[phase_id]) * aux11)
-                * aux8;
-
-        /* --> integral for the flow-seen velocity  */
-        p11   = sqrt(gama2 * aux6);
-        ter3f = p11 * vagaus(0, id);
-
-        _lagr_sde_cholesky_increments(p11,
-                                      gagam,
-                                      omegam,
-                                      grga2,
-                                      gaome,
-                                      omega2,
-                                      vagaus(0, id),
-                                      vagaus(1, id),
-                                      vagaus(2, id),
-                                      &ter5p,
-                                      &ter5x);
-
-        /* Update of the particle state-vector */
-
-        part_coords[id] =   old_part_coords[id]
-                          + ter1x + ter2x + ter3x + ter4x + ter5x;
-
-        part_vel_seen[id] =  ter1f + ter2f + ter3f;
-
-        part_vel[id]      = ter1p + ter2p + ter3p + ter4p + ter5p;
-
-      }
-
+      cs_sde_vels_pos_1_st_order_time_integ(p_set,
+                                            p_id,
+                                            dt_part,
+                                            nor,
+                                            taup,
+                                            tlag,
+                                            piil,
+                                            bx,
+                                            vagaus,
+                                            brgaus,
+                                            force_p,
+                                            beta);
+      return;
     }
 
     /* Otherwise, the deposition submodel is applied
      * ============================================= */
-
     else if (! (deposition_flags & CS_LAGR_PART_TO_DELETE)) {
+
+      /* use previous step for t_order == 1 or prediction step
+       * and current one for correction step */
+      cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
+
+      /* Fluid temperature computation depending on the type of flow */
+      cs_real_t tempf;
+      if (extra->temperature != nullptr && t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
+        tempf = extra->temperature->val[cell_id] + tkelvi;
+      else if (extra->temperature != nullptr && t_scl == CS_TEMPERATURE_SCALE_KELVIN)
+        tempf = extra->temperature->val[cell_id];
+      else {
+        tempf = cs_glob_fluid_properties->t0;
+        if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
+          tempf += tkelvi;
+      }
 
       cs_lnum_t *marko_value = p_set.attr_lnum_ptr(p_id, CS_LAGR_MARKO_VALUE);
 
-      if (yplus< p_set.attr_real(p_id, CS_LAGR_INTERF)) {
+      if (yplus < p_set.attr_real(p_id, CS_LAGR_INTERF)) {
 
         if (*marko_value < 0)
           *marko_value = CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF;
@@ -3726,8 +3584,10 @@ cs_lagr_sde(cs_lagr_particle_set_t          &p_set,
                                      piil,
                                      bx,
                                      vagaus,
-                                     romp,
+                                     brgaus,
                                      force_p,
+                                     beta,
+                                     romp,
                                      vislen,
                                      n_new_particles);
 
