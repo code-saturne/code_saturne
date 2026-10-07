@@ -3941,9 +3941,11 @@ cs_atmo_log_setup(void)
   /* Humidity profile and hydrostatic pressure options */
   cs_log_printf(CS_LOG_SETUP,
                 _("  Humidity profile type:                 %s\n"
+                  "  Ground total water content (qw0):      %e kg/kg\n"
                   "  Hydrostatic pressure model:            %d\n\n"),
                 (at_opt->qv_profile == 1) ? _("decreasing exponential")
                                           : _("constant"),
+                at_opt->meteo_qw0,
                 at_opt->hydrostatic_pressure_model);
 
   /* CUT */
@@ -3997,6 +3999,8 @@ cs_atmo_log_setup(void)
          "    P sea:     %12f [Pa]\n"
          "    T0:        %12f [K]\n"
          "    Tstar:     %12f [K]\n"
+         "    qw0:       %12e [kg/kg]\n"
+         "    qwstar:    %12e [kg/kg]\n"
          "    BL height: %12f [m]\n"
          "    phim_s:    %s\n"
          "    phih_s:    %s\n"
@@ -4011,6 +4015,8 @@ cs_atmo_log_setup(void)
        at_opt->meteo_psea,
        at_opt->meteo_t0,
        at_opt->meteo_tstar,
+       at_opt->meteo_qw0,
+       at_opt->meteo_qwstar,
        at_opt->meteo_zi,
        _univ_fn_name[at_opt->meteo_phim_s],
        _univ_fn_name[at_opt->meteo_phih_s],
