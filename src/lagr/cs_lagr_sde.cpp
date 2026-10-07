@@ -2020,13 +2020,13 @@ _sde_vels_pos_2_nd_order_time_integ(cs_lagr_particle_set_t         &p_set,
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Deposition submodel
+/*! \brief Near-wall deposition submodel (Guingo & Minier, 2007)
  *
- *  1/ Modification of the coordinate system (global ->local)
- *  2/ Call of subroutine lagcli
- *  3/ Integration of the stochastic differential equations
- *     in the 2 directions different from the normal to the boundary face
- *  4/ Modification of the coordinate system (local ->global)
+ *  1/ Modification of the coordinate system (global -> local)
+ *  2/ Integration of wall-normal stochastic dynamics and boundary interaction
+ *  3/ Integration of the stochastic differential equations in the 2 tangential
+ *     directions along the boundary face
+ *  4/ Modification of the coordinate system (local -> global)
  *  5/ Update of the particle position
  *
  * \param[in]  p_set     reference to particle set
@@ -2048,20 +2048,20 @@ _sde_vels_pos_2_nd_order_time_integ(cs_lagr_particle_set_t         &p_set,
 /*----------------------------------------------------------------------------*/
 
 static void
-_lagesd(cs_lagr_particle_set_t         &p_set,
-        cs_lnum_t                       p_id,
-        cs_real_t                       dt_part,
-        int                             nor,
-        const cs_real_t                 taup,
-        const cs_real_3_t               piil,
-        const cs_real_3_t              *vagaus,
-        const cs_real_t                 romp,
-        const cs_real_3_t               force_p,
-        cs_real_t                       tempf,
-        const cs_real_t                 vislen[],
-        cs_lagr_event_set_t            *events,
-        cs_real_t                      *depint,
-        cs_lnum_t                      *n_new_particles)
+_sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
+                                 cs_lnum_t                       p_id,
+                                 cs_real_t                       dt_part,
+                                 int                             nor,
+                                 const cs_real_t                 taup,
+                                 const cs_real_3_t               piil,
+                                 const cs_real_3_t              *vagaus,
+                                 const cs_real_t                 romp,
+                                 const cs_real_3_t               force_p,
+                                 cs_real_t                       tempf,
+                                 const cs_real_t                 vislen[],
+                                 cs_lagr_event_set_t            *events,
+                                 cs_real_t                      *depint,
+                                 cs_lnum_t                      *n_new_particles)
 {
   /* mesh and mesh quantities */
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -3428,20 +3428,20 @@ _sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
 
       }
 
-      _lagesd(p_set,
-              p_id,
-              dt_part,
-              nor,
-              taup[phase_id],
-              piil.sub_array(phase_id),
-              vagaus.data<cs_real_3_t>(),
-              romp,
-              force_p,
-              tempf,
-              vislen,
-              events,
-              &depint,
-              n_new_particles);
+      _sde_vels_pos_near_wall_submodel(p_set,
+                                       p_id,
+                                       dt_part,
+                                       nor,
+                                       taup[phase_id],
+                                       piil.sub_array(phase_id),
+                                       vagaus.data<cs_real_3_t>(),
+                                       romp,
+                                       force_p,
+                                       tempf,
+                                       vislen,
+                                       events,
+                                       &depint,
+                                       n_new_particles);
 
     }
 
