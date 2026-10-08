@@ -83,6 +83,7 @@
 #include "base/cs_syr_coupling.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_time_step.h"
+#include "base/cs_timer_stats.h"
 #include "turb/cs_turbulence_model.h"
 #include "turb/cs_turbulence_rij.h"
 #include "turb/cs_turbulence_rit.h"
@@ -1308,10 +1309,15 @@ cs_solve_equation_scalar(cs_field_t        *f,
   else
     cs_gui_thermal_source_terms(f, cvar_var, rhs, fimp);
 
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(cs_glob_domain,
                        f->id,
                        rhs,
                        fimp);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* Coupling between multiple code_saturne instances */
   const int nbrcpl = cs_sat_coupling_n_couplings();
@@ -2408,10 +2414,15 @@ cs_solve_equation_vector(cs_field_t       *f,
   /* User source terms
    * ----------------- */
 
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(cs_glob_domain,
                        f->id,
                        (cs_real_t *)rhs,
                        (cs_real_t *)fimp);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* Coupling between multiple code_saturne instances */
   const int nbrcpl = cs_sat_coupling_n_couplings();

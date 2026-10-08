@@ -79,6 +79,7 @@
 #include "base/cs_thermal_model.h"
 #include "base/cs_time_step.h"
 #include "base/cs_timer.h"
+#include "base/cs_timer_stats.h"
 #include "base/cs_turbomachinery.h"
 #include "turb/cs_turbulence_bc.h"
 #include "turb/cs_turbulence_model.h"
@@ -3258,10 +3259,15 @@ _solve_omega(int              phase_id,
   ctx.wait();
 
   /* User source terms */
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(cs_glob_domain,
                        f_omg->id,
                        rhs,
                        fimp);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* If we extrapolate the source terms */
   if (st_prv_id > -1) {
@@ -3666,10 +3672,15 @@ _solve_epsilon(int              phase_id,
   /* User source terms
    * ----------------- */
 
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(cs_glob_domain,
                        f_eps->id,
                        rhs,
                        fimp);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* If we extrapolate the source terms */
   if (st_prv_id > -1) {
@@ -4176,10 +4187,15 @@ cs_turbulence_rij(int phase_id)
   });
   ctx.wait();
 
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(cs_glob_domain,
                        f_rij->id,
                        rhs,
                        fimp);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* Time extrapolation ? */
   cs_real_6_t *c_st_prv = nullptr;

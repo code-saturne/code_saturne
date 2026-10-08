@@ -94,6 +94,7 @@
 #include "base/cs_syr_coupling.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_time_step.h"
+#include "base/cs_timer_stats.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_turbomachinery.h"
 #include "base/cs_velocity_pressure.h"
@@ -838,7 +839,12 @@ cs_boundary_conditions_set_coeffs(int         nvar,
   /* User-defined functions
      ---------------------- */
 
+  int t_bc_id = cs_timer_stats_id_by_name("user_boundary_conditions");
+  int t_top_id = cs_timer_stats_switch(t_bc_id);
+
   cs_user_boundary_conditions(cs_glob_domain, bc_type);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* Check consistency with GUI definitions */
   cs_gui_boundary_conditions_verify();
@@ -870,10 +876,14 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
     cs_gui_mobile_mesh_boundary_conditions(ale_bc_type, impale, disale);
 
+    t_top_id = cs_timer_stats_switch(t_bc_id);
+
     cs_user_boundary_conditions_ale(cs_glob_domain,
                                     bc_type,
                                     ale_bc_type,
                                     impale);
+
+    cs_timer_stats_switch(t_top_id);
 
     /* In case the user has modified disale whithout setting impale=1, we
        restore the initial displacement. */
@@ -3772,7 +3782,12 @@ cs_boundary_conditions_set_coeffs_init(void)
 
   /* User-defined function settings */
 
+  int t_bc_id = cs_timer_stats_id_by_name("user_boundary_conditions");
+  int t_top_id = cs_timer_stats_switch(t_bc_id);
+
   cs_user_boundary_conditions(cs_glob_domain, bc_type);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* ALE BCs (mesh velocity and nodal displacement) */
 
@@ -3794,10 +3809,14 @@ cs_boundary_conditions_set_coeffs_init(void)
 
     cs_gui_mobile_mesh_boundary_conditions(ale_bc_type, impale, disale);
 
+    t_top_id = cs_timer_stats_switch(t_bc_id);
+
     cs_user_boundary_conditions_ale(cs_glob_domain,
                                     bc_type,
                                     ale_bc_type,
                                     impale);
+
+    cs_timer_stats_switch(t_top_id);
 
     /* In case the user has modified disale whthout setting impale=1, we restore
        the initial displacement. */

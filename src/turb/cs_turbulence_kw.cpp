@@ -72,6 +72,7 @@
 #include "base/cs_rotation.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_time_step.h"
+#include "base/cs_timer_stats.h"
 #include "turb/cs_turbulence_model.h"
 #include "turb/cs_turbulence_rotation.h"
 #include "base/cs_volume_mass_injection.h"
@@ -511,6 +512,9 @@ cs_turbulence_kw(int phase_id)
   });
   ctx.wait();
 
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(domain,
                        f_k->id,
                        smbrk,
@@ -520,6 +524,8 @@ cs_turbulence_kw(int phase_id)
                        f_omg->id,
                        smbrw,
                        usimpw);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* If source terms are extrapolated over time */
 

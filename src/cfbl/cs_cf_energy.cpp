@@ -70,6 +70,7 @@
 #include "pprt/cs_physical_model.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_scalar_clipping.h"
+#include "base/cs_timer_stats.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_volume_mass_injection.h"
 
@@ -410,7 +411,12 @@ cs_cf_energy(int f_sc_id)
   /* Heat volume source term: rho * phi * volume
      -------------------------------------------- */
 
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(cs_glob_domain, f_sc->id, rhs, rovsdt);
+
+  cs_timer_stats_switch(t_top_id);
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {

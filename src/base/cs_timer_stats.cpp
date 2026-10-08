@@ -649,7 +649,19 @@ cs_timer_stats_create(const char  *parent_name,
 int
 cs_timer_stats_id_by_name(const char  *name)
 {
-  return cs_map_name_to_id_try(_name_map, name);
+  int stats_id = -1;
+
+  if (_name_map != nullptr) {
+    stats_id = cs_map_name_to_id_try(_name_map, name);
+    if (stats_id < 0 && name != nullptr) {
+      if (strcmp(name, "user_extra_operations") == 0)
+        stats_id = cs_map_name_to_id_try(_name_map, "user_extraoperations");
+      else if (strcmp(name, "user_extraoperations") == 0)
+        stats_id = cs_map_name_to_id_try(_name_map, "user_extra_operations");
+    }
+  }
+
+  return stats_id;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -901,6 +913,29 @@ cs_timer_stats_define_defaults(void)
                              "postprocessing_output",
                              "post-processing output");
   cs_timer_stats_set_plot(id, 0);
+
+  /* User operations */
+
+  id = cs_timer_stats_create("operations",
+                             "user_initialization",
+                             "user initialization");
+  cs_timer_stats_set_plot(id, 0);
+
+  cs_timer_stats_create("operations",
+                        "user_boundary_conditions",
+                        "user boundary conditions");
+
+  cs_timer_stats_create("operations",
+                        "user_source_terms",
+                        "user source terms");
+
+  cs_timer_stats_create("operations",
+                        "user_extra_operations",
+                        "user extra operations");
+
+  cs_timer_stats_create("operations",
+                        "user_physical_properties",
+                        "user physical properties");
 
   /* Stages */
 

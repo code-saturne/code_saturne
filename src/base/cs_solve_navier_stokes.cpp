@@ -98,6 +98,7 @@
 #include "base/cs_thermal_model.h"
 #include "turb/cs_turbulence_ke.h"
 #include "base/cs_time_step.h"
+#include "base/cs_timer_stats.h"
 #include "base/cs_turbomachinery.h"
 #include "turb/cs_turbulence_model.h"
 #include "turb/cs_turbulence_rij.h"
@@ -2138,10 +2139,15 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   cs_gui_momentum_source_terms(vel, tsexp, tsimp);
 
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(cs_glob_domain,
                        CS_F_(vel)->id,
                        (cs_real_t *)tsexp,
                        (cs_real_t *)tsimp);
+
+  cs_timer_stats_switch(t_top_id);
 
   if (cs_fan_n_fans() > 0) {
     if (ts->nt_cur == ts->nt_prev+1)

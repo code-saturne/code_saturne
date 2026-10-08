@@ -73,6 +73,7 @@
 #include "base/cs_profiling.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_thermal_model.h"
+#include "base/cs_timer_stats.h"
 #include "turb/cs_turbulence_ml.h"
 #include "turb/cs_turbulence_model.h"
 #include "turb/cs_turbulence_ke.h"
@@ -1065,7 +1066,12 @@ cs_physical_properties_update(int   iterns)
   if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY)
     cs_ht_convert_h_to_t_cells_solid();
 
+  int t_prop_id = cs_timer_stats_id_by_name("user_physical_properties");
+  int t_top_id = cs_timer_stats_switch(t_prop_id);
+
   cs_user_physical_properties(cs_glob_domain);
+
+  cs_timer_stats_switch(t_top_id);
 
   if (mbrom == 0 && n_b_faces > 0 && rho_b_f != nullptr) {
     /* Since we do the update */

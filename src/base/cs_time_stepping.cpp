@@ -731,7 +731,12 @@ cs_time_stepping(void)
       /* Global MPI reduction of variable clippings before user operations */
       cs_log_iteration_clipping_reduce();
 
+      int t_user_id = cs_timer_stats_id_by_name("user_extra_operations");
+      int t_top_id = cs_timer_stats_switch(t_user_id);
+
       cs_user_extra_operations(cs_glob_domain);
+
+      cs_timer_stats_switch(t_top_id);
 
       if (cs_glob_les_balance->i_les_balance > 0)
         cs_les_balance_compute();

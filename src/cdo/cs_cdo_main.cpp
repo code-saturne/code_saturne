@@ -335,7 +335,12 @@ _solve_steady_state_domain(cs_domain_t  *domain)
 
   /* User-defined update/settings of physical properties */
 
+  int t_prop_id = cs_timer_stats_id_by_name("user_physical_properties");
+  int t_top_id = cs_timer_stats_switch(t_prop_id);
+
   cs_user_physical_properties(domain);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* Predefined equation for the computation of the wall distance */
 
@@ -404,7 +409,12 @@ _solve_steady_state_domain(cs_domain_t  *domain)
 
   /* User-defined extra operations */
 
+  int t_extra_id = cs_timer_stats_id_by_name("user_extra_operations");
+  t_top_id = cs_timer_stats_switch(t_extra_id);
+
   cs_user_extra_operations(domain);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* Predefined post-processings */
 
@@ -543,11 +553,21 @@ _solve_domain(cs_domain_t  *domain)
 
     // User-defined update/settings of physical properties
 
+    int t_prop_id = cs_timer_stats_id_by_name("user_physical_properties");
+    int t_top_id = cs_timer_stats_switch(t_prop_id);
+
     cs_user_physical_properties(domain);
+
+    cs_timer_stats_switch(t_top_id);
 
     // User-defined boundary conditions (bc_types is not used in CDO)
 
+    int t_bc_id = cs_timer_stats_id_by_name("user_boundary_conditions");
+    t_top_id = cs_timer_stats_switch(t_bc_id);
+
     cs_user_boundary_conditions(domain, nullptr);
+
+    cs_timer_stats_switch(t_top_id);
 
   }
 
@@ -603,7 +623,12 @@ _solve_domain(cs_domain_t  *domain)
 
     // User-defined update/settings of physical properties
 
+    int t_prop_id = cs_timer_stats_id_by_name("user_physical_properties");
+    int t_top_id = cs_timer_stats_switch(t_prop_id);
+
     cs_user_physical_properties(domain);
+
+    cs_timer_stats_switch(t_top_id);
 
   }
 
@@ -1219,7 +1244,12 @@ cs_cdo_main(cs_domain_t   *domain)
      after the domain initialization if one wants to overwrite the field
      initialization for instance */
 
+  int t_extra_id = cs_timer_stats_id_by_name("user_extra_operations");
+  int t_top_id = cs_timer_stats_switch(t_extra_id);
+
   cs_user_extra_operations_initialize(cs_glob_domain);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* Output information */
 
@@ -1238,7 +1268,12 @@ cs_cdo_main(cs_domain_t   *domain)
   /* User-defined update/settings of physical properties after solving the
      steady-state equations */
 
+  int t_prop_id = cs_timer_stats_id_by_name("user_physical_properties");
+  t_top_id = cs_timer_stats_switch(t_prop_id);
+
   cs_user_physical_properties(domain);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* ============== */
   /* Main time loop */
@@ -1293,7 +1328,12 @@ cs_cdo_main(cs_domain_t   *domain)
 
     /* User-defined extra operations */
 
+    t_extra_id = cs_timer_stats_id_by_name("user_extra_operations");
+    t_top_id = cs_timer_stats_switch(t_extra_id);
+
     cs_user_extra_operations(domain);
+
+    cs_timer_stats_switch(t_top_id);
 
     /* Predefined extra-postprocessing related to
        - the domain (advection fields and properties),
@@ -1346,7 +1386,12 @@ cs_cdo_main(cs_domain_t   *domain)
 
   /* User-defined update/settings of physical properties (finalization stage) */
 
+  t_prop_id = cs_timer_stats_id_by_name("user_physical_properties");
+  t_top_id = cs_timer_stats_switch(t_prop_id);
+
   cs_user_physical_properties(domain);
+
+  cs_timer_stats_switch(t_top_id);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);

@@ -70,6 +70,7 @@
 #include "pprt/cs_physical_model.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_timer_stats.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
 
@@ -291,10 +292,15 @@ _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
     if (vp_model->ivisse == 1)
       cs_face_viscosity_secondary(secvif, secvib);
 
+    int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+    int t_top_id = cs_timer_stats_switch(t_st_id);
+
     cs_user_source_terms(cs_glob_domain,
                          vel->id,
                          tsexp,
                          tsimp);
+
+    cs_timer_stats_switch(t_top_id);
 
     /* Mass flux computation */
 

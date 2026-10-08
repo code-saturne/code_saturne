@@ -67,6 +67,7 @@
 #include "gui/cs_gui_util.h"
 #include "base/cs_post.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1329,7 +1330,12 @@ cs_elec_physical_properties(cs_domain_t  *domain)
   }
 
   /* now user properties (for joule effect particulary) */
+  int t_prop_id = cs_timer_stats_id_by_name("user_physical_properties");
+  int t_top_id = cs_timer_stats_switch(t_prop_id);
+
   cs_user_physical_properties(domain);
+
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------

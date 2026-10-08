@@ -71,6 +71,7 @@
 #include "base/cs_scalar_clipping.h"
 #include "base/cs_solve_navier_stokes.h"
 #include "base/cs_time_step.h"
+#include "base/cs_timer_stats.h"
 #include "turb/cs_turbulence_init.h"
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_vof.h"
@@ -512,7 +513,13 @@ cs_initialize_fields_stage_1(void)
      --------------------------- */
 
   cs_gui_initial_conditions();
+
+  int t_init_id = cs_timer_stats_id_by_name("user_initialization");
+  int t_top_id = cs_timer_stats_switch(t_init_id);
+
   cs_user_initialization(cs_glob_domain);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* Second stage of initialization for specific physical models
      -----------------------------------------------------------
@@ -812,7 +819,12 @@ cs_initialize_fields_stage_1(void)
 
   cs_parameters_error_barrier();
 
+  int t_extra_id = cs_timer_stats_id_by_name("user_extra_operations");
+  t_top_id = cs_timer_stats_switch(t_extra_id);
+
   cs_user_extra_operations_initialize(cs_glob_domain);
+
+  cs_timer_stats_switch(t_top_id);
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _("\n"

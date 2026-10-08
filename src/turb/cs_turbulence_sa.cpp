@@ -69,6 +69,7 @@
 #include "base/cs_porous_model.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_time_step.h"
+#include "base/cs_timer_stats.h"
 #include "turb/cs_turbulence_model.h"
 #include "turb/cs_turbulence_rotation.h"
 #include "base/cs_volume_mass_injection.h"
@@ -485,10 +486,15 @@ cs_turbulence_sa(void)
     st_imp[i] = 0;
   }
 
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(domain,
                        CS_F_(nusa)->id,
                        st_exp,
                        st_imp);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* User source terms and d/dt(rho) and div(rho u) are taken into account
      stored in ext_term */

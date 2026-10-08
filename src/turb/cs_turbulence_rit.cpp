@@ -68,7 +68,7 @@
 #include "base/cs_thermal_model.h"
 #include "base/cs_solid_zone.h"
 #include "base/cs_time_step.h"
-#include "turb/cs_turbulence_bc.h"
+#include "base/cs_timer_stats.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
 
@@ -1075,10 +1075,15 @@ _solve_rit(const cs_field_t     *f,
   /* User source terms
      ----------------- */
 
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(cs_glob_domain,
                        f_ut->id,
                        rhs_ut,
                        fimp);
+
+  cs_timer_stats_switch(t_top_id);
 
   const cs_real_t thetv = eqp->theta;
 

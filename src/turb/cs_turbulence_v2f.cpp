@@ -70,6 +70,7 @@
 #include "base/cs_porous_model.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_time_step.h"
+#include "base/cs_timer_stats.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_volume_mass_injection.h"
 #include "base/cs_wall_functions.h"
@@ -373,10 +374,15 @@ _solve_eq_fbr_al(const int         istprv,
   /* User source terms
      ----------------- */
 
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(cs_glob_domain,
                        f->id,
                        rhs,
                        rovsdt);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* If we extrapolate the source terms */
   if (istprv >= 0) {
@@ -713,10 +719,15 @@ _solve_eq_phi(const int           istprv,
   /* User source terms
      ----------------- */
 
+  int t_st_id = cs_timer_stats_id_by_name("user_source_terms");
+  int t_top_id = cs_timer_stats_switch(t_st_id);
+
   cs_user_source_terms(cs_glob_domain,
                        f_phi->id,
                        rhs,
                        rovsdt);
+
+  cs_timer_stats_switch(t_top_id);
 
   /* If we extrapolate the source terms */
   if (istprv >= 0) {

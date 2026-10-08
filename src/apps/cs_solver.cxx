@@ -512,7 +512,12 @@ _run(void)
 
       /* Finalize user extra operations */
 
+      int t_user_id = cs_timer_stats_id_by_name("user_extra_operations");
+      int t_top_id = cs_timer_stats_switch(t_user_id);
+
       cs_user_extra_operations_finalize(cs_glob_domain);
+
+      cs_timer_stats_switch(t_top_id);
 
     }
 
