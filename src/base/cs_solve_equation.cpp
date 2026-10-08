@@ -1968,22 +1968,22 @@ cs_solve_equation_scalar(cs_field_t        *f,
    * direct mutable pointer into the field's own persistent parameters,
    * not a local copy), or convection would be assembled twice, exactly
    * as for R and q_theta. */
-  bool is_temp_variance = false;
-  if (itspdv == 1 && iscavr > 0
-      && cs_field_by_id(iscavr) == cs_thermal_model_field())
-    is_temp_variance = true;
+  const bool is_variance = (iscavr > 0);
+  const cs_field_t *f_primary = is_variance ? cs_field_by_id(iscavr) : f;
+  const int turb_flux_model = f_primary->get_key_int("turbulent_flux_model");
+  const int turb_flux_model_type = turb_flux_model / 10;
+  const bool is_dfm = (turb_flux_model_type == 3);
 
   const int rij_sch
     = cs_glob_turb_rans_model->rij_discretization_scheme;
   const bool use_rit_convection =
-    (rij_sch == CS_RIJ_SCHEME_GODUNOV)
-    && (is_thermal_model_field || is_temp_variance);
+    (rij_sch == CS_RIJ_SCHEME_GODUNOV) && is_dfm;
 
   int saved_iconv = eqp->iconv;
 
   if (use_rit_convection) {
 
-    if (f->get_key_int("turbulent_flux_model") / 10 >= 1)
+    if (!is_variance)
       cs_turbulence_rij_godunov_interface_states_scalar(f);
 
     std::string i_field_name = std::string("i_") + f->name;
