@@ -446,8 +446,6 @@ _define_particle_datatype(const cs_lagr_attribute_map_t  *p_am)
   CS_FREE(blocklengths);
   CS_FREE(cs_type);
 
-  MPI_Type_commit(&new_type);
-
   return new_type;
 }
 
