@@ -224,6 +224,189 @@ _secant_ter7p(double a,
   }
 }
 
+/* Secant quotient for <gamma, Gamma> integral:
+ * (I(tlag) - I(taup)) / (tlag - taup)
+ * where I(s) = \int_0^{dt} exp(-u/tlag) exp(-u/s) du
+ */
+static inline double
+_secant_cov_gam_ggam(double taup,
+                     double tlag,
+                     double dt_part)
+{
+  const double eps = 1e-4;
+  const double h = tlag - taup;
+  const double tau_m = 0.5 * (tlag + taup);
+
+  auto i_func = [tlag, dt_part](double s) -> double {
+    const double om_exp = -expm1(-dt_part * (1.0 / tlag + 1.0 / s));
+    return (s * tlag / (s + tlag)) * om_exp;
+  };
+
+  auto i_deriv = [tlag, dt_part](double s) -> double {
+    const double lam = 1.0 / tlag + 1.0 / s;
+    const double om_exp = -expm1(-lam * dt_part);
+    const double exp_term = exp(-lam * dt_part);
+    const double int_u = (1.0 / (lam * lam))
+                       * (om_exp - lam * dt_part * exp_term);
+    return (1.0 / (s * s)) * int_u;
+  };
+
+  if (cs::abs(h) < eps * tau_m)
+    return 0.5 * (i_deriv(taup) + i_deriv(tlag));
+  else
+    return (i_func(tlag) - i_func(taup)) / h;
+}
+
+/* Secant quotient for <gamma, Omega> integral:
+ * (J(tlag) - J(taup)) / (tlag - taup)
+ * where J(s) = s * tlag * (1 - exp(-dt/tlag)) - s * I(s)
+ */
+static inline double
+_secant_cov_gam_omega(double taup,
+                      double tlag,
+                      double dt_part)
+{
+  const double eps = 1e-4;
+  const double h = tlag - taup;
+  const double tau_m = 0.5 * (tlag + taup);
+  const double om_exp_tlag = -expm1(-dt_part / tlag);
+
+  auto i_func = [tlag, dt_part](double s) -> double {
+    const double om_exp = -expm1(-dt_part * (1.0 / tlag + 1.0 / s));
+    return (s * tlag / (s + tlag)) * om_exp;
+  };
+
+  auto i_deriv = [tlag, dt_part](double s) -> double {
+    const double lam = 1.0 / tlag + 1.0 / s;
+    const double om_exp = -expm1(-lam * dt_part);
+    const double exp_term = exp(-lam * dt_part);
+    const double int_u = (1.0 / (lam * lam))
+                       * (om_exp - lam * dt_part * exp_term);
+    return (1.0 / (s * s)) * int_u;
+  };
+
+  auto j_func = [tlag, om_exp_tlag, &i_func](double s) -> double {
+    return s * tlag * om_exp_tlag - s * i_func(s);
+  };
+
+  auto j_deriv = [tlag, om_exp_tlag, &i_func, &i_deriv](double s) -> double {
+    return tlag * om_exp_tlag - i_func(s) - s * i_deriv(s);
+  };
+
+  if (cs::abs(h) < eps * tau_m)
+    return 0.5 * (j_deriv(taup) + j_deriv(tlag));
+  else
+    return (j_func(tlag) - j_func(taup)) / h;
+}
+
+/* Secant quotient for <Gamma^2> integral:
+ * (I(tlag, tlag) - 2 * I(tlag, taup) + I(taup, taup)) / (tlag - taup)^2
+ * where I(s1, s2) = \int_0^{dt} exp(-u/s1) exp(-u/s2) du
+ */
+static inline double
+_secant_var_ggam(double taup,
+                 double tlag,
+                 double dt_part)
+{
+  const double eps = 1e-4;
+  const double h = tlag - taup;
+  const double tau_m = 0.5 * (tlag + taup);
+
+  if (cs::abs(h) < eps * tau_m) {
+    const double x = dt_part / tau_m;
+    const double om_exp_2x = -expm1(-2.0 * x);
+    const double exp_2x = exp(-2.0 * x);
+    return (0.25 / tau_m) * (om_exp_2x - 2.0 * x * (1.0 + x) * exp_2x);
+  }
+  else {
+    auto i_func = [dt_part](double s1, double s2) -> double {
+      const double om_exp = -expm1(-dt_part * (1.0 / s1 + 1.0 / s2));
+      return (s1 * s2 / (s1 + s2)) * om_exp;
+    };
+    const double num = i_func(tlag, tlag)
+                     - 2.0 * i_func(tlag, taup)
+                     + i_func(taup, taup);
+    return num / (h * h);
+  }
+}
+
+/* Secant quotient for <Gamma, Omega> integral:
+ * (N(tlag, tlag) - N(tlag, taup) - N(taup, tlag) + N(taup, taup)) / (tlag - taup)^2
+ * where N(s1, s2) = \int_0^{dt} exp(-u/s1) * s2*(1 - exp(-u/s2)) du
+ */
+static inline double
+_secant_cov_ggam_omega(double taup,
+                       double tlag,
+                       double dt_part)
+{
+  const double eps = 1e-4;
+  const double h = tlag - taup;
+  const double tau_m = 0.5 * (tlag + taup);
+
+  if (cs::abs(h) < eps * tau_m) {
+    const double x = dt_part / tau_m;
+    const double om_exp_x = -expm1(-x);
+    const double exp_x = exp(-x);
+    return 0.5 * cs_math_pow2(om_exp_x - x * exp_x);
+  }
+  else {
+    auto n_func = [dt_part](double s1, double s2) -> double {
+      const double om_exp1 = -expm1(-dt_part / s1);
+      const double om_cross = -expm1(-dt_part * (1.0 / s1 + 1.0 / s2));
+      const double i_cross = (s1 * s2 / (s1 + s2)) * om_cross;
+      return s2 * (s1 * om_exp1 - i_cross);
+    };
+    const double num = n_func(tlag, tlag)
+                     - n_func(tlag, taup)
+                     - n_func(taup, tlag)
+                     + n_func(taup, taup);
+    return num / (h * h);
+  }
+}
+
+/* Secant quotient for <Omega^2> integral:
+ * (M(tlag, tlag) - 2 * M(tlag, taup) + M(taup, taup)) / (tlag - taup)^2
+ * where M(s1, s2) = \int_0^{dt} s1*(1 - exp(-u/s1)) * s2*(1 - exp(-u/s2)) du
+ */
+static inline double
+_secant_var_omega(double taup,
+                  double tlag,
+                  double dt_part)
+{
+  const double eps = 1e-4;
+  const double h = tlag - taup;
+  const double tau_m = 0.5 * (tlag + taup);
+
+  if (cs::abs(h) < eps * tau_m) {
+    const double x = dt_part / tau_m;
+    if (x < 0.1) {
+      const double int_g2 = cs_math_pow2(x) * x * cs_math_pow2(x)
+        * (1.0 / 20.0 - x / 18.0 + (5.0 / 252.0) * x * x
+           - (1.0 / 192.0) * x * x * x + (7.0 / 6480.0) * cs_math_pow2(x * x));
+      return tau_m * int_g2;
+    } else {
+      const double exp_x = exp(-x);
+      const double exp_2x = exp(-2.0 * x);
+      return 0.25 * tau_m
+        * (4.0 * x - 11.0 + 8.0 * (2.0 + x) * exp_x
+           - (5.0 + 6.0 * x + 2.0 * x * x) * exp_2x);
+    }
+  }
+  else {
+    auto m_func = [dt_part](double s1, double s2) -> double {
+      const double om_exp1 = -expm1(-dt_part / s1);
+      const double om_exp2 = -expm1(-dt_part / s2);
+      const double om_cross = -expm1(-dt_part * (1.0 / s1 + 1.0 / s2));
+      const double i_cross = (s1 * s2 / (s1 + s2)) * om_cross;
+      return s1 * s2 * (dt_part - s1 * om_exp1 - s2 * om_exp2 + i_cross);
+    };
+    const double num = m_func(tlag, tlag)
+                     - 2.0 * m_func(tlag, taup)
+                     + m_func(taup, taup);
+    return num / (h * h);
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Discretization coefficients and analytical covariances for
@@ -277,49 +460,27 @@ _lagr_sde_compute_step_coeffs(cs_real_t                    dt_part,
   c->exp_taup = exp(-dt_part / taup);
   c->exp_tlag = exp(-dt_part / tlag);
 
-  c->a1 = taup * (1.0 - c->exp_taup);
-  c->e1 = 1.0 - c->exp_taup;
+  const cs_real_t om_exp_taup = -expm1(-dt_part / taup);
+  const cs_real_t om_exp_tlag = -expm1(-dt_part / tlag);
+
+  c->a1 = taup * om_exp_taup;
+  c->e1 = om_exp_taup;
 
   c->b1 = tlag * _secant_ter2x(taup_ddt, tlag_ddt);
   c->c1 = dt_part - c->a1 - c->b1;
   c->d1 = tlag_ddt * _secant_ter2p(taup_ddt, tlag_ddt);
 
-  const cs_real_t theta = tlag / (tlag - taup);
   const cs_real_t b_sq = cs_math_pow2(bx);
-  const cs_real_t b_sq_theta = b_sq * theta;
-  const cs_real_t b_sq_theta2 = b_sq_theta * theta;
+  const cs_real_t b_sq_tlag = b_sq * tlag;
+  const cs_real_t b_sq_tlag2 = b_sq_tlag * tlag;
 
-  /* Auxiliary integrals */
-  const cs_real_t int_tlag = 0.5 * tlag * (1.0 - c->exp_tlag * c->exp_tlag);
-  const cs_real_t int_taup = 0.5 * taup * (1.0 - c->exp_taup * c->exp_taup);
-  const cs_real_t int_cross = (taup * tlag / (taup + tlag))
-                            * (1.0 - c->exp_taup * c->exp_tlag);
-
-  /* Variances and covariances (Minier & Peirano 2006, Eqs. 140-145) */
-  c->var_gam = b_sq * int_tlag;
-  c->cov_gam_ggam = b_sq_theta * (int_tlag - int_cross);
-  c->var_ggam = b_sq_theta2 * (int_tlag - 2.0 * int_cross + int_taup);
-
-  const cs_real_t tlag_1_m_exp = tlag * (1.0 - c->exp_tlag);
-  const cs_real_t taup_1_m_exp = c->a1;
-
-  c->cov_gam_omega = b_sq_theta * (
-      (tlag - taup) * tlag_1_m_exp
-    - tlag * int_tlag
-    + taup * int_cross);
-
-  c->cov_ggam_omega = b_sq_theta2 * (
-      (tlag - taup) * (tlag_1_m_exp - taup_1_m_exp)
-    - tlag * int_tlag
-    - taup * int_taup
-    + (tlag + taup) * int_cross);
-
-  c->var_omega = b_sq_theta2 * (
-      cs_math_pow2(tlag - taup) * dt_part
-    - 2.0 * (tlag - taup) * (tlag * tlag_1_m_exp - taup * taup_1_m_exp)
-    + tlag * tlag * int_tlag
-    + taup * taup * int_taup
-    - 2.0 * tlag * taup * int_cross);
+  /* Variances and covariances evaluated via dedicated secant helpers */
+  c->var_gam = b_sq * 0.5 * tlag * om_exp_tlag * (1.0 + c->exp_tlag);
+  c->cov_gam_ggam = b_sq_tlag * _secant_cov_gam_ggam(taup, tlag, dt_part);
+  c->cov_gam_omega = b_sq_tlag * _secant_cov_gam_omega(taup, tlag, dt_part);
+  c->var_ggam = b_sq_tlag2 * _secant_var_ggam(taup, tlag, dt_part);
+  c->cov_ggam_omega = b_sq_tlag2 * _secant_cov_ggam_omega(taup, tlag, dt_part);
+  c->var_omega = b_sq_tlag2 * _secant_var_omega(taup, tlag, dt_part);
 }
 
 /*----------------------------------------------------------------------------*/
