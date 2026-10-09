@@ -98,6 +98,9 @@ cs_fields_rules_manager::parse_field_(cs_tree_node_t *field_node)
   const char *label = get_attr("Label");
   if (label) rule.label = std::string(label);
 
+  const char *units = get_attr("Units");
+  if (units) rule.units = std::string(units);
+
   rule.dimension = _atoi_safe(get_attr("Dimension"), 1);
 
   const char *type = get_attr("Type");

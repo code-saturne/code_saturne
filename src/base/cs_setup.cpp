@@ -208,6 +208,8 @@ _add_property_field
   if (f_label != nullptr)
     f->set_key_str(keylbl, f_label);
 
+  cs_field_set_default_units(f);
+
   return f;
 }
 
@@ -246,6 +248,8 @@ _add_property_field_boundary
   f->set_key_int(keylog, 1);
   if (f_label != nullptr)
     f->set_key_str(keylbl, f_label);
+
+  cs_field_set_default_units(f);
 
   return f;
 }
@@ -469,6 +473,12 @@ _apply_field_eqp_from_rule(cs_field_t                      *f,
                            const cs_field_creation_rule_t   &rule)
 {
   if (f == nullptr) return;
+
+  if (!rule.units.empty())
+    f->set_units(rule.units.c_str());
+  else
+    cs_field_set_default_units(f);
+
   cs_equation_param_t *eqp = cs_field_get_equation_param(f);
   if (eqp == nullptr) return;
 
@@ -775,6 +785,16 @@ _create_variable_fields(void)
 
       if (fp_id != CS_FIELD_N_POINTERS)
         cs_field_pointer_map(fp_id, f);
+
+      if (name_idx == 0) {
+        if (   cs_glob_thermal_model->temperature_scale
+            == CS_TEMPERATURE_SCALE_CELSIUS)
+          f->set_units("degC");
+        else
+          f->set_units("K");
+      }
+      else if (name_idx == 1 || name_idx == 2)
+        f->set_units("J/kg");
     }
   }
 

@@ -108,6 +108,7 @@
       <Rule Condition="always">
         <Description>Velocity field</Description>
         <Field Name="velocity" Label="Velocity" Dimension="3"
+               Units="m/s"
                Pointer="CS_ENUMF_(vel)" Type="variable"
                Location="cells" CoupledKey="1" AMRScheme="1"/>
       </Rule>
@@ -119,6 +120,7 @@
       <Rule Condition="always">
         <Description>Pressure field</Description>
         <Field Name="pressure" Label="Pressure" Dimension="1"
+               Units="Pa"
                Pointer="CS_ENUMF_(p)" Type="variable"
                Location="cells" NoConvection="1">
           <!-- istat=1 if compressible of dilatble, 0 otherwise -->
@@ -141,6 +143,7 @@
       <Rule Condition="vof_active">
         <Description>Void fraction for VoF model</Description>
         <Field Name="void_fraction" Label="Void Fraction" Dimension="1"
+               Units="-"
                Pointer="CS_ENUMF_(void_f)" Type="variable"
                Location="cells"
                NoDiffusion="1"
@@ -159,6 +162,7 @@
       <Rule Condition="ale_active">
         <Description>Mesh velocity for ALE</Description>
         <Field Name="mesh_velocity" Label="Mesh Velocity" Dimension="3"
+               Units="m/s"
                Pointer="CS_ENUMF_(mesh_u)" Type="variable"
                Location="cells"
                CoupledKey="1"
@@ -195,8 +199,10 @@
           Used for industrial flows with high y+ (y+ > 30).
         </DetailedDescription>
         <Field Name="k"       Label="Turb Kinetic Energy" Dimension="1"
+               Units="m2/s2"
                Pointer="CS_ENUMF_(k)"   Type="variable" Location="cells"/>
         <Field Name="epsilon" Label="Turb Dissipation"    Dimension="1"
+               Units="m2/s3"
                Pointer="CS_ENUMF_(eps)" Type="variable" Location="cells"/>
       </Rule>
 
@@ -212,9 +218,11 @@
           These models are more precise for flows with curvature, rotation, or strongly anisotropic turbulence.
         </DetailedDescription>
         <Field Name="rij"     Label="Rij"             Dimension="6"
+               Units="m2/s2"
                Pointer="CS_ENUMF_(rij)" Type="variable"
                Location="cells" CoupledKey="1"/>
         <Field Name="epsilon" Label="Turb Dissipation" Dimension="1"
+               Units="m2/s3"
                Pointer="CS_ENUMF_(eps)" Type="variable"
                Location="cells"
                ExcludeModel="CS_TURB_LES_TAUSGS"/>
@@ -229,6 +237,7 @@
           The EBRSM (Elliptic Blending Reynolds Stress) model is an extension of RSM models which improves the near wall modeling. It introduces a scalar variable alpha which verifies an elliptical equation (with no convection o unsteady term). Alpha varies from 0 at the walli (viscous behavior) to 1 far from the wall (turbulent behavior).
         </DetailedDescription>
         <Field Name="alpha" Label="Alphap" Dimension="1"
+               Units="-"
                Pointer="CS_ENUMF_(alp_bl)" Type="variable"
                Location="cells"
                NoTimeTerm="1" NoConvection="1" NoDiagShift="1"/>
@@ -245,10 +254,13 @@
           These models are efficient especially for flows with separation or recirculation.
         </DetailedDescription>
         <Field Name="k"       Label="Turb Kinetic Energy" Dimension="1"
+               Units="m2/s2"
                Pointer="CS_ENUMF_(k)"   Type="variable" Location="cells"/>
         <Field Name="epsilon" Label="Turb Dissipation"    Dimension="1"
+               Units="m2/s3"
                Pointer="CS_ENUMF_(eps)" Type="variable" Location="cells"/>
         <Field Name="phi"     Label="Phi"                 Dimension="1"
+               Units="-"
                Pointer="CS_ENUMF_(phi)" Type="variable" Location="cells"/>
       </Rule>
 
@@ -260,6 +272,7 @@
           f_bar smoothes the phi source term to avoid near wall numerical singularities numeriques en proche paroi.
         </DetailedDescription>
         <Field Name="f_bar" Label="f_bar" Dimension="1"
+               Units="s-1"
                Pointer="CS_ENUMF_(f_bar)" Type="variable"
                Location="cells"
                NoTimeTerm="1" NoConvection="1" NoDiagShift="1"/>
@@ -269,6 +282,7 @@
       <Rule Condition="model_eq_CS_TURB_V2F_BL_V2K">
         <Description>v2f-BL-v2/k : alpha equation elliptique</Description>
         <Field Name="alpha" Label="Alpha" Dimension="1"
+               Units="-"
                Pointer="CS_ENUMF_(alp_bl)" Type="variable"
                Location="cells"
                NoTimeTerm="1" NoConvection="1" NoDiagShift="1"/>
@@ -283,8 +297,10 @@
           Usable with small (y+ ~ 1) or high (y+ > 30) y+.
         </DetailedDescription>
         <Field Name="k"     Label="Turb Kinetic Energy" Dimension="1"
+               Units="m2/s2"
                Pointer="CS_ENUMF_(k)"   Type="variable" Location="cells"/>
         <Field Name="omega" Label="Omega"               Dimension="1"
+               Units="s-1"
                Pointer="CS_ENUMF_(omg)" Type="variable" Location="cells"/>
       </Rule>
 
@@ -298,6 +314,7 @@
           It does not resolve k or epsilon — all the turbulence information is in nu_tilda. The real turbulent viscosity if obtained through a damping function: mu_t = rho * f_v1 * nu_tilda.
         </DetailedDescription>
         <Field Name="nu_tilda" Label="NuTilda" Dimension="1"
+               Units="m2/s"
                Pointer="CS_ENUMF_(nusa)" Type="variable" Location="cells"/>
       </Rule>
 
@@ -323,9 +340,11 @@
       <Rule Condition="always">
         <Description>Density at cells and boundary faces</Description>
         <Field Name="density"          Label="Density"          Dimension="1"
+               Units="kg/m3"
                Pointer="CS_ENUMF_(rho)"   Type="property"
                Location="cells"        PostProcess="1" Log="1"/>
         <Field Name="boundary_density" Label="Boundary Density" Dimension="1"
+               Units="kg/m3"
                Pointer="CS_ENUMF_(rho_b)" Type="property"
                Location="boundary_faces"/>
       </Rule>
@@ -335,8 +354,10 @@
       <Rule Condition="always">
         <Description>Molecular and turbulent viscosity</Description>
         <Field Name="molecular_viscosity" Label="Laminar Viscosity" Dimension="1"
+               Units="Pa.s"
                Pointer="CS_ENUMF_(mu)"   Type="property" Location="cells"/>
         <Field Name="turbulent_viscosity" Label="Turb Viscosity"    Dimension="1"
+               Units="Pa.s"
                Pointer="CS_ENUMF_(mu_t)" Type="property" Location="cells"
                HideIfModel="CS_TURB_NONE"/>
       </Rule>
@@ -346,6 +367,7 @@
       <Rule Condition="model_eq_CS_TURB_LES_TAUSGS_OR_KSGS">
         <Description>Epsilon SGS for LES with tau_SGS or k_SGS transport</Description>
         <Field Name="epsilon" Label="Epsilon SGS" Dimension="1"
+               Units="m2/s3"
                Pointer="CS_ENUMF_(eps)" Type="property"
                Location="cells" HasBoundary="1"/>
       </Rule>
@@ -354,6 +376,7 @@
       <Rule Condition="hybrid_blend_active">
         <Description>Hybride RANS/LES mixing function f_d</Description>
         <Field Name="hybrid_blend" Label="Hybrid blending function" Dimension="1"
+               Units="-"
                Type="property" Location="cells"/>
       </Rule>
 
@@ -368,30 +391,43 @@
       <Rule Condition="hybrid_turb_eq_4">
         <Description>Fields for HTLES hybrid model (hybrid_turb=4)</Description>
         <Field Name="k_tot"          Label="Energy total"              Dimension="1"
+               Units="m2/s2"
                Type="property" Location="cells"/>
         <Field Name="k_mod"          Label="Modelised Energy"          Dimension="1"
+               Units="m2/s2"
                Type="property" Location="cells"/>
         <Field Name="k_res"          Label="Resolved Energy"           Dimension="1"
+               Units="m2/s2"
                Type="property" Location="cells"/>
         <Field Name="eps_mod"        Label="Mean Dissipation"          Dimension="1"
+               Units="m2/s3"
                Type="property" Location="cells"/>
         <Field Name="htles_psi"      Label="Psi HTLES"                 Dimension="1"
+               Units="-"
                Type="property" Location="cells"/>
         <Field Name="htles_r"        Label="Energy ratio"              Dimension="1"
+               Units="-"
                Type="property" Location="cells"/>
         <Field Name="htles_t"        Label="Time scale HTLES"          Dimension="1"
+               Units="s"
                Type="property" Location="cells"/>
         <Field Name="htles_icc"      Label="ICC coefficient"           Dimension="1"
+               Units="-"
                Type="property" Location="cells"/>
         <Field Name="htles_fs"       Label="Shielding function"        Dimension="1"
+               Units="-"
                Type="property" Location="cells"/>
         <Field Name="Delta_max"      Label="Delta max"                 Dimension="1"
+               Units="m"
                Type="property" Location="cells"/>
         <Field Name="vel_mag_mean"   Label="Mean velocity mag."        Dimension="1"
+               Units="m/s"
                Type="property" Location="cells"/>
         <Field Name="velocity_mean"  Label="Vel Tavg"                  Dimension="3"
+               Units="m/s"
                Type="property" Location="cells"/>
         <Field Name="ui2_mean"       Label="Vel Tavg"                  Dimension="3"
+               Units="m2/s2"
                Type="property" Location="cells"/>
       </Rule>
 
@@ -399,8 +435,10 @@
       <Rule Condition="hybrid_turb_eq_4_and_komega">
         <Description>Additional HTLES fields for k-omega SST</Description>
         <Field Name="omg_mod"  Label="Mean Specific Dissipation" Dimension="1"
+               Units="s-1"
                Type="property" Location="cells"/>
         <Field Name="f1_kwsst" Label="Function F1 of k-omg SST" Dimension="1"
+               Units="-"
                Type="property" Location="cells"/>
       </Rule>
 
@@ -408,8 +446,10 @@
       <Rule Condition="model_eq_CS_TURB_K_OMEGA">
         <Description>S2 deformation tensor and trace of velocity gradient for k-omega</Description>
         <Field Name="s2"                Label="S2"                   Dimension="1"
+               Units="s-2"
                Type="property" Location="cells" Hidden="1"/>
         <Field Name="vel_gradient_trace" Label="Vel. Gradient Trace" Dimension="1"
+               Units="s-1"
                Type="property" Location="cells" Hidden="1"/>
       </Rule>
 
@@ -418,8 +458,10 @@
       <Rule Condition="always">
         <Description>Adimensional CFL and Fourier numbers</Description>
         <Field Name="courant_number" Label="CFL" Dimension="1"
+               Units="-"
                Type="property" Location="cells" HideIfSteady="1"/>
         <Field Name="fourier_number" Label="Fourier Number" Dimension="1"
+               Units="-"
                Type="property" Location="cells" HideIfSteady="1"/>
       </Rule>
 
@@ -427,6 +469,7 @@
       <Rule Condition="vof_active">
         <Description>Volume Courant number for VoF</Description>
         <Field Name="volume_courant_number" Label="CourantNbVol" Dimension="1"
+               Units="-"
                Type="property" Location="cells" HideIfSteady="1"/>
       </Rule>
 
@@ -435,6 +478,7 @@
       <Rule Condition="non_compressible">
         <Description>Total pressure (static + dynamic)</Description>
         <Field Name="total_pressure" Label="Total Pressure" Dimension="1"
+               Units="Pa"
                Type="property" Location="cells"
                RestartFile="auxiliary"/>
       </Rule>
@@ -443,6 +487,7 @@
       <Rule Condition="model_eq_CS_TURB_LES_SMAGO_DYN">
         <Description>Smagorinsky constant squared for LES</Description>
         <Field Name="smagorinsky_constant^2" Label="Csdyn2" Dimension="1"
+               Units="-"
                Type="property" Location="cells"/>
       </Rule>
 
@@ -450,8 +495,10 @@
       <Rule Condition="model_eq_CS_TURB_RIJ_EPSILON_BFH">
         <Description>Fields for Rij-epsilon BFH turbulence model</Description>
         <Field Name="algo:rij_beta2" Label="beta2" Dimension="1"
+               Units="-"
                Type="property" Location="cells"/>
         <Field Name="algo:cmu" Label="Cmu" Dimension="1"
+               Units="-"
                Type="property" Location="cells"/>
       </Rule>
 
@@ -459,6 +506,7 @@
       <Rule Condition="vof_free_surface">
         <Description>Drift velocity for free surface VoF</Description>
         <Field Name="drift_velocity" Label="Drift Velocity" Dimension="3"
+               Units="m/s"
                Type="property" Location="cells"/>
       </Rule>
 
@@ -484,18 +532,22 @@
         <Description>Fields for thermal kinetic source term</Description>
         <Field Name="kinetic_energy_thermal_st"
                Label="Kinetic Energy Thermal ST" Dimension="1"
+               Units="W/m3"
                Type="property" Location="cells"
                PostProcess="1" Log="1"/>
         <Field Name="rho_k_prev"
                Label="rho_k_prev" Dimension="1"
+               Units="J/m3"
                Type="internal" Location="cells"
                PostProcess="0"/>
         <Field Name="inner_face_velocity"
                Label="Inner Face Velocity" Dimension="3"
+               Units="m/s"
                Type="internal" Location="interior_faces"
                PostProcess="0"/>
         <Field Name="boundary_face_velocity"
                Label="Boundary Face Velocity" Dimension="3"
+               Units="m/s"
                Type="internal" Location="boundary_faces"
                PostProcess="0"/>
       </Rule>
@@ -504,6 +556,7 @@
       <Rule Condition="ieos_moist_air">
         <Description>Mass fraction of water vapor for humid air</Description>
         <Field Name="yv" Label="Water Vapor Mass Fraction" Dimension="1"
+               Units="-"
                Type="property" Location="cells"
                PostProcess="1" Log="1"/>
       </Rule>
@@ -514,12 +567,15 @@
         <Description>Champs compressibles gradient pression et Cp</Description>
         <Field Name="algo:pressure_gradient"
                Label="Pressure Gradient" Dimension="3"
+               Units="Pa/m"
                Type="internal" Location="cells" PostProcess="0"/>
         <Field Name="algo:pressure_increment_gradient"
                Label="Pressure Increment Gradient" Dimension="3"
+               Units="Pa/m"
                Type="internal" Location="cells" PostProcess="0"/>
         <Field Name="isobaric_heat_capacity"
                Label="Isobaric Heat Capacity" Dimension="1"
+               Units="J/(kg.K)"
                Type="property" Location="cells"
                PostProcess="0" Log="1"/>
       </Rule>
@@ -529,6 +585,7 @@
       <Rule Condition="thermal_internal_energy">
         <Description>Temperature (based on solved internal energy)</Description>
         <Field Name="temperature" Label="Temperature" Dimension="1"
+               Units="K"
                Type="property" Location="cells"
                PostProcess="1" Log="1"/>
       </Rule>
@@ -537,6 +594,7 @@
       <Rule Condition="cflt_active">
         <Description>CFL number for the thermal variable</Description>
         <Field Name="cfl_t" Label="CFL Thermal" Dimension="1"
+               Units="-"
                Type="postprocess" Location="cells"
                PostProcess="1" Log="1"/>
       </Rule>
@@ -545,6 +603,7 @@
       <Rule Condition="cflp_active">
         <Description>CFL number for pressure</Description>
         <Field Name="cfl_p" Label="CFL Pressure" Dimension="1"
+               Units="-"
                Type="postprocess" Location="cells"
                PostProcess="1" Log="1"/>
       </Rule>

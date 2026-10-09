@@ -52,6 +52,7 @@
 struct cs_field_creation_rule_t {
   std::string  name;           /* field name (ex: "k") */
   std::string  label;          /* field label (ex: "Turb Kinetic Energy") */
+  std::string  units;          /* physical units (ex: "m2/s2") */
   int          dimension;      /* 1, 3 or 6 */
   std::string  type;           /* "variable", "property", "postprocess",
                                   "internal" */

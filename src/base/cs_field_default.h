@@ -92,6 +92,20 @@ cs_variable_field_create(const char  *name,
                          int          location_id,
                          int          dim);
 
+/*----------------------------------------------------------------------------
+ * Set default physical units on a field based on standard naming conventions.
+ *
+ * If the field already has a unit defined, this function does nothing.
+ * If the field name matches a known standard field (e.g. velocity, pressure,
+ * density, temperature, k, epsilon, ...), its unit is assigned accordingly.
+ *
+ * parameters:
+ *   f <-> pointer to field structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_set_default_units(cs_field_t  *f);
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Access a field's equation parameters.

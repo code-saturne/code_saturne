@@ -178,6 +178,7 @@ cs_variable_cdo_field_create(const char  *name,
         f->set_key_str(cs_field_key_id("label"), label);
     }
 
+    cs_field_set_default_units(f);
   }
 
   return f->id;
@@ -238,7 +239,152 @@ cs_variable_field_create(const char  *name,
   if (location_id == CS_MESH_LOCATION_CELLS)
     _variable_equation_param_uninit(f);
 
+  cs_field_set_default_units(f);
+
   return f->id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set default physical units on a field based on standard naming.
+ *
+ * \param[in, out]  f  pointer to field structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_set_default_units(cs_field_t  *f)
+{
+  if (f == nullptr || f->units != nullptr || f->name == nullptr)
+    return;
+
+  const char *name = f->name;
+
+  /* Kinematic fields */
+  if (   strcmp(name, "velocity") == 0
+      || strcmp(name, "i_velocity") == 0
+      || strcmp(name, "b_velocity") == 0
+      || strcmp(name, "mesh_velocity") == 0
+      || strcmp(name, "drift_velocity") == 0
+      || strcmp(name, "inner_face_velocity") == 0
+      || strcmp(name, "boundary_face_velocity") == 0
+      || strcmp(name, "meteo_velocity") == 0)
+    f->set_units("m/s");
+
+  /* Pressure fields */
+  else if (   strcmp(name, "pressure") == 0
+           || strcmp(name, "total_pressure") == 0
+           || strcmp(name, "hydrostatic_pressure") == 0
+           || strcmp(name, "meteo_pressure") == 0
+           || strcmp(name, "algo:meteo_pressure_corrected") == 0)
+    f->set_units("Pa");
+
+  /* Density fields */
+  else if (   strcmp(name, "density") == 0
+           || strcmp(name, "boundary_density") == 0
+           || strcmp(name, "meteo_density") == 0)
+    f->set_units("kg/m3");
+
+  /* Viscosity fields */
+  else if (   strcmp(name, "molecular_viscosity") == 0
+           || strcmp(name, "turbulent_viscosity") == 0
+           || strcmp(name, "dynamic_viscosity") == 0)
+    f->set_units("Pa.s");
+
+  else if (strcmp(name, "kinematic_viscosity") == 0)
+    f->set_units("m2/s");
+
+  /* Thermal scalar fields */
+  else if (   strcmp(name, "temperature") == 0
+           || strcmp(name, "meteo_temperature") == 0
+           || strcmp(name, "meteo_pot_temperature") == 0) {
+    if (   cs_glob_thermal_model != nullptr
+        && cs_glob_thermal_model->temperature_scale
+           == CS_TEMPERATURE_SCALE_CELSIUS)
+      f->set_units("degC");
+    else
+      f->set_units("K");
+  }
+
+  else if (   strcmp(name, "enthalpy") == 0
+           || strcmp(name, "total_energy") == 0
+           || strcmp(name, "internal_energy") == 0)
+    f->set_units("J/kg");
+
+  else if (   strcmp(name, "specific_heat") == 0
+           || strcmp(name, "isobaric_heat_capacity") == 0)
+    f->set_units("J/(kg.K)");
+
+  else if (strcmp(name, "thermal_conductivity") == 0)
+    f->set_units("W/(m.K)");
+
+  else if (strcmp(name, "thermal_expansion") == 0)
+    f->set_units("1/K");
+
+  /* Turbulence fields */
+  else if (   strcmp(name, "k") == 0
+           || strcmp(name, "rij") == 0
+           || strcmp(name, "k_tot") == 0
+           || strcmp(name, "k_mod") == 0
+           || strcmp(name, "k_res") == 0
+           || strcmp(name, "meteo_tke") == 0
+           || strcmp(name, "meteo_rij") == 0)
+    f->set_units("m2/s2");
+
+  else if (   strcmp(name, "epsilon") == 0
+           || strcmp(name, "eps_mod") == 0
+           || strcmp(name, "meteo_eps") == 0)
+    f->set_units("m2/s3");
+
+  else if (   strcmp(name, "omega") == 0
+           || strcmp(name, "omg_mod") == 0
+           || strcmp(name, "f_bar") == 0
+           || strcmp(name, "strain_rate_tensor") == 0)
+    f->set_units("s-1");
+
+  else if (strcmp(name, "nu_tilda") == 0)
+    f->set_units("m2/s");
+
+  /* Geometric fields */
+  else if (   strcmp(name, "wall_distance") == 0
+           || strcmp(name, "z_ground") == 0)
+    f->set_units("m");
+
+  /* Dimensionless fields */
+  else if (   strcmp(name, "wall_yplus") == 0
+           || strcmp(name, "void_fraction") == 0
+           || strcmp(name, "alpha") == 0
+           || strcmp(name, "phi") == 0
+           || strcmp(name, "courant_number") == 0
+           || strcmp(name, "fourier_number") == 0
+           || strcmp(name, "volume_courant_number") == 0
+           || strcmp(name, "cfl_t") == 0
+           || strcmp(name, "cfl_p") == 0
+           || strcmp(name, "hybrid_blend") == 0
+           || strcmp(name, "meteo_humidity") == 0
+           || strcmp(name, "yv") == 0
+           || strcmp(name, "htles_psi") == 0
+           || strcmp(name, "htles_r") == 0
+           || strcmp(name, "htles_icc") == 0
+           || strcmp(name, "htles_fs") == 0
+           || strcmp(name, "f1_kwsst") == 0)
+    f->set_units("-");
+
+  /* Mass / Volume fluxes */
+  else if (   strcmp(name, "mass_flux") == 0
+           || strcmp(name, "boundary_mass_flux") == 0
+           || strcmp(name, "inner_mass_flux") == 0)
+    f->set_units("kg/s");
+
+  else if (   strcmp(name, "volume_flux") == 0
+           || strcmp(name, "boundary_volume_flux") == 0)
+    f->set_units("m3/s");
+
+  else if (strcmp(name, "kinetic_energy_thermal_st") == 0)
+    f->set_units("W/m3");
+
+  else if (strcmp(name, "age") == 0)
+    f->set_units("s");
 }
 
 /*----------------------------------------------------------------------------*/

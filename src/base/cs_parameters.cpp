@@ -1273,6 +1273,11 @@ cs_parameters_define_auxiliary_fields(void)
     if (rule.log && !rule.post_process)
       fld->set_key_int(key_log, 1);
 
+    if (!rule.units.empty())
+      fld->set_units(rule.units.c_str());
+    else
+      cs_field_set_default_units(fld);
+
     return fld;
   };
 
