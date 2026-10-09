@@ -1432,6 +1432,14 @@ protected:
 
 };
 
+/* Explicit trait for class */
+template<class T, int N, cs::layout L>
+struct type_info<mdspan<T, N, L>>
+{
+  using value_type = T;
+  static constexpr int rank = N;
+};
+
 } /* namespace cs */
 
 template<class T, cs::layout L = cs::layout::right>

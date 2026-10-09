@@ -838,6 +838,106 @@ using all_eq_comparable =
     std::conjunction<is_eq_comparable<T, Ts>...>;
 
 /*--------------------------------------------------------------------------*/
+/* Utility type traits objects */
+/*--------------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief  Base trait
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class T>
+struct type_info
+{
+  using value_type = T;          /*!< Value type */
+  static constexpr int rank = 0; /*!< Rank 0 for scalars by default */
+};
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Recursive trait for pointers
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class T>
+struct type_info<T*>
+{
+  using value_type = typename type_info<T>::value_type;
+  static constexpr int rank = 1 + type_info<T>::rank;
+};
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Recursive trait for C arrays
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class T, std::size_t N>
+struct type_info<T[N]>
+{
+  using value_type = typename type_info<T>::value_type;
+  static constexpr int rank = 1 + type_info<T>::rank;
+};
+
+template<class T>
+struct type_info<T[]>
+{
+  using value_type = typename type_info<T>::value_type;
+  static constexpr int rank = 1 + type_info<T>::rank;
+};
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Get underlying type
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class T>
+using type_info_t = typename type_info<T>::value_type;
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Get underlying base type (remove const, volatile and reference)
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class T>
+using type_info_base_t =
+std::remove_cv_t<std::remove_reference_t< type_info_t<T> >>;
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Check if a base type if floating point
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class T>
+inline constexpr bool is_base_type_fp_v =
+std::is_floating_point_v<type_info_base_t<T>>;
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Return FP type for two types based on their precision
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class C1, class C2>
+using pair_fp_type_t =
+std::conditional_t<std::is_same_v<type_info_base_t<C1>, type_info_base_t<C2> >,
+                   type_info_base_t<C1>,
+                   cs_real_t>;
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Check if object rank is of the given value
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class C1, int N_R>
+inline constexpr bool is_rank_v = (N_R == type_info<C1>::rank);
+
+/*--------------------------------------------------------------------------*/
 /*!
  * \brief A swap method which is callable from GPU and not only CPU.
  *

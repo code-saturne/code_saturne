@@ -2308,6 +2308,14 @@ private:
 
 };
 
+/* Explicit trait for class */
+template<class T, int N, cs::layout L>
+struct type_info<cs::array<T, N, L>>
+{
+  using value_type = T;
+  static constexpr int rank = N;
+};
+
 } /* namespace cs */
 
 /*--------------------------------------------------------------------------*/
