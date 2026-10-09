@@ -188,7 +188,7 @@ def main(argv, pkg):
         if pkg.name == 'neptune_cfd':
             splash.showMessage("%(name)s %(vers)s starting..." \
                                % {'name': pkg.name, 'vers':pkg.version},
-                               Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter, Qt.black)
+                               Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter, Qt.GlobalColor.black)
         app.processEvents()
         QTimer.singleShot(1500, splash.hide)
 

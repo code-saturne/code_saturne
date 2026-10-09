@@ -278,7 +278,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
                 if self._current_particle_f_id == None:
                     self._current_particle_f_id = name
 
-            self.comboBoxEmissivity.activated[str].connect(lambda text: self.slotEmissivityField(text))
+            self.comboBoxEmissivity.activated[int].connect(self.slotEmissivityField)
 
             self.partRadiationModel = ThermalParticlesRadiationModel(self.case)
             self.__setParticlesRadiation__()
@@ -493,7 +493,6 @@ class ThermalView(QWidget, Ui_ThermalForm):
         """
         Update the thermal scalar markup.
         """
-        text = self.comboBoxThermal.currentText()
         th = self.modelThermal.dicoV2M[str(self.comboBoxThermal.currentText())]
         self.thermal.setThermalModel(th)
 
@@ -501,11 +500,12 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.browser.configureTree(self.case)
 
 
-    def slotEmissivityField(self, text):
+    @Slot(int)
+    def slotEmissivityField(self, idx):
         """
         Update current field id for particles radiaitive model.
         """
-        f_id = self.modelParticleFields.dicoV2M[str(text)]
+        f_id = self.modelParticleFields.dicoV2M[str(self.comboBoxEmissivity.currentText())]
         self._current_particle_f_id = f_id
 
         self._update_emissivity_line()
@@ -514,7 +514,6 @@ class ThermalView(QWidget, Ui_ThermalForm):
     def slotFluidRadiativeTransfer(self,idx):
         """
         """
-        text = self.comboBoxRadModel.currentText()
         self.gas = GasCombustionModel(self.case)
         model = self.modelRadModel.dicoV2M[str(self.comboBoxRadModel.currentText())]
         self.rmdl.setRadiativeModel(model)
@@ -560,7 +559,6 @@ class ThermalView(QWidget, Ui_ThermalForm):
     def slotDirection(self, idx):
         """
         """
-        text = self.comboBoxQuadrature.currentText()
         n = int(self.modelDirection.dicoV2M[str(self.comboBoxQuadrature.currentText())])
         self.rmdl.setQuadrature(n)
 
@@ -586,7 +584,6 @@ class ThermalView(QWidget, Ui_ThermalForm):
     def slotTypeCoefficient(self, idx):
         """
         """
-        text = self.comboBoxAbsorption.currentText()
         typeCoeff = self.modelAbsorption.dicoV2M[str(self.comboBoxAbsorption.currentText())]
         self.rmdl.setTypeCoeff(typeCoeff)
 
@@ -654,7 +651,6 @@ class ThermalView(QWidget, Ui_ThermalForm):
     def slotSoot(self, idx):
         """
         """
-        text = self.comboBoxSoot.currentText()
         model = self.modelSoot.dicoV2M[str(self.comboBoxSoot.currentText())]
         self.gas.setSootModel(model)
         if model == 'off':
