@@ -17,7 +17,7 @@ Release 9.0.3 (unreleased)
 - Gas combustion: fix possible memory corruption when n_gas_species > 1.
 
 - Remove spurious error message for Lagrangian module so than
-  we can impose a frozen field even when no restart.
+  we can impose a frozen field even when not restarting.
 
 - Fix usage of `cs_user_scripts.py` with Python 3.13 and above.
 

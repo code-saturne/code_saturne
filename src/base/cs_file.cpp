@@ -3372,7 +3372,6 @@ cs_file_write_block(cs_file_t   *f,
 {
   size_t retval = 0;
 
-  MPI_Barrier(MPI_COMM_WORLD);
   const size_t bufsize = (global_num_end - global_num_start)*stride*size;
 
   /* Copy contents to ensure buffer constedness if necessary */
