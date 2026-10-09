@@ -131,30 +131,6 @@ typedef enum {
  * Local structure definitions
  *============================================================================*/
 
-/* Private tracking data associated to each particle */
-/* --------------------------------------------------*/
-
-/* This structure is currently mapped to the beginning of each
- * particle's data, and contains values which are used during the
- * tracking algorithm only.
- * It could be separated in the future, but this would require
- * keeping track of a particle's local id in most functions
- * of this file. */
-
-typedef struct {
-
-  cs_real_t  start_coords[3];       /* starting coordinates for
-                                       next displacement */
-
-  cs_lnum_t  last_face_id;          /* last face id encountered
-                                       (interior first, boundary next) */
-
-  cs_lagr_tracking_state_t  state;  /* current state */
-
-  cs_lagr_track_step_t tracking_step_id; /* Current tracking step/phase */
-
-} cs_lagr_tracking_info_t;
-
 /* face_yplus auxiliary type */
 /* ------------------------- */
 

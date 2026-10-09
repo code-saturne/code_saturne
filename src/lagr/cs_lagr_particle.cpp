@@ -62,6 +62,7 @@
 #include "lagr/cs_lagr_clogging.h"
 #include "lagr/cs_lagr_roughness.h"
 #include "lagr/cs_lagr_dlvo.h"
+#include "lagr/cs_lagr_tracking.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -114,31 +115,6 @@ typedef enum {
 /*============================================================================
  * Local structure definitions
  *============================================================================*/
-
-/* Private tracking data associated to each particle */
-/* --------------------------------------------------*/
-
-/* This structure is a copy of the one defined in cs_lagr_tracking.c,
-   which is currently mapped to the beginning of each
- * particle's data, and contains values which are used during the
- * tracking algorithm only.
- * It could be separated in the future, but this would require
- * keeping track of a particle's local id in most functions. */
-
-typedef struct {
-
-  cs_real_t  start_coords[3];       /* starting coordinates for
-                                       next displacement */
-
-  cs_lnum_t  last_face_num;         /* last face number encountered */
-
-  int        state;                 /* current state (actually an enum) */
-
-  int        integ_tracked_loc;     /* useful when using cell_wise_integ
-                                       0 : determnistic virtual partner tracked
-                                       1 : stochastic particle tracked
-                                       2 : particle tracking finished*/
-} cs_lagr_tracking_info_t;
 
 /* Particle data value */
 /*---------------------*/

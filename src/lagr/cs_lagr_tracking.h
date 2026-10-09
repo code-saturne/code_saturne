@@ -66,6 +66,24 @@ typedef enum {
   CS_LAGR_TRACK_STEP_COMPLETED              /*!< 3: Final location reached */
 } cs_lagr_track_step_t;
 
+/* Private tracking data associated to each particle, mapped at the beginning
+   of each particle's data buffer */
+
+typedef struct {
+
+  cs_real_t                 start_coords[3]; /* starting coordinates for
+                                                next displacement */
+
+  cs_lnum_t                 last_face_id;    /* last face id encountered (0 to
+                                                n-1, -1 if none; interior first,
+                                                boundary next) */
+
+  cs_lagr_tracking_state_t  state;           /* current state */
+
+  cs_lagr_track_step_t      tracking_step_id;/* Current tracking step/phase */
+
+} cs_lagr_tracking_info_t;
+
 /*=============================================================================
  * Global variables
  *============================================================================*/
