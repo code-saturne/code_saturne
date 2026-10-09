@@ -178,35 +178,21 @@ cs_math_3_distance_dot_product(const T  xa[3],
 /*----------------------------------------------------------------------------*/
 
 template <typename T, typename U>
-CS_F_HOST_DEVICE inline cs_real_t
-cs_math_3_dot_product(const T  u[3],
-                      const U  v[3])
+CS_F_HOST_DEVICE inline cs::pair_fp_type_t<T, U>
+cs_math_3_dot_product(const T&  u,
+                      const U&  v)
 {
-  double uv = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+  /* Sanity checks */
+  static_assert(cs::is_rank_v<T, 1>, "Argument #1 is not of rank 1");
+  static_assert(cs::is_base_type_fp_v<T>,
+                "Argument #1 is not floating-point based ");
+  static_assert(cs::is_rank_v<U, 1>, "Argument #2 is not of rank 1");
+  static_assert(cs::is_base_type_fp_v<U>,
+                "Argument #2 is not floating-point based ");
 
-  return uv;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the dot product of two vectors of 3 real values.
- *
- * \tparam T input value type
- * \tparam U input value type
- *
- * \param[in]   u   vector of 3 real values
- * \param[in]   v   vector of 3 real values
- *
- * \return the resulting dot product u.v.
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T>
-CS_F_HOST_DEVICE inline T
-cs_math_3_dot_product(const T  u[3],
-                      const T  v[3])
-{
-  T uv = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+  /* Declare sub-types */
+  using RET_TYPE = cs::pair_fp_type_t<T, U>;
+  RET_TYPE uv = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
 
   return uv;
 }
