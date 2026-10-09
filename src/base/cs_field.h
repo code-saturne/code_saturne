@@ -282,6 +282,7 @@ public:
   int                     type;         /* Field type flag */
 
   int                     dim;          /* Field dimension */
+  const char             *units;        /* Physical units or nullptr */
 
   int                     location_id;  /* Id of matching location */
 
@@ -389,6 +390,18 @@ public:
     const char *key,
     void       *s
   ) const;
+
+  /* Query and setter methods for physical units
+     ------------------------------------------- */
+
+  inline const char *
+  get_units(void) const
+  {
+    return this->units;
+  }
+
+  void
+  set_units(const char  *units_str);
 
   cs_span_2d<cs_real_t>
   view
@@ -1695,6 +1708,68 @@ cs_field_define_keys_base(void);
 
 const char *
 cs_field_get_label(const cs_field_t  *f);
+
+/*----------------------------------------------------------------------------
+ * Set the physical units of a field.
+ *
+ * If the string matches a known unit in the static unit list or dynamic
+ * unit registry, the field's units pointer is set to that unique string.
+ * If units is NULL or empty, the field's units pointer is set to NULL.
+ *
+ * parameters:
+ *   f     <-> pointer to field
+ *   units <-- unit string (e.g. "m/s", "Pa", "kg/m3"), or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_set_units(cs_field_t  *f,
+                   const char  *units);
+
+/*----------------------------------------------------------------------------
+ * Return the physical units associated with a field.
+ *
+ * parameters:
+ *   f <-- pointer to field structure
+ *
+ * returns:
+ *   pointer to character string associated with units for this field, or NULL
+ *----------------------------------------------------------------------------*/
+
+inline const char *
+cs_field_get_units(const cs_field_t  *f)
+{
+  return (f != nullptr) ? f->units : nullptr;
+}
+
+/*----------------------------------------------------------------------------
+ * Define or register a unit symbol with an optional description.
+ *
+ * If the unit symbol already exists, its description is updated if non-null.
+ *
+ * parameters:
+ *   symbol      <-- unit symbol (e.g. "m/s", "Pa", "kg/m3")
+ *   description <-- optional unit description (e.g. "meter per second")
+ *
+ * returns:
+ *   pointer to persistent interned unit symbol string
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_field_define_unit(const char  *symbol,
+                     const char  *description);
+
+/*----------------------------------------------------------------------------
+ * Return the description associated with a unit symbol.
+ *
+ * parameters:
+ *   symbol <-- unit symbol
+ *
+ * returns:
+ *   pointer to unit description, or NULL if none registered
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_field_get_unit_description(const char  *symbol);
 
 /*----------------------------------------------------------------------------
  * Get the boundary coefficient multipliers for some field.

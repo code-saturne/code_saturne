@@ -125,6 +125,8 @@
   \var  cs_field_t::dim
         Field dimension (usually 1 for scalar, 3 for vector, or 6 for
         symmetric tensor)
+  \var  cs_field_t::units
+        Physical units string, or nullptr
   \var  cs_field_t::location_id
         Id of matching mesh location
   \var  cs_field_t::n_time_vals
@@ -228,6 +230,67 @@ static cs_field_key_def_t  *_key_defs = nullptr;
 static cs_map_name_to_id_t  *_key_map = nullptr;
 
 static int _k_label = -1;
+static int _k_units = -1;
+
+/* Units definitions and dictionary */
+
+typedef struct {
+  const char *symbol;
+  const char *description;
+} cs_unit_def_t;
+
+static const cs_unit_def_t _standard_units[] = {
+  {"-",        "dimensionless"},
+  {"%",        "percentage"},
+  {"rad",      "radian"},
+  {"deg",      "degree"},
+  {"s",        "second"},
+  {"s-1",      "per second"},
+  {"Hz",       "Hertz"},
+  {"rad/s",    "radian per second"},
+  {"m",        "meter"},
+  {"m2",       "square meter"},
+  {"m3",       "cubic meter"},
+  {"m/s",      "meter per second"},
+  {"m/s2",     "meter per second squared"},
+  {"m2/s",     "square meter per second"},
+  {"m2/s2",    "square meter per second squared"},
+  {"m2/s3",    "square meter per cubic second"},
+  {"kg",       "kilogram"},
+  {"g",        "gram"},
+  {"kg/m3",    "kilogram per cubic meter"},
+  {"kg/s",     "kilogram per second"},
+  {"m3/s",     "cubic meter per second"},
+  {"Pa",       "Pascal"},
+  {"bar",      "bar"},
+  {"Pa.s",     "Pascal-second"},
+  {"N",        "Newton"},
+  {"N.m",      "Newton-meter"},
+  {"J",        "Joule"},
+  {"J/kg",     "Joule per kilogram"},
+  {"J/(kg.K)", "Joule per kilogram-Kelvin"},
+  {"W",        "Watt"},
+  {"W/m2",     "Watt per square meter"},
+  {"W/m3",     "Watt per cubic meter"},
+  {"W/(m.K)",  "Watt per meter-Kelvin"},
+  {"K",        "Kelvin"},
+  {"degC",     "degree Celsius"},
+  {"mol",      "mole"},
+  {"mol/m3",   "mole per cubic meter"},
+  {"mol/s",    "mole per second"},
+  {"kg/mol",   "kilogram per mole"},
+  {"J/mol",    "Joule per mole"},
+  {"J/(mol.K)","Joule per mole-Kelvin"},
+  {"A",        "Ampere"},
+  {"V",        "Volt"},
+  {"T",        "Tesla"},
+  {"S/m",      "Siemens per meter"},
+  {"Ohm.m",    "Ohm-meter"}
+};
+
+static cs_map_name_to_id_t  *_units_map = nullptr;
+static char                 **_units_desc = nullptr;
+static size_t                 _units_desc_size = 0;
 
 /* Key values : _key_vals[field_id*_n_keys_max + key_id] */
 
@@ -382,6 +445,7 @@ _field_create(const char   *name,
   f->id = field_id;
   f->type = type_flag;
   f->dim = dim;
+  f->units = nullptr;
   f->location_id = location_id;
   f->n_time_vals = 1;
 
@@ -1705,6 +1769,15 @@ cs_field_destroy_all(void)
 
   cs_map_name_to_id_destroy(&_field_map);
 
+  if (_units_map != nullptr) {
+    for (size_t i = 0; i < _units_desc_size; i++)
+      CS_FREE(_units_desc[i]);
+    CS_FREE(_units_desc);
+    _units_desc = nullptr;
+    _units_desc_size = 0;
+    cs_map_name_to_id_destroy(&_units_map);
+  }
+
   _cs_field_free_str();
   _cs_field_free_struct();
 
@@ -2361,6 +2434,9 @@ cs_field_destroy_all_keys(void)
   cs_map_name_to_id_destroy(&_key_map);
 
   CS_FREE(_key_vals);
+
+  _k_label = -1;
+  _k_units = -1;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3143,6 +3219,10 @@ cs_field_log_info(const cs_field_t  *f,
                   _("    Dimension:                  %d\n"),
                   f->dim);
 
+  if (f->units != nullptr)
+    cs_log_printf(CS_LOG_SETUP, _("    Units:                      %s\n"),
+                  f->units);
+
   if (f->is_owner == false)
     cs_log_printf(CS_LOG_SETUP,
                   _("    Values mapped from external definition\n"));
@@ -3522,13 +3602,16 @@ cs_field_log_key_vals(int   key_id,
                             name_s, kd->def_val.v_double);
           }
           else if (kd->type_id == 's') {
-            const char *s;
-            if (kv->is_set) {
+            const char *s = nullptr;
+            if (key_id == _k_units && f->units != nullptr)
+              s = f->units;
+            else if (kv->is_set) {
               s = reinterpret_cast<const char *>(kv->val.v_p);
               if (s == nullptr)
                 s = null_str;
-              cs_log_printf(CS_LOG_SETUP, _("    %s %s\n"), name_s, s);
             }
+            if (s != nullptr)
+              cs_log_printf(CS_LOG_SETUP, _("    %s %s\n"), name_s, s);
             else if (log_defaults) {
               s = reinterpret_cast<const char *>(kd->def_val.v_p);
               if (s == nullptr)
@@ -3605,6 +3688,9 @@ cs_field_define_keys_base(void)
   cs_field_define_key_str("label", nullptr, 0);
   _k_label = cs_field_key_id("label");
 
+  cs_field_define_key_str("units", nullptr, 0);
+  _k_units = cs_field_key_id("units");
+
   cs_field_define_key_int("log", 0, 0);
   cs_field_define_key_int("post_vis", 0, 0);
   cs_field_define_key_int("coupled", 0, CS_FIELD_VARIABLE);
@@ -3634,6 +3720,146 @@ cs_field_get_label(const cs_field_t  *f)
     label = f->name;
 
   return label;
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize units map and populate with standard units.
+ *----------------------------------------------------------------------------*/
+
+static void
+_init_units(void)
+{
+  if (_units_map != nullptr)
+    return;
+
+  _units_map = cs_map_name_to_id_create();
+  size_t n_std = sizeof(_standard_units) / sizeof(_standard_units[0]);
+  _units_desc_size = n_std;
+  CS_MALLOC(_units_desc, _units_desc_size, char *);
+  for (size_t i = 0; i < _units_desc_size; i++)
+    _units_desc[i] = nullptr;
+
+  for (size_t i = 0; i < n_std; i++) {
+    int id = cs_map_name_to_id(_units_map, _standard_units[i].symbol);
+    if (_standard_units[i].description != nullptr) {
+      size_t l = strlen(_standard_units[i].description);
+      CS_MALLOC(_units_desc[id], l + 1, char);
+      strcpy(_units_desc[id], _standard_units[i].description);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the physical units of a field.
+ *
+ * If the string matches a known unit in the static unit list or dynamic
+ * unit registry, the field's units pointer is set to that unique string.
+ * If units is nullptr or empty, the field's units pointer is set to nullptr.
+ *
+ * \param[in, out] f      pointer to field structure
+ * \param[in]      units  unit string (e.g. "m/s", "Pa", "kg/m3"), or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_set_units(cs_field_t  *f,
+                   const char  *units)
+{
+  if (f == nullptr)
+    return;
+
+  f->set_units(units);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define or register a unit symbol with an optional description.
+ *
+ * If the unit symbol already exists, its description is updated if non-null.
+ *
+ * \param[in] symbol       unit symbol (e.g. "m/s", "Pa", "kg/m3")
+ * \param[in] description  optional unit description (e.g. "meter per second")
+ *
+ * \return pointer to persistent interned unit symbol string
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_field_define_unit(const char  *symbol,
+                     const char  *description)
+{
+  if (symbol == nullptr || symbol[0] == '\0')
+    return nullptr;
+
+  _init_units();
+
+  int id = cs_map_name_to_id(_units_map, symbol);
+
+  if (id >= (int)_units_desc_size) {
+    size_t new_size = _units_desc_size == 0 ? 16 : _units_desc_size * 2;
+    while ((int)new_size <= id)
+      new_size *= 2;
+    CS_REALLOC(_units_desc, new_size, char *);
+    for (size_t i = _units_desc_size; i < new_size; i++)
+      _units_desc[i] = nullptr;
+    _units_desc_size = new_size;
+  }
+
+  if (description != nullptr) {
+    CS_FREE(_units_desc[id]);
+    size_t l = strlen(description);
+    CS_MALLOC(_units_desc[id], l + 1, char);
+    strcpy(_units_desc[id], description);
+  }
+
+  return cs_map_name_to_id_reverse(_units_map, id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the description associated with a unit symbol.
+ *
+ * \param[in] symbol  unit symbol
+ *
+ * \return pointer to unit description, or nullptr if none registered
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_field_get_unit_description(const char  *symbol)
+{
+  if (symbol == nullptr || symbol[0] == '\0')
+    return nullptr;
+
+  _init_units();
+
+  int id = cs_map_name_to_id_try(_units_map, symbol);
+  if (id > -1 && id < (int)_units_desc_size)
+    return _units_desc[id];
+
+  return nullptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the physical units of this field.
+ *
+ * \param[in] units  unit string (e.g. "m/s", "Pa", "kg/m3"), or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_t::set_units(const char  *units_str)
+{
+  this->units = cs_field_define_unit(units_str, nullptr);
+
+  if (this->has_sub_fields()) {
+    for (int i = 0; i < _n_fields; i++) {
+      if (_fields[i]->ns_owner == this->id && _fields[i]->id != this->id)
+        _fields[i]->units = this->units;
+    }
+  }
 }
 
 /*=============================================================================
@@ -4210,6 +4436,9 @@ cs_field_t::set_key_str
         CS_REALLOC(kv->val.v_p, strlen(str) + 1, char);
         strcpy(reinterpret_cast<char *>(kv->val.v_p), str);
         kv->is_set = 1;
+
+        if (key_id == _k_units)
+          this->set_units(str);
       }
     }
   }
@@ -4267,6 +4496,8 @@ cs_field_t::get_key_str
     else {
       cs_field_key_val_t *kv = _key_vals + (this->id*_n_keys_max + key_id);
       const char *str = nullptr;
+      if (key_id == _k_units && this->units != nullptr)
+        return this->units;
       if (kv->is_set)
         str = reinterpret_cast<char *>(kv->val.v_p);
       else if (kd->is_sub)
@@ -5270,6 +5501,8 @@ cs_field_t::initialize_sub_fields
                                       owner_id);
 
     _fields[sf_id]->map_to_ns_data();
+    if (_fields[sf_id]->units == nullptr && this->units != nullptr)
+      _fields[sf_id]->units = this->units;
   }
 }
 

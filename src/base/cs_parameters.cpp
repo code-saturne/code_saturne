@@ -978,9 +978,6 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("restart_file", CS_RESTART_DISABLED, 0);
   cs_field_define_key_int("restart_n_values", 1, 0);
 
-  /* field units */
-  cs_field_define_key_str("units", "", 0);
-
   /* AMR interpolation scheme */
   cs_field_define_key_int("amr_interpolation_scheme", 0, 0);
 }
