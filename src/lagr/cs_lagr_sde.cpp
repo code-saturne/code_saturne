@@ -304,9 +304,9 @@ _lagr_sde_compute_step_coeffs(cs_real_t                    dt_part,
   const cs_real_t taup_1_m_exp = c->a1;
 
   c->cov_gam_omega = b_sq_theta * (
-      (tlag - taup) * (1.0 - c->exp_tlag)
-    - int_tlag
-    + (taup / (tlag + taup)) * int_cross);
+      (tlag - taup) * tlag_1_m_exp
+    - tlag * int_tlag
+    + taup * int_cross);
 
   c->cov_ggam_omega = b_sq_theta2 * (
       (tlag - taup) * (tlag_1_m_exp - taup_1_m_exp)
