@@ -643,7 +643,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         """
         if index != None:
             self.treeView.selectionModel().select(index,
-                                                  QItemSelectionModel.SelectionFlag.SelectionFlag.SelectionFlag.SelectCurrent)
+                                                  QItemSelectionModel.SelectionFlag.SelectCurrent)
 
         return
 

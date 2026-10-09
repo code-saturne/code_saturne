@@ -92,7 +92,7 @@ class BrowserView(SaturneBrowserView):
     def activeSelectedPage(self, index):
         """
         """
-        self.treeView.selectionModel().select(index, QItemSelectionModel.SelectionFlag.SelectionFlag.SelectionFlag.SelectCurrent)
+        self.treeView.selectionModel().select(index, QItemSelectionModel.SelectionFlag.SelectCurrent)
 
         return
 

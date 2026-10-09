@@ -566,7 +566,7 @@ class StandardItemModelMesh(QStandardItemModel):
             elif index.column() == 1:
                 return dico['id']
             elif index.column() == 2:
-                return self.dicoM2V[dico['type']]
+                return self.dicoM2V.get(dico['type'], dico['type'])
             elif index.column() == 3:
                 return dico['location']
             else:
@@ -734,7 +734,7 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
             elif index.column() == 1:
                 return dico['id']
             elif index.column() == 2:
-                return self.dicoM2V[dico['type']]
+                return self.dicoM2V.get(dico['type'], dico['type'])
             elif index.column() == 3:
                 return dico['density']
             elif index.column() == 4:
@@ -2468,21 +2468,21 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 label = self.mdl.getMeshLabel(mesh)
                 mesh_type = self.mdl.getMeshType(mesh)
                 location = self.mdl.getMeshLocation(mesh)
-                if mesh_type != "particles":
-                    self.__insertMesh(label, mesh, mesh_type, location)
-                else:
+                if mesh_type in ("particles", "trajectories"):
                     density = self.mdl.getMeshDensity(mesh)
                     self.__insertLagrangianMesh(label, mesh, mesh_type, density, location)
+                else:
+                    self.__insertMesh(label, mesh, mesh_type, location)
         for mesh in list_mesh:
             new_id = new_id + 1
             label = self.mdl.getMeshLabel(mesh)
             mesh_type = self.mdl.getMeshType(mesh)
             location = self.mdl.getMeshLocation(mesh)
-            if mesh_type != "particles":
-                self.__insertMesh(label, str(new_id), mesh_type, location)
-            else:
+            if mesh_type in ("particles", "trajectories"):
                 density = self.mdl.getMeshDensity(mesh)
                 self.__insertLagrangianMesh(label, str(new_id), mesh_type, density, location)
+            else:
+                self.__insertMesh(label, str(new_id), mesh_type, location)
 
 
     @Slot()
@@ -2531,21 +2531,21 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 label = self.mdl.getMeshLabel(mesh)
                 mesh_type = self.mdl.getMeshType(mesh)
                 location = self.mdl.getMeshLocation(mesh)
-                if mesh_type != "particles":
-                    self.__insertMesh(label, mesh, mesh_type, location)
-                else:
+                if mesh_type in ("particles", "trajectories"):
                     density = self.mdl.getMeshDensity(mesh)
                     self.__insertLagrangianMesh(label, mesh, mesh_type, density, location)
+                else:
+                    self.__insertMesh(label, mesh, mesh_type, location)
         for mesh in list_mesh:
             new_id = new_id + 1
             label = self.mdl.getMeshLabel(mesh)
             mesh_type = self.mdl.getMeshType(mesh)
             location = self.mdl.getMeshLocation(mesh)
-            if mesh_type != "particles":
-                self.__insertMesh(label, str(new_id), mesh_type, location)
-            else:
+            if mesh_type in ("particles", "trajectories"):
                 density = self.mdl.getMeshDensity(mesh)
                 self.__insertLagrangianMesh(label, str(new_id), mesh_type, density, location)
+            else:
+                self.__insertMesh(label, str(new_id), mesh_type, location)
 
 
     @Slot("QModelIndex")
