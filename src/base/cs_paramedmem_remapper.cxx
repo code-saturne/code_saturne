@@ -649,6 +649,9 @@ cs_paramedmem_remap_field_one_time(cs_paramedmem_remapper_t *r,
   arr->alloc(r->local_mesh->n_elts, fdim);
   trg_field->setArray(arr);
   trg_field->getArray()->decrRef();
+  trg_field->setTimeUnit(src_field->getTimeUnit());
+  if (src_field->getArray() != nullptr)
+    trg_field->getArray()->copyStringInfoFrom(*src_field->getArray());
   trg_field->setNature(IntensiveMaximum);
   r->odec->attachTargetLocalField(trg_field);
 

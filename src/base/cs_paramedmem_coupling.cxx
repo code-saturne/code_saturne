@@ -1235,6 +1235,30 @@ _cs_paramedmem_coupling_t::add_field(const cs_field_t        *f,
               f->name);
 
   f_id = this->add_field(f->name, f->dim, fn, sd, td);
+
+  if (f_id >= 0 && (size_t)f_id < this->fields.size()) {
+    ParaFIELD *pf = this->fields[f_id];
+    if (pf != nullptr && pf->getField() != nullptr) {
+      pf->getField()->setTimeUnit("s");
+      if (f->units != nullptr) {
+        DataArrayDouble *arr = pf->getField()->getArray();
+        if (arr != nullptr) {
+          const char *const xyz[3] = {"X", "Y", "Z"};
+          const char *const ij6[6] = {"11", "22", "33", "12", "13", "23"};
+          for (int c = 0; c < f->dim; c++) {
+            std::string c_name = f->name;
+            if (f->dim == 3 && c < 3)
+              c_name += std::string("_") + xyz[c];
+            else if (f->dim == 6 && c < 6)
+              c_name += std::string("_") + ij6[c];
+            std::string c_info
+              = DataArrayDouble::BuildInfoFromVarAndUnit(c_name, f->units);
+            arr->setInfoOnComponent(c, c_info);
+          }
+        }
+      }
+    }
+  }
 #endif
 
   return f_id;

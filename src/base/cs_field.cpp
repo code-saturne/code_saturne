@@ -3052,8 +3052,9 @@ cs_field_log_defs(void)
   for (cat_id = mask_id_start; cat_id < mask_id_end + 1; cat_id++) {
 
     size_t name_width = 24;
+    size_t units_width = 10;
 
-    /* First loop to determine name width */
+    /* First loop to determine name and units width */
 
     n_cat_fields = 0;
 
@@ -3067,10 +3068,18 @@ cs_field_log_defs(void)
       size_t l = strlen(f->name);
       if (l > name_width)
         name_width = l;
+
+      if (f->units != nullptr) {
+        size_t lu = strlen(f->units);
+        if (lu > units_width)
+          units_width = lu;
+      }
     }
 
     if (name_width > 63)
       name_width = 63;
+    if (units_width > 32)
+      units_width = 32;
 
     /* Main loop */
 
@@ -3085,7 +3094,7 @@ cs_field_log_defs(void)
 
       if (cat_id == mask_id_end || f->type & _type_flag_mask[cat_id]) {
 
-        char tmp_s[4][64] =  {"", "", "", ""};
+        char tmp_s[5][64] =  {"", "", "", "", ""};
 
         /* Print header for first field of each category */
 
@@ -3093,8 +3102,9 @@ cs_field_log_defs(void)
 
           cs_log_strpad(tmp_s[0], _("Field"), name_width, 64);
           cs_log_strpad(tmp_s[1], _("Dim."), 4, 64);
-          cs_log_strpad(tmp_s[2], _("Location"), 20, 64);
-          cs_log_strpad(tmp_s[3], _("Id"), 4, 64);
+          cs_log_strpad(tmp_s[2], _("Units"), units_width, 64);
+          cs_log_strpad(tmp_s[3], _("Location"), 20, 64);
+          cs_log_strpad(tmp_s[4], _("Id"), 4, 64);
 
           /* Print logging header */
 
@@ -3110,19 +3120,20 @@ cs_field_log_defs(void)
                             "-------------\n"));
           cs_log_printf(CS_LOG_SETUP, "\n");
 
-          cs_log_printf(CS_LOG_SETUP, _("  %s %s %s %s Type flag\n"),
-                        tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
+          cs_log_printf(CS_LOG_SETUP, _("  %s %s %s %s %s Type flag\n"),
+                        tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3], tmp_s[4]);
 
-          for (j = 0; j < 4; j++)
+          for (j = 0; j < 5; j++)
             memset(tmp_s[j], '-', 64);
 
           tmp_s[0][name_width] = '\0';
           tmp_s[1][4] = '\0';
-          tmp_s[2][20] = '\0';
-          tmp_s[3][4] = '\0';
+          tmp_s[2][units_width] = '\0';
+          tmp_s[3][20] = '\0';
+          tmp_s[4][4] = '\0';
 
-          cs_log_printf(CS_LOG_SETUP, _("  %s %s %s %s ---------\n"),
-                        tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3]);
+          cs_log_printf(CS_LOG_SETUP, _("  %s %s %s %s %s ---------\n"),
+                        tmp_s[0], tmp_s[1], tmp_s[2], tmp_s[3], tmp_s[4]);
 
         }
 
@@ -3130,15 +3141,19 @@ cs_field_log_defs(void)
 
         cs_log_strpad(tmp_s[0], f->name, name_width, 64);
 
-        cs_log_strpad(tmp_s[1],
+        const char *u_str = (f->units != nullptr) ? f->units : "";
+        cs_log_strpad(tmp_s[2], u_str, units_width, 64);
+
+        cs_log_strpad(tmp_s[3],
                       _(cs_mesh_location_get_name(f->location_id)),
                       20,
                       64);
 
         cs_log_printf(CS_LOG_SETUP,
-                      "  %s %d %c  %s %-4d ",
+                      "  %s %d %c  %s %s %-4d ",
                       tmp_s[0], f->dim, ilv_c,
-                      tmp_s[1],
+                      tmp_s[2],
+                      tmp_s[3],
                       f->id);
 
         if (f->type != 0) {
