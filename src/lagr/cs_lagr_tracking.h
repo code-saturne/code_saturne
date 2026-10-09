@@ -74,6 +74,9 @@ typedef struct {
   cs_real_t                 start_coords[3]; /* starting coordinates for
                                                 next displacement */
 
+  cs_real_t                 end_coords[3];   /* ending coordinates for
+                                                displacement */
+
   cs_lnum_t                 last_face_id;    /* last face id encountered (0 to
                                                 n-1, -1 if none; interior first,
                                                 boundary next) */

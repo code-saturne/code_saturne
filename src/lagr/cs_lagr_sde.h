@@ -71,6 +71,38 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t          &p_set,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute deterministic position for the virtual partner
+ *        (cell_wise_integ == 1) without modifying the particle state in p_set.
+ *
+ * \param[in]  p_set     reference to particle set (read-only)
+ * \param[in]  p_id      particle index in set
+ * \param[in]  dt_part   remaining time step associated to the particle
+ * \param[in]  nor       current step id
+ * \param[in]  taup      dynamic characteristic time
+ * \param[in]  tlag      lagrangian fluid characteristic time
+ * \param[in]  piil      term in integration of up sdes
+ * \param[in]  bx        turbulence characteristics
+ * \param[in]  force_p   forces per mass unit on particles (m/s^2)
+ * \param[in]  beta      proportional to the gradient of T_lag
+ * \param[out] target    computed target coordinates of virtual partner
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_sde_predict_virtual_partner(const cs_lagr_particle_set_t    &p_set,
+                                    cs_lnum_t                        p_id,
+                                    cs_real_t                        dt_part,
+                                    int                              nor,
+                                    const cs_array<cs_real_t>&       taup,
+                                    const cs_array_2d<cs_real_t>&    tlag,
+                                    const cs_array_2d<cs_real_t>&    piil,
+                                    const cs_array_3d<cs_real_t>&    bx,
+                                    const cs_real_3_t                force_p,
+                                    const cs_real_3_t                beta,
+                                    cs_real_3_t                      target);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Integration of particle equations of motion:
  *
  * - Standard Model : First or second order

@@ -1234,27 +1234,60 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
  * \param[in]  beta      proportional to the gradient of T_lag
  */
 /*----------------------------------------------------------------------------*/
-void
-cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
-                                      cs_lnum_t                       p_id,
-                                      cs_real_t                       dt_part,
-                                      int                             nor,
-                                      const cs_array<cs_real_t>&      taup,
-                                      const cs_array_2d<cs_real_t>&   tlag,
-                                      const cs_array_2d<cs_real_t>&   piil,
-                                      const cs_array_3d<cs_real_t>&   bx,
-                                      const cs_array_2d<cs_real_t>&   vagaus,
-                                      const cs_real_6_t               brgaus,
-                                      const cs_real_3_t               force_p,
-                                      const cs_real_3_t               beta)
+/*----------------------------------------------------------------------------*/
+/*! \brief Kernel for integration of SDEs by 1st order scheme for one particle
+ *
+ * \param[in]  p_set             reference to particle set
+ * \param[in]  p_id              particle index in set
+ * \param[in]  dt_part           remaining time step associated to the particle
+ * \param[in]  nor               current step id (for 2nd order scheme)
+ * \param[in]  taup              dynamic characteristic time
+ * \param[in]  tlag              lagrangian fluid characteristic time
+ * \param[in]  piil              term in integration of up sdes
+ * \param[in]  bx                turbulence characteristics
+ * \param[in]  vagaus            gaussian random variables
+ * \param[in]  brgaus            gaussian random variables
+ * \param[in]  force_p           forces per mass unit on particles (m/s^2)
+ * \param[in]  beta              proportional to the gradient of T_lag
+ * \param[in]  is_virtual        true if virtual partner prediction
+ * \param[out] out_coords        integrated/predicted position
+ * \param[out] out_vel           integrated/predicted particle velocity
+ * \param[out] out_vel_seen      integrated/predicted fluid velocity seen
+ * \param[out] out_brown_state_1 optional brownian state 1 (can be nullptr)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_sde_vels_pos_1_st_order_kernel(cs_lagr_particle_set_t        &p_set,
+                                cs_lnum_t                      p_id,
+                                cs_real_t                      dt_part,
+                                int                            nor,
+                                const cs_array<cs_real_t>     &taup,
+                                const cs_array_2d<cs_real_t>  &tlag,
+                                const cs_array_2d<cs_real_t>  &piil,
+                                const cs_array_3d<cs_real_t>  &bx,
+                                const cs_array_2d<cs_real_t>  &vagaus,
+                                const cs_real_6_t              brgaus,
+                                const cs_real_3_t              force_p,
+                                const cs_real_3_t              beta,
+                                bool                           is_virtual,
+                                cs_real_3_t                    out_coords,
+                                cs_real_3_t                    out_vel,
+                                cs_real_3_t                    out_vel_seen,
+                                cs_real_t                     *out_brown_1)
 {
-  CS_PROFILE_FUNC_RANGE();
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
   cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
-  if (cell_id < 0)
+  if (cell_id < 0) {
+    for (int i = 0; i < 3; i++) {
+      out_coords[i] = 0.;
+      out_vel[i] = 0.;
+      out_vel_seen[i] = 0.;
+    }
     return;
+  }
 
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
@@ -1347,11 +1380,11 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
 
     for (cs_lnum_t id = 0; id < 3; id++) {
 
-      part_coords[id] = old_part_coords[id] + disp[id];
+      out_coords[id] = old_part_coords[id] + disp[id];
 
-      part_vel_seen[id] =  0.0;
+      out_vel_seen[id] =  0.0;
 
-      part_vel[id] = disp[id] / dt_part;
+      out_vel[id] = disp[id] / dt_part;
 
     }
     return;
@@ -1369,13 +1402,15 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
   cs_real_t displ_r[3];
   cs_real_t trans_m[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
+  const cs_real_t *ref_coords = is_virtual ? old_part_coords : part_coords;
+
   /* resolve SDEs*/
   if (cs_glob_lagr_time_scheme->interpol_field == 1) {
     for (int i = 0; i < 3; i++) {
       loc_fluid_vel[i] = cvar_vel[cell_id][i];
       for (int j = 0; j < 3; j++)
         loc_fluid_vel[i] += extra_i[phase_id].grad_vel[cell_id][i][j]
-                          * (part_coords[j] - cell_cen[j]);
+                          * (ref_coords[j] - cell_cen[j]);
     }
   }
   else {
@@ -1711,14 +1746,18 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
 
       if (tiu2 > 0.0) {
         tbriu      = sqrt(tiu2) * brgaus[id + 3];
-        if (cs_glob_lagr_time_scheme->t_order == 2)
-          p_set.attr_real(p_id, CS_LAGR_BROWN_STATE_1) = sqrt(tiu2);
+        if (   !is_virtual
+            && cs_glob_lagr_time_scheme->t_order == 2
+            && out_brown_1 != nullptr)
+          *out_brown_1 = sqrt(tiu2);
 
       }
       else {
         tbriu     = 0.0;
-        if (cs_glob_lagr_time_scheme->t_order == 2)
-          p_set.attr_real(p_id, CS_LAGR_BROWN_STATE_1) = 0.;
+        if (   !is_virtual
+            && cs_glob_lagr_time_scheme->t_order == 2
+            && out_brown_1 != nullptr)
+          *out_brown_1 = 0.;
       }
     }
     else {
@@ -1754,23 +1793,152 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
     cs_real_t displ[3];
     cs_math_33t_3_product(trans_m, displ_r, displ);
     for (cs_lnum_t id = 0; id < 3; id++)
-      part_coords[id] = old_part_coords[id] + displ[id];
+      out_coords[id] = old_part_coords[id] + displ[id];
 
     /* Particle velocity */
-    cs_math_33t_3_product(trans_m, part_vel_r, part_vel);
+    cs_math_33t_3_product(trans_m, part_vel_r, out_vel);
 
     /* Flow-seen velocity */
-    cs_math_33t_3_product(trans_m, part_vel_seen_r, part_vel_seen);
+    cs_math_33t_3_product(trans_m, part_vel_seen_r, out_vel_seen);
   }
 
   else { /* local_reference_frame == false */
     for (cs_lnum_t id = 0; id < 3; id++) {
-      part_coords[id] = old_part_coords[id] + displ_r[id];
-      part_vel[id] = part_vel_r[id];
-      part_vel_seen[id] = part_vel_seen_r[id];
+      out_coords[id] = old_part_coords[id] + displ_r[id];
+      out_vel[id] = part_vel_r[id];
+      out_vel_seen[id] = part_vel_seen_r[id];
     }
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Integration of SDEs by 1st order time scheme for one particle
+ *
+ * \param[in, out] p_set     reference to particle set
+ * \param[in]      p_id      particle index in set
+ * \param[in]      dt_part   remaining time step associated to the particle
+ * \param[in]      nor       current step id (for 2nd order scheme)
+ * \param[in]      taup      dynamic characteristic time
+ * \param[in]      tlag      lagrangian fluid characteristic time
+ * \param[in]      piil      term in integration of up sdes
+ * \param[in]      bx        turbulence characteristics
+ * \param[in]      vagaus    gaussian random variables
+ * \param[in]      brgaus    gaussian random variables
+ * \param[in]      force_p   forces per mass unit on particles (m/s^2)
+ * \param[in]      beta      proportional to the gradient of T_lag
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
+                                      cs_lnum_t                       p_id,
+                                      cs_real_t                       dt_part,
+                                      int                             nor,
+                                      const cs_array<cs_real_t>&      taup,
+                                      const cs_array_2d<cs_real_t>&   tlag,
+                                      const cs_array_2d<cs_real_t>&   piil,
+                                      const cs_array_3d<cs_real_t>&   bx,
+                                      const cs_array_2d<cs_real_t>&   vagaus,
+                                      const cs_real_6_t               brgaus,
+                                      const cs_real_3_t               force_p,
+                                      const cs_real_3_t               beta)
+{
+  CS_PROFILE_FUNC_RANGE();
+
+  cs_real_3_t out_coords, out_vel, out_vel_seen;
+  cs_real_t brown_state_1 = 0.;
+
+  _sde_vels_pos_1_st_order_kernel(p_set,
+                                  p_id,
+                                  dt_part,
+                                  nor,
+                                  taup,
+                                  tlag,
+                                  piil,
+                                  bx,
+                                  vagaus,
+                                  brgaus,
+                                  force_p,
+                                  beta,
+                                  false, /* is_virtual */
+                                  out_coords,
+                                  out_vel,
+                                  out_vel_seen,
+                                  &brown_state_1);
+
+  auto *part_coords   = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
+  auto *part_vel      = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
+  auto *part_vel_seen = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
+
+  for (cs_lnum_t id = 0; id < 3; id++) {
+    part_coords[id] = out_coords[id];
+    part_vel[id] = out_vel[id];
+    part_vel_seen[id] = out_vel_seen[id];
+  }
+
+  if (   cs_glob_lagr_brownian->lamvbr == 1
+      && cs_glob_lagr_time_scheme->t_order == 2)
+    p_set.attr_real(p_id, CS_LAGR_BROWN_STATE_1) = brown_state_1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute deterministic position for the virtual partner
+ *        (cell_wise_integ == 1) without modifying the particle state in p_set.
+ *
+ * \param[in]  p_set     reference to particle set (read-only)
+ * \param[in]  p_id      particle index in set
+ * \param[in]  dt_part   remaining time step associated to the particle
+ * \param[in]  nor       current step id
+ * \param[in]  taup      dynamic characteristic time
+ * \param[in]  tlag      lagrangian fluid characteristic time
+ * \param[in]  piil      term in integration of up sdes
+ * \param[in]  bx        turbulence characteristics
+ * \param[in]  force_p   forces per mass unit on particles (m/s^2)
+ * \param[in]  beta      proportional to the gradient of T_lag
+ * \param[out] target    computed target coordinates of virtual partner
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_sde_predict_virtual_partner(const cs_lagr_particle_set_t    &p_set,
+                                    cs_lnum_t                        p_id,
+                                    cs_real_t                        dt_part,
+                                    int                              nor,
+                                    const cs_array<cs_real_t>&       taup,
+                                    const cs_array_2d<cs_real_t>&    tlag,
+                                    const cs_array_2d<cs_real_t>&    piil,
+                                    const cs_array_3d<cs_real_t>&    bx,
+                                    const cs_real_3_t                force_p,
+                                    const cs_real_3_t                beta,
+                                    cs_real_3_t                      target)
+{
+  CS_PROFILE_FUNC_RANGE();
+
+  static const cs_real_6_t zero_brgaus = {0., 0., 0., 0., 0., 0.};
+  cs_array_2d<cs_real_t> zero_vagaus(taup.size() + 2, 3);
+  zero_vagaus.zero();
+
+  cs_real_3_t dummy_vel, dummy_vel_seen;
+
+  _sde_vels_pos_1_st_order_kernel(const_cast<cs_lagr_particle_set_t &>(p_set),
+                                  p_id,
+                                  dt_part,
+                                  nor,
+                                  taup,
+                                  tlag,
+                                  piil,
+                                  bx,
+                                  zero_vagaus,
+                                  zero_brgaus,
+                                  force_p,
+                                  beta,
+                                  true, /* is_virtual */
+                                  target,
+                                  dummy_vel,
+                                  dummy_vel_seen,
+                                  nullptr);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -342,6 +342,11 @@ _define_particle_datatype(const cs_lagr_attribute_map_t  *p_am)
   for (i = attr_start; i < attr_end; i++)
     cs_type[i] = CS_REAL_TYPE;
 
+  attr_start = offsetof(cs_lagr_tracking_info_t, end_coords);
+  attr_end = attr_start + 3*sizeof(cs_real_t);
+  for (i = attr_start; i < attr_end; i++)
+    cs_type[i] = CS_REAL_TYPE;
+
   attr_start = offsetof(cs_lagr_tracking_info_t, last_face_id);
   attr_end = attr_start + sizeof(cs_lnum_t);
   for (i = attr_start; i < attr_end; i++)
@@ -1317,8 +1322,13 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
 
   assert(bdy_conditions != nullptr);
 
+  const cs_real_t *target_loc
+    = (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER)
+    ? p_info->end_coords
+    : particle_coord;
+
   for (int k = 0; k < 3; k++)
-    disp[k] = particle_coord[k] - p_info->start_coords[k];
+    disp[k] = target_loc[k] - p_info->start_coords[k];
 
   cs_real_t face_area  = fvq->b_face_surf[face_id];
 
@@ -1770,27 +1780,35 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
 
       /* Modify the ending point. */
 
+      cs_real_t *target_pt
+        = (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER)
+        ? p_info->end_coords
+        : particle_coord;
+
       for (int k = 0; k < 3; k++)
-        disp[k] = particle_coord[k] - intersect_pt[k];
+        disp[k] = target_pt[k] - intersect_pt[k];
 
       tmp = 2. * cs_math_3_dot_product(disp, face_norm);
 
       for (int k = 0; k < 3; k++)
-        particle_coord[k] -= tmp * face_norm[k];
+        target_pt[k] -= tmp * face_norm[k];
 
       /* Modify particle velocity and velocity seen */
 
-      tmp = 2. * cs_math_3_dot_product(particle_velocity, face_norm);
-
-      for (int k = 0; k < 3; k++)
-        particle_velocity[k] -= tmp * face_norm[k];
-
-      for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-        tmp = 2. * cs_math_3_dot_product(particle_velocity_seen + 3 * phase_id,
-                                         face_norm);
+      if (p_info->tracking_step_id != CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER) {
+        tmp = 2. * cs_math_3_dot_product(particle_velocity, face_norm);
 
         for (int k = 0; k < 3; k++)
-          particle_velocity_seen[3 * phase_id + k] -= tmp * face_norm[k];
+          particle_velocity[k] -= tmp * face_norm[k];
+
+        for (int phase_id = 0; phase_id < n_phases; phase_id++) {
+          tmp = 2. * cs_math_3_dot_product(particle_velocity_seen
+                                           + 3 * phase_id,
+                                           face_norm);
+
+          for (int k = 0; k < 3; k++)
+            particle_velocity_seen[3 * phase_id + k] -= tmp * face_norm[k];
+        }
       }
 
       event_flag = event_flag | CS_EVENT_REBOUND;
@@ -2066,29 +2084,36 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
 
       /* Modify the ending point. */
 
+      cs_real_t *target_pt
+        = (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER)
+        ? p_info->end_coords
+        : particle_coord;
+
       for (int k = 0; k < 3; k++)
-        disp[k] = particle_coord[k] - intersect_pt[k];
+        disp[k] = target_pt[k] - intersect_pt[k];
 
       tmp = 2. * cs_math_3_dot_product(disp, face_norm);
 
       for (int k = 0; k < 3; k++)
-        particle_coord[k] -= tmp * face_norm[k];
+        target_pt[k] -= tmp * face_norm[k];
 
       /* Modify particle velocity and velocity seen */
 
-      tmp = 2. * cs_math_3_dot_product(particle_velocity, face_norm);
+      if (p_info->tracking_step_id != CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER) {
+        tmp = 2. * cs_math_3_dot_product(particle_velocity, face_norm);
 
-      for (int k = 0; k < 3; k++)
-        particle_velocity[k] -= tmp * face_norm[k];
+        for (int k = 0; k < 3; k++)
+          particle_velocity[k] -= tmp * face_norm[k];
 
-      for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-        tmp = 2. * cs_math_3_dot_product(particle_velocity_seen + 3 * phase_id,
-                                         face_norm);
+        for (int phase_id = 0; phase_id < n_phases; phase_id++) {
+          tmp = 2. * cs_math_3_dot_product(particle_velocity_seen + 3*phase_id,
+                                           face_norm);
 
-        /*TODO set anelastic rebound */
-        for (int k = 0; k < 3; k++) {
-          particle_velocity_seen[3 * phase_id + k] -= tmp * face_norm[k];
-          // particle_velocity_seen[k] = 0.0; //FIXME
+          /*TODO set anelastic rebound */
+          for (int k = 0; k < 3; k++) {
+            particle_velocity_seen[3 * phase_id + k] -= tmp * face_norm[k];
+            // particle_velocity_seen[k] = 0.0; //FIXME
+          }
         }
       }
 
@@ -2388,19 +2413,18 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
       cs_lagr_get_force_p(dt_part, p_set, p_id,
                           taup, tlag, piil, bx, tsfext, force_p);
 
-      /* save the integrated fields */
-      cs_sde_vels_pos_1_st_order_time_integ(p_set,
-                                            p_id,
-                                            dt_part,
-                                            nor,
-                                            taup,
-                                            tlag,
-                                            piil,
-                                            bx,
-                                            vagaus,
-                                            br_gaus,
-                                            force_p,
-                                            beta);
+      /* Predict virtual partner target without touching p_set */
+      cs_lagr_sde_predict_virtual_partner(p_set,
+                                          p_id,
+                                          dt_part,
+                                          nor,
+                                          taup,
+                                          tlag,
+                                          piil,
+                                          bx,
+                                          force_p,
+                                          beta,
+                                          p_info->end_coords);
       dt_incremented_in_subiter = 0.;
 
       /* compute random Gaussian variables */
@@ -2415,9 +2439,15 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
 
     }
 
-    /* track the integrated position of the stochastic particle */
-    for(int k = 0 ; k < 3 ; k++)
-      next_location[k] = particle_coord[k];
+    /* track the integrated position */
+    if (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER) {
+      for (int k = 0; k < 3; k++)
+        next_location[k] = p_info->end_coords[k];
+    }
+    else {
+      for (int k = 0; k < 3; k++)
+        next_location[k] = particle_coord[k];
+    }
 
     /* Dimension less test: no movement ? */
     const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
@@ -2800,9 +2830,14 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
 
       specific_face_interaction = true;
 
-      /* update  next position*/
-      for(int k = 0; k < 3 ; k++) {
-        next_location[k] = particle_coord[k];
+      /* update next position */
+      if (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER) {
+        for (int k = 0; k < 3; k++)
+          next_location[k] = p_info->end_coords[k];
+      }
+      else {
+        for (int k = 0; k < 3; k++)
+          next_location[k] = particle_coord[k];
       }
       p_info->last_face_id = face_id;
 
@@ -3449,6 +3484,10 @@ _sync_particle_set(cs_lagr_particle_set_t  &p_set,
 
         _apply_vector_transfo((const cs_real_t (*)[4])matrix,
                               _tracking_info(p_set, p_id)->start_coords);
+
+        _apply_vector_transfo
+          ((const cs_real_t (*)[4])matrix,
+           _tracking_info(p_set, p_id)->end_coords);
 
         _apply_vector_transfo((const cs_real_t (*)[4])matrix,
           p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_COORDS));
