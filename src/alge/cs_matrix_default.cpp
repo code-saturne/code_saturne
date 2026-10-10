@@ -465,6 +465,8 @@ cs_matrix_vector_native_multiply(bool              symmetric,
                                              vx,
                                              vy);
   }
+
+  cs_matrix_release(&a);
 }
 
 /*----------------------------------------------------------------------------

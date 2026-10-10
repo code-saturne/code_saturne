@@ -1168,14 +1168,14 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 }
 
 /*----------------------------------------------------------------------------
- * Measure intermediate matrix assembly functions performance.
+ * Measure count to index performance.
  *
  * parameters:
  *   accel <-- use accelerated version if available.
  *----------------------------------------------------------------------------*/
 
 static void
-_matrix_check_assmb_fine(bool  accel)
+_check_count_to_index(bool  accel)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
@@ -1209,6 +1209,8 @@ _matrix_check_assmb_fine(bool  accel)
                 "\n"
                 "Count to index, in-place\n"
                 "------------------------\n");
+
+  CS_FREE(idx);
 
   _print_stats(1, n_cells, cs_glob_mesh->n_g_cells, wt_r0);
 }
@@ -1279,7 +1281,7 @@ cs_benchmark(int  mpi_trace_mode)
                      i_face_cells,
                      mesh->halo);
 
-  _matrix_check_assmb_fine(false);
+  _check_count_to_index(false);
 
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
