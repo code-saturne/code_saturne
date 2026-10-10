@@ -1993,6 +1993,7 @@ _matrix_assembler_values_add_cnv_idx(cs_matrix_assembler_values_t  *mav,
       }
 
       mav->add_values(mav->matrix,
+                      0,
                       b_size,
                       stride,
                       row_id + i,
@@ -2033,6 +2034,7 @@ _matrix_assembler_values_add_cnv_idx(cs_matrix_assembler_values_t  *mav,
       }
 
       mav->add_values(mav->matrix,
+                      0,
                       b_size,
                       stride,
                       row_id + i,
@@ -2137,6 +2139,7 @@ _matrix_assembler_values_add_lg(cs_matrix_assembler_values_t  *mav,
 
     if (ma->separate_diag == mav->separate_diag)
       mav->add_values(mav->matrix,
+                      0,
                       b_size,
                       stride,
                       row_id + i,
@@ -2209,6 +2212,7 @@ _matrix_assembler_values_add_ll_g(cs_matrix_assembler_values_t  *mav,
     }
 
     mav->add_values_g(mav->matrix,
+                      0,
                       b_size,
                       stride,
                       row_g_id,
@@ -2281,6 +2285,7 @@ _matrix_assembler_values_add_llx_g(cs_matrix_assembler_values_t  *mav,
     }
 
     mav->add_values_g(mav->matrix,
+                      0,
                       b_size,
                       stride,
                       row_g_id,
@@ -2331,6 +2336,7 @@ _matrix_assembler_values_add_lg_g(cs_matrix_assembler_values_t  *mav,
       row_g_id[j] = row_id[i+j] + ma->l_range[0];
 
     mav->add_values_g(mav->matrix,
+                      0,
                       b_size,
                       stride,
                       row_g_id,
@@ -3215,6 +3221,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
 
       if (ma->separate_diag == mav->separate_diag)
         mav->add_values(mav->matrix,
+                        0,
                         b_size,
                         stride,
                         row_id + i,
@@ -3360,6 +3367,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
     if (mav->add_values_g != nullptr) /* global id-based assembler function */
       mav->add_values_g(mav->matrix,
+                        0,
                         b_size,
                         stride,
                         s_g_row_id,
@@ -3423,6 +3431,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
       if (ma->separate_diag == mav->separate_diag) {
         mav->add_values(mav->matrix,
+                        0,
                         b_size,
                         stride,
                         s_row_id,
@@ -3472,6 +3481,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
       if (ma->separate_diag == mav->separate_diag)
         mav->add_values(mav->matrix,
+                        0,
                         b_size,
                         stride,
                         s_row_id,
@@ -3589,6 +3599,7 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
         if (ma->coeff_recv_col_idx != nullptr) {
           if (ma->separate_diag == mav->separate_diag)
             mav->add_values(mav->matrix,
+                            0,
                             ma->coeff_recv_size,
                             stride,
                             ma->coeff_recv_row_id,

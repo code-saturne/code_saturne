@@ -100,6 +100,7 @@ typedef void
  *          matching a given column id.
  *
  * \param[in, out]  matrix   untyped pointer to matrix description structure
+ * \param[in]       flags    optional info flag, 0 otherwise
  * \param[in]       n        number of values to add
  * \param[in]       stride   associated data block size
  * \param[in]       row_id   associated local row ids
@@ -110,6 +111,7 @@ typedef void
 
 typedef void
 (cs_matrix_assembler_values_add_t) (void             *matrix,
+                                    int              flags,
                                     cs_lnum_t         n,
                                     cs_lnum_t         stride,
                                     const cs_lnum_t   row_id[],
@@ -132,6 +134,7 @@ typedef void
  *           structure.
  *
  * \param[in, out]  matrix    untyped pointer to matrix description structure
+ * \param[in]       flags     optional info flag, 0 otherwise
  * \param[in]       n         number of values to add
  * \param[in]       stride    associated data block size
  * \param[in]       row_g_id  associated global row ids
@@ -142,6 +145,7 @@ typedef void
 
 typedef void
 (cs_matrix_assembler_values_add_g_t) (void            *matrix,
+                                      int              flags,
                                       cs_lnum_t        n,
                                       cs_lnum_t        stride,
                                       const cs_gnum_t  row_g_id[],

@@ -897,6 +897,7 @@ _assembler_values_add_block_d_e(cs_matrix_coeffs_hypre_t  *coeffs,
  *          matching a given column id.
  *
  * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       flags     optional info flag, 0 otherwise
  * \param[in]       n         number of values to add
  * \param[in]       stride    associated data block size
  * \param[in]       row_g_id  associated global row ids
@@ -906,12 +907,13 @@ _assembler_values_add_block_d_e(cs_matrix_coeffs_hypre_t  *coeffs,
 /*----------------------------------------------------------------------------*/
 
 static void
-_assembler_values_add_g(void             *matrix_p,
-                        cs_lnum_t         n,
-                        cs_lnum_t         stride,
-                        const cs_gnum_t   row_g_id[],
-                        const cs_gnum_t   col_g_id[],
-                        const cs_real_t   vals[])
+_assembler_values_add_g(void                    *matrix_p,
+                        [[maybe_unused]] int     flags,
+                        cs_lnum_t                n,
+                        cs_lnum_t                stride,
+                        const cs_gnum_t          row_g_id[],
+                        const cs_gnum_t          col_g_id[],
+                        const cs_real_t          vals[])
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 

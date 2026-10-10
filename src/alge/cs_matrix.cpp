@@ -1656,6 +1656,7 @@ _csr_assembler_values_init(void        *matrix_p,
  *          matching a given column id.
  *
  * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       flags     optional info flag, 0 otherwise
  * \param[in]       n         number of values to add
  * \param[in]       stride    associated data block size
  * \param[in]       row_id    associated local row ids
@@ -1665,12 +1666,13 @@ _csr_assembler_values_init(void        *matrix_p,
 /*----------------------------------------------------------------------------*/
 
 static void
-_csr_assembler_values_add(void             *matrix_p,
-                          cs_lnum_t         n,
-                          cs_lnum_t         stride,
-                          const cs_lnum_t   row_id[],
-                          const cs_lnum_t   col_idx[],
-                          const cs_real_t   vals[])
+_csr_assembler_values_add(void                    *matrix_p,
+                          [[maybe_unused]] int     flags,
+                          cs_lnum_t                n,
+                          cs_lnum_t                stride,
+                          const cs_lnum_t          row_id[],
+                          const cs_lnum_t          col_idx[],
+                          const cs_real_t          vals[])
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
@@ -2450,6 +2452,7 @@ _msr_assembler_values_init(void              *matrix_p,
  *          matching a given column id.
  *
  * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       flags     optional info flag, 0 otherwise
  * \param[in]       n         number of values to add
  * \param[in]       stride    associated data block size
  * \param[in]       row_id    associated local row ids
@@ -2459,12 +2462,13 @@ _msr_assembler_values_init(void              *matrix_p,
 /*----------------------------------------------------------------------------*/
 
 static void
-_msr_assembler_values_add(void             *matrix_p,
-                          cs_lnum_t         n,
-                          cs_lnum_t         stride,
-                          const cs_lnum_t   row_id[],
-                          const cs_lnum_t   col_idx[],
-                          const cs_real_t   vals[])
+_msr_assembler_values_add(void                    *matrix_p,
+                          [[maybe_unused]] int     flags,
+                          cs_lnum_t                n,
+                          cs_lnum_t                stride,
+                          const cs_lnum_t          row_id[],
+                          const cs_lnum_t          col_idx[],
+                          const cs_real_t          vals[])
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
@@ -2682,6 +2686,7 @@ _dist_assembler_values_init(void        *matrix_p,
  *          matching a given column id.
  *
  * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       flags     optional info flag, 0 otherwise
  * \param[in]       n         number of values to add
  * \param[in]       stride    associated data block size
  * \param[in]       row_id    associated local row ids
@@ -2691,12 +2696,13 @@ _dist_assembler_values_init(void        *matrix_p,
 /*----------------------------------------------------------------------------*/
 
 static void
-_dist_assembler_values_add(void             *matrix_p,
-                           cs_lnum_t         n,
-                           cs_lnum_t         stride,
-                           const cs_lnum_t   row_id[],
-                           const cs_lnum_t   col_idx[],
-                           const cs_real_t   vals[])
+_dist_assembler_values_add(void                    *matrix_p,
+                           [[maybe_unused]] int     flags,
+                           cs_lnum_t                n,
+                           cs_lnum_t                stride,
+                           const cs_lnum_t          row_id[],
+                           const cs_lnum_t          col_idx[],
+                           const cs_real_t          vals[])
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
