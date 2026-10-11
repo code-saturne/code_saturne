@@ -1344,7 +1344,17 @@ class case:
             # Force timeout if requested
             timeout = os.getenv('CS_SOLVER_TIMEOUT')
             if timeout:
-                mpi_cmd = 'timeout -s SIGXCPU ' + str(timeout) + ' ' + mpi_cmd
+                # OpenMPI propagates SIGTERM, srun propagates SIGINT
+                # and propagates SIGTERM as SIGKILL...
+                # For MPICH variants, more settings may be needed
+                # (with Intel MPI, export `I_MPI_JOB_SIGNAL_PROPAGATION=1`
+                # may be needed, otherwise SIGKILL is used).
+
+                timeout_signal = 'SIGTERM'
+                if mpi_env.mpiexec == 'srun':
+                    timeout_signal = 'SIGINT'
+                mpi_cmd = 'timeout -s ' + timeout_signal + ' ' \
+                    + str(timeout) + ' ' + mpi_cmd
 
             cs_exec_environment.write_script_comment(s, 'Run solver.\n')
             s.write(mpi_cmd + mpi_cmd_args + tool_args + s_args[1] + s_args[2])
