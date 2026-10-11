@@ -728,7 +728,8 @@ _cs_base_backtrace_print(int  lv_start)
 static void
 _cs_base_sig_fatal(int  signum)
 {
-  if (_cs_base_sigint_handler != nullptr && signum == SIGTERM) {
+  if (   _cs_base_sigint_handler != nullptr
+      && (signum == SIGINT || signum == SIGTERM)) {
     #pragma omp single
     {
       _cs_base_sigint_handler(signum);
@@ -761,7 +762,7 @@ _cs_base_sig_fatal(int  signum)
 
     case SIGINT:
       _cs_base_err_printf(_("SIGINT signal (Control+C or equivalent) received.\n"
-                            "--> computation interrupted by user.\n"));
+                            "--> computation interrupted.\n"));
       break;
 
     case SIGTERM:

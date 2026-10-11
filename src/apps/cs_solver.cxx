@@ -32,6 +32,7 @@
 
 #include <errno.h>
 #include <locale.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -175,13 +176,36 @@ _sigint_handler(int signum)
 {
   cs_time_step_define_nt_max(cs_glob_time_step->nt_cur);
 
+  char signal_descr[80];
+  if (signum == SIGINT)
+    snprintf(signal_descr, 80,
+             _("SIGINT signal (Control+C or equivalent)"));
+  else if (signum == SIGTERM)
+    snprintf(signal_descr, 80,
+             _("SIGTERM signal (termination request by environment)"));
+  else
+    snprintf(signal_descr, 64, "Signal %d", signum);
+  signal_descr[79] = '\0';
+
+  const char fmt[] = N_("\n%s received.\n"
+                        "- Maximum time step number set to: %d\n%s");
+
   cs_log_printf(CS_LOG_DEFAULT,
-                _("Signal %d received.\n"
-                  "--> computation interrupted by environment.\n"
-                  "\n"
-                  "    maximum time step number set to: %d\n"),
-                signum,
-                cs_glob_time_step->nt_max);
+                _(fmt), signal_descr, cs_glob_time_step->nt_max, "\n");
+
+  if (cs_glob_rank_id <= 0)
+    printf(_(fmt),
+           signal_descr,
+           cs_glob_time_step->nt_max,
+           _("- Use Control+C or signal again to interrupt.\n"));
+
+  FILE *_f = fopen("run_status.interrupted", "w");
+  if (_f != nullptr) {
+    fprintf(_f, "%d\n", cs_glob_time_step->nt_max);
+    fclose(_f);
+  }
+
+  cs_base_sigint_handler_set(nullptr);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

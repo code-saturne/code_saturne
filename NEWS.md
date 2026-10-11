@@ -1,6 +1,10 @@
 ﻿Master (not on release branches yet)
 ------------------------------------
+
 ### User changes:
+
+- Improved handling of SIGINT and SIGTERM signals: when first received,
+  set current time step as last; if received again, abort.
 
 - Introduce dedicated math functions in `cs` namespace to ease use and improve
   performances: qdrt (quadratic root), pow3ov2 (x^{3/2}), pow3ov4 (x^{3/4})

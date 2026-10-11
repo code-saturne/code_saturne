@@ -388,6 +388,9 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
         if state == case_state.UNKNOWN:
             if os.path.isfile(os.path.join(run_dir, 'run_status.exceeded_time_limit')):
                 state = case_state.EXCEEDED_TIME_LIMIT
+            elif os.path.isfile(os.path.join(run_dir, 'run_status.interrupted')):
+                # Use same enum as time limit for now
+                state = case_state.EXCEEDED_TIME_LIMIT
             elif os.path.isfile(os.path.join(run_dir, 'run_status.saving')):
                 state = case_state.FINALIZING
             else:
