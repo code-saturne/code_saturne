@@ -35,6 +35,7 @@
 #  include "base/cs_config.h"
 #endif
 
+#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -1086,18 +1087,35 @@ concatenate_char
 /*--------------------------------------------------------------------------*/
 
 template<class T, class... Ts,
-         std::enable_if_t<all_eq_comparable<T, Ts...>::value, int> = 0>
+         std::enable_if_t<all_eq_comparable<T, Ts...>::value &&
+                          !std::is_same_v<T, std::string>, int> = 0>
 CS_F_HOST_DEVICE
 inline
 constexpr bool
 any_eq
 (
   const T&    ref_val, /*!<[in] Reference value to compare to */
-  const Ts... vals     /*!<[in] Parameter pack to compare to ref_val */
+  const Ts&... vals     /*!<[in] Parameter pack to compare to ref_val */
 )
 {
   return ((ref_val == vals) || ...);
 }
+
+/* Host only variant for strings */
+template<class T, class... Ts,
+         std::enable_if_t<all_eq_comparable<T, Ts...>::value &&
+                          std::is_same_v<T, std::string>, int> = 0>
+inline
+constexpr bool
+any_eq
+(
+  const T&    ref_val, /*!<[in] Reference value to compare to */
+  const Ts&... vals     /*!<[in] Parameter pack to compare to ref_val */
+)
+{
+  return ((ref_val == vals) || ...);
+}
+
 
 /*--------------------------------------------------------------------------*/
 /*!
@@ -1108,14 +1126,30 @@ any_eq
 /*--------------------------------------------------------------------------*/
 
 template<class T, class... Ts,
-         std::enable_if_t<all_eq_comparable<T, Ts...>::value, int> = 0>
+         std::enable_if_t<all_eq_comparable<T, Ts...>::value &&
+                          !std::is_same_v<T, std::string>, int> = 0>
 CS_F_HOST_DEVICE
 inline
 constexpr bool
 all_eq
 (
-  const T     ref_val, /*!<[in] Reference value to compare to */
-  const Ts... vals     /*!<[in] Parameter pack to compare to ref_val */
+  const T&     ref_val, /*!<[in] Reference value to compare to */
+  const Ts&... vals     /*!<[in] Parameter pack to compare to ref_val */
+)
+{
+  return ((ref_val == vals) && ...);
+}
+
+/* Host only variant for strings */
+template<class T, class... Ts,
+         std::enable_if_t<all_eq_comparable<T, Ts...>::value &&
+                          std::is_same_v<T, std::string>, int> = 0>
+inline
+constexpr bool
+all_eq
+(
+  const T&     ref_val, /*!<[in] Reference value to compare to */
+  const Ts&... vals     /*!<[in] Parameter pack to compare to ref_val */
 )
 {
   return ((ref_val == vals) && ...);
@@ -1130,14 +1164,30 @@ all_eq
 /*--------------------------------------------------------------------------*/
 
 template<class T, class... Ts,
-         std::enable_if_t<all_eq_comparable<T, Ts...>::value, int> = 0>
+         std::enable_if_t<all_eq_comparable<T, Ts...>::value &&
+                          !std::is_same_v<T, std::string>, int> = 0>
 CS_F_HOST_DEVICE
 inline
 constexpr bool
 none_eq
 (
-  const T     ref_val, /*!<[in] Reference value to compare to */
-  const Ts... vals     /*!<[in] Parameter pack to compare to ref_val */
+  const T&     ref_val, /*!<[in] Reference value to compare to */
+  const Ts&... vals     /*!<[in] Parameter pack to compare to ref_val */
+)
+{
+  return ((ref_val != vals) && ...);
+}
+
+/* Host only variant for strings */
+template<class T, class... Ts,
+         std::enable_if_t<all_eq_comparable<T, Ts...>::value &&
+                          std::is_same_v<T, std::string>, int> = 0>
+inline
+constexpr bool
+none_eq
+(
+  const T&     ref_val, /*!<[in] Reference value to compare to */
+  const Ts&... vals     /*!<[in] Parameter pack to compare to ref_val */
 )
 {
   return ((ref_val != vals) && ...);
