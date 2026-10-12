@@ -1117,7 +1117,7 @@ _coarsen_halo(const cs_grid_t   *f,
     start_end_id[0] = f_halo->send_index[domain_id*2];
 
     if (f_halo->n_transforms == 0)
-      start_end_id[1] = f_halo->send_index[(domain_id+1)*2];
+      start_end_id[1] = f_halo->send_index[(domain_id*2)+1];
     else
       start_end_id[1] = f_halo->send_perio_lst[4*domain_id];
 
@@ -1205,7 +1205,7 @@ _coarsen_halo(const cs_grid_t   *f,
     start_end_id[0] = f_halo->index[domain_id*2];
 
     if (f_halo->n_transforms == 0)
-      start_end_id[1] = f_halo->index[(domain_id+1)*2];
+      start_end_id[1] = f_halo->index[(domain_id*2)+1];
     else
       start_end_id[1] = f_halo->perio_lst[4*domain_id];
 
@@ -1281,7 +1281,7 @@ _coarsen_halo(const cs_grid_t   *f,
     start_end_id[0] = f_halo->send_index[domain_id*2];
 
     if (f_halo->n_transforms == 0)
-      start_end_id[1] = f_halo->send_index[(domain_id+1)*2];
+      start_end_id[1] = f_halo->send_index[(domain_id*2)+1];
     else
       start_end_id[1] = f_halo->send_perio_lst[4*domain_id];
 
