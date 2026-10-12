@@ -1352,9 +1352,11 @@ class case:
 
                 timeout_signal = 'SIGTERM'
                 if mpi_env.mpiexec == 'srun':
-                    timeout_signal = 'SIGINT'
-                mpi_cmd = 'timeout -s ' + timeout_signal + ' ' \
-                    + str(timeout) + ' ' + mpi_cmd
+                    timeout_minutes = max(int(timeout) // 60, 1)
+                    mpi_cmd += '--time=' + str(timeout_minutes) + ' '
+                else:
+                    mpi_cmd = 'timeout -s ' + timeout_signal + ' ' \
+                        + str(timeout) + ' ' + mpi_cmd
 
             cs_exec_environment.write_script_comment(s, 'Run solver.\n')
             s.write(mpi_cmd + mpi_cmd_args + tool_args + s_args[1] + s_args[2])
