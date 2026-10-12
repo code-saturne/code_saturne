@@ -82,7 +82,7 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
   cs_lnum_t   i, j;
   cs_lnum_t   base_vertex_id;
   cs_lnum_t   element_shift, layer_shift, bottom_shift, top_shift;
-  cs_lnum_t *vertex_num;
+  cs_lnum_t *vertex_ids;
 
   cs_lnum_t n_elements = this_section->n_elements;
   const cs_lnum_t   n_planes = n_layers + 1;
@@ -92,7 +92,7 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
   stride = this_section->stride * 2;
   connectivity_size = this_section->n_elements * stride * n_layers;
 
-  CS_MALLOC(vertex_num, connectivity_size, cs_lnum_t);
+  CS_MALLOC(vertex_ids, connectivity_size, cs_lnum_t);
   this_section->connectivity_size = 0;
 
   for (i = 0; i < this_section->n_elements; i++) {
@@ -103,11 +103,11 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
       top_shift = element_shift + layer_shift + this_section->stride;
       for (k = 0; k < this_section->stride; k++) {
         base_vertex_id
-          = this_section->vertex_num[this_section->stride*i + k] - 1;
-        vertex_num[bottom_shift + k]
+          = this_section->vertex_ids[this_section->stride*i + k];
+        vertex_ids[bottom_shift + k]
+          = n_planes*base_vertex_id + j;
+        vertex_ids[top_shift + k]
           = n_planes*base_vertex_id + j + 1;
-        vertex_num[top_shift + k]
-          = n_planes*base_vertex_id + j + 2;
       }
     }
   }
@@ -115,11 +115,11 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
   this_section->connectivity_size = connectivity_size;
   /* Replace old connectivity */
 
-  if (this_section->_vertex_num != nullptr)
-    CS_FREE(this_section->_vertex_num);
+  if (this_section->_vertex_ids != nullptr)
+    CS_FREE(this_section->_vertex_ids);
 
-  this_section->_vertex_num = vertex_num;
-  this_section->vertex_num = this_section->_vertex_num;
+  this_section->_vertex_ids = vertex_ids;
+  this_section->vertex_ids = this_section->_vertex_ids;
 
   this_section->connectivity_size = connectivity_size;
 

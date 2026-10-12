@@ -138,7 +138,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
  *   face_vertex     <-- face -> vertex ids (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
- *   vertex_num      --> nodal connectivity of cell, if not a general
+ *   vertex_id       --> nodal connectivity of cell, if not a general
  *                       polyhedron
  *
  * returns:
@@ -153,7 +153,7 @@ fvm_nodal_from_desc_cell(const cs_lnum_t    cell_id,
                          const cs_lnum_t   *face_vertex_num[],
                          const cs_lnum_t    cell_face_idx[],
                          const cs_lnum_t    cell_face_num[],
-                         cs_lnum_t          vertex_num[8]);
+                         cs_lnum_t          vertex_id[8]);
 
 /*----------------------------------------------------------------------------*/
 

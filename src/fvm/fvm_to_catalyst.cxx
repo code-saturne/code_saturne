@@ -1086,7 +1086,7 @@ _write_connect_block(fvm_element_t         type,
 
   for (i = 0; i < n_elts; i++) {
     for (j = 0; j < stride; j++)
-      vtx_ids[j] = connect[i*stride + vertex_order[j]] - 1;
+      vtx_ids[j] = connect[i*stride + vertex_order[j]];
     vtk_mesh->InsertNextCell(vtk_type, stride, vtx_ids);
   }
 
@@ -1128,7 +1128,7 @@ _export_nodal_polygons(const fvm_nodal_section_t  *section,
     for (j = section->vertex_index[i];
          j < section->vertex_index[i+1];
          j++)
-      vtx_ids[k++] = section->vertex_num[j] - 1;
+      vtx_ids[k++] = section->vertex_ids[j];
 
     vtk_mesh->InsertNextCell(VTK_POLYGON, k, vtx_ids);
 
@@ -1205,7 +1205,7 @@ _export_nodal_polyhedra(cs_lnum_t                   n_vertices,
         int vtx_id;
         l =    section->vertex_index[face_id]
             + (face_length + (k*face_sgn))%face_length;
-        vtx_id = section->vertex_num[l] - 1;
+        vtx_id = section->vertex_ids[l];
         face_array[m++] = vtx_id;
         if (vtx_marker[vtx_id] < i) {
           vtx_ids[cell_vtx_count] = vtx_id;
@@ -1696,7 +1696,7 @@ fvm_to_catalyst_export_nodal(void               *this_writer_p,
     if (section->stride > 0)
       _write_connect_block(section->type,
                            section->n_elements,
-                           section->vertex_num,
+                           section->vertex_ids,
                            ugrid);
 
     else if (section->type == FVM_FACE_POLY)

@@ -95,7 +95,7 @@ typedef struct _fvm_nodal_section_t {
   const cs_lnum_t   *vertex_index; /* polygon face -> vertices index (O to n-1);
                                       size: n_faces + 1 */
 
-  const cs_lnum_t   *vertex_num;   /* vertex numbers (1 to n);
+  const cs_lnum_t   *vertex_ids;   /* vertex ids (0 to n-1);
                                       size: connectivity_size */
 
   /* Pointers to local connectivity arrays, if owner */
@@ -103,7 +103,7 @@ typedef struct _fvm_nodal_section_t {
   cs_lnum_t   *_face_index;        /* face_index if owner, NULL if shared */
   cs_lnum_t   *_face_num;          /* face_num if owner, NULL if shared */
   cs_lnum_t   *_vertex_index;      /* vertex_index if owner, NULL if shared */
-  cs_lnum_t   *_vertex_num;        /* vertex numbers if owner, NULL if shared */
+  cs_lnum_t   *_vertex_ids;        /* vertex ids if owner, NULL if shared */
 
   /* Pointers to group class ids, if present */
 
@@ -267,7 +267,7 @@ fvm_nodal_section_destroy(fvm_nodal_section_t  * this_section);
  *   copy_face_index   <-- copy face index (polyhedra only) ?
  *   copy_face_num     <-- copy face numbers (polyhedra only) ?
  *   copy_vertex_index <-- copy vertex index (polyhedra/polygons only) ?
- *   copy_vertex_num   <-- copy vertex numbers ?
+ *   copy_vertex_ids   <-- copy vertex ids ?
  *----------------------------------------------------------------------------*/
 
 void
@@ -275,7 +275,7 @@ fvm_nodal_section_copy_on_write(fvm_nodal_section_t  *this_section,
                                 bool                  copy_face_index,
                                 bool                  copy_face_num,
                                 bool                  copy_vertex_index,
-                                bool                  copy_vertex_num);
+                                bool                  copy_vertex_ids);
 
 /*----------------------------------------------------------------------------
  * Return global number of elements associated with section.

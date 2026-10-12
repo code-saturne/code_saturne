@@ -1784,9 +1784,9 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
     CS_MALLOC(faces_gnum, n_tria,   cs_gnum_t);
 
     for (cs_lnum_t i = 0; i < n_tria; i++) {
-      vertex_num[3*i]   = stl_mesh->tria_vtx_ids[i][0] + 1;
-      vertex_num[3*i+1] = stl_mesh->tria_vtx_ids[i][1] + 1;
-      vertex_num[3*i+2] = stl_mesh->tria_vtx_ids[i][2] + 1;
+      vertex_num[3*i]   = stl_mesh->tria_vtx_ids[i][0];
+      vertex_num[3*i+1] = stl_mesh->tria_vtx_ids[i][1];
+      vertex_num[3*i+2] = stl_mesh->tria_vtx_ids[i][2];
 
       faces_gnum[i] = i+1;
     }

@@ -302,7 +302,7 @@ fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
 
         if (section->type != FVM_CELL_POLY) {
           fvm_nodal_section_copy_on_write(section, false, false, false, true);
-          _fvm_nodal_order_strided_connect(section->_vertex_num,
+          _fvm_nodal_order_strided_connect(section->_vertex_ids,
                                            order,
                                            (size_t)(section->stride),
                                            section->n_elements);
@@ -374,7 +374,7 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
 
         if (section->type != FVM_FACE_POLY) {
           fvm_nodal_section_copy_on_write(section, false, false, false, true);
-          _fvm_nodal_order_strided_connect(section->_vertex_num,
+          _fvm_nodal_order_strided_connect(section->_vertex_ids,
                                            order,
                                            (size_t)(section->stride),
                                            section->n_elements);
@@ -382,7 +382,7 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
         else {
           fvm_nodal_section_copy_on_write(section, false, false, true, true);
           _fvm_nodal_order_indexed_connect(section->_vertex_index,
-                                           section->_vertex_num,
+                                           section->_vertex_ids,
                                            order,
                                            section->n_elements);
         }
@@ -465,7 +465,7 @@ fvm_nodal_order_vertices(fvm_nodal_t       *this_nodal,
     fvm_nodal_section_copy_on_write(section, false, false, false, true);
 
     for (j = 0 ; j < section->connectivity_size ; j++)
-      section->_vertex_num[j] = renumber[section->_vertex_num[j] - 1] + 1;
+      section->_vertex_ids[j] = renumber[section->_vertex_ids[j]];
 
   }
 

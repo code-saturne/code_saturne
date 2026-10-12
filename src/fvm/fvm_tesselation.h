@@ -89,7 +89,7 @@ typedef struct _fvm_tesselation_t fvm_tesselation_t;
  *   vertex_index       <-- element face -> vertices index (O to n-1);
  *                          dimension: [n_cell_faces + 1], [n_elements + 1],
  *                          or NULL depending on face_index and vertex_index
- *   vertex_num         <-- element -> vertex connectivity (1 to n)
+ *   vertex_id          <-- element -> vertex connectivity (0 to n-1)
  *   global_element_num <-- global element numbers (NULL in serial mode)
  *
  * returns:
@@ -102,7 +102,7 @@ fvm_tesselation_create(fvm_element_t        element_type,
                        const cs_lnum_t      face_index[],
                        const cs_lnum_t      face_num[],
                        const cs_lnum_t      vertex_index[],
-                       const cs_lnum_t      vertex_num[],
+                       const cs_lnum_t      vertex_id[],
                        const fvm_io_num_t  *global_element_num);
 
 /*----------------------------------------------------------------------------

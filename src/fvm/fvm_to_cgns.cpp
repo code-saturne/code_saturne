@@ -2117,7 +2117,7 @@ _export_nodal_strided_g(const fvm_writer_section_t  *export_section,
   for (cs_lnum_t i = 0; i < n_elements; i++) {
     for (cs_lnum_t j = 0; j < stride; j++) {
       part_vtx_num[i*stride + j]
-        = g_vtx_num[section->vertex_num[i*stride + j] - 1];
+        = g_vtx_num[section->vertex_ids[i*stride + j]];
     }
   }
 
@@ -2190,16 +2190,12 @@ _export_nodal_strided_l(const fvm_writer_section_t  *export_section,
   elt_start = 1 + *global_counter;
   elt_end   = section->n_elements + *global_counter;
 
-  if (section->vertex_num != nullptr) {
+  if (section->vertex_ids != nullptr) {
     cgsize_t *_vertex_num = nullptr;
-    const cgsize_t *vertex_num = (const cgsize_t *)section->vertex_num;
-    if (sizeof(cgsize_t) != sizeof(cs_lnum_t)) {
-      cgsize_t i = 0, n = (elt_end + 1 - elt_start)*section->stride;
-      CS_MALLOC(_vertex_num, n, cgsize_t);
-      vertex_num = _vertex_num;
-      for (i = 0; i < n; i++)
-        _vertex_num[i] = section->vertex_num[i];
-    }
+    cgsize_t i = 0, n = (elt_end + 1 - elt_start)*section->stride;
+    CS_MALLOC(_vertex_num, n, cgsize_t);
+    for (i = 0; i < n; i++)
+      _vertex_num[i] = (cgsize_t)section->vertex_ids[i] + 1;
     retval = cg_section_write(w->index,
                               base->index,
                               zone_index,
@@ -2208,7 +2204,7 @@ _export_nodal_strided_l(const fvm_writer_section_t  *export_section,
                               elt_start,
                               elt_end,
                               0, /* unsorted boundary elements */
-                              vertex_num,
+                              _vertex_num,
                               &section_index);
     if (_vertex_num != nullptr)
       CS_FREE(_vertex_num);
@@ -2771,7 +2767,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
   const cs_gnum_t      n_g_elements
     = fvm_io_num_get_global_count(section->global_element_num);
   const cs_lnum_t     *const vertex_index = section->vertex_index;
-  const cs_lnum_t     *const vertex_num = section->vertex_num;
+  const cs_lnum_t     *const vertex_ids = section->vertex_ids;
   const cs_gnum_t     *g_elt_num
     = fvm_io_num_get_global_num(section->global_element_num);
   const cs_gnum_t     *g_vtx_num
@@ -2828,7 +2824,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
     part_connect[k++] = vertex_index[i+1] - vertex_index[i];
 #endif
     for (cs_lnum_t j = vertex_index[i]; j < vertex_index[i+1]; j++)
-      part_connect[k++] = g_vtx_num[vertex_num[j] - 1];
+      part_connect[k++] = g_vtx_num[section->vertex_ids[j]];
   }
 
   cs_part_to_block_copy_indexed(d,
@@ -2921,7 +2917,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
       offsets[i] = section->vertex_index[i];
 
     for (cs_lnum_t i = 0; i < connect_size; i++)
-      connect[i] = section->vertex_num[i];
+      connect[i] = section->vertex_ids[i] + 1;
 
     retval = cg_poly_section_write(writer->index,
                                    base->index,
@@ -2971,7 +2967,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
       for (cs_lnum_t i = section->vertex_index[j];
            i < section->vertex_index[j+1];
            i++)
-        connect[connect_size++] = section->vertex_num[i];
+        connect[connect_size++] = section->vertex_ids[i] + 1;
     }
 
     retval = cg_section_write(writer->index,

@@ -222,7 +222,7 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
   cs_lnum_t n_b_faces = vtx_idx->getNbOfElems()-1;
   cs_lnum_t n_elt_lst = vtx_lst->getNbOfElems()- n_b_faces;
 
-  cs_lnum_t  *vertex_num   = nullptr;
+  cs_lnum_t  *vertex_ids   = nullptr;
   cs_lnum_t  *vertex_idx   = nullptr;
   cs_gnum_t  *vertex_gnum  = nullptr;
   cs_gnum_t  *faces_gnum   = nullptr;
@@ -236,16 +236,16 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
   vertex_idx[0] = 0;
 
   if (cs_glob_rank_id < 1) {
-    CS_MALLOC(faces_gnum  , _n_b_faces   ,  cs_gnum_t);
-    CS_MALLOC(vertex_num  , n_elt_lst , cs_lnum_t);
-    CS_MALLOC(vertex_gnum , n_b_vtx , cs_gnum_t);
+    CS_MALLOC(faces_gnum, _n_b_faces,  cs_gnum_t);
+    CS_MALLOC(vertex_ids, n_elt_lst, cs_lnum_t);
+    CS_MALLOC(vertex_gnum, n_b_vtx, cs_gnum_t);
 
-    for (cs_lnum_t i = 0; i < _n_b_faces ; i++) {
-      vertex_idx[i] = vtx_idx->getIJ(i,0) - i;
-      cs_lnum_t s_id = vtx_idx->getIJ(i,0);
-      cs_lnum_t e_id = vtx_idx->getIJ(i+1,0);
-      for(cs_lnum_t v_id = s_id +1 ; v_id < e_id; v_id ++) {
-        vertex_num[elem]  = vtx_lst->getIJ(v_id,0) + 1;
+    for (cs_lnum_t i = 0; i < _n_b_faces; i++) {
+      vertex_idx[i] = vtx_idx->getIJ(i, 0) - i;
+      cs_lnum_t s_id = vtx_idx->getIJ(i, 0);
+      cs_lnum_t e_id = vtx_idx->getIJ(i+1, 0);
+      for(cs_lnum_t v_id = s_id +1; v_id < e_id; v_id ++) {
+        vertex_ids[elem] = vtx_lst->getIJ(v_id, 0);
         elem ++;
       }
     }
@@ -266,7 +266,7 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
                                nullptr,
                                nullptr,
                                vertex_idx,
-                               vertex_num,
+                               vertex_ids,
                                nullptr);
 
   if (cs_glob_rank_id < 1) {

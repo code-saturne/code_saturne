@@ -137,7 +137,7 @@ _face_quantities_3d(cs_lnum_t           n_vertices,
 
     for (i = 0; i < n_vertices; i++) {
       _coords_0 =   vertex_coords
-                  + parent_vertex_id[face_vertex_num[i]-1]*3;
+                  + parent_vertex_id[face_vertex_num[i]]*3;
       for (j = 0; j < 3; j++)
         vertices_center[j] += _coords_0[j];
     }
@@ -146,7 +146,7 @@ _face_quantities_3d(cs_lnum_t           n_vertices,
   else {
 
     for (i = 0; i < n_vertices; i++) {
-      _coords_0 = vertex_coords + (face_vertex_num[i]-1)*3;
+      _coords_0 = vertex_coords + (face_vertex_num[i])*3;
       for (j = 0; j < 3; j++)
         vertices_center[j] += _coords_0[j];
     }
@@ -160,8 +160,8 @@ _face_quantities_3d(cs_lnum_t           n_vertices,
 
   for (i = 0; i < n_vertices; i++) {
 
-    cs_lnum_t v_id_0 = face_vertex_num[i] - 1;
-    cs_lnum_t v_id_1 = face_vertex_num[(i+1)%n_vertices] - 1;
+    cs_lnum_t v_id_0 = face_vertex_num[i];
+    cs_lnum_t v_id_1 = face_vertex_num[(i+1)%n_vertices];
 
     if (parent_vertex_id != nullptr) {
       _coords_0 = vertex_coords + parent_vertex_id[v_id_0]*3;
@@ -237,8 +237,8 @@ _face_quantities_2d(cs_lnum_t          n_vertices,
     *surface = 0;
   }
 
-  v_id_1 = face_vertex_num[0] - 1;
-  v_id_2 = face_vertex_num[1] - 1;
+  v_id_1 = face_vertex_num[0];
+  v_id_2 = face_vertex_num[1];
 
   if (parent_vertex_id != nullptr) {
     _coords_1 = vertex_coords + parent_vertex_id[v_id_1]*2;
@@ -256,7 +256,7 @@ _face_quantities_2d(cs_lnum_t          n_vertices,
     _coords_0 = _coords_1;
     _coords_1 = _coords_2;
 
-    v_id_2 = face_vertex_num[(i+2)%n_vertices] - 1;
+    v_id_2 = face_vertex_num[(i+2)%n_vertices];
 
     if (parent_vertex_id != nullptr)
       _coords_2 = vertex_coords + parent_vertex_id[v_id_2]*2;
@@ -338,7 +338,7 @@ _cell_poly_section_centers(const fvm_nodal_section_t  *this_section,
       cs_lnum_t n_vertices = v_index_end - v_index_start;
 
       _face_quantities_3d(n_vertices,
-                          this_section->vertex_num + v_index_start,
+                          this_section->vertex_ids + v_index_start,
                           parent_vertex_id,
                           vertex_coords,
                           f_center,
@@ -422,7 +422,7 @@ _cell_strided_section_centers(const fvm_nodal_section_t  *this_section,
 
       for (k = 0; k < n_face_vertices[j]; k++)
         _vertex_num[k]
-          = this_section->vertex_num[i*stride + face_vertices[j][k]];
+          = this_section->vertex_ids[i*stride + face_vertices[j][k]];
 
       _face_quantities_3d(n_face_vertices[j],
                           _vertex_num,
@@ -499,7 +499,7 @@ _face_section_centers_3d(const fvm_nodal_section_t  *this_section,
     n_vertices = v_index_end - v_index_start;
 
     _face_quantities_3d(n_vertices,
-                        this_section->vertex_num + v_index_start,
+                        this_section->vertex_ids + v_index_start,
                         parent_vertex_id,
                         vertex_coords,
                         f_center,
@@ -567,7 +567,7 @@ _face_section_centers_2d(const fvm_nodal_section_t  *this_section,
     n_vertices = v_index_end - v_index_start;
 
     _face_quantities_2d(n_vertices,
-                        this_section->vertex_num + v_index_start,
+                        this_section->vertex_ids + v_index_start,
                         parent_vertex_id,
                         vertex_coords,
                         f_center,
@@ -751,7 +751,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
         for (k = this_section->vertex_index[face_id];
              k < this_section->vertex_index[face_id + 1];
              k++) {
-          vertex_id = this_section->vertex_num[k] - 1;
+          vertex_id = this_section->vertex_ids[k];
 
           _update_elt_extents(dim,
                               vertex_id,
@@ -784,7 +784,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
       for (j = this_section->vertex_index[i];
            j < this_section->vertex_index[i + 1];
            j++) {
-        vertex_id = this_section->vertex_num[j] - 1;
+        vertex_id = this_section->vertex_ids[j];
 
         _update_elt_extents(dim,
                             vertex_id,
@@ -812,7 +812,7 @@ _nodal_section_extents(const fvm_nodal_section_t  *this_section,
 
       for (j = 0; j < this_section->stride; j++) {
 
-        vertex_id = this_section->vertex_num[i*this_section->stride + j] - 1;
+        vertex_id = this_section->vertex_ids[i*this_section->stride + j];
 
         _update_elt_extents(dim,
                             vertex_id,
@@ -1131,7 +1131,7 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
         if (this_nodal->parent_vertex_id == nullptr) {
           for (j = 0; j < stride; j++) {
             const cs_lnum_t vertex_id
-              = section->vertex_num[(element_id * stride) + j] - 1;
+              = section->vertex_ids[(element_id * stride) + j];
             for (i = 0; i < dim; i++)
               cell_center[i] += coords[vertex_id*dim + i];
             denom += 1.;
@@ -1140,7 +1140,7 @@ fvm_nodal_get_element_centers(const fvm_nodal_t  *this_nodal,
         else { /* if (this_nodal->parent_vertex_id != nullptr) */
           for (j = 0; j < stride; j++) {
             const cs_lnum_t vertex_id
-              = section->vertex_num[(element_id * stride) + j] - 1;
+              = section->vertex_ids[(element_id * stride) + j];
             for (i = 0; i < dim; i++)
               cell_center[i] += coords[parent_id[vertex_id]*dim + i];
             denom += 1.;
@@ -1205,12 +1205,12 @@ fvm_nodal_get_strided_connect(const fvm_nodal_t  *this_nodal,
     if (section->type == element_type) {
 
       const int stride = section->stride;
-      const cs_lnum_t *num = section->vertex_num;
+      const cs_lnum_t *id = section->vertex_ids;
 
       for (element_id = 0; element_id < section->n_elements; element_id++) {
         for (i = 0; i < stride; i++) {
           connectivity[element_id * stride + i + element_count]
-            = num[element_id*stride + i];
+            = id[element_id*stride + i];
         }
       }
 
@@ -1288,7 +1288,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
 
       for (i = 0; i < section->n_elements; i++) {
         for (j = 0; j < stride; j++)
-          element_count[section->vertex_num[i*stride + j] - 1] += 1;
+          element_count[section->vertex_ids[i*stride + j]] += 1;
       }
     }
 
@@ -1298,7 +1298,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
         cs_lnum_t start_id = section->vertex_index[i];
         cs_lnum_t end_id = section->vertex_index[i+1];
         for (j = start_id; j < end_id; j++)
-          element_count[section->vertex_num[j] - 1] += 1;
+          element_count[section->vertex_ids[j]] += 1;
       }
 
     }
@@ -1313,7 +1313,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
           cs_lnum_t start_id = section->vertex_index[face_id];
           cs_lnum_t end_id = section->vertex_index[face_id+1];
           for (k = start_id; k < end_id; k++)
-            element_count[section->vertex_num[k] - 1] += 1;
+            element_count[section->vertex_ids[k]] += 1;
         }
       }
 
@@ -1353,7 +1353,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
 
       for (i = 0; i < section->n_elements; i++, element_concat_id++) {
         for (j = 0; j < stride; j++) {
-          vertex_id = section->vertex_num[i*stride + j] - 1;
+          vertex_id = section->vertex_ids[i*stride + j];
           k = _element_index[vertex_id] + element_count[vertex_id];
           _element_id[k] = element_concat_id;
           element_count[vertex_id] += 1;
@@ -1367,7 +1367,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
         cs_lnum_t start_id = section->vertex_index[i];
         cs_lnum_t end_id = section->vertex_index[i+1];
         for (j = start_id; j < end_id; j++) {
-          vertex_id = section->vertex_num[j] - 1;
+          vertex_id = section->vertex_ids[j];
           k = _element_index[vertex_id] + element_count[vertex_id];
           _element_id[k] = element_concat_id;
           element_count[vertex_id] += 1;
@@ -1386,7 +1386,7 @@ fvm_nodal_get_vertex_elements(const fvm_nodal_t   *this_nodal,
           cs_lnum_t start_id = section->vertex_index[face_id];
           cs_lnum_t end_id = section->vertex_index[face_id+1];
           for (k = start_id; k < end_id; k++) {
-            vertex_id = section->vertex_num[k] - 1;
+            vertex_id = section->vertex_ids[k];
             l = _element_index[vertex_id] + element_count[vertex_id];
             _element_id[l] = element_concat_id;
             element_count[vertex_id] += 1;

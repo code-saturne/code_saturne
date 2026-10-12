@@ -229,12 +229,12 @@ _fvm_nodal_section_copy(const fvm_nodal_section_t *this_section)
   new_section->face_index = this_section->face_index;
   new_section->face_num = this_section->face_num;
   new_section->vertex_index = this_section->vertex_index;
-  new_section->vertex_num = this_section->vertex_num;
+  new_section->vertex_ids = this_section->vertex_ids;
 
   new_section->_face_index = nullptr;
   new_section->_face_num   = nullptr;
   new_section->_vertex_index = nullptr;
-  new_section->_vertex_num = nullptr;
+  new_section->_vertex_ids = nullptr;
 
   new_section->gc_id = nullptr;
   new_section->tag = nullptr;
@@ -305,9 +305,9 @@ _fvm_nodal_section_reduce(fvm_nodal_section_t  * this_section)
       CS_FREE(this_section->_vertex_index);
     this_section->vertex_index = nullptr;
 
-    if (this_section->_vertex_num != nullptr)
-      CS_FREE(this_section->_vertex_num);
-    this_section->vertex_num = nullptr;
+    if (this_section->_vertex_ids != nullptr)
+      CS_FREE(this_section->_vertex_ids);
+    this_section->vertex_ids = nullptr;
 
     retval = true;
   }
@@ -435,15 +435,15 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
     if (this_nodal->parent_vertex_id != nullptr) {
       for (size_t i = 0; i < section->connectivity_size; i++) {
         cs_lnum_t vertex_num
-          = this_nodal->parent_vertex_id[section->vertex_num[i] - 1] + 1;
+          = this_nodal->parent_vertex_id[section->vertex_ids[i]] + 1;
         if (vertex_num > max_vertex_num)
           max_vertex_num = vertex_num;
       }
     }
     else {
       for (size_t i = 0; i < section->connectivity_size; i++) {
-        if (section->vertex_num[i] > max_vertex_num)
-          max_vertex_num = section->vertex_num[i];
+        if (section->vertex_ids[i] + 1 > max_vertex_num)
+          max_vertex_num = section->vertex_ids[i] + 1;
       }
     }
   }
@@ -478,14 +478,14 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
     if (this_nodal->parent_vertex_id != nullptr) {
       for (size_t i = 0; i < section->connectivity_size; i++) {
         cs_lnum_t vertex_id
-          = this_nodal->parent_vertex_id[section->vertex_num[i] - 1];
+          = this_nodal->parent_vertex_id[section->vertex_ids[i]];
         if (loc_vertex_id[vertex_id] == -1)
           loc_vertex_id[vertex_id] = 0;
       }
     }
     else {
       for (size_t i = 0; i < section->connectivity_size; i++) {
-        cs_lnum_t vertex_id = section->vertex_num[i] - 1;
+        cs_lnum_t vertex_id = section->vertex_ids[i];
         if (loc_vertex_id[vertex_id] == -1)
           loc_vertex_id[vertex_id] = 0;
       }
@@ -519,19 +519,19 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
 
     for (int section_id = 0; section_id < this_nodal->n_sections; section_id++) {
       fvm_nodal_section_t  *section = this_nodal->sections[section_id];
-      if (section->_vertex_num == nullptr)
+      if (section->_vertex_ids == nullptr)
         fvm_nodal_section_copy_on_write(section, false, false, false, true);
       if (this_nodal->parent_vertex_id != nullptr) {
         for (size_t i = 0; i < section->connectivity_size; i++) {
           cs_lnum_t vertex_id
-            = this_nodal->parent_vertex_id[section->vertex_num[i] - 1];
-          section->_vertex_num[i] = loc_vertex_id[vertex_id] + 1;
+            = this_nodal->parent_vertex_id[section->vertex_ids[i]];
+          section->_vertex_ids[i] = loc_vertex_id[vertex_id];
         }
       }
       else {
         for (size_t i = 0; i < section->connectivity_size; i++) {
-          cs_lnum_t vertex_id = section->vertex_num[i] - 1;
-          section->_vertex_num[i] = loc_vertex_id[vertex_id] + 1;
+          cs_lnum_t vertex_id = section->vertex_ids[i];
+          section->_vertex_ids[i] = loc_vertex_id[vertex_id];
         }
       }
     }
@@ -596,12 +596,12 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
              "  face_index:           %p\n"
              "  face_num:             %p\n"
              "  vertex_index:         %p\n"
-             "  vertex_num:           %p\n"
+             "  vertex_ids:           %p\n"
              "  parent_element_id:    %p\n",
              (const void *)this_section->face_index,
              (const void *)this_section->face_num,
              (const void *)this_section->vertex_index,
-             (const void *)this_section->vertex_num,
+             (const void *)this_section->vertex_ids,
              (const void *)this_section->parent_element_id);
 
   bft_printf("\n"
@@ -609,14 +609,14 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
              "  _face_index:          %p\n"
              "  _face_num:            %p\n"
              "  _vertex_index:        %p\n"
-             "  _vertex_num:          %p\n"
+             "  _vertex_ids:          %p\n"
              "  _parent_element_id:   %p\n"
              "  gc_id:                %p\n"
              "  tag:                  %p\n",
              (const void *)this_section->_face_index,
              (const void *)this_section->_face_num,
              (const void *)this_section->_vertex_index,
-             (const void *)this_section->_vertex_num,
+             (const void *)this_section->_vertex_ids,
              (const void *)this_section->_parent_element_id,
              (const void *)this_section->gc_id,
              (const void *)this_section->tag);
@@ -640,7 +640,7 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
                           this_section->n_faces : this_section->n_elements;
     bft_printf("\nPolygons -> vertices connectivity:\n\n");
     idx = this_section->vertex_index;
-    num = this_section->vertex_num;
+    num = this_section->vertex_ids;
     for (i = 0; i < n_faces; i++) {
       bft_printf("%10ld (idx = %10ld) %10ld\n",
                  (long)i + 1, (long)idx[i], (long)num[idx[i]]);
@@ -653,7 +653,7 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
   else {
     bft_printf("\nElements -> vertices connectivity:\n\n");
     n_elements = this_section->n_elements;
-    num = this_section->vertex_num;
+    num = this_section->vertex_ids;
     switch(this_section->stride) {
     case 2:
       for (i = 0; i < n_elements; i++)
@@ -812,12 +812,12 @@ fvm_nodal_section_create(const fvm_element_t  type)
   this_section->face_index = nullptr;
   this_section->face_num   = nullptr;
   this_section->vertex_index = nullptr;
-  this_section->vertex_num = nullptr;
+  this_section->vertex_ids = nullptr;
 
   this_section->_face_index = nullptr;
   this_section->_face_num   = nullptr;
   this_section->_vertex_index = nullptr;
-  this_section->_vertex_num = nullptr;
+  this_section->_vertex_ids = nullptr;
 
   this_section->gc_id = nullptr;
   this_section->tag = nullptr;
@@ -857,8 +857,8 @@ fvm_nodal_section_destroy(fvm_nodal_section_t  * this_section)
 
   if (this_section->_vertex_index != nullptr)
     CS_FREE(this_section->_vertex_index);
-  if (this_section->_vertex_num != nullptr)
-    CS_FREE(this_section->_vertex_num);
+  if (this_section->_vertex_ids != nullptr)
+    CS_FREE(this_section->_vertex_ids);
 
   if (this_section->gc_id != nullptr)
     CS_FREE(this_section->gc_id);
@@ -896,7 +896,7 @@ fvm_nodal_section_destroy(fvm_nodal_section_t  * this_section)
  *   copy_face_index   <-- copy face index (polyhedra only) ?
  *   copy_face_num     <-- copy face numbers (polyhedra only) ?
  *   copy_vertex_index <-- copy vertex index (polyhedra/polygons only) ?
- *   copy_vertex_num   <-- copy vertex numbers ?
+ *   copy_vertex_ids   <-- copy vertex ids ?
  *----------------------------------------------------------------------------*/
 
 void
@@ -904,7 +904,7 @@ fvm_nodal_section_copy_on_write(fvm_nodal_section_t  *this_section,
                                 bool                  copy_face_index,
                                 bool                  copy_face_num,
                                 bool                  copy_vertex_index,
-                                bool                  copy_vertex_num)
+                                bool                  copy_vertex_ids)
 {
   cs_lnum_t   n_faces;
   size_t  i;
@@ -942,13 +942,13 @@ fvm_nodal_section_copy_on_write(fvm_nodal_section_t  *this_section,
     this_section->vertex_index = this_section->_vertex_index;
   }
 
-  if (copy_vertex_num == true && this_section->_vertex_num == nullptr) {
-    CS_MALLOC(this_section->_vertex_num,
+  if (copy_vertex_ids == true && this_section->_vertex_ids == nullptr) {
+    CS_MALLOC(this_section->_vertex_ids,
                this_section->connectivity_size, cs_lnum_t);
     for (i = 0; i < this_section->connectivity_size; i++) {
-      this_section->_vertex_num[i] = this_section->vertex_num[i];
+      this_section->_vertex_ids[i] = this_section->vertex_ids[i];
     }
-    this_section->vertex_num = this_section->_vertex_num;
+    this_section->vertex_ids = this_section->_vertex_ids;
   }
 
 }
@@ -2228,7 +2228,7 @@ fvm_nodal_tesselate(fvm_nodal_t    *this_nodal,
                                                     section->face_index,
                                                     section->face_num,
                                                     section->vertex_index,
-                                                    section->vertex_num,
+                                                    section->vertex_ids,
                                                     section->global_element_num);
 
       fvm_tesselation_init(section->tesselation,
@@ -2326,7 +2326,7 @@ fvm_nodal_copy_edges(const char         *name,
   new_section = fvm_nodal_section_create(FVM_EDGE);
   new_nodal->sections[0] = new_section;
 
-  CS_MALLOC(new_section->_vertex_num, n_max_edges*2, cs_lnum_t);
+  CS_MALLOC(new_section->_vertex_ids, n_max_edges*2, cs_lnum_t);
 
   /* Add edges */
 
@@ -2345,10 +2345,10 @@ fvm_nodal_copy_edges(const char         *name,
         const cs_lnum_t n_face_edges
           = this_section->vertex_index[j+1] - this_section->vertex_index[j];
         for (k = 0; k < n_face_edges; k++) {
-          new_section->_vertex_num[n_edges*2]
-            = this_section->vertex_num[face_start_id + k];
-          new_section->_vertex_num[n_edges*2 + 1]
-            = this_section->vertex_num[face_start_id + (k + 1)%n_face_edges];
+          new_section->_vertex_ids[n_edges*2]
+            = this_section->vertex_ids[face_start_id + k];
+          new_section->_vertex_ids[n_edges*2 + 1]
+            = this_section->vertex_ids[face_start_id + (k + 1)%n_face_edges];
           n_edges += 1;
         }
       }
@@ -2426,10 +2426,10 @@ fvm_nodal_copy_edges(const char         *name,
       }
 
       for (j = 0; j < n_elts; j++) {
-        const cs_lnum_t *_vertex_num = this_section->vertex_num + (j*stride);
+        const cs_lnum_t *_vertex_ids = this_section->vertex_ids + (j*stride);
         for (k = 0; k < n_elt_edges; k++) {
-          new_section->_vertex_num[n_edges*2] = _vertex_num[edges[0][k]];
-          new_section->_vertex_num[n_edges*2 + 1] = _vertex_num[edges[1][k]];
+          new_section->_vertex_ids[n_edges*2] = _vertex_ids[edges[0][k]];
+          new_section->_vertex_ids[n_edges*2 + 1] = _vertex_ids[edges[1][k]];
           n_edges += 1;
         }
       }
@@ -2446,11 +2446,11 @@ fvm_nodal_copy_edges(const char         *name,
       = fvm_io_num_get_global_num(this_nodal->global_vertex_num);
 
     for (j = 0; j < n_max_edges; j++) {
-      cs_lnum_t vnum_1 = new_section->_vertex_num[j*2];
-      cs_lnum_t vnum_2 = new_section->_vertex_num[j*2 + 1];
-      if (v_num_g[vnum_1 - 1] > v_num_g[vnum_2 - 1]) {
-        new_section->_vertex_num[j*2] = vnum_2;
-        new_section->_vertex_num[j*2 + 1] = vnum_1;
+      cs_lnum_t vnum_1 = new_section->_vertex_ids[j*2];
+      cs_lnum_t vnum_2 = new_section->_vertex_ids[j*2 + 1];
+      if (v_num_g[vnum_1] > v_num_g[vnum_2]) {
+        new_section->_vertex_ids[j*2] = vnum_2;
+        new_section->_vertex_ids[j*2 + 1] = vnum_1;
       }
 
     }
@@ -2459,11 +2459,11 @@ fvm_nodal_copy_edges(const char         *name,
   else {
 
     for (j = 0; j < n_max_edges; j++) {
-      cs_lnum_t vnum_1 = new_section->_vertex_num[j*2];
-      cs_lnum_t vnum_2 = new_section->_vertex_num[j*2 + 1];
+      cs_lnum_t vnum_1 = new_section->_vertex_ids[j*2];
+      cs_lnum_t vnum_2 = new_section->_vertex_ids[j*2 + 1];
       if (vnum_1 > vnum_2) {
-        new_section->_vertex_num[j*2] = vnum_2;
-        new_section->_vertex_num[j*2 + 1] = vnum_1;
+        new_section->_vertex_ids[j*2] = vnum_2;
+        new_section->_vertex_ids[j*2 + 1] = vnum_1;
       }
     }
 
@@ -2472,7 +2472,7 @@ fvm_nodal_copy_edges(const char         *name,
   /* Sort and remove duplicates
      (use qsort rather than cs_order_..._s() so as to sort in place) */
 
-  qsort(new_section->_vertex_num,
+  qsort(new_section->_vertex_ids,
         n_max_edges,
         sizeof(cs_lnum_t) * 2,
         &_compare_edges);
@@ -2485,12 +2485,12 @@ fvm_nodal_copy_edges(const char         *name,
 
     for (j = 0; j < n_max_edges; j++) {
 
-      cs_lnum_t vn_1 = new_section->_vertex_num[j*2];
-      cs_lnum_t vn_2 = new_section->_vertex_num[j*2 + 1];
+      cs_lnum_t vn_1 = new_section->_vertex_ids[j*2];
+      cs_lnum_t vn_2 = new_section->_vertex_ids[j*2 + 1];
 
       if (vn_1 != vn_1_p || vn_2 != vn_2_p) {
-        new_section->_vertex_num[n_edges*2]     = vn_1;
-        new_section->_vertex_num[n_edges*2 + 1] = vn_2;
+        new_section->_vertex_ids[n_edges*2]     = vn_1;
+        new_section->_vertex_ids[n_edges*2 + 1] = vn_2;
         vn_1_p = vn_1;
         vn_2_p = vn_2;
         n_edges += 1;
@@ -2500,8 +2500,8 @@ fvm_nodal_copy_edges(const char         *name,
 
   /* Resize edge connectivity to adjust to final size */
 
-  CS_REALLOC(new_section->_vertex_num, n_edges*2, cs_lnum_t);
-  new_section->vertex_num = new_section->_vertex_num;
+  CS_REALLOC(new_section->_vertex_ids, n_edges*2, cs_lnum_t);
+  new_section->vertex_ids = new_section->_vertex_ids;
 
   new_section->n_elements = n_edges;
   new_nodal->n_edges = n_edges;
@@ -2518,14 +2518,14 @@ fvm_nodal_copy_edges(const char         *name,
       const cs_gnum_t *v_num_g
         = fvm_io_num_get_global_num(this_nodal->global_vertex_num);
       for (j = 0; j < n_edges; j++) {
-        edge_vertices_g[j*2]   = v_num_g[new_section->_vertex_num[j*2] - 1];
-        edge_vertices_g[j*2+1] = v_num_g[new_section->_vertex_num[j*2+1] - 1];
+        edge_vertices_g[j*2]   = v_num_g[new_section->_vertex_ids[j*2]];
+        edge_vertices_g[j*2+1] = v_num_g[new_section->_vertex_ids[j*2+1]];
       }
     }
     else {
       for (j = 0; j < n_edges; j++) {
-        edge_vertices_g[j*2]     = new_section->_vertex_num[j*2];
-        edge_vertices_g[j*2 + 1] = new_section->_vertex_num[j*2 + 1];
+        edge_vertices_g[j*2]     = new_section->_vertex_ids[j*2] + 1;
+        edge_vertices_g[j*2 + 1] = new_section->_vertex_ids[j*2 + 1] + 1;
       }
     }
 

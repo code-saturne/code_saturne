@@ -92,7 +92,7 @@ _transfer_to_section(cs_lnum_t       n_elements,
                      cs_lnum_t       face_index[],
                      cs_lnum_t       face_num[],
                      cs_lnum_t       vertex_index[],
-                     cs_lnum_t       vertex_num[],
+                     cs_lnum_t       vertex_ids[],
                      cs_lnum_t       parent_element_id[])
 {
   fvm_nodal_section_t  *this_section = nullptr;
@@ -111,7 +111,7 @@ _transfer_to_section(cs_lnum_t       n_elements,
   if (type == FVM_FACE_POLY || type == FVM_CELL_POLY)
     this_section->_vertex_index = vertex_index;
 
-  this_section->_vertex_num = vertex_num;
+  this_section->_vertex_ids = vertex_ids;
 
   this_section->_parent_element_id = parent_element_id;
 
@@ -120,7 +120,7 @@ _transfer_to_section(cs_lnum_t       n_elements,
   this_section->face_index = this_section->_face_index;
   this_section->face_num = this_section->_face_num;
   this_section->vertex_index = this_section->_vertex_index;
-  this_section->vertex_num = this_section->_vertex_num;
+  this_section->vertex_ids = this_section->_vertex_ids;
   this_section->parent_element_id = this_section->_parent_element_id;
 
   /* Connectivity size */
@@ -176,7 +176,7 @@ _map_to_section(cs_lnum_t       n_elements,
                 cs_lnum_t       face_index[],
                 cs_lnum_t       face_num[],
                 cs_lnum_t       vertex_index[],
-                cs_lnum_t       vertex_num[],
+                cs_lnum_t       vertex_ids[],
                 cs_lnum_t       parent_element_id[])
 {
   fvm_nodal_section_t  *this_section = nullptr;
@@ -195,7 +195,7 @@ _map_to_section(cs_lnum_t       n_elements,
   if (type == FVM_FACE_POLY || type == FVM_CELL_POLY)
     this_section->vertex_index = vertex_index;
 
-  this_section->vertex_num = vertex_num;
+  this_section->vertex_ids = vertex_ids;
 
   this_section->parent_element_id = parent_element_id;
 
@@ -261,7 +261,7 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
                              cs_lnum_t       face_index[],
                              cs_lnum_t       face_num[],
                              cs_lnum_t       vertex_index[],
-                             cs_lnum_t       vertex_num[],
+                             cs_lnum_t       vertex_ids[],
                              cs_lnum_t       parent_element_id[])
 {
   fvm_nodal_section_t  *new_section = nullptr;
@@ -280,7 +280,7 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
                                      face_index,
                                      face_num,
                                      vertex_index,
-                                     vertex_num,
+                                     vertex_ids,
                                      parent_element_id);
 
   this_nodal->sections[n_sections] = new_section;
@@ -336,7 +336,7 @@ fvm_nodal_append_shared(fvm_nodal_t    *this_nodal,
                         cs_lnum_t       face_index[],
                         cs_lnum_t       face_num[],
                         cs_lnum_t       vertex_index[],
-                        cs_lnum_t       vertex_num[],
+                        cs_lnum_t       vertex_ids[],
                         cs_lnum_t       parent_element_id[])
 {
   fvm_nodal_section_t  *new_section = nullptr;
@@ -355,7 +355,7 @@ fvm_nodal_append_shared(fvm_nodal_t    *this_nodal,
                                 face_index,
                                 face_num,
                                 vertex_index,
-                                vertex_num,
+                                vertex_ids,
                                 parent_element_id);
 
   this_nodal->sections[n_sections] = new_section;

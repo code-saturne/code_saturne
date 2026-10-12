@@ -69,7 +69,7 @@
  *                         size: face_index[n_elements]
  *   vertex_index      <-- polygon face -> vertices index (O to n-1)
  *                         size: face_index[n_elements]
- *   vertex_num        <-- element -> vertex connectivity
+ *   vertex_ids        <-- element -> vertex connectivity (0 to n-1)
  *   parent_element_id <-- element -> parent element id (0 to n-1) if non
  *                         trivial (i.e. if element definitions correspond
  *                         to a subset of the parent mesh), NULL otherwise
@@ -82,7 +82,7 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
                              cs_lnum_t       face_index[],
                              cs_lnum_t       face_num[],
                              cs_lnum_t       vertex_index[],
-                             cs_lnum_t       vertex_num[],
+                             cs_lnum_t       vertex_ids[],
                              cs_lnum_t       parent_element_id[]);
 
 /*----------------------------------------------------------------------------
@@ -104,7 +104,7 @@ fvm_nodal_append_by_transfer(fvm_nodal_t    *this_nodal,
  *                         size: face_index[n_elements]
  *   vertex_index      <-- polygon face -> vertices index (O to n-1)
  *                         size: face_index[n_elements]
- *   vertex_num        <-- element -> vertex connectivity
+ *   vertex_ids        <-- element -> vertex connectivity (0 to n-1)
  *   parent_element_id <-- element -> parent element id (0 to n-1) if non
  *                         trivial (i.e. if element definitions correspond
  *                         to a subset of the parent mesh), NULL otherwise
@@ -117,7 +117,7 @@ fvm_nodal_append_shared(fvm_nodal_t    *this_nodal,
                         cs_lnum_t       face_index[],
                         cs_lnum_t       face_num[],
                         cs_lnum_t       vertex_index[],
-                        cs_lnum_t       vertex_num[],
+                        cs_lnum_t       vertex_ids[],
                         cs_lnum_t       parent_element_id[]);
 
 /*----------------------------------------------------------------------------*/

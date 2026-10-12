@@ -149,10 +149,10 @@ _triangulate_section(int                         dim,
   ret_section->stride = 3;
   ret_section->connectivity_size =   ret_section->stride
                                    * ret_section->n_elements;
-  CS_MALLOC(ret_section->_vertex_num,
+  CS_MALLOC(ret_section->_vertex_ids,
             ret_section->connectivity_size,
             cs_lnum_t);
-  ret_section->vertex_num = ret_section->_vertex_num;
+  ret_section->vertex_ids = ret_section->_vertex_ids;
   CS_MALLOC(ret_section->_parent_element_id,
             ret_section->n_elements,
             cs_lnum_t);
@@ -183,24 +183,24 @@ _triangulate_section(int                         dim,
 
       if (n_vertices == 4)
         n_triangles = fvm_triangulate_quadrangle(dim,
-                                                 1,
+                                                 0,
                                                  vertex_coords,
                                                  parent_vertex_id,
-                                                 (  base_section->vertex_num
+                                                 (  base_section->vertex_ids
                                                   + vertex_id),
-                                                 (  ret_section->_vertex_num
+                                                 (  ret_section->_vertex_ids
                                                   + triangle_id*3));
 
       else {
         n_triangles = fvm_triangulate_polygon(dim,
-                                              1,
+                                              0,
                                               n_vertices,
                                               vertex_coords,
                                               parent_vertex_id,
-                                              (  base_section->vertex_num
+                                              (  base_section->vertex_ids
                                                + vertex_id),
                                               FVM_TRIANGULATE_MESH_DEF,
-                                              (  ret_section->_vertex_num
+                                              (  ret_section->_vertex_ids
                                                + triangle_id*3),
                                               state);
 
@@ -230,8 +230,8 @@ _triangulate_section(int                         dim,
       n_triangles = 1;
 
       for (k = 0; k < 3; k++)
-        ret_section->_vertex_num[triangle_id*3 + k]
-          = base_section->vertex_num[i*3 + k];
+        ret_section->_vertex_ids[triangle_id*3 + k]
+          = base_section->vertex_ids[i*3 + k];
 
       if (base_section->parent_element_id != nullptr)
         ret_section->_parent_element_id[triangle_id]
@@ -275,7 +275,7 @@ _triangulate_section(int                         dim,
  * parameters:
  *   dim               <-- spatial dimension
  *   vertex_coords     <-- associated vertex coordinates array
- *   parent_vertex_num <-- optional indirection to vertex coordinates
+ *   parent_vertex_ids <-- optional indirection to vertex coordinates
  *   base_section      <-- pointer to structure that should be triangulated
  *   new_sections      --> array of triangle and quadrangle sections
  *   base_element_id   <-- starting number for element ids if no
@@ -286,7 +286,7 @@ _triangulate_section(int                         dim,
 static void
 _triangulate_section_polygons(int                         dim,
                               const cs_coord_t            vertex_coords[],
-                              const cs_lnum_t             parent_vertex_num[],
+                              const cs_lnum_t             parent_vertex_ids[],
                               const fvm_nodal_section_t  *base_section,
                               fvm_nodal_section_t        *new_sections[2],
                               cs_lnum_t                   base_element_id,
@@ -355,10 +355,10 @@ _triangulate_section_polygons(int                         dim,
       _section->stride = fvm_nodal_n_vertices_element[element_type[type_id]];
       _section->connectivity_size =   _section->stride
                                     * _section->n_elements;
-      CS_MALLOC(_section->_vertex_num,
+      CS_MALLOC(_section->_vertex_ids,
                 _section->connectivity_size,
                 cs_lnum_t);
-      _section->vertex_num = _section->_vertex_num;
+      _section->vertex_ids = _section->_vertex_ids;
       CS_MALLOC(_section->_parent_element_id,
                 _section->n_elements,
                 cs_lnum_t);
@@ -400,14 +400,14 @@ _triangulate_section_polygons(int                         dim,
     if (n_vertices > 4) {
 
       n_triangles = fvm_triangulate_polygon(dim,
-                                            1,
+                                            0,
                                             n_vertices,
                                             vertex_coords,
-                                            parent_vertex_num,
-                                            (  base_section->vertex_num
+                                            parent_vertex_ids,
+                                            (  base_section->vertex_ids
                                              + vertex_id),
                                             FVM_TRIANGULATE_MESH_DEF,
-                                            (  _section->_vertex_num
+                                            (  _section->_vertex_ids
                                              + element_id[0]*3),
                                             state);
 
@@ -442,8 +442,8 @@ _triangulate_section_polygons(int                         dim,
     else {
 
       for (k = 0; k < _section->stride; k++)
-        _section->_vertex_num[element_id[type_id]*_section->stride + k]
-          = base_section->vertex_num[i*_section->stride + k];
+        _section->_vertex_ids[element_id[type_id]*_section->stride + k]
+          = base_section->vertex_ids[i*_section->stride + k];
 
       if (base_section->parent_element_id != nullptr)
         _section->_parent_element_id[element_id[type_id]]

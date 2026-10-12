@@ -171,7 +171,7 @@ fvm_interpolate_vtx_data(const fvm_nodal_t       *this_nodal,
           for (cs_lnum_t k = section->vertex_index[f_id];
                k < section->vertex_index[f_id + 1]; k++) {
 
-            cs_lnum_t  v_id = section->vertex_num[k] - 1;
+            cs_lnum_t  v_id = section->vertex_ids[k];
             if (this_nodal->parent_vertex_id != nullptr)
               v_id = this_nodal->parent_vertex_id[v_id];
             const cs_coord_t  *v_coo = vtx_coords + 3*v_id;
@@ -240,7 +240,7 @@ fvm_interpolate_vtx_data(const fvm_nodal_t       *this_nodal,
 
         for (cs_lnum_t j = v_s_id; j < v_e_id; j++) {
 
-          cs_lnum_t  v_id = section->vertex_num[j] - 1;
+          cs_lnum_t  v_id = section->vertex_ids[j];
           if (this_nodal->parent_vertex_id != nullptr)
             v_id = this_nodal->parent_vertex_id[v_id];
 

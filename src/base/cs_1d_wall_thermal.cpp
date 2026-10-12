@@ -775,8 +775,8 @@ cs_1d_wall_thermal_export_nodal(void)
     cs_real_t *zz = _1d_wall_thermal.local_models->z;
 
     for (cs_lnum_t ii = 0; ii < _n_vtx - 1; ii++) {
-      connect(_o_edge + ii, 0) = _o_vtx + ii + 1;
-      connect(_o_edge + ii, 1) = _o_vtx + ii + 2;
+      connect(_o_edge + ii, 0) = _o_vtx + ii;
+      connect(_o_edge + ii, 1) = _o_vtx + ii + 1;
     }
 
     for (cs_lnum_t ii = 0; ii < _n_vtx; ii++) {

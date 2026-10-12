@@ -627,7 +627,7 @@ _write_connect_block(fvm_element_t      type,
 
   for (i = 0; i < n_elts; i++) {
     for (j = 0; j < stride; j++)
-      elt_buf[j] = connect[i*stride + vertex_order[j]] - 1;
+      elt_buf[j] = connect[i*stride + vertex_order[j]];
     med_mesh->insertNextCell(med_type, stride, elt_buf);
   }
 }
@@ -692,7 +692,7 @@ _export_nodal_polyhedra_l(const fvm_nodal_section_t  *section,
       for (k = 0; k < face_length; k++) {
         l =    section->vertex_index[face_id]
             + (face_length + (k*face_sgn))%face_length;
-        elt_buf[m++] = section->vertex_num[l] - 1;
+        elt_buf[m++] = section->vertex_ids[l];
       }
 
     } /* End of loop on cell faces */
@@ -741,7 +741,7 @@ _export_nodal_polygons_l(const fvm_nodal_section_t  *section,
     for (j = section->vertex_index[i];
          j < section->vertex_index[i+1];
          j++)
-      elt_buf[k++] = section->vertex_num[j] - 1;
+      elt_buf[k++] = section->vertex_ids[j];
 
     med_mesh->insertNextCell(INTERP_KERNEL::NORM_POLYGON, k, elt_buf);
 
@@ -1113,7 +1113,7 @@ fvm_to_medcoupling_export_nodal(void               *this_writer_p,
     if (section->stride > 0)
       _write_connect_block(section->type,
                            section->n_elements,
-                           section->vertex_num,
+                           section->vertex_ids,
                            med_mesh);
 
     /* Output for polygons */

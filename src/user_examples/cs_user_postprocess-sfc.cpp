@@ -99,8 +99,8 @@ _cs_post_write_sfc_serial(fvm_writer_t   *writer)
     }
 
     for (i = 0; i < n_edges; i++) {
-      connect[i*2] = i+1;
-      connect[i*2+1] = i+2;
+      connect[i*2] = i;
+      connect[i*2+1] = i+1;
     }
 
     cell_gnum = nullptr;
@@ -246,8 +246,8 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
     for (i = 0; i < block_size; i++) {
       vtx_gnum[i] = bi.gnum_range[0] + i;
       if (vtx_gnum[i] < m->n_g_cells) {
-        connect[n_edges*2] = i+1;
-        connect[n_edges*2+1] = i+2;
+        connect[n_edges*2] = i;
+        connect[n_edges*2+1] = i+1;
         edge_gnum[n_edges] = vtx_gnum[i];
         n_edges++;
       }

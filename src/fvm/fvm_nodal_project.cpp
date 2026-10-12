@@ -119,10 +119,10 @@ _faces_to_edges(int                         dim,
   ret_section->connectivity_size =   ret_section->stride
                                    * ret_section->n_elements;
 
-  CS_MALLOC(ret_section->_vertex_num,
+  CS_MALLOC(ret_section->_vertex_ids,
             ret_section->connectivity_size,
             cs_lnum_t);
-  ret_section->vertex_num = ret_section->_vertex_num;
+  ret_section->vertex_ids = ret_section->_vertex_ids;
 
   if (base_section->parent_element_id != nullptr) {
 
@@ -158,8 +158,8 @@ _faces_to_edges(int                         dim,
 
     /* Initialize the edge selection */
 
-    selected_edge[0] = base_section->vertex_num[vertex_id + n_vertices - 1] - 1;
-    selected_edge[1] = base_section->vertex_num[vertex_id] - 1;
+    selected_edge[0] = base_section->vertex_ids[vertex_id + n_vertices - 1];
+    selected_edge[1] = base_section->vertex_ids[vertex_id];
 
     if (parent_vertex_id == nullptr)
       selected_edge_center = 0.5 *
@@ -181,8 +181,8 @@ _faces_to_edges(int                         dim,
 
     for (k = 1; k < n_vertices ; k++) {
 
-      tmp_selected_edge[0] = base_section->vertex_num[vertex_id + k - 1] - 1;
-      tmp_selected_edge[1] = base_section->vertex_num[vertex_id + k] - 1;
+      tmp_selected_edge[0] = base_section->vertex_ids[vertex_id + k - 1];
+      tmp_selected_edge[1] = base_section->vertex_ids[vertex_id + k];
 
       if (parent_vertex_id == nullptr)
         tmp_edge_center = 0.5 *
@@ -217,7 +217,7 @@ _faces_to_edges(int                         dim,
     /* Define vertex_num */
 
     for (j = 0; j < 2; j++)
-      ret_section->_vertex_num[i*2 + j] = selected_edge[j] + 1;
+      ret_section->_vertex_ids[i*2 + j] = selected_edge[j];
 
     if (base_section->parent_element_id != nullptr)
       ret_section->_parent_element_id[i]
@@ -279,8 +279,8 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
     old_to_new[i] = -1;
 
     if (selected_vertices[i] == true) {
-      new_to_old[idx] = i + 1;
-      old_to_new[i] = idx + 1;
+      new_to_old[idx] = i;
+      old_to_new[i] = idx;
       idx++;
     }
 
@@ -340,7 +340,7 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
     } /* End if this_nodal->_coords == nullptr */
 
-    /* Adapt _vertex_num in each section */
+    /* Adapt _vertex_id in each section */
     /* --------------------------------- */
 
     for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
@@ -350,13 +350,13 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
       if (section->type == FVM_EDGE) {
 
-        if (section->_vertex_num == nullptr)
-          CS_MALLOC(section->_vertex_num, n_connect, cs_lnum_t);
+        if (section->_vertex_ids == nullptr)
+          CS_MALLOC(section->_vertex_ids, n_connect, cs_lnum_t);
 
         for (j = 0; j < n_connect; j++)
-          section->_vertex_num[j] = old_to_new[section->vertex_num[j] - 1];
+          section->_vertex_ids[j] = old_to_new[section->vertex_ids[j]];
 
-        section->vertex_num = section->_vertex_num;
+        section->vertex_ids = section->_vertex_ids;
       }
 
     }

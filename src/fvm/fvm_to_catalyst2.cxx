@@ -850,13 +850,13 @@ _map_section_strided(fvm_element_t        type,
     if (order_type == 0) {
       cs_lnum_t n = n_elts * stride;
       for (cs_lnum_t i = 0; i < n; i++) {
-        values[i] = connect[i] - 1;
+        values[i] = connect[i];
       }
     }
     else {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         for (cs_lnum_t j = 0; j < stride; j++)
-          values[i*stride + j] = connect[i*stride + vertex_order[j]] - 1;
+          values[i*stride + j] = connect[i*stride + vertex_order[j]];
       }
     }
   }
@@ -897,7 +897,7 @@ _map_section_polygons(const fvm_nodal_section_t  *section,
     section->n_faces : section->n_elements;
 
   const cs_lnum_t *vertex_index = section->vertex_index;
-  const cs_lnum_t *vertex_num = section->vertex_num;
+  const cs_lnum_t *vertex_ids = section->vertex_ids;
 
   const unsigned int type_id = fvm_to_conduit_type_id[FVM_FACE_POLY];
 
@@ -912,7 +912,7 @@ _map_section_polygons(const fvm_nodal_section_t  *section,
       elt_types[i] = type_id;
 
     for (cs_lnum_t j = vertex_index[i]; j < vertex_index[i+1]; j++)
-      values[j] = vertex_num[j] - 1;
+      values[j] = vertex_ids[j];
 
   } /* End of loop on polygonal faces */
 }
@@ -1151,7 +1151,7 @@ _export_conduit_mesh(fvm_to_catalyst_t  *w,
       _map_section_strided(section->type,
                            section->n_elements,
                            values_shift,
-                           section->vertex_num,
+                           section->vertex_ids,
                            _values,
                            _offsets,
                            _shapes,

@@ -489,44 +489,44 @@ _assign_cell_mesh(const cs_mesh_t        *mesh,
     case FVM_CELL_TETRA:
       type = INTERP_KERNEL::NORM_TETRA4;
       n_vtx = 4;
-      elt_buf[0] = vtx_id[cell_vtx[0]-1];
-      elt_buf[1] = vtx_id[cell_vtx[2]-1];
-      elt_buf[2] = vtx_id[cell_vtx[1]-1];
-      elt_buf[3] = vtx_id[cell_vtx[3]-1];
+      elt_buf[0] = vtx_id[cell_vtx[0]];
+      elt_buf[1] = vtx_id[cell_vtx[2]];
+      elt_buf[2] = vtx_id[cell_vtx[1]];
+      elt_buf[3] = vtx_id[cell_vtx[3]];
       break;
 
     case FVM_CELL_PYRAM:
       type = INTERP_KERNEL::NORM_PYRA5;
       n_vtx = 5;
-      elt_buf[0] = vtx_id[cell_vtx[0]-1];
-      elt_buf[1] = vtx_id[cell_vtx[3]-1];
-      elt_buf[2] = vtx_id[cell_vtx[2]-1];
-      elt_buf[3] = vtx_id[cell_vtx[1]-1];
-      elt_buf[4] = vtx_id[cell_vtx[4]-1];
+      elt_buf[0] = vtx_id[cell_vtx[0]];
+      elt_buf[1] = vtx_id[cell_vtx[3]];
+      elt_buf[2] = vtx_id[cell_vtx[2]];
+      elt_buf[3] = vtx_id[cell_vtx[1]];
+      elt_buf[4] = vtx_id[cell_vtx[4]];
       break;
 
     case FVM_CELL_PRISM:
       type = INTERP_KERNEL::NORM_PENTA6;
       n_vtx = 6;
-      elt_buf[0] = vtx_id[cell_vtx[0]-1];
-      elt_buf[1] = vtx_id[cell_vtx[2]-1];
-      elt_buf[2] = vtx_id[cell_vtx[1]-1];
-      elt_buf[3] = vtx_id[cell_vtx[3]-1];
-      elt_buf[4] = vtx_id[cell_vtx[5]-1];
-      elt_buf[5] = vtx_id[cell_vtx[4]-1];
+      elt_buf[0] = vtx_id[cell_vtx[0]];
+      elt_buf[1] = vtx_id[cell_vtx[2]];
+      elt_buf[2] = vtx_id[cell_vtx[1]];
+      elt_buf[3] = vtx_id[cell_vtx[3]];
+      elt_buf[4] = vtx_id[cell_vtx[5]];
+      elt_buf[5] = vtx_id[cell_vtx[4]];
       break;
 
     case FVM_CELL_HEXA:
       type = INTERP_KERNEL::NORM_HEXA8;
       n_vtx = 8;
-      elt_buf[0] = vtx_id[cell_vtx[0]-1];
-      elt_buf[1] = vtx_id[cell_vtx[3]-1];
-      elt_buf[2] = vtx_id[cell_vtx[2]-1];
-      elt_buf[3] = vtx_id[cell_vtx[1]-1];
-      elt_buf[4] = vtx_id[cell_vtx[4]-1];
-      elt_buf[5] = vtx_id[cell_vtx[7]-1];
-      elt_buf[6] = vtx_id[cell_vtx[6]-1];
-      elt_buf[7] = vtx_id[cell_vtx[5]-1];
+      elt_buf[0] = vtx_id[cell_vtx[0]];
+      elt_buf[1] = vtx_id[cell_vtx[3]];
+      elt_buf[2] = vtx_id[cell_vtx[2]];
+      elt_buf[3] = vtx_id[cell_vtx[1]];
+      elt_buf[4] = vtx_id[cell_vtx[4]];
+      elt_buf[5] = vtx_id[cell_vtx[7]];
+      elt_buf[6] = vtx_id[cell_vtx[6]];
+      elt_buf[7] = vtx_id[cell_vtx[5]];
       break;
 
     default:

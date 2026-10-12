@@ -1524,7 +1524,7 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
     else if (post_mesh->ent_flag[3] == 2) {
 
       cs_lnum_t i;
-      cs_lnum_t  *vertex_num;
+      cs_lnum_t  *vertex_ids;
       char *mesh_name;
 
       assert(ts->nt_cur > 0);
@@ -1536,10 +1536,10 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
 
       CS_FREE(mesh_name);
 
-      CS_MALLOC(vertex_num, n_particles*2, cs_lnum_t);
+      CS_MALLOC(vertex_ids, n_particles*2, cs_lnum_t);
 
       for (i = 0; i < n_particles*2; i++)
-        vertex_num[i] = i+1;
+        vertex_ids[i] = i;
 
       CS_MALLOC(coords, n_particles*2, cs_coord_3_t);
 
@@ -1558,7 +1558,7 @@ _define_particle_export_mesh(cs_post_mesh_t        *post_mesh,
                                    nullptr,
                                    nullptr,
                                    nullptr,
-                                   vertex_num,
+                                   vertex_ids,
                                    nullptr);
 
       fvm_nodal_transfer_vertices(exp_mesh, (cs_coord_t *)coords);

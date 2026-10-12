@@ -150,12 +150,12 @@ _is_prism_or_poly(const cs_lnum_t    cell_id,
       if (cell_face_num[idx] > 0) {
         for (vtx = 0; vtx < 3; vtx++)
           vtx_tria[n_trias*3 + vtx]
-            = face_vertex[fl][vertex_id_start + vtx] + 1;
+            = face_vertex[fl][vertex_id_start + vtx];
       }
       else {
         for (vtx = 0; vtx < 3; vtx++)
           vtx_tria[n_trias*3 + vtx]
-            = face_vertex[fl][vertex_id_end - 1 - vtx] + 1;
+            = face_vertex[fl][vertex_id_end - 1 - vtx];
       }
 
       n_trias += 1;
@@ -271,12 +271,12 @@ _nodal_cell_from_desc(const cs_lnum_t    cell_id,
         if (cell_face_num[idx] > 0) {
           for (vtx = 0; vtx < n_face_vertices; vtx++)
             cell_vtx_tria[n_trias*3 + vtx]
-              = face_vertex[fl][vertex_id_start + vtx] + 1;
+              = face_vertex[fl][vertex_id_start + vtx];
         }
         else {
           for (vtx = 0; vtx < n_face_vertices; vtx++)
             cell_vtx_tria[n_trias*3 + vtx]
-              = face_vertex[fl][vertex_id_end - 1 - vtx] + 1;
+              = face_vertex[fl][vertex_id_end - 1 - vtx];
         }
       }
 
@@ -289,12 +289,12 @@ _nodal_cell_from_desc(const cs_lnum_t    cell_id,
         if (cell_face_num[idx] > 0) {
           for (vtx = 0; vtx < n_face_vertices; vtx++)
             cell_vtx_quad[n_quads*4 + vtx]
-              = face_vertex[fl][vertex_id_start + vtx] + 1;
+              = face_vertex[fl][vertex_id_start + vtx];
         }
         else {
           for (vtx = 0; vtx < n_face_vertices; vtx++)
             cell_vtx_quad[n_quads*4 + vtx]
-              = face_vertex[fl][vertex_id_end - 1 - vtx] + 1;
+              = face_vertex[fl][vertex_id_end - 1 - vtx];
         }
       }
 
@@ -882,7 +882,7 @@ _nodal_face_from_desc_copy(const cs_lnum_t    face_id,
   for (vtx = 0, vertex_id = vertex_id_start;
        vertex_id < vertex_id_end;
        vtx++, vertex_id++)
-    face_vtx[vtx] = face_vertex[fl][vertex_id] + 1;
+    face_vtx[vtx] = face_vertex[fl][vertex_id];
 }
 
 /*----------------------------------------------------------------------------
@@ -915,8 +915,8 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
                              cs_lnum_t            *cell_face_list[])
 {
   cs_lnum_t    n_faces, n_cell_faces;
-  cs_lnum_t    c_cell_face_vertex_idxs, c_cell_face_vertex_nums;
-  cs_lnum_t    n_cell_face_vertex_nums;
+  cs_lnum_t    c_cell_face_vertex_idxs, c_cell_face_vertex_ids;
+  cs_lnum_t    n_cell_face_vertex_ids;
   cs_lnum_t    face_counter, face_id, poly_id, cell_id;
   cs_lnum_t    fl, i, idx, idx_start, idx_end, num_count;
 
@@ -971,7 +971,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
 
   /* Counting for faces -> vertices connectivity and local face numbering */
 
-  n_cell_face_vertex_nums = 0;
+  n_cell_face_vertex_ids = 0;
   for (face_counter = 0; face_counter < n_faces; face_counter++) {
 
     if (local_face_num[face_counter] != 0) {
@@ -988,7 +988,7 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
       assert(fl > -1);
       face_id -= face_list_shift[fl];
 
-      n_cell_face_vertex_nums += (  face_vertex_idx[fl][face_id+1]
+      n_cell_face_vertex_ids += (  face_vertex_idx[fl][face_id+1]
                                   - face_vertex_idx[fl][face_id]);
 
     }
@@ -1036,15 +1036,15 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
             cs_lnum_t);
   this_section->vertex_index = this_section->_vertex_index;
 
-  CS_MALLOC(this_section->_vertex_num,
-            n_cell_face_vertex_nums,
+  CS_MALLOC(this_section->_vertex_ids,
+            n_cell_face_vertex_ids,
             cs_lnum_t);
-  this_section->vertex_num = this_section->_vertex_num;
+  this_section->vertex_ids = this_section->_vertex_ids;
 
   /* Definition */
 
   c_cell_face_vertex_idxs = 0;
-  c_cell_face_vertex_nums = 0;
+  c_cell_face_vertex_ids = 0;
   this_section->_vertex_index[0] = 0;
 
   for (face_counter = 0; face_counter < n_faces; face_counter++) {
@@ -1062,12 +1062,12 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
       for (i = face_vertex_idx[fl][face_id];
            i < face_vertex_idx[fl][face_id + 1];
            i++)
-        this_section->_vertex_num[c_cell_face_vertex_nums++]
-          = face_vertex[fl][i] + 1;
+        this_section->_vertex_ids[c_cell_face_vertex_ids++]
+          = face_vertex[fl][i];
 
       c_cell_face_vertex_idxs += 1;
       this_section->_vertex_index[c_cell_face_vertex_idxs]
-        = c_cell_face_vertex_nums;
+        = c_cell_face_vertex_ids;
 
     }
   }
@@ -1076,17 +1076,17 @@ _fvm_nodal_extract_polyhedra(fvm_nodal_section_t  *this_section,
      so counter = this_nodal->n_cell_faces */
 
   assert(c_cell_face_vertex_idxs == n_cell_faces);
-  assert(c_cell_face_vertex_nums == n_cell_face_vertex_nums);
+  assert(c_cell_face_vertex_ids == n_cell_face_vertex_ids);
 
   /* Set pointers and connectivity size */
 
-  this_section->connectivity_size = n_cell_face_vertex_nums;
+  this_section->connectivity_size = n_cell_face_vertex_ids;
 
   this_section->n_faces      = n_cell_faces;
   this_section->face_index   = this_section->_face_index;
   this_section->face_num     = this_section->_face_num;
   this_section->vertex_index = this_section->_vertex_index;
-  this_section->vertex_num   = this_section->_vertex_num;
+  this_section->vertex_ids   = this_section->_vertex_ids;
 
   /* Free memory */
 
@@ -1355,8 +1355,8 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
           && section->type != FVM_CELL_POLY) {
         section->stride = fvm_nodal_n_vertices_element[type_id];
         section->connectivity_size = section->stride * section->n_elements;
-        CS_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
-        section->vertex_num = section->_vertex_num;
+        CS_MALLOC(section->_vertex_ids, section->connectivity_size, cs_lnum_t);
+        section->vertex_ids = section->_vertex_ids;
       }
     }
   }
@@ -1386,7 +1386,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 
     section = sections[cell_type];
 
-    p_cell_vertex =   section->_vertex_num
+    p_cell_vertex =   section->_vertex_ids
                     + (  n_elements_type[cell_type]
                        * fvm_nodal_n_vertices_element[cell_type]);
 
@@ -1536,7 +1536,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
   fvm_element_t  face_type;
 
   cs_lnum_t   *p_vertex_idx;
-  cs_lnum_t   *p_vertex_num;
+  cs_lnum_t   *p_vertex_id;
 
   cs_lnum_t   poly_connect_size;
   cs_lnum_t   n_face_vertices;
@@ -1623,16 +1623,16 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
       if (section->type != FVM_FACE_POLY) {
         section->stride = fvm_nodal_n_vertices_element[type_id];
         section->connectivity_size = section->stride * section->n_elements;
-        CS_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
-        section->vertex_num = section->_vertex_num;
+        CS_MALLOC(section->_vertex_ids, section->connectivity_size, cs_lnum_t);
+        section->vertex_ids = section->_vertex_ids;
       }
       else {
         section->stride = fvm_nodal_n_vertices_element[type_id];
         section->connectivity_size = poly_connect_size;
         CS_MALLOC(section->_vertex_index, section->n_elements + 1, cs_lnum_t);
-        CS_MALLOC(section->_vertex_num, section->connectivity_size, cs_lnum_t);
+        CS_MALLOC(section->_vertex_ids, section->connectivity_size, cs_lnum_t);
         section->vertex_index = section->_vertex_index;
-        section->vertex_num = section->_vertex_num;
+        section->vertex_ids = section->_vertex_ids;
         section->_vertex_index[0] = 0;
       }
     }
@@ -1665,19 +1665,19 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
     case 3:
       face_type = FVM_FACE_TRIA;
       section = sections[face_type];
-      p_vertex_num = section->_vertex_num + (n_elements_type[face_type] * 3);
+      p_vertex_id = section->_vertex_ids + (n_elements_type[face_type] * 3);
       break;
     case 4:
       face_type = FVM_FACE_QUAD;
       section = sections[face_type];
-      p_vertex_num = section->_vertex_num + (n_elements_type[face_type] * 4);
+      p_vertex_id = section->_vertex_ids + (n_elements_type[face_type] * 4);
       break;
     default:
       face_type = FVM_FACE_POLY;
       section = sections[face_type];
       p_vertex_idx = section->_vertex_index + n_elements_type[face_type];
       *(p_vertex_idx + 1) = *p_vertex_idx + n_face_vertices;
-      p_vertex_num = section->_vertex_num + (*p_vertex_idx);
+      p_vertex_id = section->_vertex_ids + (*p_vertex_idx);
       break;
     }
 
@@ -1686,7 +1686,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
                                face_list_shift,
                                face_vertex_idx,
                                face_vertex,
-                               p_vertex_num);
+                               p_vertex_id);
 
     section->_parent_element_id[n_elements_type[face_type]] = face_id;
 
@@ -1760,7 +1760,7 @@ fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
  *   face_vertex     <-- face -> vertex ids (per face list)
  *   cell_face_idx   <-- cell -> face indexes (1 to n)
  *   cell_face_num   <-- cell -> face numbers (1 to n)
- *   vertex_num      --> nodal connectivity of cell, if not a general
+ *   vertex_id       --> nodal connectivity of cell, if not a general
  *                       polyhedron
  *
  * returns:
@@ -1775,7 +1775,7 @@ fvm_nodal_from_desc_cell(const cs_lnum_t    cell_id,
                          const cs_lnum_t   *face_vertex[],
                          const cs_lnum_t    cell_face_idx[],
                          const cs_lnum_t    cell_face_num[],
-                         cs_lnum_t          vertex_num[8])
+                         cs_lnum_t          vertex_id[8])
 {
   fvm_nodal_from_desc_t  retcode;
   cs_lnum_t   cell_vtx_tria[3*4]; /* We will only seek to fill these arrays */
@@ -1794,21 +1794,21 @@ fvm_nodal_from_desc_cell(const cs_lnum_t    cell_id,
   switch (cell_type) {
   case FVM_CELL_TETRA:
     retcode = _nodal_from_desc_cnv_cel_tetra(cell_vtx_tria,
-                                             vertex_num);
+                                             vertex_id);
     break;
   case FVM_CELL_PYRAM:
     retcode = _nodal_from_desc_cnv_cel_pyram(cell_vtx_tria,
                                              cell_vtx_quad,
-                                             vertex_num);
+                                             vertex_id);
     break;
   case FVM_CELL_PRISM:
     retcode = _nodal_from_desc_cnv_cel_prism(cell_vtx_tria,
                                              cell_vtx_quad,
-                                             vertex_num);
+                                             vertex_id);
     break;
   case FVM_CELL_HEXA:
     retcode = _nodal_from_desc_cnv_cel_hexa(cell_vtx_quad,
-                                            vertex_num);
+                                            vertex_id);
     break;
   default:
     retcode = FVM_NODAL_FROM_DESC_FAILURE;

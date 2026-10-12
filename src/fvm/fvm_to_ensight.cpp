@@ -801,60 +801,60 @@ _write_connect_l(int                stride,
     case 2: /* edge */
       for (i = 0; i < n_elems; i++)
         fprintf(f.tf, "%10d%10d\n",
-                (int)connect[i*2],
-                (int)connect[i*2+1]);
+                (int)connect[i*2] + 1,
+                (int)connect[i*2+1] + 1);
       break;
 
     case 3: /* FVM_FACE_TRIA */
       for (i = 0; i < n_elems; i++)
         fprintf(f.tf, "%10d%10d%10d\n",
-                (int)connect[i*3],
-                (int)connect[i*3+1],
-                (int)connect[i*3+2]);
+                (int)connect[i*3] + 1,
+                (int)connect[i*3+1] + 1,
+                (int)connect[i*3+2] + 1);
       break;
 
     case 4: /* FVM_FACE_QUAD or FVM_CELL_TETRA */
       for (i = 0; i < n_elems; i++)
         fprintf(f.tf, "%10d%10d%10d%10d\n",
-                (int)connect[i*4],
-                (int)connect[i*4+1],
-                (int)connect[i*4+2],
-                (int)connect[i*4+3]);
+                (int)connect[i*4] + 1,
+                (int)connect[i*4+1] + 1,
+                (int)connect[i*4+2] + 1,
+                (int)connect[i*4+3] + 1);
       break;
 
     case 5: /* FVM_CELL_PYRAM */
       for (i = 0; i < n_elems; i++)
         fprintf(f.tf, "%10d%10d%10d%10d%10d\n",
-                (int)connect[i*5],
-                (int)connect[i*5+1],
-                (int)connect[i*5+2],
-                (int)connect[i*5+3],
-                (int)connect[i*5+4]);
+                (int)connect[i*5] + 1,
+                (int)connect[i*5+1] + 1,
+                (int)connect[i*5+2] + 1,
+                (int)connect[i*5+3] + 1,
+                (int)connect[i*5+4] + 1);
       break;
 
     case 6: /* FVM_CELL_PRISM */
       for (i = 0; i < n_elems; i++)
         fprintf(f.tf, "%10d%10d%10d%10d%10d%10d\n",
-                (int)connect[i*6],
-                (int)connect[i*6+1],
-                (int)connect[i*6+2],
-                (int)connect[i*6+3],
-                (int)connect[i*6+4],
-                (int)connect[i*6+5]);
+                (int)connect[i*6] + 1,
+                (int)connect[i*6+1] + 1,
+                (int)connect[i*6+2] + 1,
+                (int)connect[i*6+3] + 1,
+                (int)connect[i*6+4] + 1,
+                (int)connect[i*6+5] + 1);
       break;
 
     case 8: /* FVM_CELL_HEXA */
       for (i = 0; i < n_elems; i++)
         fprintf(f.tf,
                 "%10d%10d%10d%10d%10d%10d%10d%10d\n",
-                (int)connect[i*8],
-                (int)connect[i*8+1],
-                (int)connect[i*8+2],
-                (int)connect[i*8+3],
-                (int)connect[i*8+4],
-                (int)connect[i*8+5],
-                (int)connect[i*8+6],
-                (int)connect[i*8+7]);
+                (int)connect[i*8] + 1,
+                (int)connect[i*8+1] + 1,
+                (int)connect[i*8+2] + 1,
+                (int)connect[i*8+3] + 1,
+                (int)connect[i*8+4] + 1,
+                (int)connect[i*8+5] + 1,
+                (int)connect[i*8+6] + 1,
+                (int)connect[i*8+7] + 1);
       break;
 
     default:
@@ -874,7 +874,7 @@ _write_connect_l(int                stride,
 
     while (k < n_values) {
       for (j = 0; j < buffer_size && k < n_values; j++)
-        buffer[j] = (int)(connect[k++]);
+        buffer[j] = (int)(connect[k++]) + 1;
       cs_file_write_global(f.bf, buffer, sizeof(int32_t), j);
     }
 
@@ -1473,16 +1473,16 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
           for (k = section->vertex_index[face_id];
                k < section->vertex_index[face_id+1];
                k++)
-            part_vtx_num[l++] = g_vtx_num[section->vertex_num[k] - 1];
+            part_vtx_num[l++] = g_vtx_num[section->vertex_ids[k]];
         }
         else {
           face_id = -section->face_num[j] - 1;
           k = section->vertex_index[face_id];
-          part_vtx_num[l++] = g_vtx_num[section->vertex_num[k] - 1];
+          part_vtx_num[l++] = g_vtx_num[section->vertex_ids[k]];
           for (k = section->vertex_index[face_id+1] - 1;
                k > section->vertex_index[face_id];
                k--)
-            part_vtx_num[l++] = g_vtx_num[section->vertex_num[k] - 1];
+            part_vtx_num[l++] = g_vtx_num[section->vertex_ids[k]];
         }
         if (f.bf == nullptr)
           part_vtx_num[l++] = 0; /* mark face limits in text mode */
@@ -1667,7 +1667,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
           for (k = 0; k < face_length; k++) {
             l =   section->vertex_index[face_id]
                 + (face_length + (k*face_sgn))%face_length;
-            fprintf(f.tf, "%10d", (int)section->vertex_num[l]);
+            fprintf(f.tf, "%10d", (int)section->vertex_ids[l] + 1);
           }
           fprintf(f.tf, "\n");
         }
@@ -1679,7 +1679,7 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_section,
               cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
               i_buf = 0;
             }
-            buffer[i_buf++] = (int)section->vertex_num[l];
+            buffer[i_buf++] = (int)section->vertex_ids[l] + 1;
           }
         }
 
@@ -1786,7 +1786,7 @@ _export_nodal_polygons_g(const fvm_to_ensight_writer_t  *w,
         for (j = section->vertex_index[i];
              j < section->vertex_index[i+1];
              j++)
-          part_vtx_num[k++] = g_vtx_num[section->vertex_num[j] - 1];
+          part_vtx_num[k++] = g_vtx_num[section->vertex_ids[j]];
       }
     }
 
@@ -1795,7 +1795,7 @@ _export_nodal_polygons_g(const fvm_to_ensight_writer_t  *w,
         for (j = section->vertex_index[i];
              j < section->vertex_index[i+1];
              j++)
-          part_vtx_num[k++] = g_vtx_num[section->vertex_num[j] - 1];
+          part_vtx_num[k++] = g_vtx_num[section->vertex_ids[j]];
         part_vtx_num[k++] = 0; /* mark face bounds in text mode */
       }
     }
@@ -1911,7 +1911,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
         for (j = section->vertex_index[i];
              j < section->vertex_index[i+1];
              j++)
-          fprintf(f.tf, "%10d", (int)section->vertex_num[j]);
+          fprintf(f.tf, "%10d", (int)section->vertex_ids[j] + 1);
         fprintf(f.tf, "\n");
       }
       else { /* binary mode */
@@ -1922,7 +1922,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
             cs_file_write_global(f.bf, buffer, sizeof(int32_t), i_buf);
             i_buf = 0;
           }
-          buffer[i_buf++] = (int)section->vertex_num[j];
+          buffer[i_buf++] = (int)section->vertex_ids[j] + 1;
         }
       }
 
@@ -2293,7 +2293,7 @@ _export_nodal_strided_g(const fvm_to_ensight_writer_t  *w,
     for (i = 0; i < n_elements; i++) {
       for (j = 0; j < stride; j++) {
         part_vtx_num[i*stride + j]
-          = g_vtx_num[section->vertex_num[i*stride + j] - 1];
+          = g_vtx_num[section->vertex_ids[i*stride + j]];
       }
     }
 
@@ -2906,7 +2906,7 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
 
         _write_connect_l(section->stride,
                          section->n_elements,
-                         section->vertex_num,
+                         section->vertex_ids,
                          f);
 
         export_section = export_section->next;

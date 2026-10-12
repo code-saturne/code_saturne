@@ -2368,12 +2368,12 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
 
       /* Ordinary section */
 
-      const cs_lnum_t *vertex_num = section->vertex_num;
+      const cs_lnum_t *vertex_ids = section->vertex_ids;
 
       for (elt_id = 0; elt_id < section->n_elements; elt_id++) {
         for (l_id = 0; l_id < stride; l_id++)
           part_vertex_num[num_id++]
-            = g_vtx_num[vertex_num[elt_id * stride + vertex_order[l_id]] - 1];
+            = g_vtx_num[vertex_ids[elt_id * stride + vertex_order[l_id]]];
       }
 
     }
@@ -2747,7 +2747,7 @@ _export_connect_l(const fvm_writer_section_t  *export_sections,
       /* Ordinary section */
       /*------------------*/
 
-      const cs_lnum_t *vertex_num = section->vertex_num;
+      const cs_lnum_t *vertex_ids = section->vertex_ids;
 
       /* Convert FVM connectivity to be congruent with MED standard */
 
@@ -2755,7 +2755,7 @@ _export_connect_l(const fvm_writer_section_t  *export_sections,
       for (i_elt = 0; i_elt < section->n_elements; i_elt++) {
         for (i_vtx = 0; i_vtx < stride; i_vtx++)
           med_export_connect[i_num++] =
-            (med_int)vertex_num[i_elt * stride + vertex_order[i_vtx]];
+            (med_int)(vertex_ids[i_elt * stride + vertex_order[i_vtx]] + 1);
       }
 
       n_export_elements +=  section->n_elements;
@@ -2989,7 +2989,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
 
     for (cs_lnum_t v_id = 0; v_id < section_size; v_id++)
       part_connect[v_id + section_shift]
-        = g_vtx_num[section->vertex_num[v_id] - 1];
+        = g_vtx_num[section->vertex_ids[v_id]];
 
     section_shift += section_size;
 
@@ -3142,7 +3142,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_sections,
 
       for (i = 0; i < n_connect_size; i++)
         med_export_connect[i + n_export_connect]
-          = (med_int)section->vertex_num[i];
+          = (med_int)(section->vertex_ids[i] + 1);
 
       n_export_connect += n_connect_size;
       n_export_elements += n_elements_section + 1;
@@ -3403,7 +3403,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
                v_id < section->vertex_index[face_id + 1];
                v_id++)
             part_connect[part_connect_size++]
-              = g_vtx_num[section->vertex_num[v_id] - 1];
+              = g_vtx_num[section->vertex_ids[v_id]];
         }
         else { /* face_num < 0 */
           cs_lnum_t face_id = -section->face_num[i] - 1;
@@ -3411,7 +3411,7 @@ _export_nodal_polyhedra_g(const fvm_writer_section_t  *export_sections,
                v_id >= section->vertex_index[face_id];
                v_id--)
             part_connect[part_connect_size++]
-              = g_vtx_num[section->vertex_num[v_id] - 1];
+              = g_vtx_num[section->vertex_ids[v_id]];
         }
 
       }
@@ -3605,14 +3605,14 @@ _export_nodal_polyhedra_l(const fvm_writer_section_t  *export_sections,
                vtx_id < section->vertex_index[face_id + 1];
                vtx_id++)
             med_export_connect[i_connect++] =
-              (med_int)section->vertex_num[vtx_id];
+              (med_int)(section->vertex_ids[vtx_id] + 1);
           }
           else { /* face_num < 0 */
             for (vtx_id = section->vertex_index[face_id + 1] - 1;
                  vtx_id >= section->vertex_index[face_id];
                  vtx_id--)
               med_export_connect[i_connect++] =
-                (med_int)section->vertex_num[vtx_id];
+                (med_int)(section->vertex_ids[vtx_id] + 1);
           }
 
       } /* End of loop on faces */
