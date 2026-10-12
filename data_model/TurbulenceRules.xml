@@ -169,7 +169,7 @@
         <DefaultType>2SCALES_LOG</DefaultType>
         <YPlusLimit>10.88</YPlusLimit>
       </WallFunction>
-      <DiffusionModel>ANISOTROPIC</DiffusionModel>
+      <DiffusionModel>ISOTROPIC</DiffusionModel>
     </NumericalParameters>
   </TurbulenceModel>
 

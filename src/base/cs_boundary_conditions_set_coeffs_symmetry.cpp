@@ -752,8 +752,9 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
       }
 
       /* Scalar diffusivity */
-      else
+      else {
         hint_rij = (visclc + visctc * csrij / cmu) / distbf;
+      }
 
       /* Tensor Rij (Partially or totally implicited) */
 

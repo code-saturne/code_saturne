@@ -2572,6 +2572,36 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           && df_limiter_rij != nullptr)
         df_limiter_rij[c_id] = 0.0;
 
+      /* Omega for the Rij-omega model.
+       *
+       * Rij-omega enters the second-order branch above, so its omega wall
+       * condition must be set here rather than in the later k-omega branch.
+       */
+      if (model == CS_TURB_RIJ_OMEGA) {
+        assert(f_omg != nullptr);
+        assert(f_omg->bc_coeffs != nullptr);
+
+        cs_real_t *coefa_omg = f_omg->bc_coeffs->a;
+        cs_real_t *coefb_omg = f_omg->bc_coeffs->b;
+        cs_real_t *cofaf_omg = f_omg->bc_coeffs->af;
+        cs_real_t *cofbf_omg = f_omg->bc_coeffs->bf;
+
+        const cs_real_t sigma_omega
+          = 1. / f_omg->get_key_double("turbulent_schmidt");
+        const cs_real_t pimp
+          = 60.0 * visclc
+                 / (romc * cs_turb_rij_omega_beta0 * distbf * distbf);
+        hint = (visclc + sigma_omega * visctc) / distbf;
+
+        cs_boundary_conditions_set_dirichlet_scalar(coefa_omg[f_id],
+                                                    cofaf_omg[f_id],
+                                                    coefb_omg[f_id],
+                                                    cofbf_omg[f_id],
+                                                    pimp,
+                                                    hint,
+                                                    cs_math_infinite_r);
+      }
+
       /* Epsilon
          NB: no reconstruction, possibility of partial implicitation */
 
@@ -3088,7 +3118,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Boundary conditions on k and omega
        ================================== */
 
-    else if (model == CS_TURB_K_OMEGA || model == CS_TURB_RIJ_OMEGA) {
+    else if (model == CS_TURB_K_OMEGA) {
 
       cs_real_t pimp = 0.;
       cs_real_t hint = 0.;

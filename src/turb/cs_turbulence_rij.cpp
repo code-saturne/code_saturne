@@ -2211,6 +2211,14 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add the buoyancy source term for the Wilcox
+ *        \f$R_{ij}-\omega\f$ model.
+ *
+ * The reference model uses \f$\tau_{ij}=-R_{ij}\f$, so its buoyancy
+ * source changes sign in the positive Reynolds-stress convention used here.
+ */
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Prepare the resolution of the coupled Reynolds stress components
  *        in the \f$ R_{ij} - \omega \f$ RANS (Wilcox 2006) turbulence model.
  *
@@ -2218,7 +2226,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
  * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
  * \param[in]   gradv     work array for the velocity grad term
  * \param[in]   prod      work array for production
- * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
+ * \param[in]   up_rhop   correlation fluctuation of velocity and density
  * \param[in]   grav      gravity
  * \param[out]  viscf     visc*surface/dist at internal faces
  * \param[out]  viscb     visc*surface/dist at edge faces
@@ -2273,8 +2281,6 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
   const cs_real_t *cvara_omg = f_omg->val_pre;
   const cs_real_6_t *cvara_var = (const cs_real_6_t *)f_rij->val_pre;
 
-  const int st_scheme = cs_glob_turb_rans_model->source_time_stepping;
-
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param_const(f_rij);
 
@@ -2284,6 +2290,7 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
   }
 
   const int coupled_components = cs_glob_turb_rans_model->irijco;
+  const int st_scheme = cs_glob_turb_rans_model->source_time_stepping;
 
   cs_real_6_t *c_st_prv = nullptr;
   int st_prv_id = f_rij->get_key_int("source_term_prev_id");
@@ -2299,7 +2306,7 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
     }
   }
 
- /* Time extrapolation ? */
+  /* Time extrapolation ? */
   cs_real_t *cromo = nullptr;
   int iroext = f_rho->get_key_int("time_extrapolated");
   if ((st_prv_id > -1) && (iroext > 0))
@@ -2322,22 +2329,18 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
 
   const cs_real_t cmu = cs_turb_cmu;
 
-  const cs_real_t csrij  = cs_turb_csrij;
+  const cs_real_t csrij   = cs_turb_csrij;
   const cs_real_t crijeps = cs_turb_crij_eps;
 
-  const cs_real_t cssgr1 = cs_turb_cssgr1;
-  const cs_real_t cssgr2 = cs_turb_cssgr2;
-  const cs_real_t cssgr3 = cs_turb_cssgr3;
-  const cs_real_t cssgr4 = cs_turb_cssgr4;
-  const cs_real_t cssgr5 = cs_turb_cssgr5;
-
-  const cs_real_t cssgs1 = cs_turb_cssgs1;
-  const cs_real_t cssgs2 = cs_turb_cssgs2;
+  const cs_real_t crij1 = cs_turb_crij1;
+  const cs_real_t crij2 = cs_turb_crij2;
+  const cs_real_t alpha_hat = (8. + crij2) / 11.;
+  const cs_real_t beta_hat = (8.*crij2 - 2.) / 11.;
+  const cs_real_t gamma_hat = (60.*crij2 - 4.) / 55.;
 
   const int t2v[3][3] = _T2V;
   const int iv2t[6] = _IV2T;
   const int jv2t[6] = _JV2T;
-  const cs_real_t m_deltaij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
   const cs_real_t st_deltaij[6] = {1, 1, 1, 0, 0, 0};
 
   /* Production, Pressure-Strain correlation, dissipation, Coriolis
@@ -2372,32 +2375,17 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
 
     cs_real_t matrot[3][3] = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
     cs_real_t impl_drsm[6][6] = {0};
-
-    cs_real_t m_rij[3][3], xprod[3][3];
-    cs_real_t m_aij[3][3], m_sij[3][3], m_omij[3][3];
+    cs_real_t m_rij[3][3], xprod[3][3], m_dij[3][3], m_sij[3][3];
 
     const cs_real_t tke = 0.5 * cs_math_6_trace(cvara_var[c_id]);
     const cs_real_t cvara_ep_c = cmu * tke * cs::max(cvara_omg[c_id], 1.e-10);
 
-    /* Rij */
+    /* Rij and Pij */
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
-        m_rij[i][j] = cvara_var[c_id][t2v[i][j]];
-      }
-    }
-
-    /* Pij */
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        xprod[i][j] = prod[c_id][t2v[i][j]];
-      }
-    }
-
-    /* aij */
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        m_aij[i][j] =   m_rij[i][j] / cs::max(tke, 1.e-10)
-                       - d2s3 * m_deltaij[i][j];
+        const cs_lnum_t _ij = t2v[i][j];
+        m_rij[i][j] = cvara_var[c_id][_ij];
+        xprod[i][j] = prod[c_id][_ij];
       }
     }
 
@@ -2412,17 +2400,6 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
     m_sij[2][1] = m_sij[1][2];
     m_sij[2][2] = gradv[c_id][2][2];
 
-    /* omegaij */
-    m_omij[0][0] = 0;
-    m_omij[0][1] = d1s2 * (gradv[c_id][0][1] - gradv[c_id][1][0]);
-    m_omij[0][2] = d1s2 * (gradv[c_id][0][2] - gradv[c_id][2][0]);
-    m_omij[1][0] = -m_omij[0][1];
-    m_omij[1][1] = 0;
-    m_omij[1][2] = d1s2 * (gradv[c_id][1][2] - gradv[c_id][2][1]);
-    m_omij[2][0] = -m_omij[0][2];
-    m_omij[2][1] = -m_omij[1][2];
-    m_omij[2][2] = 0;
-
     int rot_id = icorio;
     if (tm_model == CS_TURBOMACHINERY_FROZEN)
       rot_id = irotce[c_id];
@@ -2436,8 +2413,8 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = i; j < 3; j++) {
           for (cs_lnum_t k = 0; k < 3; k++)
-              xprod[j][i] -= ccorio * (  matrot[k][i] * m_rij[k][j]
-                                       + matrot[k][j] * m_rij[k][i]);
+            xprod[j][i] -= ccorio * (  matrot[k][i] * m_rij[k][j]
+                                     + matrot[k][j] * m_rij[k][i]);
         }
       }
 
@@ -2447,20 +2424,22 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
 
     }
 
-    const cs_real_t k_prod = 0.5 * cs_math_6_trace(prod[c_id]);
+    const cs_real_t k_prod = 0.5 * cs_math_33_trace(xprod);
+    const cs_real_t divu = cs_math_33_trace(m_sij);
 
-    /* aii = aijaij */
-    cs_real_t aii = 0, aklskl = 0;
-
-    for (cs_lnum_t j = 0; j < 3; j++) {
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        aii += cs_math_pow2(m_aij[j][i]);       /* aij.aij */
-        aklskl += m_aij[j][i] * m_sij[j][i];   /* aij.Sij */
+    /* D_ij in Wilcox's negative Reynolds-stress convention,
+     * tau_ij = -R_ij. */
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        m_dij[i][j] = 0.;
+        for (cs_lnum_t k = 0; k < 3; k++)
+          m_dij[i][j] -=   m_rij[i][k] * gradv[c_id][k][j]
+                         + m_rij[j][k] * gradv[c_id][k][i];
       }
     }
 
-    if (coupled_components != 0 && st_scheme != CS_TURB_RIJ_SOURCE_TS_CONVEXP) {
-
+    if (coupled_components != 0
+        && st_scheme != CS_TURB_RIJ_SOURCE_TS_CONVEXP) {
       /* Computation of implicit components */
       cs_real_t st_sij[6] = {m_sij[0][0],
                              m_sij[1][1],
@@ -2480,9 +2459,6 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
       for (cs_lnum_t ij = 0; ij < 6; ij++)
         oo_matrn[ij] /= cs::max(tke, 1.e-10);
 
-      cs_real_t impl_lin_cst = 0;
-      cs_real_t impl_id_cst = 0;
-
       /* Compute the maximal eigenvalue (in terms of norm!) of S */
       cs_real_t eigen_vals[3];
       _sym_33_eigen(st_sij, eigen_vals);
@@ -2494,24 +2470,19 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
       /* Constant for the dissipation */
       const cs_real_t ceps_impl = d1s3 * cvara_ep_c;
 
-      /* Identity constant for phi3 */
-      const cs_real_t cphi3impl = cs::abs(cssgr2 - cssgr3*sqrt(aii));
-
       /* Identity constant */
-      impl_id_cst = - d2s3 * cssgr1 * cs::min(k_prod, 0)
-                    - d1s3 * cssgs2 * cvara_ep_c * aii
-                    + cphi3impl * tke * eigen_max
-                    + 2. * d2s3 * cssgr4 * tke * eigen_max
-                    + d2s3 * tke * cssgr4 * cs::max(aklskl, 0);
+      cs_real_t impl_id_cst = - d2s3 * crij1 * cs::min(k_prod, 0.)
+                              + ccorio * cs::max(k_prod, 0.);
 
       /* Linear constant */
-      impl_lin_cst = eigen_max * (1. + cssgr4 + cssgr5);
+      cs_real_t impl_lin_cst = eigen_max * (1.0 - crij2);
 
       cs_real_t implmat2add[3][3];
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
-          const cs_lnum_t _ij = t2v[i][j];
-          implmat2add[i][j] = gradv[c_id][i][j] - ccorio * matrot[i][j]
+          cs_lnum_t _ij = t2v[i][j];
+          implmat2add[i][j] = (1.0 - crij2) * gradv[c_id][i][j]
+                              - ccorio * matrot[i][j]
                               + impl_lin_cst * st_deltaij[_ij]
                               + impl_id_cst * d1s2 * oo_matrn[_ij]
                               + ceps_impl * oo_matrn[_ij];
@@ -2520,54 +2491,27 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
       /* Compute the 6x6 matrix A which verifies
        * A.R = M.R + R.M^t */
       cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
-
-    } /* end if coupled_components != 0 && ... */
-
-    /* Rotating frame of reference => "absolute" vorticity */
-
-    if (icorio == 1) {
-      for (cs_lnum_t i = 0; i < 3; i++)
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          m_omij[i][j] -= matrot[i][j];
-      }
     }
 
     for (cs_lnum_t ij = 0; ij < 6; ij++) {
       cs_lnum_t i = iv2t[ij];
       cs_lnum_t j = jv2t[ij];
 
-      cs_real_t aiksjk = 0, aikrjk = 0, aikakj = 0;
-
-      for (cs_lnum_t k = 0; k < 3; k++) {
-        // aiksjk = aik.Sjk+ajk.Sik
-        aiksjk +=   m_aij[i][k] * m_sij[j][k]
-                  + m_aij[j][k] * m_sij[i][k];
-        // aikrjk = aik.Omega_jk + ajk.omega_ik
-        aikrjk +=   m_aij[i][k] * m_omij[j][k]
-                  + m_aij[j][k] * m_omij[i][k];
-        // aikakj = aik*akj
-        aikakj += m_aij[i][k] * m_aij[j][k];
-      }
-
       /* Explicit terms */
       const cs_real_t pij = xprod[i][j];
-      const cs_real_t phiij1 =   -cvara_ep_c
-                               * (  cssgs1 * m_aij[i][j]
-                                  + cssgs2 * (aikakj - d1s3*st_deltaij[ij]*aii));
-      const cs_real_t phiij2 =   -cssgr1 * k_prod * m_aij[i][j]
-                               +   tke * m_sij[i][j]
-                                 * (cssgr2 - cssgr3*sqrt(aii))
-                               + cssgr4*tke * (  aiksjk
-                                                 - d2s3 * st_deltaij[ij] * aklskl)
-                               + cssgr5*tke * aikrjk;
+      const cs_real_t phiij1
+        = -crij1 * cvara_ep_c
+          * (  m_rij[i][j] / cs::max(tke, 1.e-10)
+             - d2s3 * st_deltaij[ij]);
+      const cs_real_t phiij2
+        = -alpha_hat * (pij - d2s3*k_prod*st_deltaij[ij])
+          -beta_hat * (m_dij[i][j] - d2s3*k_prod*st_deltaij[ij])
+          -gamma_hat * tke
+           * (m_sij[i][j] - d1s3*divu*st_deltaij[ij]);
       const cs_real_t epsij = -d2s3*crijeps * cvara_ep_c * st_deltaij[ij];
 
-      /* save the pressure correlation  term for Rij
-       * ----------------------------------------------
-       * Phi,ij = Phi1,ij+Phi2,ij
-       * Phi1 is the so-called slow term, Phi2, the rapid term
-       */
-
+      /* save the pressure correlation term for Rij
+         post processing purposes */
       if (cpro_press_correl != nullptr)
         cpro_press_correl[c_id][ij] = phiij1 + phiij2;
 
@@ -2576,8 +2520,7 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
 
       /* Implicit terms */
       w2[c_id] =  crom[c_id] * cell_f_vol[c_id] / cs::max(tke, 1.e-10)
-                * (  cssgs1 * cvara_ep_c
-                   + cssgr1 * cs::max(k_prod, 0));
+                * crij1 * cvara_ep_c;
 
       if (st_prv_id > -1) {
         c_st_prv[c_id][ij] += w1[c_id];
@@ -2587,9 +2530,9 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
         fimp[c_id][ij][ij] += w2[c_id];
 
         if (coupled_components != 0) {
-          for (cs_lnum_t jj = 0; jj < 6; jj++)
-            fimp[c_id][ij][jj] +=   crom[c_id] * cell_f_vol[c_id]
-                                    * impl_drsm[ij][jj];
+          for (cs_lnum_t kl = 0; kl < 6; kl++)
+            fimp[c_id][ij][kl] +=   crom[c_id] * cell_f_vol[c_id]
+                                  * impl_drsm[ij][kl];
         }
       }
     } /* End of loop on ij */
@@ -2597,10 +2540,12 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
   }); /* end loop on cells */
   ctx.wait();
 
-  /* buoyancy source term
+  /* Buoyancy source term
    * -------------------- */
 
-  if (cs_glob_turb_rans_model->has_buoyant_term == 1)
+  if (   cs_glob_turb_rans_model->has_buoyant_term == 1
+      && cs_glob_turb_rans_model->source_time_stepping
+         == CS_TURB_RIJ_SOURCE_TS_IMEX)
     _gravity_st_rij(f_rij, up_rhop, grav, st_prv_id, c_st_prv, fimp, rhs);
 
   CS_FREE(c_is_solid_zone_flag);
@@ -2634,8 +2579,8 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
 
   }
 
-  /* Scalar diffusivity */
- else {
+  /* Scalar diffusivity (Shir) */
+  else {
 
     if (eqp->idifft == 1) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -3142,6 +3087,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
  *        turbulence model.
  *
  * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
+ * \param[in]   gradv     velocity gradient
  * \param[in]   prod      work array for production (without
  *                        rho volume)
  * \param[in]   viscf     visc*surface/dist at internal faces
@@ -3153,6 +3099,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
 
 static void
 _solve_omega(int              phase_id,
+             const cs_real_t  gradv[][3][3],
              const cs_real_t  prod[][6],
              cs_real_t        viscf[],
              cs_real_t        viscb[],
@@ -3208,17 +3155,14 @@ _solve_omega(int              phase_id,
   const cs_real_t *bmasfl = cs_field(iflmab)->val;
 
   const cs_real_t cmu = cs_turb_cmu;
-  const cs_real_t ckwgm1 = cs_turb_ckwgm1;
-  const cs_real_t ckwgm2 = cs_turb_ckwgm2;
-  const cs_real_t ckwbt1 = cs_turb_ckwbt1;
-  const cs_real_t ckwbt2 = cs_turb_ckwbt2;
-  const cs_real_t ckwsw1 = cs_turb_ckwsw1;
-  const cs_real_t ckwsw2 = cs_turb_ckwsw2;
-
-  const cs_real_t *w_dist = cs_field("wall_distance")->val;
+  const cs_real_t alpha = cs_turb_rij_omega_alpha;
+  const cs_real_t beta0 = cs_turb_rij_omega_beta0;
+  const cs_real_t sigma_d0 = cs_turb_rij_omega_sigma_d0;
 
   cs_equation_param_t *eqp
     = cs_field_get_equation_param(f_omg);
+  const cs_real_t sigma
+    = 1. / f_omg->get_key_double("turbulent_schmidt");
 
   cs_equation_param_t eqp_loc = *eqp;
   eqp_loc.idften = CS_ISOTROPIC_DIFFUSION;
@@ -3290,7 +3234,6 @@ _solve_omega(int              phase_id,
   cs_array_2d<cs_real_t> gradk(n_cells_ext, 3, cs_alloc_mode);
   cs_array_2d<cs_real_t> grado(n_cells_ext, 3, cs_alloc_mode);
   cs_array<cs_real_t> gdkgdw(n_cells_ext, cs_alloc_mode);
-  cs_array<cs_real_t> xf1(n_cells_ext, cs_alloc_mode);
 
   cs_array<cs_real_t> prev_k(n_cells_ext, cs_alloc_mode);
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -3327,57 +3270,81 @@ _solve_omega(int              phase_id,
   cs_field_gradient_scalar(f_omg, true, 1, grado.data<cs_real_3_t>());
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    gdkgdw[c_id] = cs_math_3_dot_product(gradk.sub_array(c_id), grado.sub_array(c_id));
+    gdkgdw[c_id] = cs_math_3_dot_product(gradk.sub_array(c_id),
+                                         grado.sub_array(c_id));
   });
   ctx.wait();
 
   gradk.clear();
   grado.clear();
 
-  /* Compute xf1 and unsteady/production terms */
+  /* Compute unsteady, production, and dissipation terms */
   cs_array<cs_real_t> w1(n_cells_ext, cs_alloc_mode);
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     cs_real_t ro = cromo[c_id];
-    cs_real_t xnu = viscl[c_id]/ro;
     cs_real_t xk = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
     cs_real_t xw = cvara_omg[c_id];
-    cs_real_t cdkw = 2.*ro/ckwsw2/cs::max(xw, 1.e-10)*gdkgdw[c_id];
-    cdkw = fmax(cdkw, 1.e-20);
-    cs_real_t distf = fmax(w_dist[c_id], cs_math_epzero);
-    cs_real_t xarg1 = fmax(sqrt(xk)/cmu/cs::max(xw, 1.e-10)/distf,
-                           500.*xnu/cs::max(xw, 1.e-10)/cs_math_pow2(distf));
-    xarg1 = fmin(xarg1, 4.*ro*xk/ckwsw2/cdkw/cs_math_pow2(distf));
-    xf1[c_id] = tanh(cs_math_pow4(xarg1));
 
     /* Unsteady term */
     fimp[c_id] += (crom[c_id]/dt[c_id])*cell_f_vol[c_id];
 
     /* Production and Dissipation */
     cs_real_t k_prod = 0.5 * cs_math_6_trace(prod[c_id]);
-    cs_real_t xxf1 = xf1[c_id];
-    cs_real_t xgamma = xxf1*ckwgm1 + (1.-xxf1)*ckwgm2;
-    cs_real_t xbeta  = xxf1*ckwbt1 + (1.-xxf1)*ckwbt2;
 
-    /* Explicit part of production */
-    w1[c_id] =   cell_f_vol[c_id] * ro * xgamma * k_prod * xw
-               / cs::max(xk, 1.e-10);
-
-    /* Implicit part of production if negative */
-    if (w1[c_id] < 0.) {
-      fimp[c_id] -= w1[c_id] / cs::max(xw, 1.e-10);
+    cs_real_t sij[3][3], omegaij[3][3];
+    cs_real_t divu = 0.;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      divu += gradv[c_id][i][i];
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        sij[i][j] = 0.5 * (gradv[c_id][i][j] + gradv[c_id][j][i]);
+        omegaij[i][j] = 0.5 * (gradv[c_id][i][j] - gradv[c_id][j][i]);
+      }
     }
 
-    /* Dissipation */
-    rhs[c_id] -= cell_f_vol[c_id] * xbeta * ro * cs_math_pow2(xw);
-    fimp[c_id] += 2. * cell_f_vol[c_id] * xbeta * ro * xw;
+    cs_real_t chi_omega_num = 0.;
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          const cs_real_t s_hat_ki
+            = sij[k][i] - 0.5*divu*(k == i ? 1. : 0.);
+          chi_omega_num += omegaij[i][j] * omegaij[j][k] * s_hat_ki;
+        }
+      }
+    }
+
+    const cs_real_t cmu_omega = cmu * cs::max(xw, 1.e-10);
+    const cs_real_t chi_omega
+      = cs::min(cs::abs(chi_omega_num) / pow(cmu_omega, 3), 1.e20);
+    const cs_real_t f_beta
+      = (1. + 85.*chi_omega) / (1. + 100.*chi_omega);
+    const cs_real_t xbeta = beta0 * f_beta;
+
+    /* Production */
+    cs_real_t p_omega = 0.;
+    const cs_real_t nut = xk / cs::max(xw, 1.e-10);
+    if (nut > 1.e-10) {
+      p_omega = alpha * (k_prod / nut);
+    }
+
+    /* Implicit part of production if negative */
+    if (p_omega < 0.) {
+      fimp[c_id] -= cell_f_vol[c_id] * ro * p_omega / cs::max(xw, 1.e-10);
+      p_omega = 0.;
+    }
+
+    w1[c_id] =   cell_f_vol[c_id] * ro * p_omega
+               - cell_f_vol[c_id] * xbeta * ro * cs_math_pow2(xw);
+
+    /* Dissipation (implicit) */
+    fimp[c_id] += cell_f_vol[c_id] * xbeta * ro * xw;
 
     /* Cross-diffusion */
-    cs_real_t cross_diff = 2.*ro/xw*(1.-xxf1)/ckwsw2*gdkgdw[c_id];
-    if (cross_diff > 0.) {
-      rhs[c_id] += cell_f_vol[c_id] * cross_diff;
-    } else {
-      fimp[c_id] -= cell_f_vol[c_id] * cross_diff / cs::max(xw, 1.e-10);
+    if (gdkgdw[c_id] > 0.) {
+      const cs_real_t cross_diff
+        =   sigma_d0 * ro * gdkgdw[c_id]
+          / cs::max(xw, 1.e-10);
+      w1[c_id] += cell_f_vol[c_id] * cross_diff;
     }
   });
   ctx.wait();
@@ -3414,37 +3381,12 @@ _solve_omega(int              phase_id,
                          rhs, fimp, gapinj);
   }
 
-  /* Boundary conditions */
-  cs_real_t *coefa_o = (cs_real_t *)f_omg->bc_coeffs->a;
-  cs_real_t *coefb_o = (cs_real_t *)f_omg->bc_coeffs->b;
-  cs_real_t *coefaf_o = (cs_real_t *)f_omg->bc_coeffs->af;
-  cs_real_t *coefbf_o = (cs_real_t *)f_omg->bc_coeffs->bf;
-
-  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-    cs_lnum_t c_id = b_face_cells[face_id];
-    cs_real_t visclc = viscl[c_id];
-    cs_real_t visctc = visct[c_id];
-    cs_real_t xxf1 = xf1[c_id];
-    cs_real_t sigma = xxf1*ckwsw1 + (1. - xxf1)*ckwsw2;
-    cs_real_t hint = (visclc + visctc/sigma)/distb[face_id];
-
-    coefaf_o[face_id] = -hint*coefa_o[face_id];
-    coefbf_o[face_id] = hint*(1. - coefb_o[face_id]);
-  });
-  ctx.wait();
-
-  xf1.clear();
   gdkgdw.clear();
 
   /* Diffusion terms (Isotropic) */
-  cs_array<cs_real_t> weighb(n_b_faces, cs_alloc_mode);
-  cs_array_2d<cs_real_t> weighf(n_i_faces, 2, cs_alloc_mode);
-  cs_array_2d<cs_real_t> viscce(n_cells_ext, 6, cs_alloc_mode);
-
   if (eqp->idiff >= 1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      // standard value, sigma is handled boundary-wise
-      w1[c_id] = viscl[c_id] + visct[c_id];
+      w1[c_id] = viscl[c_id] + sigma*visct[c_id];
     });
     ctx.wait();
     cs_face_viscosity(m, fvq, eqp->imvisf, w1, viscf, viscb);
@@ -3472,7 +3414,6 @@ _solve_omega(int              phase_id,
   eqp_loc.icoupl = -1;
   eqp_loc.idifft = -1;
   eqp_loc.iwgrec = 0;
-  eqp_loc.theta = thets;
   eqp_loc.blend_st = 0;
 
   cs_array<cs_real_t> dpvar(n_cells_ext, cs_alloc_mode);
@@ -4855,6 +4796,7 @@ cs_turbulence_rij(int phase_id)
       cs_array<cs_real_t> _fimp(n_cells_ext, cs_alloc_mode);
 
       _solve_omega(phase_id,
+                   gradv.data<cs_real_33_t>(),
                    prod.data<cs_real_6_t>(),
                    viscf,
                    viscb,
@@ -5211,7 +5153,18 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
     const cs_real_t ep = cs::pow3ov2(k) * cs_turb_cmu / almax;
     const cs_real_t omg = sqrt(k) / almax;
 
-    if (cvar_ep != nullptr) {
+    if (cs_glob_turb_model->model == CS_TURB_RIJ_OMEGA) {
+      assert(cvar_omg != nullptr);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cvar_rij[c_id][0] = tr_ii;
+        cvar_rij[c_id][1] = tr_ii;
+        cvar_rij[c_id][2] = tr_ii;
+        cvar_rij[c_id][3] = 0;
+        cvar_rij[c_id][4] = 0;
+        cvar_rij[c_id][5] = 0;
+        cvar_omg[c_id] = omg;
+      });
+    } else if (cvar_ep != nullptr) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cvar_rij[c_id][0] = tr_ii;
         cvar_rij[c_id][1] = tr_ii;
@@ -5649,7 +5602,8 @@ cs_turbulence_rij_mu_t(int  phase_id)
       cs_real_t xk = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
       cs_real_t xomg = cvar_omg[c_id];
 
-      visct[c_id] = crom[c_id] * xk / xomg;
+      visct[c_id] =   crom[c_id] * cs::max(xk, 0.)
+                    / cs::max(xomg, 1.e-12);
     });
     ctx.wait();
   }
@@ -5733,12 +5687,16 @@ cs_turbulence_rij_anisotropic_mu_t
 
   const cs_field_t *f_rij = CS_F_(rij);
   const cs_field_t *f_eps = CS_F_(eps);
+  const cs_field_t *f_omg = CS_F_(omg);
   const cs_field_t *f_rho = CS_F_(rho);
   const cs_field_t *f_mu = CS_F_(mu);
 
   if (phase_id >= 0) {
     f_rij = CS_FI_(rij, phase_id);
-    f_eps = CS_FI_(eps, phase_id);
+    if (CS_F_(eps) != nullptr)
+      f_eps = CS_FI_(eps, phase_id);
+    if (CS_F_(omg) != nullptr)
+      f_omg = CS_FI_(omg, phase_id);
     f_rho = CS_FI_(rho, phase_id);
     f_mu = CS_FI_(mu, phase_id);
   }
@@ -5751,7 +5709,8 @@ cs_turbulence_rij_anisotropic_mu_t
 
   const cs_real_t *crom = f_rho->val;
   const cs_real_t *viscl = f_mu->val;
-  const cs_real_t *cvar_ep = f_eps->val;
+  const cs_real_t *cvar_ep = (f_eps != nullptr) ? f_eps->val : nullptr;
+  const cs_real_t *cvar_omg = (f_omg != nullptr) ? f_omg->val : nullptr;
   const cs_real_6_t *cvar_rij = (const cs_real_6_t *)f_rij->val;
 
   const cs_lnum_t *c_disable_flag = nullptr;
@@ -5845,6 +5804,24 @@ cs_turbulence_rij_anisotropic_mu_t
       });
     }
 
+  }
+
+  else if (cs_glob_turb_model->model == CS_TURB_RIJ_OMEGA) {
+    assert(cvar_omg != nullptr);
+    const cs_real_t cmu = cs_turb_cmu;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      if (c_disable_flag != nullptr) {
+        if (c_disable_flag[c_id]) {
+          for (cs_lnum_t ii = 0; ii < 6; ii++)
+            visten[c_id][ii] = 0;
+          return;
+        }
+      }
+      const cs_real_t rottke
+        = csrij * crom[c_id] / (cmu * cs::max(cvar_omg[c_id], 1.e-10));
+      for (cs_lnum_t ii = 0; ii < 6; ii++)
+        visten[c_id][ii] = rottke*cvar_rij[c_id][ii];
+    });
   }
 
   // LRR or SSG

@@ -601,6 +601,9 @@ _create_variable_fields(void)
               continue;
           }
 
+          if (model == CS_TURB_RIJ_OMEGA && rule.name == "epsilon")
+            continue;
+
           cs_field_t *f = _add_variable_field(rule.name.c_str(),
                                               rule.label.c_str(),
                                               rule.dimension);
@@ -613,6 +616,21 @@ _create_variable_fields(void)
     }
 
     /* Additional cases based on the exact model. */
+
+    /* Rij-omega: specific dissipation rate omega */
+    if (model == CS_TURB_RIJ_OMEGA) {
+      const auto *fields
+        = frm->get_fields("Turbulence",
+                          "model_eq_CS_TURB_RIJ_OMEGA");
+      if (fields != nullptr) {
+        for (const auto &rule : *fields) {
+          cs_field_t *f = _add_variable_field(rule.name.c_str(),
+                                              rule.label.c_str(),
+                                              rule.dimension);
+          _apply_field_eqp_from_rule(f, rule);
+        }
+      }
+    }
 
     /* EBRSM: elliptical alpha field */
     if (model == CS_TURB_RIJ_EPSILON_EBRSM) {

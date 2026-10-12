@@ -501,14 +501,16 @@ double cs_turb_crij_eps = 1.;
 
 
 /*!
- * Constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
- * Useful if and only if \ref model=30 (\f$R_{ij}-\varepsilon\f$ LRR).
+ * Constant \f$C_1\f$ for the LRR pressure-strain model.
+ * Useful for \ref model=30 (\f$R_{ij}-\varepsilon\f$ LRR) and
+ * \ref model=34 (Wilcox \f$R_{ij}-\omega\f$).
  */
 double cs_turb_crij1 = 1.80;
 
 /*!
- * Constant \f$C_2\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
- * Useful if and only if \ref model=30 (\f$R_{ij}-\varepsilon\f$ LRR).
+ * Constant \f$C_2\f$ for the LRR pressure-strain model.
+ * Useful for \ref model=30 (\f$R_{ij}-\varepsilon\f$ LRR) and
+ * \ref model=34 (Wilcox \f$R_{ij}-\omega\f$).
  */
 double cs_turb_crij2 = 0.60;
 
@@ -547,6 +549,17 @@ double cs_turb_crijp1 = 0.50;
  * (\f$R_{ij}-\varepsilon\f$ LRR).
  */
 double cs_turb_crijp2 = 0.30;
+
+/*!
+ * Specific closure constants for the Wilcox (2006)
+ * \f$R_{ij}-\omega\f$ model.
+ * Values follow Li, Larsen and Fuhrman (2022), section 2.1.
+ * Constants shared with other turbulence models are declared above.
+ */
+double cs_turb_rij_omega_alpha        = 0.52;
+double cs_turb_rij_omega_beta0        = 0.0708;
+double cs_turb_rij_omega_sigma_d0     = 0.125;
+double cs_turb_rij_omega_alpha_b_star = 1.36;
 
 /*!
  * Constant \f$C_{s1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
@@ -1239,37 +1252,51 @@ cs_turb_compute_constants(int phase_id)
   if (cs::any_eq(cs_glob_turb_model->model,
                  CS_TURB_RIJ_EPSILON_LRR,
                  CS_TURB_RIJ_EPSILON_SSG) )
-    f_eps->set_key_double(k_turb_schmidt, 1.22);
-  else if (cs::any_eq(cs_glob_turb_model->model,
-                      CS_TURB_RIJ_EPSILON_BFH,
-                      CS_TURB_LES_TAUSGS))
-    f_eps->set_key_double(k_turb_schmidt, 1.0 / 0.477000);
+    if (f_eps != nullptr)
+      f_eps->set_key_double(k_turb_schmidt, 1.22);
+    else if (cs::any_eq(cs_glob_turb_model->model,
+                        CS_TURB_RIJ_EPSILON_BFH,
+                        CS_TURB_LES_TAUSGS))
+      if (f_eps != nullptr)
+        f_eps->set_key_double(k_turb_schmidt, 1.0 / 0.477000);
   else if (cs_glob_turb_model->model == CS_TURB_RIJ_OMEGA) {
-    f_omg->set_key_double(k_turb_schmidt, 1./0.5);
-    //TODO specify constants here
-    cs_turb_csrij = 0.6;//TODO CHECK
+    if (f_omg != nullptr)
+      f_omg->set_key_double(k_turb_schmidt, 1./0.5);
+    cs_turb_crij1 = 1.8;
+    cs_turb_crij2 = 10./19.;
   }
   else if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
-    f_eps->set_key_double(k_turb_schmidt, 1.15);
+    if (f_eps != nullptr)
+      f_eps->set_key_double(k_turb_schmidt, 1.15);
     cs_turb_crij3 = 0.6;
   }
-  else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K)
-    f_eps->set_key_double(k_turb_schmidt, 1.5);
+  else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
+    if (f_eps != nullptr)
+      f_eps->set_key_double(k_turb_schmidt, 1.5);
+  }
   else {
     if (f_eps != nullptr)
       f_eps->set_key_double(k_turb_schmidt, 1.30);
   }
 
-  if (cs_glob_turb_rans_model->idirsm == 0)
-    cs_turb_csrij = 0.11;
-  else {
-    if (cs::any_eq(cs_glob_turb_model->model,
-                   CS_TURB_RIJ_EPSILON_EBRSM,
-                   CS_TURB_RIJ_EPSILON_BFH,
-                   CS_TURB_LES_TAUSGS))
-      cs_turb_csrij = 0.21;
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_OMEGA) {
+    if (cs_glob_turb_rans_model->idirsm == 0)
+      cs_turb_csrij = 0.6 * cs_turb_cmu;
     else
-      cs_turb_csrij = 0.22;
+      cs_turb_csrij = 0.22 * cs_turb_cmu;
+  }
+  else {
+    if (cs_glob_turb_rans_model->idirsm == 0)
+      cs_turb_csrij = 0.11;
+    else {
+      if (cs::any_eq(cs_glob_turb_model->model,
+                     CS_TURB_RIJ_EPSILON_EBRSM,
+                     CS_TURB_RIJ_EPSILON_BFH,
+                     CS_TURB_LES_TAUSGS))
+        cs_turb_csrij = 0.21;
+      else
+        cs_turb_csrij = 0.22;
+    }
   }
 
   if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
@@ -1911,6 +1938,26 @@ cs_turb_constants_log_setup(void)
          cs_turb_csrij, cs_turb_crij3,
          cs_turb_ce1, cs_turb_ce2, cs_turb_ce3,
          cs_turb_cmu);
+
+  else if (turb_model->model == CS_TURB_RIJ_OMEGA)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    crij1:       %14.5e (C1 pressure-strain coeff.)\n"
+         "    crij2:       %14.5e (C2 pressure-strain coeff.)\n"
+         "    cmu:         %14.5e (beta-star coeff.)\n"
+         "    csrij:       %14.5e (Rij diffusion coeff.)\n"
+         "    alpha:       %14.5e (omega production coeff.)\n"
+         "    beta0:       %14.5e (omega dissipation coeff.)\n"
+         "    sigma_d0:    %14.5e (cross-diffusion coeff.)\n"
+         "    alpha_b:     %14.5e (buoyancy coeff.)\n"),
+       cs_turb_crij1,
+       cs_turb_crij2,
+       cs_turb_cmu,
+       cs_turb_csrij,
+       cs_turb_rij_omega_alpha,
+       cs_turb_rij_omega_beta0,
+       cs_turb_rij_omega_sigma_d0,
+       cs_turb_rij_omega_alpha_b_star);
 
   else if (turb_model->model == CS_TURB_RIJ_EPSILON_SSG)
     cs_log_printf

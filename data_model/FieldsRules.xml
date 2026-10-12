@@ -243,6 +243,19 @@
                NoTimeTerm="1" NoConvection="1" NoDiagShift="1"/>
       </Rule>
 
+      <!-- Rij-omega only: omega field -->
+      <Rule Condition="model_eq_CS_TURB_RIJ_OMEGA">
+        <Description>Rij-omega: specific dissipation rate omega</Description>
+        <DetailedDescription>
+          The Wilcox (2006) Rij-omega model directly solves the 6 components
+          of the Reynolds stress tensor coupled with the specific dissipation
+          rate omega (1/s).
+        </DetailedDescription>
+        <Field Name="omega" Label="Omega" Dimension="1"
+               Units="s-1"
+               Pointer="CS_ENUMF_(omg)" Type="variable" Location="cells"/>
+      </Rule>
+
       <!-- itytur==5: v2f-phi and v2f-BL-v2/k -->
       <!-- Extension of k-epsilon with phi variable (normal fluctuation) -->
       <Rule Condition="itytur_eq_5">
@@ -667,6 +680,7 @@
       <Entry Value="model_eq_CS_TURB_K_OMEGA"           Enum="60"/>
       <Entry Value="model_eq_CS_TURB_SPALART_ALLMARAS"  Enum="70"/>
       <Entry Value="model_eq_CS_TURB_RIJ_EPSILON_EBRSM" Enum="32"/>
+      <Entry Value="model_eq_CS_TURB_RIJ_OMEGA"         Enum="34"/>
       <Entry Value="model_eq_CS_TURB_V2F_PHI"           Enum="50"/>
       <Entry Value="model_eq_CS_TURB_V2F_BL_V2K"        Enum="51"/>
       <Entry Value="model_eq_CS_TURB_LES_SMAGO_DYN"     Enum="41"/>
