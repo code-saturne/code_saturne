@@ -182,6 +182,10 @@ static inline cs_medcoupling_slice_t * _add_slice
 )
 {
 
+  if (name == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("An empty name string was provided.\n"));
+
   cs_medcoupling_slice_t *_si =
     _get_slice_try(name);
 
@@ -248,6 +252,9 @@ static inline void _compute_slice
   CS_MALLOC(_flag, n_cells_with_ghost, cs_lnum_t);
   memset(_flag, 0, n_cells_with_ghost * sizeof(cs_lnum_t));
 
+  /* Temporary backward connectivity which may be needed */
+  cs_lnum_t *old_to_new = nullptr;
+
   if (si->n_elts > 0) {
     MEDCouplingNormalizedUnstructuredMesh<3,3> tm_wrapper(si->csm->med_mesh);
     MEDCouplingNormalizedUnstructuredMesh<3,3> sm_wrapper(m);
@@ -257,6 +264,10 @@ static inline void _compute_slice
     INTERP_KERNEL::Interpolation2D3D interpolator;
     interpolator.setPrecision(1e-12);
     interpolator.interpolateMeshes(sm_wrapper, tm_wrapper, mat, "P0P0");
+
+    CS_MALLOC(old_to_new, n_cells, cs_lnum_t);
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      old_to_new[c_id] = -1;
 
     /* Loop on the different elements of the target mesh.
      * For each element, we sum all intersected volumes to retrieve the total
@@ -269,6 +280,7 @@ static inline void _compute_slice
     const cs_lnum_t *connec = si->csm->new_to_old;
     for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
       cs_lnum_t c_id = connec[e_id];
+      old_to_new[c_id] = e_id; // tmp backward connectivity needed afterward
       for (std::map<mcIdType, double>::iterator it = mat[e_id].begin();
            it != mat[e_id].end();
            ++it) {
@@ -309,14 +321,15 @@ static inline void _compute_slice
 
       if (cs::abs(d_face_plane) < 1.e-8 && norm_nxn < 1.e-8) {
         if (c_id1 < n_cells)
-          si->surface[c_id1] *= 0.5;
+          si->surface[old_to_new[c_id1]] *= 0.5;
 
         if (c_id2 < n_cells)
-          si->surface[c_id2] *= 0.5;
+          si->surface[old_to_new[c_id2]] *= 0.5;
       }
     }
   }
 
+  CS_FREE(old_to_new); // no longer needed
   CS_FREE(_flag);
 
   // ----------------------------------------------------------------------
@@ -451,10 +464,12 @@ _tag_slice_cells
   }
 
   /* Copy necessary values */
-  cs_array_real_copy_subset(n_elts, 1, elt_ids,
-                            CS_ARRAY_SUBSET_IN,
-                            &_flag[0],
-                            _vals);
+  if (n_elts > 0) {
+    cs_array_real_copy_subset(n_elts, 1, elt_ids,
+                              CS_ARRAY_SUBSET_IN,
+                              &_flag[0],
+                              _vals);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -489,10 +504,12 @@ _get_slice_cells_surface
   }
 
   /* Copy necessary values */
-  cs_array_real_copy_subset(n_elts, 1, elt_ids,
-                            CS_ARRAY_SUBSET_IN,
-                            &_surf[0],
-                            _vals);
+  if (n_elts > 0) {
+    cs_array_real_copy_subset(n_elts, 1, elt_ids,
+                              CS_ARRAY_SUBSET_IN,
+                              &_surf[0],
+                              _vals);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -595,7 +612,7 @@ cs_medcoupling_slice_t * cs_medcoupling_slice_by_name
   if (retval == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: intersection with name \"%s\" was not found."),
-              name, __func__);
+              __func__, name);
 
   return retval;
 }
