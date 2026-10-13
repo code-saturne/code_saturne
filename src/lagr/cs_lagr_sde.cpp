@@ -1807,7 +1807,7 @@ _sde_vels_pos_1_st_order_kernel(cs_lagr_particle_set_t        &p_set,
     ter4x = (dt_part - c.a1) * v_lim;
 
     /* Additional drift terms when gradient of Tl is not negligible */
-    if (extra->iturb == 3 && cs::abs(beta[id]) > cs_math_epzero) {
+    if (extra->itytur == 3 && cs::abs(beta[id]) > cs_math_epzero) {
       const cs_real_t taup_ddt = taup_r[id] / dt_part;
       const cs_real_t tlag_ddt = tlag_r(0, id) / dt_part;
       const cs_real_t theta    = tlag_r(0, id) / (tlag_r(0, id) - taup_r[id]);
