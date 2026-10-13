@@ -3,6 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix potential memory corruption in medcoupling based slices.
+
 - Fix issues in parallel read/write of serialized in memory checkpoints,
   (used only for serialized FMI state handling).
 
