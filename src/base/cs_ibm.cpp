@@ -4119,9 +4119,6 @@ _compute_solid_surface_cog(const cs_mesh_t      *mesh,
   }
 
   cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, c_w_dist_inv);
-
-  CS_FREE(cs_ibm->nfc);
-  CS_FREE(cs_ibm->xandnfc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4481,6 +4478,9 @@ cs_ibm_finalize(void)
       _free_ibm_object(cs_ibm->objects[iobj]);
 
     CS_FREE(cs_ibm->objects);
+
+    CS_FREE(cs_ibm->nfc);
+    CS_FREE(cs_ibm->xandnfc);
 
     CS_FREE(cs_ibm);
   }
