@@ -3,6 +3,8 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix potential memory corruption in medcoupling based slices.
+
 - Fix illegal read in VoF balance log function.
 
 - Fix `resource_name` detection when only the batch system is defined for the
