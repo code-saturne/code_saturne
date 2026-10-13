@@ -3,6 +3,8 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix potential memory corruption in medcoupling based slices.
+
 - Various Fixes for PyQt6 build.
 
 - Fix Brownian motion Gaussian variable retrieval at 2nd order.
