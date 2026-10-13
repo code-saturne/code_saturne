@@ -3888,6 +3888,11 @@ cs_solidification_set_voller_model(cs_real_t beta,
   v_model->t_solidus = t_solidus;
   v_model->t_liquidus = t_liquidus;
 
+  if (t_solidus > t_liquidus)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Inconsistency found in the settings.\n"
+              "  \"t_solidus > t_liquidus\"\n", __func__);
+
   solid->latent_heat = latent_heat;
 
   // Add the Boussinesq term
