@@ -1111,8 +1111,11 @@ _update_velocity_forcing([[maybe_unused]] const cs_mesh_t *mesh,
   cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
 
   assert(cs_property_is_uniform(solid->viscosity)); // No turbulence up to now
-  const cs_real_t viscl0 = cs_property_get_cell_value(0, ts->t_cur,
-                                                       solid->viscosity);
+  assert(solid->first_cell > -1);
+
+  const cs_real_t viscl0 = cs_property_get_cell_value(solid->first_cell,
+                                                      ts->t_cur,
+                                                      solid->viscosity);
   const cs_real_t forcing_coef = solid->forcing_coef * viscl0;
   const cs_real_t *g_l = solid->g_l_field->val;
 
