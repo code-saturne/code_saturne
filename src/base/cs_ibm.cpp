@@ -4120,6 +4120,8 @@ _compute_solid_surface_cog(const cs_mesh_t      *mesh,
 
   cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, c_w_dist_inv);
 
+  CS_FREE(cs_ibm->nfc);
+  CS_FREE(cs_ibm->xandnfc);
 }
 
 /*----------------------------------------------------------------------------*/
