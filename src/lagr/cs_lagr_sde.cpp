@@ -1563,7 +1563,7 @@ _sde_vels_pos_1_st_order_kernel(cs_lagr_particle_set_t        &p_set,
   cs_real_t displ_r[3];
   cs_real_t trans_m[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
-  const cs_real_t *ref_coords = is_virtual ? old_part_coords : part_coords;
+  const cs_real_t *ref_coords = part_coords;
 
   /* resolve SDEs*/
   if (cs_glob_lagr_time_scheme->interpol_field == 1) {

@@ -2849,10 +2849,19 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
         /* stochastic particle has finished reaching the sync position */
         for (int i = 0; i < 3; i++)
           prev_location[i] = particle_coord[i];
-        p_info->tracking_step_id = CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER;
+
         sum_t_intersect = 0.;
+        dt_incremented_in_subiter = 0.;
         /* Update previous state */
         cs_lagr_particles_current_to_previous(p_set, p_id);
+
+        if (p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) <= 0.) {
+          particle_state = CS_LAGR_PART_TREATED;
+          p_info->tracking_step_id = CS_LAGR_TRACK_STEP_COMPLETED;
+        }
+        else {
+          p_info->tracking_step_id = CS_LAGR_TRACK_STEP_VIRTUAL_PARTNER;
+        }
       }
       else if (p_info->tracking_step_id == CS_LAGR_TRACK_STEP_STOCHASTIC_FINAL) {
         /* stochastic particle final location reached */
@@ -2988,6 +2997,12 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
 
         save_old_cell_id = p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID);
         p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID) = cell_id;
+
+        if ((1. - sum_t_intersect) < 1. / max_propagation_loops) {
+          remain_time = -1.;
+          p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
+          p_info->tracking_step_id = CS_LAGR_TRACK_STEP_STOCHASTIC_FINAL;
+        }
       }
       else if (specific_face_interaction) {
         /* If we track the deterministic virtual partner and there is a rebound
@@ -2998,6 +3013,17 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
         dt_incremented_in_subiter = dt_part;
         save_old_cell_id = p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID);
         p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID) = cell_id;
+
+        /* Strictly deduct the time spent reaching the boundary */
+        if (   (1. - sum_t_intersect) < 1. / max_propagation_loops
+            || remain_time * (1. - sum_t_intersect) <= 0.) {
+          remain_time = -1.;
+          p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = -1.;
+        }
+        else {
+          remain_time = remain_time * (1. - sum_t_intersect);
+          p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = remain_time;
+        }
       }
       else {
         save_old_cell_id = p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID);
