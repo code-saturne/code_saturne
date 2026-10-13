@@ -1225,10 +1225,10 @@ _update_fluid_vel(const cs_mesh_t             *m,
                   const cs_real_t              imasfl[],
                   const cs_real_t              bmasfl[],
                   cs_real_t                    coefa_dp[],
-                  cs_real_3_t                  vel[],
-                  cs_real_3_t                  dfrcxt[],
-                  cs_real_3_t                  frcxt[],
-                  cs_real_6_t                  dttens[],
+                  cs_real_t                    vel[][3],
+                  cs_real_t                    dfrcxt[][3],
+                  cs_real_t                    frcxt[][3],
+                  const cs_real_t              dttens[][6],
                   const int                    isostd[])
 {
   const cs_lnum_t n_cells = m->n_cells;
@@ -1590,26 +1590,6 @@ _update_fluid_vel(const cs_mesh_t             *m,
   ctx.wait(); // needed for the following synchronization
 
   cs_halo_sync_r(m->halo, on_device, vel);
-
-  if (vp_param->iphydr == 1) {
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      const int ind = has_disable_flag * c_id;
-      const int is_active = (1 - (has_disable_flag * c_disable_flag[ind]));
-
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        frcxt[c_id][ii] =   frcxt[c_id][ii]*is_active
-                          + dfrcxt[c_id][ii];
-    });
-    ctx.wait(); // needed for the following synchronization
-
-    cs_halo_type_t halo_type = CS_HALO_STANDARD;
-    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-    cs_gradient_type_by_imrgra(eqp_p->imrgra,
-                               &gradient_type,
-                               &halo_type);
-
-    cs_halo_sync_r(m->halo, halo_type, on_device, frcxt);
-  }
 }
 
 /*----------------------------------------------------------------------------*/

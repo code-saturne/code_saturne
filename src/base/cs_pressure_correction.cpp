@@ -558,8 +558,8 @@ _pressure_correction_fv(int                   iterns,
 
   const int meteo_profile = cs_glob_atmo_option->meteo_profile;
 
-  const int *restrict c_disable_flag = (fvq->has_disable_flag) ?
-                                        fvq->c_disable_flag : nullptr;
+  const int has_disable_flag = fvq->has_disable_flag;
+  const int *c_disable_flag = fvq->c_disable_flag;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx, ctx_c;
@@ -2773,6 +2773,20 @@ _pressure_correction_fv(int                   iterns,
       cs_real_t dvol = cs_mq_cell_vol_inv(c_id, c_disable_flag, cell_vol);
       cpro_divu[c_id] *= dvol;
     });
+  }
+
+  /* Update fext */
+  if (vp_param->iphydr == 1) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      const int ind = has_disable_flag * c_id;
+      const int is_active = (1 - (has_disable_flag * c_disable_flag[ind]));
+
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        frcxt[c_id][ii] =   frcxt[c_id][ii]*is_active
+                          + dfrcxt[c_id][ii];
+    });
+    ctx.wait(); // needed for the following synchronization
+    cs_halo_sync_r(m->halo, halo_type, on_device, frcxt);
   }
 
   /* Update boundary condition for pressure */
