@@ -4073,7 +4073,8 @@ _compute_solid_surface_cog(const cs_mesh_t      *mesh,
 
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
     for (int i = 0; i < 3; i++)
-      cell_length_3d(c_id, i) /= weight_3d(c_id, i);
+      cell_length_3d(c_id, i) /= cs::max(weight_3d(c_id, i),
+                                    cs_math_epzero*cs::pow2ov3(cell_vol[c_id]));
 
   /* c_w_dist_inv : inverse distance from cell_f_cen to c_w_face_cog */
   cs_real_t loc_min = 1.e-20;
