@@ -176,6 +176,19 @@ cs_physical_constants_log_setup(void);
 void
 cs_fluid_properties_log_setup(void);
 
+/*----------------------------------------------------------------------------
+ * Return the physical unit associated with a fluid property or reference value.
+ *
+ * parameters:
+ *   property_name <-- name of property (e.g. "ro0", "viscl0", "cp0", "t0", ...)
+ *
+ * returns:
+ *   pointer to physical unit string, or NULL
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_fluid_properties_get_unit(const char  *property_name);
+
 /*----------------------------------------------------------------------------*/
 
 #endif /* CS_PHYSICAL_CONSTANTS_H */

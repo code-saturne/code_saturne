@@ -48,6 +48,7 @@
 #include "base/cs_map.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
+#include "base/cs_physical_units.h"
 #include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
@@ -524,28 +525,35 @@ cs_fluid_properties_log_setup(void)
     (CS_LOG_SETUP,
      _("\n"
        "  Continuous phase:\n"
-       "    ro0:         %14.5e (Reference density)\n"
-       "    viscl0:      %14.5e (Ref. molecular dyn. visc.)\n"
-       "    viscv0:      %14.5e (Ref. volume viscosity)\n"
-       "    cp0:         %14.5e (Ref. specific heat)\n"
-       "    icp:         %4d (>= 0: Variable Cp)\n"
-       "    icv:         %4d (>= 0: Variable Cv)\n"
-       "    iviscv:      %4d (>= 0: Variable volume viscosity)\n"
-       "    p0:          %14.5e (Ref. total pressure)\n"
-       "    pred0:       %14.5e (Ref. reduced pressure)\n"
-       "    t0:          %14.5e (Ref. temperature)\n\n"
-       "    Initial reference point for pressure\n"
+       "    ro0:         %14.5e %-10s (Reference density)\n"
+       "    viscl0:      %14.5e %-10s (Ref. molecular dyn. visc.)\n"
+       "    viscv0:      %14.5e %-10s (Ref. volume viscosity)\n"
+       "    cp0:         %14.5e %-10s (Ref. specific heat)\n"
+       "    icp:         %4d                  (>= 0: Variable Cp)\n"
+       "    icv:         %4d                  (>= 0: Variable Cv)\n"
+       "    iviscv:      %4d                  (>= 0: Variable volume visc.)\n"
+       "    p0:          %14.5e %-10s (Ref. total pressure)\n"
+       "    pred0:       %14.5e %-10s (Ref. reduced pressure)\n"
+       "    t0:          %14.5e %-10s (Ref. temperature)\n\n"
+       "    Initial reference point for pressure (m)\n"
        "    xyzp0:       %14.5e %14.5e %14.5e\n\n"),
        cs_glob_fluid_properties->ro0,
+       cs_fluid_properties_get_unit("ro0"),
        cs_glob_fluid_properties->viscl0,
+       cs_fluid_properties_get_unit("viscl0"),
        cs_glob_fluid_properties->viscv0,
+       cs_fluid_properties_get_unit("viscv0"),
        cs_glob_fluid_properties->cp0,
+       cs_fluid_properties_get_unit("cp0"),
        cs_glob_fluid_properties->icp,
        cs_glob_fluid_properties->icv,
        cs_glob_fluid_properties->iviscv,
        cs_glob_fluid_properties->p0,
+       cs_fluid_properties_get_unit("p0"),
        cs_glob_fluid_properties->pred0,
+       cs_fluid_properties_get_unit("pred0"),
        cs_glob_fluid_properties->t0,
+       cs_fluid_properties_get_unit("t0"),
        cs_glob_fluid_properties->xyzp0[0],
        cs_glob_fluid_properties->xyzp0[1],
        cs_glob_fluid_properties->xyzp0[2]);
@@ -562,6 +570,22 @@ cs_fluid_properties_log_setup(void)
   cs_log_printf(CS_LOG_SETUP,
                 _("    ivivar:    %s\n"),
                 _(ivivar_value_str[cs_glob_fluid_properties->ivivar]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the physical unit associated with a fluid property.
+ *
+ * \param[in] property_name  name of property (e.g. "ro0", "cp0", "t0", ...)
+ *
+ * \return pointer to physical unit string, or nullptr if unknown
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_fluid_properties_get_unit(const char  *property_name)
+{
+  return cs_physical_unit_get_default(property_name);
 }
 
 /*----------------------------------------------------------------------------*/

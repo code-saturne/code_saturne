@@ -135,6 +135,7 @@ cs_part_to_block.h \
 cs_physical_constants.h \
 cs_physical_properties.h \
 cs_physical_properties_default.h \
+cs_physical_units.h \
 cs_porosity_from_scan.h \
 cs_porous_model.h \
 cs_post.h \
@@ -357,6 +358,7 @@ cs_parameters_check.cpp \
 cs_physical_constants.cpp \
 cs_physical_properties.cpp \
 cs_physical_properties_default.cpp \
+cs_physical_units.cpp \
 cs_porosity_from_scan.cpp \
 cs_porous_model.cpp \
 cs_post.cpp \
