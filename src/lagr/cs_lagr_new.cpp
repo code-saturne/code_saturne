@@ -948,7 +948,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         loc_fluid_vel[phase_id][i] =
           extra_i[phase_id].vel->vals[time_id][c_id * 3  + i];
 
-      if (   cs_glob_lagr_time_scheme->interpol_field > 0
+      if (   cs_glob_lagr_time_scheme->interpol_field != CS_LAGR_INTERPOL_NONE
           && extra_i[phase_id].grad_vel != nullptr) {
         /* gradients have been computed*/
         /* TODO compute gradient before injection */
@@ -1237,7 +1237,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
         /* Set Seen temperature */
         cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
-        if (   cs_glob_lagr_time_scheme->interpol_field > 0
+        if (   cs_glob_lagr_time_scheme->interpol_field
+               != CS_LAGR_INTERPOL_NONE
             && extra->grad_tempf != nullptr) {
           cs_real_t *part_coord
             = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
@@ -1271,7 +1272,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
       p_set.attr_lnum(p_id, CS_LAGR_COAL_ID) = coal_id;
       cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
-      if (   cs_glob_lagr_time_scheme->interpol_field > 0
+      if (   cs_glob_lagr_time_scheme->interpol_field
+             != CS_LAGR_INTERPOL_NONE
           && extra->grad_tempf != nullptr) { /* gradients have been computed */
         cs_real_t *part_coord
           = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
@@ -1338,7 +1340,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = cval_t_l[c_id];
 
       cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
-      if (   cs_glob_lagr_time_scheme->interpol_field > 0
+      if (   cs_glob_lagr_time_scheme->interpol_field
+             != CS_LAGR_INTERPOL_NONE
           && extra->grad_tempf != nullptr) { /* gradients have been computed */
         cs_real_t *part_coord
           = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);

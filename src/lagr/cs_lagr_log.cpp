@@ -530,14 +530,17 @@ cs_lagr_log_setup(void)
        "    Trajectory time scheme order:                 %d\n"
        "    max_track_propagation_loops:                  %d\n"
        "    Cell-wise integration (time-splitting alg.)   %s\n"
-       "    P1 reconstruction of mean fields              %s\n"
+       "    Carrier velocity interpolation:               %s\n"
        "    Extended time scheme:                         %s\n"
        "    Poisson correction for particle velocity:     %s\n"
        "    Failsafe mode (stop on error):                %s\n"),
      cs_glob_lagr_time_scheme->t_order,
      cs_glob_lagr_time_scheme->max_track_propagation_loops,
      _status(cs_glob_lagr_time_scheme->cell_wise_integ),
-     _status(cs_glob_lagr_time_scheme->interpol_field),
+     cs_glob_lagr_time_scheme->interpol_field == CS_LAGR_INTERPOL_RT0 ?
+       "RT0" :
+       (cs_glob_lagr_time_scheme->interpol_field == CS_LAGR_INTERPOL_P1 ?
+        "P1" : "none"),
      _status(cs_glob_lagr_time_scheme->extended_t_scheme),
      _status(cs_glob_lagr_time_scheme->ilapoi),
      _status(cs_glob_lagr_model->failsafe_mode));

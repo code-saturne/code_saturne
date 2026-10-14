@@ -845,7 +845,7 @@ _sde_i_temp_seen(cs_lagr_particle_set_t  &p_set,
 
   /* FIXME take value at previous time step if nor == 1 and current otherwise*/
   cs_real_t loc_tempf = extra->temperature->val[cell_id] - t_shift;
-  if (cs_glob_lagr_time_scheme->interpol_field > 0
+  if (   cs_glob_lagr_time_scheme->interpol_field != CS_LAGR_INTERPOL_NONE
       && extra->grad_tempf != nullptr) {
     cs_real_t *old_part_coords =
       p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_COORDS);

@@ -63,6 +63,7 @@
 #include "lagr/cs_lagr_tracking.h"
 #include "lagr/cs_lagr_stat.h"
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
@@ -561,8 +562,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       for (cs_lnum_t id = 0; id < 3; id++)
         grad_pr[iel][id] = cpro_pgradlagr[3*iel + id];
 
-    if (turb_disp_model || cs_glob_lagr_model->shape > 0
-        || cs_glob_lagr_time_scheme->interpol_field > 0) {
+    if (   turb_disp_model || cs_glob_lagr_model->shape > 0
+        || cs_glob_lagr_time_scheme->interpol_field != CS_LAGR_INTERPOL_NONE) {
 
       char *f_name = nullptr;
       f_name = _field_name_aux("lagr_velocity_gradient", phase_id);
@@ -792,9 +793,11 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                         div_mu_gradvel);
 
       const cs_real_t  *cell_f_vol = mq->cell_vol;
+      const int *c_disable_flag = (mq->has_disable_flag) ?
+                                   mq->c_disable_flag : nullptr;
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cs_real_t dvol = 1. / cell_f_vol[c_id];
+        cs_real_t dvol = cs_mq_cell_vol_inv(c_id, c_disable_flag, cell_f_vol);
         for (cs_lnum_t i = 0; i < 3; i++) {
           /* mind that div_mu_gradvel contains -div(mu gradvel) */
           div_mu_gradvel[c_id][i] *= -dvol;
@@ -807,8 +810,15 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
     /* Compute velocity gradient
        ========================= */
 
-    if (turb_disp_model || cs_glob_lagr_model->shape > 0
-        || cs_glob_lagr_time_scheme->interpol_field > 0) {
+    if (cs_glob_lagr_time_scheme->interpol_field == CS_LAGR_INTERPOL_RT0) {
+      cs_lagr_velocity_reconstruction_rt0
+        (phase_id,
+         (const cs_real_3_t *)extra_i[phase_id].vel->val,
+         grad_vel);
+    }
+    else if (   turb_disp_model || cs_glob_lagr_model->shape > 0
+             || cs_glob_lagr_time_scheme->interpol_field
+                != CS_LAGR_INTERPOL_NONE) {
       cs_field_gradient_vector(extra_i[phase_id].vel,
                                0,
                                1, /* inc */
@@ -823,7 +833,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
 
   if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
       && extra->temperature != nullptr
-      && cs_glob_lagr_time_scheme->interpol_field > 0
+      && cs_glob_lagr_time_scheme->interpol_field != CS_LAGR_INTERPOL_NONE
       && phase_id == 0)
     cs_field_gradient_scalar(extra->temperature,
                              0,
@@ -930,6 +940,162 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
 
   ctx.wait();
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute RT0 divergence-free velocity gradient from mass fluxes.
+ *
+ * This computes the solenoidal affine gradient tensor (grad_vel) based on
+ * the RT0 face velocity decomposition using face mass fluxes and cell
+ * fluid velocity (vel).
+ *
+ * \param[in]   phase_id   carrier phase id
+ * \param[in]   vel        cell-centered fluid velocity
+ * \param[out]  grad_vel   reconstructed divergence-free affine tensor (G_RT0)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_velocity_reconstruction_rt0(int                phase_id,
+                                    const cs_real_3_t *vel,
+                                    cs_real_33_t      *grad_vel)
+{
+  cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  cs_lnum_t n_cells = m->n_cells;
+  cs_lnum_t n_cells_with_ghosts = m->n_cells_with_ghosts;
+
+  cs_dispatch_context ctx;
+
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  const cs_field_t *f_vel = cs_glob_lagr_extra_module[phase_id].vel;
+  assert(f_vel != nullptr);
+
+  int imasfl_id = f_vel->get_key_int(kimasf);
+  int bmasfl_id = f_vel->get_key_int(kbmasf);
+  assert(imasfl_id >= 0 && bmasfl_id >= 0);
+
+  const cs_real_t *imasfl = cs_field_by_id(imasfl_id)->val;
+  const cs_real_t *bmasfl = cs_field_by_id(bmasfl_id)->val;
+  const cs_real_t *crom = cs_glob_lagr_extra_module[phase_id].cromf->val;
+  const cs_real_t *cell_vol = mq->cell_vol;
+  const cs_real_3_t *i_face_normal = (const cs_real_3_t *)mq->i_face_normal;
+  const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+  const cs_real_t *weight = mq->weight;
+  const int *c_disable_flag = (mq->has_disable_flag) ?
+                               mq->c_disable_flag : nullptr;
+
+  const cs_dispatch_sum_type_t i_sum_type
+    = ctx.get_parallel_for_i_faces_sum_type(m);
+  const cs_dispatch_sum_type_t b_sum_type
+    = ctx.get_parallel_for_b_faces_sum_type(m);
+
+  ctx.parallel_for(n_cells_with_ghosts, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    if (grad_vel != nullptr) {
+      for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+          grad_vel[c_id][i][j] = 0.;
+    }
+  });
+
+  /* Compute face velocities and divergence-free cell gradient G (RT0) */
+  if (grad_vel != nullptr && vel != nullptr) {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      cs_lnum_t c1 = i_face_cells[f_id][0];
+      cs_lnum_t c2 = i_face_cells[f_id][1];
+
+      const cs_real_t *s_ij = i_face_normal[f_id];
+      cs_real_t surf_sq
+        = s_ij[0]*s_ij[0] + s_ij[1]*s_ij[1] + s_ij[2]*s_ij[2];
+      cs_real_t surf = sqrt(surf_sq);
+      cs_real_t inv_surf
+        = (surf > cs_math_zero_threshold) ? 1.0 / surf : 0.0;
+      cs_real_3_t n_ij = {s_ij[0]*inv_surf,
+                          s_ij[1]*inv_surf,
+                          s_ij[2]*inv_surf};
+
+      const cs_real_t alpha = (weight != nullptr) ? weight[f_id] : 0.5;
+      cs_real_t rho_avg = alpha * crom[c1] + (1.0 - alpha) * crom[c2];
+      cs_real_t u_norm = imasfl[f_id] * inv_surf / rho_avg;
+
+      /* RT0 tangential velocity from cell fluid velocity (vel) */
+      cs_real_3_t u_avg;
+      for (int k = 0; k < 3; k++)
+        u_avg[k] = alpha * vel[c1][k] + (1.0 - alpha) * vel[c2][k];
+
+      cs_real_t u_avg_dot_n
+        = u_avg[0]*n_ij[0] + u_avg[1]*n_ij[1] + u_avg[2]*n_ij[2];
+
+      cs_real_3_t u_f;
+      for (int k = 0; k < 3; k++)
+        u_f[k] = u_norm * n_ij[k] + (u_avg[k] - u_avg_dot_n * n_ij[k]);
+
+      cs_real_33_t g1, g2;
+      cs_real_t inv_vol1 = cs_mq_cell_vol_inv(c1, c_disable_flag, cell_vol);
+      cs_real_t inv_vol2 = cs_mq_cell_vol_inv(c2, c_disable_flag, cell_vol);
+      for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+          g1[i][j] =  u_f[i] * s_ij[j] * inv_vol1;
+          g2[i][j] = -u_f[i] * s_ij[j] * inv_vol2;
+        }
+      }
+
+      if (c1 < n_cells)
+        cs_dispatch_sum<9>((cs_real_t *)grad_vel[c1],
+                           (const cs_real_t *)g1,
+                           i_sum_type);
+      if (c2 < n_cells)
+        cs_dispatch_sum<9>((cs_real_t *)grad_vel[c2],
+                           (const cs_real_t *)g2,
+                           i_sum_type);
+    });
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      cs_lnum_t c1 = b_face_cells[f_id];
+
+      const cs_real_t *s_b = b_face_normal[f_id];
+      cs_real_t surf_sq
+        = s_b[0]*s_b[0] + s_b[1]*s_b[1] + s_b[2]*s_b[2];
+      cs_real_t surf = sqrt(surf_sq);
+      cs_real_t inv_surf
+        = (surf > cs_math_zero_threshold) ? 1.0 / surf : 0.0;
+      cs_real_3_t n_b = {s_b[0]*inv_surf,
+                         s_b[1]*inv_surf,
+                         s_b[2]*inv_surf};
+
+      cs_real_t u_norm = bmasfl[f_id] * inv_surf / crom[c1];
+
+      /* RT0 boundary tangential velocity from cell fluid velocity (vel) */
+      cs_real_t u_dot_n
+        = vel[c1][0]*n_b[0] + vel[c1][1]*n_b[1] + vel[c1][2]*n_b[2];
+
+      cs_real_3_t u_f;
+      for (int k = 0; k < 3; k++)
+        u_f[k] = u_norm * n_b[k] + (vel[c1][k] - u_dot_n * n_b[k]);
+
+      cs_real_33_t g1;
+      cs_real_t inv_vol1 = cs_mq_cell_vol_inv(c1, c_disable_flag, cell_vol);
+      for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+          g1[i][j] = u_f[i] * s_b[j] * inv_vol1;
+        }
+      }
+
+      if (c1 < n_cells)
+        cs_dispatch_sum<9>((cs_real_t *)grad_vel[c1],
+                           (const cs_real_t *)g1,
+                           b_sum_type);
+    });
+
+    ctx.wait();
+
+    cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD,
+                             (cs_real_t *)grad_vel, 9);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

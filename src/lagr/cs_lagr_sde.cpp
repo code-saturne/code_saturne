@@ -802,7 +802,8 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
 
   /* resolve SDEs*/
   for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-    if (cs_glob_lagr_time_scheme->interpol_field == 1) {
+    if (   cs_glob_lagr_time_scheme->interpol_field == CS_LAGR_INTERPOL_P1
+        || cs_glob_lagr_time_scheme->interpol_field == CS_LAGR_INTERPOL_RT0) {
       for (int i = 0; i < 3; i++) {
         loc_fluid_vel(phase_id, i) = cvar_vel[phase_id][cell_id][i];
         for (int j = 0; j < 3; j++)
@@ -1566,7 +1567,8 @@ _sde_vels_pos_1_st_order_kernel(cs_lagr_particle_set_t        &p_set,
   const cs_real_t *ref_coords = part_coords;
 
   /* resolve SDEs*/
-  if (cs_glob_lagr_time_scheme->interpol_field == 1) {
+  if (   cs_glob_lagr_time_scheme->interpol_field == CS_LAGR_INTERPOL_P1
+      || cs_glob_lagr_time_scheme->interpol_field == CS_LAGR_INTERPOL_RT0) {
     for (int i = 0; i < 3; i++) {
       loc_fluid_vel[i] = cvar_vel[cell_id][i];
       for (int j = 0; j < 3; j++)

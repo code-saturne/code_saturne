@@ -150,6 +150,15 @@ enum {
   CS_LAGR_PHYS_CTWR = 3
 };
 
+/*! Mean carrier velocity interpolation mode at particle location */
+/*-----------------------------------------------------------------*/
+
+typedef enum {
+  CS_LAGR_INTERPOL_NONE = 0, /*!< No interpolation (cell-centered value) */
+  CS_LAGR_INTERPOL_P1   = 1, /*!< P1 linear reconstruction (Green-Gauss) */
+  CS_LAGR_INTERPOL_RT0  = 2  /*!< RT0 divergence-free flux reconstruction */
+} cs_lagr_interpol_field_t;
+
 /*! Fixed maximum sizes */
 /*----------------------*/
 
@@ -222,9 +231,8 @@ typedef struct {
    * (0 off, 1 on) */
   int  extended_t_scheme;
 
-  /*! activation (=1) or not (=0) of P1 interpolation of mean carrier velocity
-   *  at the location of the particles */
-  int interpol_field;
+  /*! Mean carrier velocity interpolation mode at particle location */
+  cs_lagr_interpol_field_t  interpol_field;
 
   /*! activation (=1) or not (=0) of the solution of a Poisson's equation for
     the correction of the particle instantaneous velocities

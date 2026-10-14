@@ -509,7 +509,7 @@ cs_lagr_car(int                         iprev,
       for (int id = 0; id < 3; id++)
         piil[id] += buoyancy_fac * grav[id];
 
-      if (   cs_glob_lagr_time_scheme->interpol_field > 0
+      if (   cs_glob_lagr_time_scheme->interpol_field != CS_LAGR_INTERPOL_NONE
           && extra->grad_tempf != nullptr) {
         /* Interpolate the local hydrostatic pressure gradient so its is in
          * equilibrium with the interpolated temperature at the position of the

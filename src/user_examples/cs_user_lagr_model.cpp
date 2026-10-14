@@ -307,9 +307,9 @@ cs_user_lagr_model(void)
   if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE)
     cs_glob_lagr_time_scheme->isttio   = 0;
 
-  /* Activation (=1) or not (=0) of P1 interpolation of mean carrier velocity
-   *  at the location of the particles */
-  cs_glob_lagr_time_scheme->interpol_field = 0;
+  /* Activation of mean carrier velocity interpolation at particle location
+   * (CS_LAGR_INTERPOL_NONE, CS_LAGR_INTERPOL_P1, CS_LAGR_INTERPOL_RT0) */
+  cs_glob_lagr_time_scheme->interpol_field = CS_LAGR_INTERPOL_NONE;
 
   /* Activation (=1) or not (=0) of the time-step-robust algorithm
    * (Balvet et al. 2023) */

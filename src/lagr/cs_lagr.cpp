@@ -160,7 +160,7 @@ static cs_lagr_time_scheme_t _lagr_time_scheme
      .isuila = 1,
      .t_order = 0,
      .extended_t_scheme = 0,
-     .interpol_field = 1,
+     .interpol_field = CS_LAGR_INTERPOL_P1,
      .ilapoi = 0,
      .iadded_mass = 0,
      .added_mass_const = 0,
@@ -2111,21 +2111,27 @@ cs_lagr_solve_time_step(const int         itypfb[],
         const cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
         CS_MALLOC_HD(extra_i[phase_id].grad_pr, ncelet, cs_real_3_t, cs_alloc_mode);
 
-        if (  (    cs_glob_lagr_time_scheme->interpol_field != 0
+        if (  (    cs_glob_lagr_time_scheme->interpol_field
+                   != CS_LAGR_INTERPOL_NONE
                || cs_glob_lagr_time_scheme->extended_t_scheme != 0)
             && cs_glob_lagr_model->idistu == 1)
-          CS_MALLOC_HD(extra_i[phase_id].grad_lagr_time, ncelet, cs_real_3_t, cs_alloc_mode);
+          CS_MALLOC_HD(extra_i[phase_id].grad_lagr_time,
+                       ncelet, cs_real_3_t, cs_alloc_mode);
 
         if (   cs_glob_lagr_model->modcpl > 0
             || cs_glob_lagr_model->shape > 0
-            || cs_glob_lagr_time_scheme->interpol_field != 0)
-          CS_MALLOC_HD(extra_i[phase_id].grad_vel, ncelet, cs_real_33_t, cs_alloc_mode);
+            || cs_glob_lagr_time_scheme->interpol_field
+               != CS_LAGR_INTERPOL_NONE)
+          CS_MALLOC_HD(extra_i[phase_id].grad_vel,
+                       ncelet, cs_real_33_t, cs_alloc_mode);
 
         if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
             && extra->temperature != nullptr
-            && cs_glob_lagr_time_scheme->interpol_field > 0
+            && cs_glob_lagr_time_scheme->interpol_field
+               != CS_LAGR_INTERPOL_NONE
             && phase_id == 0)
-          CS_MALLOC_HD(extra_i[phase_id].grad_tempf, ncelet, cs_real_3_t, cs_alloc_mode);
+          CS_MALLOC_HD(extra_i[phase_id].grad_tempf,
+                       ncelet, cs_real_3_t, cs_alloc_mode);
 
         /* Allocate the gradients of second order statistics */
         for (int i = 0; i < 9; i++)

@@ -138,5 +138,20 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev,
                                   cs_real_4_t   *anisotropic_euler);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute RT0 divergence-free velocity reconstruction from mass fluxes.
+ *
+ * \param[in]   phase_id   carrier phase id
+ * \param[in]   vel        cell-centered fluid velocity
+ * \param[out]  grad_vel   reconstructed divergence-free affine tensor (G_RT0)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_velocity_reconstruction_rt0(int                phase_id,
+                                    const cs_real_3_t *vel,
+                                    cs_real_33_t      *grad_vel);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_LAGR_AUX_MEAN_FLUID_QUANTITIES_H */
