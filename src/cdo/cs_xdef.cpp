@@ -911,14 +911,14 @@ cs_xdef_log_setup(const char          *prefix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_log(cs_log_t             log_type,
-            const char          *prefix,
-            const cs_xdef_t     *d)
+cs_xdef_log(cs_log_t         log_type,
+            const char      *prefix,
+            const cs_xdef_t *d)
 {
   if (d == nullptr)
     return;
 
-  bool  is_uniform = false, is_steady = false, is_cellwise = false;
+  bool is_uniform = false, is_steady = false, is_cellwise = false;
   if (d->state & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
   if (d->state & CS_FLAG_STATE_STEADY)   is_steady = true;
   if (d->state & CS_FLAG_STATE_CELLWISE) is_cellwise = true;
@@ -942,7 +942,7 @@ cs_xdef_log(cs_log_t             log_type,
 
     const cs_zone_t  *z = cs_volume_zone_by_id(d->z_id);
     assert(z != nullptr);
-    cs_log_printf(log_type, "%s | Support:   volume | Zone: %s (id:%5d)\n",
+    cs_log_printf(log_type, "%s | Support:   volume | Zone: \"%s\" (id:%4d)\n",
                   _p, z->name, z->id);
 
   }
@@ -950,7 +950,7 @@ cs_xdef_log(cs_log_t             log_type,
 
     const cs_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
     assert(z != nullptr);
-    cs_log_printf(log_type, "%s | Support: boundary | Zone: %s (id:%5d)\n",
+    cs_log_printf(log_type, "%s | Support: boundary | Zone: \"%s\" (id:%4d)\n",
                   _p, z->name, z->id);
 
   }
@@ -966,47 +966,37 @@ cs_xdef_log(cs_log_t             log_type,
     cs_log_printf(log_type, "%s | Definition by an analytical function\n",
                   _p);
     break;
-
   case CS_XDEF_BY_DOF_FUNCTION:
     cs_log_printf(log_type, "%s | Definition by a DoF function\n", _p);
     break;
-
   case CS_XDEF_BY_ARRAY:
     cs_log_printf(log_type, "%s | Definition by an array\n", _p);
     break;
-
   case CS_XDEF_BY_FIELD:
     {
       cs_field_t  *f = (cs_field_t *)d->context;
 
       if (f == nullptr)
-        bft_error(__FILE__,
-                  __LINE__,
-                  0,
+        bft_error(__FILE__, __LINE__, 0,
                   " Field pointer is set to nullptr in a definition by field");
 
       cs_log_printf(log_type, "%s | Definition by the field \"%s\"\n",
                     _p, f->name);
     }
     break;
-
   case CS_XDEF_BY_FUNCTION:
     cs_log_printf(log_type, "%s | Definition by function\n", _p);
     break;
-
   case CS_XDEF_BY_QOV:
     cs_log_printf(log_type,
                   "%s | Definition by a quantity over a volume\n", _p);
     break;
-
   case CS_XDEF_BY_SUB_DEFINITIONS:
     cs_log_printf(log_type, "%s | Definition by sub-definitions\n", _p);
     break;
-
   case CS_XDEF_BY_TIME_FUNCTION:
     cs_log_printf(log_type, "%s | Definition by a time function\n", _p);
     break;
-
   case CS_XDEF_BY_VALUE:
     {
       cs_real_t *values = (cs_real_t *)d->context;
