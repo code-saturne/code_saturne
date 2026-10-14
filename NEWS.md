@@ -107,6 +107,8 @@ Release 9.0.3 (unreleased)
 
 ### User changes:
 
+- GUI: disable wheel scrolling in combo boxes, as it was error-prone.
+
 - Backported `cs_probe_get_labels` function for use by advanced
   user-defined functions.
 
