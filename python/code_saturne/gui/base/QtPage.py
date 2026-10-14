@@ -342,7 +342,7 @@ class ComboModel:
         self.items   = []
         self.combo.setModel(self.model)
         self.combo.setItemDelegate(GroupDelegate(self.combo))
-
+        self.combo.wheelEvent = lambda event: None
 
     def addItemGroup(self, group_name):
 
