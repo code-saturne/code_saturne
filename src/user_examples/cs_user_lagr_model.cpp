@@ -308,8 +308,9 @@ cs_user_lagr_model(void)
     cs_glob_lagr_time_scheme->isttio   = 0;
 
   /* Activation of mean carrier velocity interpolation at particle location
-   * (CS_LAGR_INTERPOL_NONE, CS_LAGR_INTERPOL_P1, CS_LAGR_INTERPOL_RT0) */
-  cs_glob_lagr_time_scheme->interpol_field = CS_LAGR_INTERPOL_NONE;
+   * (CS_LAGR_INTERPOL_NONE, CS_LAGR_INTERPOL_P1, CS_LAGR_INTERPOL_RT0,
+   *  default: CS_LAGR_INTERPOL_RT0) */
+  cs_glob_lagr_time_scheme->interpol_field = CS_LAGR_INTERPOL_RT0;
 
   /* Activation (=1) or not (=0) of the time-step-robust algorithm
    * (Balvet et al. 2023) */

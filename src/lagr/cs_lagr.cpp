@@ -160,7 +160,7 @@ static cs_lagr_time_scheme_t _lagr_time_scheme
      .isuila = 1,
      .t_order = 0,
      .extended_t_scheme = 0,
-     .interpol_field = CS_LAGR_INTERPOL_P1,
+     .interpol_field = CS_LAGR_INTERPOL_RT0,
      .ilapoi = 0,
      .iadded_mass = 0,
      .added_mass_const = 0,
