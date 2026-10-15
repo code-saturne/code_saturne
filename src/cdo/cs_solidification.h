@@ -36,6 +36,7 @@
 #include "cdo/cs_equation.h"
 #include "cdo/cs_iter_algo.h"
 #include "cdo/cs_navsto_param.h"
+#include "cdo/cs_thermal_system.h"
 
 /*============================================================================
  * Macro definitions
