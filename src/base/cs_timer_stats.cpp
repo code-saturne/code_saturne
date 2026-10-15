@@ -549,6 +549,15 @@ cs_timer_stats_create(const char  *parent_name,
                       const char  *name,
                       const char  *label)
 {
+  if (name == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid name parameter. Not defined.\n", __func__);
+
+  if (_name_map == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Creation of a timer statistic structure \"%s\"\n"
+              "   before initialization.\n", __func__, name);
+
   /* Determine parent id, create new series if none */
 
   const char *_parent_name = nullptr;
@@ -580,6 +589,7 @@ cs_timer_stats_create(const char  *parent_name,
   /* Insert entry in map */
 
   int stats_id = cs_map_name_to_id(_name_map, name);
+  assert(stats_id > -1);
 
   if (stats_id < _n_stats) {
     s =  _stats + stats_id;
