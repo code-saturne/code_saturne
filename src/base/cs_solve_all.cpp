@@ -442,8 +442,7 @@ _compute_wall_distance(const int iterns)
 /*----------------------------------------------------------------------------*/
 
 static void
-_solve_most(int              n_var,
-            int              isvhb,
+_solve_most(int              isvhb,
             int              vel_verbosity,
             int             *italim,
             int             *itrfin,
@@ -512,8 +511,7 @@ _solve_most(int              n_var,
 
     if (   cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE
         || cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev+1) {
-      cs_boundary_conditions_set_coeffs(n_var,
-                                        iterns,
+      cs_boundary_conditions_set_coeffs(iterns,
                                         isvhb,
                                         *italim,
                                         *itrfin,
@@ -1263,8 +1261,7 @@ cs_solve_all()
 
   while (need_new_solve) {
 
-    _solve_most(n_var,
-                isvhb,
+    _solve_most(isvhb,
                 eqp_vel->verbosity,
                 &italim,
                 &itrfin,

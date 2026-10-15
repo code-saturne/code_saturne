@@ -92,7 +92,6 @@
  * of the theory guide for more informations, as well as the
  * <a href="../../theory.pdf#condli"><b>condli</b></a> section.
  *
- * \param[in]       nvar        total number of variables
  * \param[in]       iterns      iteration number on Navier-Stokes equations
  * \param[in]       isvhb       id of field whose exchange coeffient should be
  *                              saved at the walls, or -1.
@@ -115,8 +114,7 @@
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_set_coeffs(int         nvar,
-                                  int         iterns,
+cs_boundary_conditions_set_coeffs(int         iterns,
                                   int         isvhb,
                                   int         italim,
                                   int         itrfin,

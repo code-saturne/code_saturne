@@ -726,7 +726,6 @@ _boundary_condition_wall_condensation_1d_thermal(void)
  * of the theory guide for more informations, as well as the
  * <a href="../../theory.pdf#condli"><b>condli</b></a> section.
  *
- * \param[in]       nvar        total number of variables
  * \param[in]       iterns      iteration number on Navier-Stokes equations
  * \param[in]       isvhb       id of field whose exchange coeffient should be
  *                              saved at the walls, or -1.
@@ -749,8 +748,7 @@ _boundary_condition_wall_condensation_1d_thermal(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_set_coeffs(int         nvar,
-                                  int         iterns,
+cs_boundary_conditions_set_coeffs(int         iterns,
                                   int         isvhb,
                                   int         italim,
                                   int         itrfin,
@@ -917,7 +915,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
     cs_syr_coupling_exchange_volume();
 
-    cs_syr_coupling_recv_boundary(nvar, bc_type);
+    cs_syr_coupling_recv_boundary(bc_type);
 
     if (nfpt1t > 0)
       cs_boundary_conditions_coupling_t_in();

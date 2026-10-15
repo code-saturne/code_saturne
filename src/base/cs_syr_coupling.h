@@ -214,16 +214,12 @@ cs_syr_coupling_is_surf(int  cpl_id);
 /*
  * \brief  Read boundary field/variable values relative to a SYRTHES coupling.
  *
- * \param[in]   nvar     number of variables
  * \param[in]   bc_type  boundary condition type
- * \param[out]  icodcl   boundary condition codes
- * \param[out]  rcodcl   boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_recv_boundary(const int  nvar,
-                              int        bc_type[]);
+cs_syr_coupling_recv_boundary(int        bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*

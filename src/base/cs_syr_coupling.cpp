@@ -2553,25 +2553,17 @@ cs_syr_coupling_is_surf(int  cpl_id)
 /*!
  * \brief  Read boundary field/variable values relative to a SYRTHES coupling.
  *
- * \param[in]   nvar     number of variables
  * \param[in]   bc_type  boundary condition type
- * \param[out]  icodcl   boundary condition codes
- * \param[out]  rcodcl   boundary condition values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_syr_coupling_recv_boundary(const int  nvar,
-                              int        bc_type[])
+cs_syr_coupling_recv_boundary(int        bc_type[])
 {
   /* SYRTHES coupling: get wall temperature
      ====================================== */
 
   const int kcpsyr = cs_field_key_id("syrthes_coupling");
-
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  const cs_lnum_t n_vars = nvar;  /* cast to cs_lnum_t because this
-                                     is used in address computations here */
 
   /* Get number of coupling cases */
 
@@ -2642,8 +2634,8 @@ cs_syr_coupling_recv_boundary(const int  nvar,
 
       int  *_icodcl = f_t->bc_coeffs->icodcl;
       cs_real_t *_rcodcl1 = f_t->bc_coeffs->rcodcl1;
-      cs_real_t *_rcodcl2 = _rcodcl1 + n_b_faces*n_vars;
-      cs_real_t *_rcodcl3 = _rcodcl2 + n_b_faces*n_vars;
+      cs_real_t *_rcodcl2 = f_t->bc_coeffs->rcodcl2;
+      cs_real_t *_rcodcl3 = f_t->bc_coeffs->rcodcl3;
 
       for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
 
