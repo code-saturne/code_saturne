@@ -38,8 +38,6 @@
  * User function definitions
  *============================================================================*/
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*
  * User definition of boundary conditions.
@@ -71,12 +69,11 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   const cs_real_t characteristic_lengths[] = {1., 1., 0.5, 0.5};
 
   cs_wall_functions_iwf_options_t options = {
-    .ri_min = cs_notebook_parameter_value_by_name("IWF_Ri_min"),
-    .y_cross_min
-      = cs_notebook_parameter_value_by_name("IWF_y_cross_min"),
-    .tolerance = 1.e-4,
-    .max_iterations = 1000,
-    .first_time_step = 4
+    cs_notebook_parameter_value_by_name("IWF_Ri_min"),
+    cs_notebook_parameter_value_by_name("IWF_y_cross_min"),
+    1.e-4, /* tolerance */
+    1000,  /* max_iterations */
+    4      /* first_time_step */
   };
 
   cs_wall_functions_iwf_set_options(&options);
@@ -92,5 +89,3 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
                                     characteristic_lengths[zone_id]);
   }
 }
-
-END_C_DECLS

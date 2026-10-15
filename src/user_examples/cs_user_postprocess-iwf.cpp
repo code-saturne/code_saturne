@@ -32,7 +32,7 @@
  * Standard library headers
  *----------------------------------------------------------------------------*/
 
-#include <cstdio>
+#include <stdio.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -43,8 +43,6 @@
 /*============================================================================
  * User function definitions
  *============================================================================*/
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -69,21 +67,30 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_postprocess_values(
-  [[maybe_unused]] const char            *mesh_name,
-  int                                    mesh_id,
-  [[maybe_unused]] int                    cat_id,
-  [[maybe_unused]] cs_probe_set_t        *probes,
-  [[maybe_unused]] cs_lnum_t              n_cells,
-  [[maybe_unused]] cs_lnum_t              n_i_faces,
-  cs_lnum_t                               n_b_faces,
-  [[maybe_unused]] cs_lnum_t              n_vertices,
-  [[maybe_unused]] const cs_lnum_t        cell_list[],
-  [[maybe_unused]] const cs_lnum_t        i_face_list[],
-  const cs_lnum_t                         b_face_list[],
-  [[maybe_unused]] const cs_lnum_t        vertex_list[],
-  const cs_time_step_t                   *ts)
+cs_user_postprocess_values(const char            *mesh_name,
+                           int                    mesh_id,
+                           int                    cat_id,
+                           cs_probe_set_t        *probes,
+                           cs_lnum_t              n_cells,
+                           cs_lnum_t              n_i_faces,
+                           cs_lnum_t              n_b_faces,
+                           cs_lnum_t              n_vertices,
+                           const cs_lnum_t        cell_list[],
+                           const cs_lnum_t        i_face_list[],
+                           const cs_lnum_t        b_face_list[],
+                           const cs_lnum_t        vertex_list[],
+                           const cs_time_step_t  *ts)
 {
+  CS_UNUSED(mesh_name);
+  CS_UNUSED(cat_id);
+  CS_UNUSED(probes);
+  CS_UNUSED(n_cells);
+  CS_UNUSED(n_i_faces);
+  CS_UNUSED(n_vertices);
+  CS_UNUSED(cell_list);
+  CS_UNUSED(i_face_list);
+  CS_UNUSED(vertex_list);
+
   if (n_b_faces == 0)
     return;
 
@@ -154,5 +161,3 @@ cs_user_postprocess_values(
                       ts);
   }
 }
-
-END_C_DECLS

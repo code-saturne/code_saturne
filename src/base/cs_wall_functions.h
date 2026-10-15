@@ -130,120 +130,6 @@ extern const cs_wall_functions_t *cs_glob_wall_functions;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Classify a wall face for the natural-convection correlations.
- *
- * The face is classified as upward-facing horizontal (1), vertical (2), or
- * downward-facing horizontal (3). The wall-to-cell temperature difference is
- * used with the face-normal orientation to determine the direction of the
- * buoyant heat flux. The angular limits correspond to 45 and 135 degrees.
- *
- * \par IWF model source
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
- *
- * \param[in] cos_angle       scalar product of gravity and the outward unit
- *                            normal, divided by the gravity magnitude
- * \param[in] wall_cell_delta wall temperature minus adjacent-cell temperature
- *
- * \return 1 for upward heat flux, 2 for a vertical face, or 3 for downward
- *         heat flux
- */
-/*----------------------------------------------------------------------------*/
-
-inline static int
-_iwf_face_type(cs_real_t  cos_angle,
-               cs_real_t  wall_cell_delta)
-{
-  if (cos_angle > sqrt(0.5))
-    return (wall_cell_delta > 0.) ? 1 : 3;
-  if (cos_angle < -sqrt(0.5))
-    return (wall_cell_delta > 0.) ? 3 : 1;
-  return 2;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the natural-convection Nusselt number used by the IWF.
- *
- * This helper applies the horizontal upward, vertical, or horizontal downward
- * correlation selected by \ref _iwf_face_type. The upward-facing correlation
- * changes branch at \f$Ra = 8\,10^6\f$.
- *
- * \par IWF model source
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
- *
- * \param[in] rayleigh  Rayleigh number based on the characteristic length
- * \param[in] prandtl   molecular Prandtl number
- * \param[in] face_type face class returned by \ref _iwf_face_type
- *
- * \return local Nusselt number
- */
-/*----------------------------------------------------------------------------*/
-
-inline static cs_real_t
-_iwf_nusselt(cs_real_t  rayleigh,
-             cs_real_t  prandtl,
-             int        face_type)
-{
-  if (face_type == 1) {
-    if (rayleigh < 8.e6)
-      return 0.54 * pow(rayleigh, 0.25);
-    return 0.15 * cbrt(rayleigh);
-  }
-
-  if (face_type == 2) {
-    const cs_real_t denominator
-      = pow(1. + pow(0.437 / prandtl, 9. / 16.), 8. / 27.);
-    return cs_math_pow2(0.825
-                        + 0.387 * pow(rayleigh, 1. / 6.) / denominator);
-  }
-
-  return 0.27 * pow(rayleigh, 0.25);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the local Richardson number used to activate the IWF.
- *
- * The velocity scale is the magnitude of the adjacent-cell velocity. A near
- * zero velocity returns \ref cs_math_big_r so that the buoyancy-dominated
- * limit remains finite and no division by zero occurs.
- *
- * \par IWF model source
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
- *
- * \param[in] gravity magnitude of gravitational acceleration
- * \param[in] beta    thermal expansion coefficient
- * \param[in] delta_t absolute outer-layer-to-wall temperature difference
- * \param[in] length  wall characteristic length
- * \param[in] speed   adjacent-cell velocity magnitude
- *
- * \return local Richardson number, or \ref cs_math_big_r at near-zero speed
- */
-/*----------------------------------------------------------------------------*/
-
-inline static cs_real_t
-_iwf_richardson(cs_real_t  gravity,
-                cs_real_t  beta,
-                cs_real_t  delta_t,
-                cs_real_t  length,
-                cs_real_t  speed)
-{
-  if (speed <= 1.e-6)
-    return cs_math_big_r;
-  return gravity * beta * delta_t * length / cs_math_pow2(speed);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Power law: Werner & Wengle.
  *
  * \param[in]     l_visc        kinematic viscosity
@@ -1391,122 +1277,49 @@ cs_wall_functions_t *
 cs_get_glob_wall_functions(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the characteristic length for selected boundary faces.
- *
- * A non-positive characteristic length disables IWF on the selected faces.
- *
- * \par IWF model source
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
- *
- * \param[in]  n_faces                number of selected faces
- * \param[in]  face_ids               selected boundary face ids
- * \param[in]  characteristic_length  characteristic length
- */
-/*----------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_iwf_set_faces(cs_lnum_t        n_faces,
-                                const cs_lnum_t  face_ids[],
-                                cs_real_t         characteristic_length);
+cs_wall_functions_iwf_set_faces
+(
+  cs_lnum_t        n_faces,
+  const cs_lnum_t  face_ids[],
+  cs_real_t        characteristic_length
+);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return the local number of boundary faces configured for IWF.
- *
- * This function does not allocate IWF storage. In parallel, the returned
- * count is local to the current MPI rank.
- *
- * \par IWF model source
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
- *
- * \return local number of current-mesh faces with a positive characteristic
- *         length
- */
 /*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_wall_functions_iwf_n_faces(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set integral wall function options.
- *
- * \par IWF model source
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
- *
- * \param[in]  options  IWF options
- */
-/*----------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_iwf_set_options(
-  const cs_wall_functions_iwf_options_t  *options);
+cs_wall_functions_iwf_set_options
+(
+  const cs_wall_functions_iwf_options_t  *options
+);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Disable the integral wall function on all boundary faces.
- *
- * \par IWF model source
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
- */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_wall_functions_iwf_reset_faces(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Return the latest integral wall function result for a boundary face.
- *
- * \par IWF model source
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
- *
- * \param[in]   face_id  boundary face id
- * \param[out]  result   latest result
- *
- * \return true if the face id and result pointer are valid, false otherwise
- */
-/*----------------------------------------------------------------------------*/
 
 bool
-cs_wall_functions_iwf_get_result(
-  cs_lnum_t                       face_id,
-  cs_wall_functions_iwf_result_t *result);
+cs_wall_functions_iwf_get_result
+(
+  cs_lnum_t                        face_id,
+  cs_wall_functions_iwf_result_t  *result
+);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Update integral wall function results for all configured faces.
- *
- * This function is intended for the wall boundary-condition assembly.
- *
- * \par IWF model source
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
- *
- * \param[in]  wall_temperature  imposed wall temperatures, or null
- */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_iwf_compute(const cs_real_t  wall_temperature[]);
+cs_wall_functions_iwf_compute
+(
+  const cs_real_t  wall_temperature[]
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1527,6 +1340,7 @@ cs_wall_functions_iwf_compute(const cs_real_t  wall_temperature[]);
  * \param[in]     turb_prandtl  turbulent Prandtl
  * \param[in]     icodcl_th_fid  icodcl_th_f[f_id]]
  * \param[in]     flux
+ * \param[in]     f_th          pointer to thermal field
  * \param[in,out] iuntur        indicator: 0 in the viscous sublayer
  * \param[in,out] nsubla        counter of cell in the viscous sublayer
  * \param[in,out] nlogla        counter of cell in the log-layer
@@ -1546,22 +1360,22 @@ cs_wall_functions_iwf_compute(const cs_real_t  wall_temperature[]);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
-                           cs_real_t         l_visc,
-                           cs_real_t         t_visc,
-                           cs_real_t         vel,
-                           cs_real_t         y,
-                           cs_real_t         rough_d,
-                           cs_real_t         rnnb,
-                           cs_real_t         kinetic_en,
-                           cs_real_t         rough_t,
-                           cs_real_t         buoyant_param,
-                           cs_real_t         delta_t,
-                           cs_real_t         turb_prandtl,
-                           int               icodcl_th_fid,
-                           cs_real_t         flux,
-                           cs_field_t       *f_th,
-                           int              *iuntur,
+cs_wall_functions_velocity(cs_wall_f_type_t   iwallf,
+                           cs_real_t          l_visc,
+                           cs_real_t          t_visc,
+                           cs_real_t          vel,
+                           cs_real_t          y,
+                           cs_real_t          rough_d,
+                           cs_real_t          rnnb,
+                           cs_real_t          kinetic_en,
+                           cs_real_t          rough_t,
+                           cs_real_t          buoyant_param,
+                           cs_real_t          delta_t,
+                           cs_real_t          turb_prandtl,
+                           int                icodcl_th_fid,
+                           cs_real_t          flux,
+                           const cs_field_t  *f_th,
+                           int               *iuntur,
                            cs_gnum_t        *nsubla,
                            cs_gnum_t        *nlogla,
                            cs_real_t        *ustar,

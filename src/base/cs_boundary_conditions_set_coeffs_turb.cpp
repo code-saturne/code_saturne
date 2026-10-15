@@ -128,29 +128,31 @@ static const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
  * This coupling to the code_saturne assembly is an integration choice; the
  * physical IWF model consumed here comes from the reference below.
  *
- * \par Source of the IWF model consumed by this integration helper
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
+ * \par Reference
+ * See Borel et al.~\cite borel2026indoor.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
-                                               int          isvhb,
-                                               cs_real_t    byplus[],
-                                               cs_real_t    bdplus[],
-                                               cs_real_t    buk[],
-                                               cs_real_t    buet[],
-                                               cs_real_t    bcfnns[],
-                                               cs_real_t    bdlmo[],
-                                               cs_real_t    hbord[],
-                                               cs_real_t    theipb[],
-                                               cs_real_t   *tetmax,
-                                               cs_real_t   *tetmin,
-                                               cs_real_t   *tplumx,
-                                               cs_real_t   *tplumn)
+_cs_boundary_conditions_set_coeffs_turb_scalar
+(
+  cs_field_t        *f_sc,
+  int                isvhb,
+  bool               iwf_configured,
+  const cs_field_t  *f_th,
+  const cs_real_t    byplus[],
+  const cs_real_t    bdplus[],
+  const cs_real_t    buk[],
+  const cs_real_t    buet[],
+  const cs_real_t    bcfnns[],
+  const cs_real_t    bdlmo[],
+  cs_real_t          hbord[],
+  const cs_real_t    theipb[],
+  cs_real_t         *tetmax,
+  cs_real_t         *tetmin,
+  cs_real_t         *tplumx,
+  cs_real_t         *tplumn
+)
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -178,7 +180,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
   const int ifcvsl = f_sc->get_key_int(kivisl);
   const int thermal_variable = cs_glob_thermal_model->thermal_variable;
-  const cs_field_t *f_th = cs_thermal_model_field();
   const bool iwf_configured_locally
     = cs_wall_functions_iwf_n_faces() > 0;
 
@@ -357,7 +358,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     bvar_s = f_scal_b->val;
 
   /* variable in I', initialized by bvar_s */
-  cs_real_t *var_ip = nullptr;
+  const cs_real_t *var_ip = nullptr;
   if (f_sc == f_th)
     var_ip = theipb;
   else if (f_scal_b != nullptr)
@@ -560,7 +561,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
   } /* End loop en boundary faces */
 
-  if (f_sc == f_th) {
+  if (f_sc == f_th && iwf_configured) {
     cs_gnum_t iwf_counts[2] = {n_iwf_thermal, n_iwf_user_override};
     cs_parall_counter(iwf_counts, 2);
     cs_parall_min(1, CS_REAL_TYPE, &iwf_user_h_min);
@@ -1383,7 +1384,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   const cs_real_3_t *cell_cen = fvq->cell_cen;
 
   const cs_real_t *gxyz = cs_get_glob_physical_constants()->gravity;
-  cs_field_t *f_th = cs_thermal_model_field();
+  const cs_field_t *f_th = cs_thermal_model_field();
 
   const cs_real_t cp0 = fluid_props->cp0;
   const int icp = fluid_props->icp;
@@ -3448,9 +3449,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       if (f_scal->dim == 1) {
         _cs_boundary_conditions_set_coeffs_turb_scalar
-          (f_scal, isvhb, byplus, bdplus,
+          (f_scal, isvhb, iwf_configured, f_th, byplus, bdplus,
            bpro_uk, bpro_ustar, bcfnns, bdlmo, hbord,
-          theipb, &tetmax, &tetmin, &tplumx, &tplumn);
+           theipb, &tetmax, &tetmin, &tplumx, &tplumn);
       }
 
       /* Vector field */

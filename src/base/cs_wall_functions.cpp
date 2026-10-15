@@ -166,11 +166,11 @@ static cs_wall_functions_t  _wall_functions =
 const cs_wall_functions_t  * cs_glob_wall_functions = &_wall_functions;
 
 static cs_wall_functions_iwf_options_t  _iwf_options = {
-  .ri_min = 1.,
-  .y_cross_min = 1.,
-  .tolerance = 1.e-4,
-  .max_iterations = 1000,
-  .first_time_step = 4
+  1.,    /* ri_min */
+  1.,    /* y_cross_min */
+  1.e-4, /* tolerance */
+  1000,  /* max_iterations */
+  4      /* first_time_step */
 };
 
 static const cs_mesh_t                    *_iwf_mesh = nullptr;
@@ -182,6 +182,111 @@ static bool                                _iwf_finalize_registered = false;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Classify a wall face for the natural-convection correlations.
+ *
+ * The face is classified as upward-facing horizontal (1), vertical (2), or
+ * downward-facing horizontal (3). The wall-to-cell temperature difference is
+ * used with the face-normal orientation to determine the direction of the
+ * buoyant heat flux. The angular limits correspond to 45 and 135 degrees.
+ *
+ * \par Reference
+ * See Borel et al.~\cite borel2026indoor.
+ *
+ * \param[in] cos_angle       scalar product of gravity and outward unit normal
+ *                            divided by gravity magnitude
+ * \param[in] wall_cell_delta wall temperature minus adjacent-cell temperature
+ *
+ * \return 1 for upward heat flux, 2 for a vertical face, or 3 for downward
+ *         heat flux
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_iwf_face_type(cs_real_t  cos_angle,
+               cs_real_t  wall_cell_delta)
+{
+  if (cos_angle > sqrt(0.5))
+    return (wall_cell_delta > 0.) ? 1 : 3;
+  if (cos_angle < -sqrt(0.5))
+    return (wall_cell_delta > 0.) ? 3 : 1;
+  return 2;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the natural-convection Nusselt number used by the IWF.
+ *
+ * This helper applies the horizontal upward, vertical, or horizontal downward
+ * correlation selected by \ref _iwf_face_type. The upward-facing correlation
+ * changes branch at \f$Ra = 8\,10^6\f$.
+ *
+ * \par Reference
+ * See Borel et al.~\cite borel2026indoor.
+ *
+ * \param[in] rayleigh  Rayleigh number based on the characteristic length
+ * \param[in] prandtl   molecular Prandtl number
+ * \param[in] face_type face class returned by \ref _iwf_face_type
+ *
+ * \return local Nusselt number
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_iwf_nusselt(cs_real_t  rayleigh,
+             cs_real_t  prandtl,
+             int        face_type)
+{
+  if (face_type == 1) {
+    if (rayleigh < 8.e6)
+      return 0.54 * pow(rayleigh, 0.25);
+    return 0.15 * cbrt(rayleigh);
+  }
+
+  if (face_type == 2) {
+    const cs_real_t denominator
+      = pow(1. + pow(0.437 / prandtl, 9. / 16.), 8. / 27.);
+    return cs_math_pow2(0.825
+                        + 0.387 * pow(rayleigh, 1. / 6.) / denominator);
+  }
+
+  return 0.27 * pow(rayleigh, 0.25);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the local Richardson number used to activate the IWF.
+ *
+ * The velocity scale is the magnitude of the adjacent-cell velocity. A near
+ * zero velocity returns \ref cs_math_big_r so that the buoyancy-dominated
+ * limit remains finite and no division by zero occurs.
+ *
+ * \par Reference
+ * See Borel et al.~\cite borel2026indoor.
+ *
+ * \param[in] gravity magnitude of gravitational acceleration
+ * \param[in] beta    thermal expansion coefficient
+ * \param[in] delta_t absolute outer-layer-to-wall temperature difference
+ * \param[in] length  wall characteristic length
+ * \param[in] speed   adjacent-cell velocity magnitude
+ *
+ * \return local Richardson number, or \ref cs_math_big_r at near-zero speed
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_iwf_richardson(cs_real_t  gravity,
+                cs_real_t  beta,
+                cs_real_t  delta_t,
+                cs_real_t  length,
+                cs_real_t  speed)
+{
+  if (speed <= 1.e-6)
+    return cs_math_big_r;
+  return gravity * beta * delta_t * length / cs_math_pow2(speed);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Release all storage owned by the integral wall function extension.
  *
  * This code_saturne integration helper is not a physical equation from the
@@ -189,11 +294,8 @@ static bool                                _iwf_finalize_registered = false;
  * owns the cleanup of both face arrays. It also clears the borrowed mesh
  * reference and resets the associated sizes and counters.
  *
- * \par IWF model implemented by this storage
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
+ * \par Reference
+ * See Borel et al.~\cite borel2026indoor.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -217,14 +319,8 @@ _iwf_finalize(void)
  * initialized. The function registers \ref _iwf_finalize only after storage
  * has been allocated successfully and never more than once at a time.
  *
- * This code_saturne lifecycle helper is an integration choice, not a physical
- * equation from the reference below.
- *
- * \par IWF model implemented by this storage
- * Borel, P., Moulouel, R., Houvin, M., Ferrand, M., Benhamadouche, S., 2026.
- * Indoor turbulent airflow modelling with a new integral buoyant wall
- * function. International Journal of Heat and Fluid Flow 117, 110130.
- * https://doi.org/10.1016/j.ijheatfluidflow.2025.110130
+ * \par Reference
+ * See Borel et al.~\cite borel2026indoor.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -263,6 +359,90 @@ _iwf_ensure_storage(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute friction velocity u* and surface sensible heat flux q0
+ * for a non neutral atmospheric surface layer using the explicit formula
+ * developed for the ECMWF by Louis (1982).
+ *
+ * \param[in]     utau          tangential mean velocity
+ * \param[in]     rough_d       roughness z0
+ * \param[in]     distbf        distance between cell center and border face
+ * \param[in]     duplus        1 over dimensionless velocity in neutral cond.
+ * \param[in]     dtplus        1 over dimensionless temp. in neutral cond.
+ * \param[in]     prt           turbulent Prandtl number
+ * \param[in]     yplus_t       thermal dimensionless wall distance
+ * \param[in]     buoyant_param g beta delta Theta
+ * \param[in]     delta_t       delta Theta
+ * \param[out]    uet           friction velocity
+ * \param[out]    cfnns         non neutral correction for scalar profiles
+ * \param[out]    cfnnk         non neutral correction for k profiles
+ * \param[out]    cfnne         non neutral correction for eps profiles
+ * \param[out]    dlmo          inverse Monin Obukhov length (for log only)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_atmo_louis(const cs_real_t  utau,
+            const cs_real_t  rough_d,
+            const cs_real_t  distbf,
+            const cs_real_t  duplus,
+            const cs_real_t  dtplus,
+            const cs_real_t  prt,
+            const cs_real_t  yplus_t,
+            const cs_real_t  buoyant_param,
+            const cs_real_t  delta_t,
+            cs_real_t       *uet,
+            cs_real_t       *cfnns,
+            cs_real_t       *cfnnk,
+            cs_real_t       *cfnne,
+            cs_real_t       *dlmo)
+{
+  const cs_lnum_t nt_cur = cs_glob_time_step->nt_cur;
+
+  const cs_real_t b = 5.0;
+  const cs_real_t c = b;
+  const cs_real_t d = b;
+
+  cs_real_t rib;
+  if (cs::abs(utau) < cs_math_epzero || nt_cur == 1)
+    rib = 0.0;
+  else
+    rib = buoyant_param * delta_t * distbf / utau / utau;
+
+  cs_real_t fm, fh, fmden1, fmden2, fhden;
+  if (rib >= cs_math_epzero) {
+    fm = 1.0 / (1.0 + 2.0 * b * rib / sqrt(1.0 + d * rib));
+    fh = 1.0 / (1.0 + 3.0 * b * rib * sqrt(1.0 + d * rib));
+  }
+  else {
+    fmden1 = (yplus_t + 1.0) * cs::abs(rib);
+    fmden2 = 1.0 + 3.0 * b * c * duplus * prt * dtplus * sqrt(fmden1);
+    fm = 1.0 - 2.0 * b * rib / fmden2;
+    fhden = 3.0 * b * c * duplus * prt * dtplus * sqrt(yplus_t + 1.0);
+    fh = 1.0 - (3.0 * b * rib) / (1.0 + fhden * sqrt(cs::abs(rib)));
+  }
+
+  if (fm <= cs_math_epzero)
+    fm = cs_math_epzero;
+
+  if (cs::abs(fh) <= cs_math_epzero)
+    fh = cs_math_epzero;
+
+  if ((1.0 - rib) > cs_math_epzero) {
+    *cfnnk = sqrt(1.0 - rib);
+    *cfnne = (1.0 - rib) / sqrt(fm);
+  }
+  else {
+    *cfnnk = 1.0;
+    *cfnne = 1.0;
+  }
+
+  *uet = duplus * utau * sqrt(fm);
+  *cfnns = fh / sqrt(fm);
+  *dlmo = rib * sqrt(fm) / (distbf + rough_d);
+}
+
+/*----------------------------------------------------------------------------*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -283,11 +463,27 @@ cs_get_glob_wall_functions(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the characteristic length for selected boundary faces.
+ *
+ * A non-positive characteristic length disables IWF on the selected faces.
+ *
+ * \par Reference
+ * See Borel et al.~\cite borel2026indoor.
+ *
+ * \param[in]  n_faces                number of selected faces
+ * \param[in]  face_ids               selected boundary face ids
+ * \param[in]  characteristic_length  characteristic length
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_iwf_set_faces(cs_lnum_t        n_faces,
-                                const cs_lnum_t  face_ids[],
-                                cs_real_t         characteristic_length)
+cs_wall_functions_iwf_set_faces
+(
+  cs_lnum_t        n_faces,
+  const cs_lnum_t  face_ids[],
+  cs_real_t        characteristic_length
+)
 {
   if (n_faces < 0 || (n_faces > 0 && face_ids == nullptr))
     bft_error(__FILE__, __LINE__, 0, "Invalid IWF face selection.");
@@ -319,6 +515,16 @@ cs_wall_functions_iwf_set_faces(cs_lnum_t        n_faces,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the local number of boundary faces configured for IWF.
+ *
+ * This function does not allocate IWF storage. In parallel, the returned
+ * count is local to the current MPI rank.
+ *
+ * \return local number of current-mesh faces with a positive characteristic
+ *         length
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_wall_functions_iwf_n_faces(void)
@@ -334,10 +540,18 @@ cs_wall_functions_iwf_n_faces(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set integral wall function options.
+ *
+ * \param[in]  options  IWF options
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_iwf_set_options(
-  const cs_wall_functions_iwf_options_t  *options)
+cs_wall_functions_iwf_set_options
+(
+  const cs_wall_functions_iwf_options_t  *options
+)
 {
   if (   options == nullptr
       || options->ri_min < 0.
@@ -350,6 +564,10 @@ cs_wall_functions_iwf_set_options(
   _iwf_options = *options;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Disable the integral wall function on all boundary faces.
+ */
 /*----------------------------------------------------------------------------*/
 
 void
@@ -371,11 +589,22 @@ cs_wall_functions_iwf_reset_faces(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the latest integral wall function result for a boundary face.
+ *
+ * \param[in]   face_id  boundary face id
+ * \param[out]  result   latest result
+ *
+ * \return true if the face id and result pointer are valid, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
 
 bool
-cs_wall_functions_iwf_get_result(
-  cs_lnum_t                       face_id,
-  cs_wall_functions_iwf_result_t *result)
+cs_wall_functions_iwf_get_result
+(
+  cs_lnum_t                        face_id,
+  cs_wall_functions_iwf_result_t  *result
+)
 {
   if (   result == nullptr
       || cs_glob_mesh == nullptr
@@ -395,9 +624,23 @@ cs_wall_functions_iwf_get_result(
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update integral wall function results for all configured faces.
+ *
+ * This function is intended for the wall boundary-condition assembly.
+ *
+ * \par Reference
+ * See Borel et al.~\cite borel2026indoor.
+ *
+ * \param[in]  wall_temperature  imposed wall temperatures, or null
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_iwf_compute(const cs_real_t  wall_temperature[])
+cs_wall_functions_iwf_compute
+(
+  const cs_real_t  wall_temperature[]
+)
 {
   _iwf_ensure_storage();
 
@@ -701,122 +944,6 @@ cs_wall_functions_iwf_compute(const cs_real_t  wall_temperature[])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute friction velocity u* and surface sensible heat flux q0
- * for a non neutral atmospheric surface layer using the explicit formula
- * developed for the ECMWF by Louis (1982)
-
- * \param[in]     utau        tangential mean velocity
- * \param[in]     rough_d     roughness z0
- * \param[in]     distbf      distance between the cell center and
-                                  the center of gravity of the border face
- * \param[in]     duplus      1 over dimensionless velocity in neutral
- *                            conditions
- * \param[in]     dtplus      1 over dimensionless temperature in neutral
- *                            conditions
- * \param[in]     prt         turbulent Prandtl number
- * \param[in]     yplus_t     thermal dimensionless wall distance
- * \param[in]     buoyant_param g beta delta Theta
- * \param[in]     delta_t     delta Theta
- * \param[out]    uet         friction velocity
- * \param[out]    cfnns       non neutral correction coefficients for profiles
-                              of scalar
- * \param[out]    cfnnk       non neutral correction coefficients
-                              for profiles of k
- * \param[out]    cfnne       non neutral correction coefficients
-                              for profiles of eps
- * \param[out]    dlmo        inverse Monin Obukhov length (for log only)
- * \param[in]     temp        potential temperature in boundary cell
- * \param[in]     totwt       total water content in boundary cell
- * \param[in]     liqwt       liquid water content in boundary cell
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_atmo_louis(const cs_real_t  utau,
-            const cs_real_t  rough_d,
-            const cs_real_t  distbf,
-            const cs_real_t  duplus,
-            const cs_real_t  dtplus,
-            const cs_real_t  prt,
-            const cs_real_t  yplus_t,
-            const cs_real_t  buoyant_param,
-            const cs_real_t  delta_t,
-            cs_real_t       *uet,
-            cs_real_t       *cfnns,
-            cs_real_t       *cfnnk,
-            cs_real_t       *cfnne,
-            cs_real_t       *dlmo)
-{
-  const cs_lnum_t nt_cur = cs_glob_time_step->nt_cur;
-
-  /* Initializations
-  --------------- */
-
-  const cs_real_t b = 5.0;
-  const cs_real_t c = b; // Already corrected with a equivalent Prantl number equal to 0.71
-  const cs_real_t d = b;
-
-  /* Compute layer average Richardson number */
-
-  /* NB: rib = 0 if thermal flux conditions are imposed and tpot1 not defined */
-  /* Patch for the initial time step when thermal field is not initalized */
-  cs_real_t rib;
-  if (cs::abs(utau) < cs_math_epzero || nt_cur == 1)
-    rib = 0.0;
-  else
-    rib = buoyant_param * delta_t * distbf/utau/utau;
-
-  /* Compute correction factors based on ECMWF parametrisation
-     Louis (1982) */
-
-  cs_real_t fm, fh, fmden1, fmden2, fhden;
-  if (rib >= cs_math_epzero) {
-    /* Stable case */
-    fm = 1.0 / (1.0 + 2.0*b*rib/sqrt(1.0 + d*rib));
-    fh = 1.0 / (1.0 + 3.0*b*rib*sqrt(1.0 + d*rib));
-  }
-  else {
-    /* Unstable case */
-    fmden1 = (yplus_t + 1.0) * cs::abs(rib);
-    fmden2 = 1.0 + 3.0 * b * c * duplus * prt * dtplus * sqrt(fmden1);
-    fm = 1.0 - 2.0 * b * rib / fmden2;
-    fhden = 3.0 * b * c * duplus * prt * dtplus * sqrt(yplus_t + 1.0);
-    fh = 1.0 - (3.0*b*rib)/(1.0 + fhden * sqrt(cs::abs(rib)));
-  }
-
-  if (fm <= cs_math_epzero)
-    fm = cs_math_epzero;
-
-  if (cs::abs(fh) <= cs_math_epzero)
-    fh = cs_math_epzero;
-
-  /* Stable */
-  if ((1.0-rib) > cs_math_epzero) {
-    *cfnnk = sqrt(1.0 - rib); /* TODO write it +correction with turbulent Prandtl */
-    *cfnne = (1.0 - rib) / sqrt(fm);
-  }
-  else {
-    *cfnnk = 1.0;
-    *cfnne = 1.0;
-  }
-
-  /* Note: non neutral correction coefficients for profiles of wind
-     (Re) compute friction velocity uet (for non neutral)
-     uet = U/U^+ = U / U^{+,n} * sqrt(fm) */
-  *uet = duplus * utau * sqrt(fm);
-
-  /* Compute surface sensible heat flux q0 (can be useful for post-processing)
-     Note: non-consistent with two velocity scales */
-  *cfnns = fh / sqrt(fm);
-  //Note:  q0 = (tpot1 - tpot2) * (*uet) * dtplus * (*cfnns);
-
-  /* Compute local Obukhov inverse length for log
-     1/L =  Ri / (z Phim) */
-  *dlmo = rib * sqrt(fm) / (distbf + rough_d);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
  *
  * \param[in]     iwallf        wall function type
@@ -834,6 +961,7 @@ _atmo_louis(const cs_real_t  utau,
  * \param[in]     turb_prandtl  turbulent Prandtl
  * \param[in]     icodcl_th_fid  icodcl_th_f[f_id]]
  * \param[in]     flux
+ * \param[in]     f_th          pointer to thermal field
  * \param[in,out] iuntur        indicator: 0 in the viscous sublayer
  * \param[in,out] nsubla        counter of cell in the viscous sublayer
  * \param[in,out] nlogla        counter of cell in the log-layer
@@ -853,22 +981,22 @@ _atmo_louis(const cs_real_t  utau,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
-                           cs_real_t         l_visc,
-                           cs_real_t         t_visc,
-                           cs_real_t         vel,
-                           cs_real_t         y,
-                           cs_real_t         rough_d,
-                           cs_real_t         rnnb,
-                           cs_real_t         kinetic_en,
-                           cs_real_t         rough_t,
-                           cs_real_t         buoyant_param,
-                           cs_real_t         delta_t,
-                           cs_real_t         turb_prandtl,
-                           int               icodcl_th_fid,
-                           cs_real_t         flux,
-                           cs_field_t       *f_th,
-                           int              *iuntur,
+cs_wall_functions_velocity(cs_wall_f_type_t   iwallf,
+                           cs_real_t          l_visc,
+                           cs_real_t          t_visc,
+                           cs_real_t          vel,
+                           cs_real_t          y,
+                           cs_real_t          rough_d,
+                           cs_real_t          rnnb,
+                           cs_real_t          kinetic_en,
+                           cs_real_t          rough_t,
+                           cs_real_t          buoyant_param,
+                           cs_real_t          delta_t,
+                           cs_real_t          turb_prandtl,
+                           int                icodcl_th_fid,
+                           cs_real_t          flux,
+                           const cs_field_t  *f_th,
+                           int               *iuntur,
                            cs_gnum_t        *nsubla,
                            cs_gnum_t        *nlogla,
                            cs_real_t        *ustar,
@@ -882,6 +1010,8 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                            cs_real_t        *cfnne,
                            cs_real_t        *dlmo)
 {
+  CS_UNUSED(f_th);
+
   cs_real_t lmk;
   bool wf = true;
 
@@ -1128,11 +1258,6 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                       delta_t,
                                       dlmo,
                                       ustar);
-
-      /* Take stability into account for the turbulent velocity scale */
-      cs_real_t coef_mom = cs_mo_phim(y + z0, *dlmo);
-      const cs_real_t one_minus_ri
-        = 1 - (y + z0) * *dlmo / coef_mom;
     }
 
     else if (icodcl_th_fid == 3) {
