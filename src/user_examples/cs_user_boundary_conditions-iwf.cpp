@@ -26,12 +26,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------
- * Local headers
- *----------------------------------------------------------------------------*/
-
 #include "cs_headers.h"
 
 /*============================================================================
@@ -51,16 +45,10 @@
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(cs_domain_t  *domain,
-                            int           bc_type[])
+cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
+                            [[maybe_unused]] int           bc_type[])
 {
-  CS_UNUSED(domain);
-  CS_UNUSED(bc_type);
-
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  cs_array<cs_lnum_t> face_ids(n_b_faces);
-
-  const char *selectors[] = {
+  const char *zone_names[] = {
     "X0",
     "X1",
     "Z0",
@@ -80,12 +68,11 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
   cs_wall_functions_iwf_reset_faces();
 
   for (int zone_id = 0; zone_id < 4; zone_id++) {
-    cs_lnum_t n_faces = 0;
-    cs_selector_get_b_face_list(selectors[zone_id],
-                                &n_faces,
-                                face_ids);
-    cs_wall_functions_iwf_set_faces(n_faces,
-                                    face_ids,
+    const cs_zone_t *z = cs_boundary_zone_by_name(zone_names[zone_id]);
+    cs_wall_functions_iwf_set_faces(z->n_elts,
+                                    z->elt_ids,
                                     characteristic_lengths[zone_id]);
   }
 }
+
+/*----------------------------------------------------------------------------*/
