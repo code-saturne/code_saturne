@@ -280,6 +280,9 @@ int
 cs_map_name_to_id(cs_map_name_to_id_t  *m,
                   const char           *key)
 {
+  if (m == nullptr)
+    return -1; // Not found
+
   int start_id, end_id, mid_id;
   int cmp_ret = 1;
 
