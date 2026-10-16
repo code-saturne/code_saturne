@@ -1973,7 +1973,7 @@ cs_gdot_xx_xy(cs_lnum_t        n,
 
   cs_dot_xx_xy(n, x, y, &retval[0], &retval[1]);
 
-  cs_parall_sum(2, CS_DOUBLE, &retval);
+  cs_parall_sum(2, CS_DOUBLE, retval);
 
   *xx = retval[0];
   *xy = retval[1];
