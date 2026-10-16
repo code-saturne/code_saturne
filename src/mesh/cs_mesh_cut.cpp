@@ -1075,22 +1075,21 @@ _cut_cells(cs_mesh_t             *mesh,
           else {
 
             if (sub_face_in_cycle) {
-              if (verbosity >= 2)
+              if (verbosity >= 2) {
                 bft_printf("--> sub_face is in cycle, Keep standard cell :\n");
-              if (is_internal) {
-                if (verbosity >= 2)
+                if (is_internal) {
                   bft_printf("f_id = %d, sub_f_id = %d, i_face_cells = %d %d,"
                              " _i_face_cells = %d %d\n",
                              f_id, sub_f_id,
                              i_face_cells[f_id][0], i_face_cells[f_id][1],
                              _i_face_cells[sub_f_id][0],
                              _i_face_cells[sub_f_id][1]);
-              }
-              else {
-                if (verbosity >= 2)
+                }
+                else {
                   bft_printf("bfacecell = %d, _b_face_cells = %d\n",
                              mesh->b_face_cells[f_id],
                              _b_face_cells[sub_f_id]);
+                }
               }
             }
             else {
@@ -1103,6 +1102,7 @@ _cut_cells(cs_mesh_t             *mesh,
                     _i_face_cells[sub_f_id][0] = n_cells + n_new_cells;
                   else if (i_face_cells[f_id][1] == c_id)
                     _i_face_cells[sub_f_id][1] = n_cells + n_new_cells;
+
                   if (verbosity >= 2)
                     bft_printf("f_id = %d, sub_f_id = %d, "
                                "ifacecell = %d %d, _i_face_cells = %d %d\n",
@@ -1113,6 +1113,7 @@ _cut_cells(cs_mesh_t             *mesh,
                 }
                 else {
                   _b_face_cells[sub_f_id] = n_cells + n_new_cells;
+
                   if (verbosity >= 2)
                     bft_printf("bfacecell = %d, _b_face_cells = %d\n",
                                mesh->b_face_cells[f_id],
@@ -1121,47 +1122,42 @@ _cut_cells(cs_mesh_t             *mesh,
                 }
               }
               else if (all_vtx_sign_is_minus_one) {
-                if (verbosity >= 2)
+                if (verbosity >= 2) {
                   bft_printf("--> sub_face is NOT in cycle, "
                              "isolated face with vtx sign = -1\n");
-                if (is_internal) {
-                  if (i_face_cells[f_id][0] == c_id)
-                    _i_face_cells[sub_f_id][0] = n_cells + n_new_cells;
-                  else if (i_face_cells[f_id][1] == c_id)
-                    _i_face_cells[sub_f_id][1] = n_cells + n_new_cells;
-                  if (verbosity >= 2)
+                  if (is_internal) {
                     bft_printf("f_id = %d, sub_f_id = %d, "
                                "i_face_cells = %d %d, _i_face_cells = %d %d\n",
                                f_id, sub_f_id,
                                i_face_cells[f_id][0], i_face_cells[f_id][1],
                                _i_face_cells[sub_f_id][0],
                                _i_face_cells[sub_f_id][1]);
-                }
-                else {
-                  if (verbosity >= 2)
+                  }
+                  else {
                     bft_printf("bfacecell = %d, _b_face_cells = %d\n",
                                mesh->b_face_cells[f_id],
                                _b_face_cells[sub_f_id]);
+                  }
                 }
               }
               else {
-                if (verbosity >= 2)
+                if (verbosity >= 2) {
                   bft_printf("--> sub_face is NOT in cycle, keep standard, "
                              "vtx sign is 0 or +1 :\n");
-                if (is_internal) {
-                  if (verbosity >= 2)
+
+                  if (is_internal) {
                     bft_printf("f_id = %d, sub_f_id = %d, "
                                "i_face_cells = %d %d, _i_face_cells = %d %d\n",
                                f_id, sub_f_id,
                                i_face_cells[f_id][0], i_face_cells[f_id][1],
                                _i_face_cells[sub_f_id][0],
                                _i_face_cells[sub_f_id][1]);
-                }
-                else {
-                  if (verbosity >= 2)
+                  }
+                  else {
                     bft_printf("bfacecell = %d, _b_face_cells = %d\n",
                                mesh->b_face_cells[f_id],
                                _b_face_cells[sub_f_id]);
+                  }
                 }
               }
             }
