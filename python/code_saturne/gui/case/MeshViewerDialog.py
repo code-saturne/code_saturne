@@ -60,7 +60,10 @@ Important technical points
 
 #  Standard imports
 import os
+import math
+import re
 import logging
+import unittest
 import numpy as np
 
 #  Qt imports (via Code_Saturne wrappers)
@@ -68,22 +71,80 @@ from code_saturne.gui.base.QtCore    import *
 from code_saturne.gui.base.QtGui     import *
 from code_saturne.gui.base.QtWidgets import *
 
-# QTimer, QThread and pyqtSignal are not always exported by wrappers
-
 if QT_API == "PYSIDE6":
     try:
         import Signal as pyqtSignal # Alias
     except ImportError:
         pass
-###try:
-###    from PyQt5.QtCore import QTimer, QThread, pyqtSignal
-###except ImportError:
-###    try:
-###        from PySide6.QtCore import QTimer, QThread, Signal as pyqtSignal
-###    except ImportError:
-###        pass
 
 from code_saturne.model.Common import GuiParam
+
+# ============================================================================
+# Profile formula evaluation
+# ============================================================================
+
+def eval_profile_formula(formula, nb_points, notebook_vars=None):
+    """
+    Evaluate mathematical formula for 1D profile where parameter s in [0, 1].
+
+    Parameters
+    ----------
+    formula : str
+        Formula defining x, y, z as a function of s.
+        Supports C/Python syntax, semicolons, comments (# or //), and power (^).
+    nb_points : int, optional
+        Number of points along the segment, default 200 (minimum 2).
+    notebook_vars : dict, optional
+        Dictionary of notebook variables/constants.
+
+    Returns
+    -------
+    np.ndarray of shape (nb_points, 3)
+        Array of (x, y, z) coordinates.
+    """
+    if not formula or not str(formula).strip():
+        raise ValueError("Formula is empty.")
+
+    # 1. Clean comments (// style)
+    cleaned = re.sub(r'//.*', '', str(formula))
+    # 2. Replace ^ with ** (power)
+    cleaned = re.sub(r'\^', '**', cleaned)
+    # 3. Replace semicolons with newlines
+    cleaned = cleaned.replace(';', '\n')
+    # 4. Strip indentation from each line to avoid unexpected indent
+    lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+    cleaned = '\n'.join(lines)
+
+    # Base math environment
+    math_env = {k: getattr(math, k) for k in dir(math) if not k.startswith('_')}
+    math_env['pi'] = math.pi
+    math_env['e'] = math.e
+    math_env['abs'] = abs
+    math_env['min'] = min
+    math_env['max'] = max
+
+    if notebook_vars:
+        for k, v in notebook_vars.items():
+            try:
+                math_env[str(k)] = float(v)
+            except (ValueError, TypeError):
+                pass
+
+    nb_points = max(int(nb_points), 2)
+    s_vals = np.linspace(0.0, 1.0, nb_points)
+
+    compiled = compile(cleaned, '<profile_formula>', 'exec')
+    points = []
+    for s in s_vals:
+        scope = dict(math_env)
+        scope['s'] = float(s)
+        exec(compiled, {'__builtins__': {}}, scope)
+        if 'x' not in scope or 'y' not in scope or 'z' not in scope:
+            missing = [var for var in ['x', 'y', 'z'] if var not in scope]
+            raise ValueError(f"Formula must define variables x, y, and z. Missing: {missing}")
+        points.append([float(scope['x']), float(scope['y']), float(scope['z'])])
+
+    return np.array(points, dtype=np.float64)
 
 # ============================================================================
 # Logger
@@ -110,6 +171,7 @@ else:
 # ============================================================================
 # Import ".csm" reader
 # ============================================================================
+
 from code_saturne.base.cs_csm_reader import (
     read_csm,
     decode_csm_groups,
@@ -296,8 +358,12 @@ class MeshViewerDialog(QDialog):
     # Signal emitted after saving probes to XML
     probes_updated = pyqtSignal()
 
-    def __init__(self, parent, csm_file, zone_label=None, zone_expr=None,
-                 case=None, probes=None):
+    def __init__(self, parent, csm_file=None, zone_label=None, zone_expr=None,
+                 case=None, probes=None, profile=None, profiles=None,
+                 profile_display_mode="line", display_mode=None,
+                 show_wireframe=True, show_volume=True,
+                 stl_file=None, stl_label=None, seed_points=None):
+
         super().__init__(parent)
 
         #  Attributes
@@ -308,18 +374,52 @@ class MeshViewerDialog(QDialog):
         # Local copy of probes: editable without touching XML until "Apply"
         self.probes     = list(probes) if probes else None
 
+        # Local copy of profiles (for 1D profile visualization mode)
+        if profiles:
+            self.profiles = list(profiles)
+        elif profile:
+            self.profiles = [profile]
+        else:
+            self.profiles = None
+
+        self._selected_profile_idx = None
+        # Profile display mode: 'line' (straight line / tube) or 'points' (discrete probe spheres)
+        self.profile_display_mode = display_mode or profile_display_mode or "line"
+
+        # STL mode attributes
+        self.stl_file = stl_file
+        self.stl_label = stl_label or (os.path.basename(stl_file) if stl_file else None)
+        self.seed_points = list(seed_points) if seed_points else []
+        self.stl_polydata = None
+        self.show_stl = True
+        self.show_stl_edges = False
+        self.show_seed_points = True
+        self.stl_representation = "surface"
+
+        # Wireframe & translucent volume display flags for background mesh
+        self.show_wireframe = bool(show_wireframe)
+        self.show_volume    = bool(show_volume)
+
         # Warning flag on close if unsaved modifications exist
         self._probes_modified = False
 
         #  Window title depending on mode
-        if self.probes is not None:
-            self.setWindowTitle("Probes — %s" % os.path.basename(csm_file))
+        mesh_name = os.path.basename(csm_file) if csm_file else "No mesh"
+        if self.stl_file is not None:
+            lbl = self.stl_label if self.stl_label else "STL"
+            self.setWindowTitle("STL Object : %s — %s" % (lbl, mesh_name))
+        elif self.probes is not None:
+            self.setWindowTitle("Probes — %s" % mesh_name)
+        elif self.profiles is not None:
+            lbl = self.profiles[0].get('label', '') if len(self.profiles) == 1 else ''
+            if lbl:
+                self.setWindowTitle("Profile : %s — %s" % (lbl, mesh_name))
+            else:
+                self.setWindowTitle("Profiles — %s" % mesh_name)
         elif zone_label:
-            self.setWindowTitle("Zone : %s — %s" % (zone_label,
-                                                      os.path.basename(csm_file)))
+            self.setWindowTitle("Zone : %s — %s" % (zone_label, mesh_name))
         else:
-            self.setWindowTitle("Mesh viewer — %s" %
-                                os.path.basename(csm_file))
+            self.setWindowTitle("Mesh viewer — %s" % mesh_name)
 
         self.resize(1100, 650)
         self.setModal(False)  # non-blocking: main GUI remains interactive
@@ -330,13 +430,22 @@ class MeshViewerDialog(QDialog):
             return
 
         pv.global_theme.allow_empty_mesh = True
-        self._build_loading_ui()
 
-        # Start loading in background thread
-        self._loader = MeshLoaderThread(csm_file, probes=self.probes)
-        self._loader.finished.connect(self._on_mesh_loaded)
-        self._loader.error.connect(self._on_mesh_error)
-        self._loader.start()
+        if csm_file:
+            self._build_loading_ui()
+            # Start loading in background thread
+            self._loader = MeshLoaderThread(csm_file, probes=self.probes)
+            self._loader.finished.connect(self._on_mesh_loaded)
+            self._loader.error.connect(self._on_mesh_error)
+            self._loader.start()
+        else:
+            self.grid = None
+            self.gc_to_name = {}
+            self.name_to_tags = {}
+            self.subsets = {}
+            self.group_pairs = {}
+            self._probe_spheres = []
+            self._build_ui()
 
     # =========================================================================
     # Asynchronous loading
@@ -389,11 +498,23 @@ class MeshViewerDialog(QDialog):
         layout = QHBoxLayout(self)
         left   = QVBoxLayout()
 
+        if not hasattr(self, 'show_wireframe'):
+            self.show_wireframe = True
+        if not hasattr(self, 'show_volume'):
+            self.show_volume = True
+
         # Left panel depending on mode
-        if self.probes is not None:
+        if getattr(self, 'stl_file', None) is not None:
+            self._unique_names = list(self.name_to_tags.keys()) if getattr(self, 'name_to_tags', None) else []
+            self._build_stl_panel(left)
+        elif getattr(self, 'probes', None) is not None:
             # Probes mode: initialize _unique_names for mesh rendering
             self._unique_names = list(self.name_to_tags.keys())
             self._build_probe_panel(left)
+        elif getattr(self, 'profiles', None) is not None:
+            # Profiles mode: initialize _unique_names for mesh rendering
+            self._unique_names = list(self.name_to_tags.keys())
+            self._build_profile_panel(left)
         else:
             # Groups/zones mode
             self._build_group_panel(left)
@@ -410,20 +531,171 @@ class MeshViewerDialog(QDialog):
         # VTK viewer (QtInteractor = standard QWidget)
         self.plotter = QtInteractor(self)
         layout.addWidget(self.plotter.interactor)
+        self.plotter.show_axes()
 
         # Viewer internal state
-        self._first_render       = True   # True → view_isometric() on first render
-        self._probe_actors       = {}     # {index: pyvista sphere actor}
-        self._selected_probe_idx = None   # selected probe index
+        self._first_render         = True   # True → view_isometric() on first render
+        self._probe_actors         = {}     # {index: pyvista sphere actor}
+        self._selected_probe_idx   = None   # selected probe index
+        self._profile_actors       = {}     # {index: (tube, start_sph, end_sph)}
+        self._selected_profile_idx = None   # selected profile index
 
         # Trigger first render after window is displayed
-        if self.probes is not None:
+        if getattr(self, 'stl_file', None) is not None:
+            QTimer.singleShot(300, self._show_stl)
+        elif getattr(self, 'probes', None) is not None:
             QTimer.singleShot(300, self._show_probes)
-        elif self.zone_expr:
+        elif getattr(self, 'profiles', None) is not None:
+            QTimer.singleShot(300, self._show_profiles)
+        elif getattr(self, 'zone_expr', None):
             QTimer.singleShot(300,
                 lambda: self._show_zone(self.zone_label, self.zone_expr))
         else:
             QTimer.singleShot(300, self._show_all)
+
+    def _build_stl_panel(self, left):
+        """Build left panel in STL visualization mode."""
+        left.addWidget(QLabel("<b>STL Object Details</b>"))
+
+        if not hasattr(self, 'stl_polydata'):
+            self.stl_polydata = None
+        if not hasattr(self, 'stl_representation'):
+            self.stl_representation = "surface"
+        if not hasattr(self, 'show_stl'):
+            self.show_stl = True
+        if not hasattr(self, 'show_stl_edges'):
+            self.show_stl_edges = False
+        if not hasattr(self, 'show_seed_points'):
+            self.show_seed_points = True
+        if not hasattr(self, 'seed_points'):
+            self.seed_points = []
+
+        # Load STL geometry info if not already loaded
+        stl_file = getattr(self, 'stl_file', None)
+        if self.stl_polydata is None and stl_file and os.path.isfile(stl_file):
+            try:
+                self.stl_polydata = pv.read(stl_file)
+            except Exception as e:
+                log.warning("Failed to load STL file %s: %s", stl_file, e)
+
+        # Details display
+        self.stl_details = QTextEdit()
+        self.stl_details.setReadOnly(True)
+        self.stl_details.setMaximumHeight(160)
+
+        stl_info = []
+        lbl = getattr(self, 'stl_label', None)
+        if lbl:
+            stl_info.append("<b>Label:</b> %s" % lbl)
+        if stl_file:
+            stl_info.append("<b>File:</b> %s" % os.path.basename(stl_file))
+
+        stl_bounds = None
+        if self.stl_polydata is not None:
+            stl_bounds = self.stl_polydata.bounds
+            stl_info.append("<b>Points:</b> %d" % self.stl_polydata.n_points)
+            stl_info.append("<b>Triangles:</b> %d" % self.stl_polydata.n_cells)
+            dx = stl_bounds[1] - stl_bounds[0]
+            dy = stl_bounds[3] - stl_bounds[2]
+            dz = stl_bounds[5] - stl_bounds[4]
+            stl_info.append("<b>Dimensions:</b><br/>&nbsp;ΔX=%.4g, ΔY=%.4g, ΔZ=%.4g" % (dx, dy, dz))
+            stl_info.append("<b>Bounds:</b><br/>"
+                           "&nbsp;X: [%.4g, %.4g]<br/>"
+                           "&nbsp;Y: [%.4g, %.4g]<br/>"
+                           "&nbsp;Z: [%.4g, %.4g]" % (
+                               stl_bounds[0], stl_bounds[1],
+                               stl_bounds[2], stl_bounds[3],
+                               stl_bounds[4], stl_bounds[5]))
+
+        self.stl_details.setHtml("<br/>".join(stl_info))
+        left.addWidget(self.stl_details)
+
+        # Position check against CFD mesh bounds
+        mesh_bounds = None
+        if getattr(self, 'grid', None) is not None and hasattr(self.grid, 'bounds'):
+            mesh_bounds = self.grid.bounds
+        elif getattr(self, 'subsets', None):
+            all_pts = []
+            for sub in self.subsets.values():
+                if hasattr(sub, 'points') and len(sub.points) > 0:
+                    all_pts.append(sub.points)
+            if all_pts:
+                pts_arr = np.vstack(all_pts)
+                mesh_bounds = [pts_arr[:, 0].min(), pts_arr[:, 0].max(),
+                               pts_arr[:, 1].min(), pts_arr[:, 1].max(),
+                               pts_arr[:, 2].min(), pts_arr[:, 2].max()]
+
+        if stl_bounds is not None and mesh_bounds is not None:
+            tol = 1e-6
+            is_inside = (mesh_bounds[0] - tol <= stl_bounds[0] and
+                         stl_bounds[1] <= mesh_bounds[1] + tol and
+                         mesh_bounds[2] - tol <= stl_bounds[2] and
+                         stl_bounds[3] <= mesh_bounds[3] + tol and
+                         mesh_bounds[4] - tol <= stl_bounds[4] and
+                         stl_bounds[5] <= mesh_bounds[5] + tol)
+            if is_inside:
+                self.label_position_check = QLabel("<b style='color:#27ae60;'>✔ STL is INSIDE mesh bounds</b>")
+            else:
+                self.label_position_check = QLabel("<b style='color:#e67e22;'>⚠ STL extends OUTSIDE mesh bounds</b>")
+            self.label_position_check.setAlignment(Qt.AlignCenter)
+            left.addWidget(self.label_position_check)
+
+        # Visual separator
+        sep = QFrame()
+        sep.setFrameShape(QFrame.HLine)
+        sep.setFrameShadow(QFrame.Sunken)
+        left.addWidget(sep)
+
+        # STL display controls
+        left.addWidget(QLabel("<b>STL Display Options</b>"))
+        self.check_stl = QCheckBox("Show STL object")
+        self.check_stl.setChecked(self.show_stl)
+        self.check_stl.toggled.connect(self._on_stl_toggled)
+        left.addWidget(self.check_stl)
+
+        left.addWidget(QLabel("Representation:"))
+        self.combo_stl_rep = QComboBox()
+        self.combo_stl_rep.addItem("Surface", "surface")
+        self.combo_stl_rep.addItem("Surface with edges", "surface_edges")
+        self.combo_stl_rep.addItem("Wireframe", "wireframe")
+        self.combo_stl_rep.addItem("Points", "points")
+        self.combo_stl_rep.currentIndexChanged.connect(self._on_stl_rep_changed)
+        left.addWidget(self.combo_stl_rep)
+
+        # Visual separator
+        sep2 = QFrame()
+        sep2.setFrameShape(QFrame.HLine)
+        sep2.setFrameShadow(QFrame.Sunken)
+        left.addWidget(sep2)
+
+        # Background mesh options
+        left.addWidget(QLabel("<b>Background Mesh Options</b>"))
+        self.check_wireframe = QCheckBox("Show wireframe")
+        self.check_wireframe.setChecked(self.show_wireframe)
+        self.check_wireframe.toggled.connect(self._on_wireframe_toggled)
+        left.addWidget(self.check_wireframe)
+
+        self.check_volume = QCheckBox("Translucent volume")
+        self.check_volume.setChecked(self.show_volume)
+        self.check_volume.toggled.connect(self._on_volume_toggled)
+        left.addWidget(self.check_volume)
+
+        if self.seed_points:
+            sep3 = QFrame()
+            sep3.setFrameShape(QFrame.HLine)
+            sep3.setFrameShadow(QFrame.Sunken)
+            left.addWidget(sep3)
+
+            left.addWidget(QLabel("<b>Seed Points</b>"))
+            self.check_seeds = QCheckBox("Show seed points (%d)" % len(self.seed_points))
+            self.check_seeds.setChecked(self.show_seed_points)
+            self.check_seeds.toggled.connect(self._on_seeds_toggled)
+            left.addWidget(self.check_seeds)
+
+        # Button reset camera
+        btn_cam = QPushButton("Reset camera")
+        btn_cam.clicked.connect(self._reset_camera)
+        left.addWidget(btn_cam)
 
     def _build_group_panel(self, left):
         """Build left panel in boundary face groups / boundary zones mode."""
@@ -491,6 +763,24 @@ class MeshViewerDialog(QDialog):
         btn_apply.clicked.connect(self._on_apply_probes)
         left.addWidget(btn_apply)
 
+        # Visual separator
+        separator2 = QFrame()
+        separator2.setFrameShape(QFrame.HLine)
+        separator2.setFrameShadow(QFrame.Sunken)
+        left.addWidget(separator2)
+
+        # Display options
+        left.addWidget(QLabel("<b>Display options</b>"))
+        self.check_wireframe = QCheckBox("Show wireframe")
+        self.check_wireframe.setChecked(self.show_wireframe)
+        self.check_wireframe.toggled.connect(self._on_wireframe_toggled)
+        left.addWidget(self.check_wireframe)
+
+        self.check_volume = QCheckBox("Translucent volume")
+        self.check_volume.setChecked(self.show_volume)
+        self.check_volume.toggled.connect(self._on_volume_toggled)
+        left.addWidget(self.check_volume)
+
         btn_reset = QPushButton("Show all")
         btn_reset.clicked.connect(self._show_probes)
         left.addWidget(btn_reset)
@@ -498,6 +788,155 @@ class MeshViewerDialog(QDialog):
         btn_cam = QPushButton("Reset camera")
         btn_cam.clicked.connect(self._reset_camera)
         left.addWidget(btn_cam)
+
+    def _build_profile_panel(self, left):
+        """Build left panel in profiles mode."""
+        left.addWidget(QLabel("<b>Profiles</b>"))
+
+        self.profile_list = QListWidget()
+        for prof in self.profiles:
+            lbl = prof.get('label', 'profile')
+            self.profile_list.addItem(lbl)
+        self.profile_list.currentRowChanged.connect(self._on_profile_selected)
+        left.addWidget(self.profile_list)
+
+        # Profile details panel
+        left.addWidget(QLabel("<b>Profile details</b>"))
+        self.profile_details = QTextEdit()
+        self.profile_details.setReadOnly(True)
+        self.profile_details.setMaximumHeight(160)
+        left.addWidget(self.profile_details)
+
+        # Profile display mode selector
+        left.addWidget(QLabel("<b>Display mode</b>"))
+        self.combo_profile_display = QComboBox()
+        self.combo_profile_display.addItem("Straight line", "line")
+        self.combo_profile_display.addItem("Points", "points")
+        cur_mode = getattr(self, 'profile_display_mode', 'line')
+        idx = 1 if cur_mode in ("points", "spheres") else 0
+        self.combo_profile_display.setCurrentIndex(idx)
+        self.combo_profile_display.currentIndexChanged.connect(self._on_profile_display_mode_changed)
+        left.addWidget(self.combo_profile_display)
+
+        # Visual separator
+        separator2 = QFrame()
+        separator2.setFrameShape(QFrame.HLine)
+        separator2.setFrameShadow(QFrame.Sunken)
+        left.addWidget(separator2)
+
+        # Display options
+        left.addWidget(QLabel("<b>Display options</b>"))
+        self.check_wireframe = QCheckBox("Show wireframe")
+        self.check_wireframe.setChecked(self.show_wireframe)
+        self.check_wireframe.toggled.connect(self._on_wireframe_toggled)
+        left.addWidget(self.check_wireframe)
+
+        self.check_volume = QCheckBox("Translucent volume")
+        self.check_volume.setChecked(self.show_volume)
+        self.check_volume.toggled.connect(self._on_volume_toggled)
+        left.addWidget(self.check_volume)
+
+        btn_show_all = QPushButton("Show all profiles")
+        btn_show_all.clicked.connect(self._on_show_all_profiles)
+        left.addWidget(btn_show_all)
+
+        btn_cam = QPushButton("Reset camera")
+        btn_cam.clicked.connect(self._reset_camera)
+        left.addWidget(btn_cam)
+
+        if self.profiles:
+            self.profile_list.setCurrentRow(0)
+
+    def _on_wireframe_toggled(self, checked):
+        """Slot called when Show wireframe checkbox changes."""
+        self.show_wireframe = bool(checked)
+        if hasattr(self, 'plotter'):
+            if getattr(self, 'stl_file', None) is not None:
+                self._show_stl()
+            elif getattr(self, 'probes', None) is not None:
+                self._show_probes()
+            elif getattr(self, 'profiles', None) is not None:
+                self._show_profiles()
+
+    def _on_volume_toggled(self, checked):
+        """Slot called when Translucent volume checkbox changes."""
+        self.show_volume = bool(checked)
+        if hasattr(self, 'plotter'):
+            if getattr(self, 'stl_file', None) is not None:
+                self._show_stl()
+            elif getattr(self, 'probes', None) is not None:
+                self._show_probes()
+            elif getattr(self, 'profiles', None) is not None:
+                self._show_profiles()
+
+    def set_wireframe(self, enable):
+        """Set wireframe display and re-render."""
+        self.show_wireframe = bool(enable)
+        if hasattr(self, 'check_wireframe'):
+            self.check_wireframe.blockSignals(True)
+            self.check_wireframe.setChecked(self.show_wireframe)
+            self.check_wireframe.blockSignals(False)
+        if hasattr(self, 'plotter'):
+            if getattr(self, 'stl_file', None) is not None:
+                self._show_stl()
+            elif getattr(self, 'probes', None) is not None:
+                self._show_probes()
+            elif getattr(self, 'profiles', None) is not None:
+                self._show_profiles()
+
+    def set_volume(self, enable):
+        """Set translucent volume display and re-render."""
+        self.show_volume = bool(enable)
+        if hasattr(self, 'check_volume'):
+            self.check_volume.blockSignals(True)
+            self.check_volume.setChecked(self.show_volume)
+            self.check_volume.blockSignals(False)
+        if hasattr(self, 'plotter'):
+            if getattr(self, 'stl_file', None) is not None:
+                self._show_stl()
+            elif getattr(self, 'probes', None) is not None:
+                self._show_probes()
+            elif getattr(self, 'profiles', None) is not None:
+                self._show_profiles()
+
+    def _on_stl_toggled(self, checked):
+        """Slot called when Show STL object checkbox changes."""
+        self.show_stl = bool(checked)
+        if hasattr(self, 'plotter'):
+            self._show_stl()
+
+    def _on_stl_rep_changed(self, index):
+        """Slot called when STL representation combo changes."""
+        if hasattr(self, 'combo_stl_rep'):
+            self.stl_representation = self.combo_stl_rep.currentData() or "surface"
+        if hasattr(self, 'plotter'):
+            self._show_stl()
+
+    def _on_seeds_toggled(self, checked):
+        """Slot called when Show seed points checkbox changes."""
+        self.show_seed_points = bool(checked)
+        if hasattr(self, 'plotter'):
+            self._show_stl()
+
+    def _on_profile_display_mode_changed(self, index):
+        """Slot called when profile display mode combo box changes."""
+        mode = self.combo_profile_display.currentData()
+        self.profile_display_mode = mode
+        if hasattr(self, 'plotter'):
+            self._show_profiles()
+
+    def set_profile_display_mode(self, mode):
+        """Set profile display mode ('line' or 'points') and re-render."""
+        if mode not in ("line", "points", "spheres"):
+            raise ValueError("Invalid display mode '%s'. Choose 'line' or 'points'." % mode)
+        self.profile_display_mode = mode
+        if hasattr(self, 'combo_profile_display'):
+            idx = 1 if mode in ("points", "spheres") else 0
+            self.combo_profile_display.blockSignals(True)
+            self.combo_profile_display.setCurrentIndex(idx)
+            self.combo_profile_display.blockSignals(False)
+        if hasattr(self, 'plotter'):
+            self._show_profiles()
 
     def _build_fallback_ui(self):
         """Fallback UI displayed if pyvista/pyvistaqt are not installed."""
@@ -577,7 +1016,12 @@ class MeshViewerDialog(QDialog):
         adapt to geometry scale.
         """
         try:
-            bounds = self.grid.bounds
+            if hasattr(self, 'stl_polydata') and self.stl_polydata is not None:
+                bounds = self.stl_polydata.bounds
+            elif hasattr(self, 'grid') and self.grid is not None:
+                bounds = self.grid.bounds
+            else:
+                return 0.01
             diag = ((bounds[1]-bounds[0])**2 +
                     (bounds[3]-bounds[2])**2 +
                     (bounds[5]-bounds[4])**2) ** 0.5
@@ -736,6 +1180,29 @@ class MeshViewerDialog(QDialog):
     # Probes mode
     # =========================================================================
 
+    def _render_background_mesh(self):
+        """
+        Render boundary mesh background according to self.show_wireframe
+        and self.show_volume settings.
+        """
+        if not (self.show_wireframe or self.show_volume):
+            return
+        if not hasattr(self, 'subsets') or not self.subsets:
+            return
+
+        for name, subset in self.subsets.items():
+            if self.show_volume:
+                self.plotter.add_mesh(subset,
+                                       color="lightgray",
+                                       opacity=0.15,
+                                       show_edges=False,
+                                       reset_camera=False)
+            if self.show_wireframe:
+                self.plotter.add_mesh(subset,
+                                       style="wireframe",
+                                       color="gray",
+                                       reset_camera=False)
+
     def _refresh_probe_list(self):
         """Update QListWidget from self.probes (local list)."""
         self.probe_list.clear()
@@ -745,7 +1212,7 @@ class MeshViewerDialog(QDialog):
 
     def _show_probes(self):
         """
-        Display translucent mesh + all probes as spheres.
+        Display mesh (wireframe and/or translucent volume) + all probes as spheres.
 
         Uses spheres precomputed in thread (_probe_spheres).
         Creates an individual actor per probe to support add/delete/highlight.
@@ -758,13 +1225,8 @@ class MeshViewerDialog(QDialog):
         self._probe_actors       = {}
         self._selected_probe_idx = None
 
-        # Translucent mesh (geometric background)
-        for name, subset in self.subsets.items():
-            self.plotter.add_mesh(subset,
-                                   color="lightgray",
-                                   opacity=0.2,
-                                   show_edges=False,
-                                   reset_camera=False)
+        # Boundary mesh background (wireframe and/or translucent volume)
+        self._render_background_mesh()
 
         # Individual spheres per probe
         r = self._probe_radius()
@@ -942,6 +1404,216 @@ class MeshViewerDialog(QDialog):
             QMessageBox.critical(self, "Erreur de sauvegarde", str(e))
 
     # =========================================================================
+    # Profiles mode
+    # =========================================================================
+
+    def _show_profiles(self, selected_idx=-1):
+        """
+        Display translucent mesh + all profiles as 3D curves/tubes inside volume.
+        """
+        if not hasattr(self, 'plotter'):
+            return
+
+        if selected_idx == -1:
+            selected_idx = getattr(self, '_selected_profile_idx', None)
+
+        cam = self._get_camera_state()
+        self.plotter.clear()
+        self._profile_actors = {}
+
+        # Boundary mesh background (wireframe and/or translucent volume)
+        self._render_background_mesh()
+
+        r = self._probe_radius()
+        tube_r = max(r * 0.35, 1e-6)
+        sph_r  = max(r * 0.7, 1e-6)
+
+        palette = [
+            "#e74c3c",  # Red
+            "#3498db",  # Blue
+            "#2ecc71",  # Green
+            "#f39c12",  # Orange
+            "#9b59b6",  # Purple
+            "#1abc9c",  # Turquoise
+            "#e67e22",  # Carrot
+            "#34495e",  # Slate
+        ]
+
+        mode = getattr(self, 'profile_display_mode', 'line')
+
+        for idx, prof in enumerate(self.profiles):
+            pts = np.asarray(prof.get('points', []), dtype=float)
+            if len(pts) < 1:
+                continue
+
+            color = palette[idx % len(palette)]
+            is_sel = (selected_idx is None or idx == selected_idx)
+            if is_sel:
+                tube_color  = color if selected_idx is None else "#e74c3c"
+                start_color = "#2ecc71"  # Green for s=0
+                end_color   = "#e74c3c"  # Red for s=1
+                cur_tube_r  = tube_r * 1.4 if selected_idx is not None else tube_r
+                cur_sph_r   = sph_r * 1.4 if selected_idx is not None else sph_r
+            else:
+                tube_color  = "#95a5a6"  # Subtle gray
+                start_color = "#bdc3c7"
+                end_color   = "#bdc3c7"
+                cur_tube_r  = tube_r * 0.6
+                cur_sph_r   = sph_r * 0.6
+
+            try:
+                if mode in ("points", "spheres"):
+                    # Points mode: display one sphere per probe point defined in profile
+                    acts = []
+                    cur_point_r = cur_sph_r
+                    if len(pts) > 1:
+                        dists = np.linalg.norm(np.diff(pts, axis=0), axis=1)
+                        min_dist = float(np.min(dists)) if len(dists) > 0 else 0.0
+                        if min_dist > 1e-8:
+                            cur_point_r = max(min(cur_sph_r, min_dist * 0.45), cur_sph_r * 0.25, 1e-6)
+
+                    # Intermediate probe points
+                    if len(pts) > 2:
+                        mid_poly = pv.PolyData(pts[1:-1])
+                        mid_glyph = mid_poly.glyph(geom=pv.Sphere(radius=cur_point_r), scale=False, orient=False)
+                        act_mid = self.plotter.add_mesh(mid_glyph, color=tube_color, reset_camera=False)
+                        acts.append(act_mid)
+                    elif len(pts) == 1:
+                        act_s0 = self.plotter.add_mesh(pv.Sphere(radius=cur_point_r, center=pts[0]),
+                                                       color=start_color, reset_camera=False)
+                        acts.append(act_s0)
+
+                    if len(pts) >= 2:
+                        act_s0 = self.plotter.add_mesh(pv.Sphere(radius=cur_point_r * 1.15, center=pts[0]),
+                                                       color=start_color, reset_camera=False)
+                        act_s1 = self.plotter.add_mesh(pv.Sphere(radius=cur_point_r * 1.15, center=pts[-1]),
+                                                       color=end_color, reset_camera=False)
+                        acts.extend([act_s0, act_s1])
+
+                    self._profile_actors[idx] = tuple(acts)
+                else:
+                    if len(pts) < 2:
+                        continue
+                    line = pv.lines_from_points(pts)
+                    tube = line.tube(radius=cur_tube_r)
+                    act_tube = self.plotter.add_mesh(tube, color=tube_color, reset_camera=False)
+                    act_s0   = self.plotter.add_mesh(pv.Sphere(radius=cur_sph_r, center=pts[0]),
+                                                     color=start_color, reset_camera=False)
+                    act_s1   = self.plotter.add_mesh(pv.Sphere(radius=cur_sph_r, center=pts[-1]),
+                                                     color=end_color, reset_camera=False)
+                    self._profile_actors[idx] = (act_tube, act_s0, act_s1)
+            except Exception as e:
+                log.warning("Could not render profile %s: %s", prof.get('label'), e)
+
+        self._finalize_render(cam)
+
+    def _on_profile_selected(self, row):
+        """Highlight selected profile and update details panel."""
+        if row < 0 or row >= len(self.profiles):
+            return
+        self._selected_profile_idx = row
+        prof = self.profiles[row]
+        pts = np.asarray(prof.get('points', []), dtype=float)
+
+        info = "<b>%s</b><br>" % prof.get('label', 'Profile')
+        if len(pts) >= 2:
+            info += "<b>Start (s=0):</b> (%.4g, %.4g, %.4g)<br>" % (pts[0][0], pts[0][1], pts[0][2])
+            info += "<b>End (s=1):</b> (%.4g, %.4g, %.4g)<br>" % (pts[-1][0], pts[-1][1], pts[-1][2])
+            info += "<b>Points:</b> %d<br>" % len(pts)
+        mode_str = "Points" if getattr(self, 'profile_display_mode', 'line') in ("points", "spheres") else "Straight line"
+        info += "<b>Display:</b> %s<br>" % mode_str
+        formula = prof.get('formula')
+        if formula:
+            clean_form = formula.strip().replace('\n', '; ')
+            if len(clean_form) > 60:
+                clean_form = clean_form[:57] + "..."
+            info += "<b>Formula:</b> %s" % clean_form
+        if hasattr(self, 'profile_details'):
+            self.profile_details.setHtml(info)
+
+        if hasattr(self, 'plotter'):
+            self._show_profiles(selected_idx=row)
+
+    def _on_show_all_profiles(self):
+        """Reset profile selection to show all profiles uniformly."""
+        self._selected_profile_idx = None
+        if hasattr(self, 'profile_list'):
+            self.profile_list.setCurrentRow(-1)
+            self.profile_list.clearSelection()
+        if hasattr(self, 'profile_details'):
+            self.profile_details.setHtml("<i>All profiles displayed</i>")
+        self._show_profiles(selected_idx=None)
+
+    # =========================================================================
+    # STL mode
+    # =========================================================================
+
+    def _show_stl(self):
+        """
+        Display background CFD mesh (wireframe and/or translucent volume) + STL object.
+        """
+        if not hasattr(self, 'plotter'):
+            return
+
+        cam = self._get_camera_state()
+        self.plotter.clear()
+
+        # Render background CFD mesh in wireframe and/or translucent volume
+        self._render_background_mesh()
+
+        # Load STL geometry if needed
+        if self.stl_polydata is None and self.stl_file and os.path.isfile(self.stl_file):
+            try:
+                self.stl_polydata = pv.read(self.stl_file)
+            except Exception as e:
+                log.warning("Could not read STL file %s: %s", self.stl_file, e)
+
+        # Render STL geometry
+        if getattr(self, 'show_stl', True) and self.stl_polydata is not None:
+            rep = getattr(self, 'stl_representation', 'surface')
+            show_edges = False
+            style = 'surface'
+            if rep == 'surface_edges':
+                show_edges = True
+                style = 'surface'
+            elif rep == 'wireframe':
+                style = 'wireframe'
+            elif rep == 'points':
+                style = 'points'
+
+            try:
+                self.plotter.add_mesh(
+                    self.stl_polydata,
+                    color="#3498db",
+                    style=style,
+                    opacity=0.9,
+                    show_edges=show_edges,
+                    edge_color="black",
+                    reset_camera=False
+                )
+            except Exception as e:
+                log.warning("Error rendering STL mesh: %s", e)
+
+        # Render seed points if any
+        if getattr(self, 'show_seed_points', True) and self.seed_points:
+            r = self._probe_radius()
+            for item in self.seed_points:
+                if len(item) == 4:
+                    lbl, x, y, z = item
+                elif len(item) == 3:
+                    x, y, z = item
+                    lbl = ""
+                else:
+                    continue
+                try:
+                    sph = pv.Sphere(radius=max(r, 1e-4), center=(float(x), float(y), float(z)))
+                    self.plotter.add_mesh(sph, color="#e74c3c", reset_camera=False)
+                except Exception as e:
+                    log.warning("Error rendering seed point: %s", e)
+
+        self._finalize_render(cam)
+
+    # =========================================================================
     # Teardown / Close
     # =========================================================================
 
@@ -977,6 +1649,14 @@ class MeshViewerDialog(QDialog):
                 self.zone_list.currentRowChanged.disconnect()
             if hasattr(self, 'probe_list'):
                 self.probe_list.currentRowChanged.disconnect()
+            if hasattr(self, 'profile_list'):
+                self.profile_list.currentRowChanged.disconnect()
+            if hasattr(self, 'combo_profile_display'):
+                self.combo_profile_display.currentIndexChanged.disconnect()
+            if hasattr(self, 'check_wireframe'):
+                self.check_wireframe.toggled.disconnect()
+            if hasattr(self, 'check_volume'):
+                self.check_volume.toggled.disconnect()
         except Exception:
             pass  # disconnect might fail if signal was not connected
 
@@ -989,3 +1669,463 @@ class MeshViewerDialog(QDialog):
             self.plotter.close()
 
         event.accept()
+
+
+#-------------------------------------------------------------------------------
+# Unit tests
+#-------------------------------------------------------------------------------
+
+class MeshViewerDialogTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+        cls.app = QApplication.instance() or QApplication([])
+
+    def testAxesWidgetConfiguration(self):
+        """
+        Verify that QtInteractor in MeshViewerDialog configures orientation axes
+        (X, Y, Z) in the lower left corner.
+        """
+        if not HAS_VISU:
+            self.skipTest("PyVista/PyVistaQt not available")
+
+        dlg = MeshViewerDialog.__new__(MeshViewerDialog)
+        super(MeshViewerDialog, dlg).__init__(None)
+        dlg.probes = None
+        dlg.profiles = None
+        dlg.name_to_tags = {'Wall': [1]}
+        dlg.zone_expr = None
+        dlg.zone_label = None
+        dlg.case = None
+        dlg._probes_modified = False
+        dlg._unique_names = ['Wall']
+
+        dlg._build_ui()
+
+        # Check that axes widget is present and enabled
+        widget = getattr(dlg.plotter.renderer, 'axes_widget', None)
+        self.assertIsNotNone(widget)
+        self.assertEqual(widget.GetEnabled(), 1)
+
+        # Check lower-left viewport: (0, 0, xmax, ymax) with positive dimensions
+        vp = widget.GetViewport()
+        self.assertAlmostEqual(vp[0], 0.0)
+        self.assertAlmostEqual(vp[1], 0.0)
+        self.assertGreater(vp[2], 0.0)
+        self.assertGreater(vp[3], 0.0)
+
+        # Check axes labels: X, Y, Z
+        axes_actor = widget.GetOrientationMarker()
+        self.assertIsNotNone(axes_actor)
+        self.assertEqual(axes_actor.GetXAxisLabelText(), 'X')
+        self.assertEqual(axes_actor.GetYAxisLabelText(), 'Y')
+        self.assertEqual(axes_actor.GetZAxisLabelText(), 'Z')
+
+        dlg.close()
+
+    def testEvalProfileFormula(self):
+        """
+        Verify evaluation of profile mathematical formulas with parameter s in [0, 1].
+        """
+        formula = """
+        x0 = 1.0; x1 = 4.0;
+        y0 = 2.0; y1 = 6.0;
+        z0 = 3.0; z1 = 8.0;
+        x = x0 + (x1 - x0)*s;
+        y = y0 + (y1 - y0)*s;
+        z = z0 + (z1 - z0)*s;
+        """
+        pts = eval_profile_formula(formula, nb_points=10)
+        self.assertEqual(len(pts), 10)
+        np.testing.assert_allclose(pts[0], [1.0, 2.0, 3.0])
+        np.testing.assert_allclose(pts[-1], [4.0, 6.0, 8.0])
+
+        # Test formula with notebook variables
+        f_nb = "x = L * s; y = 0.0; z = 0.0;"
+        pts_nb = eval_profile_formula(f_nb, nb_points=5, notebook_vars={'L': 12.5})
+        self.assertEqual(len(pts_nb), 5)
+        np.testing.assert_allclose(pts_nb[0], [0.0, 0.0, 0.0])
+        np.testing.assert_allclose(pts_nb[-1], [12.5, 0.0, 0.0])
+
+        # Test invalid formula raises ValueError
+        with self.assertRaises(ValueError):
+            eval_profile_formula("x = s; y = s;")  # missing z
+
+    def testProfileModeUI(self):
+        """
+        Verify MeshViewerDialog UI initialization in profile visualization mode.
+        """
+        if not HAS_VISU:
+            self.skipTest("PyVista/PyVistaQt not available")
+
+        pts = np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]], dtype=float)
+        prof = {'label': 'Profile_1', 'points': pts, 'formula': 'x=s; y=s; z=s;', 'nb_points': 2}
+
+        dlg = MeshViewerDialog.__new__(MeshViewerDialog)
+        super(MeshViewerDialog, dlg).__init__(None)
+        dlg.probes = None
+        dlg.profiles = [prof]
+        dlg.name_to_tags = {'Wall': [1]}
+        dlg.zone_expr = None
+        dlg.zone_label = None
+        dlg.case = None
+        dlg._probes_modified = False
+        dlg._unique_names = ['Wall']
+
+        dlg._build_ui()
+
+        self.assertTrue(hasattr(dlg, 'profile_list'))
+        self.assertEqual(dlg.profile_list.count(), 1)
+        self.assertEqual(dlg.profile_list.item(0).text(), 'Profile_1')
+
+        # Test rendering profiles
+        dlg.subsets = {}
+        dlg._show_profiles()
+        self.assertIn(0, dlg._profile_actors)
+
+        # Test profile details and selection
+        self.assertIn('Profile_1', dlg.profile_details.toHtml())
+        dlg._on_show_all_profiles()
+        self.assertIsNone(dlg._selected_profile_idx)
+        self.assertIn('All profiles displayed', dlg.profile_details.toHtml())
+        dlg._on_profile_selected(0)
+        self.assertEqual(dlg._selected_profile_idx, 0)
+        self.assertIn('Profile_1', dlg.profile_details.toHtml())
+
+        dlg.close()
+
+    def testProfileModePointsUI(self):
+        """
+        Verify MeshViewerDialog points representation mode for profiles.
+        """
+        if not HAS_VISU:
+            self.skipTest("PyVista/PyVistaQt not available")
+
+        # 5 discrete probe points along a segment
+        pts = np.array([
+            [0.0, 0.0, 0.0],
+            [0.25, 0.25, 0.25],
+            [0.5, 0.5, 0.5],
+            [0.75, 0.75, 0.75],
+            [1.0, 1.0, 1.0]
+        ], dtype=float)
+        prof = {'label': 'Profile_Points', 'points': pts, 'formula': 'x=s; y=s; z=s;', 'nb_points': 5}
+
+        dlg = MeshViewerDialog.__new__(MeshViewerDialog)
+        super(MeshViewerDialog, dlg).__init__(None)
+        dlg.probes = None
+        dlg.profiles = [prof]
+        dlg.profile_display_mode = "points"
+        dlg.name_to_tags = {'Wall': [1]}
+        dlg.zone_expr = None
+        dlg.zone_label = None
+        dlg.case = None
+        dlg._probes_modified = False
+        dlg._unique_names = ['Wall']
+
+        dlg._build_ui()
+
+        # Check UI combo box exists and points mode is selected
+        self.assertTrue(hasattr(dlg, 'combo_profile_display'))
+        self.assertEqual(dlg.combo_profile_display.currentData(), 'points')
+        self.assertEqual(dlg.combo_profile_display.currentIndex(), 1)
+
+        # Test rendering profiles in points mode
+        dlg.subsets = {}
+        dlg._show_profiles()
+        self.assertIn(0, dlg._profile_actors)
+        # Should have intermediate glyph actor + start + end sphere actors
+        actors = dlg._profile_actors[0]
+        self.assertGreaterEqual(len(actors), 2)
+
+        # Check profile details contains Points mode indicator
+        dlg._on_profile_selected(0)
+        self.assertIn('Points', dlg.profile_details.toHtml())
+
+        # Test switching to line mode
+        dlg.set_profile_display_mode("line")
+        self.assertEqual(dlg.profile_display_mode, "line")
+        self.assertEqual(dlg.combo_profile_display.currentData(), "line")
+        self.assertEqual(dlg.combo_profile_display.currentIndex(), 0)
+        self.assertIn(0, dlg._profile_actors)
+        line_actors = dlg._profile_actors[0]
+        self.assertEqual(len(line_actors), 3)  # tube, s0, s1
+
+        # Test switching back to points mode
+        dlg.set_profile_display_mode("points")
+        self.assertEqual(dlg.profile_display_mode, "points")
+        self.assertEqual(dlg.combo_profile_display.currentData(), "points")
+
+        # Test invalid mode raises ValueError
+        with self.assertRaises(ValueError):
+            dlg.set_profile_display_mode("invalid_mode")
+
+        dlg.close()
+
+    def testProbeModeWireframeUI(self):
+        """
+        Verify MeshViewerDialog UI and rendering controls in probe mode with wireframe.
+        """
+        if not HAS_VISU:
+            self.skipTest("PyVista/PyVistaQt not available")
+
+        dlg = MeshViewerDialog.__new__(MeshViewerDialog)
+        super(MeshViewerDialog, dlg).__init__(None)
+        dlg.probes = [('probe_1', 0.1, 0.2, 0.3)]
+        dlg.profiles = None
+        dlg.show_wireframe = True
+        dlg.show_volume = True
+        dlg.name_to_tags = {'Wall': [1]}
+        dlg.zone_expr = None
+        dlg.zone_label = None
+        dlg.case = None
+        dlg._probes_modified = False
+        dlg._unique_names = ['Wall']
+
+        dlg._build_ui()
+
+        # Check UI display options checkboxes
+        self.assertTrue(hasattr(dlg, 'check_wireframe'))
+        self.assertTrue(hasattr(dlg, 'check_volume'))
+        self.assertTrue(dlg.check_wireframe.isChecked())
+        self.assertTrue(dlg.check_volume.isChecked())
+
+        # Test rendering in probe mode
+        dlg.subsets = {}
+        dlg._probe_spheres = []
+        dlg._show_probes()
+        self.assertIn(0, dlg._probe_actors)
+
+        # Toggle wireframe off
+        dlg.check_wireframe.setChecked(False)
+        self.assertFalse(dlg.show_wireframe)
+
+        # Toggle volume off
+        dlg.check_volume.setChecked(False)
+        self.assertFalse(dlg.show_volume)
+
+        # Programmatic setters
+        dlg.set_wireframe(True)
+        self.assertTrue(dlg.show_wireframe)
+        self.assertTrue(dlg.check_wireframe.isChecked())
+
+        dlg.set_volume(True)
+        self.assertTrue(dlg.show_volume)
+        self.assertTrue(dlg.check_volume.isChecked())
+
+        dlg.close()
+
+    def testProfileModeWireframeUI(self):
+        """
+        Verify MeshViewerDialog UI and rendering controls in profile mode with wireframe.
+        """
+        if not HAS_VISU:
+            self.skipTest("PyVista/PyVistaQt not available")
+
+        pts = np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]], dtype=float)
+        prof = {'label': 'Profile_Wireframe', 'points': pts, 'formula': 'x=s; y=s; z=s;', 'nb_points': 2}
+
+        dlg = MeshViewerDialog.__new__(MeshViewerDialog)
+        super(MeshViewerDialog, dlg).__init__(None)
+        dlg.probes = None
+        dlg.profiles = [prof]
+        dlg.show_wireframe = True
+        dlg.show_volume = True
+        dlg.name_to_tags = {'Wall': [1]}
+        dlg.zone_expr = None
+        dlg.zone_label = None
+        dlg.case = None
+        dlg._probes_modified = False
+        dlg._unique_names = ['Wall']
+
+        dlg._build_ui()
+
+        # Check UI display options checkboxes
+        self.assertTrue(hasattr(dlg, 'check_wireframe'))
+        self.assertTrue(hasattr(dlg, 'check_volume'))
+        self.assertTrue(dlg.check_wireframe.isChecked())
+        self.assertTrue(dlg.check_volume.isChecked())
+
+        # Test rendering in profile mode
+        dlg.subsets = {}
+        dlg._show_profiles()
+        self.assertIn(0, dlg._profile_actors)
+
+        # Toggle wireframe off
+        dlg.check_wireframe.setChecked(False)
+        self.assertFalse(dlg.show_wireframe)
+
+        # Toggle volume off
+        dlg.check_volume.setChecked(False)
+        self.assertFalse(dlg.show_volume)
+
+        # Programmatic setters
+        dlg.set_wireframe(True)
+        self.assertTrue(dlg.show_wireframe)
+        self.assertTrue(dlg.check_wireframe.isChecked())
+
+        dlg.set_volume(True)
+        self.assertTrue(dlg.show_volume)
+        self.assertTrue(dlg.check_volume.isChecked())
+
+        dlg.close()
+
+    def testSTLModeUI(self):
+        """
+        Verify MeshViewerDialog UI controls in STL mode.
+        """
+        if not HAS_VISU:
+            self.skipTest("PyVista/PyVistaQt not available")
+
+        import tempfile
+        cube = pv.Cube()
+        with tempfile.NamedTemporaryFile(suffix='.stl', delete=False) as f:
+            stl_path = f.name
+        try:
+            cube.save(stl_path)
+
+            dlg = MeshViewerDialog.__new__(MeshViewerDialog)
+            super(MeshViewerDialog, dlg).__init__(None)
+            dlg.csm_file = None
+            dlg.probes = None
+            dlg.profiles = None
+            dlg.stl_file = stl_path
+            dlg.stl_label = "TestCube"
+            dlg.seed_points = [("Seed_1", 0.0, 0.0, 1.0)]
+            dlg.show_wireframe = True
+            dlg.show_volume = True
+            dlg.show_stl = True
+            dlg.show_stl_edges = False
+            dlg.show_seed_points = True
+            dlg.stl_representation = "surface"
+            dlg.name_to_tags = {}
+            dlg.zone_expr = None
+            dlg.zone_label = None
+            dlg.case = None
+            dlg._probes_modified = False
+            dlg._unique_names = []
+
+            dlg._build_ui()
+
+            self.assertTrue(hasattr(dlg, 'check_stl'))
+            self.assertTrue(hasattr(dlg, 'combo_stl_rep'))
+            self.assertTrue(hasattr(dlg, 'check_wireframe'))
+            self.assertTrue(hasattr(dlg, 'check_volume'))
+            self.assertTrue(hasattr(dlg, 'check_seeds'))
+            self.assertTrue(hasattr(dlg, 'stl_details'))
+
+            self.assertTrue(dlg.check_stl.isChecked())
+            self.assertTrue(dlg.check_wireframe.isChecked())
+            self.assertTrue(dlg.check_volume.isChecked())
+            self.assertTrue(dlg.check_seeds.isChecked())
+
+            # Test toggling STL visibility
+            dlg.check_stl.setChecked(False)
+            self.assertFalse(dlg.show_stl)
+            dlg.check_stl.setChecked(True)
+            self.assertTrue(dlg.show_stl)
+
+            # Test toggling representation
+            dlg.combo_stl_rep.setCurrentIndex(1)
+            self.assertEqual(dlg.stl_representation, "surface_edges")
+
+            dlg.close()
+        finally:
+            if os.path.exists(stl_path):
+                os.remove(stl_path)
+
+    def testSTLPositionCheck(self):
+        """
+        Verify automated bounds check: inside vs outside mesh bounds.
+        """
+        if not HAS_VISU:
+            self.skipTest("PyVista/PyVistaQt not available")
+
+        import tempfile
+        # Cube of size 1 centered at origin: bounds [-0.5, 0.5, -0.5, 0.5, -0.5, 0.5]
+        cube = pv.Cube()
+        with tempfile.NamedTemporaryFile(suffix='.stl', delete=False) as f:
+            stl_path = f.name
+        try:
+            cube.save(stl_path)
+
+            dlg = MeshViewerDialog.__new__(MeshViewerDialog)
+            super(MeshViewerDialog, dlg).__init__(None)
+            dlg.csm_file = "mesh.csm"
+            dlg.probes = None
+            dlg.profiles = None
+            dlg.stl_file = stl_path
+            dlg.stl_label = "InsideCube"
+            dlg.seed_points = []
+            dlg.show_wireframe = True
+            dlg.show_volume = True
+            dlg.show_stl = True
+            dlg.show_stl_edges = False
+            dlg.show_seed_points = False
+            dlg.stl_representation = "surface"
+            dlg.name_to_tags = {'Domain': [1]}
+            dlg.zone_expr = None
+            dlg.zone_label = None
+            dlg.case = None
+            dlg._probes_modified = False
+            dlg._unique_names = ['Domain']
+
+            # Background domain mesh encompassing the cube: [-2.0, 2.0, -2.0, 2.0, -2.0, 2.0]
+            domain_cube = pv.Cube(bounds=[-2.0, 2.0, -2.0, 2.0, -2.0, 2.0])
+            dlg.grid = domain_cube
+            dlg.subsets = {'Domain': domain_cube}
+
+            dlg._build_ui()
+
+            self.assertTrue(hasattr(dlg, 'label_position_check'))
+            self.assertIn("INSIDE", dlg.label_position_check.text())
+            dlg.close()
+
+            # Now test an STL extending outside the domain: domain is [-0.1, 0.1, ...]
+            dlg2 = MeshViewerDialog.__new__(MeshViewerDialog)
+            super(MeshViewerDialog, dlg2).__init__(None)
+            dlg2.csm_file = "mesh.csm"
+            dlg2.probes = None
+            dlg2.profiles = None
+            dlg2.stl_file = stl_path
+            dlg2.stl_label = "OutsideCube"
+            dlg2.seed_points = []
+            dlg2.show_wireframe = True
+            dlg2.show_volume = True
+            dlg2.show_stl = True
+            dlg2.show_stl_edges = False
+            dlg2.show_seed_points = False
+            dlg2.stl_representation = "surface"
+            dlg2.name_to_tags = {'Domain': [1]}
+            dlg2.zone_expr = None
+            dlg2.zone_label = None
+            dlg2.case = None
+            dlg2._probes_modified = False
+            dlg2._unique_names = ['Domain']
+
+            small_domain = pv.Cube(bounds=[-0.1, 0.1, -0.1, 0.1, -0.1, 0.1])
+            dlg2.grid = small_domain
+            dlg2.subsets = {'Domain': small_domain}
+
+            dlg2._build_ui()
+            self.assertTrue(hasattr(dlg2, 'label_position_check'))
+            self.assertIn("OUTSIDE", dlg2.label_position_check.text())
+            dlg2.close()
+        finally:
+            if os.path.exists(stl_path):
+                os.remove(stl_path)
+
+
+def suite():
+    testSuite = unittest.TestSuite()
+    testSuite.addTest(unittest.TestLoader().loadTestsFromTestCase(MeshViewerDialogTestCase))
+    return testSuite
+
+
+def runTest():
+    runner = unittest.TextTestRunner()
+    runner.run(suite())
+
+
+if __name__ == '__main__':
+    runTest()

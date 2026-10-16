@@ -53,6 +53,7 @@ from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.ImmersedBoundariesNeptune import Ui_ImmersedBoundariesNeptune
 from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
+from code_saturne.model.PyVistaWrapper import pyvistaWrapper
 
 #-------------------------------------------------------------------------------
 # log config
@@ -472,6 +473,24 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.pushButtonAddSTLPoint.clicked.connect(self.slotAddSTLPoint)
         self.pushButtonDeleteSTLPoint.clicked.connect(self.slotDeleteSTLPoint)
 
+        # Visualization button for STL object & CFD mesh wireframe
+        if not hasattr(self, 'pushButtonVisuSTL'):
+            self.pushButtonVisuSTL = QPushButton(self.tr("View STL & Mesh"))
+            self.pushButtonVisuSTL.setToolTip(
+                self.tr("View the STL object and CFD mesh wireframe in 3D to check if it is inside or outside"))
+            if hasattr(self, 'horizontalLayout'):
+                self.horizontalLayout.addWidget(self.pushButtonVisuSTL)
+
+        self.pyvista = pyvistaWrapper()
+        if not self.pyvista.isActive():
+            self.pushButtonVisuSTL.setEnabled(False)
+            self.pushButtonVisuSTL.setToolTip(
+                self.tr("Required : pip install pyvista pyvistaqt"))
+        else:
+            self.pushButtonVisuSTL.setEnabled(False)
+
+        self.pushButtonVisuSTL.clicked.connect(self.slotVisuSTL)
+
         self.dim = ComboModel(self.comboBoxDim, 1, 1)
         self.dim.addItem("3D computation")
         self.dim.addItem("2D computation with symmetry in X-direction")
@@ -651,6 +670,8 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
                     self.groupBoxExplicit.show()
                     self.groupBoxMEDCoupling.hide()
                     self.groupBoxSTL.hide()
+                    if hasattr(self, 'pushButtonVisuSTL'):
+                        self.pushButtonVisuSTL.setEnabled(False)
 
                     exp = self.ibm.getObjectFormula(self.current_obj-1)
                     if exp:
@@ -663,6 +684,8 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
                     self.groupBoxExplicit.hide()
                     self.groupBoxMEDCoupling.show()
                     self.groupBoxSTL.hide()
+                    if hasattr(self, 'pushButtonVisuSTL'):
+                        self.pushButtonVisuSTL.setEnabled(False)
 
                     if self.ibm.getMesh(self.current_obj).endswith('.med'):
                         self.lineEditMEDFile.setText(os.path.basename(
@@ -675,17 +698,22 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
                     self.groupBoxMEDCoupling.hide()
                     self.groupBoxSTL.show()
 
-                    if self.ibm.getMesh(self.current_obj).endswith('.stl'):
-                        self.lineEditSTLFile.setText(os.path.basename(
-                            self.ibm.getMesh(self.current_obj)))
+                    stl_mesh = self.ibm.getMesh(self.current_obj)
+                    if stl_mesh and stl_mesh.endswith('.stl'):
+                        self.lineEditSTLFile.setText(os.path.basename(stl_mesh))
+                        if hasattr(self, 'pushButtonVisuSTL') and hasattr(self, 'pyvista'):
+                            self.pushButtonVisuSTL.setEnabled(self.pyvista.isActive())
                     else:
                         self.lineEditSTLFile.setText('')
-
+                        if hasattr(self, 'pushButtonVisuSTL'):
+                            self.pushButtonVisuSTL.setEnabled(False)
 
             else:
                 self.groupBoxExplicit.hide()
                 self.groupBoxMEDCoupling.hide()
                 self.groupBoxSTL.hide()
+                if hasattr(self, 'pushButtonVisuSTL'):
+                    self.pushButtonVisuSTL.setEnabled(False)
 
 
     @Slot()
@@ -804,6 +832,97 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
             if (file_name[0].endswith('.stl')):
                 self.ibm.setMesh(num, file_name[0])
                 self.lineEditSTLFile.setText(os.path.basename(file_name[0]))
+                self.updatePageView()
+
+
+    @Slot()
+    def slotVisuSTL(self):
+        """
+        Open the 3D mesh viewer to display the defined STL object along with
+        the CFD domain mesh in wireframe mode.
+        """
+        if self.current_obj is None or self.ibm.getNumberOfObjects() == 0:
+            QMessageBox.information(self, self.tr("Visualization"),
+                self.tr("Please first select an object from the list."))
+            return
+
+        method = self.ibm.getObjectMethod(self.current_obj)
+        if method != 'STL file':
+            QMessageBox.information(self, self.tr("Visualization"),
+                self.tr("The selected object is not defined using an STL file."))
+            return
+
+        stl_mesh = self.ibm.getMesh(self.current_obj)
+        if not stl_mesh or not str(stl_mesh).strip():
+            QMessageBox.information(self, self.tr("Visualization"),
+                self.tr("No STL file specified for this object."))
+            return
+
+        # Resolve STL file path
+        stl_file = str(stl_mesh).strip()
+        if not os.path.isabs(stl_file):
+            case_path = self.case['case_path']
+            study_path = os.path.split(case_path)[0]
+            candidates = [
+                os.path.join(study_path, 'MESH', stl_file),
+                os.path.join(case_path, 'MESH', stl_file),
+                os.path.join(case_path, stl_file),
+                os.path.join(study_path, stl_file),
+            ]
+            for cand in candidates:
+                if os.path.isfile(cand):
+                    stl_file = cand
+                    break
+
+        if not os.path.isfile(stl_file):
+            QMessageBox.warning(self, self.tr("File not found"),
+                self.tr("Impossible to find STL file:\n%s") % stl_file)
+            return
+
+        # Retrieve seed points if any
+        seed_points = []
+        for pts_id in range(1, self.ibm.getNumberOfSTLObjectSeedPoints(self.current_obj) + 1):
+            x, y, z = self.ibm.getSTLObjectSeedPoint(self.current_obj, pts_id)
+            try:
+                seed_points.append((f"Seed_{pts_id}", float(x), float(y), float(z)))
+            except (ValueError, TypeError):
+                seed_points.append((f"Seed_{pts_id}", x, y, z))
+
+        # Reconstruct CFD .csm mesh path if available
+        mesh_file = None
+        try:
+            from code_saturne.model.SolutionDomainModel import SolutionDomainModel
+            mdl = SolutionDomainModel(self.case)
+            mesh_list = mdl.getMeshList()
+            if mesh_list:
+                mesh_name, mesh_dir = mesh_list[0]
+                if mesh_dir:
+                    csm_candidate = os.path.join(mesh_dir, mesh_name)
+                else:
+                    case_path = self.case['case_path']
+                    csm_candidate = os.path.join(case_path, '..', 'MESH', mesh_name)
+                    csm_candidate = os.path.normpath(csm_candidate)
+                    if not os.path.isfile(csm_candidate):
+                        csm_candidate = os.path.join(case_path, mesh_name)
+                if os.path.isfile(csm_candidate) and csm_candidate.endswith(".csm"):
+                    mesh_file = csm_candidate
+        except Exception as e:
+            log.debug("Could not resolve domain mesh: %s" % e)
+
+        # Launch MeshViewerDialog
+        from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog
+        obj_name = self.ibm.getObjectName(self.current_obj)
+        self._visu_dlg = MeshViewerDialog(
+            self,
+            csm_file=mesh_file,
+            stl_file=stl_file,
+            stl_label=obj_name,
+            seed_points=seed_points,
+            case=self.case,
+            show_wireframe=True,
+            show_volume=True
+        )
+        self._visu_dlg.exec_()
 
 
     @Slot()
@@ -848,5 +967,146 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
 
 
 #-------------------------------------------------------------------------------
-# End
+# Testing part
 #-------------------------------------------------------------------------------
+
+import unittest
+
+
+class ImmersedBoundariesViewNeptuneTestCase(unittest.TestCase):
+    """
+    Unit test cases for ImmersedBoundariesViewNeptune and STL visualization.
+    """
+    @classmethod
+    def setUpClass(cls):
+        os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+        cls.app = QApplication.instance() or QApplication([])
+
+    def setUp(self):
+        from code_saturne.model.XMLengine import Case
+        from code_saturne.model.XMLinitialize import XMLinit
+        self.case = Case(None)
+        XMLinit(self.case).initialize()
+        class DummyTree:
+            def configureTree(self, case):
+                pass
+        self.tree = DummyTree()
+        self.stbar = QStatusBar()
+        self.view = ImmersedBoundariesViewNeptune(None, self.case, self.stbar, self.tree)
+
+    def tearDown(self):
+        if hasattr(self, 'view') and self.view:
+            self.view.close()
+        del self.view
+        del self.case
+
+    def testVisuSTLButtonInitialization(self):
+        """
+        Verify pushButtonVisuSTL exists, has proper label and starts disabled.
+        """
+        self.assertTrue(hasattr(self.view, 'pushButtonVisuSTL'))
+        self.assertEqual(self.view.pushButtonVisuSTL.text(), "View STL & Mesh")
+        self.assertTrue(bool(self.view.pushButtonVisuSTL.toolTip()))
+        self.assertFalse(self.view.pushButtonVisuSTL.isEnabled())
+
+    def testVisuSTLButtonEnabledWhenSTLDefined(self):
+        """
+        Verify pushButtonVisuSTL is enabled when an STL tracking object has a .stl file.
+        """
+        # Activate IBM
+        self.view.checkBoxActivate.setChecked(True)
+        # Add an object
+        self.view.slotAdd()
+        self.view.current_obj = 1
+        self.view.ibm.setObjectMethod(1, "STL file")
+        self.view.ibm.setMesh(1, "my_geometry.stl")
+
+        self.view.updatePageView()
+        from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+        pv = pyvistaWrapper()
+        if pv.isActive():
+            self.assertTrue(self.view.pushButtonVisuSTL.isEnabled())
+        else:
+            self.assertFalse(self.view.pushButtonVisuSTL.isEnabled())
+
+    def testSlotVisuSTLValidation(self):
+        """
+        Verify slotVisuSTL displays information message if no object or invalid method.
+        """
+        info_boxes = []
+        orig_info = QMessageBox.information
+        QMessageBox.information = lambda p, t, m: info_boxes.append((t, m))
+        try:
+            # No object selected
+            self.view.current_obj = None
+            self.view.slotVisuSTL()
+            self.assertTrue(len(info_boxes) > 0)
+
+            # Object selected with function method
+            info_boxes.clear()
+            self.view.slotAdd()
+            self.view.current_obj = 1
+            self.view.ibm.setObjectMethod(1, "defined by function")
+            self.view.slotVisuSTL()
+            self.assertTrue(len(info_boxes) > 0)
+        finally:
+            QMessageBox.information = orig_info
+
+    def testSlotVisuSTLLaunchesDialog(self):
+        """
+        Verify slotVisuSTL constructs MeshViewerDialog with correct parameters.
+        """
+        from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog
+        import tempfile
+
+        # Create valid stl file
+        with tempfile.NamedTemporaryFile(suffix='.stl', delete=False) as f:
+            stl_path = f.name
+            f.write(b"solid test\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid test\n")
+
+        try:
+            self.view.checkBoxActivate.setChecked(True)
+            self.view.slotAdd()
+            self.view.current_obj = 1
+            self.view.ibm.setObjectMethod(1, "STL file")
+            self.view.ibm.setMesh(1, stl_path)
+            self.view.ibm.addSTLSeedPoint(1, 0, x=1.0, y=2.0, z=3.0)
+
+            orig_exec = MeshViewerDialog.exec_
+            dlg_instance = []
+
+            def mock_exec(dlg_self):
+                dlg_instance.append(dlg_self)
+                return 1
+
+            MeshViewerDialog.exec_ = mock_exec
+            try:
+                self.view.slotVisuSTL()
+                self.assertEqual(len(dlg_instance), 1)
+                dlg = dlg_instance[0]
+                self.assertEqual(dlg.stl_file, stl_path)
+                self.assertTrue(hasattr(dlg, 'seed_points'))
+                self.assertEqual(len(dlg.seed_points), 1)
+                self.assertEqual(dlg.seed_points[0][1:], (1.0, 2.0, 3.0))
+                self.assertTrue(dlg.show_wireframe)
+                self.assertTrue(dlg.show_volume)
+            finally:
+                MeshViewerDialog.exec_ = orig_exec
+        finally:
+            if os.path.exists(stl_path):
+                os.remove(stl_path)
+
+
+def suite():
+    testSuite = unittest.TestSuite()
+    testSuite.addTest(unittest.TestLoader().loadTestsFromTestCase(ImmersedBoundariesViewNeptuneTestCase))
+    return testSuite
+
+
+def runTest():
+    runner = unittest.TextTestRunner()
+    runner.run(suite())
+
+
+if __name__ == '__main__':
+    runTest()

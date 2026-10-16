@@ -187,6 +187,20 @@
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="pushButtonVisuSTL">
+          <property name="text">
+           <string>View STL &amp; Mesh</string>
+          </property>
+          <property name="toolTip">
+           <string>View the STL object and CFD mesh wireframe in 3D to check if it is inside or outside</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../base/resource_base.qrc">
+            <normaloff>:/data/icons/22x22/document-open.png</normaloff>:/data/icons/22x22/document-open.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer name="horizontalSpacer_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>

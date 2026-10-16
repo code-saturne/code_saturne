@@ -3148,9 +3148,124 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 # Testing part
 #-------------------------------------------------------------------------------
 
+import unittest
+
+
+class OutputControlViewTestCase(unittest.TestCase):
+    """
+    Unit test cases for OutputControlView probe visualization.
+    """
+    @classmethod
+    def setUpClass(cls):
+        os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+        cls.app = QApplication.instance() or QApplication([])
+
+    def setUp(self):
+        from code_saturne.model.XMLengine import Case
+        from code_saturne.model.XMLinitialize import XMLinit
+        self.case = Case(None)
+        XMLinit(self.case).initialize()
+        self.view = OutputControlView(None, self.case, None)
+
+    def tearDown(self):
+        self.view.close()
+        self.view = None
+        self.case = None
+
+    def testVisuProbesButtonInitialization(self):
+        """
+        Verify that pushButtonVisuProbes is properly added and configured.
+        """
+        self.assertTrue(hasattr(self.view, 'pushButtonVisuProbes'))
+        self.assertIsInstance(self.view.pushButtonVisuProbes, QPushButton)
+        from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+        pv = pyvistaWrapper()
+        self.assertEqual(self.view.pushButtonVisuProbes.isEnabled(), pv.isActive())
+
+    def testSlotVisuProbesNoProbes(self):
+        """
+        Verify QMessageBox when slotVisuProbes is called without defined probes.
+        """
+        info_boxes = []
+        orig_info = QMessageBox.information
+        QMessageBox.information = lambda parent, title, msg: info_boxes.append((title, msg))
+        try:
+            self.view.slotVisuProbes()
+            self.assertEqual(len(info_boxes), 1)
+            self.assertIn("sonde", info_boxes[0][1].lower())
+        finally:
+            QMessageBox.information = orig_info
+
+    def testSlotVisuProbesNoMesh(self):
+        """
+        Verify QMessageBox when case has no associated mesh.
+        """
+        self.view.mdl.addMonitoringPoint()
+        self.view.mdl.replaceMonitoringPointCoordinates('1', 0.1, 0.2, 0.3)
+
+        warning_boxes = []
+        orig_warning = QMessageBox.warning
+        QMessageBox.warning = lambda parent, title, msg: warning_boxes.append((title, msg))
+        try:
+            self.view.slotVisuProbes()
+            self.assertEqual(len(warning_boxes), 1)
+            self.assertIn("maillage", warning_boxes[0][1].lower())
+        finally:
+            QMessageBox.warning = orig_warning
+
+    def testSlotVisuProbesExecutionWithMesh(self):
+        """
+        Verify slotVisuProbes successfully creates and configures MeshViewerDialog with wireframe.
+        """
+        csm_file = '/home/i76777/Codes/TEST/2026/PYVISTA/CASE1/RESU/20260520-1104/checkpoint/mesh_input.csm'
+        if not os.path.isfile(csm_file):
+            self.skipTest("Sample CSM mesh not found at %s" % csm_file)
+
+        from code_saturne.model.SolutionDomainModel import SolutionDomainModel
+        from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog
+
+        # Set mesh on case
+        sdm = SolutionDomainModel(self.case)
+        sdm.addMesh((os.path.basename(csm_file), os.path.dirname(csm_file)))
+
+        # Add probe
+        self.view.mdl.addMonitoringPoint()
+        self.view.mdl.replaceMonitoringPointCoordinates('1', 0.1, 0.2, 0.3)
+
+        # Mock dialog exec to avoid blocking modal loop
+        exec_called = []
+        orig_exec = MeshViewerDialog.exec_
+        def mock_exec(dlg_self):
+            exec_called.append(dlg_self)
+            return 0
+        MeshViewerDialog.exec_ = mock_exec
+
+        try:
+            self.view.slotVisuProbes()
+        finally:
+            MeshViewerDialog.exec_ = orig_exec
+
+        self.assertEqual(len(exec_called), 1)
+        dlg = exec_called[0]
+        self.assertEqual(len(dlg.probes), 1)
+        self.assertTrue(dlg.show_wireframe)
+        self.assertTrue(dlg.show_volume)
+        dlg.close()
+
+
+def suite():
+    testSuite = unittest.TestSuite()
+    testSuite.addTest(unittest.TestLoader().loadTestsFromTestCase(OutputControlViewTestCase))
+    return testSuite
+
+
+def runTest():
+    runner = unittest.TextTestRunner()
+    runner.run(suite())
+
 
 if __name__ == "__main__":
-    pass
+    runTest()
 
 
 #-------------------------------------------------------------------------------

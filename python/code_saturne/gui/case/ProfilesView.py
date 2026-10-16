@@ -31,6 +31,7 @@ This module contains the following classes:
 # Standard modules
 #-------------------------------------------------------------------------------
 
+import os, sys
 import logging
 
 #-------------------------------------------------------------------------------
@@ -51,6 +52,7 @@ from code_saturne.gui.case.ProfilesForm import Ui_ProfilesForm
 from code_saturne.model.ProfilesModel import ProfilesModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.PyVistaWrapper import pyvistaWrapper
 
 if QT_API == "PYQT6":
     from code_saturne.gui.case import resources_pages_rc
@@ -217,6 +219,24 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.comboBoxFreq.activated[int].connect(self.slotFrequencyType)
         self.comboBoxFormat.activated[int].connect(self.slotFormatType)
         self.pushButtonFormula.clicked.connect(self.slotFormula)
+
+        # Mesh viewer button and display mode
+        self.pyvista = pyvistaWrapper()
+        self.pushButtonVisuProfile = QPushButton(self.tr("View profile"))
+        self.pushButtonVisuProfile.setToolTip(
+            self.tr("View the 1D profile inside the 3D mesh volume."))
+        self.pushButtonVisuProfile.setEnabled(self.pyvista.isActive())
+        self.pushButtonVisuProfile.clicked.connect(self.slotVisuProfile)
+        self.horizontalLayout.addWidget(self.pushButtonVisuProfile)
+
+        self.comboBoxProfileDisplay = QComboBox()
+        self.comboBoxProfileDisplay.addItem(self.tr("Straight line"), "line")
+        self.comboBoxProfileDisplay.addItem(self.tr("Points"), "points")
+        self.comboBoxProfileDisplay.setToolTip(
+            self.tr("Choose profile representation: continuous straight line or discrete probe points."))
+        self.comboBoxProfileDisplay.setEnabled(self.pyvista.isActive())
+        self.horizontalLayout.addWidget(self.comboBoxProfileDisplay)
+
         self.lineEditBaseName.textChanged[str].connect(self.slotBaseName)
         self.lineEditFreq.textChanged[str].connect(self.slotFrequence)
         self.lineEditFreqTime.textChanged[str].connect(self.slotFrequenceTime)
@@ -237,7 +257,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         validatorNbPoint = IntValidator(self.lineEditNbPoint, min=0)
         self.lineEditNbPoint.setValidator(validatorNbPoint)
 
-        rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
+        rx = r"[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
         validatorBaseName =  RegExpValidator(self.lineEditBaseName, QRegularExpression(rx))
         self.lineEditBaseName.setValidator(validatorBaseName)
 
@@ -267,7 +287,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             default = {}
             default['label'] = label
             default['list'] = self.mdl.getProfilesLabelsList()
-            rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
+            rx = r"[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
             default['regexp'] = QRegularExpression(rx)
             from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
             dialog = VerifyExistenceLabelDialogView(self, default)
@@ -429,6 +449,10 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         else:
             self.pushButtonFormula.setStyleSheet("background-color: red")
 
+        self.pushButtonVisuProfile.setEnabled(self.pyvista.isActive())
+        if hasattr(self, 'comboBoxProfileDisplay'):
+            self.comboBoxProfileDisplay.setEnabled(self.pyvista.isActive())
+
 
     @Slot()
     def slotAddVarProfile(self):
@@ -570,14 +594,346 @@ z = z1*s + z0*(1.-s);"""
         else:
             self.mdl.setProfileInterpolation(self.label_select, "no")
 
+    @Slot()
+    def slotVisuProfile(self, checked=False, display_mode=None):
+        """
+        Open the 3D mesh viewer to display the defined 1D profile inside the mesh volume.
+        """
+        import os
+        from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog, eval_profile_formula
+        from code_saturne.model.SolutionDomainModel import SolutionDomainModel
+
+        if not isinstance(display_mode, str):
+            display_mode = None
+        if display_mode is None and hasattr(self, 'comboBoxProfileDisplay'):
+            display_mode = self.comboBoxProfileDisplay.currentData()
+        if not display_mode:
+            display_mode = "line"
+
+        if not hasattr(self, 'label_select') or not self.label_select:
+            row = self.treeViewProfile.currentIndex().row()
+            if row >= 0:
+                self.label_select = self.modelProfile.getLabel(row)
+            else:
+                QMessageBox.information(self, self.tr("Visualization"),
+                    self.tr("Please first select a 1D profile from the list."))
+                return
+
+        # Retrieve profile data
+        lab, fmt, lst, choice, freq, formula, nb_point = self.mdl.getProfileData(self.label_select)
+
+        if not formula or not str(formula).strip():
+            QMessageBox.information(self, self.tr("Visualization"),
+                self.tr("No mathematical formula defined for profile '%s'.\n"
+                        "Define the formula (x, y, z as a function of s) using "
+                        "the mathematical expression editor first.") % self.label_select)
+            return
+
+        # Notebook variables
+        notebook_vars = dict(self.notebook.getNotebookList())
+
+        # Evaluate the active profile
+        try:
+            points = eval_profile_formula(formula, nb_points=nb_point, notebook_vars=notebook_vars)
+        except Exception as e:
+            QMessageBox.warning(self, self.tr("Formula Evaluation Error"),
+                self.tr("Error evaluating mathematical formula for profile '%s':\n%s") % (self.label_select, str(e)))
+            return
+
+        active_prof = {
+            'label': self.label_select,
+            'formula': formula,
+            'nb_points': nb_point,
+            'points': points
+        }
+
+        # Also collect other defined profiles if available
+        profiles_list = [active_prof]
+        for lab in self.mdl.getProfilesLabelsList():
+            if lab == self.label_select:
+                continue
+            l, f, ls, c, fr, form, nbp = self.mdl.getProfileData(lab)
+            if form and str(form).strip():
+                try:
+                    pts = eval_profile_formula(form, nb_points=nbp, notebook_vars=notebook_vars)
+                    profiles_list.append({
+                        'label': lab,
+                        'formula': form,
+                        'nb_points': nbp,
+                        'points': pts
+                    })
+                except Exception:
+                    pass
+
+        # Reconstruct .csm file path
+        mdl = SolutionDomainModel(self.case)
+        mesh_list = mdl.getMeshList()
+
+        if not mesh_list:
+            QMessageBox.warning(self, self.tr("Mesh not found"),
+                self.tr("Case has no associated mesh."))
+            return
+
+        mesh_name, mesh_dir = mesh_list[0]
+        if mesh_dir:
+            mesh_file = os.path.join(mesh_dir, mesh_name)
+        else:
+            case_path = self.case['case_path']
+            mesh_file = os.path.join(case_path, '..', 'MESH', mesh_name)
+            mesh_file = os.path.normpath(mesh_file)
+            if not os.path.isfile(mesh_file):
+                mesh_file = os.path.join(case_path, mesh_name)
+
+        if not os.path.isfile(mesh_file):
+            QMessageBox.warning(self, self.tr("File not found"),
+                self.tr("Impossible to find :\n%s" % mesh_file))
+            return
+
+        if not mesh_file.endswith(".csm"):
+            QMessageBox.information(self, self.tr("Unsupported file format"),
+                self.tr("Mesh view functionality is only available "
+                        "for .csm files."))
+            return
+
+        # Open in profile mode
+        self._visu_dlg = MeshViewerDialog(self, mesh_file,
+                                           profiles=profiles_list,
+                                           case=self.case,
+                                           profile_display_mode=display_mode)
+        self._visu_dlg.exec_()
+
 
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------
 
+import unittest
+
+
+class ProfilesViewTestCase(unittest.TestCase):
+    """
+    Unit test cases for ProfilesView and 1D profile visualization.
+    """
+    @classmethod
+    def setUpClass(cls):
+        os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+        cls.app = QApplication.instance() or QApplication([])
+
+    def setUp(self):
+        from code_saturne.model.XMLengine import Case
+        from code_saturne.model.XMLinitialize import XMLinit
+        self.case = Case(None)
+        XMLinit(self.case).initialize()
+        self.view = ProfilesView(None, self.case, None)
+
+    def tearDown(self):
+        if hasattr(self, 'view') and self.view:
+            self.view.close()
+        del self.view
+        del self.case
+
+    def testVisuProfileButtonInitialization(self):
+        """
+        Verify that pushButtonVisuProfile is properly added and configured.
+        """
+        self.assertTrue(hasattr(self.view, 'pushButtonVisuProfile'))
+        self.assertEqual(self.view.pushButtonVisuProfile.text(), "View profile")
+        self.assertTrue(bool(self.view.pushButtonVisuProfile.toolTip()))
+        from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+        pv = pyvistaWrapper()
+        self.assertEqual(self.view.pushButtonVisuProfile.isEnabled(), pv.isActive())
+
+        # Test comboBoxProfileDisplay
+        self.assertTrue(hasattr(self.view, 'comboBoxProfileDisplay'))
+        self.assertEqual(self.view.comboBoxProfileDisplay.count(), 2)
+        self.assertEqual(self.view.comboBoxProfileDisplay.itemText(0), "Straight line")
+        self.assertEqual(self.view.comboBoxProfileDisplay.itemData(0), "line")
+        self.assertEqual(self.view.comboBoxProfileDisplay.itemText(1), "Points")
+        self.assertEqual(self.view.comboBoxProfileDisplay.itemData(1), "points")
+        self.assertEqual(self.view.comboBoxProfileDisplay.isEnabled(), pv.isActive())
+
+    def testSlotVisuProfileNoSelection(self):
+        """
+        Verify QMessageBox when slotVisuProfile is called without a selected profile.
+        """
+        info_boxes = []
+        orig_info = QMessageBox.information
+        QMessageBox.information = lambda parent, title, msg: info_boxes.append((title, msg))
+        try:
+            self.view.slotVisuProfile()
+            self.assertEqual(len(info_boxes), 1)
+            self.assertIn("select", info_boxes[0][1].lower())
+        finally:
+            QMessageBox.information = orig_info
+
+    def testSlotVisuProfileNoFormula(self):
+        """
+        Verify QMessageBox when profile has no mathematical formula defined.
+        """
+        label = self.view.mdl.addProfile()
+        self.view.label_select = label
+        orig_get_data = self.view.mdl.getProfileData
+        self.view.mdl.getProfileData = lambda lab: (lab, 'CSV', [], 'frequency', 1, '', 10)
+
+        info_boxes = []
+        orig_info = QMessageBox.information
+        QMessageBox.information = lambda parent, title, msg: info_boxes.append((title, msg))
+        try:
+            self.view.slotVisuProfile()
+            self.assertEqual(len(info_boxes), 1)
+            self.assertIn("mathematical formula", info_boxes[0][1].lower())
+        finally:
+            self.view.mdl.getProfileData = orig_get_data
+            QMessageBox.information = orig_info
+
+    def testSlotVisuProfileInvalidFormula(self):
+        """
+        Verify QMessageBox when profile formula has invalid syntax or variables.
+        """
+        label = self.view.mdl.addProfile()
+        self.view.mdl.setFormula(label, "x = invalid_token * s; y = s; z = s;")
+        self.view.label_select = label
+
+        warning_boxes = []
+        orig_warning = QMessageBox.warning
+        QMessageBox.warning = lambda parent, title, msg: warning_boxes.append((title, msg))
+        try:
+            self.view.slotVisuProfile()
+            self.assertEqual(len(warning_boxes), 1)
+            self.assertIn("error evaluating", warning_boxes[0][1].lower())
+        finally:
+            QMessageBox.warning = orig_warning
+
+    def testSlotVisuProfileNoMesh(self):
+        """
+        Verify QMessageBox when case has no associated mesh.
+        """
+        label = self.view.mdl.addProfile()
+        self.view.mdl.setFormula(label, "x = s; y = 2*s; z = 3*s;")
+        self.view.label_select = label
+
+        warning_boxes = []
+        orig_warning = QMessageBox.warning
+        QMessageBox.warning = lambda parent, title, msg: warning_boxes.append((title, msg))
+        try:
+            self.view.slotVisuProfile()
+            self.assertEqual(len(warning_boxes), 1)
+            self.assertIn("mesh", warning_boxes[0][1].lower())
+        finally:
+            QMessageBox.warning = orig_warning
+
+    def testSlotVisuProfileExecutionWithMesh(self):
+        """
+        Verify slotVisuProfile successfully creates and configures MeshViewerDialog.
+        """
+        csm_file = '/home/i76777/Codes/TEST/2026/PYVISTA/CASE1/RESU/20260520-1104/checkpoint/mesh_input.csm'
+        if not os.path.isfile(csm_file):
+            self.skipTest("Sample CSM mesh not found at %s" % csm_file)
+
+        from code_saturne.model.SolutionDomainModel import SolutionDomainModel
+        from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog
+
+        # Set mesh on case
+        sdm = SolutionDomainModel(self.case)
+        sdm.addMesh((os.path.basename(csm_file), os.path.dirname(csm_file)))
+
+        # Add profile
+        label = self.view.mdl.addProfile()
+        formula = "x = 0.1 * s; y = 0.2 * s; z = 0.3 * s;"
+        self.view.mdl.setFormula(label, formula)
+        self.view.mdl.setNbPoint(label, 15)
+        self.view.label_select = label
+
+        # Also add a second profile to verify multiple profile handling
+        label2 = self.view.mdl.addProfile()
+        self.view.mdl.setFormula(label2, "x = 0.5 * s; y = 0.5; z = 0.1 * s;")
+        self.view.mdl.setNbPoint(label2, 10)
+
+        # Mock dialog exec to avoid blocking modal loop
+        exec_called = []
+        orig_exec = MeshViewerDialog.exec_
+        def mock_exec(dlg_self):
+            exec_called.append(dlg_self)
+            return 0
+        MeshViewerDialog.exec_ = mock_exec
+
+        try:
+            self.view.slotVisuProfile()
+        finally:
+            MeshViewerDialog.exec_ = orig_exec
+
+        self.assertEqual(len(exec_called), 1)
+        dlg = exec_called[0]
+        self.assertEqual(len(dlg.profiles), 2)
+        self.assertEqual(dlg.profiles[0]['label'], label)
+        self.assertEqual(len(dlg.profiles[0]['points']), 15)
+        self.assertEqual(dlg.profiles[1]['label'], label2)
+        self.assertEqual(len(dlg.profiles[1]['points']), 10)
+        self.assertEqual(dlg.profile_display_mode, 'line')
+        self.assertTrue(dlg.show_wireframe)
+        self.assertTrue(dlg.show_volume)
+        dlg.close()
+
+    def testSlotVisuProfilePointsModeExecutionWithMesh(self):
+        """
+        Verify slotVisuProfile forwards profile_display_mode='points' to MeshViewerDialog.
+        """
+        csm_file = '/home/i76777/Codes/TEST/2026/PYVISTA/CASE1/RESU/20260520-1104/checkpoint/mesh_input.csm'
+        if not os.path.isfile(csm_file):
+            self.skipTest("Sample CSM mesh not found at %s" % csm_file)
+
+        from code_saturne.model.SolutionDomainModel import SolutionDomainModel
+        from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog
+
+        # Set mesh on case
+        sdm = SolutionDomainModel(self.case)
+        sdm.addMesh((os.path.basename(csm_file), os.path.dirname(csm_file)))
+
+        # Add profile with 25 probe points
+        label = self.view.mdl.addProfile()
+        formula = "x = 0.1 * s; y = 0.2 * s; z = 0.3 * s;"
+        self.view.mdl.setFormula(label, formula)
+        self.view.mdl.setNbPoint(label, 25)
+        self.view.label_select = label
+
+        # Select points mode in comboBoxProfileDisplay
+        self.view.comboBoxProfileDisplay.setCurrentIndex(1)
+        self.assertEqual(self.view.comboBoxProfileDisplay.currentData(), 'points')
+
+        exec_called = []
+        orig_exec = MeshViewerDialog.exec_
+        def mock_exec(dlg_self):
+            exec_called.append(dlg_self)
+            return 0
+        MeshViewerDialog.exec_ = mock_exec
+
+        try:
+            self.view.slotVisuProfile()
+        finally:
+            MeshViewerDialog.exec_ = orig_exec
+
+        self.assertEqual(len(exec_called), 1)
+        dlg = exec_called[0]
+        self.assertEqual(dlg.profile_display_mode, 'points')
+        self.assertEqual(len(dlg.profiles[0]['points']), 25)
+        self.assertTrue(dlg.show_wireframe)
+        self.assertTrue(dlg.show_volume)
+        dlg.close()
+
+
+def suite():
+    testSuite = unittest.TestSuite()
+    testSuite.addTest(unittest.makeSuite(ProfilesViewTestCase))
+    return testSuite
+
+
+def runTest():
+    runner = unittest.TextTestRunner()
+    runner.run(suite())
+
 
 if __name__ == "__main__":
-    pass
+    runTest()
 
 
 #-------------------------------------------------------------------------------
