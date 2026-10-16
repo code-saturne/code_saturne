@@ -1100,7 +1100,11 @@ sys.exit(0)]"
 
     if test $retval -ne 0 ; then
       AC_MSG_RESULT([no])
-      AC_MSG_FAILURE([PyQt6 support (>= 6.0), Graphical User Interface cannot be installed])
+      # Fail only when PyQt6 was explicitly requested.
+      # Otherwise, continue and try PySide6.
+      if test "x$QT_SELECT" = "xpyqt6" ; then
+        AC_MSG_FAILURE([PyQt6 support (>= 6.0), Graphical User Interface cannot be installed])
+      fi
     else
       AC_MSG_RESULT([yes])
       cs_have_gui=PyQt6
@@ -1161,7 +1165,11 @@ sys.exit(0)]"
 
     if test $retval -ne 0 ; then
       AC_MSG_RESULT([no])
-      AC_MSG_FAILURE([cannot find PySide support (>= 6.0), Graphical User Interface cannot be installed])
+
+      # Fail immediately only if PySide6 was explicitly requested.
+      if test "x$QT_SELECT" = "xpyside6" -o "x$QT_SELECT" = "x6" ; then
+        AC_MSG_FAILURE([cannot find PySide support (>= 6.0), Graphical User Interface cannot be installed])
+      fi
     else
       AC_MSG_RESULT([yes])
       cs_have_gui=PySide6
@@ -1214,6 +1222,11 @@ fi
 #------------------------------------------------------------------------------
 # Checks for Qt tools.
 #------------------------------------------------------------------------------
+
+# No supported Qt Python binding was found.
+if test "x$cs_have_gui" = "xcheck" ; then
+  AC_MSG_FAILURE([cannot find PyQt5, PyQt6, or PySide6 support; Graphical User Interface cannot be installed])
+fi
 
 AM_CONDITIONAL(HAVE_GUI, [test "x$cs_have_gui" != "xno"])
 AC_SUBST(cs_have_gui)
