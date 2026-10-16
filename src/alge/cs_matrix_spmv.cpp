@@ -266,7 +266,7 @@ _set_mkl_sparse_map(cs_matrix_t   *matrix)
 
   if (csm != nullptr) {
     _unset_mkl_sparse_map(matrix);
-    csm = nulllptr;
+    csm = nullptr;
   }
 
   CS_MALLOC(csm, 1, cs_matrix_mkl_sparse_map_t);
