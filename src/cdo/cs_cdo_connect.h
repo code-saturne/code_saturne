@@ -156,6 +156,31 @@ struct cs_cdo_connect_t {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Perform a linear search for a local entity identifier in a compact
+ *        list.
+ *
+ * \param[in] id      target global identifier
+ * \param[in] ids     array of identifiers of length n_elts
+ * \param[in] n_elts  number of elements in the array
+ *
+ * \return local index in [0, n_elts - 1], or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_lnum_t
+cs_cdo_connect_find_local_id(cs_lnum_t        id,
+                             const cs_lnum_t *ids,
+                             cs_lnum_t        n_elts)
+{
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    if (ids[i] == id)
+      return i;
+  }
+  return -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Get the next three vertices in a row from a face to edge connectivity
  *         and a edge to vertex connectivity
  *
