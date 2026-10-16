@@ -66,6 +66,7 @@
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
+#include "base/cs_post.h"
 #include "base/cs_renumber.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_renumber_update.h"
@@ -742,6 +743,7 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
  * \brief Sync a standard field
  */
 /*--------------------------------------------------------------------------*/
+
 static void
 _halo_sync_std_owner
 (
@@ -767,6 +769,7 @@ _halo_sync_std_owner
  * \brief Sync a field which is a series owner and has subfields
  */
 /*--------------------------------------------------------------------------*/
+
 static void
 _halo_sync_series_owner
 (
@@ -798,6 +801,7 @@ _halo_sync_series_owner
  * \brief Sync a field
  */
 /*--------------------------------------------------------------------------*/
+
 static void
 _halo_sync
 (
@@ -1257,7 +1261,7 @@ cs_adaptive_refinement_define(int                     n_layers,
     CS_TIMER_COUNTER_INIT(_amr_t_renumber);
 
     // Set finalization callback
-    _amr_finalize();
+    cs_base_at_finalize(_amr_finalize);
   }
 
   _amr_info.is_set = true;
@@ -1287,6 +1291,10 @@ cs_adaptive_refinement_define(int                     n_layers,
   if (stats_root > -1) {
     _amr_stat_id = cs_timer_stats_create("operations", "AMR", "AMR");
   }
+
+  // Adapt postprocessing
+
+  cs_post_set_changing_connectivity();
 }
 
 /*----------------------------------------------------------------------------*/
