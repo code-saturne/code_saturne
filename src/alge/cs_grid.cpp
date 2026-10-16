@@ -163,14 +163,14 @@ typedef struct _cs_graph_m_ptr_t {
 /* Enforce diagonal dominance if non-negative */
 static double _grid_diag_dom_clip_factor = -1.; // Use positive value to enable.
 
-cs_real_t _penalization_threshold = 1e4;
+static cs_real_t _penalization_threshold = 1e4;
 
 /* Threshold under which diagonal dominant rows are ignored in the
    aggregation scheme (assuming that dominance allows strong enough
    convergence for those rows by itself). Y Notay recommends using
    a value of 5. */
 
-cs_real_t _dd_threshold_pw = 5;
+static cs_real_t _dd_threshold_pw = 5;
 
 /* ALgorithm variant settings */
 
@@ -1565,13 +1565,13 @@ _scatter_row_int(const cs_grid_t  *g,
         cs_lnum_t n_send = (  g->merge_cell_idx[rank_id+1]
                             - g->merge_cell_idx[rank_id]);
         int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
-        MPI_Send(num + g->merge_cell_idx[rank_id], n_send, CS_MPI_LNUM,
+        MPI_Send(num + g->merge_cell_idx[rank_id], n_send, MPI_INT,
                  dist_rank, tag, comm);
       }
     }
     else {
       MPI_Status status;
-      MPI_Recv(num, g->n_elts_r[0], CS_MPI_LNUM,
+      MPI_Recv(num, g->n_elts_r[0], MPI_INT,
                g->merge_sub_root, tag, comm, &status);
     }
   }
@@ -4338,8 +4338,8 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
       c_cardinality[ii] += 1;
       c_cardinality[jj] += 1;
 
-      xv_sum[ii] += abs(_f_xa[face_id*isym]);
-      xv_sum[jj] += abs(_f_xa[face_id*isym + isym-1]);
+      xv_sum[ii] += cs::abs(_f_xa[face_id*isym]);
+      xv_sum[jj] += cs::abs(_f_xa[face_id*isym + isym-1]);
     }
 
     /* Also check for penalization */
@@ -7590,7 +7590,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
                  + c_xa0ij[3*c_face +2] * dij[2];
       }
 
-      if (abs(dsigjg) > cs_math_epzero) {
+      if (cs::abs(dsigjg) > cs_math_epzero) {
 
         cs_real_t agij = dsxaij/dsigjg;
 
@@ -8029,7 +8029,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
                + c_xa0ij[3*c_face +1] * c_face_normal[c_face][1]
                + c_xa0ij[3*c_face +2] * c_face_normal[c_face][2];
 
-      if (abs(dsigjg) > cs_math_epzero) {
+      if (cs::abs(dsigjg) > cs_math_epzero) {
 
         cs_real_t agij = dsxaij/dsigjg;
 
@@ -8066,9 +8066,10 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     for (cs_lnum_t ii = 0; ii < f_n_cells; ii++) {
       cs_lnum_t ic = c_coarse_row[ii];
       if (ic > -1) {
-        if (w1[ii] > 0.)
-          c_da[ic] += w1[ii];
-        else
+        auto w1_ii = w1[ii];
+        if (w1_ii > 0.)
+          c_da[ic] += w1_ii;
+        else if (w1_ii < 0.)
           n_g_neg_diag++;
       }
     }
@@ -9021,7 +9022,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
           cs_real_t c_x_val_c = c_xa0[c_face_id];
 
-          if (abs(dsigjg) > cs_math_epzero) {
+          if (cs::abs(dsigjg) > cs_math_epzero) {
             const cs_real_t dsxaij
               = cs_math_3_dot_product(c_xa0ij[c_face_id],
                                       c_face_normal[c_face_id]);
@@ -9074,7 +9075,7 @@ _compute_coarse_quantities_msr_with_faces(const cs_grid_t  *f,
 
           cs_real_t c_x_val_c = c_xa0[c_face_id];
 
-          if (abs(dsigjg) > cs_math_epzero) {
+          if (cs::abs(dsigjg) > cs_math_epzero) {
             const cs_real_t dsxaij
               = cs_math_3_dot_product(c_xa0ij[c_face_id], dijc);
             const cs_real_t agij = dsxaij/dsigjg;
@@ -9199,12 +9200,12 @@ _native_from_msr(cs_grid_t  *g)
     CS_REALLOC(g->_da, db_stride*n_cols_ext, cs_real_t);
 
     for (cs_lnum_t i = 0; i < n_rows; i++) {
-      for (cs_lnum_t l = 0; l < eb_stride; l++)
+      for (cs_lnum_t l = 0; l < db_stride; l++)
         g->_da[i*db_stride + l] = d_val[i*db_stride + l];
     }
 
     for (cs_lnum_t i = n_rows; i < n_cols_ext; i++) {
-      for (cs_lnum_t l = 0; l < eb_stride; l++)
+      for (cs_lnum_t l = 0; l < db_stride; l++)
         g->_da[i*db_stride + l] = 0;
     }
   }
@@ -10677,7 +10678,7 @@ cs_grid_coarsen(cs_grid_t            *f,
     break;
   case CS_GRID_COARSENING_CONV_DIFF_DX:
     {
-      snprintf(aggr_type, 64, _("SPD PW, max %d, relax %4.3f"),
+      snprintf(aggr_type, 64, _("SPD DX, max %d, relax %4.3f"),
                aggregation_limit, relaxation_parameter);
     }
     break;
@@ -10839,7 +10840,7 @@ cs_grid_project_row_num(const cs_grid_t  *g,
   cs_gnum_t base_shift = 1;
   cs_gnum_t _max_num = max_num;
   cs_lnum_t n_max_rows = 0;
-  cs_lnum_t *tmp_num_1 = nullptr, *tmp_num_2 = nullptr;
+  int *tmp_num_1 = nullptr, *tmp_num_2 = nullptr;
   const cs_grid_t *_g = g;
 
   assert(g != nullptr);
@@ -10853,7 +10854,7 @@ cs_grid_project_row_num(const cs_grid_t  *g,
       n_max_rows = _g->n_rows;
   }
 
-  CS_MALLOC(tmp_num_1, n_max_rows, cs_lnum_t);
+  CS_MALLOC(tmp_num_1, n_max_rows, int);
 
   /* Compute local base starting row number in parallel mode */
 
@@ -10874,7 +10875,7 @@ cs_grid_project_row_num(const cs_grid_t  *g,
 
     /* Allocate temporary arrays */
 
-    CS_MALLOC(tmp_num_2, n_max_rows, cs_lnum_t);
+    CS_MALLOC(tmp_num_2, n_max_rows, int);
     for (cs_lnum_t i = 0; i < n_max_rows; i++)
       tmp_num_2[i] = -1;        /* singleton */
 
@@ -11143,11 +11144,11 @@ cs_grid_dump(const cs_grid_t  *g)
              "  n_rows:        %d\n"
              "  n_cols_ext:    %d\n"
              "  n_faces:       %d\n"
-             "  n_g_cells:     %d\n"
+             "  n_g_cells:     %lu\n"
              "  n_elts_r:      [%d, %d]\n",
              (const void *)g, g->level, (const void *)(g->parent),
              (int)(g->n_rows), (int)(g->n_cols_ext),
-             (int)(g->n_faces), (int)(g->n_g_rows),
+             (int)(g->n_faces), (unsigned long)(g->n_g_rows),
              (int)(g->n_elts_r[0]), (int)(g->n_elts_r[1]));
 
 #if defined(HAVE_MPI)
