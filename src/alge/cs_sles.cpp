@@ -579,6 +579,7 @@ _save_system_info(cs_sles_t  *s)
 
   s_old->_name = nullptr; /* still points to new name */
   s->context = nullptr;   /* old context now only available through s_old */
+  s->post_info = nullptr;
 
   _cs_sles_systems[2][i] = s_old;
 

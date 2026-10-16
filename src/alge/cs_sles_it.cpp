@@ -3560,7 +3560,6 @@ _gmres(cs_sles_it_t              *c,
 
   int check_freq = (int)(krylov_size/10) + 1;
   double epsi = 1.e-15;
-  int scaltest = 0;
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -3675,7 +3674,8 @@ _gmres(cs_sles_it_t              *c,
       dot_prod = sqrt(_dot_product(c, ctx, dk, dk));
       _h_matrix[ii*krylov_size + ii + 1] = dot_prod;
 
-      if (dot_prod < epsi) scaltest = 1;
+      int scaltest = 0;
+      if (dot_prod < epsi*beta) scaltest = 1;
 
       if (   (l_iter + 1)%check_freq == 0
           || l_iter == krylov_size - 2
@@ -3727,7 +3727,7 @@ _gmres(cs_sles_it_t              *c,
       l_iter++;
 
       if (cvg == CS_SLES_CONVERGED || cvg == CS_SLES_MAX_ITERATION ||
-          l_iter == krylov_size - 1   || scaltest == 1) {
+          l_iter == krylov_size - 1 || scaltest == 1) {
 #       pragma omp parallel for if (n_rows > CS_THR_MIN)
         for (cs_lnum_t jj = 0; jj < n_rows; jj++)
           vx[jj] = fk[jj];
