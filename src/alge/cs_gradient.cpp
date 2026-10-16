@@ -2508,7 +2508,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
   /* Add contributions from neighbor cells (standard and extended)
      ------------------------------------------------------------- */
 
-  int n_steps = (extended) ? 2 : 1;
+  int n_steps = (extended && is_porous == false) ? 2 : 1;
 
   for (int step_id = 0; step_id < n_steps; step_id++) {
 
@@ -2704,8 +2704,10 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 #endif
 
   /* Weighting requires face weights, so cannot be applied consistently
-     with an extended neighborhhood. */
-  if (c_weight != nullptr)
+     with an extended neighborhhood.
+     In the porous case, face surfaces are required, so a standard
+     neighborhood is used also. */
+  if (c_weight != nullptr || is_porous)
     halo_type = CS_HALO_STANDARD;
 
   cs_dispatch_context ctx;
@@ -2835,9 +2837,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
       for (cs_lnum_t cidx = cell_cells_e_idx[ii];
            cidx < cell_cells_e_idx[ii+1];
            cidx++) {
-
-        if (is_porous)
-          if (i_face_surf[c2f[cidx]] < DBL_MIN) continue;
 
         cs_lnum_t jj = cell_cells_e[cidx];
 
@@ -3262,8 +3261,10 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
     t_start = std::chrono::high_resolution_clock::now();
 
   /* Weighting requires face weights, so cannot be applied consistently
-     with an extended neighborhhod.  */
-  if (c_weight_s != nullptr)
+     with an extended neighborhhood.
+     In the porous case, face surfaces are required, so a standard
+     neighborhood is used also. */
+  if (c_weight_s != nullptr || is_porous_f)
     halo_type = CS_HALO_STANDARD;
 
   cs_dispatch_context ctx;
@@ -3468,9 +3469,6 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
            cidx++) {
 
         cs_lnum_t jj = cell_cells_lst[cidx];
-
-        if (is_porous_f)
-          if (i_face_surf[c2f[cidx]] < DBL_MIN) continue;
 
         /* Note: replaced the expressions:
          *  a) ptmid = 0.5 * (cell_cen[jj] - cell_cen[ii])
@@ -6788,11 +6786,16 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
   const cs_lnum_t *restrict c2f = nullptr;
   const cs_real_t *restrict b_face_surf = nullptr;
   const cs_real_t *restrict i_face_surf = nullptr;
+
   if (is_porous) {
     ma = cs_glob_mesh_adjacencies;
     c2f = ma->cell_i_faces;
     b_face_surf = fvq->b_face_surf;
     i_face_surf = fvq->i_face_surf;
+
+    /* In the porous case, face surfaces are required, so only
+       a standard neighborhood may be used. */
+    halo_type = CS_HALO_STANDARD;
   }
 
 #if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
@@ -6933,9 +6936,6 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
         cs_real_t dc[3];
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
-
-        if (is_porous)
-          if (i_face_surf[c2f[cidx]] < DBL_MIN) return;
 
         cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
