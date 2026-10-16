@@ -281,8 +281,8 @@ cs_sles_it_solve(void                *context,
                  int                 *n_iter,
                  double              *residual,
                  const cs_real_t     *rhs,
-                 cs_real_t           *vx,
                  cs_real_t           *vx_ini,
+                 cs_real_t           *vx,
                  size_t               aux_size,
                  void                *aux_vectors);
 

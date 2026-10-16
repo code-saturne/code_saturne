@@ -1394,7 +1394,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
     ro_0 = rk_gk;
 
     cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
-    cs_real_t alpha  =  - ro_0 * d_ro_1;
+    cs_real_t alpha = - ro_0 * d_ro_1;
 
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       dk[ii] = gk[ii] + (beta * dk[ii]);
@@ -2010,7 +2010,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 
 #if defined(HAVE_MPI)
     if (c->comm != MPI_COMM_NULL) {
-      MPI_Allreduce(MPI_IN_PLACE, rd.r, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      MPI_Allreduce(MPI_IN_PLACE, rd.r, 5, MPI_DOUBLE, MPI_SUM, c->comm);
     }
 #endif /* defined(HAVE_MPI) */
 
@@ -3062,7 +3062,7 @@ _bicgstab2(cs_sles_it_t              *c,
 
     /* Preconditionning */
 
-    c->setup_data->pc_apply(c->setup_data->pc_context, vk, zk);
+    // c->setup_data->pc_apply(c->setup_data->pc_context, vk, zk);
 
     /* Compute gamma and alpha */
 
@@ -3085,7 +3085,7 @@ _bicgstab2(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(ctx, a, rk, sk);
 
-    c->setup_data->pc_apply(c->setup_data->pc_context, sk, zk);
+    // c->setup_data->pc_apply(c->setup_data->pc_context, sk, zk);
 
     ro_1 = _dot_product(c, ctx, qk, sk);
     beta = alpha*ro_1/ro_0;
@@ -3100,7 +3100,7 @@ _bicgstab2(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(ctx, a, vk, wk);
 
-    c->setup_data->pc_apply(c->setup_data->pc_context, wk, zk);
+    // c->setup_data->pc_apply(c->setup_data->pc_context, wk, zk);
 
     gamma = _dot_product(c, ctx, qk, wk);
     alpha = (ro_0+mprec)/(gamma+mprec);
@@ -3114,7 +3114,7 @@ _bicgstab2(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(ctx, a, sk, tk);
 
-    c->setup_data->pc_apply(c->setup_data->pc_context, tk, zk);
+    // c->setup_data->pc_apply(c->setup_data->pc_context, tk, zk);
 
     _dot_products_xx_yy_xy_xz_yz(c, ctx, sk, tk, rk,
                                  &mu, &tau, &nu, &omega_1, &omega_2);
@@ -4791,7 +4791,7 @@ cs_sles_it_destroy(void **context)
       CS_FREE(c->add_data);
     }
     CS_FREE(c);
-    *context = c;
+    *context = c;  // Except in case of memory corruption, c == nullptr here.
   }
 }
 
@@ -4884,18 +4884,16 @@ cs_sles_it_log(const void  *context,
     int n_it_min = c->n_iterations_min;
     int n_it_max = c->n_iterations_max;
     unsigned long long n_it_tot = c->n_iterations_tot;
-    int n_it_mean = 0;
 
     if (n_it_min < 0)
       n_it_min = 0;
 
-    if (n_calls > 0)
-      n_it_mean = (int)( n_it_tot / ((unsigned long long)n_calls));
-
-    if (n_it_mean == 0)
+    if (n_calls == 0)
       cs_log_printf(log_type, _("\n  No resolution\n"));
 
     else {
+
+      int n_it_mean = (int)( n_it_tot / ((unsigned long long)n_calls));
 
       cs_log_printf(log_type,
                     _("\n"
@@ -5576,6 +5574,7 @@ cs_sles_it_transfer_pc(cs_sles_it_t     *context,
       c->_pc = *pc;
       c->pc = *pc;
     }
+    *pc = nullptr;
   }
   else if (pc != nullptr)
     cs_sles_pc_destroy(pc);
