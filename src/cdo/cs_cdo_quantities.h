@@ -141,10 +141,16 @@ struct cs_quant_t {
 
 struct cs_cdo_quantities_t { /* Specific mesh quantities */
 
+  /* Metadata about mesh quantities */
+  /* ============================== */
+
   /* Keep the information about the removal of boundary faces in case of 2D
      computations */
 
   bool             remove_boundary_faces;
+  bool             has_own_face_quantities;
+  bool             has_own_cell_centers;
+  bool             has_own_cell_volumes;
 
   /* Global mesh quantities */
 

@@ -203,6 +203,9 @@ _create_cdo_quantities(void)
   CS_MALLOC(cdoq, 1, cs_cdo_quantities_t);
 
   cdoq->remove_boundary_faces = false;
+  cdoq->has_own_face_quantities = false;
+  cdoq->has_own_cell_centers = false;
+  cdoq->has_own_cell_volumes = false;
 
   cdoq->vol_tot = 0.;
 
@@ -1435,6 +1438,11 @@ _subdiv_algorithm(const cs_mesh_t            *mesh,
   cs_real_t    *b_face_surf     = nullptr;
   cs_real_3_t  *b_face_center   = nullptr;
 
+  // Set this variable to know that one has to free the memory even if there is
+  // a modification of the way to compute mesh quantities
+
+  cdoq->has_own_face_quantities = true;
+
   // Reset pointers related to boundary face quantities
 
   CS_MALLOC(b_face_u_normal, mesh->n_b_faces, cs_nreal_3_t);
@@ -1659,17 +1667,21 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
 
     case CS_CDO_QUANTITIES_BARYC_CENTER:
       cdoq->cell_vol = mq->cell_vol;
+      cdoq->has_own_cell_centers = true;
       CS_MALLOC(cdoq->cell_centers, m->n_cells_with_ghosts, cs_real_3_t);
       _mirtich_algorithm(m, mq, topo, cdoq);
       break;
 
     case CS_CDO_QUANTITIES_MEANV_CENTER:
       cdoq->cell_vol = mq->cell_vol;
+      cdoq->has_own_cell_centers = true;
       CS_MALLOC(cdoq->cell_centers, m->n_cells_with_ghosts, cs_real_3_t);
       _vtx_algorithm(topo, cdoq);
       break;
 
     case CS_CDO_QUANTITIES_SUBDIV_CENTER:
+      cdoq->has_own_cell_volumes = true;
+      cdoq->has_own_cell_centers = true;
       CS_MALLOC(cdoq->cell_vol, m->n_cells_with_ghosts, cs_real_t);
       CS_MALLOC(cdoq->cell_centers, m->n_cells_with_ghosts, cs_real_3_t);
       _subdiv_algorithm(m, mq, topo, cdoq);
@@ -1920,10 +1932,10 @@ cs_cdo_quantities_free(cs_cdo_quantities_t *cdoq)
 
   /* Cell-related quantities */
 
-  if (cs_cdo_cell_center_algo != CS_CDO_QUANTITIES_SATURNE_CENTER)
+  if (cdoq->has_own_cell_centers)
     CS_FREE(cdoq->cell_centers);
 
-  if (cs_cdo_cell_center_algo == CS_CDO_QUANTITIES_SUBDIV_CENTER) {
+  if (cdoq->has_own_face_quantities) {
     CS_FREE(cdoq->b_face_u_normal);
     CS_FREE(cdoq->b_face_normal);
     CS_FREE(cdoq->b_face_surf);
@@ -1975,11 +1987,9 @@ cs_cdo_quantities_free_cell_vol(cs_cdo_quantities_t *cdoq)
   if (cdoq == nullptr)
     return;
 
-  if (cs_glob_mesh_quantities->cell_vol != cdoq->cell_vol)
+  if (cdoq->has_own_cell_volumes)
     CS_FREE(cdoq->cell_vol);
 }
-
-
 
 /*----------------------------------------------------------------------------*/
 /*!
