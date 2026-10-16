@@ -329,150 +329,176 @@ _compute_max_ent(const cs_mesh_t  *m,
                  cs_cdo_connect_t *connect)
 {
   assert(connect != nullptr && m != nullptr);
-  assert(connect->c2v != nullptr && connect->c2e != nullptr
-         && connect->f2c != nullptr);
-  assert(connect->f2e != nullptr);
+  assert(connect->c2v != nullptr && connect->c2e != nullptr);
+  assert(connect->c2f != nullptr && connect->e2v != nullptr);
+  assert(connect->if2v != nullptr && connect->bf2v != nullptr);
 
-  const cs_lnum_t n_vertices = connect->n_vertices;
+  const cs_lnum_t n_cells   = connect->n_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
 
-  short int *v_count = nullptr;
-  CS_MALLOC(v_count, n_vertices, short int);
-# pragma omp parallel for if (n_vertices > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_vertices; i++)
-    v_count[i] = 0;
+  const cs_adjacency_t *c2v  = connect->c2v;
+  const cs_adjacency_t *c2e  = connect->c2e;
+  const cs_adjacency_t *c2f  = connect->c2f;
+  const cs_adjacency_t *e2v  = connect->e2v;
+  const cs_adjacency_t *if2v = connect->if2v;
+  const cs_adjacency_t *bf2v = connect->bf2v;
 
-  const cs_lnum_t       n_cells = connect->n_cells;
-  const cs_lnum_t       n_edges = connect->n_edges;
-  const cs_adjacency_t *c2v     = connect->c2v;
-  const cs_adjacency_t *c2e     = connect->c2e;
-  const cs_adjacency_t *e2v     = connect->e2v;
-
-  assert(c2e->n_elts == n_cells);
   assert(c2v->n_elts == n_cells);
+  assert(c2e->n_elts == n_cells);
+  assert(c2f->n_elts == n_cells);
 
   int n_max_vc = 0, n_max_ec = 0, n_max_fc = 0;
   int n_max_v2ec = 0, n_max_v2fc = 0, n_max_vf = 0;
+  cs_lnum_t max_v_range = 0, max_e_range = 0;
 
-  connect->e_max_cell_range = 0;
-  connect->v_max_cell_range = 0;
+  constexpr int stack_capacity = 64;
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+# pragma omp parallel if (n_cells > CS_THR_MIN)
+  {
+    int th_max_vc = 0, th_max_ec = 0, th_max_fc = 0;
+    int th_max_v2ec = 0, th_max_v2fc = 0, th_max_vf = 0;
+    cs_lnum_t th_max_v_range = 0, th_max_e_range = 0;
 
-    /* Vertices */
+    /* Thread-local count buffer (stack-allocated in 99% of cases) */
+    int  stack_v_count[stack_capacity];
+    int *v_count          = stack_v_count;
+    int  v_count_capacity = stack_capacity;
 
-    const cs_lnum_t *c2v_idx = c2v->idx + c_id;
-    const cs_lnum_t *c2v_ids = c2v->ids + c2v_idx[0];
-    const int        n_vc    = c2v_idx[1] - c2v_idx[0];
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    cs_lnum_t min_id = n_vertices, max_id = 0;
-    for (short int v = 0; v < n_vc; v++) {
-      if (c2v_ids[v] < min_id)
-        min_id = c2v_ids[v];
-      if (c2v_ids[v] > max_id)
-        max_id = c2v_ids[v];
-    }
-    cs_lnum_t _range = max_id - min_id;
+      // 1. Cell vertices
 
-    if (n_vc > n_max_vc)
-      n_max_vc = n_vc;
-    if (connect->v_max_cell_range < _range)
-      connect->v_max_cell_range = _range;
+      const cs_lnum_t *c2v_idx = c2v->idx + c_id;
+      const cs_lnum_t *c2v_ids = c2v->ids + c2v_idx[0];
+      const cs_lnum_t  n_vc    = c2v_idx[1] - c2v_idx[0];
 
-    /* Edges */
+      if (n_vc > th_max_vc)
+        th_max_vc = static_cast<int>(n_vc);
 
-    const cs_lnum_t *c2e_idx = c2e->idx + c_id;
-    const cs_lnum_t *c2e_ids = c2e->ids + c2e_idx[0];
-    const int        n_ec    = c2e_idx[1] - c2e_idx[0];
-
-    min_id = n_edges, max_id = 0;
-    for (short int e = 0; e < n_ec; e++) {
-      if (c2e_ids[e] < min_id)
-        min_id = c2e_ids[e];
-      if (c2e_ids[e] > max_id)
-        max_id = c2e_ids[e];
-    }
-    _range = max_id - min_id;
-
-    if (n_ec > n_max_ec)
-      n_max_ec = n_ec;
-    if (connect->e_max_cell_range < _range)
-      connect->e_max_cell_range = _range;
-
-    for (short int e = 0; e < n_ec; e++) {
-
-      const cs_lnum_t *e2v_ids = e2v->ids + 2 * c2e_ids[e];
-
-      v_count[e2v_ids[0]] += 1;
-      v_count[e2v_ids[1]] += 1;
-    }
-
-    /* Update n_max_v2ec and reset v_count */
-
-    for (short int v = 0; v < n_vc; v++) {
-
-      const cs_lnum_t v_id = c2v_ids[v];
-      if (v_count[v_id] > n_max_v2ec)
-        n_max_v2ec = v_count[v_id];
-      v_count[v_id] = 0; /* reset */
-    }
-
-    const cs_lnum_t *c2f_idx = connect->c2f->idx + c_id;
-    const cs_lnum_t *c2f_ids = connect->c2f->ids + c2f_idx[0];
-    const int        n_fc    = c2f_idx[1] - c2f_idx[0];
-
-    if (n_fc > n_max_fc)
-      n_max_fc = n_fc;
-
-    for (short int f = 0; f < n_fc; f++) {
-
-      const cs_lnum_t f_id = c2f_ids[f];
-      if (f_id < m->n_i_faces) { /* Interior face */
-
-        const cs_lnum_t *f2v_idx = m->i_face_vtx_idx + f_id;
-        const cs_lnum_t *f2v_ids = m->i_face_vtx_lst + f2v_idx[0];
-        const int        n_vf    = f2v_idx[1] - f2v_idx[0];
-
-        if (n_vf > n_max_vf)
-          n_max_vf = n_vf;
-        for (short int v = 0; v < n_vf; v++)
-          v_count[f2v_ids[v]] += 1;
-      }
-      else { /* Border face */
-
-        const cs_lnum_t *f2v_idx = m->b_face_vtx_idx + f_id - m->n_i_faces;
-        const cs_lnum_t *f2v_ids = m->b_face_vtx_lst + f2v_idx[0];
-        const int        n_vf    = f2v_idx[1] - f2v_idx[0];
-
-        if (n_vf > n_max_vf)
-          n_max_vf = n_vf;
-        for (short int v = 0; v < n_vf; v++)
-          v_count[f2v_ids[v]] += 1;
+      // Range: c2v is guaranteed to be sorted by cs_adjacency_sort
+      if (n_vc > 0) {
+        const cs_lnum_t range_v = c2v_ids[n_vc - 1] - c2v_ids[0];
+        if (range_v > th_max_v_range)
+          th_max_v_range = range_v;
       }
 
-    } /* Loop on cell faces */
+      // 2. Cell edges
 
-    /* Update n_max_v2fc and reset v_count */
+      const cs_lnum_t *c2e_idx = c2e->idx + c_id;
+      const cs_lnum_t *c2e_ids = c2e->ids + c2e_idx[0];
+      const cs_lnum_t  n_ec    = c2e_idx[1] - c2e_idx[0];
 
-    for (short int v = 0; v < n_vc; v++) {
+      if (n_ec > th_max_ec)
+        th_max_ec = static_cast<int>(n_ec);
 
-      const cs_lnum_t v_id = c2v_ids[v];
-      if (v_count[v_id] > n_max_v2fc)
-        n_max_v2fc = v_count[v_id];
-      v_count[v_id] = 0; /* reset */
+      // Range: c2e is guaranteed to be sorted by cs_adjacency_sort
+      if (n_ec > 0) {
+        const cs_lnum_t range_e = c2e_ids[n_ec - 1] - c2e_ids[0];
+        if (range_e > th_max_e_range)
+          th_max_e_range = range_e;
+      }
+
+      // Ensure thread-local buffer is large enough for general polyhedra
+      if (n_vc > v_count_capacity) {
+        if (v_count != stack_v_count)
+          CS_FREE(v_count);
+        v_count_capacity = static_cast<int>(n_vc);
+        CS_MALLOC(v_count, v_count_capacity, int);
+      }
+
+      // Initialize in-cell vertex counters
+      for (cs_lnum_t v = 0; v < n_vc; v++)
+        v_count[v] = 0;
+
+      // Count edges connected to each vertex in the cell
+      for (cs_lnum_t e = 0; e < n_ec; e++) {
+        const cs_lnum_t *e2v_ids = e2v->ids + 2 * c2e_ids[e];
+
+        const cs_lnum_t v0
+          = cs_cdo_connect_find_local_id(e2v_ids[0], c2v_ids, n_vc);
+        const cs_lnum_t v1
+          = cs_cdo_connect_find_local_id(e2v_ids[1], c2v_ids, n_vc);
+
+        assert(v0 >= 0 && v0 < n_vc);
+        assert(v1 >= 0 && v1 < n_vc);
+
+        v_count[v0]++;
+        v_count[v1]++;
+      }
+
+      for (cs_lnum_t v = 0; v < n_vc; v++) {
+        if (v_count[v] > th_max_v2ec)
+          th_max_v2ec = v_count[v];
+        v_count[v] = 0; // Reset for face-to-vertex count
+      }
+
+      // 3. Cell faces
+
+      const cs_lnum_t *c2f_idx = c2f->idx + c_id;
+      const cs_lnum_t *c2f_ids = c2f->ids + c2f_idx[0];
+      const cs_lnum_t  n_fc    = c2f_idx[1] - c2f_idx[0];
+
+      if (n_fc > th_max_fc)
+        th_max_fc = static_cast<int>(n_fc);
+
+      for (cs_lnum_t f = 0; f < n_fc; f++) {
+        const cs_lnum_t f_id = c2f_ids[f];
+
+        const bool is_int = (f_id < n_i_faces);
+        const cs_adjacency_t *f2v = is_int ? if2v : bf2v;
+        const cs_lnum_t f_idx = is_int ? f_id : f_id - n_i_faces;
+
+        const cs_lnum_t *f2v_idx = f2v->idx + f_idx;
+        const cs_lnum_t *f2v_ids = f2v->ids + f2v_idx[0];
+        const int        n_vf    = static_cast<int>(f2v_idx[1] - f2v_idx[0]);
+
+        if (n_vf > th_max_vf)
+          th_max_vf = n_vf;
+
+        for (int v = 0; v < n_vf; v++) {
+          const cs_lnum_t loc_v
+            = cs_cdo_connect_find_local_id(f2v_ids[v], c2v_ids, n_vc);
+          assert(loc_v >= 0 && loc_v < n_vc);
+          v_count[loc_v]++;
+        }
+      } // Loop on cell faces
+
+      for (cs_lnum_t v = 0; v < n_vc; v++) {
+        if (v_count[v] > th_max_v2fc)
+          th_max_v2fc = v_count[v];
+      }
+
+    } // Loop on cells
+
+    if (v_count != stack_v_count)
+      CS_FREE(v_count);
+
+    // Thread reduction
+#   pragma omp critical
+    {
+      if (th_max_vc > n_max_vc)         n_max_vc = th_max_vc;
+      if (th_max_ec > n_max_ec)         n_max_ec = th_max_ec;
+      if (th_max_fc > n_max_fc)         n_max_fc = th_max_fc;
+      if (th_max_v2ec > n_max_v2ec)     n_max_v2ec = th_max_v2ec;
+      if (th_max_v2fc > n_max_v2fc)     n_max_v2fc = th_max_v2fc;
+      if (th_max_vf > n_max_vf)         n_max_vf = th_max_vf;
+      if (th_max_v_range > max_v_range) max_v_range = th_max_v_range;
+      if (th_max_e_range > max_e_range) max_e_range = th_max_e_range;
     }
 
-  } /* Loop on cells */
-
-  CS_FREE(v_count);
+  } // End OpenMP parallel block
 
   /* Store computed values */
 
-  connect->n_max_vbyc = n_max_vc; /* Max number of vertices for a cell */
-  connect->n_max_ebyc = n_max_ec; /* Max number of edges for a cell */
-  connect->n_max_fbyc = n_max_fc; /* Max number of faces for a cell */
-  connect->n_max_v2ec = n_max_v2ec;
-  connect->n_max_v2fc = n_max_v2fc;
-  connect->n_max_vbyf = n_max_vf; /* Max number of vertices in a face */
+  connect->n_max_vbyc       = n_max_vc;
+  connect->n_max_ebyc       = n_max_ec;
+  connect->n_max_fbyc       = n_max_fc;
+  connect->n_max_v2ec       = n_max_v2ec;
+  connect->n_max_v2fc       = n_max_v2fc;
+  connect->n_max_vbyf       = n_max_vf;
+  connect->v_max_cell_range = max_v_range;
+  connect->e_max_cell_range = max_e_range;
 }
 
 /*----------------------------------------------------------------------------*/
