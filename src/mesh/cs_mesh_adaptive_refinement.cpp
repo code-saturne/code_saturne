@@ -1383,8 +1383,17 @@ cs_adaptive_refinement_free_gradients(void)
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->grad != nullptr)
-      CS_FREE(f->grad);
+
+    if (!f->owner())
+      continue;
+
+    f->_grad->clear();
+
+    if (f->is_series_owner()) {
+      f->map_to_ns_gradient();
+    } else {
+      f->grad = f->_grad->data();
+    }
   }
 }
 
