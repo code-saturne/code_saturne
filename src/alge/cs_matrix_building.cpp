@@ -2052,7 +2052,11 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
 
       /* Diagonal values */
 
-      cs_matrix_assembler_values_add_g(mav, n_cells, r_g_id, r_g_id, da);
+      cs_matrix_assembler_values_add_g(mav,
+                                       n_cells,
+                                       const_cast<cs_gnum_t *>(r_g_id),
+                                       const_cast<cs_gnum_t *>(r_g_id),
+                                       const_cast<cs_real_t *>(da));
 
       /* Extradiagonal values based on internal faces */
 
@@ -2402,7 +2406,11 @@ cs_matrix_compute_coeffs
 
       /* Diagonal values */
 
-      cs_matrix_assembler_values_add_g(mav, n_cells, r_g_id, r_g_id, da_p);
+      cs_matrix_assembler_values_add_g(mav,
+                                       n_cells,
+                                       const_cast<cs_gnum_t *>(r_g_id),
+                                       const_cast<cs_gnum_t *>(r_g_id),
+                                       const_cast<cs_real_t *>(da_p));
 
       /* Extradiagonal values based on internal faces */
 

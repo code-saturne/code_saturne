@@ -60,35 +60,37 @@ namespace algorithm {
  * \brief Binary search for a given local id in a given array of
  *        ordered local ids, when the id might not be present.
  *
- * \param[in]  l_id_array_size  array_size
- * \param[in]  l_id             local id to search for
- * \param[in]  l_id_array       ordered unique local ids array
+ * \tparam T integer variant
  *
- * \return  index of l_id in l_id_array, or -1 if not found
+ * \return  index of id in id_array, or -1 if not found
  */
 /*----------------------------------------------------------------------------*/
 
+template <typename T>
 CS_F_HOST_DEVICE inline cs_lnum_t
-l_binary_search(cs_lnum_t        l_id_array_size,
-                cs_lnum_t        l_id,
-                const cs_lnum_t  l_id_array[])
+binary_search
+(
+  cs_lnum_t  id_array_size,  /*!< [in] array_size */
+  T          id,             /*!< [in] id to search for */
+  const T    id_array[]      /*!< [in] ordered unique ids array */
+)
 {
-  if (l_id_array_size < 1)
+  if (id_array_size < 1)
     return -1;
 
   cs_lnum_t start_id = 0;
-  cs_lnum_t end_id = l_id_array_size - 1;
+  cs_lnum_t end_id = id_array_size - 1;
   cs_lnum_t mid_id = (end_id -start_id) / 2;
   while (start_id < end_id) {
-    if (l_id_array[mid_id] < l_id)
+    if (id_array[mid_id] < id)
       start_id = mid_id + 1;
-    else if (l_id_array[mid_id] > l_id)
+    else if (id_array[mid_id] > id)
       end_id = mid_id - 1;
     else
       break;
     mid_id = start_id + ((end_id -start_id) / 2);
   }
-  if (l_id_array[mid_id] != l_id)
+  if (id_array[mid_id] != id)
     mid_id = -1;
 
   return mid_id;

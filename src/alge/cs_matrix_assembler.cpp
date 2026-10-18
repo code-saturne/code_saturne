@@ -2046,119 +2046,6 @@ _matrix_assembler_values_add_cnv_idx(cs_matrix_assembler_values_t  *mav,
   }
 }
 
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add coefficient values based on local row ids and global column ids,
- *        using a local addition function.
- *
- * This function may be called by different threads if the caller
- * ensures different threads will not write to the same final parts of
- * the matrix coefficients.
- *
- * \param[in, out]  mav       pointer to matrix assembler values structure
- * \param[in]       n         number of values to add
- * \param[in]       stride    matrix block stride
- * \param[in]       row_id    matrix row ids
- * \param[in]       col_g_id  global column ids
- * \param[in]       val       values to add
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_matrix_assembler_values_add_lg(cs_matrix_assembler_values_t  *mav,
-                                cs_lnum_t                      n,
-                                cs_lnum_t                      stride,
-                                const cs_lnum_t                row_id[],
-                                const cs_gnum_t                col_g_id[],
-                                const cs_real_t                val[])
-{
-  const cs_matrix_assembler_t  *ma = mav->ma;
-
-  assert(mav->add_values != nullptr);
-
-  cs_lnum_t s_col_idx[COEFF_GROUP_SIZE];
-
-  for (cs_lnum_t i = 0; i < n; i+= COEFF_GROUP_SIZE) {
-
-    cs_lnum_t b_size = COEFF_GROUP_SIZE;
-    if (i + COEFF_GROUP_SIZE > n)
-      b_size = n - i;
-
-    for (cs_lnum_t j = 0; j < b_size; j++) {
-
-      cs_lnum_t k = i+j;
-
-      cs_lnum_t l_r_id = row_id[k];
-      cs_gnum_t g_c_id = col_g_id[k];
-
-      /* Local part */
-
-      if (g_c_id >= ma->l_range[0] && g_c_id < ma->l_range[1]) {
-
-        cs_lnum_t l_c_id = g_c_id - ma->l_range[0];
-        cs_lnum_t n_cols =  ma->r_idx[l_r_id+1] - ma->r_idx[l_r_id];
-
-        /* remark: we could slightly reduce the binary search by subtracting
-           the last (ma->d_r_idx[l_r_id+1] - ma->d_r_idx[l_r_id]) from
-           the column count, but this would require a separate function
-           for the serial case where that array may not exist */
-
-        s_col_idx[j] = _l_id_binary_search(n_cols,
-                                           l_c_id,
-                                           ma->c_id + ma->r_idx[l_r_id]);
-
-        assert(s_col_idx[j] > -1 || (ma->separate_diag && l_c_id == l_r_id));
-
-      }
-
-      /* Distant part */
-
-#if defined(HAVE_MPI)
-
-      else {
-
-        cs_lnum_t n_cols = ma->d_r_idx[l_r_id+1] - ma->d_r_idx[l_r_id];
-
-        cs_lnum_t d_c_idx = _g_id_binary_find(n_cols,
-                                              g_c_id,
-                                              ma->d_g_c_id + ma->d_r_idx[l_r_id]);
-
-        /* column ids start and end of local row, so add r_idx[row_id+1] */
-        s_col_idx[j] = d_c_idx + ma->r_idx[l_r_id] + 1;
-
-      }
-
-#endif /* HAVE_MPI */
-
-    }
-
-    /* Case where assembler and values assembler have the same
-       "separate diagonal" behavior */
-
-    if (ma->separate_diag == mav->separate_diag)
-      mav->add_values(mav->matrix,
-                      0,
-                      b_size,
-                      stride,
-                      row_id + i,
-                      s_col_idx,
-                      val + (i*stride));
-
-    else
-      _matrix_assembler_values_add_cnv_idx(mav,
-                                           b_size,
-                                           stride,
-                                           row_id + i,
-                                           s_col_idx,
-                                           val + (i*stride));
-
-  }
-}
-
-#endif /* HAVE_MPI */
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add coefficient values based on local row ids and column ids,
@@ -2937,6 +2824,32 @@ cs_matrix_assembler_get_col_ids(const cs_matrix_assembler_t  *ma)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return local range and distant column id info.
+ *
+ * \param[in]  ma  pointer to matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_assembler_get_dist_info
+(
+  const cs_matrix_assembler_t   *ma,          /*!< [in] pointer to assembler */
+  cs_gnum_t                      l_range[2],  /*!< [out] local range */
+  const cs_lnum_t              *&d_r_idx,     /*!< [out] distant row index */
+  const cs_gnum_t              *&d_g_c_id     /*!< [out] distant global
+                                                         column ids */
+)
+{
+  assert(ma != nullptr);
+
+  l_range[0] = ma->l_range[0];
+  l_range[1] = ma->l_range[1];
+  d_r_idx = ma->d_r_idx;
+  d_g_c_id = ma->d_g_c_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return info on the number of neighbor ranks a matrix assembler
  *        may communicate with.
  *
@@ -3149,6 +3062,8 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav)
  *
  * If the matching matrix coefficients use a block structure, the
  * values passed to this function should use the same block size.
+ * An entry should be provided by block, one pair of ids represents
+ * one block, with (interleaved) stride*stride values.
  *
  * Note also that if the matrix has different diagonal and extradiagonal
  * block sizes, separate calls to this function should be used for both
@@ -3260,6 +3175,8 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  *
  * If the matching matrix coefficients use a block structure, the
  * values passed to this function should use the same block size.
+ * An entry should be provided by block, one pair of global ids represents
+ * one block, with (interleaved) stride*stride values.
  *
  * Note also that if the matrix has different diagonal and extradiagonal
  * block sizes, separate calls to this function should be used for both
@@ -3272,20 +3189,24 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  * in the case of external libraries so that their builder functions
  * have the same property).
  *
+ * The col_g_id, row_g_id, and val arrays should only be modified
+ * with certain matrix types if col_g_id references values on
+ * distant ranks.
+ *
  * \param[in, out]  mav       pointer to matrix assembler values structure
  * \param[in]       n         number of entries
- * \param[in]       col_g_id  global column ids associated with entries
- * \param[in]       row_g_id  global row ids associated with entries
- * \param[in]       val       values associated with entries
+ * \param[in, out]  col_g_id  global column ids associated with entries
+ * \param[in, out]  row_g_id  global row ids associated with entries
+ * \param[in, out]  val       values associated with entries
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
                                  cs_lnum_t                      n,
-                                 const cs_gnum_t                row_g_id[],
-                                 const cs_gnum_t                col_g_id[],
-                                 const cs_real_t                val[])
+                                 cs_gnum_t                      row_g_id[],
+                                 cs_gnum_t                      col_g_id[],
+                                 cs_real_t                      val[])
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
 
@@ -3301,202 +3222,54 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
   else
     stride = mav->eb_size * mav->eb_size;
 
-  cs_gnum_t s_g_row_id[COEFF_GROUP_SIZE];
-  cs_gnum_t s_g_col_id[COEFF_GROUP_SIZE];
-
-  for (cs_lnum_t i = 0; i < n; i+= COEFF_GROUP_SIZE) {
-
-    cs_lnum_t b_size = COEFF_GROUP_SIZE;
-    if (i + COEFF_GROUP_SIZE > n)
-      b_size = n - i;
-
-    for (cs_lnum_t j = 0; j < b_size; j++) {
-
-      cs_lnum_t k = i+j;
-
-      cs_gnum_t g_r_id = row_g_id[k];
-
 #if defined(HAVE_MPI)
 
-      /* Case where coefficient is handled by another rank */
+  for (cs_lnum_t k = 0; k < n; k++) {
 
-      if (g_r_id < ma->l_range[0] || g_r_id >= ma->l_range[1]) {
+    cs_gnum_t g_r_id = row_g_id[k];
 
-        constexpr cs_gnum_t max_gnum = std::numeric_limits<cs_gnum_t>::max();
+    /* Case where coefficient is handled by another rank */
 
-        s_g_row_id[j] = ma->l_range[1];
-        s_g_col_id[j] = max_gnum;         // Out of range for local filtering.
+    if (g_r_id < ma->l_range[0] || g_r_id >= ma->l_range[1]) {
 
-        cs_lnum_t e_r_id = _g_id_binary_find(ma->coeff_send_n_rows,
-                                             g_r_id,
-                                             ma->coeff_send_row_g_id);
+      cs_lnum_t e_r_id = _g_id_binary_find(ma->coeff_send_n_rows,
+                                           g_r_id,
+                                           ma->coeff_send_row_g_id);
 
-        cs_lnum_t r_start = ma->coeff_send_index[e_r_id];
-        cs_lnum_t n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
+      cs_lnum_t r_start = ma->coeff_send_index[e_r_id];
+      cs_lnum_t n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
 
-        cs_lnum_t e_id =   r_start
-                         +_g_id_binary_find(n_e_rows,
-                                            col_g_id[k],
-                                            ma->coeff_send_col_g_id + r_start);
+      cs_lnum_t e_id =    r_start
+                       + _g_id_binary_find(n_e_rows,
+                                           col_g_id[k],
+                                           ma->coeff_send_col_g_id + r_start);
 
-        /* Now add values to send coefficients */
+      /* Now add values to send coefficients */
 
-        for (cs_lnum_t l = 0; l < stride; l++)
-#         pragma omp atomic
-          mav->coeff_send[e_id*stride + l] += val[k*stride + l];
-
+      for (cs_lnum_t l = 0; l < stride; l++) {
+#       pragma omp atomic
+        mav->coeff_send[e_id*stride + l] += val[k*stride + l];
       }
 
-      /* Standard case */
+    }
 
-      else {
-
-        s_g_row_id[j] = g_r_id;
-        s_g_col_id[j] = col_g_id[k];
-
-      }
-
-#else
-
-      s_g_row_id[j] = g_r_id;
-      s_g_col_id[j] = col_g_id[k];
+  }
 
 #endif /* HAVE_MPI */
 
-    }
-
-    if (mav->add_values_g != nullptr) /* global id-based assembler function */
-      mav->add_values_g(mav->matrix,
-                        0,
-                        b_size,
-                        stride,
-                        s_g_row_id,
-                        s_g_col_id,
-                        val + (i*stride));
-
-    else if (ma->d_r_idx != nullptr) { /* local-id-based function, need to adapt */
-
-      cs_lnum_t s_row_id[COEFF_GROUP_SIZE];
-      cs_lnum_t s_col_idx[COEFF_GROUP_SIZE];
-
-      for (cs_lnum_t j = 0; j < b_size; j++) {
-
-        if (s_g_row_id[j] == ma->l_range[1]) { /* filter other-rank values */
-          s_row_id[j] = -1;
-          s_col_idx[j] = -1;
-        }
-
-        else { /* Handle values assigned to local rank */
-
-          cs_lnum_t l_r_id = s_g_row_id[j] - ma->l_range[0];
-          cs_gnum_t g_c_id = s_g_col_id[j];
-
-          s_row_id[j] = l_r_id;
-
-          cs_lnum_t n_l_cols = (  ma->r_idx[l_r_id+1] - ma->r_idx[l_r_id]
-                                - ma->d_r_idx[l_r_id+1] + ma->d_r_idx[l_r_id]);
-
-          /* Local part */
-
-          if (g_c_id >= ma->l_range[0] && g_c_id < ma->l_range[1]) {
-
-            cs_lnum_t l_c_id = g_c_id - ma->l_range[0];
-
-            s_col_idx[j] = _l_id_binary_search(n_l_cols,
-                                               l_c_id,
-                                               ma->c_id + ma->r_idx[l_r_id]);
-
-            assert(s_col_idx[j] > -1 || (ma->separate_diag && l_c_id == l_r_id));
-
-          }
-
-          /* Distant part */
-
-          else {
-
-            cs_lnum_t n_cols = ma->d_r_idx[l_r_id+1] - ma->d_r_idx[l_r_id];
-
-            cs_lnum_t d_c_idx = _g_id_binary_find(n_cols,
-                                                  g_c_id,
-                                                  ma->d_g_c_id + ma->d_r_idx[l_r_id]);
-
-            /* column ids start and end of local row, so add n_l_cols */
-            s_col_idx[j] = d_c_idx + n_l_cols;
-
-          }
-
-        }
-
-      }
-
-      if (ma->separate_diag == mav->separate_diag) {
-        mav->add_values(mav->matrix,
-                        0,
-                        b_size,
-                        stride,
-                        s_row_id,
-                        s_col_idx,
-                        val + (i*stride));
-      }
-
-      else
-        _matrix_assembler_values_add_cnv_idx(mav,
-                                             b_size,
-                                             stride,
-                                             s_row_id,
-                                             s_col_idx,
-                                             val + (i*stride));
-
-    }
-
-    else { /* local-only case or matrix part */
-
-      assert(ma->d_r_idx == nullptr);
-
-      cs_lnum_t s_row_id[COEFF_GROUP_SIZE];
-      cs_lnum_t s_col_idx[COEFF_GROUP_SIZE];
-
-      for (cs_lnum_t j = 0; j < b_size; j++) {
-
-        assert(s_g_row_id[j] < ma->l_range[1]);
-        assert(s_g_col_id[j] < ma->l_range[1]);
-
-        cs_lnum_t l_r_id = s_g_row_id[j] - ma->l_range[0];
-        cs_lnum_t l_c_id = s_g_col_id[j] - ma->l_range[0];
-
-        assert(   s_g_col_id[j] >= ma->l_range[0]
-               && s_g_col_id[j] < ma->l_range[1]);
-
-        s_row_id[j] = l_r_id;
-
-        cs_lnum_t n_cols = ma->r_idx[l_r_id+1] - ma->r_idx[l_r_id];
-
-        s_col_idx[j] = _l_id_binary_search(n_cols,
-                                           l_c_id,
-                                           ma->c_id + ma->r_idx[l_r_id]);
-
-        assert(s_col_idx[j] > -1 || (ma->separate_diag && l_c_id == l_r_id));
-
-      }
-
-      if (ma->separate_diag == mav->separate_diag)
-        mav->add_values(mav->matrix,
-                        0,
-                        b_size,
-                        stride,
-                        s_row_id,
-                        s_col_idx,
-                        val + (i*stride));
-      else
-        _matrix_assembler_values_add_cnv_idx(mav,
-                                             b_size,
-                                             stride,
-                                             s_row_id,
-                                             s_col_idx,
-                                             val + (i*stride));
-
-    }
+  if (mav->add_values_g == nullptr) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: missing 'add_values_g' function for matrix assembler."),
+              __func__);
   }
+
+  mav->add_values_g(mav->matrix,
+                    0,
+                    n,
+                    stride,
+                    row_g_id,
+                    col_g_id,
+                    val);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3587,68 +3360,27 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
 
     if (ma->coeff_recv_size > 0) {
 
-      /* Using local id-based function */
+      /* Using global id-based function */
 
-      if (mav->add_values != nullptr) {
+      assert(mav->add_values_g != nullptr);
 
-        assert(ma->coeff_recv_row_id != nullptr);
-        assert(ma->coeff_recv_col_idx != nullptr);
-
-        /* Case where columns are already pre-indexed */
-
-        if (ma->coeff_recv_col_idx != nullptr) {
-          if (ma->separate_diag == mav->separate_diag)
-            mav->add_values(mav->matrix,
-                            0,
-                            ma->coeff_recv_size,
-                            stride,
-                            ma->coeff_recv_row_id,
-                            ma->coeff_recv_col_idx,
-                            recv_coeffs);
-          else
-            _matrix_assembler_values_add_cnv_idx(mav,
-                                                 ma->coeff_recv_size,
-                                                 stride,
-                                                 ma->coeff_recv_row_id,
-                                                 ma->coeff_recv_col_idx,
-                                                 recv_coeffs);
-        }
-        else {
-          assert(ma->coeff_recv_col_g_id != nullptr);
-          _matrix_assembler_values_add_lg(mav,
+      if (ma->coeff_recv_col_g_id != nullptr)
+        _matrix_assembler_values_add_lg_g(mav,
                                           ma->coeff_recv_size,
                                           stride,
                                           ma->coeff_recv_row_id,
                                           ma->coeff_recv_col_g_id,
                                           recv_coeffs);
-        }
-
-      }
-
-      /* Using global id-based function */
 
       else {
-        assert(mav->add_values_g != nullptr);
-
-        if (ma->coeff_recv_col_g_id != nullptr)
-          _matrix_assembler_values_add_lg_g(mav,
-                                            ma->coeff_recv_size,
-                                            stride,
-                                            ma->coeff_recv_row_id,
-                                            ma->coeff_recv_col_g_id,
-                                            recv_coeffs);
-
-        else {
-          assert(ma->coeff_recv_col_idx);
-          _matrix_assembler_values_add_llx_g(mav,
-                                             ma->coeff_recv_size,
-                                             stride,
-                                             ma->coeff_recv_row_id,
-                                             ma->coeff_recv_col_idx,
-                                             recv_coeffs);
-        }
+        assert(ma->coeff_recv_col_idx);
+        _matrix_assembler_values_add_llx_g(mav,
+                                           ma->coeff_recv_size,
+                                           stride,
+                                           ma->coeff_recv_row_id,
+                                           ma->coeff_recv_col_idx,
+                                           recv_coeffs);
       }
-
     }
 
     CS_FREE(recv_coeffs);

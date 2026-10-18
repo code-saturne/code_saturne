@@ -100,6 +100,7 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_algorithm.h"
 #include "base/cs_base.h"
 #include "alge/cs_blas.h"
 #include "base/cs_dispatch.h"
@@ -1751,6 +1752,137 @@ _csr_assembler_values_add(void                    *matrix_p,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Function for addition to CSR matrix coefficients using
+ *        global row ids and column indexes.
+ *
+ * Values whose associated row index is not in the local range should be
+ * ignored. Other indexes should be valid.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       flags     optional info flag, 0 otherwise
+ * \param[in]       n         number of values to add
+ * \param[in]       stride    associated data block size
+ * \param[in]       g_row_id  associated local row ids
+ * \param[in]       g_col_id  associated local column indexes
+ * \param[in]       vals      pointer to values (size: n*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_csr_assembler_values_add_g(void                    *matrix_p,
+                            [[maybe_unused]] int     flags,
+                            cs_lnum_t                n,
+                            cs_lnum_t                stride,
+                            const cs_gnum_t          g_row_id[],
+                            const cs_gnum_t          g_col_id[],
+                            const cs_real_t          vals[])
+{
+  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
+
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
+
+  auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
+  const cs_lnum_t *row_index = ms->row_index;
+  const cs_lnum_t *col_id = ms->col_id;
+  cs_real_t *val = mc->_val;
+
+  cs_gnum_t l_range[2];
+  const cs_lnum_t *d_r_idx;
+  const cs_gnum_t *d_g_c_id;
+
+  cs_matrix_assembler_get_dist_info(matrix->assembler,
+                                    l_range,
+                                    d_r_idx,
+                                    d_g_c_id);
+
+  cs_dispatch_context  ctx;
+  if (ctx.use_gpu() == false) {
+#if defined(_OPENMP)
+    if (omp_in_parallel())
+      ctx.set_n_cpu_threads(1);
+#endif
+  }
+  else if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
+  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+
+  /* Assembly kernel
+     --------------- */
+
+  ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+
+    cs_gnum_t g_r_id = g_row_id[i];
+    cs_gnum_t g_c_id = g_col_id[i];
+
+    /* filter other-rank values */
+
+    if (g_r_id < l_range[0] || g_r_id >= l_range[1])
+      return;
+
+    assert(g_r_id >= l_range[0]);
+
+    cs_lnum_t r_id = static_cast<cs_lnum_t>(g_r_id - l_range[0]);
+    cs_lnum_t col_idx;
+    cs_real_t *a_val;
+
+    /* Local part */
+
+    cs_lnum_t r_idx_s = row_index[r_id];
+    cs_lnum_t n_cols = row_index[r_id+1] - r_idx_s;
+
+    /* Local column */
+
+    if (g_c_id >= l_range[0] && g_c_id < l_range[1]) {
+
+      cs_lnum_t l_c_id = g_c_id - l_range[0];
+
+      col_idx = cs::algorithm::binary_search(n_cols,
+                                             l_c_id,
+                                             col_id + r_idx_s);
+
+      assert(col_idx > -1);
+
+    }
+
+    /* Halo column */
+
+    else {
+
+      cs_lnum_t d_r_idx_s = d_r_idx[r_id];
+      cs_lnum_t n_d_cols = d_r_idx[r_id+1] - d_r_idx_s;
+      cs_lnum_t n_l_cols = n_cols - n_d_cols;
+
+      cs_lnum_t d_c_idx
+        = cs::algorithm::binary_search(n_d_cols,
+                                       g_c_id,
+                                       d_g_c_id + d_r_idx_s);
+
+      assert(d_c_idx > -1);
+
+      /* column ids start and end of local row, so add n_l_cols */
+      col_idx = d_c_idx + n_l_cols;
+
+    }
+
+    a_val = val + stride*(r_idx_s + col_idx);
+
+    /* Now add values */
+
+    for (cs_lnum_t j = 0; j < stride; j++)
+      cs_dispatch_sum(&a_val[j], vals[i*stride + j], sum_type);
+  });
+
+  ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create and initialize a CSR matrix assembler values structure.
  *
  * The associated matrix's structure must have been created using
@@ -1777,7 +1909,7 @@ _assembler_values_create_csr(cs_matrix_t  *matrix,
                                         (void *)matrix,
                                         _csr_assembler_values_init,
                                         _csr_assembler_values_add,
-                                        nullptr,
+                                        _csr_assembler_values_add_g,
                                         nullptr,
                                         nullptr);
 
@@ -2563,6 +2695,149 @@ _msr_assembler_values_add(void                    *matrix_p,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Function for addition to MSR matrix coefficients using
+ *        global row ids and column indexes.
+ *
+ * Values whose associated row index is not in the local range should be
+ * ignored. Other indexes should be valid.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       flags     optional info flag, 0 otherwise
+ * \param[in]       n         number of values to add
+ * \param[in]       stride    associated data block size
+ * \param[in]       g_row_id  associated local row ids
+ * \param[in]       g_col_id  associated local column indexes
+ * \param[in]       vals      pointer to values (size: n*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_msr_assembler_values_add_g(void                    *matrix_p,
+                            [[maybe_unused]] int     flags,
+                            cs_lnum_t                n,
+                            cs_lnum_t                stride,
+                            const cs_gnum_t          g_row_id[],
+                            const cs_gnum_t          g_col_id[],
+                            const cs_real_t          vals[])
+{
+  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
+
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
+
+  auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
+  const cs_matrix_struct_csr_t *ms_e = &(ms->e);
+  const cs_lnum_t *row_index = ms_e->row_index;
+  const cs_lnum_t *col_id = ms_e->col_id;
+  cs_real_t *d_val = mc->_d_val;
+  cs_real_t *e_val = mc->_e_val;
+
+  cs_gnum_t l_range[2];
+  const cs_lnum_t *d_r_idx;
+  const cs_gnum_t *d_g_c_id;
+
+  cs_matrix_assembler_get_dist_info(matrix->assembler,
+                                    l_range,
+                                    d_r_idx,
+                                    d_g_c_id);
+
+  cs_dispatch_context  ctx;
+  if (ctx.use_gpu() == false) {
+#if defined(_OPENMP)
+    if (omp_in_parallel())
+      ctx.set_n_cpu_threads(1);
+#endif
+  }
+  else if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
+  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+
+  /* Assembly kernel
+     --------------- */
+
+  ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+
+    cs_gnum_t g_r_id = g_row_id[i];
+    cs_gnum_t g_c_id = g_col_id[i];
+
+    /* filter other-rank values */
+
+    if (g_r_id < l_range[0] || g_r_id >= l_range[1])
+      return;
+
+    assert(g_r_id >= l_range[0]);
+
+    cs_lnum_t r_id = static_cast<cs_lnum_t>(g_r_id - l_range[0]);
+    cs_lnum_t col_idx;
+    cs_real_t *a_val;
+
+    /* Local diagonal */
+
+    if (g_c_id == g_r_id) {
+      a_val = d_val + stride*r_id;
+    }
+
+    /* Local part */
+
+    else {
+
+      cs_lnum_t r_idx_s = row_index[r_id];
+      cs_lnum_t n_cols = row_index[r_id+1] - r_idx_s;
+
+      /* Local column */
+
+      if (g_c_id >= l_range[0] && g_c_id < l_range[1]) {
+
+        cs_lnum_t l_c_id = g_c_id - l_range[0];
+
+        col_idx = cs::algorithm::binary_search(n_cols,
+                                               l_c_id,
+                                               col_id + r_idx_s);
+
+        assert(col_idx > -1);
+
+      }
+
+      /* Halo column */
+
+      else {
+
+        cs_lnum_t d_r_idx_s = d_r_idx[r_id];
+        cs_lnum_t n_d_cols = d_r_idx[r_id+1] - d_r_idx_s;
+        cs_lnum_t n_l_cols = n_cols - n_d_cols;
+
+        cs_lnum_t d_c_idx
+          = cs::algorithm::binary_search(n_d_cols,
+                                         g_c_id,
+                                         d_g_c_id + d_r_idx_s);
+
+        assert(d_c_idx > -1);
+
+        /* column ids start and end of local row, so add n_l_cols */
+        col_idx = d_c_idx + n_l_cols;
+
+      }
+
+      a_val = e_val + stride*(r_idx_s + col_idx);
+
+    }
+
+    /* Now add values */
+
+    for (cs_lnum_t j = 0; j < stride; j++)
+      cs_dispatch_sum(&a_val[j], vals[i*stride + j], sum_type);
+  });
+
+  ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create and initialize an MSR matrix assembler values structure.
  *
  * The associated matrix's structure must have been created using
@@ -2589,7 +2864,7 @@ _assembler_values_create_msr(cs_matrix_t      *matrix,
                                         (void *)matrix,
                                         _msr_assembler_values_init,
                                         _msr_assembler_values_add,
-                                        nullptr,
+                                        _msr_assembler_values_add_g,
                                         nullptr,
                                         nullptr);
 
@@ -2833,6 +3108,150 @@ _dist_assembler_values_add(void                    *matrix_p,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Function for addition to MSR matrix coefficients using
+ *        global row ids and column indexes.
+ *
+ * Values whose associated row index is not in the local range should be
+ * ignored. Other indexes should be valid.
+ *
+ * \warning  The matrix pointer must point to valid data when the selection
+ *           function is called, so the life cycle of the data pointed to
+ *           should be at least as long as that of the assembler values
+ *           structure.
+ *
+ * \param[in, out]  matrix_p  untyped pointer to matrix description structure
+ * \param[in]       flags     optional info flag, 0 otherwise
+ * \param[in]       n         number of values to add
+ * \param[in]       stride    associated data block size
+ * \param[in]       g_row_id  associated local row ids
+ * \param[in]       g_col_id  associated local column indexes
+ * \param[in]       vals      pointer to values (size: n*stride)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dist_assembler_values_add_g(void                    *matrix_p,
+                             [[maybe_unused]] int     flags,
+                             cs_lnum_t                n,
+                             cs_lnum_t                stride,
+                             const cs_gnum_t          g_row_id[],
+                             const cs_gnum_t          g_col_id[],
+                             const cs_real_t          vals[])
+{
+  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
+
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
+
+  auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
+  const cs_matrix_struct_csr_t *ms_e = &(ms->e);
+  // halo structure not used here, should match d_r_idx below.
+  // const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
+  const cs_lnum_t *e_row_index = ms_e->row_index;
+  const cs_lnum_t *e_col_id = ms_e->col_id;
+  cs_real_t *d_val = mc->_d_val;
+  cs_real_t *e_val = mc->_e_val;
+  cs_real_t *h_val = mc->_h_val;
+
+  cs_gnum_t l_range[2];
+  const cs_lnum_t *d_r_idx;
+  const cs_gnum_t *d_g_c_id;
+
+  cs_matrix_assembler_get_dist_info(matrix->assembler,
+                                    l_range,
+                                    d_r_idx,
+                                    d_g_c_id);
+
+  cs_dispatch_context  ctx;
+  if (ctx.use_gpu() == false) {
+#if defined(_OPENMP)
+    if (omp_in_parallel())
+      ctx.set_n_cpu_threads(1);
+#endif
+  }
+  else if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
+  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+
+  /* Assembly kernel
+     --------------- */
+
+  ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+
+    cs_gnum_t g_r_id = g_row_id[i];
+    cs_gnum_t g_c_id = g_col_id[i];
+
+    /* filter other-rank values */
+
+    if (g_r_id < l_range[0] || g_r_id >= l_range[1])
+      return;
+
+    assert(g_r_id >= l_range[0]);
+
+    cs_lnum_t r_id = static_cast<cs_lnum_t>(g_r_id - l_range[0]);
+    cs_lnum_t col_idx;
+    cs_real_t *a_val;
+
+    /* Local diagonal */
+
+    if (g_c_id == g_r_id) {
+      a_val = d_val + stride*r_id;
+    }
+
+    /* Local part */
+
+    else {
+
+      cs_lnum_t r_idx_s = e_row_index[r_id];
+      cs_lnum_t n_cols = e_row_index[r_id+1] - r_idx_s;
+
+      /* Local column */
+
+      if (g_c_id >= l_range[0] && g_c_id < l_range[1]) {
+
+        cs_lnum_t l_c_id = g_c_id - l_range[0];
+
+        col_idx = cs::algorithm::binary_search(n_cols,
+                                               l_c_id,
+                                               e_col_id + r_idx_s);
+
+        assert(col_idx > -1);
+
+        a_val = e_val + stride*(r_idx_s + col_idx);
+
+      }
+
+      /* Halo column */
+
+      else {
+
+        cs_lnum_t d_r_idx_s = d_r_idx[r_id];
+        cs_lnum_t n_d_cols = d_r_idx[r_id+1] - d_r_idx_s;
+
+        cs_lnum_t d_c_idx
+          = cs::algorithm::binary_search(n_d_cols,
+                                         g_c_id,
+                                         d_g_c_id + d_r_idx_s);
+
+        assert(d_c_idx > -1);
+
+        a_val = h_val + stride*(d_r_idx_s + d_c_idx);
+
+      }
+
+    }
+
+    /* Now add values */
+
+    for (cs_lnum_t j = 0; j < stride; j++)
+      cs_dispatch_sum(&a_val[j], vals[i*stride + j], sum_type);
+  });
+
+  ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create and initialize a distributed matrix assembler values structure.
  *
  * The associated matrix's structure must have been created using
@@ -2859,7 +3278,7 @@ _assembler_values_create_dist(cs_matrix_t  *matrix,
                                         (void *)matrix,
                                         _dist_assembler_values_init,
                                         _dist_assembler_values_add,
-                                        nullptr,
+                                        _dist_assembler_values_add_g,
                                         nullptr,
                                         nullptr);
 

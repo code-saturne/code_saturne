@@ -485,6 +485,24 @@ cs_matrix_assembler_get_col_ids(const cs_matrix_assembler_t  *ma);
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief Return local range and distant column id info.
+ *
+ * \param[in]  ma  pointer to matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_assembler_get_dist_info
+(
+  const cs_matrix_assembler_t   *ma,          /*!< [in] pointer to assembler */
+        cs_gnum_t                l_range[2],  /*!< [out] local range */
+  const cs_lnum_t              *&d_r_idx,     /*!< [out] distant row index */
+  const cs_gnum_t              *&d_g_c_id     /*!< [out] distant global
+                                                         column ids */
+);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Return info on the number of neighbor ranks a matrix assembler
  *        may communicate with.
  *
@@ -589,6 +607,8 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav);
  *
  * If the matching matrix coefficients use a block structure, the
  * values passed to this function should use the same block size.
+ * An entry should be provided by block, one pair of ids represents
+ * one block, with (interleaved) stride*stride values.
  *
  * Note also that if the matrix has different diagonal and extradiagonal
  * block sizes, separate calls to this function should be used for both
@@ -623,6 +643,8 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  *
  * If the matching matrix coefficients use a block structure, the
  * values passed to this function should use the same block size.
+ * An entry should be provided by block, one pair of global ids represents
+ * one block, with (interleaved) stride*stride values.
  *
  * Note also that if the matrix has different diagonal and extradiagonal
  * block sizes, separate calls to this function should be used for both
@@ -635,20 +657,24 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  * in the case of external libraries so that their builder functions
  * have the same property).
  *
+ * The col_g_id, row_g_id, and val arrays should only be modified
+ * with certain matrix types if col_g_id references values on
+ * distant ranks.
+ *
  * \param[in, out]  mav       pointer to matrix assembler values structure
  * \param[in]       n         number of entries
- * \param[in]       col_g_id  global column ids associated with entries
- * \param[in]       row_g_id  global row ids associated with entries
- * \param[in]       val       values associated with entries
+ * \param[in, out]  col_g_id  global column ids associated with entries
+ * \param[in, out]  row_g_id  global row ids associated with entries
+ * \param[in, out]  val       values associated with entries
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
                                  cs_lnum_t                      n,
-                                 const cs_gnum_t                row_g_id[],
-                                 const cs_gnum_t                col_g_id[],
-                                 const cs_real_t                val[]);
+                                 cs_gnum_t                      row_g_id[],
+                                 cs_gnum_t                      col_g_id[],
+                                 cs_real_t                      val[]);
 
 /*----------------------------------------------------------------------------*/
 /*

@@ -1074,7 +1074,11 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
 
   /* Diagonal values */
 
-  cs_matrix_assembler_values_add_g(mav, n_rows, r_g_id, r_g_id, da);
+  cs_matrix_assembler_values_add_g(mav,
+                                   n_rows,
+                                   const_cast<cs_gnum_t *>(r_g_id),
+                                   const_cast<cs_gnum_t *>(r_g_id),
+                                   const_cast<cs_real_t *>(da));
 
   /* Extradiagonal values based on internal faces */
 
