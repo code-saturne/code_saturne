@@ -44,7 +44,7 @@
 /* compressible model general options descriptor */
 /*-----------------------------------------------*/
 
-typedef struct {
+struct cs_cf_model_t {
 
   int           eos_model{-1};   /* indicator of equation of state */
 
@@ -67,7 +67,7 @@ typedef struct {
                                      - -1 disabled
                                      -  0 enabled */
 
-} cs_cf_model_t;
+};
 
 typedef enum {
 

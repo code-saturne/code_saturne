@@ -2688,7 +2688,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
-  const cs_lnum_t *restrict c2f = nullptr;
+  [[maybe_unused]] const cs_lnum_t *restrict c2f = nullptr;
   const cs_real_t *restrict i_face_surf = nullptr;
   const cs_real_t *restrict b_face_surf = nullptr;
   if (is_porous) {
@@ -3236,7 +3236,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   const cs_lnum_t *restrict cell_cells_lst = m->cell_cells_lst;
 
   const cs_mesh_adjacencies_t *ma = nullptr;
-  const cs_lnum_t *restrict c2f = nullptr;
+  [[maybe_unused]] const cs_lnum_t *restrict c2f = nullptr;
   const cs_real_t *restrict i_face_surf = nullptr;
   const cs_real_t *restrict b_face_surf = nullptr;
   if (is_porous_f) {
@@ -6783,7 +6783,7 @@ _lsq_strided_gradient(cs_dispatch_context         &ctx,
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
   const cs_mesh_adjacencies_t *ma = nullptr;
-  const cs_lnum_t *restrict c2f = nullptr;
+  [[maybe_unused]] const cs_lnum_t *restrict c2f = nullptr;
   const cs_real_t *restrict b_face_surf = nullptr;
   const cs_real_t *restrict i_face_surf = nullptr;
 
@@ -8960,9 +8960,6 @@ cs_gradient_scalar(const char                    *var_name,
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
-
-  /* Presence of porosity */
-  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
   cs_gradient_info_t *gradient_info = nullptr;
   cs_timer_t t0, t1;
