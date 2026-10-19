@@ -215,7 +215,6 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         # Connections
         self.checkBoxRestart.clicked.connect(self.slotRestart)
         self.checkBoxPotentialState.clicked.connect(self.slotPotentialState)
-        self.checkBoxFacesReconstruction.clicked.connect(self.slotFacesReconstruction)
         self.checkBoxMultigrid.clicked.connect(self.slotMultigrid)
         self.lineEditMinimumPressure.textChanged[str].connect(self.slotMinimumPressure)
         self.lineEditMaximumPressure.textChanged[str].connect(self.slotMaximumPressure)
@@ -260,12 +259,6 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.checkBoxPotentialState.setChecked(1)
         else :
             self.checkBoxPotentialState.setChecked(0)
-
-        status = self.mdl.getFacesReconstruction()
-        if status == 'on':
-            self.checkBoxFacesReconstruction.setChecked(1)
-        else :
-            self.checkBoxFacesReconstruction.setChecked(0)
 
         status = self.mdl.getRegulateBadCElls()
         self.checkBoxRegulBadCells.setChecked(status == 'on')
@@ -333,18 +326,6 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setPotentielState('on')
         else:
             self.mdl.setPotentielState('off')
-
-
-    @Slot()
-    def slotFacesReconstruction(self):
-        """
-        Input if faces reconstruction
-        """
-        if self.checkBoxFacesReconstruction.isChecked():
-            self.mdl.setFacesReconstruction('on')
-            self.checkBoxFacesReconstruction.setChecked(1)
-        else:
-            self.mdl.setFacesReconstruction('off')
 
 
     @Slot()

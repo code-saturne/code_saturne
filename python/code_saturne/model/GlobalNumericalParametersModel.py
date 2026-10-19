@@ -50,7 +50,6 @@ class GlobalNumericalParametersModel(Model):
 
         default['restart_time_step']                    = 'off'
         default['potential_state']                      = 'off'
-        default['faces_reconstruction']                 = 'on'
         default['multigrid']                            = 'on'
         default['sub_cycles']                           = 1
         default['alpha-pressure_cycles']                = 50
@@ -118,32 +117,6 @@ class GlobalNumericalParametersModel(Model):
         """
         value = self.defaultValues()['potential_state']
         node = self._numericalNode.xmlGetNode('potential_state')
-        if node :
-            value = node['status']
-        return value
-
-
-    @Variables.undoLocal
-    def setFacesReconstruction(self, status):
-        """
-        Set maximum internal faces reconstruction status
-        only if it 's different of default value
-        """
-        self.isOnOff(status)
-        if status == self.defaultValues()['faces_reconstruction'] :
-            self._numericalNode.xmlRemoveChild('max_faces_reconstruction')
-        else:
-            node = self._numericalNode.xmlInitNode('max_faces_reconstruction')
-            node['status'] = status
-
-
-    @Variables.noUndo
-    def getFacesReconstruction(self):
-        """
-        Get maximum internal faces reconstruction status
-        """
-        value = self.defaultValues()['faces_reconstruction']
-        node = self._numericalNode.xmlGetNode('max_faces_reconstruction')
         if node :
             value = node['status']
         return value
@@ -562,18 +535,6 @@ class GlobalNumericalParametersTestCase(ModelTest):
                  </numerical_parameters>'''
         assert mdl.getPotentielState() == 'on',\
             'Could not get Potentiel State'
-
-
-    def checkGetandSetFacesReconstruction(self):
-        """Check whether the GlobalNumericalParametersModel class could get and set InternalFacesReconstruction"""
-        mdl = GlobalNumericalParametersModel(self.case)
-        mdl.setFacesReconstruction('off')
-        doc = '''<numerical_parameters>
-                         <restart_time_step_parameter/>
-                         <max_faces_reconstruction status="off"/>
-                 </numerical_parameters>'''
-        assert mdl.getFacesReconstruction() == 'off',\
-            'Could not get InternalFacesReconstruction'
 
 
     def checkGetandSetMultigridStatus(self):
