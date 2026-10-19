@@ -2042,7 +2042,7 @@ cs_atmo_1d_rad_compute_solar(const int       ivertc,
                          cell_cen, cpro_ck_down);
 
       _interpolate_coeff(idx, dim, kmx,
-                         n_cells, zray, w0_sir,
+                         n_cells, zray, w0_suv,
                          cell_cen, cpro_w0);
     }
 
