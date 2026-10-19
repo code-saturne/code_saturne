@@ -1680,14 +1680,15 @@ _csr_assembler_values_add(void                    *matrix_p,
   cs_real_t *val = mc->_val;
 
   cs_dispatch_context  ctx;
+
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
   if (ctx.use_gpu() == false) {
 #if defined(_OPENMP)
     if (omp_in_parallel())
       ctx.set_n_cpu_threads(1);
 #endif
   }
-  else if (matrix->alloc_mode == CS_ALLOC_HOST)
-    ctx.set_use_gpu(false);
 
   cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
 
@@ -1777,14 +1778,15 @@ _csr_assembler_values_add_g(void                    *matrix_p,
                                     d_g_c_id);
 
   cs_dispatch_context  ctx;
+
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
   if (ctx.use_gpu() == false) {
 #if defined(_OPENMP)
     if (omp_in_parallel())
       ctx.set_n_cpu_threads(1);
 #endif
   }
-  else if (matrix->alloc_mode == CS_ALLOC_HOST)
-    ctx.set_use_gpu(false);
 
   cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
 
@@ -2585,14 +2587,15 @@ _msr_assembler_values_add(void                    *matrix_p,
   cs_real_t *e_val = mc->_e_val;
 
   cs_dispatch_context  ctx;
+
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
   if (ctx.use_gpu() == false) {
 #if defined(_OPENMP)
     if (omp_in_parallel())
       ctx.set_n_cpu_threads(1);
 #endif
   }
-  else if (matrix->alloc_mode == CS_ALLOC_HOST)
-    ctx.set_use_gpu(false);
 
   cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
 
@@ -2697,14 +2700,15 @@ _msr_assembler_values_add_g(void                    *matrix_p,
                                     d_g_c_id);
 
   cs_dispatch_context  ctx;
+
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
   if (ctx.use_gpu() == false) {
 #if defined(_OPENMP)
     if (omp_in_parallel())
       ctx.set_n_cpu_threads(1);
 #endif
   }
-  else if (matrix->alloc_mode == CS_ALLOC_HOST)
-    ctx.set_use_gpu(false);
 
   cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
 
@@ -2941,14 +2945,15 @@ _dist_assembler_values_add(void                    *matrix_p,
   cs_real_t *h_val = mc->_h_val;
 
   cs_dispatch_context  ctx;
+
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
   if (ctx.use_gpu() == false) {
 #if defined(_OPENMP)
     if (omp_in_parallel())
       ctx.set_n_cpu_threads(1);
 #endif
   }
-  else if (matrix->alloc_mode == CS_ALLOC_HOST)
-    ctx.set_use_gpu(false);
 
   cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
 
@@ -3078,14 +3083,15 @@ _dist_assembler_values_add_g(void                    *matrix_p,
                                     d_g_c_id);
 
   cs_dispatch_context  ctx;
+
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
   if (ctx.use_gpu() == false) {
 #if defined(_OPENMP)
     if (omp_in_parallel())
       ctx.set_n_cpu_threads(1);
 #endif
   }
-  else if (matrix->alloc_mode == CS_ALLOC_HOST)
-    ctx.set_use_gpu(false);
 
   cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
 
