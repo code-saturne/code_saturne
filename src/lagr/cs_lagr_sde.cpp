@@ -651,8 +651,10 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
   CS_PROFILE_FUNC_RANGE();
 
   /* use previous step for t_order == 1 or prediction step
-   * and current one for correction step */
-  cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
+   * and current one for correction step; use current cell for cell-wise */
+  cs_lnum_t cell_id = (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
+                      ? p_set.attr_lnum(p_id, CS_LAGR_CELL_ID)
+                      : p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
   if (cell_id < 0)
     return;
@@ -809,6 +811,21 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
         for (int j = 0; j < 3; j++)
           loc_fluid_vel(phase_id, i) += extra_i[phase_id].grad_vel[cell_id][i][j]
                             * (part_coords[j] - cell_cen[j]);
+        if (cs_glob_lagr_time_scheme->interpol_field_limiter
+            == CS_LAGR_INTERPOL_LIMITER_LOCAL
+            && extra_i[phase_id].cell_vel_min != nullptr) {
+          loc_fluid_vel(phase_id, i)
+            = cs::clamp(loc_fluid_vel(phase_id, i),
+                        extra_i[phase_id].cell_vel_min[cell_id][i],
+                        extra_i[phase_id].cell_vel_max[cell_id][i]);
+        }
+        else if (cs_glob_lagr_time_scheme->interpol_field_limiter
+                 == CS_LAGR_INTERPOL_LIMITER_GLOBAL) {
+          loc_fluid_vel(phase_id, i)
+            = cs::clamp(loc_fluid_vel(phase_id, i),
+                        extra_i[phase_id].vel_min[i],
+                        extra_i[phase_id].vel_max[i]);
+        }
       }
     }
     else {
@@ -1439,8 +1456,10 @@ _sde_vels_pos_1_st_order_kernel(cs_lagr_particle_set_t        &p_set,
                                 cs_real_t                     *out_brown_1)
 {
   /* use previous step for t_order == 1 or prediction step
-   * and current one for correction step */
-  cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
+   * and current one for correction step; use current cell for cell-wise */
+  cs_lnum_t cell_id = (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
+                      ? p_set.attr_lnum(p_id, CS_LAGR_CELL_ID)
+                      : p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
   if (cell_id < 0) {
     for (int i = 0; i < 3; i++) {
@@ -1530,19 +1549,23 @@ _sde_vels_pos_1_st_order_kernel(cs_lagr_particle_set_t        &p_set,
   auto *part_coords       =
     p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
 
+  const cs_real_t *start_coords
+    = (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
+      ? part_coords : old_part_coords;
+
   int imposed_motion = p_set.flag(p_id, CS_LAGR_PART_IMPOSED_MOTION);
   if (imposed_motion) {
     cs_real_t disp[3] = {0., 0., 0.};
 
     cs_user_lagr_imposed_motion(p_set,
                                 p_id,
-                                old_part_coords,
+                                start_coords,
                                 dt_part,
                                 disp);
 
     for (cs_lnum_t id = 0; id < 3; id++) {
 
-      out_coords[id] = old_part_coords[id] + disp[id];
+      out_coords[id] = start_coords[id] + disp[id];
 
       out_vel_seen[id] =  0.0;
 
@@ -1566,14 +1589,31 @@ _sde_vels_pos_1_st_order_kernel(cs_lagr_particle_set_t        &p_set,
 
   const cs_real_t *ref_coords = part_coords;
 
+  const cs_real_t *u0 = cvar_vel[cell_id];
+
   /* resolve SDEs*/
   if (   cs_glob_lagr_time_scheme->interpol_field == CS_LAGR_INTERPOL_P1
       || cs_glob_lagr_time_scheme->interpol_field == CS_LAGR_INTERPOL_RT0) {
     for (int i = 0; i < 3; i++) {
-      loc_fluid_vel[i] = cvar_vel[cell_id][i];
+      loc_fluid_vel[i] = u0[i];
       for (int j = 0; j < 3; j++)
         loc_fluid_vel[i] += extra_i[phase_id].grad_vel[cell_id][i][j]
                           * (ref_coords[j] - cell_cen[j]);
+      if (cs_glob_lagr_time_scheme->interpol_field_limiter
+          == CS_LAGR_INTERPOL_LIMITER_LOCAL
+          && extra_i[phase_id].cell_vel_min != nullptr) {
+        loc_fluid_vel[i]
+          = cs::clamp(loc_fluid_vel[i],
+                      extra_i[phase_id].cell_vel_min[cell_id][i],
+                      extra_i[phase_id].cell_vel_max[cell_id][i]);
+      }
+      else if (cs_glob_lagr_time_scheme->interpol_field_limiter
+               == CS_LAGR_INTERPOL_LIMITER_GLOBAL) {
+        loc_fluid_vel[i]
+          = cs::clamp(loc_fluid_vel[i],
+                      extra_i[phase_id].vel_min[i],
+                      extra_i[phase_id].vel_max[i]);
+      }
     }
   }
   else {
@@ -1956,7 +1996,7 @@ _sde_vels_pos_1_st_order_kernel(cs_lagr_particle_set_t        &p_set,
     cs_real_t displ[3];
     cs_math_33t_3_product(trans_m, displ_r, displ);
     for (cs_lnum_t id = 0; id < 3; id++)
-      out_coords[id] = old_part_coords[id] + displ[id];
+      out_coords[id] = start_coords[id] + displ[id];
 
     /* Particle velocity */
     cs_math_33t_3_product(trans_m, part_vel_r, out_vel);
@@ -1967,7 +2007,7 @@ _sde_vels_pos_1_st_order_kernel(cs_lagr_particle_set_t        &p_set,
 
   else { /* local_reference_frame == false */
     for (cs_lnum_t id = 0; id < 3; id++) {
-      out_coords[id] = old_part_coords[id] + displ_r[id];
+      out_coords[id] = start_coords[id] + displ_r[id];
       out_vel[id] = part_vel_r[id];
       out_vel_seen[id] = part_vel_seen_r[id];
     }
@@ -2165,8 +2205,10 @@ _sde_vels_pos_2_nd_order_time_integ(cs_lagr_particle_set_t         &p_set,
   cs_real_6_t auxl;
 
   /* use previous step for t_order == 1 or prediction step
-   * and current one for correction step */
-  cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
+   * and current one for correction step; use current cell for cell-wise */
+  cs_lnum_t cell_id = (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
+                      ? p_set.attr_lnum(p_id, CS_LAGR_CELL_ID)
+                      : p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
   for (cs_lnum_t id = 0; id < 3; id++) {
     auxl[id] = force_p[id];
@@ -2433,8 +2475,10 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
   cs_real_t p_stat_w = p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT);
 
   /* use previous step for t_order == 1 or prediction step
-   * and current one for correction step */
-  cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
+   * and current one for correction step; use current cell for cell-wise */
+  cs_lnum_t cell_id = (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
+                      ? p_set.attr_lnum(p_id, CS_LAGR_CELL_ID)
+                      : p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
   cs_lnum_t face_id = p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID);
 
@@ -3724,8 +3768,10 @@ _sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
     else if (! (deposition_flags & CS_LAGR_PART_TO_DELETE)) {
 
       /* use previous step for t_order == 1 or prediction step
-       * and current one for correction step */
-      cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
+       * and current one for correction step; use current cell for cell-wise */
+      cs_lnum_t cell_id = (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
+                          ? p_set.attr_lnum(p_id, CS_LAGR_CELL_ID)
+                          : p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
       /* Fluid temperature computation depending on the type of flow */
       cs_real_t tempf;

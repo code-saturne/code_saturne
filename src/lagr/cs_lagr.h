@@ -159,6 +159,15 @@ typedef enum {
   CS_LAGR_INTERPOL_RT0  = 2  /*!< RT0 divergence-free flux reconstruction */
 } cs_lagr_interpol_field_t;
 
+/*! Mean carrier velocity interpolation limiter mode */
+/*----------------------------------------------------*/
+
+typedef enum {
+  CS_LAGR_INTERPOL_LIMITER_NONE   = 0, /*!< No limiter */
+  CS_LAGR_INTERPOL_LIMITER_GLOBAL = 1, /*!< Global velocity field bounds */
+  CS_LAGR_INTERPOL_LIMITER_LOCAL  = 2  /*!< Local cell-neighborhood bounds */
+} cs_lagr_interpol_limiter_t;
+
 /*! Fixed maximum sizes */
 /*----------------------*/
 
@@ -233,6 +242,9 @@ typedef struct {
 
   /*! Mean carrier velocity interpolation mode at particle location */
   cs_lagr_interpol_field_t  interpol_field;
+
+  /*! Limiter mode for interpolated carrier velocity */
+  cs_lagr_interpol_limiter_t  interpol_field_limiter;
 
   /*! activation (=1) or not (=0) of the solution of a Poisson's equation for
     the correction of the particle instantaneous velocities
@@ -1123,6 +1135,14 @@ typedef struct {
   /* (if transport_GLM_generic) save the Euler parameters associated to the
    * eigenvectors for the rotation matrix (where G is diagonal) */
   cs_real_4_t *anisotropic_euler;
+
+  /* Carrier velocity physical bounds for interpolation limiting */
+  cs_real_3_t vel_min;
+  cs_real_3_t vel_max;
+
+  /* Local cell-neighborhood velocity bounds (if limiter == LOCAL) */
+  cs_real_3_t *cell_vel_min;
+  cs_real_3_t *cell_vel_max;
 
 } cs_lagr_extra_module_t;
 

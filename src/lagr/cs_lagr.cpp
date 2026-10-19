@@ -161,6 +161,7 @@ static cs_lagr_time_scheme_t _lagr_time_scheme
      .t_order = 0,
      .extended_t_scheme = 0,
      .interpol_field = CS_LAGR_INTERPOL_RT0,
+     .interpol_field_limiter = CS_LAGR_INTERPOL_LIMITER_LOCAL,
      .ilapoi = 0,
      .iadded_mass = 0,
      .added_mass_const = 0,
@@ -377,6 +378,8 @@ static void _lagr_map_field_initialize(cs_lnum_t n_phases)
     _lagr_extra_module[phase_id].anisotropic_bx = nullptr;
     _lagr_extra_module[phase_id].grad_lagr_time_r_et = nullptr;
     _lagr_extra_module[phase_id].anisotropic_euler = nullptr;
+    _lagr_extra_module[phase_id].cell_vel_min = nullptr;
+    _lagr_extra_module[phase_id].cell_vel_max = nullptr;
     for (int i = 0; i < 9; i++)
       _lagr_extra_module[phase_id].grad_cov_skp[i] = nullptr;
     for (int i = 0; i < 6; i++)
@@ -1029,6 +1032,8 @@ cs_lagr_finalize(void)
     CS_FREE(extra[phase_id].anisotropic_lagr_time);
     CS_FREE(extra[phase_id].anisotropic_bx);
     CS_FREE(extra[phase_id].anisotropic_euler);
+    CS_FREE(extra[phase_id].cell_vel_min);
+    CS_FREE(extra[phase_id].cell_vel_max);
   }
   CS_FREE(cs_glob_lagr_extra_module);
 }
@@ -2125,6 +2130,14 @@ cs_lagr_solve_time_step(const int         itypfb[],
           CS_MALLOC_HD(extra_i[phase_id].grad_vel,
                        ncelet, cs_real_33_t, cs_alloc_mode);
 
+        if (cs_glob_lagr_time_scheme->interpol_field_limiter
+            == CS_LAGR_INTERPOL_LIMITER_LOCAL) {
+          CS_MALLOC_HD(extra_i[phase_id].cell_vel_min,
+                       ncelet, cs_real_3_t, cs_alloc_mode);
+          CS_MALLOC_HD(extra_i[phase_id].cell_vel_max,
+                       ncelet, cs_real_3_t, cs_alloc_mode);
+        }
+
         if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
             && extra->temperature != nullptr
             && cs_glob_lagr_time_scheme->interpol_field
@@ -2189,6 +2202,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
             CS_REALLOC(extra_i[phase_id].grad_lagr_time, n_cells_ext, cs_real_3_t);
           if (extra_i[phase_id].anisotropic_euler != nullptr)
             CS_REALLOC(extra_i[phase_id].anisotropic_euler, n_cells_ext, cs_real_4_t);
+          if (extra_i[phase_id].cell_vel_min != nullptr)
+            CS_REALLOC(extra_i[phase_id].cell_vel_min,
+                       n_cells_ext, cs_real_3_t);
+          if (extra_i[phase_id].cell_vel_max != nullptr)
+            CS_REALLOC(extra_i[phase_id].cell_vel_max,
+                       n_cells_ext, cs_real_3_t);
 
         }
 

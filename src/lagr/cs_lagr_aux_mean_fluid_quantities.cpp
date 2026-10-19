@@ -828,6 +828,78 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
 
   ctx.wait();
 
+  /* Compute carrier velocity bounds for interpolation limiting */
+  if (extra_i[phase_id].vel != nullptr) {
+    const cs_real_3_t *cvar_vel
+      = (const cs_real_3_t *)extra_i[phase_id].vel->val;
+
+    if (cs_glob_lagr_time_scheme->interpol_field_limiter
+        == CS_LAGR_INTERPOL_LIMITER_GLOBAL) {
+      cs_real_3_t v_min = {1e30, 1e30, 1e30};
+      cs_real_3_t v_max = {-1e30, -1e30, -1e30};
+      for (cs_lnum_t c = 0; c < n_cells; c++) {
+        for (int i = 0; i < 3; i++) {
+          v_min[i] = cs::min(v_min[i], cvar_vel[c][i]);
+          v_max[i] = cs::max(v_max[i], cvar_vel[c][i]);
+        }
+      }
+      if (cs_glob_rank_id >= 0) {
+        cs_parall_min(3, CS_DOUBLE, v_min);
+        cs_parall_max(3, CS_DOUBLE, v_max);
+      }
+      for (int i = 0; i < 3; i++) {
+        extra_i[phase_id].vel_min[i] = v_min[i];
+        extra_i[phase_id].vel_max[i] = v_max[i];
+      }
+    }
+    else if (cs_glob_lagr_time_scheme->interpol_field_limiter
+             == CS_LAGR_INTERPOL_LIMITER_LOCAL
+             && extra_i[phase_id].cell_vel_min != nullptr) {
+      cs_real_3_t *cell_min = extra_i[phase_id].cell_vel_min;
+      cs_real_3_t *cell_max = extra_i[phase_id].cell_vel_max;
+      const cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
+
+      /* Initialize with local cell velocity */
+      for (cs_lnum_t c = 0; c < ncelet; c++) {
+        for (int i = 0; i < 3; i++) {
+          cell_min[c][i] = cvar_vel[c][i];
+          cell_max[c][i] = cvar_vel[c][i];
+        }
+      }
+
+      /* Update from internal face neighbors */
+      const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
+      const cs_lnum_2_t *face_cells = cs_glob_mesh->i_face_cells;
+      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+        cs_lnum_t c1 = face_cells[f_id][0];
+        cs_lnum_t c2 = face_cells[f_id][1];
+        for (int i = 0; i < 3; i++) {
+          cell_min[c1][i] = cs::min(cell_min[c1][i], cvar_vel[c2][i]);
+          cell_max[c1][i] = cs::max(cell_max[c1][i], cvar_vel[c2][i]);
+          cell_min[c2][i] = cs::min(cell_min[c2][i], cvar_vel[c1][i]);
+          cell_max[c2][i] = cs::max(cell_max[c2][i], cvar_vel[c1][i]);
+        }
+      }
+
+      /* Update from boundary faces (wall no-slip: 0.0) */
+      const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+      const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+        cs_lnum_t c = b_face_cells[f_id];
+        for (int i = 0; i < 3; i++) {
+          cell_min[c][i] = cs::min(cell_min[c][i], (cs_real_t)0.0);
+          cell_max[c][i] = cs::max(cell_max[c][i], (cs_real_t)0.0);
+        }
+      }
+
+      /* Synchronize cell bounds over MPI halo */
+      cs_halo_sync_var_strided(cs_glob_mesh->halo, CS_HALO_STANDARD,
+                               (cs_real_t *)cell_min, 3);
+      cs_halo_sync_var_strided(cs_glob_mesh->halo, CS_HALO_STANDARD,
+                               (cs_real_t *)cell_max, 3);
+    }
+  }
+
   /* Compute temperature gradient
      ============================ */
 

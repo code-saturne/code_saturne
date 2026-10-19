@@ -959,6 +959,21 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
             loc_fluid_vel[phase_id][i] +=
                 extra_i[phase_id].grad_vel[c_id][i][j]
               * (part_coord[j] - cell_cen[c_id][j]);
+          if (cs_glob_lagr_time_scheme->interpol_field_limiter
+              == CS_LAGR_INTERPOL_LIMITER_LOCAL
+              && extra_i[phase_id].cell_vel_min != nullptr) {
+            loc_fluid_vel[phase_id][i]
+              = cs::clamp(loc_fluid_vel[phase_id][i],
+                          extra_i[phase_id].cell_vel_min[c_id][i],
+                          extra_i[phase_id].cell_vel_max[c_id][i]);
+          }
+          else if (cs_glob_lagr_time_scheme->interpol_field_limiter
+                   == CS_LAGR_INTERPOL_LIMITER_GLOBAL) {
+            loc_fluid_vel[phase_id][i]
+              = cs::clamp(loc_fluid_vel[phase_id][i],
+                          extra_i[phase_id].vel_min[i],
+                          extra_i[phase_id].vel_max[i]);
+          }
         }
       }
     }
