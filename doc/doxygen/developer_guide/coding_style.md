@@ -210,6 +210,16 @@ The following coding rules are strongly recommended:
   values is that a compiler may issue a warning when a `switch`
   construct has no `case` for a given enumeration value.
 
+- Memory allocation should be handled using `CS_MALLOC`/`CS_FREE`
+  type functions, never directly using `new` or `delete`, so as
+  to maintain code_saturne' internal memory allocation tracking,
+  and allow control of allocation location (through `CS_MALLOC_HD`)
+  on GPU's.
+  To call constructors or destructors on memory allocated through
+  this system, use
+  [placement new](https://en.cppreference.com/cpp/language/new)
+  and associated `delete`.
+
 Line spacing
 ------------
 
