@@ -403,6 +403,7 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cm->coyfp = nullptr;
   cm->npm = nullptr;
   cm->fsm = nullptr;
+  cm->n2pm = nullptr;
 
   for (int i = 0; i < CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES; i++) {
     cm->ym[i] = nullptr;
@@ -468,6 +469,7 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cm->nxr = -1;
   cm->nzm = -1;
   cm->nzvar = -1;
+  cm->nfvs = -1;
   cm->nlibvar = -1;
   cm->ikimid = 1;
   cm->mode_fp2m = 1;
@@ -1074,8 +1076,15 @@ cs_combustion_gas_add_variable_fields(void)
 
     cm->npm = _add_model_variable("soot_precursor_number", "NPr_Soot");
     cm->npm->set_key_double(kscmin, 0.);
-    cm->npm->set_key_double(kscmax, 1.);
+    cm->npm->set_key_double(kscmax, 1.e+20);
     cs_field_pointer_map(CS_ENUMF_(npm), cm->npm);
+
+    /* Add Ns^2 for the three equations soot model with SLFM */
+    if (cm->type/100 == CS_COMBUSTION_SLFM) {
+        cm->n2pm = _add_model_variable("squared_soot_precursor_number", "N2Pr_Soot");
+        cm->n2pm->set_key_double(kscmin, 0.);
+        cm->n2pm->set_key_double(kscmax, 1.e+40);
+    }
   }
 
   /* Default numerical options

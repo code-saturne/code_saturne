@@ -288,6 +288,9 @@ typedef struct {
   cs_field_t  *npm;     /*< soot precursor number */
   cs_field_t  *fsm;     /*< soot mass fraction */
 
+  /* model soot with SLFM: a three equation model (Ns,Ys,Ns²) */
+  cs_field_t  *n2pm;     /*< second moment of the soot number density */
+
   cs_field_t *xr;       /*< heat loss */
   cs_field_t *hrr;      /*< heat release rate */
   cs_field_t *omgc;     /*< Omega C */
@@ -335,6 +338,7 @@ typedef struct {
   int nxr;       /*!< discretization of enthalpy defect */
   int nzm;       /*!< discretization of mixture fraction */
   int nzvar;     /*!< discretization of variance */
+  int nfvs;      /*!< discretization of soot volume fraction */
   int nlibvar;   /*!< number of variables in library */
   int ikimid;    /*!< Index (1-based) for flamelet on middle branch */
 
