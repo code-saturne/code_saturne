@@ -44,8 +44,8 @@
  * Matrix assembler option flags
  */
 
-#define CS_MATRIX_DISTANT_ROW_USE_COL_IDX     (1 << 0)
-#define CS_MATRIX_DISTANT_ROW_USE_COL_G_ID    (1 << 1)
+#define CS_MATRIX_DISTANT_USE_LOCAL_IDS       (1 << 0)
+#define CS_MATRIX_DISTANT_USE_GLOBAL_IDS      (1 << 1)
 #define CS_MATRIX_EXTERNAL_HALO               (1 << 2)
 
 /*============================================================================
@@ -104,7 +104,7 @@ typedef void
  * \param[in]       n        number of values to add
  * \param[in]       stride   associated data block size
  * \param[in]       row_id   associated local row ids
- * \param[in]       col_idx  associated local column indexes
+ * \param[in]       col_id   associated local column ids
  * \param[in]       val      pointer to values (size: n*stride)
  */
 /*----------------------------------------------------------------------------*/
@@ -115,7 +115,7 @@ typedef void
                                     cs_lnum_t         n,
                                     cs_lnum_t         stride,
                                     const cs_lnum_t   row_id[],
-                                    const cs_lnum_t   col_idx[],
+                                    const cs_lnum_t   col_id[],
                                     const cs_real_t   val[]);
 
 /*----------------------------------------------------------------------------*/

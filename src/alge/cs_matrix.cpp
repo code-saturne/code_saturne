@@ -1641,27 +1641,21 @@ _csr_assembler_values_init(void        *matrix_p,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Function for addition to CSR matrix coefficients using
- *        local row ids and column indexes.
+ *        local row and column ids.
  *
- * Values whose associated row index is negative should be ignored;
- * Values whose column index is -1 are assumed to be assigned to a
- * separately stored diagonal. Other indexes should be valid.
+ * Values whose associated row id is negative should be ignored.
  *
  * \warning  The matrix pointer must point to valid data when the selection
  *           function is called, so the life cycle of the data pointed to
  *           should be at least as long as that of the assembler values
  *           structure.
  *
- * \remark  Note that we pass column indexes (not ids) here; as the
- *          caller is already assumed to have identified the index
- *          matching a given column id.
- *
  * \param[in, out]  matrix_p  untyped pointer to matrix description structure
  * \param[in]       flags     optional info flag, 0 otherwise
  * \param[in]       n         number of values to add
  * \param[in]       stride    associated data block size
  * \param[in]       row_id    associated local row ids
- * \param[in]       col_idx   associated local column indexes
+ * \param[in]       col_id    associated local column ids
  * \param[in]       vals      pointer to values (size: n*stride)
  */
 /*----------------------------------------------------------------------------*/
@@ -1672,82 +1666,64 @@ _csr_assembler_values_add(void                    *matrix_p,
                           cs_lnum_t                n,
                           cs_lnum_t                stride,
                           const cs_lnum_t          row_id[],
-                          const cs_lnum_t          col_idx[],
+                          const cs_lnum_t          col_id[],
                           const cs_real_t          vals[])
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
+  auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
+  const cs_lnum_t n_rows = ms->n_rows;
+  const cs_lnum_t *row_index = ms->row_index;
+  const cs_lnum_t *m_col_id = ms->col_id;
+  cs_real_t *val = mc->_val;
 
-  bool sub_threads = (n*stride > _base_assembler_thr_min) ? true : false;
+  cs_dispatch_context  ctx;
+  if (ctx.use_gpu() == false) {
 #if defined(_OPENMP)
-  if (omp_in_parallel()) sub_threads = false;
+    if (omp_in_parallel())
+      ctx.set_n_cpu_threads(1);
 #endif
-
-  if (stride == 1) {
-
-    /* Copy instead of test for OpenMP to avoid outlining for small sets */
-
-    if (sub_threads == false) {
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        if (row_id[ii] < 0)
-          continue;
-        else {
-          cs_lnum_t r_id = row_id[ii];
-          mc->_val[ms->row_index[r_id] + col_idx[ii]] += vals[ii];
-        }
-      }
-    }
-
-    else {
-#     pragma omp parallel for
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        if (row_id[ii] < 0)
-          continue;
-        else {
-          cs_lnum_t r_id = row_id[ii];
-#         pragma omp atomic
-          mc->_val[ms->row_index[r_id] + col_idx[ii]] += vals[ii];
-        }
-      }
-    }
   }
+  else if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
 
-  else { /* if (stride > 1) */
+  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
 
-    /* Copy instead of test for OpenMP to avoid outlining for small sets */
+  /* Assembly kernel
+     --------------- */
 
-    if (sub_threads == false) {
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        if (row_id[ii] < 0)
-          continue;
-        else {
-          cs_lnum_t r_id = row_id[ii];
-          cs_lnum_t displ = (ms->row_index[r_id] + col_idx[ii])*stride;
-          for (cs_lnum_t jj = 0; jj < stride; jj++)
-            mc->_val[displ + jj] += vals[ii*stride + jj];
-        }
-      }
-    }
+  ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
 
-    else {
-#     pragma omp parallel for
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        if (row_id[ii] < 0)
-          continue;
-        else {
-          cs_lnum_t r_id = row_id[ii];
-          cs_lnum_t displ = (ms->row_index[r_id] + col_idx[ii])*stride;
-          for (cs_lnum_t jj = 0; jj < stride; jj++)
-#           pragma omp atomic
-            mc->_val[displ + jj] += vals[ii*stride + jj];
-        }
-      }
-    }
-  }
+    cs_lnum_t r_id = row_id[i];
+    cs_lnum_t c_id = col_id[i];
 
+    /* filter out of range values */
+
+    if (r_id < 0 || r_id >= n_rows)
+      return;
+
+    cs_lnum_t r_idx_s = row_index[r_id];
+    cs_lnum_t n_cols = row_index[r_id+1] - r_idx_s;
+
+    /* Local column */
+
+    cs_lnum_t col_idx = cs::algorithm::binary_search(n_cols,
+                                                     c_id,
+                                                     m_col_id + r_idx_s);
+
+    assert(col_idx > -1);
+
+    cs_real_t *a_val = val + stride*(r_idx_s + col_idx);
+
+    /* Now add values */
+
+    for (cs_lnum_t j = 0; j < stride; j++)
+      cs_dispatch_sum(&a_val[j], vals[i*stride + j], sum_type);
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2568,27 +2544,21 @@ _msr_assembler_values_init(void              *matrix_p,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Function for addition to MSR matrix coefficients using
- *        local row ids and column indexes.
+ *        local row and column ids.
  *
- * Values whose associated row index is negative should be ignored;
- * Values whose column index is -1 are assumed to be assigned to a
- * separately stored diagonal. Other indexes should be valid.
+ * Values whose associated row id is negative should be ignored.
  *
  * \warning  The matrix pointer must point to valid data when the selection
  *           function is called, so the life cycle of the data pointed to
  *           should be at least as long as that of the assembler values
  *           structure.
  *
- * \remark  Note that we pass column indexes (not ids) here; as the
- *          caller is already assumed to have identified the index
- *          matching a given column id.
- *
  * \param[in, out]  matrix_p  untyped pointer to matrix description structure
  * \param[in]       flags     optional info flag, 0 otherwise
  * \param[in]       n         number of values to add
  * \param[in]       stride    associated data block size
  * \param[in]       row_id    associated local row ids
- * \param[in]       col_idx   associated local column indexes
+ * \param[in]       col_idx   associated local column ids
  * \param[in]       vals      pointer to values (size: n*stride)
  */
 /*----------------------------------------------------------------------------*/
@@ -2599,7 +2569,7 @@ _msr_assembler_values_add(void                    *matrix_p,
                           cs_lnum_t                n,
                           cs_lnum_t                stride,
                           const cs_lnum_t          row_id[],
-                          const cs_lnum_t          col_idx[],
+                          const cs_lnum_t          col_id[],
                           const cs_real_t          vals[])
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
@@ -2607,90 +2577,71 @@ _msr_assembler_values_add(void                    *matrix_p,
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
-  const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+  const cs_matrix_struct_csr_t *ms_e = &(ms->e);
+  const cs_lnum_t n_rows = ms_e->n_rows;
+  const cs_lnum_t *row_index = ms_e->row_index;
+  const cs_lnum_t *e_col_id = ms_e->col_id;
+  cs_real_t *d_val = mc->_d_val;
+  cs_real_t *e_val = mc->_e_val;
 
-  bool sub_threads = (n*stride > _base_assembler_thr_min) ? true : false;
+  cs_dispatch_context  ctx;
+  if (ctx.use_gpu() == false) {
 #if defined(_OPENMP)
-  if (omp_in_parallel()) sub_threads = false;
+    if (omp_in_parallel())
+      ctx.set_n_cpu_threads(1);
 #endif
+  }
+  else if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
 
-  if (stride == 1) {
+  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
 
-    /* Copy instead of test for OpenMP to avoid outlining for small sets */
+  /* Assembly kernel
+     --------------- */
 
-    if (sub_threads == false) {
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        cs_lnum_t r_id = row_id[ii];
-        if (r_id < 0)
-          continue;
-        if (col_idx[ii] < 0) {
-          mc->_d_val[r_id] += vals[ii];
-        }
-        else {
-          mc->_e_val[ms_e->row_index[r_id] + col_idx[ii]] += vals[ii];
-        }
-      }
+  ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+
+    cs_lnum_t r_id = row_id[i];
+    cs_lnum_t c_id = col_id[i];
+
+    /* filter out of range values */
+
+    if (r_id < 0 || r_id >= n_rows)
+      return;
+
+    cs_real_t *a_val;
+
+    /* Local diagonal */
+
+    if (c_id == r_id) {
+      a_val = d_val + stride*r_id;
     }
+
+    /* Extra-diagonal part */
 
     else {
-#     pragma omp parallel for
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        cs_lnum_t r_id = row_id[ii];
-        if (r_id < 0)
-          continue;
-        if (col_idx[ii] < 0) {
-#         pragma omp atomic
-          mc->_d_val[r_id] += vals[ii];
-        }
-        else {
-#         pragma omp atomic
-          mc->_e_val[ms_e->row_index[r_id] + col_idx[ii]] += vals[ii];
-        }
-      }
-    }
-  }
 
-  else { /* if (stride > 1) */
+      cs_lnum_t r_idx_s = row_index[r_id];
+      cs_lnum_t n_cols = row_index[r_id+1] - r_idx_s;
+      cs_lnum_t col_idx;
 
-    /* Copy instead of test for OpenMP to avoid outlining for small sets */
+      col_idx = cs::algorithm::binary_search(n_cols,
+                                             c_id,
+                                             e_col_id + r_idx_s);
 
-    if (sub_threads == false) {
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        cs_lnum_t r_id = row_id[ii];
-        if (r_id < 0)
-          continue;
-        if (col_idx[ii] < 0) {
-          for (cs_lnum_t jj = 0; jj < stride; jj++)
-            mc->_d_val[r_id*stride + jj] += vals[ii*stride + jj];
-        }
-        else {
-          cs_lnum_t displ = (ms_e->row_index[r_id] + col_idx[ii])*stride;
-          for (cs_lnum_t jj = 0; jj < stride; jj++)
-            mc->_e_val[displ + jj] += vals[ii*stride + jj];
-        }
-      }
+      assert(col_idx > -1);
+
+      a_val = e_val + stride*(r_idx_s + col_idx);
+
     }
 
-    else {
-#     pragma omp parallel for
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        cs_lnum_t r_id = row_id[ii];
-        if (r_id < 0)
-          continue;
-        if (col_idx[ii] < 0) {
-          for (cs_lnum_t jj = 0; jj < stride; jj++)
-#           pragma omp atomic
-            mc->_d_val[r_id*stride + jj] += vals[ii*stride + jj];
-        }
-        else {
-          cs_lnum_t displ = (ms_e->row_index[r_id] + col_idx[ii])*stride;
-          for (cs_lnum_t jj = 0; jj < stride; jj++)
-#           pragma omp atomic
-            mc->_e_val[displ + jj] += vals[ii*stride + jj];
-        }
-      }
-    }
-  }
+    /* Now add values */
+
+    for (cs_lnum_t j = 0; j < stride; j++)
+      cs_dispatch_sum(&a_val[j], vals[i*stride + j], sum_type);
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2773,7 +2724,6 @@ _msr_assembler_values_add_g(void                    *matrix_p,
     assert(g_r_id >= l_range[0]);
 
     cs_lnum_t r_id = static_cast<cs_lnum_t>(g_r_id - l_range[0]);
-    cs_lnum_t col_idx;
     cs_real_t *a_val;
 
     /* Local diagonal */
@@ -2788,6 +2738,7 @@ _msr_assembler_values_add_g(void                    *matrix_p,
 
       cs_lnum_t r_idx_s = row_index[r_id];
       cs_lnum_t n_cols = row_index[r_id+1] - r_idx_s;
+      cs_lnum_t col_idx;
 
       /* Local column */
 
@@ -2945,27 +2896,21 @@ _dist_assembler_values_init(void        *matrix_p,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Function for addition to distributed matrix coefficients using
- *        local row ids and column indexes.
+ *        local row and column ids.
  *
- * Values whose associated row index is negative should be ignored;
- * Values whose column index is -1 are assumed to be assigned to a
- * separately stored diagonal. Other indexes should be valid.
+ * Values whose associated row id is negative should be ignored.
  *
  * \warning  The matrix pointer must point to valid data when the selection
  *           function is called, so the life cycle of the data pointed to
  *           should be at least as long as that of the assembler values
  *           structure.
  *
- * \remark  Note that we pass column indexes (not ids) here; as the
- *          caller is already assumed to have identified the index
- *          matching a given column id.
- *
  * \param[in, out]  matrix_p  untyped pointer to matrix description structure
  * \param[in]       flags     optional info flag, 0 otherwise
  * \param[in]       n         number of values to add
  * \param[in]       stride    associated data block size
  * \param[in]       row_id    associated local row ids
- * \param[in]       col_idx   associated local column indexes
+ * \param[in]       col_id    associated local column indexes
  * \param[in]       vals      pointer to values (size: n*stride)
  */
 /*----------------------------------------------------------------------------*/
@@ -2976,7 +2921,7 @@ _dist_assembler_values_add(void                    *matrix_p,
                            cs_lnum_t                n,
                            cs_lnum_t                stride,
                            const cs_lnum_t          row_id[],
-                           const cs_lnum_t          col_idx[],
+                           const cs_lnum_t          col_id[],
                            const cs_real_t          vals[])
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
@@ -2984,126 +2929,97 @@ _dist_assembler_values_add(void                    *matrix_p,
   auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
-  const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+  const cs_matrix_struct_csr_t *ms_e = &(ms->e);
   const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
+  const cs_lnum_t n_rows = ms_e->n_rows;
+  const cs_lnum_t *e_row_index = ms_e->row_index;
+  const cs_lnum_t *e_col_id = ms_e->col_id;
+  const cs_lnum_t *h_row_index = ms_h->row_index;
+  const cs_lnum_t *h_col_id = ms_h->col_id;
+  cs_real_t *d_val = mc->_d_val;
+  cs_real_t *e_val = mc->_e_val;
+  cs_real_t *h_val = mc->_h_val;
 
-  bool sub_threads = (n*stride > _base_assembler_thr_min) ? true : false;
+  cs_dispatch_context  ctx;
+  if (ctx.use_gpu() == false) {
 #if defined(_OPENMP)
-  if (omp_in_parallel()) sub_threads = false;
+    if (omp_in_parallel())
+      ctx.set_n_cpu_threads(1);
 #endif
+  }
+  else if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
 
-  if (stride == 1) {
+  cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
 
-    /* Copy instead of test for OpenMP to avoid outlining for small sets */
+  /* Assembly kernel
+     --------------- */
 
-    if (sub_threads == false) {
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        cs_lnum_t r_id = row_id[ii];
-        if (r_id < 0)
-          continue;
-        if (col_idx[ii] < 0) {
-          mc->_d_val[r_id] += vals[ii];
-        }
-        else {
-          cs_lnum_t idx_s =   ms_e->row_index[r_id] + col_idx[ii]
-                            - ms_e->row_index[r_id+1];
-          if (idx_s < 0) {
-            mc->_e_val[ms_e->row_index[r_id] + col_idx[ii]] += vals[ii];
-          }
-          else {
-            mc->_h_val[ms_h->row_index[r_id] + idx_s] += vals[ii];
-          }
-        }
-      }
+  ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+
+    cs_lnum_t r_id = row_id[i];
+    cs_lnum_t c_id = col_id[i];
+
+    /* filter out of range values */
+
+    if (r_id < 0 || r_id >= n_rows)
+      return;
+
+    cs_real_t *a_val;
+
+    /* Local diagonal */
+
+    if (c_id == r_id) {
+      a_val = d_val + stride*r_id;
     }
+
+    /* Local part */
 
     else {
-#     pragma omp parallel for
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        cs_lnum_t r_id = row_id[ii];
-        if (r_id < 0)
-          continue;
-        if (col_idx[ii] < 0) {
-#         pragma omp atomic
-          mc->_d_val[r_id] += vals[ii];
-        }
-        else {
-          cs_lnum_t idx_s =   ms_e->row_index[r_id] + col_idx[ii]
-                            - ms_e->row_index[r_id+1];
-          if (idx_s < 0) {
-#           pragma omp atomic
-            mc->_e_val[ms_e->row_index[r_id] + col_idx[ii]] += vals[ii];
-          }
-          else {
-#           pragma omp atomic
-            mc->_h_val[ms_h->row_index[r_id] + idx_s] += vals[ii];
-          }
-        }
+
+      /* Local column */
+
+      if (c_id < n_rows) {
+
+        cs_lnum_t r_idx_s = e_row_index[r_id];
+        cs_lnum_t n_cols = e_row_index[r_id+1] - r_idx_s;
+
+        cs_lnum_t col_idx = cs::algorithm::binary_search(n_cols,
+                                                         c_id,
+                                                         e_col_id + r_idx_s);
+
+        assert(col_idx > -1);
+
+        a_val = e_val + stride*(r_idx_s + col_idx);
+
       }
-    }
-  }
 
-  else { /* if (stride > 1) */
+      /* Halo column */
 
-    /* Copy instead of test for OpenMP to avoid outlining for small sets */
+      else {
 
-    if (sub_threads == false) {
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        cs_lnum_t r_id = row_id[ii];
-        if (r_id < 0)
-          continue;
-        if (col_idx[ii] < 0) {
-          for (cs_lnum_t jj = 0; jj < stride; jj++)
-            mc->_d_val[r_id*stride + jj] += vals[ii*stride + jj];
-        }
-        else {
-          cs_lnum_t idx_s =   ms_e->row_index[r_id] + col_idx[ii]
-                            - ms_e->row_index[r_id+1];
-          if (idx_s < 0) {
-            cs_lnum_t displ = (ms_e->row_index[r_id] + col_idx[ii])*stride;
-            for (cs_lnum_t jj = 0; jj < stride; jj++)
-              mc->_e_val[displ + jj] += vals[ii*stride + jj];
-          }
-          else {
-            cs_lnum_t displ = (ms_h->row_index[r_id] + idx_s)*stride;
-            for (cs_lnum_t jj = 0; jj < stride; jj++)
-              mc->_h_val[displ + jj] += vals[ii*stride + jj];
-          }
-        }
+        cs_lnum_t r_idx_s = h_row_index[r_id];
+        cs_lnum_t n_cols = h_row_index[r_id+1] - r_idx_s;
+
+        cs_lnum_t col_idx = cs::algorithm::binary_search(n_cols,
+                                                         c_id,
+                                                         h_col_id + r_idx_s);
+
+        assert(col_idx > -1);
+
+        a_val = h_val + stride*(r_idx_s + col_idx);
+
       }
+
     }
 
-    else {
-#     pragma omp parallel for
-      for (cs_lnum_t ii = 0; ii < n; ii++) {
-        cs_lnum_t r_id = row_id[ii];
-        if (r_id < 0)
-          continue;
-        if (col_idx[ii] < 0) {
-          for (cs_lnum_t jj = 0; jj < stride; jj++)
-#           pragma omp atomic
-            mc->_d_val[r_id*stride + jj] += vals[ii*stride + jj];
-        }
-        else {
-          cs_lnum_t idx_s =   ms_e->row_index[r_id] + col_idx[ii]
-                            - ms_e->row_index[r_id+1];
-          if (idx_s < 0) {
-            cs_lnum_t displ = (ms_e->row_index[r_id] + col_idx[ii])*stride;
-            for (cs_lnum_t jj = 0; jj < stride; jj++)
-#             pragma omp atomic
-              mc->_e_val[displ + jj] += vals[ii*stride + jj];
-          }
-          else {
-            cs_lnum_t displ = (ms_h->row_index[r_id] + idx_s)*stride;
-            for (cs_lnum_t jj = 0; jj < stride; jj++)
-#             pragma omp atomic
-              mc->_h_val[displ + jj] += vals[ii*stride + jj];
-          }
-        }
-      }
-    }
-  }
+    /* Now add values */
 
+    for (cs_lnum_t j = 0; j < stride; j++)
+      cs_dispatch_sum(&a_val[j], vals[i*stride + j], sum_type);
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

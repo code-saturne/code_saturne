@@ -112,12 +112,12 @@ struct _cs_matrix_assembler_t {
 
   cs_lnum_t    *coeff_recv_row_id;       /* local row ids associated with
                                             received data; */
-  cs_lnum_t    *coeff_recv_col_idx;      /* local column index associated with
-                                            received data; the column numbering
-                                            implicitely assumes local terms
-                                            first, distant ones second */
-  cs_gnum_t    *coeff_recv_col_g_id;     /* global column id couples
-                                            associated with received data */
+  cs_lnum_t    *coeff_recv_col_id;       /* local column ids associated with
+                                            received data; */
+  cs_gnum_t    *coeff_recv_row_g_id;     /* global row ids associated with
+                                            received data; */
+  cs_gnum_t    *coeff_recv_col_g_id;     /* global column ids associated with
+                                            received data */
 
   /* Associated communicator */
 
