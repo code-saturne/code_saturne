@@ -2130,8 +2130,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
           CS_MALLOC_HD(extra_i[phase_id].grad_vel,
                        ncelet, cs_real_33_t, cs_alloc_mode);
 
-        if (cs_glob_lagr_time_scheme->interpol_field_limiter
-            == CS_LAGR_INTERPOL_LIMITER_LOCAL) {
+        if (   cs_glob_lagr_time_scheme->interpol_field_limiter
+               == CS_LAGR_INTERPOL_LIMITER_LOCAL
+            || cs_glob_lagr_time_scheme->interpol_field_limiter
+               == CS_LAGR_INTERPOL_LIMITER_SLOPE_VTX
+            || cs_glob_lagr_time_scheme->interpol_field_limiter
+               == CS_LAGR_INTERPOL_LIMITER_SLOPE_FACES) {
           CS_MALLOC_HD(extra_i[phase_id].cell_vel_min,
                        ncelet, cs_real_3_t, cs_alloc_mode);
           CS_MALLOC_HD(extra_i[phase_id].cell_vel_max,

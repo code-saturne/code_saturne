@@ -543,9 +543,13 @@ cs_lagr_log_setup(void)
        (cs_glob_lagr_time_scheme->interpol_field == CS_LAGR_INTERPOL_P1 ?
         "P1" : "none"),
      cs_glob_lagr_time_scheme->interpol_field_limiter
-       == CS_LAGR_INTERPOL_LIMITER_LOCAL ? "local" :
+       == CS_LAGR_INTERPOL_LIMITER_SLOPE_VTX ? "slope_vertices" :
        (cs_glob_lagr_time_scheme->interpol_field_limiter
-        == CS_LAGR_INTERPOL_LIMITER_GLOBAL ? "global" : "none"),
+        == CS_LAGR_INTERPOL_LIMITER_SLOPE_FACES ? "slope_faces" :
+        (cs_glob_lagr_time_scheme->interpol_field_limiter
+         == CS_LAGR_INTERPOL_LIMITER_LOCAL ? "local" :
+         (cs_glob_lagr_time_scheme->interpol_field_limiter
+          == CS_LAGR_INTERPOL_LIMITER_GLOBAL ? "global" : "none"))),
      _status(cs_glob_lagr_time_scheme->extended_t_scheme),
      _status(cs_glob_lagr_time_scheme->ilapoi),
      _status(cs_glob_lagr_model->failsafe_mode));

@@ -49,6 +49,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_array.h"
+#include "base/cs_boundary_conditions.h"
 #include "alge/cs_balance.h"
 #include "alge/cs_face_viscosity.h"
 #include "base/cs_dispatch.h"
@@ -63,6 +64,7 @@
 #include "lagr/cs_lagr_tracking.h"
 #include "lagr/cs_lagr_stat.h"
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
@@ -490,6 +492,71 @@ compute_anisotropic_prop(int            iprev,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute physical boundary face velocity according to BC type.
+ *
+ * - No-slip fixed wall: u_b = 0 (or a + b * u_c)
+ * - Sliding wall: u_b = u_wall (from a + b * u_c)
+ * - Inlet: prescribed inlet velocity u_b = u_inlet (from a + b * u_c)
+ * - Outlet: zero normal gradient u_b = u_c (no artificial broadening)
+ * - Symmetry: zero normal velocity, tangential velocity equals u_c:
+ *             u_b = u_c - (u_c . n_b) * n_b
+ *
+ * \param[in]  f_id       boundary face index
+ * \param[in]  c          adjacent cell index
+ * \param[in]  cvar_vel   cell-centered velocity array
+ * \param[in]  bc_type    boundary face type array (cs_glob_bc_type)
+ * \param[in]  bc_coeffs  velocity field boundary coefficients
+ * \param[in]  n_b        unit outward normal to boundary face
+ * \param[out] u_b        resulting boundary face velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_b_face_velocity(cs_lnum_t                     f_id,
+                 cs_lnum_t                     c,
+                 const cs_real_3_t            *cvar_vel,
+                 const int                    *bc_type,
+                 const cs_field_bc_coeffs_t   *bc_coeffs,
+                 const cs_real_3_t             n_b,
+                 cs_real_3_t                   u_b)
+{
+  const int b_type = (bc_type != nullptr) ? bc_type[f_id] : CS_SMOOTHWALL;
+
+  if (b_type == CS_SYMMETRY) {
+    /* Symmetry: zero normal component, tangential component equals u_c */
+    cs_real_t u_dot_n = cs_math_3_dot_product(cvar_vel[c], n_b);
+    for (int i = 0; i < 3; i++)
+      u_b[i] = cvar_vel[c][i] - u_dot_n * n_b[i];
+  }
+  else if (   b_type == CS_OUTLET || b_type == CS_FREE_INLET
+           || b_type == CS_SOPCF  || b_type == CS_SSPCF) {
+    /* Outlet: zero normal gradient (u_b = u_c), no artificial broadening */
+    for (int i = 0; i < 3; i++)
+      u_b[i] = cvar_vel[c][i];
+  }
+  else if (   bc_coeffs != nullptr
+           && bc_coeffs->a != nullptr
+           && bc_coeffs->b != nullptr) {
+    /* Walls (no-slip u_b=0, sliding u_b=u_wall) and Inlets (u_b=u_inlet):
+     * Standard code_saturne formulation: u_b = a + b * u_c */
+    for (int i = 0; i < 3; i++)
+      u_b[i] = bc_coeffs->a[3 * f_id + i]
+             + bc_coeffs->b[3 * f_id + i] * cvar_vel[c][i];
+  }
+  else if (b_type == CS_SMOOTHWALL || b_type == CS_ROUGHWALL) {
+    /* Default fixed wall: no-slip */
+    for (int i = 0; i < 3; i++)
+      u_b[i] = 0.0;
+  }
+  else {
+    /* Default fallback: u_b = u_c */
+    for (int i = 0; i < 3; i++)
+      u_b[i] = cvar_vel[c][i];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute auxilary mean fluid quantities.
  *
  *  - Lagrangian time (if modcpl == 1 also anisotropic values)
@@ -807,6 +874,100 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
 
     }
 
+    /* Compute carrier velocity bounds for interpolation limiting */
+    if (extra_i[phase_id].vel != nullptr) {
+      const cs_real_3_t *cvar_vel
+        = (const cs_real_3_t *)extra_i[phase_id].vel->val;
+
+      if (cs_glob_lagr_time_scheme->interpol_field_limiter
+          == CS_LAGR_INTERPOL_LIMITER_GLOBAL) {
+        cs_real_3_t v_min = {1e30, 1e30, 1e30};
+        cs_real_3_t v_max = {-1e30, -1e30, -1e30};
+        for (cs_lnum_t c = 0; c < n_cells; c++) {
+          for (int i = 0; i < 3; i++) {
+            v_min[i] = cs::min(v_min[i], cvar_vel[c][i]);
+            v_max[i] = cs::max(v_max[i], cvar_vel[c][i]);
+          }
+        }
+        if (cs_glob_rank_id >= 0) {
+          cs_parall_min(3, CS_DOUBLE, v_min);
+          cs_parall_max(3, CS_DOUBLE, v_max);
+        }
+        for (int i = 0; i < 3; i++) {
+          extra_i[phase_id].vel_min[i] = v_min[i];
+          extra_i[phase_id].vel_max[i] = v_max[i];
+        }
+      }
+      else if (   (   cs_glob_lagr_time_scheme->interpol_field_limiter
+                      == CS_LAGR_INTERPOL_LIMITER_LOCAL
+                   || cs_glob_lagr_time_scheme->interpol_field_limiter
+                      == CS_LAGR_INTERPOL_LIMITER_SLOPE_VTX
+                   || cs_glob_lagr_time_scheme->interpol_field_limiter
+                      == CS_LAGR_INTERPOL_LIMITER_SLOPE_FACES)
+               && extra_i[phase_id].cell_vel_min != nullptr) {
+        cs_real_3_t *cell_min = extra_i[phase_id].cell_vel_min;
+        cs_real_3_t *cell_max = extra_i[phase_id].cell_vel_max;
+        const cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
+
+        /* Initialize with local cell velocity */
+        for (cs_lnum_t c = 0; c < ncelet; c++) {
+          for (int i = 0; i < 3; i++) {
+            cell_min[c][i] = cvar_vel[c][i];
+            cell_max[c][i] = cvar_vel[c][i];
+          }
+        }
+
+        /* Update from internal face neighbors */
+        const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
+        const cs_lnum_2_t *face_cells = cs_glob_mesh->i_face_cells;
+        for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+          cs_lnum_t c1 = face_cells[f_id][0];
+          cs_lnum_t c2 = face_cells[f_id][1];
+          for (int i = 0; i < 3; i++) {
+            cell_min[c1][i] = cs::min(cell_min[c1][i], cvar_vel[c2][i]);
+            cell_max[c1][i] = cs::max(cell_max[c1][i], cvar_vel[c2][i]);
+            cell_min[c2][i] = cs::min(cell_min[c2][i], cvar_vel[c1][i]);
+            cell_max[c2][i] = cs::max(cell_max[c2][i], cvar_vel[c1][i]);
+          }
+        }
+
+        /* Update from boundary faces according to physical BC type */
+        const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+        const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+        const cs_real_3_t *b_face_normal
+          = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+        const cs_field_bc_coeffs_t *bc_coeffs
+          = (extra_i[phase_id].vel != nullptr)
+            ? extra_i[phase_id].vel->bc_coeffs : nullptr;
+        const int *bc_type = cs_glob_bc_type;
+
+        for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+          cs_lnum_t c = b_face_cells[f_id];
+          const cs_real_t *s_b = b_face_normal[f_id];
+          cs_real_t surf = sqrt(cs_math_3_square_norm(s_b));
+          cs_real_t inv_surf
+            = (surf > cs_math_zero_threshold) ? 1.0 / surf : 0.0;
+          cs_real_3_t n_b = {s_b[0]*inv_surf,
+                             s_b[1]*inv_surf,
+                             s_b[2]*inv_surf};
+
+          cs_real_3_t u_b;
+          _b_face_velocity(f_id, c, cvar_vel, bc_type, bc_coeffs, n_b, u_b);
+
+          for (int i = 0; i < 3; i++) {
+            cell_min[c][i] = cs::min(cell_min[c][i], u_b[i]);
+            cell_max[c][i] = cs::max(cell_max[c][i], u_b[i]);
+          }
+        }
+
+        /* Synchronize cell bounds over MPI halo */
+        cs_halo_sync_var_strided(cs_glob_mesh->halo, CS_HALO_STANDARD,
+                                 (cs_real_t *)cell_min, 3);
+        cs_halo_sync_var_strided(cs_glob_mesh->halo, CS_HALO_STANDARD,
+                                 (cs_real_t *)cell_max, 3);
+      }
+    }
+
     /* Compute velocity gradient
        ========================= */
 
@@ -827,78 +988,6 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
   }
 
   ctx.wait();
-
-  /* Compute carrier velocity bounds for interpolation limiting */
-  if (extra_i[phase_id].vel != nullptr) {
-    const cs_real_3_t *cvar_vel
-      = (const cs_real_3_t *)extra_i[phase_id].vel->val;
-
-    if (cs_glob_lagr_time_scheme->interpol_field_limiter
-        == CS_LAGR_INTERPOL_LIMITER_GLOBAL) {
-      cs_real_3_t v_min = {1e30, 1e30, 1e30};
-      cs_real_3_t v_max = {-1e30, -1e30, -1e30};
-      for (cs_lnum_t c = 0; c < n_cells; c++) {
-        for (int i = 0; i < 3; i++) {
-          v_min[i] = cs::min(v_min[i], cvar_vel[c][i]);
-          v_max[i] = cs::max(v_max[i], cvar_vel[c][i]);
-        }
-      }
-      if (cs_glob_rank_id >= 0) {
-        cs_parall_min(3, CS_DOUBLE, v_min);
-        cs_parall_max(3, CS_DOUBLE, v_max);
-      }
-      for (int i = 0; i < 3; i++) {
-        extra_i[phase_id].vel_min[i] = v_min[i];
-        extra_i[phase_id].vel_max[i] = v_max[i];
-      }
-    }
-    else if (cs_glob_lagr_time_scheme->interpol_field_limiter
-             == CS_LAGR_INTERPOL_LIMITER_LOCAL
-             && extra_i[phase_id].cell_vel_min != nullptr) {
-      cs_real_3_t *cell_min = extra_i[phase_id].cell_vel_min;
-      cs_real_3_t *cell_max = extra_i[phase_id].cell_vel_max;
-      const cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
-
-      /* Initialize with local cell velocity */
-      for (cs_lnum_t c = 0; c < ncelet; c++) {
-        for (int i = 0; i < 3; i++) {
-          cell_min[c][i] = cvar_vel[c][i];
-          cell_max[c][i] = cvar_vel[c][i];
-        }
-      }
-
-      /* Update from internal face neighbors */
-      const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
-      const cs_lnum_2_t *face_cells = cs_glob_mesh->i_face_cells;
-      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-        cs_lnum_t c1 = face_cells[f_id][0];
-        cs_lnum_t c2 = face_cells[f_id][1];
-        for (int i = 0; i < 3; i++) {
-          cell_min[c1][i] = cs::min(cell_min[c1][i], cvar_vel[c2][i]);
-          cell_max[c1][i] = cs::max(cell_max[c1][i], cvar_vel[c2][i]);
-          cell_min[c2][i] = cs::min(cell_min[c2][i], cvar_vel[c1][i]);
-          cell_max[c2][i] = cs::max(cell_max[c2][i], cvar_vel[c1][i]);
-        }
-      }
-
-      /* Update from boundary faces (wall no-slip: 0.0) */
-      const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-      const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        cs_lnum_t c = b_face_cells[f_id];
-        for (int i = 0; i < 3; i++) {
-          cell_min[c][i] = cs::min(cell_min[c][i], (cs_real_t)0.0);
-          cell_max[c][i] = cs::max(cell_max[c][i], (cs_real_t)0.0);
-        }
-      }
-
-      /* Synchronize cell bounds over MPI halo */
-      cs_halo_sync_var_strided(cs_glob_mesh->halo, CS_HALO_STANDARD,
-                               (cs_real_t *)cell_min, 3);
-      cs_halo_sync_var_strided(cs_glob_mesh->halo, CS_HALO_STANDARD,
-                               (cs_real_t *)cell_max, 3);
-    }
-  }
 
   /* Compute temperature gradient
      ============================ */
@@ -1126,6 +1215,9 @@ cs_lagr_velocity_reconstruction_rt0(int                phase_id,
                            i_sum_type);
     });
 
+    const cs_field_bc_coeffs_t *bc_coeffs = f_vel->bc_coeffs;
+    const int *bc_type = cs_glob_bc_type;
+
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       cs_lnum_t c1 = b_face_cells[f_id];
 
@@ -1141,13 +1233,15 @@ cs_lagr_velocity_reconstruction_rt0(int                phase_id,
 
       cs_real_t u_norm = bmasfl[f_id] * inv_surf / crom[c1];
 
-      /* RT0 boundary tangential velocity from cell fluid velocity (vel) */
-      cs_real_t u_dot_n
-        = vel[c1][0]*n_b[0] + vel[c1][1]*n_b[1] + vel[c1][2]*n_b[2];
+      /* Boundary velocity according to physical BC */
+      cs_real_3_t u_b;
+      _b_face_velocity(f_id, c1, vel, bc_type, bc_coeffs, n_b, u_b);
+
+      cs_real_t u_b_dot_n = cs_math_3_dot_product(u_b, n_b);
 
       cs_real_3_t u_f;
       for (int k = 0; k < 3; k++)
-        u_f[k] = u_norm * n_b[k] + (vel[c1][k] - u_dot_n * n_b[k]);
+        u_f[k] = u_norm * n_b[k] + (u_b[k] - u_b_dot_n * n_b[k]);
 
       cs_real_33_t g1;
       cs_real_t inv_vol1 = cs_mq_cell_vol_inv(c1, c_disable_flag, cell_vol);
@@ -1164,6 +1258,145 @@ cs_lagr_velocity_reconstruction_rt0(int                phase_id,
     });
 
     ctx.wait();
+
+    /* Apply Barth-Jespersen slope limiter on gradient tensor G_RT0 */
+    if (   (   cs_glob_lagr_time_scheme->interpol_field_limiter
+               == CS_LAGR_INTERPOL_LIMITER_SLOPE_VTX
+            || cs_glob_lagr_time_scheme->interpol_field_limiter
+               == CS_LAGR_INTERPOL_LIMITER_SLOPE_FACES)
+        && cs_glob_lagr_extra_module[phase_id].cell_vel_min != nullptr
+        && cs_glob_lagr_extra_module[phase_id].cell_vel_max != nullptr) {
+
+      const cs_real_3_t *cell_min
+        = cs_glob_lagr_extra_module[phase_id].cell_vel_min;
+      const cs_real_3_t *cell_max
+        = cs_glob_lagr_extra_module[phase_id].cell_vel_max;
+
+      cs_array<cs_real_t> psi(n_cells);
+      for (cs_lnum_t c = 0; c < n_cells; c++)
+        psi[c] = 1.0;
+
+      if (cs_glob_lagr_time_scheme->interpol_field_limiter
+          == CS_LAGR_INTERPOL_LIMITER_SLOPE_VTX) {
+        const cs_adjacency_t *c2v = cs_mesh_adjacencies_cell_vertices();
+        const cs_real_t *vtx_coord = m->vtx_coord;
+
+        for (cs_lnum_t c = 0; c < n_cells; c++) {
+          const cs_real_t *xc = mq->cell_cen[c];
+          for (cs_lnum_t k = c2v->idx[c]; k < c2v->idx[c+1]; k++) {
+            cs_lnum_t v_id = c2v->ids[k];
+            const cs_real_t *xv = &vtx_coord[3 * v_id];
+            cs_real_t dx[3] = {xv[0] - xc[0], xv[1] - xc[1], xv[2] - xc[2]};
+
+            for (int i = 0; i < 3; i++) {
+              cs_real_t du = cs_math_3_dot_product(grad_vel[c][i], dx);
+              cs_real_t d_max = cell_max[c][i] - vel[c][i];
+              cs_real_t d_min = cell_min[c][i] - vel[c][i];
+
+              if (du > d_max) {
+                cs_real_t r = d_max / du;
+                psi[c] = cs::min(psi[c], cs::max((cs_real_t)0.0, r));
+              }
+              else if (du < d_min) {
+                cs_real_t r = d_min / du;
+                psi[c] = cs::min(psi[c], cs::max((cs_real_t)0.0, r));
+              }
+            }
+          }
+        }
+      }
+      else { /* CS_LAGR_INTERPOL_LIMITER_SLOPE_FACES */
+        const cs_real_3_t *i_face_cog = mq->i_face_cog;
+        const cs_real_3_t *b_face_cog = mq->b_face_cog;
+
+        for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++) {
+          cs_lnum_t c1 = i_face_cells[f_id][0];
+          cs_lnum_t c2 = i_face_cells[f_id][1];
+          const cs_real_t *xf = i_face_cog[f_id];
+
+          if (c1 < n_cells) {
+            const cs_real_t *xc = mq->cell_cen[c1];
+            cs_real_t dx[3] = {xf[0] - xc[0], xf[1] - xc[1], xf[2] - xc[2]};
+            for (int i = 0; i < 3; i++) {
+              cs_real_t du = cs_math_3_dot_product(grad_vel[c1][i], dx);
+              cs_real_t d_max = cell_max[c1][i] - vel[c1][i];
+              cs_real_t d_min = cell_min[c1][i] - vel[c1][i];
+
+              if (du > d_max) {
+                cs_real_t r = d_max / du;
+                psi[c1] = cs::min(psi[c1], cs::max((cs_real_t)0.0, r));
+              }
+              else if (du < d_min) {
+                cs_real_t r = d_min / du;
+                psi[c1] = cs::min(psi[c1], cs::max((cs_real_t)0.0, r));
+              }
+            }
+          }
+          if (c2 < n_cells) {
+            const cs_real_t *xc = mq->cell_cen[c2];
+            cs_real_t dx[3] = {xf[0] - xc[0], xf[1] - xc[1], xf[2] - xc[2]};
+            for (int i = 0; i < 3; i++) {
+              cs_real_t du = cs_math_3_dot_product(grad_vel[c2][i], dx);
+              cs_real_t d_max = cell_max[c2][i] - vel[c2][i];
+              cs_real_t d_min = cell_min[c2][i] - vel[c2][i];
+
+              if (du > d_max) {
+                cs_real_t r = d_max / du;
+                psi[c2] = cs::min(psi[c2], cs::max((cs_real_t)0.0, r));
+              }
+              else if (du < d_min) {
+                cs_real_t r = d_min / du;
+                psi[c2] = cs::min(psi[c2], cs::max((cs_real_t)0.0, r));
+              }
+            }
+          }
+        }
+
+        for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
+          cs_lnum_t c = b_face_cells[f_id];
+          const cs_real_t *xf = b_face_cog[f_id];
+          if (c < n_cells) {
+            const cs_real_t *xc = mq->cell_cen[c];
+            cs_real_t dx[3] = {xf[0] - xc[0], xf[1] - xc[1], xf[2] - xc[2]};
+            for (int i = 0; i < 3; i++) {
+              cs_real_t du = cs_math_3_dot_product(grad_vel[c][i], dx);
+              cs_real_t d_max = cell_max[c][i] - vel[c][i];
+              cs_real_t d_min = cell_min[c][i] - vel[c][i];
+
+              if (du > d_max) {
+                cs_real_t r = d_max / du;
+                psi[c] = cs::min(psi[c], cs::max((cs_real_t)0.0, r));
+              }
+              else if (du < d_min) {
+                cs_real_t r = d_min / du;
+                psi[c] = cs::min(psi[c], cs::max((cs_real_t)0.0, r));
+              }
+            }
+          }
+        }
+      }
+
+      /* Apply scalar limiter: G_c = psi_c * G_c. Preserves tr(G_c) = 0 */
+      cs_gnum_t n_limited = 0;
+      for (cs_lnum_t c = 0; c < n_cells; c++) {
+        if (psi[c] < 1.0) {
+          n_limited++;
+          for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+              grad_vel[c][i][j] *= psi[c];
+        }
+      }
+
+      if (   cs_glob_time_step->nt_cur <= 1
+          || cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1
+          || cs_glob_time_step->nt_cur % 100 == 0) {
+        cs_gnum_t g_n_limited = n_limited;
+        cs_parall_counter(&g_n_limited, 1);
+        bft_printf("[RT0 Slope Limiter] Limited cells: %llu / %llu\n",
+                   (unsigned long long)g_n_limited,
+                   (unsigned long long)cs_glob_mesh->n_g_cells);
+      }
+    }
 
     cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD,
                              (cs_real_t *)grad_vel, 9);

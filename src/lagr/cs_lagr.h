@@ -163,9 +163,11 @@ typedef enum {
 /*----------------------------------------------------*/
 
 typedef enum {
-  CS_LAGR_INTERPOL_LIMITER_NONE   = 0, /*!< No limiter */
-  CS_LAGR_INTERPOL_LIMITER_GLOBAL = 1, /*!< Global velocity field bounds */
-  CS_LAGR_INTERPOL_LIMITER_LOCAL  = 2  /*!< Local cell-neighborhood bounds */
+  CS_LAGR_INTERPOL_LIMITER_NONE        = 0, /*!< No limiter */
+  CS_LAGR_INTERPOL_LIMITER_SLOPE_VTX   = 1, /*!< Limiter on vertices */
+  CS_LAGR_INTERPOL_LIMITER_SLOPE_FACES = 2, /*!< Limiter on face centers */
+  CS_LAGR_INTERPOL_LIMITER_GLOBAL      = 3, /*!< Global velocity clamp */
+  CS_LAGR_INTERPOL_LIMITER_LOCAL       = 4  /*!< Local neighborhood clamp */
 } cs_lagr_interpol_limiter_t;
 
 /*! Fixed maximum sizes */
