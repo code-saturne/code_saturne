@@ -3,6 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix formulae in dynamic Smagorinsky modeling (broken since v7.2.0).
+
 - Fix potential memory corruption in medcoupling based slices.
 
 - Fix issues in parallel read/write of serialized in memory checkpoints,

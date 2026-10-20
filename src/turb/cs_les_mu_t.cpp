@@ -229,7 +229,7 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
     const cs_real_t delta = w0[c_id];
     const cs_real_t deltaf = cs_turb_xlesfd * delta;
     for (cs_lnum_t ij = 0; ij < 6; ij++)
-      mij[c_id][ij] = -2.0 * xro[c_id] * cs_math_pow2(deltaf)
+      mij[c_id][ij] = -2.0 * xrof[c_id] * cs_math_pow2(deltaf)
                            * sf_n[c_id] * w61[c_id][ij]
                       - w62[c_id][ij];
   }
@@ -596,7 +596,7 @@ cs_les_mu_t_smago_dyn(void)
 
       cs_les_filter(3, (cs_real_t *)scami, (cs_real_t *)scamif);
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        const cs_real_t deltaf  = cs_turb_xlesfd * pow(xa*cell_vol[c_id],xb);
+        const cs_real_t deltaf = cs_turb_xlesfd*cs_turb_xlesfl*pow(xa*cell_vol[c_id],xb);
         for (cs_lnum_t i = 0; i < 3; i++)
           scami[c_id][i] = - cs_math_pow2(deltaf)*xrof[c_id]
                               * sf_n[c_id]*gradsf[c_id][i]
