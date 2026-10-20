@@ -3,6 +3,8 @@ Release 8.0.6 (unreleased)
 
 ### Bug fixes:
 
+- Fix formulae in dynamic Smagorinsky modeling (broken since v7.2.0).
+
 - Fix usage of `cs_user_scripts.py` with Python 3.13 and above.
 
 - [GUI] Fix bug in outlet backflow conditions using formulae for NCFD.
