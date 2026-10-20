@@ -33,9 +33,10 @@
 
 #include "base/cs_base.h"
 #include "base/cs_halo_perio.h"
+#include "base/cs_time_plot.h"
+
 #include "alge/cs_matrix.h"
 #include "alge/cs_param_sles.h"
-#include "base/cs_time_plot.h"
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_pc.h"
 
@@ -44,16 +45,16 @@
  *============================================================================*/
 
 /* Set of macros defined in order to match MUMPS documentation (because of the
- * difference between C/FORTRAN programming language)
+ * differences between the C and Fortran programming languages).
  */
 
-#define ICNTL(I)   icntl[(I)-1]
-#define CNTL(I)    cntl[(I)-1]
-#define INFOG(I)   infog[(I)-1]
-#define INFO(I)    info[(I)-1]
-#define RINFOG(I)  rinfog[(I)-1]
-#define RINFO(I)   rinfo[(I)-1]
-#define KEEP(I)    keep[(I)-1]
+#define ICNTL(I)   icntl[(I) - 1]
+#define CNTL(I)    cntl[(I) - 1]
+#define INFOG(I)   infog[(I) - 1]
+#define INFO(I)    info[(I) - 1]
+#define RINFOG(I)  rinfog[(I) - 1]
+#define RINFO(I)   rinfo[(I) - 1]
+#define KEEP(I)    keep[(I) - 1]
 
 /*============================================================================
  * Type definitions
@@ -64,13 +65,14 @@
  * \brief Function pointer for user settings of a MUMPS solver.
  *        This function is called at the end of the setup stage.
  *
- * Note: if the context pointer is non-null, it must point to valid data
- * when the selection function is called so that value or structure should
- * not be temporary (i.e. local);
+ * Note: If the context pointer is non-null, it must point to valid data
+ * when the hook function is called, so that the value or structure is
+ * not temporary (i.e., local).
  *
  * \param[in]      slesp     pointer to the related cs_param_sles_t structure
  * \param[in, out] context   pointer to optional (untyped) value or structure
  * \param[in, out] mumps     pointer to DMUMPS_STRUC_C or SMUMPS_STRUC_C
+ *                           structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -84,30 +86,27 @@ typedef void
 typedef struct _cs_sles_mumps_t  cs_sles_mumps_t;
 
 /*============================================================================
- * Global variables
- *============================================================================*/
-
-/*=============================================================================
  * User function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Function pointer for advanced user settings of a MUMPS solver.
- *        This function is called two times during the setup stage.
+ * \brief Advanced user settings hook function for a MUMPS solver.
+ *        This function is called twice during the setup stage:
  *        1. Before the analysis step
  *        2. Before the factorization step
  *
- * One can recover the MUMPS step through the "job" member.
- * MUMPS_JOB_ANALYSIS or MUMPS_JOB_FACTORIZATION
+ * The MUMPS step can be retrieved through the "job" member:
+ * MUMPS_JOB_ANALYSIS or MUMPS_JOB_FACTORIZATION.
  *
- * Note: if the context pointer is non-null, it must point to valid data
- * when the selection function is called so that structure should
- * not be temporary (i.e. local);
+ * Note: If the context pointer is non-null, it must point to valid data
+ * when the hook function is called, so that the structure is
+ * not temporary (i.e., local).
  *
  * \param[in]      slesp    pointer to the related cs_param_sles_t structure
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] pmumps   pointer to DMUMPS_STRUC_C or SMUMPS_STRUC_C struct.
+ * \param[in, out] pmumps   pointer to DMUMPS_STRUC_C or SMUMPS_STRUC_C
+ *                          structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -116,16 +115,16 @@ cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
                         void                    *context,
                         void                    *pmumps);
 
-/*=============================================================================
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Modifiy the default value used as a threshold to clean matrix values
- *        sent to MUMPS in case of factorization with "double precisiion"
+ * \brief Modify the default threshold used to filter matrix values
+ *        sent to MUMPS in case of double-precision factorization.
  *
- *        If thr < 0, there is no cleaning
+ *        If thr < 0, filtering is disabled.
  *
  * \param[in] thr  value of the threshold to set
  */
@@ -136,10 +135,10 @@ cs_sles_mumps_set_zero_dthreshold(double thr);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Modifiy the default value used as a threshold to clean matrix values
- *        sent to MUMPS in case of factorization in "single precisiion"
+ * \brief Modify the default threshold used to filter matrix values
+ *        sent to MUMPS in case of single-precision factorization.
  *
- *        If thr < 0, there is no cleaning
+ *        If thr < 0, filtering is disabled.
  *
  * \param[in] thr  value of the threshold to set
  */
@@ -166,11 +165,11 @@ cs_sles_mumps_set_zero_sthreshold(double thr);
  * \ref cs_sles_t container.
  *
  * \param[in]      f_id          associated field id, or < 0
- * \param[in]      name          associated name if f_id < 0, or NULL
+ * \param[in]      name          associated name if f_id < 0, or nullptr
  * \param[in]      slesp         pointer to a cs_param_sles_t structure
  * \param[in]      setup_hook    pointer to optional setup epilogue function
- * \param[in,out]  context       pointer to optional (untyped) value or
- *                               structure for setup_hook, or NULL
+ * \param[in, out] context       pointer to optional (untyped) value or
+ *                               structure for setup_hook, or nullptr
  *
  * \return  pointer to newly created sparse direct solver info object.
  */
@@ -185,11 +184,11 @@ cs_sles_mumps_define(int                            f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create a preconditioner structure relying on MUMPS solver
+ * \brief Create a preconditioner structure relying on the MUMPS solver.
  *
  * \param[in] slesp  pointer to a cs_param_sles_t structure
  *
- * \return a pointer to the newly created preconditioner object.
+ * \return pointer to the newly created preconditioner object.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -202,8 +201,8 @@ cs_sles_mumps_pc_create(const cs_param_sles_t  *slesp);
  *
  * \param[in]      slesp         pointer to a cs_param_sles_t structure
  * \param[in]      setup_hook    pointer to optional setup epilogue function
- * \param[in,out]  context       pointer to optional (untyped) value or
- *                               structure for setup_hook, or NULL
+ * \param[in, out] context       pointer to optional (untyped) value or
+ *                               structure for setup_hook, or nullptr
  *
  * \return  pointer to associated linear system object.
  */
@@ -220,26 +219,26 @@ cs_sles_mumps_create(const cs_param_sles_t       *slesp,
  *        info and context.
  *
  * \param[in]  context  pointer to reference info and context
- *                      (actual type: cs_sles_mumps_t  *)
+ *                      (actual type: cs_sles_mumps_t *)
  *
  * \return  pointer to newly created solver info object.
- *          (actual type: cs_sles_mumps_t  *)
+ *          (actual type: cs_sles_mumps_t *)
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_sles_mumps_copy(const void   *context);
+cs_sles_mumps_copy(const void  *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Free MUMPS linear equation solver setup context.
  *
- * This function frees resolution-related data, such as
- * buffers and preconditioning but does not free the whole context,
+ * This function frees solve-related data, such as
+ * buffers and preconditioning, but does not free the whole context,
  * as info used for logging (especially performance data) is maintained.
  *
  * \param[in, out]  context  pointer to sparse direct solver info and context
- *                           (actual type: cs_sles_mumps_t  *)
+ *                           (actual type: cs_sles_mumps_t *)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -248,7 +247,7 @@ cs_sles_mumps_free(void  *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set keep_data option for MUMPS solver.
+ * \brief Set the keep_data option for the MUMPS solver.
  *
  * If true, data (including analysis) is kept even when cs_sles_free is called,
  * so the analysis stage is not recomputed between solves.
@@ -264,11 +263,11 @@ cs_sles_mumps_set_keep_data(cs_sles_mumps_t  *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Query keep_data option for MUMPS solver.
+ * \brief Query the keep_data option for the MUMPS solver.
  *
  * \param[in] context  pointer to MUMPS solver info and context
  *
- * \return true if data is kept across calls, false otherwise
+ * \return true if data is kept across calls, false otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -280,19 +279,19 @@ cs_sles_mumps_get_keep_data(const cs_sles_mumps_t  *context);
  * \brief Destroy MUMPS linear system solver info and context.
  *
  * \param[in, out]  context  pointer to sparse direct solver info and context
- *                           (actual type: cs_sles_mumps_t  **)
+ *                           (actual type: cs_sles_mumps_t **)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sles_mumps_destroy(void   **context);
+cs_sles_mumps_destroy(void  **context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Setup MUMPS linear equation solver.
+ * \brief Set up the MUMPS linear equation solver.
  *
  * \param[in, out]  context    pointer to sparse direct solver info and context
- *                             (actual type: cs_sles_mumps_t  *)
+ *                             (actual type: cs_sles_mumps_t *)
  * \param[in]       name       pointer to system name
  * \param[in]       a          associated matrix
  * \param[in]       verbosity  associated verbosity
@@ -307,10 +306,10 @@ cs_sles_mumps_setup(void               *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Call MUMPS linear equation solver.
+ * \brief Call the MUMPS linear equation solver.
  *
  * \param[in, out]  context        pointer to sparse direct solver info and
- *                                 context (actual type: cs_sles_mumps_t  *)
+ *                                 context (actual type: cs_sles_mumps_t *)
  * \param[in]       name           pointer to system name
  * \param[in]       a              matrix
  * \param[in]       verbosity      associated verbosity
@@ -318,15 +317,15 @@ cs_sles_mumps_setup(void               *context,
  * \param[in]       r_norm         residual normalization
  * \param[out]      n_iter         number of "equivalent" iterations
  * \param[out]      residual       residual
- * \param[in]       rhs            right hand side
+ * \param[in]       rhs            right-hand side
  * \param[in]       vx_ini         initial system solution
  *                                 (vx if nonzero, nullptr if zero)
  * \param[in, out]  vx             system solution
  * \param[in]       aux_size       number of elements in aux_vectors (in bytes)
- * \param           aux_vectors    optional working area
- *                                 (internal allocation if NULL)
+ * \param[in, out]  aux_vectors    optional working area
+ *                                 (internal allocation if nullptr)
  *
- * \return  convergence state
+ * \return  convergence state.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -350,7 +349,7 @@ cs_sles_mumps_solve(void                *context,
  * \brief Log sparse linear equation solver info.
  *
  * \param[in]  context   pointer to sparse direct solver info and context
- *                       (actual type: cs_sles_mumps_t  *)
+ *                       (actual type: cs_sles_mumps_t *)
  * \param[in]  log_type  log type
  */
 /*----------------------------------------------------------------------------*/
@@ -361,7 +360,7 @@ cs_sles_mumps_log(const void  *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print information on MUMPS library.
+ * \brief Print information on the MUMPS library.
  *
  * \param[in]  log_type  log type
  */
