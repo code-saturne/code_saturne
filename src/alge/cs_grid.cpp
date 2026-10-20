@@ -8138,13 +8138,15 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
  * Build a coarse level from a finer level with an MSR matrix.
  *
  * parameters:
- *   fine_grid   <-- Fine grid structure
- *   coarse_grid <-> Coarse grid structure
+ *   fine_grid           <-- Fine grid structure
+ *   coarse_grid         <-> Coarse grid structure
+ *   coarse_struct_v_id  <-- coarse structure algorithm choice
  *----------------------------------------------------------------------------*/
 
 static void
 _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
-                               cs_grid_t        *coarse_grid)
+                               cs_grid_t        *coarse_grid,
+                               int               coarse_struct_v_id)
 
 {
   std::chrono::high_resolution_clock::time_point t_start;
@@ -8202,22 +8204,68 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   /* Build structure
      --------------- */
 
-  cs_lnum_t *c_row_index,  *c_col_id;
   cs_lnum_t c_nnz = 0;
+  cs_lnum_t *c_row_index = nullptr,  *c_col_id = nullptr;
+  cs_lnum_t *face_id_stage_0 = nullptr;
 
-  _coarse_msr_struct(fine_grid->level,
-                     f_n_rows,
-                     c_n_rows,
-                     coarse_grid->alloc_mode,
-                     f_row_index,
-                     f_col_id,
-                     f_c_row,
-                     c_f_row_index,
-                     c_f_row_ids,
-                     c_row_index_0,
-                     c_nnz,
-                     &c_row_index,
-                     &c_col_id);
+  if (coarse_struct_v_id == 0)
+    _coarse_msr_struct(fine_grid->level,
+                       f_n_rows,
+                       c_n_rows,
+                       coarse_grid->alloc_mode,
+                       f_row_index,
+                       f_col_id,
+                       f_c_row,
+                       c_f_row_index,
+                       c_f_row_ids,
+                       c_row_index_0,
+                       c_nnz,
+                       &c_row_index,
+                       &c_col_id);
+
+  if (coarse_struct_v_id == 1)
+    _coarse_msr_struct_hd(ctx,
+                          fine_grid->level,
+                          c_n_rows, // c->n_cols_ext,
+                          fine_grid->alloc_mode,
+                          f_row_index,
+                          f_col_id,
+                          f_c_row,
+                          c_f_row_index,
+                          c_f_row_ids,
+                          c_row_index_0,
+                          c_nnz,
+                          c_row_index,
+                          c_col_id,
+                          &face_id_stage_0,
+                          &coarse_grid->cell_face_sgn);
+
+  if (coarse_struct_v_id == 2 || coarse_struct_v_id == 3) {
+#if defined(HAVE_CUDA)
+    _coarse_msr_struct_cuda(ctx,
+                            coarse_struct_v_id - 2,
+                            fine_grid->level,
+                            f_n_rows,
+                            c_n_rows,
+                            coarse_grid->n_cols_ext,
+                            fine_grid->alloc_mode,
+                            f_row_index,
+                            f_col_id,
+                            f_c_row,
+                            c_f_row_index,
+                            c_f_row_ids,
+                            c_nnz,
+                            c_row_index,
+                            c_col_id,
+                            &face_id_stage_0,
+                            &coarse_grid->cell_face_sgn);
+
+#else
+    assert(0);
+#endif // defined(HAVE_CUDA)
+  }
+
+  CS_FREE(face_id_stage_0);
 
   /* Assign values
      ------------- */
@@ -10110,6 +10158,36 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
 #endif
 
 /*----------------------------------------------------------------------------
+ * Allow choice of coarsening structure constructions.
+ *
+ * CS_MG_COARSE = 0 - default
+ *                1 - host-device algorithm (default on GPU)
+ *                2 - CUDA algorithm with cub and radix sort
+ *                3 - CUDA algorithm with cub and merge sort
+ *
+ * returns:
+ *   coarse structure variant id (-1 if unset)
+ *----------------------------------------------------------------------------*/
+
+static int
+_select_coarse_struct_v_id(void)
+{
+  int coarse_struct_v_id = -1;
+  const char *s_variant = getenv("CS_MG_COARSE");
+  if (s_variant != nullptr) {
+    coarse_struct_v_id = atoi(s_variant);
+    cs_assert(coarse_struct_v_id > -1);
+#if defined(HAVE_CUDA)
+    cs_assert(coarse_struct_v_id < 4);
+#else
+    cs_assert(coarse_struct_v_id < 2);
+#endif
+  }
+
+  return coarse_struct_v_id;
+}
+
+/*----------------------------------------------------------------------------
  * Create coarse grid from fine grid.
  *
  * parameters:
@@ -10197,25 +10275,7 @@ cs_grid_coarsen(cs_grid_t            *f,
     spd_dx_variant = atoi(s_variant);
   }
 
-  /* Allow choice of coarsening structure constructions.
-   *
-   * CS_MG_COARSE = 0 - default
-   *                1 - host-device algorithm (default on GPU)
-   *                2 - CUDA algorithm with cub and radix sort
-   *                3 - CUDA algorithm with cub and merge sort
-   */
-
-  int coarse_struct_v_id = -1;
-  s_variant = getenv("CS_MG_COARSE");
-  if (s_variant != nullptr) {
-    coarse_struct_v_id = atoi(s_variant);
-    cs_assert(coarse_struct_v_id > -1);
-#if defined(HAVE_CUDA)
-    cs_assert(coarse_struct_v_id < 4);
-#else
-    cs_assert(coarse_struct_v_id < 2);
-#endif
-  }
+  int coarse_struct_v_id = _select_coarse_struct_v_id();
 
   cs_grid_t *c = nullptr;
 
@@ -10486,7 +10546,7 @@ cs_grid_coarsen(cs_grid_t            *f,
 
   else if (fine_matrix_type == CS_MATRIX_MSR && c->relaxation <= 0) {
 
-   _compute_coarse_quantities_msr(f, c);
+   _compute_coarse_quantities_msr(f, c, coarse_struct_v_id);
 
   }
 
@@ -10765,7 +10825,10 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
     _aggregation_stats_log(f, c, verbosity);
 
   if (fine_matrix_type == CS_MATRIX_MSR) {
-    _compute_coarse_quantities_msr(f, c);
+
+    int coarse_struct_v_id = _select_coarse_struct_v_id();
+
+    _compute_coarse_quantities_msr(f, c, coarse_struct_v_id);
 
 #if defined(HAVE_MPI)
     if (c->n_ranks > 1 && merge_stride > 1) {

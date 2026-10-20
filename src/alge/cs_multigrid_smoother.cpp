@@ -945,7 +945,7 @@ _chebyshev(cs_sles_it_t              *c,
   assert(diag_block_size == 1);
 
   cs_real_t *_aux_vectors = nullptr;
-  cs_real_t *rk = nullptr, *dk = nullptr, *adk = nullptr, *tmp = nullptr;
+  cs_real_t *rk = nullptr, *dk = nullptr, *adk = nullptr;
 
   unsigned n_iter = 0;
 
