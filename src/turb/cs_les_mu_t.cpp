@@ -240,7 +240,7 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
     const cs_real_t delta = w0[c_id];
     const cs_real_t deltaf = xlesfd * delta;
     for (cs_lnum_t ij = 0; ij < 6; ij++)
-      mij(c_id, ij) = -2.0 * xro[c_id] * cs_math_pow2(deltaf)
+      mij(c_id, ij) = -2.0 * xrof[c_id] * cs_math_pow2(deltaf)
                            * sf_n[c_id] * w61(c_id, ij)
                       - w62(c_id, ij);
   });
@@ -634,7 +634,7 @@ cs_les_mu_t_smago_dyn(void)
                                scamif.data<cs_real_3_t>());
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        const cs_real_t deltaf  = xlesfd * pow(ales*cell_vol[c_id], bles);
+        const cs_real_t deltaf = xlesfd*xlesfl*pow(ales*cell_vol[c_id], bles);
         for (cs_lnum_t i = 0; i < 3; i++) {
           scami(c_id, i) = - cs_math_pow2(deltaf)*xrof[c_id]
                               * sf_n[c_id]*gradsf(c_id, i)
