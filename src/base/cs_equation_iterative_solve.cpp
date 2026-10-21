@@ -374,7 +374,7 @@ _equation_iterative_solve_strided(int                   idtvar,
        the array is defined but not up to date). */
 
     cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
-      (f->bc_coeffs,
+      (bc_coeffs,
        n_b_faces,
        f->dim,
        cs_alloc_mode);
@@ -1577,7 +1577,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     }
 
     cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
-      (f->bc_coeffs,
+      (bc_coeffs,
        n_b_faces,
        f->dim,
        cs_alloc_mode);
