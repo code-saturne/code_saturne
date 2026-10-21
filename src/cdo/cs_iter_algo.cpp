@@ -325,19 +325,23 @@ _anderson_damping(cs_iter_algo_aac_t    *c,
   const int  m_max = c->param.n_max_dir;
   const cs_real_t  *Rval = c->R->val;
 
+  /* x = x - (1-beta)*(fold - Q*R*gamma) */
+
+# pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
+  for (cs_lnum_t l = 0; l < c->n_elts; l++)
+    x[l] -= omb * c->fold[l];
+
   for (int j = 0; j < c->n_dir; j++) {
 
     double  R_gamma = 0.;
     for (int k = j; k < c->n_dir; k++)  /* R is upper diag */
       R_gamma += Rval[j*m_max+k] * c->gamma[k];
 
-    /* x = x - (1-beta)*(fold - Q*R*gamma) */
-
     const cs_real_t  *Qj = c->Q + j*c->n_elts;  /* get row j */
 
 #   pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t l = 0; l < c->n_elts; l++)
-      x[l] += omb * (Qj[l] * R_gamma - c->fold[l]);
+      x[l] += omb * Qj[l] * R_gamma;
 
   } /* Loop on directions */
 }
