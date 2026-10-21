@@ -473,7 +473,7 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousVelocity -> %s" % str(result))
-            self.pushButtonImposed.setFormula(exp)
+            self.pushButtonImposed.setFormula(result)
             self.ibm.setObjectImposedMovingFormula(objId-1, result)
 
 
@@ -503,7 +503,7 @@ rho = 1.293 * (273.15 / temperature);"""
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousRho -> %s" % str(result))
-            self.pushButtonDensity.setFormula(exp)
+            self.pushButtonDensity.setFormula(result)
             self.ibm.setObjectRhoFormula(objId-1, result)
 
 
@@ -532,7 +532,7 @@ rho = 1.293 * (273.15 / temperature);"""
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousCp -> %s" % str(result))
-            self.pushButtonSpecificHeat.setFormula(exp)
+            self.pushButtonSpecificHeat.setFormula(result)
             self.ibm.setObjectCpFormula(objId-1, result)
 
 
@@ -561,7 +561,7 @@ rho = 1.293 * (273.15 / temperature);"""
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousAl -> %s" % str(result))
-            self.pushButtonThermalConductivity.setFormula(exp)
+            self.pushButtonThermalConductivity.setFormula(result)
             self.ibm.setObjectAlFormula(objId-1, result)
 
 
@@ -601,7 +601,7 @@ rho = 1.293 * (273.15 / temperature);"""
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousInertia -> %s" % str(result))
-            self.pushButtonThermalConductivity.setFormula(exp)
+            self.pushButtonInertia.setFormula(result)
             self.ibm.setObjectInertiaFormula(objId-1, result)
 
 

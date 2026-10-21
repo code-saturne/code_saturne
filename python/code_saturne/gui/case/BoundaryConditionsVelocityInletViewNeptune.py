@@ -136,9 +136,16 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
 
         if choice[-7:] == "formula":
             self.pushButtonVelocityFormula.setEnabled(True)
+            exp = self.__boundary.getVelocity(self.__currentField)
+            if exp:
+                self.pushButtonVelocityFormula.setFormula(exp)
+            else:
+                self.pushButtonVelocityFormula.setFormulaRequired()
             self.lineEditVelocity.setEnabled(False)
+            self.lineEditVelocity.setText("")
         else:
             self.pushButtonVelocityFormula.setEnabled(False)
+            self.pushButtonVelocityFormula.clearFormula()
             self.lineEditVelocity.setEnabled(True)
             v = self.__boundary.getVelocity(self.__currentField)
             self.lineEditVelocity.setText(str(v))
@@ -149,9 +156,16 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         text = self.modelDirection.dicoM2V[choice]
         if choice == "formula":
             self.pushButtonDirectionFormula.setEnabled(True)
+            exp = self.__boundary.getDirection(self.__currentField,
+                                               'direction_formula')
+            if exp:
+                self.pushButtonDirectionFormula.setFormula(exp)
+            else:
+                self.pushButtonDirectionFormula.setFormulaRequired()
             self.frameDirectionCoordinates.hide()
         elif choice == "normal":
             self.pushButtonDirectionFormula.setEnabled(False)
+            self.pushButtonDirectionFormula.clearFormula()
             self.frameDirectionCoordinates.hide()
 
         self.show()

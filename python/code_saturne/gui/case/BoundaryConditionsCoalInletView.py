@@ -362,9 +362,16 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
         if choice[-7:] == "formula":
             self.pushButtonVelocityFormula.setEnabled(True)
+            exp = self.__boundary.getVelocity()
+            if exp:
+                self.pushButtonVelocityFormula.setFormula(exp)
+            else:
+                self.pushButtonVelocityFormula.setFormulaRequired()
             self.lineEditVelocity.setEnabled(False)
+            self.lineEditVelocity.setText("")
         else:
             self.pushButtonVelocityFormula.setEnabled(False)
+            self.pushButtonVelocityFormula.clearFormula()
             self.lineEditVelocity.setEnabled(True)
             v = self.__boundary.getVelocity()
             self.lineEditVelocity.setText(str(v))
@@ -382,9 +389,15 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         text = self.modelDirection.dicoM2V[choice]
         if choice == "formula":
             self.pushButtonDirectionFormula.setEnabled(True)
+            exp = self.__boundary.getDirection('direction_formula')
+            if exp:
+                self.pushButtonDirectionFormula.setFormula(exp)
+            else:
+                self.pushButtonDirectionFormula.setFormulaRequired()
             self.frameDirectionCoordinates.hide()
         elif choice == "coordinates":
             self.pushButtonDirectionFormula.setEnabled(False)
+            self.pushButtonDirectionFormula.clearFormula()
             self.frameDirectionCoordinates.show()
             v = self.__boundary.getDirection('direction_x')
             self.lineEditDirectionX.setText(str(v))
@@ -394,6 +407,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.lineEditDirectionZ.setText(str(v))
         elif choice == "normal":
             self.pushButtonDirectionFormula.setEnabled(False)
+            self.pushButtonDirectionFormula.clearFormula()
             self.frameDirectionCoordinates.hide()
 
         log.debug("showWidget:inlet type: %s " % self.__boundary.getInletType())

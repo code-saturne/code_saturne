@@ -213,4 +213,4 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
             result = dialog.get_result()
             log.debug("slotFormulaSt -> %s" % str(result))
             self.model.setFormula(self.field_id_a, self.field_id_b, "surface_tension", result, self.zone_id)
-            self.pushButtonSurfaceTension.setFormula(exp)
+            self.pushButtonSurfaceTension.setFormula(result)

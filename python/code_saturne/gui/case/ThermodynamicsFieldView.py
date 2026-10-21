@@ -898,7 +898,7 @@ temperature = enthalpy / 1000;
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'density', result, zone=self.zone_id)
-            self.pushButtonDensity.setFormula(exp)
+            self.pushButtonDensity.setFormula(result)
 
 
     @Slot()
@@ -927,7 +927,7 @@ temperature = enthalpy / 1000;
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'molecular_viscosity', result, zone=self.zone_id)
-            self.pushButtonViscosity.setFormula(exp)
+            self.pushButtonViscosity.setFormula(result)
 
 
     @Slot()
@@ -956,7 +956,7 @@ temperature = enthalpy / 1000;
             result = dialog.get_result()
             log.debug("slotFormulaCp -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'specific_heat', result, zone=self.zone_id)
-            self.pushButtonSpecificHeat.setFormula(exp)
+            self.pushButtonSpecificHeat.setFormula(result)
 
 
     @Slot()
@@ -985,7 +985,7 @@ temperature = enthalpy / 1000;
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'thermal_conductivity', result, zone=self.zone_id)
-            self.pushButtonThermalConductivity.setFormula(exp)
+            self.pushButtonThermalConductivity.setFormula(result)
 
 
     @Slot()

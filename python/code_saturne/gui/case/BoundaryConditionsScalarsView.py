@@ -693,7 +693,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             result = dialog.get_result()
             log.debug("slotThermalFormula -> %s" % str(result))
             self.__boundary.setScalarFormula(self.thermal, thermal_type, str(result))
-            self.pushButtonThermal.setFormula(exp)
+            self.pushButtonThermal.setFormula(result)
 
 
     @Slot()
@@ -738,7 +738,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             result = dialog.get_result()
             log.debug("slotSpeciesFormula -> %s" % str(result))
             self.__boundary.setScalarFormula(self.species, self.species_type, str(result))
-            self.pushButtonSpecies.setFormula(exp)
+            self.pushButtonSpecies.setFormula(result)
 
 
     @Slot()
@@ -786,7 +786,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             result = dialog.get_result()
             log.debug("slotVoidFractionFormula -> %s" % str(result))
             self.__boundary.setScalarFormula(name, self.hgn_type, str(result))
-            self.pushButtonVoidFraction.setFormula(exp)
+            self.pushButtonVoidFraction.setFormula(result)
 
 
     @Slot()
@@ -831,7 +831,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             result = dialog.get_result()
             log.debug("slotMeteoFormula -> %s" % str(result))
             self.__boundary.setScalarFormula(self.meteo, self.meteo_type, str(result))
-            self.pushButtonMeteo.setFormula(exp)
+            self.pushButtonMeteo.setFormula(result)
 
 
     @Slot(str)

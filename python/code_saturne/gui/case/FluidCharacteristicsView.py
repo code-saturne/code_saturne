@@ -627,10 +627,16 @@ thermal_expansion = 1.0 / (temperature + 273.15);
                 if c == 'user_law':
                     __button.show()
                     __button.setEnabled(True)
+                    exp = self.mdl.getFormulaTry(tag, self.zone_id)
+                    if exp:
+                        __button.setFormula(exp)
+                    else:
+                        __button.setFormulaRequired()
                     __label.setText(self.tr("Reference value"))
                 else:
                     __button.hide()
                     __button.setEnabled(False)
+                    __button.clearFormula()
                     __label.setText(self.tr("Reference value"))
                 if c == 'thermal_law':
                     __line.hide()

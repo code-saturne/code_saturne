@@ -470,4 +470,9 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
         _is_selected = self.current_name != None
         self.labelFormula.setVisible(_is_selected)
         self.pushButtonFormula.setVisible(_is_selected)
+        if _is_selected:
+            exp = self.mdl.getFunctionFormula(self.current_name)
+            self.pushButtonFormula.setFormula(exp)
+        else:
+            self.pushButtonFormula.clearFormula()
 

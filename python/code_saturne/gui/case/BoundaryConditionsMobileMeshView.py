@@ -605,6 +605,14 @@ class BoundaryConditionsMobileMeshView(QWidget,
                 self.__comboModel.disableItem(str_model="internal_coupling")
                 self.__comboModel.disableItem(str_model="external_coupling")
             self.update_view(modelData)
+            if modelData in ["fixed_velocity", "fixed_displacement"]:
+                exp = self.__boundary.getALEFormula()
+                if exp:
+                    self.pushButtonMobilBoundary.setFormula(exp)
+                else:
+                    self.pushButtonMobilBoundary.setFormulaRequired()
+            else:
+                self.pushButtonMobilBoundary.clearFormula()
             self.show()
         else:
             self.hideWidget()

@@ -161,6 +161,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
                 self.__modelEnergy.setItem(str_model=energychoice)
 
                 self.__setSubWidgetsStatus(energychoice)
+                self.__updateFormula(energychoice, self.__currentField)
                 if energychoice in ['dirichlet', 'flux', 'timp_K']:
                     val = self.__boundary.getEnthalpy(self.__currentField)
                     self.lineEditEnergy.setText(str(val))
@@ -185,6 +186,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
                 self.__modelEnergy.setItem(str_model=energychoice)
 
                 self.__setSubWidgetsStatus(energychoice)
+                self.__updateFormula(energychoice, "none")
 
                 val = self.__boundary.getEnthalpy("none")
 
@@ -209,6 +211,20 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         Hide the widget
         """
         self.hide()
+
+    def __updateFormula(self, energyChoice, fieldId):
+        """
+        Display the formula of the energy boundary condition
+        """
+        if energyChoice[-7:] == "formula":
+            exp = self.__boundary.getEnthalpy(fieldId)
+            if exp not in ['', None]:
+                self.pushButtonEnergy.setFormula(exp)
+            else:
+                self.pushButtonEnergy.setFormulaRequired()
+        else:
+            self.pushButtonEnergy.clearFormula()
+
 
     def __setSubWidgetsStatus(self, energyChoice):
         """

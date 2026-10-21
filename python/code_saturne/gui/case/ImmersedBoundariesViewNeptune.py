@@ -801,7 +801,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotExplicitFormula -> %s" % str(result))
-            self.pushButtonExplicit.setFormula(exp)
+            self.pushButtonExplicit.setFormula(result)
             self.ibm.setObjectFormula(objId-1, result)
 
 
