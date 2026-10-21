@@ -291,7 +291,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButtonMassMatrix">
+          <widget class="FormulaButton" name="pushButtonMassMatrix">
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -340,7 +340,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButtonDampingMatrix">
+          <widget class="FormulaButton" name="pushButtonDampingMatrix">
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XCSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -389,7 +389,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButtonStiffnessMatrix">
+          <widget class="FormulaButton" name="pushButtonStiffnessMatrix">
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XKSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -431,7 +431,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButtonFluidForce">
+          <widget class="FormulaButton" name="pushButtonFluidForce">
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;FORSTR&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>

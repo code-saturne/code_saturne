@@ -224,7 +224,8 @@ class FormulaCoupling(Coupling):
         Called when boundary is set.
         """
         # call getter to create default value if needed
-        self.getBoundaryDefinedValue()
+        exp = self.getBoundaryDefinedValue()
+        self.getWidget().setFormula(exp)
 
 
     @Slot(bool)
@@ -252,6 +253,7 @@ class FormulaCoupling(Coupling):
             result = dialog.get_result()
             log.debug("FormulaCoupling -> %s" % str(result))
             self.setBoundaryDefinedValue(result)
+            self.getWidget().setFormula(result)
 
 # -------------------------------------------------------------------------------
 # CouplingManager class
