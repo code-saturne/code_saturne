@@ -115,6 +115,7 @@ cs_check_cdo \
 cs_check_quadrature \
 cs_check_sdm \
 cs_check_solidification \
+cs_check_anderson \
 cs_core_test \
 cs_dispatch_test \
 cs_dispatch_queue_test \
@@ -189,6 +190,13 @@ cs_check_solidification$(EXEEXT):
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_check_solidification $(top_srcdir)/tests/cs_check_solidification.cpp
+
+cs_check_anderson_SOURCES = cs_check_anderson.cpp
+
+cs_check_anderson$(EXEEXT):
+	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	-o cs_check_anderson $(top_srcdir)/tests/cs_check_anderson.cpp
 
 cs_core_test_SOURCES  = cs_core_test.cpp
 cs_core_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
