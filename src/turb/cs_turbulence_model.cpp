@@ -1251,14 +1251,16 @@ cs_turb_compute_constants(int phase_id)
 
   if (cs::any_eq(cs_glob_turb_model->model,
                  CS_TURB_RIJ_EPSILON_LRR,
-                 CS_TURB_RIJ_EPSILON_SSG) )
+                 CS_TURB_RIJ_EPSILON_SSG)) {
     if (f_eps != nullptr)
       f_eps->set_key_double(k_turb_schmidt, 1.22);
-    else if (cs::any_eq(cs_glob_turb_model->model,
-                        CS_TURB_RIJ_EPSILON_BFH,
-                        CS_TURB_LES_TAUSGS))
-      if (f_eps != nullptr)
-        f_eps->set_key_double(k_turb_schmidt, 1.0 / 0.477000);
+  }
+  else if (cs::any_eq(cs_glob_turb_model->model,
+                      CS_TURB_RIJ_EPSILON_BFH,
+                      CS_TURB_LES_TAUSGS)) {
+    if (f_eps != nullptr)
+      f_eps->set_key_double(k_turb_schmidt, 1.0 / 0.477000);
+  }
   else if (cs_glob_turb_model->model == CS_TURB_RIJ_OMEGA) {
     if (f_omg != nullptr)
       f_omg->set_key_double(k_turb_schmidt, 1./0.5);
