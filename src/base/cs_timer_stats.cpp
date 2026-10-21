@@ -133,6 +133,8 @@ static cs_time_plot_t  *_time_plot = nullptr;
 
 /* Field definitions */
 
+static void (*_timer_stats_breakdown_hook)(void) = nullptr;
+
 static int  _n_stats = 0;
 static int  _n_stats_max = 0;
 static cs_timer_stats_t  *_stats= nullptr;
@@ -415,6 +417,9 @@ cs_timer_stats_finalize(void)
 
   _log_performance();
 
+  if (_timer_stats_breakdown_hook != nullptr)
+    _timer_stats_breakdown_hook();
+
   for (int i = 0; i < _n_stages; i++)
     CS_FREE(_stage_vals[i]);
   CS_FREE(_stage_vals);
@@ -517,15 +522,15 @@ cs_timer_stats_increment_time_step(void)
 
   if (_time_id % _plot_frequency == 0) {
 
-    if (_time_plot != nullptr)
-      _output_time_plot();
-
     for (int stats_id = 0; stats_id < _n_stats; stats_id++) {
       cs_timer_stats_t  *s = _stats + stats_id;
       CS_TIMER_COUNTER_ADD(s->t_tot, s->t_tot, s->t_cur);
       CS_TIMER_COUNTER_ADD(s->t_plot, s->t_plot, s->t_cur);
       CS_TIMER_COUNTER_INIT(s->t_cur);
     }
+
+    if (_time_plot != nullptr)
+      _output_time_plot();
 
   }
 
@@ -984,6 +989,63 @@ cs_timer_stats_increment_stage(void)
   CS_REALLOC(_stage_ts, _n_stages+1, int);
   _stage_ts[_n_stages] = _time_id;
   _n_stages++;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return total elapsed time (in seconds) for a given statistic id.
+ *
+ * \param[in]  id  id of statistic
+ *
+ * \return  total elapsed time in seconds, or 0.0 if id is invalid
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_timer_stats_get_total_time(int id)
+{
+  if (id < 0 || id >= _n_stats)
+    return 0.;
+
+  cs_real_t t = (_stats + id)->t_tot.nsec * 1e-9;
+  for (int i = 0; i < _n_stages; i++) {
+    if (_stage_vals[i] != nullptr)
+      t += _stage_vals[i][id];
+  }
+
+  return t;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return total elapsed time (in seconds) for a given statistic name.
+ *
+ * \param[in]  name  canonical name of statistic
+ *
+ * \return  total elapsed time in seconds, or 0.0 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_timer_stats_get_total_time_by_name(const char *name)
+{
+  int id = cs_timer_stats_id_by_name(name);
+  return cs_timer_stats_get_total_time(id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set an optional callback hook to be called during finalize
+ *        just after printing the timer statistics summary, before freeing data.
+ *
+ * \param[in]  hook  pointer to function to call, or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_timer_stats_set_breakdown_hook(void (*hook)(void))
+{
+  _timer_stats_breakdown_hook = hook;
 }
 
 /*-----------------------------------------------------------------------------*/

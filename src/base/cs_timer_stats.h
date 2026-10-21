@@ -262,5 +262,43 @@ extern "C" void
 cs_timer_stats_increment_stage(void);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Return total elapsed time (in seconds) for a given statistic id.
+ *
+ * \param[in]  id  id of statistic
+ *
+ * \return  total elapsed time in seconds, or 0.0 if id is invalid
+ */
+/*----------------------------------------------------------------------------*/
+
+extern "C" cs_real_t
+cs_timer_stats_get_total_time(int id);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return total elapsed time (in seconds) for a given statistic name.
+ *
+ * \param[in]  name  canonical name of statistic
+ *
+ * \return  total elapsed time in seconds, or 0.0 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+extern "C" cs_real_t
+cs_timer_stats_get_total_time_by_name(const char *name);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Set an optional callback hook to be called during finalize
+ *        just after printing the timer statistics summary, before freeing data.
+ *
+ * \param[in]  hook  pointer to function to call, or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+extern "C" void
+cs_timer_stats_set_breakdown_hook(void (*hook)(void));
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_TIMER_STATS_H */
