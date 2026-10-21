@@ -1136,6 +1136,9 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
 
     }
 
+    /* Calculate initial norm to detect rank breakdown */
+    const double  df_init_norm = sqrt(sqnorm(c->df));
+
     for (int j = 0; j < c->n_dir-1; j++) {
 
       cs_real_t *Qj = c->Q + j*c->n_elts; /* get the row j */
@@ -1151,19 +1154,47 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
     }
 
     const double  df_norm = sqrt(sqnorm(c->df));
-    const cs_real_t  coef = 1.0/df_norm;
 
-    /* R(n_dir,n_dir) = |df|_L2 */
+    /* Check for rank deficiency or stagnation:
+     * ||(I - Q Q^T) df|| <= eps * ||df|| */
+    const double  rank_threshold =
+      cs::max(cs_math_epzero * df_init_norm, cs_math_epzero);
 
-    Rval[(c->n_dir-1)*m_max+(c->n_dir-1)] = df_norm;
+    if (df_norm > rank_threshold) {
 
-    /* Set the row n_dir-1 of Q */
+      const cs_real_t  coef = 1.0/df_norm;
 
-    cs_real_t *q_n_dir = c->Q + (c->n_dir-1)*c->n_elts;
+      /* R(n_dir,n_dir) = |df|_L2 */
+      Rval[(c->n_dir-1)*m_max+(c->n_dir-1)] = df_norm;
 
-#   pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t i = 0; i < c->n_elts; i++)
-      q_n_dir[i] = c->df[i]*coef;  /* Q(n_dir, :) = df/|df|_L2 */
+      /* Set the row n_dir-1 of Q */
+      cs_real_t *q_n_dir = c->Q + (c->n_dir-1)*c->n_elts;
+
+#     pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
+      for (cs_lnum_t i = 0; i < c->n_elts; i++)
+        q_n_dir[i] = c->df[i]*coef;  /* Q(n_dir, :) = df/|df|_L2 */
+
+    }
+    else {
+
+      /* Rank deficiency detected: drop redundant direction to avoid NaN */
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    " %s: Anderson rank deficiency detected"
+                    " (df_norm = %5.3e <= %5.3e).\n"
+                    " %s: Dropping direction %d to prevent NaN propagation.\n",
+                    __func__, df_norm, rank_threshold, __func__, c->n_dir - 1);
+
+      /* Clear stale upper triangular entries for this rejected direction */
+      for (int j = 0; j < c->n_dir-1; j++)
+        Rval[j*m_max + (c->n_dir-1)] = 0.0;
+
+      c->n_dir--;
+
+      if (c->n_dir == 0)
+        return; /* Fallback to standard Picard step */
+
+    }
 
   } /* n_dir > 1 */
 
