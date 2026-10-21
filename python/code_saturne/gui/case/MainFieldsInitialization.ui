@@ -111,7 +111,7 @@
                </widget>
               </item>
               <item row="3" column="4">
-               <widget class="QPushButton" name="pushButtonEnergy">
+               <widget class="FormulaButton" name="pushButtonEnergy">
                 <property name="text">
                  <string/>
                 </property>
@@ -141,7 +141,7 @@
                </spacer>
               </item>
               <item row="2" column="4">
-               <widget class="QPushButton" name="pushButtonTurbulence">
+               <widget class="FormulaButton" name="pushButtonTurbulence">
                 <property name="text">
                  <string/>
                 </property>
@@ -217,7 +217,7 @@
                </spacer>
               </item>
               <item row="0" column="4">
-               <widget class="QPushButton" name="pushButtonVelocity">
+               <widget class="FormulaButton" name="pushButtonVelocity">
                 <property name="text">
                  <string/>
                 </property>
@@ -319,7 +319,7 @@
                <widget class="QComboBox" name="comboBoxNonCondensable"/>
               </item>
               <item row="1" column="4">
-               <widget class="QPushButton" name="pushButtonFraction">
+               <widget class="FormulaButton" name="pushButtonFraction">
                 <property name="text">
                  <string/>
                 </property>
@@ -346,7 +346,7 @@
                <widget class="QComboBox" name="comboBoxEnergy"/>
               </item>
               <item row="5" column="4">
-               <widget class="QPushButton" name="pushButtonScalar">
+               <widget class="FormulaButton" name="pushButtonScalar">
                 <property name="text">
                  <string/>
                 </property>
@@ -386,7 +386,7 @@
                </spacer>
               </item>
               <item row="4" column="4">
-               <widget class="QPushButton" name="pushButtonNonCondensable">
+               <widget class="FormulaButton" name="pushButtonNonCondensable">
                 <property name="text">
                  <string/>
                 </property>
@@ -446,7 +446,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButtonPressure">
+         <widget class="FormulaButton" name="pushButtonPressure">
           <property name="text">
            <string/>
           </property>
@@ -495,6 +495,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
  </resources>

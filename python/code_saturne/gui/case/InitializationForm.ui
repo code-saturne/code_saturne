@@ -80,7 +80,7 @@
        </widget>
       </item>
       <item row="4" column="11">
-       <widget class="QPushButton" name="pushButtonTurbulence">
+       <widget class="FormulaButton" name="pushButtonTurbulence">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Initialize the turbulence variables. They can be initialized either automatically based on the reference values defined in the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Reference Values&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; heading, or by using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -147,7 +147,7 @@
        </layout>
       </item>
       <item row="1" column="11">
-       <widget class="QPushButton" name="pushButtonVelocity">
+       <widget class="FormulaButton" name="pushButtonVelocity">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Initialize the velocity by using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -191,7 +191,7 @@
        </widget>
       </item>
       <item row="3" column="11">
-       <widget class="QPushButton" name="pushButtonThermal">
+       <widget class="FormulaButton" name="pushButtonThermal">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Initialize the thermal scalar by using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -267,7 +267,7 @@
        </widget>
       </item>
       <item row="0" column="11">
-       <widget class="QPushButton" name="pushButtonHydraulicHead">
+       <widget class="FormulaButton" name="pushButtonHydraulicHead">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Initialize the hydraulic head by using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -346,7 +346,7 @@
        </widget>
       </item>
       <item row="6" column="11">
-       <widget class="QPushButton" name="pushButtonSpecies">
+       <widget class="FormulaButton" name="pushButtonSpecies">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select and initialize species by using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -366,7 +366,7 @@
        </widget>
       </item>
       <item row="10" column="11">
-       <widget class="QPushButton" name="pushButtonCombustion">
+       <widget class="FormulaButton" name="pushButtonCombustion">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select and initialize the combustion scalars by using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -399,7 +399,7 @@
        </spacer>
       </item>
       <item row="8" column="11">
-       <widget class="QPushButton" name="pushButtonMeteo">
+       <widget class="FormulaButton" name="pushButtonMeteo">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select and initialize the atmospheric scalars by using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -452,7 +452,7 @@
        </widget>
       </item>
       <item row="2" column="11">
-       <widget class="QPushButton" name="pushButtonVoidFraction">
+       <widget class="FormulaButton" name="pushButtonVoidFraction">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Initialize the void fraction by using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -570,7 +570,7 @@
        </widget>
       </item>
       <item row="3" column="4">
-       <widget class="QPushButton" name="pushButtonEnergy">
+       <widget class="FormulaButton" name="pushButtonEnergy">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Initialize the total energy in J/kg. Tick the check box and fill the formula editor to choose the total energy as one of the two variables to initialize. The total energy cannot be selected together with the temperature.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -590,7 +590,7 @@
        </widget>
       </item>
       <item row="2" column="4">
-       <widget class="QPushButton" name="pushButtonTemperature">
+       <widget class="FormulaButton" name="pushButtonTemperature">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Initialize the temperature in K. Tick the check box and fill the formula editor to choose the temperature as one of the two variables to initialize. The total energy cannot be selected together with the temperature.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -610,7 +610,7 @@
        </widget>
       </item>
       <item row="1" column="4">
-       <widget class="QPushButton" name="pushButtonDensity">
+       <widget class="FormulaButton" name="pushButtonDensity">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Initialize the density in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. Tick the check box and fill the formula editor to choose the density as one of the two variables to initialize.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -630,7 +630,7 @@
        </widget>
       </item>
       <item row="0" column="4">
-       <widget class="QPushButton" name="pushButtonPressure">
+       <widget class="FormulaButton" name="pushButtonPressure">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Initialize the pressure in Pa. Tick the check box and fill the formula editor to choose the pressure as one of the two variables to initialize.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
@@ -696,6 +696,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
  </resources>

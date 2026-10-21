@@ -100,10 +100,9 @@ class ImmersedBoundariesInitializationView(QWidget, Ui_ImmersedBoundariesInitial
 
         exp = self.ibm.getObjectTemperatureFormula(self.current_obj-1)
         if exp:
-            self.pushButtonTemperature.setStyleSheet("background-color: green")
-            self.pushButtonTemperature.setToolTip(exp)
+            self.pushButtonTemperature.setFormula(exp)
         else:
-            self.pushButtonTemperature.setStyleSheet("background-color: red")
+            self.pushButtonTemperature.setFormulaRequired()
 
 
     @Slot()
@@ -132,5 +131,4 @@ temperature = 273.15;"""
             result = dialog.get_result()
             log.debug("slotFormulaTemperatureInit -> %s" % str(result))
             self.ibm.setObjectTemperatureFormula(self.current_obj-1, result)
-            self.pushButtonTemperature.setStyleSheet("background-color: green")
-            self.pushButtonTemperature.setToolTip(result)
+            self.pushButtonTemperature.setFormula(result)

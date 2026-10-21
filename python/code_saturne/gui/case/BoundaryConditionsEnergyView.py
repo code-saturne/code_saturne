@@ -93,6 +93,9 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         Ui_BoundaryConditionsEnergy.__init__(self)
         self.setupUi(self)
 
+        # The formula is displayed in place of the value field
+        self.pushButtonEnergy.setDisplayField(self.lineEditEnergy)
+
         # Connections
         self.comboBoxEnergy.activated[int].connect(self.__slotChoiceEnergy)
 
@@ -250,7 +253,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         if old_choice != energy_choice:
            if old_choice[-7:] == 'formula' and energy_choice[-7:] != 'formula':
                self.__boundary.setEnthalpy(self.__currentField, "0.")
-               self.pushButtonEnergy.setStyleSheet("background-color: grey")
+               self.pushButtonEnergy.clearFormula()
 
 
         self.__boundary.setEnthalpyChoice(self.__currentField, energy_choice)
@@ -268,10 +271,9 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
                 else:
                     self.lineEditEnergy.setText(str(''))
                     if val not in ['', None]:
-                        self.pushButtonEnergy.setToolTip(val)
-                        self.pushButtonEnergy.setStyleSheet("background-color: green")
+                        self.pushButtonEnergy.setFormula(val)
                     else:
-                        self.pushButtonEnergy.setStyleSheet("background-color: red")
+                        self.pushButtonEnergy.setFormulaRequired()
                 self.labelEnergy.setText(bc_energy_units.get(energy_choice, ''))
 
         self.__setSubWidgetsStatus(energy_choice)
@@ -353,8 +355,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
             result = dialog.get_result()
             log.debug("slotThermalFormula -> %s" % str(result))
             self.__boundary.setEnthalpy(self.__currentField, result)
-            self.pushButtonEnergy.setToolTip(result)
-            self.pushButtonEnergy.setStyleSheet("background-color: green")
+            self.pushButtonEnergy.setFormula(result)
 
 
 #-------------------------------------------------------------------------------

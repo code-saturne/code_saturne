@@ -101,10 +101,9 @@ class ImmersedBoundariesSourceTermView(QWidget, Ui_ImmersedBoundariesSourceTerm)
         # Thermal source term
         exp = self.ibm.getObjectThermalSourceTermFormula(self.current_obj-1)
         if exp:
-            self.pushButtonThermalSourceTerm.setStyleSheet("background-color: green")
-            self.pushButtonThermalSourceTerm.setToolTip(exp)
+            self.pushButtonThermalSourceTerm.setFormula(exp)
         else:
-            self.pushButtonThermalSourceTerm.setStyleSheet("background-color: red")
+            self.pushButtonThermalSourceTerm.setFormulaRequired()
 
 
     @Slot()
@@ -136,5 +135,4 @@ class ImmersedBoundariesSourceTermView(QWidget, Ui_ImmersedBoundariesSourceTerm)
             result = dialog.get_result()
             log.debug("slotFormulaThermalSourceTerm -> %s" % str(result))
             self.ibm.setObjectThermalSourceTermFormula(self.current_obj-1, result)
-            self.pushButtonThermalSourceTerm.setStyleSheet("background-color: green")
-            self.pushButtonThermalSourceTerm.setToolTip(result)
+            self.pushButtonThermalSourceTerm.setFormula(result)

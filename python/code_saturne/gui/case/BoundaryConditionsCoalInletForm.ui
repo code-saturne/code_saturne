@@ -124,7 +124,7 @@
                 </spacer>
                </item>
                <item>
-                <widget class="QPushButton" name="pushButtonVelocityFormula" >
+                <widget class="FormulaButton" name="pushButtonVelocityFormula" >
                  <property name="text" >
                   <string/>
                  </property>
@@ -264,7 +264,7 @@
               </spacer>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButtonDirectionFormula" >
+              <widget class="FormulaButton" name="pushButtonDirectionFormula" >
                <property name="text" >
                 <string/>
                </property>
@@ -547,6 +547,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc" />
  </resources>

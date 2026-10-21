@@ -257,7 +257,7 @@ frequency</string>
              <item row="3" column="1">
               <layout class="QHBoxLayout" name="horizontalLayout">
                <item>
-                <widget class="QPushButton" name="pushButtonFormula">
+                <widget class="FormulaButton" name="pushButtonFormula">
                  <property name="toolTip">
                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Set the parametric equation of the segment through the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
@@ -544,6 +544,13 @@ frequency</string>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
   <include location="resources_pages.qrc"/>

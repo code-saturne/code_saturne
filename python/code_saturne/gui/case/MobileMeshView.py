@@ -164,10 +164,9 @@ if (xray2 < xr2) {
         self.modelVISCOSITY.setItem(str_model=value)
         exp = self.mdl.getFormula()
         if exp:
-            self.pushButtonFormula.setStyleSheet("background-color: green")
-            self.pushButtonFormula.setToolTip(exp)
+            self.pushButtonFormula.setFormula(exp)
         else:
-            self.pushButtonFormula.setStyleSheet("background-color: red")
+            self.pushButtonFormula.setFormulaRequired()
 
         self.case.undoStartGlobal()
 
@@ -191,10 +190,9 @@ if (xray2 < xr2) {
         self.mdl.setViscosity(visco)
         exp = self.mdl.getFormula()
         if exp:
-            self.pushButtonFormula.setStyleSheet("background-color: green")
-            self.pushButtonFormula.setToolTip(exp)
+            self.pushButtonFormula.setFormula(exp)
         else:
-            self.pushButtonFormula.setStyleSheet("background-color: red")
+            self.pushButtonFormula.setFormulaRequired()
         return visco
 
     @Slot(int)
@@ -208,10 +206,9 @@ if (xray2 < xr2) {
         self.mdl.setALESolver(solver)
         exp = self.mdl.getFormula()
         if exp:
-            self.pushButtonFormula.setStyleSheet("background-color: green")
-            self.pushButtonFormula.setToolTip(exp)
+            self.pushButtonFormula.setFormula(exp)
         else:
-            self.pushButtonFormula.setStyleSheet("background-color: red")
+            self.pushButtonFormula.setFormulaRequired()
         return solver
 
     @Slot()
@@ -241,8 +238,7 @@ if (xray2 < xr2) {
             result = dialog.get_result()
             log.debug("slotFormulaMobileMeshView -> %s" % str(result))
             self.mdl.setFormula(str(result))
-            self.pushButtonFormula.setStyleSheet("background-color: green")
-            self.pushButtonFormula.setToolTip(result)
+            self.pushButtonFormula.setFormula(result)
 
 
 # -------------------------------------------------------------------------------

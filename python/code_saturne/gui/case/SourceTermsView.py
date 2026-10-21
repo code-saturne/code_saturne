@@ -179,19 +179,17 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             self.pushButtonMomentum.show()
             exp = self.mdl.getMomentumFormula(self.zone_id)
             if exp:
-                self.pushButtonMomentum.setToolTip(exp)
-                self.pushButtonMomentum.setStyleSheet("background-color: green")
+                self.pushButtonMomentum.setFormula(exp)
             else:
-                self.pushButtonMomentum.setStyleSheet("background-color: red")
+                self.pushButtonMomentum.setFormulaRequired()
 
             if GroundwaterModel(self.case).getGroundwaterModel() != "off":
                 self.groupBoxRichards.show()
                 exp = self.mdl.getRichardsFormula(self.zone_id)
                 if exp:
-                    self.pushButtonRichards.setToolTip(exp)
-                    self.pushButtonRichards.setStyleSheet("background-color: green")
+                    self.pushButtonRichards.setFormula(exp)
                 else:
-                    self.pushButtonRichards.setStyleSheet("background-color: red")
+                    self.pushButtonRichards.setFormulaRequired()
             else:
                 self.groupBoxRichards.hide()
         else:
@@ -206,10 +204,9 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
                 self.th_sca_name = 'enthalpy'
             exp = self.mdl.getThermalFormula(self.zone_id, self.th_sca_name)
             if exp:
-                self.pushButtonThermal.setToolTip(exp)
-                self.pushButtonThermal.setStyleSheet("background-color: green")
+                self.pushButtonThermal.setFormula(exp)
             else:
-                self.pushButtonThermal.setStyleSheet("background-color: red")
+                self.pushButtonThermal.setFormulaRequired()
         else:
             self.pushButtonThermal.hide()
             self.labelThermal.hide()
@@ -221,20 +218,18 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
 
             exp = self.mdl.getSpeciesFormula(self.zone_id, self.scalar)
             if exp:
-                self.pushButtonSpecies.setToolTip(exp)
-                self.pushButtonSpecies.setStyleSheet("background-color: green")
+                self.pushButtonSpecies.setFormula(exp)
             else:
-                self.pushButtonSpecies.setStyleSheet("background-color: red")
+                self.pushButtonSpecies.setFormulaRequired()
 
             if GroundwaterModel(self.case).getGroundwaterModel() != "off":
                 self.groupBoxTransport.show()
 
                 exp = self.mdl.getGroundWaterSpeciesFormula(self.zone_id, self.scalar)
                 if exp:
-                    self.pushButtonSpecies2.setToolTip(exp)
-                    self.pushButtonSpecies2.setStyleSheet("background-color: green")
+                    self.pushButtonSpecies2.setFormula(exp)
                 else:
-                    self.pushButtonSpecies2.setStyleSheet("background-color: red")
+                    self.pushButtonSpecies2.setFormulaRequired()
             else:
                 self.groupBoxTransport.hide()
         else:
@@ -252,11 +247,10 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.scalar = self.modelSpecies.dicoV2M[str(text)]
         exp = self.mdl.getSpeciesFormula(self.zone_id, self.scalar)
         if exp:
-            self.pushButtonSpecies.setToolTip(exp)
-            self.pushButtonSpecies.setStyleSheet("background-color: green")
+            self.pushButtonSpecies.setFormula(exp)
         else:
+            self.pushButtonSpecies.setFormulaRequired()
             self.pushButtonSpecies.setToolTip("Use the formula editor to define a source term for this species.")
-            self.pushButtonSpecies.setStyleSheet("background-color: red")
 
     @Slot()
     def slotMomentumFormula(self):
@@ -288,8 +282,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
             self.mdl.setMomentumFormula(self.zone_id, str(result))
-            self.pushButtonMomentum.setToolTip(result)
-            self.pushButtonMomentum.setStyleSheet("background-color: green")
+            self.pushButtonMomentum.setFormula(result)
 
     @Slot()
     def slotSpeciesFormula(self):
@@ -316,8 +309,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
             self.mdl.setSpeciesFormula(self.zone_id, self.scalar, str(result))
-            self.pushButtonSpecies.setToolTip(result)
-            self.pushButtonSpecies.setStyleSheet("background-color: green")
+            self.pushButtonSpecies.setFormula(result)
 
     @Slot()
     def slotSpeciesGroundWaterFormula(self):
@@ -344,8 +336,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
             result = dialog.get_result()
             log.debug("slotSpeciesGroundWaterFormula -> %s" % str(result))
             self.mdl.setGroundWaterSpeciesFormula(self.zone_id, self.scalar, str(result))
-            self.pushButtonSpecies2.setToolTip(result)
-            self.pushButtonSpecies2.setStyleSheet("background-color: green")
+            self.pushButtonSpecies2.setFormula(result)
 
     @Slot()
     def slotRichardsFormula(self):
@@ -371,8 +362,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
             result = dialog.get_result()
             log.debug("slotRichardsFormula -> %s" % str(result))
             self.mdl.setRichardsFormula(self.zone_id, str(result))
-            self.pushButtonRichards.setToolTip(result)
-            self.pushButtonRichards.setStyleSheet("background-color: green")
+            self.pushButtonRichards.setFormula(result)
 
     @Slot()
     def slotThermalFormula(self):
@@ -400,8 +390,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
             self.mdl.setThermalFormula(self.zone_id, self.th_sca_name, str(result))
-            self.pushButtonThermal.setToolTip(result)
-            self.pushButtonThermal.setStyleSheet("background-color: green")
+            self.pushButtonThermal.setFormula(result)
 
     def getThermalLabelAndUnit(self):
         """

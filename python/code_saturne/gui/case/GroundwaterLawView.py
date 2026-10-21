@@ -214,10 +214,9 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
                 self.groupBoxUser.show()
                 exp = self.mdl.getGroundwaterLawFormula(name)
                 if exp:
-                    self.pushButtonUserLaw.setStyleSheet("background-color: green")
-                    self.pushButtonUserLaw.setToolTip(exp)
+                    self.pushButtonUserLaw.setFormula(exp)
                 else:
-                    self.pushButtonUserLaw.setStyleSheet("background-color: red")
+                    self.pushButtonUserLaw.setFormulaRequired()
             else:
                 self.groupBoxVanGenuchten.show()
                 self.groupBoxUser.hide()
@@ -356,10 +355,9 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.groupBoxUser.show()
             exp = self.mdl.getGroundwaterLawFormula(name)
             if exp:
-                self.pushButtonUserLaw.setStyleSheet("background-color: green")
-                self.pushButtonUserLaw.setToolTip(exp)
+                self.pushButtonUserLaw.setFormula(exp)
             else:
-                self.pushButtonUserLaw.setStyleSheet("background-color: red")
+                self.pushButtonUserLaw.setFormulaRequired()
         else:
             self.groupBoxVanGenuchten.show()
             self.groupBoxUser.hide()
@@ -429,8 +427,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             result = dialog.get_result()
             log.debug("slotFormula -> %s" % str(result))
             self.mdl.setGroundwaterLawFormula(name, str(result))
-            self.pushButtonUserLaw.setStyleSheet("background-color: green")
-            self.pushButtonUserLaw.setToolTip(result)
+            self.pushButtonUserLaw.setFormula(result)
 
     @Slot(int)
     def slotNameDiff(self, idx):

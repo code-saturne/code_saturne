@@ -253,7 +253,7 @@
                  <widget class="QComboBox" name="comboBoxDensity"/>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButtonDensity">
+                 <widget class="FormulaButton" name="pushButtonDensity">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -400,7 +400,7 @@
                  <widget class="QComboBox" name="comboBoxViscosity"/>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButtonViscosity">
+                 <widget class="FormulaButton" name="pushButtonViscosity">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -542,7 +542,7 @@
                  <widget class="QComboBox" name="comboBoxSpecificHeat"/>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButtonSpecificHeat">
+                 <widget class="FormulaButton" name="pushButtonSpecificHeat">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -689,7 +689,7 @@
                  <widget class="QComboBox" name="comboBoxThermalConductivity"/>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButtonThermalConductivity">
+                 <widget class="FormulaButton" name="pushButtonThermalConductivity">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -797,7 +797,7 @@
                </spacer>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButtonTemperature">
+               <widget class="FormulaButton" name="pushButtonTemperature">
                 <property name="text">
                  <string/>
                 </property>
@@ -833,6 +833,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

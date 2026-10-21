@@ -224,7 +224,7 @@ the mesh viscosity</string>
             </spacer>
            </item>
                       <item row="3" column="2">
-            <widget class="QPushButton" name="pushButtonFormula">
+            <widget class="FormulaButton" name="pushButtonFormula">
              <property name="toolTip">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the spatial distribution of the mesh viscosity. It must be greater than zero.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
@@ -292,6 +292,13 @@ the mesh viscosity</string>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
  </resources>

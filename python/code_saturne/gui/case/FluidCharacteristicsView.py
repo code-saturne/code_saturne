@@ -575,17 +575,16 @@ thermal_expansion = 1.0 / (temperature + 273.15);
             if diff_choice  != 'user_law':
                 self.pushButtonDiff.hide()
                 self.pushButtonDiff.setEnabled(False)
-                self.pushButtonDiff.setStyleSheet("background-color: None")
+                self.pushButtonDiff.clearFormula()
             else:
                 self.pushButtonDiff.show()
                 self.pushButtonDiff.setEnabled(True)
                 name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
                 exp = self.mdl.m_sca.getDiffFormula(self.scalar, self.zone_id)
                 if exp:
-                    self.pushButtonDiff.setStyleSheet("background-color: green")
-                    self.pushButtonDiff.setToolTip(exp)
+                    self.pushButtonDiff.setFormula(exp)
                 else:
-                    self.pushButtonDiff.setStyleSheet("background-color: red")
+                    self.pushButtonDiff.setFormulaRequired()
 
             self.lineEditDiff.setVisible(is_main_zone)
             self.labelDiff.setVisible(is_main_zone)
@@ -1011,7 +1010,7 @@ thermal_expansion = 1.0 / (temperature + 273.15);
 
         if choice != 'user_law':
             self.pushButtonDiff.setEnabled(False)
-            self.pushButtonDiff.setStyleSheet("background-color: None")
+            self.pushButtonDiff.clearFormula()
             self.pushButtonDiff.hide()
         else:
             self.pushButtonDiff.show()
@@ -1019,10 +1018,9 @@ thermal_expansion = 1.0 / (temperature + 273.15);
             name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
             exp = self.mdl.m_sca.getDiffFormula(self.scalar, self.zone_id)
             if exp:
-                self.pushButtonDiff.setStyleSheet("background-color: green")
-                self.pushButtonDiff.setToolTip(exp)
+                self.pushButtonDiff.setFormula(exp)
             else:
-                self.pushButtonDiff.setStyleSheet("background-color: red")
+                self.pushButtonDiff.setFormulaRequired()
 
         self.mdl.m_sca.setScalarDiffusivityChoice(self.scalar, choice)
 
@@ -1045,17 +1043,16 @@ thermal_expansion = 1.0 / (temperature + 273.15);
         if  mdl!= 'user_law':
             self.pushButtonDiff.hide()
             self.pushButtonDiff.setEnabled(False)
-            self.pushButtonDiff.setStyleSheet("background-color: None")
+            self.pushButtonDiff.clearFormula()
         else:
             self.pushButtonDiff.show()
             self.pushButtonDiff.setEnabled(True)
             name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
             exp = self.mdl.m_sca.getDiffFormula(self.scalar, self.zone_id)
             if exp:
-                self.pushButtonDiff.setStyleSheet("background-color: green")
-                self.pushButtonDiff.setToolTip(exp)
+                self.pushButtonDiff.setFormula(exp)
             else:
-                self.pushButtonDiff.setStyleSheet("background-color: red")
+                self.pushButtonDiff.setFormulaRequired()
 
 
     def __changeChoice(self, text, sym, tag):
@@ -1076,7 +1073,7 @@ thermal_expansion = 1.0 / (temperature + 273.15);
         if choice != 'user_law':
             __button.hide()
             __button.setEnabled(False)
-            __button.setStyleSheet("background-color: None")
+            __button.clearFormula()
         else:
             __button.setEnabled(True)
             __button.show()
@@ -1098,10 +1095,9 @@ thermal_expansion = 1.0 / (temperature + 273.15);
                 exp = self.mdl.m_sca.getDiffFormula(self.scalar, self.zone_id)
 
             if exp:
-                __button.setStyleSheet("background-color: green")
-                __button.setToolTip(exp)
+                __button.setFormula(exp)
             else:
-                __button.setStyleSheet("background-color: red")
+                __button.setFormulaRequired()
         if choice == 'thermal_law':
             __line.hide()
             __label.hide()
@@ -1279,8 +1275,7 @@ thermal_expansion = 1.0 / (temperature + 273.15);
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula('density', str(result), self.zone_id)
-            self.pushButtonRho.setToolTip(result)
-            self.pushButtonRho.setStyleSheet("background-color: green")
+            self.pushButtonRho.setFormula(result)
 
 
     @Slot()
@@ -1319,8 +1314,7 @@ thermal_expansion = 1.0 / (temperature + 273.15);
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
             self.mdl.setFormula('molecular_viscosity', str(result), self.zone_id)
-            self.pushButtonMu.setToolTip(result)
-            self.pushButtonMu.setStyleSheet("background-color: green")
+            self.pushButtonMu.setFormula(result)
 
 
     @Slot()
@@ -1347,8 +1341,7 @@ thermal_expansion = 1.0 / (temperature + 273.15);
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula('specific_heat', str(result), self.zone_id)
-            self.pushButtonCp.setToolTip(result)
-            self.pushButtonCp.setStyleSheet("background-color: green")
+            self.pushButtonCp.setFormula(result)
 
 
     @Slot()
@@ -1375,8 +1368,7 @@ thermal_expansion = 1.0 / (temperature + 273.15);
             result = dialog.get_result()
             log.debug("slotFormulaViscv0 -> %s" % str(result))
             self.mdl.setFormula('volume_viscosity', str(result), self.zone_id)
-            self.pushButtonViscv0.setToolTip(result)
-            self.pushButtonViscv0.setStyleSheet("background-color: green")
+            self.pushButtonViscv0.setFormula(result)
 
 
     @Slot()
@@ -1412,8 +1404,7 @@ thermal_expansion = 1.0 / (temperature + 273.15);
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
             self.mdl.setFormula('thermal_conductivity', str(result), self.zone_id)
-            self.pushButtonAl.setToolTip(result)
-            self.pushButtonAl.setStyleSheet("background-color: green")
+            self.pushButtonAl.setFormula(result)
 
 
     @Slot()
@@ -1449,8 +1440,7 @@ thermal_expansion = 1.0 / (temperature + 273.15);
             result = dialog.get_result()
             log.debug("slotFormulaBeta -> %s" % str(result))
             self.mdl.setFormula('thermal_expansion', str(result), self.zone_id)
-            self.pushButtonBeta.setToolTip(result)
-            self.pushButtonBeta.setStyleSheet("background-color: green")
+            self.pushButtonBeta.setFormula(result)
 
 
     @Slot()
@@ -1479,8 +1469,7 @@ thermal_expansion = 1.0 / (temperature + 273.15);
             result = dialog.get_result()
             log.debug("slotFormulaDiff -> %s" % str(result))
             self.mdl.m_sca.setDiffFormula(self.scalar, str(result), self.zone_id)
-            self.pushButtonDiff.setToolTip(result)
-            self.pushButtonDiff.setStyleSheet("background-color: green")
+            self.pushButtonDiff.setFormula(result)
 
 
 #-------------------------------------------------------------------------------

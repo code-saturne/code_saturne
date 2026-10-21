@@ -110,7 +110,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonRho">
+             <widget class="FormulaButton" name="pushButtonRho">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Fill the formula editor in case of a variable fluid density.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
@@ -700,7 +700,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonDiftl0">
+             <widget class="FormulaButton" name="pushButtonDiftl0">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Fill the formula editor in case of a variable fluid thermal conductivity.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
@@ -1012,7 +1012,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonAl">
+             <widget class="FormulaButton" name="pushButtonAl">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Fill the formula editor in case of a variable fluid thermal conductivity.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
@@ -1236,7 +1236,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonBeta">
+             <widget class="FormulaButton" name="pushButtonBeta">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Fill the formula editor in case of a variable fluid thermal expansion.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
@@ -1443,7 +1443,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButtonDiff">
+           <widget class="FormulaButton" name="pushButtonDiff">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Fill the formula editor in case of a variable diffusion coefficient.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
@@ -1743,7 +1743,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonMu">
+             <widget class="FormulaButton" name="pushButtonMu">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Fill the formula editor in case of a variable fluid viscosity.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
@@ -1943,7 +1943,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButtonSigma">
+           <widget class="FormulaButton" name="pushButtonSigma">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Fill the formula editor in case of a variable fluid volumic viscosity.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
@@ -2132,7 +2132,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonViscv0">
+             <widget class="FormulaButton" name="pushButtonViscv0">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Fill the formula editor in case of a variable fluid volumic viscosity.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
@@ -2356,7 +2356,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonCp">
+             <widget class="FormulaButton" name="pushButtonCp">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the fluid specific heat. It can be either constant, in which case the reference value must be completed, or variable and then the formula editor must be filled.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICP&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
@@ -2488,6 +2488,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>comboBoxRho</tabstop>
   <tabstop>lineEditRho</tabstop>

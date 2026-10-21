@@ -192,10 +192,9 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
 
             exp = self.ibm.getObjectImposedMovingFormula(self.current_obj-1)
             if exp:
-                self.pushButtonImposed.setToolTip(exp)
-                self.pushButtonImposed.setStyleSheet("background-color: green")
+                self.pushButtonImposed.setFormula(exp)
             else:
-                self.pushButtonImposed.setStyleSheet("background-color: red")
+                self.pushButtonImposed.setFormulaRequired()
 
         else:
             self.groupBoxImposed.hide()
@@ -244,10 +243,9 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
             self.lineEditMass.setText(str(self.ibm.getObjectMass(self.current_obj)))
             exp = self.ibm.getObjectInertiaFormula(self.current_obj-1)
             if exp:
-                self.pushButtonInertia.setStyleSheet("background-color: green")
-                self.pushButtonInertia.setToolTip(exp)
+                self.pushButtonInertia.setFormula(exp)
             else:
-                self.pushButtonInertia.setStyleSheet("background-color: red")
+                self.pushButtonInertia.setFormulaRequired()
 
         list = [('density', 'Density'),
                 ('stiffness', 'Stiffness'),
@@ -282,7 +280,7 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
                 elif tag == 'thermal_conductivity':
                     __line.setText(str(self.ibm.getObjectThermalConductivity(self.current_obj)))
 
-                __button.setStyleSheet("background-color: None")
+                __button.clearFormula()
 
             elif mode == "user_law" :
                 __button.setEnabled(True)
@@ -297,16 +295,15 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
                     exp = self.ibm.getObjectAlFormula(self.current_obj-1)
 
                 if exp:
-                    __button.setStyleSheet("background-color: green")
-                    __button.setToolTip(exp)
+                    __button.setFormula(exp)
                 else:
-                    __button.setStyleSheet("background-color: red")
+                    __button.setFormulaRequired()
 
             else :
                 __button.setEnabled(False)
                 __line.setEnabled(False)
                 __line.setText("")
-                __button.setStyleSheet("background-color: None")
+                __button.clearFormula()
 
     def __changeChoice(self, text, sym, tag):
 
@@ -320,7 +317,7 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
         __button.setEnabled(False)
         __line.setEnabled(False)
         __line.setText("")
-        __button.setStyleSheet("background-color: None")
+        __button.clearFormula()
 
         mode = __model.dicoV2M[str(text)]
         self.ibm.setObjectPropertyMode(current_obj, mode, tag)
@@ -328,7 +325,7 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
         if mode == 'constant':
             __button.setEnabled(False)
             __line.setEnabled(True)
-            __button.setStyleSheet("background-color: None")
+            __button.clearFormula()
 
             #__line.setText(str(self.ibm.defaultValues()['object_'+tag]))
             if tag == 'density':
@@ -356,10 +353,9 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
                 exp = self.ibm.getObjectAlFormula(self.current_obj-1)
 
             if exp:
-                __button.setStyleSheet("background-color: green")
-                __button.setToolTip(exp)
+                __button.setFormula(exp)
             else:
-                __button.setStyleSheet("background-color: red")
+                __button.setFormulaRequired()
 
 
     @Slot(str)
@@ -477,8 +473,7 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousVelocity -> %s" % str(result))
-            self.pushButtonImposed.setStyleSheet("background-color: green")
-            self.pushButtonImposed.setToolTip(exp)
+            self.pushButtonImposed.setFormula(exp)
             self.ibm.setObjectImposedMovingFormula(objId-1, result)
 
 
@@ -508,8 +503,7 @@ rho = 1.293 * (273.15 / temperature);"""
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousRho -> %s" % str(result))
-            self.pushButtonDensity.setStyleSheet("background-color: green")
-            self.pushButtonDensity.setToolTip(exp)
+            self.pushButtonDensity.setFormula(exp)
             self.ibm.setObjectRhoFormula(objId-1, result)
 
 
@@ -538,8 +532,7 @@ rho = 1.293 * (273.15 / temperature);"""
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousCp -> %s" % str(result))
-            self.pushButtonSpecificHeat.setStyleSheet("background-color: green")
-            self.pushButtonSpecificHeat.setToolTip(exp)
+            self.pushButtonSpecificHeat.setFormula(exp)
             self.ibm.setObjectCpFormula(objId-1, result)
 
 
@@ -568,8 +561,7 @@ rho = 1.293 * (273.15 / temperature);"""
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousAl -> %s" % str(result))
-            self.pushButtonThermalConductivity.setStyleSheet("background-color: green")
-            self.pushButtonThermalConductivity.setToolTip(exp)
+            self.pushButtonThermalConductivity.setFormula(exp)
             self.ibm.setObjectAlFormula(objId-1, result)
 
 
@@ -609,8 +601,7 @@ rho = 1.293 * (273.15 / temperature);"""
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousInertia -> %s" % str(result))
-            self.pushButtonThermalConductivity.setStyleSheet("background-color: green")
-            self.pushButtonThermalConductivity.setToolTip(exp)
+            self.pushButtonThermalConductivity.setFormula(exp)
             self.ibm.setObjectInertiaFormula(objId-1, result)
 
 

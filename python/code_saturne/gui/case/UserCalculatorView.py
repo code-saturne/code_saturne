@@ -432,8 +432,7 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
             result = dialog.get_result()
             log.debug("slotFormulaCalculator -> {}".format(str(result)))
             self.mdl.setFunctionFormula(self.current_name, str(result))
-            self.pushButtonFormula.setToolTip(result)
-            self.pushButtonFormula.setStyleSheet("background-color: green")
+            self.pushButtonFormula.setFormula(result)
 
 
     @Slot(QModelIndex)

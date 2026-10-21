@@ -669,22 +669,21 @@ temperature = enthalpy / 1000;
             __button.setEnabled(False)
             __line.setEnabled(True)
             __line.setText(str(self.mdl.getInitialValue(currentFluid, tag)))
-            __button.setStyleSheet("background-color: None")
+            __button.clearFormula()
         elif choice == "user_law":
             __button.setEnabled(True)
             __line.setEnabled(True)
             __line.setText(str(self.mdl.getInitialValue(currentFluid, tag)))
             exp = self.mdl.getFormula(currentFluid, tag, zone=self.zone_id)
             if exp:
-                __button.setStyleSheet("background-color: green")
-                __button.setToolTip(exp)
+                __button.setFormula(exp)
             else:
-                __button.setStyleSheet("background-color: red")
+                __button.setFormulaRequired()
         else :
             __button.setEnabled(False)
             __line.setEnabled(False)
             __line.setText("")
-            __button.setStyleSheet("background-color: None")
+            __button.clearFormula()
 
         self.mdl.setPropertyMode(currentFluid, tag, choice)
 
@@ -796,22 +795,21 @@ temperature = enthalpy / 1000;
                     __button.setEnabled(False)
                     __line.setEnabled(is_main_zone)
                     __line.setText(str(self.mdl.getInitialValue(fieldId, tag)))
-                    __button.setStyleSheet("background-color: None")
+                    __button.clearFormula()
                 elif method2 == "user_law" :
                     __button.setEnabled(True)
                     __line.setEnabled(False)
                     __line.setText(str(self.mdl.getInitialValue(fieldId, tag)))
                     exp = self.mdl.getFormula(fieldId, tag, zone=self.zone_id)
                     if exp:
-                        __button.setStyleSheet("background-color: green")
-                        __button.setToolTip(exp)
+                        __button.setFormula(exp)
                     else:
-                        __button.setStyleSheet("background-color: red")
+                        __button.setFormulaRequired()
                 else :
                     __button.setEnabled(False)
                     __line.setEnabled(False)
                     __line.setText("")
-                    __button.setStyleSheet("background-color: None")
+                    __button.clearFormula()
 
             # Temperature / enthalpy law
             self.groupBoxTemperature.hide()
@@ -822,10 +820,9 @@ temperature = enthalpy / 1000;
                 label = self.m_out.getVariableLabel(str(fieldId), 'temperature')
                 exp = self.mdl.getFormula(fieldId, 'temperature', zone=self.zone_id)
                 if exp:
-                    self.pushButtonTemperature.setStyleSheet("background-color: green")
-                    self.pushButtonTemperature.setToolTip(exp)
+                    self.pushButtonTemperature.setFormula(exp)
                 else:
-                    self.pushButtonTemperature.setStyleSheet("background-color: red")
+                    self.pushButtonTemperature.setFormulaRequired()
         else :
             self.groupBoxEOS.show()
             self.groupBoxConstantProperties.hide()
@@ -901,8 +898,7 @@ temperature = enthalpy / 1000;
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'density', result, zone=self.zone_id)
-            self.pushButtonDensity.setStyleSheet("background-color: green")
-            self.pushButtonDensity.setToolTip(exp)
+            self.pushButtonDensity.setFormula(exp)
 
 
     @Slot()
@@ -931,8 +927,7 @@ temperature = enthalpy / 1000;
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'molecular_viscosity', result, zone=self.zone_id)
-            self.pushButtonViscosity.setStyleSheet("background-color: green")
-            self.pushButtonViscosity.setToolTip(exp)
+            self.pushButtonViscosity.setFormula(exp)
 
 
     @Slot()
@@ -961,8 +956,7 @@ temperature = enthalpy / 1000;
             result = dialog.get_result()
             log.debug("slotFormulaCp -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'specific_heat', result, zone=self.zone_id)
-            self.pushButtonSpecificHeat.setStyleSheet("background-color: green")
-            self.pushButtonSpecificHeat.setToolTip(exp)
+            self.pushButtonSpecificHeat.setFormula(exp)
 
 
     @Slot()
@@ -991,8 +985,7 @@ temperature = enthalpy / 1000;
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'thermal_conductivity', result, zone=self.zone_id)
-            self.pushButtonThermalConductivity.setStyleSheet("background-color: green")
-            self.pushButtonThermalConductivity.setToolTip(exp)
+            self.pushButtonThermalConductivity.setFormula(exp)
 
 
     @Slot()
@@ -1043,8 +1036,7 @@ temperature = enthalpy / 1000;
             result = dialog.get_result()
             log.debug("slotFormulaTemperature -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'temperature', result, zone=self.zone_id)
-            self.pushButtonTemperature.setStyleSheet("background-color: green")
-            self.pushButtonTemperature.setToolTip(result)
+            self.pushButtonTemperature.setFormula(result)
 
 
 #-------------------------------------------------------------------------------

@@ -151,10 +151,9 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
                 self.pushButtonTurb.setEnabled(True)
                 exp = self.__boundary.getTurbFormula(self.__currentField)
                 if exp:
-                    self.pushButtonTurb.setStyleSheet("background-color: green")
-                    self.pushButtonTurb.setToolTip(exp)
+                    self.pushButtonTurb.setFormula(exp)
                 else:
-                    self.pushButtonTurb.setStyleSheet("background-color: red")
+                    self.pushButtonTurb.setFormulaRequired()
             self.show()
         else:
             self.hideWidget()
@@ -194,10 +193,9 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
             self.pushButtonTurb.setEnabled(True)
             exp = self.__boundary.getTurbFormula(self.__currentField)
             if exp:
-                self.pushButtonTurb.setStyleSheet("background-color: green")
-                self.pushButtonTurb.setToolTip(exp)
+                self.pushButtonTurb.setFormula(exp)
             else:
-                self.pushButtonTurb.setStyleSheet("background-color: red")
+                self.pushButtonTurb.setFormulaRequired()
 
 
     @Slot(str)
@@ -386,8 +384,7 @@ R12-23 = 5e-05;"""
             result = dialog.get_result()
             log.debug("slotFormulaTurb -> %s" % str(result))
             self.__boundary.setTurbFormula(self.__currentField, result)
-            self.pushButtonTurb.setToolTip(result)
-            self.pushButtonTurb.setStyleSheet("background-color: green")
+            self.pushButtonTurb.setFormula(result)
 
 
 #-------------------------------------------------------------------------------

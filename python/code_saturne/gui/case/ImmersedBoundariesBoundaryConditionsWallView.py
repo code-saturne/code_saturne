@@ -85,6 +85,9 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
         Ui_ImmersedBoundariesBoundaryConditionsWall.__init__(self)
         self.setupUi(self)
 
+        # The formula is displayed in place of the value field
+        self.pushButtonEnergy.setDisplayField(self.lineEditEnergy)
+
 
     def setup(self, case, ibm, current_obj):
         """
@@ -171,7 +174,7 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
 
             if energy_mode in ['flux', 'temperature']:
                 self.lineEditEnergy.setEnabled(True)
-                self.pushButtonEnergy.setStyleSheet("background-color: grey")
+                self.pushButtonEnergy.clearFormula()
                 self.pushButtonEnergy.setEnabled(False) #no user law
                 val = ''
                 if energy_mode == 'temperature':
@@ -192,10 +195,9 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
                     exp = self.ibm.getObjectBoundaryTemperatureFormula(self.current_obj-1)
 
                 if exp:
-                    self.pushButtonEnergy.setStyleSheet("background-color: green")
-                    self.pushButtonEnergy.setToolTip(exp)
+                    self.pushButtonEnergy.setFormula(exp)
                 else:
-                    self.pushButtonEnergy.setStyleSheet("background-color: red")
+                    self.pushButtonEnergy.setFormulaRequired()
 
 
     @Slot()
@@ -230,7 +232,7 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
             elif energy_mode == 'flux':
                 val = self.ibm.getObjectBoundaryThermalFlux(self.current_obj)
 
-            self.pushButtonEnergy.setStyleSheet("background-color: grey")
+            self.pushButtonEnergy.clearFormula()
             self.pushButtonEnergy.setEnabled(False)
             self.lineEditEnergy.setEnabled(True)
             self.lineEditEnergy.setText(str(val))
@@ -246,10 +248,9 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
                 exp = self.ibm.getObjectBoundaryThermalFluxFormula(self.current_obj-1)
 
             if exp:
-                self.pushButtonEnergy.setToolTip(exp)
-                self.pushButtonEnergy.setStyleSheet("background-color: green")
+                self.pushButtonEnergy.setFormula(exp)
             else:
-                self.pushButtonEnergy.setStyleSheet("background-color: red")
+                self.pushButtonEnergy.setFormulaRequired()
 
         self.labelEnergy.setText(bc_energy_units.get(energy_mode, ''))
 
@@ -304,8 +305,7 @@ flux = 1000.;"""
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotBoundaryThermalFormula -> %s" % str(result))
-            self.pushButtonEnergy.setToolTip(result)
-            self.pushButtonEnergy.setStyleSheet("background-color: green")
+            self.pushButtonEnergy.setFormula(result)
 
             if energy_mode == "temperature_formula":
                 self.ibm.setObjectBoundaryTemperatureFormula(objId-1, result)

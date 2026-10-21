@@ -58,7 +58,7 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_6">
          <item row="0" column="2">
-          <widget class="QPushButton" name="pushButtonHsatL">
+          <widget class="FormulaButton" name="pushButtonHsatL">
            <property name="text">
             <string/>
            </property>
@@ -135,7 +135,7 @@
           </spacer>
          </item>
          <item row="1" column="2">
-          <widget class="QPushButton" name="pushButtonHsatG">
+          <widget class="FormulaButton" name="pushButtonHsatG">
            <property name="text">
             <string/>
            </property>
@@ -168,7 +168,7 @@
           </spacer>
          </item>
          <item row="0" column="2">
-          <widget class="QPushButton" name="pushButtondHsatLdp">
+          <widget class="FormulaButton" name="pushButtondHsatLdp">
            <property name="text">
             <string/>
            </property>
@@ -232,7 +232,7 @@
           </spacer>
          </item>
          <item row="1" column="2">
-          <widget class="QPushButton" name="pushButtondHsatGdp">
+          <widget class="FormulaButton" name="pushButtondHsatGdp">
            <property name="text">
             <string/>
            </property>
@@ -265,7 +265,7 @@
           </spacer>
          </item>
          <item row="0" column="1">
-          <widget class="QPushButton" name="pushButtonTsat">
+          <widget class="FormulaButton" name="pushButtonTsat">
            <property name="text">
             <string/>
            </property>
@@ -311,7 +311,7 @@
           </spacer>
          </item>
          <item row="0" column="1">
-          <widget class="QPushButton" name="pushButtondTsatdp">
+          <widget class="FormulaButton" name="pushButtondTsatdp">
            <property name="text">
             <string/>
            </property>
@@ -357,7 +357,7 @@
           </spacer>
          </item>
          <item row="0" column="1">
-          <widget class="QPushButton" name="pushButtonHlat">
+          <widget class="FormulaButton" name="pushButtonHlat">
            <property name="text">
             <string/>
            </property>
@@ -401,6 +401,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

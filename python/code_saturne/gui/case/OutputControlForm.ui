@@ -315,7 +315,7 @@
            </widget>
           </item>
           <item row="0" column="4">
-           <widget class="QPushButton" name="pushButtonFrequency">
+           <widget class="FormulaButton" name="pushButtonFrequency">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
@@ -1908,6 +1908,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
  </resources>

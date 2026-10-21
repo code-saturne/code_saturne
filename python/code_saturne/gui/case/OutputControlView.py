@@ -2018,10 +2018,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.pushButtonFrequency.setEnabled(True)
                 exp = self.mdl.getWriterFrequency(writer_id)
                 if exp:
-                    self.pushButtonFrequency.setStyleSheet("background-color: green")
-                    self.pushButtonFrequency.setToolTip(exp)
+                    self.pushButtonFrequency.setFormula(exp)
                 else:
-                    self.pushButtonFrequency.setStyleSheet("background-color: red")
+                    self.pushButtonFrequency.setFormulaRequired()
 
             if self.mdl.getWriterOutputStartStatus(writer_id) == 'on':
                 self.checkBoxOutputStart.setChecked(True)
@@ -2084,10 +2083,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.pushButtonFrequency.setEnabled(True)
                 exp = self.mdl.getWriterFrequency(writer_id)
                 if exp:
-                    self.pushButtonFrequency.setStyleSheet("background-color: green")
-                    self.pushButtonFrequency.setToolTip(exp)
+                    self.pushButtonFrequency.setFormula(exp)
                 else:
-                    self.pushButtonFrequency.setStyleSheet("background-color: red")
+                    self.pushButtonFrequency.setFormulaRequired()
                 self.pushButtonFrequency.show()
 
 
@@ -2158,8 +2156,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 result = str(dialog.get_result())
                 log.debug("slotWriterFrequencyFormula -> %s" % result)
                 self.mdl.setWriterFrequency(writer_id, result)
-                self.pushButtonFrequency.setStyleSheet("background-color: green")
-                self.pushButtonFrequency.setToolTip(result)
+                self.pushButtonFrequency.setFormula(result)
 
 
     @Slot(int)

@@ -53,7 +53,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButtonHeadLossesFormula">
+      <widget class="FormulaButton" name="pushButtonHeadLossesFormula">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the external head losses for a free inlet/outlet boundary condition. This boundary condition corresponds to the standard outlet when the flow is outgoing, but to a free inlet when the flow is ingoing. The Bernoulli relationship is used to derive a boundary condition on the pressure increment to couple velocity and pressure at these free inlet faces. This external head losses is taken into account in the Bernoulli relationship.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
@@ -89,6 +89,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
  </resources>

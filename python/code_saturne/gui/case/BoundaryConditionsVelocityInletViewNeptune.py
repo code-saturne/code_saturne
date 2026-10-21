@@ -81,6 +81,9 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         Ui_BoundaryConditionsVelocityInletForm.__init__(self)
         self.setupUi(self)
 
+        # The formula is displayed in place of the value field
+        self.pushButtonVelocityFormula.setDisplayField(self.lineEditVelocity)
+
         # Connections
         self.comboBoxVelocity.activated[int].connect(self.__slotChoiceVelocity)
         self.lineEditVelocity.textChanged[str].connect(self.__slotVelocityValue)
@@ -182,13 +185,12 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.lineEditVelocity.setText("")
             exp = self.__boundary.getVelocity(self.__currentField)
             if exp:
-                self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
-                self.pushButtonVelocityFormula.setToolTip(exp)
+                self.pushButtonVelocityFormula.setFormula(exp)
             else:
-                self.pushButtonVelocityFormula.setStyleSheet("background-color: red")
+                self.pushButtonVelocityFormula.setFormulaRequired()
         else:
             self.pushButtonVelocityFormula.setEnabled(False)
-            self.pushButtonVelocityFormula.setStyleSheet("background-color: None")
+            self.pushButtonVelocityFormula.clearFormula()
             self.lineEditVelocity.setEnabled(True)
             v = self.__boundary.getVelocity(self.__currentField)
             self.lineEditVelocity.setText(str(v))
@@ -270,8 +272,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
             self.__boundary.setVelocity(self.__currentField, result)
-            self.pushButtonVelocityFormula.setToolTip(result)
-            self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
+            self.pushButtonVelocityFormula.setFormula(result)
 
 
     @Slot(int)
@@ -289,13 +290,12 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.frameDirectionCoordinates.hide()
             exp = self.__boundary.getDirection(self.__currentField, 'direction_formula')
             if exp:
-                self.pushButtonDirectionFormula.setStyleSheet("background-color: green")
-                self.pushButtonDirectionFormula.setToolTip(exp)
+                self.pushButtonDirectionFormula.setFormula(exp)
             else:
-                self.pushButtonDirectionFormula.setStyleSheet("background-color: red")
+                self.pushButtonDirectionFormula.setFormulaRequired()
         elif c == "normal":
             self.pushButtonDirectionFormula.setEnabled(False)
-            self.pushButtonDirectionFormula.setStyleSheet("background-color: None")
+            self.pushButtonDirectionFormula.clearFormula()
             self.frameDirectionCoordinates.hide()
 
 
@@ -332,8 +332,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             result = dialog.get_result()
             log.debug("slotFormulaDirection -> %s" % str(result))
             self.__boundary.setDirection(self.__currentField, 'direction_formula', result)
-            self.pushButtonDirectionFormula.setToolTip(result)
-            self.pushButtonDirectionFormula.setStyleSheet("background-color: green")
+            self.pushButtonDirectionFormula.setFormula(result)
 
 
 #-------------------------------------------------------------------------------

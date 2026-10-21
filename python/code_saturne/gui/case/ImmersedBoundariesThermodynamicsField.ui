@@ -53,7 +53,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_20">
            <item>
-            <widget class="QPushButton" name="pushButtonImposed">
+            <widget class="FormulaButton" name="pushButtonImposed">
              <property name="maximumSize">
               <size>
                <width>28</width>
@@ -269,7 +269,7 @@
                   <widget class="QComboBox" name="comboBoxDensity"/>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="pushButtonDensity">
+                  <widget class="FormulaButton" name="pushButtonDensity">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -420,7 +420,7 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="pushButtonInertia">
+                  <widget class="FormulaButton" name="pushButtonInertia">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -572,7 +572,7 @@
                  <widget class="QComboBox" name="comboBoxStiffness"/>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButtonStiffness">
+                 <widget class="FormulaButton" name="pushButtonStiffness">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -719,7 +719,7 @@
                  <widget class="QComboBox" name="comboBoxDamping"/>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButtonDamping">
+                 <widget class="FormulaButton" name="pushButtonDamping">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -861,7 +861,7 @@
                  <widget class="QComboBox" name="comboBoxSpecificHeat"/>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButtonSpecificHeat">
+                 <widget class="FormulaButton" name="pushButtonSpecificHeat">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -1008,7 +1008,7 @@
                  <widget class="QComboBox" name="comboBoxThermalConductivity"/>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButtonThermalConductivity">
+                 <widget class="FormulaButton" name="pushButtonThermalConductivity">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -1052,6 +1052,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
  </resources>

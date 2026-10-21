@@ -130,7 +130,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         self.lineEditValueHydraulicHead.hide()
         self.lineEditExHydraulicHead.hide()
         self.pushButtonHydraulicHead.setEnabled(False)
-        self.pushButtonHydraulicHead.setStyleSheet("background-color: None")
+        self.pushButtonHydraulicHead.clearFormula()
 
         HydraulicChoice = self.__boundary.getHydraulicHeadChoice()
         self.modelTypeHydraulic.setItem(str_model = HydraulicChoice)
@@ -149,10 +149,9 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
 
             exp = self.__boundary.getHydraulicHeadFormula()
             if exp:
-                self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
-                self.pushButtonHydraulicHead.setToolTip(exp)
+                self.pushButtonHydraulicHead.setFormula(exp)
             else:
-                self.pushButtonHydraulicHead.setStyleSheet("background-color: red")
+                self.pushButtonHydraulicHead.setFormulaRequired()
 
         self.show()
 
@@ -220,8 +219,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
             result = dialog.get_result()
             log.debug("slotHydraulicHeadFormula -> %s" % str(result))
             self.__boundary.setHydraulicHeadFormula(str(result))
-            self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
-            self.pushButtonHydraulicHead.setToolTip(result)
+            self.pushButtonHydraulicHead.setFormula(result)
 
 
     @Slot(int)

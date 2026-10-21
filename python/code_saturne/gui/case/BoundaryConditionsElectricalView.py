@@ -201,11 +201,11 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.labelValuePotElecIm.hide()
 
         self.pushButtonPotVectorFormula.setEnabled(False)
-        self.pushButtonPotVectorFormula.setStyleSheet("background-color: None")
+        self.pushButtonPotVectorFormula.clearFormula()
         self.pushButtonPotElecFormula.setEnabled(False)
-        self.pushButtonPotElecFormula.setStyleSheet("background-color: None")
+        self.pushButtonPotElecFormula.clearFormula()
         self.pushButtonPotElecImFormula.setEnabled(False)
-        self.pushButtonPotElecImFormula.setStyleSheet("background-color: None")
+        self.pushButtonPotElecImFormula.clearFormula()
 
         # Initialize electric potential
         self.potElec_type = self.__b.getElecScalarChoice(self.potElec)
@@ -221,10 +221,9 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.pushButtonPotElecFormula.setEnabled(True)
             exp = self.__b.getElecScalarFormula(self.potElec, self.potElec_type)
             if exp:
-                self.pushButtonPotElecFormula.setStyleSheet("background-color: green")
-                self.pushButtonPotElecFormula.setToolTip(exp)
+                self.pushButtonPotElecFormula.setFormula(exp)
             else:
-                self.pushButtonPotElecFormula.setStyleSheet("background-color: red")
+                self.pushButtonPotElecFormula.setFormulaRequired()
 
         # Initialize imaginary electric potential
         if self.__model.getElectricalModel() == 'joule':
@@ -243,10 +242,9 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                     self.pushButtonPotElecFormula.setEnabled(True)
                     exp = self.__b.getElecScalarFormula(self.potElecIm, self.potElecIm_type)
                     if exp:
-                        self.pushButtonPotElecImFormula.setStyleSheet("background-color: green")
-                        self.pushButtonPotElecImFormula.setToolTip(exp)
+                        self.pushButtonPotElecImFormula.setFormula(exp)
                     else:
-                        self.pushButtonPotElecImFormula.setStyleSheet("background-color: red")
+                        self.pushButtonPotElecImFormula.setFormulaRequired()
 
         # Initialize potential vector
         if self.__model.getElectricalModel() == 'arc':
@@ -257,10 +255,9 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                 self.pushButtonPotVectorFormula.setEnabled(True)
                 exp = self.__b.getElecScalarFormula(self.potVect, self.potVec_type)
                 if exp:
-                    self.pushButtonPotVectorFormula.setStyleSheet("background-color: green")
-                    self.pushButtonPotVectorFormula.setToolTip(exp)
+                    self.pushButtonPotVectorFormula.setFormula(exp)
                 else:
-                    self.pushButtonPotVectorFormula.setStyleSheet("background-color: red")
+                    self.pushButtonPotVectorFormula.setFormulaRequired()
 
             # Initialize species
             if self.species :
@@ -400,8 +397,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         """
         exp = self.__b.getElecScalarFormula(self.potElec, self.potElec_type)
         if self.getScalarFormula(self.potElec, self.potElec_type, exp):
-            self.pushButtonPotElecFormula.setStyleSheet("background-color: green")
-            self.pushButtonPotElecFormula.setToolTip(exp)
+            self.pushButtonPotElecFormula.setFormula(exp)
 
     @Slot()
     def slotPotElecImFormula(self):
@@ -409,8 +405,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         """
         exp = self.__b.getElecScalarFormula(self.potElec, self.potElec_type)
         if self.getScalarFormula(self.potElec, self.potElec_type, exp):
-            self.pushButtonPotElecImFormula.setStyleSheet("background-color: green")
-            self.pushButtonPotElecImFormula.setToolTip(exp)
+            self.pushButtonPotElecImFormula.setFormula(exp)
 
 
     @Slot()
@@ -458,8 +453,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             result = dialog.get_result()
             log.debug("slotPotVectorFormula -> %s" % str(result))
             self.__b.setElecScalarFormula(self.potVect, self.potVec_type, str(result))
-            self.pushButtonPotVectorFormula.setToolTip(result)
-            self.pushButtonPotVectorFormula.setStyleSheet("background-color: green")
+            self.pushButtonPotVectorFormula.setFormula(result)
 
 
     def showWidget(self, b):

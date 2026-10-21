@@ -127,7 +127,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
             turb_choice = boundary.getTurbulenceChoice()
             self.__modelTurbulence.setItem(str_model=turb_choice)
             self.pushButtonTurb.setEnabled(False)
-            self.pushButtonTurb.setStyleSheet("background-color: None")
+            self.pushButtonTurb.clearFormula()
             if turb_choice == "hydraulic_diameter":
                 self.frameTurbDiameter.show()
                 self.frameTurbIntensity.hide()
@@ -146,10 +146,9 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
                 self.pushButtonTurb.setEnabled(True)
                 exp = self.__boundary.getTurbFormula()
                 if exp:
-                    self.pushButtonTurb.setStyleSheet("background-color: green")
-                    self.pushButtonTurb.setToolTip(exp)
+                    self.pushButtonTurb.setFormula(exp)
                 else:
-                    self.pushButtonTurb.setStyleSheet("background-color: red")
+                    self.pushButtonTurb.setFormulaRequired()
             self.show()
         else:
             self.hideWidget()
@@ -174,7 +173,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.frameTurbDiameter.hide()
         self.frameTurbIntensity.hide()
         self.pushButtonTurb.setEnabled(False)
-        self.pushButtonTurb.setStyleSheet("background-color: None")
+        self.pushButtonTurb.clearFormula()
 
         if turb_choice  == 'hydraulic_diameter':
             self.frameTurbDiameter.show()
@@ -190,10 +189,9 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
             self.pushButtonTurb.setEnabled(True)
             exp = self.__boundary.getTurbFormula()
             if exp:
-                self.pushButtonTurb.setStyleSheet("background-color: green")
-                self.pushButtonTurb.setToolTip(exp)
+                self.pushButtonTurb.setFormula(exp)
             else:
-                self.pushButtonTurb.setStyleSheet("background-color: red")
+                self.pushButtonTurb.setFormulaRequired()
 
 
     @Slot(str)
@@ -289,8 +287,7 @@ epsilon = ustar2^1.5/(kappa*dh*0.1);"""
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
-                self.pushButtonTurb.setStyleSheet("background-color: green")
-                self.pushButtonTurb.setToolTip(result)
+                self.pushButtonTurb.setFormula(result)
 
         elif turb_model in ('Rij-epsilon', 'Rij-SSG', 'Rij-BFH'):
 
@@ -332,8 +329,7 @@ r23 = 0;
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
-                self.pushButtonTurb.setStyleSheet("background-color: green")
-                self.pushButtonTurb.setToolTip(result)
+                self.pushButtonTurb.setFormula(result)
 
         elif turb_model == 'LES_TAUSGS':
 
@@ -373,8 +369,7 @@ r23 = 0;
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
-                self.pushButtonTurb.setStyleSheet("background-color: green")
-                self.pushButtonTurb.setToolTip(result)
+                self.pushButtonTurb.setFormula(result)
 
         elif turb_model == 'Rij-EBRSM':
 
@@ -418,8 +413,7 @@ alpha =  1.;
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
-                self.pushButtonTurb.setStyleSheet("background-color: green")
-                self.pushButtonTurb.setToolTip(result)
+                self.pushButtonTurb.setFormula(result)
 
         elif turb_model == 'v2f-BL-v2/k':
 
@@ -454,8 +448,7 @@ alpha = 0;"""
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
-                self.pushButtonTurb.setStyleSheet("background-color: green")
-                self.pushButtonTurb.setToolTip(result)
+                self.pushButtonTurb.setFormula(result)
 
         elif turb_model == 'k-omega-SST':
 
@@ -486,8 +479,7 @@ omega = epsilon/(cmu * k);"""
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
-                self.pushButtonTurb.setStyleSheet("background-color: green")
-                self.pushButtonTurb.setToolTip(result)
+                self.pushButtonTurb.setFormula(result)
 
         elif turb_model == 'Spalart-Allmaras':
 
@@ -518,8 +510,7 @@ nu_tilda = _epsilon/(cmu * _k);"""
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
-                self.pushButtonTurb.setStyleSheet("background-color: green")
-                self.pushButtonTurb.setToolTip(result)
+                self.pushButtonTurb.setFormula(result)
 
 
 #-------------------------------------------------------------------------------

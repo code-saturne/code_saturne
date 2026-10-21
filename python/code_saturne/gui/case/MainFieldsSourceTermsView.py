@@ -132,10 +132,9 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
                                              self.currentId,
                                              self.th_sca_name)
             if exp:
-                self.pushButtonThermal.setToolTip(exp)
-                self.pushButtonThermal.setStyleSheet("background-color: green")
+                self.pushButtonThermal.setFormula(exp)
             else:
-                self.pushButtonThermal.setStyleSheet("background-color: red")
+                self.pushButtonThermal.setFormulaRequired()
         else:
             self.pushButtonThermal.hide()
             self.labelThermal.hide()
@@ -172,8 +171,7 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
                                        self.currentId,
                                        self.th_sca_name,
                                        str(result))
-            self.pushButtonThermal.setToolTip(result)
-            self.pushButtonThermal.setStyleSheet("background-color: green")
+            self.pushButtonThermal.setFormula(result)
 
 
     @Slot(int)
@@ -188,10 +186,9 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
                                          self.currentId,
                                          self.th_sca_name)
         if exp:
-            self.pushButtonThermal.setStyleSheet("background-color: green")
-            self.pushButtonThermal.setToolTip(exp)
+            self.pushButtonThermal.setFormula(exp)
         else:
-            self.pushButtonThermal.setStyleSheet("background-color: red")
+            self.pushButtonThermal.setFormulaRequired()
 
     def isSourceTermActived(self, nature: str) -> bool:
         source_term = nature + "_source_term"

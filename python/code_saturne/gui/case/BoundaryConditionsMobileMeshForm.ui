@@ -52,7 +52,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButtonMobilBoundary">
+         <widget class="FormulaButton" name="pushButtonMobilBoundary">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the boundary condition for the mobile mesh. Six choices are available:&lt;br/&gt;- Fixed boundary,&lt;br/&gt;- Sliding boundary,&lt;br/&gt;- Internal coupling,&lt;br/&gt;- External coupling,&lt;br/&gt;- Fixed velocity,&lt;br/&gt;- Fixed displacement.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;In case of a fixed velocity of displacement, the formula editor must be filled.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
@@ -522,6 +522,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
  </resources>

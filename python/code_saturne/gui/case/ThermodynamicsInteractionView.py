@@ -62,6 +62,9 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
         Ui_ThermodynamicsInteraction.__init__(self)
         self.setupUi(self)
 
+        # The formula is displayed in place of the value field
+        self.pushButtonSurfaceTension.setDisplayField(self.lineEditSurfaceTensionValue)
+
         self.case      = None
         self.zone      = None
         self.zone_name = None
@@ -154,23 +157,22 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
         if text == "eos":
             self.lineEditSurfaceTensionValue.setText("")
             self.lineEditSurfaceTensionValue.setEnabled(False)
-            self.pushButtonSurfaceTension.setStyleSheet("background-color: None")
+            self.pushButtonSurfaceTension.clearFormula()
             self.pushButtonSurfaceTension.setEnabled(False)
         elif text == "constant":
             surface_tension_value = self.model.getInitialValue(self.field_id_a, self.field_id_b, tag)
             self.lineEditSurfaceTensionValue.setText(str(surface_tension_value))
             self.lineEditSurfaceTensionValue.setEnabled(True)
-            self.pushButtonSurfaceTension.setStyleSheet("background-color: None")
+            self.pushButtonSurfaceTension.clearFormula()
             self.pushButtonSurfaceTension.setEnabled(False)
         elif text == "user law":
             self.lineEditSurfaceTensionValue.setText("")
             self.lineEditSurfaceTensionValue.setEnabled(False)
             exp = self.model.getFormula(self.field_id_a, self.field_id_b, tag)
             if exp:
-                self.pushButtonSurfaceTension.setStyleSheet("background-color: green")
-                self.pushButtonSurfaceTension.setToolTip(exp)
+                self.pushButtonSurfaceTension.setFormula(exp)
             else:
-                self.pushButtonSurfaceTension.setStyleSheet("background-color: red")
+                self.pushButtonSurfaceTension.setFormulaRequired()
             self.pushButtonSurfaceTension.setEnabled(True)
         return
 
@@ -211,5 +213,4 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
             result = dialog.get_result()
             log.debug("slotFormulaSt -> %s" % str(result))
             self.model.setFormula(self.field_id_a, self.field_id_b, "surface_tension", result, self.zone_id)
-            self.pushButtonSurfaceTension.setStyleSheet("background-color: green")
-            self.pushButtonSurfaceTension.setToolTip(exp)
+            self.pushButtonSurfaceTension.setFormula(exp)

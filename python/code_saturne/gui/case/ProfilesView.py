@@ -444,10 +444,9 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
 
         exp = self.mdl.getFormula(self.label_select)
         if exp:
-            self.pushButtonFormula.setStyleSheet("background-color: green")
-            self.pushButtonFormula.setToolTip(exp)
+            self.pushButtonFormula.setFormula(exp)
         else:
-            self.pushButtonFormula.setStyleSheet("background-color: red")
+            self.pushButtonFormula.setFormulaRequired()
 
         self.pushButtonVisuProfile.setEnabled(self.pyvista.isActive())
         if hasattr(self, 'comboBoxProfileDisplay'):
@@ -533,8 +532,7 @@ z = z1*s + z0*(1.-s);"""
             result = dialog.get_result()
             log.debug("slotLineFormula -> %s" % str(result))
             self.mdl.setFormula(self.label_select, str(result))
-            self.pushButtonFormula.setToolTip(result)
-            self.pushButtonFormula.setStyleSheet("background-color: green")
+            self.pushButtonFormula.setFormula(result)
 
 
     @Slot(str)

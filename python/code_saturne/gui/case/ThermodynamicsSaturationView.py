@@ -71,13 +71,6 @@ log.setLevel(GuiParam.DEBUG)
 
 
 #-------------------------------------------------------------------------------
-# Combo box delegate for the material
-#-------------------------------------------------------------------------------
-
-_ok_str  = "background-color: green"
-_nok_str = "background-color: red"
-
-#-------------------------------------------------------------------------------
 # MainFieldsView class
 #-------------------------------------------------------------------------------
 
@@ -178,10 +171,9 @@ class ThermodynamicsSaturationView(QWidget, Ui_ThermodynamicsSaturation):
 
                 exp = self.mdl.getFormula("none", key, self.zone_id)
                 if exp:
-                    _button.setStyleSheet(_ok_str)
-                    _button.setToolTip(exp)
+                    _button.setFormula(exp)
                 else:
-                    _button.setStyleSheet(_nok_str)
+                    _button.setFormulaRequired()
 
     @Slot()
     def slotFormula(self, name):
@@ -212,8 +204,7 @@ class ThermodynamicsSaturationView(QWidget, Ui_ThermodynamicsSaturation):
             _button  = getattr(self, "pushButton" + _k)
             log.debug("slotFormula%s -> %s" % (_k, str(result)))
             self.mdl.setFormula('none', name, result, zone=self.zone_id)
-            _button.setStyleSheet(_ok_str)
-            _button.setToolTip(result)
+            _button.setFormula(result)
 
 
 #-------------------------------------------------------------------------------

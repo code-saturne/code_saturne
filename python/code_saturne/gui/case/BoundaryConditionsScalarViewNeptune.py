@@ -79,6 +79,9 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         Ui_BoundaryConditionsScalar.__init__(self)
         self.setupUi(self)
 
+        # The formula is displayed in place of the value field
+        self.pushButtonScalar.setDisplayField(self.lineEditScalar)
+
         # Connections
         self.comboBoxScalar.activated[int].connect(self.__slotChoiceScalar)
 
@@ -165,13 +168,12 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         val = self.__boundary.getScalarValue(_f0, _s0)
         if _user_law:
             if val not in ["", None]:
-                self.pushButtonScalar.setToolTip(val)
-                self.pushButtonScalar.setStyleSheet("background-color: green")
+                self.pushButtonScalar.setFormula(val)
             else:
-                self.pushButtonScalar.setStyleSheet("background-color: red")
+                self.pushButtonScalar.setFormulaRequired()
         else:
             self.lineEditScalar.setText(str(val))
-            self.pushButtonScalar.setStyleSheet("background-color: grey")
+            self.pushButtonScalar.clearFormula()
 
     def hideWidget(self):
         """
@@ -254,8 +256,7 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
             result = dialog.get_result()
             log.debug("slotScalarFormula -> %s" % str(result))
             self.__boundary.setScalarValue(_fid, _s, result)
-            self.pushButtonScalar.setToolTip(result)
-            self.pushButtonScalar.setStyleSheet("background-color: green")
+            self.pushButtonScalar.setFormula(result)
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

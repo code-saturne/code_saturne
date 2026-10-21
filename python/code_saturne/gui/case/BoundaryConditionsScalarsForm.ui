@@ -194,7 +194,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonMeteo">
+             <widget class="FormulaButton" name="pushButtonMeteo">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
                 the way to impose the meteo scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
@@ -526,7 +526,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonThermal">
+             <widget class="FormulaButton" name="pushButtonThermal">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the way to impose the thermal scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a constant dirichlet boundary condition on the thermal scalar,&lt;br/&gt;- Prescribed value (user law): define a dirichlet boundary condition on the thermal scalar, which can be variable and depend on different criteria such as geometrical criteria,&lt;br/&gt;- Prescribed flux: define a constant Neumann boundary condition on the thermal scalar by imposing the flux on the boundary region (For wall and outlet boundary conditions only), &lt;br/&gt;- Prescribed flux (user law): define a Neumann boundary condition on the thermal scalar which can be variable (For Wall boundary conditions only),&lt;br/&gt;- Exchange coefficient: define the thermal scalar value and the exchange coefficient value (For wall boundary conditions only),&lt;br/&gt;- Exchange coefficient (user law): define the thermal scalar value and the exchange coefficient value which can be both variable (For wall boundary conditions only).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
@@ -843,7 +843,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonVoidFraction">
+             <widget class="FormulaButton" name="pushButtonVoidFraction">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
                 the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
@@ -1190,7 +1190,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonSpecies">
+             <widget class="FormulaButton" name="pushButtonSpecies">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose
                 the way to impose the scalar value on the boundary region:&lt;br/&gt;- Prescribed value: define a
@@ -1380,6 +1380,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
  </resources>

@@ -131,7 +131,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButtonExplicit">
+       <widget class="FormulaButton" name="pushButtonExplicit">
         <property name="text">
          <string/>
         </property>
@@ -346,6 +346,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../base/resource_base.qrc"/>
   <include location="resources_pages.qrc"/>

@@ -675,10 +675,9 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
 
                     exp = self.ibm.getObjectFormula(self.current_obj-1)
                     if exp:
-                        self.pushButtonExplicit.setToolTip(exp)
-                        self.pushButtonExplicit.setStyleSheet("background-color: green")
+                        self.pushButtonExplicit.setFormula(exp)
                     else:
-                        self.pushButtonExplicit.setStyleSheet("background-color: red")
+                        self.pushButtonExplicit.setFormulaRequired()
 
                 elif self.ibm.getObjectMethod(self.current_obj) == 'MEDCoupling using a MED file':
                     self.groupBoxExplicit.hide()
@@ -802,8 +801,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         if dialog.exec():
             result = dialog.get_result()
             log.debug("slotExplicitFormula -> %s" % str(result))
-            self.pushButtonExplicit.setStyleSheet("background-color: green")
-            self.pushButtonExplicit.setToolTip(exp)
+            self.pushButtonExplicit.setFormula(exp)
             self.ibm.setObjectFormula(objId-1, result)
 
 

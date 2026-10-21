@@ -155,7 +155,7 @@
               <widget class="QLineEdit" name="lineEditEnergy"/>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButtonEnergy">
+              <widget class="FormulaButton" name="pushButtonEnergy">
                <property name="text">
                 <string/>
                </property>
@@ -252,6 +252,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

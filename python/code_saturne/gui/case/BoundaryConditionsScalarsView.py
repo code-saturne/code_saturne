@@ -348,7 +348,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.lineEditValueThermal.hide()
         self.labelValueThermal.hide()
         self.pushButtonThermal.setEnabled(False)
-        self.pushButtonThermal.setStyleSheet("background-color: None")
+        self.pushButtonThermal.clearFormula()
 #        self.groupBoxSyrthes.hide()
         self.labelSyrthesInstance.hide()
         self.lineEditSyrthesInstance.hide()
@@ -384,10 +384,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 self.pushButtonThermal.setEnabled(True)
                 exp = self.__boundary.getScalarFormula(self.thermal, thermal_type)
                 if exp:
-                    self.pushButtonThermal.setStyleSheet("background-color: green")
-                    self.pushButtonThermal.setToolTip(exp)
+                    self.pushButtonThermal.setFormula(exp)
                 else:
-                    self.pushButtonThermal.setStyleSheet("background-color: red")
+                    self.pushButtonThermal.setFormulaRequired()
 
             elif self.thermal_type == "syrthes_coupling":
                 self.labelSyrthesInstance.show()
@@ -399,7 +398,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.labelValueSpecies.hide()
         self.lineEditValueSpecies.hide()
         self.pushButtonSpecies.setEnabled(False)
-        self.pushButtonSpecies.setStyleSheet("background-color: None")
+        self.pushButtonSpecies.clearFormula()
 
         if self.species_list != None and self.species_list != []:
             self.species_type = self.__boundary.getScalarChoice(self.species)
@@ -435,10 +434,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 self.pushButtonSpecies.setEnabled(True)
                 exp = self.__boundary.getScalarFormula(self.species, self.species_type)
                 if exp:
-                    self.pushButtonSpecies.setStyleSheet("background-color: green")
-                    self.pushButtonSpecies.setToolTip(exp)
+                    self.pushButtonSpecies.setFormula(exp)
                 else:
-                    self.pushButtonSpecies.setStyleSheet("background-color: red")
+                    self.pushButtonSpecies.setFormulaRequired()
 
             if self.nature == 'groundwater':
                 self.groupBoxSpecies.setTitle('Transport equation')
@@ -447,7 +445,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.lineEditValueVoidFraction.hide()
         self.labelValueVoidFraction.hide()
         self.pushButtonVoidFraction.setEnabled(False)
-        self.pushButtonVoidFraction.setStyleSheet("background-color: None")
+        self.pushButtonVoidFraction.clearFormula()
 
         if self.hgn.getHgnModel() != 'off' and self.nature != 'wall':
             self.modelTypeVoidFraction.setItem(str_model=self.hgn_type)
@@ -480,16 +478,15 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                 self.pushButtonVoidFraction.setEnabled(True)
                 exp = self.__boundary.getScalarFormula(_hgn_name, self.hgn_type)
                 if exp:
-                    self.pushButtonVoidFraction.setStyleSheet("background-color: green")
-                    self.pushButtonVoidFraction.setToolTip(exp)
+                    self.pushButtonVoidFraction.setFormula(exp)
                 else:
-                    self.pushButtonVoidFraction.setStyleSheet("background-color: red")
+                    self.pushButtonVoidFraction.setFormulaRequired()
 
         # Initialize meteo
         self.labelValueMeteo.hide()
         self.lineEditValueMeteo.hide()
         self.pushButtonMeteo.setEnabled(False)
-        self.pushButtonMeteo.setStyleSheet("background-color: None")
+        self.pushButtonMeteo.clearFormula()
 
         if (self.meteo_list):
             label = self.__boundary.getLabel()
@@ -530,10 +527,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
                     self.pushButtonMeteo.setEnabled(True)
                     exp = self.__boundary.getScalarFormula(self.meteo, self.meteo_type)
                     if exp:
-                        self.pushButtonMeteo.setStyleSheet("background-color: green")
-                        self.pushButtonMeteo.setToolTip(exp)
+                        self.pushButtonMeteo.setFormula(exp)
                     else:
-                        self.pushButtonMeteo.setStyleSheet("background-color: red")
+                        self.pushButtonMeteo.setFormulaRequired()
 
 
     def showWidget(self, boundary):
@@ -697,8 +693,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             result = dialog.get_result()
             log.debug("slotThermalFormula -> %s" % str(result))
             self.__boundary.setScalarFormula(self.thermal, thermal_type, str(result))
-            self.pushButtonThermal.setStyleSheet("background-color: green")
-            self.pushButtonThermal.setToolTip(exp)
+            self.pushButtonThermal.setFormula(exp)
 
 
     @Slot()
@@ -743,8 +738,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             result = dialog.get_result()
             log.debug("slotSpeciesFormula -> %s" % str(result))
             self.__boundary.setScalarFormula(self.species, self.species_type, str(result))
-            self.pushButtonSpecies.setStyleSheet("background-color: green")
-            self.pushButtonSpecies.setToolTip(exp)
+            self.pushButtonSpecies.setFormula(exp)
 
 
     @Slot()
@@ -792,8 +786,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             result = dialog.get_result()
             log.debug("slotVoidFractionFormula -> %s" % str(result))
             self.__boundary.setScalarFormula(name, self.hgn_type, str(result))
-            self.pushButtonVoidFraction.setStyleSheet("background-color: green")
-            self.pushButtonVoidFraction.setToolTip(exp)
+            self.pushButtonVoidFraction.setFormula(exp)
 
 
     @Slot()
@@ -838,8 +831,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             result = dialog.get_result()
             log.debug("slotMeteoFormula -> %s" % str(result))
             self.__boundary.setScalarFormula(self.meteo, self.meteo_type, str(result))
-            self.pushButtonMeteo.setStyleSheet("background-color: green")
-            self.pushButtonMeteo.setToolTip(exp)
+            self.pushButtonMeteo.setFormula(exp)
 
 
     @Slot(str)

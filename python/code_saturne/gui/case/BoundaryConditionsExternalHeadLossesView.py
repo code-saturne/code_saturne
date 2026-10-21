@@ -105,10 +105,9 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
         self.__boundary = Boundary('free_inlet_outlet', label, self.case)
         exp = self.__boundary.getHeadLossesFormula()
         if exp:
-            self.pushButtonHeadLossesFormula.setStyleSheet("background-color: green")
-            self.pushButtonHeadLossesFormula.setToolTip(exp)
+            self.pushButtonHeadLossesFormula.setFormula(exp)
         else:
-            self.pushButtonHeadLossesFormula.setStyleSheet("background-color: red")
+            self.pushButtonHeadLossesFormula.setFormulaRequired()
 
         self.show()
 
@@ -160,8 +159,7 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
             result = dialog.get_result()
             log.debug("slotFormulaDirection -> %s" % str(result))
             self.__boundary.setHeadLossesFormula(str(result))
-            self.pushButtonHeadLossesFormula.setStyleSheet("background-color: green")
-            self.pushButtonHeadLossesFormula.setToolTip(result)
+            self.pushButtonHeadLossesFormula.setFormula(result)
 
 
 #-------------------------------------------------------------------------------

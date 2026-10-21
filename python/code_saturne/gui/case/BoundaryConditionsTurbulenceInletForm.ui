@@ -125,7 +125,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButtonTurb">
+             <widget class="FormulaButton" name="pushButtonTurb">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the method to specify the boundary conditions on turbulence between three choices:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Calculation by hydraulic diameter: the boundary conditions are imposed using correlations on the head loss coefficient, the hydraulic diameter and the reference velocity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Calculation by turbulent intensity: the boundary conditions are imposed using the turbulent intensity and the reference velocity.        &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Calculation by formula: specify the boundary conditions on turbulence using the formula editor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
@@ -389,6 +389,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
  </resources>

@@ -519,8 +519,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
             result = dialog.get_result()
             log.debug("slotFormulaMobileMeshBoundary -> %s" % str(result))
             self.__boundary.setFormula(str(result))
-            self.pushButtonMobilBoundary.setStyleSheet("background-color: green")
-            self.pushButtonMobilBoundary.setToolTip(result)
+            self.pushButtonMobilBoundary.setFormula(result)
 
     @Slot(int)
     def _slotExtSolverType(self, idx):
@@ -554,10 +553,9 @@ class BoundaryConditionsMobileMeshView(QWidget,
         # color to red.
         self.update_view(modelData)
         if exp:
-            self.pushButtonMobilBoundary.setStyleSheet("background-color: red")
-            self.pushButtonMobilBoundary.setToolTip(exp)
+            self.pushButtonMobilBoundary.setFormulaRequired(exp)
         else:
-            self.pushButtonMobilBoundary.setStyleSheet("background-color: red")
+            self.pushButtonMobilBoundary.setFormulaRequired()
 
     def update_view(self, modelData):
         """

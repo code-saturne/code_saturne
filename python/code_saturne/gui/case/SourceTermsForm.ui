@@ -96,7 +96,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButtonMomentum">
+           <widget class="FormulaButton" name="pushButtonMomentum">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
                                                      font-size:9pt;&quot;&gt;Define momentum source terms using the
@@ -164,7 +164,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButtonThermal">
+           <widget class="FormulaButton" name="pushButtonThermal">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
                                                      font-size:9pt;&quot;&gt;Define thermal source terms using the
@@ -254,7 +254,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButtonSpecies">
+           <widget class="FormulaButton" name="pushButtonSpecies">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
                                                      font-size:9pt;&quot;&gt;Define scalar source terms by selecting the
@@ -338,7 +338,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButtonRichards">
+         <widget class="FormulaButton" name="pushButtonRichards">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
                                              font-size:9pt;&quot;&gt;Define a volumetric source term for the Richards
@@ -428,7 +428,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButtonSpecies2">
+         <widget class="FormulaButton" name="pushButtonSpecies2">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;
                                              font-size:9pt;&quot;&gt;Define a scalar source term for groundwater flows.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
@@ -469,6 +469,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
  </resources>

@@ -135,10 +135,9 @@ class PorosityView(QWidget, Ui_PorosityForm):
 
         exp = self.model.getPorosityFormula(zone_id)
         if exp:
-            self.pushButtonPorosity.setToolTip(exp)
-            self.pushButtonPorosity.setStyleSheet("background-color: green")
+            self.pushButtonPorosity.setFormula(exp)
         else:
-            self.pushButtonPorosity.setStyleSheet("background-color: red")
+            self.pushButtonPorosity.setFormulaRequired()
 
     @Slot(int)
     def slotPorosity(self, idx):
@@ -185,8 +184,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
             result = dialog.get_result()
             log.debug("slotFormulaPorosity -> %s" % str(result))
             self.model.setPorosityFormula(zone_id, str(result))
-            self.pushButtonPorosity.setToolTip(result)
-            self.pushButtonPorosity.setStyleSheet("background-color: green")
+            self.pushButtonPorosity.setFormula(result)
 
     def displayDefaultView(self):
         self.modelPorosityType = ComboModel(self.comboBoxType, 1, 1)

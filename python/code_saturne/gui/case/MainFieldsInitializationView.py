@@ -182,10 +182,9 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
     def setViewFromCase(self):
         exp = self.mdl.getFormulaPressure(self.zone_id)
         if exp:
-            self.pushButtonPressure.setStyleSheet("background-color: green")
-            self.pushButtonPressure.setToolTip(exp)
+            self.pushButtonPressure.setFormula(exp)
         else:
-            self.pushButtonPressure.setStyleSheet("background-color: red")
+            self.pushButtonPressure.setFormulaRequired()
         if (len(self.mdl.mainFieldsModel.getFieldIdList()) > 0):
             self.groupBoxDefinition.show()
             self.initializeVariables(self.zone_id, self.currentid)
@@ -194,33 +193,29 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 field = self.mdl.mainFieldsModel.getFieldFromId(self.currentid)
                 exp = self.mdl.getFormula(self.zone_id, self.currentid, 'velocity')
                 if exp:
-                    self.pushButtonVelocity.setStyleSheet("background-color: green")
-                    self.pushButtonVelocity.setToolTip(exp)
+                    self.pushButtonVelocity.setFormula(exp)
                 else:
-                    self.pushButtonVelocity.setStyleSheet("background-color: red")
+                    self.pushButtonVelocity.setFormulaRequired()
 
                 exp = self.mdl.getFormula(self.zone_id, self.currentid, 'volume_fraction')
                 if exp:
-                    self.pushButtonFraction.setStyleSheet("background-color: green")
-                    self.pushButtonFraction.setToolTip(exp)
+                    self.pushButtonFraction.setFormula(exp)
                 else:
-                    self.pushButtonFraction.setStyleSheet("background-color: red")
+                    self.pushButtonFraction.setFormulaRequired()
 
                 turbModel = TurbulenceModel(self.case).getTurbulenceModel(self.currentid)
                 exp = TurbulenceModel(self.case).getFormula(self.zone_id, self.currentid, turbModel)
                 if exp:
-                    self.pushButtonTurbulence.setStyleSheet("background-color: green")
-                    self.pushButtonTurbulence.setToolTip(exp)
+                    self.pushButtonTurbulence.setFormula(exp)
                 else:
-                    self.pushButtonTurbulence.setStyleSheet("background-color: red")
+                    self.pushButtonTurbulence.setFormulaRequired()
 
                 if field.enthalpy_model != "off":
                     exp = self.mdl.getFormula(self.zone_id, self.currentid, 'enthalpy')
                     if exp:
-                        self.pushButtonEnergy.setStyleSheet("background-color: green")
-                        self.pushButtonEnergy.setToolTip(exp)
+                        self.pushButtonEnergy.setFormula(exp)
                     else:
-                        self.pushButtonEnergy.setStyleSheet("background-color: red")
+                        self.pushButtonEnergy.setFormulaRequired()
 
                 lst = self.NonCondensable.getNonCondensableByFieldId(self.currentid)
                 if len(lst) > 0:
@@ -228,19 +223,17 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                                                             self.currentid,
                                                             self.currentNonCond)
                     if exp:
-                        self.pushButtonNonCondensable.setStyleSheet("background-color: green")
-                        self.pushButtonNonCondensable.setToolTip(exp)
+                        self.pushButtonNonCondensable.setFormula(exp)
                     else:
-                        self.pushButtonNonCondensable.setStyleSheet("background-color: red")
+                        self.pushButtonNonCondensable.setFormulaRequired()
 
             lst = self.SpeciesModel.getScalarByFieldId(self.currentid)
             if len(lst) > 0:
                 exp = self.mdl.getFormulaScalar(self.zone_id, self.currentid, self.currentScalar)
                 if exp:
-                    self.pushButtonScalar.setStyleSheet("background-color: green")
-                    self.pushButtonScalar.setToolTip(exp)
+                    self.pushButtonScalar.setFormula(exp)
                 else:
-                    self.pushButtonScalar.setStyleSheet("background-color: red")
+                    self.pushButtonScalar.setFormulaRequired()
         else:
             self.groupBoxDefinition.hide()
 
@@ -262,30 +255,27 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                                       'velocity')
 
             if exp:
-                self.pushButtonVelocity.setStyleSheet("background-color: green")
-                self.pushButtonVelocity.setToolTip(exp)
+                self.pushButtonVelocity.setFormula(exp)
             else:
-                self.pushButtonVelocity.setStyleSheet("background-color: red")
+                self.pushButtonVelocity.setFormulaRequired()
 
             # Volume Fraction
             exp = self.mdl.getFormula(self.zone_id,
                                       self.currentid,
                                       'volume_fraction')
             if exp:
-                self.pushButtonFraction.setStyleSheet("background-color: green")
-                self.pushButtonFraction.setToolTip(exp)
+                self.pushButtonFraction.setFormula(exp)
             else:
-                self.pushButtonFraction.setStyleSheet("background-color: red")
+                self.pushButtonFraction.setFormulaRequired()
 
             # Turbulence
             exp = TurbulenceModel(self.case).getFormula(self.zone_id,
                                                         self.currentid,
                                                         turbModel)
             if exp:
-                self.pushButtonTurbulence.setStyleSheet("background-color: green")
-                self.pushButtonTurbulence.setToolTip(exp)
+                self.pushButtonTurbulence.setFormula(exp)
             else:
-                self.pushButtonTurbulence.setStyleSheet("background-color: red")
+                self.pushButtonTurbulence.setFormulaRequired()
 
             # Energy
             if field.enthalpy_model != "off":
@@ -293,10 +283,9 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                                           self.currentid,
                                           'enthalpy')
                 if exp:
-                    self.pushButtonEnergy.setStyleSheet("background-color: green")
-                    self.pushButtonEnergy.setToolTip(exp)
+                    self.pushButtonEnergy.setFormula(exp)
                 else:
-                    self.pushButtonEnergy.setStyleSheet("background-color: red")
+                    self.pushButtonEnergy.setFormulaRequired()
 
             # Non condensable gases
             lst = self.NonCondensable.getNonCondensableByFieldId(self.currentid)
@@ -305,10 +294,9 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                                                         self.currentid,
                                                         self.currentNonCond)
                 if exp:
-                    self.pushButtonNonCondensable.setStyleSheet("background-color: green")
-                    self.pushButtonNonCondensable.setToolTip(exp)
+                    self.pushButtonNonCondensable.setFormula(exp)
                 else:
-                    self.pushButtonNonCondensable.setStyleSheet("background-color: red")
+                    self.pushButtonNonCondensable.setFormulaRequired()
 
         # Scalars (can exist for 'none')
         lst = self.SpeciesModel.getScalarByFieldId(self.currentid)
@@ -317,10 +305,9 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                                             self.currentid,
                                             self.currentScalar)
             if exp:
-                self.pushButtonScalar.setStyleSheet("background-color: green")
-                self.pushButtonScalar.setToolTip(exp)
+                self.pushButtonScalar.setFormula(exp)
             else:
-                self.pushButtonScalar.setStyleSheet("background-color: red")
+                self.pushButtonScalar.setFormulaRequired()
 
 
     @Slot(int)
@@ -339,9 +326,9 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonTurbulence.setVisible(True)
             turbFormula = TurbulenceModel(self.case).getFormula(zoneId, fieldId, turbModel)
             if not turbFormula:
-                self.pushButtonTurbulence.setStyleSheet("background-color: red")
+                self.pushButtonTurbulence.setFormulaRequired()
             else:
-                self.pushButtonTurbulence.setStyleSheet("background-color: green")
+                self.pushButtonTurbulence.setFormula(turbFormula)
                 TurbulenceModel(self.case).setFormula(zoneId, fieldId, turbModel, turbFormula)
         else:
             self.pushButtonTurbulence.hide()
@@ -361,17 +348,16 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             exp = self.mdl.getFormula(self.zone_id, self.currentid, 'enthalpy')
             if exp:
                 if (model == 'enthalpy' and 'temperature' in exp):
-                    self.pushButtonEnergy.setStyleSheet("background-color: red")
+                    self.pushButtonEnergy.setFormulaRequired()
                 elif (model == 'temperature' and 'enthalpy' in exp):
-                    self.pushButtonEnergy.setStyleSheet("background-color: red")
+                    self.pushButtonEnergy.setFormulaRequired()
                 else:
-                    self.pushButtonEnergy.setStyleSheet("background-color: green")
-                    self.pushButtonEnergy.setToolTip(exp)
+                    self.pushButtonEnergy.setFormula(exp)
             else:
-                self.pushButtonEnergy.setStyleSheet("background-color: red")
+                self.pushButtonEnergy.setFormulaRequired()
         else:
             self.pushButtonEnergy.setEnabled(False)
-            self.pushButtonEnergy.setStyleSheet("background-color: None")
+            self.pushButtonEnergy.clearFormula()
 
 
     @Slot(int)
@@ -384,10 +370,9 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.currentNonCondLabel = str(text)
         exp = self.mdl.getFormulaNonCondensable(self.zone_id, self.currentid, self.currentNonCond)
         if exp:
-            self.pushButtonNonCondensable.setStyleSheet("background-color: green")
-            self.pushButtonNonCondensable.setToolTip(exp)
+            self.pushButtonNonCondensable.setFormula(exp)
         else:
-            self.pushButtonNonCondensable.setStyleSheet("background-color: red")
+            self.pushButtonNonCondensable.setFormulaRequired()
 
 
     @Slot(int)
@@ -400,10 +385,9 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.currentScalarLabel = str(text)
         exp = self.mdl.getFormulaScalar(self.zone_id, self.currentid, self.currentScalar)
         if exp:
-            self.pushButtonScalar.setStyleSheet("background-color: green")
-            self.pushButtonScalar.setToolTip(exp)
+            self.pushButtonScalar.setFormula(exp)
         else:
-            self.pushButtonScalar.setStyleSheet("background-color: red")
+            self.pushButtonScalar.setFormulaRequired()
 
 
     @Slot()
@@ -435,8 +419,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula(self.zone_id, self.currentid, 'velocity', result)
-            self.pushButtonVelocity.setStyleSheet("background-color: green")
-            self.pushButtonVelocity.setToolTip(result)
+            self.pushButtonVelocity.setFormula(result)
 
 
     @Slot()
@@ -471,8 +454,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula(self.zone_id, self.currentid, 'volume_fraction', result)
-            self.pushButtonFraction.setStyleSheet("background-color: green")
-            self.pushButtonFraction.setToolTip(result)
+            self.pushButtonFraction.setFormula(result)
 
     @Slot()
     def slotTurbulence(self):
@@ -555,8 +537,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             TurbulenceModel(self.case).setFormula(self.zone_id, self.currentid, turbModel, result)
-            self.pushButtonTurbulence.setStyleSheet("background-color: green")
-            self.pushButtonTurbulence.setToolTip(result)
+            self.pushButtonTurbulence.setFormula(result)
 
 
     @Slot()
@@ -601,8 +582,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula(self.zone_id, self.currentid, 'enthalpy', result)
-            self.pushButtonEnergy.setStyleSheet("background-color: green")
-            self.pushButtonEnergy.setToolTip(result)
+            self.pushButtonEnergy.setFormula(result)
 
 
     @Slot()
@@ -637,8 +617,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormulaPressure(self.zone_id, result)
-            self.pushButtonPressure.setStyleSheet("background-color: green")
-            self.pushButtonPressure.setToolTip(result)
+            self.pushButtonPressure.setFormula(result)
 
 
     @Slot()
@@ -670,8 +649,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormulaNonCondensable(self.zone_id, self.currentid, self.currentNonCond, result)
-            self.pushButtonNonCondensable.setStyleSheet("background-color: green")
-            self.pushButtonNonCondensable.setToolTip(result)
+            self.pushButtonNonCondensable.setFormula(result)
 
 
     @Slot()
@@ -703,8 +681,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormulaScalar(self.zone_id, self.currentid, self.currentScalar, result)
-            self.pushButtonScalar.setStyleSheet("background-color: green")
-            self.pushButtonScalar.setToolTip(result)
+            self.pushButtonScalar.setFormula(result)
 
 
     def initializeVariables(self, zone, fieldId):
@@ -755,7 +732,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
                     self.pushButtonEnergy.setEnabled(True)
                 elif model == "hsat_P":
                     self.pushButtonEnergy.setEnabled(False)
-                    self.pushButtonEnergy.setStyleSheet("background-color: None")
+                    self.pushButtonEnergy.clearFormula()
 
                 if ThermodynamicsModel(self.case).getMaterials(self.currentid) == 'user_material' :
                     self.modelEnergy.disableItem(1)

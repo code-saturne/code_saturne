@@ -281,9 +281,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
         exp = self.init.getHydraulicHeadFormula(zone_id)
         if exp:
             self.checkBoxHydraulicHead.setChecked(True)
-            self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
+            self.pushButtonHydraulicHead.setFormula(exp)
             self.pushButtonHydraulicHead.show()
-            self.pushButtonHydraulicHead.setToolTip(exp)
         else:
             self.checkBoxHydraulicHead.setChecked(False)
             self.pushButtonHydraulicHead.hide()
@@ -296,9 +295,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
         exp = self.init.getVelocityFormula(zone_id)
         if exp:
             self.checkBoxVelocity.setChecked(True)
-            self.pushButtonVelocity.setStyleSheet("background-color: green")
+            self.pushButtonVelocity.setFormula(exp)
             self.pushButtonVelocity.show()
-            self.pushButtonVelocity.setToolTip(exp)
         else:
             self.checkBoxVelocity.setChecked(False)
             self.pushButtonVelocity.hide()
@@ -318,9 +316,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
         exp = self.init.getVoidFractionFormula(zone_id)
         if exp:
             self.checkBoxVoidFraction.setChecked(True)
-            self.pushButtonVoidFraction.setStyleSheet("background-color: green")
+            self.pushButtonVoidFraction.setFormula(exp)
             self.pushButtonVoidFraction.show()
-            self.pushButtonVoidFraction.setToolTip(exp)
         else:
             self.checkBoxVoidFraction.setChecked(False)
             self.pushButtonVoidFraction.hide()
@@ -359,12 +356,11 @@ class InitializationView(QWidget, Ui_InitializationForm):
             if not exp:
                 exp = self.init.getDefaultTurbFormula(turb_model)
                 self.pushButtonTurbulence.setEnabled(True)
-                self.pushButtonTurbulence.setStyleSheet("background-color: red")
+                self.pushButtonTurbulence.setFormulaRequired(exp)
             else:
                 self.pushButtonTurbulence.setEnabled(True)
-                self.pushButtonTurbulence.setStyleSheet("background-color: green")
+                self.pushButtonTurbulence.setFormula(exp)
             self.init.setTurbFormula(zone_id, exp)
-            self.pushButtonTurbulence.setToolTip(exp)
         else:
             self.pushButtonTurbulence.hide()
 
@@ -387,8 +383,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.modelThermal.setItem(str_model="automatic")
         else:
             self.modelThermal.setItem(str_model="formula")
-            self.pushButtonThermal.setStyleSheet("background-color: green")
-            self.pushButtonThermal.setToolTip(th_formula)
+            self.pushButtonThermal.setFormula(th_formula)
 
 
     def updateViewSpecies(self, zone_id):
@@ -398,8 +393,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         exp = self.init.getSpeciesFormula(zone_id, self.scalar)
         if exp:
             self.checkBoxSpecies.setChecked(True)
-            self.pushButtonSpecies.setStyleSheet("background-color: green")
-            self.pushButtonSpecies.setToolTip(exp)
+            self.pushButtonSpecies.setFormula(exp)
             self.pushButtonSpecies.show()
         else:
             self.checkBoxSpecies.setChecked(False)
@@ -413,8 +407,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         exp = self.init.getMeteoFormula(zone_id, self.scalar_meteo)
         if exp:
             self.checkBoxMeteo.setChecked(True)
-            self.pushButtonMeteo.setStyleSheet("background-color: green")
-            self.pushButtonMeteo.setToolTip(exp)
+            self.pushButtonMeteo.setFormula(exp)
             self.pushButtonMeteo.show()
         else:
             self.checkBoxMeteo.setChecked(False)
@@ -428,8 +421,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         exp = self.init.getCombustionFormula(zone_id, self.scalar_combustion)
         if exp:
             self.checkBoxCombustion.setChecked(True)
-            self.pushButtonCombustion.setStyleSheet("background-color: green")
-            self.pushButtonCombustion.setToolTip(exp)
+            self.pushButtonCombustion.setFormula(exp)
             self.pushButtonCombustion.show()
         else:
             self.checkBoxCombustion.setChecked(False)
@@ -452,16 +444,15 @@ class InitializationView(QWidget, Ui_InitializationForm):
             turb_formula = self.init.getTurbFormula(zone_id, turb_model)
             if not turb_formula:
                 turb_formula = self.init.getDefaultTurbFormula(turb_model)
-                self.pushButtonTurbulence.setStyleSheet("background-color: red")
+                self.pushButtonTurbulence.setFormulaRequired()
             else:
-                self.pushButtonTurbulence.setStyleSheet("background-color: green")
+                self.pushButtonTurbulence.setFormula(turb_formula)
                 self.init.setTurbFormula(zone_id, turb_formula)
-                self.pushButtonTurbulence.setToolTip(turb_formula)
         else:
             self.pushButtonTurbulence.hide()
         if choice == 'reference_value':
             self.pushButtonTurbulence.setDisabled(True)
-            self.pushButtonTurbulence.setStyleSheet("background-color: None")
+            self.pushButtonTurbulence.clearFormula()
             self.init.setTurbFormula(zone_id, None)
 
 
@@ -478,9 +469,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
             th_formula = self.init.getThermalFormula(zone_id)
             if not th_formula:
                 th_formula = self.init.getDefaultThermalFormula()
-                self.pushButtonThermal.setStyleSheet("background-color: red")
+                self.pushButtonThermal.setFormulaRequired()
             else:
-                self.pushButtonThermal.setStyleSheet("background-color: green")
+                self.pushButtonThermal.setFormula(th_formula)
             self.init.setThermalFormula(zone_id, th_formula)
             self.pushButtonThermal.show()
         else:
@@ -544,8 +535,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
             self.init.setVelocityFormula(zone_id, str(result))
-            self.pushButtonVelocity.setStyleSheet("background-color: green")
-            self.pushButtonVelocity.setToolTip(result)
+            self.pushButtonVelocity.setFormula(result)
 
 
     @Slot()
@@ -554,8 +544,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         exp = self.init.getVelocityFormula(zone_id)
         if self.checkBoxVelocity.isChecked():
             self.pushButtonVelocity.show()
-            self.pushButtonVelocity.setStyleSheet("background-color: green")
-            self.pushButtonVelocity.setToolTip(exp)
+            self.pushButtonVelocity.setFormula(exp)
             self.init.setVelocityFormula(zone_id, exp)
         else:
             self.pushButtonVelocity.hide()
@@ -585,8 +574,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotFormulaVoidFraction -> %s" % str(result))
             self.init.setVoidFractionFormula(zone_id, str(result))
-            self.pushButtonVoidFraction.setStyleSheet("background-color: green")
-            self.pushButtonVoidFraction.setToolTip(result)
+            self.pushButtonVoidFraction.setFormula(result)
 
 
     @Slot()
@@ -595,8 +583,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         exp = self.init.getVoidFractionFormula(zone_id)
         if self.checkBoxVoidFraction.isChecked():
             self.pushButtonVoidFraction.show()
-            self.pushButtonVoidFraction.setStyleSheet("background-color: green")
-            self.pushButtonVoidFraction.setToolTip(exp)
+            self.pushButtonVoidFraction.setFormula(exp)
             self.init.setVoidFractionFormula(zone_id, exp)
         else:
             self.pushButtonVoidFraction.hide()
@@ -610,8 +597,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if self.checkBoxHydraulicHead.isChecked():
             exp = self.init.getHydraulicHeadFormula(zone_id)
             self.pushButtonHydraulicHead.show()
-            self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
-            self.pushButtonHydraulicHead.setToolTip(exp)
+            self.pushButtonHydraulicHead.setFormula(exp)
             self.init.setHydraulicHeadFormula(zone_id, exp)
         else:
             self.pushButtonHydraulicHead.hide()
@@ -625,8 +611,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if self.checkBoxSpecies.isChecked():
             exp = self.init.getSpeciesFormula(zone_id, self.scalar)
             self.pushButtonSpecies.show()
-            self.pushButtonSpecies.setStyleSheet("background-color: green")
-            self.pushButtonSpecies.setToolTip(exp)
+            self.pushButtonSpecies.setFormula(exp)
             self.init.setSpeciesFormula(zone_id, self.scalar, exp)
         else:
             self.pushButtonSpecies.hide()
@@ -640,8 +625,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if self.checkBoxMeteo.isChecked():
             exp = self.init.getMeteoFormula(zone_id, self.scalar_meteo)
             self.pushButtonMeteo.show()
-            self.pushButtonMeteo.setStyleSheet("background-color: green")
-            self.pushButtonMeteo.setToolTip(exp)
+            self.pushButtonMeteo.setFormula(exp)
             self.init.setMeteoFormula(zone_id, self.scalar_meteo, exp)
         else:
             self.pushButtonMeteo.hide()
@@ -655,11 +639,11 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if self.checkBoxCombustion.isChecked():
             species_formula = self.init.getCombustionFormula(zone_id, self.scalar)
             self.pushButtonCombustion.show()
-            self.pushButtonCombustion.setStyleSheet("background-color: green")
+            self.pushButtonCombustion.setFormula(species_formula)
             self.init.setCombustionFormula(zone_id, self.scalar, species_formula)
         else:
             self.pushButtonCombustion.hide()
-            self.pushButtonCombustion.setStyleSheet("background-color: None")
+            self.pushButtonCombustion.clearFormula()
             self.init.setCombustionFormula(zone_id, self.scalar, None)
 
 
@@ -702,8 +686,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotFormulaTurb -> %s" % str(result))
             self.init.setTurbFormula(zone_id, str(result))
-            self.pushButtonTurbulence.setStyleSheet("background-color: green")
-            self.pushButtonTurbulence.setToolTip(result)
+            self.pushButtonTurbulence.setFormula(result)
 
 
     @Slot()
@@ -730,8 +713,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
             self.init.setThermalFormula(zone_id, str(result))
-            self.pushButtonThermal.setStyleSheet("background-color: green")
-            self.pushButtonThermal.setToolTip(result)
+            self.pushButtonThermal.setFormula(result)
 
 
     @Slot()
@@ -759,8 +741,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
             self.init.setSpeciesFormula(zone_id, self.scalar, str(result))
-            self.pushButtonSpecies.setStyleSheet("background-color: green")
-            self.pushButtonSpecies.setToolTip(result)
+            self.pushButtonSpecies.setFormula(result)
 
 
     @Slot()
@@ -786,8 +767,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotFormulaMeteo -> %s" % str(result))
             self.init.setMeteoFormula(zone_id, self.scalar_meteo, str(result))
-            self.pushButtonMeteo.setStyleSheet("background-color: green")
-            self.pushButtonMeteo.setToolTip(result)
+            self.pushButtonMeteo.setFormula(result)
 
 
     @Slot()
@@ -814,8 +794,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotFormulaCombustion -> %s" % str(result))
             self.init.setCombustionFormula(zone_id, self.scalar_combustion, str(result))
-            self.pushButtonCombustion.setStyleSheet("background-color: green")
-            self.pushButtonCombustion.setToolTip(result)
+            self.pushButtonCombustion.setFormula(result)
 
 
     @Slot()
@@ -831,10 +810,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonPressure.setEnabled(True)
             exp = self.init.getPressureFormula(zone_id)
             if exp:
-                self.pushButtonPressure.setStyleSheet("background-color: green")
-                self.pushButtonPressure.setToolTip(exp)
+                self.pushButtonPressure.setFormula(exp)
             else:
-                self.pushButtonPressure.setStyleSheet("background-color: red")
+                self.pushButtonPressure.setFormulaRequired()
             if len(box_list) == 2:
                 for name in self.thermodynamic_list:
                     if name not in box_list:
@@ -844,7 +822,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setPressureStatus(zone_id, "off")
             box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonPressure.setEnabled(False)
-            self.pushButtonPressure.setStyleSheet("background-color: None")
+            self.pushButtonPressure.clearFormula()
             if len(box_list) == 1:
                 for name in self.thermodynamic_list:
                     if name != 'Pressure':
@@ -868,10 +846,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonDensity.setEnabled(True)
             exp = self.init.getDensityFormula(zone_id)
             if exp:
-                self.pushButtonDensity.setStyleSheet("background-color: green")
-                self.pushButtonDensity.setToolTip(exp)
+                self.pushButtonDensity.setFormula(exp)
             else:
-                self.pushButtonDensity.setStyleSheet("background-color: red")
+                self.pushButtonDensity.setFormulaRequired()
             if len(box_list) == 2:
                 for name in self.thermodynamic_list:
                     if name not in box_list:
@@ -881,7 +858,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setDensityStatus(zone_id, "off")
             box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonDensity.setEnabled(False)
-            self.pushButtonDensity.setStyleSheet("background-color: None")
+            self.pushButtonDensity.clearFormula()
             if len(box_list) == 1:
                 for name in self.thermodynamic_list:
                     if name != 'Density':
@@ -905,10 +882,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonTemperature.setEnabled(True)
             exp = self.init.getTemperatureFormula(zone_id)
             if exp:
-                self.pushButtonTemperature.setStyleSheet("background-color: green")
-                self.pushButtonTemperature.setToolTip(exp)
+                self.pushButtonTemperature.setFormula(exp)
             else:
-                self.pushButtonTemperature.setStyleSheet("background-color: red")
+                self.pushButtonTemperature.setFormulaRequired()
             if len(box_list) == 2:
                 for name in self.thermodynamic_list:
                     if name not in box_list:
@@ -919,7 +895,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setTemperatureStatus(zone_id, "off")
             box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonTemperature.setEnabled(False)
-            self.pushButtonTemperature.setStyleSheet("background-color: None")
+            self.pushButtonTemperature.clearFormula()
             if len(box_list) == 1:
                 for name in self.thermodynamic_list:
                     if name != 'Temperature':
@@ -940,10 +916,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonEnergy.setEnabled(True)
             exp = self.init.getEnergyFormula(zone_id)
             if exp:
-                self.pushButtonEnergy.setStyleSheet("background-color: green")
-                self.pushButtonEnergy.setToolTip(exp)
+                self.pushButtonEnergy.setFormula(exp)
             else:
-                self.pushButtonEnergy.setStyleSheet("background-color: red")
+                self.pushButtonEnergy.setFormulaRequired()
             if len(box_list) == 2:
                 for name in self.thermodynamic_list:
                     if name not in box_list:
@@ -951,14 +926,14 @@ class InitializationView(QWidget, Ui_InitializationForm):
                         __Button = getattr(self, "pushButton" + name)
                         __checkBox.setEnabled(False)
                         __Button.setEnabled(False)
-                        __Button.setStyleSheet("background-color: None")
+                        __Button.clearFormula()
             if len(box_list) == 1:
                 self.checkBoxTemperature.setEnabled(False)
         else:
             self.init.setEnergyStatus(zone_id, "off")
             box_list = self.init.getCheckedBoxList(zone_id)
             self.pushButtonEnergy.setEnabled(False)
-            self.pushButtonEnergy.setStyleSheet("background-color: None")
+            self.pushButtonEnergy.clearFormula()
             if len(box_list) == 1:
                 for name in self.thermodynamic_list:
                     if name != 'Energy':
@@ -966,7 +941,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                         __Button = getattr(self, "pushButton" + name)
                         __checkBox.setEnabled(True)
                         __Button.setEnabled(False)
-                        __Button.setStyleSheet("background-color: None")
+                        __Button.clearFormula()
             self.checkBoxTemperature.setEnabled(True)
 
 
@@ -993,8 +968,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotPressureFormula -> %s" % str(result))
             self.init.setPressureFormula(zone_id, str(result))
-            self.pushButtonPressure.setStyleSheet("background-color: green")
-            self.pushButtonPressure.setToolTip(result)
+            self.pushButtonPressure.setFormula(result)
 
 
     @Slot()
@@ -1020,8 +994,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotHydraulicHeadFormula -> %s" % str(result))
             self.init.setHydraulicHeadFormula(zone_id, str(result))
-            self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
-            self.pushButtonHydraulicHead.setToolTip(result)
+            self.pushButtonHydraulicHead.setFormula(result)
 
 
     @Slot()
@@ -1047,8 +1020,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotDensityFormula -> %s" % str(result))
             self.init.setDensityFormula(zone_id, str(result))
-            self.pushButtonDensity.setStyleSheet("background-color: green")
-            self.pushButtonDensity.setToolTip(result)
+            self.pushButtonDensity.setFormula(result)
 
 
     @Slot()
@@ -1074,8 +1046,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotTemperatureFormula -> %s" % str(result))
             self.init.setTemperatureFormula(zone_id, str(result))
-            self.pushButtonTemperature.setStyleSheet("background-color: green")
-            self.pushButtonTemperature.setToolTip(result)
+            self.pushButtonTemperature.setFormula(result)
 
 
     @Slot()
@@ -1102,8 +1073,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             result = dialog.get_result()
             log.debug("slotEnergyFormula -> %s" % str(result))
             self.init.setEnergyFormula(zone_id, str(result))
-            self.pushButtonEnergy.setStyleSheet("background-color: green")
-            self.pushButtonEnergy.setToolTip(result)
+            self.pushButtonEnergy.setFormula(result)
 
 
     def initializeCompressibleVariables(self):
@@ -1120,7 +1090,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                     __Button = getattr(self, "pushButton" + name)
                     __checkBox.setChecked(False)
                     __Button.setEnabled(False)
-                    __Button.setStyleSheet("background-color: None")
+                    __Button.clearFormula()
             elif len(box_list) == 1:
                 box = box_list[0]
                 for name in self.thermodynamic_list:
@@ -1129,7 +1099,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                         __Button = getattr(self, "pushButton" + name)
                         __checkBox.setChecked(False)
                         __Button.setEnabled(False)
-                        __Button.setStyleSheet("background-color: None")
+                        __Button.clearFormula()
                 if box == 'Temperature':
                     self.checkBoxEnergy.setEnabled(False)
                 elif box == 'Energy':
@@ -1138,7 +1108,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                 __checkBox.setChecked(True)
                 __Button = getattr(self, "pushButton" + box)
                 __Button.setEnabled(True)
-                __Button.setStyleSheet("background-color: red")
+                __Button.setFormulaRequired()
             elif len(box_list) == 2:
                 box1 = box_list[0]
                 box2 = box_list[1]
@@ -1154,7 +1124,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                     __Button = getattr(self, "pushButton" + name)
                     __checkBox.setChecked(True)
                     __Button.setEnabled(True)
-                    __Button.setStyleSheet("background-color: red")
+                    __Button.setFormulaRequired()
 
 
 #-------------------------------------------------------------------------------

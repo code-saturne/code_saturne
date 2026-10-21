@@ -55,7 +55,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButtonThermalSourceTerm">
+         <widget class="FormulaButton" name="pushButtonThermalSourceTerm">
           <property name="text">
            <string/>
           </property>
@@ -104,6 +104,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources_pages.qrc"/>
  </resources>

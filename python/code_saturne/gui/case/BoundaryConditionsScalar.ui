@@ -45,7 +45,7 @@
          <widget class="QLineEdit" name="lineEditScalar"/>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButtonScalar">
+         <widget class="FormulaButton" name="pushButtonScalar">
           <property name="text">
             <string/>
           </property>
@@ -88,6 +88,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FormulaButton</class>
+   <extends>QPushButton</extends>
+   <header>code_saturne.gui.base.FormulaButton</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
