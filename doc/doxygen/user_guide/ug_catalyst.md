@@ -275,7 +275,7 @@ the first output appears as follows:
 
 <p><a class="anchor" id="fig_ug_catalyst_40_stream_lines_50"></a></p>
 <div class="image">
-<img src="../images/ug_catalyst/ug_catalyst_stream_lines1_000050.png" width="90%" alt="">
+<img src="../images/ug_catalyst/ug_catalyst_stream_lines1_000050_v0.png" width="90%" alt="">
 <div class="caption">Catalyst output at 50 time steps</div>
 </div>
 
