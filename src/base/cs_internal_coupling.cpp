@@ -1128,8 +1128,8 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
         cs_real_t hext = hextp[face_id];
         cs_real_t hrad = h_rad[face_id];
         cs_real_t dhsum = 1. / (hint + hext + hrad);
-        cs_real_t heqi = hint * hext * dhsum;
-        cs_real_t heqj = (hint + hrad) * hext * dhsum;
+        cs_real_t heqi = hint * (hext + hrad) * dhsum;
+        cs_real_t heqj = hint * hext * dhsum;
 
         y[cell_id] += thetap * idiffp * surf * (heqi * pi - heqj * pj);
       }
@@ -1388,7 +1388,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
       // cs_internal_coupling_spmv_contribution
 
       cs_real_t dhsum = 1. / (hint + hext + hrad);
-      cs_real_t heqj = (hint + hrad) * hext * dhsum;
+      cs_real_t heqj = hint * hext * dhsum;
       cs_real_t c = thetap * idiffp * heqj * surf;
 
       d_g_row_id[jj] = g_id_l[ii];
@@ -1940,18 +1940,20 @@ cs_internal_coupling_update_bc_coeffs_s
         cs_real_t hradext = h_rad_ext[ii];
         cs_real_t phi_rad = flux_rad[face_id];
         cs_real_t phi_radext = phi_rad_ext[ii];
+        cs_real_t hrad_tot = hrad + hradext;
+        cs_real_t phi_rad_tot = phi_rad + phi_radext;
         // TODO check /0
-        cs_real_t dhsum = 1. / (hint + hext + hrad + hradext);
+        cs_real_t dhsum = 1. / (hint + hext + hrad_tot);
 
-        cs_real_t heqi = (hext + hradext) * hint * dhsum;
-        cs_real_t heqj = hext * (hint + hrad) * dhsum;
+        cs_real_t heqi = hint * (hext + hrad_tot) * dhsum;
+        cs_real_t heqj = hint * hext * dhsum;
 
         // FIXME: this should be var_ip limited instead of var[cell_id].
         //
         // Ts = (ha Ta + hl Tl + Phi_rad)/(ha + hl + hrad)
         bc_coeff_a[face_id] =  ( hext * var_ext[ii]
                                + hint * var[cell_id]
-                               + phi_rad + phi_radext
+                               + phi_rad_tot
                                ) * dhsum;
 
         //TODO: it is not correct with wall functions.
@@ -1962,14 +1964,12 @@ cs_internal_coupling_update_bc_coeffs_s
           if (var_ext_d != nullptr) {
             // limited value var_ext_d at iprime position
             bc_coeff_af[face_id] = (- heqj * var_ext_d[ii]
-                                 + (hext * phi_rad - hint * phi_radext)* dhsum
-            ); // ;
+                                    - hint * phi_rad_tot * dhsum);
             bc_coeff_bf[face_id] = heqi;
           }
           else {
             bc_coeff_af[face_id] = (- heqj * var_ext[ii]
-                                 + (hext * phi_rad - hint * phi_radext)* dhsum
-                                   );// ;
+                                    - hint * phi_rad_tot * dhsum);
             bc_coeff_bf[face_id] = heqi;
           }
         }
