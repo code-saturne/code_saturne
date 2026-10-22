@@ -14,12 +14,15 @@ magneto-hydrodynamics, compressible flows, two-phase flows
 Presentation
 ============
 
-code_saturne is portable on all Linux flavors and UNIX platforms tested so far.
-It runs in parallel with MPI on distributed memory machines (Intel, AMD, ARM, ...).
-Developed since 1997 at EDF R&D, it is based on a co-located Finite Volume
-approach that accepts meshes with any type of cell (tetrahedral, hexahedral,
-prismatic, pyramidal, polyhedral...) and any type of grid structure
-(unstructured, block structured, hybrid, conforming or with hanging nodes, ...).
+code_saturne runs on all Linux distributions and UNIX platforms tested so far.
+It supports parallel computing with MPI on distributed memory machines (Intel,
+AMD, ARM, ...) and with OpenMP on shared memory nodes. Parts of the computations
+can also be accelerated on GPUs. Developed at EDF R&D since 1997, it is based on
+co-located Finite Volume (FV) and, more recently, on Compatible Discrete
+Operator (CDO) spatial discretization schemes. These approaches support meshes
+with any type of cell (tetrahedral, hexahedral, prismatic, pyramidal,
+polyhedral...) and any mesh structure (unstructured, block structured, hybrid,
+conforming, or with hanging nodes, ...).
 
 Meshes may be imported using the CGNS, MED, GMSH, I-Deas, GAMBIT, or Simail
 formats, and Post-processing output is available in EnSight, CGNS
