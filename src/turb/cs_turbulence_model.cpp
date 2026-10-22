@@ -1213,7 +1213,6 @@ cs_set_glob_turb_model(void)
  *        some of which may depend on the model choice.
  *
  * \param[in]       phase_id  turbulent phase id (-1 for single phase flow)
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1335,11 +1334,13 @@ cs_turb_compute_constants(int phase_id)
   if (cs::any_eq(cs_glob_turb_model->model,
                  CS_TURB_RIJ_EPSILON_BFH,
                  CS_TURB_LES_TAUSGS)) {
-    cs_turb_crij_c0 = (2.974546 - 2.0) / 1.5; /* ~0.64969733 (equivalent to CR-1) */
+    cs_turb_crij_c0 = (2.974546 - 2.0) / 1.5; /* ~0.64969733
+                                                 (equivalent to CR-1) */
     cs_turb_crij1 = 1.5 * cs_turb_crij_c0 + 1.0; /* ~1.974546 */
     cs_turb_ce1 = 1.44;
     cs_turb_c1trit = 2.0; /* Thermal return-to-isotropy constant (C_theta) */
-    cs_turb_c3trit = cs_turb_crij3; /* C_theta3 = C_B (Eq. 38 of Ferrand et al. 2027) */
+    cs_turb_c3trit = cs_turb_crij3; /* C_theta3 = C_B
+                                       (Eq. 38 of Ferrand et al. 2027) */
   }
 
   /* In case of Rotta model (ie LRR + Cr2 = 0) compute
@@ -1648,9 +1649,9 @@ cs_turb_model_log_setup(void)
                     "    iclsyr:           %14d (Symmetry implicitation)\n"
                     "    iclptr:           %14d (Wall implicitation)\n"
                     "    ikwcln:           %14d (Wall boundary condition"
-                                                "on omega in k-omega SST)\n"
+                                                " on omega in k-omega SST)\n"
                     "    dissip_buo_mdl    %14d (Turbulent dissipation"
-                                                "buoyant production model)\n"),
+                                                " buoyant production model)\n"),
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->reinit_turb,
                   cs_glob_turb_rans_model->irijco,

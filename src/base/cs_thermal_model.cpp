@@ -226,35 +226,45 @@ cs_thermal_model_log_setup(void)
                  "---------------------\n\n"
                  "  Continuous phase:\n\n"));
 
+  const char *thermal_variable_enum_str[]
+    = {"CS_THERMAL_MODEL_NONE",
+       "CS_THERMAL_MODEL_TEMPERATURE",
+       "CS_THERMAL_MODEL_ENTHALPY",
+       "CS_THERMAL_MODEL_TOTAL_ENERGY",
+       "CS_THERMAL_MODEL_INTERNAL_ENERGY"};
+
   const char *thermal_variable_value_str[]
-    = {N_("no thermal model"),
-       N_("temperature)"),
+    = {N_("none"),
+       N_("temperature"),
        N_("enthalpy"),
-       N_("total energy")};
+       N_("total energy"),
+       N_("internal energy")};
+
+  const char *temperature_scale_enum_str[]
+    {"CS_TEMPERATURE_SCALE_NONE",
+     "CS_TEMPERATURE_SCALE_KELVIN",
+     "CS_TEMPERATURE_SCALE_CELSIUS"};
 
   const char *temperature_scale_value_str[]
     = {N_("none"),
-       N_("temperature in Kelvin"),
-       N_("temperature in Celsius")};
+       N_("Kelvin"),
+       N_("Celsius")};
 
   cs_log_printf(CS_LOG_SETUP,
-                ("    Thermal model\n"));
-  cs_log_printf(CS_LOG_SETUP,
-                _("    thermal_variable:   %d (%s)\n"),
-                thermal_variable, _(thermal_variable_value_str[thermal_variable]));
+                _("    thermal_variable:  %s (%s)\n"),
+                thermal_variable_enum_str[thermal_variable],
+                _(thermal_variable_value_str[thermal_variable]));
 
   cs_log_printf(CS_LOG_SETUP,
-                ("    Temperature scale\n"));
-  cs_log_printf(CS_LOG_SETUP,
-                _("    temperature_scale:  %d (%s)\n"),
-                temperature_scale, _(temperature_scale_value_str[temperature_scale]));
+                _("    temperature_scale: %s (%s)\n"),
+                temperature_scale_enum_str[temperature_scale],
+                _(temperature_scale_value_str[temperature_scale]));
 
   cs_field_t *tf = cs_thermal_model_field();
   if (tf != nullptr)
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    Thermal variable solved: %s (field id %d)\n"),
-       tf->name, tf->id);
+       _("\n    Thermal variable solved: \"%s\"\n"), tf->name);
 }
 
 /*----------------------------------------------------------------------------*/
