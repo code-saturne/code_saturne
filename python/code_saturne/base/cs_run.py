@@ -685,12 +685,42 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
 
     r_c, s_c, run_conf = process_options(options, pkg)
 
+    cli_run_id = r_c['run_id']
+
     if not r_c['casedir'] and not r_c['staging_dir']:
         return 1, None, None
 
     # Read run configuration
 
     read_run_config_file(i_c, r_c, s_c, pkg, run_conf=run_conf)
+
+    cfg_run_id = r_c['run_id']
+    if cfg_run_id == cli_run_id:
+        cfg_run_id = None
+
+    # Check for incompatible run id options
+
+    if (cfg_run_id or cli_run_id) and (r_c['id_prefix'] or r_c['id_suffix']):
+        print('Warning: incompatible run options provided', file=sys.stdout)
+        for k in ('id_prefix', 'id_suffix'):
+            if r_c[k]:
+                print('  {:<22}: {}'.format(k, r_c[k]), file=sys.stdout)
+
+        # run_id (run.cfg) option is superseded by CLI options
+        if cfg_run_id:
+            print('  {:<22}: {}'.format('run_id [run.cfg]', cfg_run_id),
+                  file=sys.stderr)
+            print('  run_id [run.cfg] option is ignored.', file=sys.stderr)
+            r_c['run_id'] = None
+
+        # --id option supersedes --id-prefix/--id-suffix
+        if cli_run_id:
+            print('  {:<22}: {}'.format('--id', cli_run_id),
+                  file=sys.stderr)
+            for k in ('id_prefix', 'id_suffix'):
+                if r_c[k]:
+                    print('  {} option is ignored.'.format(k), file=sys.stderr)
+                    r_c[k] = None
 
     # Determine compute stages
 
