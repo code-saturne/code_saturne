@@ -2553,7 +2553,7 @@ cs_parameters_eqp_complete(void)
     cs_field_t *f = cs_glob_field_pointers[dyn_ids[i]].f;
     if (f != nullptr) {
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-      if (eqp != nullptr)
+      if (eqp != nullptr && eqp->time_control == nullptr)
         eqp->time_control = vp_tc;
     }
   }

@@ -63,6 +63,7 @@
 #include "base/cs_runge_kutta_integrator.h"
 #include "base/cs_sat_coupling.h"
 #include "base/cs_thermal_model.h"
+#include "base/cs_time_control.h"
 #include "base/cs_time_step.h"
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_vof.h"
@@ -3530,6 +3531,12 @@ cs_pressure_correction(int                   iterns,
                        cs_real_t             dfrcxt[][3])
 {
   CS_PROFILE_FUNC_RANGE();
+
+  const cs_equation_param_t *eqp_p
+    = cs_field_get_equation_param_const(CS_F_(p));
+  const cs_time_step_t *ts = cs_glob_time_step;
+  if (eqp_p != nullptr && !cs_time_control_is_active(eqp_p->time_control, ts))
+    return;
 
   /* Pointers to BC coefficients */
 
