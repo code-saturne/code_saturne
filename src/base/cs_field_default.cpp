@@ -500,7 +500,7 @@ cs_field_map_and_init_bcs(void)
     if (f == f_th) {
       cs_equation_param_t *eqp_th = cs_field_get_equation_param(f_th);
       if (eqp_th->icoupl > 0)
-        bc_flags[f_id * n_bc_flags + 3] = true;
+        bc_flags[f_id * n_bc_flags + 4] = true;
     }
 
     if (f->dim == 6) {

@@ -1951,7 +1951,7 @@ cs_internal_coupling_update_bc_coeffs_s
         // Ts = (ha Ta + hl Tl + Phi_rad)/(ha + hl + hrad)
         bc_coeff_a[face_id] =  ( hext * var_ext[ii]
                                + hint * var[cell_id]
-                               + phi_rad
+                               + phi_rad + phi_radext
                                ) * dhsum;
 
         //TODO: it is not correct with wall functions.
