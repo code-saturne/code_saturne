@@ -48,6 +48,7 @@
 
 #include "base/cs_array.h"
 #include "base/cs_ale.h"
+#include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_variables.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_dispatch.h"
@@ -924,6 +925,13 @@ _physical_properties_update_models_stage_2(void)
         || cs_glob_cf_model->eos_model == CS_EOS_IDEAL_GAS)
       && cs_glob_velocity_pressure_model->idilat == 2)
     cs_eos_predicted_rho();
+
+  /* Atmospheric Flows: update properties if p0 has been modified */
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
+    const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
+    if (cs::abs(fp->p0 - fp->p0_prev) > cs_math_epzero)
+      cs_atmo_physical_properties_update();
+  }
 }
 
 /*----------------------------------------------------------------------------*/

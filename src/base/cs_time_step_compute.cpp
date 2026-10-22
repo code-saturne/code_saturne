@@ -720,6 +720,17 @@ cs_local_time_step_compute(int  itrale)
                  "============================\n\n\n"),
                ts->t_cur, ts->nt_cur);
 
+            const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
+            if (fp != nullptr && ts->nt_cur > 1 && ts->dt[0] > cs_math_epzero) {
+              const cs_real_t dp0_dt = (fp->p0 - fp->p0_prev) / ts->dt[0];
+              if (cs::abs(dp0_dt) > cs_math_epzero)
+                cs_log_printf
+                  (CS_LOG_DEFAULT,
+                   _(" Ambient reference pressure variation: "
+                     "dp0/dt = %12.5e Pa/s\n\n"),
+                   dp0_dt);
+            }
+
           }
         }
 

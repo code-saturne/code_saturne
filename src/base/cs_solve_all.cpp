@@ -1394,8 +1394,21 @@ cs_solve_all()
                          CS_F_(rho_b)->val);
   }
 
-  /* Update reference pressure at previous time step */
+  /* Log ambient reference pressure variation if non-zero */
   cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
+  if (fluid_props != nullptr && ts != nullptr && ts->nt_cur > 1
+      && ts->dt[0] > cs_math_epzero) {
+    const cs_real_t dp0_dt = (fluid_props->p0 - fluid_props->p0_prev)
+                             / ts->dt[0];
+    if (cs::abs(dp0_dt) > cs_math_epzero && cs_log_default_is_active())
+      cs_log_printf
+        (CS_LOG_DEFAULT,
+         _(" Ambient reference pressure variation: "
+           "dp0/dt = %12.5e Pa/s\n\n"),
+         dp0_dt);
+  }
+
+  /* Update reference pressure at previous time step */
   fluid_props->p0_prev = fluid_props->p0;
 }
 

@@ -2980,6 +2980,9 @@ _init_user(void)
   /* User functions */
   cs_user_parameters(cs_glob_domain);
 
+  /* Synchronize initial reference pressure */
+  cs_get_glob_fluid_properties()->p0_prev = cs_glob_fluid_properties->p0;
+
   /* If time step is local or variable, pass information to C layer, as it
    * may be needed for some field (or moment) definitions */
   if (cs_glob_time_step_options->idtvar != 0)

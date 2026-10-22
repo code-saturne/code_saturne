@@ -1308,8 +1308,26 @@ cs_atmo_physical_properties_update(void)
     cpro_beta = cs_field("thermal_expansion")->val;
 
   if (at_opt->meteo_profile > 1) {
-    cpro_met_p = cs_field("meteo_pressure")->val;
+    cs_field_t *f_met_p = cs_field("meteo_pressure");
+    const cs_field_t *f_met_p_hyd
+      = cs_field_try("algo:meteo_pressure_corrected");
+    cpro_met_p = f_met_p->val;
     cpro_met_rho = cs_field("meteo_density")->val;
+
+    if (cs::abs(fluid_props->p0 - fluid_props->p0_prev) > cs_math_epzero) {
+      const cs_real_t *g_vec = cs_glob_physical_constants->gravity;
+      const cs_real_t ro0 = fluid_props->ro0;
+      const cs_real_t p_ground = fluid_props->p0;
+
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        const cs_real_t p_hyd
+          = (f_met_p_hyd != nullptr) ? f_met_p_hyd->val[c_id] : 0.;
+        cpro_met_p[c_id] = p_ground + p_hyd
+          + ro0 * cs_math_3_distance_dot_product(fluid_props->xyzp0,
+                                                 cell_cen[c_id],
+                                                 g_vec);
+      }
+    }
   }
 
   /* This function computes the density and the thermodynamic temperature.

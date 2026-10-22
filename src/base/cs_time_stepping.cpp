@@ -71,6 +71,7 @@
 #include "base/cs_mobile_structures.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
+#include "base/cs_physical_constants.h"
 #include "base/cs_physical_properties_default.h"
 #include "base/cs_porosity_from_scan.h"
 #include "base/cs_porous_model.h"
@@ -646,13 +647,25 @@ cs_time_stepping(void)
 
     if (   idtvar != CS_TIME_STEP_ADAPTIVE && ts->nt_max > ts->nt_prev
         && cs_glob_ale_data->ale_iteration > 0) {
-      if (cs_log_default_is_active() && cs_param_cdo_has_fv_main())
+      if (cs_log_default_is_active() && cs_param_cdo_has_fv_main()) {
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("\n INSTANT %18.9f    TIME STEP NUMBER %15d\n"
              " ============================================="
              "=================\n\n\n"),
            ts->t_cur, ts->nt_cur);
+
+        const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
+        if (fp != nullptr && ts->nt_cur > 1 && ts->dt[0] > cs_math_epzero) {
+          const cs_real_t dp0_dt = (fp->p0 - fp->p0_prev) / ts->dt[0];
+          if (cs::abs(dp0_dt) > cs_math_epzero)
+            cs_log_printf
+              (CS_LOG_DEFAULT,
+               _(" Ambient reference pressure variation: "
+                 "dp0/dt = %12.5e Pa/s\n\n"),
+               dp0_dt);
+        }
+      }
     }
 
     /* Adaptive Mesh Refinement (AMR) operations */

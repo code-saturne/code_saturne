@@ -57,6 +57,7 @@
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_log.h"
 #include "base/cs_measures_util.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
@@ -1238,6 +1239,12 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
   cs_real_t dp0_dt = 0.;
   if (ts->nt_cur > 1 && dt > cs_math_epzero)
     dp0_dt = (phys_pro->p0 - phys_pro->p0_prev) / dt;
+
+  if (cs::abs(dp0_dt) > cs_math_epzero && cs_log_default_is_active())
+    cs_log_printf
+      (CS_LOG_DEFAULT,
+       _(" Nucleation: ambient pressure variation dp0/dt = %12.5e Pa/s\n"),
+       dp0_dt);
 
   /* Force execution on host, as some functions called are not
      available yet on GPU */
