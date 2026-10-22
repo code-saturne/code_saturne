@@ -72,6 +72,7 @@ typedef struct {
   double        viscv0;       /* reference volume viscosity
                                  (for compressible model) */
   double        p0;           /* reference pressure for the total pressure */
+  double        p0_prev;      /* reference pressure at previous time step */
   double        pred0;        /* reference value for the reduced pressure */
   double        xyzp0[3];     /* reference point coordinates for the total
                                  pressure */

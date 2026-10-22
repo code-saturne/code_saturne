@@ -379,7 +379,9 @@ _compute_deposition_vel(const cs_real_t tempc,
   const cs_real_t ather = ckarm/log((dp+rugt)/rugt);
   const cs_real_t raero = 1.0 / (ather * ustar * cfnns);
 
-  const cs_real_t st    = wg*ustar/(9.81*arecep);
+  const cs_real_t grav
+    = cs_math_3_norm(cs_glob_physical_constants->gravity);
+  const cs_real_t st    = wg*ustar/(grav*arecep);
   const cs_real_t ceimp = cs::pow2(st/(st+alpha));
   const cs_real_t ceint = 2.0*(cs::pow2(rcloudvolmoy/arecep));
 
@@ -1210,6 +1212,10 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
 
   const cs_real_t rhowater = 1000; // kg/m^3
   const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+  const cs_real_t mol_mass_rat = cs_glob_air_props->molmass_rat;
+  const cs_real_t grav
+    = cs_math_3_norm(cs_glob_physical_constants->gravity);
+  const cs_real_t p_std = 101325.0; // standard reference atmospheric pressure
 
   /* Test minimum liquid water to carry out nucleation */
   cs_real_t _qliqmax;
@@ -1227,6 +1233,12 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
   //FIXME not coherent with cs_math_epzero used after
   if (_qliqmax <= 1.e-8)
     return;
+
+  /* Time derivative of ambient reference pressure (dp0/dt) */
+  const cs_real_t dt = ts->dt[0];
+  cs_real_t dp0_dt = 0.;
+  if (ts->nt_cur > 1 && dt > cs_math_epzero)
+    dp0_dt = (phys_pro->p0 - phys_pro->p0_prev) / dt;
 
   /* Force execution on host, as some functions called are not
      available yet on GPU */
@@ -1332,235 +1344,217 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
     }
     else { /* cpro_liqwt[c_id] > cs_math_epzero */
 
-      /* New droplets are created by nucleation if vel_z > 0 or cpro_rad_cool < 0,
-       * then if number of new droplets is superior to nc,
-       * the difference is added */
+      cs_real_t tempk = tempc[c_id] + tkelvi;
+      cs_real_t esat = cs_air_pwv_sat(tempc[c_id]);
+      cs_real_t kka = ((5.69 + 0.017*tempc[c_id])/0.239)*1.e-3;
+      cs_real_t ddv
+        = 0.211*pow(tempk/tkelvi, 1.94)*(p_std/pphy[c_id])*1.e-4;
+      cs_real_t a1 =   mol_mass_rat*clatev*grav/(rair*cp*cs::pow2(tempk))
+                     - grav/(rair*tempk);
+      cs_real_t a2 =   rair*tempk/(mol_mass_rat*esat)
+                     + (mol_mass_rat*cs::pow2(clatev))/(tempk*pphy[c_id]*cp);
+      cs_real_t a3 = 1.0 / (  (rhowater*rvap*tempk)/(esat*ddv)
+                            + clatev*rhowater*(clatev/(tempk*rvap) - 1.0)
+                              / (kka*tempk));
+      cs_real_t a4 = -mol_mass_rat*clatev/(rair*cs::pow2(tempk));
 
-      if ((vel[c_id][2] > cs_math_epzero)
-          || (cpro_rad_cool[c_id] < cs_math_epzero)) {
+      /* Effective vertical velocity including ambient pressure variation */
+      cs_real_t w_eff = vel[c_id][2];
+      if (cs::abs(dp0_dt) > cs_math_epzero && rom[c_id] > cs_math_epzero)
+        w_eff -= dp0_dt / (rom[c_id] * grav);
 
-        cs_real_t tempk = tempc[c_id] + tkelvi;
-        cs_real_t esat = cs_air_pwv_sat(tempc[c_id]);
-        cs_real_t kka = ((5.69 + 0.017*tempc[c_id])/0.239)*1.e-3;
-        cs_real_t ddv = 0.211*pow(tempk/tkelvi, 1.94)*(101325./pphy[c_id])*1.e-4;
-        cs_real_t aa1 =   0.622*clatev*9.81/(rair*cp*cs_math_pow2(tempk))
-                        - 9.81/(rair*tempk);
-        cs_real_t aa2 =   rair*tempk/(0.622*esat)
-                        + (0.622*cs_math_pow2(clatev))/(tempk*pphy[c_id]*cp);
-        cs_real_t aa3 = 1.0/((1000.*rvap*tempk)/(esat*ddv)
-                        + clatev*1000.*(clatev/(tempk*rvap) -1.0)/(kka*tempk));
-        cs_real_t aa4 = -0.622*clatev/(rair*cs_math_pow2(tempk));
+      /* Total rate of supersaturation production (dynamic + radiative) */
+      cs_real_t s_prod = a1*w_eff + a4*cpro_rad_cool[c_id];
 
-        if ((aa1*vel[c_id][2]+aa4*cpro_rad_cool[c_id]) > cs_math_epzero) {
+      /* New droplets are created by nucleation if s_prod > 0.
+       * If number of new droplets is superior to nc, difference is added */
+      if (s_prod > cs_math_epzero) {
 
-          // 1.1  Model of Pruppacher and Klett (1997)
-          if (modnuc == 1) {
-            const cs_real_t cons2 = pow(constc, 2./(constk+2.));
-            const cs_real_t cons3 = cs::pow3ov2( 0.01*(  aa1*vel[c_id][2]
-                                               + aa4*cpro_rad_cool[c_id]));
-            const cs_real_t cons4
-              = (2.*cs_math_pi*rhowater*aa2*cs::pow3ov2(aa3)*constk*fbeta);
-            nuc = cons2*pow(cons3/cons4, constk/(constk + 2.));
-          }
-
-          // 1.2  Modele of Cohard and Pinty (1998)
-          else if (modnuc == 2) {
-            /* compute max supersaturation: sursat */
-            cs_real_t yy = 1.0;
-            cs_real_t sursat = 0;
-            cs_real_t tmpsur = 0;
-            for (int ii = 0; ii < 20; ii++) {
-              tmpsur = sursat;
-              yy = _hypgeo(constmu, constk/2, constk/2 + 3./2,
-                        -constbeta*cs_math_pow2(sursat));
-              const cs_real_t cons1
-                = cs::pow3ov2(0.01*(aa1*vel[c_id][2] + aa4*cpro_rad_cool[c_id]));
-              const cs_real_t cons2
-                = (2*constk*constc*cs_math_pi*rhowater*aa2*fbeta
-                   *cs::pow3ov2(aa3));
-
-              sursat = pow((cons1/cons2)/yy, 1./(constk + 2.));
-            }
-
-            if (cs::abs(tmpsur - sursat) > 1.e-2)
-              bft_error(__FILE__, __LINE__, 0,
-                        "Maximum saturation has not converged\n"
-                        "Residue = %12.5e", cs::abs(tmpsur - sursat));
-
-            nuc = constc*pow(sursat, constk)*_hypgeo(constmu,
-                                                     constk/2,
-                                                     constk/2 + 1.,
-                                                     -constbeta*
-                                                     cs_math_pow2(sursat));
-            if (nuc < 0.)
-              bft_error(__FILE__, __LINE__, 0,
-                        _("Cohard and Pindy model (1998).\n"
-                          "The nucleation is negative."));
-          }
-
-          /* 1.3  Model of Abdul-Razzak and al. (1998)
-           * This model requires a fine knowledge of aerosols chemistry. */
-          else if (modnuc == 3) {
-
-            /* Warning: this set of constants fits for PARISFOG case.
-             * They were determined using fine data on aerosols measured
-             * during PARISFOG POI 13 */
-            cs_real_t sigaero3 = 1.3;
-            cs_real_t sigaero2 = 1.59;
-            cs_real_t sigaero1 = 1.570;
-            cs_real_t ntotal1 = 8700.;
-            cs_real_t ntotal2 = 8300.;
-            cs_real_t ntotal3 = 1000.;
-            cs_real_t rayonm3 = 0.4e-6;
-            cs_real_t rayonm2 = 0.055e-6;
-            cs_real_t rayonm1 = 0.0165e-6;
-
-            /* surface tension water-steam [N/m], tempk [K] */
-            const cs_real_t tauvw = 0.0750;
-
-            /* fractions in %
-             * fisrt component: sulfate
-             * second component: nitrate
-             * third component: black carbon
-             * fourth component: organic carbon */
-            const cs_real_t fraero[4] = {0.25, 0.2, 0.164, 0.386};
-
-            /* number of ions produced by dissociation of a salt molecule
-               in water (if NaCl, nbion=2) */
-            const cs_real_t nbion[4] = {3., 2., 0., 1.};
-
-            /* osmotic coefficient */
-            const cs_real_t coefosm[4] = {1., 1., 1., 1.};
-
-            /* mass fraction of of soluble
-               substance in aerosol mix: msolu/mmix */
-            const cs_real_t frasolu[4] = {1., 1., 0., 0.1};
-
-            /* molecular mass of water */
-            const cs_real_t mmh2o = 18.e-3;
-
-            /* molecular mass of aerosol components */
-            const cs_real_t mmaero[4] = {132e-3, 80e-3, 250e-3, 250e-3};
-
-            /* density of aerosol !FIXME to check */
-            const cs_real_t rhoaero[4] = {1.77e3, 1.77e3, 1.77e3, 1.77e3};
-
-            /* coefficient for Kelvin effect: coefa [/m] */
-            const cs_real_t coefa = 2*tauvw/(rhowater*rvap*tempk);
-
-            /* FIXME
-             * cf Pruppacher and Klett 1997 (reprinted correction 2000) (6-28)
-             * coefa = 3.3d-7 / tempk */
-
-            /* coefficient for Raoult effect: coefb [-] */
-            cs_real_t numcb = 0;
-            cs_real_t dencb = 0;
-            for (int ii = 0; ii < 4; ii++) {
-              numcb += fraero[ii]*nbion[ii]*coefosm[ii]*frasolu[ii]/mmaero[ii];
-              dencb += fraero[ii]/rhoaero[ii];
-            }
-            const cs_real_t coefb = mmh2o*numcb/(dencb*rhowater);
-
-            /* supersaturation [-] */
-            cs_real_t sursat1 = (2./sqrt(coefb))*(cs::pow3ov2(coefa/3./rayonm1));
-            cs_real_t sursat2 = (2./sqrt(coefb))*(cs::pow3ov2(coefa/3./rayonm2));
-            cs_real_t sursat3 = (2./sqrt(coefb))*(cs::pow3ov2(coefa/3./rayonm3));
-
-            /* standard deviation function */
-            cs_real_t foncf1 = 0.5*exp(2.5*cs_math_pow2(log(sigaero1)));
-            cs_real_t foncf2 = 0.5*exp(2.5*cs_math_pow2(log(sigaero2)));
-            cs_real_t foncf3 = 0.5*exp(2.5*cs_math_pow2(log(sigaero3)));
-            cs_real_t foncg1 = 1.0 + 0.25*(log(sigaero1));
-            cs_real_t foncg2 = 1.0 + 0.25*(log(sigaero2));
-            cs_real_t foncg3 = 1.0 + 0.25*(log(sigaero3));
-
-            /* coefficient corresponding to vertical velocity |aa1| */
-            aa1 =   0.622*clatev*9.81/(rair*cp*cs_math_pow2(tempk))
-                  - 9.81/(rair*tempk);
-
-            /* coefficient corresponding to liquid water condensation |aa2| */
-            aa2 =   rair*tempk/(0.622*esat)+(0.622*cs_math_pow2(clatev))
-                  / (tempk*pphy[c_id]*cp);
-
-            /* coefficient corresponding to the droplet growth |aa3| */
-            ddv = 0.211*pow(tempk/tkelvi, 1.94)*(101325./pphy[c_id])*1.e-4;
-            rvap = rvsra*rair;
-            aa3 =   1/((1000*rvap*tempk)/(esat*ddv)
-                  + clatev*1000*(clatev/(tempk*rvap)-1.0)/(kka*tempk));
-
-            /* coefficient corresponding to infrared radiation |aa4| */
-            aa4 = -0.622*clatev/(rair*cs_math_pow2(tempk));
-
-            /* alphaV/G */
-            cs_real_t coefavg = (aa1*vel[c_id][2] + aa4*cpro_rad_cool[c_id])/aa3;
-
-            /* coefficient zeta */
-            cs_real_t coefzeta = 2*coefa/3*sqrt(coefavg);
-
-            /* coefficient eta - Ntot [m^(-3)] */
-            const cs_real_t coefeta1
-              = cs::pow3ov2(coefavg)/(2*cs_math_pi*rhowater*aa2*ntotal1*1.e6);
-            const cs_real_t coefeta2
-              = cs::pow3ov2(coefavg)/(2*cs_math_pi*rhowater*aa2*ntotal2*1.e6);
-            const cs_real_t coefeta3
-              = cs::pow3ov2(coefavg)/(2*cs_math_pi*rhowater*aa2*ntotal3*1.e6);
-
-            /* max supersaturation (smax) */
-            cs_real_t x_tp1 = foncf1*cs::pow3ov2(coefzeta/coefeta1);
-            cs_real_t x_tp2 = cs::pow3ov4((sursat1*sursat1)/(coefeta1+3*coefzeta));
-            cs_real_t smax1 = (x_tp1 + foncg1*x_tp2)/sursat1/sursat1;
-
-            x_tp1 = foncf2*cs::pow3ov2(coefzeta/coefeta2);
-            x_tp2 = cs::pow3ov4((sursat2*sursat2)/(coefeta2+3*coefzeta));
-            cs_real_t smax2 = (x_tp1 + foncg2*x_tp2)/sursat2/sursat2;
-
-            x_tp1 = foncf3*(cs::pow3ov2(coefzeta/coefeta3));
-            x_tp2 = cs::pow3ov4((sursat3*sursat3)/(coefeta3+3*coefzeta));
-            cs_real_t smax3 = (x_tp1 + foncg3*x_tp2)/sursat3/sursat3;
-
-            cs_real_t smax = 1.0/sqrt(smax3 + smax2 + smax1);
-
-            if ((smax > 1.0) || (sursat1 > 1.0) ||
-                (sursat2 > 1.0) || (sursat3 > 1.0)) {
-              bft_error(__FILE__, __LINE__, 0,
-                        _("%s: Abdul-Razzak and al. model (1998).\n"
-                          " Negative supersaturation."), __func__);
-            }
-
-            cs_real_t f3_ov_sqrt2 = 3.*sqrt(2.);
-            cs_real_t ugauss1 =   (2.*log(sursat1/smax))
-                                / (f3_ov_sqrt2*log(sigaero1));
-            cs_real_t ugauss2 =   (2.*log(sursat2/smax))
-                                / (f3_ov_sqrt2*log(sigaero2));
-            cs_real_t ugauss3 =   (2.*log(sursat3/smax))
-                                / (f3_ov_sqrt2*log(sigaero3));
-
-            const cs_real_t nuc1 = 0.5 * ntotal1 * (1.0-erf(ugauss1));
-            const cs_real_t nuc2 = 0.5 * ntotal2 * (1.0-erf(ugauss2));
-            const cs_real_t nuc3 = 0.5 * ntotal3 * (1.0-erf(ugauss3));
-
-            nuc = nuc1 + nuc2 + nuc3;
-
-          } /* end nucleation model */
-
-          /* 2. Compute difference */
-          nuc = cs::max(nuc - nc[c_id], 0.0);
-        }
-        else {
-          nuc = 0.0;
+        // 1.1  Model of Pruppacher and Klett (1997)
+        if (modnuc == 1) {
+          const cs_real_t cons2 = pow(constc, 2./(constk+2.));
+          const cs_real_t cons3 = cs::pow3ov2(0.01*s_prod);
+          const cs_real_t cons4
+            = (2.*cs_math_pi*rhowater*a2*cs::pow3ov2(a3)*constk*fbeta);
+          nuc = cons2*pow(cons3/cons4, constk/(constk + 2.));
         }
 
+        // 1.2  Modele of Cohard and Pinty (1998)
+        else if (modnuc == 2) {
+          /* compute max supersaturation: sursat */
+          cs_real_t yy = 1.0;
+          cs_real_t sursat = 0;
+          cs_real_t tmpsur = 0;
+          for (int ii = 0; ii < 20; ii++) {
+            tmpsur = sursat;
+            yy = _hypgeo(constmu, constk/2, constk/2 + 3./2,
+                      -constbeta*cs::pow2(sursat));
+            const cs_real_t cons1 = cs::pow3ov2(0.01*s_prod);
+            const cs_real_t cons2
+              = (2*constk*constc*cs_math_pi*rhowater*a2*fbeta
+                 *cs::pow3ov2(a3));
+
+            sursat = pow((cons1/cons2)/yy, 1./(constk + 2.));
+          }
+
+          if (cs::abs(tmpsur - sursat) > 1.e-2)
+            bft_error(__FILE__, __LINE__, 0,
+                      "Maximum saturation has not converged\n"
+                      "Residue = %12.5e", cs::abs(tmpsur - sursat));
+
+          nuc = constc*pow(sursat, constk)*_hypgeo(constmu,
+                                                   constk/2,
+                                                   constk/2 + 1.,
+                                                   -constbeta*
+                                                   cs::pow2(sursat));
+          if (nuc < 0.)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Cohard and Pindy model (1998).\n"
+                        "The nucleation is negative."));
+        }
+
+        /* 1.3  Model of Abdul-Razzak and al. (1998)
+         * This model requires a fine knowledge of aerosols chemistry. */
+        else if (modnuc == 3) {
+
+          /* Warning: this set of constants fits for PARISFOG case.
+           * They were determined using fine data on aerosols measured
+           * during PARISFOG POI 13 */
+          cs_real_t sigaero3 = 1.3;
+          cs_real_t sigaero2 = 1.59;
+          cs_real_t sigaero1 = 1.570;
+          cs_real_t ntotal1 = 8700.;
+          cs_real_t ntotal2 = 8300.;
+          cs_real_t ntotal3 = 1000.;
+          cs_real_t rayonm3 = 0.4e-6;
+          cs_real_t rayonm2 = 0.055e-6;
+          cs_real_t rayonm1 = 0.0165e-6;
+
+          /* surface tension water-steam [N/m], tempk [K] */
+          const cs_real_t tauvw = 0.0750;
+
+          /* fractions in %
+           * fisrt component: sulfate
+           * second component: nitrate
+           * third component: black carbon
+           * fourth component: organic carbon */
+          const cs_real_t fraero[4] = {0.25, 0.2, 0.164, 0.386};
+
+          /* number of ions produced by dissociation of a salt molecule
+             in water (if NaCl, nbion=2) */
+          const cs_real_t nbion[4] = {3., 2., 0., 1.};
+
+          /* osmotic coefficient */
+          const cs_real_t coefosm[4] = {1., 1., 1., 1.};
+
+          /* mass fraction of of soluble
+             substance in aerosol mix: msolu/mmix */
+          const cs_real_t frasolu[4] = {1., 1., 0., 0.1};
+
+          /* molecular mass of water */
+          const cs_real_t mmh2o = 18.e-3;
+
+          /* molecular mass of aerosol components */
+          const cs_real_t mmaero[4] = {132e-3, 80e-3, 250e-3, 250e-3};
+
+          /* density of aerosol !FIXME to check */
+          const cs_real_t rhoaero[4] = {1.77e3, 1.77e3, 1.77e3, 1.77e3};
+
+          /* coefficient for Kelvin effect: coefa [/m] */
+          const cs_real_t coefa = 2*tauvw/(rhowater*rvap*tempk);
+
+          /* FIXME
+           * cf Pruppacher and Klett 1997 (reprinted correction 2000) (6-28)
+           * coefa = 3.3d-7 / tempk */
+
+          /* coefficient for Raoult effect: coefb [-] */
+          cs_real_t numcb = 0;
+          cs_real_t dencb = 0;
+          for (int ii = 0; ii < 4; ii++) {
+            numcb += fraero[ii]*nbion[ii]*coefosm[ii]*frasolu[ii]/mmaero[ii];
+            dencb += fraero[ii]/rhoaero[ii];
+          }
+          const cs_real_t coefb = mmh2o*numcb/(dencb*rhowater);
+
+          /* supersaturation [-] */
+          cs_real_t sursat1 = (2./sqrt(coefb))*(cs::pow3ov2(coefa/3./rayonm1));
+          cs_real_t sursat2 = (2./sqrt(coefb))*(cs::pow3ov2(coefa/3./rayonm2));
+          cs_real_t sursat3 = (2./sqrt(coefb))*(cs::pow3ov2(coefa/3./rayonm3));
+
+          /* standard deviation function */
+          cs_real_t foncf1 = 0.5*exp(2.5*cs::pow2(log(sigaero1)));
+          cs_real_t foncf2 = 0.5*exp(2.5*cs::pow2(log(sigaero2)));
+          cs_real_t foncf3 = 0.5*exp(2.5*cs::pow2(log(sigaero3)));
+          cs_real_t foncg1 = 1.0 + 0.25*(log(sigaero1));
+          cs_real_t foncg2 = 1.0 + 0.25*(log(sigaero2));
+          cs_real_t foncg3 = 1.0 + 0.25*(log(sigaero3));
+
+          /* alphaV/G */
+          cs_real_t coefavg = s_prod/a3;
+
+          /* coefficient zeta */
+          cs_real_t coefzeta = 2*coefa/3*sqrt(coefavg);
+
+          /* coefficient eta - Ntot [m^(-3)] */
+          const cs_real_t coefeta1
+            = cs::pow3ov2(coefavg)/(2*cs_math_pi*rhowater*a2*ntotal1*1.e6);
+          const cs_real_t coefeta2
+            = cs::pow3ov2(coefavg)/(2*cs_math_pi*rhowater*a2*ntotal2*1.e6);
+          const cs_real_t coefeta3
+            = cs::pow3ov2(coefavg)/(2*cs_math_pi*rhowater*a2*ntotal3*1.e6);
+
+          /* max supersaturation (smax) */
+          cs_real_t x_tp1 = foncf1*cs::pow3ov2(coefzeta/coefeta1);
+          cs_real_t x_tp2 = cs::pow3ov4((sursat1*sursat1)/(coefeta1+3*coefzeta));
+          cs_real_t smax1 = (x_tp1 + foncg1*x_tp2)/sursat1/sursat1;
+
+          x_tp1 = foncf2*cs::pow3ov2(coefzeta/coefeta2);
+          x_tp2 = cs::pow3ov4((sursat2*sursat2)/(coefeta2+3*coefzeta));
+          cs_real_t smax2 = (x_tp1 + foncg2*x_tp2)/sursat2/sursat2;
+
+          x_tp1 = foncf3*(cs::pow3ov2(coefzeta/coefeta3));
+          x_tp2 = cs::pow3ov4((sursat3*sursat3)/(coefeta3+3*coefzeta));
+          cs_real_t smax3 = (x_tp1 + foncg3*x_tp2)/sursat3/sursat3;
+
+          cs_real_t smax = 1.0/sqrt(smax3 + smax2 + smax1);
+
+          if ((smax > 1.0) || (sursat1 > 1.0) ||
+              (sursat2 > 1.0) || (sursat3 > 1.0)) {
+            bft_error(__FILE__, __LINE__, 0,
+                      _("%s: Abdul-Razzak and al. model (1998).\n"
+                        " Negative supersaturation."), __func__);
+          }
+
+          cs_real_t f3_ov_sqrt2 = 3.*sqrt(2.);
+          cs_real_t ugauss1 =   (2.*log(sursat1/smax))
+                              / (f3_ov_sqrt2*log(sigaero1));
+          cs_real_t ugauss2 =   (2.*log(sursat2/smax))
+                              / (f3_ov_sqrt2*log(sigaero2));
+          cs_real_t ugauss3 =   (2.*log(sursat3/smax))
+                              / (f3_ov_sqrt2*log(sigaero3));
+
+          const cs_real_t nuc1 = 0.5 * ntotal1 * (1.0-erf(ugauss1));
+          const cs_real_t nuc2 = 0.5 * ntotal2 * (1.0-erf(ugauss2));
+          const cs_real_t nuc3 = 0.5 * ntotal3 * (1.0-erf(ugauss3));
+
+          nuc = nuc1 + nuc2 + nuc3;
+
+        } /* end nucleation model */
+
+        /* 2. Compute difference */
+        nuc = cs::max(nuc - nc[c_id], 0.0);
         nc[c_id] += nuc;
-      }
 
-      /* 3. if qc > 0, w <= 0 and nc = 0,
+      } /* end s_prod > cs_math_epzero */
+
+      /* 3. if qc > 0, s_prod <= 0 and nc = 0,
        * we impose nc > 0 so that the mean volume radius = 10 microns */
       else if (nc[c_id] < cs_math_epzero) {
 
         nc[c_id] =   1.e-6*(3.*rom[c_id]*cpro_liqwt[c_id])
-                   / (4.*cs_math_pi*rhowater*cs_math_pow3(10e-6));
+                   / (4.*cs_math_pi*rhowater*cs::pow3(10e-6));
 
-      } /* end Vel_z > cs_math_epzero*/
+      }
 
     } /* end cpro_liqwt[c_id] > cs_math_epzero */
   }

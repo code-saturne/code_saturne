@@ -383,6 +383,7 @@ static cs_fluid_properties_t  _fluid_properties = {
   .viscl0   = 1.83337e-5,
   .viscv0   = 0.,
   .p0       = 1.01325e5,
+  .p0_prev  = 1.01325e5,
   .pred0    = 0.,
   .xyzp0    = {-1.e30, -1.e30, -1.e30},
   .p0_face_id = -1,

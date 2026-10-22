@@ -1393,6 +1393,10 @@ cs_solve_all()
                          CS_F_(rho)->val,
                          CS_F_(rho_b)->val);
   }
+
+  /* Update reference pressure at previous time step */
+  cs_fluid_properties_t *fluid_props = cs_get_glob_fluid_properties();
+  fluid_props->p0_prev = fluid_props->p0;
 }
 
 /*----------------------------------------------------------------------------*/

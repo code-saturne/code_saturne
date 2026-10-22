@@ -1097,14 +1097,18 @@ R}_{a}T^{2}C_{p}}\frac{\partial F_{rad}}{\partial z}
 lifting \quad	\quad \quad \quad \quad \quad \quad \quad \quad latent	\quad heat \quad	release \quad	radiation
 \end{center}
 \begin{equation}
-=A_{1}w-A_{2}\frac{\dd\bar{q_{l}}}{dt}+A_{4}\frac{\partial F_{rad}}{\partial
-z}
+=A_{1}w_{eff}-A_{2}\frac{\dd\bar{q_{l}}}{dt}+A_{4}\text{cool}_{rad}
 \end{equation}
-where $\xi =$ 0.622 (molecular weight of water/molecular
-weight of air), $g (\si{m s^{-2}})$ is the gravity, $R_{a}$ is the gas constant for
-dry air, $\bar{w} (\si{m s^{-1}})$ is the vertical air velocity, $e_{s} (\si{Pa})$ is
-the saturation vapor pressure water and $F_{rad}$ the net radiation flux $(\si{W
-m^{-2}})$.
+where $\xi$ is the ratio of molecular weights of water over dry air
+($\texttt{mol\_mass\_rat}$), $g = \|\vect{g}\|$ is the gravity acceleration,
+$R_{a}$ is the gas constant for dry air, $e_{s} (\si{Pa})$ is the saturation
+vapor pressure of water, $\text{cool}_{rad} = (\partial T/\partial t)_{rad}$
+is the net radiative temperature cooling rate, and $w_{eff} (\si{m s^{-1}})$
+is the effective vertical velocity accounting for both vertical velocity $w$
+and the time variation of ambient reference pressure $p_0(t)$:
+\begin{equation}
+w_{eff} = w - \frac{1}{\rho g} \frac{\dd p_0}{\dd t}
+\end{equation}
 
 \subsubsection{Abdul-Razzack nucleation scheme}
 
@@ -1135,9 +1139,11 @@ _{i}+3\varsigma } \right)^{3/4} \right],
 With $f_{i}=0.5\exp \left( 2.5\, {ln}^{2}\sigma_{i\, } \right),\, g_{i}=1+0.25\, ln\sigma_{i}$,
 $s_{i}=\frac{2}{\sqrt B_{i} }\left(\frac{A}{3r_{a}} \right)^{3/2}$
 \newline
-and $\varsigma =\frac{2A}{3}\left( \frac{A_{1}w+A_{4}\partial
-F_{rad}/\partial z}{A_{3}} \right)^{1/2}$, $\eta_{i}=\frac{\left[ \left(
-A_{1}w+A_{4}\partial F_{rad}/\partial z \right)/A_{3} \right]^{3/2}}{2\pi
+and
+$\varsigma = \frac{2A}{3}\left(
+\frac{A_{1}w_{eff}+A_{4}\text{cool}_{rad}}{A_{3}} \right)^{1/2}$,
+$\eta_{i}=\frac{\left[ \left(
+A_{1}w_{eff}+A_{4}\text{cool}_{rad} \right)/A_{3} \right]^{3/2}}{2\pi
 \rho_{w}A_{2}N_{ai}}$
 \newline
 where $\rho_{w}$ (kg m$^{-3})$ is the water density, $A_{1}$, $A_{2}$,
