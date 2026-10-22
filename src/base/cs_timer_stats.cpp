@@ -133,7 +133,7 @@ static cs_time_plot_t  *_time_plot = nullptr;
 
 /* Field definitions */
 
-static void (*_timer_stats_breakdown_hook)(void) = nullptr;
+static void (*_timer_stats_finalize_hook)(void) = nullptr;
 
 static int  _n_stats = 0;
 static int  _n_stats_max = 0;
@@ -417,8 +417,8 @@ cs_timer_stats_finalize(void)
 
   _log_performance();
 
-  if (_timer_stats_breakdown_hook != nullptr)
-    _timer_stats_breakdown_hook();
+  if (_timer_stats_finalize_hook != nullptr)
+    _timer_stats_finalize_hook();
 
   for (int i = 0; i < _n_stages; i++)
     CS_FREE(_stage_vals[i]);
@@ -1043,9 +1043,9 @@ cs_timer_stats_get_total_time_by_name(const char *name)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_timer_stats_set_breakdown_hook(void (*hook)(void))
+cs_timer_stats_set_finalize_hook(void (*hook)(void))
 {
-  _timer_stats_breakdown_hook = hook;
+  _timer_stats_finalize_hook = hook;
 }
 
 /*-----------------------------------------------------------------------------*/

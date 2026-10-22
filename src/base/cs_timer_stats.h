@@ -297,7 +297,7 @@ cs_timer_stats_get_total_time_by_name(const char *name);
 /*----------------------------------------------------------------------------*/
 
 extern "C" void
-cs_timer_stats_set_breakdown_hook(void (*hook)(void));
+cs_timer_stats_set_finalize_hook(void (*hook)(void));
 
 /*----------------------------------------------------------------------------*/
 
