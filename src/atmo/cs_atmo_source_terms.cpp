@@ -595,14 +595,13 @@ cs_atmo_source_term(int              f_id,
 
       /* Initialize variables to store source terms for each fields */
 
-      /* Compute r3 */
-      cs_real_t r3;
-      if (nc[cell_id] >= 1) {
+      /* Compute mean volumic radius r3 in meters.
+       * nc is in 1/cm^3, conversion of 1e6 passes from 1/cm^3 to 1/m^3 */
+      const cs_real_t nc_to_m3 = 1.e6; // convert from 1/cm^3 to 1/m^3
+      cs_real_t r3 = 0.;
+      if (nc[cell_id] >= 1.) {
         r3 = cbrt((0.75*rho_h[cell_id]*yc[cell_id])
-                          / (cs_math_pi*rho_l*nc[cell_id]));
-      }
-      else {
-        r3 = 0.;
+                  / (cs_math_pi*rho_l*nc[cell_id]*nc_to_m3));
       }
 
       /* Autoconversion */
