@@ -176,9 +176,15 @@ cs_initialize_fields_stage_0(void)
   CS_F_(rho)->get_val_s().set_to_val(ctx, fluid_props->ro0);
   CS_F_(rho_b)->get_val_s().set_to_val(ctx, fluid_props->ro0);
 
-  /* Boussinesq (set to impossible value at this stage) */
+  /* Boussinesq */
   if (cs_glob_velocity_pressure_model->idilat == 0) {
-    cs_field_by_name("thermal_expansion")->get_val_s().set_to_val(ctx, -1.);
+    cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
+    if (f_beta != nullptr) {
+      cs_span<cs_real_t> beta_val = f_beta->get_val_s();
+      const cs_real_t beta_init
+        = (fluid_props->beta0 > 0.) ? fluid_props->beta0 : -1.;
+      beta_val.set_to_val(ctx, beta_init);
+    }
   }
 
   /* Molecular viscosity */

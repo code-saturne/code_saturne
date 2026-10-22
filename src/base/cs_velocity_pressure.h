@@ -250,6 +250,18 @@ cs_velocity_pressure_set_solid(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Enable Boussinesq approximation and optionally set reference thermal
+ *        expansion coefficient.
+ *
+ * \param[in] beta0  reference thermal expansion coefficient (1/K), or <= 0
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_velocity_pressure_set_boussinesq(double beta0);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print the stokes model parameters to setup.log.
  */
 /*----------------------------------------------------------------------------*/

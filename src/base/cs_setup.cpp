@@ -1427,8 +1427,8 @@ _additional_fields_stage_1(void)
   }
 
   /* Add thermal expansion field for Boussinesq approximation
-     if not already added */
-  if (vp_m->idilat == 0) {
+     if not already added and thermal model is active */
+  if (vp_m->idilat == 0 && cs_thermal_model_field() != nullptr) {
     cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
     if (f_beta == nullptr) {
       _add_property_field("thermal_expansion",

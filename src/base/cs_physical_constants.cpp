@@ -49,6 +49,8 @@
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_units.h"
+#include "base/cs_thermal_model.h"
+#include "base/cs_velocity_pressure.h"
 #include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
@@ -296,6 +298,11 @@
         Always useful. This was previously only available through the GUI,
         so in most cases, is set to 1.
 
+  \var  cs_fluid_properties_t::beta0
+        reference thermal expansion coefficient (1/K)
+
+        Used with the Boussinesq approximation when \ref idilat = 0.
+
   \var  cs_fluid_properties_t::r_pg_cnst
         Perfect Gas specific constant in J/kg/K
 
@@ -395,6 +402,7 @@ static cs_fluid_properties_t  _fluid_properties = {
   .cvl      = 4185.0,
   .l00      = 3118235.0,
   .lambda0  = 1.,
+  .beta0    = -1.,
   .r_pg_cnst = 287.058, /* dry air perfect gas constant J/kg/K */
   .r_v_cnst = 461.52272377, /* Water vapor gas constant J/kg/K */
   .rvsra    = 1.607768, /* Note: Rv = 461.52272377 J/mol/K */
@@ -571,6 +579,16 @@ cs_fluid_properties_log_setup(void)
   cs_log_printf(CS_LOG_SETUP,
                 _("    ivivar:    %s\n"),
                 _(ivivar_value_str[cs_glob_fluid_properties->ivivar]));
+
+  if (   cs_glob_fluid_properties->beta0 > 0.
+      || (   cs_glob_velocity_pressure_model->idilat == 0
+          && cs_thermal_model_field() != nullptr)) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    beta0:       %14.5e %-10s (Ref. thermal expansion)\n"),
+       cs_glob_fluid_properties->beta0,
+       cs_fluid_properties_get_unit("beta0"));
+  }
 }
 
 /*----------------------------------------------------------------------------*/

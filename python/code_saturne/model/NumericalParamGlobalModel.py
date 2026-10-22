@@ -350,6 +350,11 @@ class NumericalParamGlobalModel(Model):
         else:
             node['choice'] = value
 
+        if value == 'boussi':
+            from code_saturne.model.FluidCharacteristicsModel \
+                import FluidCharacteristicsModel
+            FluidCharacteristicsModel(self.case).addThermalExpansionProperty()
+
 
 #-------------------------------------------------------------------------------
 # NumericalParamEquat test case
@@ -488,6 +493,21 @@ class NumericalParamGlobalTestCase(ModelTest):
                 'Could not set time scheme order in NumericalParamGlobalModel'
         assert model.getTimeSchemeOrder() == 2,\
                 'Could not get time scheme order in NumericalParamGlobalModel'
+
+    def checkSetandGetDensityVar(self):
+        """
+        Check setting density variation to boussi creates thermal_expansion.
+        """
+        model = NumericalParamGlobalModel(self.case)
+        assert model.getDensityVar() == 'default'
+        model.setDensityVar('boussi')
+        assert model.getDensityVar() == 'boussi'
+        from code_saturne.model.FluidCharacteristicsModel \
+            import FluidCharacteristicsModel
+        fcm = FluidCharacteristicsModel(self.case)
+        assert fcm.boussi_state == 'on'
+        assert ('thermal_expansion', 'Beta') in fcm.lst
+        assert fcm.getInitialValueBeta() == 0.00341
 
 
 def suite():

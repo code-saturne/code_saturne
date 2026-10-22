@@ -86,6 +86,7 @@ typedef struct {
   double        cvl;          /* reference specific for liquid water */
   double        l00;          /* Latent heat  */
   double        lambda0;      /* reference heat conductivity */
+  double        beta0;        /* reference thermal expansion coefficient */
 
   double        r_pg_cnst;    /* perfect gas specific constant in J/kg/K */
   double        r_v_cnst;     /* water vapor specific constant in J/kg/K */

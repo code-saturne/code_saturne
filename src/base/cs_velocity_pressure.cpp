@@ -53,6 +53,7 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
+#include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_porous_model.h"
 #include "mesh/cs_mesh_location.h"
@@ -425,6 +426,25 @@ cs_velocity_pressure_set_solid(void)
       _velocity_pressure_model.fluid_solid = true;
       break;
     }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Enable Boussinesq approximation and optionally set reference thermal
+ *        expansion coefficient.
+ *
+ * \param[in] beta0  reference thermal expansion coefficient (1/K), or <= 0
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_velocity_pressure_set_boussinesq(double beta0)
+{
+  _velocity_pressure_model.idilat = 0;
+  if (beta0 > 0.) {
+    cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
+    fp->beta0 = beta0;
   }
 }
 

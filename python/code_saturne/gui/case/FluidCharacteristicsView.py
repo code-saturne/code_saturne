@@ -183,6 +183,10 @@ thermal_conductivity = 4.431e-4 * temperature + 5.334e-2;
 thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 """
 
+    thermal_expansion="""# ideal gas at reference temperature
+thermal_expansion = 1.0 / (temperature + 273.15);
+"""
+
     def __init__(self, parent=None): #, case):
         """
         Constructor
@@ -245,6 +249,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelSigma     = ComboModel(self.comboBoxSigma,    1, 1)
         self.modelCp        = ComboModel(self.comboBoxCp,       2, 1)
         self.modelAl        = ComboModel(self.comboBoxAl,       n_al, 1)
+        self.modelBeta      = ComboModel(self.comboBoxBeta,     2, 1)
         self.modelDiff      = ComboModel(self.comboBoxDiff,     2, 1)
         self.modelNameDiff  = ComboModel(self.comboBoxNameDiff, 1, 1)
         self.modelViscv0    = ComboModel(self.comboBoxViscv0,   3, 1)
@@ -295,6 +300,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelAl.addItem(self.tr('user law'), 'user_law')
         if n_al == 3:
             self.modelAl.addItem(self.tr('user law, anisotropic'), 'user_law_anisotropic')
+
+        self.modelBeta.addItem(self.tr('constant'), 'constant')
+        self.modelBeta.addItem(self.tr('user law'), 'user_law')
 
         self.modelDiff.addItem(self.tr('constant'), 'constant')
         self.modelDiff.addItem(self.tr('user law'), 'user_law')
@@ -352,6 +360,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         validatorSigma  = DoubleValidator(self.lineEditSigma,  min = 0.0)
         validatorCp     = DoubleValidator(self.lineEditCp,     min = 0.0)
         validatorAl     = DoubleValidator(self.lineEditAl,     min = 0.0)
+        validatorBeta   = DoubleValidator(self.lineEditBeta,   min = 0.0)
         validatorDiff   = DoubleValidator(self.lineEditDiff,   min = 0.0)
         validatorViscv0 = DoubleValidator(self.lineEditViscv0, min = 0.0)
         validatorDiftl0 = DoubleValidator(self.lineEditDiftl0, min = 0.0)
@@ -364,6 +373,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         validatorMu2.setExclusiveMin(True)
         validatorCp.setExclusiveMin(True)
         validatorAl.setExclusiveMin(True)
+        validatorBeta.setExclusiveMin(True)
         validatorDiff.setExclusiveMin(True)
         validatorDiftl0.setExclusiveMin(True)
 
@@ -376,6 +386,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.lineEditSigma.setValidator(validatorSigma)
         self.lineEditCp.setValidator(validatorCp)
         self.lineEditAl.setValidator(validatorAl)
+        self.lineEditBeta.setValidator(validatorBeta)
         self.lineEditDiff.setValidator(validatorDiff)
         self.lineEditViscv0.setValidator(validatorViscv0)
         self.lineEditDiftl0.setValidator(validatorDiftl0)
@@ -393,6 +404,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.comboBoxSigma.currentIndexChanged[int].connect(self.slotStateSigma)
         self.comboBoxCp.currentIndexChanged[int].connect(self.slotStateCp)
         self.comboBoxAl.currentIndexChanged[int].connect(self.slotStateAl)
+        self.comboBoxBeta.currentIndexChanged[int].connect(self.slotStateBeta)
         self.comboBoxDiff.currentIndexChanged[int].connect(self.slotStateDiff)
         self.comboBoxNameDiff.activated[int].connect(self.slotNameDiff)
         self.comboBoxViscv0.currentIndexChanged[int].connect(self.slotStateViscv0)
@@ -408,6 +420,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.lineEditSigma.textChanged[str].connect(self.slotSigma)
         self.lineEditCp.textChanged[str].connect(self.slotCp)
         self.lineEditAl.textChanged[str].connect(self.slotAl)
+        self.lineEditBeta.textChanged[str].connect(self.slotBeta)
         self.lineEditDiff.textChanged[str].connect(self.slotDiff)
         self.lineEditDiftl0.textChanged[str].connect(self.slotDiftl0)
         self.lineEditViscv0.textChanged[str].connect(self.slotViscv0)
@@ -415,6 +428,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.pushButtonMu.clicked.connect(self.slotFormulaMu)
         self.pushButtonCp.clicked.connect(self.slotFormulaCp)
         self.pushButtonAl.clicked.connect(self.slotFormulaAl)
+        self.pushButtonBeta.clicked.connect(self.slotFormulaBeta)
         self.pushButtonDiff.clicked.connect(self.slotFormulaDiff)
         self.pushButtonViscv0.clicked.connect(self.slotFormulaViscv0)
 
@@ -546,6 +560,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         # combustion
         self.groupBoxDiftl0.hide()
 
+        # Boussinesq
+        self.groupBoxBeta.hide()
+
         if self.scalar == "":
             self.groupBoxDiff.hide()
         else :
@@ -582,6 +599,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.groupBoxMu.hide()
             self.groupBoxDiftl0.hide()
             self.groupBoxDiff.hide()
+            self.groupBoxBeta.hide()
 
         # Standard Widget initialization
         for tag, symbol in self.mdl.lst:
@@ -639,10 +657,18 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             __line.setText(str(self.mdl.getInitialValue(tag)))
 
 
-        # If no thermal scalar, hide specific heat and thermal conductivity.
+        # If no thermal scalar, hide Cp and thermal conductivity.
         if mdl_thermal == 'off':
             self.groupBoxCp.hide()
             self.groupBoxAl.hide()
+
+        # Boussinesq thermal expansion (requires thermal and no HTS)
+        if self.mdl.boussi_state == 'on' \
+           and mdl_thermal != 'off' \
+           and self.mdl.hts_state == 'off':
+            self.groupBoxBeta.setVisible(is_main_zone)
+        else:
+            self.groupBoxBeta.hide()
 
         if mdl_gas != 'off' or mdl_coal != 'off':
             self.groupBoxDiftl0.setVisible(is_main_zone)
@@ -755,6 +781,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         add/suppress thermo tables for each properties
         """
         for tag, symbol in self.mdl.lst:
+            if tag == 'thermal_expansion':
+                continue
             __model  = getattr(self, "model" + symbol)
             if self.mdl.getMaterials() == "user_material":
                 __model.disableItem(str_model='thermal_law')
@@ -964,6 +992,15 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
 
     @Slot(int)
+    def slotStateBeta(self, idx):
+        """
+        Method to call 'getState' with correct arguments for 'Beta'
+        """
+        text = self.comboBoxBeta.currentText()
+        self.__changeChoice(str(text), 'Beta', 'thermal_expansion')
+
+
+    @Slot(int)
     def slotStateDiff(self, idx):
         """
         Method to set diffusion choice for the coefficient
@@ -1054,6 +1091,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 exp = self.mdl.getFormula('volume_viscosity', self.zone_id)
             elif sym == "Al":
                 exp = self.mdl.getFormula('thermal_conductivity', self.zone_id)
+            elif sym == "Beta":
+                exp = self.mdl.getFormula('thermal_expansion', self.zone_id)
             elif sym == "Diff":
                 name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
                 exp = self.mdl.m_sca.getDiffFormula(self.scalar, self.zone_id)
@@ -1173,6 +1212,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if self.lineEditAl.validator().state == QValidator.State.Acceptable:
             al = from_qvariant(text, float)
             self.mdl.setInitialValueCond(float(al))
+
+
+    @Slot(str)
+    def slotBeta(self, text):
+        """
+        Update the thermal expansion coefficient
+        """
+        if self.lineEditBeta.validator().state == QValidator.State.Acceptable:
+            beta = from_qvariant(text, float)
+            self.mdl.setInitialValueBeta(float(beta))
 
 
     @Slot(str)
@@ -1365,6 +1414,43 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.mdl.setFormula('thermal_conductivity', str(result), self.zone_id)
             self.pushButtonAl.setToolTip(result)
             self.pushButtonAl.setStyleSheet("background-color: green")
+
+
+    @Slot()
+    def slotFormulaBeta(self):
+        """
+        User formula for thermal expansion
+        """
+        exp, req, sca, symbols_beta = \
+            self.mdl.getFormulaPropertyComponents('thermal_expansion',
+                                                  self.zone_id)
+
+        self.m_th = ThermalScalarModel(self.case)
+        s = self.m_th.getThermalScalarName()
+        mdl = self.m_th.getThermalScalarModel()
+        if mdl == "temperature_celsius":
+            TempInContext = "(" + s + " + 273.15)"
+            exa = (FluidCharacteristicsView.thermal_expansion
+                   .replace("temperature", TempInContext))
+        else:
+            exa = FluidCharacteristicsView.thermal_expansion
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'vol',
+                                zone_name     = self.zone_name,
+                                variable_name = 'thermal_expansion',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symbols_beta,
+                                known_fields  = sca,
+                                examples      = exa)
+
+        if dialog.exec():
+            result = dialog.get_result()
+            log.debug("slotFormulaBeta -> %s" % str(result))
+            self.mdl.setFormula('thermal_expansion', str(result), self.zone_id)
+            self.pushButtonBeta.setToolTip(result)
+            self.pushButtonBeta.setStyleSheet("background-color: green")
 
 
     @Slot()

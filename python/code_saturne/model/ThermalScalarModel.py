@@ -225,6 +225,14 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
                     self.deleteThermalScalar(node['name'])
             self._setNewThermalScalar(thermal_scalar)
 
+            from code_saturne.model.NumericalParamGlobalModel \
+                import NumericalParamGlobalModel
+            if NumericalParamGlobalModel(self.case).getDensityVar() == 'boussi':
+                from code_saturne.model.FluidCharacteristicsModel \
+                    import FluidCharacteristicsModel
+                fcm = FluidCharacteristicsModel(self.case)
+                fcm.addThermalExpansionProperty()
+
         else:
             node = self.node_therm.xmlGetNode('variable', type='thermal')
             if node:

@@ -223,6 +223,10 @@ class FluidCharacteristicsModel(Variables, Model):
                                           output="Thermal conductivity",
                                           ref_tag="lambda0",
                                           unit="W/m/K")
+        self.properties_info.add_property(name="thermal_expansion",
+                                          output="Thermal expansion",
+                                          ref_tag="beta0",
+                                          unit="1/K")
         self.properties_info.add_property(name="volume_viscosity",
                                           output="Volume viscosity",
                                           ref_tag="viscv0",
@@ -289,6 +293,16 @@ class FluidCharacteristicsModel(Variables, Model):
         self.node_cond = None
         self.node_vol_visc = None
         self.node_dyn = None
+        self.node_beta = None
+
+        # Check if Boussinesq approximation is active
+        from code_saturne.model.NumericalParamGlobalModel \
+            import NumericalParamGlobalModel
+        npm = NumericalParamGlobalModel(self.case)
+        if npm.getDensityVar() == 'boussi':
+            self.boussi_state = 'on'
+        else:
+            self.boussi_state = 'off'
 
         # Get surface tension for Vof model
 
@@ -324,6 +338,14 @@ class FluidCharacteristicsModel(Variables, Model):
             self.node_dyn = self.setNewFluidProperty(self.node_fluid, \
                                                      'dynamic_diffusion')
             self.node_lst.append(self.node_dyn)
+
+        # Define thermal expansion for Boussinesq model
+        if self.boussi_state == 'on' \
+           and self.tsm != "off" and self.hts_state == 'off':
+            self.lst.append(('thermal_expansion', 'Beta'))
+            self.node_beta = self.setNewFluidProperty(self.node_fluid, \
+                                                      'thermal_expansion')
+            self.node_lst.append(self.node_beta)
 
         # Build scalars list
 
@@ -398,6 +420,11 @@ class FluidCharacteristicsModel(Variables, Model):
         # Compressible properties
         if self.__check_node_on(self.node_comp):
             l.append('volume_viscosity')
+
+        # Boussinesq property
+        if self.boussi_state == 'on' \
+           and self.tsm != 'off' and self.hts_state == 'off':
+            l.append('thermal_expansion')
 
         if first_elt in l:
             l.insert(0, l.pop(l.index(first_elt)))
@@ -480,6 +507,7 @@ class FluidCharacteristicsModel(Variables, Model):
            default['molecular_viscosity'] = default['molecular_viscosity_1']
         default['specific_heat']          = 1017.24
         default['thermal_conductivity']   = 0.02495
+        default['thermal_expansion']      = 0.00341
         default['dynamic_diffusion']      = 0.01
         default['volume_viscosity']       = 0.
         default['material']               = "user_material"
@@ -795,6 +823,7 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         self.isInList(tag, ('density', 'molecular_viscosity', 'surface_tension',
                             'specific_heat', 'thermal_conductivity',
+                            'thermal_expansion',
                             'volume_viscosity', 'dynamic_diffusion'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
         pp = node.xmlGetDouble('initial_value')
@@ -827,6 +856,7 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         self.isInList(tag, ('density', 'molecular_viscosity', 'surface_tension',
                             'specific_heat', 'thermal_conductivity',
+                            'thermal_expansion',
                             'volume_viscosity', 'dynamic_diffusion'))
         if tag != 'volume_viscosity' and tag != 'surface_tension':
             self.isGreater(val, 0.)
@@ -956,6 +986,45 @@ class FluidCharacteristicsModel(Variables, Model):
 
 
     @Variables.noUndo
+    def getInitialValueBeta(self):
+        """Return initial value of thermal expansion"""
+        return self.getInitialValue('thermal_expansion')
+
+
+    @Variables.undoLocal
+    def setInitialValueBeta(self, val):
+        """Put initial value for thermal expansion"""
+        self.setInitialValue('thermal_expansion', val)
+
+
+    @Variables.undoLocal
+    def addThermalExpansionProperty(self):
+        """
+        Ensure thermal_expansion property is present in fluid_properties
+        when both Boussinesq and a fluid thermal model are active.
+        """
+        if self.tsm == 'off' or self.hts_state != 'off':
+            return
+        self.boussi_state = 'on'
+        if self.node_fluid:
+            node_beta = self.node_fluid.xmlGetNode('property',
+                                                   name='thermal_expansion')
+            dft = self.defaultFluidCharacteristicsValues()
+            val = dft['thermal_expansion']
+            if not node_beta:
+                self.node_beta = self.setNewFluidProperty(self.node_fluid,
+                                                          'thermal_expansion')
+                self.setInitialValue('thermal_expansion', val)
+                if ('thermal_expansion', 'Beta') not in self.lst:
+                    self.lst.append(('thermal_expansion', 'Beta'))
+                if self.node_beta not in self.node_lst:
+                    self.node_lst.append(self.node_beta)
+            else:
+                if not node_beta.xmlGetChildNode('initial_value'):
+                    self.setInitialValue('thermal_expansion', val)
+
+
+    @Variables.noUndo
     def getFormulaTry(self, tag, zone="1"):
         """
         Return a formula for I{tag} 'density', 'molecular_viscosity',
@@ -965,6 +1034,7 @@ class FluidCharacteristicsModel(Variables, Model):
         self.isInList(tag, ('density', 'dynamic_diffusion',
                             'molecular_viscosity',
                             'specific_heat', 'thermal_conductivity',
+                            'thermal_expansion',
                             'volume_viscosity'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
         if zone != "1":
@@ -1270,6 +1340,27 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         'Could not set initial value of thermal_conductivity'
         assert mdl.getInitialValueCond() == 456.9,\
         'Could not get initial value of thermal_conductivity'
+
+    def checkSetandGetInitialValueBeta(self):
+        """
+        Check whether initial value for thermal_expansion could be set/get
+        """
+        from code_saturne.model.NumericalParamGlobalModel \
+            import NumericalParamGlobalModel
+        NumericalParamGlobalModel(self.case).setDensityVar('boussi')
+        mdl = FluidCharacteristicsModel(self.case)
+        assert mdl.boussi_state == 'on'
+        assert ('thermal_expansion', 'Beta') in mdl.lst
+        mdl.setInitialValueBeta(0.00341)
+        assert mdl.getInitialValueBeta() == 0.00341,\
+            'Could not get initial value of thermal_expansion'
+        doc = '''<property choice="constant"
+                           label="Beta"
+                           name="thermal_expansion">
+                    <initial_value>0.00341</initial_value>
+                 </property>'''
+        assert mdl.node_beta == self.xmlNodeFromString(doc),\
+            'Could not set initial value of thermal_expansion'
 
     def checkSetandGetPropertyMode(self):
         """Check whether choice constant or variable could be set and get"""

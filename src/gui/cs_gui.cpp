@@ -4276,6 +4276,10 @@ cs_gui_physical_properties(void)
                          &phys_pp->t0,
                          &phys_pp->cp0);
 
+  if (   cs_glob_velocity_pressure_model->idilat == 0
+      && cs_thermal_model_field() != nullptr)
+    cs_gui_properties_value("thermal_expansion", &(phys_pp->beta0));
+
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
     cs_gui_properties_value("volume_viscosity", &phys_pp->viscv0);
     double visls_0 = -1;
@@ -6004,6 +6008,18 @@ cs_gui_physical_variable(void)
           if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
             _physical_property(c, z);
         }
+      }
+    }
+  }
+
+  /* law for thermal expansion (Boussinesq model) */
+  if (cs_glob_velocity_pressure_model->idilat == 0) {
+    cs_field_t *c = cs_field_by_name_try("thermal_expansion");
+    if (n_zones_pp > 0 && c != nullptr) {
+      for (int z_id = 0; z_id < n_zones; z_id++) {
+        const cs_zone_t *z = cs_volume_zone_by_id(z_id);
+        if (z->type & CS_VOLUME_ZONE_PHYSICAL_PROPERTIES)
+          _physical_property(c, z);
       }
     }
   }

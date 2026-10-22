@@ -1072,24 +1072,39 @@ _ext_forces(const cs_mesh_t                *m,
 
   /* Boussinesq approximation */
   if (cs_glob_velocity_pressure_model->idilat == 0) {
-    const cs_real_t *cvar_t = cs_thermal_model_field()->val;
-    const cs_real_t *cpro_beta = cs_field_by_name("thermal_expansion")->val;
+    const cs_field_t *f_th = cs_thermal_model_field();
+    const cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
 
-    cs_real_t tref = fp->t0;
-    /* for atmospheric flows, variable is potential temperature */
-    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY) {
-      const cs_real_t rscp = fp->r_pg_cnst/fp->cp0;
-      tref = fp->t0*pow(cs_glob_atmo_constants->ps/fp->p0, rscp);
+    if (f_th != nullptr && f_beta != nullptr) {
+      const auto cvar_t = f_th->get_val_s();
+      const auto cpro_beta = f_beta->get_val_s();
+
+      cs_real_t tref = fp->t0;
+      /* for atmospheric flows, variable is potential temperature */
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC]
+          > CS_ATMO_CONSTANT_DENSITY) {
+        const cs_real_t rscp = fp->r_pg_cnst/fp->cp0;
+        tref = fp->t0*pow(cs_glob_atmo_constants->ps/fp->p0, rscp);
+      }
+
+      if (has_disable_flag) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          const int c_act = 1 - c_disable_flag[c_id];
+          const cs_real_t drom
+            = -crom[c_id]*cpro_beta[c_id]*(cvar_t[c_id] - tref)*c_act;
+          for (cs_lnum_t ii = 0; ii < 3; ii++)
+            dfrcxt[c_id][ii] = drom*gxyz[ii] - frcxt[c_id][ii]*c_act;
+        });
+      }
+      else {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          const cs_real_t drom
+            = -crom[c_id]*cpro_beta[c_id]*(cvar_t[c_id] - tref);
+          for (cs_lnum_t ii = 0; ii < 3; ii++)
+            dfrcxt[c_id][ii] = drom*gxyz[ii] - frcxt[c_id][ii];
+        });
+      }
     }
-
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      const int ind = has_disable_flag * c_id;
-      const int c_act = (1 - (has_disable_flag * c_disable_flag[ind]));
-      const cs_real_t drom
-        = -crom[c_id]*cpro_beta[c_id]*(cvar_t[c_id] - tref)*c_act;
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        dfrcxt[c_id][ii] = drom*gxyz[ii] - frcxt[c_id][ii]*c_act;
-    });
   }
 
   else {
@@ -2339,25 +2354,32 @@ _velocity_prediction(const cs_mesh_t             *m,
   }
   /* Boussinesq approximation */
   else if (vp_model->idilat == 0) {
+    const cs_field_t *f_th = cs_thermal_model_field();
+    const cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
 
-    /* FIXME make it dependant on the scalar and use coupled_with_vel_p field */
-    const cs_real_t *cvar_t = cs_thermal_model_field()->val;
-    const cs_real_t *cpro_beta = cs_field_by_name("thermal_expansion")->val;
+    if (f_th != nullptr && f_beta != nullptr) {
+      /* FIXME make it dependant on the scalar and use coupled_with_vel_p
+         field */
+      const auto cvar_t = f_th->get_val_s();
+      const auto cpro_beta = f_beta->get_val_s();
 
-    /* Delta rho = - rho_0 beta (T-T0) */
-    cs_real_t tref = fp->t0;
-    /* for atmospheric flows, variable is potential temperature */
-    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY) {
-      const cs_real_t rscp = fp->r_pg_cnst/fp->cp0;
-      tref = fp->t0*pow(cs_glob_atmo_constants->ps/fp->p0, rscp);
+      /* Delta rho = - rho_0 beta (T-T0) */
+      cs_real_t tref = fp->t0;
+      /* for atmospheric flows, variable is potential temperature */
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC]
+          > CS_ATMO_CONSTANT_DENSITY) {
+        const cs_real_t rscp = fp->r_pg_cnst/fp->cp0;
+        tref = fp->t0*pow(cs_glob_atmo_constants->ps/fp->p0, rscp);
+      }
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        const cs_real_t drom
+          = -crom[c_id]*cpro_beta[c_id]*(cvar_t[c_id] - tref);
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          trav[c_id][ii] +=   (drom*gxyz[ii] - cpro_gradp[c_id][ii])
+                            * cell_f_vol[c_id];
+      });
     }
-
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      const cs_real_t drom = -crom[c_id]*cpro_beta[c_id]*(cvar_t[c_id] - tref);
-      for (cs_lnum_t ii = 0; ii < 3; ii++)
-        trav[c_id][ii] +=   (drom*gxyz[ii] - cpro_gradp[c_id][ii])
-                          * cell_f_vol[c_id];
-    });
 
   }
   else {

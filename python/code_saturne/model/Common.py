@@ -103,6 +103,7 @@ def dicoLabel(name):
                             ('surface_tension',               "TenSurf",    "SurfTen"),
                             ('specific_heat',                 "ChSpec",     "SpecHeat"),
                             ('thermal_conductivity',          "CondTherm",  "ThermalCond"),
+                            ('thermal_expansion',             "DilatTherm", "Beta"),
                             ('dynamic_diffusion',             "DynDiff",    "DiffDyn"),
                             ('volume_viscosity',              "VolVisc",    "VolVisc"),
                             ('local_time_step',               "pdtlocal",   "LocalTime"),

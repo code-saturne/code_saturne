@@ -302,7 +302,8 @@ cs_physical_unit_get_default(const char  *name)
            || strcmp(name, "lambda0") == 0)
     return cs_physical_unit_define("W/(m.K)", nullptr);
 
-  else if (strcmp(name, "thermal_expansion") == 0)
+  else if (   strcmp(name, "thermal_expansion") == 0
+           || strcmp(name, "beta0") == 0)
     return cs_physical_unit_define("1/K", nullptr);
 
   else if (strcmp(name, "rho_k_prev") == 0)
