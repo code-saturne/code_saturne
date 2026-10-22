@@ -563,8 +563,8 @@ _check_log_scalar_diff(cs_dispatch_context &ctx,
       cs_real_t vismax = -cs_math_big_r, vismin = cs_math_big_r;
 
       if (ifcvsl >= 0) {
-        vismin = visminmax[reduce_idx];
-        vismax = visminmax[reduce_idx + reduce_count];
+        vismin =  visminmax[reduce_idx];
+        vismax = -visminmax[reduce_idx + reduce_count];
         reduce_idx++;
       }
       else {
