@@ -1855,6 +1855,7 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
     _diag_dom_csr(matrix, dd);
     break;
   case CS_MATRIX_MSR:
+  case CS_MATRIX_DIST:
     if (matrix->db_size == 1)
       _diag_dom_dist(matrix, dd);
     else
