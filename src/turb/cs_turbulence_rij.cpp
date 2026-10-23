@@ -2914,22 +2914,25 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
                                      0., 0., 0.,
                                      0., 0., 0.};
 
+#if 0
       /* Compute inverse matrix of R^n
          (scaling by tr(R) for numerical stability) */
       cs_real_t oo_matrn[6];
       cs_math_sym_33_inv_cramer(matrn, oo_matrn);
       for (int ij = 0; ij < 6; ij++)
         oo_matrn[ij] /= tke;
-
+#endif
 
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
           const cs_lnum_t ij = t2v[i][j];
+#if 0
           cs_real_t nink_invrkj = 0.;
           for (cs_lnum_t k = 0; k < 3; k++) {
             const cs_lnum_t kj = t2v[k][j];
             nink_invrkj += xnal[i] * xnal[k] * oo_matrn[kj];
           }
+#endif
           /* Rotation in Pij and Coriolis is implicited */
           implmat2add[i][j] = gradv[c_id][i][j] - ccorio * matrot[i][j]
                            // 2 beta2 (S R + R S)
