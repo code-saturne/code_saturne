@@ -908,7 +908,7 @@ cs_lagr_injection(int        time_id,
     cs_lagr_zone_data_t *zd = zda[i_loc];
     int fr_size = zd->n_zones * n_stats;
     for (int i = 0; i < fr_size; i++)
-      zd->particle_mass_flow[i] = 0;
+      zd->particle_mass_balance[i] = 0;
 
     if (zd->particle_heat_flow != nullptr)
       for (int i = 0; i < fr_size; i++)
@@ -1334,12 +1334,12 @@ cs_lagr_injection(int        time_id,
           cs_real_t mass_flow = ( s_weight
                                  * p_set.attr_real(p_id, CS_LAGR_MASS));
 
-          zd->particle_mass_flow[z_id*n_stats] += mass_flow;
+          zd->particle_mass_balance[z_id*n_stats] += mass_flow;
 
           if (n_stats > 1) {
             int class_id = p_set.attr_lnum(p_id, CS_LAGR_STAT_CLASS);
             if (class_id > 0 && class_id < n_stats)
-              zd->particle_mass_flow[z_id*n_stats + class_id] += mass_flow;
+              zd->particle_mass_balance[z_id*n_stats + class_id] += mass_flow;
           }
 
           if (zd->particle_heat_flow != nullptr) {

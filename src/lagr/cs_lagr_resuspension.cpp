@@ -150,6 +150,58 @@ _add_resuspension_event(cs_lagr_event_set_t     *events,
   events->n_events += 1;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update boundary mass balance when a particle is resuspended
+ *
+ * \param[in]  p_set    reference to particle set
+ * \param[in]  p_id     particle id
+ * \param[in]  face_id  boundary face id
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_resuspension_balance(cs_lagr_particle_set_t  &p_set,
+                             cs_lnum_t                p_id,
+                             cs_lnum_t                face_id)
+{
+  if (face_id < 0)
+    return;
+
+  cs_lagr_zone_data_t *bdy_conditions = cs_lagr_get_boundary_conditions();
+  if (bdy_conditions == nullptr)
+    return;
+
+  const cs_lnum_t *b_face_zone_id = cs_boundary_zone_face_zone_id();
+  cs_lnum_t b_z_id = (b_face_zone_id != nullptr) ? b_face_zone_id[face_id] : 0;
+  int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
+
+  cs_real_t fr = p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT)
+               * p_set.attr_real(p_id, CS_LAGR_MASS);
+
+  /* Particle is resuspended from wall back into fluid: increase mass balance */
+  bdy_conditions->particle_mass_balance[b_z_id * n_stats] += fr;
+
+  if (n_stats > 1) {
+    int class_id = p_set.attr_lnum(p_id, CS_LAGR_STAT_CLASS);
+    if (class_id > 0 && class_id < n_stats)
+      bdy_conditions->particle_mass_balance[b_z_id * n_stats + class_id] += fr;
+  }
+
+  if (bdy_conditions->particle_heat_flow != nullptr) {
+    cs_real_t hf = fr
+      * p_set.attr_real(p_id, CS_LAGR_TEMPERATURE)
+      * p_set.attr_real(p_id, CS_LAGR_CP);
+    bdy_conditions->particle_heat_flow[b_z_id * n_stats] += hf;
+
+    if (n_stats > 1) {
+      int class_id = p_set.attr_lnum(p_id, CS_LAGR_STAT_CLASS);
+      if (class_id > 0 && class_id < n_stats)
+        bdy_conditions->particle_heat_flow[b_z_id * n_stats + class_id] += hf;
+    }
+  }
+}
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -334,6 +386,8 @@ cs_lagr_resuspension(void)
               p_set.n_part_resusp += 1;
               p_set.weight_resusp += p_stat_weight;
 
+              _update_resuspension_balance(p_set, p_id, face_id);
+
               if (events != nullptr)
                 _add_resuspension_event(events,
                                         &p_set,
@@ -395,6 +449,8 @@ cs_lagr_resuspension(void)
                 /* Update of the number and weight of resuspended particles */
                 p_set.n_part_resusp += 1;
                 p_set.weight_resusp += p_stat_weight;
+
+                _update_resuspension_balance(p_set, p_id, face_id);
 
                 if (events != nullptr)
                   _add_resuspension_event(events,
@@ -519,6 +575,8 @@ cs_lagr_resuspension(void)
             /* Update of the number and weight of resuspended particles     */
             p_set.n_part_resusp += 1;
             p_set.weight_resusp += p_stat_weight;
+
+            _update_resuspension_balance(p_set, p_id, face_id);
 
             if (events != nullptr)
               _add_resuspension_event(events,

@@ -711,7 +711,7 @@ cs_lagr_log_iteration(void)
 
   for (int z_id = 0; z_id < bdy_cond->n_zones; z_id++) {
 
-    if (cs::abs(bdy_cond->particle_mass_flow[z_id*n_stats]) > 0.) {
+    if (cs::abs(bdy_cond->particle_mass_balance[z_id*n_stats]) > 0.) {
 
       const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
       const char *p_bcond;
@@ -747,16 +747,16 @@ cs_lagr_log_iteration(void)
         cs_log_printf(CS_LOG_DEFAULT,
                       "   %3d         %12.5e               %s (%s)\n",
                       z_id,
-                      bdy_cond->particle_mass_flow[z_id*n_stats]
+                      bdy_cond->particle_mass_balance[z_id*n_stats]
                       / cs_glob_lagr_time_step->dtp,
                       z->name, p_bcond);
 
         for (int j = 1; j < n_stats; j++) {
-          if (cs::abs(bdy_cond->particle_mass_flow[z_id*n_stats + j]) > 0)
+          if (cs::abs(bdy_cond->particle_mass_balance[z_id*n_stats + j]) > 0)
             cs_log_printf(CS_LOG_DEFAULT,
                           "         %3d   %12.5e\n",
                           j,
-                          bdy_cond->particle_mass_flow[z_id*n_stats + j]
+                          bdy_cond->particle_mass_balance[z_id*n_stats + j]
                           / cs_glob_lagr_time_step->dtp);
 
         }
@@ -766,18 +766,18 @@ cs_lagr_log_iteration(void)
         cs_log_printf(CS_LOG_DEFAULT,
                       "   %3d         %12.5e           %12.5e     %s (%s)\n",
                       z_id,
-                      bdy_cond->particle_mass_flow[z_id*n_stats]
+                      bdy_cond->particle_mass_balance[z_id*n_stats]
                       / cs_glob_lagr_time_step->dtp,
                       bdy_cond->particle_heat_flow[z_id*n_stats]
                       / cs_glob_lagr_time_step->dtp,
                       z->name, p_bcond);
 
         for (int j = 1; j < n_stats; j++) {
-          if (cs::abs(bdy_cond->particle_mass_flow[z_id*n_stats + j]) > 0)
+          if (cs::abs(bdy_cond->particle_mass_balance[z_id*n_stats + j]) > 0)
             cs_log_printf(CS_LOG_DEFAULT,
                           "         %3d   %12.5e   %12.5e\n",
                           j,
-                          bdy_cond->particle_mass_flow[z_id*n_stats + j]
+                          bdy_cond->particle_mass_balance[z_id*n_stats + j]
                           / cs_glob_lagr_time_step->dtp,
                           bdy_cond->particle_heat_flow[z_id*n_stats + j]
                           / cs_glob_lagr_time_step->dtp

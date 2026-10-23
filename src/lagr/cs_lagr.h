@@ -835,7 +835,7 @@ typedef struct {
   char                       *elt_type;            /*! zone type per
                                                        element, or NULL */
 
-  cs_real_t                  *particle_mass_flow;  /*!< particle mass flow
+  cs_real_t                  *particle_mass_balance;/*!< particle mass balance
                                                         per zone per
                                                         statistical class */
 

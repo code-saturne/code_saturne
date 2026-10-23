@@ -2169,22 +2169,23 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
     events->n_events += 1;
   }
 
-  /* Update per-zone flow rate measure for exiting particles */
+  /* Update per-zone flow rate measure for exiting or depositing particles */
 
-  if (particle_state == CS_LAGR_PART_OUT) {
+  if (   particle_state == CS_LAGR_PART_OUT
+      || (event_flag & CS_EVENT_DEPOSITION)) {
     int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
 
     cs_real_t fr =   particle_stat_weight
                    * p_set.attr_real(p_id, CS_LAGR_MASS);
 
-    bdy_conditions->particle_mass_flow[b_z_id*n_stats] -= fr;
+    bdy_conditions->particle_mass_balance[b_z_id*n_stats] -= fr;
 
     if (n_stats > 1) {
       int class_id
         = p_set.attr_lnum(p_id, CS_LAGR_STAT_CLASS);
       if (class_id > 0 && class_id < n_stats)
-        bdy_conditions->particle_mass_flow[  b_z_id*n_stats
-                                           + class_id] -= fr;
+        bdy_conditions->particle_mass_balance[  b_z_id*n_stats
+                                              + class_id] -= fr;
     }
 
     if (bdy_conditions->particle_heat_flow != nullptr) {
@@ -4337,7 +4338,9 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
     cs_lagr_zone_data_t *bdy_cond = cs_lagr_get_boundary_conditions();
     int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
     int flow_rate_size = bdy_cond->n_zones*n_stats;
-    cs_parall_sum(flow_rate_size, CS_REAL_TYPE, bdy_cond->particle_mass_flow);
+    cs_parall_sum(flow_rate_size,
+                  CS_REAL_TYPE,
+                  bdy_cond->particle_mass_balance);
     if (bdy_cond->particle_heat_flow != nullptr)
       cs_parall_sum(flow_rate_size, CS_REAL_TYPE, bdy_cond->particle_heat_flow);
   }
