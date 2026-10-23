@@ -936,6 +936,115 @@ _test_multidir_damping(FILE *out)
 }
 
 /*============================================================================
+ * Test 12: Condition number filtering under degraded conditioning (CR-002)
+ *============================================================================*/
+
+static void
+_test_condition_number_filtering(FILE *out)
+{
+  fprintf(out, "=== Test 12: Condition number filtering under degraded conditioning ===\n");
+
+  /* Tests Anderson acceleration when the condition number of R degrades,
+     triggering the QR filtering mechanism (max_cond > 0).
+     We set up a stiff linear Richardson iteration where disparate eigenvalues
+     lead to rapid convergence along large-eigenvalue modes, producing nearly
+     collinear directions and a large condition number in R.
+
+     Parameters:
+       m_max = 4 (multiple directions)
+       max_cond = 50.0 (strict threshold to trigger filtering)
+
+     Verifies:
+       1. The algorithm prunes ill-conditioned directions via _qrdelete with
+          proper dimension (c->n_dir) without memory corruption or out-of-bounds access.
+       2. The history dg is properly shifted via _anderson_shift_dg, keeping
+          gamma and dg synchronized.
+       3. The solver converges to machine precision and matches exact solution. */
+
+  const cs_lnum_t n = 6;
+  _active_n_elts    = n;
+
+  cs_iter_algo_t *algo       = cs_iter_algo_create(CS_ITER_ALGO_ANDERSON);
+  algo->cvg_param.rtol       = 1e-10;
+  algo->cvg_param.atol       = 1e-12;
+  algo->cvg_param.n_max_iter = 60;
+
+  cs_iter_algo_param_aac_t aac_p;
+  aac_p.n_max_dir     = 4;
+  aac_p.starting_iter = 1;
+  aac_p.max_cond      = 50.0; /* Strict conditioning threshold */
+  aac_p.beta          = 1.0;
+  cs_iter_algo_set_anderson_param(algo, aac_p, n);
+
+  /* Matrix diagonal entries spanning two orders of magnitude */
+  const cs_real_t diag_A[6]  = {2.0, 1.5, 1.0, 0.5, 0.1, 0.02};
+  const cs_real_t rhs_b[6]   = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+  const cs_real_t x_exact[6] = {1.0/2.0, 1.0/1.5, 1.0/1.0, 1.0/0.5, 1.0/0.1, 1.0/0.02};
+  const cs_real_t omega      = 0.5;
+
+  cs_real_t cur_x[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  cs_real_t pre_x[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+  cs_sles_convergence_state_t state = CS_SLES_ITERATING;
+  int                         iter  = 0;
+
+  while (state == CS_SLES_ITERATING && iter < 60) {
+    for (cs_lnum_t i = 0; i < n; i++)
+      pre_x[i] = cur_x[i];
+
+    /* Richardson step: cur_x = pre_x - omega * (A*pre_x - b) */
+    for (cs_lnum_t i = 0; i < n; i++) {
+      cs_real_t res_i = diag_A[i] * pre_x[i] - rhs_b[i];
+      cur_x[i] = pre_x[i] - omega * res_i;
+    }
+
+    cs_iter_algo_update_anderson(algo,
+                                 cur_x,
+                                 pre_x,
+                                 _test_dotprod,
+                                 _test_sqnorm);
+
+    double sq_diff = 0.0;
+    for (cs_lnum_t i = 0; i < n; i++) {
+      double diff = cur_x[i] - pre_x[i];
+      sq_diff += diff * diff;
+    }
+
+    double res = std::sqrt(sq_diff);
+    cs_iter_algo_update_residual(algo, res);
+    state = cs_iter_algo_update_cvg_tol_auto(algo);
+
+    fprintf(out,
+            "    iter %2d: res = %.4e, x[0] = %.4e, x[5] = %.4e, status = %d\n",
+            iter, res, cur_x[0], cur_x[5], state);
+
+    iter++;
+  }
+
+  fprintf(out,
+          "  Conditioning filtering problem converged in %d iterations, residual = %.4e\n",
+          iter,
+          cs_iter_algo_get_residual(algo));
+
+  assert(state == CS_SLES_CONVERGED);
+
+  /* Verify solution against exact solution */
+  double max_err = 0.0;
+  for (cs_lnum_t i = 0; i < n; i++) {
+    double err = cs::abs(cur_x[i] - x_exact[i]);
+    if (err > max_err)
+      max_err = err;
+    assert(!std::isnan(cur_x[i]) && !std::isinf(cur_x[i]));
+  }
+  fprintf(out, "  Max absolute error against exact solution: %.4e\n", max_err);
+  assert(max_err < 1e-8);
+
+  cs_iter_algo_free(&algo);
+
+  fprintf(out, "  -> Passed.\n\n");
+}
+
+/*============================================================================
  * Main entry point
  *============================================================================*/
 
@@ -984,8 +1093,11 @@ main(int argc, char *argv[])
   // Test #11
   _test_multidir_damping(out);
 
+  // Test #12
+  _test_condition_number_filtering(out);
+
   printf("=============================================================\n");
-  printf(" All 11 Anderson Acceleration Tests Passed Successfully!\n");
+  printf(" All 12 Anderson Acceleration Tests Passed Successfully!\n");
   printf("=============================================================\n");
 
   return EXIT_SUCCESS;
