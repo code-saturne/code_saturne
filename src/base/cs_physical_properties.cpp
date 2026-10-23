@@ -97,9 +97,7 @@ typedef struct {
   char        *material;             /* material choice (water, ...) */
   char        *method;               /* method choice
                                         (cathare, thetis, CoolProp, ...) */
-  cs_phys_prop_table_type_t  type;   /* 0 for user
-                                      * 2 for EOS
-                                      * 3 for CoolProp  */
+  cs_phys_prop_table_type_t  type;
 
   cs_phys_prop_thermo_plane_type_t   thermo_plane;
 
