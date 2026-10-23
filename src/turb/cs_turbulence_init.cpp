@@ -390,8 +390,7 @@ cs_turbulence_init_clip_and_verify(void)
 
     if (   rd_rij.r[0] >= 0 && rd_rij.r[1] >= 0
         && rd_rij.r[2] >= 0 && rd_rij.r[3] >= 0) {
-      if (cs_glob_turb_rans_model->irijco == 0)
-        cs_turbulence_rij_clip(-1, n_cells);
+      cs_turbulence_rij_clip(-1, n_cells);
     }
     else {
       n_errors += 1;
