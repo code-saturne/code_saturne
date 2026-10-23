@@ -80,7 +80,8 @@
 
 /* Boltzmann constant */
 static const double _k_boltz = 1.38e-23;
-
+static constexpr cs_real_t f_corr   = 1.7009;
+static constexpr cs_real_t g_corr = 0.73999;
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2787,8 +2788,8 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
         for (cs_lnum_t id = 1; id < 3; id++) {
 
           drag_force[id]   =  3.0 * cs_math_pi * p_diam
-            * (vvue[id] - vpart[id]) * visccf * romf * 1.7;
-          drag_torque[id] = 1.4 * drag_force[id] * p_diam * 0.5;
+            * (vvue[id] - vpart[id]) * visccf * romf * f_corr;
+          drag_torque[id] = g_corr * drag_force[id] * p_diam * 0.5;
 
         }
 
@@ -2937,7 +2938,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
           cs_real_t iner_tor = (7.0 / 5.0) * p_mass * cs_math_pow2((p_diam * 0.5));
           cs_real_t cst_1, cst_4;
           cst_4 =   6 * cs_math_pi * visccf
-            * romf * 1.7 * 1.4
+            * romf * f_corr * g_corr
             * cs_math_pow2(p_diam * 0.5);
           cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
 
@@ -3054,8 +3055,8 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
           for (cs_lnum_t id = 1; id < 3; id++) {
 
             drag_force[id]  =   3.0 * cs_math_pi * (p_height - mean_depo_height)
-                              * (vvue[id] - vpart[id]) * visccf * romf * 1.7;
-            drag_torque[id] = 1.4 * drag_force[id] * p_diam * 0.5;
+                              * (vvue[id] - vpart[id]) * visccf * romf * f_corr;
+            drag_torque[id] = g_corr * drag_force[id] * p_diam * 0.5;
 
           }
 
@@ -3147,8 +3148,8 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
           for (cs_lnum_t id = 1; id < 3; id++) {
 
             drag_force[id]   =  3.0 * cs_math_pi * p_diam
-              * (vvue[id] - vpart[id]) * visccf * romf * 1.7;
-            drag_torque[id] = 1.4 * drag_force[id] * p_diam * 0.5;
+              * (vvue[id] - vpart[id]) * visccf * romf * f_corr;
+            drag_torque[id] = g_corr * drag_force[id] * p_diam * 0.5;
 
           }
 
@@ -3352,7 +3353,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
                                * cs_math_pow2((p_diam * 0.5));
             cs_real_t cst_1, cst_4;
             cst_4 =   6 * cs_math_pi * visccf
-              * romf * 1.7 * 1.4
+              * romf * f_corr * g_corr
               * cs_math_pow2(p_diam * 0.5);
             cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
 
@@ -3506,7 +3507,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
                 cs_real_t iner_tor = (7.0 / 5.0) * p_mass * cs_math_pow2((p_diam * 0.5));
                 cs_real_t cst_1, cst_4;
                 cst_4 =   6 * cs_math_pi * visccf
-                  * romf * 1.7 * 1.4
+                  * romf * f_corr * g_corr
                   * cs_math_pow2(p_diam * 0.5);
                 cst_1 = cst_4 * (p_diam * 0.5) / iner_tor;
 
