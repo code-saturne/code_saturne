@@ -437,13 +437,13 @@ cs_iter_algo_create(cs_iter_algo_type_t    type)
 
     c->param.n_max_dir = 5;
     c->param.starting_iter = 3;
-    c->param.max_cond = 500;
-    c->param.beta = 0;
+    c->param.max_cond = -1; // No cleaning to cure ill-conditioned systems
+    c->param.beta = 1.;     // No relaxation
 
     /* Other variables */
 
-    c->n_elts = 0;    /* Should be set latter */
-    c->n_dir = 0;
+    c->n_elts = 0;  // Should be set latter
+    c->n_dir = 0;   // No active direction
 
     /* Work arrays and structures */
 

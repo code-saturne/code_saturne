@@ -141,18 +141,18 @@ struct cs_iter_algo_param_aac_t {
  * Anderson acceleration starts at this iteration number
  *
  * \var max_cond
- * Tolerance under which terms are dropped in order to improve the
- * conditionning number of the QR factorization
+ * Tolerance under which terms are dropped in order to improve the conditioning
+ * number of the QR factorization. If < 0, there is no cleaning.
  *
  * \var beta
- * Value of the relaxation coefficient (if this is equal to zero then there is
- * non relaxation to perform)
+ * Value of the relaxation coefficient. Default value is equal to 1 meaning
+ * that there is no relaxation.
  */
 
-  int                        n_max_dir;
-  int                        starting_iter;
-  double                     max_cond;
-  double                     beta;
+  int      n_max_dir;
+  int      starting_iter;
+  double   max_cond;
+  double   beta;
 
 };
 
