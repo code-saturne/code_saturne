@@ -2436,7 +2436,6 @@ cs_ale_initialize_volume_fields(void)
 {
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t  n_cells = m->n_cells;
   const cs_real_t *mq_cell_vol = mq->cell_vol;
 
   cs_field_t *f_cellvol = cs_field_by_name("cell_vol");
@@ -2445,34 +2444,31 @@ cs_ale_initialize_volume_fields(void)
 
   /* Initialize f_cell_vol by the initial mq->cell_vol */
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    cell_vol[c_id] = mq_cell_vol[c_id];
-    cell_vol_pre[c_id] = mq_cell_vol[c_id];
-  }
+  cs_array_copy(m->n_cells_with_ghosts, mq->cell_vol, cell_vol);
+  cs_field_current_to_previous(f_cellvol);
 
-  cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, cell_vol);
-  cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, cell_vol_pre);
-
-  /* In neptune, volnp1 is computed in cs_ale_compute_volume_from_displacement
-     and is stored in cs_field_by_name("cell_vol"). The most used Vol^n is
-     stored in cell_vol_pre.
-     In saturne, we always use cell_vol_pre wich is updated in cs_ale_mesh_update
-     and cs_field_by_name("cell_vol")->val is never used. As the f->type is not
-     CS_FIELD_VARIABLE, we have not the current_to previous val_pre = val.
+  /* In neptune_cfd, volnp1 is computed in
+     cs_ale_compute_volume_from_displacement and is stored in
+     cs_field_by_name("cell_vol"). The most used Vol^n is stored in cell_vol_pre.
+     In code_saturne, we always use cell_vol_pre wich is updated in
+     cs_ale_mesh_update and cs_field_by_name("cell_vol")->val is never used.
+     As the f->type is not CS_FIELD_VARIABLE, and f->n_time_vals = 1,
+     we have val_pre = val.
   */
 
   mq->cell_vol = cell_vol_pre;
+  CS_FREE(mq->_cell_vol);  /* mq does not own cell_vol anymore */
 
   /* Be careful if CS_CDO_QUANTITIES_SUBDIV_CENTER is set. The value of
      cell_vol in the CDO part is replaced by the one in the FV part */
 
   if (cs_glob_ale == CS_ALE_CDO) {
+    /* FIXME: this makes  cdo_quantities->has_own_cell_volumes incoherent
+       and causes a crash */
     cs_cdo_quantities_free_cell_vol(cs_glob_domain->cdo_quantities);
     cs_glob_domain->cdo_quantities->cell_vol = cell_vol_pre;
   }
 
-  /* Free _cell_vol which is not owner anymore */
-  CS_FREE(mq->_cell_vol);
 }
 
 /*----------------------------------------------------------------------------*/
