@@ -225,8 +225,8 @@ _qrdelete(int          m,
     cs_real_t  *R_ip1 = R->val + (i+1)*n_cols;
 
     double  tempR = sqrt(R_i[i+1]*R_i[i+1] + R_ip1[i+1]*R_ip1[i+1]);
-    const double  c = R_i[i+1]/tempR;
-    const double  s = R_ip1[i+1]/tempR;
+    const double  c = (tempR > cs_math_epzero) ? R_i[i+1]/tempR : 1.0;
+    const double  s = (tempR > cs_math_epzero) ? R_ip1[i+1]/tempR : 0.0;
 
      R_i[i+1] = tempR;
      R_ip1[i+1] = 0.0;
@@ -263,6 +263,7 @@ _qrdelete(int          m,
     cs_real_t  *R_i = R->val + i*n_cols;
     for (int j = i; j < m-1; j++)
       R_i[j] = R_i[j+1];
+    R_i[m-1] = 0.0;
 
   }
 
@@ -1212,7 +1213,8 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
     while (c->n_dir > 1 &&
            _condition_number(c->n_dir, c->R) > c->param.max_cond) {
 
-      _qrdelete(m_max, c->n_elts, c->Q, c->R);
+      _qrdelete(c->n_dir, c->n_elts, c->Q, c->R);
+      _anderson_shift_dg(c);
       c->n_dir--;
 
     }
