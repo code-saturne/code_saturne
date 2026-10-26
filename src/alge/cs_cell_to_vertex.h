@@ -106,5 +106,28 @@ cs_cell_to_vertex(cs_cell_to_vertex_type_t   method,
                   cs_real_t                  v_var[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Interpolate cell values to vertex values, with external forces.
+ *
+ * \param[in]       method            interpolation method
+ * \param[in]       verbosity         verbosity level
+ * \param[in]       c_weight          cell weight, or nullptr
+ * \param[in]       f_ext             exterior force generating pressure
+ * \param[in]       c_var             base cell-based variable
+ * \param[in]       b_var             base boundary-face values
+ * \param[out]      v_var             vertex-based variable
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_to_vertex_p_hyd(cs_cell_to_vertex_type_t   method,
+                        [[maybe_unused]] int       verbosity,
+                        const cs_real_t *restrict  c_weight,
+                        const cs_real_t            f_ext[][3],
+                        const cs_real_t *restrict  c_var,
+                        const cs_real_t *restrict  b_var,
+                        cs_real_t *restrict        v_var);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_CELL_TO_VERTEX__ */

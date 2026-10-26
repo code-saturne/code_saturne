@@ -657,7 +657,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
 
         if (b_var == nullptr) {
           ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-            cs_lnum_t c_id = m->b_face_cells[f_id];
+            cs_lnum_t c_id = b_face_cells[f_id];
             const cs_real_t *_b_var = c_var + c_id*stride;
             cs_lnum_t s_id = f2v_idx[f_id];
             cs_lnum_t e_id = f2v_idx[f_id+1];
@@ -673,7 +673,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
         }
         else {
           ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-            cs_lnum_t c_id = m->b_face_cells[f_id];
+            cs_lnum_t c_id = b_face_cells[f_id];
             cs_lnum_t s_id = f2v_idx[f_id];
             cs_lnum_t e_id = f2v_idx[f_id+1];
             for (cs_lnum_t j = s_id; j < e_id; j++) {
@@ -916,5 +916,244 @@ cs_cell_to_vertex<6>(cs_cell_to_vertex_type_t  method,
                      const cs_real_t *restrict c_var,
                      const cs_real_t *restrict b_var,
                      cs_real_t *restrict       v_var);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Interpolate cell values to vertex values, with external forces.
+ *
+ * \param[in]       method            interpolation method
+ * \param[in]       verbosity         verbosity level
+ * \param[in]       c_weight          cell weight, or nullptr
+ * \param[in]       f_ext             exterior force generating pressure
+ * \param[in]       c_var             base cell-based variable
+ * \param[in]       b_var             base boundary-face values
+ * \param[out]      v_var             vertex-based variable
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_to_vertex_p_hyd(cs_cell_to_vertex_type_t   method,
+                        [[maybe_unused]] int       verbosity,
+                        const cs_real_t *restrict  c_weight,
+                        const cs_real_t            f_ext[][3],
+                        const cs_real_t *restrict  c_var,
+                        const cs_real_t *restrict  b_var,
+                        cs_real_t *restrict        v_var)
+{
+  const int tr_ignore = 0;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_adjacency_t *c2v = cs_mesh_adjacencies_cell_vertices();
+
+  cs_dispatch_context ctx;
+  cs_dispatch_sum_type_t v_sum_type = CS_DISPATCH_SUM_SIMPLE;
+  if (ctx.use_gpu() == true || cs_glob_n_threads > 1)
+    v_sum_type = CS_DISPATCH_SUM_ATOMIC;
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+  const cs_lnum_t n_vertices = m->n_vertices;
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_real_t *restrict vtx_coord = m->vtx_coord;
+  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
+
+  const cs_lnum_t *c2v_idx = c2v->idx;
+  const cs_lnum_t *c2v_ids = c2v->ids;
+
+  const cs_lnum_t *f2v_idx = m->b_face_vtx_idx;
+  const cs_lnum_t *f2v_ids = m->b_face_vtx_lst;
+
+  const cs_lnum_t n_v_values = n_vertices;
+
+  const cs_real_3_t *cell_cen = mq->cell_cen;
+
+  ctx.parallel_for(n_v_values, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
+    v_var[v_id] = 0.;
+  });
+
+  switch(method) {
+
+  case CS_CELL_TO_VERTEX_UNWEIGHTED:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: method \"%s\" not handled."),
+              __func__, _(cs_cell_to_vertex_type_name[method]));
+    break;
+
+  case CS_CELL_TO_VERTEX_SHEPARD:
+    {
+      if (! _set[CS_CELL_TO_VERTEX_SHEPARD])
+        _cell_to_vertex_w_inv_distance(tr_ignore);
+
+      const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_SHEPARD][0];
+
+      cs_real_t *v_w = nullptr;
+      if (c_weight != nullptr) {
+        CS_MALLOC_HD(v_w, n_vertices, cs_real_t, cs_alloc_mode);
+
+        ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
+          v_w[v_id] = 0.;
+        });
+      }
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cs_lnum_t s_id = c2v_idx[c_id];
+        cs_lnum_t e_id = c2v_idx[c_id+1];
+        cs_real_t c_w = (c_weight != nullptr) ? c_weight[c_id] : 1.;
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t v_id = c2v_ids[j];
+          const cs_real_t *v_coo = vtx_coord + v_id*3;
+          cs_real_t v_val =   c_var[c_id]
+                            + cs_math_3_distance_dot_product(v_coo,
+                                                             cell_cen[c_id],
+                                                             f_ext[c_id]);
+          cs_dispatch_sum(&v_var[v_id],
+                          v_val * w[j] * c_w,
+                          v_sum_type);
+          cs_dispatch_sum(&v_w[v_id], w[j] * c_w, v_sum_type);
+        }
+      });
+
+      const cs_weight_t *wb = _weights[CS_CELL_TO_VERTEX_SHEPARD][1];
+
+      ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        cs_lnum_t c_id = b_face_cells[f_id];
+        cs_lnum_t s_id = f2v_idx[f_id];
+        cs_lnum_t e_id = f2v_idx[f_id+1];
+        cs_real_t c_w = (c_weight != nullptr) ? c_weight[c_id] : 1.;
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t v_id = f2v_ids[j];
+          const cs_real_t *v_coo = vtx_coord + v_id*3;
+          cs_real_t v_val =   b_var[f_id]
+                            + cs_math_3_distance_dot_product(v_coo,
+                                                             cell_cen[c_id],
+                                                             f_ext[c_id]);
+          cs_dispatch_sum(&v_var[v_id],
+                          v_val * wb[j] * c_w,
+                          b_sum_type);
+          cs_dispatch_sum(&v_w[v_id], wb[j] * c_w, b_sum_type);
+        }
+      });
+
+      ctx.wait();
+
+      if (m->vtx_interfaces != nullptr)
+        cs_interface_set_sum_tr(m->vtx_interfaces,
+                                m->n_vertices,
+                                1,
+                                true,
+                                CS_REAL_TYPE,
+                                tr_ignore,
+                                v_var);
+
+      if (c_weight != nullptr) {
+        if (m->vtx_interfaces != nullptr)
+          cs_interface_set_sum_tr(m->vtx_interfaces,
+                                  n_vertices,
+                                  1,
+                                  true,
+                                  CS_REAL_TYPE,
+                                  tr_ignore,
+                                  v_w);
+        ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
+          v_var[v_id] /= v_w[v_id];
+        });
+
+        ctx.wait();
+        CS_FREE(v_w);
+      }
+
+    }
+    break;
+
+  case CS_CELL_TO_VERTEX_LR:
+    {
+      if (! _set[CS_CELL_TO_VERTEX_LR])
+        _cell_to_vertex_f_lsq(tr_ignore);
+
+      cs_real_t  *rhs;
+      cs_lnum_t  rhs_size = n_vertices*4;
+      CS_MALLOC_HD(rhs, rhs_size, cs_real_t, cs_alloc_mode);
+
+      ctx.parallel_for(rhs_size, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
+        rhs[v_id] = 0.;
+      });
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        const cs_real_t *c_coo = cell_cen[c_id];
+        cs_lnum_t s_id = c2v_idx[c_id];
+        cs_lnum_t e_id = c2v_idx[c_id+1];
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t v_id = c2v_ids[j];
+          const cs_real_t *v_coo = vtx_coord + v_id*3;
+          cs_real_t v_val =   c_var[c_id]
+                            + cs_math_3_distance_dot_product(v_coo,
+                                                             cell_cen[c_id],
+                                                             f_ext[c_id]);
+          if (c_weight != nullptr)
+            v_val *= c_weight[c_id];
+          cs_real_t r_coo[3]
+            = {c_coo[0]-v_coo[0], c_coo[1]-v_coo[1], c_coo[2]-v_coo[2]};
+          cs_real_t *_rhs = rhs + v_id*4;
+          cs_dispatch_sum(&_rhs[0], r_coo[0] * v_val, v_sum_type);
+          cs_dispatch_sum(&_rhs[1], r_coo[1] * v_val, v_sum_type);
+          cs_dispatch_sum(&_rhs[2], r_coo[2] * v_val, v_sum_type);
+          cs_dispatch_sum(&_rhs[3], v_val, v_sum_type);
+        }
+      });
+
+      ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        cs_lnum_t c_id = b_face_cells[f_id];
+        const cs_real_t *f_coo = b_face_cog[f_id];
+        cs_lnum_t s_id = f2v_idx[f_id];
+        cs_lnum_t e_id = f2v_idx[f_id+1];
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t v_id = f2v_ids[j];
+          const cs_real_t *v_coo = vtx_coord + v_id*3;
+          cs_real_t v_val =   b_var[f_id]
+                            + cs_math_3_distance_dot_product(v_coo,
+                                                             cell_cen[c_id],
+                                                             f_ext[c_id]);
+          if (c_weight != nullptr)
+            v_val *= c_weight[c_id];
+          cs_real_t *_rhs = rhs + v_id*4;
+          cs_dispatch_sum(&_rhs[0], (f_coo[0] - v_coo[0]) * v_val, b_sum_type);
+          cs_dispatch_sum(&_rhs[1], (f_coo[1] - v_coo[1]) * v_val, b_sum_type);
+          cs_dispatch_sum(&_rhs[2], (f_coo[2] - v_coo[2]) * v_val, b_sum_type);
+          cs_dispatch_sum(&_rhs[3], v_val, b_sum_type);
+        }
+      });
+
+      ctx.wait();
+
+      if (m->vtx_interfaces != nullptr)
+        cs_interface_set_sum_tr(m->vtx_interfaces,
+                                m->n_vertices,
+                                4,
+                                true,
+                                CS_REAL_TYPE,
+                                tr_ignore,
+                                rhs);
+
+      const cs_weight_t *ldlt = _weights[CS_CELL_TO_VERTEX_LR][0];
+
+      ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
+        const cs_real_t *_ldlt = ldlt + v_id*10;
+        const cs_real_t *_rhs = rhs + v_id*4;
+        v_var[v_id] = cs_math_sym_44_partial_solve_ldlt(_ldlt, _rhs);
+      });
+
+      ctx.wait();
+      CS_FREE(rhs);
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  ctx.wait();
+}
 
 /*----------------------------------------------------------------------------*/

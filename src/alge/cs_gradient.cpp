@@ -5026,7 +5026,7 @@ static void
 _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
                               const cs_mesh_quantities_t     *fvq,
                               int                             hyd_p_flag,
-                              const T                         f_ext[][3],
+                              const cs_real_t                 f_ext[][3],
                               const cs_real_t                *c_weight_s,
                               const cs_real_t                *t_f_weight,
                               const cs_real_t                 c_var[],
@@ -5102,13 +5102,22 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
   cs_real_t *v_var;
   CS_MALLOC_HD(v_var, m->n_vertices, cs_real_t, amode);
 
-  cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
-                       0, /* verbosity */
-                       0, /* tr_dim */
-                       c_weight_s,
-                       c_var,
-                       val_f,
-                       v_var);
+  if (hyd_p_flag == 1)
+    cs_cell_to_vertex_p_hyd(CS_CELL_TO_VERTEX_LR,
+                            0,     /* verbosity */
+                            c_weight_s,
+                            f_ext,
+                            c_var,
+                            val_f,
+                            v_var);
+  else
+    cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
+                         0,     /* verbosity */
+                         false, /* ignore_rot_perio */
+                         c_weight_s,
+                         c_var,
+                         val_f,
+                         v_var);
 
   /* Interpolate to face-based values
      -------------------------------- */
@@ -7860,7 +7869,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
       _fv_vtx_based_scalar_gradient(mesh,
                                     fvq,
                                     hyd_p_flag,
-                                    f_ext_loc,
+                                    f_ext,
                                     c_weight,
                                     tensor_f_weight,
                                     var,
