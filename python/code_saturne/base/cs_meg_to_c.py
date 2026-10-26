@@ -1937,8 +1937,8 @@ class meg_to_c_interpreter:
                             name = 'turbulence_ke'
                             req  = ['k', 'epsilon']
                         elif turb_model in ('Rij-epsilon',
-                                             'Rij-SSG',
-                                             'Rij-BFH'):
+                                            'Rij-SSG',
+                                            'Rij-BFH'):
                             name = 'turbulence_rije'
                             # Careful! The order of rij components must be the
                             # same as in the code (r23 before r13)
