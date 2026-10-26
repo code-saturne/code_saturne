@@ -2163,13 +2163,14 @@ cs_lagr_solve_time_step(const int         itypfb[],
               CS_MALLOC_HD(extra_i[phase_id].grad_lagr_time_r_et, ncelet, cs_real_3_t, cs_alloc_mode);
         }
 
-        if (cs_glob_lagr_model->modcpl > 0) {
-          CS_MALLOC_HD(extra_i[phase_id].anisotropic_lagr_time, ncelet, cs_real_3_t, cs_alloc_mode);
-          CS_MALLOC_HD(extra_i[phase_id].anisotropic_bx, ncelet, cs_real_3_t, cs_alloc_mode);
-          CS_MALLOC_HD(extra_i[phase_id].anisotropic_euler, ncelet, cs_real_4_t, cs_alloc_mode);
-        }
-        if (cs_glob_lagr_model->transport_GLM_rotated ) {
-          CS_MALLOC_HD(extra_i[phase_id].anisotropic_euler, ncelet, cs_real_4_t, cs_alloc_mode);
+        if (   cs_glob_lagr_model->modcpl > 0
+            || cs_glob_lagr_model->transport_GLM_rotated) {
+          CS_MALLOC_HD(extra_i[phase_id].anisotropic_lagr_time,
+                       ncelet, cs_real_3_t, cs_alloc_mode);
+          CS_MALLOC_HD(extra_i[phase_id].anisotropic_bx,
+                       ncelet, cs_real_3_t, cs_alloc_mode);
+          CS_MALLOC_HD(extra_i[phase_id].anisotropic_euler,
+                       ncelet, cs_real_4_t, cs_alloc_mode);
         }
         cs_lagr_aux_mean_fluid_quantities(0,
                                           phase_id,

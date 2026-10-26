@@ -270,7 +270,6 @@ compute_anisotropic_prop(int            iprev,
                          cs_real_3_t   *grad_lagr_time_r_et,
                          cs_real_3_t   *grad_lagr_time,
                          cs_real_4_t   *anisotropic_euler )
-
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -432,13 +431,8 @@ compute_anisotropic_prop(int            iprev,
               anisotropic_lagr_time[cell_id][id] = eig_val[id];
             /* The eigenvectors are the corresponding rotations
              * needed to reach this frame of reference */
-            for (int id = 0; id < 4; id++) {
-              /* Call function to transform the rotation matrix
-               * (which is based on the three eigenvectors)
-               * into a quaternion (i.e. 4 Euler parameters for the rotation) */
-              cs_math_33_rotation_into_quaternions(eig_vec,
-                  anisotropic_euler[cell_id]);
-            }
+            cs_math_33_rotation_into_quaternions(eig_vec,
+                                                 anisotropic_euler[cell_id]);
           }
         }
 
