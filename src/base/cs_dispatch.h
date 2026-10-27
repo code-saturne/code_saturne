@@ -49,6 +49,7 @@
 
 #include "base/cs_assert.h"
 #include "base/cs_mem.h"
+#include "base/cs_atomic.h"
 
 #ifdef __CUDACC__
 #include "base/cs_base_cuda.h"
@@ -61,6 +62,8 @@
 #include "base/cs_hip_reduce.h"
 #include "cs_math_hip.h"
 #endif
+
+#include "base/cs_reduce_op.h"
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -88,23 +91,6 @@
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-/*! Algorithm classes for indirect sums from a graph's edges to its nodes,
-  such as face-to cell sums. */
-
-typedef enum {
-
-  CS_DISPATCH_SUM_SIMPLE,  /*!< Simple sum (assumes data race-avoiding
-                                numbering/coloring) */
-  CS_DISPATCH_SUM_ATOMIC   /*!< Atomic sum */
-
-} cs_dispatch_sum_type_t;
-
-/*!
- * Provide default implementations of a cs_context based on parallel_for
- * function. This class is a mixin that use CRTP (Curiously Recurring
- * Template Pattern) to provide such functions.
- */
 
 template <class Derived>
 class cs_dispatch_context_mixin {
@@ -164,6 +150,20 @@ public:
   try_get_parallel_for_b_faces_sum_type(const M*                 m,
                                         cs_dispatch_sum_type_t&  st);
 
+  // Query reduce operation type for assembly loop over all interior faces
+  // Must be redefined by the child class
+  template <class M>
+  bool
+  try_get_parallel_for_i_faces_reduce_op_type(const M*              m,
+                                              cs_reduce_op_type_t&  st);
+
+  // Query reduce operation type for assembly loop over all boundary faces
+  // Must be redefined by the child class
+  template <class M>
+  bool
+  try_get_parallel_for_b_faces_reduce_op_type(const M*              m,
+                                              cs_reduce_op_type_t&  st);
+
 };
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -190,13 +190,35 @@ decltype(auto) cs_dispatch_context_mixin<Derived>::parallel_for_b_faces
                                          static_cast<Args&&>(args)...);
 }
 
+// Default implementation of get interior faces reduced operation type
+template <class Derived>
+template <class M>
+bool cs_dispatch_context_mixin<Derived>::try_get_parallel_for_i_faces_reduce_op_type
+  ([[maybe_unused]]const M*       m,
+   cs_reduce_op_type_t&           st) {
+  st = CS_OP_SIMPLE;
+  return true;
+}
+
+// Default implementation of get boundary faces sum type
+template <class Derived>
+template <class M>
+bool cs_dispatch_context_mixin<Derived>::try_get_parallel_for_b_faces_reduce_op_type
+  ([[maybe_unused]]const M*       m,
+   cs_reduce_op_type_t&           st) {
+  st = CS_OP_SIMPLE;
+  return true;
+}
+
 // Default implementation of get interior faces sum type
 template <class Derived>
 template <class M>
 bool cs_dispatch_context_mixin<Derived>::try_get_parallel_for_i_faces_sum_type
   ([[maybe_unused]]const M*          m,
    cs_dispatch_sum_type_t&           st) {
-  st = CS_DISPATCH_SUM_SIMPLE;
+  return
+    static_cast<Derived*>(this)->try_get_parallel_for_i_faces_reduce_op_type
+      (m, st);
   return true;
 }
 
@@ -206,7 +228,9 @@ template <class M>
 bool cs_dispatch_context_mixin<Derived>::try_get_parallel_for_b_faces_sum_type
   ([[maybe_unused]]const M*          m,
    cs_dispatch_sum_type_t&           st) {
-  st = CS_DISPATCH_SUM_SIMPLE;
+  return
+    static_cast<Derived*>(this)->try_get_parallel_for_b_faces_reduce_op_type
+      (m, st);
   return true;
 }
 
@@ -493,21 +517,21 @@ public:
     return true;
   }
 
-  // Get interior faces sum type associated with this context
+  // Get interior faces reduced operation type associated with this context
   template <class M>
   bool
-  try_get_parallel_for_i_faces_sum_type([[maybe_unused]]const M*   m,
-                                        cs_dispatch_sum_type_t&    st) {
-    st = CS_DISPATCH_SUM_SIMPLE;
+  try_get_parallel_for_i_faces_reduce_op_type([[maybe_unused]]const M* m,
+                                              cs_reduce_op_type_t&     st) {
+    st = CS_OP_SIMPLE;
     return true;
   }
 
-  // Get boundary faces sum type associated with this context
+  // Get boundary faces reduced operation type associated with this context
   template <class M>
   bool
-  try_get_parallel_for_b_faces_sum_type([[maybe_unused]]const M*   m,
-                                        cs_dispatch_sum_type_t&    st) {
-    st = CS_DISPATCH_SUM_SIMPLE;
+  try_get_parallel_for_b_faces_reduce_op_type([[maybe_unused]]const M* m,
+                                              cs_reduce_op_type_t&     st) {
+    st = CS_OP_SIMPLE;
     return true;
   }
 
@@ -1043,29 +1067,29 @@ public:
     return false;
   }
 
-  // Get interior faces sum type associated with this context
+  // Get interior faces reduced operation type associated with this context
   template <class M>
   bool
-  try_get_parallel_for_i_faces_sum_type(const M                 *m,
-                                        cs_dispatch_sum_type_t  &st) {
+  try_get_parallel_for_i_faces_reduce_op_type(const M              *m,
+                                              cs_reduce_op_type_t  &st) {
     if (device_ < 0 || use_gpu_ == false) {
       return false;
     }
 
-    st = CS_DISPATCH_SUM_ATOMIC;
+    st = CS_OP_ATOMIC;
     return true;
   }
 
-  // Get boundary faces sum type associated with this context
+  // Get boundary faces reduced operation type associated with this context
   template <class M>
   bool
-  try_get_parallel_for_b_faces_sum_type(const M                 *m,
-                                        cs_dispatch_sum_type_t  &st) {
+  try_get_parallel_for_b_faces_reduce_op_type(const M              *m,
+                                              cs_reduce_op_type_t  &st) {
     if (device_ < 0 || use_gpu_ == false) {
       return false;
     }
 
-    st = CS_DISPATCH_SUM_ATOMIC;
+    st = CS_OP_ATOMIC;
     return true;
   }
 
@@ -1586,29 +1610,29 @@ public:
     return false;
   }
 
-  // Get interior faces sum type associated with this context
+  // Get interior faces reduced operation type associated with this context
   template <class M>
   bool
-  try_get_parallel_for_i_faces_sum_type(const M                 *m,
-                                        cs_dispatch_sum_type_t  &st) {
+  try_get_parallel_for_i_faces_reduce_op_type(const M              *m,
+                                              cs_reduce_op_type_t  &st) {
     if (device_ < 0 || use_gpu_ == false) {
       return false;
     }
 
-    st = CS_DISPATCH_SUM_ATOMIC;
+    st = CS_OP_ATOMIC;
     return true;
   }
 
-  // Get boundary faces sum type associated with this context
+  // Get boundary faces reduced operation type associated with this context
   template <class M>
   bool
-  try_get_parallel_for_b_faces_sum_type(const M                 *m,
-                                        cs_dispatch_sum_type_t  &st) {
+  try_get_parallel_for_b_faces_reduce_op_type(const M              *m,
+                                              cs_reduce_op_type_t  &st) {
     if (device_ < 0 || use_gpu_ == false) {
       return false;
     }
 
-    st = CS_DISPATCH_SUM_ATOMIC;
+    st = CS_OP_ATOMIC;
     return true;
   }
 
@@ -1757,29 +1781,29 @@ public:
     return false;
   }
 
-  // Get interior faces sum type associated with this context
+  // Get interior faces reduced operation type associated with this context
   template <class M>
   bool
-  try_get_parallel_for_i_faces_sum_type(const M                 *m,
-                                        cs_dispatch_sum_type_t  &st) {
+  try_get_parallel_for_i_faces_reduce_op_type(const M              *m,
+                                              cs_reduce_op_type_t  &st) {
     if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
 
-    st = CS_DISPATCH_SUM_ATOMIC;
+    st = CS_OP_ATOMIC;
     return true;
   }
 
-  // Get interior faces sum type associated with this context
+  // Get interior faces reduced operation type associated with this context
   template <class M>
   bool
-  try_get_parallel_for_b_faces_sum_type(const M                 *m,
-                                        cs_dispatch_sum_type_t  &st) {
+  try_get_parallel_for_b_faces_reduce_op_type(const M              *m,
+                                              cs_reduce_op_type_t  &st) {
     if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
 
-    st = CS_DISPATCH_SUM_ATOMIC;
+    st = CS_OP_ATOMIC;
     return true;
   }
 
@@ -1901,29 +1925,29 @@ public:
     return true;
   }
 
-  // Get interior faces sum type associated with this context
+  // Get interior faces reduced operation type associated with this context
   template <class M>
   bool
-  try_get_parallel_for_i_faces_sum_type(const M                 *m,
-                                        cs_dispatch_sum_type_t  &st) {
+  try_get_parallel_for_i_faces_reduce_op_type(const M              *m,
+                                              cs_reduce_op_type_t  &st) {
     if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
 
-    st = CS_DISPATCH_SUM_ATOMIC;
+    st = CS_OP_ATOMIC;
     return true;
   }
 
-  // Get interior faces sum type associated with this context
+  // Get interior faces reduced operation type associated with this context
   template <class M>
   bool
-  try_get_parallel_for_b_faces_sum_type(const M                 *m,
-                                        cs_dispatch_sum_type_t  &st) {
+  try_get_parallel_for_b_faces_reduce_op_type(const M              *m,
+                                              cs_reduce_op_type_t  &st) {
     if (is_gpu == false || use_gpu_ == false) {
       return false;
     }
 
-    st = CS_DISPATCH_SUM_ATOMIC;
+    st = CS_OP_ATOMIC;
     return true;
   }
 
@@ -2235,7 +2259,7 @@ public:
   template <class M>
   cs_dispatch_sum_type_t
   get_parallel_for_i_faces_sum_type(const M* m) {
-    cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+    cs_dispatch_sum_type_t sum_type = CS_OP_ATOMIC;
     bool known = false;
     [[maybe_unused]] decltype(nullptr) try_query[] = {
       (   known = known
@@ -2260,7 +2284,7 @@ public:
   template <class M>
   cs_dispatch_sum_type_t
   get_parallel_for_b_faces_sum_type(const M* m) {
-    cs_dispatch_sum_type_t sum_type = CS_DISPATCH_SUM_ATOMIC;
+    cs_dispatch_sum_type_t sum_type = CS_OP_ATOMIC;
     bool known = false;
     [[maybe_unused]] decltype(nullptr) try_query[] = {
       (   known = known
@@ -2268,6 +2292,56 @@ public:
           nullptr)...
     };
     return sum_type;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*! \brief Return reduced operation type to be used with \ref parallel_for_i_faces.
+   *
+   * \tparam M  mesh type structure (templated mostly to avoid
+   *            dependency to mesh definitions in lower level code)
+   *
+   * \param[in]  m     pointer to  mesh
+   *
+   * \return  assembly operation type that should be used in parallel_for_i_faces
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <class M>
+  cs_reduce_op_type_t
+  get_parallel_for_i_faces_reduce_op_type(const M* m) {
+    cs_reduce_op_type_t op_type = CS_OP_ATOMIC;
+    bool known = false;
+    [[maybe_unused]] decltype(nullptr) try_query[] = {
+      (   known = known
+       || Contexts::try_get_parallel_for_i_faces_reduce_op_type(m, op_type),
+          nullptr)...
+    };
+    return op_type;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*! \brief Return reduced operation type to be used with \ref parallel_for_b_faces.
+   *
+   * \tparam M  mesh type structure (templated mostly to avoid
+   *            dependency to mesh definitions in lower level code)
+   *
+   * \param[in]  m     pointer to  mesh
+   *
+   * \return  assembly operation type that should be used in parallel_for_b_faces
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <class M>
+  cs_reduce_op_type_t
+  get_parallel_for_b_faces_reduce_op_type(const M* m) {
+    cs_reduce_op_type_t op_type = CS_OP_ATOMIC;
+    bool known = false;
+    [[maybe_unused]] decltype(nullptr) try_query[] = {
+      (   known = known
+       || Contexts::try_get_parallel_for_b_faces_reduce_op_type(m, op_type),
+          nullptr)...
+    };
+    return op_type;
   }
 
 };
@@ -2350,85 +2424,18 @@ public:
  */
 /*----------------------------------------------------------------------------*/
 
-#ifdef __CUDA_ARCH__   // Test whether we are on GPU or CPU...
-
-template <typename T>
-__device__ static void __forceinline__
-cs_dispatch_sum(T                       *dest,
-                const T                  src,
-                cs_dispatch_sum_type_t   sum_type)
-{
-  if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
-#if 1
-    using sum_v = assembled_value<T>;
-    sum_v v;
-
-    v.get() = src;
-    sum_v::ref(*dest).conflict_free_add(-1u, v);
-#else
-    atomicAdd(dest, src);
-#endif
-  }
-  else if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
-    *dest += src;
-  }
-}
-
-#elif defined(__HIP_DEVICE_COMPILE__)
-
-template <typename T>
-__device__ static void __forceinline__
-cs_dispatch_sum(T                       *dest,
-                const T                  src,
-                cs_dispatch_sum_type_t   sum_type)
-{
-  if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
-    atomicAdd(dest, src);
-  }
-  else if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
-    *dest += src;
-  }
-}
-
-#elif defined(SYCL_LANGUAGE_VERSION)
-
-template <typename T>
+template<typename T>
+CS_F_HOST_DEVICE
 inline void
-cs_dispatch_sum(T                       *dest,
-                const T                  src,
-                cs_dispatch_sum_type_t   sum_type)
+cs_dispatch_sum
+(
+  T                       *dest,
+  const T                  src,
+  cs_dispatch_sum_type_t   sum_type
+)
 {
-  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
-    *dest += src;
-  }
-  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
-    sycl::atomic_ref<T,
-                     sycl::memory_order::relaxed,
-                     sycl::memory_scope::device> aref(*dest);
-    aref.fetch_add(src);
-  }
+  return cs::op::sum<T>(dest, src, sum_type);
 }
-
-#else  // ! CUDA or HIP or SYCL
-
-template <typename T>
-inline void
-cs_dispatch_sum(T                       *dest,
-                const T                  src,
-                cs_dispatch_sum_type_t   sum_type)
-{
-  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
-    *dest += src;
-  }
-  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
-    #ifdef _OPENMP
-    #pragma omp atomic
-    #endif
-    *dest += src;
-  }
-}
-
-#endif // __CUDA_ARCH__
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2446,107 +2453,18 @@ cs_dispatch_sum(T                       *dest,
  */
 /*----------------------------------------------------------------------------*/
 
-#ifdef __CUDA_ARCH__   // Test whether we are on GPU or CPU...
-
-template <size_t dim, typename T>
-__device__ static void __forceinline__
-cs_dispatch_sum(T                       *dest,
-                const T                 *src,
-                cs_dispatch_sum_type_t   sum_type)
-{
-  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
-    for (cs_lnum_t i = 0; i < dim; i++) {
-      dest[i] += src[i];
-    }
-  }
-  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
-#if __CUDA_ARCH__ >= 700
-    using sum_v = assembled_value<T, dim>;
-    sum_v v;
-
-    for (size_t i = 0; i < dim; i++) {
-      v[i].get() = src[i];
-    }
-
-    sum_v &vs = reinterpret_cast<sum_v &>(*dest);
-    vs.conflict_free_add(-1u, v);
-
-    //sum_v::ref(dest).conflict_free_add(-1u, v);
-#else
-    for (size_t i = 0; i < dim; i++) {
-      atomicAdd(&dest[i], src[i]);
-    }
-#endif
-  }
-}
-
-#elif defined(__HIP_DEVICE_COMPILE__)
-
-template <size_t dim, typename T>
-__device__ static void __forceinline__
-cs_dispatch_sum(T                       *dest,
-                const T                 *src,
-                cs_dispatch_sum_type_t   sum_type)
-{
-  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
-    for (cs_lnum_t i = 0; i < dim; i++) {
-      dest[i] += src[i];
-    }
-  }
-  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
-    for (size_t i = 0; i < dim; i++) {
-      atomicAdd(&dest[i], src[i]);
-    }
-  }
-}
-
-#elif defined(SYCL_LANGUAGE_VERSION)
-
-template <size_t dim, typename T>
+template<size_t dim, typename T>
+CS_F_HOST_DEVICE
 inline void
-cs_dispatch_sum(T                       *dest,
-                const T                 *src,
-                cs_dispatch_sum_type_t   sum_type)
+cs_dispatch_sum
+(
+  T                       *dest,
+  const T                 *src,
+  cs_dispatch_sum_type_t   sum_type
+)
 {
-  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
-    for (size_t i = 0; i < dim; i++) {
-      dest[i] += src[i];
-    }
-  }
-  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
-    for (size_t i = 0; i < dim; i++) {
-      sycl::atomic_ref<T,
-                       sycl::memory_order::relaxed,
-                       sycl::memory_scope::device> aref(dest[i]);
-      aref.fetch_add(src[i]);
-    }
-  }
+  return cs::op::sum<dim, T>(dest, src, sum_type);
 }
-
-#else  // ! CUDA or SYCL
-
-template <size_t dim, typename T>
-inline void
-cs_dispatch_sum(T                       *dest,
-                const T                 *src,
-                cs_dispatch_sum_type_t   sum_type)
-{
-  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
-    for (size_t i = 0; i < dim; i++) {
-      dest[i] += src[i];
-    }
-  }
-  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
-    for (size_t i = 0; i < dim; i++) {
-      #ifdef _OPENMP
-      #pragma omp atomic
-      #endif
-      dest[i] += src[i];
-    }
-  }
-}
-
-#endif // __CUDA_ARCH__
 
 /*----------------------------------------------------------------------------*/
 

@@ -149,6 +149,7 @@ cs_profiling.h \
 cs_prototypes.h \
 cs_random.h \
 cs_range_set.h \
+cs_reduce_op.h \
 cs_reducers.h \
 cs_renumber.h \
 cs_renumber_update.h \

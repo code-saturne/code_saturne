@@ -118,6 +118,7 @@ cs_check_solidification \
 cs_check_anderson \
 cs_core_test \
 cs_dispatch_test \
+cs_dispatch_atomic_test \
 cs_dispatch_queue_test \
 cs_file_test \
 cs_geom_test \
@@ -208,6 +209,13 @@ cs_dispatch_test$(EXEEXT): cs_dispatch_test.cpp $(top_srcdir)/src/base/cs_dispat
 	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_dispatch_test $(top_srcdir)/tests/cs_dispatch_test.cpp
+
+cs_dispatch_atomic_test_SOURCES = cs_dispatch_atomic_test.cpp
+
+cs_dispatch_atomic_test$(EXEEXT): cs_dispatch_atomic_test.cpp $(top_srcdir)/src/base/cs_dispatch.h
+	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	-o cs_dispatch_atomic_test $(top_srcdir)/tests/cs_dispatch_atomic_test.cpp
 
 cs_dispatch_queue_test_SOURCES = cs_dispatch_queue_test.cpp
 
