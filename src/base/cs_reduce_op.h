@@ -506,6 +506,170 @@ min
 
 #endif // __CUDA_ARCH__
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Minimum of values using a chosen dispatch max type.
+ *
+ * This allows calling a unique function for assembly in lambda functions
+ * called by a dispatch context for interior or boundary faces.
+ *
+ * \tparam  T    value type
+ *
+ * \param[in, out]  dest      destination
+ * \param[in]       src       source value
+ * \param[in]       max_type  max type
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+
+template <typename T>
+__device__ static void __forceinline__
+max
+(
+  T                   *dest,
+  const T              src,
+  cs_reduce_op_type_t  max_type = CS_OP_ATOMIC
+)
+{
+  if (max_type == CS_OP_ATOMIC) {
+    cs::atomic::fetch_max(dest, src);
+  }
+  else if (max_type == CS_OP_SIMPLE) {
+    if (src < *dest)
+      *dest = src;
+  }
+}
+
+#elif defined(SYCL_LANGUAGE_VERSION)
+
+template <typename T>
+inline void
+max
+(
+  T                       *dest,
+  const T                  src,
+  cs_reduce_op_type_t   max_type = CS_OP_ATOMIC
+)
+{
+  if (max_type == CS_OP_SIMPLE) {
+    if (src < *dest)
+      *dest = src;
+  }
+  else if (max_type == CS_OP_ATOMIC) {
+    cs::atomic::fetch_max(dest, src);
+  }
+}
+
+#else  // ! CUDA or HIP or SYCL
+
+template <typename T>
+inline void
+max
+(
+  T                    *dest,
+  const T               src,
+  cs_reduce_op_type_t   max_type = CS_OP_ATOMIC
+)
+{
+  if (max_type == CS_OP_SIMPLE) {
+    if (src < *dest)
+      *dest = src;
+  }
+  else if (max_type == CS_OP_ATOMIC) {
+    cs::atomic::fetch_max(dest, src);
+  }
+}
+
+#endif // __CUDA_ARCH__
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Minimum of strided array values using a chosen dispatch max type.
+ *
+ * \tparam  dim       array stride
+ * \tparam  T         array type
+ *
+ * \param[in, out]  dest      destination values
+ * \param[in]       src       source values
+ * \param[in]       max_type  max type
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+
+template <size_t dim, typename T>
+__device__ static void __forceinline__
+max
+(
+  T                   *dest,
+  const T             *src,
+  cs_reduce_op_type_t  max_type = CS_OP_ATOMIC
+)
+{
+  if (max_type == CS_OP_SIMPLE) {
+    for (size_t i = 0; i < dim; i++) {
+      if (src[i] < dest[i])
+        dest[i] = src[i];
+    }
+  }
+  else if (max_type == CS_OP_ATOMIC) {
+    for (size_t i = 0; i < dim; i++) {
+      cs::atomic::fetch_max(&dest[i], src[i]);
+    }
+  }
+}
+
+#elif defined(SYCL_LANGUAGE_VERSION)
+
+template <size_t dim, typename T>
+inline void
+max
+(
+  T                   *dest,
+  const T             *src,
+  cs_reduce_op_type_t  max_type = CS_OP_ATOMIC
+)
+{
+  if (max_type == CS_OP_SIMPLE) {
+    for (size_t i = 0; i < dim; i++) {
+      if (src[i] < dest[i])
+        dest[i] = src[i];
+    }
+  }
+  else if (max_type == CS_OP_ATOMIC) {
+    for (size_t i = 0; i < dim; i++) {
+      cs::atomic::fetch_max(&dest[i], src[i]);
+    }
+  }
+}
+
+#else  // ! CUDA or HIP or SYCL
+
+template <size_t dim, typename T>
+inline void
+max
+(
+  T                   *dest,
+  const T             *src,
+  cs_reduce_op_type_t  max_type = CS_OP_ATOMIC
+)
+{
+  if (max_type == CS_OP_SIMPLE) {
+    for (size_t i = 0; i < dim; i++) {
+      if (src[i] < dest[i])
+        dest[i] = src[i];
+    }
+  }
+  else if (max_type == CS_OP_ATOMIC) {
+    for (size_t i = 0; i < dim; i++) {
+      cs::atomic::fetch_max(&dest[i], src[i]);
+    }
+  }
+}
+
+#endif // __CUDA_ARCH__
+
 } /* namespace op */
 } /* namespace cs */
 /*----------------------------------------------------------------------------*/

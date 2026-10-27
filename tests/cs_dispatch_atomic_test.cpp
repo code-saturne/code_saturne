@@ -305,7 +305,7 @@ test_cs_dispatch_sum(cs_dispatch_context &ctx)
   const cs_lnum_t n_bins = 12;
   cs_alloc_mode_t amode = ctx.alloc_mode();
 
-  // 1. Scalar cs_dispatch_sum with CS_DISPATCH_SUM_ATOMIC
+  // 1. Scalar cs_dispatch_sum with CS_OP_ATOMIC
   {
     cs_real_t *bins = nullptr;
     CS_MALLOC_HD(bins, n_bins, cs_real_t, amode);
@@ -316,7 +316,7 @@ test_cs_dispatch_sum(cs_dispatch_context &ctx)
     ctx.parallel_for(n_items, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       cs_lnum_t bin_id = i % n_bins;
       cs_real_t inc = 1.25;
-      cs_dispatch_sum(&bins[bin_id], inc, CS_DISPATCH_SUM_ATOMIC);
+      cs_dispatch_sum(&bins[bin_id], inc, CS_OP_ATOMIC);
     });
     ctx.wait();
 
@@ -325,9 +325,9 @@ test_cs_dispatch_sum(cs_dispatch_context &ctx)
       assert(std::fabs(bins[b] - expected) < 1e-9);
     }
 
-    // Scalar cs_dispatch_sum with CS_DISPATCH_SUM_SIMPLE
+    // Scalar cs_dispatch_sum with CS_OP_SIMPLE
     ctx.parallel_for(n_bins, [=] CS_F_HOST_DEVICE (cs_lnum_t b) {
-      cs_dispatch_sum(&bins[b], (cs_real_t)10.0, CS_DISPATCH_SUM_SIMPLE);
+      cs_dispatch_sum(&bins[b], (cs_real_t)10.0, CS_OP_SIMPLE);
     });
     ctx.wait();
 
@@ -338,7 +338,7 @@ test_cs_dispatch_sum(cs_dispatch_context &ctx)
     CS_FREE(bins);
   }
 
-  // 2. Strided cs_dispatch_sum<3> with CS_DISPATCH_SUM_ATOMIC
+  // 2. Strided cs_dispatch_sum<3> with CS_OP_ATOMIC
   {
     cs_real_3_t *vec_bins = nullptr;
     CS_MALLOC_HD(vec_bins, n_bins, cs_real_3_t, amode);
@@ -352,7 +352,7 @@ test_cs_dispatch_sum(cs_dispatch_context &ctx)
     ctx.parallel_for(n_items, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       cs_lnum_t bin_id = i % n_bins;
       cs_real_t v[3] = {1.0, 2.0, 3.0};
-      cs_dispatch_sum<3>(vec_bins[bin_id], v, CS_DISPATCH_SUM_ATOMIC);
+      cs_dispatch_sum<3>(vec_bins[bin_id], v, CS_OP_ATOMIC);
     });
     ctx.wait();
 
@@ -363,10 +363,10 @@ test_cs_dispatch_sum(cs_dispatch_context &ctx)
       assert(std::fabs(vec_bins[b][2] - count * 3.0) < 1e-9);
     }
 
-    // Strided cs_dispatch_sum<3> with CS_DISPATCH_SUM_SIMPLE
+    // Strided cs_dispatch_sum<3> with CS_OP_SIMPLE
     ctx.parallel_for(n_bins, [=] CS_F_HOST_DEVICE (cs_lnum_t b) {
       cs_real_t add[3] = {10.0, 20.0, 30.0};
-      cs_dispatch_sum<3>(vec_bins[b], add, CS_DISPATCH_SUM_SIMPLE);
+      cs_dispatch_sum<3>(vec_bins[b], add, CS_OP_SIMPLE);
     });
     ctx.wait();
 
@@ -393,7 +393,7 @@ test_cs_dispatch_min(cs_dispatch_context &ctx)
   const cs_lnum_t n_bins = 12;
   cs_alloc_mode_t amode = ctx.alloc_mode();
 
-  // 1. Scalar cs_dispatch_min with CS_DISPATCH_MIN_ATOMIC
+  // 1. Scalar cs_dispatch_min with CS_OP_ATOMIC
   {
     cs_real_t *bins = nullptr;
     CS_MALLOC_HD(bins, n_bins, cs_real_t, amode);
@@ -404,7 +404,7 @@ test_cs_dispatch_min(cs_dispatch_context &ctx)
     ctx.parallel_for(n_items, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       cs_lnum_t bin_id = i % n_bins;
       cs_real_t val = (cs_real_t)((i * 41 + 17) % 733) - 350.0;
-      cs_dispatch_min(&bins[bin_id], val, CS_DISPATCH_MIN_ATOMIC);
+      cs::op::min(&bins[bin_id], val, CS_OP_ATOMIC);
     });
     ctx.wait();
 
@@ -419,9 +419,9 @@ test_cs_dispatch_min(cs_dispatch_context &ctx)
       assert(std::fabs(bins[b] - ref_min) < 1e-9);
     }
 
-    // Scalar cs_dispatch_min with CS_DISPATCH_MIN_SIMPLE
+    // Scalar cs_dispatch_min with CS_OP_SIMPLE
     ctx.parallel_for(n_bins, [=] CS_F_HOST_DEVICE (cs_lnum_t b) {
-      cs_dispatch_min(&bins[b], (cs_real_t)-999.0, CS_DISPATCH_MIN_SIMPLE);
+      cs::op::min(&bins[b], (cs_real_t)-999.0, CS_OP_SIMPLE);
     });
     ctx.wait();
 
@@ -432,7 +432,7 @@ test_cs_dispatch_min(cs_dispatch_context &ctx)
     CS_FREE(bins);
   }
 
-  // 2. Strided cs_dispatch_min<3> with CS_DISPATCH_MIN_ATOMIC
+  // 2. Strided cs_dispatch_min<3> with CS_OP_ATOMIC
   {
     cs_real_3_t *vec_bins = nullptr;
     CS_MALLOC_HD(vec_bins, n_bins, cs_real_3_t, amode);
@@ -450,7 +450,7 @@ test_cs_dispatch_min(cs_dispatch_context &ctx)
         (cs_real_t)((i * 29 + 11) % 433) - 200.0,
         (cs_real_t)((i * 47 + 23) % 521) - 300.0
       };
-      cs_dispatch_min<3>(vec_bins[bin_id], v, CS_DISPATCH_MIN_ATOMIC);
+      cs::op::min<3>(vec_bins[bin_id], v, CS_OP_ATOMIC);
     });
     ctx.wait();
 
@@ -472,10 +472,10 @@ test_cs_dispatch_min(cs_dispatch_context &ctx)
       assert(std::fabs(vec_bins[b][2] - ref_min[2]) < 1e-9);
     }
 
-    // Strided cs_dispatch_min<3> with CS_DISPATCH_MIN_SIMPLE
+    // Strided cs_dispatch_min<3> with CS_OP_SIMPLE
     ctx.parallel_for(n_bins, [=] CS_F_HOST_DEVICE (cs_lnum_t b) {
       cs_real_t v[3] = {-1000.0, -2000.0, -3000.0};
-      cs_dispatch_min<3>(vec_bins[b], v, CS_DISPATCH_MIN_SIMPLE);
+      cs::op::min<3>(vec_bins[b], v, CS_OP_SIMPLE);
     });
     ctx.wait();
 
@@ -503,7 +503,7 @@ test_cs_dispatch_max(cs_dispatch_context &ctx)
   const cs_lnum_t n_bins = 12;
   cs_alloc_mode_t amode = ctx.alloc_mode();
 
-  // 1. Scalar cs_dispatch_max with CS_DISPATCH_MAX_ATOMIC
+  // 1. Scalar cs_dispatch_max with CS_OP_ATOMIC
   {
     cs_real_t *bins = nullptr;
     CS_MALLOC_HD(bins, n_bins, cs_real_t, amode);
@@ -514,7 +514,7 @@ test_cs_dispatch_max(cs_dispatch_context &ctx)
     ctx.parallel_for(n_items, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       cs_lnum_t bin_id = i % n_bins;
       cs_real_t val = (cs_real_t)((i * 41 + 17) % 733) - 350.0;
-      cs_dispatch_max(&bins[bin_id], val, CS_DISPATCH_MAX_ATOMIC);
+      cs::op::max(&bins[bin_id], val, CS_OP_ATOMIC);
     });
     ctx.wait();
 
@@ -529,9 +529,9 @@ test_cs_dispatch_max(cs_dispatch_context &ctx)
       assert(std::fabs(bins[b] - ref_max) < 1e-9);
     }
 
-    // Scalar cs_dispatch_max with CS_DISPATCH_MAX_SIMPLE
+    // Scalar cs_dispatch_max with CS_OP_SIMPLE
     ctx.parallel_for(n_bins, [=] CS_F_HOST_DEVICE (cs_lnum_t b) {
-      cs_dispatch_max(&bins[b], (cs_real_t)999.0, CS_DISPATCH_MAX_SIMPLE);
+      cs::op::max(&bins[b], (cs_real_t)999.0, CS_OP_SIMPLE);
     });
     ctx.wait();
 
@@ -542,7 +542,7 @@ test_cs_dispatch_max(cs_dispatch_context &ctx)
     CS_FREE(bins);
   }
 
-  // 2. Strided cs_dispatch_max<3> with CS_DISPATCH_MAX_ATOMIC
+  // 2. Strided cs_dispatch_max<3> with CS_OP_ATOMIC
   {
     cs_real_3_t *vec_bins = nullptr;
     CS_MALLOC_HD(vec_bins, n_bins, cs_real_3_t, amode);
@@ -560,7 +560,7 @@ test_cs_dispatch_max(cs_dispatch_context &ctx)
         (cs_real_t)((i * 29 + 11) % 433) - 200.0,
         (cs_real_t)((i * 47 + 23) % 521) - 300.0
       };
-      cs_dispatch_max<3>(vec_bins[bin_id], v, CS_DISPATCH_MAX_ATOMIC);
+      cs::op::max<3>(vec_bins[bin_id], v, CS_OP_ATOMIC);
     });
     ctx.wait();
 
@@ -582,10 +582,10 @@ test_cs_dispatch_max(cs_dispatch_context &ctx)
       assert(std::fabs(vec_bins[b][2] - ref_max[2]) < 1e-9);
     }
 
-    // Strided cs_dispatch_max<3> with CS_DISPATCH_MAX_SIMPLE
+    // Strided cs_dispatch_max<3> with CS_OP_SIMPLE
     ctx.parallel_for(n_bins, [=] CS_F_HOST_DEVICE (cs_lnum_t b) {
       cs_real_t v[3] = {1000.0, 2000.0, 3000.0};
-      cs_dispatch_max<3>(vec_bins[b], v, CS_DISPATCH_MAX_SIMPLE);
+      cs::op::max<3>(vec_bins[b], v, CS_OP_SIMPLE);
     });
     ctx.wait();
 
