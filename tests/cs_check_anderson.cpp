@@ -94,8 +94,8 @@ _test_lifecycle_and_accessors(FILE *out)
   cs_iter_algo_param_aac_t p_def = cs_iter_algo_get_anderson_param(algo);
   assert(p_def.n_max_dir == 5);
   assert(p_def.starting_iter == 3);
-  assert(cs::abs(p_def.max_cond - 500.0) < 1e-12);
-  assert(cs::abs(p_def.beta - 0.0) < 1e-12);
+  assert(cs::abs(p_def.max_cond - (-1.0)) < 1e-12);
+  assert(cs::abs(p_def.beta - 1.0) < 1e-12);
 
   /* Configure custom parameters */
   cs_iter_algo_param_aac_t p_custom;
