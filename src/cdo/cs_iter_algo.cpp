@@ -293,7 +293,8 @@ _anderson_compute_gamma(cs_iter_algo_aac_t    *c,
     for (int j = i + 1; j < c->n_dir; j++)
       s -= c->R->val[i * n_cols + j] * c->gamma[j];
 
-    c->gamma[i] = s / c->R->val[i * (n_cols + 1)];
+    const cs_real_t  diag_val = c->R->val[i * (n_cols + 1)];
+    c->gamma[i] = (cs::abs(diag_val) > cs_math_epzero) ? s / diag_val : 0.0;
 
   }
 
@@ -992,6 +993,10 @@ cs_iter_algo_get_anderson_param(cs_iter_algo_t         *algo)
 /*!
  * \brief Apply one more iteration of the Anderson acceleration
  *
+ * \note In parallel execution, the \p dotprod and \p sqnorm function pointers
+ *       must compute globally synchronized reductions (e.g. via MPI_Allreduce)
+ *       to guarantee identical scalar decisions across all MPI ranks.
+ *
  * \param[in, out] algo         pointer to a cs_iter_algo_t structure
  * \param[in, out] cur_iterate  current iterate
  * \param[in]      pre_iterate  previous iterate
@@ -1112,23 +1117,28 @@ cs_iter_algo_update_anderson(cs_iter_algo_t            *algo,
 
     Rval[0] = df_norm; /* R(0,0) = |df|_L2 */
 
-    if (df_norm > 0.) {
+    if (df_norm > cs_math_epzero) {
 
-      const cs_real_t coef = 1.0/df_norm;
+      const cs_real_t  coef = 1.0 / df_norm;
 
 #     pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
       for (cs_lnum_t i = 0; i < c->n_elts; i++)
-        c->Q[i] = c->df[i]*coef; /* Q(0) = df/|df|_L2 */
+        c->Q[i] = c->df[i] * coef; /* Q(0) = df/|df|_L2 */
 
     }
     else {
 
+      /* Stagnation on the first direction: reset subspace and fallback to Picard */
       cs_base_warn(__FILE__, __LINE__);
-      cs_log_printf(CS_LOG_WARNINGS, " %s: Unexpected behavior. df_norm = 0.\n",
-                    __func__);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    " %s: Anderson initial direction stagnation"
+                    " (df_norm = %5.3e <= %5.3e).\n"
+                    " %s: Resetting Anderson subspace to fallback to Picard iteration.\n",
+                    __func__, df_norm, cs_math_epzero, __func__);
 
-      for (cs_lnum_t i = 0; i < c->n_elts; i++)
-        c->Q[i] = 0;
+      c->n_dir = 0;
+      Rval[0] = 0.0;
+      return; /* Fallback to standard Picard step */
 
     }
 
@@ -1197,9 +1207,7 @@ cs_iter_algo_update_anderson(cs_iter_algo_t            *algo,
         Rval[j*m_max + (c->n_dir-1)] = 0.0;
 
       c->n_dir--;
-
-      if (c->n_dir == 0)
-        return; /* Fallback to standard Picard step */
+      /* Continue Anderson acceleration using the remaining valid directions */
 
     }
 
