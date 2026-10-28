@@ -893,8 +893,10 @@ template <typename T,
           typename... Vals,
           typename std::enable_if<!std::is_array<T>::value, int>::type = 0>
 static void
-sum(T &first,       /*!<[in,out] First scalar to update */
-    Vals &...values /*!<[in,out] Scalar values to update */
+sum
+(
+  T &       first, /*!<[in,out] First scalar to update */
+  Vals &... values /*!<[in,out] Scalar values to update */
 )
 {
 #if defined(HAVE_MPI)
