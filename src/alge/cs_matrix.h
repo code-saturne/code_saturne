@@ -764,7 +764,7 @@ cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
 /*!
  * \brief Directly access matrix coefficients in an MSR format for writing.
  *
- * The matrix's fil type is also set by this function.
+ * The matrix's fill type is also set by this function.
  *
  * The associated matrix must be in MSR format, and the associated row index
  * and column ids known.

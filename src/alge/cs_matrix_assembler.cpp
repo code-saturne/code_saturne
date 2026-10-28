@@ -305,6 +305,9 @@ _g_id_rank_index(int              n_ranges,
                  const cs_gnum_t  d_ranges[],
                  cs_gnum_t        g_id)
 {
+  if (n_ranges <= 0)
+    return -2;
+
   cs_lnum_t start_id = 0;
   cs_lnum_t end_id = n_ranges - 1;
   cs_lnum_t mid_id = (end_id -start_id) / 2;
@@ -619,44 +622,6 @@ _append_local_and_distant(cs_matrix_assembler_t  *ma,
   CS_FREE(c_count);
 }
 
-/*----------------------------------------------------------------------------
- * Determine assumed rank associated with a given global id.
- *
- * parameters:
- *   n_ranks <-- number of ranks
- *   n_g     <-- global number of ids
- *   g_id    <-- array of global ids for local rank (size: n)
- *
- * returns:
- *   assumed rank id for g_id
- *----------------------------------------------------------------------------*/
-
-static inline int
-_assumed_rank(int              n_ranks,
-              cs_gnum_t        n_g,
-              const cs_gnum_t  g_id)
-{
-  int rank_id;
-
-  cs_gnum_t n_per_rank = n_g / n_ranks;
-  cs_lnum_t rmdr = n_g - n_per_rank * (cs_gnum_t)n_ranks;
-
-  assert(g_id < n_g);
-
-  if (rmdr == 0)
-    rank_id = g_id / n_per_rank;
-  else {
-    cs_gnum_t n_ranks_rmdr = n_ranks - rmdr;
-    cs_gnum_t n_ranks_n_per_rank = n_ranks_rmdr * n_per_rank;
-    if (g_id  <  n_ranks_n_per_rank)
-      rank_id = g_id / n_per_rank;
-    else
-      rank_id = (g_id + n_ranks_rmdr) / (n_per_rank + 1);
-  }
-
-  return rank_id;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Build Assumed rank neighbors info
@@ -691,6 +656,9 @@ _assumed_rank_neighbors(cs_lnum_t        n,
   MPI_Comm_size(comm, &n_ranks);
   MPI_Comm_rank(comm, &l_rank);
 
+  cs_gnum_t nr_g = n_ranks;
+  cs_gnum_t block_size = (n_g % nr_g) ? n_g/nr_g + 1 : n_g/nr_g;
+
   /* Build real to assumed partition mapping */
 
   cs_lnum_t l_range_size = l_range[1] - l_range[0];
@@ -705,7 +673,7 @@ _assumed_rank_neighbors(cs_lnum_t        n,
 
   for (cs_lnum_t i = 0; i < l_range_size; i++) {
     cs_gnum_t _g_id = l_range[0] + (cs_gnum_t)i;
-    int r_dest = _assumed_rank(n_ranks, n_g, _g_id);
+    int r_dest = _g_id / block_size;
     if (r_dest != r_prev && r_dest != l_rank) {
       a_rank[n_a_neighbors++] = r_dest;
       r_prev = r_dest;
@@ -718,7 +686,7 @@ _assumed_rank_neighbors(cs_lnum_t        n,
      ordered, we limit the size of sent data. */
 
   for (cs_lnum_t i = 0; i < n; i++) {
-    int r_dest = _assumed_rank(n_ranks, n_g, g_id[i]);
+    int r_dest = g_id[i] / block_size;
     if (r_dest != r_prev && r_dest != l_rank) {
       a_rank[count++] = r_dest;
       r_prev = r_dest;
@@ -743,7 +711,7 @@ _assumed_rank_neighbors(cs_lnum_t        n,
  * \brief Exchange range info for building assumed rank neighbors info
  *
  * This operation is collective on communicator comm. The caller is
- * responsible for freeng the returned array.
+ * responsible for freeing the returned array.
  *
  * \param[in]  arn      info on ranks with which we will communicate
  * \param[in]  l_range  global id range [min, max[ for local rank
@@ -862,9 +830,12 @@ _assumed_to_true_rank(cs_rank_neighbors_t  *arn,
   cs_lnum_t n_range_match = 0;
   cs_lnum_t n_range_dist = 0;
 
+  cs_gnum_t nr_g = n_ranks;
+  cs_gnum_t block_size = (n_g % nr_g) ? n_g/nr_g + 1 : n_g/nr_g;
+
   [[maybe_unused]] int a_rank_prev = -1;
   for (cs_lnum_t i = 0; i < n; i++) {
-    int r = _assumed_rank(n_ranks, n_g, g_id[i]);
+    int r = g_id[i] / block_size;
     if (r == local_rank) {
       int r_idx = _g_id_rank_index(arn->size, d_ranges, g_id[i]);
       assert(r_idx >= 0);
