@@ -59,6 +59,13 @@
 
 - The report figures file is now stored in the POST folder
 
+### Bug fixes:
+
+- Fix rarely encountered crash in matrix assembler, when some local assigned
+  range sets are empty due to a small number of DoFs per MPI ranks is small.
+  This probably matches an issue first reported in 2017, which was
+  partitioning-dependent and difficult to reproduce.
+
 Release 9.2.0 (2026-07-06)
 --------------------------
 
