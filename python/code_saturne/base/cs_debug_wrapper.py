@@ -110,6 +110,7 @@ Debugger options:
   --asan-bp              Adds a breakpoint for gcc's Address-Sanitizer
   --back-end=GDB         Path to debugger back-end (for graphical front-ends)
   --breakpoints=LIST     Comma-separated list of breakpoints to insert
+  --command-file=FILE    Path to debugger commands file
   --ranks=LIST           Comma-separated list of MPI ranks to debug;
                          if specified, other ranks are run directly.
   --terminal=TERM        Select terminal type to use for console debugger
@@ -161,7 +162,7 @@ def process_cmd_line(argv, pkg):
                  "mpiexec": -1,
                  "program": -1}
 
-    debugger_options = ("asan-bp", "back-end", "breakpoints",
+    debugger_options = ("asan-bp", "back-end", "breakpoints", "command-file",
                         "ranks", "terminal")
 
     files = []
@@ -521,7 +522,11 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
             elif o.find('--breakpoints=') == 0: # Specify breakpoints
                 for bp in o[o.find('=')+1:].split(','):
                     cmds.append('b ' + bp)
-            elif o.find('--ranks=') == 0: # Specify breakpoints
+            elif o.find('--command-file=') == 0: # Specify command file
+                cmd_file_path = o[o.find('=')+1:]
+                for l in open(cmd_file_path).readlines():
+                    cmds.append(l.strip())
+            elif o.find('--ranks=') == 0: # Specify ranks
                 rank_filter = []
                 for r in o[o.find('=')+1:].split(','):
                     rank_filter.append(r)
