@@ -4163,7 +4163,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
   /* Arrays that are needed for both descent and ascent phases */
   cs_real_t *restrict rt_lv = mgd->rhs_vx[level*na];
-  assert(rt_lv != nullptr);
+  assert(rt_lv != nullptr || f_n_rows == 0);
 
   cs_multigrid_level_info_t  *lv_info = mg->lv_info + level;
   t0 = cs_timer_time();
