@@ -606,7 +606,7 @@ cs_rank_neighbors_symmetrize(cs_rank_neighbors_t  *n,
           n_max_elts *= 2;
           CS_REALLOC(recvbuf, n_max_elts, int);
         }
-        MPI_Recv(recvbuf + n_elts, 1, MPI_INT, status. MPI_SOURCE,
+        MPI_Recv(recvbuf + n_elts, 1, MPI_INT, status.MPI_SOURCE,
                  tag, comm, &status_recv);
         recvbuf[n_elts] = status.MPI_SOURCE;
         n_elts += 1;
@@ -816,7 +816,7 @@ cs_rank_neighbors_sync_count_m(const cs_rank_neighbors_t      *n_send,
   /* Fallback if nonblocking barrier is not available */
 #if !defined(HAVE_MPI_IBARRIER)
   if (exchange_type == CS_RANK_NEIGHBORS_NBX)
-    exchange_type == _exchange_type;
+    exchange_type = _exchange_type;
 #endif
 
   /* Initialize timers if required */
