@@ -1131,7 +1131,8 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
   ma->coeff_send_n_rows = 0;
 
-  cs_gnum_t g_r_id_prev = ma->l_range[0]; /* impossible value here */
+  constexpr cs_gnum_t max_gnum = std::numeric_limits<cs_gnum_t>::max();
+  cs_gnum_t g_r_id_prev = max_gnum; /* impossible value here */
 
   cs_lnum_t  n_e_g_ids = 0;
   cs_gnum_t *e_g_id = nullptr;
@@ -1160,7 +1161,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
     CS_MALLOC(ma->coeff_send_row_g_id, ma->coeff_send_n_rows, cs_gnum_t);
     CS_MALLOC(ma->coeff_send_col_g_id, ma->coeff_send_size, cs_gnum_t);
 
-    g_r_id_prev = ma->l_range[0]; /* impossible value here */
+    g_r_id_prev = max_gnum; /* impossible value here */
 
     for (cs_lnum_t i = 0; i < ma->coeff_send_size; i++) {
       cs_gnum_t g_r_id = e_g_ij[i*2];
