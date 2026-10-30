@@ -221,6 +221,7 @@ dist_pkgdata_DATA = \
 COPYING
 
 dist_pkgdata_SCRIPTS = \
+bin/debug_wrapper \
 bin/runcase_mpi_rank
 
 # Install thermochemistry and other data files
