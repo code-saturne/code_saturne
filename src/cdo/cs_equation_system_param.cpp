@@ -118,44 +118,26 @@ cs_equation_system_param_create(const char       *name,
 
   cs_param_sles_t  *slesp = cs_param_sles_create(-1, sysp->name);
 
-  slesp->cvg_param.n_max_iter = 100;
-  slesp->cvg_param.rtol = 1e-06;
-  slesp->cvg_param.atol = 1e-08;
-  slesp->cvg_param.dtol = 1e3;
+  cs_param_sles_set_cvg_param(slesp,
+                              1e-6, // rtol
+                              1e-8, // atol
+                              1e3,  // dtol
+                              100); // n_max_iter
 
-#if defined(HAVE_MUMPS)
+  /* By default, the MUMPS sparse direct solver is used. */
+
   sysp->sles_strategy = CS_EQUATION_SYSTEM_SLES_MUMPS;
 
-  slesp->solver = CS_PARAM_SOLVER_MUMPS;
-  slesp->precond = CS_PARAM_PRECOND_NONE;
-  slesp->solver_class = CS_PARAM_SOLVER_CLASS_MUMPS;
-#else
-#if defined(HAVE_PETSC)
-#if defined(PETSC_HAVE_MUMPS)
-  sysp->sles_strategy = CS_EQUATION_SYSTEM_SLES_MUMPS;
+  int ierr = cs_param_sles_set_solver("mumps", slesp);
 
-  slesp->solver = CS_PARAM_SOLVER_MUMPS;
-  slesp->precond = CS_PARAM_PRECOND_NONE;
-  slesp->solver_class = CS_PARAM_SOLVER_CLASS_PETSC;
-#else
-  bft_error(__FILE__, __LINE__, 0,
-            " %s: System of eq. \"%s\"\n"
-            " Error detected while initializing the linear algebra.\n"
-            " MUMPS is not available with your installation.\n"
-            " This is mandatory with this settings.\n"
-            " Please check your installation.\n",
-            __func__, name);
-#endif
-#else
-  bft_error(__FILE__, __LINE__, 0,
-            " %s: System of eq. \"%s\"\n"
-            " Error detected while initializing the linear algebra.\n"
-            " MUMPS is not available with your installation.\n"
-            " This is mandatory with this settings.\n"
-            " Please check your installation.\n",
-            __func__, name);
-#endif  /* HAVE_PETSC */
-#endif  /* HAVE_MUMPS */
+  if (ierr > 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: System of eq. \"%s\"\n"
+              " Error detected while initializing the linear algebra.\n"
+              " MUMPS is not available with your installation.\n"
+              " This is mandatory with this settings.\n"
+              " Please check your installation.\n",
+              __func__, name);
 
   sysp->sles_param = slesp;
 
