@@ -38,7 +38,7 @@ def name_to_id(Comm, name):
     Return the id of the app with name "name" within the communicator.
     """
 
-    new_id = pyplec.coupling_mpi_name_to_id(Comm, name)
+    new_id = pyplec.coupling_mpi_name_to_id(Comm.py2f(), name)
 
     return new_id
 
@@ -74,8 +74,8 @@ class ple_mpi_set(object):
             self.idx = pyplec.coupling_mpi_set_create(sync_flags,
                                                       app_type,
                                                       app_name,
-                                                      base_comm,
-                                                      app_comm)
+                                                      base_comm.py2f(),
+                                                      app_comm.py2f())
         except:
             raise Exception("ple mpi set create failed...")
 

@@ -24,7 +24,6 @@
 */
 
 #include <Python.h>
-#include "mpi4py/mpi4py.h"
 
 /*----------------------------------------------------------------------------
  * Standard C library headers
@@ -81,8 +80,8 @@ static ple_coupling_mpi_set_t **_mpi_sets;
 static PyObject *
 pyple_coupling_mpi_name_to_id(PyObject *self, PyObject *args)
 {
-  PyObject *py_comm = NULL;
-  MPI_Comm *comm_p  = NULL;
+  long     fcomm_handle = -1;
+  MPI_Comm comm_c       = MPI_COMM_NULL;
 
   const char *group_name = "";
 
@@ -93,18 +92,18 @@ pyple_coupling_mpi_name_to_id(PyObject *self, PyObject *args)
    * If a CPython function returns NULL, it means it failed.
    */
   if (!PyArg_ParseTuple(args,
-                        "Os:ple_coupling_mpi_name_to_id",
-                        &py_comm,
+                        "ls:ple_coupling_mpi_name_to_id",
+                        &fcomm_handle,
                         &group_name))
     return NULL;
 
   /* Retrieve the C MPI_Comm from the mpi4py.Comm */
-  comm_p = PyMPIComm_Get(py_comm);
-  if (comm_p == NULL)
+  comm_c = MPI_Comm_f2c((MPI_Fint)fcomm_handle);
+  if (comm_c == MPI_COMM_NULL)
     return NULL;
 
   /* Call the C function */
-  int new_id = ple_coupling_mpi_name_to_id(*comm_p, group_name);
+  int new_id = ple_coupling_mpi_name_to_id(comm_c, group_name);
 
   /* Return a Python value */
   return Py_BuildValue("i", new_id);
@@ -133,11 +132,11 @@ pyple_coupling_mpi_set_create(PyObject *self, PyObject *args)
   const char *app_type = "";
   const char *app_name = "";
 
-  PyObject *py_base_comm = NULL;
-  PyObject *py_app_comm  = NULL;
+  long fcomm_base_handle = -1;
+  long fcomm_app_handle  = -1;
 
-  MPI_Comm *base_comm_p = NULL;
-  MPI_Comm *app_comm_p  = NULL;
+  MPI_Comm base_comm_c = MPI_COMM_NULL;
+  MPI_Comm app_comm_c  = MPI_COMM_NULL;
 
   /* We verify that the correct arguments are provided.
    * format is of the form "var1_typevar2_type..varn_type:function_name"
@@ -145,19 +144,19 @@ pyple_coupling_mpi_set_create(PyObject *self, PyObject *args)
    * know it failed here.
    * If a CPython function returns NULL, it means it failed.
    */
-  if (!PyArg_ParseTuple(args, "issOO:ple_coupling_mpi_set_create",
+  if (!PyArg_ParseTuple(args, "issll:ple_coupling_mpi_set_create",
                         &sync_flags,
                         &app_type,
                         &app_name,
-                        &py_base_comm,
-                        &py_app_comm))
+                        &fcomm_base_handle,
+                        &fcomm_app_handle))
     return NULL;
 
   /* Retrieve the C MPI_Comm from the mpi4py.Comm */
-  base_comm_p = PyMPIComm_Get(py_base_comm);
-  app_comm_p  = PyMPIComm_Get(py_app_comm);
+  base_comm_c = MPI_Comm_f2c((MPI_Fint)fcomm_base_handle);
+  app_comm_c  = MPI_Comm_f2c((MPI_Fint)fcomm_app_handle);
 
-  if (base_comm_p == NULL || app_comm_p == NULL)
+  if (base_comm_c == MPI_COMM_NULL || app_comm_c == MPI_COMM_NULL)
     return NULL;
 
   /* Call the C function */
@@ -169,8 +168,8 @@ pyple_coupling_mpi_set_create(PyObject *self, PyObject *args)
   _mpi_sets[_n_sets] = ple_coupling_mpi_set_create(sync_flags,
                                                    app_type,
                                                    app_name,
-                                                   *base_comm_p,
-                                                   *app_comm_p);
+                                                   base_comm_c,
+                                                   app_comm_c);
 
   _n_sets++;
 
@@ -496,9 +495,9 @@ static PyObject *
 pyple_coupling_mpi_intracomm_create(PyObject *self, PyObject *args)
 {
 
-  PyObject *py_base_comm = NULL;
-  PyObject *py_app_comm  = NULL;
-  PyObject *py_new_comm  = NULL;
+  long fcomm_base_handle = -1;
+  long fcomm_app_handle  = -1;
+  long fcomm_new_handle  = -1;
 
   int distant_root = 0;
 
@@ -511,29 +510,29 @@ pyple_coupling_mpi_intracomm_create(PyObject *self, PyObject *args)
    * know it failed here.
    * If a CPython function returns NULL, it means it failed.
    */
-  if (!PyArg_ParseTuple(args, "OOiOO!O!:ple_coupling_mpi_intracomm_create",
-                        &py_base_comm, &py_app_comm,
-                        &distant_root, &py_new_comm,
+  if (!PyArg_ParseTuple(args, "llilO!O!:ple_coupling_mpi_intracomm_create",
+                        &fcomm_base_handle, &fcomm_app_handle,
+                        &distant_root, &fcomm_new_handle,
                         &PyList_Type, &llist,
                         &PyList_Type, &dlist))
     return NULL;
 
-  MPI_Comm *base_comm_p = NULL;
-  MPI_Comm *app_comm_p  = NULL;
-  MPI_Comm *new_comm_p  = NULL;
+  MPI_Comm base_comm_c = MPI_COMM_NULL;
+  MPI_Comm app_comm_c  = MPI_COMM_NULL;
+  MPI_Comm new_comm_c  = MPI_COMM_NULL;
 
-  base_comm_p = PyMPIComm_Get(py_base_comm);
-  app_comm_p  = PyMPIComm_Get(py_app_comm);
-  new_comm_p  = PyMPIComm_Get(py_new_comm);
+  base_comm_c = MPI_Comm_f2c((MPI_Fint)fcomm_base_handle);
+  app_comm_c  = MPI_Comm_f2c((MPI_Fint)fcomm_app_handle);
+  new_comm_c  = MPI_Comm_f2c((MPI_Fint)fcomm_new_handle);
 
   int lranks[2] = {-1, -1};
   int dranks[2] = {-1, -1};
 
   /* Call the C function */
-  ple_coupling_mpi_intracomm_create(*base_comm_p,
-                                    *app_comm_p,
+  ple_coupling_mpi_intracomm_create(base_comm_c,
+                                    app_comm_c,
                                     distant_root,
-                                    new_comm_p,
+                                    &new_comm_c,
                                     lranks,
                                     dranks);
 
@@ -543,8 +542,7 @@ pyple_coupling_mpi_intracomm_create(PyObject *self, PyObject *args)
   }
 
   /* Return a Python value */
-  Py_INCREF(Py_None);
-  return Py_None;
+  return PyLong_FromLong((long)new_comm_c);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -715,7 +713,7 @@ PyInit_libpyplecoupling(void)
   PyObject *m = NULL;
 
   /* Initialize mpi4py's C-API */
-  if (import_mpi4py() < 0) goto bad;
+  //if (import_mpi4py() < 0) goto bad;
 
   /* Module initialization  */
   m = PyModule_Create(&libpyplecoupling_module);
