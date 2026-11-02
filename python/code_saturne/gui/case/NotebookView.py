@@ -92,7 +92,7 @@ class item_class(object):
     def __repr__(self):
         return ("index : %s // variable : %s // value : %s // " \
                 "used with openturns : %s // editable : %s // " \
-                "read at restart : %s // log : %s //" \
+                "read from restart : %s // log : %s //" \
                 % (str(self.index), str(self.name), str(self.value), \
                    str(self.oturns), str(self.edit), str(self.restart), \
                    str(self.log)))
@@ -229,7 +229,7 @@ class VariableStandardItemModel(QAbstractItemModel):
             elif index.column() == 3:
                 return self.tr("Editable")
             elif index.column() == 4:
-                return self.tr("Read at restart")
+                return self.tr("Read from restart")
             elif index.column() == 5:
                 return self.tr("Print to default log file")
             elif index.column() == 6:

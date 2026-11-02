@@ -117,7 +117,7 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Import notebook variables from a file, one variable per line:&lt;br/&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;name, value&lt;/b&gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Optional extra columns: OpenTurns (Yes/No), read at restart (Yes/No), print to log (Yes/No), description.&lt;br/&gt;Use commas in .csv files, spaces in .txt files.&lt;br/&gt;Variables that already exist are overwritten.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Example: t_inlet,300&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Import notebook variables from a file, one variable per line:&lt;br/&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;name, value&lt;/b&gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Optional extra columns: OpenTurns (Yes/No), read from restart (Yes/No), print to log (Yes/No), description.&lt;br/&gt;Use commas in .csv files, spaces in .txt files.&lt;br/&gt;Variables that already exist are overwritten.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Example: t_inlet,300&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="statusTip">
            <string>Import notebook variables from a CSV or text file</string>
