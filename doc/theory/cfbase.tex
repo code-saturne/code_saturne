@@ -195,19 +195,19 @@ ainsi que l'équation d'énergie totale de manière conservative,
 pour des écoulements compressibles.
 
 \begin{equation}\label{Cfbl_Cfbase_eq_ref_laminaire_cfbase}
-\left\{\begin{array}{l}
-
-\displaystyle\frac{\partial\rho}{\partial t} + \divs(\vect{Q}) = 0 \\
-\\
-\displaystyle\frac{\partial\vect{Q}}{\partial t}
+\left\{
+\begin{aligned}
+&\displaystyle\frac{\partial\rho}{\partial t} + \divs(\vect{Q}) = 0 \\[1em]
+&\\
+&\displaystyle\frac{\partial\vect{Q}}{\partial t}
 + \divv(\vect{u} \otimes \vect{Q}) + \gradv{P}
-= \rho \vect{f}_v + \divv(\tens{\Sigma}^v) \\
-\\
-\displaystyle\frac{\partial E}{\partial t} + \divs( \vect{u} (E+P) )
+= \rho \vect{f}_v + \divv(\tens{\Sigma}^v) \\[1em]
+&\\
+&\displaystyle\frac{\partial E}{\partial t} + \divs( \vect{u} (E+P) )
 = \rho\vect{f}_v\cdot\vect{u} + \divs(\tens{\Sigma}^v \vect{u})
 - \divs{\,\vect{\Phi}_s} + \rho\Phi_v
-
-\end{array}\right.
+\end{aligned}
+\right.
 \end{equation}
 
 Nous avons présenté ici le système d'équations laminaires, mais il faut préciser

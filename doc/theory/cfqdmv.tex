@@ -49,17 +49,17 @@ la turbulence, dont le traitement n'a rien de particulier dans le
 module compressible)~:
 
 \begin{equation}\label{Cfbl_Cfqdmv_eq_qdm_cfqdmv}
-\left\{\begin{array}{l}
-
-\rho^{**}=\rho^{*}=\rho^{n+1}\\
-\\
-\displaystyle\frac{\partial \rho\vect{u}}{\partial t}+
-\divv(\vect{u} \otimes \vect{Q}_{ac}) + \gradv{P}
-= \rho \vect{f}_v + \divv(\tens{\Sigma}^v)\\
-\\
-e^{**}=e^{*}=e^n\\
-
-\end{array}\right.
+\left\{
+\begin{aligned}
+\rho^{**} &= \rho^{*}=\rho^{n+1} \\[1em]
+&\\
+\displaystyle\frac{\partial \rho\vect{u}}{\partial t}
++ \divv(\vect{u} \otimes \vect{Q}_{ac}) + \gradv{P}
+&= \rho \vect{f}_v + \divv(\tens{\Sigma}^v) \\[1em]
+&\\
+e^{**} &= e^{*}=e^n
+\end{aligned}
+\right.
 \end{equation}
 
 La résolution de cette étape est similaire à l'étape
@@ -84,15 +84,14 @@ volumiques en utilisant $\rho^{n+1}$.
 
 On obtient alors l'équation discrète suivante~:
 \begin{equation}\label{Cfbl_Cfqdmv_eq_vitesse_cfqdmv}
-\begin{array}{l}
-\displaystyle\frac{(\rho\vect{u})^{n+1}-(\rho\vect{u})^n}{\Delta t^n}
+\begin{aligned}
+&\displaystyle\frac{(\rho\vect{u})^{n+1}-(\rho\vect{u})^n}{\Delta t^n}
 + \divv(\vect{u}^{n+1} \otimes \vect{Q}_{ac}^{n+1})
 - \divv(\mu^n \gradt{\vect{u}^{n+1}})\\
-\\
-\text{\ \ \ \ }= \rho^{n+1} \vect{f}_v - \gradv{\widetilde{P}}
+&= \rho^{n+1} \vect{f}_v - \gradv{\widetilde{P}}
 + \divv\left(\mu^n\ ^t\gradt{\vect{u}^n}
-+ (\kappa^n-\frac{2}{3}\mu^n)\divs{\vect{u}^n}\ \tens{Id}\right)\\
-\end{array}
++ (\kappa^n-\frac{2}{3}\mu^n)\divs{\vect{u}^n}\ \tens{Id}\right)
+\end{aligned}
 \end{equation}
 avec $\widetilde{P}=P^n\text{ ou }P^{Pred}$ suivant la valeur de \var{IGRDPP}
 ($P^n$ par défaut).
@@ -102,21 +101,23 @@ gauche l'écart $\vect{u}^{n+1} - \vect{u}^n$. Pour cela, on écrit la
 dérivée en temps discrète sous la forme suivante~:
 
 \begin{equation}
-\begin{array}{ll}
+\begin{aligned}
 \displaystyle
 \frac{(\rho \vect{u})^{n+1} - (\rho \vect{u})^n}{\Delta t^n}
 & =
 \displaystyle
-\frac{\rho^{n+1}\, \vect{u}^{n+1} - \rho^n\, \vect{u}^n}{\Delta t^n}\\
+\frac{\rho^{n+1}\, \vect{u}^{n+1} - \rho^n\, \vect{u}^n}{\Delta t^n}\\[0.5em]
 & =
 \displaystyle
-\frac{\rho^{n}\, \vect{u}^{n+1} - \rho^n\, \vect{u}^n}{\Delta t^n}+
-\frac{\rho^{n+1}\, \vect{u}^{n+1} - \rho^n\, \vect{u}^{n+1}}{\Delta t^n}\\
+\frac{\rho^{n}\, \vect{u}^{n+1} - \rho^n\, \vect{u}^n}{\Delta t^n}
++
+\frac{\rho^{n+1}\, \vect{u}^{n+1} - \rho^n\, \vect{u}^{n+1}}{\Delta t^n}\\[0.5em]
 & =
 \displaystyle
-\frac{\rho^{n}}{\Delta t^n}\left(\vect{u}^{n+1} - \vect{u}^n\right)+
+\frac{\rho^{n}}{\Delta t^n}\left(\vect{u}^{n+1} - \vect{u}^n\right)
++
 \vect{u}^{n+1}\frac{\rho^{n+1} - \rho^n}{\Delta t^n}
-\end{array}
+\end{aligned}
 \end{equation}
 
 et l'on utilise alors l'équation de la masse discrète pour écrire~:
@@ -143,20 +144,19 @@ sur la cellule $i$ de volume $\Omega_i$ et
 on obtient l'équation discrétisée en espace~:
 
 \begin{equation}\label{Cfbl_Cfqdmv_eq_vitesse_discrete_cfqdmv}
-\begin{array}{l}
-\displaystyle\frac{\Omega_i}{\Delta t^n}
+\begin{aligned}
+&\displaystyle\frac{\Omega_i}{\Delta t^n}
 (\rho_i^{n+1}\vect{u}_i^{n+1}-\rho_i^n\vect{u}_i^n)
 + \displaystyle\sum\limits_{j\in V(i)}
 (\vect{u}^{n+1} \otimes \vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij}
 - \displaystyle\sum\limits_{j\in V(i)}
-\left(\mu^n\gradt{\vect{u}^{n+1}}\right)_{ij} \cdot \vect{S}_{ij}\\
-\\
-= \Omega_i\rho_i^{n+1} {\vect{f}_v}_i
+\left(\mu^n\gradt{\vect{u}^{n+1}}\right)_{ij} \cdot \vect{S}_{ij}\\[1em]
+&= \Omega_i\rho_i^{n+1} {\vect{f}_v}_i
 - \Omega_i(\gradv{\widetilde{P}})_i
 + \displaystyle\sum\limits_{j\in V(i)}
 \left(\mu^n\ ^t\gradt{\vect{u}^n} + (\kappa^n-\frac{2}{3}\mu^n)
-\divs{\vect{u}^n}\ \tens{Id}\right)_{ij}\vect{S}_{ij}\\
-\end{array}
+\divs{\vect{u}^n}\ \tens{Id}\right)_{ij}\vect{S}_{ij}
+\end{aligned}
 \end{equation}
 
 %.................................
@@ -170,13 +170,13 @@ La valeur à la face s'écrit~:
 \end{equation}
 avec un décentrement sur la valeur de $\vect{u}^{n+1}$ aux faces~:
 \begin{equation}
-\begin{array}{lllll}
+\begin{aligned}
 \vect{u}_{ij}^{n+1}
-& = & \vect{u}_i^{n+1}
-& \text{si\ } & (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} \geqslant 0 \\
-& = & \vect{u}_j^{n+1}
-& \text{si\ } & (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} < 0 \\
-\end{array}
+&= \vect{u}_i^{n+1}
+&\text{si\ }& (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} \geqslant 0 \\[0.5em]
+&= \vect{u}_j^{n+1}
+&\text{si\ }& (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} < 0
+\end{aligned}
 \end{equation}
 que l'on peut noter~:
 \begin{equation}
@@ -185,12 +185,12 @@ que l'on peut noter~:
 \end{equation}
 avec
 \begin{equation}
-\left\{\begin{array}{lll}
-\beta_{ij} = 1 & \text{si\ }
-& (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} \geqslant 0 \\
-\beta_{ij} = 0 & \text{si\ }
-& (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} < 0 \\
-\end{array}\right.
+\left\{
+\begin{aligned}
+\beta_{ij} &= 1 &\text{si\ }& (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} \geqslant 0 \\[0.5em]
+\beta_{ij} &= 0 &\text{si\ }& (\vect{Q}_{ac}^{n+1})_{ij} \cdot \vect{S}_{ij} < 0
+\end{aligned}
+\right.
 \end{equation}
 
 %.................................
@@ -231,16 +231,15 @@ On calcule des gradients aux cellules et on utilise une
 interpolation linéaire aux
 faces (avec, en pratique, $\alpha_{ij}=\frac{1}{2}$)~:
 \begin{equation}
-\begin{array}{r}
-\left(\mu^n\ ^t\gradt{\vect{u}^n} + (\kappa^n-\frac{2}{3}\mu^n)
-\divs{\vect{u}^n}\ \tens{Id}\right)_{ij}\cdot\vect{S}_{ij}
-= \left\{\alpha_{ij} \left(\mu^n\ ^t\gradt{\vect{u}^n}
+\begin{aligned}
+&\left(\mu^n\ ^t\gradt{\vect{u}^n} + (\kappa^n-\frac{2}{3}\mu^n)
+\divs{\vect{u}^n}\ \tens{Id}\right)_{ij}\cdot\vect{S}_{ij}\\
+&= \left\{\alpha_{ij} \left(\mu^n\ ^t\gradt{\vect{u}^n}
 + (\kappa^n-\frac{2}{3}\mu^n)\divs{\vect{u}^n}\ \tens{Id}\right)_i\right.\\
-\\
-\left.+ (1-\alpha_{ij}) \left(\mu^n\ ^t\gradt{\vect{u}^n}
+&\qquad\left.+ (1-\alpha_{ij}) \left(\mu^n\ ^t\gradt{\vect{u}^n}
 + (\kappa^n-\frac{2}{3}\mu^n)\divs{\vect{u}^n}\ \tens{Id}\right)_j
-\right\} \cdot\vect{S}_{ij}\\
-\end{array}
+\right\} \cdot\vect{S}_{ij}
+\end{aligned}
 \end{equation}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -251,21 +250,24 @@ faces (avec, en pratique, $\alpha_{ij}=\frac{1}{2}$)~:
 On résout les trois directions d'espace du système
 (\ref{Cfbl_Cfqdmv_eq_vitesse_discrete_cfqdmv}) successivement et indépendamment~:
 \begin{equation}\label{Cfbl_Cfqdmv_eq_vitesse_finale_cfqdmv}
-\left\{\begin{array}{l}
-\displaystyle\frac{\Omega_i}{\Delta t^n}
+\left\{
+\begin{aligned}
+&\displaystyle\frac{\Omega_i}{\Delta t^n}
 (\rho_i^{n+1}{u_i}_{(\alpha)}^{n+1}-\rho_i^n{u_i}_{(\alpha)}^n)
 + \displaystyle\sum\limits_{j\in V(i)}
-{u_{ij}}_{(\alpha)}^{n+1}(\vect{Q}_{ac}^{n+1})_{ij}\cdot\vect{S}_{ij}
-- \displaystyle\sum\limits_{j\in V(i)}
+{u_{ij}}_{(\alpha)}^{n+1}(\vect{Q}_{ac}^{n+1})_{ij}\cdot\vect{S}_{ij}\\
+&- \displaystyle\sum\limits_{j\in V(i)}
 \mu_{ij}^n\frac{{u_j}_{(\alpha)}^{n+1}-{u_i}_{(\alpha)}^{n+1}}{\overline{I'J'}}S_{ij}\\
-\qquad\qquad\qquad\qquad= \Omega_i\rho_i^{n+1} {{f_v}_i}_{(\alpha)}
+&\qquad= \Omega_i\rho_i^{n+1} {{f_v}_i}_{(\alpha)}
 - \Omega_i{(\gradv{\widetilde{P}})_{i}}_{(\alpha)}\\
-\qquad\qquad\qquad\qquad + \displaystyle\sum\limits_{j\in V(i)}
+&\qquad\quad + \displaystyle\sum\limits_{j\in V(i)}
 \left((\mu^n\ ^t\gradt{\vect{u}^n})_{ij}\cdot\vect{S}_{ij}\right)_{(\alpha)}
- + \displaystyle\sum\limits_{j\in V(i)} \left((\kappa^n-\frac{2}{3}\mu^n)
-\divs{\vect{u}^n}\right)_{ij}{S_{ij}}_{(\alpha)}\\
-i = 1\ldots N \qquad \text{et} \qquad (\alpha) = x,\ y,\ z\\
-\end{array}\right.
++ \displaystyle\sum\limits_{j\in V(i)}
+\left((\kappa^n-\frac{2}{3}\mu^n)
+\divs{\vect{u}^n}\right)_{ij}{S_{ij}}_{(\alpha)}\\[0.5em]
+&i = 1\ldots N \qquad \text{et} \qquad (\alpha) = x,\ y,\ z
+\end{aligned}
+\right.
 \end{equation}
 
 Chaque système associé à une direction est résolu par une méthode

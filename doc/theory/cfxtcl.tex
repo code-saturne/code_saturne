@@ -35,19 +35,19 @@ Pour le traitement des conditions aux limites, on considère
 le système (\ref{Cfbl_Cfxtcl_eq_ref_laminaire_cfxtcl})
 
 \begin{equation}\label{Cfbl_Cfxtcl_eq_ref_laminaire_cfxtcl}
-\left\{\begin{array}{l}
-
-\displaystyle\frac{\partial\rho}{\partial t} + \divs(\vect{Q}) = 0 \\
-\\
-\displaystyle\frac{\partial\vect{Q}}{\partial t}
+\left\{
+\begin{aligned}
+&\displaystyle\frac{\partial\rho}{\partial t} + \divs(\vect{Q}) = 0 \\[1em]
+&\\
+&\displaystyle\frac{\partial\vect{Q}}{\partial t}
 + \divv(\vect{u} \otimes \vect{Q}) + \gradv{P}
-= \rho \vect{f}_v + \divv(\tens{\Sigma}^v) \\
-\\
-\displaystyle\frac{\partial E}{\partial t} + \divs( \vect{u} (E+P) )
+= \rho \vect{f}_v + \divv(\tens{\Sigma}^v) \\[1em]
+&\\
+&\displaystyle\frac{\partial E}{\partial t} + \divs( \vect{u} (E+P) )
 = \rho\vect{f}_v\cdot\vect{u} + \divs(\tens{\Sigma}^v \vect{u})
 - \divs{\,\vect{\Phi}_s} + \rho\Phi_v
-
-\end{array}\right.
+\end{aligned}
+\right.
 \end{equation}
 
 en tant que système hyperbolique portant sur la variable vectorielle
@@ -268,17 +268,17 @@ $(\vect{\tau}_1,\vect{\tau}_2,\vect{n})$
 et l'on ne considère que les variations suivant cette normale.
 Le système devient donc~:
 \begin{equation}\label{Cfbl_Cfxtcl_eq_euler_cfxtcl}
-\begin{array}{lllll}
+\begin{aligned}
 \displaystyle\frac{\partial \vect{W}}{\partial t}
 + \frac{\partial}{\partial n}\vect{F}_n(\vect{W})
-= 0
+&= 0
 &\text{avec}
-& \vect{F}_n(\vect{W})
- = \displaystyle\sum\limits_{i=1}^3 n_i \vect{F}_i(\vect{W})
-& \text{et}
-& \displaystyle\frac{\partial}{\partial n}
+&\quad \vect{F}_n(\vect{W})
+= \displaystyle\sum\limits_{i=1}^3 n_i \vect{F}_i(\vect{W})\\
+&&\text{et}
+&\quad \displaystyle\frac{\partial}{\partial n}
 = \displaystyle\sum\limits_{i=1}^3 n_i \frac{\partial}{\partial x_i}
-\end{array}
+\end{aligned}
 \end{equation}
 
 Pour déterminer les valeurs des variables au bord, on recherche
@@ -368,20 +368,27 @@ thermodynamique prévue est celle des gaz parfaits).
 Pour les faces de paroi, on définit à l'extérieur du domaine
 un état miroir $\vect{W}_{\,\infty}$ par~:
 \begin{equation}\label{Cfbl_Cfxtcl_eq_paroi_cfxtcl}
-\begin{array}{lllll}
-\vect{W}_{\,i} &=&
-\left(\begin{array}{l}
-\rho_i\\ {\vect{u}_\tau}_i\\ u_i\\ P_i
-\end{array}\right)
+\begin{aligned}
+\vect{W}_{\,i} &=
+\left(
+\begin{aligned}
+\rho_i\\
+{\vect{u}_\tau}_i\\
+u_i\\
+P_i
+\end{aligned}
+\right)
 \qquad
-\vect{W}_{\,\infty} &=&
-\left(\begin{array}{lll}
-\rho_\infty &=& \rho_i\\
-{\vect{u}_\tau}_\infty &=& {\vect{u}_\tau}_i\\
-u_\infty &=& -u_i\\
-P_\infty &=& P_i
-\end{array}\right)
-\end{array}
+\vect{W}_{\,\infty} &=
+\left(
+\begin{aligned}
+\rho_\infty &= \rho_i\\
+{\vect{u}_\tau}_\infty &= {\vect{u}_\tau}_i\\
+u_\infty &= -u_i\\
+P_\infty &= P_i
+\end{aligned}
+\right)
+\end{aligned}
 \end{equation}
 
 \vspace{0.5cm}
@@ -434,23 +441,24 @@ Par des considérations de symétrie on trouve $u_p = 0$.
 Puis on obtient $\rho_p$ et $P_p$ en écrivant la conservation
 des invariants de Riemann à travers la 1-détente~:
 \begin{equation}\label{Cfbl_Cfxtcl_eq_invariants_detente_cfxtcl}
-\begin{array}{lll}
-\left\{\begin{array}{l}
+\begin{aligned}
+\left\{
+\begin{aligned}
 u_1 + \displaystyle\int_0^{\rho_1} \frac{c}{\rho} d\rho
-= u_i + \displaystyle\int_0^{\rho_i} \frac{c}{\rho} d\rho\\
-\\
-s_1 = s_i
-\end{array}\right.
-&
-\Rightarrow
-\left\{\begin{array}{ll}
+&= u_i + \displaystyle\int_0^{\rho_i} \frac{c}{\rho} d\rho\\[0.5em]
+s_1 &= s_i
+\end{aligned}
+\right.
+&\Rightarrow
+\left\{
+\begin{aligned}
 \displaystyle\int_{\rho_i}^{\rho_1} \frac{c}{\rho} d\rho = u_i
-& \Rightarrow \rho_p=\rho_1\\
-\\
+&\Rightarrow \rho_p=\rho_1\\[0.5em]
 s(P_1,\rho_1) = s(P_i,\rho_i)
-& \Rightarrow P_p=P_1
-\end{array}\right.
-\end{array}
+&\Rightarrow P_p=P_1
+\end{aligned}
+\right.
+\end{aligned}
 \end{equation}
 
 \vspace{0.5cm}
@@ -491,23 +499,24 @@ on trouve ${\vect{u}_\tau}_p = {\vect{u}_\tau}_i$ et $u_p = 0$,
 puis $\rho_p$ et $P_p$ en écrivant les relations de saut
 à travers le 1-choc~:
 \begin{equation}\label{Cfbl_Cfxtcl_eq_saut_choc_cfxtcl}
-\begin{array}{lll}
-\left\{\begin{array}{l}
+\begin{aligned}
+\left\{
+\begin{aligned}
 \rho_1 \rho_i (u_1 - u_i)^2
-= (P_1 - P_i)(\rho_1 - \rho_i)\\
-\\
+&= (P_1 - P_i)(\rho_1 - \rho_i)\\[0.5em]
 2\rho_1 \rho_i (\varepsilon_1 - \varepsilon_i)
-= (P_1 + P_i)(\rho_1 - \rho_i)
-\end{array}\right.
-& \text{avec } \varepsilon = \varepsilon(P,\rho)
-&
-\Rightarrow
-\left\{\begin{array}{l}
-\rho_p=\rho_1\\
-\\
-P_p=P_1
-\end{array}\right.
-\end{array}
+&= (P_1 + P_i)(\rho_1 - \rho_i)
+\end{aligned}
+\right.
+&\qquad \text{avec } \varepsilon = \varepsilon(P,\rho)
+\qquad\Rightarrow
+\left\{
+\begin{aligned}
+\rho_p &= \rho_1\\[0.5em]
+P_p &= P_1
+\end{aligned}
+\right.
+\end{aligned}
 \end{equation}
 
 \bigskip
@@ -592,12 +601,14 @@ Toutes les caractéristiques sont sortantes,
 on connaît donc toutes les conditions au bord~:
 
 \begin{equation}
-\left\{\begin{array}{l}
-\rho_b = \rho_i\\
-{\vect{u}_\tau}_b = {\vect{u}_\tau}_i\\
-u_b = u_i\\
-P_b = P_i
-\end{array}\right.
+\left\{
+\begin{aligned}
+\rho_b &= \rho_i\\
+{\vect{u}_\tau}_b &= {\vect{u}_\tau}_i\\
+u_b &= u_i\\
+P_b &= P_i
+\end{aligned}
+\right.
 \end{equation}
 
 \paragraph{Sortie subsonique (condition ISOPCF de
@@ -650,23 +661,24 @@ on a une 1-détente.
 On écrit la conservation
 des invariants de Riemann à travers la 1-détente~:
 \begin{equation}
-\begin{array}{lll}
-\left\{\begin{array}{l}
-s_1 = s_i\\
-\\
+\begin{aligned}
+\left\{
+\begin{aligned}
+s_1 &= s_i\\[0.5em]
 u_1 + \displaystyle\int_0^{\rho_1} \frac{c}{\rho} d\rho
-= u_i + \displaystyle\int_0^{\rho_i} \frac{c}{\rho} d\rho
-\end{array}\right.
-&
-\Rightarrow
-\left\{\begin{array}{ll}
+&= u_i + \displaystyle\int_0^{\rho_i} \frac{c}{\rho} d\rho
+\end{aligned}
+\right.
+&\Rightarrow
+\left\{
+\begin{aligned}
 s(P_{ext},\rho_1) = s(P_i,\rho_i)
-& \Rightarrow \rho_b=\rho_1\\
-\\
+&\Rightarrow \rho_b=\rho_1\\[0.5em]
 u_1 = u_i - \displaystyle\int_{\rho_i}^{\rho_1} \frac{c}{\rho} d\rho
-& \Rightarrow u_b = u_1
-\end{array}\right.
-\end{array}
+&\Rightarrow u_b = u_1
+\end{aligned}
+\right.
+\end{aligned}
 \end{equation}
 
 \item Si $P_{ext} > P_i$,
@@ -674,22 +686,23 @@ on a un 1-choc.
 
 On écrit les relations de saut à travers le 1-choc~:
 \begin{equation}
-\begin{array}{lll}
-\left\{\begin{array}{l}
+\begin{aligned}
+\left\{
+\begin{aligned}
 \rho_1 \rho_i (u_1 - u_i)^2
-= (P_{ext} - P_i)(\rho_1 - \rho_i)\\
-\\
+&= (P_{ext} - P_i)(\rho_1 - \rho_i)\\[0.5em]
 2\rho_1 \rho_i (\varepsilon(P_{ext},\rho_1) - \varepsilon(P_i,\rho_i))
-= (P_{ext} + P_i)(\rho_1 - \rho_i)
-\end{array}\right.
-&
-\Rightarrow
-\left\{\begin{array}{l}
-\rho_b=\rho_1\\
-\\
-u_b = u_1
-\end{array}\right.
-\end{array}
+&= (P_{ext} + P_i)(\rho_1 - \rho_i)
+\end{aligned}
+\right.
+&\Rightarrow
+\left\{
+\begin{aligned}
+\rho_b &= \rho_1\\[0.5em]
+u_b &= u_1
+\end{aligned}
+\right.
+\end{aligned}
 \end{equation}
 
 \bigskip
@@ -778,12 +791,14 @@ Toutes les caractéristiques sont entrantes,
 toutes les conditions au bord sont donc imposées par l'utilisateur.
 
 \begin{equation}
-\left\{\begin{array}{l}
-\rho_b = \rho_{ext}\\
-{\vect{u}_\tau}_b = {\vect{u}_\tau}_{ext}\\
-u_b = u_{ext}\\
-P_b = P_{ext}
-\end{array}\right.
+\left\{
+\begin{aligned}
+\rho_b &= \rho_{ext}\\
+{\vect{u}_\tau}_b &= {\vect{u}_\tau}_{ext}\\
+u_b &= u_{ext}\\
+P_b &= P_{ext}
+\end{aligned}
+\right.
 \end{equation}
 
 
@@ -841,32 +856,35 @@ On écrit la conservation
 des invariants de Riemann à travers la 1-détente
 et la conservation de la vitesse et de la pression à travers le contact~:
 \begin{equation}
-\begin{array}{lll}
-\begin{array}{l}
-\left\{\begin{array}{l}
+\begin{aligned}
+\left\{
+\begin{aligned}
+\left\{
+\begin{aligned}
 u_1 + \displaystyle\int_0^{\rho_1} \frac{c}{\rho} d\rho
-= u_i + \displaystyle\int_0^{\rho_i} \frac{c}{\rho} d\rho\\
-\\
-s_1 = s_i
-\end{array}\right.\\
-\\
-\left\{\begin{array}{l}
-u_1 = u_2 = u_{ext}\\
-\\
-P_1 = P_2
-\end{array}\right.
-\end{array}
-&
-\Rightarrow
-\left\{\begin{array}{ll}
+&= u_i + \displaystyle\int_0^{\rho_i} \frac{c}{\rho} d\rho\\[0.5em]
+s_1 &= s_i
+\end{aligned}
+\right.\\[1em]
+\left\{
+\begin{aligned}
+u_1 &= u_2 = u_{ext}\\[0.5em]
+P_1 &= P_2
+\end{aligned}
+\right.
+\end{aligned}
+\right.
+&\Rightarrow
+\left\{
+\begin{aligned}
 \displaystyle\int_{\rho_i}^{\rho_1} \frac{c}{\rho} d\rho
-= u_i - u_{ext}
-& \Rightarrow \rho_1\\
-\\
-s(P_2,\rho_1) = s(P_i,\rho_i)
-& \Rightarrow P_b = P_2
-\end{array}\right.
-\end{array}
+&= u_i - u_{ext}
+&\Rightarrow \rho_1\\[0.5em]
+s(P_2,\rho_1) &= s(P_i,\rho_i)
+&\Rightarrow P_b = P_2
+\end{aligned}
+\right.
+\end{aligned}
 \end{equation}
 
 \item Si $u_{ext} < u_i$,
@@ -875,32 +893,34 @@ on a un 1-choc.
 On écrit les relations de saut à travers le 1-choc
 et la conservation de la vitesse et de la pression à travers le contact~:
 \begin{equation}
-\begin{array}{lll}
-\begin{array}{l}
-\left\{\begin{array}{l}
+\begin{aligned}
+\left\{
+\begin{aligned}
+\left\{
+\begin{aligned}
 \rho_1 \rho_i (u_1 - u_i)^2
-= (P_1 - P_i)(\rho_1 - \rho_i)\\
-\\
+&= (P_1 - P_i)(\rho_1 - \rho_i)\\[0.5em]
 2\rho_1 \rho_i (\varepsilon_1 - \varepsilon_i)
-= (P_1 + P_i)(\rho_1 - \rho_i)\\
-\\
-\varepsilon = \varepsilon(P,\rho)
-\end{array}\right.\\
-\\
-\left\{\begin{array}{l}
-u_1 = u_2 = u_{ext}\\
-\\
-P_1 = P_2
-\end{array}\right.
-\end{array}
-&
-\Rightarrow
-\left\{\begin{array}{l}
-\rho_1\\
-\\
-P_b = P_2
-\end{array}\right.
-\end{array}
+&= (P_1 + P_i)(\rho_1 - \rho_i)\\[0.5em]
+\varepsilon &= \varepsilon(P,\rho)
+\end{aligned}
+\right.\\[1em]
+\left\{
+\begin{aligned}
+u_1 &= u_2 = u_{ext}\\[0.5em]
+P_1 &= P_2
+\end{aligned}
+\right.
+\end{aligned}
+\right.
+&\Rightarrow
+\left\{
+\begin{aligned}
+\rho_1\\[0.5em]
+P_b &= P_2
+\end{aligned}
+\right.
+\end{aligned}
 \end{equation}
 
 \bigskip
@@ -958,11 +978,11 @@ Pour simplifier la résolution, on peut utiliser la formulation
 de (\ref{Cfbl_Cfxtcl_eq_equilibre_local_cfxtcl}) en incompressible
 (c'est cette approche qui a été adoptée dans \CS)~:
 \begin{equation}\label{Cfbl_Cfxtcl_eq_equilibre_incompressible_cfxtcl}
-\begin{array}{lll}
-\left(\gradv{P}\right)_i = \rho_i \vect{g}
-& \text{ce qui donne}
-& P_{paroi} = P_i + \rho_i \vect{g} \cdot (\vect{x}_{paroi} - \vect{x}_i)
-\end{array}
+\begin{aligned}
+\left(\gradv{P}\right)_i &= \rho_i \vect{g}
+&\text{ce qui donne}\quad&
+P_{paroi} = P_i + \rho_i \vect{g} \cdot (\vect{x}_{paroi} - \vect{x}_i)
+\end{aligned}
 \end{equation}
 
 
@@ -971,11 +991,12 @@ consiste à résoudre l'équilibre local avec la formulation
 compressible (\ref{Cfbl_Cfxtcl_eq_equilibre_local_cfxtcl}), en supposant de plus que
 la maille est isentropique~:
 \begin{equation}
-\left\{\begin{array}{lll}
-\gradv{P} = \rho \vect{g}\\
-\\
-P = P(\rho,s_i)
-\end{array}\right.
+\left\{
+\begin{aligned}
+\gradv{P} &= \rho \vect{g}\\[0.5em]
+P &= P(\rho,s_i)
+\end{aligned}
+\right.
 \end{equation}
 Ce qui donne, pour un gaz parfait~:
 \begin{equation}
@@ -1041,15 +1062,17 @@ $\displaystyle P=\frac{\rho\varepsilon}{\gamma-1}$ et
 on note $u_\xi$ les composantes de $\vect{u}$)~:
 
 \begin{equation}
-\left\{\begin{array}{lllll}
+\left\{
+\begin{aligned}
 \displaystyle\frac{\partial\rho}{\partial t}
-&+&\rho\divv{\,\vect{u}} + \vect{u}\,\grad{\,\rho}&=& 0 \\
+&+ \rho\divv{\,\vect{u}} + \vect{u}\,\grad{\,\rho} &=& 0 \\[0.5em]
 \displaystyle\frac{\partial u_\xi}{\partial t}
-&+& \vect{u}\,\grad{u_\xi}+\displaystyle\frac{1}{\rho}\,\frac{\partial
-P}{\partial \xi} &=& 0 \\
+&+ \vect{u}\,\grad{u_\xi}
++ \displaystyle\frac{1}{\rho}\,\frac{\partial P}{\partial \xi} &=& 0 \\[0.5em]
 \displaystyle\frac{\partial P}{\partial t}
-&+&\gamma\,P\,\dive{\vect{u}}+\vect{u}\,\grad{P}&=& 0
-\end{array}\right.
+&+ \gamma\,P\,\dive{\vect{u}}+\vect{u}\,\grad{P} &=& 0
+\end{aligned}
+\right.
 \end{equation}
 
 En notant le vecteur d'état $\vect{W}= (\rho,\vect{u},P)^t$,
@@ -1127,11 +1150,13 @@ P}{\partial n} &=& 0 \\
 
 La matrice jacobienne associée est donc~:
 \begin{equation}
-\left(\begin{array}{lll}
-\displaystyle u & \rho                 & 0                                \\
-\displaystyle 0 & u                    & \displaystyle\frac{1}{\rho}        \\
-\displaystyle 0 & \gamma\, P        & 0                                 \\
-\end{array}\right)
+\left(
+\begin{aligned}
+u &\quad \rho &\quad 0\\
+0 &\quad u &\quad \displaystyle\frac{1}{\rho}\\
+0 &\quad \gamma\, P &\quad 0
+\end{aligned}
+\right)
 \end{equation}
 
 Les valeurs propres sont $u$ et $\displaystyle\,u\pm c$ (avec
@@ -1150,49 +1175,48 @@ Les flux convectifs calculés par le schéma de Rusanov
 pour les variables masse, quantité de mouvement
 et énergie représentent donc la discrétisation des termes suivants~:
 \begin{equation}
-\left\{\begin{array}{l}
-\displaystyle\dive(\vect{Q})\\
-\displaystyle\divv(\vect{u}\otimes\vect{Q})+\grad\,P\\
-\displaystyle\dive\left(\vect{Q}\,(e+\frac{P}{\rho})\right)
-\end{array}\right.
+\left\{
+\begin{aligned}
+&\displaystyle\dive(\vect{Q})\\[0.5em]
+&\displaystyle\divv(\vect{u}\otimes\vect{Q})+\grad\,P\\[0.5em]
+&\displaystyle\dive\left(\vect{Q}\,(e+\frac{P}{\rho})\right)
+\end{aligned}
+\right.
 \end{equation}
 
 Pour une face de bord $ik$ adjacente à la cellule $i$ et
 avec la valeur précédente de $\rho_{rus\,{b}_{ik}}$, on a~:
 \begin{equation}
-\left\{\begin{array}{lll}
-\displaystyle\int_{S_{\,{b}_{ik}}}\vect{Q}\cdot\vect{n}\,dS
-&=&
-\displaystyle\frac{1}{2}\left(
+\left\{
+\begin{aligned}
+&\displaystyle\int_{S_{\,{b}_{ik}}}\vect{Q}\cdot\vect{n}\,dS
+= \displaystyle\frac{1}{2}\left(
 (\vect{Q}_i+\vect{Q}_{\,{b}_{ik}})\cdot\vect{n}_{\,{b}_{ik}}\right)\,S_{\,{b}_{ik}}\\
-&&\displaystyle \qquad\qquad\qquad\qquad\qquad\qquad
+&\qquad\displaystyle
 -\frac{1}{2}\,\rho_{rus\,{b}_{ik}}
-\left(\rho_{\,{b}_{ik}}-\rho_i \right)\,S_{\,{b}_{ik}}\\
+\left(\rho_{\,{b}_{ik}}-\rho_i \right)\,S_{\,{b}_{ik}}\\[1em]
 %
-\displaystyle\int_{S_{\,{b}_{ik}}}(\vect{u}\otimes\vect{Q}+\grad\,P)\cdot\vect{n}\,dS
-&=&
-\displaystyle\frac{1}{2}\left(
- \vect{u}_i(\vect{Q}_i\cdot\vect{n}_{\,{b}_{ik}})
+&\displaystyle\int_{S_{\,{b}_{ik}}}(\vect{u}\otimes\vect{Q}+\grad\,P)\cdot\vect{n}\,dS
+= \displaystyle\frac{1}{2}\left(
+\vect{u}_i(\vect{Q}_i\cdot\vect{n}_{\,{b}_{ik}})
 +P_i\,\vect{n}_{\,{b}_{ik}}
 +\vect{u}_{\,{b}_{ik}}(\vect{Q}_{\,{b}_{ik}}\cdot\vect{n}_{\,{b}_{ik}})
 +P_{\,{b}_{ik}}\,\vect{n}_{\,{b}_{ik}}\right)\,S_{\,{b}_{ik}}\\
-&&\displaystyle \qquad\qquad\qquad\qquad\qquad\qquad
+&\qquad\displaystyle
 -\frac{1}{2}\,\rho_{rus\,{b}_{ik}}
-\left(\vect{Q}_{\,{b}_{ik}}-\vect{Q}_i \right)\,S_{\,{b}_{ik}}\\
+\left(\vect{Q}_{\,{b}_{ik}}-\vect{Q}_i \right)\,S_{\,{b}_{ik}}\\[1em]
 %
-\displaystyle\int_{S_{\,{b}_{ik}}}(e+\frac{P}{\rho})\,\vect{Q}\cdot\vect{n}\,dS
-&=&
-\displaystyle\frac{1}{2}\left(
+&\displaystyle\int_{S_{\,{b}_{ik}}}(e+\frac{P}{\rho})\,\vect{Q}\cdot\vect{n}\,dS
+= \displaystyle\frac{1}{2}\left(
 (e_i+\frac{P_i}{\rho_i})\,(\vect{Q}_i\cdot\vect{n}_{\,{b}_{ik}})
 +(e_{\,{b}_{ik}}+\frac{P_{\,{b}_{ik}}}{\rho_{\,{b}_{ik}}})(\vect{Q}_{\,{b}_{ik}}\cdot\vect{n}_{\,{b}_{ik}})
 \right)\,S_{\,{b}_{ik}}\\
-&&\displaystyle \qquad\qquad\qquad\qquad\qquad\qquad
+&\qquad\displaystyle
 -\frac{1}{2}\,\rho_{rus\,{b}_{ik}}
-\left(\rho_{\,{b}_{ik}}\,e_{\,{b}_{ik}}-\rho_i\,e_i \right)\,S_{\,{b}_{ik}}\\
-\end{array}\right.
+\left(\rho_{\,{b}_{ik}}\,e_{\,{b}_{ik}}-\rho_i\,e_i \right)\,S_{\,{b}_{ik}}
+\end{aligned}
+\right.
 \end{equation}
-
-
 
 %=================================
 \subsection*{Conditions aux limites pour le flux diffusif d'énergie}
@@ -1216,16 +1240,18 @@ normal au bord pour la variable $f$.
 \end{figure}
 
 \begin{equation}\label{Cfbl_Cfxtcl_eq_flux_cfxtcl}
-\begin{array}{l}
-    \underbrace{h_{int}(f_{b,int}-f_{I'})}_{\phi_{int}}
-  = \underbrace{h_{b}(f_{b,ext}-f_{I'})}_{\phi_{b}}
-  = \left\{\begin{array}{ll}
-    \underbrace{h_{imp,ext}(f_{imp,ext}-f_{b,ext})}_{\phi_{\text{\it réel
-imposé}}} &\text{(condition de Dirichlet)}\\
-    \underbrace{\phi_{\text{\it imp,ext}}}_{\phi_{\text{\it réel imposé}}}
-            &\text{(condition de Neumann)}
-           \end{array}\right.
-\end{array}
+\begin{aligned}
+\underbrace{h_{int}(f_{b,int}-f_{I'})}_{\phi_{int}}
+&= \underbrace{h_{b}(f_{b,ext}-f_{I'})}_{\phi_{b}}\\
+&= \left\{
+\begin{aligned}
+&\underbrace{h_{imp,ext}(f_{imp,ext}-f_{b,ext})}_{\phi_{\text{\it réel imposé}}}
+&&\text{(condition de Dirichlet)}\\[0.5em]
+&\underbrace{\phi_{\text{\it imp,ext}}}_{\phi_{\text{\it réel imposé}}}
+&&\text{(condition de Neumann)}
+\end{aligned}
+\right.
+\end{aligned}
 \end{equation}
 
 

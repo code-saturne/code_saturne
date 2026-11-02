@@ -38,18 +38,18 @@ normal aux faces (défini et calculé aux faces).
 
 On a donc le système suivant, entre $t^n$ et $t^*$~:
 \begin{equation}\label{Cfbl_Cfmsvl_eq_acoustique_cfmsvl}
-\left\{\begin{array}{l}
-
-\displaystyle\frac{\partial\rho}{\partial t}+\divs{\vect{Q}_{ac}} = 0 \\
-\\
-\displaystyle\frac{\partial\vect{Q}_{ac}}{\partial t}+\gradv{P} =
-\rho \vect{f}\\
-\\
-\vect{Q}^*=\vect{Q}^n\\
-\\
-e^*=e^n\\
-
-\end{array}\right.
+\left\{
+\begin{aligned}
+&\displaystyle\frac{\partial\rho}{\partial t}+\divs{\vect{Q}_{ac}} = 0 \\[1em]
+&\\
+&\displaystyle\frac{\partial\vect{Q}_{ac}}{\partial t}+\gradv{P} =
+\rho \vect{f} \\[1em]
+&\\
+&\vect{Q}^*=\vect{Q}^n \\[1em]
+&\\
+&e^*=e^n
+\end{aligned}
+\right.
 \end{equation}
 
 Une partie des termes sources de l'équation de la
@@ -98,14 +98,14 @@ e^*=e^n\\
 \end{equation}
 
 \begin{equation}\label{Cfbl_Cfmsvl_eq_forces_supplementaires_cfmsvl}
-\begin{array}{llll}
-\text{avec\ }&\vect{f}^n &=& \vect{0} \\
-\text{ou\ }&\vect{f}^n &=& \vect{g} \\
-\text{ou même\ }&\vect{f}^n &=& \vect{f}_v
- + \displaystyle\frac{1}{\rho^n}
+\begin{aligned}
+\text{avec\ } &\vect{f}^n &=& \vect{0} \\[0.5em]
+\text{ou\ } &\vect{f}^n &=& \vect{g} \\[0.5em]
+\text{ou même\ } &\vect{f}^n &=& \vect{f}_v
++ \displaystyle\frac{1}{\rho^n}
 \left( - \divs(\vect{u} \otimes \vect{Q}) + \divv(\tens{\Sigma}^v)
- + \vect{j}\wedge\vect{B} \right)^n
-\end{array}
++ \vect{j}\wedge\vect{B} \right)^n
+\end{aligned}
 \end{equation}
 
 Dans la pratique nous avons décidé de prendre $\vect{f}^n=\vect{g}$~:
@@ -158,10 +158,10 @@ de~(\ref{Cfbl_Cfmsvl_eq_acoustique_discrete_cfmsvl})~:
 
 où~:
 \begin{equation}
-\begin{array}{lll}
-\vect{w}^n&=&  \vect{u}^n + \Delta t^n
+\begin{aligned}
+\vect{w}^n &= \vect{u}^n + \Delta t^n
 \displaystyle\left(\vect{f}^n-\frac{\beta^n}{\rho^n}\gradv(s^n)\right)
-\end{array}
+\end{aligned}
 \end{equation}
 
 Formulation alternative (programmée mais non testée)
@@ -217,12 +217,12 @@ une simple interpolation linéaire~:
 \end{equation}
 et un décentrement sur la valeur de $\rho^{n+\frac{1}{2}}$ aux faces~:
 \begin{equation}
-\begin{array}{lllll}
-\displaystyle\rho_{ij}^{n+\frac{1}{2}} &=& \rho_{I'}^{n+\frac{1}{2}}
-                &\text{si\ }& \vect{w}^n_{ij} \cdot \vect{S}_{ij} \geqslant 0 \\
-                         &=& \rho_{J'}^{n+\frac{1}{2}}
-                &\text{si\ }& \vect{w}^n_{ij} \cdot \vect{S}_{ij} < 0 \\
-\end{array}
+\begin{aligned}
+\displaystyle\rho_{ij}^{n+\frac{1}{2}} &= \rho_{I'}^{n+\frac{1}{2}}
+&\text{si\ }& \vect{w}^n_{ij} \cdot \vect{S}_{ij} \geqslant 0 \\[0.5em]
+&= \rho_{J'}^{n+\frac{1}{2}}
+&\text{si\ }& \vect{w}^n_{ij} \cdot \vect{S}_{ij} < 0
+\end{aligned}
 \end{equation}
 que l'on peut noter~:
 \begin{equation}
@@ -231,10 +231,12 @@ que l'on peut noter~:
 \end{equation}
 avec
 \begin{equation}
-\left\{\begin{array}{lll}
-\beta_{ij} = 1 & \text{si\ } & \vect{w}^n_{ij} \cdot \vect{S}_{ij} \geqslant 0 \\
-\beta_{ij} = 0 & \text{si\ } & \vect{w}^n_{ij} \cdot \vect{S}_{ij} < 0 \\
-\end{array}\right.
+\left\{
+\begin{aligned}
+\beta_{ij} &= 1 &\text{si\ }& \vect{w}^n_{ij} \cdot \vect{S}_{ij} \geqslant 0 \\[0.5em]
+\beta_{ij} &= 0 &\text{si\ }& \vect{w}^n_{ij} \cdot \vect{S}_{ij} < 0
+\end{aligned}
+\right.
 \end{equation}
 
 %.................................
