@@ -77,27 +77,26 @@ and in the rest of this, except in the compressible module.\\
 
 The equation for the conservation of momentum is finally written as:
 \begin{equation}
-\begin{array}{lcl}
-&\displaystyle \rho\,
-\frac{\partial \vect {u} } {\partial t} = -\
-\underbrace {\dive(\rho \vect{u} \otimes \vect{u})}_{\text{
-convection}} +\ \underbrace {\dive (\mu\ \ggrad \vect {u})}_{\text{
-diffusion}} &\\
-&\displaystyle \underbrace { +\ \dive (\mu \,^t\ggrad \vect {u}) }_{\text{
-transpose of the velocity gradient term}}
-\underbrace { - \ \frac {2} {3}\ \grad (\mu\ \dive \vect {u})}_{\text{
-secondary viscosity}}\ \ - \dive{(\rho \tens{R})}
- -\ \grad(p) + (\rho -\rho_0)\,\vect {g} +
-\vect{u}\,\dive (\rho\,\vect {u})&\\
-&\displaystyle +\underbrace {\Gamma
-(\vect{u}_{\,i}-\vect{u})}_{\text{mass source term}}-
-\underbrace {\rho\
-\tens{K} \vect {u}}_{\text{head loss}} +
-\underbrace { \vect{T}_{\,s}^{\,exp}+
-T_{s}^{\,imp}\ \vect{u}}_{\text{other source terms}}
+\begin{aligned}
+\rho\,\frac{\partial \vect{u}}{\partial t}
+={}&
+-\underbrace{\dive(\rho \vect{u} \otimes \vect{u})}_{\text{convection}}
++\underbrace{\dive(\mu\,\ggrad \vect{u})}_{\text{diffusion}}
+\\[1ex]
+&+\underbrace{\dive(\mu\,{}^t\ggrad \vect{u})}_{\text{transpose of the velocity gradient term}}
+-\underbrace{\frac{2}{3}\grad(\mu\,\dive\vect{u})}_{\text{secondary viscosity}}
+-\dive(\rho\tens{R})
+\\
+&-\grad(p)+(\rho-\rho_0)\vect{g}
++\vect{u}\,\dive(\rho\,\vect{u})
+\\
+&+\underbrace{\Gamma(\vect{u}_{\,i}-\vect{u})}_{\text{mass source term}}
+-\underbrace{\rho\tens{K}\vect{u}}_{\text{head loss}}
+\\
+&+\underbrace{\vect{T}_{\,s}^{\,exp}
++T_{s}^{\,imp}\vect{u}}_{\text{other source terms}}
+\end{aligned}
 \label{Base_Predvv_eqqdm}
-
-\end{array}
 \end{equation}
 with $p$ denoting the difference in pressure relative to the reference hydrostatic
 pressure (the real hydrostatic pressure being calculated with the density
