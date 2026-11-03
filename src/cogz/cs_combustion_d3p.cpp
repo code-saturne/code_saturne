@@ -757,7 +757,7 @@ cs_combustion_d3p_integration(int        indpdf[],
 
       int i_f = 0;
       for (int jf = 0; jf < (nmaxf-1); jf++) {
-        if (fdeb[c_id] >= ff[jf] && fdeb[c_id] < ff[jf+1]) {
+        if (fm >= ff[jf] && fm < ff[jf+1]) {
           i_f = jf;
           break;
         }
