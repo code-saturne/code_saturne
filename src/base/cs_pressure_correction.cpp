@@ -560,7 +560,8 @@ _pressure_correction_fv(int                   iterns,
   const int meteo_profile = cs_glob_atmo_option->meteo_profile;
 
   const int has_disable_flag = fvq->has_disable_flag;
-  const int *c_disable_flag = fvq->c_disable_flag;
+  const int *restrict c_disable_flag = (has_disable_flag) ?
+                                        fvq->c_disable_flag : nullptr;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx, ctx_c;
@@ -2780,7 +2781,9 @@ _pressure_correction_fv(int                   iterns,
   if (vp_param->iphydr == 1) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       const int ind = has_disable_flag * c_id;
-      const int is_active = (1 - (has_disable_flag * c_disable_flag[ind]));
+      int is_active = 1;
+      if (has_disable_flag)
+        is_active = (1 - (has_disable_flag * c_disable_flag[ind]));
 
       for (cs_lnum_t ii = 0; ii < 3; ii++)
         frcxt[c_id][ii] =   frcxt[c_id][ii]*is_active
