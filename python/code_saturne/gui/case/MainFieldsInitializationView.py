@@ -187,50 +187,51 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         else:
             self.pushButtonPressure.setStyleSheet("background-color: red")
         if (len(self.mdl.mainFieldsModel.getFieldIdList()) > 0):
-            field = self.mdl.mainFieldsModel.getFieldFromId(self.currentid)
             self.groupBoxDefinition.show()
             self.initializeVariables(self.zone_id, self.currentid)
 
-            exp = self.mdl.getFormula(self.zone_id, self.currentid, 'velocity')
-            if exp:
-                self.pushButtonVelocity.setStyleSheet("background-color: green")
-                self.pushButtonVelocity.setToolTip(exp)
-            else:
-                self.pushButtonVelocity.setStyleSheet("background-color: red")
-
-            exp = self.mdl.getFormula(self.zone_id, self.currentid, 'volume_fraction')
-            if exp:
-                self.pushButtonFraction.setStyleSheet("background-color: green")
-                self.pushButtonFraction.setToolTip(exp)
-            else:
-                self.pushButtonFraction.setStyleSheet("background-color: red")
-
-            turbModel = TurbulenceModel(self.case).getTurbulenceModel(self.currentid)
-            exp = TurbulenceModel(self.case).getFormula(self.zone_id, self.currentid, turbModel)
-            if exp:
-                self.pushButtonTurbulence.setStyleSheet("background-color: green")
-                self.pushButtonTurbulence.setToolTip(exp)
-            else:
-                self.pushButtonTurbulence.setStyleSheet("background-color: red")
-
-            if field.enthalpy_model != "off":
-                exp = self.mdl.getFormula(self.zone_id, self.currentid, 'enthalpy')
+            if self.currentid != 'none':
+                field = self.mdl.mainFieldsModel.getFieldFromId(self.currentid)
+                exp = self.mdl.getFormula(self.zone_id, self.currentid, 'velocity')
                 if exp:
-                    self.pushButtonEnergy.setStyleSheet("background-color: green")
-                    self.pushButtonEnergy.setToolTip(exp)
+                    self.pushButtonVelocity.setStyleSheet("background-color: green")
+                    self.pushButtonVelocity.setToolTip(exp)
                 else:
-                    self.pushButtonEnergy.setStyleSheet("background-color: red")
+                    self.pushButtonVelocity.setStyleSheet("background-color: red")
 
-            lst = self.NonCondensable.getNonCondensableByFieldId(self.currentid)
-            if len(lst) > 0:
-                exp = self.mdl.getFormulaNonCondensable(self.zone_id,
-                                                        self.currentid,
-                                                        self.currentNonCond)
+                exp = self.mdl.getFormula(self.zone_id, self.currentid, 'volume_fraction')
                 if exp:
-                    self.pushButtonNonCondensable.setStyleSheet("background-color: green")
-                    self.pushButtonNonCondensable.setToolTip(exp)
+                    self.pushButtonFraction.setStyleSheet("background-color: green")
+                    self.pushButtonFraction.setToolTip(exp)
                 else:
-                    self.pushButtonNonCondensable.setStyleSheet("background-color: red")
+                    self.pushButtonFraction.setStyleSheet("background-color: red")
+
+                turbModel = TurbulenceModel(self.case).getTurbulenceModel(self.currentid)
+                exp = TurbulenceModel(self.case).getFormula(self.zone_id, self.currentid, turbModel)
+                if exp:
+                    self.pushButtonTurbulence.setStyleSheet("background-color: green")
+                    self.pushButtonTurbulence.setToolTip(exp)
+                else:
+                    self.pushButtonTurbulence.setStyleSheet("background-color: red")
+
+                if field.enthalpy_model != "off":
+                    exp = self.mdl.getFormula(self.zone_id, self.currentid, 'enthalpy')
+                    if exp:
+                        self.pushButtonEnergy.setStyleSheet("background-color: green")
+                        self.pushButtonEnergy.setToolTip(exp)
+                    else:
+                        self.pushButtonEnergy.setStyleSheet("background-color: red")
+
+                lst = self.NonCondensable.getNonCondensableByFieldId(self.currentid)
+                if len(lst) > 0:
+                    exp = self.mdl.getFormulaNonCondensable(self.zone_id,
+                                                            self.currentid,
+                                                            self.currentNonCond)
+                    if exp:
+                        self.pushButtonNonCondensable.setStyleSheet("background-color: green")
+                        self.pushButtonNonCondensable.setToolTip(exp)
+                    else:
+                        self.pushButtonNonCondensable.setStyleSheet("background-color: red")
 
             lst = self.SpeciesModel.getScalarByFieldId(self.currentid)
             if len(lst) > 0:
@@ -725,43 +726,43 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         self.labelTurbulence.hide()
         self.pushButtonTurbulence.hide()
         self.comboBoxTurbulence.hide()
-        turbModel = TurbulenceModel(self.case).getTurbulenceModel(fieldId)
-        if turbModel != 'none' and 'mixing' not in turbModel:
-            self.labelTurbulence.setVisible(fieldId!='none')
-            self.pushButtonTurbulence.setVisible(fieldId!='none')
-            self.comboBoxTurbulence.setVisible(fieldId!='none')
-            turbInitChoice = \
-                    TurbulenceModel(self.case).getInitialTurbulenceChoice(zone, fieldId)
-            self.modelTurbulence.setItem(str_model=turbInitChoice)
+        if fieldId != 'none':
+            turbModel = TurbulenceModel(self.case).getTurbulenceModel(fieldId)
+            if turbModel != 'none' and 'mixing' not in turbModel:
+                self.labelTurbulence.setVisible(True)
+                self.pushButtonTurbulence.setVisible(True)
+                self.comboBoxTurbulence.setVisible(True)
+                turbInitChoice = \
+                        TurbulenceModel(self.case).getInitialTurbulenceChoice(zone, fieldId)
+                self.modelTurbulence.setItem(str_model=turbInitChoice)
 
-            if turbInitChoice != 'formula':
-                turbFormula = \
-                        TurbulenceModel(self.case).getDefaultTurbFormula(zone, fieldId, turbModel)
-                TurbulenceModel(self.case).setFormula(zone, fieldId, turbModel, turbFormula)
-                self.pushButtonTurbulence.hide()
+                if turbInitChoice != 'formula':
+                    turbFormula = \
+                            TurbulenceModel(self.case).getDefaultTurbFormula(zone, fieldId, turbModel)
+                    TurbulenceModel(self.case).setFormula(zone, fieldId, turbModel, turbFormula)
+                    self.pushButtonTurbulence.hide()
 
-        field = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
-        if fieldId != 'none' and field.enthalpy_model != "off":
-            self.labelEnergy.show()
-            self.comboBoxEnergy.show()
-            self.pushButtonEnergy.show()
+            field = self.mdl.mainFieldsModel.getFieldFromId(fieldId)
+            if field.enthalpy_model != "off":
+                self.labelEnergy.show()
+                self.comboBoxEnergy.show()
+                self.pushButtonEnergy.show()
 
-            model = self.mdl.getEnergyModel(zone, fieldId)
-            self.modelEnergy.setItem(str_model=model)
+                model = self.mdl.getEnergyModel(zone, fieldId)
+                self.modelEnergy.setItem(str_model=model)
 
-            if model == "enthalpy" or model == "temperature":
-                self.pushButtonEnergy.setEnabled(True)
-            elif model == "hsat_P":
-                self.pushButtonEnergy.setEnabled(False)
-                self.pushButtonEnergy.setStyleSheet("background-color: None")
+                if model == "enthalpy" or model == "temperature":
+                    self.pushButtonEnergy.setEnabled(True)
+                elif model == "hsat_P":
+                    self.pushButtonEnergy.setEnabled(False)
+                    self.pushButtonEnergy.setStyleSheet("background-color: None")
 
-            if ThermodynamicsModel(self.case).getMaterials(self.currentid) == 'user_material' :
-                self.modelEnergy.disableItem(1)
-                self.modelEnergy.disableItem(2)
-            else :
-                self.modelEnergy.enableItem(1)
-                self.modelEnergy.enableItem(2)
-
+                if ThermodynamicsModel(self.case).getMaterials(self.currentid) == 'user_material' :
+                    self.modelEnergy.disableItem(1)
+                    self.modelEnergy.disableItem(2)
+                else :
+                    self.modelEnergy.enableItem(1)
+                    self.modelEnergy.enableItem(2)
         # Non-condensable initialization
         self.labelNonCondensable.hide()
         self.comboBoxNonCondensable.hide()
