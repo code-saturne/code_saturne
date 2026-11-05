@@ -580,13 +580,13 @@ many directories and waiting for pre-processing before each run.
   through the GUI or user script).
 
   * To make this easier, code\_saturne provides a
-    <span style="color: rgb(0,91,187)">`cs_debug_wrapper.py`</span> script, in the
-    <span style="color: rgb(0,91,187)">`python/code_saturne/base`</span> directory
+    <span style="color: rgb(0,91,187)">`debug_wrapper`</span> script, in the
+    <span style="color: rgb(0,91,187)">`bin`</span> directory
     of the source tree (and in the
-    <span style="color: rgb(0,91,187)">`lib/python<version>/site-packages/code_saturne`</span>
+    <span style="color: rgb(0,91,187)">`share/code_saturne`</span>
     directory of an installed build).
 
-  * Run <span style="color: rgb(48,119,16)">`cs_debug_wrapper.py --help`</span> for
+  * Run <span style="color: rgb(48,119,16)">`debug_wrapper --help`</span> for
     instructions.
 
 - The XML file may be modified directly using
@@ -692,7 +692,7 @@ When no true parallel debugger is available, serial debuggers may be used.
   * Very painful if not automated.
 
   * This is where the
-    <span style="color: rgb(0,91,187)">`cs_debug_wrapper.py`</span> script
+    <span style="color: rgb(0,91,187)">`debug_wrapper`</span> script
     really becomes useful.
 
     + This script also includes a `--ranks` filter option so as to call the

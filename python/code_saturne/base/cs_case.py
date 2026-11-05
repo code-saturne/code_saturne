@@ -1037,26 +1037,6 @@ class case:
 
     # ---------------------------------------------------------------------------
 
-    def debug_wrapper_args(self):
-        """
-        Additional arguments to use debug wrapper
-        """
-        debug_args = ''
-        python_exec = self.package.config.python
-        if os.path.isfile(python_exec) or os.path.islink(python_exec):
-            debug_args += python_exec + ' '
-        else:
-            debug_args += 'python '
-        cs_pkg_dir = self.package.get_dir('pkgpythondir')
-        if self.package.name != 'code_saturne':
-            cs_pkg_dir = os.path.join(cs_pkg_dir, '../code_saturne')
-        dbg_wrapper_path = os.path.join(cs_pkg_dir,
-                                        'base', 'cs_debug_wrapper.py')
-        debug_args += dbg_wrapper_path + ' '
-        return debug_args
-
-    # ---------------------------------------------------------------------------
-
     def generate_solver_mpmd_mpiexec(self, n_procs, mpi_env, tool_args=''):
         """
         Generate MPMD mpiexec command.
@@ -1307,7 +1287,8 @@ class case:
         if self.tool_args:
             tool_args = self.tool_args + ' '
         if self.debug_args:
-            tool_args += self.debug_wrapper_args() + self.debug_args + ' '
+            tool_args += self.package.get_pkgdatadir_script('debug_wrapper') \
+                + ' ' + self.debug_args + ' '
 
         # Check if we need MPS. If this is the case, force the
         # MPMD mode to script.

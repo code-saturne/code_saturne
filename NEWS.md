@@ -12,6 +12,9 @@
 
 ### Architectural changes:
 
+- Replaced `cs_debug_wrapper.py` debugger wrapper with `debug_wrapper` shell
+  script version, to avoid some environment-related issues with some terminals.
+
 - Mesh: revamp handling of hidden and appended boundary faces.
   The `n_b_faces_all` member is replaced by `n_b_faces_appended`,
   which is negative for hidden faces, positive for appended faces.
