@@ -594,6 +594,30 @@ _convert_size(unsigned char  buf[],
     val[i] = ((uint64_t *)buf)[i];
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if system is big endian.
+ *
+ * \return true if current architecture is big endian, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_arch_is_big_endian(void)
+{
+  bool is_big_endian = true;
+
+  /* Check if system is "big-endian" or "little-endian" */
+
+  int int_endian = 0;
+  *((char *)(&int_endian)) = '\1';
+
+  if (int_endian == 1)
+    is_big_endian = false;
+
+  return is_big_endian;
+}
+
 /*----------------------------------------------------------------------------
  * Open input file, testing magic string for type.
  *
@@ -609,7 +633,6 @@ static _cs_io_t
 _open_input(const char  *filename,
             int          mode)
 {
-  unsigned int_endian;
   size_t alignments[3];
   char header_buf[65];
 
@@ -637,13 +660,6 @@ _open_input(const char  *filename,
 
   inp.index = nullptr;
 
-  /* Check if system is "big-endian" or "little-endian" */
-
-  int_endian = 0;
-  *((char *)(&int_endian)) = '\1';
-  if (int_endian == 1)
-    inp.swap_endian = 1;
-
   /* Open file */
 
   if (mode != 1)
@@ -662,13 +678,33 @@ _open_input(const char  *filename,
 
   _file_read(header_buf, 1, 64, &inp);
 
-  if (strncmp(header_buf, "Code_Saturne I/O, BE, R0", 64) != 0) {
+  const char *base_header[2] = {"Code_Saturne I/O, BE, R0",
+                                "code_saturne I/O, LE, R0"};
+
+  int endianness = -1;  /* undetermined */
+  if (strncmp(header_buf, base_header[0], 64) == 0)
+    endianness = 0;
+  else if (strncmp(header_buf, base_header[1], 64) == 0)
+    endianness = 1;
+  else {
     header_buf[64] = '\0';
     _error(__FILE__, __LINE__, 0,
            _("File format of \"%s\" is not recognized:\n"
              "First %d bytes: \"%s\"."),
            filename, 64, header_buf);
   }
+
+  bool need_swap_endian = false;
+  if (_arch_is_big_endian()) {
+    if (endianness == 1)
+      need_swap_endian = true;
+  }
+  else {
+    if (endianness == 0)
+      need_swap_endian = true;
+  }
+
+  inp.swap_endian = need_swap_endian ? 1 : 0;
 
   _file_read(header_buf, 1, 64, &inp);
 
@@ -1056,9 +1092,6 @@ _read_section_header(_cs_io_t  *inp)
 {
   size_t body_size = 0;
   size_t header_vals[6];
-  unsigned int_endian = 0;
-
-  *((char *)(&int_endian)) = '\1'; /* Determine if we are little-endian */
 
   assert(inp != nullptr);
   assert(inp->f != nullptr);
@@ -1079,7 +1112,7 @@ _read_section_header(_cs_io_t  *inp)
 
   _file_read(inp->buffer, 1, inp->header_size, inp);
 
-  if (int_endian == 1)
+  if (inp->swap_endian)
     _swap_endian(inp->buffer, 8, 6);
 
   _convert_size(inp->buffer, header_vals, 6);
@@ -1122,7 +1155,7 @@ _read_section_header(_cs_io_t  *inp)
     if (inp->data == nullptr)
       body_size = inp->type_size*inp->n_vals;
 
-    else if (int_endian == 1 && inp->type_size > 1)
+    else if (inp->swap_endian && inp->type_size > 1)
       _swap_endian(inp->data, inp->type_size, inp->n_vals);
   }
 
