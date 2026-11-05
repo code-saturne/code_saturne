@@ -176,7 +176,11 @@ int  cs_glob_node_n_ranks = 1;   /*!< Number of ranks on node of main
 
 #if defined(HAVE_MPI)
 
-MPI_Comm  cs_glob_mpi_comm = MPI_COMM_NULL;   /* Main MPI intra-communicator */
+/*! Main MPI intra-communicator */
+MPI_Comm  cs_glob_mpi_comm = MPI_COMM_NULL;
+
+/*! MPI intra-node communicator (instanciated when needed) */
+MPI_Comm  cs_glob_mpi_node_comm = MPI_COMM_NULL;
 
 #endif
 

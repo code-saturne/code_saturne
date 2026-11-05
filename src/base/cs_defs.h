@@ -603,7 +603,8 @@ extern int  cs_glob_node_n_ranks;  /* Number of ranks on node of main
 
 #if defined(HAVE_MPI) && !defined(CS_IGNORE_MPI)
 
-extern MPI_Comm       cs_glob_mpi_comm;      /* Main MPI intra-communicator */
+extern MPI_Comm  cs_glob_mpi_comm;       /* Main MPI intra-communicator */
+extern MPI_Comm  cs_glob_mpi_node_comm;  /* MPI intra-node communicator */
 
 #endif
 

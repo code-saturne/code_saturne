@@ -927,6 +927,10 @@ _cs_base_mpi_finalize(void)
   bft_error_handler_set(cs_glob_base_err_handler_save);
   ple_error_handler_set(cs_glob_base_err_handler_save);
 
+  if (   cs_glob_mpi_node_comm != MPI_COMM_NULL
+      && cs_glob_mpi_comm != cs_glob_mpi_comm)
+    MPI_Comm_free(&cs_glob_mpi_node_comm);
+
   if (   cs_glob_mpi_comm != MPI_COMM_NULL
       && cs_glob_mpi_comm != MPI_COMM_WORLD)
     MPI_Comm_free(&cs_glob_mpi_comm);
@@ -1037,7 +1041,7 @@ _cs_datatype_to_mpi_init(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Determine node-local MPI info
+ * \brief Determine node-local MPI info and build associated communicator
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1045,14 +1049,19 @@ static void
 _mpi_node_info(void)
 {
 #if (MPI_VERSION >= 3)
-  MPI_Comm sh_comm;
-  MPI_Comm_split_type(cs_glob_mpi_comm, MPI_COMM_TYPE_SHARED, 0,
-                      MPI_INFO_NULL, &sh_comm);
 
-  MPI_Comm_rank(sh_comm, &cs_glob_node_rank_id);
-  MPI_Comm_size(sh_comm, &cs_glob_node_n_ranks);
+  if (cs_glob_mpi_node_comm == MPI_COMM_NULL)
+    MPI_Comm_split_type(cs_glob_mpi_comm, MPI_COMM_TYPE_SHARED, 0,
+                        MPI_INFO_NULL, &cs_glob_mpi_node_comm);
 
-  MPI_Comm_free(&sh_comm);
+  MPI_Comm_rank(cs_glob_mpi_node_comm, &cs_glob_node_rank_id);
+  MPI_Comm_size(cs_glob_mpi_node_comm, &cs_glob_node_n_ranks);
+
+  if (cs_glob_node_n_ranks == cs_glob_n_ranks) {
+    MPI_Comm_free(&cs_glob_mpi_node_comm);
+    cs_glob_mpi_node_comm = cs_glob_mpi_comm;
+  }
+
 #endif
 }
 
