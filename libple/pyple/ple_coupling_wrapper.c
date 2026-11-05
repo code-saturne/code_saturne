@@ -52,7 +52,6 @@ extern "C" {
 #endif
 #endif /* __cplusplus */
 
-
 /*============================================================================
  * Static local variables
  *============================================================================*/
@@ -63,7 +62,7 @@ static ple_coupling_mpi_set_t **_mpi_sets;
 /*----------------------------------------------------------------------------*/
 
 /*============================================================================
- * Python bindings for the C functions which will be called by Python
+ * Python bindings for some C functions.
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -494,7 +493,6 @@ pyple_coupling_mpi_set_dump(PyObject *self, PyObject *args)
 static PyObject *
 pyple_coupling_mpi_intracomm_create(PyObject *self, PyObject *args)
 {
-
   long fcomm_base_handle = -1;
   long fcomm_app_handle  = -1;
   long fcomm_new_handle  = -1;
@@ -510,6 +508,7 @@ pyple_coupling_mpi_intracomm_create(PyObject *self, PyObject *args)
    * know it failed here.
    * If a CPython function returns NULL, it means it failed.
    */
+
   if (!PyArg_ParseTuple(args, "llilO!O!:ple_coupling_mpi_intracomm_create",
                         &fcomm_base_handle, &fcomm_app_handle,
                         &distant_root, &fcomm_new_handle,
@@ -711,9 +710,6 @@ PyMODINIT_FUNC
 PyInit_libpyplecoupling(void)
 {
   PyObject *m = NULL;
-
-  /* Initialize mpi4py's C-API */
-  //if (import_mpi4py() < 0) goto bad;
 
   /* Module initialization  */
   m = PyModule_Create(&libpyplecoupling_module);

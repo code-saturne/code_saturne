@@ -13,6 +13,9 @@ Bug fixes:
 Changes:
 --------
 
+- Update python wrapping to avoid needing mpi4py for wrapper compilation.
+  * This moves the mpi4py dependency to runtime instead of installation.
+
 - Remove some definitions for some ancient compilers and MPI libraries.
 
 - Add `ple_locator_exchange_point_var_all` function to handle
