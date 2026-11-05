@@ -675,7 +675,7 @@ _cs_base_backtrace_print(int  lv_start)
 
   if (tr != nullptr) {
 
-    char s_func_buf[67];
+    char s_func_buf[512];
 
     const char *s_file;
     const char *s_func;
@@ -701,9 +701,9 @@ _cs_base_backtrace_print(int  lv_start)
       if (s_func == nullptr)
         strcpy(s_func_buf, "?");
       else {
-        s_func_buf[0] = '<';
-        strncpy(s_func_buf + 1, s_func, 64);
-        strcat(s_func_buf, ">");
+        int n = snprintf(s_func_buf, 511, "<%s>", s_func);
+        if (n >= 511)
+          s_func_buf[511] = '\0';
       }
       if (s_addr == nullptr)
         s_addr = s_unknown;
