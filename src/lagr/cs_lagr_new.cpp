@@ -1443,7 +1443,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                  particle_yplus, neighbor_face_id);
 
         }
-        else {
+        else if (p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID) < 0){
           p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID) = -1;
           p_set.attr_real(p_id, CS_LAGR_YPLUS) = 0.;
         }

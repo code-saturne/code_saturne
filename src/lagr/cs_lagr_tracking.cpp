@@ -2684,7 +2684,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
 
     if (lagr_model->deposition && exit_face >= 0) {
       cs_lnum_t b_face_id = p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID);
-      if (b_face_id > -1) {
+      if (b_face_id > -1 && events != nullptr) {
         if (p_set.flag(p_id, CS_LAGR_PART_ROLLING))
           _roll_off_event(p_set, events, p_id, b_face_id);
       }

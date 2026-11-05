@@ -321,8 +321,8 @@ cs_lagr_resuspension(void)
     }
 
     /* Monolayer resuspension model */
-    if ((    cs_glob_lagr_model->clogging == 0 && face_id > 0)
-         || (   cs_glob_lagr_model->clogging == 1 && face_id > 0
+    if ((    cs_glob_lagr_model->clogging == 0 && face_id > -1)
+         || (   cs_glob_lagr_model->clogging == 1 && face_id > -1
              && bound_stat[face_id + n_faces * lag_bi->ihdepm] < diam_mean)) {
 
       if (flag & CS_LAGR_PART_DEPOSITED)
