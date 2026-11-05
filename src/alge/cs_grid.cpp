@@ -9801,7 +9801,7 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
   if (n_ranks > 1 || local) {
     g->matrix = a;
 #if defined(HAVE_MPI)
-    g->comm = cs_base_get_rank_step_comm(g->merge_stride);
+    g->comm = cs_base_get_sub_comm(0, cs_glob_n_ranks, g->merge_stride);
     MPI_Comm_size(g->comm, &(g->n_ranks));
 #endif
   }
@@ -9809,7 +9809,7 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
     g->_matrix = cs_matrix_create_by_local_restrict(a);
     g->matrix = g->_matrix;
 #if defined(HAVE_MPI)
-    g->comm = cs_base_get_rank_step_comm(g->merge_stride);
+    g->comm = cs_base_get_sub_comm(0, cs_glob_n_ranks, g->merge_stride);
     MPI_Comm_size(g->comm, &(g->n_ranks));
 #endif
   }
@@ -10149,7 +10149,7 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
     if (cs_glob_n_ranks %size > 0)
       rank_step += 1;
     rank_step *= merge_stride;
-    comm = cs_base_get_rank_step_comm(rank_step);
+    comm = cs_base_get_sub_comm(0, cs_glob_n_ranks, rank_step);
   }
 
   return comm;

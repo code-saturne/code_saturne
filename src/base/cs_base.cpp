@@ -201,9 +201,17 @@ static cs_base_sigint_handler_t  * _cs_base_sigint_handler = nullptr;
 /* Additional MPI communicators */
 
 #if defined(HAVE_MPI)
-static int        _n_step_comms = 0;
-static int       *_step_ranks = nullptr;
-static MPI_Comm  *_step_comm = nullptr;
+
+typedef struct {
+  int       rank_start;
+  int       rank_end;
+  int       stride;
+  MPI_Comm  comm;
+} cs_sub_comm_t;
+
+static int             _n_sub_comms = 0;
+static cs_sub_comm_t  *_sub_comms = nullptr;
+
 #endif
 
 /*! Is MPI device-aware ? */
@@ -898,18 +906,15 @@ _get_path(const char   *dir_path,
 static void
 _finalize_reduced_communicators(void)
 {
-  int comm_id;
-
-  for (comm_id = 1; comm_id < _n_step_comms; comm_id++) {
-    if (   _step_comm[comm_id] != MPI_COMM_NULL
-        && _step_comm[comm_id] != cs_glob_mpi_comm)
-      MPI_Comm_free(&(_step_comm[comm_id]));
+  for (int comm_id = 0; comm_id < _n_sub_comms; comm_id++) {
+    if (   _sub_comms[comm_id].comm != MPI_COMM_NULL
+        && _sub_comms[comm_id].comm != cs_glob_mpi_comm)
+      MPI_Comm_free(&(_sub_comms[comm_id].comm));
   }
 
-  CS_FREE(_step_comm);
-  CS_FREE(_step_ranks);
+  CS_FREE(_sub_comms);
 
-  _n_step_comms = 0;
+  _n_sub_comms = 0;
 }
 
 /*----------------------------------------------------------------------------
@@ -917,7 +922,7 @@ _finalize_reduced_communicators(void)
  *----------------------------------------------------------------------------*/
 
 static void
-_cs_base_mpi_fin(void)
+_cs_base_mpi_finalize(void)
 {
   bft_error_handler_set(cs_glob_base_err_handler_save);
   ple_error_handler_set(cs_glob_base_err_handler_save);
@@ -1437,163 +1442,93 @@ cs_base_mpi_init(int    *argc,
 
 }
 
-/*----------------------------------------------------------------------------
- * Return a reduced communicator matching a multiple of the total
- * number of ranks.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a reduced communicator matching a range of ranks and a stride.
  *
  * This updates the number of reduced communicators if necessary.
  *
- * parameters:
- *   rank_step <-- associated multiple of total ranks
- *----------------------------------------------------------------------------*/
+ * \param[in]  rank_start  starting rank
+ * \param[in]  rank_end    past-the-end rank
+ * \param[in]  stride      stride between ranks
+ *
+ * \return associated communicator, or MPI_COMM_NULL
+ */
+/*----------------------------------------------------------------------------*/
 
 MPI_Comm
-cs_base_get_rank_step_comm(int  rank_step)
+cs_base_get_sub_comm(int  rank_start,
+                     int  rank_end,
+                     int  stride)
 {
-  if (rank_step <= 1)
+  if (stride <= 0)
+    stride = 1;
+
+  if (rank_start < 0)
+    rank_start = 0;
+
+  if (rank_end > cs_glob_n_ranks)
+    rank_end = cs_glob_n_ranks;
+
+  if (rank_start >= rank_end)
+    return MPI_COMM_NULL;
+
+  if (rank_start == 0 && rank_end == cs_glob_n_ranks && stride == 1)
     return cs_glob_mpi_comm;
 
-  int n_ranks = cs_glob_n_ranks / rank_step;
-  if (cs_glob_n_ranks % rank_step > 0)
-    n_ranks += 1;
-
+  int n_ranks = (rank_end - 1 - rank_start) / stride + 1;
   if (n_ranks <= 1)
     return MPI_COMM_NULL;
 
   int comm_id = 0;
-  if (_n_step_comms > 0) {
-    while (   _step_ranks[comm_id] != n_ranks
-           && comm_id < _n_step_comms)
-      comm_id++;
-  }
-
-  /* Add communicator if required */
-
-  if (comm_id >= _n_step_comms) {
-
-    _n_step_comms += 1;
-    CS_REALLOC(_step_comm, _n_step_comms, MPI_Comm);
-    CS_REALLOC(_step_ranks, _n_step_comms, int);
-
-    _step_ranks[comm_id] = n_ranks;
-
-    if (n_ranks == cs_glob_n_ranks)
-      _step_comm[comm_id] = cs_glob_mpi_comm;
-
-    else if (n_ranks == 1)
-      _step_comm[comm_id] = MPI_COMM_NULL;
-
-    else {
-
-      int ranges[1][3];
-      MPI_Group old_group, new_group;
-
-      MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
-
-      MPI_Comm_size(cs_glob_mpi_comm, &n_ranks);
-      MPI_Comm_group(cs_glob_mpi_comm, &old_group);
-
-      ranges[0][0] = 0;
-      ranges[0][1] = n_ranks - 1;
-      ranges[0][2] = rank_step;
-
-      MPI_Group_range_incl(old_group, 1, ranges, &new_group);
-      MPI_Comm_create(cs_glob_mpi_comm, new_group, &(_step_comm[comm_id]));
-      MPI_Group_free(&new_group);
-
-      MPI_Group_free(&old_group);
-
-      MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
-
-    }
-
-  }
-
-  return _step_comm[comm_id];
-}
-
-/*----------------------------------------------------------------------------
- * Return a reduced communicator matching a multiple of the total
- * number of ranks, and given a parent communicator.
- *
- * Compared to \ref cs_base_get_rank_step_comm, this function is
- * collective only on the provided communicator.
- *
- * This updates the number of reduced communicators if necessary.
- *
- * parameters:
- *   parent_comm <-- associated parent communicator (must be either
- *                   cs_glob_mpi_comm or a communicator returned by a
- *                   previous
- *   rank_step   <-- associated multiple of ranks of parent communicator
- *----------------------------------------------------------------------------*/
-
-MPI_Comm
-cs_base_get_rank_step_comm_recursive(MPI_Comm  parent_comm,
-                                     int       rank_step)
-{
-  if (rank_step <= 1 || parent_comm == MPI_COMM_NULL)
-    return parent_comm;
-
-  int parent_n_ranks = -1;
-  MPI_Comm_size(parent_comm, &parent_n_ranks);
-
-  int n_ranks = parent_n_ranks / rank_step;
-  if (parent_n_ranks % rank_step > 0)
-    n_ranks += 1;
-
-  if (n_ranks <= 1)
-    return MPI_COMM_NULL;
-
-  int comm_id = 0;
-  for (comm_id = 0; comm_id < _n_step_comms; comm_id++) {
-    if (_step_ranks[comm_id] == n_ranks)
+  for (comm_id = 0; comm_id < _n_sub_comms; comm_id++) {
+    if (   _sub_comms[comm_id].rank_start == rank_start
+        && _sub_comms[comm_id].rank_end == rank_end
+        && _sub_comms[comm_id].stride == stride)
       break;
   }
 
   /* Add communicator if required */
 
-  if (comm_id >= _n_step_comms) {
+  if (comm_id >= _n_sub_comms) {
 
-    _n_step_comms += 1;
-    CS_REALLOC(_step_comm, _n_step_comms, MPI_Comm);
-    CS_REALLOC(_step_ranks, _n_step_comms, int);
+    _n_sub_comms += 1;
+    CS_REALLOC(_sub_comms, _n_sub_comms, cs_sub_comm_t);
 
-    _step_ranks[comm_id] = n_ranks;
+    _sub_comms[comm_id].rank_start = rank_start;
+    _sub_comms[comm_id].rank_end = rank_end;
+    _sub_comms[comm_id].stride = stride;
+    _sub_comms[comm_id].comm = MPI_COMM_NULL;
 
-    if (n_ranks == cs_glob_n_ranks)
-      _step_comm[comm_id] = cs_glob_mpi_comm;
+    int ranges[1][3];
+    MPI_Group old_group, new_group;
 
-    else if (n_ranks == 1)
-      _step_comm[comm_id] = MPI_COMM_NULL;
+    // MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
 
-    else {
+    MPI_Comm_group(cs_glob_mpi_comm, &old_group);
 
-      int ranges[1][3];
-      MPI_Group old_group, new_group;
+    ranges[0][0] = rank_start;
+    ranges[0][1] = rank_end - 1;
+    ranges[0][2] = stride;
 
-      MPI_Barrier(parent_comm); /* For debugging */
+    MPI_Group_range_incl(old_group, 1, ranges, &new_group);
+    MPI_Comm_create(cs_glob_mpi_comm, new_group, &(_sub_comms[comm_id].comm));
+    MPI_Group_free(&new_group);
 
-      MPI_Comm_size(parent_comm, &n_ranks);
-      MPI_Comm_group(parent_comm, &old_group);
+    MPI_Group_free(&old_group);
 
-      ranges[0][0] = 0;
-      ranges[0][1] = n_ranks - 1;
-      ranges[0][2] = rank_step;
-
-      MPI_Group_range_incl(old_group, 1, ranges, &new_group);
-      MPI_Comm_create(parent_comm, new_group, &(_step_comm[comm_id]));
-      MPI_Group_free(&new_group);
-
-      MPI_Group_free(&old_group);
-
-      MPI_Barrier(parent_comm); /* For debugging */
-
+    if (_sub_comms[comm_id].comm != MPI_COMM_NULL) {
+      char buf[128];
+      snprintf(buf, sizeof(buf), "cs_glob_mpi_comm sub-comm [%d, %d[, stride %d",
+               rank_start, rank_end, stride);
+      MPI_Comm_set_name(_sub_comms[comm_id].comm, buf);
     }
+
+    MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
 
   }
 
-  return _step_comm[comm_id];
+  return _sub_comms[comm_id].comm;
 }
 
 #endif /* HAVE_MPI */
@@ -1634,7 +1569,7 @@ cs_exit(int  status)
     if (mpi_flag != 0) {
 
       if (status != EXIT_FAILURE) {
-        _cs_base_mpi_fin();
+        _cs_base_mpi_finalize();
       }
     }
   }

@@ -65,6 +65,7 @@
 #include "fvm/fvm_writer_helper.h"
 #include "fvm/fvm_writer_priv.h"
 
+#include "base/cs_base.h"
 #include "base/cs_map.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
@@ -382,7 +383,7 @@ fvm_to_melissa_init_writer(const char             *name,
 #if defined(HAVE_MELISSA_MPI)
       w->min_rank_step = rank_step;
       if (rank_step > 1) {
-        w->block_comm = cs_base_get_rank_step_comm(rank_step);
+        w->block_comm = cs_base_get_sub_comm(0, cs_glob_n_ranks, rank_step);
       }
       else
         w->block_comm = comm;

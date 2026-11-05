@@ -1405,7 +1405,7 @@ cs_grid_merge_ranks(cs_grid_t  *g,
       g->n_ranks = (g->n_ranks/merge_stride) + 1;
     else
       g->n_ranks = (g->n_ranks/merge_stride);
-    g->comm = cs_base_get_rank_step_comm_recursive(g->comm, merge_stride);
+    g->comm = cs_base_get_sub_comm(0, cs_glob_n_ranks, g->next_merge_stride);
   }
 
   if (verbosity > 2) {

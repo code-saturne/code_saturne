@@ -174,37 +174,22 @@ cs_base_mpi_init(int    *argc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return a reduced communicator matching a multiple of the total
- *        number of ranks.
+ * \brief Return a reduced communicator matching a range of ranks and a stride.
  *
  * This updates the number of reduced communicators if necessary.
  *
- * \param[in]  rank_step  associated multiple of total ranks
+ * \param[in]  rank_start  starting rank
+ * \param[in]  rank_end    past-the-end rank
+ * \param[in]  stride      stride between ranks
+ *
+ * \return associated communicator, or MPI_COMM_NULL
  */
 /*----------------------------------------------------------------------------*/
 
 MPI_Comm
-cs_base_get_rank_step_comm(int  rank_step);
-
-/*----------------------------------------------------------------------------
- * Return a reduced communicator matching a multiple of the total
- * number of ranks, and given a parent communicator.
- *
- * Compared to \ref cs_base_get_rank_step_comm, this function is
- * collective only on the provided communicator.
- *
- * This updates the number of reduced communicators if necessary.
- *
- * parameters:
- *   parent_comm <-- associated parent communicator (must be either
- *                   cs_glob_mpi_comm or a communicator returned by a
- *                   previous
- *   rank_step   <-- associated multiple of ranks of parent communicator
- *----------------------------------------------------------------------------*/
-
-MPI_Comm
-cs_base_get_rank_step_comm_recursive(MPI_Comm  parent_comm,
-                                     int       rank_step);
+cs_base_get_sub_comm(int  rank_start,
+                     int  rank_end,
+                     int  stride);
 
 #endif /* defined(HAVE_MPI) */
 
