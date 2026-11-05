@@ -672,6 +672,7 @@ cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
   bc_coeffs->h_int_tot = nullptr;
   bc_coeffs->h_rad = nullptr;
   bc_coeffs->flux_rad = nullptr;
+  bc_coeffs->h_rad_ext = nullptr;
 
   bc_coeffs->val_f = nullptr;
   bc_coeffs->val_f_pre = nullptr;
@@ -766,6 +767,9 @@ cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
   if (copy->flux_rad != ref->flux_rad)
     CS_FREE(copy->flux_rad);
 
+  if (copy->h_rad_ext != ref->h_rad_ext)
+    CS_FREE(copy->h_rad_ext);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -788,6 +792,7 @@ cs_field_bc_coeffs_clear(cs_field_bc_coeffs_t  *bc_coeffs)
 
  CS_FREE(bc_coeffs->h_rad);
  CS_FREE(bc_coeffs->flux_rad);
+ CS_FREE(bc_coeffs->h_rad_ext);
 
   CS_FREE(bc_coeffs->val_f);
   CS_FREE(bc_coeffs->val_f_pre);
@@ -1345,11 +1350,13 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
         CS_MALLOC_HD(f->bc_coeffs->h_int_tot, n_elts[0], cs_real_t, amode);
         CS_MALLOC_HD(f->bc_coeffs->h_rad, n_elts[0], cs_real_t, amode);
         CS_MALLOC_HD(f->bc_coeffs->flux_rad, n_elts[0], cs_real_t, amode);
+        CS_MALLOC_HD(f->bc_coeffs->h_rad_ext, n_elts[0], cs_real_t, amode);
       }
       else {
         f->bc_coeffs->h_int_tot = nullptr;
         f->bc_coeffs->h_rad = nullptr;
         f->bc_coeffs->flux_rad  = nullptr;
+        f->bc_coeffs->h_rad_ext = nullptr;
       }
 
     }
@@ -1401,10 +1408,12 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       if (have_rad_bc) {
         CS_REALLOC_HD(f->bc_coeffs->h_rad, n_elts[0], cs_real_t, amode);
         CS_REALLOC_HD(f->bc_coeffs->flux_rad, n_elts[0], cs_real_t, amode);
+        CS_REALLOC_HD(f->bc_coeffs->h_rad_ext, n_elts[0], cs_real_t, amode);
       }
       else {
         CS_FREE(f->bc_coeffs->h_rad);
         CS_FREE(f->bc_coeffs->flux_rad);
+        CS_FREE(f->bc_coeffs->h_rad_ext);
       }
 
     }
@@ -1567,6 +1576,12 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
         flux_rad[i] = 0.;
       });
     }
+    if (f->bc_coeffs->h_rad_ext != nullptr) {
+      cs_real_t *h_rad_ext = f->bc_coeffs->h_rad_ext;
+      ctx.parallel_for(n_elts[0], [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        h_rad_ext[i] = 0.;
+      });
+    }
 
   }
 
@@ -1692,6 +1707,7 @@ cs_field_destroy_all(void)
       CS_FREE(f->bc_coeffs->h_int_tot);
       CS_FREE(f->bc_coeffs->h_rad);
       CS_FREE(f->bc_coeffs->flux_rad);
+      CS_FREE(f->bc_coeffs->h_rad_ext);
 
       CS_FREE(f->bc_coeffs->val_f);
       CS_FREE(f->bc_coeffs->flux_diff);

@@ -126,6 +126,9 @@ public:
                                      (used for internal coupling and
                                       coupling) */
 
+  cs_real_t         *h_rad_ext;   /* Exterior exchange coef for radiative
+                                     transfer (used for internal coupling) */
+
   cs_real_t         *val_f;       /* face value for gradient */
   cs_real_t         *val_f_pre;   /* previous face value for gradient */
 
@@ -162,6 +165,7 @@ public:
 
     h_rad = nullptr;
     flux_rad = nullptr;
+    h_rad_ext = nullptr;
 
     h_int_tot = nullptr;
 
