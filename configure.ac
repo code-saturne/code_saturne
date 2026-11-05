@@ -791,6 +791,19 @@ AM_CONDITIONAL([HAVE_OPENMP_TARGET], [test "$cs_have_openmp_target" = "yes"])
 AC_ARG_VAR([PYTHON], [the Python interpreter])
 AM_PATH_PYTHON(["3.4"])
 
+# Check for numpy which is needed in the python layer
+AC_MSG_CHECKING([for numpy support])
+cs_have_numpy="no"
+$PYTHON -c "import numpy" 2>/dev/null
+result_test_numpy=$?
+if test  "$result_test_numpy" = "0" ; then
+  cs_have_numpy="yes"
+fi
+AC_MSG_RESULT($cs_have_numpy)
+if test "$cs_have_numpy" = "no" ; then
+  AC_MSG_ERROR([numpy support not found.])
+fi
+
 # On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths
 # It seems better to use the standard way of installing Python modules,
 # as it is on Unix systems (whichever is chosen, Python modules will be
@@ -1226,6 +1239,19 @@ fi
 # No supported Qt Python binding was found.
 if test "x$cs_have_gui" = "xcheck" ; then
   AC_MSG_FAILURE([cannot find PyQt5, PyQt6, or PySide6 support; Graphical User Interface cannot be installed])
+else
+  # GUI is available, check if PyVista is available
+  AC_MSG_CHECKING([for PyVista support])
+  cs_have_pyvista=no
+  $PYTHON -c "import pyvista" 2>/dev/null
+  result_test_pyvisa=$?
+  if test "$result_test_pyvisa" = "0" ; then
+    cs_have_pyvista=yes
+  fi
+  AC_MSG_RESULT($cs_have_pyvista)
+  if test "$cs_have_pyvista" = "no" ; then
+    AC_MSG_WARN([PyVista support is missing, some GUI Viewer functionnalities will not be available])
+  fi
 fi
 
 AM_CONDITIONAL(HAVE_GUI, [test "x$cs_have_gui" != "xno"])
