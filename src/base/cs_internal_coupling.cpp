@@ -1130,8 +1130,8 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
         cs_real_t hrad = h_rad[face_id];
         cs_real_t hradext = (h_rad_ext != nullptr) ? h_rad_ext[face_id] : 0.;
         cs_real_t dhsum = 1. / (hint + hext + hrad + hradext);
-        cs_real_t heqi = hint * (hext + hradext) * dhsum;
-        cs_real_t heqj = (hint + hrad) * hext * dhsum;
+        cs_real_t heqi = hint * (hext + hrad + hradext) * dhsum;
+        cs_real_t heqj = hint * hext * dhsum;
 
         y[cell_id] += thetap * idiffp * surf * (heqi * pi - heqj * pj);
       }
@@ -1392,7 +1392,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
       // cs_internal_coupling_spmv_contribution
 
       cs_real_t dhsum = 1. / (hint + hext + hrad + hradext);
-      cs_real_t heqj = (hint + hrad) * hext * dhsum;
+      cs_real_t heqj = hint * hext * dhsum;
       cs_real_t c = thetap * idiffp * heqj * surf;
 
       d_g_row_id[jj] = g_id_l[ii];
@@ -1949,8 +1949,8 @@ cs_internal_coupling_update_bc_coeffs_s
         // TODO check /0
         cs_real_t dhsum = 1. / (hint + hext + hrad_tot);
 
-        cs_real_t heqi = hint * (hext + hradext) * dhsum;
-        cs_real_t heqj = (hint + hrad) * hext * dhsum;
+        cs_real_t heqi = hint * (hext + hrad_tot) * dhsum;
+        cs_real_t heqj = hint * hext * dhsum;
 
         if (bc_coeffs->h_rad_ext != nullptr)
           bc_coeffs->h_rad_ext[face_id] = hradext;
@@ -1967,8 +1967,7 @@ cs_internal_coupling_update_bc_coeffs_s
         // cofimp should be used.
         bc_coeff_b[face_id] = 0.;
 
-        cs_real_t rad_flux_term
-          = phi_rad - (hint + hrad) * phi_rad_tot * dhsum;
+        cs_real_t rad_flux_term = - hint * phi_rad_tot * dhsum;
 
         if (compute_diffusion_coeffs) {
           if (var_ext_d != nullptr) {
