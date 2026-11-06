@@ -417,6 +417,11 @@ _copy_values_no_bbox(cs_medcoupling_remapper_t  *r,
     for (cs_lnum_t i = 0; i < n_vals; i++) {
       new_vals[i] = val_ptr[i];
     }
+
+    // target_field is owned by the caller (transferField returns a new
+    // reference) and is not stored anywhere else: release it here to
+    // avoid a memory leak per call.
+    target_field->decrRef();
   }
 
   return new_vals;
@@ -457,6 +462,11 @@ _copy_values_with_bbox(cs_medcoupling_remapper_t  *r,
     MEDCouplingFieldDouble *source_field
       = r->source_fields[field_id]->buildSubPart(subcells);
     source_field->setNature(IntensiveMaximum);
+
+    // subcells is a new reference returned by getCellsInBoundingBox and is
+    // no longer needed once the subfield has been built: release it here
+    // to avoid a memory leak per call..
+    subcells->decrRef();
 
     // Interpolate the new values
     MEDCouplingFieldDouble *target_field
@@ -503,6 +513,12 @@ _copy_values_with_bbox(cs_medcoupling_remapper_t  *r,
         new_vals[i] = val_ptr[i];
       }
     }
+
+    // source_field (from buildSubPart) and target_field (from
+    // transferField) are both new references owned by this function and
+    // not stored anywhere else: release them here to avoid a memory leak per call..
+    source_field->decrRef();
+    target_field->decrRef();
 
   }
 
@@ -560,11 +576,21 @@ _setup_with_bbox(cs_medcoupling_remapper_t  *r)
 
     source_field->setNature(IntensiveMaximum); /* TODO options */
 
+    // subcells is a new reference returned by getCellsInBoundingBox and is
+    // no longer needed once the subfield has been built: release it here
+    // to avoid a memory leak per call.
+    subcells->decrRef();
+
     // Update the remapper structure and interpolation matrix
 
     r->remapper->prepare(source_field->getMesh(),
                          r->target_mesh->med_mesh,
                          r->interp_method);
+
+    // source_field (from buildSubPart) is a new reference owned by this
+    // function and not stored anywhere else: release it here to 
+    // avoid a memory leak per call.
+    source_field->decrRef();
   }
 }
 
@@ -738,6 +764,13 @@ cs_medcoupling_remapper_set_iteration
 {
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   for (int i = 0; i < r->n_fields; i++) {
+    // The previous source field held by r->source_fields[i] is about to
+    // be overwritten: release it first, otherwise each call to this
+    // function (typically once per time step read from the MED file)
+    // leaks one MEDCouplingFieldDouble.
+    if (r->source_fields[i] != nullptr)
+      r->source_fields[i]->decrRef();
+
     r->source_fields[i] = _cs_medcoupling_read_field_real(r->medfile_path,
                                                           r->field_names[i],
                                                           iteration,
@@ -1107,6 +1140,13 @@ cs_medcoupling_remapper_update_time_value
   int order = r->iter_order[id][1];
 
   for (int ii = 0; ii < r->n_fields; ii++) {
+    // The previous source field held by r->source_fields[ii] is about to
+    // be overwritten: release it first, otherwise each call to this
+    // function (typically once per time step read from the MED file)
+    // leaks one MEDCouplingFieldDouble.
+    if (r->source_fields[ii] != nullptr)
+      r->source_fields[ii]->decrRef();
+
     r->source_fields[ii] = _cs_medcoupling_read_field_real(r->medfile_path,
                                                            r->field_names[ii],
                                                            it,
