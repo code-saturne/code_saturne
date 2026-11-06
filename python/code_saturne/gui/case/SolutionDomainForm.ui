@@ -138,11 +138,14 @@
         </item>
         <item>
          <widget class="QFrame" name="frameMeshCartesian">
+          <property name="toolTip">
+           <string>Coordinates are expressed in meters (SI units).</string>
+          </property>
           <layout class="QGridLayout" name="gridLayout_3">
            <item row="6" column="0">
             <widget class="QGroupBox" name="gridGroupBoxYparams">
              <property name="title">
-              <string>Y direction</string>
+              <string>Y direction (m)</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_4">
               <item row="0" column="3">
@@ -214,7 +217,7 @@
            <item row="2" column="0">
             <widget class="QGroupBox" name="gridGroupBoxXparams">
              <property name="title">
-              <string>X direction</string>
+              <string>X direction (m)</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_5">
               <item row="1" column="3">
@@ -286,7 +289,7 @@
            <item row="7" column="0">
             <widget class="QGroupBox" name="gridGroupBoxZparams">
              <property name="title">
-              <string>Z direction</string>
+              <string>Z direction (m)</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_6">
               <item row="1" column="1">
