@@ -3,6 +3,8 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix memory leak in medcoupling remapper calls.
+
 - Fix potential memory corruption in medcoupling based slices.
 
 - Fix illegal read in VoF balance log function.
