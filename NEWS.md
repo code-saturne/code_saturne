@@ -3,6 +3,8 @@ Release 9.2.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix memory leak in medcoupling remapper calls
+
 - Fix GUI crash when PyGments is not available on host system
 
 - Compressible model: fix boundary handling issue introduced in v9.2.0.
