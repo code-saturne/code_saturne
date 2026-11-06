@@ -1610,7 +1610,8 @@ _pressure_correction_fv(int                   iterns,
                   && staggered == 0) {
 
                 coefa_dp[f_id] += dph;
-                coefa_p[f_id] += dph;
+                coefa_p[f_id]  += dph;
+                coefaf_p[f_id] -= hint * dph;
               }
               else {
                 coefa_dp[f_id] = dph;
