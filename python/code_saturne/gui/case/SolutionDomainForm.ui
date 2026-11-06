@@ -154,7 +154,7 @@
               <item row="0" column="4">
                <widget class="QLabel" name="label_4">
                 <property name="text">
-                 <string>ymax</string>
+                 <string>ymax [m]</string>
                 </property>
                </widget>
               </item>
@@ -171,7 +171,7 @@
               <item row="0" column="2">
                <widget class="QLabel" name="label_3">
                 <property name="text">
-                 <string>ymin</string>
+                 <string>ymin [m]</string>
                 </property>
                </widget>
               </item>
@@ -236,7 +236,7 @@
               <item row="0" column="4">
                <widget class="QLabel" name="label_10">
                 <property name="text">
-                 <string>xmax</string>
+                 <string>xmax [m]</string>
                 </property>
                </widget>
               </item>
@@ -263,7 +263,7 @@
               <item row="0" column="2">
                <widget class="QLabel" name="label_11">
                 <property name="text">
-                 <string>xmin</string>
+                 <string>xmin [m]</string>
                 </property>
                </widget>
               </item>
@@ -295,14 +295,14 @@
               <item row="0" column="2">
                <widget class="QLabel" name="label_6">
                 <property name="text">
-                 <string>zmin</string>
+                 <string>zmin [m]</string>
                 </property>
                </widget>
               </item>
               <item row="0" column="4">
                <widget class="QLabel" name="label_7">
                 <property name="text">
-                 <string>zmax</string>
+                 <string>zmax [m]</string>
                 </property>
                </widget>
               </item>
@@ -405,7 +405,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources_pages.qrc">
+                <iconset>
                  <normaloff>:data/icons/22x22/document-open.png</normaloff>:data/icons/22x22/document-open.png</iconset>
                </property>
               </widget>
@@ -464,7 +464,7 @@
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset resource="resources_pages.qrc">
+                <iconset>
                  <normaloff>:data/icons/22x22/folder-open.png</normaloff>:data/icons/22x22/folder-open.png</iconset>
                </property>
               </widget>
@@ -478,7 +478,7 @@
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset resource="resources_pages.qrc">
+                <iconset>
                  <normaloff>:data/icons/22x22/edit-clear.png</normaloff>:data/icons/22x22/edit-clear.png</iconset>
                </property>
               </widget>
@@ -560,7 +560,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources_pages.qrc">
+                <iconset>
                  <normaloff>:data/icons/22x22/add.png</normaloff>:data/icons/22x22/add.png</iconset>
                </property>
               </widget>
@@ -574,7 +574,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources_pages.qrc">
+                <iconset>
                  <normaloff>:data/icons/22x22/remove.png</normaloff>:data/icons/22x22/remove.png</iconset>
                </property>
               </widget>
