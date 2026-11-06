@@ -50,6 +50,72 @@
 
 typedef struct _cs_grid_t cs_grid_t;
 
+namespace cs {
+
+/* Class associated with grid rank merging */
+/*-----------------------------------------*/
+
+#if defined(HAVE_MPI)
+
+class grid_rank_merge {
+
+public:
+  int         rank_id{-1};       /* destination rank for this subset */
+  int         rank_stride{0};    /* rank stride within this subset
+                                    (equal to parent rank stride) */
+  int         sub_root{-1};      /* source sub-root when merging */
+  int         sub_rank{-1};      /* sub-rank when merging
+                                    (0 <= sub-rank < merge_sub_size) */
+  int         sub_size[2]{1,1};  /* number of merged ranks for this subset
+                                    (actual and target)*/
+
+  cs_lnum_t  *row_idx{nullptr};  /* start row_id for each sub-rank when
+                                    merge_sub_rank = 0 (size: merge_size + 1) */
+
+  void       *buf{nullptr};      /* additional buffer when merge
+                                    send and receive overlap */
+  size_t      buf_size{0};       /* size of merge buffer */
+
+private:
+
+  /* Prevent use of some non-relevant operators
+     ------------------------------------------ */
+
+  void * operator new[] (size_t);
+
+public:
+
+  /*--------------------------------------------------------------------------
+   * Custom new and delete operators (implemented in cs_grid_rank_merge.cpp)
+   *--------------------------------------------------------------------------*/
+
+  void *
+  operator new(std::size_t size);
+
+  void
+  operator delete(void *ptr);
+
+  /*--------------------------------------------------------------------------
+   * Constructors and destructors
+   *--------------------------------------------------------------------------*/
+
+  ~grid_rank_merge();
+
+  /*--------------------------------------------------------------------------
+   * Public memeber functions
+   *--------------------------------------------------------------------------*/
+
+  void
+  dump();
+
+};
+
+#endif
+
+} /* namespace cs */
+
+/*----------------------------------------------------------------------------*/
+
 /* Structure associated with grid */
 /*--------------------------------*/
 
@@ -152,21 +218,11 @@ struct _cs_grid_t {
 
   /* Additional fields to allow merging grids */
 
-  int               merge_sub_root;    /* sub-root when merging */
-  int               merge_sub_rank;    /* sub-rank when merging
-                                          (0 <= sub-rank < merge_sub_size) */
-  int               merge_sub_size;    /* current number of merged ranks
-                                          for this subset */
-  int               merge_stride;      /* total number of ranks over which
-                                          merging occurred at previous levels */
-  int               next_merge_stride; /* total number of ranks over which
-                                          merging occurred at current level */
-
-  cs_lnum_t        *merge_cell_idx;    /* start cell_id for each sub-rank
-                                          when merge_sub_rank = 0
-                                          (size: merge_size + 1) */
+  cs::grid_rank_merge  *rank_merge;
 
   int               n_ranks;           /* Number of active ranks */
+  int               rank_stride;       /* Stride between active ranks
+                                          <= 0 for inactive ranks) */
   MPI_Comm          comm;              /* Associated communicator */
 
 #endif
@@ -404,7 +460,7 @@ MPI_Comm
 cs_grid_get_comm_merge(MPI_Comm  parent,
                        int       merge_stride);
 
-#endif
+#endif // have_MPI
 
 /*----------------------------------------------------------------------------
  * Create coarse grid from fine grid.
@@ -458,6 +514,15 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
                           int               merge_stride,
                           int               verbosity);
 
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Finalize global info related to rank merging
+ *----------------------------------------------------------------------------*/
+
+void
+cs_grid_merge_ranks_finalize(void);
+
 /*----------------------------------------------------------------------------
  * Merge grids on several ranks to a grid on a single rank
  *
@@ -475,6 +540,8 @@ void
 cs_grid_merge_ranks(cs_grid_t  *g,
                     int         merge_stride,
                     int         verbosity);
+
+#endif // HAVE_MPI
 
 /*----------------------------------------------------------------------------
  * Merge bottom grid over adjacent ranks, to reduce communicator size.
@@ -495,6 +562,46 @@ cs_grid_merge_bottom(cs_grid_t      *g,
                      int             verbosity,
                      int             n_max_ranks,
                      float           max_row_factor);
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Gather coarse cell data in case of merged grids
+ *
+ * Though the grid is <const> here, its `merge_buf` member may be allocated
+ * and used here.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_rank_merge_gather_row_data
+(
+  const cs_grid_t  *g,            /*!< grid structure */
+  cs_datatype_t     data_type,    /*!< associated data type */
+  size_t            data_stride,  /*!< associated data stride */
+  void             *data          /*!< associated data buffer */
+);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Scatter coarse cell data in case of merged grids
+ *
+ * Though the grid is <const> here, its `merge_buf` member may be allocated
+ * and used here.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_rank_merge_scatter_row_data
+(
+  const cs_grid_t  *g,            /*!< grid structure */
+  cs_datatype_t     data_type,    /*!< associated data type */
+  size_t            data_stride,  /*!< associated data stride */
+  void             *data          /*!< associated data buffer */
+);
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Project coarse grid row numbers to base grid.

@@ -538,15 +538,9 @@ _create_grid(void)
 
 #if defined(HAVE_MPI)
 
-  g->merge_sub_root = 0;
-  g->merge_sub_rank = 0;
-  g->merge_sub_size = 1;
-  g->merge_stride = 0;
-  g->next_merge_stride = 1;
-
-  g->merge_cell_idx = nullptr;
-
+  g->rank_merge = nullptr;
   g->n_ranks = cs_glob_n_ranks;
+  g->rank_stride = 1;
   g->comm = cs_glob_mpi_comm;
 
 #endif
@@ -617,8 +611,7 @@ _coarse_init(const cs_grid_t  *f,
   // Initialized later to avoid extra loop or CPU/GPU exchange.
 
 #if defined(HAVE_MPI)
-  c->merge_stride = f->merge_stride;
-  c->next_merge_stride = f->next_merge_stride;
+  c->rank_stride = f->rank_stride;
   c->n_ranks = f->n_ranks;
   c->comm = f->comm;
 #endif
@@ -1454,7 +1447,8 @@ _coarse_row_count_and_halo(const cs_grid_t   *f,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    MPI_Comm comm = _root_grid(c)->comm;
+    //MPI_Comm comm = _root_grid(c)->comm;
+    MPI_Comm comm = f->comm;
     if (comm != MPI_COMM_NULL) {
       cs_gnum_t _c_n_rows = c_n_rows;
       MPI_Allreduce(&_c_n_rows, &(c->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM,
@@ -1531,96 +1525,6 @@ _build_coarse_matrix_msr(cs_grid_t *c,
                                       &c_d_val,
                                       &c_x_val);
 }
-
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Scatter coarse cell integer data in case of merged grids
- *
- * parameters:
- *   g    <-- Grid structure
- *   num  <-> Variable defined on merged grid cells in,
- *            defined on scattered to grid cells out
- *----------------------------------------------------------------------------*/
-
-static void
-_scatter_row_int(const cs_grid_t  *g,
-                 int              *num)
-{
-  assert(g != nullptr);
-
-  /* If grid merging has taken place, scatter coarse data */
-
-  if (g->merge_sub_size > 1) {
-
-    MPI_Comm  comm = cs_glob_mpi_comm;
-    static const int tag = 'p'+'r'+'o'+'l'+'o'+'n'+'g';
-
-    /* Append data */
-
-    if (g->merge_sub_rank == 0) {
-      int rank_id;
-      assert(cs_glob_rank_id == g->merge_sub_root);
-      for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
-        cs_lnum_t n_send = (  g->merge_cell_idx[rank_id+1]
-                            - g->merge_cell_idx[rank_id]);
-        int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
-        MPI_Send(num + g->merge_cell_idx[rank_id], n_send, MPI_INT,
-                 dist_rank, tag, comm);
-      }
-    }
-    else {
-      MPI_Status status;
-      MPI_Recv(num, g->n_elts_r[0], MPI_INT,
-               g->merge_sub_root, tag, comm, &status);
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Scatter coarse cell integer data in case of merged grids
- *
- * parameters:
- *   g    <-- Grid structure
- *   num  <-> Variable defined on merged grid cells in,
- *            defined on scattered to grid cells out
- *----------------------------------------------------------------------------*/
-
-static void
-_scatter_row_num(const cs_grid_t  *g,
-                 cs_lnum_t        *num)
-{
-  assert(g != nullptr);
-
-  /* If grid merging has taken place, scatter coarse data */
-
-  if (g->merge_sub_size > 1) {
-
-    MPI_Comm  comm = cs_glob_mpi_comm;
-    static const int tag = 'p'+'r'+'o'+'l'+'o'+'n'+'g';
-
-    /* Append data */
-
-    if (g->merge_sub_rank == 0) {
-      int rank_id;
-      assert(cs_glob_rank_id == g->merge_sub_root);
-      for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
-        cs_lnum_t n_send = (  g->merge_cell_idx[rank_id+1]
-                            - g->merge_cell_idx[rank_id]);
-        int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
-        MPI_Send(num + g->merge_cell_idx[rank_id], n_send, CS_MPI_LNUM,
-                 dist_rank, tag, comm);
-      }
-    }
-    else {
-      MPI_Status status;
-      MPI_Recv(num, g->n_elts_r[0], CS_MPI_LNUM,
-               g->merge_sub_root, tag, comm, &status);
-    }
-  }
-}
-
-#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Remove an element from a list (queue) of elements listed by adjacency size.
@@ -9579,7 +9483,8 @@ _prolong_row_int(const cs_grid_t  *c,
   assert(c_num != nullptr);
 
 #if defined(HAVE_MPI)
-  _scatter_row_int(c, c_num);
+  if (c->rank_merge != nullptr)
+    cs_grid_rank_merge_scatter_row_data(c, CS_INT_TYPE, 1, c_num);
 #endif
 
   /* Set fine values (possible penalization at first level) */
@@ -9631,11 +9536,9 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
                            const cs_matrix_t     *a,
                            bool                   conv_diff)
 {
-  cs_grid_t *g = nullptr;
-
   /* Create empty structure and map base data */
 
-  g = _create_grid();
+  cs_grid_t *g = _create_grid();
 
   g->alloc_mode = cs_matrix_get_alloc_mode(a);
   //if (g->alloc_mode == CS_ALLOC_DEVICE)
@@ -9800,19 +9703,19 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
 
   if (n_ranks > 1 || local) {
     g->matrix = a;
-#if defined(HAVE_MPI)
-    g->comm = cs_base_get_sub_comm(0, cs_glob_n_ranks, g->merge_stride);
-    MPI_Comm_size(g->comm, &(g->n_ranks));
-#endif
   }
   else {
     g->_matrix = cs_matrix_create_by_local_restrict(a);
     g->matrix = g->_matrix;
-#if defined(HAVE_MPI)
-    g->comm = cs_base_get_sub_comm(0, cs_glob_n_ranks, g->merge_stride);
-    MPI_Comm_size(g->comm, &(g->n_ranks));
-#endif
   }
+
+#if defined(HAVE_MPI)
+  if (g->rank_stride == 1)
+    g->comm = cs_glob_mpi_comm;
+  else
+    g->comm = cs_base_get_sub_comm(0, cs_glob_n_ranks, g->rank_stride);
+  MPI_Comm_size(g->comm, &(g->n_ranks));
+#endif
 
   g->level = 0;
   g->symmetric = cs_matrix_is_symmetric(g->matrix);
@@ -9854,10 +9757,15 @@ cs_grid_destroy(cs_grid_t **grid)
   if (grid != nullptr && *grid != nullptr) {
 
     cs_grid_t *g = *grid;
+
+#if defined(HAVE_MPI)
+    if (g->rank_merge != nullptr)
+      delete g->rank_merge;
+#endif
+
     cs_grid_free_quantities(g);
 
     CS_FREE(g->_face_cell);
-
     CS_FREE(g->coarse_row);
 
     if (g->_halo != nullptr)
@@ -9871,10 +9779,6 @@ cs_grid_destroy(cs_grid_t **grid)
 
     CS_FREE(g->cell_face);
     CS_FREE(g->cell_face_sgn);
-
-#if defined(HAVE_MPI)
-    CS_FREE(g->merge_cell_idx);
-#endif
 
     CS_FREE(*grid);
   }
@@ -10688,6 +10592,16 @@ cs_grid_coarsen(cs_grid_t            *f,
     }
   }
 
+  /* In case of grid merging, global counts for grids on inactive rows still
+     need to be updated, as they may be used in local tests */
+  if (c->n_ranks < cs_glob_n_ranks) {
+    cs_gnum_t buf[2] = {c->n_g_rows, (cs_gnum_t)c->n_ranks};
+    MPI_Allreduce(MPI_IN_PLACE, buf, 2, CS_MPI_GNUM, MPI_MAX,
+                  _root_grid(f)->comm);
+    c->n_g_rows = buf[0];
+    c->n_ranks = (int)(buf[1]);
+  }
+
 #endif
 
   if (f->use_faces && c->_matrix != nullptr)
@@ -10758,12 +10672,12 @@ cs_grid_coarsen(cs_grid_t            *f,
   }
 
 #if CS_PROFILING == CS_PROFILING_NVTX
-    nvtxRangePop();
+  nvtxRangePop();
 #endif
 
   /* Return new (coarse) grid */
 
-  //cs_grid_dump(c);
+  // cs_grid_dump(c);
   return c;
 }
 
@@ -10947,7 +10861,8 @@ cs_grid_project_row_num(const cs_grid_t  *g,
       cs_lnum_t n_parent_rows = _g->parent->n_rows;
 
 #if defined(HAVE_MPI)
-      _scatter_row_num(_g, tmp_num_1);
+      if (_g->rank_merge != nullptr)
+        cs_grid_rank_merge_scatter_row_data(_g, CS_LNUM_TYPE, 1, tmp_num_1);
 #endif /* defined(HAVE_MPI) */
 
       for (ii = 0; ii < n_parent_rows; ii++) {
@@ -11183,6 +11098,8 @@ cs_grid_finalize(void)
 
     _grid_tune_max_level = 0;
   }
+
+  cs_grid_merge_ranks_finalize();
 }
 
 /*----------------------------------------------------------------------------
@@ -11195,8 +11112,6 @@ cs_grid_finalize(void)
 void
 cs_grid_dump(const cs_grid_t  *g)
 {
-  cs_lnum_t  i;
-
   if (g == nullptr) {
     bft_printf("\n\n  grid: null\n");
     return;
@@ -11216,23 +11131,26 @@ cs_grid_dump(const cs_grid_t  *g)
 
 #if defined(HAVE_MPI)
 
-  bft_printf("\n"
-             "  merge_sub_root:     %d\n"
-             "  merge_sub_rank:     %d\n"
-             "  merge_sub_size:     %d\n"
-             "  merge_stride:       %d\n"
-             "  next_merge_stride:  %d\n"
-             "  n_ranks:            %d\n",
-             g->merge_sub_root, g->merge_sub_rank, g->merge_sub_size,
-             g->merge_stride, g->next_merge_stride, g->n_ranks);
+  if (g->rank_merge != nullptr)
+    g->rank_merge->dump();
 
-  if (g->merge_cell_idx != nullptr) {
-    bft_printf("  merge_cell_idx\n");
-    for (i = 0; i < g->merge_sub_size + 1; i++)
-      bft_printf("    %ld: %ld\n", (long)i, (long)g->merge_cell_idx[i]);
+  char comm_name[MPI_MAX_OBJECT_NAME];
+  if (g->comm != MPI_COMM_NULL) {
+    int comm_name_len;
+    MPI_Comm_get_name(g->comm, comm_name, &comm_name_len);
   }
+  else
+    strcpy(comm_name, "MPI_COMM_NULL");
+
+  bft_printf("\n"
+             "  n_ranks:       %d\n"
+             "  rank_stride    %d\n"
+             "  comm           %p (%s)\n",
+             g->n_ranks, g->rank_stride, (void *)g->comm,
+             comm_name);
 
 #endif
+
   bft_printf("\n"
              "  face_cell:      %p\n"
              "  _face_cell:     %p\n"
@@ -11246,7 +11164,7 @@ cs_grid_dump(const cs_grid_t  *g)
   if (g->face_cell != nullptr) {
     bft_printf("\n"
                "  face -> cell connectivity;\n");
-    for (i = 0; i < g->n_faces; i++)
+    for (cs_lnum_t i = 0; i < g->n_faces; i++)
       bft_printf("    %ld : %ld, %ld\n", (long)(i+1),
                  (long)(g->face_cell[i][0]), (long)(g->face_cell[i][1]));
   }
@@ -11254,7 +11172,7 @@ cs_grid_dump(const cs_grid_t  *g)
   if (g->coarse_row != nullptr && g->parent != nullptr) {
     bft_printf("\n"
                "  coarse_row;\n");
-    for (i = 0; i < g->parent->n_rows; i++)
+    for (cs_lnum_t i = 0; i < g->parent->n_rows; i++)
       bft_printf("    %ld : %ld\n",
                  (long)(i+1), (long)(g->coarse_row[i]));
   }
@@ -11262,7 +11180,7 @@ cs_grid_dump(const cs_grid_t  *g)
   if (g->coarse_face != nullptr && g->parent != nullptr) {
     bft_printf("\n"
                "  coarse_face;\n");
-    for (i = 0; i < g->parent->n_faces; i++)
+    for (cs_lnum_t i = 0; i < g->parent->n_faces; i++)
       bft_printf("    %ld : %ld\n",
                  (long)(i+1), (long)(g->coarse_face[i]));
   }
@@ -11415,29 +11333,8 @@ cs_grid_restrict_row_var(cs_dispatch_context  &ctx,
 
   /* If grid merging has taken place, gather coarse data */
 
-  if (c->merge_sub_size > 1) {
-
-    MPI_Comm  comm = cs_glob_mpi_comm;
-    static const int tag = 'r'+'e'+'s'+'t'+'r'+'i'+'c'+'t';
-
-    /* Append data */
-
-    if (c->merge_sub_rank == 0) {
-      int rank_id;
-      MPI_Status status;
-      assert(cs_glob_rank_id == c->merge_sub_root);
-      for (rank_id = 1; rank_id < c->merge_sub_size; rank_id++) {
-        cs_lnum_t n_recv = (  c->merge_cell_idx[rank_id+1]
-                            - c->merge_cell_idx[rank_id]);
-        int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
-        MPI_Recv(c_var + c->merge_cell_idx[rank_id]*db_size,
-                 n_recv*db_size, CS_MPI_REAL, dist_rank, tag, comm, &status);
-      }
-    }
-    else
-      MPI_Send(c_var, c->n_elts_r[0]*db_size, CS_MPI_REAL,
-               c->merge_sub_root, tag, comm);
-  }
+  if (c->rank_merge != nullptr)
+    cs_grid_rank_merge_gather_row_data(c, CS_REAL_TYPE, db_size, c_var);
 
 #endif /* defined(HAVE_MPI) */
 }
@@ -11478,31 +11375,8 @@ cs_grid_prolong_row_var(cs_dispatch_context  &ctx,
 #if defined(HAVE_MPI)
 
   /* If grid merging has taken place, scatter coarse data */
-
-  if (c->merge_sub_size > 1) {
-
-    MPI_Comm  comm = cs_glob_mpi_comm;
-    static const int tag = 'p'+'r'+'o'+'l'+'o'+'n'+'g';
-
-    /* Append data */
-
-    if (c->merge_sub_rank == 0) {
-      int rank_id;
-      assert(cs_glob_rank_id == c->merge_sub_root);
-      for (rank_id = 1; rank_id < c->merge_sub_size; rank_id++) {
-        cs_lnum_t n_send = (  c->merge_cell_idx[rank_id+1]
-                            - c->merge_cell_idx[rank_id]);
-        int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
-        MPI_Send(c_var + c->merge_cell_idx[rank_id]*db_size,
-                 n_send*db_size, CS_MPI_REAL, dist_rank, tag, comm);
-      }
-    }
-    else {
-      MPI_Status status;
-      MPI_Recv(c_var, c->n_elts_r[0]*db_size, CS_MPI_REAL,
-               c->merge_sub_root, tag, comm, &status);
-    }
-  }
+  if (c->rank_merge != nullptr)
+    cs_grid_rank_merge_scatter_row_data(c, CS_REAL_TYPE, db_size, c_var);
 
 #endif /* defined(HAVE_MPI) */
 
@@ -11537,6 +11411,7 @@ cs_grid_prolong_row_var(cs_dispatch_context  &ctx,
   /* Overwrite mode */
 
   else {
+
     if (db_size == 1) {
       ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
         cs_lnum_t ic = coarse_row[ii];

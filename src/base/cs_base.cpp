@@ -928,7 +928,7 @@ _cs_base_mpi_finalize(void)
   ple_error_handler_set(cs_glob_base_err_handler_save);
 
   if (   cs_glob_mpi_node_comm != MPI_COMM_NULL
-      && cs_glob_mpi_comm != cs_glob_mpi_comm)
+      && cs_glob_mpi_node_comm != cs_glob_mpi_comm)
     MPI_Comm_free(&cs_glob_mpi_node_comm);
 
   if (   cs_glob_mpi_comm != MPI_COMM_NULL
