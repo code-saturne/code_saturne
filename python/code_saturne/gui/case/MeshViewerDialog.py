@@ -71,12 +71,6 @@ from code_saturne.gui.base.QtCore    import *
 from code_saturne.gui.base.QtGui     import *
 from code_saturne.gui.base.QtWidgets import *
 
-if QT_API == "PYSIDE6":
-    try:
-        import Signal as pyqtSignal # Alias
-    except ImportError:
-        pass
-
 from code_saturne.model.Common import GuiParam
 
 # ============================================================================
@@ -199,8 +193,12 @@ class MeshLoaderThread(QThread):
     finished(grid, gc_to_name, name_to_tags, subsets, group_pairs, probe_spheres)
     error(traceback_str)
     """
-    finished = pyqtSignal(object, object, object, object, object, object)
-    error    = pyqtSignal(str)
+    if QT_API == "PYSIDE6":
+        finished = Signal(object, object, object, object, object, object)
+        error    = Signal(str)
+    else:
+        finished = pyqtSignal(object, object, object, object, object, object)
+        error    = pyqtSignal(str)
 
     def __init__(self, csm_file, probes=None):
         """
@@ -356,7 +354,10 @@ class MeshViewerDialog(QDialog):
     """
 
     # Signal emitted after saving probes to XML
-    probes_updated = pyqtSignal()
+    if QT_API == "PYSIDE6":
+        probes_updated = Signal()
+    else:
+        probes_updated = pyqtSignal()
 
     def __init__(self, parent, csm_file=None, zone_label=None, zone_expr=None,
                  case=None, probes=None, profile=None, profiles=None,
