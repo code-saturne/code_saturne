@@ -417,7 +417,7 @@ class DefineUserScalarsModel(Variables, Model):
     def renameScalarLabel(self, old_name, new_name):
         """Public method.
         Modify old_name of scalar with new_name and put new name if variancy exists"""
-        # fusion de cette methode avec OutputVolumicVariablesModel.setVariablesLabel
+        # merge this method with OutputVolumicVariablesModel.setVariablesLabel
         self.isInList(old_name, self.getScalarNameList())
 
         name = new_name[:LABEL_LENGTH_MAX]
@@ -522,7 +522,7 @@ class DefineUserScalarsModel(Variables, Model):
                     if node_name.startswith(scalar_name + '_'):
                         node.xmlRemoveNode()
 
-        # Creer les nouveaux noeuds selon le modele choisi
+        # Create new nodes according to chosen model
         if TurbFlux in ('SGDH', 'OFF'):
             return
 

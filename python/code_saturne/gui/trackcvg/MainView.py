@@ -233,7 +233,7 @@ class CaseStandardItemModel(QAbstractItemModel):
         itm = index.internalPointer()
 
         if itm in self.noderoot.values():
-            # traitement des categories
+            # Category handling
             if index.column() == 0:
                 return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
             elif index.column() == 1:
@@ -668,7 +668,7 @@ class MainView(object):
 
         self.spinBox.valueChanged[int].connect(self.updateSubplotNumber)
 
-        # gestion des figures
+        # Figure management
         l = QVBoxLayout(self.widget)
         self.dc = MyMplCanvas(self.widget, subplotNb=self.subplotNumber,
                               width=5, height=4, dpi=50)
@@ -984,7 +984,7 @@ class MainView(object):
                         itt.subplot_id = 1
                         itt.status = "off"
         self.updateView()
-        # TODO manque update au niveau fichier!!!!!! et le traitement de NEPTUNE
+        # TODO missing update at the file level!!!!!! and NEPTUNE handling
 
 
     def updateView(self):

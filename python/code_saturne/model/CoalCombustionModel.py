@@ -384,7 +384,7 @@ class CoalCombustionModel(Variables, Model):
         Delete scalars x_p_wt_ and fr_h2o and property dry_ts_coal
         if model isn't 'homogeneous_fuel_moisture'
         """
-        # TODO a supprimer doit etre appele si on change le modele uniquement
+        # TODO to remove; should be called only if the model is changed
         if model != 'homogeneous_fuel_moisture':
             nod = self.node_fuel.xmlGetNode('variable', type="model", name="fr_h2o")
             if nod:

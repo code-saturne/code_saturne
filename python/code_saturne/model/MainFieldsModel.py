@@ -373,7 +373,7 @@ class MainFieldsModel(Variables, Model):
                except :
                    pass
 
-        # TODO mettre en coherence pour les aires interf., tout ce qui est closure law a faire aussi pour la nature.
+        # TODO make consistent for interfacial areas; everything related to closure law should also be done for the nature.
         # Activated if dispersed or second continuous phase of GLIM
         if field.flow_type == "dispersed" or self.getPredefinedFlow() == "multiregime":
            self.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "diameter", "diam_"+field_name)
@@ -532,7 +532,7 @@ class MainFieldsModel(Variables, Model):
             for fieldId in field_id_list[-1:1:-1]:
                 self.deleteField(fieldId)
 
-            # modification du choix pour le predicteur de vitesse
+            # modify velocity predictor choice
             self.case.undoStop()
             if flow_choice == "boiling_flow":
                 GlobalNumericalParametersModel(self.case).setVelocityPredictorAlgo(

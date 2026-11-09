@@ -298,7 +298,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
         itm = index.internalPointer()
         if itm in self.noderoot.values():
-            # traitement des categories
+            # category handling
             if index.column() >= 2:
                 return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsAutoTristate
             else:
@@ -495,7 +495,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                     item.item.status[1] = "off"
 
             if item not in self.noderoot.values():
-                # C'est un enfant — on met a jour le modele XML
+                # It is a child — update the XML model
                 if item.item.value == _calculator_group:
                     if c_id == 0:
                         self.calculator.setPrintingStatus(item.item.name,
@@ -541,7 +541,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                         self.dataChanged.emit(parent_col_index, parent_col_index)
 
             else:
-                # It si a parent — propagate status to all children.
+                # It is a parent — propagate status to all children.
                 # Index is on the checked column, rebuild with column 0.
                 parent_col0 = self.index(index.row(), 0, self.parent(index))
 

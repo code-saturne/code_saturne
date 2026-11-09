@@ -621,7 +621,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
             self.modelScalars.newItem(name)
         for name in self.mdl.getScalarsVarianceList():
             self.modelVariance.newItem(name)
-        # le code ci-dessous fonctione-t-il ?
+        # does the code below work?
         if GasCombustionModel(self.case).getGasCombustionModel() == "d3p":
             for name in self.mdl.getGasCombScalarsNameList():
                 self.modelScalars.newModelItem(name)

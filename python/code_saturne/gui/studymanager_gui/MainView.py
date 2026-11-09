@@ -332,9 +332,8 @@ class MainView(object):
             return
         if not fname in self.recentFiles:
             self.recentFiles.insert(0, str(fname))
-            # l'idée est de garder les 8 premiers élements de la
-            # liste. On pourrait donc remplacer le code ci-dessus par
-            # :
+            # The idea is to keep the first 8 elements of the
+            # list. We could therefore replace the code above with:
             # self.recentFiles = self.recentFiles[:8]
             while len(self.recentFiles) > 9:
                 try:

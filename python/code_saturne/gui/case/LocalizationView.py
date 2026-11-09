@@ -599,16 +599,16 @@ class BoundaryLocalizationView(LocalizationView):
         #  "Visualize zone" button
         # Allows visualizing boundary faces corresponding to the zone
         # selected in the table, with OR/AND/NOT expression parsing.
-        self.pushButtonVisuZone = QPushButton(self.tr("Visualiser la zone"))
+        self.pushButtonVisuZone = QPushButton(self.tr("Visualize boundary zone"))
         self.pushButtonVisuZone.setToolTip(
-            self.tr("Affiche les faces de bord correspondant "
-                    "à la zone sélectionnée"))
+            self.tr("Display boundary faces corresponding "
+                    "to the selected zone"))
 
         self.pyvista = pyvistaWrapper()
         if not self.pyvista.isActive():
             self.pushButtonVisuZone.setEnabled(False)
             self.pushButtonVisuZone.setToolTip(
-                self.tr("Requiert : pip install pyvista pyvistaqt"))
+                self.tr("Requires: pip install pyvista pyvistaqt"))
 
         self.groupBoxLocalization.layout().addWidget(self.pushButtonVisuZone)
         self.pushButtonVisuZone.clicked.connect(self.slotVisuZone)
@@ -632,7 +632,7 @@ class BoundaryLocalizationView(LocalizationView):
 
         selected = self.tableView.selectionModel().selectedRows()
         if not selected:
-            QMessageBox.information(self, self.tr("Visualisation"),
+            QMessageBox.information(self, self.tr("Visualization"),
                 self.tr("Please first select a zone from the list."))
             return
 

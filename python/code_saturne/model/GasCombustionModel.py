@@ -1132,22 +1132,22 @@ class ThermochemistryData(Model):
         # in colecd : igfuel and igoxy (parameters position_fuel and position_oxi) and in colecd : stoeg (parameter global_stoeg)
         # see colecd.f90 for more information
 
-        #Comment to add at the end of each lines FR
+        # Comment to add at the end of each line
         InfoLine = {}
-        InfoLine['NumberOfSpecies'] = "Nb especes courantes"
-        InfoLine['NbPointsTabu'] = "Nb de points de tabulation ENTH-TEMP"
+        InfoLine['NumberOfSpecies'] = "Number of current species"
+        InfoLine['NbPointsTabu'] = "Number of ENTH-TEMP tabulation points"
         InfoLine['MinimumTemp'] = "TMIN"
         InfoLine['MaximumTemp'] = "TMAX"
-        InfoLine['LineInfo-GaseousSpecies'] = "Especes Gazeuses"
-        InfoLine['CoeffAbsorp'] = "Coeff absorption (ray)"
-        InfoLine['GlobalElemCompo'] = "Nb especes elementaires"
-        InfoLine['LineInfo-ChemElem'] = "Composition CHON"
-        InfoLine['NumberOfKnownGlobalSpecies'] = "Nb d'especes globales connues (ici : / Fuel / Oxydant / Produits)"
-        InfoLine['FuelComposition'] = "Numero espece reactive / Composition Fuel     en especes elementaires"
-        InfoLine['OxiComposition'] = "Numero espece reactive / Composition Oxydant  en especes elementaires"
-        InfoLine['ProdComposition'] = "Numero espece reactive / Composition Produits en especes elementaires"
-        InfoLine['NbReaction'] = "Nb de reactions mises en jeu pour les especes globales"
-        InfoLine['Stoeg'] = "Stoechiometrie en nb de mole especes globales"
+        InfoLine['LineInfo-GaseousSpecies'] = "Gaseous Species"
+        InfoLine['CoeffAbsorp'] = "Absorption coeff (rad)"
+        InfoLine['GlobalElemCompo'] = "Number of elementary species"
+        InfoLine['LineInfo-ChemElem'] = "CHON composition"
+        InfoLine['NumberOfKnownGlobalSpecies'] = "Number of known global species (here: / Fuel / Oxidizer / Products)"
+        InfoLine['FuelComposition'] = "Reactive species number / Fuel composition in elementary species"
+        InfoLine['OxiComposition'] = "Reactive species number / Oxidizer composition in elementary species"
+        InfoLine['ProdComposition'] = "Reactive species number / Products composition in elementary species"
+        InfoLine['NbReaction'] = "Number of reactions involved for global species"
+        InfoLine['Stoeg'] = "Stoichiometry in number of moles of global species"
         #----------------------------------------
         ErrorLine = {}
         ErrorLine['Error'] = "Error in the GUI\n"

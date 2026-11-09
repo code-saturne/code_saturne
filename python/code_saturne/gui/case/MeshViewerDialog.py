@@ -252,7 +252,7 @@ class AddProbeDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Ajouter une sonde")
+        self.setWindowTitle("Add probe")
         self.setModal(True)
         self.resize(300, 180)
 
@@ -284,11 +284,11 @@ class AddProbeDialog(QDialog):
             float(self.lineY.text())
             float(self.lineZ.text())
         except ValueError:
-            QMessageBox.warning(self, "Erreur",
-                "Les coordonnées X, Y, Z doivent être des nombres.")
+            QMessageBox.warning(self, "Error",
+                "X, Y, Z coordinates must be numbers.")
             return
         if not self.lineLabel.text().strip():
-            QMessageBox.warning(self, "Erreur", "Le label ne peut pas être vide.")
+            QMessageBox.warning(self, "Error", "Label cannot be empty.")
             return
         self.accept()
 
@@ -1402,7 +1402,7 @@ class MeshViewerDialog(QDialog):
         except Exception as e:
             import traceback
             traceback.print_exc()
-            QMessageBox.critical(self, "Erreur de sauvegarde", str(e))
+            QMessageBox.critical(self, "Save error", str(e))
 
     # =========================================================================
     # Profiles mode

@@ -268,7 +268,7 @@ def csm_to_pyvista_boundary(csm_file):
         import pyvista as pv
     except ImportError:
         raise ImportError(
-            "La bibliothèque 'pyvista' est requise pour générer la grille de visualisation."
+            "The 'pyvista' library is required to generate the visualization grid."
         )
 
     data = read_csm(csm_file)

@@ -790,7 +790,7 @@ class TurbulenceModelTestCase(ModelTest):
              'Could not set the LES turbulence model'
 
     def checkSetLESdynamique(self):
-        """Check whether the dynamique LES turbulence model could be set"""
+        """Check whether the dynamic LES turbulence model could be set"""
         mdl = TurbulenceModel(self.case)
         mdl.node_turb.xmlRemoveChild('variable')
         mdl.node_turb.xmlRemoveChild('property')
@@ -801,7 +801,7 @@ class TurbulenceModelTestCase(ModelTest):
                  <property label="Csdyn2" name="smagorinsky_constant^2"/>
                </turbulence>'''
         assert mdl.node_turb == self.xmlNodeFromString(doc),\
-           'Could not set the dynamique LES turbulence model'
+           'Could not set the dynamic LES turbulence model'
 
     def checkSetV2F(self):
         """Check whether the v2f phi turbulence model could be set"""

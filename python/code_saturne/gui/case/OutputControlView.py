@@ -2980,10 +2980,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             probes.append((str(name), float(x), float(y), float(z)))
 
         if not probes:
-            QMessageBox.information(self, self.tr("Visualisation"),
-                self.tr("Aucune sonde définie.\n"
-                        "Ajoutez des sondes avec le bouton '+' avant "
-                        "de les visualiser."))
+            QMessageBox.information(self, self.tr("Visualization"),
+                self.tr("No probes defined.\n"
+                        "Add probes with the '+' button before "
+                        "visualizing them."))
             return
 
         # Reconstruct .csm file path
@@ -2991,8 +2991,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         mesh_list = mdl.getMeshList()
 
         if not mesh_list:
-            QMessageBox.warning(self, self.tr("Maillage introuvable"),
-                self.tr("Aucun maillage associé au cas."))
+            QMessageBox.warning(self, self.tr("Mesh not found"),
+                self.tr("Case has no associated mesh."))
             return
 
         mesh_name, mesh_dir = mesh_list[0]
@@ -3006,14 +3006,14 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 mesh_file = os.path.join(case_path, mesh_name)
 
         if not os.path.isfile(mesh_file):
-            QMessageBox.warning(self, self.tr("Fichier introuvable"),
-                self.tr("Impossible de trouver :\n%s" % mesh_file))
+            QMessageBox.warning(self, self.tr("File not found"),
+                self.tr("Impossible to find:\n%s" % mesh_file))
             return
 
         if not mesh_file.endswith(".csm"):
-            QMessageBox.information(self, self.tr("Format non supporté"),
-                self.tr("La visualisation est disponible uniquement "
-                        "pour les fichiers .csm."))
+            QMessageBox.information(self, self.tr("Unsupported file format"),
+                self.tr("Visualization is only available "
+                        "for .csm files."))
             return
 
         # Open in probes mode with case to allow saving
@@ -3192,7 +3192,7 @@ class OutputControlViewTestCase(unittest.TestCase):
         try:
             self.view.slotVisuProbes()
             self.assertEqual(len(info_boxes), 1)
-            self.assertIn("sonde", info_boxes[0][1].lower())
+            self.assertIn("probe", info_boxes[0][1].lower())
         finally:
             QMessageBox.information = orig_info
 
@@ -3209,7 +3209,7 @@ class OutputControlViewTestCase(unittest.TestCase):
         try:
             self.view.slotVisuProbes()
             self.assertEqual(len(warning_boxes), 1)
-            self.assertIn("maillage", warning_boxes[0][1].lower())
+            self.assertIn("mesh", warning_boxes[0][1].lower())
         finally:
             QMessageBox.warning = orig_warning
 

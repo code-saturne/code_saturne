@@ -289,12 +289,12 @@ class OutputVolumicVariablesModel(Variables, Model):
 
     def __getFieldsFromRules__(self):
         """
-        Lit FieldsRules.xml et retourne les champs crees par le solver
-        qui ne sont pas encore dans setup.xml.
+        Read FieldsRules.xml and return fields created by the solver
+        that are not yet in setup.xml.
         """
         nodeList = []
 
-        # Supprimer les noeuds crees precedemment (marqueur from_rules="1")
+        # Delete nodes previously created (marker from_rules="1")
         for tag in ('variable', 'property'):
             for node in self.node_output.xmlGetNodeList(tag):
                 if node['from_rules'] == '1':
@@ -389,8 +389,8 @@ class OutputVolumicVariablesModel(Variables, Model):
                     label   = field.get("Label", name)
                     dim     = int(field.get("Dimension", "1"))
                     ftype   = field.get("Type", "variable")
-                    # postprocess n'est pas liste par getVolumeFieldsNodeList
-                    # on le traite comme property pour l'affichage GUI
+                    # postprocess is not listed by getVolumeFieldsNodeList;
+                    # treat it as a property for GUI display
                     if ftype == "postprocess":
                         ftype = "property"
                     hidden  = field.get("Hidden", "") == "1"
@@ -920,7 +920,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         Replace old_label by new_label for node with name and old_label.
         Only for the View
         """
-        # fusion de cette methode avec DefineUserScalarsModel.renameScalarLabel
+        # merge this method with DefineUserScalarsModel.renameScalarLabel
         self.isInList(old_label, self.getLabelsList())
         self.isNotInList(new_label, [""])
 

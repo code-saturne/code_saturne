@@ -1307,8 +1307,8 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         if not selected:
             QMessageBox.information(self,
-                self.tr("Visualisation"),
-                self.tr("Sélectionnez d'abord un maillage dans la liste."))
+                self.tr("Visualization"),
+                self.tr("Please first select a mesh from the list."))
             return
 
         # Retrieve name and directory of selected mesh
@@ -1329,18 +1329,18 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         if not os.path.isfile(mesh_file):
             QMessageBox.warning(self,
-                self.tr("Fichier introuvable"),
-                self.tr("Impossible de trouver le fichier :\n%s" % mesh_file))
+                self.tr("File not found"),
+                self.tr("Cannot find file:\n%s" % mesh_file))
             return
 
         # Only .csm format is supported
         if not mesh_file.endswith(".csm"):
             QMessageBox.information(self,
-                self.tr("Format non supporté"),
-                self.tr("La visualisation est disponible uniquement "
-                        "pour les fichiers .csm.\n\n"
-                        "Pour un fichier .med, lancez d'abord "
-                        "'Mesh quality criteria' pour générer le .csm."))
+                self.tr("Unsupported file format"),
+                self.tr("Visualization is only available "
+                        "for .csm files.\n\n"
+                        "For a .med file, first run "
+                        "'Mesh preprocessing' to generate the .csm."))
             return
 
         # Open dialog in boundary face groups mode (without zone or probes)

@@ -325,7 +325,7 @@ class ThermodynamicsModel(Variables, Model):
 
                 ref_idx = 0
                 if self.eos.getNumberOfFluidReferences(material, method) == 1:
-                    # cas des gaz par exemple
+                    # case of gases for example
                     ref = self.eos.getFluidReferences(material, method)
                 else :
                     if phase == "liquid" :

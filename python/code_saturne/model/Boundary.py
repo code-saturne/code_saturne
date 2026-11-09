@@ -3789,7 +3789,7 @@ class InletBoundaryTestCase(ModelTest):
         node =  model._XMLBoundaryConditionsNode
         model.setVelocityChoice('flow1+direction')
         model.setVelocityChoice('norm')
-        #il faut explicietement supprimer direction si on ne dirige pas la vitesse
+        # direction must be explicitly deleted if velocity is not directed
         model.deleteDirectionNodes()
 
         model.setNorm(999.99)

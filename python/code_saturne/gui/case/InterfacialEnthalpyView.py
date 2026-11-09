@@ -309,7 +309,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
                 self.modelFieldaModel.addItem(self.tr("Flashing (Cathare)"), "flashing")
                 self.modelFieldaModel.addItem(self.tr("Bubble model for liquid (Manon-Berne)"),
                                               "bubble_model_for_liquid")
-                # suppression temporaire le temps que le modele soit au point
+                # temporary removal until the model is ready
                 # self.modelFieldbModel.addItem(self.tr("Bubble model for vapour"),"bubble_model_for_vapour")
                 self.modelFieldbModel.addItem(self.tr("Relaxation time + subcooled gas treatment"),
                                               "relaxation_time_subcooled")

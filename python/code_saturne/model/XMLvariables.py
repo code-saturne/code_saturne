@@ -350,7 +350,7 @@ class Variables(object):
         return p1
 
 
-    #Copie des methode de Variables pour Neptune (surcharge):
+    # Copy of Variables methods for Neptune (override):
 
     def __setOutputControl__(self, variable, post=False):
         """
