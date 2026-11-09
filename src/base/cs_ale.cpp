@@ -2472,6 +2472,7 @@ cs_ale_initialize_volume_fields(void)
     /* FIXME: this makes  cdo_quantities->has_own_cell_volumes incoherent
        and causes a crash */
     cs_cdo_quantities_free_cell_vol(cs_glob_domain->cdo_quantities);
+    cs_glob_domain->cdo_quantities->has_own_cell_volumes = false;
     cs_glob_domain->cdo_quantities->cell_vol = cell_vol_pre;
   }
 
