@@ -288,7 +288,7 @@ def csm_to_pyvista_boundary(csm_file):
     #  Group names decoding
     gc_to_name, name_to_tags = decode_csm_groups(data)
 
-    #  PyVista grid construction
+    #  grid construction
     boundary_mask     = face_cells[:, 1] == 0
     boundary_face_ids = np.where(boundary_mask)[0]
     boundary_gc       = face_gc_id[boundary_face_ids]
@@ -311,7 +311,7 @@ def csm_to_pyvista_boundary(csm_file):
         else:
             ct = pv.CellType.POLYGON  # general polygon (polyhedron faces)
 
-        # PyVista format: [n_pts, p0, p1, ..., pn]
+        # format: [n_pts, p0, p1, ..., pn]
         cells_list.append(np.concatenate([[n], verts]))
         celltypes_list.append(ct)
         tags_list.append(boundary_gc[i])

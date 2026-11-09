@@ -52,7 +52,7 @@ from code_saturne.gui.case.ProfilesForm import Ui_ProfilesForm
 from code_saturne.model.ProfilesModel import ProfilesModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
-from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+from code_saturne.gui.base.PyVistaWrapper import pyvistaWrapper
 
 if QT_API == "PYQT6":
     from code_saturne.gui.case import resources_pages_rc
@@ -739,7 +739,7 @@ class ProfilesViewTestCase(unittest.TestCase):
         self.assertTrue(hasattr(self.view, 'pushButtonVisuProfile'))
         self.assertEqual(self.view.pushButtonVisuProfile.text(), "View profile")
         self.assertTrue(bool(self.view.pushButtonVisuProfile.toolTip()))
-        from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+        from code_saturne.gui.base.PyVistaWrapper import pyvistaWrapper
         pv = pyvistaWrapper()
         self.assertEqual(self.view.pushButtonVisuProfile.isEnabled(), pv.isActive())
 

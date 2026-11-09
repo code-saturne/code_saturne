@@ -53,7 +53,7 @@ from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.ImmersedBoundariesNeptune import Ui_ImmersedBoundariesNeptune
 from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
-from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+from code_saturne.gui.base.PyVistaWrapper import pyvistaWrapper
 
 #-------------------------------------------------------------------------------
 # log config
@@ -1022,7 +1022,7 @@ class ImmersedBoundariesViewNeptuneTestCase(unittest.TestCase):
         self.view.ibm.setMesh(1, "my_geometry.stl")
 
         self.view.updatePageView()
-        from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+        from code_saturne.gui.base.PyVistaWrapper import pyvistaWrapper
         pv = pyvistaWrapper()
         if pv.isActive():
             self.assertTrue(self.view.pushButtonVisuSTL.isEnabled())

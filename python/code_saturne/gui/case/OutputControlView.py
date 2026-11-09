@@ -68,7 +68,7 @@ if QT_API == "PYQT6":
     from code_saturne.gui.case import resources_pages_rc
 
 # Mesh viewer import (optional: pyvistaWrapper disables the button if unavailable)
-from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+from code_saturne.gui.base.PyVistaWrapper import pyvistaWrapper
 from code_saturne.gui.case.MeshViewerDialog import MeshViewerDialog
 
 #-------------------------------------------------------------------------------
@@ -3178,7 +3178,7 @@ class OutputControlViewTestCase(unittest.TestCase):
         """
         self.assertTrue(hasattr(self.view, 'pushButtonVisuProbes'))
         self.assertIsInstance(self.view.pushButtonVisuProbes, QPushButton)
-        from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+        from code_saturne.gui.base.PyVistaWrapper import pyvistaWrapper
         pv = pyvistaWrapper()
         self.assertEqual(self.view.pushButtonVisuProbes.isEnabled(), pv.isActive())
 

@@ -150,7 +150,7 @@ log.setLevel(GuiParam.DEBUG)
 # ============================================================================
 # Imports PyVista modules if available
 # ============================================================================
-from code_saturne.model.PyVistaWrapper import pyvistaWrapper
+from code_saturne.gui.base.PyVistaWrapper import pyvistaWrapper
 
 _wrapper = pyvistaWrapper()
 HAS_VISU = _wrapper.isActive()
