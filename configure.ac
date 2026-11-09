@@ -801,7 +801,7 @@ if test  "$result_test_numpy" = "0" ; then
 fi
 AC_MSG_RESULT($cs_have_numpy)
 if test "$cs_have_numpy" = "no" ; then
-  AC_MSG_ERROR([numpy support not found.])
+  AC_MSG_WARN([numpy support not found but necessary for studymanager.])
 fi
 
 # On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths
