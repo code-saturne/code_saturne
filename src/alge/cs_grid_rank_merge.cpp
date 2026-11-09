@@ -61,6 +61,7 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_algorithm.h"
 #include "base/cs_base.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_halo.h"
@@ -71,13 +72,11 @@
 #include "base/cs_reducers.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
-#include "alge/cs_matrix_tuning.h"
 #include "alge/cs_matrix_util.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_profiling.h"
 #include "base/cs_reducers.h"
-#include "alge/cs_sles.h"
 #include "base/cs_sort.h"
 
 #include "fvm/fvm_defs.h"
@@ -141,92 +140,6 @@ _root_grid(cs_grid_t  *g)
 }
 
 #if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Return a reduced communicator restricted to the first node of a given
- * parent communicator.
- *
- * The lowest ranks of the reduced communicator are used, so as to map
- * to a smaller number of nodes, assuming ranks on adjacent nodes have
- * neighboring ids (instead of actually checking the topology).
- *
- * parameters:
- *   parent_comm     <-- associated parent communicator (must be either
- *                       cs_glob_mpi_comm or a communicator returned by a
- *                       previous merge step)
- *   n_max_ranks     --> maximum number of ranks for communicator
- *   rank_step       --> associated multiple of ranks of parent communicator
- *   merge_rank_step --> rank to which grid on parent communicator is merged
- *----------------------------------------------------------------------------*/
-
-static MPI_Comm
-_get_rank_step_comm_compact(MPI_Comm   parent_comm,
-                            int        n_max_ranks,
-                            int       &rank_step,
-                            int       &merge_rank_id)
-{
-  MPI_Comm sh_comm = MPI_COMM_NULL;
-
-  rank_step = 1;
-  merge_rank_id = -1;
-
-#if (MPI_VERSION >= 3)
-  /* Check which MPI ranks are on root node */
-
-  int parent_n_ranks;
-  MPI_Comm_size(parent_comm, &parent_n_ranks);
-
-  int parent_rank_id;
-  MPI_Comm_rank(parent_comm, &parent_rank_id);
-
-  MPI_Comm_split_type(cs_glob_mpi_comm, MPI_COMM_TYPE_SHARED, 0,
-                      MPI_INFO_NULL, &sh_comm);
-
-  int node_rank_id = -1, node_n_ranks = 0;
-  MPI_Comm_rank(sh_comm, &node_rank_id);
-  MPI_Comm_size(sh_comm, &node_n_ranks);
-
-  int parent_min_rank_id = parent_rank_id;
-  MPI_Allreduce(MPI_IN_PLACE, &parent_min_rank_id, 1, MPI_INT, MPI_MIN,
-                sh_comm);
-
-  if (parent_min_rank_id > 0) {
-    MPI_Comm_free(&sh_comm);
-    sh_comm = MPI_COMM_NULL;
-  }
-  else {
-    node_rank_id = -1;
-  }
-
-  MPI_Bcast(&node_n_ranks, 1, MPI_INT, 0, parent_comm);
-
-  int *node_rank_ids;
-  CS_MALLOC(node_rank_ids, node_n_ranks, int);
-  if (sh_comm != MPI_COMM_NULL)
-    MPI_Gather(&parent_rank_id, 1, MPI_INT,
-               node_rank_ids, 1, MPI_INT, 0, sh_comm);
-
-  MPI_Bcast(&node_rank_ids, node_n_ranks, MPI_INT, 0, parent_comm);
-
-  int parent_rank_stride = 1;
-  if (n_max_ranks < node_n_ranks)
-    parent_rank_stride = node_n_ranks / n_max_ranks;
-
-  int comm_n_ranks = cs::min(n_max_ranks, node_n_ranks);
-  rank_step = parent_n_ranks / comm_n_ranks;
-  if (parent_n_ranks % comm_n_ranks)
-    rank_step += 1;
-
-  merge_rank_id = node_rank_ids[(parent_rank_id/rank_step)*parent_rank_stride];
-
-  CS_FREE(node_rank_ids);
-
-#else
-  cs_assert(0);  // Requires at least MPI-3
-#endif
-
-  return sh_comm;
-}
 
 /*----------------------------------------------------------------------------
  * Empty a halo that is only useful for global synchronization
@@ -681,6 +594,10 @@ _append_cell_data(cs_grid_t  *g)
 
   /* Reallocate arrays for receiving rank and append data */
 
+  cs_alloc_mode_t alloc_mode = g->alloc_mode;
+  if (!cs_mpi_device_support && alloc_mode > CS_ALLOC_HOST)
+    alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+
   cs_real_t *da = nullptr;
   cs_real_3_t *cell_cen = nullptr;
   cs_real_t *cell_vol = nullptr;
@@ -694,11 +611,11 @@ _append_cell_data(cs_grid_t  *g)
     g->n_cols_ext = g->n_rows + g->halo->n_elts[0];
 
     if (g->relaxation > 0) {
-      CS_MALLOC(cell_cen, g->n_cols_ext, cs_real_3_t);
-      CS_MALLOC(cell_vol, g->n_cols_ext, cs_real_t);
+      CS_MALLOC_HD(cell_cen, g->n_cols_ext, cs_real_3_t, alloc_mode);
+      CS_MALLOC_HD(cell_vol, g->n_cols_ext, cs_real_t, alloc_mode);
     }
 
-    CS_MALLOC(da, g->n_cols_ext*db_stride, cs_real_t);
+    CS_MALLOC_HD(da, g->n_cols_ext*db_stride, cs_real_t, alloc_mode);
 
     for (int rank_idx = 0; rank_idx < grm->sub_size[0]; rank_idx++) {
 
@@ -724,6 +641,27 @@ _append_cell_data(cs_grid_t  *g)
 
   {
     cs_lnum_t n_send = g->n_elts_r[0];
+
+    /* Ensure sent buffers are in shared memory if MPI is not CUDA-aware */
+    if (!cs_mpi_device_support) {
+      if (cs_check_device_ptr(g->_da) == CS_ALLOC_DEVICE) {
+        CS_REALLOC_HD(g->_da, n_send*db_stride, cs_real_t,
+                      CS_ALLOC_HOST_DEVICE_SHARED);
+        g->da = g->_da;
+      }
+      if (g->relaxation > 0) {
+        if (cs_check_device_ptr(g->_cell_cen) == CS_ALLOC_DEVICE) {
+          CS_REALLOC_HD(g->_cell_cen, n_send, cs_real_3_t,
+                        CS_ALLOC_HOST_DEVICE_SHARED);
+          g->cell_cen = g->_cell_cen;
+        }
+        if (cs_check_device_ptr(g->_cell_vol) == CS_ALLOC_DEVICE) {
+          CS_REALLOC_HD(g->_cell_vol, n_send, cs_real_t,
+                        CS_ALLOC_HOST_DEVICE_SHARED);
+          g->cell_vol = g->_cell_vol;
+        }
+      }
+    }
 
     if (g->relaxation > 0) {
       MPI_Isend(g->_cell_cen, n_send*3, CS_MPI_REAL, grm->rank_id,
@@ -845,6 +783,10 @@ _append_face_data(cs_grid_t   *g,
 
   /* Reallocate arrays for receiving rank and append data */
 
+  cs_alloc_mode_t alloc_mode = g->alloc_mode;
+  if (!cs_mpi_device_support && alloc_mode > CS_ALLOC_HOST)
+    alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+
   CS_FREE(g->coarse_face);
 
   cs_lnum_t faces_count = 0;
@@ -857,20 +799,20 @@ _append_face_data(cs_grid_t   *g,
     for (int rank_idx = 0; rank_idx < grm->sub_size[0]; rank_idx++)
       faces_count += recv_count[rank_idx];
 
-    CS_MALLOC(face_cell, faces_count, cs_lnum_2_t);
+    CS_MALLOC_HD(face_cell, faces_count, cs_lnum_2_t, alloc_mode);
 
     if (g->symmetric == true)
-      CS_REALLOC(xa, faces_count, cs_real_t);
+      CS_REALLOC_HD(xa, faces_count, cs_real_t, alloc_mode);
     else
-      CS_REALLOC(xa, faces_count*2, cs_real_t);
+      CS_REALLOC_HD(xa, faces_count*2, cs_real_t, alloc_mode);
 
     if (g->relaxation > 0) {
 
       if (g->face_normal != nullptr)
-        CS_MALLOC(face_normal, faces_count, cs_real_3_t);
+        CS_MALLOC_HD(face_normal, faces_count, cs_real_3_t, alloc_mode);
 
-      CS_MALLOC(xa0, faces_count, cs_real_t);
-      CS_MALLOC(xa0ij, faces_count*3, cs_real_t);
+      CS_MALLOC_HD(xa0, faces_count, cs_real_t, alloc_mode);
+      CS_MALLOC_HD(xa0ij, faces_count*3, cs_real_t, alloc_mode);
 
     }
 
@@ -894,8 +836,8 @@ _append_face_data(cs_grid_t   *g,
       if (g->relaxation > 0) {
 
         if (g->face_normal != nullptr)
-          MPI_Irecv(face_normal + faces_count, n_recv*3,
-                    CS_MPI_REAL, dist_rank, tag, comm, &request[request_count++]);
+          MPI_Irecv(face_normal + faces_count, n_recv*3, CS_MPI_REAL,
+                    dist_rank, tag, comm, &request[request_count++]);
 
         MPI_Irecv(xa0 + faces_count, n_recv,
                   CS_MPI_REAL, dist_rank, tag, comm, &request[request_count++]);
@@ -914,6 +856,21 @@ _append_face_data(cs_grid_t   *g,
 
   /* Filter face connectivity then send it */
   {
+    /* Ensure source arrays are in host/device shared memory for filtering */
+    if (cs_check_device_ptr(g->_face_cell) == CS_ALLOC_DEVICE) {
+      CS_REALLOC_HD(g->_face_cell, g->n_faces, cs_lnum_2_t,
+                    CS_ALLOC_HOST_DEVICE_SHARED);
+      g->face_cell = g->_face_cell;
+    }
+    if (cs_check_device_ptr(g->_xa) == CS_ALLOC_DEVICE) {
+      size_t xa_size = g->n_faces * (g->symmetric ? 1 : 2);
+      CS_REALLOC_HD(g->_xa, xa_size, cs_real_t,
+                    CS_ALLOC_HOST_DEVICE_SHARED);
+      g->xa = g->_xa;
+    }
+
+    /* TODO: GPU support: port face connectivity filtering and compaction
+       to GPU using cs_dispatch_context */
     for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
       cs_lnum_t p_face_id = face_list[face_id];
       assert(face_id <= p_face_id);
@@ -1125,26 +1082,6 @@ _build_coarse_matrix_msr(cs_grid_t *c,
 }
 
 /*----------------------------------------------------------------------------
- * Create a distributed matrix structure from a native matrix structure.
- *
- * Note that the structure created maps global cell numbers to the given
- * existing face -> cell connectivity array, so it must be destroyed before
- * this array (usually the code's global cell numbering) is freed.
- *
- * parameters:
- *   n     <-- number of elements
- *   index <-> count (shifted by 1) in, index out (size: n+1)
- *----------------------------------------------------------------------------*/
-
-static void
-_count_to_index(cs_lnum_t  n,
-                cs_lnum_t  index[])
-{
-  for (cs_lnum_t i = 0; i < n; i++)
-    index[i+1] += index[i];
-}
-
-/*----------------------------------------------------------------------------
  * Prune MSR arrays to remove duplicate columns.
  *
  * This should occur only after discarding periodicity info, which only makes
@@ -1175,11 +1112,16 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
   cs_alloc_mode_t alloc_mode = cs_matrix_get_alloc_mode(matrix);
 
   if (alloc_mode > CS_ALLOC_HOST) {
-    alloc_mode = CS_ALLOC_HOST;
+    alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
     cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(g->_matrix),
                              alloc_mode);
     if (g->matrix_struct != nullptr)
       cs_matrix_structure_set_alloc_mode(g->matrix_struct, alloc_mode);
+  }
+
+  cs_dispatch_context ctx;
+  if (alloc_mode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
   }
 
   cs_assert(cs_matrix_get_diag_block_size(matrix) == 1);
@@ -1216,23 +1158,24 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
     g->_xa = nullptr;
 
   cs_lnum_t *c_row_index;
-  CS_MALLOC(c_row_index, n_rows+1, cs_lnum_t);
+  CS_MALLOC_HD(c_row_index, n_rows+1, cs_lnum_t, alloc_mode);
   c_row_index[0] = 0;
 
   int n_threads = cs_parall_n_threads(n_rows, CS_THR_MIN);
-  bool need_compact = false;
+
+  int *need_compact;
+  CS_MALLOC_HD(need_compact, 1, int, cs_alloc_mode); // Shared when using GPU.
+  need_compact[0] = false;
 
   if (o2n != nullptr) {
-    cs_lnum_t nnz = row_index[n_rows];
+    cs_lnum_t nnz = cs_get_host_value(row_index + n_rows);
 
-#   pragma omp parallel for  num_threads(n_threads)
-    for (cs_lnum_t i = 0; i < nnz; i++) {
+    ctx.parallel_for(nnz, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       col_id[i] = o2n[col_id[i]];
-    }
+    });
   }
 
-# pragma omp parallel for  num_threads(n_threads)
-  for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t row_id) {
     cs_lnum_t *restrict row_col_id = col_id + row_index[row_id];
     cs_real_t *restrict row_val = x_val + row_index[row_id];
     cs_lnum_t n_row_elts = row_index[row_id+1] - row_index[row_id];
@@ -1241,7 +1184,7 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
       if (row_col_id[i] <= row_col_id[i-1])
         unordered = true;
     }
-    c_row_index[row_id + 1] = n_row_elts;
+    c_row_index[row_id] = n_row_elts;
 
     if (unordered) {
       cs_sort_coupled_shell(0, n_row_elts, row_col_id, row_val);
@@ -1255,24 +1198,24 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
         else
           row_val[j] += row_val[i];
       }
-      c_row_index[row_id + 1] = j+1;
+      c_row_index[row_id] = j+1;
       if (j+1 < n_row_elts)
-        need_compact = true;  /* no issue here for possible thread race, as
+        need_compact[0] = 1;  /* no issue here for possible thread race, as
                                  this can only take one value */
     }
-  }
+  });
+  ctx.wait();
 
-  if (need_compact) {
-    _count_to_index(n_rows, c_row_index);
-    cs_lnum_t nnz = c_row_index[n_rows];
+  if (need_compact[0]) {
+    cs::algorithm::count_to_index(ctx, n_rows, c_row_index);
+    cs_lnum_t nnz = cs_get_host_value(c_row_index + n_rows);
 
     cs_lnum_t *c_col_id;
     cs_real_t *c_x_val;
     CS_MALLOC_HD(c_col_id, nnz, cs_lnum_t, alloc_mode);
     CS_MALLOC_HD(c_x_val, nnz, cs_real_t, alloc_mode);
 
-#   pragma omp parallel for  num_threads(n_threads)
-    for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t row_id) {
       const cs_lnum_t src_shift = row_index[row_id];
       const cs_lnum_t dst_shift = c_row_index[row_id];
       const cs_lnum_t n_row_elts = c_row_index[row_id+1] - c_row_index[row_id];
@@ -1280,7 +1223,8 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
         c_col_id[dst_shift + i] = col_id[src_shift + i];
         c_x_val[dst_shift + i] = x_val[src_shift + i];
       }
-    }
+    });
+    ctx.wait();
 
     CS_FREE(row_index);
     CS_FREE(col_id);
@@ -1292,6 +1236,8 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
   }
   else
     CS_FREE(c_row_index);
+
+  CS_FREE(need_compact);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -1392,17 +1338,21 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
   if (g->matrix != nullptr)
     alloc_mode = cs_matrix_get_alloc_mode(g->matrix);
 
+  cs_dispatch_context ctx;
+  if (alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
   /* Compute and exchange new row_ids */
 
   cs_lnum_t *new_row_id;
-  CS_MALLOC(new_row_id, g->n_cols_ext, cs_lnum_t);
-  for (cs_lnum_t j = 0; j < n_rows; j++)
-    new_row_id[j] = base_shift + j;
+  CS_MALLOC_HD(new_row_id, g->n_cols_ext, cs_lnum_t, alloc_mode);
 
-  cs_halo_sync_untyped(g->halo,
-                       CS_HALO_STANDARD,
-                       sizeof(cs_lnum_t),
-                       new_row_id);
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t j) {
+    new_row_id[j] = base_shift + j;
+  });
+  ctx.wait();
+
+  cs_halo_sync(g->halo, CS_HALO_STANDARD, ctx.use_gpu(), new_row_id);
 
   /* Access matrix MSR vectors */
 
@@ -1428,15 +1378,6 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
   if (g->_halo != nullptr)
     cs_halo_destroy(&(g->_halo));
   g->halo = nullptr;
-
-  /* Discard geometric data */
-
-  cs_grid_free_quantities(g);
-  CS_FREE(g->_face_cell);
-  g->face_cell = nullptr;
-  g->n_faces = 0;
-  CS_FREE(g->cell_face);
-  CS_FREE(g->cell_face_sgn);
 
   /* Compute number of coarse cells in new grid;
      local cell numbers will be shifted by cell_shift in the merged grid */
@@ -1482,8 +1423,11 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
     /* Now update row index based on local shifts */
 
     if (base_rank > 0 && row_index != nullptr) {
-      for (cs_lnum_t j = 0; j < n_rows+1; j++)
-        row_index[j] += counts[1];
+      const cs_lnum_t shift_val = counts[1];
+      ctx.parallel_for(n_rows + 1, [=] CS_F_HOST_DEVICE (cs_lnum_t j) {
+        row_index[j] += shift_val;
+      });
+      ctx.wait();
     }
 
     /* Now send matrix data to root rank */
@@ -1559,8 +1503,9 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
       g->n_cols_ext = 0;
 
       CS_FREE(row_index);
-      CS_MALLOC_HD(row_index, 1, cs_lnum_t, alloc_mode);
-      row_index[0] = 0;
+      CS_MALLOC_HD(row_index, 1, cs_lnum_t, CS_ALLOC_HOST);
+      if (alloc_mode < CS_ALLOC_DEVICE)
+        row_index[0] = 0;
       CS_FREE(col_id);
       CS_FREE(d_val);
       CS_FREE(x_val);
@@ -1737,6 +1682,14 @@ cs_grid_merge_ranks(cs_grid_t  *g,
   bool  *halo_cell_flag = nullptr;
   MPI_Comm comm = cs_glob_mpi_comm;
 
+  cs_alloc_mode_t alloc_mode = g->alloc_mode;
+  if (!cs_mpi_device_support && alloc_mode > CS_ALLOC_HOST)
+    alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+
+  cs_dispatch_context ctx;
+  if (alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
   static const int tag = 'm'+'e'+'r'+'g'+'e';
 
   int n_requests = 1;
@@ -1802,24 +1755,33 @@ cs_grid_merge_ranks(cs_grid_t  *g,
 
   /* Compute and exchange new cell numbers */
 
-  CS_MALLOC(new_cell_id, g->n_cols_ext, cs_lnum_t);
-  for (cs_lnum_t j = 0; j < g->n_rows; j++)
-    new_cell_id[j] = cell_shift + j;
-  for (cs_lnum_t j = g->n_rows; j < g->n_cols_ext; j++)
-    new_cell_id[j] = -1;
+  CS_MALLOC_HD(new_cell_id, g->n_cols_ext, cs_lnum_t, alloc_mode);
+  const cs_lnum_t n_rows = g->n_rows;
+  const cs_lnum_t n_cols_ext = g->n_cols_ext;
+  ctx.parallel_for(n_cols_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t j) {
+    if (j < n_rows)
+      new_cell_id[j] = cell_shift + j;
+    else
+      new_cell_id[j] = -1;
+  });
+  ctx.wait();
 
-  cs_halo_sync_untyped(g->halo,
-                       CS_HALO_STANDARD,
-                       sizeof(cs_lnum_t),
-                       new_cell_id);
+  cs_halo_sync(g->halo, CS_HALO_STANDARD, ctx.use_gpu(), new_cell_id);
 
   /* Now build face filter list (before halo is modified) */
 
-  CS_MALLOC(face_list, g->n_faces, cs_lnum_t);
+  CS_MALLOC_HD(face_list, g->n_faces, cs_lnum_t, alloc_mode);
 
   cs_lnum_t n_faces = (grm->sub_rank == 0) ? g->n_faces : 0;
 
   if (grm->sub_size[0] > 1 && grm->sub_rank > 0 && g->n_faces > 0) {
+
+    /* Ensure face_cell is accessible on host for filtering loop */
+    if (cs_check_device_ptr(g->_face_cell) == CS_ALLOC_DEVICE) {
+      CS_REALLOC_HD(g->_face_cell, g->n_faces, cs_lnum_2_t,
+                    CS_ALLOC_HOST_DEVICE_SHARED);
+      g->face_cell = g->_face_cell;
+    }
 
     cs_lnum_t n_ghost_cells = g->n_cols_ext - g->n_rows;
 
@@ -1852,6 +1814,8 @@ cs_grid_merge_ranks(cs_grid_t  *g,
       }
     }
 
+    /* TODO: GPU support: port face filtering to GPU using
+       cs::algorithm::select_if_gt or custom device kernel */
     for (cs_lnum_t face_id = 0; face_id < g->n_faces; face_id++) {
       bool use_face = true;
       cs_lnum_t ii = g->face_cell[face_id][0] - g->n_rows;
@@ -1875,8 +1839,10 @@ cs_grid_merge_ranks(cs_grid_t  *g,
 
     /* For first rank of merge set, all faces are used */
     cs_lnum_t _n_faces = g->n_faces;
-    for (cs_lnum_t face_id = 0; face_id < _n_faces; face_id++)
+    ctx.parallel_for(_n_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       face_list[face_id] = face_id;
+    });
+    ctx.wait();
 
   }
 
@@ -1886,13 +1852,18 @@ cs_grid_merge_ranks(cs_grid_t  *g,
 
   /* Update face ->cells connectivity */
 
-  for (cs_lnum_t face_id = 0; face_id < g->n_faces; face_id++) {
-    cs_lnum_t ii = g->face_cell[face_id][0];
-    cs_lnum_t jj = g->face_cell[face_id][1];
-    assert(ii != jj && new_cell_id[ii] != new_cell_id[jj]);
-    g->_face_cell[face_id][0] = new_cell_id[ii];
-    g->_face_cell[face_id][1] = new_cell_id[jj];
-  }
+  const cs_lnum_t n_faces_all = g->n_faces;
+  const cs_lnum_2_t *face_cell = g->face_cell;
+  cs_lnum_2_t *_face_cell = g->_face_cell;
+  const cs_lnum_t *new_cell_id_p = new_cell_id;
+
+  ctx.parallel_for(n_faces_all, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    cs_lnum_t ii = face_cell[face_id][0];
+    cs_lnum_t jj = face_cell[face_id][1];
+    _face_cell[face_id][0] = new_cell_id_p[ii];
+    _face_cell[face_id][1] = new_cell_id_p[jj];
+  });
+  ctx.wait();
 
   CS_FREE(new_cell_id);
 
@@ -1959,6 +1930,15 @@ cs_grid_merge_bottom(cs_grid_t      *g,
 
   if (g->rank_merge != nullptr)
     return;
+
+  /* Discard geometric data */
+
+  cs_grid_free_quantities(g);
+  CS_FREE(g->_face_cell);
+  g->face_cell = nullptr;
+  g->n_faces = 0;
+  CS_FREE(g->cell_face);
+  CS_FREE(g->cell_face_sgn);
 
 #if defined(HAVE_MPI)
 
@@ -2066,11 +2046,22 @@ cs_grid_rank_merge_gather_row_data
   if (r_s_idx == 0) {
     cs::grid_rank_merge *_grm = const_cast<cs::grid_rank_merge *>(grm);
     size_t merge_buf_size = (size_t)(g->n_elts_r[0]) * elt_size;
+    cs_alloc_mode_t data_amode = cs_check_device_ptr(data);
+    if (!cs_mpi_device_support && data_amode > CS_ALLOC_HOST)
+      data_amode = CS_ALLOC_HOST_DEVICE_SHARED;
     if (merge_buf_size > _grm->buf_size) {
       CS_FREE(_grm->buf);
-      CS_MALLOC(_grm->buf, merge_buf_size, cs_byte_t);
+      CS_MALLOC_HD(_grm->buf, merge_buf_size, cs_byte_t, data_amode);
+      _grm->buf_size = merge_buf_size;
     }
+#if defined(HAVE_ACCEL)
+    if (cs_check_device_ptr(data) == CS_ALLOC_DEVICE)
+      cs_copy_d2d(_grm->buf, data, merge_buf_size);
+    else
+      memcpy(_grm->buf, data, merge_buf_size);
+#else
     memcpy(_grm->buf, data, merge_buf_size);
+#endif
     send_buf = static_cast<cs_byte_t *>(_grm->buf);
   }
 
@@ -2164,11 +2155,22 @@ cs_grid_rank_merge_scatter_row_data
   if (r_s_idx == 0) {
     cs::grid_rank_merge *_grm = const_cast<cs::grid_rank_merge *>(grm);
     size_t merge_buf_size = (size_t)(g->n_rows) * elt_size;
+    cs_alloc_mode_t data_amode = cs_check_device_ptr(data);
+    if (!cs_mpi_device_support && data_amode > CS_ALLOC_HOST)
+      data_amode = CS_ALLOC_HOST_DEVICE_SHARED;
     if (merge_buf_size > grm->buf_size) {
       CS_FREE(_grm->buf);
-      CS_MALLOC(_grm->buf, merge_buf_size, cs_byte_t);
+      CS_MALLOC_HD(_grm->buf, merge_buf_size, cs_byte_t, data_amode);
+      _grm->buf_size = merge_buf_size;
     }
+#if defined(HAVE_ACCEL)
+    if (cs_check_device_ptr(data) == CS_ALLOC_DEVICE)
+      cs_copy_d2d(_grm->buf, data, merge_buf_size);
+    else
+      memcpy(_grm->buf, data, merge_buf_size);
+#else
     memcpy(_grm->buf, data, merge_buf_size);
+#endif
     send_buf = static_cast<cs_byte_t *>(_grm->buf);
   }
 

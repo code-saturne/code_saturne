@@ -68,7 +68,7 @@
 /*----------------------------------------------------------------------------*/
 
 template <typename T, typename U>
-void
+CS_F_HOST_DEVICE void
 cs_sort_coupled_shell(cs_lnum_t   l,
                       cs_lnum_t   r,
                       T           a[],
