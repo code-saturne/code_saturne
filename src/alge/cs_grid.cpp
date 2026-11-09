@@ -9893,6 +9893,28 @@ cs_grid_get_info(const cs_grid_t  *g,
 }
 
 /*----------------------------------------------------------------------------
+ * Check if a grid has merged rank data at the current level.
+ *
+ * parameters:
+ *   g          <-- Grid structure
+ *
+ * return:
+ *   true if grid includes rank merge structure, false otherwise
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_grid_has_rank_merge(const cs_grid_t  *g)
+{
+  assert(g != nullptr);
+
+  bool retval = false;
+  if (g->rank_merge != nullptr)
+    retval = true;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
  * Get memory allocation mode corresponding to a grid.
  *
  * parameters:
@@ -11098,8 +11120,6 @@ cs_grid_finalize(void)
 
     _grid_tune_max_level = 0;
   }
-
-  cs_grid_merge_ranks_finalize();
 }
 
 /*----------------------------------------------------------------------------

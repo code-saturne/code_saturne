@@ -351,6 +351,19 @@ cs_grid_get_info(const cs_grid_t  *g,
                  cs_gnum_t        *n_g_rows);
 
 /*----------------------------------------------------------------------------
+ * Check if a grid has merged rank data at the current level.
+ *
+ * parameters:
+ *   g          <-- Grid structure
+ *
+ * return:
+ *   true if grid includes rank merge structure, false otherwise
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_grid_has_rank_merge(const cs_grid_t  *g);
+
+/*----------------------------------------------------------------------------
  * Get memory allocation mode corresponding to a grid.
  *
  * parameters:
@@ -517,13 +530,6 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Finalize global info related to rank merging
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_merge_ranks_finalize(void);
-
-/*----------------------------------------------------------------------------
  * Merge grids on several ranks to a grid on a single rank
  *
  * The coarse grid must previously have been initialized with _coarse_init()
@@ -531,15 +537,17 @@ cs_grid_merge_ranks_finalize(void);
  * it is extended to halo cells here if necessary).
  *
  * parameters:
- *   g            <-- Pointer to grid structure
- *   merge_stride <-- Associated merge stride
- *   verbosity    <-- verbosity level
+ *   g           <-- Pointer to grid structure
+ *   sub_size    <-- Associated merge subset size
+ *   verbosity   <-- verbosity level
+ *   rank_stride <-- destination rank stride, or -1 for default
  *----------------------------------------------------------------------------*/
 
 void
 cs_grid_merge_ranks(cs_grid_t  *g,
-                    int         merge_stride,
-                    int         verbosity);
+                    int         sub_size,
+                    int         verbosity,
+                    int         rank_stride = -1);
 
 #endif // HAVE_MPI
 

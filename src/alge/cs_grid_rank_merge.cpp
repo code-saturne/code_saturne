@@ -114,16 +114,6 @@
  *  Global variables
  *============================================================================*/
 
-/* Single-node communicator for merged ranks */
-
-#if defined(HAVE_MPI)
-
-static MPI_Comm   _node_0_comm = MPI_COMM_NULL;
-static int        _node_0_merge_rank_step = -1;
-static int        _node_0_merge_rank_id = -1;
-
-#endif
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -506,8 +496,8 @@ _append_halos(cs_grid_t  *g,
       for (int rank_id = 0; rank_id < n_c_domains_ini; rank_id++) {
         for (int tr_id = 0; tr_id < n_transforms; tr_id++) {
           cs_lnum_t s_id = perio_lst_tr_r[n_transforms*2*rank_id + 2*tr_id];
-          cs_lnum_t e_id =   s_id
-                           + perio_lst_tr_r[n_transforms*2*rank_id + 2*tr_id + 1];
+          cs_lnum_t e_id
+            = s_id + perio_lst_tr_r[n_transforms*2*rank_id + 2*tr_id + 1];
           cs_lnum_t tr_num_shift = (tr_id + 1);
           for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
             tmp_num[ii*2] += tr_num_shift;
@@ -1354,7 +1344,8 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
     MPI_Comm_size(comm, &n_ranks);
     MPI_Exscan(&n_rows, &base_shift, 1, CS_MPI_LNUM, MPI_SUM, comm);
 
-    /* According to standard, base_shift on rank 0 is undefined after MPI_Exscan */
+    /* According to standard, base_shift on rank 0 is undefined
+       after MPI_Exscan. */
     if (base_rank == 0)
       base_shift = 0;
   }
@@ -1692,19 +1683,6 @@ cs::grid_rank_merge::dump()
  * documented than private static functions)
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Finalize global info related to rank merging
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_merge_ranks_finalize(void)
-{
-#if defined(HAVE_MPI)
-  if (_node_0_comm != MPI_COMM_NULL)
-    MPI_Comm_free(&_node_0_comm);
-#endif
-}
-
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
@@ -1715,17 +1693,19 @@ cs_grid_merge_ranks_finalize(void)
  * it is extended to halo cells here if necessary).
  *
  * parameters:
- *   g            <-- Pointer to grid structure
- *   merge_stride <-- Associated merge stride
- *   verbosity    <-- verbosity level
+ *   g           <-- Pointer to grid structure
+ *   sub_size    <-- Associated merge subset size
+ *   verbosity   <-- verbosity level
+ *   rank_stride <-- destination rank stride, or -1 for default
  *----------------------------------------------------------------------------*/
 
 void
 cs_grid_merge_ranks(cs_grid_t  *g,
-                    int         merge_stride,
-                    int         verbosity)
+                    int         sub_size,
+                    int         verbosity,
+                    int         rank_stride)
 {
-  if (merge_stride < 2)
+  if (sub_size < 2)
     return;
 
   std::chrono::high_resolution_clock::time_point tm_start;
@@ -1734,7 +1714,7 @@ cs_grid_merge_ranks(cs_grid_t  *g,
 
   /* Determine rank in merged group */
 
-  _compute_merge_stride_and_ranks(g, merge_stride);
+  _compute_merge_stride_and_ranks(g, sub_size, rank_stride);
 
   auto grm = g->rank_merge;
 
@@ -1744,7 +1724,7 @@ cs_grid_merge_ranks(cs_grid_t  *g,
   if (verbosity > 2) {
     bft_printf("\n"
                "    merging level %2d grid:\n"
-               "      merge_stride = %d; new ranks = %d\n",
+               "      sub_size = %d; new ranks = %d\n",
                g->level, g->rank_stride, g->n_ranks);
     if (verbosity > 3)
       bft_printf("      sub_root = %d; sub_rank = %d; sub_size = {%d, %d}\n",
@@ -1970,7 +1950,14 @@ cs_grid_merge_bottom(cs_grid_t      *g,
                      int             n_max_ranks,
                      float           max_row_factor)
 {
-  if (g->halo == nullptr)
+  if (g->n_ranks == 1 && g->halo == nullptr)
+    return;
+
+  /* Cannot be called if this level already has merging info;
+     in that case, should be called instead of previous merge
+     (which may require re-building the cuurent grid from its parent). */
+
+  if (g->rank_merge != nullptr)
     return;
 
 #if defined(HAVE_MPI)
@@ -1990,23 +1977,15 @@ cs_grid_merge_bottom(cs_grid_t      *g,
     _merge_bottom_grids_to_single(g, verbosity);
   }
 
-  else if (g->comm == cs_glob_mpi_comm) {
-    if (_node_0_merge_rank_step == -1) {
-      _node_0_comm = _get_rank_step_comm_compact(g->comm,
-                                                 n_max_ranks,
-                                                 _node_0_merge_rank_step,
-                                                 _node_0_merge_rank_id);
-    }
-    cs_grid_merge_ranks(g,
-                        _node_0_merge_rank_step,
-                        verbosity);
-  }
-
   else {
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: not implemented for merge to multiple ranks "
-              "with previous merging.\n",
-              __func__);
+    int rank_stride = std::max(cs_glob_node_n_ranks / n_max_ranks, 1);
+    int sub_size = g->n_ranks / n_max_ranks;
+    if (g->n_ranks % n_max_ranks)
+      sub_size += 1;
+    cs_grid_merge_ranks(g,
+                        sub_size,
+                        verbosity,
+                        rank_stride);
   }
 
 #else
