@@ -1329,19 +1329,12 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
 {
   CS_PROFILE_FUNC_RANGE();
 
-  std::chrono::high_resolution_clock::time_point tm_start;
-  if (cs_glob_timer_kernels_flag > 0)
-    tm_start = std::chrono::high_resolution_clock::now();
-
   if (g->db_size > 1 || g->level == 0)
     return;
 
-  if (g->halo == nullptr)
-    return;
-
-  cs_alloc_mode_t alloc_mode = CS_ALLOC_HOST;
-  if (g->matrix != nullptr)
-    alloc_mode = cs_matrix_get_alloc_mode(g->matrix);
+  std::chrono::high_resolution_clock::time_point tm_start;
+  if (cs_glob_timer_kernels_flag > 0)
+    tm_start = std::chrono::high_resolution_clock::now();
 
   const cs_lnum_t n_rows = g->n_rows;
   cs_lnum_t base_shift = 0;
@@ -1350,10 +1343,11 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
 
 #if defined(HAVE_MPI)
 
-  /* Initial comm should match parent, but be safe. */
+  /* Contrary to _compute_merge_stride_and_ranks, _merge_bottom_grids_to_single
+     operates on an existing bottom grid g whose rows, halo, and
+     matrix are already partitioned across g->comm, so directly use g->comm. */
+
   MPI_Comm comm = g->comm;
-  if (g->parent != nullptr)
-    comm = g->parent->comm;
 
   if (comm != MPI_COMM_NULL) {
     MPI_Comm_rank(comm, &base_rank);
@@ -1365,6 +1359,47 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
       base_shift = 0;
   }
 #endif
+
+  /* Determine rank in merged group */
+
+#if defined(HAVE_MPI)
+  if (n_ranks > 1) {
+    _compute_merge_stride_and_ranks(g, n_ranks);
+
+    if (verbosity > 2) {
+      bft_printf("\n"
+                 "    merging level %2d grid:\n"
+                 "      merge_stride = %d; new ranks = %d\n",
+                 g->level, g->rank_stride, g->n_ranks);
+      if (verbosity > 3)
+        bft_printf("    rank_merge:\n"
+                   "      rank_id = %d\n"
+                   "      rank_stride = %d\n"
+                   "      sub_root = %d\n"
+                   "      sub_rank = %d\n"
+                   "      sub_size = {%d, %d}\n",
+                   g->rank_merge->rank_id, g->rank_stride,
+                   g->rank_merge->sub_root, g->rank_merge->sub_rank,
+                   g->rank_merge->sub_size[0], g->rank_merge->sub_size[1]);
+    }
+  }
+
+#else
+
+  if (verbosity > 2) {
+    bft_printf("\n"
+               "    merging level %2d grid periodic columns\n",
+               g->level);
+  }
+
+#endif
+
+  if (g->halo == nullptr)
+    return;
+
+  cs_alloc_mode_t alloc_mode = CS_ALLOC_HOST;
+  if (g->matrix != nullptr)
+    alloc_mode = cs_matrix_get_alloc_mode(g->matrix);
 
   /* Compute and exchange new row_ids */
 
@@ -1408,42 +1443,9 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
   cs_grid_free_quantities(g);
   CS_FREE(g->_face_cell);
   g->face_cell = nullptr;
+  g->n_faces = 0;
   CS_FREE(g->cell_face);
   CS_FREE(g->cell_face_sgn);
-
-  /* Determine rank in merged group */
-
-#if defined(HAVE_MPI)
-  if (n_ranks > 1) {
-    _compute_merge_stride_and_ranks(g, n_ranks);
-
-    if (verbosity > 2) {
-      bft_printf("\n"
-                 "    merging level %2d grid:\n"
-                 "      merge_stride = %d; new ranks = %d\n",
-                 g->level, g->rank_stride, g->n_ranks);
-      if (verbosity > 3)
-        bft_printf("    rank_merge:\n"
-                   "      rank_id = %d\n"
-                   "      rank_stride = %d\n"
-                   "      sub_root = %d\n"
-                   "      sub_rank = %d\n"
-                   "      sub_size = {%d, %d}\n",
-                   g->rank_merge->rank_id, g->rank_stride,
-                   g->rank_merge->sub_root, g->rank_merge->sub_rank,
-                   g->rank_merge->sub_size[0], g->rank_merge->sub_size[1]);
-    }
-  }
-
-#else
-
-  if (verbosity > 2) {
-    bft_printf("\n"
-               "    merging level %2d grid periodic columns\n",
-               g->level);
-  }
-
-#endif
 
   /* Compute number of coarse cells in new grid;
      local cell numbers will be shifted by cell_shift in the merged grid */
@@ -1527,7 +1529,8 @@ _merge_bottom_grids_to_single(cs_grid_t  *g,
     }
 
     if (comm != MPI_COMM_NULL) {
-      MPI_Gatherv(row_index+1, n_send, CS_MPI_LNUM,
+      cs_lnum_t *s_row_idx = (row_index != nullptr) ? row_index + 1 : nullptr;
+      MPI_Gatherv(s_row_idx, n_send, CS_MPI_LNUM,
                   row_index+1, recvcounts, displs, CS_MPI_LNUM,
                   0, comm);
 
