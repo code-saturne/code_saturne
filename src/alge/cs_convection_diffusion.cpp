@@ -4702,6 +4702,24 @@ cs_convection_diffusion_adjust_and_check_bounds_scalar
     ctx.wait();
 }
 
+// Force instanciation
+
+template void
+cs_convection_diffusion_adjust_and_check_bounds_scalar
+(
+  cs_dispatch_context         &ctx,
+  const char                  *var_name,
+  const cs_equation_param_t   &eqp,
+  bool                         face_gradient,
+  int                          ircflb,
+  const cs_mesh_t              *m,
+  const cs_mesh_quantities_t   *fvq,
+  const cs_real_t              *restrict pvar,
+  const double                (*restrict grad)[3],
+  const cs_real_t              *df_limiter,
+  cs_real_t                   (*restrict bounds)[2]
+);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Adust bounds if rc_clip_factor < or > 1, and check bounds
