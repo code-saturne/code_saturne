@@ -39,8 +39,9 @@
 #endif
 #if defined(__cpp_lib_atomic_ref)
   #include <atomic>
+  #define _CS_CPP_LIB_ATOMIC_REF __cpp_lib_atomic_ref
 #else
-  #define __cpp_lib_atomic_ref 0  // To simplify further tests
+  #define _CS_CPP_LIB_ATOMIC_REF 0 // To simplify further tests
 #endif
 
 /*============================================================================
@@ -86,7 +87,7 @@ compare_exchange(T  *address,
   return  (old == compare) ? true : false;
 
   // CPU version, C++20
-  #elif __cpp_lib_atomic_ref >= 201806L  // or __cplusplus >= 202002L
+  #elif _CS_CPP_LIB_ATOMIC_REF >= 201806L  // or __cplusplus >= 202002L
   std::atomic_ref<T> address_{*address};
   return address_.compare_exchange_weak(compare,
                                         value,
@@ -157,7 +158,7 @@ fetch_add(T  *sum,
   aref.fetch_add(value);
 
   // CPU version, C++20
-  #elif __cpp_lib_atomic_ref >= 201806L  // or __cplusplus >= 202002L
+  #elif _CS_CPP_LIB_ATOMIC_REF >= 201806L  // or __cplusplus >= 202002L
   std::atomic_ref<T> sum_{*sum};
   return sum_.fetch_add(value);
 
@@ -264,7 +265,7 @@ fetch_min(T  *address,
   aref.fetch_min(value);
 
   // CPU version, C++20
-  #elif __cpp_lib_atomic_ref >= 201806L  // or __cplusplus >= 202002L
+  #elif _CS_CPP_LIB_ATOMIC_REF >= 201806L  // or __cplusplus >= 202002L
   std::atomic_ref<T> address_{*address};
   T prev = address_.load(std::memory_order_relaxed);
   while (value < prev && !address_.compare_exchange_weak(prev,
@@ -395,7 +396,7 @@ fetch_max(T  *address,
   aref.fetch_max(value);
 
   // CPU version, C++20
-  #elif __cpp_lib_atomic_ref >= 201806L  // or __cplusplus >= 202002L
+  #elif _CS_CPP_LIB_ATOMIC_REF >= 201806L  // or __cplusplus >= 202002L
   std::atomic_ref<T> address_{*address};
   T prev = address_.load(std::memory_order_relaxed);
   while (prev < value && !address_.compare_exchange_weak(prev,
