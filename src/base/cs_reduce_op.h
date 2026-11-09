@@ -43,6 +43,7 @@
 #if defined(__HIP_DEVICE_COMPILE__)
 #include "hip/hip_runtime.h"
 #endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
@@ -69,7 +70,8 @@
 
 /*!
   \file cs_reduce_op.h
-        Reduce operatiosn (sum, min, max) using various runtimes (OpenMP, CUDA, ...)
+
+  Reduce operations (sum, min, max) using various runtimes (OpenMP, CUDA, ...)
 */
 
 /*=============================================================================
@@ -106,6 +108,7 @@ using cs_dispatch_sum_type_t = cs_reduce_op_type_t;
 
 namespace cs {
 namespace op {
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  sum values using a chosen dispatch sum type.
@@ -672,6 +675,7 @@ max
 
 } /* namespace op */
 } /* namespace cs */
+
 /*----------------------------------------------------------------------------*/
 
 #endif /* CS_DISPATCH_H */
