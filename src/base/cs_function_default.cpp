@@ -789,9 +789,9 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id)
   const char base_name[] = "mpi_rank_id";
   const char *loc_name = cs_mesh_location_get_name(location_id);
 
-  size_t l_name = strlen(loc_name) + strlen(base_name) + 1;
+  size_t l_name = strlen(loc_name) + strlen(base_name) + 2;
   char *name;
-  CS_MALLOC(name, l_name + 1, char);
+  CS_MALLOC(name, l_name, char);
   snprintf(name, l_name, "%s_%s", base_name, loc_name);
 
   cs_function_t *f
@@ -851,9 +851,9 @@ cs_function_define_refinement_generation(cs_mesh_location_type_t  location_id)
   const char base_name[] = "r_gen";
   const char *loc_name = cs_mesh_location_get_name(location_id);
 
-  size_t l_name = strlen(loc_name) + strlen(base_name) + 1;
+  size_t l_name = strlen(loc_name) + strlen(base_name) + 2;
   char *name;
-  CS_MALLOC(name, l_name + 1, char);
+  CS_MALLOC(name, l_name, char);
   snprintf(name, l_name, "%s_%s", base_name, loc_name);
 
   cs_function_t *f
@@ -911,9 +911,9 @@ cs_function_define_refinement_level(cs_mesh_location_type_t  location_id)
   const char base_name[] = "r_level";
   const char *loc_name = cs_mesh_location_get_name(location_id);
 
-  size_t l_name = strlen(loc_name) + strlen(base_name) + 1;
+  size_t l_name = strlen(loc_name) + strlen(base_name) + 2;
   char *name;
-  CS_MALLOC(name, l_name + 1, char);
+  CS_MALLOC(name, l_name, char);
   snprintf(name, l_name, "%s_%s", base_name, loc_name);
 
   cs_function_t *f
