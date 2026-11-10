@@ -479,9 +479,15 @@ cs_lagr_resuspension(void)
                                   bound_stat[face_id + n_faces * lag_bi->inclg] );
 
         cs_real_t disp_norm = p_set.attr_real(p_id,
-                                                    CS_LAGR_DISPLACEMENT_NORM);
+                                              CS_LAGR_DISPLACEMENT_NORM);
 
         cs_lnum_t ndiam = (cs_lnum_t)(disp_norm / cluster_spacing);
+
+        /* The distance travelled since the last rocking test is kept
+           below cluster_spacing (as for monolayer resuspension) */
+        if (ndiam > 0)
+          p_set.attr_real(p_id, CS_LAGR_DISPLACEMENT_NORM)
+            = disp_norm - ndiam * cluster_spacing;
 
         cs_lnum_t ii = 1;
         while (   ii <= ndiam
@@ -496,7 +502,7 @@ cs_lagr_resuspension(void)
             * cs_math_3_square_norm(part_vel);
 
           cs_real_t kinetic_energy = kinetic_energy_prev
-            + ii / ndiam * (kinetic_energy_cur - kinetic_energy_prev);
+            + (cs_real_t)ii / ndiam * (kinetic_energy_cur - kinetic_energy_prev);
 
           /* Adhesion energy upon rocking */
 
@@ -525,7 +531,7 @@ cs_lagr_resuspension(void)
           adhes_torque = adhes_force * p_diam * 0.5;
           p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE) = adhes_torque;
 
-          if (kinetic_energy > adhesion_energ) {
+          if (kinetic_energy > adhes_energ) {
 
             /* The particle is resuspended    */
             /* and its kinetic energy is totally converted   */
@@ -539,7 +545,7 @@ cs_lagr_resuspension(void)
 
             cs_real_t norm_velocity = cs_math_3_norm(part_vel);
 
-            cs_real_t norm_reent = sqrt((kinetic_energy-adhesion_energ)
+            cs_real_t norm_reent = sqrt((kinetic_energy-adhes_energ)
                                         *2.0/p_mass);
             cs_real_t angle_reent =
               acos(p_diam * 0.5 /

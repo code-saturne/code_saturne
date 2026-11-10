@@ -3613,6 +3613,38 @@ _sync_particle_set(cs_lagr_particle_set_t  &p_set,
 }
 
 /*----------------------------------------------------------------------------
+ * Append to the particle set the particles created during the integration
+ * of the SDEs (split of a deposited cluster in the multilayer resuspension
+ * model, see cs_lagr_sde): they are stored after the last particle, are not
+ * moved during the current displacement and are kept by _sync_particle_set.
+ *
+ * parameters:
+ *   p_set           <-> reference to particle set structure
+ *   particle_range  <-> start and past-the-end ids of tracked particles
+ *   n_new_particles <-> number of created particles (reset to 0)
+ *----------------------------------------------------------------------------*/
+
+static void
+_append_new_particles(cs_lagr_particle_set_t  &p_set,
+                      cs_lnum_t                particle_range[2],
+                      cs_lnum_t               *n_new_particles)
+{
+  if (*n_new_particles < 1)
+    return;
+
+  assert(particle_range[1] == p_set.n_particles);
+
+  for (cs_lnum_t i = 0; i < *n_new_particles; i++)
+    _tracking_info(p_set, p_set.n_particles + i)->state
+      = CS_LAGR_PART_TREATED;
+
+  p_set.n_particles += *n_new_particles;
+  particle_range[1] += *n_new_particles;
+
+  *n_new_particles = 0;
+}
+
+/*----------------------------------------------------------------------------
  * Prepare for particle movement phase
  *
  * parameters:
@@ -4020,6 +4052,9 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                                  &n_new_particles,
                                  true);
 
+      /* The particle set may have been resized (new particles) */
+      p_info = _tracking_info(p_set, p_id);
+
       /* save field particle quantities if still needed for coupling */
       if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
           && cs_glob_lagr_time_scheme->t_order == 1) {
@@ -4068,6 +4103,8 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
     }
   } /* end resol_sde */
 
+  _append_new_particles(p_set, particle_range, &n_new_particles);
+
   /* limit number of ranks and periodicity crossed to avoid infinite loop */
   int  max_perio_or_rank_crossed =
     cs_glob_lagr_time_scheme->max_perio_or_rank_crossed;
@@ -4104,6 +4141,9 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                                             vagaus,
                                             &n_new_particles);
 
+        /* The particle set may have been resized (new particles) */
+        p_info = _tracking_info(p_set, p_id);
+
         if(displacement_step_id >= max_perio_or_rank_crossed -1
             && cur_part_state == CS_LAGR_PART_TO_SYNC_NEXT) {
           cs_real_t  *particle_coord
@@ -4139,6 +4179,9 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
 
       }
     } /* End of loop on particles */
+
+    _append_new_particles(p_set, particle_range, &n_new_particles);
+
     /* Update of the particle set structure. Delete exited particles,
      update for particles which change domain. */
 
@@ -4153,9 +4196,6 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
         particle must not be defined */
 
     displacement_step_id++;
-
-    /* Update size of the particle set if it has changed */
-    p_set.n_particles += n_new_particles;
   } /* End of while (global displacement) */
 
 
@@ -4279,6 +4319,8 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
   CS_FREE(list_taup);
   CS_FREE(list_force_p);
   CS_FREE(list_tempct);
+
+  _append_new_particles(p_set, particle_range, &n_new_particles);
 
   /* Deposition sub-model additional loop */
 

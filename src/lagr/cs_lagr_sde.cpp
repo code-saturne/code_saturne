@@ -3160,7 +3160,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
           /* Calculation of gravity force and torque */
           for (cs_lnum_t id = 0; id < 3; id++) {
-            grav_force[id] = p_diam * ggp[id]
+            grav_force[id] = p_mass * ggp[id]
               *(p_height - mean_depo_height) / p_height;
           }
 
@@ -3202,7 +3202,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
           /* Calculation of gravity force and torque */
           for (cs_lnum_t id = 0; id < 3; id++) {
-            grav_force[id] = p_diam * ggp[id];
+            grav_force[id] = p_mass * ggp[id];
           }
 
           for (cs_lnum_t id = 1; id < 3; id++) {
@@ -3253,7 +3253,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
           /* Calculation of gravity force and torque */
           for (cs_lnum_t id = 0; id < 3; id++) {
-            grav_force[id] = p_diam * ggp[id];
+            grav_force[id] = p_mass * ggp[id];
           }
 
           for (cs_lnum_t id = 1; id < 3; id++) {
@@ -3469,7 +3469,9 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
                   /* exceed the surrounding fluid velocity    */
                   vpart[id] = vvue[id];
 
-                cs_real_t kkk = vvue[id] + adhes_torque[id] / cst_4;
+                cs_real_t kkk =   vvue[id]
+                                + (  adhes_torque[id] + lift_torque[id]
+                                   + grav_torque[id]) / cst_4;
                 cs_real_t kk  = vpart0[id] - kkk;
 
                 depl[id] = kkk * dt_part + kk / cst_1
@@ -3507,8 +3509,9 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
              * we first check if there is resuspension */
             cs_real_t cond_resusp[2];
             for (cs_lnum_t id = 0; id < 2; id++) {
-              cond_resusp[id] = (adhes_torque[id] + grav_torque[id]
-                              + lift_torque[id] + drag_torque[id] ) * vvue[id];
+              cond_resusp[id] = (  adhes_torque[id+1] + grav_torque[id+1]
+                                 + lift_torque[id+1] + drag_torque[id+1])
+                                * vvue[id+1];
             }
 
             if (cond_resusp[0] > 0.0 || cond_resusp[1] > 0.0) {
@@ -3636,7 +3639,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
                   / p_set.attr_real(p_id, CS_LAGR_CLUSTER_NB_PART);
                 p_set.attr_real(new_p_id, CS_LAGR_MASS) = m_resusp;
                 cs_real_t d_resusp
-                  = cbrt(0.75 * cs_math_pow2(p_diam) * p_height);
+                  = cbrt(0.75 * cs_math_pow2(p_diam) * height_reent);
                 p_set.attr_real(new_p_id, CS_LAGR_DIAMETER) = d_resusp;
                 if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0)
                   p_set.attr_real(new_p_id, CS_LAGR_HEIGHT) = d_resusp;
@@ -3651,7 +3654,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
                 /* Update of deposit height */
                 if (p_set.p_am->count[0][CS_LAGR_HEIGHT] > 0) {
-                  cs_real_t d_stay = p_set.attr_real(p_id, CS_LAGR_HEIGHT);
+                  cs_real_t d_stay = p_height - height_reent;
                   p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_stay;
                 }
 
@@ -3673,10 +3676,10 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
                 p_set.attr_real(p_id, CS_LAGR_MASS) = mp_stay;
 
                 /* The new particle starts rolling */
-                p_set.unset_flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
-                p_set.set_flag(p_id, CS_LAGR_PART_ROLLING);
+                p_set.unset_flag(new_p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
+                p_set.set_flag(new_p_id, CS_LAGR_PART_ROLLING);
                 p_set.attr_real(new_p_id, CS_LAGR_ADHESION_FORCE) = adhes_force;
-                p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES)
+                p_set.attr_lnum(new_p_id, CS_LAGR_N_SMALL_ASPERITIES)
                   = cs::max(1,ncont_pp);
                 p_set.attr_real(new_p_id, CS_LAGR_ADHESION_TORQUE)
                   = adhes_force * d_resusp * 0.5;

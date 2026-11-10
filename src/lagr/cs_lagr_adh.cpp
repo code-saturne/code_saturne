@@ -579,7 +579,7 @@ cs_lagr_adh(cs_lnum_t   p_id,
     if (nbasp == 0)
       distcc  = _d_cut_off + step * (3 - 2 * (np+1)) + rpart + rayasg;
 
-    else if (nbasp > 0)
+    else
       distcc  = _d_cut_off + rayasp + step * (3 - 2 * (np+1)) + rpart + rayasg;
 
     cs_real_t uvdwss, uedlss;
@@ -665,7 +665,7 @@ cs_lagr_adh_pp(cs_real_t   dpart,
   cs_lagr_physico_chemical_t *lag_pc = cs_glob_lagr_physico_chemical;
   cs_lagr_clogging_model_t *lag_cm = cs_glob_lagr_clogging_model;
 
-  cs_real_t step = 1e-11;
+  const cs_real_t step = 1e-11;
 
   /* ================================================================  */
   /* 1.    calculation of the adhesion force  */
@@ -683,14 +683,15 @@ cs_lagr_adh_pp(cs_real_t   dpart,
 
     udlvor[np] = 0.0;
 
-    cs_real_t distcc = _d_cut_off + step * (3 - 2 * (np + 1)) + 2.0 * rpart;
+    cs_real_t distcc
+      = 2.0 * (_d_cut_off + step * (3 - 2 * (np + 1))) + 2.0 * rpart;
 
     cs_real_t uvdwss, uedlss;
 
     _vdwss(lag_cm->csthpp, lag_pc->lambda_vdw, &distcc, &rpart, &rpart, &uvdwss);
     _edlss(&distcc, &rpart, &rpart, lag_pc->phi_p, lag_pc->phi_p, tempf, &uedlss);
 
-    udlvor[np] = uvdwss + uedlss;
+    udlvor[np] = (uvdwss + uedlss) * (1.0 - lag_cm->scovapp);
 
   }
 
