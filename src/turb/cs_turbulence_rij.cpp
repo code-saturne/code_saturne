@@ -3120,8 +3120,6 @@ _solve_omega(int              phase_id,
   cs_dispatch_context ctx;
 
   const cs_real_t *cell_f_vol = fvq->cell_vol;
-  const cs_real_t *distb = fvq->b_dist;
-  const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   cs_field_t *f_rij = CS_F_(rij);
   cs_field_t *f_omg = CS_F_(omg);
