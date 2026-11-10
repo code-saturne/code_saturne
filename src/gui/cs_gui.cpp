@@ -628,6 +628,9 @@ _physical_property(cs_field_t          *c_prop,
     else if (cs_gui_strcmp(c_prop->name, "thermal_conductivity")) {
       p_val = phys_pp->lambda0;
     }
+    else if (cs_gui_strcmp(c_prop->name, "thermal_expansion")) {
+      p_val = phys_pp->beta0;
+    }
 
     const cs_lnum_t n_cells = z->n_elts;
     const cs_lnum_t *cell_ids = z->elt_ids;
@@ -6013,7 +6016,8 @@ cs_gui_physical_variable(void)
   }
 
   /* law for thermal expansion (Boussinesq model) */
-  if (cs_glob_velocity_pressure_model->idilat == 0) {
+  if (   cs_glob_velocity_pressure_model->idilat == 0
+      && cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 0) {
     cs_field_t *c = cs_field_by_name_try("thermal_expansion");
     if (n_zones_pp > 0 && c != nullptr) {
       for (int z_id = 0; z_id < n_zones; z_id++) {

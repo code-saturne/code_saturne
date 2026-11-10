@@ -563,12 +563,12 @@ cs_atmo_add_property_fields(void)
   /* Temperature for DRY or HUMID */
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY) {
 
-    f = cs_field_try("real_temperature");
     cs_physical_property_define_from_field("real_temperature",
                                            field_type,
                                            CS_MESH_LOCATION_CELLS,
                                            1,
                                            false);
+    f = cs_field_try("real_temperature");
     if (f != nullptr) {
       f->set_key_int(keyvis, 1);
       f->set_key_int(keylog, 1);
@@ -584,12 +584,12 @@ cs_atmo_add_property_fields(void)
     f->set_key_int(keylog, 0);
     f->set_key_str(klbl, "Non Neutral Scalar Correction");
 
-    f = cs_field_try("thermal_expansion");
     cs_physical_property_define_from_field("thermal_expansion",
                                            field_type,
                                            CS_MESH_LOCATION_CELLS,
                                            1,
                                            false);
+    f = cs_field_try("thermal_expansion");
     if (f != nullptr) {
       f->set_key_int(keyvis, 1);
       f->set_key_int(keylog, 1);
@@ -600,12 +600,12 @@ cs_atmo_add_property_fields(void)
   /* Liquid water content HUMID */
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
 
-    f = cs_field_try("liquid_water");
     cs_physical_property_define_from_field("liquid_water",
                                            field_type,
                                            CS_MESH_LOCATION_CELLS,
                                            1,
                                            false);
+    f = cs_field_try("liquid_water");
     if (f != nullptr) {
       f->set_key_int(keyvis, 1);
       f->set_key_int(keylog, 1);
@@ -1421,7 +1421,8 @@ cs_atmo_physical_properties_update(void)
         crom[c_id] = fluid_props->ro0;
       /* "delta rho = - beta0 rho_a delta theta" gives
          "beta0 = 1 / theta0" */
-      cpro_beta[c_id] = 1.0 / theta0;
+      if (cpro_beta != nullptr)
+        cpro_beta[c_id] = 1.0 / theta0;
     }
     else {
       cs_real_t beta = 0.0, yw_liq = 0.0;
@@ -1469,13 +1470,17 @@ cs_atmo_physical_properties_update(void)
   cs_real_t *theta_liq = cs_field("temperature")->val; // Liq. pot. temp.
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    cs_real_t beta_dummy = 0.;
+    cs_real_t *p_beta
+      = (cpro_beta != nullptr) ? &(cpro_beta[c_id]) : &beta_dummy;
+
     cs_rho_humidair(ym_w[c_id],
                     theta_liq[c_id],
                     cpro_met_p[c_id],
                     &(cpro_liqwt[c_id]),
                     &(cpro_tempc[c_id]),
                     &(rho_h[c_id]),
-                    &(cpro_beta[c_id]));
+                    p_beta);
     /* Homogeneous mixture density */
     crom[c_id] = 1.0 / ((1.0 - yr[c_id])/rho_h[c_id] + yr[c_id]/1000);
   }
