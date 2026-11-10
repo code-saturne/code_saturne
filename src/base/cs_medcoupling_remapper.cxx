@@ -588,7 +588,7 @@ _setup_with_bbox(cs_medcoupling_remapper_t  *r)
                          r->interp_method);
 
     // source_field (from buildSubPart) is a new reference owned by this
-    // function and not stored anywhere else: release it here to 
+    // function and not stored anywhere else: release it here to
     // avoid a memory leak per call.
     source_field->decrRef();
   }

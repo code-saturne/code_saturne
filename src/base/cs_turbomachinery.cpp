@@ -1724,8 +1724,6 @@ cs_turbomachinery_resize_cell_fields(void)
   const int n_fields = cs_field_n_fields();
 
   const cs_halo_t *halo = cs_glob_mesh->halo;
-  const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_CELLS);
-  cs_lnum_t _n_cells = n_elts[2];
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
