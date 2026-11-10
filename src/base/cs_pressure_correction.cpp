@@ -2794,6 +2794,37 @@ _pressure_correction_fv(int                   iterns,
     cs_halo_sync_r(m->halo, halo_type, on_device, frcxt);
   }
 
+  /* Legacy path (update_p_bc_after_prediction = 0): update the Dirichlet
+     boundary conditions on the pressure for standard outlets and automatic
+     atmospheric inlets/outlets with the pressure increment BCs.
+     This was previously done in the velocity update (_update_fluid_vel),
+     after the face values below had been computed, leaving them stale;
+     doing it here keeps a, af, val_f and flux consistent. Since
+     af_dp = -hint.a_dp on these faces, af_p += af_dp keeps af_p = -hint.a_p. */
+
+  if (   vp_param->iphydr == 1
+      && vp_param->irevmc == 0
+      && vp_param->update_p_bc_after_prediction != 1) {
+
+    const int *iautom = nullptr;
+    if (   cs_glob_atmo_option->open_bcs_treatment > 0
+        && cs_glob_atmo_option->meteo_profile > 0)
+      iautom = cs_glob_bc_pm_info->iautom;
+
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      /* automatic inlet/outlet face for atmospheric flow */
+      int iautof = 0;
+      if (iautom != nullptr)
+        iautof = iautom[f_id];
+
+      if (isostd[f_id] == 1 || iautof > 0) {
+        coefa_p[f_id]  += coefa_dp[f_id];
+        coefaf_p[f_id] += coefaf_dp[f_id];
+      }
+    });
+    ctx.wait();
+  }
+
   /* Update boundary condition for pressure */
   cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_pr);
 

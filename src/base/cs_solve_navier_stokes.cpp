@@ -1239,15 +1239,12 @@ _update_fluid_vel(const cs_mesh_t             *m,
                   const cs_real_t              cromk1[],
                   const cs_real_t              imasfl[],
                   const cs_real_t              bmasfl[],
-                  cs_real_t                    coefa_dp[],
                   cs_real_t                    vel[][3],
                   cs_real_t                    dfrcxt[][3],
-                  const cs_real_t              dttens[][6],
-                  const int                    isostd[])
+                  const cs_real_t              dttens[][6])
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -1391,43 +1388,9 @@ _update_fluid_vel(const cs_mesh_t             *m,
 
       }
 
-      /* Update of the Dirichlet boundary conditions on the
-       * pressure for the outlet */
-
-      const int *iautom = nullptr;
-      if (   cs_glob_atmo_option->open_bcs_treatment > 0
-          && cs_glob_atmo_option->meteo_profile > 0) {
-        iautom = cs_glob_bc_pm_info->iautom;
-      }
-
-      cs_field_t *f_p = CS_F_(p);
-      cs_real_t *coefa_p = f_p->bc_coeffs->a;
-
-      // TODO move it in pressure_correction deprecated...
-      if (vp_param->update_p_bc_after_prediction != 1) {
-        ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-          /*  automatic inlet/outlet face for atmospheric flow */
-          int iautof = 0;
-          if (iautom != nullptr)
-            iautof = iautom[face_id];
-
-          if (isostd[face_id] == 1 || iautof > 0 )
-            coefa_p[face_id] += coefa_dp[face_id];
-        });
-      }
-
-#if 0 // FIXME: check c0a96bd9db
-      cs_boundary_conditions_update_bc_coeff_face_values
-        (ctx,
-         f_p,
-         eqp_p,
-         true, true,
-         vp_param->iphydr,
-         frcxt,
-         nullptr,
-         nullptr,
-         f_p->val);
-#endif
+      /* Note: the update of the Dirichlet boundary conditions on the
+       * pressure for the outlet (update_p_bc_after_prediction = 0)
+       * is done at the end of the pressure correction step. */
     }
 
     /* Standard handling of hydrostatic pressure */
@@ -4465,8 +4428,6 @@ cs_solve_navier_stokes(const int        iterns,
     if (eqp_u->verbosity > 0)
       bft_printf("** SOLVING CONTINUITY PRESSURE\n");
 
-    cs_real_t *coefa_dp = cs_field_by_name("pressure_increment")->bc_coeffs->a;
-
     /* Pointers to BC coefficients */
     coefau = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
 
@@ -4553,11 +4514,9 @@ cs_solve_navier_stokes(const int        iterns,
                         cromk1,
                         imasfl,
                         bmasfl,
-                        coefa_dp,
                         vel,
                         dfrcxt,
-                        dttens,
-                        isostd);
+                        dttens);
 
     /* Bad cells regularisation */
     cs_bad_cells_regularisation_vector(vel, 1);
