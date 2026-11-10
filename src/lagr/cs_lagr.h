@@ -602,6 +602,7 @@ typedef struct {
   cs_real_t          mporos;
   cs_real_t          csthpp;
   cs_real_t          diam_mean;
+  cs_real_t          scovapp;
 
 } cs_lagr_clogging_model_t;
 

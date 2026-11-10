@@ -245,7 +245,7 @@ cs_lagr_precipitation_model_t *cs_glob_lagr_precipitation_model
   = &_cs_glob_lagr_precipitation_model;
 
 /* lagr clogging model structure and associated pointer */
-static cs_lagr_clogging_model_t _cs_glob_lagr_clogging_model = {0, 0, 0, 0};
+static cs_lagr_clogging_model_t _cs_glob_lagr_clogging_model = {0, 0, 0, 0, 0};
 cs_lagr_clogging_model_t *cs_glob_lagr_clogging_model
   = &_cs_glob_lagr_clogging_model;
 
@@ -1944,7 +1944,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
   /* Initialization for the roughness surface model
      ---------------------------------------------- */
 
-  if (lagr_model->roughness == 1)
+  if (lagr_model->roughness == 1) {
     roughness_init(&cs_glob_lagr_physico_chemical->epseau,
                    &cs_glob_lagr_physico_chemical->fion,
                    tempp,
@@ -1957,6 +1957,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
                    &cs_glob_lagr_reentrained_model->denasp,
                    &cs_glob_lagr_reentrained_model->rayasp,
                    &cs_glob_lagr_reentrained_model->rayasg);
+    if (cs_glob_lagr_clogging_model->scovapp <= 0.0)
+      cs_glob_lagr_clogging_model->scovapp
+        = cs_glob_lagr_reentrained_model->denasp
+        * cs_math_pi
+        * cs_math_pow2(cs_glob_lagr_reentrained_model->rayasp);
+  }
 
   /* Initialization for the clogging model
      ------------------------------------- */

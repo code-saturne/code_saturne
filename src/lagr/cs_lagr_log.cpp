@@ -579,11 +579,13 @@ cs_lagr_log_setup(void)
        _("      Jamming limit:                              %14.5e\n"
          "      Mean deposit porosity:                      %14.5e\n"
          "      Mean particle diameter:                     %14.5e\n"
-         "      Hamaker constant (particle-particle):       %14.5e\n"),
+         "      Hamaker constant (particle-particle):       %14.5e\n"
+         "      Asperity surface coverage (part-part):      %14.5e\n"),
        cs_glob_lagr_clogging_model->jamlim,
        cs_glob_lagr_clogging_model->mporos,
        cs_glob_lagr_clogging_model->diam_mean,
-       cs_glob_lagr_clogging_model->csthpp);
+       cs_glob_lagr_clogging_model->csthpp,
+       cs_glob_lagr_clogging_model->scovapp);
   }
 
   cs_log_printf
