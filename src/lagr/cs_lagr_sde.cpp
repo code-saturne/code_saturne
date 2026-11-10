@@ -2836,40 +2836,14 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
         }
 
-        /* Calculation of lift force and torque */
+        /* Calculation of lift force (torque computed below) */
         lift_force[0] = - 20.0 * cs_math_pow2(visccf) * romf *
           pow(ustar * p_diam * 0.5 / visccf, 2.31);
 
-        for (cs_lnum_t id = 1; id < 3; id++) {
-
-          lift_torque[id] = -lift_force[0] * p_diam * 0.5
-            * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
-
-        }
-
-        /* Calculation of gravity force and torque */
+        /* Calculation of gravity force (torque computed below) */
         for (cs_lnum_t id = 0; id < 3; id++) {
           grav_force[id] = 4./3. * cs_math_pi * cs_math_pow3(p_diam/2)
                                  * romp * ggp[id];
-        }
-
-        for (cs_lnum_t id = 1; id < 3; id++) {
-
-          cs_real_t sign11, sign22;
-          if (grav_force[1]*vvue[1] < 0 )
-            sign11 = -1.0;
-          else
-            sign11 = 1.0;
-          if (grav_force[2]*vvue[2] < 0 )
-            sign22 = -1.0;
-          else
-            sign22 = 1.0;
-
-          grav_torque[id] = (-grav_force[0] +
-                              grav_force[1]*sign11 +
-                              grav_force[2]*sign22 ) * p_diam * 0.5
-            * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]));
-
         }
 
         /* Case with consolidation */
@@ -2889,6 +2863,43 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
         cs_real_t adhes_force =
           p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE);
+
+        /* Lever arm of the wall-normal forces (lift, gravity) about the
+           pivot point: these forces act through the particle centre, so their
+           lever arm is the distance a0 between the pivot point and the
+           projection of the centre on the wall, i.e. the lever arm of the
+           adhesion force (CS_LAGR_ADHESION_TORQUE = a0 * adhesion force).
+           The wall-parallel gravity components keep the lever arm R. */
+        cs_real_t norm_arm = 0.0;
+        if (adhes_force > 0.0)
+          norm_arm =   p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE)
+                     / adhes_force;
+
+        for (cs_lnum_t id = 1; id < 3; id++) {
+
+          lift_torque[id] = -lift_force[0] * norm_arm
+            * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
+
+        }
+
+        for (cs_lnum_t id = 1; id < 3; id++) {
+
+          cs_real_t sign11, sign22;
+          if (grav_force[1]*vvue[1] < 0 )
+            sign11 = -1.0;
+          else
+            sign11 = 1.0;
+          if (grav_force[2]*vvue[2] < 0 )
+            sign22 = -1.0;
+          else
+            sign22 = 1.0;
+
+          grav_torque[id] = (- grav_force[0] * norm_arm
+                             + (  grav_force[1]*sign11
+                                + grav_force[2]*sign22) * p_diam * 0.5)
+            * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]));
+
+        }
 
         /* Is there direct wall-normal lift-off of the particle ? */
         if (   (adhes_force + grav_force[0] + lift_force[0] + drag_force[0]) < 0
