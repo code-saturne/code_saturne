@@ -1074,7 +1074,10 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
 
   /* Diagonal values */
 
+  int flags = CS_MATRIX_VALUES_ARE_LOCAL | CS_MATRIX_VALUES_NO_CONFLICT;
+
   cs_matrix_assembler_values_add_g(mav,
+                                   flags,
                                    n_rows,
                                    const_cast<cs_gnum_t *>(r_g_id),
                                    const_cast<cs_gnum_t *>(r_g_id),
@@ -1105,12 +1108,12 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
         jj++;
       }
       if (jj >= block_size - 1) {
-        cs_matrix_assembler_values_add_g(mav, jj,
+        cs_matrix_assembler_values_add_g(mav, flags, jj,
                                          g_row_id, g_col_id, val);
         jj = 0;
       }
     }
-    cs_matrix_assembler_values_add_g(mav, jj,
+    cs_matrix_assembler_values_add_g(mav, flags, jj,
                                      g_row_id, g_col_id, val);
     jj = 0;
   }

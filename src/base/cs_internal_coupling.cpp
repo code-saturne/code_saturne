@@ -1328,6 +1328,8 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   cs_lnum_t db_stride = db_size*db_size;
   cs_lnum_t eb_stride = eb_size*eb_size;
 
+  int flags = 0;
+
   assert(block_size > db_stride && block_size > eb_size);
 
   cs_lnum_t jj = 0, kk = 0, db_fill = 0, eb_fill = 0;
@@ -1365,13 +1367,15 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
       eb_fill += eb_stride;
 
       if (db_fill >= block_size - 1) {
-        cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_row_id, d_aij);
+        cs_matrix_assembler_values_add_g(mav, flags, jj,
+                                         d_g_row_id, d_g_row_id, d_aij);
         jj = 0;
         db_fill = 0;
       }
 
       if (eb_fill >= block_size - 1) {
-        cs_matrix_assembler_values_add_g(mav, kk, e_g_row_id, e_g_col_id, e_aij);
+        cs_matrix_assembler_values_add_g(mav, flags, kk,
+                                         e_g_row_id, e_g_col_id, e_aij);
         kk = 0;
         eb_fill = 0;
       }
@@ -1415,13 +1419,15 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
       eb_fill += eb_stride;
 
       if (db_fill >= block_size - 1) {
-        cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_row_id, d_aij);
+        cs_matrix_assembler_values_add_g(mav, flags, jj,
+                                         d_g_row_id, d_g_row_id, d_aij);
         jj = 0;
         db_fill = 0;
       }
 
       if (eb_fill >= block_size - 1) {
-        cs_matrix_assembler_values_add_g(mav, kk, e_g_row_id, e_g_col_id, e_aij);
+        cs_matrix_assembler_values_add_g(mav, flags, kk,
+                                         e_g_row_id, e_g_col_id, e_aij);
         kk = 0;
         eb_fill = 0;
       }
@@ -1429,8 +1435,10 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
 
   }
 
-  cs_matrix_assembler_values_add_g(mav, jj, d_g_row_id, d_g_row_id, d_aij);
-  cs_matrix_assembler_values_add_g(mav, kk, e_g_row_id, e_g_col_id, e_aij);
+  cs_matrix_assembler_values_add_g(mav, flags, jj,
+                                   d_g_row_id, d_g_row_id, d_aij);
+  cs_matrix_assembler_values_add_g(mav, flags, kk,
+                                   e_g_row_id, e_g_col_id, e_aij);
 
   /* Free memory */
 

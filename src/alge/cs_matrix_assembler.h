@@ -44,9 +44,30 @@
  * Matrix assembler option flags
  */
 
+/*! Flag indicating that Local row and column ids matching distant row data
+  are computed and maintained, so the associated coefficient contributions can
+  be added more efficiently by using simpler local assembly functions. */
 #define CS_MATRIX_DISTANT_USE_LOCAL_IDS       (1 << 0)
+
+/*! Flag indicating that row and column global ids matching distant row data
+  are maintained directly. */
 #define CS_MATRIX_DISTANT_USE_GLOBAL_IDS      (1 << 1)
+
+/*! Flag indicating that we do not need to build an associated halo structure,
+  as it will be built externally (i.e. by an external library such as PETSc,
+  HYPRE, ...) using its own equivalent structures. */
 #define CS_MATRIX_EXTERNAL_HALO               (1 << 2)
+
+/*! Flag indicating that all values passed to a given values assembly call
+  are local (i.e. the matching row is managed owned the local MPI rank). */
+#define CS_MATRIX_VALUES_ARE_LOCAL            (1 << 3)
+
+/*! Flag indicating that this assembly call does not need to handle write
+  conflicts. If no concurrent calls add values to the same matrix entries
+  than those handled in the current call, and this call does not contain
+  duplicate entries which must be summed, then simple additions may be
+  used instead of atomic additions, providing better performance. */
+#define CS_MATRIX_VALUES_NO_CONFLICT          (1 << 4)
 
 /*============================================================================
  * Type definitions
@@ -622,6 +643,7 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav);
  * have the same property).
  *
  * \param[in, out]  mav     pointer to matrix assembler values structure
+ * \param[in]       flags   optional info flag, 0 otherwise
  * \param[in]       n       number of entries
  * \param[in]       col_id  local column ids associated with entries
  * \param[in]       row_id  local row ids associated with entries
@@ -631,6 +653,7 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav);
 
 void
 cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
+                               int                            flags,
                                cs_lnum_t                      n,
                                const cs_lnum_t                row_id[],
                                const cs_lnum_t                col_id[],
@@ -662,6 +685,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  * distant ranks.
  *
  * \param[in, out]  mav       pointer to matrix assembler values structure
+ * \param[in]       flags     optional info flag, 0 otherwise
  * \param[in]       n         number of entries
  * \param[in, out]  col_g_id  global column ids associated with entries
  * \param[in, out]  row_g_id  global row ids associated with entries
@@ -671,6 +695,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
 
 void
 cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
+                                 int                            flags,
                                  cs_lnum_t                      n,
                                  cs_gnum_t                      row_g_id[],
                                  cs_gnum_t                      col_g_id[],

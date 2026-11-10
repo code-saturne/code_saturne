@@ -1638,12 +1638,10 @@ _get_diagonal_csr(const cs_matrix_t  *matrix)
 /*----------------------------------------------------------------------------*/
 
 static void
-_csr_assembler_values_init(void        *matrix_p,
-                           cs_lnum_t    db_size,
-                           cs_lnum_t    eb_size)
+_csr_assembler_values_init(void                         *matrix_p,
+                           [[maybe_unused]] cs_lnum_t    db_size,
+                           cs_lnum_t                     eb_size)
 {
-  CS_UNUSED(db_size);
-
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
   auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
@@ -1698,7 +1696,7 @@ _csr_assembler_values_init(void        *matrix_p,
 
 static void
 _csr_assembler_values_add(void                    *matrix_p,
-                          [[maybe_unused]] int     flags,
+                          int                      flags,
                           cs_lnum_t                n,
                           cs_lnum_t                stride,
                           const cs_lnum_t          row_id[],
@@ -1728,6 +1726,9 @@ _csr_assembler_values_add(void                    *matrix_p,
 
   cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
   if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
+
+  if (flags & CS_MATRIX_VALUES_NO_CONFLICT)
     sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
@@ -1790,7 +1791,7 @@ _csr_assembler_values_add(void                    *matrix_p,
 
 static void
 _csr_assembler_values_add_g(void                    *matrix_p,
-                            [[maybe_unused]] int     flags,
+                            int                      flags,
                             cs_lnum_t                n,
                             cs_lnum_t                stride,
                             const cs_gnum_t          g_row_id[],
@@ -1828,6 +1829,9 @@ _csr_assembler_values_add_g(void                    *matrix_p,
 
   cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
   if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
+
+  if (flags & CS_MATRIX_VALUES_NO_CONFLICT)
     sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
@@ -2657,7 +2661,7 @@ _msr_assembler_values_init(void              *matrix_p,
 
 static void
 _msr_assembler_values_add(void                    *matrix_p,
-                          [[maybe_unused]] int     flags,
+                          int                      flags,
                           cs_lnum_t                n,
                           cs_lnum_t                stride,
                           const cs_lnum_t          row_id[],
@@ -2689,6 +2693,9 @@ _msr_assembler_values_add(void                    *matrix_p,
 
   cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
   if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
+
+  if (flags & CS_MATRIX_VALUES_NO_CONFLICT)
     sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
@@ -2764,7 +2771,7 @@ _msr_assembler_values_add(void                    *matrix_p,
 
 static void
 _msr_assembler_values_add_g(void                    *matrix_p,
-                            [[maybe_unused]] int     flags,
+                            int                      flags,
                             cs_lnum_t                n,
                             cs_lnum_t                stride,
                             const cs_gnum_t          g_row_id[],
@@ -2804,6 +2811,9 @@ _msr_assembler_values_add_g(void                    *matrix_p,
 
   cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
   if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
+
+  if (flags & CS_MATRIX_VALUES_NO_CONFLICT)
     sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
@@ -3024,7 +3034,7 @@ _dist_assembler_values_init(void        *matrix_p,
 
 static void
 _dist_assembler_values_add(void                    *matrix_p,
-                           [[maybe_unused]] int     flags,
+                           int                      flags,
                            cs_lnum_t                n,
                            cs_lnum_t                stride,
                            const cs_lnum_t          row_id[],
@@ -3060,6 +3070,9 @@ _dist_assembler_values_add(void                    *matrix_p,
 
   cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
   if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
+
+  if (flags & CS_MATRIX_VALUES_NO_CONFLICT)
     sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
@@ -3157,7 +3170,7 @@ _dist_assembler_values_add(void                    *matrix_p,
 
 static void
 _dist_assembler_values_add_g(void                    *matrix_p,
-                             [[maybe_unused]] int     flags,
+                             int                      flags,
                              cs_lnum_t                n,
                              cs_lnum_t                stride,
                              const cs_gnum_t          g_row_id[],
@@ -3200,6 +3213,9 @@ _dist_assembler_values_add_g(void                    *matrix_p,
 
   cs_reduce_op_type_t sum_type = CS_OP_ATOMIC;
   if (ctx.use_gpu() == false && cs_glob_n_threads == 1)
+    sum_type = CS_OP_SIMPLE;
+
+  if (flags & CS_MATRIX_VALUES_NO_CONFLICT)
     sum_type = CS_OP_SIMPLE;
 
   /* Assembly kernel
@@ -4295,10 +4311,8 @@ _set_coeffs_dist(cs_matrix_t         *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_release_coeffs_dist(cs_matrix_t  *matrix)
+_release_coeffs_dist([[maybe_unused]] cs_matrix_t  *matrix)
 {
-  CS_UNUSED(matrix);
-
   /* No shared values in distributed coefficients */
 }
 

@@ -1476,7 +1476,8 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
     }
 
 #pragma omp critical
-    cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, values);
+    cs_matrix_assembler_values_add_g(mav, CS_MATRIX_VALUES_NO_CONFLICT,
+                                     bufsize, r_gids, c_gids, values);
     bufsize = 0;
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -1494,7 +1495,8 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
       if (bufsize + m->n_cols - 1 > CS_CDO_ASSEMBLY_BUFSIZE) {
 
 #pragma omp critical
-        cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, values);
+        cs_matrix_assembler_values_add_g(mav, CS_MATRIX_VALUES_NO_CONFLICT,
+                                         bufsize, r_gids, c_gids, values);
         bufsize = 0;
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -1520,7 +1522,8 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
     if (bufsize > 0) {
 
 #pragma omp critical
-      cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, values);
+      cs_matrix_assembler_values_add_g(mav, CS_MATRIX_VALUES_NO_CONFLICT,
+                                       bufsize, r_gids, c_gids, values);
     }
   }
   else { /* Buffer size is too small for this matrix. */
@@ -1545,8 +1548,8 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
     }
 
 #   pragma omp critical
-    cs_matrix_assembler_values_add_g(mav, bufsize,
-                                     row_gids, col_gids, m_values);
+    cs_matrix_assembler_values_add_g(mav, CS_MATRIX_VALUES_NO_CONFLICT,
+                                     bufsize, row_gids, col_gids, m_values);
     bufsize = 0;
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -1564,8 +1567,8 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
       if (bufsize + m->n_cols - 1 > max_buf_size) {
 
 #       pragma omp critical
-        cs_matrix_assembler_values_add_g(mav, bufsize,
-                                         row_gids, col_gids, m_values);
+        cs_matrix_assembler_values_add_g(mav, CS_MATRIX_VALUES_NO_CONFLICT,
+                                         bufsize, row_gids, col_gids, m_values);
         bufsize = 0;
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -1591,8 +1594,8 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
 
     if (bufsize > 0) {
 #     pragma omp critical
-      cs_matrix_assembler_values_add_g(mav, bufsize,
-                                       row_gids, col_gids, m_values);
+      cs_matrix_assembler_values_add_g(mav, CS_MATRIX_VALUES_NO_CONFLICT,
+                                       bufsize, row_gids, col_gids, m_values);
     }
 
     CS_FREE(row_gids);
@@ -1665,7 +1668,7 @@ cs_cdo_assembly_matrix_e33_generic(const cs_sdm_t                  *m,
         r_gids[i] = row->g_id;
 
 #     pragma omp critical
-      cs_matrix_assembler_values_add_g(mav,
+      cs_matrix_assembler_values_add_g(mav, CS_MATRIX_VALUES_NO_CONFLICT,
                                        m->n_cols, r_gids, row->col_g_id,
                                        xyz_row[k]);
 

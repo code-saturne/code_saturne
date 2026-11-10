@@ -1066,12 +1066,14 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
         cs_matrix_assembler_values_t *mav = nullptr;
 
+        int flags = CS_MATRIX_VALUES_ARE_LOCAL;
+
         if (f_type[f_id] == CS_MATRIX_SCALAR)
           mav = cs_matrix_assembler_values_init(m, 1, 1);
         else if (f_type[f_id] == CS_MATRIX_BLOCK_D)
           mav = cs_matrix_assembler_values_init(m, d_block_size, 1);
 
-        cs_matrix_assembler_values_add_g(mav, n_rows,
+        cs_matrix_assembler_values_add_g(mav, flags, n_rows,
                                          r_g_id, r_g_id, da);
 
         if (c_id == 0) { /* Rank contributions through global edges */
@@ -1094,13 +1096,14 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
               val[jj] = xa[ii*2+1]*0.5;
             jj++;
             if (jj >= block_size - 1) {
-              cs_matrix_assembler_values_add_g(mav, jj,
+              cs_matrix_assembler_values_add_g(mav, flags, jj,
                                                g_row_id, g_col_id, val);
               jj = 0;
             }
           }
 
-          cs_matrix_assembler_values_add_g(mav, jj, g_row_id, g_col_id, val);
+          cs_matrix_assembler_values_add_g(mav, flags, jj,
+                                           g_row_id, g_col_id, val);
         }
         else { /* Rank contributions are local */
           cs_lnum_t jj = 0;
@@ -1120,12 +1123,13 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
               jj++;
             }
             if (jj >= block_size - 1) {
-              cs_matrix_assembler_values_add_g(mav, jj,
+              cs_matrix_assembler_values_add_g(mav, flags, jj,
                                                g_row_id, g_col_id, val);
               jj = 0;
             }
           }
-          cs_matrix_assembler_values_add_g(mav, jj, g_row_id, g_col_id, val);
+          cs_matrix_assembler_values_add_g(mav, flags, jj,
+                                           g_row_id, g_col_id, val);
         }
 
         cs_matrix_assembler_values_finalize(&mav);

@@ -2812,6 +2812,7 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav)
  * have the same property).
  *
  * \param[in, out]  mav     pointer to matrix assembler values structure
+ * \param[in]       flags   optional info flag, 0 otherwise
  * \param[in]       n       number of entries
  * \param[in]       col_id  local column ids associated with entries
  * \param[in]       row_id  local row ids associated with entries
@@ -2821,6 +2822,7 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav)
 
 void
 cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
+                               int                            flags,
                                cs_lnum_t                      n,
                                const cs_lnum_t                row_id[],
                                const cs_lnum_t                col_id[],
@@ -2843,7 +2845,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
   if (mav->add_values != nullptr) {
 
     mav->add_values(mav->matrix,
-                    0,
+                    flags,
                     n,
                     stride,
                     row_id,
@@ -2891,6 +2893,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  * distant ranks.
  *
  * \param[in, out]  mav       pointer to matrix assembler values structure
+ * \param[in]       flags     optional info flag, 0 otherwise
  * \param[in]       n         number of entries
  * \param[in, out]  col_g_id  global column ids associated with entries
  * \param[in, out]  row_g_id  global row ids associated with entries
@@ -2900,6 +2903,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
 
 void
 cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
+                                 int                            flags,
                                  cs_lnum_t                      n,
                                  cs_gnum_t                      row_g_id[],
                                  cs_gnum_t                      col_g_id[],
@@ -2921,31 +2925,37 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 
 #if defined(HAVE_MPI)
 
-  for (cs_lnum_t k = 0; k < n; k++) {
+  /* Case where id couples may contain non-local values */
 
-    cs_gnum_t g_r_id = row_g_id[k];
+  if ((flags & CS_MATRIX_VALUES_ARE_LOCAL) == 0) {
 
-    /* Case where coefficient is handled by another rank */
+    for (cs_lnum_t k = 0; k < n; k++) {
 
-    if (g_r_id < ma->l_range[0] || g_r_id >= ma->l_range[1]) {
+      cs_gnum_t g_r_id = row_g_id[k];
 
-      cs_lnum_t e_r_id = _g_id_binary_find(ma->coeff_send_n_rows,
-                                           g_r_id,
-                                           ma->coeff_send_row_g_id);
+      /* Case where coefficient is handled by another rank */
 
-      cs_lnum_t r_start = ma->coeff_send_index[e_r_id];
-      cs_lnum_t n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
+      if (g_r_id < ma->l_range[0] || g_r_id >= ma->l_range[1]) {
 
-      cs_lnum_t e_id =    r_start
-                       + _g_id_binary_find(n_e_rows,
-                                           col_g_id[k],
-                                           ma->coeff_send_col_g_id + r_start);
+        cs_lnum_t e_r_id = _g_id_binary_find(ma->coeff_send_n_rows,
+                                             g_r_id,
+                                             ma->coeff_send_row_g_id);
 
-      /* Now add values to send coefficients */
+        cs_lnum_t r_start = ma->coeff_send_index[e_r_id];
+        cs_lnum_t n_e_rows = ma->coeff_send_index[e_r_id+1] - r_start;
 
-      for (cs_lnum_t l = 0; l < stride; l++) {
-#       pragma omp atomic
-        mav->coeff_send[e_id*stride + l] += val[k*stride + l];
+        cs_lnum_t e_id =    r_start
+                         + _g_id_binary_find(n_e_rows,
+                                             col_g_id[k],
+                                             ma->coeff_send_col_g_id + r_start);
+
+        /* Now add values to send coefficients */
+
+        for (cs_lnum_t l = 0; l < stride; l++) {
+#         pragma omp atomic
+          mav->coeff_send[e_id*stride + l] += val[k*stride + l];
+        }
+
       }
 
     }
@@ -2961,7 +2971,7 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
   }
 
   mav->add_values_g(mav->matrix,
-                    0,
+                    flags,
                     n,
                     stride,
                     row_g_id,

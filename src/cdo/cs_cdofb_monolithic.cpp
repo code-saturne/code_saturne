@@ -677,6 +677,7 @@ _full_system_assembly(const cs_cell_sys_t             *csys,
           if (bufsize == CS_CDO_ASSEMBLY_BUFSIZE) {
 #pragma omp critical
             cs_matrix_assembler_values_add_g(xb->mav,
+                                             CS_MATRIX_VALUES_NO_CONFLICT,
                                              bufsize,
                                              r_gids,
                                              c_gids,
@@ -701,6 +702,7 @@ _full_system_assembly(const cs_cell_sys_t             *csys,
       if (bufsize == CS_CDO_ASSEMBLY_BUFSIZE) {
 #pragma omp critical
         cs_matrix_assembler_values_add_g(xb->mav,
+                                         CS_MATRIX_VALUES_NO_CONFLICT,
                                          bufsize,
                                          r_gids,
                                          c_gids,
@@ -718,6 +720,7 @@ _full_system_assembly(const cs_cell_sys_t             *csys,
       if (bufsize == CS_CDO_ASSEMBLY_BUFSIZE) {
 #pragma omp critical
         cs_matrix_assembler_values_add_g(xb->mav,
+                                         CS_MATRIX_VALUES_NO_CONFLICT,
                                          bufsize,
                                          r_gids,
                                          c_gids,
@@ -731,7 +734,8 @@ _full_system_assembly(const cs_cell_sys_t             *csys,
 
   if (bufsize > 0) {
 #pragma omp critical
-    cs_matrix_assembler_values_add_g(xb->mav, bufsize, r_gids, c_gids, values);
+    cs_matrix_assembler_values_add_g(xb->mav, CS_MATRIX_VALUES_NO_CONFLICT,
+                                     bufsize, r_gids, c_gids, values);
     bufsize = 0;
   }
 
@@ -846,7 +850,8 @@ _full_system_assembly_solidification(const cs_cell_sys_t             *csys,
     assert(bufsize <= CS_CDO_ASSEMBLY_BUFSIZE);
 
 #pragma omp critical
-    cs_matrix_assembler_values_add_g(xb->mav, bufsize, r_gids, c_gids, values);
+    cs_matrix_assembler_values_add_g(xb->mav, CS_MATRIX_VALUES_NO_CONFLICT,
+                                     bufsize, r_gids, c_gids, values);
 
   } /* This cell is tag as solid */
 }
