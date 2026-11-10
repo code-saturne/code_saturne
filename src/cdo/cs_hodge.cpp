@@ -174,15 +174,19 @@ _check_vector_hodge(cs_lnum_t                c_id,
                     cs_cell_builder_t       *cb)
 
 {
+  if (hodge == nullptr)
+    return;
+
+  const cs_sdm_t *hmat = hodge->matrix;
+
   if (c_id % CS_HODGE_MODULO != 0 || hmat == nullptr)
     return;
 
   cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-  hodge->matrix->dump(c_id);
+  hmat->dump(c_id);
 
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
-  const cs_sdm_t  *hmat = hodge->matrix;
 
   cs_real_t  *in = cb->values;
   cs_real_t  *h_in = cb->values + hmat->n_rows;
@@ -4126,7 +4130,7 @@ cs_hodge_edfp_voro_get(const cs_cell_mesh_t     *cm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    hdg->dump(cm->c_id);
+    hmat->dump(cm->c_id);
   }
 #endif
 

@@ -510,7 +510,7 @@ _invert_tensor(cs_real_3_t *tens, cs_property_type_t type)
                                                                */
   bool is_ok = true;
   for (int k = 0; k < 3; k++)
-    if (cs::abs(tensor[k][k]) < cs_math_zero_threshold)
+    if (cs::abs(tens[k][k]) < cs_math_zero_threshold)
       is_ok = false;
 
   if (is_ok)
@@ -518,14 +518,10 @@ _invert_tensor(cs_real_3_t *tens, cs_property_type_t type)
 
   if (!is_ok) {
     _print_tensor((const cs_real_t(*)[3])tens);
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              " %s: A problem has been detected during the definition of the"
-              " property %s in the cell %d.\n",
-              __func__,
-              pty->name,
-              c_id);
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: A problem has been detected during the inversion of a"
+              " tensor.\n",
+              __func__);
   }
 #endif
 
