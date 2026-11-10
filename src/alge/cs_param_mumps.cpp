@@ -100,11 +100,11 @@ cs_param_mumps_create(void)
   mumpsp->advanced_optim = false;   // No advanced MPI/OpenMP optimization
   mumpsp->blr_threshold = 0;        // No BLR
   mumpsp->mem_coef = -1;            // No additional memory range
-  mumpsp->block_analysis = 0;       // No clustered analysis
-  mumpsp->ir_steps = 0;             // No iterative refinement
   mumpsp->keep_ordering = false;    // Keep the initial ordering during all the
                                     // computation
   mumpsp->keep_data = false;        // Keep analysis data across solves
+  mumpsp->block_analysis = 0;       // No clustered analysis
+  mumpsp->ir_steps = 0;             // No iterative refinement
 
   return mumpsp;
 }

@@ -155,24 +155,23 @@ _check_stiffness(cs_lnum_t             c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check the coherency of the values of a discrete Hodge operator
+ * \brief Check the coherency of the values of a discrete Hodge operator
  *
- * \param[in]      c_id    current cell id
- * \param[in]      vec     vectors of quantities to test against a hodge
- * \param[in]      res     vectors of quantities to compare with
- * \param[in]      hodge   pointer to a discrete Hodge operator
- * \param[in, out] cb      pointer to a cell builder structure
- *                         buffers to store temporary values
+ * \param[in]      c_id   current cell id
+ * \param[in]      vec    vectors of quantities to test against a hodge
+ * \param[in]      res    vectors of quantities to compare with
+ * \param[in]      hodge  pointer to a discrete Hodge operator
+ * \param[in, out] cb     pointer to a cell builder structure
+ *                        buffers to store temporary values
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_check_vector_hodge(cs_lnum_t                c_id,
-                    const cs_real_3_t       *vec,
-                    const cs_real_3_t       *res,
-                    cs_hodge_t              *hodge,
-                    cs_cell_builder_t       *cb)
-
+_check_vector_hodge(cs_lnum_t          c_id,
+                    const cs_real_3_t *vec,
+                    const cs_real_3_t *res,
+                    cs_hodge_t        *hodge,
+                    cs_cell_builder_t *cb)
 {
   if (hodge == nullptr)
     return;
@@ -188,10 +187,10 @@ _check_vector_hodge(cs_lnum_t                c_id,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  cs_real_t  *in = cb->values;
-  cs_real_t  *h_in = cb->values + hmat->n_rows;
-  cs_real_t  *ref = cb->values + 2*hmat->n_rows;
-  double  print_val = 0.;
+  cs_real_t *in = cb->values;
+  cs_real_t *h_in = cb->values + hmat->n_rows;
+  cs_real_t *ref = cb->values + 2*hmat->n_rows;
+  double print_val = 0.;
 
   if (ptyd->is_unity) {
     ptyd->tensor[0][0] = ptyd->tensor[1][1] = ptyd->tensor[2][2] = 1;
@@ -232,7 +231,6 @@ _check_vector_hodge(cs_lnum_t                c_id,
   }
 
   cs_log_printf(CS_LOG_DEFAULT, "%s: err = % -5.3e\n", __func__, print_val);
-
 }
 
 /*----------------------------------------------------------------------------*/

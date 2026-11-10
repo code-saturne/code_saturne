@@ -498,16 +498,16 @@ _set_pty_state_flag(cs_property_t *pty)
 /*!
  * \brief  Check if the settings are valid and then invert a tensor
  *
- * \param[in, out]  tens           values of the tensor
- * \param[in]       type           type of property to deal with
+ * \param[in, out] tens  values of the tensor
+ * \param[in]      type  type of property to deal with
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_invert_tensor(cs_real_3_t *tens, cs_property_type_t type)
+_invert_tensor(cs_real_3_t        *tens,
+               cs_property_type_t  type)
 {
-#if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 0 /* Sanity check  \
-                                                               */
+#if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 0 // Sanity check
   bool is_ok = true;
   for (int k = 0; k < 3; k++)
     if (cs::abs(tens[k][k]) < cs_math_zero_threshold)
