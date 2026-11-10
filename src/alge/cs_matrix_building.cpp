@@ -2244,6 +2244,7 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
     if (symmetric)
       cs_matrix_set_symmetric(a, true);
 
+    assert(a_msr != a);
     cs_matrix_release(&a_msr);
 
   }
@@ -2507,8 +2508,7 @@ cs_matrix_compute_coeffs
   /* Common case: direct assignment of matrix coefficients
      ---------------------------------------------------- */
 
-  cs_matrix_t *a_msr = (ma != nullptr)
-    ? cs_matrix_default(symmetric, stride, eb_size) : a;
+  cs_matrix_t *a_msr = (ma != nullptr) ? cs_matrix_msr() : a;
   if (ma != nullptr)
     cs_matrix_set_alloc_mode(a_msr, amode);
 
@@ -2582,7 +2582,7 @@ cs_matrix_compute_coeffs
 
   }
   else { // tensorial_diffusion > 1
-    cs_assert(0);  // Not handled direcly yet; handled above
+    cs_assert(0);  // Not handled directly yet; handled above
   }
 
   /* For steady computations, the diagonal is relaxed */
@@ -2708,6 +2708,7 @@ cs_matrix_compute_coeffs
     if (symmetric)
       cs_matrix_set_symmetric(a, true);
 
+    assert(a_msr != a);
     cs_matrix_release(&a_msr);
 
   }
