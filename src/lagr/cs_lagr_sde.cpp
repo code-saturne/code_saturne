@@ -3053,10 +3053,15 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
                 /* exceed the surrounding fluid velocity    */
                 vpart[id] = vvue[id];
 
-              cs_real_t kkk = vvue[id] + adhes_torque[id] / cst_4;
+              /* Displacement: integral over the time step of the velocity
+                 given above (same torques) */
+              cs_real_t kkk =   vvue[id]
+                              + (  adhes_torque[id] + lift_torque[id]
+                                 + grav_torque[id]) / cst_4;
               cs_real_t kk  = vpart0[id] - kkk;
 
-              depl[id] = (kkk * dt_part + kk / cst_1 * (1. - exp(-cst_1 * dt_part)));
+              depl[id]
+                = (kkk * dt_part + kk / cst_1 * (1. - exp(-cst_1 * dt_part)));
 
             }
 
