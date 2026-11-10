@@ -232,7 +232,8 @@ static cs_lagr_reentrained_model_t _lagr_reentrained_model
      .denasp = 0.,
      .modyeq = 0.,
      .rayasp = 0.,
-     .rayasg = 0.};
+     .rayasg = 0.,
+     .wall_seen_model = 0};
 cs_lagr_reentrained_model_t *cs_glob_lagr_reentrained_model
   = &_lagr_reentrained_model;
 

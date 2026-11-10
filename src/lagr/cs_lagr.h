@@ -552,6 +552,16 @@ typedef struct {
   cs_real_t          rayasp;
   cs_real_t          rayasg;
 
+  /* Fluid velocity seen by deposited or rolling particles:
+     - 0: Langevin model with the near-wall k and epsilon of the
+          deposition submodel (default)
+     - 1: Henry & Minier (J. Aerosol Sci. 77, 2014, Eq. 8-9): Ornstein-
+          Uhlenbeck process around the mean velocity, timescale
+          T+ = 5, streamwise and spanwise rms of Matida et al. (2000)
+     Both rely on smooth-wall, attached, equilibrium boundary layer laws
+     (y+ of the particle centre below about 5). */
+  int                wall_seen_model;
+
 } cs_lagr_reentrained_model_t;
 
 /*! Parameters of the precipitation model */

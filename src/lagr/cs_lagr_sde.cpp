@@ -2661,29 +2661,72 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
     depl[0]  = 0.0;
     vpart[0] = 0.0;
 
-    /* Integration in the 2 other directions */
+    if (cs_glob_lagr_reentrained_model->wall_seen_model == 1) {
 
-    for (cs_lnum_t id = 1; id < 3; id++) { // FIXME seems strange
+      /* Henry & Minier (2014), Eq. (8)-(9): Ornstein-Uhlenbeck process for
+       * the fluctuation of the tangential velocity seen around the mean
+       * fluid velocity, with timescale T+ = 5 and the streamwise and
+       * spanwise rms of Matida et al. (2000) at the particle centre;
+       * exact integration over the time step */
 
-      cs_lnum_t i0 = id-1;
+      const cs_real_t t_seen = 5.0 * tvisq;
+      const cs_real_t aux2 = exp(-dt_part / t_seen);
+      const cs_real_t g_sd = sqrt(1.0 - aux2 * aux2);
 
-      cs_real_t tci   = piilp[id] * tlp + vflui[id];
-      cs_real_t aux2  = exp(-dt_part / tlp);
-      cs_real_t aux6  = bxp * bxp * tlp;
+      const cs_real_t sig_x
+        = ustar * 0.40 * yplus / (1.0 + 0.0239 * pow(yplus, 1.496));
+      const cs_real_t sig_z
+        = ustar * 0.19 * yplus / (1.0 + 0.0361 * pow(yplus, 1.322));
 
-      /* --> Terms for the flow-seen velocity     */
-      cs_real_t ter1f = vvue[id] * aux2;
-      cs_real_t ter2f = tci * (1.0 - aux2);
+      /* Streamwise (e_x) and spanwise (e_z) unit vectors in the wall plane */
+      cs_real_t e_x[2] = {1.0, 0.0};
+      cs_real_t n_fl = sqrt(cs_math_pow2(vflui[1]) + cs_math_pow2(vflui[2]));
+      if (n_fl > cs_math_zero_threshold) {
+        e_x[0] = vflui[1] / n_fl;
+        e_x[1] = vflui[2] / n_fl;
+      }
+      const cs_real_t e_z[2] = {-e_x[1], e_x[0]};
 
-      /* --> (2.3) Coefficients computation for the stochastic integrals:  */
-      cs_real_t gama2 = 0.5 * (1.0 - aux2 * aux2);
+      cs_real_t f_x =   (vvue[1] - vflui[1]) * e_x[0]
+                      + (vvue[2] - vflui[2]) * e_x[1];
+      cs_real_t f_z =   (vvue[1] - vflui[1]) * e_z[0]
+                      + (vvue[2] - vflui[2]) * e_z[1];
 
-      /* --> Integral for the flow-seen velocity  */
-      cs_real_t p11   = sqrt (gama2 * aux6);
-      cs_real_t ter3f = p11 * vagaus[0][i0];
+      f_x = f_x * aux2 + sig_x * g_sd * vagaus[0][0];
+      f_z = f_z * aux2 + sig_z * g_sd * vagaus[0][1];
 
-      /* --> flow-seen velocity    */
-      vvue[id] = ter1f + ter2f + ter3f;
+      for (cs_lnum_t id = 1; id < 3; id++)
+        vvue[id] = vflui[id] + f_x * e_x[id-1] + f_z * e_z[id-1];
+
+    }
+
+    else {
+
+      /* Integration in the 2 other directions */
+
+      for (cs_lnum_t id = 1; id < 3; id++) { // FIXME seems strange
+
+        cs_lnum_t i0 = id-1;
+
+        cs_real_t tci   = piilp[id] * tlp + vflui[id];
+        cs_real_t aux2  = exp(-dt_part / tlp);
+        cs_real_t aux6  = bxp * bxp * tlp;
+
+        /* --> Terms for the flow-seen velocity     */
+        cs_real_t ter1f = vvue[id] * aux2;
+        cs_real_t ter2f = tci * (1.0 - aux2);
+
+        /* --> (2.3) Coefficients computation for the stochastic integrals:  */
+        cs_real_t gama2 = 0.5 * (1.0 - aux2 * aux2);
+
+        /* --> Integral for the flow-seen velocity  */
+        cs_real_t p11   = sqrt (gama2 * aux6);
+        cs_real_t ter3f = p11 * vagaus[0][i0];
+
+        /* --> flow-seen velocity    */
+        vvue[id] = ter1f + ter2f + ter3f;
+
+      }
 
     }
 
