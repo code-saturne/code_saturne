@@ -5837,10 +5837,10 @@ cs_matrix_get_need_xa(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
- *\brief Indicate whether matrix will need xa coefficients.
+ * \brief Indicate whether matrix will need xa coefficients.
  *
  * \param[in, out]  matrix      pointer to matrix structure
- * \param[in]       need_xa     is thr face-based xa array needed ?
+ * \param[in]       need_xa     is the face-based xa array needed ?
  */
 /*----------------------------------------------------------------------------*/
 
@@ -6929,6 +6929,45 @@ cs_matrix_release_msr_arrays(cs_matrix_t    *matrix,
       (__FILE__, __LINE__, 0,
        _("%s is not available for matrix using %s storage."),
        __func__, matrix->type_name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build global row and column ids for extra-diagonal MSR entries.
+ *
+ * \param[in]   matrix    pointer to matrix structure
+ * \param[in]   r_g_id    mapping from local row/column id to global id
+ * \param[out]  g_row_id  global row ids for extra-diagonal entries
+ * \param[out]  g_col_id  global column ids for extra-diagonal entries
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_build_msr_e_g_ids(const cs_matrix_t  *matrix,
+                            const cs_gnum_t    *r_g_id,
+                            cs_gnum_t          *g_row_id,
+                            cs_gnum_t          *g_col_id)
+{
+  const cs_lnum_t *row_index = nullptr;
+  const cs_lnum_t *col_id = nullptr;
+
+  cs_matrix_get_msr_arrays(matrix, &row_index, &col_id, nullptr, nullptr);
+
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(matrix);
+
+  cs_dispatch_context ctx;
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t row) {
+    const cs_gnum_t g_row = r_g_id[row];
+    for (cs_lnum_t i = row_index[row]; i < row_index[row + 1]; i++) {
+      g_row_id[i] = g_row;
+      g_col_id[i] = r_g_id[col_id[i]];
+    }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

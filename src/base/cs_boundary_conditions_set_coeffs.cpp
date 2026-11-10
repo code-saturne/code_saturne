@@ -4464,9 +4464,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
 
   }
 
-  /* Presence of porosity */
-  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
-
   /* gradient clipping on boundary */
   cs_real_t b_rc_clip_factor = (eqp->imligr < 0) ? -1.0 : eqp->b_rc_clip_factor;
 

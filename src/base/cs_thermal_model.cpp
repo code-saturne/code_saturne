@@ -298,18 +298,15 @@ cs_thermal_model_init(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_model_gamma_d_c_square(const cs_real_t  cp[],
-                                  const cs_real_t  cv[],
-                                  const cs_real_t  temp[],
-                                  const cs_real_t  pres[],
-                                  const cs_real_t  fracv[],
-                                  const cs_real_t  fracm[],
-                                  const cs_real_t  frace[],
-                                  cs_real_t        gdc2[])
+cs_thermal_model_gamma_d_c_square([[maybe_unused]] const cs_real_t  cp[],
+                                  [[maybe_unused]] const cs_real_t  cv[],
+                                  const cs_real_t                   temp[],
+                                  const cs_real_t                   pres[],
+                                  const cs_real_t                   fracv[],
+                                  [[maybe_unused]] const cs_real_t  fracm[],
+                                  const cs_real_t                   frace[],
+                                  cs_real_t                         gdc2[])
 {
-  CS_NO_WARN_IF_UNUSED(cp);
-  CS_NO_WARN_IF_UNUSED(fracm);
-
   /*  Local variables */
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;

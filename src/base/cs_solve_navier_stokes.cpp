@@ -1242,7 +1242,6 @@ _update_fluid_vel(const cs_mesh_t             *m,
                   cs_real_t                    coefa_dp[],
                   cs_real_t                    vel[][3],
                   cs_real_t                    dfrcxt[][3],
-                  cs_real_t                    frcxt[][3],
                   const cs_real_t              dttens[][6],
                   const int                    isostd[])
 {
@@ -4561,7 +4560,6 @@ cs_solve_navier_stokes(const int        iterns,
                         coefa_dp,
                         vel,
                         dfrcxt,
-                        frcxt,
                         dttens,
                         isostd);
 

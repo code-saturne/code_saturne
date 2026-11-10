@@ -199,50 +199,58 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
 
   char outputs[32];
   switch (property) {
-    case CS_PHYS_PROP_PRESSURE:
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("bad choice: you can't choose pressure as an output variable"));
-      break;
-    case CS_PHYS_PROP_TEMPERATURE:
-      /* temperature is in K */
-      strncpy(outputs, "T", 31);
-      break;
-    case CS_PHYS_PROP_ENTHALPY:
-      strncpy(outputs, "H", 31);
-      break;
-    case CS_PHYS_PROP_ENTROPY:
-      strncpy(outputs, "S", 31);
-      break;
-    case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
-      strncpy(outputs, "CPMASS", 31);
-      break;
-    case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
-      strncpy(outputs, "CVMASS", 31);
-      break;
-    case CS_PHYS_PROP_SPECIFIC_VOLUME:
-      bft_error(__FILE__, __LINE__, 0,
-                _("bad choice: specific volume not available yet"));
-      break;
-    case CS_PHYS_PROP_DENSITY:
-      strncpy(outputs, "D", 31);
-      break;
-    case CS_PHYS_PROP_INTERNAL_ENERGY:
-      strncpy(outputs, "U", 31);
-      break;
-    case CS_PHYS_PROP_QUALITY:
-      bft_error(__FILE__, __LINE__, 0,
-                _("bad choice: quality not available yet"));
-      break;
-    case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
-      strncpy(outputs, "L", 31);
-      break;
-    case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
-      strncpy(outputs, "V", 31);
-      break;
-    case CS_PHYS_PROP_SPEED_OF_SOUND:
-      strncpy(outputs, "SPEED_OF_SOUND", 31);
-      break;
+  case CS_PHYS_PROP_PRESSURE:
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("bad choice: you can't choose pressure as an output variable"));
+    break;
+  case CS_PHYS_PROP_TEMPERATURE:
+    /* temperature is in K */
+    strncpy(outputs, "T", 31);
+    break;
+  case CS_PHYS_PROP_ENTHALPY:
+    strncpy(outputs, "H", 31);
+    break;
+  case CS_PHYS_PROP_ENTROPY:
+    strncpy(outputs, "S", 31);
+    break;
+  case CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY:
+    strncpy(outputs, "CPMASS", 31);
+    break;
+  case CS_PHYS_PROP_ISOCHORIC_HEAT_CAPACITY:
+    strncpy(outputs, "CVMASS", 31);
+    break;
+  case CS_PHYS_PROP_SPECIFIC_VOLUME:
+    bft_error(__FILE__, __LINE__, 0,
+              _("bad choice: specific volume not available yet"));
+    break;
+  case CS_PHYS_PROP_DENSITY:
+    strncpy(outputs, "D", 31);
+    break;
+  case CS_PHYS_PROP_INTERNAL_ENERGY:
+    strncpy(outputs, "U", 31);
+    break;
+  case CS_PHYS_PROP_QUALITY:
+    bft_error(__FILE__, __LINE__, 0,
+              _("bad choice: quality not available yet"));
+    break;
+  case CS_PHYS_PROP_THERMAL_CONDUCTIVITY:
+    strncpy(outputs, "L", 31);
+    break;
+  case CS_PHYS_PROP_DYNAMIC_VISCOSITY:
+    strncpy(outputs, "V", 31);
+    break;
+  case CS_PHYS_PROP_SPEED_OF_SOUND:
+    strncpy(outputs, "SPEED_OF_SOUND", 31);
+    break;
+  case CS_PHYS_PROP_DRHO_DP_H:
+    bft_error(__FILE__, __LINE__, 0,
+              _("bad choice: DRHO_DP_H not handled yet"));
+    break;
+  case CS_PHYS_PROP_DRHO_DH_P:
+    bft_error(__FILE__, __LINE__, 0,
+              _("bad choice: DRHO_DH_P not handled yet"));
+    break;
   }
   outputs[31] = '\0';
   long output_key = get_param_index(outputs);

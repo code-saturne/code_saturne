@@ -1161,8 +1161,6 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
   CS_MALLOC_HD(c_row_index, n_rows+1, cs_lnum_t, alloc_mode);
   c_row_index[0] = 0;
 
-  int n_threads = cs_parall_n_threads(n_rows, CS_THR_MIN);
-
   int *need_compact;
   CS_MALLOC_HD(need_compact, 1, int, cs_alloc_mode); // Shared when using GPU.
   need_compact[0] = false;

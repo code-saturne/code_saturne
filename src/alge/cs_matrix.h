@@ -638,11 +638,11 @@ bool
 cs_matrix_get_need_xa(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------*/
-/*
- *\brief Indicate whether matrix will need xa coefficients.
+/*!
+ * \brief Indicate whether matrix will need xa coefficients.
  *
  * \param[in, out]  matrix      pointer to matrix structure
- * \param[in]       need_xa     is thr face-based xa array needed ?
+ * \param[in]       need_xa     is the face-based xa array needed ?
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1055,6 +1055,23 @@ cs_matrix_release_msr_arrays(cs_matrix_t    *matrix,
                              cs_lnum_t    **col_id,
                              cs_real_t    **d_val,
                              cs_real_t    **x_val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build global row and column ids for extra-diagonal MSR entries.
+ *
+ * \param[in]   matrix    pointer to matrix structure
+ * \param[in]   r_g_id    mapping from local row/column id to global id
+ * \param[out]  g_row_id  global row ids for extra-diagonal entries
+ * \param[out]  g_col_id  global column ids for extra-diagonal entries
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_build_msr_e_g_ids(const cs_matrix_t  *matrix,
+                            const cs_gnum_t    *r_g_id,
+                            cs_gnum_t          *g_row_id,
+                            cs_gnum_t          *g_col_id);
 
 /*----------------------------------------------------------------------------*/
 /*

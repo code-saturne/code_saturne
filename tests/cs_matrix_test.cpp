@@ -729,6 +729,53 @@ _free_base_data(void)
   CS_FREE(_edges);
 }
 
+/*----------------------------------------------------------------------------
+ * Test MSR extra-diagonal global id builder.
+ *----------------------------------------------------------------------------*/
+
+static void
+_test_msr_build_e_g_ids(void)
+{
+  cs_matrix_structure_t *ms
+    = cs_matrix_structure_create(CS_MATRIX_MSR,
+                                 _n_vtx,
+                                 _n_vtx,
+                                 _n_edges,
+                                 _edges,
+                                 nullptr,
+                                 nullptr);
+
+  cs_matrix_t *m = cs_matrix_create(ms);
+
+  const cs_lnum_t *row_index = nullptr;
+  const cs_lnum_t *col_id = nullptr;
+  cs_matrix_get_msr_arrays(m, &row_index, &col_id, nullptr, nullptr);
+
+  const cs_lnum_t n_extra = row_index[_n_vtx];
+  cs_gnum_t *g_row_id = nullptr;
+  cs_gnum_t *g_col_id = nullptr;
+
+  CS_MALLOC(g_row_id, n_extra, cs_gnum_t);
+  CS_MALLOC(g_col_id, n_extra, cs_gnum_t);
+
+  cs_matrix_build_msr_e_g_ids(m, _g_vtx_id, g_row_id, g_col_id);
+
+  /* Verify mapping */
+  for (cs_lnum_t row = 0; row < _n_vtx; row++) {
+    const cs_gnum_t exp_row_g_id = _g_vtx_id[row];
+    for (cs_lnum_t i = row_index[row]; i < row_index[row + 1]; i++) {
+      assert(g_row_id[i] == exp_row_g_id);
+      assert(g_col_id[i] == _g_vtx_id[col_id[i]]);
+    }
+  }
+
+  CS_FREE(g_row_id);
+  CS_FREE(g_col_id);
+
+  cs_matrix_destroy(&m);
+  cs_matrix_structure_destroy(&ms);
+}
+
 /*----------------------------------------------------------------------------*/
 
 int
@@ -989,6 +1036,9 @@ main(int argc, char *argv[])
 
     cs_matrix_assembler_destroy(&ma);
   }
+
+  /* Test MSR extra-diagonal global id builder */
+  _test_msr_build_e_g_ids();
 
   bft_printf("\n");
 

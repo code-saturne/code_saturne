@@ -2824,7 +2824,7 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
     part_connect[k++] = vertex_index[i+1] - vertex_index[i];
 #endif
     for (cs_lnum_t j = vertex_index[i]; j < vertex_index[i+1]; j++)
-      part_connect[k++] = g_vtx_num[section->vertex_ids[j]];
+      part_connect[k++] = g_vtx_num[vertex_ids[j]];
   }
 
   cs_part_to_block_copy_indexed(d,

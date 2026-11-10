@@ -1982,14 +1982,10 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
   bool symmetric = (iconvp == 1) ? false : true;
   bool need_xa = cs_matrix_get_need_xa(a);
 
-  /* Case with matrix assembler or non-msr format;
-     we use the legacy assembly here, but should move to a row-based
-     (i.e. gather) algorithm so as to be able to call assembler in a
-     multithreaded manner (and later even a device-accelerated manner). */
+  /* Case with non-msr format or when xa is needed;
+     we use the legacy assembly here. */
 
-  if (   ma != nullptr
-      || m_type != CS_MATRIX_MSR
-      || need_xa) {
+  if (ma == nullptr && (m_type != CS_MATRIX_MSR || need_xa)) {
 
     const cs_lnum_t n_edges = m->n_i_faces;
     const cs_lnum_2_t *edges = m->i_face_cells;
@@ -2029,104 +2025,21 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
       });
     }
 
-    if (ma != nullptr) {
+    /* As arrays are transferred, we assume the array type is
+       neither "native", nor "dist", as the associated formats
+       do not currently have a "transfer coefficients" method.*/
 
-      int flags = CS_MATRIX_VALUES_ARE_LOCAL;
+    cs_assert(   m_type != CS_MATRIX_NATIVE
+              && m_type != CS_MATRIX_DIST);
 
-      cs_lnum_t s0 = 2;
-      cs_lnum_t s1 = 1;
-
-      if (isym == 1) {
-        s0 = 1;
-        s1 = 0;
-      }
-
-      cs_matrix_assembler_values_t *mav
-        = cs_matrix_assembler_values_init(a, 1, 1);
-      assert(n_cells == cs_matrix_get_n_rows(a));
-
-      const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a, m->halo);
-
-      const cs_lnum_t block_size = 800;
-      cs_gnum_t g_row_id[800];
-      cs_gnum_t g_col_id[800];
-      cs_real_t val[1600];
-
-      /* Diagonal values */
-
-      cs_matrix_assembler_values_add_g(mav,
-                                       flags,
-                                       n_cells,
-                                       const_cast<cs_gnum_t *>(r_g_id),
-                                       const_cast<cs_gnum_t *>(r_g_id),
-                                       const_cast<cs_real_t *>(da));
-
-      /* Extradiagonal values based on internal faces */
-
-      cs_lnum_t jj = 0;
-
-      for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
-        cs_lnum_t i0 = edges[ii][0];
-        cs_lnum_t i1 = edges[ii][1];
-        if (i0 < n_cells) {
-          g_row_id[jj] = r_g_id[i0];
-          g_col_id[jj] = r_g_id[i1];
-          val[jj] = xa[ii*s0];
-          jj++;
-        }
-        if (i1 < n_cells) {
-          g_row_id[jj] = r_g_id[i1];
-          g_col_id[jj] = r_g_id[i0];
-          val[jj] = xa[ii*s0+s1];
-          jj++;
-        }
-        if (jj >= block_size - 1) {
-          cs_matrix_assembler_values_add_g(mav, flags, jj,
-                                           g_row_id, g_col_id, val);
-          jj = 0;
-        }
-      }
-      cs_matrix_assembler_values_add_g(mav, flags, jj,
-                                       g_row_id, g_col_id, val);
-      jj = 0;
-
-      /* Set extended contribution for domain coupling */
-
-      if (f != nullptr) {
-        int coupling_id = f->get_key_int("coupling_entity");
-
-        if (coupling_id > -1)
-          cs_internal_coupling_matrix_add_values(f, 1, 1, r_g_id, mav);
-      }
-
-      /* Finalize assembly */
-
-      cs_matrix_assembler_values_finalize(&mav);
-
-      if (isym == 1)
-        cs_matrix_set_symmetric(a, true);
-
-    }
-
-    else {
-
-      /* As arrays are transferred, we assume the array type is
-         neither "native", nor "dist", as the associated formats
-         do not currently have a "transfer coefficients" method.*/
-
-      cs_assert(   m_type != CS_MATRIX_NATIVE
-                && m_type != CS_MATRIX_DIST);
-
-      cs_matrix_transfer_coefficients(a,
-                                      symmetric,
-                                      1,
-                                      1,
-                                      n_edges,
-                                      edges,
-                                      &da,
-                                      &xa);
-
-    }
+    cs_matrix_transfer_coefficients(a,
+                                    symmetric,
+                                    1,
+                                    1,
+                                    n_edges,
+                                    edges,
+                                    &da,
+                                    &xa);
 
     /* Free remaining local (non-transferred) arrays */
 
@@ -2151,13 +2064,17 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
   /* Common case: direct assignment of matrix coefficients
      ---------------------------------------------------- */
 
+  cs_matrix_t *a_msr = (ma != nullptr) ? cs_matrix_msr() : a;
+  if (ma != nullptr)
+    cs_matrix_set_alloc_mode(a_msr, amode);
+
   cs_mesh_adjacencies_update_cell_i_faces();
 
   cs_dispatch_context ctx;
   ctx.set_use_gpu(amode >= CS_ALLOC_HOST_DEVICE_SHARED);
 
   cs_real_t *da, *ea;
-  cs_matrix_get_coefficients_msr_w(a,
+  cs_matrix_get_coefficients_msr_w(a_msr,
                                    symmetric,
                                    1, 1,
                                    &da,
@@ -2251,6 +2168,86 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
   }
   ctx.wait();
 
+  if (ma != nullptr) {
+
+    int flags = CS_MATRIX_VALUES_ARE_LOCAL;
+
+    cs_real_t *d_val = nullptr;
+    cs_real_t *e_val = nullptr;
+
+    cs_matrix_release_msr_arrays(a_msr,
+                                 nullptr,
+                                 nullptr,
+                                 &d_val,
+                                 &e_val);
+
+    const cs_lnum_t *row_index = nullptr;
+    const cs_lnum_t *col_id = nullptr;
+
+    cs_matrix_get_msr_arrays(a_msr,
+                             &row_index,
+                             &col_id,
+                             nullptr,
+                             nullptr);
+
+    const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a, m->halo);
+
+    const cs_lnum_t n_extra = row_index[n_cells];
+    cs_gnum_t *g_row_ids = nullptr;
+    cs_gnum_t *g_col_ids = nullptr;
+
+    CS_MALLOC_HD(g_row_ids, n_extra, cs_gnum_t, amode);
+    CS_MALLOC_HD(g_col_ids, n_extra, cs_gnum_t, amode);
+
+    cs_matrix_build_msr_e_g_ids(a_msr, r_g_id, g_row_ids, g_col_ids);
+
+    cs_matrix_assembler_values_t *mav
+      = cs_matrix_assembler_values_init(a, 1, 1);
+    assert(n_cells == cs_matrix_get_n_rows(a));
+
+    /* Diagonal values */
+
+    cs_matrix_assembler_values_add_g(mav,
+                                     flags,
+                                     n_cells,
+                                     const_cast<cs_gnum_t *>(r_g_id),
+                                     const_cast<cs_gnum_t *>(r_g_id),
+                                     d_val);
+
+    /* Extradiagonal values */
+
+    cs_matrix_assembler_values_add_g(mav,
+                                     flags,
+                                     n_extra,
+                                     g_row_ids,
+                                     g_col_ids,
+                                     e_val);
+
+    CS_FREE(d_val);
+    CS_FREE(e_val);
+    CS_FREE(g_row_ids);
+    CS_FREE(g_col_ids);
+
+    /* Set extended contribution for domain coupling */
+
+    if (f != nullptr) {
+      int coupling_id = f->get_key_int("coupling_entity");
+
+      if (coupling_id > -1)
+        cs_internal_coupling_matrix_add_values(f, 1, 1, r_g_id, mav);
+    }
+
+    /* Finalize assembly */
+
+    cs_matrix_assembler_values_finalize(&mav);
+
+    if (symmetric)
+      cs_matrix_set_symmetric(a, true);
+
+    cs_matrix_release(&a_msr);
+
+  }
+
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
       t_stop = std::chrono::high_resolution_clock::now();
@@ -2334,16 +2331,15 @@ cs_matrix_compute_coeffs
 
   using b_t = cs_real_t[stride][stride];
 
-  /* Case with matrix assembler or non-msr format;
+  /* Case with matrix assembler, non-msr format, or when xa is needed;
      we use the legacy assembly here, but should move to a row-based
      (i.e. gather) algorithm so as to be able to call assembler in a
      multithreaded manner (and later even a device-accelerated manner). */
 
-  if (   ma != nullptr
-      || m_type != CS_MATRIX_MSR
-      || tensorial_diffusion != 1
-      || need_xa
-      || (cs_glob_porous_model == 3 && stride == 3)) { // should be test on vel ?
+  if (   (ma != nullptr && (   tensorial_diffusion != 1
+                            || eb_size > 1
+                            || (cs_glob_porous_model == 3 && stride == 3)))
+      || (ma == nullptr && (m_type != CS_MATRIX_MSR || need_xa))) {
 
     const cs_lnum_t n_edges = m->n_i_faces;
     const cs_lnum_2_t *edges = m->i_face_cells;
@@ -2508,8 +2504,13 @@ cs_matrix_compute_coeffs
     return;
   }
 
-  /* Common case: direct assigment of matrix coefficients
+  /* Common case: direct assignment of matrix coefficients
      ---------------------------------------------------- */
+
+  cs_matrix_t *a_msr = (ma != nullptr)
+    ? cs_matrix_default(symmetric, stride, eb_size) : a;
+  if (ma != nullptr)
+    cs_matrix_set_alloc_mode(a_msr, amode);
 
   cs_mesh_adjacencies_update_cell_i_faces();
 
@@ -2517,7 +2518,7 @@ cs_matrix_compute_coeffs
   ctx.set_use_gpu(amode >= CS_ALLOC_HOST_DEVICE_SHARED);
 
   cs_real_t *da_p, *ea_p;
-  cs_matrix_get_coefficients_msr_w(a,
+  cs_matrix_get_coefficients_msr_w(a_msr,
                                    symmetric,
                                    stride, eb_size,
                                    &da_p,
@@ -2626,6 +2627,90 @@ cs_matrix_compute_coeffs
     });
   }
   ctx.wait();
+
+  if (ma != nullptr) {
+
+    int flags = CS_MATRIX_VALUES_ARE_LOCAL;
+
+    cs_real_t *d_val = nullptr;
+    cs_real_t *e_val = nullptr;
+
+    cs_matrix_release_msr_arrays(a_msr,
+                                 nullptr,
+                                 nullptr,
+                                 &d_val,
+                                 &e_val);
+
+    const cs_lnum_t *row_index = nullptr;
+    const cs_lnum_t *col_id = nullptr;
+
+    cs_matrix_get_msr_arrays(a_msr,
+                             &row_index,
+                             &col_id,
+                             nullptr,
+                             nullptr);
+
+    const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a, m->halo);
+
+    const cs_lnum_t n_extra = row_index[n_cells];
+    cs_gnum_t *g_row_ids = nullptr;
+    cs_gnum_t *g_col_ids = nullptr;
+
+    CS_MALLOC_HD(g_row_ids, n_extra, cs_gnum_t, amode);
+    CS_MALLOC_HD(g_col_ids, n_extra, cs_gnum_t, amode);
+
+    cs_matrix_build_msr_e_g_ids(a_msr, r_g_id, g_row_ids, g_col_ids);
+
+    cs_matrix_assembler_values_t *mav
+      = cs_matrix_assembler_values_init(a, stride, eb_size);
+    assert(n_cells == cs_matrix_get_n_rows(a));
+
+    /* Diagonal values */
+
+    cs_matrix_assembler_values_add_g(mav,
+                                     flags,
+                                     n_cells,
+                                     const_cast<cs_gnum_t *>(r_g_id),
+                                     const_cast<cs_gnum_t *>(r_g_id),
+                                     d_val);
+
+    /* Extradiagonal values */
+
+    cs_matrix_assembler_values_add_g(mav,
+                                     flags,
+                                     n_extra,
+                                     g_row_ids,
+                                     g_col_ids,
+                                     e_val);
+
+    CS_FREE(d_val);
+    CS_FREE(e_val);
+    CS_FREE(g_row_ids);
+    CS_FREE(g_col_ids);
+
+    /* Set extended contribution for domain coupling */
+
+    if (f != nullptr) {
+      int coupling_id = f->get_key_int("coupling_entity");
+
+      if (coupling_id > -1)
+        cs_internal_coupling_matrix_add_values(f,
+                                               stride,
+                                               eb_size,
+                                               r_g_id,
+                                               mav);
+    }
+
+    /* Finalize assembly */
+
+    cs_matrix_assembler_values_finalize(&mav);
+
+    if (symmetric)
+      cs_matrix_set_symmetric(a, true);
+
+    cs_matrix_release(&a_msr);
+
+  }
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
