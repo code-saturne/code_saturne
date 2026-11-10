@@ -3012,13 +3012,41 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
           /* if (scalax..) */
           else {
 
-            /* The particle is not set into motion or stops
-             * the flag is set to 1 and velocity and displacement are null */
+            /* The particle is not set into motion or stops:
+             * velocity and displacement are null */
 
-            /* Simplified treatment:
-             * no update of iscovc, ihdepm for particles that stop */
-            if (p_set.flag(p_id, CS_LAGR_PART_ROLLING))
+            /* A rolling particle that stops is deposited again
+             * (it keeps its adhesion force, see cs_lagr_resuspension):
+             * update of the surface covered and deposit height */
+
+            if (p_set.flag(p_id, CS_LAGR_PART_ROLLING)) {
+
+              if (bi->iscovc > -1)
+                bound_stat[n_f_id + nfabor * bi->iscovc]
+                  +=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
+                     * 0.25 / mq->b_face_surf[n_f_id];
+
+              if (bi->ihdepm > -1)
+                bound_stat[n_f_id + nfabor * bi->ihdepm]
+                  +=   cs_math_pi * p_height * cs_math_pow2(p_diam) * p_stat_w
+                     * 0.25 / mq->b_face_surf[n_f_id];
+
+              if (bi->ihdepv > -1)
+                bound_stat[n_f_id + nfabor * bi->ihdepv]
+                  +=   cs_math_pow2(cs_math_pi * p_height
+                     * cs_math_pow2(p_diam) * p_stat_w
+                     * 0.25 / mq->b_face_surf[n_f_id]);
+
+              if (bi->inclg > -1)
+                bound_stat[n_f_id + nfabor * bi->inclg]
+                  += p_stat_w;
+
+              p_set.unset_flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
+              p_set.set_flag(p_id, CS_LAGR_PART_DEPOSITED);
+
               iresusp = 1;
+
+            }
 
             for (cs_lnum_t id = 1; id < 3; id++) {
               depl[id]     = 0.0;
