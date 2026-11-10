@@ -835,16 +835,17 @@ cs_atmo_read_chemistry_profile(int mode)
 
     /* 1. Date and time of profile */
     _clean_num_line(s);
+    s[strcspn(s, "\r\n")] = '\0';
 
     /* Count whitespace-separated tokens on line */
     int n_date_tokens = 0;
     for (char *p = s; *p != '\0';) {
-      while (*p == ' ' || *p == '\t')
+      while (isspace((unsigned char)*p))
         p++;
       if (*p == '\0')
         break;
       n_date_tokens++;
-      while (*p != '\0' && *p != ' ' && *p != '\t')
+      while (*p != '\0' && !isspace((unsigned char)*p))
         p++;
     }
 

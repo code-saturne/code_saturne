@@ -4167,7 +4167,12 @@ cs_atmo_read_meteo_profile(int mode)
        ---------------------------- */
 
     /* clean line */
+    line[strcspn(line, "\r\n")] = '\0';
     for (int i = 0; line[i] != '\0'; i++) {
+      if (line[i] == '/') {
+        line[i] = '\0';
+        break;
+      }
       if (line[i] == ',')
         line[i] = ' ';
       if (line[i] == 'd' || line[i] == 'D')
@@ -4177,12 +4182,12 @@ cs_atmo_read_meteo_profile(int mode)
     /* Count whitespace-separated tokens on line */
     int n_date_tokens = 0;
     for (char *p = line; *p != '\0';) {
-      while (*p == ' ' || *p == '\t')
+      while (isspace((unsigned char)*p))
         p++;
       if (*p == '\0')
         break;
       n_date_tokens++;
-      while (*p != '\0' && *p != ' ' && *p != '\t')
+      while (*p != '\0' && !isspace((unsigned char)*p))
         p++;
     }
 
@@ -4351,6 +4356,8 @@ cs_atmo_read_meteo_profile(int mode)
 
     else {
 
+      const int nbmaxt = at_opt->met_1d_nlevels_max_t;
+
       for (int ii = 0; ii < at_opt->met_1d_nlevels_t; ii++) {
 
         fgets(line, 256, file);
@@ -4365,14 +4372,14 @@ cs_atmo_read_meteo_profile(int mode)
         //  Altitude, temperature, humidite
         if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
           sscanf(line, " %le %le %le %le", &at_opt->z_temp_met[ii],
-                 &at_opt->temp_met[ii + itp*at_opt->met_1d_nlevels_t],
-                 &at_opt->qw_met[ii + itp*at_opt->met_1d_nlevels_t],
-                 &at_opt->ndrop_met[ii + itp*at_opt->met_1d_nlevels_t]);
+                 &at_opt->temp_met[ii + itp*nbmaxt],
+                 &at_opt->qw_met[ii + itp*nbmaxt],
+                 &at_opt->ndrop_met[ii + itp*nbmaxt]);
         }
         else {
           sscanf(line, " %le %le %le", &at_opt->z_temp_met[ii],
-                 &at_opt->temp_met[ii + itp*at_opt->met_1d_nlevels_t],
-                 &at_opt->qw_met[ii + itp*at_opt->met_1d_nlevels_t]);
+                 &at_opt->temp_met[ii + itp*nbmaxt],
+                 &at_opt->qw_met[ii + itp*nbmaxt]);
         }
         // Initialize p0, rho0 and theta0 at the first level
         if (itp == 0 && ii == 0) {
@@ -4383,15 +4390,15 @@ cs_atmo_read_meteo_profile(int mode)
         }
 
         // Check the unity of the specific humidity (kg/kg) when used
-        if (   at_opt->qw_met[ii + itp*at_opt->met_1d_nlevels_t] > 0.1
-            || at_opt->qw_met[ii + itp*at_opt->met_1d_nlevels_t] < 0.0 )
+        if (   at_opt->qw_met[ii + itp*nbmaxt] > 0.1
+            || at_opt->qw_met[ii + itp*nbmaxt] < 0.0 )
           cs_parameters_error
             (CS_ABORT_IMMEDIATE,
              _("Meteo profile file"),
              _("the values for the specific humidity are not realistic;"
                " check the unit (kg/kg)."));
         if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
-          if (at_opt->ndrop_met[ii + itp*at_opt->met_1d_nlevels_t] < 0.0)
+          if (at_opt->ndrop_met[ii + itp*nbmaxt] < 0.0)
             cs_parameters_error
               (CS_ABORT_IMMEDIATE,
                _("Meteo profile file"),
