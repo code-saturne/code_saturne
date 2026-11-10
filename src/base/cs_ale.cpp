@@ -2315,6 +2315,13 @@ cs_ale_activate(void)
 
   cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_WITH_FV);
 
+  /* Switch to the cell center computed by the FV part since CDO and FV are
+     used together */
+
+  cs_cdo_quantities_set_algo_ccenter(CS_CDO_QUANTITIES_SATURNE_CENTER);
+
+  /* Add a dedicated equation to solve the mesh displacement */
+
   cs_equation_t *eq =
     cs_equation_add("mesh_velocity", /* equation name */
                     "mesh_velocity", /* associated variable field name */
@@ -2324,15 +2331,14 @@ cs_ale_activate(void)
 
   cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
-  /* Predefined settings */
+  /* Predefined default settings */
+  /* --------------------------- */
 
   cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
-
-  /* BC settings */
-
   cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
 
-  /* System to solve is SPD by construction */
+  /* System to solve is SPD by construction so that it is more efficient to
+     modify the default settings */
 
   cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "cg");
   cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "jacobi");
