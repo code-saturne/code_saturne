@@ -505,12 +505,14 @@ compute_anisotropic_prop(int            iprev,
  */
 /*----------------------------------------------------------------------------*/
 
+CS_F_HOST_DEVICE
 static inline void
 _b_face_velocity(cs_lnum_t                     f_id,
                  cs_lnum_t                     c,
                  const cs_real_3_t            *cvar_vel,
                  const int                    *bc_type,
-                 const cs_field_bc_coeffs_t   *bc_coeffs,
+                 const cs_real_t              *bc_a,
+                 const cs_real_t              *bc_b,
                  const cs_real_3_t             n_b,
                  cs_real_3_t                   u_b)
 {
@@ -528,14 +530,12 @@ _b_face_velocity(cs_lnum_t                     f_id,
     for (int i = 0; i < 3; i++)
       u_b[i] = cvar_vel[c][i];
   }
-  else if (   bc_coeffs != nullptr
-           && bc_coeffs->a != nullptr
-           && bc_coeffs->b != nullptr) {
+  else if (bc_a != nullptr && bc_b != nullptr) {
     /* Walls (no-slip u_b=0, sliding u_b=u_wall) and Inlets (u_b=u_inlet):
      * Standard code_saturne formulation: u_b = a + b * u_c */
     for (int i = 0; i < 3; i++)
-      u_b[i] = bc_coeffs->a[3 * f_id + i]
-             + bc_coeffs->b[3 * f_id + i] * cvar_vel[c][i];
+      u_b[i] = bc_a[3 * f_id + i]
+             + bc_b[3 * f_id + i] * cvar_vel[c][i];
   }
   else if (b_type == CS_SMOOTHWALL || b_type == CS_ROUGHWALL) {
     /* Default fixed wall: no-slip */
@@ -934,6 +934,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
           = (extra_i[phase_id].vel != nullptr)
             ? extra_i[phase_id].vel->bc_coeffs : nullptr;
         const int *bc_type = cs_glob_bc_type;
+        const cs_real_t *bc_a = bc_coeffs->a;
+        const cs_real_t *bc_b = bc_coeffs->b;
 
         for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
           cs_lnum_t c = b_face_cells[f_id];
@@ -946,7 +948,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                              s_b[2]*inv_surf};
 
           cs_real_3_t u_b;
-          _b_face_velocity(f_id, c, cvar_vel, bc_type, bc_coeffs, n_b, u_b);
+          _b_face_velocity(f_id, c, cvar_vel, bc_type, bc_a, bc_b, n_b, u_b);
 
           for (int i = 0; i < 3; i++) {
             cell_min[c][i] = cs::min(cell_min[c][i], u_b[i]);
@@ -1149,13 +1151,14 @@ cs_lagr_velocity_reconstruction_rt0(int                phase_id,
   const cs_dispatch_sum_type_t b_sum_type
     = ctx.get_parallel_for_b_faces_sum_type(m);
 
-  ctx.parallel_for(n_cells_with_ghosts, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    if (grad_vel != nullptr) {
+  if (grad_vel != nullptr) {
+    ctx.parallel_for(n_cells_with_ghosts, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)
           grad_vel[c_id][i][j] = 0.;
-    }
-  });
+    });
+    ctx.wait();
+  }
 
   /* Compute face velocities and divergence-free cell gradient G (RT0) */
   if (grad_vel != nullptr && vel != nullptr) {
@@ -1209,12 +1212,16 @@ cs_lagr_velocity_reconstruction_rt0(int                phase_id,
                            i_sum_type);
     });
 
+    ctx.wait();
+
     const cs_field_bc_coeffs_t *bc_coeffs = f_vel->bc_coeffs;
+    const cs_real_t *bc_a = bc_coeffs->a;
+    const cs_real_t *bc_b = bc_coeffs->b;
+
     const int *bc_type = cs_glob_bc_type;
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       cs_lnum_t c1 = b_face_cells[f_id];
-
       const cs_real_t *s_b = b_face_normal[f_id];
       cs_real_t surf_sq
         = s_b[0]*s_b[0] + s_b[1]*s_b[1] + s_b[2]*s_b[2];
@@ -1229,7 +1236,7 @@ cs_lagr_velocity_reconstruction_rt0(int                phase_id,
 
       /* Boundary velocity according to physical BC */
       cs_real_3_t u_b;
-      _b_face_velocity(f_id, c1, vel, bc_type, bc_coeffs, n_b, u_b);
+      _b_face_velocity(f_id, c1, vel, bc_type, bc_a, bc_b, n_b, u_b);
 
       cs_real_t u_b_dot_n = cs_math_3_dot_product(u_b, n_b);
 
