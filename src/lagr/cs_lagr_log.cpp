@@ -524,6 +524,68 @@ cs_lagr_log_setup(void)
      _("\n  Take mean viscous term into account: %s\n"),
      _status_b(cs_glob_lagr_model->viscous_terms));
 
+  const char *deposition_value_str[]
+    = {N_("none"),
+       N_("standard near-wall model"),
+       N_("subgrid near-wall turbulence model")};
+
+  const char *wall_seen_model_str[]
+    = {N_("0 (Langevin model with near-wall k and epsilon)"),
+       N_("1 (Henry & Minier 2014 Ornstein-Uhlenbeck, T+=5, Matida rms)")};
+
+  const char *rocking_model_str[]
+    = {N_("0 (Guingo & Minier 2008 adhesion alteration)"),
+       N_("1 (Henry & Minier 2014 Poisson collision events)")};
+
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n  Deposition and resuspension options:\n"
+       "    Deposition model:                             %s\n"
+       "    Clogging model (multilayer):                  %s\n"
+       "    Resuspension model:                           %s\n"),
+     (   cs_glob_lagr_model->deposition >= 0
+      && cs_glob_lagr_model->deposition <= 2)
+       ? _(deposition_value_str[cs_glob_lagr_model->deposition]) : "user",
+     _status(cs_glob_lagr_model->clogging),
+     _status(cs_glob_lagr_reentrained_model->ireent));
+
+  if (cs_glob_lagr_reentrained_model->ireent > 0) {
+    int w_seen = cs_glob_lagr_reentrained_model->wall_seen_model;
+    int r_mod = cs_glob_lagr_reentrained_model->rocking_model;
+
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("      Wall seen velocity model:                   %s\n"
+         "      Rocking model:                              %s\n"
+         "      Radius of small asperities:                 %14.5e\n"
+         "      Radius of large asperities:                 %14.5e\n"
+         "      Spacing of large asperities:                %14.5e\n"
+         "      Density of small asperities:                %14.5e\n"
+         "      Equivalent Young modulus:                   %14.5e\n"
+         "      Deposit head loss coupling:                 %s\n"),
+       (w_seen >= 0 && w_seen <= 1) ? _(wall_seen_model_str[w_seen]) : "other",
+       (r_mod >= 0 && r_mod <= 1) ? _(rocking_model_str[r_mod]) : "other",
+       cs_glob_lagr_reentrained_model->rayasp,
+       cs_glob_lagr_reentrained_model->rayasg,
+       cs_glob_lagr_reentrained_model->espasg,
+       cs_glob_lagr_reentrained_model->denasp,
+       cs_glob_lagr_reentrained_model->modyeq,
+       _status(cs_glob_lagr_reentrained_model->iflow));
+  }
+
+  if (cs_glob_lagr_model->clogging > 0) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("      Jamming limit:                              %14.5e\n"
+         "      Mean deposit porosity:                      %14.5e\n"
+         "      Mean particle diameter:                     %14.5e\n"
+         "      Hamaker constant (particle-particle):       %14.5e\n"),
+       cs_glob_lagr_clogging_model->jamlim,
+       cs_glob_lagr_clogging_model->mporos,
+       cs_glob_lagr_clogging_model->diam_mean,
+       cs_glob_lagr_clogging_model->csthpp);
+  }
+
   cs_log_printf
     (CS_LOG_SETUP,
      _("\n  Numerical options:\n"
