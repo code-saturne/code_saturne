@@ -33,6 +33,8 @@
 
 ### Numerics:
 
+- Linear solvers: Bi-CGSTAB2 finally handles (right) preconditionning.
+
 - Turbulence: add Godunov-type solver options and exact time-integration
   schemes for second-order transport source terms, based on the publications:
   * Bennoura Bouchiba, Ferrand, Hérard (2025). ESAIM: M2AN, 59(5), 2639-2683.

@@ -2895,12 +2895,11 @@ _bi_cgstab(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of (ad+ax).vx = Rhs using (not yet preconditioned) Bi-CGSTAB2.
+ * Solution of A.vx = Rhs using right-preconditioned Bi-CGSTAB2.
  *
- * This Krylov method is based on an implemantation of J.P. Caltagirone
- * in his file bibpac6.f90 for Aquillon. He refers to it as Bi-CGSTAB2,
- * but a proper reference for the method has yet to be found.
- * (Gutknecht's BiCGstab2?)
+ * This Krylov method is based on an implementation of J.P. Caltagirone
+ * in his file bibpac6.f90 for Aquillon (Gutknecht's BiCGstab2),
+ * with right preconditioning.
  *
  * On entry, vx is considered initialized.
  *
@@ -2940,7 +2939,8 @@ _bicgstab2(cs_sles_it_t              *c,
   cs_real_t  *_aux_vectors;
   cs_real_t  *restrict res0, *restrict qk, *restrict rk, *restrict sk;
   cs_real_t  *restrict tk, *restrict uk, *restrict vk, *restrict wk;
-  cs_real_t  *restrict zk;
+  cs_real_t  *restrict u_hat, *restrict r_hat, *restrict v_hat;
+  cs_real_t  *restrict s_hat;
 
   unsigned n_iter = 0;
 
@@ -2961,7 +2961,7 @@ _bicgstab2(cs_sles_it_t              *c,
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-    size_t  n_wa = 9;
+    size_t  n_wa = 12;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
@@ -2969,15 +2969,18 @@ _bicgstab2(cs_sles_it_t              *c,
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
-    res0 = _aux_vectors;
-    zk = _aux_vectors + wa_size;
-    qk = _aux_vectors + wa_size*2;
-    rk = _aux_vectors + wa_size*3;
-    sk = _aux_vectors + wa_size*4;
-    tk = _aux_vectors + wa_size*5;
-    uk = _aux_vectors + wa_size*6;
-    vk = _aux_vectors + wa_size*7;
-    wk = _aux_vectors + wa_size*8;
+    res0  = _aux_vectors;
+    qk    = _aux_vectors + wa_size;
+    rk    = _aux_vectors + wa_size*2;
+    sk    = _aux_vectors + wa_size*3;
+    tk    = _aux_vectors + wa_size*4;
+    uk    = _aux_vectors + wa_size*5;
+    vk    = _aux_vectors + wa_size*6;
+    wk    = _aux_vectors + wa_size*7;
+    u_hat = _aux_vectors + wa_size*8;
+    r_hat = _aux_vectors + wa_size*9;
+    v_hat = _aux_vectors + wa_size*10;
+    s_hat = _aux_vectors + wa_size*11;
   }
 
   /* Initialize work arrays */
@@ -3053,16 +3056,16 @@ _bicgstab2(cs_sles_it_t              *c,
     ro_0 = ro_1;
 
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
-      uk[ii] = rk[ii] - beta* uk[ii];
+      uk[ii] = rk[ii] - beta*uk[ii];
     });
 
-    /* Compute vk =  A*uk */
+    /* Compute u_hat = M^{-1}*uk */
 
-    cs_matrix_vector_multiply(ctx, a, uk, vk);
+    c->setup_data->pc_apply(c->setup_data->pc_context, uk, u_hat);
 
-    /* Preconditionning */
+    /* Compute vk = A*u_hat */
 
-    // c->setup_data->pc_apply(c->setup_data->pc_context, vk, zk);
+    cs_matrix_vector_multiply(ctx, a, u_hat, vk);
 
     /* Compute gamma and alpha */
 
@@ -3074,18 +3077,20 @@ _bicgstab2(cs_sles_it_t              *c,
 
     alpha = ro_0/gamma;
 
-    /* Update rk */
+    /* Update rk and vx */
 
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       rk[ii] -= alpha*vk[ii];
-      vx[ii] += alpha*uk[ii];
+      vx[ii] += alpha*u_hat[ii];
     });
 
-    /* p = A*r */
+    /* Compute r_hat = M^{-1}*rk */
 
-    cs_matrix_vector_multiply(ctx, a, rk, sk);
+    c->setup_data->pc_apply(c->setup_data->pc_context, rk, r_hat);
 
-    // c->setup_data->pc_apply(c->setup_data->pc_context, sk, zk);
+    /* Compute sk = A*r_hat */
+
+    cs_matrix_vector_multiply(ctx, a, r_hat, sk);
 
     ro_1 = _dot_product(c, ctx, qk, sk);
     beta = alpha*ro_1/ro_0;
@@ -3094,13 +3099,16 @@ _bicgstab2(cs_sles_it_t              *c,
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       vk[ii] = sk[ii] - beta*vk[ii];
       uk[ii] = rk[ii] - beta*uk[ii];
+      u_hat[ii] = r_hat[ii] - beta*u_hat[ii];
     });
 
-    /* wk = A*vk */
+    /* Compute v_hat = M^{-1}*vk */
 
-    cs_matrix_vector_multiply(ctx, a, vk, wk);
+    c->setup_data->pc_apply(c->setup_data->pc_context, vk, v_hat);
 
-    // c->setup_data->pc_apply(c->setup_data->pc_context, wk, zk);
+    /* Compute wk = A*v_hat */
+
+    cs_matrix_vector_multiply(ctx, a, v_hat, wk);
 
     gamma = _dot_product(c, ctx, qk, wk);
     alpha = (ro_0+mprec)/(gamma+mprec);
@@ -3108,13 +3116,16 @@ _bicgstab2(cs_sles_it_t              *c,
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       rk[ii] -= alpha*vk[ii];
       sk[ii] -= alpha*wk[ii];
+      r_hat[ii] -= alpha*v_hat[ii];
     });
 
-    /* tk = A*sk */
+    /* Compute s_hat = M^{-1}*sk */
 
-    cs_matrix_vector_multiply(ctx, a, sk, tk);
+    c->setup_data->pc_apply(c->setup_data->pc_context, sk, s_hat);
 
-    // c->setup_data->pc_apply(c->setup_data->pc_context, tk, zk);
+    /* Compute tk = A*s_hat */
+
+    cs_matrix_vector_multiply(ctx, a, s_hat, tk);
 
     _dot_products_xx_yy_xy_xz_yz(c, ctx, sk, tk, rk,
                                  &mu, &tau, &nu, &omega_1, &omega_2);
@@ -3124,9 +3135,9 @@ _bicgstab2(cs_sles_it_t              *c,
 
     omega_1 = (omega_1 - nu*omega_2)/mu;
 
-    /* sol <- sol + omega_1*r + omega_2*s + alpha*u */
+    /* sol <- sol + omega_1*r_hat + omega_2*s_hat + alpha*u_hat */
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
-      vx[ii] += omega_1*rk[ii] + omega_2*sk[ii] + alpha*uk[ii];
+      vx[ii] += omega_1*r_hat[ii] + omega_2*s_hat[ii] + alpha*u_hat[ii];
       rk[ii] += - omega_1*sk[ii] - omega_2*tk[ii];
       uk[ii] += - omega_1*vk[ii] - omega_2*wk[ii];
     });
