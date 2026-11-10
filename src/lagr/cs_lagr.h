@@ -562,6 +562,15 @@ typedef struct {
      (y+ of the particle centre below about 5). */
   int                wall_seen_model;
 
+  /* Resuspension of rolling particles by rocking over large-scale asperities:
+     - 0: Guingo & Minier (2008): large asperities alter the adhesion force;
+          when their number changes from 0 to >0, the particle resuspends if
+          its kinetic energy exceeds the adhesion energy (default)
+     - 1: Henry & Minier (2014, Sec. 2.3 & 3.4): large asperities do not alter
+          the adhesion force; each step of rolling over d_cont samples a Poisson
+          event of collision with a large asperity */
+  int                rocking_model;
+
 } cs_lagr_reentrained_model_t;
 
 /*! Parameters of the precipitation model */

@@ -308,46 +308,31 @@ cs_lagr_adh(cs_lnum_t   p_id,
 
   cs_real_t rpart = 0.5 * p_set.attr_real(p_id, CS_LAGR_DIAMETER);
 
-  cs_real_t nmoyag = (2.0 * rpart + rayasg) / rayasg * scovag;
+  int nbasg = 0;
 
-  if (nmoyag > 600.0) {
+  if (cs_glob_lagr_reentrained_model->rocking_model == 1) {
 
-    cs_lnum_t tmp = 1;
-    cs_real_t rtmp;
-
-    cs_random_normal(1, &rtmp);
-
-    tmp = (int)nmoyag + sqrt(nmoyag) * rtmp;
-    tmp = cs::max(0, tmp);
-
-    p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) = tmp;
+    /* Large-scale asperities only act as obstacles for rolling particles
+       (rocking events, see cs_lagr_resuspension): they do not take part in
+       the adhesion force */
+    p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) = 0;
 
   }
   else {
 
-    int ntmp;
-
-    cs_random_poisson(1, nmoyag, &ntmp);
-
-    p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) = ntmp;
-
-  }
-
-  int nbasg = 0;
-  if (p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) > 1) {
-
-    nmoyag =  1.0
-            +  2.0 * _d_cut_off * (2.0 * rpart + 2.0 * rayasg + 4.0 * _d_cut_off)
-             / pow (rayasg, 2) * scovag;
+    cs_real_t nmoyag = (2.0 * rpart + rayasg) / rayasg * scovag;
 
     if (nmoyag > 600.0) {
 
+      cs_lnum_t tmp = 1;
       cs_real_t rtmp;
 
       cs_random_normal(1, &rtmp);
 
-      nbasg = (int)nmoyag + sqrt (nmoyag) * rtmp;
-      nbasg = cs::max(0, nbasg);
+      tmp = (int)nmoyag + sqrt(nmoyag) * rtmp;
+      tmp = cs::max(0, tmp);
+
+      p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) = tmp;
 
     }
     else {
@@ -356,16 +341,45 @@ cs_lagr_adh(cs_lnum_t   p_id,
 
       cs_random_poisson(1, nmoyag, &ntmp);
 
-      nbasg = ntmp;
+      p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) = ntmp;
 
     }
 
-    nbasg = cs::max(1, nbasg);
+    if (p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) > 1) {
 
-  }
-  else {
+      nmoyag =  1.0
+              +  2.0 * _d_cut_off
+               * (2.0 * rpart + 2.0 * rayasg + 4.0 * _d_cut_off)
+               / pow (rayasg, 2) * scovag;
 
-    nbasg = p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES);
+      if (nmoyag > 600.0) {
+
+        cs_real_t rtmp;
+
+        cs_random_normal(1, &rtmp);
+
+        nbasg = (int)nmoyag + sqrt (nmoyag) * rtmp;
+        nbasg = cs::max(0, nbasg);
+
+      }
+      else {
+
+        int ntmp;
+
+        cs_random_poisson(1, nmoyag, &ntmp);
+
+        nbasg = ntmp;
+
+      }
+
+      nbasg = cs::max(1, nbasg);
+
+    }
+    else {
+
+      nbasg = p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES);
+
+    }
 
   }
 

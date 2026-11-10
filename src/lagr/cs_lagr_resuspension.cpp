@@ -332,6 +332,20 @@ cs_lagr_resuspension(void)
       const cs_real_t rayasp = cs_glob_lagr_reentrained_model->rayasp;
       const cs_real_t d_cont = 2.0 * sqrt((p_diam + rayasp) * rayasp);
 
+      /* Mean number of rocking events on large-scale asperities over the
+         distance d_cont (rocking_model = 1, Henry & Minier 2014, Eq. 34):
+         rho_large S_cont,large d_cont / D_cont,large, with
+         S_cont,large = pi R_large (R_large + 2 R_part) and
+         D_cont,large = 2 sqrt(R_large (R_large + 2 R_part)) */
+      cs_real_t mu_rock = 0.;
+      if (cs_glob_lagr_reentrained_model->rocking_model == 1) {
+        const cs_real_t rayasg = cs_glob_lagr_reentrained_model->rayasg;
+        const cs_real_t espasg = cs_glob_lagr_reentrained_model->espasg;
+        if (espasg > 0.)
+          mu_rock =   0.5 * cs_math_pi * sqrt(rayasg * (rayasg + p_diam))
+                    * d_cont / cs_math_pow2(espasg);
+      }
+
       if (flag & CS_LAGR_PART_DEPOSITED) {
 
         /* The particle has just deposited: the adhesion force is calculated.
@@ -357,15 +371,37 @@ cs_lagr_resuspension(void)
              ii < n_renew && p_set.flag(p_id, CS_LAGR_PART_ROLLING);
              ii++) {
 
-          /* If the number of large-scale asperities is null,
-             the particle is marked for a possible collision */
-          test_colli
-            = (p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) == 0) ? 1 : 0;
+          bool rocking = false;
 
-          cs_lagr_adh(p_id, temp, &adhesion_energ);
+          if (cs_glob_lagr_reentrained_model->rocking_model == 1) {
 
-          if (   test_colli == 1
-              && p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) > 0) {
+            /* Henry & Minier (2014), Sec. 3.4: number of large-scale
+               asperities hit over the distance d_cont (Poisson law) */
+            cs_lagr_adh(p_id, temp, &adhesion_energ);
+
+            int n_rock = 0;
+            if (mu_rock > 0.)
+              cs_random_poisson(1, mu_rock, &n_rock);
+            rocking = (n_rock > 0);
+
+          }
+          else {
+
+            /* If the number of large-scale asperities is null,
+               the particle is marked for a possible collision */
+            const cs_lnum_t n_large
+              = p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES);
+            test_colli = (n_large == 0) ? 1 : 0;
+
+            cs_lagr_adh(p_id, temp, &adhesion_energ);
+
+            rocking = (   test_colli == 1
+                       && p_set.attr_lnum(p_id,
+                                          CS_LAGR_N_LARGE_ASPERITIES) > 0);
+
+          }
+
+          if (rocking) {
 
             cs_real_t kinetic_energy
               =  0.5 * p_mass * cs_math_3_dot_product(part_vel, part_vel);
