@@ -181,7 +181,7 @@ def arg_parser(argv):
                         help="additional commands and keywords to run tool " \
                         + "(such as debugger or profiler) prefixing MPI launch")
 
-    parser.add_argument("-p", "--param", dest="param", type=str,
+    parser.add_argument("--param", dest="param", type=str,
                         metavar="<param>",
                         help="path or name of the parameters file")
 
