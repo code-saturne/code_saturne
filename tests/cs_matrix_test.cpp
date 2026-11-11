@@ -937,6 +937,8 @@ main(int argc, char *argv[])
       {
         /* Diagonal */
 
+        int flags = 0;
+
         for (cs_lnum_t i = 0; i < _n_vtx; i++) {
           g_row_id[j] = _g_vtx_id[i];
           g_col_id[j] = _g_vtx_id[i];
@@ -945,11 +947,13 @@ main(int argc, char *argv[])
           val[j] = cos(g_row_id[j] + 0.1) + sin(g_col_id[j] + 0.1);
           j++;
           if (j == 6) {
-            cs_matrix_assembler_values_add_g(mav, j, g_row_id, g_col_id, val);
+            cs_matrix_assembler_values_add_g(mav, flags, j,
+                                             g_row_id, g_col_id, val);
             j = 0;
           }
         }
-        cs_matrix_assembler_values_add_g(mav, j, g_row_id, g_col_id, val);
+        cs_matrix_assembler_values_add_g(mav, flags, j,
+                                         g_row_id, g_col_id, val);
         j = 0;
 
         /* Extra-diagonal */
@@ -960,11 +964,13 @@ main(int argc, char *argv[])
           val[j] = cos(g_row_id[j] + 0.1) + sin(g_col_id[j] + 0.1);
           j++;
           if (j == 6) {
-            cs_matrix_assembler_values_add_g(mav, j, g_row_id, g_col_id, val);
+            cs_matrix_assembler_values_add_g(mav, flags, j,
+                                             g_row_id, g_col_id, val);
             j = 0;
           }
         }
-        cs_matrix_assembler_values_add_g(mav, j, g_row_id, g_col_id, val);
+        cs_matrix_assembler_values_add_g(mav, flags, j,
+                                         g_row_id, g_col_id, val);
         j = 0;
       }
 
