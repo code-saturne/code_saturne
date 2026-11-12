@@ -488,9 +488,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar
       hint[f_id] = viscis / fikis;
     }
 
-    if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED)
-      continue;
-
     cs_real_t hflui = 0.0;
     cs_real_t prdtl = (rkl > DBL_MIN) ? cpp * visclc / rkl : cpp * visclc;
 
@@ -809,6 +806,10 @@ _cs_boundary_conditions_set_coeffs_turb_scalar
       if (isvhbl > -1)
         hbord[f_id] = exchange_coef;
 
+      /* Internal coupling */
+      if (h_int_tot != nullptr)
+        h_int_tot[f_id] = exchange_coef;
+
       /* Radiative transfer */
       if (cs_glob_rad_transfer_params->type >= 1 && f_sc == f_th) {
         bhconv[f_id] = exchange_coef;
@@ -972,6 +973,11 @@ _cs_boundary_conditions_set_coeffs_turb_scalar
     }
 
   } /* End loop on faces */
+
+  /* internal coupling: update with final rough or smooth exchange coefficients */
+  if (eqp_sc->icoupl > 0) {
+    cs_ic_field_set_exchcoeff(f_sc, h_int_tot);
+  }
 
   CS_FREE(hint);
   CS_FREE(yptp);
