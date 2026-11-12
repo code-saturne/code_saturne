@@ -1,5 +1,6 @@
 /*============================================================================
- * Atmospheric ground module - Build constants and variables to describe ground model
+ * Atmospheric ground module - Build constants and variables to describe ground
+ * model
  *============================================================================*/
 
 /*
@@ -509,10 +510,11 @@ _ground_compute_mean(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Ground Plant Atmo Continuum model - compute plant and ground convective
- * exchange resistances.
+ * \brief Ground Plant Atmo Continuum model - compute plant and ground
+ *        convective exchange resistances.
  *
- * \param[in] face_id and ground_id.
+ * \param[in] face_id    boundary face id.
+ * \param[in] ground_id  ground id.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -560,7 +562,7 @@ _compute_convective_exch_resistances(cs_lnum_t face_id,
 /*!
  * \brief Ground Plant Atmo Continuum model - compute water stress.
  *
- * \param[in] face_id and ground_id.
+ * \param[in] ground_id  ground id.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -615,7 +617,7 @@ _compute_water_stress(cs_lnum_t ground_id)
 /*!
  * \brief Ground Plant Atmo Continuum model - compute stomatal conductance.
  *
- * \param[in] face_id and ground_id.
+ * \param[in] ground_id  ground id.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -852,7 +854,7 @@ _compute_stomatal_conductance(cs_lnum_t ground_id,
  * \brief Ground Plant Atmo Continuum model - compute energy exchanges
  *        and plant temperature.
  *
- * \param[in] face_id and ground_id.
+ * \param[in] ground_id  ground id.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1026,7 +1028,7 @@ _compute_le_h_and_leaf_temp(cs_lnum_t ground_id,
  * \brief Ground Plant Atmo Continuum model - compute source term plant and ground
  * to air.
  *
- * \param[in] face_id and ground_id.
+ * \param[in] ground_id  ground id.
  */
 /*----------------------------------------------------------------------------*/
 

@@ -735,12 +735,13 @@ cs_atmo_set_meteo_file_name(const char *file_name);
  *   - albedo if above the sea
  *   (Use analytical formulae of Paltrige and Platt
  *              dev.in atm. science no 5)
- * \param[in]   xlat        latitude
- * \param[in]   xlong       longitude
- * \param[in]   jour        day in the year
- * \param[in]   heurtu      Universal time (hour)
- * \param[in]   imer        sea index
- * \param[out]  albe        albedo
+ *
+ * \param[in]   latitude    latitude
+ * \param[in]   longitude   longitude
+ * \param[in]   squant      day in the year
+ * \param[in]   utc         Universal time (hour)
+ * \param[in]   sea_id      sea index
+ * \param[out]  albedo      albedo
  * \param[out]  za          zenithal angle
  * \param[out]  muzero      cosin of zenithal angle
  *                          (+ correction due to Earth curvature)
@@ -750,12 +751,12 @@ cs_atmo_set_meteo_file_name(const char *file_name);
 /*----------------------------------------------------------------------------*/
 
 extern "C" void
-cs_atmo_compute_solar_angles(cs_real_t xlat,
-                             cs_real_t xlong,
-                             cs_real_t jour,
-                             cs_real_t heurtu,
-                             int       imer,
-                             cs_real_t *albe,
+cs_atmo_compute_solar_angles(cs_real_t  latitude,
+                             cs_real_t  longitude,
+                             cs_real_t  squant,
+                             cs_real_t  utc,
+                             int        sea_id,
+                             cs_real_t *albedo,
                              cs_real_t *za,
                              cs_real_t *muzero,
                              cs_real_t *omega,

@@ -98,7 +98,7 @@
  *
  * \param[in]     cell_id       Cell index
  * \param[in]     p0            Fluid properties reference pressure
- * \param[in]     ref_ressure   Atmospheric reference pressure
+ * \param[in]     ref_pressure  Atmospheric reference pressure
  * \return        pphy          Reference pressure
  */
 /*----------------------------------------------------------------------------*/

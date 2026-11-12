@@ -78,13 +78,13 @@ cs_atmo_source_term(int              f_id,
  *        the thermal scalar equation to take into account the radiative forcing.
  *
  * \param[in]     f_id          field id
- * \param[in,out] exp_st        Explicit source term
+ * \param[in,out] st_exp        Explicit source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_atmo_scalar_source_term(int              f_id,
-                           cs_real_t        exp_st[]);
+                           cs_real_t        st_exp[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

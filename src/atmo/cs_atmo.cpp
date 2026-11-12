@@ -4821,19 +4821,20 @@ _wgs84_to_utm(cs_real_t  lon_deg,
  * longitude in degrees from Easting (E) and Northing (N) using the standard
  * series expansions for the footprint latitude.
  *
- * \param[in]  E       Easting in meters (UTM).
- * \param[in]  N       Northing in meters (UTM).
- * \param[out] lon_deg Longitude in degrees (East positive).
- * \param[out] lat_deg Latitude in degrees.
+ * \param[in]  easting   Easting in meters (UTM).
+ * \param[in]  northing  Northing in meters (UTM).
+ * \param[out] lon_deg   Longitude in degrees (East positive).
+ * \param[out] lat_deg   Latitude in degrees.
+ * \param[in]  zone      UTM zone number.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _utm_to_wgs84(cs_real_t  easting,
               cs_real_t  northing,
-              cs_real_t  *lon_deg,
-              cs_real_t  *lat_deg,
-              int         zone)
+              cs_real_t *lon_deg,
+              cs_real_t *lat_deg,
+              int        zone)
 {
   const cs_real_t rad_to_deg = 180 / cs_math_pi;
 
