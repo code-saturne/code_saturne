@@ -14,6 +14,7 @@
       <tab type="user" visible="yes" url="@ref cs_ug_file_formats" title="Supported file formats"/>
       <tab type="user" visible="yes" url="@ref cs_ug_parallel" title="Parallelism and periodicity"/>
       <tab type="user" visible="yes" url="@ref cs_ug_udf" title="User-defined functions"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_variables_properties" title="Variables and properties"/>
       <tab type="user" visible="yes" url="@ref cs_var_dico" title="Variables and structures reference"/>
       <tab type="user" visible="yes" url="@ref cs_ug_user_settings" title="Global user settings"/>
       <tab type="user" visible="yes" url="@ref cs_ug_mesh_select_c" title="Mesh element set selection"/>
