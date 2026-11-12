@@ -92,8 +92,6 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
  * \param[in]      doxyd   amplitude of Dirac peak in 1
  * \param[in]      dfuel   amplitude of Dirac peak in 0
  * \param[in]      hrec    height of pdf rectangle
- * \param[in]      f1m     mean of tracer 1 mvl [chx1m+co]
- * \param[in]      f2m     mean of tracer 2 mvl [chx2m+co]
  * \param[in]      f3m     mean of tracer 3 (oxydant 1)
  * \param[in]      f4m     mean of tracer 4 (oxydant 2)
  * \param[in]      f5m     mean of tracer 5 (oxydant 3)
@@ -101,6 +99,10 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
  * \param[in]      f7m     mean of tracer 7 (C + O2)
  * \param[in]      f8m     mean of tracer 8 (C + CO2)
  * \param[in]      f9m     mean of tracer 9 (C + H2O)
+ * \param[in]      fs3no   stoichiometric fraction for oxidant 1
+ * \param[in]      fs4no   stoichiometric fraction for oxidant 2
+ * \param[in]      yfs4no  mass fraction associated to oxidant 2
+ * \param[in]      enthox  oxidant enthalpy
  */
 /*----------------------------------------------------------------------------*/
 

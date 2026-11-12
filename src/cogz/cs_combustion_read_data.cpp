@@ -102,7 +102,7 @@
  *
  * \param[in]       name       name of associated file (for error logging)
  * \param[in, out]  line_num   line number counter
- * \param[in, out]  start      any position in current line before
+ * \param[in, out]  s          any position in current line before
  *                             line break in, pointer to start of line out
  * \param[in]       last       last possible position in buffer
  * \param[in]       allow_end  if true, return null if last position in buffer
