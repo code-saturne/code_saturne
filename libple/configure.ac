@@ -4,7 +4,7 @@
 # This file is part of the "Parallel Location and Exchange" library,
 # intended to provide mesh or particle-based code coupling services.
 #
-# Copyright (C) 2005-2023 EDF S.A.
+# Copyright (C) 2005-2026 EDF S.A.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,7 @@ m4_define([ple_licence_c_comment],
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2023  EDF
+  Copyright (C) 2005-2026  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -226,22 +226,9 @@ AC_ARG_ENABLE(python,
 if test "${python_bindings}" = "yes" ; then
   AM_PATH_PYTHON(3.4)
   PLE_AC_PYTHON_DEV
-  PLE_AC_TEST_MPI4PY
 fi
 
-AM_CONDITIONAL(HAVE_MPI4PY, [test "${HAVE_PYMOD_MPI4PY}" = yes])
-
-if test "${python_bindings}" = "yes" ; then
-
-  if test "${HAVE_PYMOD_MPI4PY}" = "yes"; then
-    AC_DEFINE([HAVE_MPI4PY], 1, [mpi4py module])
-  else
-    # AC_MSG_WARN(mpi4py MPI Python bindings not found])
-    python_bindings=no
-  fi
-
-fi
-
+AM_CONDITIONAL(HAVE_PYPLE, [test "${python_bindings}" = yes])
 AC_SUBST(python_bindings)
 
 # Default compiler options (may be modified

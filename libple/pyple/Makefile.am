@@ -2,7 +2,7 @@
 #   This file is part of the "Parallel Location and Exchange" library,
 #   intended to provide mesh or particle-based code coupling services.
 #
-#   Copyright (C) 2005-2023  EDF S.A.
+#   Copyright (C) 2005-2026  EDF S.A.
 #
 #   This library is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU Lesser General Public
@@ -21,21 +21,17 @@
 
 # Main part
 
-if HAVE_MPI4PY
+if HAVE_PYPLE
 
 EXTRA_DIST = \
 pyple_coupler.py.in \
 ple_coupling_wrapper.c
 
-edit_python = sed \
-	-e 's|@mpi4pydir[@]|$(MPI4PY_PATH)|g'
-
 pyple_coupler.py: Makefile
 	rm -f $@ $@.tmp
 	srcidr=''; \
 	test -f ./$@.in || srcdir=$(srcdir)/; \
-	$(edit_python) $${srcdir}$@.in >$@.tmp;
-	mv $@.tmp $@
+	cp $${srcdir}$@ $@
 
 AM_CPPFLAGS = -DHAVE_CONFIG_H -I$(top_builddir) $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS) $(CFLAGS_DBG) $(CFLAGS_OPT)
@@ -45,7 +41,7 @@ AM_LIBS = $(MPI_LIBS) $(LIBS) $(top_builddir)/src/libple.${LIB_EXT}
 # Build rules
 
 ple_coupling_wrapper.o: ple_coupling_wrapper.c $(top_builddir)/src/libple.${LIB_EXT}
-	$(CC) $(PYTHON_CPPFLAGS) $(AM_CPPFLAGS) $(MPI4PY_CFLAGS) $(AM_CFLAGS) -I$(srcdir)/../src -c $(srcdir)/ple_coupling_wrapper.c
+	$(CC) $(PYTHON_CPPFLAGS) $(AM_CPPFLAGS) $(AM_CFLAGS) -I$(srcdir)/../src -c $(srcdir)/ple_coupling_wrapper.c
 
 # Base Library
 
@@ -105,4 +101,3 @@ uninstall-local:
 	rmdir -p "$(DESTDIR)$(pkgpythondir)" || exit 0
 
 endif
-

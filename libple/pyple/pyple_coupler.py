@@ -2,7 +2,7 @@
 # This file is part of the "Parallel Location and Exchange" library,
 # intended to provide mesh or particle-based code coupling services.
 #
-# Copyright (C) 2005-2023  EDF S.A.
+# Copyright (C) 2005-2026  EDF S.A.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -21,16 +21,11 @@
 
 #===============================================================================
 # Python utility module, facilitating the use of PLE for the coupling of
-# a python code with code_saturne.
+# a Python code with code_saturne.
 #===============================================================================
-
-mpi4pypath = '@mpi4pydir@'
 
 import os
 import sys
-
-if mpi4pypath:
-    sys.path.insert(0, mpi4pypath)
 
 try:
     from ple import Init as ple_init
