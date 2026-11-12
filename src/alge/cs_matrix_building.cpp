@@ -49,6 +49,7 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_array.h"
 #include "alge/cs_blas.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_halo.h"
@@ -907,6 +908,465 @@ _coeffs_msr_porous(const cs_mesh_t            *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Build the anisotropic diffusion matrix for a strided field
+ * (symmetric matrix).
+ *
+ * The matrix is split into a diagonal block (number of cells)
+ * and an extra diagonal part.
+ *
+ * \tparam  stride  3 for vectors, 6 for tensors
+ *
+ * \param[in]     m             pointer to mesh structure
+ * \param[in]     ctx           dispatch context
+ * \param[in]     idiffp        indicator (1: diffusion, 0: otherwise)
+ * \param[in]     thetap        weighting coefficient for theta-scheme
+ * \param[in]     bc_coeffs     boundary condition structure
+ * \param[in]     fimp          implicit terms, or null
+ * \param[in]     i_visc        viscosity tensor at interior faces
+ * \param[in]     b_visc        viscosity at border faces
+ * \param[out]    da            diagonal part of the matrix
+ * \param[out]    ea            extra-diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+static void
+_sym_coeffs_msr_anisotropic_diffusion
+(
+  const cs_mesh_t            *m,
+  cs_dispatch_context        &ctx,
+  int                         idiffp,
+  double                      thetap,
+  const cs_field_bc_coeffs_t *bc_coeffs,
+  const cs_real_t             fimp[][stride][stride],
+  const cs_real_t             i_visc[][stride][stride],
+  const cs_real_t             b_visc[],
+  cs_real_t                   da[][stride][stride],
+  cs_real_t                   ea[][stride][stride]
+)
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  cs_mesh_adjacencies_update_cell_i_faces();
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
+
+  if (idiffp) {
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+      auto &_da = da[c_id];
+
+      if (fimp != nullptr) {
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          for (cs_lnum_t j = 0; j < stride; j++)
+            _da[i][j] = fimp[c_id][i][j];
+        }
+      }
+      else {
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          for (cs_lnum_t j = 0; j < stride; j++)
+            _da[i][j] = 0.;
+        }
+      }
+
+      /* Loop on interior faces */
+      const cs_lnum_t s_id_i = c2c_idx[c_id];
+      const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
+
+      for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+        const cs_lnum_t f_id = cell_i_faces[cidx];
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          for (cs_lnum_t j = 0; j < stride; j++) {
+            cs_real_t vfac = thetap * i_visc[f_id][i][j];
+            ea[cidx][i][j] = -vfac;
+            _da[i][j] += vfac;
+          }
+        }
+      }
+
+    });
+
+  }
+  else {
+
+    /* TODO check if we can remove also this part: there is no point
+       in using more costly anisotropic diffusion if
+       diffusion is turned off (idiffp = 0) */
+
+    if (fimp != nullptr) {
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        auto &_da = da[c_id];
+
+        for (cs_lnum_t i = 0; i < stride; i++) {
+          for (cs_lnum_t j = 0; j < stride; j++)
+            _da[i][j] = fimp[c_id][i][j];
+        }
+      });
+
+    }
+
+    cs_arrays_set_zero<cs_real_t, 1>(ctx, n_cells*stride*stride,
+                                     reinterpret_cast<cs_real_t *>(da));
+
+    cs_lnum_t nnz = cs_get_host_value(&(c2c_idx[n_cells]));
+
+    cs_arrays_set_zero<cs_real_t, 1>(ctx, nnz*stride*stride,
+                                     reinterpret_cast<cs_real_t *>(ea));
+
+  }
+
+  /* Contribution of boundary faces to the diagonal */
+
+  if (idiffp) {
+    using b_t = cs_real_t[stride][stride];
+    const b_t *cofbfp = (const b_t *)bc_coeffs->bf;
+    cs_dispatch_sum_type_t b_sum_type
+      = ctx.get_parallel_for_b_faces_sum_type(m);
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+
+      cs_lnum_t ii = b_face_cells[f_id];
+      cs_real_t bfac[stride*stride];
+
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        for (cs_lnum_t j = 0; j < stride; j++)
+          bfac[stride*i+j] = thetap * b_visc[f_id] * cofbfp[f_id][i][j];
+      }
+
+      cs_dispatch_sum<stride*stride>(reinterpret_cast<cs_real_t*>(da[ii]),
+                                     bfac,
+                                     b_sum_type);
+
+    });
+  }
+
+  ctx.wait();
+
+#if defined(HAVE_ACCEL)
+  cs_mem_advise_set_read_mostly(da);
+  cs_mem_advise_set_read_mostly(ea);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the advection/diffusion matrix for a vector field with a
+ * tensorial diffusivity.
+ *
+ * The advection is upwind, the diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (3x3 times number of cells)
+ * and an extra diagonal part (of dimension 2 times 3x3 the number of internal
+ * faces).
+ *
+ * \param[in]     m             pointer to mesh structure
+ * \param[in]     mq            pointer to mesh quantities structure
+ * \param[in]     ctx           Reference to dispatch context
+ * \param[in]     iconvp        indicator
+ *                               - 1 advection
+ *                               - 0 otherwise
+ * \param[in]     idiffp        indicator
+ *                               - 1 diffusion
+ *                               - 0 otherwise
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centered
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     bc_coeffs_v   boundary condition structure for the variable
+ * \param[in]     b_massflux    mass flux at border faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the matrix
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the matrix
+ * \param[out]    da            diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+static void
+_matrix_anisotropic_diffusion_boundary_strided
+(
+ const cs_mesh_t            *m,
+ const cs_mesh_quantities_t *mq,
+ cs_dispatch_context        &ctx,
+ int                         iconvp,
+ int                         idiffp,
+ double                      thetap,
+ const cs_field_bc_coeffs_t *bc_coeffs_v,
+ const cs_real_t             b_massflux[],
+ const cs_real_t             b_visc[],
+ const cs_real_t            *b_f_face_factor,
+ cs_real_t        (*restrict da)[stride][stride]
+)
+{
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
+
+  int is_p = 0;
+
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+  /* Discontinuous porous treatment */
+
+  /* Is it porous? */
+  if (cs_glob_porous_model == 3 && stride == 3)
+    is_p = 1;
+
+  /* Contribution of border faces to the diagonal */
+
+  if (stride == 3) {
+
+    const cs_real_33_t *coefbp = (const cs_real_33_t *)bc_coeffs_v->b;
+    const cs_real_33_t *cofbfp = (const cs_real_33_t *)bc_coeffs_v->bf;
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+      const cs_lnum_t _p = is_p*f_id;
+      const cs_nreal_t *n = b_face_u_normal[f_id];
+      const cs_real_t _b_massflux = b_massflux[f_id];
+      cs_lnum_t ii = b_face_cells[f_id];
+
+      // Signbit is positive if _b_massflux is negative
+      cs_real_t flu[2] = {
+        /* (m_ij)^+ */
+        signbit(_b_massflux) ? 0 : iconvp*_b_massflux,
+        /* (m_ij)^- */
+        signbit(_b_massflux) ? iconvp*_b_massflux : 0
+      };
+
+      cs_real_t n_b_n
+        = cs_math_3_33_3_dot_product(n, coefbp[f_id], n);
+      cs_real_t n_bf_n
+        = cs_math_3_33_3_dot_product(n, cofbfp[f_id], n);
+
+      cs_real_t bfac[stride*stride];
+
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        for (cs_lnum_t j = 0; j < stride; j++) {
+          cs_real_t d_ij = ((i == j) ? 1. : 0.);
+          /* D = theta (m_f)^+.1 + theta B (m_f)^- - m_f.1
+           * NB: stop here because the first two terms maybe scaled
+           *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+           *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+           */
+          bfac[stride*i+j] =
+            thetap * (
+                d_ij * flu[0]
+                + flu[1] * coefbp[f_id][i][j]
+                + idiffp * b_visc[f_id] * cofbfp[f_id][i][j]
+                + (flu[0] + flu[1] * n_b_n + idiffp * b_visc[f_id] * n_bf_n)
+                * (b_f_face_factor[_p] - 1.) * n[i] * n[j]
+                )
+            - iconvp * d_ij * b_massflux[f_id];
+        }
+      }
+
+      cs_dispatch_sum<stride*stride>(reinterpret_cast<cs_real_t*>(da[ii]),
+                                     bfac,
+                                     b_sum_type);
+
+    });
+  }
+  else if (stride == 6) {
+
+    const cs_real_66_t *coefbp = (const cs_real_66_t *)bc_coeffs_v->b;
+    const cs_real_66_t *cofbfp = (const cs_real_66_t *)bc_coeffs_v->bf;
+
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+
+      cs_lnum_t ii = b_face_cells[f_id];
+      const cs_real_t _b_massflux = b_massflux[f_id];
+      // Signbit is positive if _b_massflux is negative
+      cs_real_t flui = signbit(_b_massflux) ? _b_massflux : 0;
+
+      cs_real_t bfac[stride*stride];
+
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        for (cs_lnum_t j = 0; j < stride; j++) {
+          cs_real_t d_ij = ((i == j) ? 1. : 0.);
+          /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+           *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+           *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+           */
+
+          bfac[stride*i+j] = - d_ij * iconvp
+                  * (thetap * flui + (1. - thetap) * iconvp * b_massflux[f_id])
+                    + thetap * (  iconvp * flui * coefbp[f_id][i][j]
+                                + idiffp * b_visc[f_id] * cofbfp[f_id][i][j]);
+        }
+      }
+
+      cs_dispatch_sum<stride*stride>(reinterpret_cast<cs_real_t*>(da[ii]),
+                                     bfac,
+                                     b_sum_type);
+
+
+    });
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the convection/anisotropic-diffusion matrix for a strided field
+ * (non-symmetric matrix).
+ *
+ * The matrix is split into a diagonal block (number of cells)
+ * and an extra diagonal part.
+ *
+ * \tparam  stride  3 for vectors, 6 for tensors
+ *
+ * \param[in]     m             pointer to mesh structure
+ * \param[in]     mq            pointer to mesh quantities structure
+ * \param[in]     ctx           dispatch context
+ * \param[in]     iconvp        indicator (1: advection, 0: otherwise)
+ * \param[in]     idiffp        indicator (1: diffusion, 0: otherwise)
+ * \param[in]     thetap        weighting coefficient for theta-scheme
+ * \param[in]     bc_coeffs     boundary condition structure
+ * \param[in]     fimp          implicit terms, or null
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at border faces
+ * \param[in]     i_visc        viscosity tensor at interior faces
+ * \param[in]     b_visc        viscosity at border faces
+ * \param[out]    da            diagonal part of the matrix
+ * \param[out]    ea            extra-diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+static void
+_coeffs_msr_anisotropic_diffusion
+(
+  const cs_mesh_t            *m,
+  const cs_mesh_quantities_t *mq,
+  cs_dispatch_context        &ctx,
+  int                         iconvp,
+  int                         idiffp,
+  double                      thetap,
+  const cs_field_bc_coeffs_t *bc_coeffs,
+  const cs_real_t             fimp[][stride][stride],
+  const cs_real_t             i_massflux[],
+  const cs_real_t             b_massflux[],
+  const cs_real_t             i_visc[][stride][stride],
+  const cs_real_t             b_visc[],
+  cs_real_t                   da[][stride][stride],
+  cs_real_t                   ea[][stride][stride]
+)
+{
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  cs_mesh_adjacencies_update_cell_i_faces();
+  const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+  const short int *c2f_sgn = ma->cell_i_faces_sgn;
+  const cs_lnum_t *cell_i_faces = ma->cell_i_faces;
+
+  const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
+
+  cs_real_2_t *i_f_face_factor = nullptr;
+  cs_real_t *b_f_face_factor = nullptr;
+  int is_p = 0;
+  cs_real_2_t *_i_f_face_factor = nullptr;
+  cs_real_t *_b_f_face_factor = nullptr;
+
+  if (cs_glob_porous_model == 3 && stride == 3) {
+    i_f_face_factor = mq->i_f_face_factor;
+    b_f_face_factor = mq->b_f_face_factor;
+    is_p = 1;
+  }
+  else {
+    CS_MALLOC_HD(_i_f_face_factor, 1, cs_real_2_t, cs_alloc_mode);
+    CS_MALLOC_HD(_b_f_face_factor, 1, cs_real_t, cs_alloc_mode);
+    i_f_face_factor = _i_f_face_factor;
+    b_f_face_factor = _b_f_face_factor;
+    i_f_face_factor[0][0] = i_f_face_factor[0][1] = 1.0;
+    b_f_face_factor[0] = 1.0;
+  }
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+    auto &_da = da[c_id];
+
+    if (fimp != nullptr) {
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        for (cs_lnum_t j = 0; j < stride; j++)
+          _da[i][j] = fimp[c_id][i][j];
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        for (cs_lnum_t j = 0; j < stride; j++)
+          _da[i][j] = 0.;
+      }
+    }
+
+    /* Loop on interior faces */
+    const cs_lnum_t s_id_i = c2c_idx[c_id];
+    const cs_lnum_t e_id_i = c2c_idx[c_id + 1];
+
+    for (cs_lnum_t cidx = s_id_i; cidx < e_id_i; cidx++) {
+      const cs_lnum_t f_id = cell_i_faces[cidx];
+      const cs_lnum_t _p = is_p * f_id;
+      const cs_nreal_t *n = i_face_u_normal[f_id];
+      cs_real_t _i_massflux = i_massflux[f_id];
+
+      cs_real_t flu, face_factor_m_1, d_ij_mult;
+
+      // Signbit is positive if _i_massflux is negative
+      if (c2f_sgn[cidx] > 0) {
+        flu = (signbit(_i_massflux)) ? _i_massflux : 0.;
+        face_factor_m_1 = i_f_face_factor[_p][0] - 1.;
+        d_ij_mult = -1;
+      }
+      else {
+        flu = (signbit(_i_massflux)) ? 0 : -_i_massflux;
+        face_factor_m_1 = i_f_face_factor[_p][1] - 1.;
+        d_ij_mult = 1;
+      }
+      flu *= iconvp;
+
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        for (cs_lnum_t j = 0; j < stride; j++) {
+          cs_real_t d_ij = (i == j) ? d_ij_mult : 0.;
+
+          cs_real_t e_ij = thetap * (  d_ij * flu
+                                     + face_factor_m_1 * n[i] * n[j] * flu
+                                     - idiffp * i_visc[f_id][i][j]);
+
+          ea[cidx][i][j] = e_ij;
+
+          cs_real_t diag = d_ij * iconvp * (1. - thetap) * _i_massflux;
+          _da[i][j] += diag - e_ij;
+        }
+      }
+    }
+
+  });
+
+  /* Contribution of border faces to the diagonal */
+
+  _matrix_anisotropic_diffusion_boundary_strided(m, mq,
+                                                 ctx,
+                                                 iconvp, idiffp,
+                                                 thetap,
+                                                 bc_coeffs,
+                                                 b_massflux,
+                                                 b_visc,
+                                                 b_f_face_factor,
+                                                 da);
+
+  ctx.wait();
+
+  CS_FREE(_i_f_face_factor);
+  CS_FREE(_b_f_face_factor);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Build the diffusion matrix for a scalar field.
  * (symmetric matrix).
  *
@@ -1726,9 +2186,7 @@ _matrix_anisotropic_diffusion_strided
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
-  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
 
   cs_real_2_t *i_f_face_factor = nullptr;
   cs_real_t *b_f_face_factor = nullptr;
@@ -1737,7 +2195,6 @@ _matrix_anisotropic_diffusion_strided
   int is_p = 0;
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
-  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
   /* Discontinuous porous treatment */
 
@@ -1824,90 +2281,15 @@ _matrix_anisotropic_diffusion_strided
 
   /* Contribution of border faces to the diagonal */
 
-  if (stride == 3) {
-
-    const cs_real_33_t *coefbp = (const cs_real_33_t *)bc_coeffs_v->b;
-    const cs_real_33_t *cofbfp = (const cs_real_33_t *)bc_coeffs_v->bf;
-
-    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-      const cs_lnum_t _p = is_p*f_id;
-      const cs_nreal_t *n = b_face_u_normal[f_id];
-      cs_lnum_t ii = b_face_cells[f_id];
-
-      cs_real_t flu[2] = {
-         /* (m_ij)^+ */
-         iconvp * 0.5 * (b_massflux[f_id] + cs::abs(b_massflux[f_id])),
-         /* (m_ij)^- */
-         iconvp * 0.5 * (b_massflux[f_id] - cs::abs(b_massflux[f_id]))
-      };
-
-      cs_real_t n_b_n
-        = cs_math_3_33_3_dot_product(n, coefbp[f_id], n);
-      cs_real_t n_bf_n
-        = cs_math_3_33_3_dot_product(n, cofbfp[f_id], n);
-
-      cs_real_t bfac[stride*stride];
-
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        for (cs_lnum_t j = 0; j < stride; j++) {
-          cs_real_t d_ij = ((i == j) ? 1. : 0.);
-          /* D = theta (m_f)^+.1 + theta B (m_f)^- - m_f.1
-           * NB: stop here because the first two terms maybe scaled
-           *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
-           *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
-           */
-          bfac[stride*i+j] =
-            thetap * (
-                d_ij * flu[0]
-                + flu[1] * coefbp[f_id][i][j]
-                + idiffp * b_visc[f_id] * cofbfp[f_id][i][j]
-                + (flu[0] + flu[1] * n_b_n + idiffp * b_visc[f_id] * n_bf_n)
-                * (b_f_face_factor[_p] - 1.) * n[i] * n[j]
-                )
-            - iconvp * d_ij * b_massflux[f_id];
-        }
-      }
-
-      cs_dispatch_sum<stride*stride>(reinterpret_cast<cs_real_t*>(da[ii]),
-                                     bfac,
-                                     b_sum_type);
-
-    });
-  }
-  else if (stride == 6) {
-
-    const cs_real_66_t *coefbp = (const cs_real_66_t *)bc_coeffs_v->b;
-    const cs_real_66_t *cofbfp = (const cs_real_66_t *)bc_coeffs_v->bf;
-
-    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-
-      cs_lnum_t ii = b_face_cells[f_id];
-      cs_real_t flui = 0.5*(b_massflux[f_id] - cs::abs(b_massflux[f_id]));
-      cs_real_t bfac[stride*stride];
-
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        for (cs_lnum_t j = 0; j < stride; j++) {
-          cs_real_t d_ij = ((i == j) ? 1. : 0.);
-          /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
-           *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
-           *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
-           */
-
-          bfac[stride*i+j] = - d_ij * iconvp
-                  * (thetap * flui + (1. - thetap) * iconvp * b_massflux[f_id])
-                    + thetap * (  iconvp * flui * coefbp[f_id][i][j]
-                                + idiffp * b_visc[f_id] * cofbfp[f_id][i][j]);
-        }
-      }
-
-      cs_dispatch_sum<stride*stride>(reinterpret_cast<cs_real_t*>(da[ii]),
-                                     bfac,
-                                     b_sum_type);
-
-
-    });
-
-  }
+  _matrix_anisotropic_diffusion_boundary_strided(m, mq,
+                                                 ctx,
+                                                 iconvp, idiffp,
+                                                 thetap,
+                                                 bc_coeffs_v,
+                                                 b_massflux,
+                                                 b_visc,
+                                                 b_f_face_factor,
+                                                 da);
 
   ctx.wait();
 
@@ -2332,15 +2714,10 @@ cs_matrix_compute_coeffs
 
   using b_t = cs_real_t[stride][stride];
 
-  /* Case with matrix assembler, non-msr format, or when xa is needed;
-     we use the legacy assembly here, but should move to a row-based
-     (i.e. gather) algorithm so as to be able to call assembler in a
-     multithreaded manner (and later even a device-accelerated manner). */
+  /* Case with non-msr format or when xa is needed;
+     we use the legacy assembly here. */
 
-  if (   (ma != nullptr && (   tensorial_diffusion != 1
-                            || eb_size > 1
-                            || (cs_glob_porous_model == 3 && stride == 3)))
-      || (ma == nullptr && (m_type != CS_MATRIX_MSR || need_xa))) {
+  if (ma == nullptr && (m_type != CS_MATRIX_MSR || need_xa)) {
 
     const cs_lnum_t n_edges = m->n_i_faces;
     const cs_lnum_2_t *edges = m->i_face_cells;
@@ -2383,107 +2760,23 @@ cs_matrix_compute_coeffs
       });
     }
 
-    if (ma != nullptr) {
+    /* As arrays are transferred, we assume the array type is
+       neither "native", nor "dist", as the associated formats
+       do not currently have a "transfer coefficients" method.*/
 
-      int flags = CS_MATRIX_VALUES_ARE_LOCAL;
+    cs_assert(   m_type != CS_MATRIX_NATIVE
+              && m_type != CS_MATRIX_DIST);
 
-      cs_lnum_t s0 = 2;
-      cs_lnum_t s1 = 1;
+    cs_matrix_transfer_coefficients(a,
+                                    symmetric,
+                                    stride,
+                                    eb_size,
+                                    n_edges,
+                                    edges,
+                                    &(da_p),
+                                    &xa);
 
-      if (isym == 1) {
-        s0 = 1;
-        s1 = 0;
-      }
-
-      cs_matrix_assembler_values_t *mav
-        = cs_matrix_assembler_values_init(a, stride, eb_size);
-      assert(n_cells == cs_matrix_get_n_rows(a));
-
-      const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a, m->halo);
-
-      const cs_lnum_t block_size = 800;
-      cs_gnum_t g_row_id[800];
-      cs_gnum_t g_col_id[800];
-      cs_real_t val[1600];
-
-      /* Diagonal values */
-
-      cs_matrix_assembler_values_add_g(mav,
-                                       flags,
-                                       n_cells,
-                                       const_cast<cs_gnum_t *>(r_g_id),
-                                       const_cast<cs_gnum_t *>(r_g_id),
-                                       const_cast<cs_real_t *>(da_p));
-
-      /* Extradiagonal values based on internal faces */
-
-      cs_lnum_t jj = 0;
-
-      for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
-        cs_lnum_t i0 = edges[ii][0];
-        cs_lnum_t i1 = edges[ii][1];
-        if (i0 < n_cells) {
-          g_row_id[jj] = r_g_id[i0];
-          g_col_id[jj] = r_g_id[i1];
-          val[jj] = xa[ii*s0];
-          jj++;
-        }
-        if (i1 < n_cells) {
-          g_row_id[jj] = r_g_id[i1];
-          g_col_id[jj] = r_g_id[i0];
-          val[jj] = xa[ii*s0+s1];
-          jj++;
-        }
-        if (jj >= block_size - 1) {
-          cs_matrix_assembler_values_add_g(mav, flags, jj,
-                                           g_row_id, g_col_id, val);
-          jj = 0;
-        }
-      }
-      cs_matrix_assembler_values_add_g(mav, flags, jj,
-                                       g_row_id, g_col_id, val);
-      jj = 0;
-
-      /* Set extended contribution for domain coupling */
-
-      if (f != nullptr) {
-        int coupling_id = f->get_key_int("coupling_entity");
-
-        if (coupling_id > -1)
-          cs_internal_coupling_matrix_add_values(f,
-                                                 stride, eb_size,
-                                                 r_g_id, mav);
-      }
-
-      /* Finalize assembly */
-
-      cs_matrix_assembler_values_finalize(&mav);
-
-      if (isym == 1)
-        cs_matrix_set_symmetric(a, true);
-
-    }
-
-    else {
-
-      /* As arrays are transferred, we assume the array type is
-         neither "native", nor "dist", as the associated formats
-         do not currently have a "transfer coefficients" method.*/
-
-      cs_assert(   m_type != CS_MATRIX_NATIVE
-                && m_type != CS_MATRIX_DIST);
-
-      cs_matrix_transfer_coefficients(a,
-                                      symmetric,
-                                      stride,
-                                      eb_size,
-                                      n_edges,
-                                      edges,
-                                      &(da_p),
-                                      &xa);
-
-      da = reinterpret_cast<b_t *>(da_p);  // should be nullptr
-    }
+    da = reinterpret_cast<b_t *>(da_p);  // should be nullptr
 
     /* Free remaining local (non-transferred) arrays */
 
@@ -2528,10 +2821,10 @@ cs_matrix_compute_coeffs
 
   /* scalar diffusion or right anisotropic diffusion */
   if (tensorial_diffusion == 1) {
-    assert(eb_size == 1);
 
     /* Symmetric matrix */
     if (symmetric) {
+      assert(eb_size == 1);
       _sym_coeffs_msr<stride>(m,
                               ctx,
                               idiffp,
@@ -2582,7 +2875,42 @@ cs_matrix_compute_coeffs
 
   }
   else { // tensorial_diffusion > 1
-    cs_assert(0);  // Not handled directly yet; handled above
+    assert(eb_size == stride);
+    b_t *restrict ea = reinterpret_cast<b_t *>(ea_p);
+
+    /* Symmetric matrix */
+    if (symmetric) {
+      _sym_coeffs_msr_anisotropic_diffusion<stride>
+        (m,
+         ctx,
+         idiffp,
+         thetap,
+         bc_coeffs,
+         fimp,
+         reinterpret_cast<const b_t *>(i_visc),
+         b_visc,
+         da,
+         ea);
+    }
+
+    /* Non-symmetric matrix */
+    else {
+      _coeffs_msr_anisotropic_diffusion<stride>
+        (m,
+         mq,
+         ctx,
+         iconvp,
+         idiffp,
+         thetap,
+         bc_coeffs,
+         fimp,
+         i_massflux,
+         b_massflux,
+         reinterpret_cast<const b_t *>(i_visc),
+         b_visc,
+         da,
+         ea);
+    }
   }
 
   /* For steady computations, the diagonal is relaxed */
