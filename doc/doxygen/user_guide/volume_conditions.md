@@ -116,7 +116,50 @@ Initialization
 Porosity
 ========
 
-Porous zones can be defined through the GUI in the **Volume zones** page.
+Porous zones can be defined through the GUI in the **Volume zones** page. Porous
+zones are defined at the beginning of the computation, before the time loop.
+
+In code_saturne, porosity is used to represent the hydraulic effect of a porous
+medium or a distributed obstacle without explicitly meshing its detailed
+geometry (tube bundles, perforated plates, filters, packed beds, vegetation, and
+similar structures).
+
+The volumetric porosity \f$\phi\f$ is defined as the fraction of the cell
+volume available to the fluid:
+
+\f[
+\phi = \frac{V_f}{V}
+\f]
+
+where:
+- \f$V\f$ is the total cell volume (\f$m^3\f$);
+- \f$V_f\f$ is the fluid volume (\f$m^3\f$).
+
+Typical values are:
+- \f$\phi = 1\f$: free-fluid region (no porosity);
+- \f$\phi = 0\f$: fully blocked cell;
+- \f$0 < \phi < 1\f$: porous region.
+
+The governing equations are modified to account for the reduction of the fluid
+volume available within each computational cell. In addition, the effective flow
+area at cell faces may be reduced according to the local porosity, thereby
+affecting mass, momentum, and scalar fluxes.
+
+Porosity can therefore be used to represent complex internal structures on
+meshes that are too coarse to explicitly resolve the solid obstacles while
+preserving their overall hydraulic effect on the flow.
+
+The porosity does not affect the relation between the pressure and the velocity.
+However, the mass flux computed by code_saturne is:
+
+\f[
+\dot{m} = \rho \phi \vect{u}\cdot\vect{S}
+\f]
+
+where:
+- \f$\rho\f$ is the density (\f$kg/m^3\f$);
+- \f$\vect{u}\f$ is the fluid velocity (\f$m/s\f$);
+- \f$\vect{S}\f$ the normal surface vector (\f$m^2\f$).
 
 Alternatively, the porous model can be activated using the
 \ref cs_porous_model_set_model function in \ref cs_user_parameters.
@@ -124,9 +167,6 @@ Advanced zone porosity values can be set in the
 \ref cs_user_porosity function.
 
 See \ref cs_porosity for examples.
-
-Porous zones are defined at the beginning of the computation, before the time
-loop.
 
 Head losses
 ===========
@@ -136,13 +176,41 @@ In the GUI, the **Volume zones** allows to define areas where pressure drops are
 applied, see an example in the [head losses region figure](@ref fig_gui_head_loss_regions).
 The item **Head losses** allows to specify the head loss coefficients
 (see [head loss coefficients figure](@ref fig_gui_head_loss_coeffs).
-The tensor representing the pressure drops is supposed to be symmetric and positive.
 
 \anchor fig_gui_head_loss_regions
 \image html gui_head_loss_regions.png "Creation of head losses region"
 
 \anchor fig_gui_head_loss_coeffs
 \image html gui_head_loss_coeffs.png "Head loss coefficients"
+
+In code_saturne, the head-loss term of the momentum equation is expressed as:
+\f[
+\Delta P = \rho \tens{K} \cdot \vect{u}
+\f]
+
+where:
+- \f$\rho\f$ is the density (\f$kg/m^3\f$);
+- \f$\vect{u}\f$ is the fluid velocity (\f$m/s\f$);
+- \f$\tens{K}\f$ is a symmetric definite positive tensor which has the dimension
+of a velocity. 
+
+The tensor is defined as:
+
+\f[
+  \tens{K}
+  =
+  \frac{|\vect{u}|}{2}
+  \left(
+    \begin{array}{ccc}
+      \xi_{xx} & 0        & 0 \\
+      0        & \xi_{yy} & 0 \\
+      0        & 0        & \xi_{zz}
+    \end{array}
+  \right)
+\f]
+
+where the pressure loss coefficients \f$\xi_{jj}\f$ are
+dimensionless.
 
 In the user sources, two files can be of use: \ref cs_user_zones.cpp
 (called at the computation start) to define volume zones and \ref cs_user_head_losses.cpp
