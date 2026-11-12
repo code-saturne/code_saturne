@@ -248,8 +248,8 @@ studies).
 ### Specify the cell size from physical considerations
 
 - Evaluate the size of the cells at the wall from the boundary layer thickness
-and from the constraints imposed by the selected turbulence model (see the
-dedicated section).
+and from the constraints imposed by the selected turbulence model (see
+\ref bpg_cell_size_at_the_wall).
 - Evaluate the size of the cells in the core of the domain from the experience
 acquired through previous studies on similar geometries and from the size of the
 structures of the flow that shall be resolved.
