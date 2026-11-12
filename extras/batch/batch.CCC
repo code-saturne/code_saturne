@@ -1,5 +1,0 @@
-#MSUB -n 2
-#MSUB -T 300
-#MSUB -o job_%J.out.log
-#MSUB -e job_%J.err.log
-#MSUB -r nameandcase

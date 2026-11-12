@@ -1,59 +1,56 @@
 General Information
 ===================
 
-This directory contains the [code_saturne](https://code-saturne.org) CFD tool,
-EDF's general purpose Computational Fluid Dynamics (CFD) software.
+The PLE (Parallel Location and Exchange) library is designed to simplify
+coupling of distributed parallel computational codes. It is maintained a
+a part of [code_caturne](https://code-saturne.org) CFD tool,
+EDF's general purpose Computational Fluid Dynamics (CFD) software,
+but it may also be used with other tools, and is distributed under
+a more permissive licence (LGPL instead of GPL).
 
-The basic capabilities of code_saturne enable the handling of either
-incompressible or expandable flows with or without heat transfer and
-turbulence. Dedicated modules are available for specific physics such as
-radiative heat transfer, combustion (gas, coal, heavy fuel oil, ...),
-magneto-hydrodynamics, compressible flows, two-phase flows
-(Euler-Lagrange approach with two-way coupling), or atmospheric flows.
+PLE provides support for 2 categories of tasks: synchronizing
+parallel codes at predifined points, and enabling parallel mapping
+of points to meshes, and transfer of variables using this mapping.
 
-Presentation
-============
-
-code_saturne runs on all Linux distributions and UNIX platforms tested so far.
-It supports parallel computing with MPI on distributed memory machines (Intel,
-AMD, ARM, ...) and with OpenMP on shared memory nodes. Parts of the computations
-can also be accelerated on GPUs. Developed at EDF R&D since 1997, it is based on
-co-located Finite Volume (FV) and, more recently, on Compatible Discrete
-Operator (CDO) spatial discretization schemes. These approaches support meshes
-with any type of cell (tetrahedral, hexahedral, prismatic, pyramidal,
-polyhedral...) and any mesh structure (unstructured, block structured, hybrid,
-conforming, or with hanging nodes, ...).
-
-Meshes may be imported using the CGNS, MED, GMSH, I-Deas, GAMBIT, or Simail
-formats, and Post-processing output is available in EnSight, CGNS
-and MED formats. In-situ postprocessing is available using the
-[ParaView Catalyst](https://kitware.github.io/paraview-catalyst) and
-[Melissa](https://melissa-sa.github.io) libraries.
-
-code_saturne can be coupled to other tools using its built-in PLE
-(Parallel Location and Exchange) library or the MEDCoupling
-from the [SALOME platform](https://www.salome-platform.org/).
-The atmospheric model can include chemistry modeling based on the
-[SSH-aerosol](https://sshaerosol.wordpress.com/) library.
-Built-in support for the [FMI standard](https://fmi-standard.org/) allows easy
-construction of associated FMUs.
+Its target use is coupling of parallel tools based using
+[MPI](https://www.mpi-forum.org/), though it could be adapted to other
+runtimes.
 
 Copying
-=======
+-------
 
-code_saturne is distributed under the GNU General Public Licence, v2, or
-(at your option) any later version.
-
+The PLE library is distrubuted under the GNU Lesser General Public Licence.
 See the COPYING file for details.
 
 Installation
-============
+------------
 
-Installation from source files can be done either through a semi-automatic
-`install_saturne.py` script, directly by using GNU-Autotools-based scripts,
-or by a combination thereof.
+The installation system is based on the GNU autotools (without libtool)
 
-Install instructions (from source) are provided in the
-accompanying [INSTALL.md](INSTALL.md) file.
+If the code was obtained through a Git repository, a first step is required:
+```
+cd libple
+./sbin/bootstrap
+cd ..
+```
 
-code_saturne support: saturne-support@edf.fr
+To create a standalone installation of PLE, it is recommended
+to create a specific build directory, and run PLE's configure script
+from there:
+
+```
+mkdir ple_build
+cd ple_build
+<path_to_ple_sources>/configure
+make
+make install
+```
+
+The "configure" script takes several options, so running:
+`<path_to_ple_sources>/configure --help`
+first is recommended to list the available options.
+
+To port PLE to a system on which it was not previously supported,
+most of the adaptation should be possible by adapting the
+`config/ple_auto_flags.sh` file, which does not require running
+`./sbin/bootstrap` again.

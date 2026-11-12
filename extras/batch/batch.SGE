@@ -1,4 +1,0 @@
-#$ -pe mpi* 4
-#$ -l h_rt=1:00:00
-#$ -j y
-#$ -N nameandcase

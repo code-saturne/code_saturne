@@ -1,151 +1,137 @@
 /*============================================================================
- * Main code_saturne documentation page
+ * Main PLE documentation page
  *============================================================================*/
 
 /*
-  This file is part of code_saturne, a general-purpose CFD tool.
+  This file is part of the PLE (Parallel Location and Exchange) library.
 
-  Copyright (C) 1998-2026 EDF S.A.
+  Copyright (C) 2010-2026 EDF S.A.
 
-  This program is free software; you can redistribute it and/or modify it under
-  the terms of the GNU General Public License as published by the Free Software
-  Foundation; either version 2 of the License, or (at your option) any later
-  version.
+  The PLE library is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by the
+  Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
 
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-  details.
+  The PLE library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
-  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+  You should have received a copy of the GNU Lesser General Public License
+  along with this library; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 /*-----------------------------------------------------------------------------*/
 
+#include <ple_locator.h>
+
 /*!
-  \mainpage Introduction
+  \mainpage PLE (Parallel Location and Exchange) documentation
 
-  code_saturne is a general purpose Computational Fluid Dynamics (CFD)
-  software developed mostly by EDF.
+  \anchor mainpage_ple
 
-  The basic capabilities of code_saturne enable the handling of either
-  incompressible or expandable flows with or without heat transfer and
-  turbulence. Dedicated modules are available for specific physics such as
-  radiative heat transfer, combustion (gas, coal, ...),
-  magneto-hydrodynamics, compressible flows, two-phase flows
-  (Euler-Lagrange approach with two-way coupling), or atmospheric flows.
+  \section intro Introduction
 
-  code_saturne relies on a finite volume discretisation and allows the use of
-  various mesh types which may be hybrid (containing several kinds of
-  elements) and may have structural non-conformities (hanging nodes).
+  PLE is a libary designed to simplify coupling of distributed parallel
+  computational codes. It is maintained as a part of code_saturne,
+  EDF's general purpose Computational Fluid Dynamics (CFD) software,
+  but it may also be used with other tools, and is distributed under
+  a more permissive licence (LGPL instead of GPL).
 
-  A basic overview of the underlying theory is given in \cite Archambeau:2004.
-  More detailed information is available in the theoretical documentation.
+  PLE provides support for 2 categories of tasks: synchronizing
+  parallel codes at predifined points, and enabling parallel mapping
+  of points to meshes, and transfer of variables using this mapping.
 
-  \section mainpage_licence Licence
+  \subsection ple_coupling PLE Coupling API
 
-  code_saturne is free software; you can redistribute it and/or modify it under
-  the terms of the GNU General Public License as published by the
-  Free Software Foundation; either version 2 of the License, or (at your option)
-  any later version. code_saturne is distributed in the hope that it will be
-  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
+  The ple_coupling_...() functions allow identifying applications and
+  defining MPI communicators necessary to the ple_locator_...()
+  functions, as well as providing each of a set of coupled codes
+  with info on the other code's time steps, convergence status, and
+  other synchronization data at predifined points (usually once per
+  time step).
 
-  \section mainpage_install Installation
+  \subsection ple_locator PLE Locator subset
 
-  code_saturne may be configured and installed using the
-  \c configure shell script and \c make. Please refer to the
-  \ref autotoc_md0 "installation guide".
+  The ple_locator_...() functions allow mapping points to a mesh
+  in parallel, given serial functions providing this functionnality
+  for the associated data structures, then exchanging variables using
+  this mapping.
 
-  \section mainpage_sublibs Sub-libraries
+  \subsection example Example
 
-  code_saturne also relies on the PLE (Parallel Location and Exchange) library
-  (developed by the same team, under the LGPL license) for the management of
-  code coupling; this library can also be used independently.
+  For example, consider the case described in the following figure. Fluid flows
+  along a channel (from left to right), and heat is exchanged at the domain
+  boundaries on the lower side of the channel. In addition, in this example,
+  we add a separate inlet channel, in which we will use a periodicity boundary
+  condition to simulate an infinite upstream channel, and based the inlet flow
+  conditions on those along a section inside the inlet domain.
 
-  See \ref mainpage_ple "PLE" (Parallel Location and Exchange).
+  \image html ple_coupling_example_domains.svg "Example coupling case"
 
-  \section mainpage_user_sources User sources, functions, and subroutines
+  For clarity, we will limit ourselves to this simple case, which allows
+  illustrating the main concepts without adding unneeded complexity.
 
-  Many user examples are available in the \ref cs_user_examples "user examples tab":
-    - \ref cs_user_boundary_conditions_examples "User boundary conditions definitions",
-    - \ref cs_user_extra_operations_examples "User extra operations",
-    - \ref cs_user_initialization "Physical fields user initialization",
-    - [CDO schemes](@ref cs_ug_cdo_hho_base)
-    - and so on ...
+  \subsubsection ple_ex_coupling Communicators and ple_coupling API.
 
-  \section additional_doc Additional documentation
+  Let us in addition assume that we will assign the first /a np_inlet MPI
+  processes to the inlet domain, the second /a np_fluid processes to the fluid
+  domain, and the last /a np_solid processes to the solid domain. All
+  computational codes are started simultaneously by the MPI runtime environment.
 
-  In addition to the HTML documentation, code_saturne is provided with a
-  pdf document:
-    - \anchor theory a <a href="../../theory.pdf"><b>theory guide</b></a>,
+  - Each simulation tool/domain will have access to the top-level
+    (usually \c MPI_COMM_WORLD) communicator.
+  - For simulation tools parallelized using MPI, a communicator local to that
+    domain is needed for all parallel operations not directly involving the
+    other domains. This “main” communicator used by each tool is a subset of the
+    top communicator. We refer to it here as \c comm_domain, though each tool may
+    of course use its own variable name to refer to this.
+  - To communicate between themselves, coupled domains will build additional
+    communicators involving only them.
 
-  \section main_components Base architecture
+  So finally, each domain can use the following communicators
 
-  code_saturne is composed of several elements, managed through
-  a global \c code_saturne script. The three main elements
-  are shown on the following figure:
+  1. The inlet domain can access the common top-level and local \c comm_domain
+     communicator (including ranks <em>[0, np_inlet[</em> of the top
+     communicator).
+     It will also use a communicator for exchanges with the fluid domain,
+     including ranks <em>[0, np_inlet + np_fluid[</em> of the top communicator.
+  2. The fluid domain can access the common top-level and local \c comm_domain
+     communicator (including ranks <em>[np_inlet , np_inlet + np_fluid[</em> of
+     the top communicator).
+     It will also use a communicator for exchanges with the inlet domain,
+     including ranks <em>[0, np_inlet + np_fluid[</em> of the top communicator,
+     and a different communicator for exchanges with the solid domain, including ranks
+     <em>[np_inlet + np_fluid, np_inlet + np_fluid + np_solid[</em>.
+  3. The solid domain can access the common top-level and local \c comm_domain
+     communicator (including ranks
+     <em>[np_inlet + np_fluid, np_inlet + np_fluid + np_solid[</em> of the
+     top communicator).
+     It will also use a communicator for exchanges with the fluid domain,
+     including ranks <em>[np_inlet + np_fluid, np_inlet + np_fluid + np_solid[</em>
+     of the main communicator.
 
-  - The \b GUI allows defining the main computation settings\n
-    (which can be completed with more detailed settings in user-defined code).
-  - The \b Solver module is the numerical solver and main program.
-  - the \b Preprocessor module is in charge of mesh import.
+  These steps are shown on the following figure, with collective operations highlighted
+  using frames.
 
-   \image html cs_components.svg "code_saturne elements"
+  \image html ple_coupling_example_init.svg "Example initialization and MPI communicators"
 
-  \section main_script_commands Top-level commands
+  Note also that when ending a computation, additional communicators must be freed
+  and the coupling structures finalized and destroyed using the appropriate
+  functions.
 
-  The \c code_saturne script allows multiple commands, usable
-  through a common syntax:
-  \code{.sh}
-  code_saturne <command> [options]
-  \endcode
+  \subsubsection ple_ex_locator Mesh location, variable exchange, and ple_locator API.
 
-  To obtain the list of commands, in a terminal, type:
-  \code{.sh}
-  code_saturne --help
-  \endcode
+  We will then locate discretization points from computational domains relative
+  to their coupled domains, using a \ref ple_locator_t object, and the
+  \ref ple_locator_set_mesh and \ref ple_locator_exchange_point_var functions.
+  These steps are shown on the next figure, with collective operations highlighted
+  using frames. Note that use of a global \ref ple_coupling_mpi_set_t
+  synchronization object is not required, but when we have more than two domains,
+  such as here, it can be very practical so as to avoid deadlocks or crashes due
+  to computations stopping at different time steps.
 
-  To obtain the list of options for a given command, in a terminal, type:
-  \code{.sh}
-  code_saturne <command> --help
-  \endcode
-
-  The main commands are:
-
-  - \b info \n
-    Get information on code_saturne. Open the documentation (theory, ...).\n\n
-
-  - \b config \n
-    Get information on the configuration and installation of code_saturne.\n\n
-
-  - \b create \n
-    Create a new code_saturne study or case structure.\n\n
-
-  - \b gui \n
-    Launch the main graphical user interface.\n\n
-
-  - \b run \n
-    Run a single case.\n\n
-
-  - \b submit \n
-    Submit a single case to a batch system.\n\n
-
-  - \b trackcvg \n
-    Launch the code_saturne convergence tracking and plotting graphical interface.\n\n
-
-  - \b studymanager or \b smgr \n
-    Launch the code_saturne study manager to run multiple related cases and
-    generate reports.\n\n
-
-  - \b studymanagergui or \b smgrgui \n
-    Launch the code_saturne study manager setup graphical interface;
-    must be run from the top-level study directory.\n\n
-
-  - \b compile \n
-    Build a specific solver executable when some user-defined source are present;
+  \image html ple_coupling_example_exchange.svg "Example exchanges and MPI communicators"
 
 */
