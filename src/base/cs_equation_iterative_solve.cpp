@@ -496,16 +496,8 @@ _equation_iterative_solve_strided(int                   idtvar,
   ctx_c.wait();
   CS_PROFILE_MARK_LINE();
 
-  /* In the following, cs_balance is called with inc=1,
-   * except for Weight Matrix (nswrsm=-1) */
+  /* In the following, cs_balance is called with inc=1 */
   inc = 1;
-
-  //FIXME correct this trick by declaring a specific variable with homogeneous
-  // Neumann
-  if (eqp->nswrsm == -1) {
-    eqp->nswrsm = 1;
-    inc = 0;
-  }
   CS_PROFILE_MARK_LINE();
 
   /*  Incrementation and rebuild of right hand side */
@@ -1642,15 +1634,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     pvar[cell_id] = pvark[cell_id];
   });
 
-  /* In the following, cs_balance_scalar is called with inc=1,
-     except for Weight Matrix (nswrsp=-1) */
+  /* In the following, cs_balance_scalar is called with inc=1 */
   inc = 1;
-
-  //FIXME rm do it in a different manner
-  if (eqp->nswrsm == -1) {
-    eqp->nswrsm = 1;
-    inc = 0;
-  }
 
   /* Incrementation and rebuild of right hand side */
 

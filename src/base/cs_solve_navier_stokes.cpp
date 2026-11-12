@@ -3268,21 +3268,21 @@ _velocity_prediction(const cs_mesh_t             *m,
     /* Velocity-pression coupling: compute the vector T, stored in dttens,
      * cs_equation_iterative_solve_vector is called, only one sweep is done,
      * and dttens is initialized by 0, so that the advection/diffusion added
-     * by cs_balance_vector is 0.
-     *  nswrsp = -1 indicated that only one sweep is required and inc=0
-     *  for boundary contitions on the weight matrix. */
+     * by cs_balance_vector is 0. */
 
     if (vp_param->ipucou == 1) {
 
-      cs_real_3_t *vect;
-      CS_MALLOC_HD(vect, n_cells_ext, cs_real_3_t, cs_alloc_mode_device);
+      cs_field_t *f_pseu = cs_field_by_name("algo:vel_p_coupling_pseu_time");
+      cs_real_3_t *vect = (cs_real_3_t *)f_pseu->val;
 
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        const int ind = has_disable_flag * c_id;
-        const int c_act = (1 - (has_disable_flag * c_disable_flag[ind]));
-        for (cs_lnum_t ii = 0; ii < 3; ii++) {
-          smbr[c_id][ii] = c_act * cell_f_vol[c_id];
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
           vect[c_id][ii] = 0;
+        if (c_id < n_cells) {
+          const int ind = has_disable_flag * c_id;
+          const int c_act = (1 - (has_disable_flag * c_disable_flag[ind]));
+          for (cs_lnum_t ii = 0; ii < 3; ii++)
+            smbr[c_id][ii] = c_act * cell_f_vol[c_id];
         }
       });
 
@@ -3291,22 +3291,20 @@ _velocity_prediction(const cs_mesh_t             *m,
       /* We do not take into account transpose of grad */
       int ivisep = 0;
 
-      //TODO this should be simplified by declaring an additional vector
-      //variable for ipucou
-      eqp_loc.nswrsm = -1;
+      eqp_loc.nswrsm = 1;
 
       ctx.wait();
 
       cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                          iterns,
-                                         CS_F_(vel)->id,
+                                         f_pseu->id,
                                          nullptr,
                                          ivisep,
                                          iescap,
                                          &eqp_loc,
                                          vect,
                                          vect,
-                                         bc_coeffs_v,
+                                         f_pseu->bc_coeffs,
                                          imasfl,
                                          bmasfl,
                                          viscfi,
@@ -3333,8 +3331,6 @@ _velocity_prediction(const cs_mesh_t             *m,
       });
 
       ctx.wait();
-
-      CS_FREE(vect);
     }
 
     /* The estimator on the predicted velocity is summed over the components */

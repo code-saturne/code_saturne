@@ -1792,6 +1792,17 @@ _additional_fields_stage_1(void)
         eqp->idften              = CS_ANISOTROPIC_LEFT_DIFFUSION;
       }
     }
+
+    /* Velocity-pressure reinforced coupling pseudo time step */
+
+    if (vp_param->ipucou == 1) {
+      cs_field_t *f_pcoup =
+        _add_variable_field("algo:vel_p_coupling_pseu_time",
+                            "vel_p_coupling_pseu_time",
+                            3);
+      int keycpl = cs_field_key_id("coupled");
+      f_pcoup->set_key_int(keycpl, 1);
+    }
   }
 
   /* Map to field pointers
