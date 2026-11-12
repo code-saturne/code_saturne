@@ -50,13 +50,10 @@ doxygen-pre:
 	$(DOXYGENCMD) $(top_srcdir)/doc/doxygen/Doxyfile-pre
 
 doxygen-src:
-	if test "$(ple_type)" = "internal" && test -f $(top_builddir)/libple/doc/doxygen/html/ple.tag ; then \
+	if test "$(ple_type)" = "internal" ; then \
 	  cp $(top_builddir)/libple/doc/doxygen/html/ple.tag . ;\
-	elif test -f $(ple_docdir)/doxygen/ple.tag ; then \
+	else \
 	  cp $(ple_docdir)/doxygen/ple.tag . ;\
-	elif test ! -f ple.tag ; then \
-	  echo "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>" \
-	    "<tagfile/>" > ple.tag ;\
 	fi ;\
 	if test "$(NEPTUNE_CFD)" = "neptune_cfd" ; then \
 	  cp $(top_builddir)/neptune_cfd/docs/doxygen/neptune.tag . ;\
@@ -68,7 +65,6 @@ doxygen-src:
 	for d in $(IMAGE_SUBDIRS) ; do \
 	  \cp -Rp $(top_srcdir)/doc/doxygen/images/$$d src/images/ ;\
 	done ; \
-	rm -f doxygen_warn.log ; \
 	$(DOXYGENCMD) $(top_srcdir)/doc/doxygen/Doxyfile-src
 
 doxygen-ui:
@@ -86,7 +82,7 @@ clean-local:
 	    (cd $$d && rm -rf html latex man index.bt) ;\
           fi ;\
 	done ;\
-	rm -f *.tag doxygen_warn.log
+	rm -f *.tag
 
 endif
 
