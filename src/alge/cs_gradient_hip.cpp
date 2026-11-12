@@ -1652,4 +1652,3 @@ INSTANTIATE_GG_R(cs_gradient_strided_gg_r_hip, 6);
 
 /*----------------------------------------------------------------------------*/
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

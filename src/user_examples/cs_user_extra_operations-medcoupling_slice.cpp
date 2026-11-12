@@ -86,11 +86,11 @@ cs_user_extra_operations_initialize([[maybe_unused]] cs_domain_t   *domain)
   }
 
   {
-    /*!(medcpl_slice_activate_postprocessing]*/
+    /*![medcpl_slice_activate_postprocessing]*/
     /* Activate intersection flag and surface postprocessing functions.
      */
     cs_medcoupling_slice_activate_postprocess("slice_OZ");
-    /*!(medcpl_slice_activate_postprocessing]*/
+    /*![medcpl_slice_activate_postprocessing]*/
   }
 
   {

@@ -63,7 +63,7 @@ The first parameter is the structure managing the domain boundaries. An example
 of the domain boundary settings is described [here](@ref ug_cdo_sec_domain_boundaries).
 
 
-### Choosing your model and coupling algorithm {#sec_ug_cdo_navsto_model_choice}
+## Choosing your model and coupling algorithm {#sec_ug_cdo_navsto_model_choice}
 
 The two most important parameters are the physical model (\ref cs_navsto_param_model_t) and the
 velocity-pressure coupling algorithm (\ref cs_navsto_param_coupling_t).

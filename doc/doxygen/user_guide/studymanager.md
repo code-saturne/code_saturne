@@ -1070,8 +1070,8 @@ which will then allow \f$ \mbox{\LaTeX} \f$
 
 For example, in order to write \f$ \lambda<1 \f$ in a legend, the following
 attribute will be used:
-```
-  <plot fig="4" fmt="k--" legend="solution for $\lambda &lt; 1$" xcol="1" ycol="2"/>
+```{.xml}
+  <plot fig="4" fmt="k--" legend="solution for $\\lambda &lt; 1$" xcol="1" ycol="2"/>
 ```
 
 ### How to set a logarithmic scale?

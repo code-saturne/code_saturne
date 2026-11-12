@@ -1372,8 +1372,6 @@ cs_order_renumbering(const cs_lnum_t  order[],
  * \param[in]      elt_size    element size
  * \param[in]      order       reordering array
  * \param[in,out]  data        data
- *
- * \return  new size of data
  */
 /*----------------------------------------------------------------------------*/
 

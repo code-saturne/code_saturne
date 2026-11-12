@@ -103,21 +103,11 @@
 
   \snippet cs_user_initialization-atmospheric.cpp loc_var_dec
 
-  \subsection user_initialization_atmo_alloc Allocation
-
-  Before user initialization, work arrays lstelt must be allocated,
-  like in basic example.
-
   \subsection user_initialization_atmo_s_init Initialization
 
   The following initialization block needs to be added for the following examples:
 
   \snippet cs_user_initialization-atmospheric.cpp init
-
-  \subsection user_initialization_atmo_finalize Finalization
-
-  At the end of the subroutine, it is recommended to deallocate the work array lstelt,
-  like in basic example.
 
 */
 

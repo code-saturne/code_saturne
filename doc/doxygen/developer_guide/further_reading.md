@@ -395,7 +395,7 @@ double r = a.dot();
 C storage class specifiers
 --------------------------
 
-A variable declaration can be combined with a \emph{storage class specifier}.
+A variable declaration can be combined with a _storage class specifier_.
 
 - `static` indicates the variable is "permanent":
    - Its values are saved from one call to the next.
@@ -646,9 +646,9 @@ C++ Preprocessing
 Before the C++ compilation proper, a first stage replaces character sequences based
 on several rules.
 
- - It is called the _preprocessor_
- - Directives start with `#`
-   - `#include`, `#if`, `#ifdef`, `#ifndef`, `#define`,
+- It is called the _preprocessor_
+- Directives start with `#`
+  - `#include`, `#if`, `#ifdef`, `#ifndef`, `#define`,
 - Allows defining _macros_
   - Using a common coding convention, we write them in capitals.
   - No need for `;` at the end of the line (or statement).
@@ -680,7 +680,7 @@ on several rules.
     even colorize the block as a comment.
 
 - Note also than in C++20, a
-  [<version>](https://en.cppreference.com/cpp/utility/feature_test)
+  [`<version>`](https://en.cppreference.com/cpp/utility/feature_test)
   header can be explicitely included and defines many finer-grained feature macros.
   In case it is available with lower version of the standard (i.e. with partial
   support), it can be included using:

@@ -85,10 +85,11 @@ cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
   /*![loc_var]*/
 
   /* Assign boundary conditions to boundary faces here
-
+   *
    *     One may use selection criteria to filter boundary case subsets
    *       Loop on faces from a subset
-   *         Set the boundary condition for each face */
+   *         Set the boundary condition for each face
+   */
 
   /*![example_1]*/
 

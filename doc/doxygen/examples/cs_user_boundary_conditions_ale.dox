@@ -58,7 +58,8 @@
  - \c ale_bc_type[face_id] = \ref CS_BOUNDARY_ALE_SLIDING : The mesh slides on
    the corresponding face \c face_id. The normal component of the mesh velocity
    is automatically set to 0. A homogeneous Neumann condition is automatically
-   prescribed for the other components, as is the case for "Symmetry" fluid condition.
+   prescribed for the other components, as is the case for "Symmetry" fluid
+   condition.
 
  - \c ale_bc_type[face_id] = \ref CS_BOUNDARY_ALE_IMPOSED_VEL :
    the mesh velocity is imposed on face \c face_id. Thus, the mesh velocity's
@@ -125,10 +126,6 @@ Here is the list of examples:
   One may use selection criteria to filter boundary case subsets.\n
   Loop on faces from a subset.\n
   Set the boundary condition for each face.
-
-  \subsection calculation_ale Calculation of displacement at current time step
-
-  \snippet  cs_user_boundary_conditions_ale-base.cpp calcul
 
   \subsection example1_ale Example 1
   Example : For boundary faces of color 4 assign a fixed velocity

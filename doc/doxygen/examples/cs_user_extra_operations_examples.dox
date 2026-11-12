@@ -264,10 +264,6 @@
 
   \snippet cs_user_extra_operations-vorticity_field.cpp vorticity_cv
 
-  The array holding the gradient values has to be deallocated at the end.
-
-  \snippet cs_user_extra_operations-vorticity_field.cpp vorticity_da
-
 */
 // __________________________________________________________________________________
 /*!

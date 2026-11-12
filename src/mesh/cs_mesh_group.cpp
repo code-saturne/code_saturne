@@ -824,8 +824,6 @@ cs_mesh_group_clean(cs_mesh_t  *mesh)
  * \param[in]       gc_id         input element group classes
  *                                (size: gc_id_idx[n_elts])
  * \param[in]       gc_id_merged  output element group classes (size: n_elts)
- *
- * \return  array of new element group class ids
  */
 /*----------------------------------------------------------------------------*/
 

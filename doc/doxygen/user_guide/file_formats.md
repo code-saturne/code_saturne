@@ -97,7 +97,7 @@ entities could lead to a high number of groups.
 <tr><td> Zone selection    <td> physical entities interpreted as groups
 <tr><td> Compatibility     <td> all files of this type (current revision: 4.1)
 <tr><td> Documentation     <td> included documentation, also available at:
-                                [gmsh.info/#Documentation](gmsh.info/#Documentation)
+                                [gmsh.info/#Documentation](https://gmsh.info/#Documentation)
 </table>
 
 ### NOPO/Simail (INRIA/Distene) {#sec_fmtdesc_des}

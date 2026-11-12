@@ -468,8 +468,6 @@ cs_restart_add_location(cs_restart_t      *restart,
  * \param[in]  n_glob_ents     global number of entities
  * \param[in]  n_ents          local number of entities
  * \param[in]  ent_global_num  global entity numbers, or null
- *
- * \return  the location id assigned, or -1 in case of error
  */
 /*----------------------------------------------------------------------------*/
 

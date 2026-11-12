@@ -91,7 +91,7 @@ which yields:
 Source terms for transported scalars may be defined using the \ref cs_user_source_terms
 user-defined function.
 
- \subsection field_meta Field access and information
+ \section field_meta Field access and information
 
 The following initialization block or portions thereof needs to be added for the
 following examples:

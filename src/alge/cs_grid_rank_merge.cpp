@@ -93,7 +93,7 @@
  *============================================================================*/
 
 /*!
-  \file cs_grid_rank_lerge.cpp
+  \file cs_grid_rank_merge.cpp
         Coarse grid merging over multiple ranks for multigrid solver.
 */
 

@@ -1388,7 +1388,7 @@ face as an inlet boundary.
  - Cells may have very different sizes, from very small (near ground or
 buildings) to very large (near the top of domain or far from zone of interest).
 
- - Vertical resolution: from tiny cells (e.g. \f$\Delta\f$\upshape z = 1 m) near
+ - Vertical resolution: from tiny cells (e.g. \f$\Delta z = 1\f$ m) near
 the ground to a few hundreds of meters at the top.
 
  - Horizontal resolution: from a few meters to hundreds of meters.
@@ -1501,7 +1501,7 @@ file.
 
 You can also set the profiles of atmospheric variables directly in the GUI.
 The following boundary conditions can be selected in the GUI:
- - Inlet/Outlet is automatically calculated for lateral boundaries (e.g. North, West\textellipsis ) of the computational domain
+ - Inlet/Outlet is automatically calculated for lateral boundaries (e.g. North, West... ) of the computational domain
 (see [fig:inlet](@ref gui_atmospheric_user_s_guide_v95)).
  - Inlet for the top of the domain (see [fig:top](@ref gui_atmospheric_user_s_guide_v96)).
  - Rough wall for building walls (see [fig:walls](@ref gui_atmospheric_user_s_guide_v97)) or for
@@ -1755,7 +1755,7 @@ Periodicity
 
 The rotational periodicity treatment is possible only in *Frozen
 Rotor*. However, the interface plane between rotor and stator
-must match in the azimuthal $\theta$ direction:
+must match in the azimuthal \f$\theta\f$ direction:
   - \f$\theta_{min}^{rotor}(z)=\theta_{min}^{stator}(z),\quad\theta_{max}^{rotor}(z)=\theta_{max}^{stator}(z)\f$
 
 for all \f$z\f$ through the rotation axis direction.

@@ -111,6 +111,7 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 
   /* Example to initialize variables using 1-D meteo data */
 
+  /*! [loc_var_dec] */
   cs_span<cs_real_t> cvar_k;
   cs_span<cs_real_t> cvar_ep;
   cs_span<cs_real_t> cvar_fb;
@@ -122,7 +123,9 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
   auto cvar_vel = CS_F_(vel)->get_val_v();
 
   cs_field_t *th_f = cs_thermal_model_field();
+  /*! [loc_var_dec] */
 
+  /*! [init] */
   /*  Initialize variables using an input meteo profile
    *   (only if we are not doing a restart */
 
@@ -228,6 +231,7 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
     }
 
   }
+  /*! [init] */
 }
 
 /*----------------------------------------------------------------------------*/

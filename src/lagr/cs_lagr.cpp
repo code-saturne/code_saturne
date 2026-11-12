@@ -1574,9 +1574,7 @@ cs_lagr_get_volume_conditions(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return pointer to the main internal conditions structure.
- *
- * \return pointer to current internal conditions structure
+ * \brief Finalize the global boundary and volume condition structures.
  */
 /*----------------------------------------------------------------------------*/
 

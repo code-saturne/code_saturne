@@ -940,8 +940,6 @@ _gcr_update_vx(cs_lnum_t                      n_rows,
  * \param [in]   size       size of data to copy
  * \param [in]   device_id  HIP device id
  * \param [in]   stream     size of data to copy
- *
- * \returns pointer to allocated memory.
  */
 /*----------------------------------------------------------------------------*/
 

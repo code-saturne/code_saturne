@@ -108,8 +108,6 @@
  * \param[in]       allow_end  if true, return null if last position in buffer
  *                             is reached; otherwise, this is considered a
  *                              premature end
- *
- * \return  pointer to start of next line, or null if end reached
  */
 /*----------------------------------------------------------------------------*/
 

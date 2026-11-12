@@ -182,8 +182,6 @@ cs_cdo_assembly_finalize(void);
  * \param[in, out] asb          pointer to a cs_cdo_assembly_t to update
  * \param[in]      l_row_shift  shift to apply to local row ids
  * \param[in]      l_col_shift  shift to apply to local col ids
- *
- * \return a function pointer cs_cdo_assembly_func_t
  */
 /*----------------------------------------------------------------------------*/
 

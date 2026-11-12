@@ -481,8 +481,6 @@ cs_all_to_all_copy_array(cs_all_to_all_t *d,
  * \param[in]       reverse    if true, communicate in reverse direction
  * \param[in]       src_data   source data
  * \param[out]      dest_data  pointer to destination data, or NULL
- *
- * \return void
  */
 /*----------------------------------------------------------------------------*/
 
@@ -571,8 +569,6 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t *d,
  * \param[in]       src_data    source data
  * \param[in]       dest_index  destination index
  * \param[out]      dest_data   pointer to destination data, or NULL
- *
- * \return void
  */
 /*----------------------------------------------------------------------------*/
 
