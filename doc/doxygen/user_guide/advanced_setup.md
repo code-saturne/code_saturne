@@ -1247,10 +1247,7 @@ Fluid-Structure external coupling
 
 The \ref cs_user_fsi_structure_num function belongs to the module dedicated to external
 Fluid-Structure coupling with *code_aster*. Here one defines the boundary
-faces coupled with *code_aster* and the fluid forces components which are
-given to structural calculation. When using external coupling with *code_aster*,
-structure numbers necessarily need to be negative;\n
-the references of coupled faces being (*i.e. -1, -2*), etc.
+faces coupled with *code_aster*. 
 For examples on the function we can see [examples](@ref cs_user_fluid_structure_interaction_h_usaste)
 
 <!-- ======================================================================= -->
@@ -1324,15 +1321,15 @@ Fluid - structure interaction {#cs_ug_as_fsi}
 
 Fluid structure interaction may use either *internal* structures using a
 simplified "mass-spring" model, or *external* coupling with the code_aster
-structural mechanics code.
+structural mechanics code or user subroutine.
 
 When using the GUI, boundary condition definitions allow associating an internal
 or external coupling to each boundary zone when ALE mesh deformation is activated.
 For each (per-zone) boundary condition with an internal coupling definition,
 a new internal structure is created. Structure ids are numbered from *0* to *n*,
 in order of boundary condition appearance. Zones may also be associated with
-an external structure, based on coupling with code_aster. In this case, a
-single coupling is handled, so whether a single zone or multiple zones are
+an external structure, based on coupling with code_aster or external user subroutine. 
+In this case, a single coupling is handled, so whether a single zone or multiple zones are
 defined as being coupled with this external code has no incidence (the mapping
 between coupled fluid and structure surfaces is based on geometrical proximity).
 
@@ -1362,6 +1359,22 @@ Slightly finer control over these settings is also possible using the
 \ref cs_user_fsi_structure_define function from
 the \ref cs_user_fluid_structure_interaction.cpp file, as shown in the
 [examples](@ref cs_user_fluid_structure_interaction_h_internal) section.
+
+Fluid - structure external coupling with code_aster
+---------------------------------------------------
+
+Using the GUI, users can configure the convergence criteria and select a convergence acceleration algorithm.
+
+This coupling relies on the MEDCoupling library to transfer data between the two meshes. 
+The projection is based on vertex interpolation using Lagrange basis functions, while the 
+nearest vertex is identified through an orthogonal projection procedure.
+
+The boundary stress field is defined as a piecewise constant quantity on boundary faces. 
+Prior to the transfer to code_aster, these face values are interpolated onto the mesh vertices.
+
+The method can also be applied to non-coincident curved interfaces. 
+In this case, the projection error depends on both the geometric mismatch between 
+the interfaces and the discretization error associated with the meshes.
 
 <!-- ======================================================================= -->
 

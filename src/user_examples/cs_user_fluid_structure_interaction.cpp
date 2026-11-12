@@ -254,7 +254,7 @@ cs_user_fsi_structure_num
 
       const cs_lnum_t face_id = zn->elt_ids[e_idx];
       structure_num[face_id]  = st_id;
-      structure_typ[face_id]  = CS_STRUCTURE_EXTERNAL_CODE_ASTER;
+      structure_typ[face_id]  = CS_STRUCTURE_INTERNAL_0D;
     }
   }
   /*! [fsi_i_str_num] */

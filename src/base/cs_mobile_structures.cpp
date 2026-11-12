@@ -1606,7 +1606,7 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
         ms->forstr[i][j] += b_stress[face_id][j] * b_face_surf[face_id];
     }
     else if (str_type == CS_STRUCTURE_EXTERNAL_CODE_ASTER) {
-      /* code_aster needs a surfacic force or stress in Pa = N.m-2 */
+      /* code_aster needs a surface force or stress in Pa = N.m-2 */
       for (cs_lnum_t j = 0; j < 3; j++)
         bstress_ast[indast][j] = b_stress[face_id][j];
       indast += 1;
