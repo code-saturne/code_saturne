@@ -454,9 +454,6 @@ _gradient_boundary_iprime_lsq_s
         for (cs_lnum_t ii = 0; ii < 3; ii++)
           dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
 
-        if (is_porous)
-          if (i_face_surf[cell_i_faces[i]] < DBL_MIN) continue;
-
         cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
 
         cocg[0] += dc[0]*dc[0]*ddc;
@@ -505,9 +502,6 @@ _gradient_boundary_iprime_lsq_s
 
       cs_lnum_t c_f_id = cell_b_faces[i];
 
-      if (is_porous)
-        if (b_face_surf[c_f_id] < DBL_MIN) continue;
-
       cs_real_t a = bc_coeff_a[c_f_id];
       cs_real_t b = bc_coeff_b[c_f_id];
 
@@ -545,6 +539,9 @@ _gradient_boundary_iprime_lsq_s
       cocg[3] += dif[0]*dif[1];
       cocg[4] += dif[1]*dif[2];
       cocg[5] += dif[0]*dif[2];
+
+      if (is_porous)
+        if (b_face_surf[c_f_id] < DBL_MIN) continue;
 
       cs_real_t pfac = (a + (b-1.)*var_i);
 

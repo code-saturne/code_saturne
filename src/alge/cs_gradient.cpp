@@ -2538,8 +2538,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
                            cell_cen[c_id1][1] - cell_cen[c_id][1],
                            cell_cen[c_id1][2] - cell_cen[c_id][2]};
 
-        if (is_porous)
-          if (i_face_surf[c2f[i]] < DBL_MIN) continue;
         cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
         _cocg[0] += dc[0] * dc[0] * ddc;
@@ -2582,9 +2580,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
     for (cs_lnum_t i = s_id; i < e_id; i++) { /* loop on boundary faces */
       cs_lnum_t f_id = c2b[i];
-
-      if (is_porous)
-        if (b_face_surf[f_id] < DBL_MIN) continue;
 
       const cs_real_t unddij = 1. / b_dist[f_id];
 
