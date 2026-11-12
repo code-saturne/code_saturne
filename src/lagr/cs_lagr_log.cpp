@@ -526,8 +526,7 @@ cs_lagr_log_setup(void)
 
   const char *deposition_value_str[]
     = {N_("none"),
-       N_("standard near-wall model"),
-       N_("subgrid near-wall turbulence model")};
+       N_("standard near-wall model")};
 
   const char *wall_seen_model_str[]
     = {N_("0 (Langevin model with near-wall k and epsilon)"),
@@ -544,12 +543,12 @@ cs_lagr_log_setup(void)
        "    Clogging model (multilayer):                  %s\n"
        "    Resuspension model:                           %s\n"),
      (   cs_glob_lagr_model->deposition >= 0
-      && cs_glob_lagr_model->deposition <= 2)
+      && cs_glob_lagr_model->deposition <= 1)
        ? _(deposition_value_str[cs_glob_lagr_model->deposition]) : "user",
      _status(cs_glob_lagr_model->clogging),
-     _status(cs_glob_lagr_reentrained_model->ireent));
+     _status(cs_glob_lagr_model->resuspension));
 
-  if (cs_glob_lagr_reentrained_model->ireent > 0) {
+  if (cs_glob_lagr_model->resuspension > 0) {
     int w_seen = cs_glob_lagr_reentrained_model->wall_seen_model;
     int r_mod = cs_glob_lagr_reentrained_model->rocking_model;
 

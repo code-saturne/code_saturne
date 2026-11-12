@@ -683,8 +683,10 @@ cs_lagr_adh_pp(cs_real_t   dpart,
 
     udlvor[np] = 0.0;
 
+    /* Gap between the two surfaces: _d_cut_off (+/- step for the
+       centred difference below) */
     cs_real_t distcc
-      = 2.0 * (_d_cut_off + step * (3 - 2 * (np + 1))) + 2.0 * rpart;
+      = _d_cut_off + step * (3 - 2 * (np + 1)) + 2.0 * rpart;
 
     cs_real_t uvdwss, uedlss;
 

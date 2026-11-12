@@ -47,6 +47,20 @@
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Calculation of the adhesion force of the particles lying on a
+ *        monolayer deposit whose adhesion force is not known yet.
+ *
+ * To be called before the trajectory step with the cell-wise integration,
+ * which integrates the particles injected in the current time step.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_resuspension_init_deposited(void);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Calculation of the particle resuspension
  */
 /*----------------------------------------------------------------------------*/

@@ -2393,6 +2393,46 @@ _sde_vels_pos_2_nd_order_time_integ(cs_lagr_particle_set_t         &p_set,
   }
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Torque about the pivot point of a force acting at the centre of a
+ *        particle at the wall (local frame of the boundary face).
+ *
+ * As for the other torques of the wall submodel, the torque is written as
+ * a wall-parallel vector (force times lever arm, positive when it drives
+ * the particle in the corresponding direction):
+ * - the wall-normal component acts with the lever arm arm_n (horizontal
+ *   distance between the pivot point and the centre) and is projected on
+ *   the direction of the velocity of the fluid seen (the pivot point is
+ *   downstream); a force towards the wall (> 0) opposes rolling;
+ * - each wall-parallel component acts with the lever arm arm_t (height of
+ *   the centre above the pivot point) and keeps its sign.
+ *
+ * \param[in]   force   force in the local frame
+ * \param[in]   arm_n   lever arm of the wall-normal component
+ * \param[in]   arm_t   lever arm of the wall-parallel components
+ * \param[in]   vvue    velocity of the fluid seen in the local frame
+ * \param[out]  torque  torque (components 1 and 2)
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_wall_centre_force_torque(const cs_real_t  force[3],
+                          cs_real_t        arm_n,
+                          cs_real_t        arm_t,
+                          const cs_real_t  vvue[3],
+                          cs_real_t        torque[3])
+{
+  cs_real_t vt = sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]));
+  cs_real_t inv_vt = (vt > 0.) ? 1. / vt : 0.;
+
+  torque[0] = 0.;
+  for (int id = 1; id < 3; id++)
+    torque[id] = - force[0] * arm_n * vvue[id] * inv_vt + force[id] * arm_t;
+}
+
+
 /*----------------------------------------------------------------------------*/
 /*! \brief Near-wall deposition submodel (Guingo & Minier, 2007)
  *
@@ -2453,9 +2493,10 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
   cs_real_t lift_force[1] = {0};
   cs_real_t lift_torque[3] = {0, 0, 0};
 
-  /* Gravity force and torque on a deposited particle   */
-  cs_real_t grav_force[3] = {0, 0, 0};
-  cs_real_t grav_torque[3] = {0, 0, 0};
+  /* Volume force (apparent weight + pressure gradient) and torque
+   * on a deposited particle */
+  cs_real_t pg_force[3] = {0, 0, 0};
+  cs_real_t pg_torque[3] = {0, 0, 0};
 
   /* Adhesion force and torque on a deposited particle   */
   cs_real_t adhes_torque[3] = {0, 0, 0};
@@ -2559,9 +2600,9 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
   /* 2.3 - Gravity vector */
 
-  cs_real_t ggp[3];
+  cs_real_t grav_r[3];
 
-  cs_math_33_3_product(rot_m, grav, ggp);
+  cs_math_33_3_product(rot_m, grav, grav_r);
 
   /* 2.4 - flow velocity  */
 
@@ -2648,7 +2689,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
                      &yplus,
                      &interf,
                      &enertur,
-                     ggp,
+                     grav_r,
                      vflui,
                      force_p_r,
                      piilp,
@@ -2840,10 +2881,10 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
         lift_force[0] = - 20.0 * cs_math_pow2(visccf) * romf *
           pow(ustar * p_diam * 0.5 / visccf, 2.31);
 
-        /* Calculation of gravity force (torque computed below) */
+        /* Calculation of unified volume force (apparent weight, dynamic
+           pressure gradient, and external forces) */
         for (cs_lnum_t id = 0; id < 3; id++) {
-          grav_force[id] = 4./3. * cs_math_pi * cs_math_pow3(p_diam/2)
-                                 * romp * ggp[id];
+          pg_force[id] = p_mass * force_p_r[id];
         }
 
         /* Case with consolidation */
@@ -2864,12 +2905,18 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
         cs_real_t adhes_force =
           p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE);
 
-        /* Lever arm of the wall-normal forces (lift, gravity) about the
-           pivot point: these forces act through the particle centre, so their
-           lever arm is the distance a0 between the pivot point and the
-           projection of the centre on the wall, i.e. the lever arm of the
-           adhesion force (CS_LAGR_ADHESION_TORQUE = a0 * adhesion force).
-           The wall-parallel gravity components keep the lever arm R. */
+        /* Lever arm of the wall-normal forces (lift, apparent weight,
+           pressure gradient) about the pivot point: these forces act through
+           the particle centre, so their lever arm is the distance a0 between
+           the pivot point (where the particle is in contact with the asperity)
+           and the projection of the centre on the wall, i.e.
+           the lever arm of the adhesion force (ADH_TORQUE / adh_force).
+           The pivot point lies on the particle surface, so the lever arm of
+           the wall-parallel components (apparent weight, pressure gradient)
+           is the height of the centre above it, sqrt(R^2 - a0^2); these
+           components keep their sign (a wall-parallel force opposed to the
+           flow opposes rolling). */
+
         cs_real_t norm_arm = 0.0;
         if (adhes_force > 0.0)
           norm_arm =   p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE)
@@ -2882,28 +2929,16 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
         }
 
-        for (cs_lnum_t id = 1; id < 3; id++) {
+        cs_real_t tang_arm =
+          sqrt(cs::max(cs_math_pow2(p_diam * 0.5) - cs_math_pow2(norm_arm),
+                       0.0));
 
-          cs_real_t sign11, sign22;
-          if (grav_force[1]*vvue[1] < 0 )
-            sign11 = -1.0;
-          else
-            sign11 = 1.0;
-          if (grav_force[2]*vvue[2] < 0 )
-            sign22 = -1.0;
-          else
-            sign22 = 1.0;
-
-          grav_torque[id] = (- grav_force[0] * norm_arm
-                             + (  grav_force[1]*sign11
-                                + grav_force[2]*sign22) * p_diam * 0.5)
-            * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]));
-
-        }
+        _wall_centre_force_torque(pg_force, norm_arm, tang_arm,
+                                  vvue, pg_torque);
 
         /* Is there direct wall-normal lift-off of the particle ? */
-        if (   (adhes_force + grav_force[0] + lift_force[0] + drag_force[0]) < 0
-            && iresusp == 0 ) {
+        if (   (adhes_force + pg_force[0] + lift_force[0] + drag_force[0]) < 0
+            && iresusp == 0) {
 
           /* Update of the number and weight of resuspended particles     */
           p_set.n_part_resusp += 1;
@@ -3001,7 +3036,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
             vpart0[id] = vpart[id];
             vpart[id]  =  vpart0[id] * exp(-cst_1 * dt_part)
                         + (vvue[id] + (adhes_torque[id] + lift_torque[id]
-                                       + grav_torque[id]) / cst_4)
+                                       + pg_torque[id]) / cst_4)
                         * (1.0 - exp(-cst_1 * dt_part) );
 
           }
@@ -3057,7 +3092,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
                  given above (same torques) */
               cs_real_t kkk =   vvue[id]
                               + (  adhes_torque[id] + lift_torque[id]
-                                 + grav_torque[id]) / cst_4;
+                                 + pg_torque[id]) / cst_4;
               cs_real_t kk  = vpart0[id] - kkk;
 
               depl[id]
@@ -3136,13 +3171,13 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
           /* Calculation of drag force and torque*/
           drag_force[0] =   3.0 * cs_math_pi * (p_height - mean_depo_height)
-                          * (vvue[0] - vpart[0]) * visccf * romf * 3.39;
+            * (vvue[0] - vpart[0]) * visccf * romf * 3.39;
           drag_torque[0] = 0.0;
 
           for (cs_lnum_t id = 1; id < 3; id++) {
 
             drag_force[id]  =   3.0 * cs_math_pi * (p_height - mean_depo_height)
-                              * (vvue[id] - vpart[id]) * visccf * romf * f_corr;
+              * (vvue[id] - vpart[id]) * visccf * romf * f_corr;
             drag_torque[id] = g_corr * drag_force[id] * p_diam * 0.5;
 
           }
@@ -3158,34 +3193,21 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
           }
 
-          /* Calculation of gravity force and torque */
+          /* Volume force (apparent weight and dynamic pressure gradient)
+             for protruding part of the cluster */
+          const cs_real_t h_ratio = (p_height - mean_depo_height) / p_height;
           for (cs_lnum_t id = 0; id < 3; id++) {
-            grav_force[id] = p_mass * ggp[id]
-              *(p_height - mean_depo_height) / p_height;
+            pg_force[id] = p_mass * force_p_r[id] * h_ratio;
           }
 
-          for (cs_lnum_t id = 1; id < 3; id++) {
-
-            cs_real_t sign11, sign22;
-            if (grav_force[1]*vvue[1] < 0 )
-              sign11 = -1.0;
-            else
-              sign11 = 1.0;
-            if (grav_force[2]*vvue[2] < 0 )
-              sign22 = -1.0;
-            else
-              sign22 = 1.0;
-
-            grav_torque[id] = (-grav_force[0] +
-                                grav_force[1]*sign11 +
-                                grav_force[2]*sign22 ) * p_diam * 0.5
-              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
-
-          }
+          /* Lever arm R for all components (as for the adhesion torque of
+             a cluster); wall-parallel components keep their sign */
+          _wall_centre_force_torque(pg_force, p_diam * 0.5, p_diam * 0.5,
+                                    vvue, pg_torque);
 
         }
         else if (   p_height <= mean_depo_height
-                 && p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
+            && p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
 
           /* Calculation of drag force and torque*/
           for (cs_lnum_t id = 0; id < 3; id++) {
@@ -3200,29 +3222,14 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
             lift_torque[id] = 0.0;
           }
 
-          /* Calculation of gravity force and torque */
           for (cs_lnum_t id = 0; id < 3; id++) {
-            grav_force[id] = p_mass * ggp[id];
+            pg_force[id] = p_mass * force_p_r[id];
           }
 
-          for (cs_lnum_t id = 1; id < 3; id++) {
-
-            cs_real_t sign11, sign22;
-            if (grav_force[1]*vvue[1] < 0 )
-              sign11 = -1.0;
-            else
-              sign11 = 1.0;
-            if (grav_force[2]*vvue[2] < 0 )
-              sign22 = -1.0;
-            else
-              sign22 = 1.0;
-
-            grav_torque[id] = (-grav_force[0] +
-                                grav_force[1]*sign11 +
-                                grav_force[2]*sign22 ) * p_diam * 0.5
-              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
-
-          }
+          /* Lever arm R for all components (as for the adhesion torque of
+             a cluster); wall-parallel components keep their sign */
+          _wall_centre_force_torque(pg_force, p_diam * 0.5, p_diam * 0.5,
+                                    vvue, pg_torque);
 
         }
         else if (p_set.flag(p_id, CS_LAGR_PART_ROLLING)) {
@@ -3251,29 +3258,14 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
           }
 
-          /* Calculation of gravity force and torque */
           for (cs_lnum_t id = 0; id < 3; id++) {
-            grav_force[id] = p_mass * ggp[id];
+            pg_force[id] = p_mass * force_p_r[id];
           }
 
-          for (cs_lnum_t id = 1; id < 3; id++) {
-
-            cs_real_t sign11, sign22;
-            if (grav_force[1]*vvue[1] < 0 )
-              sign11 = -1.0;
-            else
-              sign11 = 1.0;
-            if (grav_force[2]*vvue[2] < 0 )
-              sign22 = -1.0;
-            else
-              sign22 = 1.0;
-
-            grav_torque[id] = (-grav_force[0] +
-                                grav_force[1]*sign11 +
-                                grav_force[2]*sign22 ) * p_diam * 0.5
-              * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
-
-          }
+          /* Lever arm R for all components (as for the adhesion torque of
+             a cluster); wall-parallel components keep their sign */
+          _wall_centre_force_torque(pg_force, p_diam * 0.5, p_diam * 0.5,
+                                    vvue, pg_torque);
         }
 
         /* Adhesion force and torque for multilayered structures:
@@ -3346,8 +3338,8 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
 
 
         /* Is there direct wall-normal lift-off of the cluster ?  */
-        if ((adhes_force + grav_force[0] + lift_force[0] + drag_force[0]) < 0
-             && iresusp == 0 ) {
+        if (   (adhes_force + pg_force[0] + lift_force[0] + drag_force[0]) < 0
+            && iresusp == 0) {
 
           /* Update of the number and weight of resuspended particles     */
           p_set.n_part_resusp += 1;
@@ -3387,7 +3379,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
           /* The particle is resuspended    */
           vpart[0] = cs::min(-1.0 / p_mass * dt_part
                             * cs::abs(-lift_force[0] - drag_force[0]
-                                      - adhes_force -grav_force[0] ),
+                                      - adhes_force - pg_force[0]),
                             0.001);
           if (p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
             vpart[1] = 0.0;
@@ -3427,8 +3419,8 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
                                           + cs_math_pow2(drag_torque[2]));
           cs_real_t lift_tor_norm  = sqrt(  cs_math_pow2(lift_torque[1])
                                           + cs_math_pow2(lift_torque[2]));
-          cs_real_t grav_tor_norm  = sqrt(  cs_math_pow2(grav_torque[1])
-                                          + cs_math_pow2(grav_torque[2]));
+          cs_real_t pg_tor_norm    = sqrt(  cs_math_pow2(pg_torque[1])
+                                          + cs_math_pow2(pg_torque[2]));
 
           /* Differentiation between two cases:
            *  a) Already rolling clusters
@@ -3449,7 +3441,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
               vpart0[id] = vpart[id];
               vpart[id]  =  vpart0[id] * exp(-cst_1 * dt_part)
                 + (   vvue[id] + (adhes_torque[id] + lift_torque[id]
-                    + grav_torque[id]) / cst_4)
+                    + pg_torque[id]) / cst_4)
                 * (1.0 - exp(-cst_1 * dt_part) );
 
             }
@@ -3470,8 +3462,8 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
                   vpart[id] = vvue[id];
 
                 cs_real_t kkk =   vvue[id]
-                                + (  adhes_torque[id] + lift_torque[id]
-                                   + grav_torque[id]) / cst_4;
+                                + (  adhes_torque[id] + pg_torque[id]
+                                     + lift_torque[id]) / cst_4;
                 cs_real_t kk  = vpart0[id] - kkk;
 
                 depl[id] = kkk * dt_part + kk / cst_1
@@ -3509,7 +3501,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
              * we first check if there is resuspension */
             cs_real_t cond_resusp[2];
             for (cs_lnum_t id = 0; id < 2; id++) {
-              cond_resusp[id] = (  adhes_torque[id+1] + grav_torque[id+1]
+              cond_resusp[id] = (  adhes_torque[id+1] + pg_torque[id+1]
                                  + lift_torque[id+1] + drag_torque[id+1])
                                 * vvue[id+1];
             }
@@ -3531,7 +3523,7 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
               }
               else {
                 cs_real_t param
-                  = 1.0 - ((drag_tor_norm + lift_tor_norm - grav_tor_norm)
+                  = 1.0 - ((drag_tor_norm + lift_tor_norm - pg_tor_norm)
                            / p_diam - 2.0 * adhes_force)
                   / (cs_glob_lagr_consolidation_model->force_consol
                      - adhes_force);
@@ -3604,8 +3596,8 @@ _sde_vels_pos_near_wall_submodel(cs_lagr_particle_set_t         &p_set,
                 for (cs_lnum_t id = 1; id < 3; id++) {
                   vpart0[id] = vpart[id];
                   vpart[id]  =  vpart0[id] * exp(-cst_1 * dt_part)
-                    + (vvue[id] + (  adhes_torque[id] + lift_torque[id]
-                                   + grav_torque[id]) / cst_4)
+                    + (vvue[id] + (  adhes_torque[id] + pg_torque[id]
+                                   + lift_torque[id]) / cst_4)
                     * (1.0 - exp(-cst_1 * dt_part) );
                 }
 

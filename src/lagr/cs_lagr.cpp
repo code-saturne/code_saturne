@@ -2453,6 +2453,18 @@ cs_lagr_solve_time_step(const int         itypfb[],
     lag_bdi->npstf++;
     lag_bdi->npstft++;
 
+    /* With the cell-wise integration, the particles injected at the current time
+       step are integrated at the current time step: However before
+       tracking their state and trajectories the adhesion force of the particles
+       injected in the deposited state is needed by the near-wall sub-model
+       before passing through cs_lagr_resuspension
+       (called just after _integ_particle_quant in the trajecto step) */
+
+    if (   lagr_model->resuspension > 0
+        && cs_glob_lagr_time_scheme->cell_wise_integ == 1)
+      cs_lagr_resuspension_init_deposited();
+
+
     cs_lnum_t particle_range[2] = {0, p_set.n_particles};
     cs_lagr_integ_track_particles(vislen, particle_range, true);
 

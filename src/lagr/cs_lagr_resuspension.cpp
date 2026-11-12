@@ -208,6 +208,68 @@ _update_resuspension_balance(cs_lagr_particle_set_t  &p_set,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Calculation of the adhesion force of the particles lying on a
+ *        monolayer deposit whose adhesion force is not known yet.
+ *
+ * With the cell-wise integration (cell_wise_integ = 1), particles injected
+ * during the current time step are integrated over the whole time step, so
+ * that a particle injected in the deposited state goes through the
+ * resuspension tests of the near-wall sub-model before
+ * cs_lagr_resuspension, called after the trajectory step, has computed its
+ * adhesion force. This function computes this force before the trajectory
+ * step, as cs_lagr_resuspension would do for a particle that has just
+ * deposited (the deprecated integration scheme does not integrate the
+ * particles in their injection time step).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_resuspension_init_deposited(void)
+{
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
+
+  const cs_lagr_boundary_interactions_t *lag_bi
+    = cs_glob_lagr_boundary_interactions;
+  const cs_lnum_t n_faces = cs_glob_mesh->n_b_faces;
+  const cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  const cs_real_t diam_mean = cs_glob_lagr_clogging_model->diam_mean;
+
+  cs_real_t xmtk = 0;
+  if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
+    xmtk = cs_physical_constants_celsius_to_kelvin;
+
+  for (cs_lnum_t p_id = 0; p_id < p_set.n_particles; p_id++) {
+
+    cs_lnum_t face_id = p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID);
+
+    if (   face_id < 0
+        || !p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)
+        || p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE) > 0.)
+      continue;
+
+    /* Same condition as the monolayer branch of cs_lagr_resuspension
+       (the multilayer branch computes the adhesion in the near-wall
+       sub-model) */
+    if (   cs_glob_lagr_model->clogging == 1)
+      if (bound_stat[face_id + n_faces * lag_bi->ihdepm] >= diam_mean)
+        continue;
+
+    cs_lnum_t iel = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
+
+    cs_real_t temp;
+    if (extra->temperature != nullptr)
+      temp = extra->temperature->val[iel] + xmtk;
+    else
+      temp = cs_glob_fluid_properties->t0 + xmtk;
+
+    cs_real_t adhesion_energ;
+    cs_lagr_adh(p_id, temp, &adhesion_energ);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Calculation of the particle resuspension
  */
 /*----------------------------------------------------------------------------*/
