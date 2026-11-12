@@ -1584,11 +1584,11 @@ fi
 echo
 echo " PdfLaTeX (document typesetting) available: "$cs_have_latex""
 echo " Doxygen (document generation) available: "$cs_have_doxygen""
-echo " Sphinx (documentation) available: "$cs_have_sphinx""
 if (test x$cs_have_doxygen = xyes) ; then
   echo "   dot (Graphviz) available: "$cs_have_dot""
   echo "   MathJax enabled: "$cs_enable_mathjax""
 fi
+echo " Sphinx (documentation) available: "$cs_have_sphinx""
 echo
 echo "The package has been configured. Type:"
 echo " make"

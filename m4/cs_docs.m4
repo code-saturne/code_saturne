@@ -152,18 +152,39 @@ AC_SUBST(cs_enable_mathjax)
 
 AC_DEFUN([CS_AC_TEST_SPHINX],[
 
-cs_have_sphinx=yes
+# Enable use of Sphinx ?
 
-AC_ARG_VAR([SPHINXBUILD], [Sphinx documentation tool])
+AC_ARG_ENABLE(sphinx,
+  [AS_HELP_STRING([--enable-sphinx], [enable Sphinx for documentation])],
+  [
+    case "${enableval}" in
+      yes) cs_enable_sphinx=yes ;;
+      no)  cs_enable_sphinx=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-sphinx]) ;;
+    esac
+  ],
+  [ cs_enable_sphinx=no ]
+)
 
-dnl where is sphinx ?
-AC_PATH_PROG(SPHINXBUILD, sphinx-build)
-if test "x$SPHINXBUILD" = "x"; then
-  AC_MSG_WARN(sphinx-build not found)
-  cs_have_sphinx=no
+cs_have_sphinx=no
+
+if test "x$cs_enable_sphinx" = "xyes"; then
+
+  AC_ARG_VAR([SPHINXBUILD], [Sphinx documentation tool])
+
+  dnl where is sphinx ?
+  AC_PATH_PROG(SPHINXBUILD, sphinx-build)
+  if test "x$SPHINXBUILD" = "x"; then
+    AC_MSG_WARN(sphinx-build not found)
+  else
+    cs_have_sphinx=yes
+  fi
+
 fi
 
 AM_CONDITIONAL(HAVE_SPHINX, [test $cs_have_sphinx = yes])
 AC_SUBST(cs_have_sphinx)
+
+unset cs_enable_sphinx
 
 ])dnl
