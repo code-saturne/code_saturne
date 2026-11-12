@@ -88,9 +88,9 @@ When multiple examples are provided, example file names are
 defined by appending the name of the matching example
 to the matching reference file name. For example, general
 examples for user source terms are provided in
-`cs_user_source_terms-base.c`, while examples specific to advanced
+`cs_user_source_terms-base.cpp`, while examples specific to advanced
 turbulence model modification are found in
-`cs_user_source_terms-turbulence.c`
+`cs_user_source_terms-turbulence.cpp`
 
 The user is encouraged to check which examples are available, and to study
 those that are relevant to a given setup.
@@ -271,6 +271,15 @@ Functions called during after time stepping
   allows handling operations required only at the end of the computation (such
   as some specific post-processing extracts), and possibly cleaning up and freeing
   structures used in the main \ref cs_user_extra_operations function.
+
+Base call graph with user-defined functions
+===========================================
+
+The call sites of the main user-defined functions in a computation are shown
+below (this does not include CDO-specific functions).
+
+\anchor user_functions_call_graph
+\image html cs_callgraph_detailed.svg "User-function call sites in general call graph"
 
 Main variables and structures
 =============================

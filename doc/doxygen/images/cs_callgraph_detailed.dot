@@ -1,0 +1,194 @@
+digraph CodeSaturneCallGraph {
+  rankdir=TB;
+  compound=true;
+  ratio="auto";
+  size="8.5,14";
+  nodesep=0.4;
+  ranksep=0.45;
+  ordering=out;
+  fontname="Helvetica,Arial,sans-serif";
+  node [fontname="Helvetica,Arial,sans-serif", fontsize=10, shape=box, style="rounded,filled"];
+  edge [fontname="Helvetica,Arial,sans-serif", fontsize=8, color="#64748b"];
+  bgcolor="#f8fafc";
+
+  subgraph cluster_setup {
+    label = "1. Setup Stage (cs_setup)";
+    color = "#0284c7";
+    bgcolor = "#e0f2fe";
+    style = "filled,rounded";
+    margin = 12;
+
+    "main_entry" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>main / _run</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">code_saturne solver entry (_run)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_parallel_io" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_parallel_io</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_parallel_io</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_time_table" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_time_table</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_time_table</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_zones" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_zones</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_zones</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_setup" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_setup</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">cs_setup (Calculation Setup)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "_init_setup" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>_init_setup</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">_init_setup (Module Defaults)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "_init_user" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>_init_user</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">_init_user (Read GUI &amp; Models)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_model" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_model</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_model</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_parameters" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_parameters</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_parameters</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_linear_solvers" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_linear_solvers</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_linear_solvers</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_time_moments" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_time_moments</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_time_moments</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_finalize_setup" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_finalize_setup</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_finalize_setup</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_matrix_tuning" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_matrix_tuning</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_matrix_tuning</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_couplings" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_syrthes/saturne_coupling</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_syrthes / saturne_coupling</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_postprocess_setup" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_postprocess_writers/meshes/probes</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_postprocess_writers / meshes / probes</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+  }
+
+  subgraph cluster_preprocess {
+    label = "2. Preprocessing Stage (cs_preprocess_mesh)";
+    color = "#475569";
+    bgcolor = "#f1f5f9";
+    style = "filled,rounded";
+    margin = 12;
+
+    "cs_preprocess_mesh" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_preprocess_mesh</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">cs_preprocess_mesh (Mesh Engine)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_mesh_input" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_mesh_input</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_mesh_input</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_join" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_join</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_join</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_periodicity" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_periodicity</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_periodicity</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_mesh_modify" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_mesh_modify</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_mesh_modify / smoothe</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_partition" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_partition / numbering</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_partition / numbering</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_mesh_quality" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_mesh_quality</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">cs_mesh_quality &amp; bad cells postprocess</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+  }
+
+  subgraph cluster_init {
+    label = "3. Initialization Stage";
+    color = "#059669";
+    bgcolor = "#ecfdf5";
+    style = "filled,rounded";
+    margin = 12;
+
+    "init_stage" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>Initialization Stage</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Field &amp; Model Initialization</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_initialize_fields" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_initialize_fields_stage_0/1</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">cs_initialize_fields_stage_0/1</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_restart_read" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_time_stepping_read_checkpoint</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Read Checkpoint (Restart)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_porous_model_init" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_porous_model_init</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Porosity Model Initialization</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_porosity" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_porosity</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_porosity</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_initialization" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_initialization</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_initialization</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_extra_operations_initialize" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_extra_operations_initialize</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_extra_operations_initialize</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_lagr_solve_initialize" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_lagr_solve_initialize</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Lagrangian Initialization (cs_lagr_solve_initialize)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+  }
+
+  subgraph cluster_timeloop {
+    label = "4. Time Loop (cs_time_stepping & cs_solve_all)";
+    color = "#d97706";
+    bgcolor = "#fffbeb";
+    style = "filled,rounded";
+    margin = 12;
+
+    "cs_time_stepping" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_time_stepping</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Main Time Loop (cs_time_stepping)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "time_step_control" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>Time Step Control &amp; AMR</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Time Step Control &amp; AMR</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_solve_all" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_solve_all</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Flow &amp; Transport Equations (cs_solve_all)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_physical_properties_update" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_physical_properties_update</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Physical Properties Update</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_physical_properties" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_physical_properties</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_physical_properties</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_physical_properties_turb_viscosity" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_physical_properties_turb_viscosity</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_physical_properties_turb_viscosity</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_head_losses_compute" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_head_losses_compute</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Head Losses Computation</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_head_losses" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_head_losses</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_head_losses</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "_solve_most" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>_solve_most</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Velocity-Pressure Coupling Loop (_solve_most)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_boundary_conditions_set_coeffs" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_boundary_conditions_set_coeffs</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Boundary Conditions Setup (cs_boundary_conditions_set_coeffs)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_boundary_conditions" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_boundary_conditions</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_boundary_conditions</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_solve_navier_stokes" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_solve_navier_stokes</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Navier-Stokes Solver (cs_solve_navier_stokes)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "_cs_mass_flux_prediction" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>_cs_mass_flux_prediction</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Mass Flux Prediction (Low Mach)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_velocity_prediction_1" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_velocity_prediction (iappel = 1)</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Velocity Prediction Step (iappel = 1)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_pressure_correction" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#be185d">[SOLVE]</FONT> cs_pressure_correction</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#831843">Pressure Correction / Poisson Solve</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#be185d">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fce7f3", color="#db2777", shape=box, penwidth=1.8];
+    "cs_sles_solve_pressure" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#be185d">[SOLVE]</FONT> cs_sles_solve (Pressure Poisson)</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#831843">Iterative Solve: Pressure Poisson</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#be185d">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fce7f3", color="#db2777", shape=box, penwidth=1.8];
+    "cs_mass_flux" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_mass_flux</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Mass Flux Update (cs_mass_flux)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_velocity_prediction_2" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_velocity_prediction (iappel = 2)</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Velocity Correction Step (iappel = 2)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_equation_iterative_solve_vector" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#be185d">[SOLVE]</FONT> cs_equation_iterative_solve_vector</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#831843">Iterative Solve: Momentum</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#be185d">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fce7f3", color="#db2777", shape=box, penwidth=1.8];
+    "_solve_turbulence" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>_solve_turbulence</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Turbulence Equations (_solve_turbulence)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_turbulence_iterative_solve" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#be185d">[SOLVE]</FONT> cs_turbulence_iterative_solve</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#831843">Iterative Solve: Turbulence (k, eps, Rij)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#be185d">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fce7f3", color="#db2777", shape=box, penwidth=1.8];
+    "cs_rad_transfer_solve" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_rad_transfer_solve</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Radiative Transfer Solve (cs_rad_transfer_solve)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_rad_transfer_bcs" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_radiative_transfer_bcs</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_radiative_transfer_bcs</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_rad_transfer_absorption" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_rad_transfer_absorption</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_rad_transfer_absorption</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_solve_transported_variables" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_solve_transported_variables</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Scalar &amp; Energy Equations (cs_solve_transported_variables)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_solve_equation_scalar" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#be185d">[SOLVE]</FONT> cs_solve_equation (Scalar)</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#831843">Iterative Solve: Transported Scalars</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#be185d">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fce7f3", color="#db2777", shape=box, penwidth=1.8];
+    "cs_user_source_terms" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_source_terms</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_source_terms</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[Nx / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_lagr_solve_time_step" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_lagr_solve_time_step</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Lagrangian Particle Tracking (cs_lagr_solve_time_step)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_lagr_bcs" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_lagr_boundary_conditions</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_lagr_boundary_conditions</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_user_lagr_particle" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_lagr_particle / volume_conditions</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_lagr_particle / volume_conditions</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_time_moment_update_all" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_time_moment_update_all</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Temporal Moments Accumulation</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_extra_operations" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_extra_operations</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_extra_operations</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+    "cs_time_stepping_write_checkpoint" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_time_stepping_write_checkpoint</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Write Checkpoint (Restart)</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_post_default_write_variables" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>cs_post_default_write_variables</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Visualization &amp; Probes Output</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_postprocess_values" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_postprocess_values / activate</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_postprocess_values / activate</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x / Step]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+  }
+
+  subgraph cluster_finalize {
+    label = "5. Finalization Stage";
+    color = "#db2777";
+    bgcolor = "#fdf2f8";
+    style = "filled,rounded";
+    margin = 12;
+
+    "finalization_core" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B>Finalization Stage</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#64748b">Clean Finalization &amp; Deallocation</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#0284c7">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#ffffff", color="#334155", shape=box, penwidth=1.0];
+    "cs_user_extra_operations_finalize" [label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1"><TR><TD ALIGN="CENTER"><B><FONT COLOR="#b45309">[USER]</FONT> cs_user_extra_operations_finalize</B></TD></TR><TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="#78350f">cs_user_extra_operations_finalize</FONT></TD></TR><TR><TD ALIGN="CENTER"><B><FONT POINT-SIZE="8" COLOR="#b45309">[1x]</FONT></B></TD></TR></TABLE>>, fillcolor="#fef3c7", color="#d97706", shape=box, penwidth=2.0];
+  }
+
+  // Primary vertical spine (Chronological calling order)
+  "main_entry" -> "cs_setup" [weight=10, penwidth=2.2, color="#0284c7"];
+  "cs_setup" -> "cs_preprocess_mesh" [weight=10, penwidth=2.2, color="#0284c7"];
+  "cs_preprocess_mesh" -> "init_stage" [weight=10, penwidth=2.2, color="#0284c7"];
+  "init_stage" -> "cs_time_stepping" [weight=10, penwidth=2.2, color="#0284c7"];
+  "cs_time_stepping" -> "finalization_core" [weight=10, penwidth=2.2, color="#0284c7"];
+  "cs_time_stepping" -> "time_step_control" [weight=8, penwidth=1.8, color="#0284c7"];
+  "time_step_control" -> "cs_solve_all" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_solve_all" -> "cs_physical_properties_update" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_physical_properties_update" -> "cs_head_losses_compute" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_head_losses_compute" -> "_solve_most" [weight=8, penwidth=1.8, color="#0284c7"];
+  "_solve_most" -> "cs_boundary_conditions_set_coeffs" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_boundary_conditions_set_coeffs" -> "cs_solve_navier_stokes" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_solve_navier_stokes" -> "cs_velocity_prediction_1" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_velocity_prediction_1" -> "cs_pressure_correction" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_pressure_correction" -> "cs_mass_flux" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_mass_flux" -> "cs_velocity_prediction_2" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_velocity_prediction_2" -> "_solve_turbulence" [weight=8, penwidth=1.8, color="#0284c7"];
+  "_solve_turbulence" -> "cs_rad_transfer_solve" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_rad_transfer_solve" -> "cs_solve_transported_variables" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_solve_transported_variables" -> "cs_lagr_solve_time_step" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_lagr_solve_time_step" -> "cs_time_moment_update_all" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_time_moment_update_all" -> "cs_time_stepping_write_checkpoint" [weight=8, penwidth=1.8, color="#0284c7"];
+  "cs_time_stepping_write_checkpoint" -> "cs_post_default_write_variables" [weight=8, penwidth=1.8, color="#0284c7"];
+
+  // Aligned ranks: Core caller on left, User hook on right
+  { rank=same; "main_entry"; "cs_user_parallel_io"; }
+  "main_entry" -> "cs_user_parallel_io" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_setup"; "cs_user_model"; }
+  "cs_setup" -> "cs_user_model" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_setup"; "cs_user_parameters"; }
+  "cs_setup" -> "cs_user_parameters" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_setup"; "cs_user_linear_solvers"; }
+  "cs_setup" -> "cs_user_linear_solvers" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_setup"; "cs_user_finalize_setup"; }
+  "cs_setup" -> "cs_user_finalize_setup" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_preprocess_mesh"; "cs_user_mesh_input"; }
+  "cs_preprocess_mesh" -> "cs_user_mesh_input" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_preprocess_mesh"; "cs_user_join"; }
+  "cs_preprocess_mesh" -> "cs_user_join" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_preprocess_mesh"; "cs_user_periodicity"; }
+  "cs_preprocess_mesh" -> "cs_user_periodicity" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_preprocess_mesh"; "cs_user_partition"; }
+  "cs_preprocess_mesh" -> "cs_user_partition" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "init_stage"; "cs_user_initialization"; }
+  "init_stage" -> "cs_user_initialization" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "init_stage"; "cs_user_porosity"; }
+  "init_stage" -> "cs_user_porosity" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "init_stage"; "cs_user_extra_operations_initialize"; }
+  "init_stage" -> "cs_user_extra_operations_initialize" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_physical_properties_update"; "cs_user_physical_properties"; }
+  "cs_physical_properties_update" -> "cs_user_physical_properties" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_head_losses_compute"; "cs_user_head_losses"; }
+  "cs_head_losses_compute" -> "cs_user_head_losses" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_boundary_conditions_set_coeffs"; "cs_user_boundary_conditions"; }
+  "cs_boundary_conditions_set_coeffs" -> "cs_user_boundary_conditions" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_velocity_prediction_1"; "cs_user_source_terms"; }
+  "cs_velocity_prediction_1" -> "cs_user_source_terms" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_rad_transfer_solve"; "cs_user_rad_transfer_bcs"; }
+  "cs_rad_transfer_solve" -> "cs_user_rad_transfer_bcs" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_lagr_solve_time_step"; "cs_user_lagr_bcs"; }
+  "cs_lagr_solve_time_step" -> "cs_user_lagr_bcs" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_time_stepping"; "cs_user_extra_operations"; }
+  "cs_time_stepping" -> "cs_user_extra_operations" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "cs_post_default_write_variables"; "cs_user_postprocess_values"; }
+  "cs_post_default_write_variables" -> "cs_user_postprocess_values" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+  { rank=same; "finalization_core"; "cs_user_extra_operations_finalize"; }
+  "finalization_core" -> "cs_user_extra_operations_finalize" [color="#d97706", style=dashed, penwidth=1.6, label="calls", fontcolor="#b45309"];
+}

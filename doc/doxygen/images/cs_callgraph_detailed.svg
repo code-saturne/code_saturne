@@ -1,0 +1,711 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 3260" width="920" height="3260">
+  <defs>
+    <marker id="spine-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284c7" />
+    </marker>
+    <marker id="user-call-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706" />
+    </marker>
+  </defs>
+  <rect width="920" height="3260" fill="#f8fafc" />
+
+  <!-- Title Header -->
+  <text x="460.0" y="42" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="22" font-weight="700" fill="#0f172a">code_saturne User-Defined Functions Call Graph</text>
+  <text x="460.0" y="66" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="12" fill="#64748b">Calling-Order Aligned Architecture &amp; User Call Sites (Detailed Pipeline)</text>
+
+  <!-- Legend Pills -->
+  <g transform="translate(40, 82)">
+    <rect x="0" y="0" width="70" height="18" rx="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="1"/>
+    <text x="35" y="13" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#0284c7">[1x] Once</text>
+    <rect x="80" y="0" width="105" height="18" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+    <text x="132" y="13" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#16a34a">[1x/Step] Per Step</text>
+    <rect x="195" y="0" width="115" height="18" rx="4" fill="#fff7ed" stroke="#ea580c" stroke-width="1"/>
+    <text x="252" y="13" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#ea580c">[Nx/Step] Multiple</text>
+    <rect x="320" y="0" width="90" height="18" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+    <text x="365" y="13" text-anchor="middle" font-family="monospace" font-size="10" font-weight="700" fill="#b45309">[USER] Hook</text>
+  </g>
+
+  <!-- Stage: 1. SETUP STAGE (cs_setup) -->
+  <rect x="40" y="115" width="840" height="610" rx="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5" />
+  <text x="56" y="139" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="700" fill="#0284c7">1. SETUP STAGE (cs_setup)</text>
+  <text x="58" y="157" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="10" font-weight="700" fill="#475569">CORE SOLVER PIPELINE (CHRONOLOGICAL)</text>
+  <text x="502" y="157" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="10" font-weight="700" fill="#b45309">ALIGNED USER-DEFINED CALL SITES (cs_user_*)</text>
+
+  <!-- Row 1: main_entry -> cs_user_parallel_io -->
+  <g id="node-main_entry">
+    <rect x="58" y="172" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="191" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">main / _run</text>
+    <text x="68" y="206" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">code_saturne solver entry (_run)</text>
+    <text x="68" y="218" font-family="monospace" font-size="7.5" fill="#94a3b8">src/apps/cs_solver.cxx:220</text>
+    <rect x="348" y="180" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="191" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="226" x2="238" y2="242" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_parallel_io">
+    <rect x="502" y="172" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="191" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_parallel_io</text>
+    <text x="512" y="206" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Tune parallel MPI-IO buffer heuristics</text>
+    <text x="512" y="218" font-family="monospace" font-size="7.5" fill="#94a3b8">src/apps/cs_solver.cxx:267</text>
+    <rect x="792" y="180" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="191" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="199" x2="496" y2="199" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="191" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="203" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 2: _init_setup -> cs_user_time_table -->
+  <g id="node-_init_setup">
+    <rect x="58" y="244" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="263" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">_init_setup</text>
+    <text x="68" y="278" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Module defaults &amp; domain zone allocation</text>
+    <text x="68" y="290" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_setup.cpp:2730</text>
+    <rect x="348" y="252" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="263" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="298" x2="238" y2="314" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_time_table">
+    <rect x="502" y="244" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="263" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_time_table / cs_user_zones</text>
+    <text x="512" y="278" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Define time interpolation tables &amp; zones</text>
+    <text x="512" y="290" font-family="monospace" font-size="7.5" fill="#94a3b8">src/apps/cs_solver.cxx:274</text>
+    <rect x="792" y="252" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="263" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="271" x2="496" y2="271" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="263" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="275" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 3: _init_user -> cs_user_model -->
+  <g id="node-_init_user">
+    <rect x="58" y="316" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="335" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">_init_user</text>
+    <text x="68" y="350" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Parse GUI setup XML &amp; model flags</text>
+    <text x="68" y="362" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_setup.cpp:2784</text>
+    <rect x="348" y="324" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="335" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="370" x2="238" y2="386" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_model">
+    <rect x="502" y="316" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="335" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_model</text>
+    <text x="512" y="350" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Select flow, turbulence, thermal &amp; physics models</text>
+    <text x="512" y="362" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_setup.cpp:2828</text>
+    <rect x="792" y="324" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="335" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="343" x2="496" y2="343" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="335" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="347" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 4: cs_setup -> cs_user_parameters -->
+  <g id="node-cs_setup-params">
+    <rect x="58" y="388" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="407" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_setup (Parameters Stage)</text>
+    <text x="68" y="422" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Create variable fields &amp; equation parameters</text>
+    <text x="68" y="434" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_setup.cpp:2981</text>
+    <rect x="348" y="396" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="407" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="442" x2="238" y2="458" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_parameters">
+    <rect x="502" y="388" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="407" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_parameters</text>
+    <text x="512" y="422" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Set relaxation, time schemes, constants &amp; tolerances</text>
+    <text x="512" y="434" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_setup.cpp:2981</text>
+    <rect x="792" y="396" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="407" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="415" x2="496" y2="415" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="407" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="419" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 5: cs_setup -> cs_user_linear_solvers -->
+  <g id="node-cs_setup-sles">
+    <rect x="58" y="460" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="479" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_sles_setup</text>
+    <text x="68" y="494" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Iterative solver algorithms &amp; preconditioners</text>
+    <text x="68" y="506" font-family="monospace" font-size="7.5" fill="#94a3b8">src/apps/cs_solver.cxx:349</text>
+    <rect x="348" y="468" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="479" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="514" x2="238" y2="530" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_linear_solvers">
+    <rect x="502" y="460" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="479" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_linear_solvers</text>
+    <text x="512" y="494" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Configure AMG, BiCGStab, GMRES, PETSc / HYPRE</text>
+    <text x="512" y="506" font-family="monospace" font-size="7.5" fill="#94a3b8">src/apps/cs_solver.cxx:349</text>
+    <rect x="792" y="468" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="479" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="487" x2="496" y2="487" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="479" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="491" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 6: cs_setup -> cs_user_time_moments -->
+  <g id="node-cs_setup-moments">
+    <rect x="58" y="532" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="551" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_time_moment_setup</text>
+    <text x="68" y="566" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Statistical moments &amp; MPI code couplings</text>
+    <text x="68" y="578" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_setup.cpp:3000</text>
+    <rect x="348" y="540" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="551" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="586" x2="238" y2="602" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_time_moments">
+    <rect x="502" y="532" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="551" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_time_moments / cs_user_couplings</text>
+    <text x="512" y="566" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Define temporal statistics &amp; SYRTHES coupling</text>
+    <text x="512" y="578" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_setup.cpp:3000</text>
+    <rect x="792" y="540" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="551" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="559" x2="496" y2="559" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="551" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="563" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 7: cs_setup -> cs_user_finalize_setup -->
+  <g id="node-cs_setup-finalize">
+    <rect x="58" y="604" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="623" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_finalize_setup / cs_post_init</text>
+    <text x="68" y="638" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Complete equations, BCs &amp; writers</text>
+    <text x="68" y="650" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_setup.cpp:3020</text>
+    <rect x="348" y="612" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="623" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <g id="node-cs_user_finalize_setup">
+    <rect x="502" y="604" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="623" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_finalize_setup / postprocess</text>
+    <text x="512" y="638" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Conclude equation setup, matrix tuning &amp; probes</text>
+    <text x="512" y="650" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_setup.cpp:3020</text>
+    <rect x="792" y="612" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="623" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="631" x2="496" y2="631" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="623" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="635" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Spine to Stage 2 -->
+  <line x1="238" y1="725" x2="238" y2="755" stroke="#0284c7" stroke-width="2.5" marker-end="url(#spine-arrow)" />
+
+  <!-- Stage: 2. MESH PREPROCESSING (cs_preprocess_mesh) -->
+  <rect x="40" y="765" width="840" height="470" rx="8" fill="#f1f5f9" stroke="#475569" stroke-width="1.5" />
+  <text x="56" y="789" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="700" fill="#475569">2. MESH PREPROCESSING (cs_preprocess_mesh)</text>
+  <text x="58" y="807" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="10" font-weight="700" fill="#475569">CORE SOLVER PIPELINE (CHRONOLOGICAL)</text>
+  <text x="502" y="807" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="10" font-weight="700" fill="#b45309">ALIGNED USER-DEFINED CALL SITES (cs_user_*)</text>
+
+  <!-- Row 1: cs_preprocess_mesh -> cs_user_mesh_input -->
+  <g id="node-cs_preprocess_mesh-input">
+    <rect x="58" y="822" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="841" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_preprocess_mesh (Input)</text>
+    <text x="68" y="856" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Mesh file reading &amp; Cartesian mesh generation</text>
+    <text x="68" y="868" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_preprocess.cpp:150</text>
+    <rect x="348" y="830" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="841" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="876" x2="238" y2="892" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_mesh_input">
+    <rect x="502" y="822" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="841" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_mesh_input</text>
+    <text x="512" y="856" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Specify input mesh files, formats &amp; scaling</text>
+    <text x="512" y="868" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_preprocess.cpp:168</text>
+    <rect x="792" y="830" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="841" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="849" x2="496" y2="849" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="841" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="853" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 2: cs_preprocess_mesh -> cs_user_join -->
+  <g id="node-cs_preprocess_mesh-join">
+    <rect x="58" y="894" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="913" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_mesh_join</text>
+    <text x="68" y="928" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Non-conformal boundary face joining engine</text>
+    <text x="68" y="940" font-family="monospace" font-size="7.5" fill="#94a3b8">src/mesh/cs_join.c:120</text>
+    <rect x="348" y="902" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="913" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="948" x2="238" y2="964" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_join">
+    <rect x="502" y="894" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="913" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_join</text>
+    <text x="512" y="928" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Specify non-conformal face joining tolerances</text>
+    <text x="512" y="940" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_preprocess.cpp:184</text>
+    <rect x="792" y="902" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="913" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="921" x2="496" y2="921" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="913" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="925" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 3: cs_preprocess_mesh -> cs_user_periodicity -->
+  <g id="node-cs_preprocess_mesh-period">
+    <rect x="58" y="966" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="985" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_mesh_periodicity</text>
+    <text x="68" y="1000" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Periodic boundary matching &amp; face transformation</text>
+    <text x="68" y="1012" font-family="monospace" font-size="7.5" fill="#94a3b8">src/mesh/cs_mesh_periodicity.c:85</text>
+    <rect x="348" y="974" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="985" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="1020" x2="238" y2="1036" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_periodicity">
+    <rect x="502" y="966" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="985" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_periodicity</text>
+    <text x="512" y="1000" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Define translation &amp; rotation vectors</text>
+    <text x="512" y="1012" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_preprocess.cpp:187</text>
+    <rect x="792" y="974" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="985" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="993" x2="496" y2="993" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="985" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="997" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 4: cs_preprocess_mesh -> cs_user_partition -->
+  <g id="node-cs_preprocess_mesh-partition">
+    <rect x="58" y="1038" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="1057" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_partition / cs_numbering</text>
+    <text x="68" y="1072" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">SCOTCH / METIS / Hilbert domain decomposition</text>
+    <text x="68" y="1084" font-family="monospace" font-size="7.5" fill="#94a3b8">src/mesh/cs_partition.c:310</text>
+    <rect x="348" y="1046" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="1057" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="1092" x2="238" y2="1108" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_partition">
+    <rect x="502" y="1038" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="1057" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_partition / cs_user_mesh_modify</text>
+    <text x="512" y="1072" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Domain decomposition options &amp; coordinate updates</text>
+    <text x="512" y="1084" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_preprocess.cpp:237</text>
+    <rect x="792" y="1046" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="1057" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="1065" x2="496" y2="1065" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="1057" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="1069" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 5: cs_mesh_quality (No user hook) -->
+  <g id="node-cs_mesh_quality">
+    <rect x="58" y="1110" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="1129" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_mesh_quality</text>
+    <text x="68" y="1144" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Detect degenerate cells, warped faces &amp; bad angles</text>
+    <text x="68" y="1156" font-family="monospace" font-size="7.5" fill="#94a3b8">src/mesh/cs_mesh_quality.cpp:210</text>
+    <rect x="348" y="1118" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="1129" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+
+  <!-- Spine to Stage 3 -->
+  <line x1="238" y1="1235" x2="238" y2="1265" stroke="#0284c7" stroke-width="2.5" marker-end="url(#spine-arrow)" />
+
+  <!-- Stage: 3. INITIALIZATION STAGE -->
+  <rect x="40" y="1275" width="840" height="390" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="1.5" />
+  <text x="56" y="1299" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="700" fill="#059669">3. INITIALIZATION STAGE</text>
+  <text x="58" y="1317" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="10" font-weight="700" fill="#475569">CORE SOLVER PIPELINE (CHRONOLOGICAL)</text>
+  <text x="502" y="1317" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="10" font-weight="700" fill="#b45309">ALIGNED USER-DEFINED CALL SITES (cs_user_*)</text>
+
+  <!-- Row 1: cs_restart_read -->
+  <g id="node-cs_restart_read">
+    <rect x="58" y="1332" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="1351" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_time_stepping_read_checkpoint</text>
+    <text x="68" y="1366" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Load restart checkpoint variables &amp; time counters</text>
+    <text x="68" y="1378" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_time_stepping.cpp:330</text>
+    <rect x="348" y="1340" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="1351" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="1386" x2="238" y2="1402" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+
+  <!-- Row 2: cs_initialize_fields -> cs_user_initialization -->
+  <g id="node-cs_initialize_fields">
+    <rect x="58" y="1404" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="1423" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_initialize_fields_stage_0/1</text>
+    <text x="68" y="1438" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Field allocation &amp; base field initialization</text>
+    <text x="68" y="1450" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_initialize_fields.cpp:120</text>
+    <rect x="348" y="1412" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="1423" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="1458" x2="238" y2="1474" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_initialization">
+    <rect x="502" y="1404" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="1423" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_initialization</text>
+    <text x="512" y="1438" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Prescribe initial u, p, T, turbulent quantities &amp; scalars</text>
+    <text x="512" y="1450" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_initialize_fields.cpp:526</text>
+    <rect x="792" y="1412" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="1423" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="1431" x2="496" y2="1431" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="1423" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="1435" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 3: cs_porous_model_init -> cs_user_porosity -->
+  <g id="node-cs_porous_model_init">
+    <rect x="58" y="1476" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="1495" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_porous_model_init</text>
+    <text x="68" y="1510" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Porosity tensor mapping &amp; boundary scan</text>
+    <text x="68" y="1522" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_time_stepping.cpp:355</text>
+    <rect x="348" y="1484" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="1495" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="238" y1="1530" x2="238" y2="1546" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_porosity">
+    <rect x="502" y="1476" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="1495" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_porosity</text>
+    <text x="512" y="1510" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Prescribe cell fluid volume fraction &amp; drag</text>
+    <text x="512" y="1522" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_time_stepping.cpp:380</text>
+    <rect x="792" y="1484" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="1495" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="1503" x2="496" y2="1503" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="1495" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="1507" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 4: cs_lagr_solve_initialize -> cs_user_extra_operations_initialize -->
+  <g id="node-cs_lagr_solve_initialize">
+    <rect x="58" y="1548" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="1567" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_lagr_solve_initialize</text>
+    <text x="68" y="1582" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Lagrangian module setup &amp; boundary models</text>
+    <text x="68" y="1594" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_time_stepping.cpp:495</text>
+    <rect x="348" y="1556" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="1567" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <g id="node-cs_user_extra_operations_initialize">
+    <rect x="502" y="1548" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="1567" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_extra_operations_initialize</text>
+    <text x="512" y="1582" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Pre-computation user tracking structures &amp; memory</text>
+    <text x="512" y="1594" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_initialize_fields.cpp:831</text>
+    <rect x="792" y="1556" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="1567" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="1575" x2="496" y2="1575" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="1567" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="1579" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Spine to Stage 4 -->
+  <line x1="238" y1="1665" x2="238" y2="1695" stroke="#0284c7" stroke-width="2.5" marker-end="url(#spine-arrow)" />
+
+  <!-- Stage: 4. MAIN TIME LOOP (cs_time_stepping & cs_solve_all) -->
+  <rect x="40" y="1705" width="840" height="1360" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.5" />
+  <text x="56" y="1729" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="700" fill="#d97706">4. MAIN TIME LOOP (cs_time_stepping &amp; cs_solve_all)</text>
+  <text x="58" y="1747" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="10" font-weight="700" fill="#475569">CORE SOLVER PIPELINE (CHRONOLOGICAL)</text>
+  <text x="502" y="1747" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="10" font-weight="700" fill="#b45309">ALIGNED USER-DEFINED CALL SITES (cs_user_*)</text>
+
+  <!-- Row 1: time_step_control -->
+  <g id="node-time_step_control">
+    <rect x="58" y="1762" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="1781" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">time_step_control &amp; AMR</text>
+    <text x="68" y="1796" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">CFL / Fourier time step control &amp; adaptive refinement</text>
+    <text x="68" y="1808" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_time_stepping.cpp:560</text>
+    <rect x="348" y="1770" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="378" y="1781" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="238" y1="1816" x2="238" y2="1832" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+
+  <!-- Row 2: cs_physical_properties_update -> cs_user_physical_properties -->
+  <g id="node-cs_physical_properties_update">
+    <rect x="58" y="1834" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="1853" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_physical_properties_update</text>
+    <text x="68" y="1868" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Update fluid density, viscosity, Cp &amp; conductivity</text>
+    <text x="68" y="1880" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_physical_properties_default.cpp:1050</text>
+    <rect x="348" y="1842" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="378" y="1853" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="238" y1="1888" x2="238" y2="1904" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_physical_properties">
+    <rect x="502" y="1834" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="1853" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_physical_properties</text>
+    <text x="512" y="1868" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Prescribe T/P-dependent physical properties &amp; mu_t</text>
+    <text x="512" y="1880" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_physical_properties_default.cpp:1080</text>
+    <rect x="792" y="1842" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="822" y="1853" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="418" y1="1861" x2="496" y2="1861" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="1853" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="1865" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 3: cs_head_losses_compute -> cs_user_head_losses -->
+  <g id="node-cs_head_losses_compute">
+    <rect x="58" y="1906" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="1925" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_head_losses_compute</text>
+    <text x="68" y="1940" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Anisotropic quadratic head loss tensor evaluation</text>
+    <text x="68" y="1952" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_head_losses.cpp:140</text>
+    <rect x="348" y="1914" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="378" y="1925" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="238" y1="1960" x2="238" y2="1976" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_head_losses">
+    <rect x="502" y="1906" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="1925" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_head_losses</text>
+    <text x="512" y="1940" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Define directional resistance tensor Kij in zones</text>
+    <text x="512" y="1952" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_head_losses.cpp:149</text>
+    <rect x="792" y="1914" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="822" y="1925" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="418" y1="1933" x2="496" y2="1933" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="1925" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="1937" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 4: cs_boundary_conditions_set_coeffs -> cs_user_boundary_conditions -->
+  <g id="node-cs_boundary_conditions_set_coeffs">
+    <rect x="58" y="1978" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="1997" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_boundary_conditions_set_coeffs</text>
+    <text x="68" y="2012" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Sub-iteration loop (iterns=1..nterup): Wall friction</text>
+    <text x="68" y="2024" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_boundary_conditions_set_coeffs.cpp:840</text>
+    <rect x="348" y="1986" width="60" height="15" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="378" y="1997" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#ea580c">[Nx/Step]</text>
+  </g>
+  <line x1="238" y1="2032" x2="238" y2="2048" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_boundary_conditions">
+    <rect x="502" y="1978" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="1997" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_boundary_conditions</text>
+    <text x="512" y="2012" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Set inlet profiles, wall temperatures &amp; outlet values</text>
+    <text x="512" y="2024" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_boundary_conditions_set_coeffs.cpp:843</text>
+    <rect x="792" y="1986" width="60" height="15" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="822" y="1997" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#ea580c">[Nx/Step]</text>
+  </g>
+  <line x1="418" y1="2005" x2="496" y2="2005" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="1997" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="2009" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 5: cs_velocity_prediction_1 -> cs_user_source_terms -->
+  <g id="node-cs_velocity_prediction_1">
+    <rect x="58" y="2050" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="2069" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_velocity_prediction (iappel = 1)</text>
+    <text x="68" y="2084" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Assemble momentum matrix &amp; solve predicted velocity</text>
+    <text x="68" y="2096" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_solve_navier_stokes.cpp:1840</text>
+    <rect x="348" y="2058" width="60" height="15" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="378" y="2069" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#ea580c">[Nx/Step]</text>
+  </g>
+  <line x1="238" y1="2104" x2="238" y2="2120" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_source_terms-momentum">
+    <rect x="502" y="2050" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="2069" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_source_terms [Momentum]</text>
+    <text x="512" y="2084" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Explicit (st_exp) &amp; implicit (st_imp) momentum terms</text>
+    <text x="512" y="2096" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_solve_equation.cpp:1315</text>
+    <rect x="792" y="2058" width="60" height="15" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="822" y="2069" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#ea580c">[Nx/Step]</text>
+  </g>
+  <line x1="418" y1="2077" x2="496" y2="2077" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="2069" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="2081" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 6: cs_equation_iterative_solve_vector -->
+  <g id="node-cs_equation_iterative_solve_vector">
+    <rect x="58" y="2122" width="360" height="54" rx="6" fill="#fdf2f8" stroke="#db2777" stroke-width="1.5" />
+    <text x="68" y="2141" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">Iterative Solve: Momentum Matrix</text>
+    <text x="68" y="2156" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Vector iterative linear solve (BiCGStab / Jacobi)</text>
+    <text x="68" y="2168" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_solve_equation.cpp:2400</text>
+    <rect x="348" y="2130" width="60" height="15" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="378" y="2141" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#ea580c">[Nx/Step]</text>
+  </g>
+  <line x1="238" y1="2176" x2="238" y2="2192" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+
+  <!-- Row 7: cs_pressure_correction -->
+  <g id="node-cs_pressure_correction">
+    <rect x="58" y="2194" width="360" height="54" rx="6" fill="#fdf2f8" stroke="#db2777" stroke-width="1.5" />
+    <text x="68" y="2213" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_pressure_correction</text>
+    <text x="68" y="2228" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Rhie-Chow velocity interpolation &amp; Poisson system</text>
+    <text x="68" y="2240" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_pressure_correction.cpp:150</text>
+    <rect x="348" y="2202" width="60" height="15" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="378" y="2213" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#ea580c">[Nx/Step]</text>
+  </g>
+  <line x1="238" y1="2248" x2="238" y2="2264" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+
+  <!-- Row 8: cs_sles_solve_pressure -->
+  <g id="node-cs_sles_solve_pressure">
+    <rect x="58" y="2266" width="360" height="54" rx="6" fill="#fdf2f8" stroke="#db2777" stroke-width="1.5" />
+    <text x="68" y="2285" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">Iterative Solve: Pressure Poisson</text>
+    <text x="68" y="2300" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Invert Poisson matrix via Multigrid AMG / CG</text>
+    <text x="68" y="2312" font-family="monospace" font-size="7.5" fill="#94a3b8">src/alge/cs_sles.cpp:410</text>
+    <rect x="348" y="2274" width="60" height="15" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="378" y="2285" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#ea580c">[Nx/Step]</text>
+  </g>
+  <line x1="238" y1="2320" x2="238" y2="2336" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+
+  <!-- Row 9: cs_mass_flux -->
+  <g id="node-cs_mass_flux">
+    <rect x="58" y="2338" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="2357" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_mass_flux</text>
+    <text x="68" y="2372" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Update face mass fluxes to guarantee mass conservation</text>
+    <text x="68" y="2384" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_solve_navier_stokes.cpp:4167</text>
+    <rect x="348" y="2346" width="60" height="15" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="378" y="2357" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#ea580c">[Nx/Step]</text>
+  </g>
+  <line x1="238" y1="2392" x2="238" y2="2408" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+
+  <!-- Row 10: cs_velocity_prediction_2 -->
+  <g id="node-cs_velocity_prediction_2">
+    <rect x="58" y="2410" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="2429" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_velocity_prediction (iappel = 2)</text>
+    <text x="68" y="2444" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Velocity correction using pressure gradient &amp; residuals</text>
+    <text x="68" y="2456" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_solve_navier_stokes.cpp:4680</text>
+    <rect x="348" y="2418" width="60" height="15" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="378" y="2429" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#ea580c">[Nx/Step]</text>
+  </g>
+  <line x1="238" y1="2464" x2="238" y2="2480" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+
+  <!-- Row 11: _solve_turbulence -> cs_user_source_terms -->
+  <g id="node-_solve_turbulence">
+    <rect x="58" y="2482" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="2501" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">_solve_turbulence</text>
+    <text x="68" y="2516" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Solve RANS (k-eps, Rij, v2-f) or LES subgrid equations</text>
+    <text x="68" y="2528" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_solve_all.cpp:320</text>
+    <rect x="348" y="2490" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="378" y="2501" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="238" y1="2536" x2="238" y2="2552" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_source_terms-turb">
+    <rect x="502" y="2482" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="2501" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_source_terms [Turbulence]</text>
+    <text x="512" y="2516" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Custom sources for k, epsilon, omega or Rij equations</text>
+    <text x="512" y="2528" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_solve_equation.cpp:1315</text>
+    <rect x="792" y="2490" width="60" height="15" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="822" y="2501" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#ea580c">[Nx/Step]</text>
+  </g>
+  <line x1="418" y1="2509" x2="496" y2="2509" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="2501" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="2513" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 12: cs_rad_transfer_solve -> cs_user_rad_transfer_bcs -->
+  <g id="node-cs_rad_transfer_solve">
+    <rect x="58" y="2554" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="2573" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_rad_transfer_solve</text>
+    <text x="68" y="2588" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Solve radiative transfer equation (P-1 / DOM)</text>
+    <text x="68" y="2600" font-family="monospace" font-size="7.5" fill="#94a3b8">src/rayt/cs_rad_transfer_solve.cpp:200</text>
+    <rect x="348" y="2562" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="378" y="2573" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="238" y1="2608" x2="238" y2="2624" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_rad_transfer_bcs">
+    <rect x="502" y="2554" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="2573" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_radiative_transfer_bcs</text>
+    <text x="512" y="2588" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Define wall emissivity, absorption &amp; boundary flux</text>
+    <text x="512" y="2600" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_prototypes.h:1280</text>
+    <rect x="792" y="2562" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="822" y="2573" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="418" y1="2581" x2="496" y2="2581" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="2573" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="2585" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 13: cs_solve_transported_variables -> cs_user_source_terms -->
+  <g id="node-cs_solve_transported_variables">
+    <rect x="58" y="2626" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="2645" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_solve_transported_variables</text>
+    <text x="68" y="2660" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Convection-diffusion solves for thermal &amp; user scalars</text>
+    <text x="68" y="2672" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_solve_transported_variables.cpp:110</text>
+    <rect x="348" y="2634" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="378" y="2645" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="238" y1="2680" x2="238" y2="2696" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_source_terms-scalars">
+    <rect x="502" y="2626" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="2645" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_source_terms [Scalars]</text>
+    <text x="512" y="2660" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Explicit and implicit source terms for scalars &amp; enthalpy</text>
+    <text x="512" y="2672" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_solve_equation.cpp:1315</text>
+    <rect x="792" y="2634" width="60" height="15" rx="3" fill="#fff7ed" stroke="#ea580c" stroke-width="0.7"/>
+    <text x="822" y="2645" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#ea580c">[Nx/Step]</text>
+  </g>
+  <line x1="418" y1="2653" x2="496" y2="2653" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="2645" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="2657" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 14: cs_lagr_solve_time_step -> cs_user_lagr_bcs -->
+  <g id="node-cs_lagr_solve_time_step">
+    <rect x="58" y="2698" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="2717" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_lagr_solve_time_step</text>
+    <text x="68" y="2732" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Integrate particle tracking, drag &amp; wall deposition</text>
+    <text x="68" y="2744" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_time_stepping.cpp:710</text>
+    <rect x="348" y="2706" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="378" y="2717" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="238" y1="2752" x2="238" y2="2768" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_lagr_bcs">
+    <rect x="502" y="2698" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="2717" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_lagr_bcs / particle</text>
+    <text x="512" y="2732" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Prescribe particle rebound, fouling &amp; injection forces</text>
+    <text x="512" y="2744" font-family="monospace" font-size="7.5" fill="#94a3b8">src/user/cs_user_lagr_boundary_conditions.cpp:40</text>
+    <rect x="792" y="2706" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="822" y="2717" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="418" y1="2725" x2="496" y2="2725" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="2717" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="2729" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 15: cs_time_moment_update_all -> cs_user_extra_operations -->
+  <g id="node-cs_time_moment_update_all">
+    <rect x="58" y="2770" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="2789" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_time_moment_update_all</text>
+    <text x="68" y="2804" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Accumulate statistical means, variances &amp; Reynolds stresses</text>
+    <text x="68" y="2816" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_time_stepping.cpp:728</text>
+    <rect x="348" y="2778" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="378" y="2789" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="238" y1="2824" x2="238" y2="2840" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_extra_operations">
+    <rect x="502" y="2770" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="2789" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_extra_operations</text>
+    <text x="512" y="2804" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Post-step monitoring, online integrals &amp; calculation steering</text>
+    <text x="512" y="2816" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_time_stepping.cpp:758</text>
+    <rect x="792" y="2778" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="822" y="2789" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="418" y1="2797" x2="496" y2="2797" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="2789" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="2801" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 16: cs_post_default_write_variables -> cs_user_postprocess_values -->
+  <g id="node-cs_post_default_write_variables">
+    <rect x="58" y="2842" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="2861" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_post_default_write_variables</text>
+    <text x="68" y="2876" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Write EnSight, MED, CGNS visualization &amp; probes</text>
+    <text x="68" y="2888" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_time_stepping.cpp:830</text>
+    <rect x="348" y="2850" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="378" y="2861" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="238" y1="2896" x2="238" y2="2912" stroke="#0284c7" stroke-width="2.0" marker-end="url(#spine-arrow)" />
+  <g id="node-cs_user_postprocess_values">
+    <rect x="502" y="2842" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="2861" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_postprocess_values / activate</text>
+    <text x="512" y="2876" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Calculate &amp; export custom derived fields on meshes</text>
+    <text x="512" y="2888" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_post.cpp:8176</text>
+    <rect x="792" y="2850" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="822" y="2861" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+  <line x1="418" y1="2869" x2="496" y2="2869" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="2861" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="2873" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+
+  <!-- Row 17: cs_time_stepping_write_checkpoint -->
+  <g id="node-cs_time_stepping_write_checkpoint">
+    <rect x="58" y="2914" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="2933" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_time_stepping_write_checkpoint</text>
+    <text x="68" y="2948" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Write binary restart checkpoint file</text>
+    <text x="68" y="2960" font-family="monospace" font-size="7.5" fill="#94a3b8">src/base/cs_time_stepping.cpp:805</text>
+    <rect x="348" y="2922" width="60" height="15" rx="3" fill="#f0fdf4" stroke="#16a34a" stroke-width="0.7"/>
+    <text x="378" y="2933" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#16a34a">[1x/Step]</text>
+  </g>
+
+  <!-- Spine to Stage 5 -->
+  <line x1="238" y1="3065" x2="238" y2="3095" stroke="#0284c7" stroke-width="2.5" marker-end="url(#spine-arrow)" />
+
+  <!-- Stage: 5. FINALIZATION STAGE -->
+  <rect x="40" y="3105" width="840" height="116" rx="8" fill="#fdf2f8" stroke="#db2777" stroke-width="1.5" />
+  <text x="56" y="3129" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="700" fill="#db2777">5. FINALIZATION STAGE</text>
+  <text x="58" y="3147" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="10" font-weight="700" fill="#475569">CORE SOLVER PIPELINE (CHRONOLOGICAL)</text>
+  <text x="502" y="3147" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="10" font-weight="700" fill="#b45309">ALIGNED USER-DEFINED CALL SITES (cs_user_*)</text>
+  <g id="node-finalization_core">
+    <rect x="58" y="3155" width="360" height="54" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.0" />
+    <text x="68" y="3174" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">Finalization Stage</text>
+    <text x="68" y="3189" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Clean Finalization, deallocate SLES, matrices &amp; MPI</text>
+    <text x="68" y="3201" font-family="monospace" font-size="7.5" fill="#94a3b8">src/apps/cs_solver.cxx:540</text>
+    <rect x="348" y="3163" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="378" y="3174" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <g id="node-cs_user_extra_operations_finalize">
+    <rect x="502" y="3155" width="360" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8" />
+    <text x="512" y="3174" font-family="monospace" font-size="11" font-weight="700" fill="#0f172a">cs_user_extra_operations_finalize</text>
+    <text x="512" y="3189" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="9" fill="#64748b">Print balance sheets, close custom files &amp; free user memory</text>
+    <text x="512" y="3201" font-family="monospace" font-size="7.5" fill="#94a3b8">src/apps/cs_solver.cxx:542</text>
+    <rect x="792" y="3163" width="60" height="15" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="0.7"/>
+    <text x="822" y="3174" text-anchor="middle" font-family="monospace" font-size="8" font-weight="700" fill="#0284c7">[1x]</text>
+  </g>
+  <line x1="418" y1="3182" x2="496" y2="3182" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#user-call-arrow)" />
+  <rect x="434" y="3174" width="42" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+  <text x="455" y="3186" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="8" font-weight="700" fill="#b45309">calls ➔</text>
+</svg>
