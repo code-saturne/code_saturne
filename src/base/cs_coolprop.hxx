@@ -65,7 +65,7 @@
  *                                 "BICUBIC&HEOS" for tabulated)
  * \param[in]   thermo_plane       type of thermal plane
  * \param[in]   property           type of property to compute
- * \param(in]   n_vals             size of variable and property arrays
+ * \param[in]   n_vals             size of variable and property arrays
  * \param[in]   var1               first variable of thermodynamic plane
  *                                 (pressure)
  * \param[in]   var2               second variable of thermodynamic plane

@@ -1143,7 +1143,7 @@ cs_porosity_from_scan_add_source(const cs_real_t  source[3],
 /*!
  * \brief Add the scanner sources from csv file to fill fluid space.
  *
- * \param[in] csv file containing the (x,y,z) coordinates of each scanner
+ * \param[in] file_name  CSV file containing the (x,y,z) coordinates of each scanner
  */
 /*----------------------------------------------------------------------------*/
 

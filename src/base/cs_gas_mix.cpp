@@ -855,7 +855,7 @@ cs_gas_mix_add_species(int  f_id)
  * \param[in]  f_id         id of field representing species mixture fraction.
  * \param[in]  mol_mass     molar mass
  * \param[in]  cp           specific heat
- * \param[in]  col_diff     volume diffusion
+ * \param[in]  vol_diff     volume diffusion
  * \param[in]  mu_a         dynamic viscosity a
  * \param[in]  mu_b         dynamic viscosity b
  * \param[in]  lambda_a     thermal conductivity a

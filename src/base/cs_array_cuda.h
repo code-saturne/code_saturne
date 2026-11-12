@@ -292,18 +292,17 @@ cs_arrays_set_value(cudaStream_t     stream,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Assign values to all elements of multiple arrays. ref_val is input
- *        as a pointer or an array
+ * \brief Assign zero to all elements of multiple arrays.
  *
  * Template parmeters.
  *                 T       type name
- *                 stride  1 for scalars, 3 for vectors, 6 for symetric tensors
+ *                 stride  1 for scalars, 3 for vectors, 6 for symmetric tensors
  *                 Arrays  varadiac parameters pack
  *
  * Function parameters:
  * \param[in]      stream  cuda stream used for the operation
+ * \param[in]      async   if true, do not synchronize stream
  * \param[in]      n_elts  total number of elements to set
- * \param[in]      ref_val value to assign
  * \param[out]     arrays  arrays to set
  */
 /*----------------------------------------------------------------------------*/

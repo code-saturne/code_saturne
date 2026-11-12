@@ -164,7 +164,7 @@ cs_medcoupling_mesh_destroy_all(void);
 /*!
  * \brief Return a cs_medcoupling_mesh_t structure's spatial dimension
  *
- * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ * \param[in] m     cs_medcoupling_mesh_t pointer
  *
  * \return associated spatial dimension
  */
@@ -177,7 +177,7 @@ cs_medcoupling_mesh_get_dim(cs_medcoupling_mesh_t  *m);
 /*!
  * \brief Return a cs_medcoupling_mesh_t structure's number of elements
  *
- * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ * \param[in] m     cs_medcoupling_mesh_t pointer
  *
  * \return associated number of elements
  */
@@ -190,7 +190,7 @@ cs_medcoupling_mesh_get_n_elts(cs_medcoupling_mesh_t  *m);
 /*!
  * \brief Return a cs_medcoupling_mesh_t structure's (parent) elements list
  *
- * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ * \param[in] m     cs_medcoupling_mesh_t pointer
  *
  * \return ids of associated elements, or NULL
  */
@@ -203,7 +203,7 @@ cs_medcoupling_mesh_get_elt_list(cs_medcoupling_mesh_t  *m);
 /*!
  * \brief Return a cs_medcoupling_mesh_t structure's number of vertices
  *
- * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ * \param[in] m     cs_medcoupling_mesh_t pointer
  *
  * \return associated number of vertices
  */
@@ -216,7 +216,7 @@ cs_medcoupling_mesh_get_n_vertices(cs_medcoupling_mesh_t  *m);
 /*!
  * \brief Return a cs_medcoupling_mesh_t structure's (parent) vertices list
  *
- * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ * \param[in] m     cs_medcoupling_mesh_t pointer
  *
  * \return ids of associated vertices, or NULL if all or no local vertices
  *         o parent mesh are present.
@@ -230,7 +230,7 @@ cs_medcoupling_mesh_get_vertex_list(cs_medcoupling_mesh_t  *m);
 /*!
  * \brief Return a cs_medcoupling_mesh_t structure's (parent) elements list
  *
- * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ * \param[in] m     cs_medcoupling_mesh_t pointer
  *
  * \return ids of associated elements, or NULL
  */
@@ -243,7 +243,7 @@ cs_medcoupling_mesh_get_connectivity(cs_medcoupling_mesh_t  *m);
 /*!
  * \brief Export a medcoupling_mesh
  *
- * \param[in] mesh  cs_medcoupling_mesh_t pointer
+ * \param[in] m     cs_medcoupling_mesh_t pointer
  * \param[in] name  name of the file
  */
 /*----------------------------------------------------------------------------*/

@@ -83,8 +83,6 @@ cs_renumber_update(void);
  *
  * This function regroups all the data that needs to be updated after some
  * mesh operations, such as renumbering or redistribution.
- *
- * \param[in]       mesh            pointer to mesh
  */
 /*----------------------------------------------------------------------------*/
 

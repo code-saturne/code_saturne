@@ -78,21 +78,20 @@ cs_volume_mass_injection_eval(void);
  * \brief Return pointers to the mass source term arrays.
  *
  * \param[in]   f         pointer to associated field
- * \param[out]  ncesmp    number of cells with mass source terms
- * \param[out]  icetsm    pointet to source mass cells list (1-based numbering)
- * \param[out]  itpsmp    mass source type for the working variable
- * \param[out]  s_type    mass source types (0: ambient value, 1: s_val value)
- * \param[out]  smcelp    pointer to mass source values
+ * \param[out]  n_elts    number of cells with mass source terms
+ * \param[out]  elt_ids   pointer to source mass cells list (1-based numbering)
+ * \param[out]  mst_type  mass source types (0: ambient value, 1: s_val value)
+ * \param[out]  mst_val   pointer to mass source values
  * \param[out]  gamma     pointer to flow mass value
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_volume_mass_injection_get_arrays(const cs_field_t   *f,
-                                    cs_lnum_t          *ncesmp,
-                                    const cs_lnum_t   **icetsm,
-                                    int               **itpsmp,
-                                    cs_real_t         **smcelp,
+                                    cs_lnum_t          *n_elts,
+                                    const cs_lnum_t   **elt_ids,
+                                    int               **mst_type,
+                                    cs_real_t         **mst_val,
                                     cs_real_t         **gamma);
 
 /*----------------------------------------------------------------------------*/

@@ -293,18 +293,17 @@ cs_arrays_set_value(hipStream_t     stream,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Assign values to all elements of multiple arrays. ref_val is input
- *        as a pointer or an array
+ * \brief Assign zero to all elements of multiple arrays.
  *
  * Template parmeters.
  *                 T       type name
- *                 stride  1 for scalars, 3 for vectors, 6 for symetric tensors
+ *                 stride  1 for scalars, 3 for vectors, 6 for symmetric tensors
  *                 Arrays  varadiac parameters pack
  *
  * Function parameters:
  * \param[in]      stream  hip stream used for the operation
+ * \param[in]      async   if true, do not synchronize stream
  * \param[in]      n_elts  total number of elements to set
- * \param[in]      ref_val value to assign
  * \param[out]     arrays  arrays to set
  */
 /*----------------------------------------------------------------------------*/
@@ -312,9 +311,9 @@ cs_arrays_set_value(hipStream_t     stream,
 template <typename T, size_t stride, typename... Arrays>
 void
 cs_arrays_set_zero(hipStream_t     stream,
-                   bool             async,
-                   cs_lnum_t        n_elts,
-                   Arrays&&...      arrays)
+                   bool            async,
+                   cs_lnum_t       n_elts,
+                   Arrays&&...     arrays)
 {
   const long block_size_ = 256;
   const long grid_size_ = (n_elts % block_size_) ?

@@ -132,8 +132,8 @@ cs_selector_get_b_face_vertices_list(const char *criteria,
 /*!
  * \brief Fill a list of vertices belonging to a given list of boundary faces.
  *
- * \param[in]   n_cells     number of selected cells
- * \param[in]   cell_ids    ids of selected cells
+ * \param[in]   n_faces     number of selected boundary faces
+ * \param[in]   face_ids    ids of selected boundary faces
  * \param[out]  n_vertices  number of selected vertices
  * \param[out]  vtx_ids     list of selected vertices
  *                          (0 to n-1, preallocated to cs_glob_mesh->n_vertices)

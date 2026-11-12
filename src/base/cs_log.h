@@ -301,7 +301,6 @@ cs_log_timer_array(cs_log_t                   log,
  *
  * In parallel, output is only handled by rank 0.
  *
- * \param[in]  log     log file type
  * \param[in]  format  format string, as printf() and family.
  * \param[in]  ...     variable arguments based on format string.
  *

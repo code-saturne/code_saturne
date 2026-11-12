@@ -100,7 +100,6 @@
  * \param[in]       ineefl      for ALE
  * \param[in]       itrfup      Update after velocity-pressure sub-iterations
  * \param[in, out]  isostd      indicator for standard outlet
- * \param[in]       dt          time step (per cell)
  * \param[in, out]  visvdr      dynamic viscosity after V. Driest damping in
  *                              boundary cells
  * \param[out]      hbord       exchange coefficient at boundary
@@ -254,7 +253,7 @@ cs_boundary_conditions_set_neumann_vector_aniso(cs_real_t        a[3],
  *
  * \param[out]  a           explicit BC coefficient for gradients
  * \param[out]  af          explicit BC coefficient for diffusive flux
- * \param[out]  fb          implicit BC coefficient for gradients
+ * \param[out]  b           implicit BC coefficient for gradients
  * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   qimpts      flux value to impose
  * \param[in]   hint        internal exchange coefficient
@@ -293,7 +292,7 @@ cs_boundary_conditions_set_neumann_tensor(cs_real_t        a[6],
  *
  * \param[out]  a           explicit BC coefficient for gradients
  * \param[out]  af          explicit BC coefficient for diffusive flux
- * \param[out]  fb          implicit BC coefficient for gradients
+ * \param[out]  b           implicit BC coefficient for gradients
  * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   pimpv       Dirichlet value to impose
  * \param[in]   hint        internal exchange coefficient
@@ -439,10 +438,10 @@ cs_boundary_conditions_set_dirichlet_vector_aniso
 /*!
  * \brief  Set Dirichlet BC for a tensor for a given face.
  *
- * \param[out]  coefa       explicit BC coefficient for gradients
- * \param[out]  cofaf       explicit BC coefficient for diffusive flux
- * \param[out]  coefb       implicit BC coefficient for gradients
- * \param[out]  cofbf       implicit BC coefficient for diffusive flux
+ * \param[out]  a           explicit BC coefficient for gradients
+ * \param[out]  af          explicit BC coefficient for diffusive flux
+ * \param[out]  b           implicit BC coefficient for gradients
+ * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   pimpts      Dirichlet value to impose
  * \param[in]   hint        internal exchange coefficient
  * \param[in]   hextts      external exchange coefficient (10^30 by default)
@@ -939,10 +938,10 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_vector
  * \brief  Imposed value for the convection operator, imposed flux for
  *         diffusion, for a tensor
  *
- * \param[out]    coefa       explicit BC coefficient for gradients
- * \param[out]    cofaf       explicit BC coefficient for diffusive flux
- * \param[out]    coefb       implicit BC coefficient for gradients
- * \param[out]    cofbf       implicit BC coefficient for diffusive flux
+ * \param[out]    a           explicit BC coefficient for gradients
+ * \param[out]    af          explicit BC coefficient for diffusive flux
+ * \param[out]    b           implicit BC coefficient for gradients
+ * \param[out]    bf          implicit BC coefficient for diffusive flux
  * \param[in]     pimpts      Dirichlet value to impose
  * \param[in]     qimpts      flux value to impose
  */
@@ -1260,7 +1259,7 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
  * \param[in]      c_weight              viscosity by cell, or nullptr
  * \param[in]      weighb                boundary face weight for cells i in
  *                                       case of tensor diffusion, or nullptr
- * \param[in]      var                   variable values at cell centers
+ * \param[in]      pvar                  variable values at cell centers
  *
  */
 /*----------------------------------------------------------------------------*/

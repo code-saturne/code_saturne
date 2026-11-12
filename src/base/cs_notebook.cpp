@@ -811,7 +811,6 @@ cs_notebook_var_change_editable(int    id,
  * \brief Get name of a notebook parameter based on its id
  *
  * \param[in]   id    Id of the notebook parameter
- * \param[out]  name  Name of the notebook parameter
  *
  * \returns name of variable (char *)
  */

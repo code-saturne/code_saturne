@@ -548,8 +548,6 @@ cs_restart_map_set_locations(bool map_cell_centers,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build mapping of restart files to different mesh if defined.
- *
- * \param[in]  need_vertices  indicate if location at vertices is needed
  */
 /*----------------------------------------------------------------------------*/
 

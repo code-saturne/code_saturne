@@ -217,16 +217,16 @@ cs_thermal_model_demdt_ecsnt(const cs_real_t  pres,
  * \brief First pass to compute the contribution of the kinetic energy based
  *        source term from the prediction step
  *
- * \param[in]       imasfl    inner mass flux used in the momentum equation
- * \param[in]       bmasfl    boundary mass flux used in the momentum equation
- * \param[in]       vela      velocity at previous time step
- * \param[in]       vel       velocity at iteration k
+ * \param[in]       i_massflux    inner mass flux used in the momentum equation
+ * \param[in]       b_massflux    boundary mass flux used in the momentum equation
+ * \param[in]       vela          velocity at previous time step
+ * \param[in]       vel           velocity at iteration k
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_model_kinetic_st_prepare(const cs_real_t  imasfl[],
-                                    const cs_real_t  bmasfl[],
+cs_thermal_model_kinetic_st_prepare(const cs_real_t  i_massflux[],
+                                    const cs_real_t  b_massflux[],
                                     const cs_real_t  vela[][3],
                                     const cs_real_t  vel[][3]);
 
@@ -261,7 +261,7 @@ cs_thermal_model_add_kst(cs_real_t  smbrs[]);
  * \param[in]       croma     density values at the last time iteration
  * \param[in]       trav2     predicted velocity
  * \param[in]       cvara_pr  pressure values at the last time iteration
- * \param[in]       imasfl    face mass fluxes
+ * \param[in]       i_massflux face mass fluxes
  * \param[in, out]  cflp      CFL condition related to the pressure equation
  */
 /*----------------------------------------------------------------------------*/
@@ -270,7 +270,7 @@ void
 cs_thermal_model_cflp(const cs_real_t  croma[],
                       const cs_real_t  trav2[][3],
                       const cs_real_t  cvara_pr[],
-                      const cs_real_t  imasfl[],
+                      const cs_real_t  i_massflux[],
                       cs_real_t        cflp[]);
 
 /*----------------------------------------------------------------------------*/

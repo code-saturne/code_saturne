@@ -247,9 +247,6 @@ cs_runge_kutta_staging_potential(cs_dispatch_context          &ctx,
  *                               of tensor diffusion
  * \param[in]      weighb        boundary face weight for cells i in case
  *                               of tensor diffusion
- * \param[in]      icvflb        global indicator of boundary convection flux
- *                                - 0 upwind scheme at all boundary faces
- *                                - 1 imposed flux at some boundary faces
  * \param[in]      icvfli        boundary face indicator array of convection flux
  *                                - 0 upwind scheme
  *                                - 1 imposed flux

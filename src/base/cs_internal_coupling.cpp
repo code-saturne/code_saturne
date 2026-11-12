@@ -809,8 +809,9 @@ cs_internal_coupling_add_volume_zones(int        n_zones,
  *
  * This allows filtering faces on each side of the boundary in a simpler manner.
  *
- * \param[in, out] cpl             pointer to mesh structure to modify
- * \param[in]      criteria_cells  criteria for the first group of cells
+ * \param[in, out] cpl            pointer to internal coupling structure
+ * \param[in]      interior_name  name for interior boundary faces group
+ * \param[in]      exterior_name  name for exterior boundary faces group
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1741,7 +1742,6 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
  * \param[in]     cpl              structure associated with internal coupling
  * \param[in]     compute_diffusion_coeffs compute diffusion coefficients or not
  * \param[in]     halo_type        halo type
- * \param[in]     inc              if 0, solve on increment; 1 otherwise
  * \param[in]     w_stride         stride for weighting coefficient
  * \param[in]     clip_coeff       clipping coefficient
  * \param[in]     hyd_p_flag       flag for hydrostatic pressure

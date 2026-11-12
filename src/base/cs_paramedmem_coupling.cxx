@@ -1194,9 +1194,9 @@ _cs_paramedmem_coupling_t::add_field(const char              *name,
 /*!
  * \brief Add a coupled field based on a cs_field_t pointer
  *
- * \param[in] f           pointer to cs_field_t struct
- * \param[in] fn          field nature flag
- * \param[in] time_discr  field coupling time discretisation
+ * \param[in] f   pointer to cs_field_t struct
+ * \param[in] fn  field nature flag
+ * \param[in] td  field coupling time discretisation
  *
  * \return index of field within the storing vector
  */

@@ -436,7 +436,7 @@ cs_parall_max_loc_vals(int         n,
  *        default communicator processes.
  *
  * \param[in]       n             size of the related array
- * \param[in, out]  minx          local min in, global min out
+ * \param[in, out]  min           local min in, global min out
  * \param[in, out]  min_loc_vals  array values at location of local min in,
  *                                and at location of global min out
  */
@@ -639,7 +639,7 @@ cs_parall_block_count(size_t  n,
 /*!
  * \brief Sum values of a counter on all default communicator processes.
  *
- * \param[in]       ec   parallel execution context
+ * \param[in]       mpi_w    MPI wrapper
  * \param[in, out]  cpt  local counter in, global counter out (size: n)
  * \param[in]       n    number of values
  */
@@ -666,7 +666,7 @@ cs_parall_counter
 /*!
  * \brief Maximum values of a counter on all default communicator processes.
  *
- * \param[in]       ec   parallel execution context
+ * \param[in]       mpi_w    MPI wrapper
  * \param[in, out]  cpt  local counter in, global counter out (size: n)
  * \param[in]       n    number of values
  */
@@ -694,7 +694,7 @@ cs_parall_counter_max
 /*!
  * \brief Sum values of a given datatype on all of a communicator processes.
  *
- * \param[in]       ec        parallel execution context
+ * \param[in]       mpi_w     MPI wrapper
  * \param[in]       n         number of values
  * \param[in]       datatype  matching code_saturne datatype
  * \param[in, out]  val       local value input, global value output (array)
@@ -726,7 +726,7 @@ cs_parall_sum
  * \brief Maximum values of a given datatype on all default
  *        communicator processes.
  *
- * \param[in]       ec       parallel execution context
+ * \param[in]       mpi_w    MPI wrapper
  * \param[in]       n        number of values
  * \param[in]       datatype matching code_saturne datatype
  * \param[in, out]  val      local value input, global value output (array)
@@ -758,7 +758,7 @@ cs_parall_max
  * \brief Minimum values of a given datatype on all default
  *        communicator processes.
  *
- * \param[in]       ec       parallel execution context
+ * \param[in]       mpi_w    MPI wrapper
  * \param[in]       n        number of values
  * \param[in]       datatype matching code_saturne datatype
  * \param[in, out]  val      local value input, global value output (array)

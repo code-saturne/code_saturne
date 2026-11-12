@@ -412,7 +412,7 @@ cs_time_moment_set_start_time(int   moment_id,
  * at the same time step.
  *
  * \param[in]   moment_id  id of associated moment, or -1 for all
- * \param[in]   nt_start   starting time value
+ * \param[in]   t_start    starting time value
  */
 /*----------------------------------------------------------------------------*/
 

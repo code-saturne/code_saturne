@@ -97,8 +97,8 @@ static int class_id_max = 0;
 /*!
  * \brief Update boundary flux mass of the mixture
  *
- * \param[in]      m       pointer to associated mesh structure
- * \param[in, out] bmasfl  boundary face mass flux
+ * \param[in]      m            pointer to associated mesh structure
+ * \param[in, out] b_mass_flux  boundary face mass flux
  */
 /*----------------------------------------------------------------------------*/
 

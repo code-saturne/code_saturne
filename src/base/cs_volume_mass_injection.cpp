@@ -698,9 +698,9 @@ cs_volume_mass_injection_eval(void)
  *
  * \param[in]   f         pointer to associated field
  * \param[out]  n_elts    number of cells with mass source terms
- * \param[out]  elt_ids   pointer to source mass cells list (1-based
- * numbering)//FIXME \param[out]  mst_type  mass source types (0: ambient value,
- * 1: s_val value) \param[out]  mst_val   pointer to mass source values
+ * \param[out]  elt_ids   pointer to source mass cells list (1-based numbering)
+ * \param[out]  mst_type  mass source types (0: ambient value, 1: s_val value)
+ * \param[out]  mst_val   pointer to mass source values
  * \param[out]  gamma     pointer to flow mass value
  */
 /*----------------------------------------------------------------------------*/

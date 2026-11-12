@@ -363,7 +363,6 @@ cs_ibm_object_by_name_try(const char *name);
  * \brief Check if a point is solid or fluid based on the cut-cell method.
  *
  * \param[in]  c_id         local cell number
- * \param[out] ipenal       indicator for cut cells algo
  * \param[in]  xyz          x, y, z coordinates of the current position
  * \param[in]  t            time value for the current time step
  * \param[in]  num_object   num of fsi object (if fsi activated)
@@ -573,7 +572,7 @@ cs_user_ibm_parameters(void);
  * \brief User function where to apply predefined transformations to MED/STL
  *        based objects.
  *
- * \param[in]  t  time value for the current time step
+ * \param[in]  time time value for the current time step
  */
 /*----------------------------------------------------------------------------*/
 

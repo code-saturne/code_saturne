@@ -170,8 +170,9 @@ cs_internal_coupling_add_volume_zones(int        n_zones,
  *
  * This allows filtering faces on each side of the boundary in a simpler manner.
  *
- * \param[in, out] cpl             pointer to mesh structure to modify
- * \param[in]      criteria_cells  criteria for the first group of cells
+ * \param[in, out] cpl            pointer to internal coupling structure
+ * \param[in]      interior_name  name for interior boundary faces group
+ * \param[in]      exterior_name  name for exterior boundary faces group
  */
 /*----------------------------------------------------------------------------*/
 

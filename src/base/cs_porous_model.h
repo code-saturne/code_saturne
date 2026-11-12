@@ -183,7 +183,6 @@ cs_porous_model_postprocess_meshes(void);
  * \param[in]       ib_cells_filt      indices of the filtered cells
  * \param[in]       n_glob_vtx         total vertex number
  * \param[in]       ibcell_cells       connectivity ib_cell->cells
- * \param[in]       ibcell_cells_filt  connectivity ib_cell->cells after filtering
  * \param[in]       vtx_ids            vertex ids on both sides of a IB vertex
  *                                     (v0<v1)
  * \param[in]       w_vtx_idx          ib vertex indexes

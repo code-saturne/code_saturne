@@ -219,8 +219,6 @@ _ext_library_version_info(bool  log)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Print available system information.
- *
- * \param[in]  comm  associated MPI communicator
  */
 /*----------------------------------------------------------------------------*/
 
@@ -233,8 +231,6 @@ cs_ext_library_info(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Print available system information, without additional logging
- *
- * \param[in]  comm  associated MPI communicator
  */
 /*----------------------------------------------------------------------------*/
 

@@ -1199,7 +1199,7 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
  * emiting part of a boundary face (and not the reflecting one)
  * and the radiative absorbing part.
  *
- * \param[in]   bc_type   boundary face types
+ * \param[in]   itypfb    boundary face types
  * \param[in]   twall     inside current wall temperature (K)
  * \param[in]   qincid    radiative incident flux  (W/m2)
  * \param[in]   xlam      conductivity (W/m/K)
@@ -1451,8 +1451,6 @@ cs_user_source_terms(cs_domain_t  *domain,
 /*!
  * \brief Define time tables using C API.
  * This function is called at the begin of the simulation only.
- *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 

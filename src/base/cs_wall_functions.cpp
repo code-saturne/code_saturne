@@ -946,37 +946,37 @@ cs_wall_functions_iwf_compute
 /*!
  * \brief Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
  *
- * \param[in]     iwallf        wall function type
- * \param[in]     l_visc        kinematic viscosity
- * \param[in]     t_visc        turbulent kinematic viscosity
- * \param[in]     vel           wall projected cell center velocity
- * \param[in]     y             wall distance
- * \param[in]     rough_d       roughness length scale
- *                              (not sand grain roughness)
- * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
- * \param[in]     kinetic_en    turbulent kinetic energy (cell center)
- * \param[in]     rough_t       boundary_thermal_roughness
- * \param[in]     buoyant_param Buoyant parameter: g beta delta Theta v
- * \param[in]     delta_t       temperature delta
- * \param[in]     turb_prandtl  turbulent Prandtl
+ * \param[in]     iwallf         wall function type
+ * \param[in]     l_visc         kinematic viscosity
+ * \param[in]     t_visc         turbulent kinematic viscosity
+ * \param[in]     vel            wall projected cell center velocity
+ * \param[in]     y              wall distance
+ * \param[in]     rough_d        roughness length scale
+ *                               (not sand grain roughness)
+ * \param[in]     rnnb           \f$\vec{n}.(\tens{R}\vec{n})\f$
+ * \param[in]     kinetic_en     turbulent kinetic energy (cell center)
+ * \param[in]     rough_t        boundary_thermal_roughness
+ * \param[in]     buoyant_param  Buoyant parameter: g beta delta Theta v
+ * \param[in]     delta_t        temperature delta
+ * \param[in]     turb_prandtl   turbulent Prandtl
  * \param[in]     icodcl_th_fid  icodcl_th_f[f_id]]
  * \param[in]     flux
- * \param[in]     f_th          pointer to thermal field
- * \param[in,out] iuntur        indicator: 0 in the viscous sublayer
- * \param[in,out] nsubla        counter of cell in the viscous sublayer
- * \param[in,out] nlogla        counter of cell in the log-layer
- * \param[out]    cfbnns        corrective factors
+ * \param[in]     f_th           pointer to thermal field
+ * \param[in,out] iuntur         indicator: 0 in the viscous sublayer
+ * \param[in,out] nsubla         counter of cell in the viscous sublayer
+ * \param[in,out] nlogla         counter of cell in the log-layer
+ * \param[out]    ustar          friction velocity
+ * \param[out]    uk             friction velocity
+ * \param[out]    yplus          dimensionless distance to the wall
+ * \param[out]    ypup           yplus projected vel ratio
+ * \param[out]    cofimp         \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
+ *                               turbulence production
+ * \param[out]    dplus          dimensionless shift to the wall for scalable
+ *                               wall functions
+ * \param[out]    cfnns          correctif factors
  * \param[out]    cfnnk
  * \param[out]    cfnne
- * \param[out]    dlmo          inverse of Obukhov length
- * \param[out]    ustar         friction velocity
- * \param[out]    uk            friction velocity
- * \param[out]    yplus         dimensionless distance to the wall
- * \param[out]    ypup          yplus projected vel ratio
- * \param[out]    cofimp        \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
- *                              turbulence production
- * \param[out]    dplus         dimensionless shift to the wall for scalable
- *                              wall functions
+ * \param[out]    dlmo           inverse of Obukhov length
  */
 /*----------------------------------------------------------------------------*/
 
@@ -997,18 +997,18 @@ cs_wall_functions_velocity(cs_wall_f_type_t   iwallf,
                            cs_real_t          flux,
                            const cs_field_t  *f_th,
                            int               *iuntur,
-                           cs_gnum_t        *nsubla,
-                           cs_gnum_t        *nlogla,
-                           cs_real_t        *ustar,
-                           cs_real_t        *uk,
-                           cs_real_t        *yplus,
-                           cs_real_t        *ypup,
-                           cs_real_t        *cofimp,
-                           cs_real_t        *dplus,
-                           cs_real_t        *cfnns,
-                           cs_real_t        *cfnnk,
-                           cs_real_t        *cfnne,
-                           cs_real_t        *dlmo)
+                           cs_gnum_t         *nsubla,
+                           cs_gnum_t         *nlogla,
+                           cs_real_t         *ustar,
+                           cs_real_t         *uk,
+                           cs_real_t         *yplus,
+                           cs_real_t         *ypup,
+                           cs_real_t         *cofimp,
+                           cs_real_t         *dplus,
+                           cs_real_t         *cfnns,
+                           cs_real_t         *cfnnk,
+                           cs_real_t         *cfnne,
+                           cs_real_t         *dlmo)
 {
   CS_UNUSED(f_th);
 

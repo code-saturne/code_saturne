@@ -711,11 +711,10 @@ cs_elapsed_time(cs_event_ref  start,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Returns elapsed time (in microseconds) between stard and end
+ * \brief  Returns elapsed time (in microseconds) between start and end
  *         of a task.
  *
- * \param[in]  start   reference to start event
- * \param[in]  end     reference to end event
+ * \param[in]  task   reference to task
  *
  * \return  elapsed time.
  */

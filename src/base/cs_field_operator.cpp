@@ -806,8 +806,9 @@ cs_field_gradient_tensor(const cs_field_t          *f,
  * \param[in]       f               pointer to field
  * \param[in]       use_previous_t  should we use values from the previous
  *                                  time step ?
- * \param[in]       inc             if 0, solve on increment; 1 otherwise
- * \param[out]      grad            gradient
+ * \param[in]       n_faces         number of boundary faces
+ * \param[in]       face_ids        list of boundary face ids
+ * \param[out]      var_iprime      values at I' positions
  */
 /*----------------------------------------------------------------------------*/
 
@@ -979,8 +980,9 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
  * \param[in]       f               pointer to field
  * \param[in]       use_previous_t  should we use values from the previous
  *                                  time step ?
- * \param[in]       inc             if 0, solve on increment; 1 otherwise
- * \param[out]      grad            gradient
+ * \param[in]       n_faces         number of boundary faces
+ * \param[in]       face_ids        list of boundary face ids
+ * \param[out]      var_iprime      values at I' positions
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1143,8 +1145,9 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
  * \param[in]       f               pointer to field
  * \param[in]       use_previous_t  should we use values from the previous
  *                                  time step ?
- * \param[in]       inc             if 0, solve on increment; 1 otherwise
- * \param[out]      grad            gradient
+ * \param[in]       n_faces         number of boundary faces
+ * \param[in]       face_ids        list of boundary face ids
+ * \param[out]      var_iprime      values at I' positions
  */
 /*----------------------------------------------------------------------------*/
 

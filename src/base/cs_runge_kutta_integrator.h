@@ -706,8 +706,8 @@ cs_runge_kutta_stage_complete_scalar_rhs
  *                                at interior faces for the r.h.s.
  * \param[in]      b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                                at boundary faces for the r.h.s.
- * \param[in]      secvif        secondary viscosity at interior faces
- * \param[in]      secvib        secondary viscosity at boundary faces
+ * \param[in]      i_secvis      secondary viscosity at interior faces
+ * \param[in]      b_secvis      secondary viscosity at boundary faces
  * \param[in]      viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]      weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
@@ -717,7 +717,6 @@ cs_runge_kutta_stage_complete_scalar_rhs
  *                                - 0 upwind scheme (true everywhere if null)
  *                                - 1 imposed flux
  * \param[in]      pvar          solved velocity (current time step)
- * \param[in]      rhs_pvar    pointer to high level rhs array
  */
 /*----------------------------------------------------------------------------*/
 

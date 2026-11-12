@@ -183,7 +183,7 @@ _gather_full_strided_hip(cs_lnum_t         n,
  * \param[in]   sync_mode     synchronization mode (standard or extended)
  * \param[in]   data_type     data type
  * \param[in]   stride        number of (interlaced) values by entity
- * \param[in]   var           pointer to value array (device)
+ * \param[in]   val           pointer to value array (device)
  * \param[out]  send_buffer   pointer to send buffer, NULL for global buffer
  */
 /*----------------------------------------------------------------------------*/

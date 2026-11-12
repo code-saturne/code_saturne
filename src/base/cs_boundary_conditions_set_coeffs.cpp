@@ -734,7 +734,6 @@ _boundary_condition_wall_condensation_1d_thermal(void)
  * \param[in]       ineefl      for ALE
  * \param[in]       itrfup      Update after velocity-pressure sub-iterations
  * \param[in, out]  isostd      indicator for standard outlet
- * \param[in]       dt          time step (per cell)
  * \param[in, out]  visvdr      dynamic viscosity after V. Driest damping in
  *                              boundary cells
  * \param[out]      hbord       exchange coefficient at boundary
@@ -4369,7 +4368,7 @@ cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
  * \param[in]      c_weight              viscosity by cell, or nullptr
  * \param[in]      weighb                boundary face weight for cells i in
  *                                       case of tensor diffusion, or nullptr
- * \param[in]      var                   variable values at cell centers
+ * \param[in]      pvar                  variable values at cell centers
  *
  */
 /*----------------------------------------------------------------------------*/

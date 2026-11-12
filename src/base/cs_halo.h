@@ -267,8 +267,6 @@ cs_halo_create_from_rank_neighbors
  * \param[in]  n_distant_elts  number of distant elements for local rank
  * \param[in]  elt_rank_idx    distant element rank index in rank neighbors,
  *                             ordered by rank (size: n_distant_elts)
- * \param[in]  elt_tr_id       distant element transform id, or null
- *                             (-1 for non-periodic elements)
  * \param[in]  elt_id          distant element id (at distant rank),
  *                             ordered by rank (size: n_distant_elts)
  *

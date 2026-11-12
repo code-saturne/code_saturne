@@ -375,7 +375,8 @@ cs_time_table_get_n_cols(const char *name);
  * \brief Return pointer to table data
  *
  * \param[in]  name            Name of the time table to use
- * \param[out] retvals         Array of output values
+ *
+ * \return pointer to table data columns
  */
 /*----------------------------------------------------------------------------*/
 

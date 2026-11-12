@@ -183,8 +183,8 @@ cs_renumber_get_min_subset_size(cs_lnum_t  *min_i_subset_size,
  * cells renumbering and multipass interior faces renumbering with no
  * reblancing (i. e. with a relaxation factor of 0).
  *
- * \param[in]  relaxation factor  multipass renumbering rebalance step
- *                                relaxation factor.
+ * \param[in]  relaxation_factor  multipass renumbering rebalance step
+ *                                 relaxation factor.
  */
 /*----------------------------------------------------------------------------*/
 

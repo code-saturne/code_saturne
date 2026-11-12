@@ -199,7 +199,7 @@ _log_debug(void)
 /*!
  * \brief  Create the context for wall condensation models.
  *
- * \param[in] nfbpcd   number of faces with wall condensation
+ * \param[in] nzones   number of zones
  */
 /*----------------------------------------------------------------------------*/
 

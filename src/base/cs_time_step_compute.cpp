@@ -100,8 +100,6 @@
  * \brief Compute the local time step.
  *
  * \param[in]     itrale        ALE iteration number
- * \param[in]     iwarnp        verbosity
- * \param[in]     dt            time step (per cell)
  */
 /*----------------------------------------------------------------------------*/
 

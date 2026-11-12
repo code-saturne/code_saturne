@@ -3093,7 +3093,6 @@ _compute_b_fac_porosity(const cs_mesh_t      *mesh,
  * \param[in]   mesh               pointer to associated mesh structure
  * \param[in]   mesh_quantities    pointer to associated mesh quantities
  * \param[in]   c_poro             cell porosity
- * \param[in]   v_poro             vertex porosity
  * \param[out]  ifpro_poro         internal face porosity
  */
 /*----------------------------------------------------------------------------*/
@@ -3486,7 +3485,6 @@ _compute_i_fac_cog(const cs_mesh_t      *mesh,
  * \brief  Iso-volume porosity check
  *
  * \param[in]   mesh               pointer to associated mesh structure
- * \param[in]   mesh_quantities    pointer to associated mesh quantities
  * \param[in]   c_poro             cell porosity
  * \param[in]   comp_cell          list of cells to recompute porosity
  */
@@ -3553,7 +3551,6 @@ _compute_iso_vol_porosity(const cs_mesh_t      *mesh,
  * \brief  Compute list of cells for porosity computing
  *
  * \param[in]   mesh               pointer to associated mesh structure
- * \param[in]   mesh_quantities    pointer to associated mesh quantities
  * \param[out]  comp_cell          list of cells to recompute porosity
  */
 /*----------------------------------------------------------------------------*/
