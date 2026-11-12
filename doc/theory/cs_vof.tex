@@ -1,0 +1,175 @@
+\section{Introduction}
+\label{sec:vof}
+
+\hypertarget{cs_vof}{}
+
+The Volume of Fluid (VOF) model allows for the simulation of immiscible
+multi-phase flows with a resolved interface. It belongs to the class of
+interface-capturing approaches in which a scalar indicator function is
+transported.
+
+In \CS, the VOF formulation handles two phases and relies on the introduction
+of an additional transport equation for the void fraction of one of the phases.
+Mass and momentum equations remain unchanged, the velocity corresponding to the
+velocity of the mixture. The fluid properties of density and viscosity are
+reconstructed from the local void fraction, using constant values for each
+phase. Surface tension can be enabled through a Continuum Surface Force
+approach, and interface compression can be activated.
+
+Dedicated compressive numerical schemes with boundedness properties are used
+for the void fraction transport. The transport equation is solved in
+conservative form so that the total amount of each phase is preserved at the
+discrete level.
+
+The present approach is especially suited to free-surface flows, wave dynamics,
+sloshing, dam-break problems, liquid-gas interactions and cavitating flows.
+
+%-------------------------------------------------------------------------------
+
+\section{System equations}
+
+\subsection{Volume fraction transport equation}
+
+Let $\alpha$ denote the void fraction of the dispersed phase
+(or equivalently the void fraction in cavitation applications).
+%alpha=0 by default initialization, phase 1 to 1000 by default
+%rho_0 taken to max (rho_1, rho_2)
+
+The local phase indicator satisfies:
+
+\begin{equation}
+\frac{\partial \alpha}{\partial t}+\divs (\alpha \vect{u})=S_\alpha ,
+\label{eq:vof:transport}
+\end{equation}
+
+where:
+
+\begin{itemize}
+\item $\alpha = 0$ corresponds to pure fluid 1,
+\item $\alpha = 1$ corresponds to pure fluid 2,
+\item $0 < \alpha < 1$ identifies cells crossed by the interface,
+\item $\vect{u}$ is the mixture velocity,
+\item $S_\alpha$ denotes optional source terms.
+\end{itemize}
+
+An additional drift contribution may be introduced:
+
+\begin{equation}
+\frac{\partial \alpha}{\partial t}
++\divs \cdot (\alpha \vect{u})
++\divs \cdot (\alpha (1-\alpha)\vect{u}_r)
+=S_\alpha ,
+\label{eq:vof:drift}
+\end{equation}
+
+where $\vect{u}_r$ denotes a relative velocity between phases.
+This formulation is based on the drift-flux approach implemented in \CS
+following the work of \cite{deshpande:2012}.
+It can be either interpreted as :
+\begin{itemize}
+  \item A compressive contribution to preserve a sharper transition between
+    phases as pure advection tends to diffuse the interface because of
+    numerical dissipation, despite of compressive
+    numerical schemes used.
+  \item A specific closure to model two-phase behaviours at scales that are not
+    represented by the mesh.
+\end{itemize}
+The additional flux is active only close to the interface since it is
+proportional to $\alpha(1-\alpha)$.
+
+%-------------------------------------------------------------------------------
+
+\subsection{Mixture properties}
+
+The VOF model adopts a one-fluid formulation.
+Only one velocity field is solved on the computational domain.
+
+The local density is reconstructed from the void fraction using a
+linear interpolation:
+
+\begin{equation}
+\rho=\alpha \rho_1+(1-\alpha)\rho_2 ,
+\label{eq:vof:rho_mix}
+\end{equation}
+
+with $\rho_1$ and $\rho_2$ the reference viscosities of the phases 1 and 2.
+
+Similarly, the dynamic viscosity is obtained as
+
+\begin{equation}
+\mu=\alpha \mu_1+(1-\alpha)\mu_2 ,
+\label{eq:vof:mu_mix}
+\end{equation}
+
+with $\mu_1$ and $\mu_2$ the reference viscosities of the phases 1 and 2.
+
+%-------------------------------------------------------------------------------
+
+\subsection{Mixture mass conservation}
+
+The mixture density varies locally through the void fraction field.
+The corresponding conservation equation reads
+
+\begin{equation}
+\frac{\partial \rho}{\partial t}+\divs \cdot (\rho \vect{u})=0.
+\label{eq:vof:mass}
+\end{equation}
+
+The mass fluxes used by the momentum solver are updated consistently
+with the reconstructed density field so that phase conservation and
+momentum conservation remain coupled.
+
+%-------------------------------------------------------------------------------
+
+\subsection{Momentum equation}
+
+The velocity field is governed by a single Navier--Stokes equation
+written for the mixture:
+
+\begin{equation}
+\frac{\partial (\rho \vect{u})}{\partial t}
+  +\divv (\rho \vect{u}\otimes\vect{u})
+=-\grad p
++\divv\left[\mu\left(\gradt\vect{u}+\gradt\vect{u}^{T}\right)\right]
++\rho \vect{g}+\vect{F}_{\sigma},
+\label{eq:vof:momentum}
+\end{equation}
+
+where:
+
+\begin{itemize}
+\item $p$ is pressure,
+\item $\vect{g}$ is gravitational acceleration,
+\item $\vect{F}_{\sigma}$ is the surface tension force.
+\end{itemize}
+
+The momentum equation is therefore solved over the whole domain,
+independently of the local phase, while material properties vary through
+the void fraction field.
+
+Surface tension effects are modelled through the Continuum Surface Force (CSF)
+formulation proposed by Brackbill, Kothe and Zemach. It spreads the capillary
+force over a finite thickness around the interface.
+
+The interface normal is computed from the void fraction gradient:
+
+\begin{equation}
+\vect{n}=\frac{\grad \alpha}{\left| \grad \alpha \right|}.
+\label{eq:vof:normal}
+\end{equation}
+
+The interface curvature is obtained from
+
+\begin{equation}
+\kappa=-\divs \vect{n}.
+\label{eq:vof:curvature}
+\end{equation}
+
+The volumetric surface tension force entering the momentum equation is
+
+\begin{equation}
+\vect{F}_{\sigma}=\sigma \kappa \grad \alpha,
+\label{eq:vof:csf}
+\end{equation}
+
+where $\sigma$ is the surface tension coefficient.

@@ -8,6 +8,7 @@ api/cs_ug_mesh_select_c
 api/advanced_ale
 api/advanced_atmospheric
 api/advanced_cavitation
+api/advanced_vof
 api/advanced_coal_and_gas_combution
 api/advanced_compressible
 api/advanced_conjugate_heat_transfer

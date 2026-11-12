@@ -60,6 +60,7 @@ Advanced modeling setup
 - \subpage advanced_turbomachinery
 - \subpage advanced_ale
 - \subpage advanced_cavitation
+- \subpage advanced_vof
 
 <!-- ======================================================================= -->
 
@@ -713,7 +714,7 @@ Fluid-Structure external coupling
 
 The \ref cs_user_fsi_structure_num function belongs to the module dedicated to external
 Fluid-Structure coupling with *code_aster*. Here one defines the boundary
-faces coupled with *code_aster*. 
+faces coupled with *code_aster*.
 For examples on the function we can see [examples](@ref cs_user_fluid_structure_interaction_h_usaste)
 
 <!-- ======================================================================= -->
@@ -794,7 +795,7 @@ or external coupling to each boundary zone when ALE mesh deformation is activate
 For each (per-zone) boundary condition with an internal coupling definition,
 a new internal structure is created. Structure ids are numbered from *0* to *n*,
 in order of boundary condition appearance. Zones may also be associated with
-an external structure, based on coupling with code_aster or external user subroutine. 
+an external structure, based on coupling with code_aster or external user subroutine.
 In this case, a single coupling is handled, so whether a single zone or multiple zones are
 defined as being coupled with this external code has no incidence (the mapping
 between coupled fluid and structure surfaces is based on geometrical proximity).
@@ -831,15 +832,15 @@ Fluid - structure external coupling with code_aster
 
 Using the GUI, users can configure the convergence criteria and select a convergence acceleration algorithm.
 
-This coupling relies on the MEDCoupling library to transfer data between the two meshes. 
-The projection is based on vertex interpolation using Lagrange basis functions, while the 
+This coupling relies on the MEDCoupling library to transfer data between the two meshes.
+The projection is based on vertex interpolation using Lagrange basis functions, while the
 nearest vertex is identified through an orthogonal projection procedure.
 
-The boundary stress field is defined as a piecewise constant quantity on boundary faces. 
+The boundary stress field is defined as a piecewise constant quantity on boundary faces.
 Prior to the transfer to code_aster, these face values are interpolated onto the mesh vertices.
 
-The method can also be applied to non-coincident curved interfaces. 
-In this case, the projection error depends on both the geometric mismatch between 
+The method can also be applied to non-coincident curved interfaces.
+In this case, the projection error depends on both the geometric mismatch between
 the interfaces and the discretization error associated with the meshes.
 
 <!-- ======================================================================= -->
@@ -1314,6 +1315,79 @@ of the liquid phase and the gas phase.
 
 For a description of the user management of the cavitation module,
 please refer to [the dedicated doxygen documentation.](@ref cavit)
+
+<!-- ======================================================================= -->
+
+\page advanced_vof VOF (Volume of Fluid) module
+
+Introduction
+============
+
+The Volume of Fluid (VOF) model allows for the simulation of immiscible
+multi-phase flows with a resolved interface. It belongs to the class of
+interface-capturing approaches in which a scalar indicator function is
+transported.
+
+In **code_saturne**, the VOF formulation handles two phases and relies on the
+introduction of an additional transport equation for the void fraction of one
+of the phases.
+
+Mass and momentum equations remain unchanged, the velocity corresponding to the
+velocity of the mixture. The fluid properties of density and viscosity are
+reconstructed from the local void fraction, using constant values for each
+phase. Surface tension can be enabled through a Continuum Surface Force
+approach, and interface compression can be activated.
+
+Dedicated compressive numerical schemes with boundedness properties are used
+for the void fraction transport. The transport equation is solved in
+conservative form so that the total amount of each phase is preserved at the
+discrete level.
+
+Activation of the model
+-----------------------
+
+The module can be activated in **Calculations features** with the **No mass
+transfer option**.
+
+Specific parameters
+-------------------
+
+When VOF model is enabled, constant phase densities and viscosities can be
+set in the **Volume conditions** section for both fluids. The reference density
+for reduced pressure computation will automatically be taken to the maximum
+of those densities. The surface tension can also be set. If set to 0, one
+does not go through the surface tension routines.
+
+In **Volume conditions**, one can also initialize the void fraction field (by
+default, it is set to 0 everywhere, corresponding to 100\% phase 1). For
+Inlet boundary conditions, one can also set the void fraction.
+
+Interaction with turbulence
+---------------------------
+
+There is no modification of the turbulence relative to the presence of two
+phases.
+
+Interface compression
+---------------------
+
+An interface compression term can be added through the **idrift** option
+(disabled by default with 0 value) through a user. If equal to 1, automatic
+\cite deshpande:2012 model will be used. It equal to 2, the relative velocity
+definition is left to the user, in \ref cs_user_physical_properties .
+
+Numerical scheme
+----------------
+
+The void fraction also appears in the **Equations parameters**.
+
+The default scheme uses a CICSAM NVD/TVD scheme (**ischcv = 4** with
+**CS_NVD_VOF_CICSAM** as limiter choice) with a continuous "beta" limiter
+ensuring boundedness (**isstpc = 2**), a second order convective scheme
+(**blencv = 1**). The void fraction is clipped between 0 and 1.
+
+For a description of the user management of the VOF module,
+please refer to [the dedicated doxygen documentation.](@ref vof)
 
 <!-- ======================================================================= -->
 

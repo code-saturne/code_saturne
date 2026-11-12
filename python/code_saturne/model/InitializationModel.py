@@ -117,7 +117,7 @@ velocity[2] = 0.;"""
 
     @Variables.noUndo
     def getDefaultVoidFractionFormula(self):
-        formula = """# 0.: 100% heavy fluid (water) ; 1.: 100% light fluid (air)
+        formula = """# 0.: 100% fluid 1 ; 1.: 100% fluid 2
 void_fraction = 0.;"""
         return formula
 
