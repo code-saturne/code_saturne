@@ -237,8 +237,8 @@ cs_dbg_dump_msr_system(const char        *eqname,
  *
  * \param[in] basename  name of the system
  * \param[in] matrix    matrix to dump
- * \param[in] b         right-hand side to dump or null
- * \param[in] x         solution array to dump or null
+ * \param[in] rhs       right-hand side to dump or null
+ * \param[in] sol       solution array to dump or null
  */
 /*----------------------------------------------------------------------------*/
 

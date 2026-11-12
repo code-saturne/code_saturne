@@ -781,7 +781,7 @@ cs_navsto_system_set_model_flag(cs_navsto_param_model_flag_t model_flag);
 /*
  * \brief Set numerical flags for the Navier-Stokes (NS) system
  *
- * \param[in] mnum_flag     additional high-level numerical options
+ * \param[in] num_flag      additional high-level numerical options
  *
  */
 /*----------------------------------------------------------------------------*/

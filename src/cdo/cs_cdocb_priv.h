@@ -59,10 +59,10 @@ typedef struct _cs_cdocb_t  cs_cdocb_scaleq_t;
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdocb_scaleq_assemble_t)(const cs_cell_sys_t   *csys,
-                             const cs_cell_mesh_t  *cm,
-                             cs_cdocb_scaleq_t     *eqc,
-                             cs_cdo_assembly_t     *asb);
+(cs_cdocb_scaleq_assemble_t)(const cs_cell_sys_t  *csys,
+                             const cs_cell_mesh_t *cm,
+                             cs_cdocb_scaleq_t    *eqc,
+                             cs_cdo_assembly_t    *asb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -70,7 +70,7 @@ typedef void
  *        arising from the discretization of the scalar-valued CDO cell-based
  *        scheme.
  *
- * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] saddle  pointer to a cs_saddle_solver_t structure
  * \param[in, out] flux    values of the flux at faces (scalar)
  * \param[in, out] pot     values of the potential in cells
  *
@@ -79,9 +79,9 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef int
-(cs_cdocb_scaleq_solve_t)(cs_saddle_solver_t  *saddle,
-                          cs_real_t           *flux,
-                          cs_real_t           *pot);
+(cs_cdocb_scaleq_solve_t)(cs_saddle_solver_t *saddle,
+                          cs_real_t          *flux,
+                          cs_real_t          *pot);
 
 /* Main structure */
 /* ============== */

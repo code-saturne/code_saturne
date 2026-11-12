@@ -2161,9 +2161,9 @@ _cs_sdm_t::~_cs_sdm_t()
 /*!
  * \brief Constructor for a matrix.
  *
- * \param[in] flag        metadata related to a cs_sdm_t structure
- * \param[in] n_max_rows  max number of rows
- * \param[in] n_max_cols  max number of columns
+ * \param[in] flag_        metadata related to a cs_sdm_t structure
+ * \param[in] n_max_rows_  max number of rows
+ * \param[in] n_max_cols_  max number of columns
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2193,7 +2193,7 @@ _cs_sdm_t::_cs_sdm_t(const cs_flag_t flag_,
 /*!
  * \brief Constructor for a square matrix using an empty flag
  *
- * \param[in] n_max_rows  max number of rows
+ * \param[in] n_max_rows_  max number of rows
  */
 /*----------------------------------------------------------------------------*/
 

@@ -5491,7 +5491,6 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     w_stride      stride for weighting coefficient
  * \param[in]     c_weight      diffusion gradient weighting
  * \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
@@ -6002,8 +6001,7 @@ cs_convection_diffusion_secvis
  * \param[in]       i_visc    \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                            at interior faces for the r.h.s.
  * \param[in]       i_secvis  secondary viscosity at interior faces
- * \param[in]       b_secvis  secondary viscosity at boundary faces
- * \param[in]       grad      velocity gradient
+ * \param[in]       gradv     velocity gradient
  * \param[in, out]  rhs       right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/

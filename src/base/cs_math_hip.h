@@ -418,17 +418,17 @@ public:
 /*!
  * \brief  Normalise a vector of 3 real values.
  *
- * To normalize in-place, \p vin and \p vout may point to the same array.
+ * To normalize in-place, \p in and \p out may point to the same array.
  *
- * \param[in]     vin           vector
- * \param[out]    vout          normalized vector
+ * \param[in]  in   vector
+ * \param[out] out  normalized vector
  */
 /*----------------------------------------------------------------------------*/
 
 template <typename T>
 __device__ static void
-cs_math_3_normalize_hip(const T  in[3],
-                        T        out[3])
+cs_math_3_normalize_hip(const T in[3],
+                        T       out[3])
 {
   T norm = sqrt(  in[0]*in[0]
                 + in[1]*in[1]
@@ -445,9 +445,9 @@ cs_math_3_normalize_hip(const T  in[3],
 /*!
  * \brief Compute the square norm of a vector of 3 real values.
  *
- * \param[in]     v             vector of 3 real values
+ * \param[in]     in            vector of 3 real values
  *
- * \return square norm of v.
+ * \return square norm of in.
  */
 /*----------------------------------------------------------------------------*/
 

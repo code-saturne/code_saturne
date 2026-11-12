@@ -60,7 +60,7 @@
  * \param[in]      n2_dofs  number of (scatter) DoFs for the (2,2)-block
  * \param[in]      vec      array of values
  * \param[in]      mat_adj  adjacency related to the matrix operator
- * \param[in]      mat_val  values associated to the matrix operator
+ * \param[in]      mat_op   values associated to the matrix operator
  * \param[in, out] matvec   resulting vector (have to be allocated)
  */
 /*----------------------------------------------------------------------------*/

@@ -227,11 +227,11 @@ _assign_vb_dirichlet_values(int                dim,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute mapped boundary conditions for a given field and mapping
- * locator. Hybrid field for cdofb
+ *        locator. Hybrid field for CDO face-based scheme.
  *
  * \param[in]      bc_map      pointer to a cs_bc_map_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]      val_c      pointer to a cs_field_t structure
+ * \param[in]      cdoq        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      val_c       pointer to a cs_field_t structure
  * \param[in]      normalize  normalize values to conserve the initial norm
  * \param[in, out] values     pointer to the array of values to set
  *                            size = 3*n_b_faces

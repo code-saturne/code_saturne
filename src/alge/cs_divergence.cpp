@@ -109,7 +109,7 @@
  *
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
- * \param[in]     f             pointer to field
+ * \param[in]     f_id          field id
  * \param[in]     itypfl        indicator (take rho into account or not)
  *                               - 1 compute \f$ \rho\vect{u}\cdot\vect{s} \f$
  *                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$
@@ -674,20 +674,7 @@ cs_mass_flux(const cs_mesh_t             *m,
  * \param[in]     inc           indicator
  *                               - 0 solve an increment
  *                               - 1 otherwise
- * \param[in]     imrgra        indicator
- *                               - 0 iterative gradient
- *                               - 1 least square gradient
- * \param[in]     nswrgu        number of sweeps for the reconstruction
- *                               of the gradients
- * \param[in]     imligu        clipping gradient method
- *                               - < 0 no clipping
- *                               - = 0 thanks to neighbooring gradients
- *                               - = 1 thanks to the mean gradient
- * \param[in]     iwarnu        verbosity
- * \param[in]     epsrgu        relative precision for the gradient
- *                               reconstruction
- * \param[in]     climgu        clipping coefficient for the computation of
- *                               the gradient
+ * \param[in]     eqp           equation calculation options
  * \param[in]     c_rho         cell density
  * \param[in]     b_rho         density at boundary faces
  * \param[in]     c_var         variable

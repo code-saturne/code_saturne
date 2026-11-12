@@ -526,7 +526,6 @@ cs_vertex_to_cell_free(void)
  *
  * \param[in]       method            interpolation method
  * \param[in]       verbosity         verbosity level
- * \param[in]       ignore_rot_perio  if true, ignore periodicity of rotation
  * \param[in]       v_weight          vertex weight, or nullptr
  * \param[in]       v_var             base vertex-based variable
  * \param[out]      c_var             cell-based variable

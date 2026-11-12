@@ -98,7 +98,6 @@ public:
    *         initialization.
    *
    * \param[in]       method            interpolation method
-   * \param[in]       verbosity         verbosity level
    * \param[in]       ignore_rot_perio  if true, ignore periodicity of rotation
    * \param[in]       b_var             boundary-face values
    * \param[out]      v_var             vertex-based values

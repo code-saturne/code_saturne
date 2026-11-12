@@ -96,7 +96,7 @@ typedef enum {
  * \param[in]      v2       second vertex
  * \param[in]      len      length of edge [v1, v2]
  * \param[in, out] gpts     gauss points
- * \param[in, out] w        weight (same weight for the two points)
+ * \param[in, out] weights  weight (same weight for the two points)
  */
 /*----------------------------------------------------------------------------*/
 

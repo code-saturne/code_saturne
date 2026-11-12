@@ -293,6 +293,8 @@ cs_balance_scalar(int                         idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
+ * \param[in,out] i_pvar        convective variable value at interior faces
+ * \param[in,out] b_pvar        convective variable value at boundary faces
  * \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/

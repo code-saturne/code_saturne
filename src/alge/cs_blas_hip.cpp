@@ -129,7 +129,7 @@ _asum_stage_1_of_2(cs_lnum_t    n,
  * \param[in]   n      array size
  * \param[in]   x      x vector
  * \param[in]   y      y vector
- * \param[out]  b_res  result of s = x.x
+ * \param[out]  b_res  result of s = x.y
  */
 /*----------------------------------------------------------------------------*/
 
@@ -165,7 +165,6 @@ _dot_xy_stage_1_of_2(cs_lnum_t    n,
  *
  * \param[in]   n      array size
  * \param[in]   x      x vector
- * \param[in]   y      y vector
  * \param[out]  b_res  result of s = x.x
  */
 /*----------------------------------------------------------------------------*/

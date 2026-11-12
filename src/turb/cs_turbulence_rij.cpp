@@ -6888,21 +6888,6 @@ _rit_godunov_boundary_state(int                 bc_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief div(R) contribution (momentum equation) from the exact
- *        Riemann solver, filling face-based tensor-flux buffers with
- *        the SAME layout/convention as cs_tensor_face_flux, so that
- *        the existing cs_tensor_divergence(m, 1, tflmas, tflmab,
- *        cpro_divr) call in _div_rij can be reused unchanged.
- *
- * \param[in]   crom    density at cells
- * \param[in]   brom    density at boundary faces
- * \param[out]  tflmas  interior face tensor flux (contracted with n)
- * \param[out]  tflmab  boundary face tensor flux (contracted with n)
- */
-/*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Compute, once per time step, the exact Riemann interface state
  *        for the coupled {u, R} system on every interior and boundary
  *        face, and store it in the shared fields "i_velocity",

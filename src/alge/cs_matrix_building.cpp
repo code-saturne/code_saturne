@@ -2319,7 +2319,7 @@ _matrix_anisotropic_diffusion_strided
  * \param[in]       ndircp        number of Dirichlet BCs
  * \param[in]       thetap        time scheme parameter
  * \param[in]       relaxp        relaxation coefficient (if < 1)
- * \param[in]       imucp         1 for temperature (with Cp), 0 otherwise
+ * \param[in]       imucpp        1 for temperature (with Cp), 0 otherwise
  * \param[in]       bc_coeffs     boundary condition structure
  * \param[in]       rovsdt        implicit terms (rho / dt)
  * \param[in]       i_massflux    mass flux at interior faces
@@ -3226,24 +3226,37 @@ cs_matrix_wrapper(int                         iconvp,
  *
  * \tparam  stride 3 for vectors, 6 for tensors
  *
- * \param[in]     m             pointer to mesh structure
- * \param[in]     idiffp        indicator
- *                               - 1 diffusion
- *                               - 0 otherwise
- * \param[in]     thetap        weighting coefficient for the theta-scheme,
- *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centered
- *                               scheme (mix between Crank-Nicolson and
- *                               Adams-Bashforth)
- *                               - thetap = 1: implicit scheme
- * \param[in]     bc_coeffs_v   boundary condition structure for the variable
- * \param[in]     fimp          \f$ \tens{f_s}^{imp} \f$, or null
- * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
- *                               at interior faces for the matrix
- * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
- *                               at border faces for the matrix
- * \param[out]    da            diagonal part of the matrix
- * \param[out]    xa            extra interleaved diagonal part of the matrix
+ * \param[in]  iconvp               indicator
+ *                                   - 1 convection
+ *                                   - 0 otherwise
+ * \param[in]  idiffp               indicator
+ *                                   - 1 diffusion
+ *                                   - 0 otherwise
+ * \param[in]  tensorial_diffusion  indicator
+ *                                   - 1 anisotropic diffusion
+ *                                   - 0 isotropic diffusion
+ * \param[in]  ndircp               number of Dirichlet BCs
+ * \param[in]  isym                 indicator
+ *                                   - 1 symmetric matrix
+ *                                   - 2 non symmmetric matrix
+ * \param[in]  eb_size              extra-diagonal block size
+ *                                  (1 or 3 for stride 3, 1 for stride 6)
+ * \param[in]  thetap               weighting coefficient for the theta-scheme,
+ *                                   - thetap = 0: explicit scheme
+ *                                   - thetap = 0.5: time-centered
+ *                                   scheme (mix between Crank-Nicolson and
+ *                                   Adams-Bashforth)
+ *                                   - thetap = 1: implicit scheme
+ * \param[in]  bc_coeffs_v          boundary condition structure for the
+ *                                  variable
+ * \param[in]  fimp                 \f$ \tens{f_s}^{imp} \f$, or null
+ * \param[in]  i_visc               \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                                   at interior faces for the matrix
+ * \param[in]  b_visc               \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                                   at border faces for the matrix
+ * \param[out] da                   diagonal part of the matrix
+ * \param[out] xa                   extra diagonal part of the matrix
+ *                                  (interleaved arrangement)
  */
 /*----------------------------------------------------------------------------*/
 

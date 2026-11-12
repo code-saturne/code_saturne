@@ -72,7 +72,7 @@
  * \param[in]       ndircp        number of Dirichlet BCs
  * \param[in]       thetap        time scheme parameter
  * \param[in]       relaxp        relaxation coefficient (if < 1)
- * \param[in]       imucp         1 for temperature (with Cp), 0 otherwise
+ * \param[in]       imucpp        1 for temperature (with Cp), 0 otherwise
  * \param[in]       bc_coeffs     boundary condition structure
  * \param[in]       rovsdt        implicit terms (rho / dt)
  * \param[in]       i_massflux    mass flux at interior faces

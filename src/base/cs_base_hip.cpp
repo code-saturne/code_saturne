@@ -716,9 +716,6 @@ cs_base_hip_nccl_info(cs_log_t  log_id)
 /*!
  * \brief Set HIP device based on MPI rank and number of devices.
  *
- * \param[in]  comm            associated MPI communicator
- * \param[in]  ranks_per_node  number of ranks per node (min and max)
- *
  * \return  selected device id, or -1 if no usable device is available
  */
 /*----------------------------------------------------------------------------*/

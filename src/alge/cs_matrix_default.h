@@ -237,7 +237,7 @@ cs_matrix_get_tuning_runs(void);
 /*
  * \brief Set default matrix type for a given fill type.
  *
- * \param[in] fill type  Fill type for which tuning behavior is set
+ * \param[in] fill_type  Fill type for which tuning behavior is set
  * \param[in] type       Matrix type to use
  */
 /*----------------------------------------------------------------------------*/

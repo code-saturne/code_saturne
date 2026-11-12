@@ -87,7 +87,7 @@
  *        with a CDO-Vb scheme.
  *
  * \param[in]      cur2prev     do a "current to previous" operation ?
- * \param[in]      n_eqs        number of equations
+ * \param[in]      n_equations  number of equations
  * \param[in, out] blocks       array of the core members for an equation
  * \param[in, out] scalsys      pointer to a cs_cdovb_scalsys_t structure
  * \param[in, out] fields       array of pointers to the associated fields
@@ -109,18 +109,18 @@ typedef void
  *        Add the block attached to the block (row_id, col_id) in the full
  *        (coupled) system
  *
- * \param[in]      csys       pointer to a cellwise view of the system
- * \param[in, out] sh         pointer to the system helper of the coupled sys.
- * \param[in, out] eqc        context for this kind of discretization
- * \param[in, out] asb        pointer to a cs_cdo_assembly_t structure
+ * \param[in]      csys  pointer to a cellwise view of the system
+ * \param[in, out] sh    pointer to the system helper of the coupled sys.
+ * \param[in, out] eqb   pointer to equation builder
+ * \param[in, out] asb   pointer to a cs_cdo_assembly_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdovb_scalsys_asb_t)(const cs_cell_sys_t          *csys,
-                         cs_cdo_system_helper_t       *sh,
-                         cs_equation_builder_t        *eqb,
-                         cs_cdo_assembly_t            *asb);
+(cs_cdovb_scalsys_asb_t)(const cs_cell_sys_t    *csys,
+                         cs_cdo_system_helper_t *sh,
+                         cs_equation_builder_t  *eqb,
+                         cs_cdo_assembly_t      *asb);
 
 /*----------------------------------------------------------------------------*/
 /*!

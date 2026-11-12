@@ -3769,9 +3769,8 @@ cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t *eqp,
  *        initializing a cs_xdef_t structure, using an array.
  *
  * \param[in, out] eqp          pointer to a cs_equation_param_t structure
- * \param[in]      bc_type      type of boundary condition to add
- * \param[in]      z_name       name of the related boundary zone
- * \param[in]      loc          information to know where are located values
+ * \param[in]      z_name       name of the related volume zone
+ * \param[in]      loc_flag     information to know where are located values
  * \param[in]      array        pointer to an array
  * \param[in]      is_owner     transfer the lifecycle to the cs_xdef_t struct.
  *                              (true or false)

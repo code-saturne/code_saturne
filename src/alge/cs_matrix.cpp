@@ -6324,8 +6324,8 @@ cs_matrix_is_symmetric(const cs_matrix_t  *matrix)
 /*!
  * \brief Set (force) matrix coefficients symmetry flag
  *
- * \param[in]  matrix    pointer to matrix structure
- * \param[in]  symmetry  matrix symmetry flag
+ * \param[in]  matrix     pointer to matrix structure
+ * \param[in]  symmetric  matrix symmetry flag
  */
 /*----------------------------------------------------------------------------*/
 

@@ -1148,7 +1148,6 @@ cs_mesh_cartesian_set_gc_id_shift(int  id,
  *
  * \param[in] mp       Pointer to mesh parameters
  * \param[in] enable   Enable/disable flag
- * \param[in] r_core   Core radius
  * \param[in] r_outer  Outer cylinder radius
  * \param[in] nr       Number of radial layers
  * \param[in] r_prog   Radial geometric progression factor
@@ -1259,16 +1258,6 @@ cs_mesh_cartesian_get_ncells(int  id,
 
   return mp->params[idim]->ncells;
 }
-
-/*----------------------------------------------------------------------------*/
-/*! \brief Build unstructured connectivity needed for partitionning.
- *
- * \param[in] id    Id of the cartesian mesh
- * \param[in] m     pointer to cs_mesh_t structure
- * \param[in] mb    pointer to cs_mesh_builder_t structure
- * \param[in] echo  verbosity flag
- */
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Helper to map 2D core vertex indices to global 2D index.

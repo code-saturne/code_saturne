@@ -1948,7 +1948,7 @@ cs_stl_mesh_rotate(cs_stl_mesh_t  *stl_mesh,
  * \brief Apply a scaling to a STL mesh structure.
  *
  * \param[in]  stl_mesh        pointer to the associated STL mesh structure
- * \param[in]  vector          translation vector
+ * \param[in]  scale           scaling factor
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2172,18 +2172,18 @@ cs_stl_file_write(cs_stl_mesh_t  *stl_mesh,
 /*!
  * \brief Compute intersection between a STL mesh and the main mesh.
  *
- * \param[in]     stl_mesh          pointer to the associated STL mesh structure
- * \param[in]     location_id       mesh location
- * \param[in]     v2v               vertex to vextex connectivity, v0 < V1
- *                                  if vertex mesh entity, or nullptr
- * \param[in]     n_input           number of mesh entity on which intersection is done
- * \param[in]     input_idx         index of input (size: input_idx)
- * \param[out]    n_selected_cells  number of output intersecting
- * \param[out]    selected_cells    index of output (size: output_idx)
- * \param[out]    tria_in_cell_idx  start index of triangle intersecting
-                                    each mesh entity (size: n_output)
- * \param[out]    tria_in_cell_lst  list of triangles in intersecting cells
- * \param[in,out] max_size          maximum size of tria_in_cell_lst array
+ * \param[in]     stl_mesh     pointer to the associated STL mesh structure
+ * \param[in]     location_id  mesh location
+ * \param[in]     v2v          vertex to vextex connectivity, v0 < V1
+ *                             if vertex mesh entity, or nullptr
+ * \param[in]     n_input      number of mesh entity on which intersection is done
+ * \param[in]     input_idx    index of input (size: input_idx)
+ * \param[out]    n_selected   number of output intersecting
+ * \param[out]    selected     index of output (size: output_idx)
+ * \param[out]    tria_idx     start index of triangle intersecting
+                               each mesh entity (size: n_output)
+ * \param[out]    tria_lst     list of triangles in intersecting cells
+ * \param[in,out] max_size     maximum size of tria_in_cell_lst array
  */
 /*----------------------------------------------------------------------------*/
 

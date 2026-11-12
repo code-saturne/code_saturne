@@ -115,27 +115,27 @@ typedef struct _cs_turbulence_t cs_turbulence_t;
  * \brief  Allocate and initialize the context structure related to a given
  *         turbulence modelling
  *
- * \param[in]      tbm       pointer to a \ref cs_turb_model_t structure
+ * \param[in] tbm  pointer to a \ref cs_turb_model_t structure
  *
  * \return a pointer to a new allocated turbulence context structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void *
-(cs_turb_init_context_t)(const cs_turb_model_t   *tbm);
+(cs_turb_init_context_t)(const cs_turb_model_t *tbm);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Free the context structure related to a given turbulence modelling
  *
- * \param[in, out]  tbc       pointer to a structure cast on-the-fly to free
+ * \param[in, out]turb_context  pointer to a structure cast on-the-fly to free
  *
  * \return a null pointer
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void *
-(cs_turb_free_context_t)(void     *turb_context);
+(cs_turb_free_context_t)(void *turb_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -305,33 +305,33 @@ struct _cs_turbulence_t {
 
   cs_turb_update_t             *update;
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief  Compute and add the turbulent part of the boundray stress
    *
-   * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
-   * \param[in] boundary_stress pointer to a \ref cs_field_t structure
+   * \param[in] m                pointer to a \ref cs_mesh_t structure
+   * \param[in] boundary_stress  pointer to a \ref cs_field_t structure
    *
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   void
-  add_boundary_stress(const cs_mesh_t *m, cs_field_t *boundary_stress) const;
+  add_boundary_stress(const cs_mesh_t *m,
+                      cs_field_t      *boundary_stress) const;
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief Check the convergence of the pseudo-steady algorithm
    *        when the unsteady Navier-Stokes system with a CDO face-based scheme
    *        is used.
    *
-   * \param[in]  quant         pointer to a \ref cs_cdo_quantities_t struct.
-   * \param[in]  ts            pointer to a \ref cs_time_step_t structure
-   * \param[in]  psp           pointer to a \ref cs_param_psteady_t struct.
-   * \param[in]  ps_cvg        pointer to a \ref cs_cdo_navsto_psteady_cvg_t
-   *                           struct.
+   * \param[in]  quant   pointer to a \ref cs_cdo_quantities_t struct.
+   * \param[in]  ts      pointer to a \ref cs_time_step_t structure
+   * \param[in]  psp     pointer to a \ref cs_param_psteady_t struct.
+   * \param[in]  ps_cvg  pointer to a \ref cs_cdo_navsto_psteady_cvg_t struct.
    *
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   void
   check_convergence(const cs_cdo_quantities_t   *quant,

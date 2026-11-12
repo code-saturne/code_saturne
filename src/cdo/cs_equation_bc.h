@@ -481,7 +481,7 @@ cs_equation_bc_cw_robin(cs_real_t                    t_eval,
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
  * \param[in]      nu          laminar kinematic viscosity
  * \param[in]      rho         density at the boundary face
- * \param[in]      k           turbulent kinetic energy
+ * \param[in]      kener       turbulent kinetic energy
  * \param[in]      hfc         distance from cell center to the wall
  * \param[in]      uc          cell velocity
  * \param[in]      uf          face velocity
@@ -497,7 +497,7 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
                                    const cs_cell_mesh_t      *cm,
                                    const cs_real_t            nu,
                                    const cs_real_t            rho,
-                                   const cs_real_t            k,
+                                   const cs_real_t            kener,
                                    const cs_real_t            hfc,
                                    const cs_real_t           *uc,
                                    const cs_real_t           *uf,

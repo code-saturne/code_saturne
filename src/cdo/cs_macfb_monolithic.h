@@ -84,7 +84,7 @@ cs_macfb_monolithic_get_face_velocity(bool previous)
 /*!
  * \brief  Set shared pointers from the main domain members
  *
- * \param[in] mom_eqp    equation parameter settings
+ * \param[in] eqp        equation parameter settings
  * \param[in] mesh       pointer to a cs_mesh_t structure
  * \param[in] quant      additional mesh quantities struct.
  * \param[in] connect    pointer to a \ref cs_cdo_connect_t struct.
@@ -92,7 +92,7 @@ cs_macfb_monolithic_get_face_velocity(bool previous)
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_macfb_monolithic_init_sharing(const cs_equation_param_t *mom_eqp,
+void cs_macfb_monolithic_init_sharing(const cs_equation_param_t *eqp,
                                       const cs_mesh_t           *mesh,
                                       const cs_cdo_quantities_t *quant,
                                       const cs_cdo_connect_t    *connect,

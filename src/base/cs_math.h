@@ -564,8 +564,7 @@ cs_math_matrix_gauss_inverse(const T  a[n][n],
  * \brief  Inverse 3x3 symmetric matrix in place,
  *         using Gauss-Jordan elimination.
  *
- * \param[in]   a  input matrix
- * \param[out]  b  output matrix (may be identical to a)
+ * \param[in, out] a  input and output matrix
  */
 /*----------------------------------------------------------------------------*/
 

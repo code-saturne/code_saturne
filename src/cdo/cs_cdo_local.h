@@ -312,7 +312,6 @@ struct cs_cell_mesh_t {
    *          given vertex id in the mesh numbering
    *
    * \param[in]       v_id    vertex id in the mesh numbering
-   * \param[in]       cm      pointer to a cs_cell_mesh_t structure
    *
    * \return the vertex id in the cell numbering or -1 if not found
    */

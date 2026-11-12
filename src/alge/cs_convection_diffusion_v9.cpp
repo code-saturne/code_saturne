@@ -1945,7 +1945,6 @@ cs_convection_diffusion_scalar_v9(const cs_field_t           *f,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     w_stride      stride for weighting coefficient
  * \param[in]     c_weight      diffusion gradient weighting
  * \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$

@@ -650,21 +650,6 @@ _read_header(cs_xml_t  *doc)
   assert(found);
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Read and parse XML file to tree.
- *
- * \param[in, out]   r    root node to which XML contents are read
- * \param[in]  path  path to XML file
- */
-/*----------------------------------------------------------------------------*/
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Replace XML comments with spaces in-place in the buffer.
@@ -707,6 +692,21 @@ _strip_comments(char    *buf,
     }
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Read and parse XML file to tree.
+ *
+ * \param[in, out]   r    root node to which XML contents are read
+ * \param[in]  path  path to XML file
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_tree_xml_read(cs_tree_node_t  *r,

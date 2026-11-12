@@ -295,7 +295,7 @@ n2o_update_global_num(cs_lnum_t          n_new,
  * \param[in, out]  m              mesh
  * \param[in]       n_new          new number of cells
  * \param[in]       c_o2n          cell old to new renumbering
- * \param[out]      i_f_n2o_pre    new-to-old map of interior faces induced by
+ * \param[out]      i_f_n2o        new-to-old map of interior faces induced by
  *                                 cell merge
  */
 /*----------------------------------------------------------------------------*/

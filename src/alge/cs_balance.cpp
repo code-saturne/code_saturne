@@ -111,7 +111,7 @@ static int _balance_stat_id = -1;
 /*!
  * \brief Update the cell viscosity for balance
  *
- * \param[in]     context           reference to dispatch context
+ * \param[in]     ctx               reference to dispatch context
  * \param[in]     f                 pointer to field or nullptr
  * \param[in]     eqp               equation parameters
  * \param[in]     halo_type         halo type
@@ -645,7 +645,7 @@ cs_balance_scalar(int                         idtvar,
  *                              contains variable calculation options
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
- * \param[in]     bc_coeffs_v   boundary condition structure for the variable
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -662,6 +662,8 @@ cs_balance_scalar(int                         idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme (true everywhere if null)
  *                               - 1 imposed flux
+ * \param[in,out] i_pvar        convective variable value at interior faces
+ * \param[in,out] b_pvar        convective variable value at boundary faces
  * \param[in,out] smbr          right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/

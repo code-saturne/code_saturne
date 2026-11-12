@@ -82,20 +82,20 @@ cs_cdofb_scaleq_is_initialized(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate work buffer and general structures related to CDO
- *         scalar-valued face-based schemes.
- *         Set shared pointers from the main domain members
+ * \brief Allocate work buffer and general structures related to CDO
+ *        scalar-valued face-based schemes.
+ *        Set shared pointers from the main domain members
  *
- * \param[in]  quant       additional mesh quantities struct.
- * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]  time_step   pointer to a time step structure
+ * \param[in] cdoq       additional mesh quantities struct.
+ * \param[in] connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in] time_step  pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_init_sharing(const cs_cdo_quantities_t     *quant,
-                             const cs_cdo_connect_t        *connect,
-                             const cs_time_step_t          *time_step);
+cs_cdofb_scaleq_init_sharing(const cs_cdo_quantities_t *cdoq,
+                             const cs_cdo_connect_t    *connect,
+                             const cs_time_step_t      *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!

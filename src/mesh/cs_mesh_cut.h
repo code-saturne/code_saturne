@@ -100,15 +100,14 @@ cs_mesh_cut(cs_mesh_t       *mesh,
  * The polygons created by the cut are added to a new group,
  * "auto:closing_polygons".
  *
- *
- * \param[in]       stl_mesh    STL mesh
- * \param[in, out]  mesh        mesh to cut
+ * \param[in]       stl_file_name  STL file name
+ * \param[in, out]  mesh           mesh to cut
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_cut_edges_by_stl(const char  *stl_file_name,
-                         cs_mesh_t   *mesh);
+cs_mesh_cut_edges_by_stl(const char *stl_file_name,
+                         cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
 

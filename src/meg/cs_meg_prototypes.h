@@ -129,7 +129,7 @@ cs_meg_source_terms
   const cs_lnum_t  n_elts,      /*!<[in]  number of elements */
   const cs_lnum_t *elt_ids,     /*!<[in]  list of element ids */
   const cs_real_t  xyz[][3],    /*!<[in]  list of coordinates */
-  const char      *name,        /*!<[in]  variable field name */
+  const char      *field_name,  /*!<[in]  variable field name */
   const char      *source_type, /*!<[in]  source term type */
   cs_real_t       *retvals      /*!<[out] array of computed values */
 );

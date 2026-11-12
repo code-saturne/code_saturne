@@ -1779,8 +1779,8 @@ cs_equation_get_count(int *n_equations,
  * \brief Print a synthesis of the monitoring information in the performance
  *        file
  *
- * \param[in] time_steps  pointer to a structure managing the time stepping
- * \param[in] cdoq        pointer to a structure managing CDO quantities
+ * \param[in] ts    pointer to a structure managing the time stepping
+ * \param[in] cdoq  pointer to a structure managing CDO quantities
  */
 /*----------------------------------------------------------------------------*/
 

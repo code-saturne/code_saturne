@@ -1272,10 +1272,10 @@ cs_turb_wall_functions_is_activated(const cs_turbulence_param_t *turbulence)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute and add the turbulent part of the boundray stress
+ * \brief Compute and add the turbulent part of the boundray stress
  *
- * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
- * \param[in] boundary_stress pointer to a \ref cs_field_t structure
+ * \param[in] m                pointer to a \ref cs_mesh_t structure
+ * \param[in] boundary_stress  pointer to a \ref cs_field_t structure
  *
  */
 /*----------------------------------------------------------------------------*/

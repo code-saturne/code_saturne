@@ -216,7 +216,7 @@
   convergence fails.
 
   \param[in, out]  sles           pointer to solver object
-  \param[in]       status         convergence status
+  \param[in]       state          convergence status
   \param[in]       a              matrix
   \param[in]       rhs            Right hand side
   \param[out]      vx             System solution

@@ -195,7 +195,8 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
 /*!
  * \brief Regularisation on bad cells for vectors
  *
- * \param[in, out]  var  variable to regularize.
+ * \param[in, out]  var                  variable to regularize.
+ * \param[in]       boundary_projection  indicator for boundary face projection
  */
 /*----------------------------------------------------------------------------*/
 
@@ -392,7 +393,8 @@ cs_bad_cells_regularisation_vector(double       (*var)[3],
 /*!
  * \brief Regularisation on bad cells for symmetric tensors.
  *
- * \param[in, out]  var  variable to regularize.
+ * \param[in, out]  var                  variable to regularize.
+ * \param[in]       boundary_projection  indicator for boundary face projection
  */
 /*----------------------------------------------------------------------------*/
 
@@ -572,7 +574,8 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
 /*!
  * \brief Regularisation on bad cells for tensors
  *
- * \param[in, out]  var  variable to regularize.
+ * \param[in, out]  var                  variable to regularize.
+ * \param[in]       boundary_projection  indicator for boundary face projection
  */
 /*----------------------------------------------------------------------------*/
 

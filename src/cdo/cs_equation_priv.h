@@ -147,7 +147,7 @@ typedef void
 /*!
  * \brief Build a linear system within the CDO framework
  *
- * \param[in]      m          pointer to a \ref cs_mesh_t structure
+ * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
@@ -168,9 +168,9 @@ typedef void
  *        array and the right hand side of the linear system to solve.
  *        Handle parallelism thanks to cs_range_set_t structure.
  *
- * \param[in]      mesh     pointer to a mesh structure
- * \param[in, out] eq_cast  pointer to generic builder structure
- * \param[in, out] p_x      pointer of pointer to the solution array
+ * \param[in]      mesh        pointer to a mesh structure
+ * \param[in, out] eq_to_cast  pointer to generic builder structure
+ * \param[in, out] p_x         pointer of pointer to the solution array
  */
 /*----------------------------------------------------------------------------*/
 
