@@ -219,7 +219,7 @@ manner, with the help of the series $\delta \varia^{n+1}_{k+1}=\varia^{n+1}_{k+1
 More theoretical details of such an iterative process are given in \S \ref{sec:algebrea_iterative_process}.
 
 %-------------------------------------------------------------------------------
-\section{Pressure-based velocity-pressure solver}
+\section{Velocity-pressure coupling}\label{sec:timstp:velocity_pressure_coupling}
 The aim of this section is to describe how Navier Stokes equations are solved for an incompressible
 or weakly compressible (dilatable or Low Mach algorithm) combined with an
 implicit Euler time stepping or a second order Crank Nicolson time stepping.
@@ -310,37 +310,7 @@ the momentum equation of \eqref{eq:timstp:navier_stokes}
 For more details, see \S~ \ref{ap:cs_solve_navier_stokes} and \ref{ap:cs_velocity_prediction}. The \doxygenfile{predvv_8f90.html}{programmers reference
 of the dedicated subroutine} can also be helpful.
 
-\subsubsection{Correction step}
-The predicted velocity has \emph{a priori} non-zero divergence. The second step
-corrects the pressure by imposing the nullity\footnote{or the density time-variation
-is the corresponding algorithm is chosen.}
-of the steady constraint for
-the velocity computed at time instant ${t^{n+1}}$.
-We then solve:
-\begin{equation}\label{eq:timstp:c0_correction_step}
-\left\{\begin{array}{ r c l}
-\displaystyle \dfrac{(\rho\vect{u})^{n+1}-(\rho\vect{\widetilde{u}})^{n+1}}{\Delta t} &=&
--\grad{\delta P^{n+\theta}} ,\\
-\displaystyle
-\dive(\rho\vect{u})^{n+1} = \Gamma ,\\
-\end{array}\right.
-\end{equation}
-% FIXME add head loss to the source term
-where the pressure increment $\delta P^{n+\theta}$ is defined as:
-\begin{equation}
-\delta P^{n+\theta}=P^{n+\theta}-P^{n-1+\theta} .
-\end{equation}
-
-\begin{remark}
-The  $\rho$ and $\mu$ quantities remain constant over the course of both
-steps. If there has been any variation in the interval, their values will be
-modified at the start of the next time step, after the scalars
-(temperature, mass fraction,...) have been updated.
-\end{remark}
-
-
-For more details, see \S~ \ref{ap:cs_solve_navier_stokes} and \ref{ap:resopv}. The \doxygenfile{resopv_8f90.html}{programmers reference
- of the dedicated subroutine} can also be helpful.
+\input{cs_pressure_correction}
 
 %-------------------------------------------------------------------------------
 \subsection{Variable density conservative solvers}
@@ -383,8 +353,177 @@ Combining the two equations of \eqref{eq:timstp:correction} leads to a Poisson e
 %\end{remark}
 
 %-------------------------------------------------------------------------------
+\subsection{Pseudo-coupled solver: reinforced velocity-pressure coupling (\texttt{ipucou = 1})}\label{sec:timstp:reinforced_coupling}
 
-%\subsection{Pseudo-coupled solver}
+\paragraph{Motivation and Physical Justification}
+In conventional segregated solvers of \textit{SIMPLE} or \textit{SIMPLEC} type
+(standard segregated coupling, see \S~\ref{sec:timstp:correction_step}),
+the momentum operator $\tens{B}_\alpha$ is approximated solely by its unsteady inertia diagonal:
+\begin{equation}
+  \tens{B}_\alpha \approx \tens{M}_\alpha^n = \text{diag} \left( \frac{\vol{\celli}}{\Delta t_{\alpha,\celli}^n} \right)
+\end{equation}
+This approximation is valid when the time step $\Delta t$ is small and the flow is
+dominated by unsteady acceleration. However, in many industrial calculations
+involving steady-state convergence, large time steps, or local grid refinement, the
+local Courant number ($\text{CFL} = u \Delta t / \Delta x$) is much larger than unity.
+In this regime, the magnitude of convective transport $\tens{A}_\alpha$ and implicit
+drag or head loss terms $\tens{I}_{s,\alpha}$ far exceeds the unsteady term:
+\begin{equation}
+  \| \tens{A}_\alpha^n \| \gg \| \tens{M}_\alpha^n \|
+\end{equation}
+
+Neglecting $\tens{A}_\alpha$ and $\tens{I}_{s,\alpha}$ in the velocity correction
+operator leads to an overestimation of the velocity response to pressure changes,
+forcing the use of aggressive under-relaxation or very small time steps to avoid
+divergence.
+
+The pseudo-coupled reinforced velocity-pressure coupling algorithm ($\var{ipucou} = 1$)
+remedies this limitation by accounting for the full momentum operator $\tens{B}_\alpha$
+(unsteady, convective, diffusive, and implicit source terms) in the pressure
+correction step, while avoiding the prohibitive expense of inverting the full
+coupled system.
+
+\paragraph{Inversion of the Directional Pseudo-Time Step Equation}
+In the reinforced coupling algorithm, the diagonal approximation of $\tens{B}_\alpha^{-1}$
+is derived by solving an auxiliary linear system for each spatial coordinate
+direction $\alpha \in \{1, 2, 3\}$:
+\begin{equation}
+  \tens{B}_\alpha \vect{T}_\alpha = \vect{\Omega}
+  \label{eq:reinforced_coupling:pseudo_time_sys}
+\end{equation}
+where $\vect{\Omega}$ is the vector of cell volumes ($\vect{\Omega}_\celli = \vol{\celli}$).
+
+In \CS, system~\eqref{eq:reinforced_coupling:pseudo_time_sys} is solved within
+\fort{cs\_velocity\_prediction} using a single sweep ($N_{\text{sweeps}} = 1$) of the
+iterative linear solver with:
+\begin{itemize}
+\item an initial guess set to zero ($\vect{T}_\alpha = \vect{0}$),
+\item homogeneous Dirichlet boundary conditions on boundary faces ($T_{\alpha,b} = 0$),
+\item no non-orthogonal gradient reconstruction.
+\end{itemize}
+
+The resulting field $\vect{T}_\alpha = (T_{\alpha,1}, \dots, T_{\alpha,\ncell})^T$
+provides a directional effective pseudo-time step for each cell $\celli$, directly
+incorporating the local rates of convection, diffusion, and implicit resistance:
+\begin{equation}
+  T_{\alpha,\celli} = \left( \tens{B}_\alpha^{-1} \vect{\Omega} \right)_\celli
+\end{equation}
+The diagonal operator $\tens{B}_\alpha^{-1}$ is then approximated as:
+\begin{equation}
+  \tens{B}_\alpha^{-1} \approx \text{diag} \left( \frac{T_{\alpha,\celli}}{\vol{\celli}} \right)
+\end{equation}
+
+The equivalent directional time-scale tensor $\tens{T}_\celli$ at cell $\celli$ is
+a diagonal second-order tensor:
+\begin{equation}
+  \tens{T}_\celli = \begin{pmatrix}
+    T_{11,\celli} & 0 & 0 \\
+    0 & T_{22,\celli} & 0 \\
+    0 & 0 & T_{33,\celli}
+  \end{pmatrix}
+  = \begin{pmatrix}
+    \rho_\celli T_{1,\celli} & 0 & 0 \\
+    0 & \rho_\celli T_{2,\celli} & 0 \\
+    0 & 0 & \rho_\celli T_{3,\celli}
+  \end{pmatrix}
+  \label{eq:reinforced_coupling:tensor_T}
+\end{equation}
+
+In the asymptotic limit of small time steps ($\Delta t \to 0$), the unsteady mass
+matrix dominates: $\tens{B}_\alpha \to \frac{\vol{\celli}}{\Delta t_\celli} \tens{Id}$,
+which immediately yields:
+\begin{equation}
+  \vect{T}_\alpha \to \Delta t_\celli \vect{1}, \quad \text{and} \quad \tens{T}_\celli \to \rho_\celli \Delta t_\celli \tens{Id}
+\end{equation}
+The reinforced coupling thus smoothly and consistently degenerates into the standard
+weak coupling algorithm.
+
+\paragraph{Face Orthotropic Diffusivity}
+Because the directional pseudo-time steps $T_{11,\celli}, T_{22,\celli}, T_{33,\celli}$
+differ in general due to anisotropic convection, boundary-layer shear, or directional
+flow resistances, the tensor $\tens{T}_\celli$ is anisotropic. Consequently, the
+Laplacian of the pressure increment is an orthotropic diffusion operator.
+
+At an interior face $\fij$ with unit normal $\vect{n}_{ij} = (n_x, n_y, n_z)^T$,
+the effective face diffusivity is computed by projecting the interpolated tensor
+along the face normal:
+\begin{equation}
+  \widetilde{T}_{ij} = \left( \tens{T}_{ij} \vect{n}_{ij} \right) \cdot \vect{n}_{ij}
+  = T_{11,ij} \, n_x^2 + T_{22,ij} \, n_y^2 + T_{33,ij} \, n_z^2
+  \label{eq:reinforced_coupling:face_diffusivity}
+\end{equation}
+where $\tens{T}_{ij}$ is linearly interpolated between cell centers $I$ and $J$.
+Similarly, at a boundary face $\fib$ with unit normal $\vect{n}_b$:
+\begin{equation}
+  \widetilde{T}_{b} = \left( \tens{T}_{b} \vect{n}_{b} \right) \cdot \vect{n}_{b}
+\end{equation}
+
+The facet pressure increment flux is then discretized as:
+\begin{equation}
+  \left[ \tens{T}_{ij} (\grad \delta p)_{\fij} \right] \cdot \vect{S}_{ij}
+  = \widetilde{T}_{ij} \frac{\delta p_\cellj - \delta p_\celli}{\overline{I'J'}} S_{ij}
+  + \frac{\vect{JJ'} - \vect{II'}}{\overline{I'J'}} \cdot \frac{1}{2}
+  \left( \tens{T}_\celli \grad(\delta p)_\celli + \tens{T}_\cellj \grad(\delta p)_\cellj \right) S_{ij}
+\end{equation}
+
+\paragraph{Anisotropic Rhie \& Chow Regularization}
+The Rhie \& Chow interpolation is extended to handle the tensorial time scale
+$\tens{T}$. The cell-centered pressure gradient contribution is scaled by the full
+diagonal tensor:
+\begin{equation}
+  \widetilde{\vect{G}}(p^n)_\celli = \tens{T}_\celli \grad(p^n)_\celli
+  = \begin{pmatrix}
+    T_{11,\celli} \dfrac{\partial p^n}{\partial x} \\[6pt]
+    T_{22,\celli} \dfrac{\partial p^n}{\partial y} \\[6pt]
+    T_{33,\celli} \dfrac{\partial p^n}{\partial z}
+  \end{pmatrix}_\celli
+\end{equation}
+The regularized Rhie \& Chow mass flux at an interior face $\fij$ reads:
+\begin{equation}
+  \widetilde{m}_{ij} = \left[ \rho^n \favre{\vect{u}} + \frac{\alpha_{\text{Arak}}}{\rho} \tens{T}^n \grad(p^n) \right]_{\fij} \cdot \vect{S}_{ij}
+  - \alpha_{\text{Arak}} \, \widetilde{T}_{ij} (\grad p^n)_{\fij} \cdot \vect{S}_{ij}
+\end{equation}
+and similarly for boundary faces.
+This tensorial filtering ensures that high-frequency pressure oscillations are
+damped along each coordinate direction with the appropriate directional scale,
+preventing grid decoupling even on highly stretched meshes.
+
+\paragraph{Algorithmic Structure ($\var{ipucou} = 1$)}
+The complete reinforced velocity-pressure coupling sequence proceeds as follows:
+\begin{enumerate}
+\item \textbf{Velocity prediction:}
+  Solve the momentum equation for the predicted velocity $\favre{\vect{u}}$.
+\item \textbf{Directional pseudo-time step calculation:}
+  Assemble the linearized momentum operator $\tens{B}_\alpha$ for $\alpha \in \{1, 2, 3\}$.
+  Solve $\tens{B}_\alpha \vect{T}_\alpha = \vect{\Omega}$ with a single sweep
+  and construct the cell diagonal tensor $\tens{T}_\celli = \text{diag}(\rho_\celli T_{1,\celli}, \rho_\celli T_{2,\celli}, \rho_\celli T_{3,\celli})$.
+\item \textbf{Orthotropic diffusivity evaluation:}
+  Compute the face-normal scalar diffusivities $\widetilde{T}_{ij}$ and $\widetilde{T}_b$.
+  Assemble the pressure diffusion matrix using orthotropic face diffusivities.
+\item \textbf{Residual normalization:}
+  Compute the reference mass residual $\mathcal{R}_{\text{norm}} = \| \dive(\rho \favre{\vect{u}}) - \Gamma \|_2$.
+\item \textbf{Rhie \& Chow fluxes:}
+  Evaluate regularized mass fluxes $\widetilde{m}_{ij}$ and $\widetilde{m}_b$ using
+  $\widetilde{\vect{G}}(p^n)$ and $\widetilde{T}_{ij}$.
+\item \textbf{Pressure Poisson solve:}
+  Solve the incremental pressure equation with the non-orthogonality fixed-point loop
+  until $\| \vect{r}^k \|_2 < 10 \, \varepsilon_p \, \mathcal{R}_{\text{norm}}$.
+\item \textbf{Velocity correction:}
+  Correct the cell velocities using the anisotropic tensor:
+  \begin{equation}
+    \vect{u}_\celli^{n+1} = \favre{\vect{u}}_\celli - \frac{1}{\rho_\celli} \tens{T}_\celli \grad(\delta p)_\celli
+    = \begin{pmatrix}
+      \favre{u}_{1,\celli} - \dfrac{T_{11,\celli}}{\rho_\celli} \dfrac{\partial \delta p}{\partial x} \\[6pt]
+      \favre{u}_{2,\celli} - \dfrac{T_{22,\celli}}{\rho_\celli} \dfrac{\partial \delta p}{\partial y} \\[6pt]
+      \favre{u}_{3,\celli} - \dfrac{T_{33,\celli}}{\rho_\celli} \dfrac{\partial \delta p}{\partial z}
+    \end{pmatrix}_\celli
+  \end{equation}
+\item \textbf{Mass flux correction:}
+  Update face mass fluxes $\dot{m}_{ij}^{n+1} = \widetilde{m}_{ij} - \widetilde{T}_{ij} (\grad \delta p)_{\fij} \cdot \vect{S}_{ij}$,
+  ensuring strict machine-precision divergence-free velocity fields.
+\end{enumerate}
+
+%-------------------------------------------------------------------------------
 
 %\section{Steady algorithm}
 

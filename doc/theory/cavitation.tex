@@ -62,14 +62,14 @@ It is seen that the mass equation of the mixture Eq.~\eqref{eq:cavit:mass}
 has been splitted into two equations: one simple convection equation
 which can be used to solve the void fraction and one equation
 structurally similar to the one solved at the correction step of the
-predictior-corrector solver of \CS (see \appendixname~\ref{ap:resopv}).
+predictior-corrector solver of \CS (see \S~\ref{ap:resopv}).
 The global resolution scheme of the cavitation module is thus the
 following:
 \begin{enumerate}
 \item Prediction of the velocity using Eq.~\eqref{eq:cavit:qdm} (see
 \appendixname~\ref{ap:cs_velocity_prediction}).
 \item Correction of the velocity using Eq.~\eqref{eq:cavit:eq_lf1} (see
-\appendixname~\ref{ap:resopv}).
+\S~\ref{ap:resopv}).
 \item Resolution of the void fraction using Eq.~\eqref{eq:cavit:eq_vf1}.
 \item Update physical properties of the mixture using
 Eqs.~\eqref{eq:cavit:eq_rho} and \eqref{eq:cavit:eq_mu}.

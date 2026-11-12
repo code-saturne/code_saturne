@@ -167,7 +167,7 @@ $\mu_{\,laminar}^n + \mu_{\,turbulent}^n$ when \fort{cs\_equation\_iterative\_so
 
 \minititre{Remark 2}
 When \fort{cs\_equation\_iterative\_solve} is used for strengthened transient velocity-pressure coupling
-(\var{IPUCOU}=1), a single iteration $k$ is made by initialising the sequence $(a^{n+1,\,k})_{k\in\mathbb{N}}$ to zero. The Dirichlet type boundary conditions are cancelled (we have $\var{INC}\,=\,0$) and the right-hand side is equal to $\rho |\Omega_i|$, which allows us to obtain a diagonal-type approximation of $\tens{EM}_{n}$, needed for the velocity correction step \footnote{cf. subroutine \fort{resopv}.}.
+(\var{IPUCOU}=1), a single iteration $k$ is made by initialising the sequence $(a^{n+1,\,k})_{k\in\mathbb{N}}$ to zero. The Dirichlet type boundary conditions are cancelled (we have $\var{INC}\,=\,0$) and the right-hand side is equal to $\rho |\Omega_i|$, which allows us to obtain a diagonal-type approximation of $\tens{EM}_{n}$, needed for the velocity correction step \footnote{cf. \S~\ref{sec:timstp:reinforced_coupling}.}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
