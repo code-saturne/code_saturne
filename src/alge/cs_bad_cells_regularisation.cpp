@@ -169,7 +169,7 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
                        (cs_real_t *)var);
 
   bft_printf("Solving %s: N iter: %d, Res: %12.5e, Norm: %12.5e\n",
-                 "potential_regularisation_scalar", niterf, ressol, rnorm);
+             "potential_regularisation_scalar", niterf, ressol, rnorm);
   //FIXME use less!
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     var[cell_id] = cs::min(var[cell_id], varmax);
@@ -347,7 +347,7 @@ cs_bad_cells_regularisation_vector(T            (*var)[3],
                        (cs_real_t *)var);
 
   bft_printf("Solving %s: N iter: %d, Res: %12.5e, Norm: %12.5e\n",
-                 "potential_regularisation_vector", niterf, ressol, rnorm);
+             "potential_regularisation_vector", niterf, ressol, rnorm);
 
   //FIXME useless clipping? the matrix is min/max preserving..
 #if 1
@@ -545,7 +545,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
                        (cs_real_t *)var);
 
   bft_printf("Solving %s: N iter: %d, Res: %12.5e, Norm: %12.5e\n",
-                 "potential_regularisation_sym_tensor", niterf, ressol, rnorm);
+             "potential_regularisation_sym_tensor", niterf, ressol, rnorm);
   //FIXME useless clipping? the matrix is min/max preserving..
 #if 1
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -725,7 +725,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
                        (cs_real_t *)var);
 
   bft_printf("Solving %s: N iter: %d, Res: %12.5e, Norm: %12.5e\n",
-                 "potential_regularisation_tensor", niterf, ressol, rnorm);
+             "potential_regularisation_tensor", niterf, ressol, rnorm);
   //FIXME useless clipping? the matrix is min/max preserving..
 #if 1
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
