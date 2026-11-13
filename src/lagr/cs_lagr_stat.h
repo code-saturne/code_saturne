@@ -237,7 +237,6 @@ extern cs_lagr_stat_options_t   *cs_glob_lagr_stat_options;
  * \param[in]  name           statistics base name
  * \param[in]  location_id    id of associated mesh location
  * \param[in]  stat_type      predefined statistics type, or -1
- * \param[in]  stat_group     statistics group (particle or event)
  * \param[in]  m_type         moment type
  * \param[in]  class_id       particle class id, or 0 for all
  * \param[in]  dim            dimension associated with element data

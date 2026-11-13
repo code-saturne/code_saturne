@@ -55,14 +55,14 @@
 /*!
  * \brief Implicit and explicit radiative source terms for thermal scalar.
  *
- * \param[in,out]  smbrs   work array for right hand side
- * \param[in,out]  rovsdt  work array for unsteady term
+ * \param[in,out]  rhs     work array for right hand side
+ * \param[in,out]  fimp    work array for unsteady term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_source_terms(cs_real_t  smbrs[],
-                             cs_real_t  rovsdt[]);
+cs_rad_transfer_source_terms(cs_real_t  rhs[],
+                             cs_real_t  fimp[]);
 
 /*----------------------------------------------------------------------------*/
 

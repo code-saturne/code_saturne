@@ -98,7 +98,7 @@ const char *_astat[2] = {N_("off"), N_("on")};
 /*!
  * \brief  Return string indicating on/off depending on integer value
  *
- * \param  i  input integer
+ * \param[in]  i  input integer
  *
  * \return  status string, possibly translated
  */
@@ -114,7 +114,7 @@ _status(int i)
 /*!
  * \brief  Return string indicating on/off depending on boolean value
  *
- * \param  b  input bool
+ * \param[in] i  input bool
  *
  * \return  status string, possibly translated
  */
@@ -129,9 +129,8 @@ _status_b(bool i)
 
 /*----------------------------------------------------------------*/
 /*!
- *\brief Computes min/max for boundary statistics.
+ * \brief Computes min/max for boundary statistics.
  *
- * Parameters:
  * \param[in]  s_id      stat id
  * \param[out] nbrfac    number of particles used for the statistics
  * \param[out] gmin      min value

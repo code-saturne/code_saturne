@@ -278,11 +278,12 @@ _bm_stretching_phase_spheroid(const cs_real_t   dtp,
  * Principle:
  *            Use of quaternions to get the rotation angle
  *
- * \param[in]  dtp          time step
- * \param[in]  d_minus      reduced parameter for the (isotropic)
- *                          fluctuation tensor
- * \param[in]  orientation  spheroid orientation (vector)
- * \param[in]  brown        normal random number (9 values by particles)
+ * \param[in]      dtp          time step
+ * \param[in]      d_minus      reduced parameter for the (isotropic)
+ *                              fluctuation tensor
+ * \param[in, out] orient_loc   spheroid orientation (vector)
+ * \param[in, out] quater_loc   quaternion orientation
+ * \param[in]      brown        normal random number (9 values by particles)
  */
 /*----------------------------------------------------------------------------*/
 

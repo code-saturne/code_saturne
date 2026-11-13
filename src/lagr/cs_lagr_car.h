@@ -98,8 +98,6 @@ cs_lagr_car(int                         iprev,
  * \param[in]  tlag                fluid characteristic Lagrangian time scale
  * \param[in]  piil                term in integration of up sde
  * \param[in]  bx                  turbulence characteristics
- * \param[in]  tempct              thermal characteristic time
- * \param[in]  beta                for the extended scheme
  * \param[in]  tsfext              info for return coupling source terms
  * \param[in]  force_p             user external force field (m/s^2)$
  *

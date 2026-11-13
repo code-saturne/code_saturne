@@ -1070,7 +1070,7 @@ cs_lagr_part_copy(cs_lnum_t  dest,
  * For attributes not currently present, the displacement and data
  * size should be -1 and 0 respectively.
  *
- * \param[in]   particles  associated particle set
+ * \param[in]   p_set      associated particle set
  * \param[in]   time_id    associated time id (0: current, 1: previous)
  * \param[in]   attr       particle attribute
  * \param[out]  extents    size (in bytes) of particle structure, or NULL
@@ -1085,7 +1085,7 @@ cs_lagr_part_copy(cs_lnum_t  dest,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *particles,
+cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *p_set,
                       int                            time_id,
                       cs_lagr_attribute_t            attr,
                       size_t                        *extents,
@@ -1098,7 +1098,7 @@ cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *particles,
 /*!
  * \brief Check that query for a given particle attribute is valid.
  *
- * \param[in]   particles             associated particle set
+ * \param[in]   p_set                 associated particle set
  * \param[in]   attr                  attribute whose values are required
  * \param[in]   datatype              associated value type
  * \param[in]   stride                number of values per particle
@@ -1110,7 +1110,7 @@ cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *particles,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_lagr_check_attr_query(const cs_lagr_particle_set_t  *particles,
+cs_lagr_check_attr_query(const cs_lagr_particle_set_t  *p_set,
                          cs_lagr_attribute_t            attr,
                          cs_datatype_t                  datatype,
                          int                            stride,
@@ -1640,14 +1640,10 @@ cs_lagr_particles_set_real_n(cs_lagr_particle_set_t  *particle_set,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set attribute value of type cs_real_t of a given particle in a set
- *        at a given time.
+ * \brief Fill all attributes of a given particle with zero.
  *
  * \param[in, out]   p_set         pointer to particle set
- * \param[in]        particle_id   particle id
- * \param[in]        time_id       0 for current, 1 for previous
- * \param[in]        attr          requested attribute id
- * \param[in]        value         value to assign
+ * \param[in]        p_id          particle id
  */
 /*----------------------------------------------------------------------------*/
 

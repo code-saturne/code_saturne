@@ -72,7 +72,7 @@
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_boundary_conditions(const int  itypfb[]);
+cs_user_lagr_boundary_conditions(const int  bc_type[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

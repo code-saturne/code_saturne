@@ -108,22 +108,21 @@ cs_lagr_sde_predict_virtual_partner(const cs_lagr_particle_set_t    &p_set,
  * - Standard Model : First or second order
  * - Deposition submodel (Guingo & Minier, 2007) if needed
  *
- * \param[in]  p_set     reference to particle set
- * \param[in]  p_id      particle index in set
- * \param[in]  dt_part   remaining time step associated to the particle
- * \param[in]  nor       current step id (for 2nd order scheme)
- * \param[in]  taup      dynamic characteristic time
- * \param[in]  tlag      fluid characteristic time
- * \param[in]  piil      term in integration of U-P SDEs
- * \param[in]  bx        turbulence characteristics
- * \param[out] tsfext    info for return coupling source terms
- * \param[out] force_p   forces per mass unit on particles (m/s^2)
- * \param[in]  vislen    nu/u* = y/y+
- * \param[in]  beta      proportional to the gradient of T_lag
- * \param[out] vagaus    gaussian random variables
- * \param[out] brgaus    gaussian random variables
- * \param[in]  nresnew
- *
+ * \param[in]  p_set            reference to particle set
+ * \param[in]  p_id             particle index in set
+ * \param[in]  dt_part          remaining time step associated to the particle
+ * \param[in]  nor              current step id (for 2nd order scheme)
+ * \param[in]  taup             dynamic characteristic time
+ * \param[in]  tlag             fluid characteristic time
+ * \param[in]  piil             term in integration of U-P SDEs
+ * \param[in]  bx               turbulence characteristics
+ * \param[out] tsfext           info for return coupling source terms
+ * \param[out] force_p          forces per mass unit on particles (m/s^2)
+ * \param[in]  vislen           nu/u* = y/y+
+ * \param[in]  beta             proportional to the gradient of T_lag
+ * \param[out] vagaus           gaussian random variables
+ * \param[out] brgaus           gaussian random variables
+ * \param[in]  n_new_particles  number of new particles
  */
 /*----------------------------------------------------------------------------*/
 
@@ -142,7 +141,7 @@ cs_lagr_sde(cs_lagr_particle_set_t          &p_set,
             const cs_real_3_t                beta,
             cs_array_2d<cs_real_t>&          vagaus,
             cs_real_6_t                      brgaus,
-            cs_lnum_t                       *nresnew);
+            cs_lnum_t                       *n_new_particles);
 
 /*----------------------------------------------------------------------------*/
 /*!

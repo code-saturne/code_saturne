@@ -415,7 +415,9 @@ _secant_var_omega(double taup,
  *        direction (Minier & Peirano 2006, Tables 3 and 4).
  */
 /*----------------------------------------------------------------------------*/
+
 struct cs_lagr_sde_step_coeffs_t {
+
   /* Exponential relaxation factors */
   cs_real_t exp_taup; /* exp(-dt / tau_p) */
   cs_real_t exp_tlag; /* exp(-dt / T_L)   */
@@ -434,6 +436,7 @@ struct cs_lagr_sde_step_coeffs_t {
   cs_real_t cov_gam_ggam;      /* <gamma, Gamma>, Eq. 143 */
   cs_real_t cov_gam_omega;     /* <gamma, Omega>, Eq. 144 */
   cs_real_t cov_ggam_omega;    /* <Gamma, Omega>, Eq. 145 */
+
 };
 
 /*----------------------------------------------------------------------------*/
@@ -1433,7 +1436,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
  * \param[out] out_coords        integrated/predicted position
  * \param[out] out_vel           integrated/predicted particle velocity
  * \param[out] out_vel_seen      integrated/predicted fluid velocity seen
- * \param[out] out_brown_state_1 optional brownian state 1 (can be nullptr)
+ * \param[out] out_brown_1       optional brownian state 1 (can be nullptr)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3951,22 +3954,21 @@ _sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
  * - Standard Model : First or second order
  * - Deposition submodel (Guingo & Minier, 2007) if needed
  *
- * \param[in]  p_set     reference to particle set
- * \param[in]  p_id      particle index in set
- * \param[in]  dt_part   remaining time step associated to the particle
- * \param[in]  nor       current step id (for 2nd order scheme)
- * \param[in]  taup      dynamic characteristic time
- * \param[in]  tlag      fluid characteristic time
- * \param[in]  piil      term in integration of U-P SDEs
- * \param[in]  bx        turbulence characteristics
- * \param[out] tsfext    info for return coupling source terms
- * \param[out] force_p   forces per mass unit on particles (m/s^2)
- * \param[in]  vislen    nu/u* = y/y+
- * \param[in]  beta      proportional to the gradient of T_lag
- * \param[out] vagaus    gaussian random variables
- * \param[out] brgaus    gaussian random variables
- * \param[in]  n_new_particles
- *
+ * \param[in]  p_set            reference to particle set
+ * \param[in]  p_id             particle index in set
+ * \param[in]  dt_part          remaining time step associated to the particle
+ * \param[in]  nor              current step id (for 2nd order scheme)
+ * \param[in]  taup             dynamic characteristic time
+ * \param[in]  tlag             fluid characteristic time
+ * \param[in]  piil             term in integration of U-P SDEs
+ * \param[in]  bx               turbulence characteristics
+ * \param[out] tsfext           info for return coupling source terms
+ * \param[out] force_p          forces per mass unit on particles (m/s^2)
+ * \param[in]  vislen           nu/u* = y/y+
+ * \param[in]  beta             proportional to the gradient of T_lag
+ * \param[out] vagaus           gaussian random variables
+ * \param[out] brgaus           gaussian random variables
+ * \param[in]  n_new_particles  number of new particles
  */
 /*----------------------------------------------------------------------------*/
 
