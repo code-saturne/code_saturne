@@ -223,6 +223,45 @@ cs_boundary_conditions_type(bool  init,
       cs_boundary_conditions_error(bc_type, nullptr);
   }
 
+  /* Put homogeneous Neumann on velocity-pressure coupling pseudo time
+     for ipucou=1.
+     This must be done before the default/consistency checks on
+     boundary types below: as this field is a variable, inlet faces
+     with an undefined BC and an incoming mass flux would otherwise
+     be reported as missing a Dirichlet value. */
+
+  if (vp_param->ipucou == 1) {
+    cs_field_t *f_pseu = cs_field_by_name_try("algo:vel_p_coupling_pseu_time");
+
+    if (f_pseu != nullptr && (f_pseu->type & CS_FIELD_VARIABLE)) {
+      int *icodcl = f_pseu->bc_coeffs->icodcl;
+      cs_real_t *rcodcl1 = f_pseu->bc_coeffs->rcodcl1;
+      cs_real_t *rcodcl2 = f_pseu->bc_coeffs->rcodcl2;
+      cs_real_t *rcodcl3 = f_pseu->bc_coeffs->rcodcl3;
+      cs_real_3_t *coefa = (cs_real_3_t *)f_pseu->bc_coeffs->a;
+      cs_real_33_t *coefb = (cs_real_33_t *)f_pseu->bc_coeffs->b;
+      cs_real_3_t *cofaf = (cs_real_3_t *)f_pseu->bc_coeffs->af;
+      cs_real_33_t *cofbf = (cs_real_33_t *)f_pseu->bc_coeffs->bf;
+
+      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+        icodcl[f_id] = CS_BC_NEUMANN;
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          rcodcl1[k*n_b_faces + f_id] = 0.;
+          rcodcl2[k*n_b_faces + f_id] = cs_math_infinite_r;
+          rcodcl3[k*n_b_faces + f_id] = 0.;
+          coefa[f_id][k] = 0.;
+          if (cofaf != nullptr)
+            cofaf[f_id][k] = 0.;
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            coefb[f_id][k][j] = (k == j) ? 1. : 0.;
+            if (cofbf != nullptr)
+              cofbf[f_id][k][j] = 0.;
+          }
+        }
+      }
+    }
+  }
+
   /* Sort boundary faces
      =================== */
 
@@ -1607,41 +1646,6 @@ cs_boundary_conditions_type(bool  init,
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
         if (icodcl_hp[f_id] == CS_BC_UNDEF)
           icodcl_hp[f_id] = CS_BC_NEUMANN;
-      }
-    }
-  }
-
-  /* Put homogeneous Neumann on velocity-pressure coupling pseudo time
-     for ipucou=1 */
-
-  if (vp_param->ipucou == 1) {
-    cs_field_t *f_pseu = cs_field_by_name_try("algo:vel_p_coupling_pseu_time");
-
-    if (f_pseu != nullptr && (f_pseu->type & CS_FIELD_VARIABLE)) {
-      int *icodcl = f_pseu->bc_coeffs->icodcl;
-      cs_real_t *rcodcl1 = f_pseu->bc_coeffs->rcodcl1;
-      cs_real_t *rcodcl2 = f_pseu->bc_coeffs->rcodcl2;
-      cs_real_t *rcodcl3 = f_pseu->bc_coeffs->rcodcl3;
-      cs_real_3_t *coefa = (cs_real_3_t *)f_pseu->bc_coeffs->a;
-      cs_real_33_t *coefb = (cs_real_33_t *)f_pseu->bc_coeffs->b;
-      cs_real_3_t *cofaf = (cs_real_3_t *)f_pseu->bc_coeffs->af;
-      cs_real_33_t *cofbf = (cs_real_33_t *)f_pseu->bc_coeffs->bf;
-
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        icodcl[f_id] = CS_BC_NEUMANN;
-        for (cs_lnum_t k = 0; k < 3; k++) {
-          rcodcl1[k*n_b_faces + f_id] = 0.;
-          rcodcl2[k*n_b_faces + f_id] = cs_math_infinite_r;
-          rcodcl3[k*n_b_faces + f_id] = 0.;
-          coefa[f_id][k] = 0.;
-          if (cofaf != nullptr)
-            cofaf[f_id][k] = 0.;
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            coefb[f_id][k][j] = (k == j) ? 1. : 0.;
-            if (cofbf != nullptr)
-              cofbf[f_id][k][j] = 0.;
-          }
-        }
       }
     }
   }
