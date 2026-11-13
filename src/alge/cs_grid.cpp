@@ -9907,8 +9907,10 @@ cs_grid_has_rank_merge(const cs_grid_t  *g)
   assert(g != nullptr);
 
   bool retval = false;
+#if defined(HAVE_MPI)
   if (g->rank_merge != nullptr)
     retval = true;
+#endif
 
   return retval;
 }

@@ -1919,15 +1919,22 @@ cs_grid_merge_bottom(cs_grid_t      *g,
                      int             n_max_ranks,
                      float           max_row_factor)
 {
+#if defined(HAVE_MPI)
   if (g->n_ranks == 1 && g->halo == nullptr)
     return;
+#else
+  if (g->halo == nullptr)
+    return;
+#endif
 
   /* Cannot be called if this level already has merging info;
      in that case, should be called instead of previous merge
      (which may require re-building the cuurent grid from its parent). */
 
+#if defined(HAVE_MPI)
   if (g->rank_merge != nullptr)
     return;
+#endif
 
   /* Discard geometric data */
 
