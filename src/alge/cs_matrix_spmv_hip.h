@@ -95,14 +95,8 @@ cs_matrix_spmv_hip_get_stream(void);
 #endif /* defined(__HIPCC__) */
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Matrix.vector product y = A.x with MSR matrix, scalar HIP version.
- *
- * \param[in]   matrix        pointer to matrix structure
- * \param[in]   exclude_diag  exclude diagonal if true,
- * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   d_x           multipliying vector values (on device)
- * \param[out]  d_y           resulting vector (on device)
+/*
+ * Matrix.vector product y = A.x with MSR matrix, scalar HIP version.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -114,14 +108,8 @@ cs_matrix_spmv_hip_native(cs_matrix_t  *matrix,
                            cs_real_t     d_y[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Matrix.vector product y = A.x with CSR matrix, scalar HIP version.
- *
- * \param[in]   matrix        pointer to matrix structure
- * \param[in]   exclude_diag  exclude diagonal if true,
- * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   d_x           multipliying vector values (on device)
- * \param[out]  d_y           resulting vector (on device)
+/*
+ * Matrix.vector product y = A.x with CSR matrix, scalar HIP version.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -135,14 +123,8 @@ cs_matrix_spmv_hip_csr(cs_matrix_t  *matrix,
 #if defined(HAVE_ROCSPARSE)
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Matrix.vector product y = A.x with CSR matrix, scalar rocSPARSE version.
- *
- * \param[in]   matrix        pointer to matrix structure
- * \param[in]   exclude_diag  exclude diagonal if true,
- * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   d_x           multipliying vector values (on device)
- * \param[out]  d_y           resulting vector (on device)
+/*
+ * Matrix.vector product y = A.x with CSR matrix, scalar rocSPARSE version.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -156,14 +138,8 @@ cs_matrix_spmv_hip_csr_rocsparse(cs_matrix_t  *matrix,
 #endif /* defined(HAVE_ROCSPARSE) */
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Matrix.vector product y = A.x with MSR matrix, scalar HIP version.
- *
- * \param[in]   matrix        pointer to matrix structure
- * \param[in]   exclude_diag  exclude diagonal if true,
- * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   d_x           multipliying vector values (on device)
- * \param[out]  d_y           resulting vector (on device)
+/*
+ * Matrix.vector product y = A.x with MSR matrix, scalar HIP version.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -177,15 +153,8 @@ cs_matrix_spmv_hip_msr(cs_matrix_t  *matrix,
 #if defined(HAVE_ROCSPARSE)
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Matrix.vector product y = A.x with MSR matrix,
- *        scalar rocSPARSE version.
- *
- * \param[in]   matrix        pointer to matrix structure
- * \param[in]   exclude_diag  exclude diagonal if true,
- * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   d_x           multipliying vector values (on device)
- * \param[out]  d_y           resulting vector (on device)
+/*
+ * Matrix.vector product y = A.x with MSR matrix, scalar rocSPARSE version.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -199,15 +168,8 @@ cs_matrix_spmv_hip_msr_rocsparse(cs_matrix_t  *matrix,
 #endif /* defined(HAVE_ROCSPARSE) */
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
- *        HIP version.
- *
- * \param[in]   matrix        pointer to matrix structure
- * \param[in]   exclude_diag  exclude diagonal if true,
- * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   d_x           multipliying vector values (on device)
- * \param[out]  d_y           resulting vector (on device)
+/*
+ * Matrix.vector product y = A.x with MSR matrix, block diagonal HIP version.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -221,20 +183,14 @@ cs_matrix_spmv_hip_msr_b(cs_matrix_t  *matrix,
 #if defined(HAVE_ROCSPARSE)
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
- *        rocSPARSE version.
+/*
+ * Matrix.vector product y = A.x with MSR matrix, block diagonal rocSPARSE
+ * version.
  *
- * Remark: this functions is available with older rocSPARSE versions not
- *         providing the generic API, because they
- *         assume dense matrixes are always in column-major order, while
- *         row-major is needed with interleaved blocks.
- *
- * \param[in]   matrix        pointer to matrix structure
- * \param[in]   exclude_diag  exclude diagonal if true,
- * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   d_x           multipliying vector values (on device)
- * \param[out]  d_y           resulting vector (on device)
+ * Remark: This function is available with older rocSPARSE versions not
+ *         providing the generic API, because they assume dense matrixes are
+ *         always in column-major order, while row-major is needed with
+ *         interleaved blocks.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -248,20 +204,13 @@ cs_matrix_spmv_hip_msr_b_rocsparse(cs_matrix_t  *matrix,
 #endif /* defined(HAVE_ROCSPARSE) */
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Matrix.vector product y = A.x with MSR matrix, block
- *        rocSPARSE version.
+/*
+ * Matrix.vector product y = A.x with MSR matrix, block rocSPARSE version.
  *
- * Remmark: this functions is available with older rocSPARSE versions not
- *          providing the generic API, because they
- *          assume dense matrixes are always in column-major order, while
- *          row-major is needed with interleaved blocks.
- *
- * \param[in]   matrix        pointer to matrix structure
- * \param[in]   exclude_diag  exclude diagonal if true,
- * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   d_x           multipliying vector values (on device)
- * \param[out]  d_y           resulting vector (on device)
+ * Remmark: This function is available with older rocSPARSE versions not
+ *          providing the generic API, because they assume dense matrixes are
+ *          always in column-major order, while row-major is needed with
+ *          interleaved blocks.
  */
 /*----------------------------------------------------------------------------*/
 

@@ -298,8 +298,8 @@ typedef int
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the threshold value used in the detection of immediate exit
+/*
+ * Set the threshold value used in the detection of immediate exit
  */
 /*----------------------------------------------------------------------------*/
 
@@ -307,11 +307,8 @@ void
 cs_sles_set_epzero(double  new_value);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the current threshold value used in the detection of immediate
- *        exit
- *
- * \return the value of the threshold
+/*
+ * Get the current threshold value used in the detection of immediate exit
  */
 /*----------------------------------------------------------------------------*/
 
@@ -319,24 +316,22 @@ double
 cs_sles_get_epzero(void);
 
 /*----------------------------------------------------------------------------
- * \brief Initialize sparse linear equation solver API.
+ * Initialize sparse linear equation solver API.
  *----------------------------------------------------------------------------*/
 
 void
 cs_sles_initialize(void);
 
 /*----------------------------------------------------------------------------
- * \brief Finalize sparse linear equation solver API.
+ * Finalize sparse linear equation solver API.
  *----------------------------------------------------------------------------*/
 
 void
 cs_sles_finalize(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Log sparse linear equation solver info
- *
- * \param[in]  log_type  log type (CS_LOG_SETUP or CS_LOG_PERFORMANCE)
+/*
+ * Log sparse linear equation solver info
  */
 /*----------------------------------------------------------------------------*/
 
@@ -345,15 +340,10 @@ cs_sles_log(cs_log_t  log_type);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return pointer to linear system object, based on matching field id or
- *        system name.
+ * Return pointer to linear system object, based on matching field id or system
+ * name.
  *
  * If this system did not previously exist, nullptr is returned.
- *
- * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
- *
- * \return  pointer to associated linear system object, or NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -363,20 +353,15 @@ cs_sles_find(int          f_id,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return pointer to linear system object, based on matching field id or
- *        system name.
+ * Return pointer to linear system object, based on matching field id or system
+ * name.
  *
- * If this system did not previously exist, it is created and added to
- * to the list of "known" systems. In this case, it will be usable
- * only if cs_sles_define() is called for the same field id and name
- * (in which case calling the present function is redundant), or if
- * cs_sles_set_sefault_define() has been previously used to define
- * the default solver policy.
- *
- * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
- *
- * \return  pointer to associated linear system object, or NULL
+ * If this system did not previously exist, it is created and added to to the
+ * list of "known" systems. In this case, it will be usable only if
+ * cs_sles_define() is called for the same field id and name (in which case
+ * calling the present function is redundant), or if
+ * cs_sles_set_sefault_define() has been previously used to define the default
+ * solver policy.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -386,18 +371,15 @@ cs_sles_find_or_add(int          f_id,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Temporarily replace field id with name for matching calls
- * to \ref cs_sles_setup, \ref cs_sles_solve, \ref cs_sles_free, and other
- * operations involving access through a field id.
+ * Temporarily replace field id with name for matching calls to cs_sles_setup,
+ * cs_sles_solve, cs_sles_free, and other operations involving access through a
+ * field id.
  *
- * This function is provided to allow some peculiar calling sequences,
- * in which \ref cs_equation_iterative_solve_scalar is called with a given
- * field id, but specific solver options must still be set.
- * In the future, a cleaner method to handle those exceptional cases
- * would be preferred. As such, only a stack depth of 1 is allowed.
- *
- * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
+ * This function is provided to allow some peculiar calling sequences, in which
+ * cs_equation_iterative_solve_scalar is called with a given field id, but
+ * specific solver options must still be set.  In the future, a cleaner method
+ * to handle those exceptional cases would be preferred. As such, only a stack
+ * depth of 1 is allowed.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -407,11 +389,9 @@ cs_sles_push(int          f_id,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Restore behavior temporarily modified by \ref cs_sles_push.
+ * Restore behavior temporarily modified by cs_sles_push.
  *
- * \deprecated This function matches \ref cs_sles_push, which is deprecated.
- *
- * \param[in]  f_id  associated field id, or < 0
+ * This function matches cs_sles_push, which is deprecated.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -419,39 +399,18 @@ cs_sles_push(int          f_id,
 cs_sles_pop(int  f_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define sparse linear equation solver for a given field or
- *        equation name.
+/*
+ * Define sparse linear equation solver for a given field or equation name.
  *
- * If this system did not previously exist, it is added to the list of
- * "known" systems.
+ * If this system did not previously exist, it is added to the list of "known"
+ * systems.
  *
  * The context pointer is used to point to a structure adapted to the function
- * pointers given here, and combined with those functions, allows using
- * both built-in, external, or user-defined solvers.
+ * pointers given here, and combined with those functions, allows using both
+ * built-in, external, or user-defined solvers.
  *
- * It is recommended the context type name provided here directly relate
- * to the associated structure type (for example, "cs_sles_it_t" or
- * "cs_multigrid_t").
- *
- * \param[in]       f_id          associated field id, or < 0
- * \param[in]       name          associated name if f_id < 0, or NULL
- * \param[in, out]  context       pointer to solver context management
- *                                structure (cs_sles subsystem becomes owner)
- * \param[in]       type_name     context structure or object type name
- * \param[in]       setup_func    pointer to system setup function
- * \param[in]       solve_func    pointer to system solution function (also
- *                                calls setup_func if not done yet or free_func
- *                                called since last solve)
- * \param[in]       free_func     pointer function freeing system setup
- * \param[in]       log_func      pointer to system info logging function
-                                  (optional, but recommended)
- * \param[in]       copy_func     pointer to settings copy function (optional)
- * \param[in]       destroy_func  pointer to function destroying solver context
- *                                (called with \ref cs_sles_finalize or with a
- *                                new call to this function for the same system)
- *
- * \return  pointer to associated linear system object
+ * It is recommended the context type name provided here directly relate to the
+ * associated structure type (for example, "cs_sles_it_t" or "cs_multigrid_t").
  */
 /*----------------------------------------------------------------------------*/
 
@@ -468,16 +427,13 @@ cs_sles_define(int                 f_id,
                cs_sles_destroy_t  *destroy_func);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the verbosity for a given linear equation solver.
+/*
+ * Set the verbosity for a given linear equation solver.
  *
  * This verbosity will be used by cs_sles_setup and cs_sles_solve.
  *
- * By default, the verbosity is set to 0, or the value returned by the
- * function set with cs_sles_set_default_define().
- *
- * \param[in, out]  sles       pointer to solver object
- * \param[in]       verbosity  verbosity level
+ * By default, the verbosity is set to 0, or the value returned by the function
+ * set with cs_sles_set_default_define().
  */
 /*----------------------------------------------------------------------------*/
 
@@ -486,14 +442,10 @@ cs_sles_set_verbosity(cs_sles_t  *sles,
                       int         verbosity);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the verbosity for a given linear equation solver.
+/*
+ * Get the verbosity for a given linear equation solver.
  *
  * This verbosity will be used by cs_sles_setup and cs_sles_solve.
- *
- * \param[in, out]  sles       pointer to solver object
- *
- * \return  verbosity level
  */
 /*----------------------------------------------------------------------------*/
 
@@ -502,14 +454,10 @@ cs_sles_get_verbosity(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Activate postprocessing output for a given linear equation solver.
+ * Activate postprocessing output for a given linear equation solver.
  *
- * This allows the output of the residual at the end of each solution
- * series, using a single postprocessing writer.
- * By default, no output is activated.
- *
- * \param[in, out]  sles       pointer to solver object
- * \param[in]       writer_id  id of the writer
+ * This allows the output of the residual at the end of each solution series,
+ * using a single postprocessing writer. By default, no output is activated.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -519,12 +467,8 @@ cs_sles_set_post_output(cs_sles_t  *sles,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return the id of the associated writer if postprocessing output
- *        is active for a given linear equation solver.
- *
- * \param[in]  sles  pointer to solver object
- *
- * \return  id od associated writer, or 0
+ * Return the id of the associated writer if postprocessing output is active
+ * for a given linear equation solver.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -533,22 +477,18 @@ cs_sles_get_post_output(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return type name of solver context.
+ * Return type name of solver context.
  *
  * The returned string is intended to help determine which type is associated
- * with the void * pointer returned by \ref cs_sles_get_context for a given
+ * with the void * pointer returned by cs_sles_get_context for a given
  * solver definition, so as to be able to call additional specific functions
  * beyond the generic functions assigned to a cs_sles_t object.
  *
  * If no type_name string was associated to the solver upon its definition by
- * \ref cs_sles_define, or it has not been defined yet, the string returned
+ * cs_sles_define, or it has not been defined yet, the string returned
  * is "<undefined>". It is recommended the type name provided
- * \ref cs_sles_define directly relate to the associated structure type
+ * cs_sles_define directly relate to the associated structure type
  * (for example, "cs_sles_it_t" or "cs_multigrid_t").
- *
- * \param[in]  sles  pointer to solver object
- *
- * \return  pointer to linear system solver specific type name
  */
 /*----------------------------------------------------------------------------*/
 
@@ -557,15 +497,11 @@ cs_sles_get_type(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return pointer to solver context structure pointer.
+ * Return pointer to solver context structure pointer.
  *
- * The context structure depends on the type of solver used, which may in
- * turn be determined by the string returned by cs_sles_get_type().
- * If may be used by appropriate functions specific to that type.
- *
- * \param[in]  sles  pointer to solver object
- *
- * \return  pointer to solver-specific linear system info and context
+ * The context structure depends on the type of solver used, which may in turn
+ * be determined by the string returned by cs_sles_get_type().  If may be used
+ * by appropriate functions specific to that type.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -574,11 +510,7 @@ cs_sles_get_context(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return field id associated with a given sparse linear equation solver.
- *
- * \param[in]  sles  pointer to solver object
- *
- * \return  associated field id (or -1 if defined by name)
+ * Return field id associated with a given sparse linear equation solver.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -587,14 +519,10 @@ cs_sles_get_f_id(const cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return name associated with a given sparse linear equation solver.
+ * Return name associated with a given sparse linear equation solver.
  *
- * This is simply a utility function which will return its name argument
- * if f_id < 0, and the associated field's name otherwise.
- *
- * \param[in]  sles  pointer to solver object
- *
- * \return  pointer to associated linear system object name
+ * This is simply a utility function which will return its name argument if
+ * f_id < 0, and the associated field's name otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -603,14 +531,9 @@ cs_sles_get_name(const cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Query if immediate_return ("no-op") is allowed when initial
- * guess is zero (solve by increments) and the RHS is already zero within the
- * normalized tolerance criteria.
- *
- * \param[in]  sles  pointer to solver object
- *
- * \return  true if immediate return is allowed, false if at least one
- *          iteration is required
+ * Query if immediate_return ("no-op") is allowed when initial guess is zero
+ * (solve by increments) and the RHS is already zero within the normalized
+ * tolerance criteria.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -619,13 +542,9 @@ cs_sles_get_allow_no_op(const cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Indicate if immediate_return ("no-op") is allowed when initial
- * guess is zero (solve by increments) and the RHS is already zero within the
- * normalized tolerance criteria.
- *
- * \param[in, out]  sles         pointer to solver object
- * \param[in]       allow_no_op  true if immediate return is allowed,
- *                               false if at least one iteration is required
+ * Indicate if immediate_return ("no-op") is allowed when initial guess is zero
+ * (solve by increments) and the RHS is already zero within the normalized
+ * tolerance criteria.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -635,17 +554,14 @@ cs_sles_set_allow_no_op(cs_sles_t  *sles,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Setup sparse linear equation solver.
+ * Setup sparse linear equation solver.
  *
- * Use of this function is optional: if a \ref cs_sles_solve is called
- * for the same system before this function is called, the latter will be
- * called automatically.
+ * Use of this function is optional: if a cs_sles_solve is called for the same
+ * system before this function is called, the latter will be called
+ * automatically.
  *
  * If no options were previously provided for the matching system,
  * default options will be used.
- *
- * \param[in, out]  sles  pointer to solver object
- * \param[in]       a     matrix
  */
 /*----------------------------------------------------------------------------*/
 
@@ -655,38 +571,22 @@ cs_sles_setup(cs_sles_t          *sles,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief General sparse linear system resolution.
+ * General sparse linear system resolution.
  *
- * If no options were previously provided for the matching system,
- * default options will be used.
+ * If no options were previously provided for the matching system, default
+ * options will be used.
  *
- * Note that if \ref cs_sles_setup was previously called for this
- * system, and \ref cs_sles_free has not been called since, the matrix
- * provided should be the same. The optional separation between the
- * two stages is intended to allow amortizing the cost of setup
- * over multiple solutions.
+ * Note that if cs_sles_setup was previously called for this system, and
+ * cs_sles_free has not been called since, the matrix provided should be the
+ * same. The optional separation between the two stages is intended to allow
+ * amortizing the cost of setup over multiple solutions.
  *
- * If the initial solution iz zero, setting vx_ini_0 to true may
- * allow extra optimizations with some solvers, and avoids
- * requiring an upstream initialization.
+ * If the initial solution iz zero, setting vx_ini_0 to true may allow extra
+ * optimizations with some solvers, and avoids requiring an upstream
+ * initialization.
  *
  * The system is considered to have converged when
  * residual/r_norm <= precision, residual being the L2 norm of a.vx-rhs.
- *
- * \param[in, out]  sles           pointer to solver object
- * \param[in]       a              matrix
- * \param[in]       precision      solver precision
- * \param[in]       r_norm         residual normalization
- * \param[in]       vx_ini_0       if true, initialize solution to 0
- * \param[out]      n_iter         number of "equivalent" iterations
- * \param[out]      residual       residual
- * \param[in]       rhs            right hand side
- * \param[in, out]  vx             system solution
- * \param[in]       aux_size       size of aux_vectors (in bytes)
- * \param           aux_vectors    optional working area
- *                                 (internal allocation if NULL)
- *
- * \return  convergence state
  */
 /*----------------------------------------------------------------------------*/
 
@@ -705,14 +605,12 @@ cs_sles_solve(cs_sles_t           *sles,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Free sparse linear equation solver setup.
+ * Free sparse linear equation solver setup.
  *
  * This function frees resolution-related data, such as multigrid hierarchy,
  * preconditioning, and any other temporary arrays or objects required for
- * resolution, but maintains context information such as that used for
- * logging (especially performance data).
- *
- * \param[in, out]  sles  pointer to solver object
+ * resolution, but maintains context information such as that used for logging
+ * (especially performance data).
  */
 /*----------------------------------------------------------------------------*/
 
@@ -721,23 +619,18 @@ cs_sles_free(cs_sles_t  *sles);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Copy the definition of a sparse linear equation solver to another.
+ * Copy the definition of a sparse linear equation solver to another.
  *
- * The intended use of this function is to allow associating different
- * solvers to related systems, so as to differentiate logging, while using
- * the same settings by default.
+ * The intended use of this function is to allow associating different solvers
+ * to related systems, so as to differentiate logging, while using the same
+ * settings by default.
  *
- * If the source solver does not provide a \ref cs_sles_copy_t function,
- * No modification is done to the solver. If the copy function is available,
- * the context is copied, as are the matching function pointers.
+ * If the source solver does not provide a cs_sles_copy_t function, No
+ * modification is done to the solver. If the copy function is available, the
+ * context is copied, as are the matching function pointers.
  *
- * If previous settings have been defined and used, they are saved as
- * per \ref cs_sles_define.
- *
- * \param[in, out]  dest  pointer to destination solver object
- * \param[in]       src   pointer to source solver object
- *
- * \return  0 in case of success, 1 in case of failure
+ * If previous settings have been defined and used, they are saved as per
+ * cs_sles_define.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -747,18 +640,14 @@ cs_sles_copy(cs_sles_t        *dest,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Associate a convergence error handler to a given sparse linear
- *        equation solver.
+ * Associate a convergence error handler to a given sparse linear equation
+ * solver.
  *
- * The error will be called whenever convergence fails. To dissassociate
- * the error handler, this function may be called with \p handler = NULL.
+ * The error will be called whenever convergence fails. To dissassociate the
+ * error handler, this function may be called with \p handler = NULL.
  *
  * The association will only be successful if the matching solver
  * has already been defined.
- *
- * \param[in, out]  sles                pointer to solver object
- * \param[in]       error_handler_func  pointer to convergence error
- *                                      handler function
  */
 /*----------------------------------------------------------------------------*/
 
@@ -768,13 +657,11 @@ cs_sles_set_error_handler(cs_sles_t                *sles,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return pointer to default sparse linear solver definition function.
+ * Return pointer to default sparse linear solver definition function.
  *
  * The associated function will be used to provide a definition when
- * \ref cs_sles_setup or \ref cs_sles_solve is used for a system for which no
- * matching call to \ref cs_sles_define has been done.
- *
- * \return  define_func pointer to default definition function
+ * cs_sles_setup or cs_sles_solve is used for a system for which no matching
+ * call to cs_sles_define has been done.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -783,13 +670,11 @@ cs_sles_get_default_define(void);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Set default sparse linear solver definition function.
+ * Set default sparse linear solver definition function.
  *
  * The provided function will be used to provide a definition when
- * \ref cs_sles_setup or \ref cs_sles_solve is used for a system for which no
- * matching call to \ref cs_sles_define has been done.
- *
- * \param[in]  define_func pointer to default definition function
+ * cs_sles_setup or cs_sles_solve is used for a system for which no matching
+ * call to cs_sles_define has been done.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -798,12 +683,10 @@ cs_sles_set_default_define(cs_sles_define_t  *define_func);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Set default verbosity definition function.
+ * Set default verbosity definition function.
  *
  * The provided function will be used to define the verbosity when
- * \ref cs_sles_find_or_add is called.
- *
- * \param[in]  verbosity_func pointer to default verbosity function
+ * cs_sles_find_or_add is called.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -812,13 +695,7 @@ cs_sles_set_default_verbosity(cs_sles_verbosity_t  *verbosity_func);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Output default post-processing data for failed system convergence.
- *
- * \param[in]       name           variable name
- * \param[in]       mesh_id        id of error output mesh, or 0 if none
- * \param[in]       a              linear equation matrix
- * \param[in]       rhs            right hand side
- * \param[in, out]  vx             current system solution
+ * Output default post-processing data for failed system convergence.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -831,15 +708,7 @@ cs_sles_post_error_output_def(const char          *name,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Output post-processing variable related to system convergence.
- *
- * \param[in]       name             variable name
- * \param[in]       mesh_id          id of error output mesh, or 0 if none
- * \param[in]       location_id      mesh location id (cells or vertices)
- * \param[in]       writer_id        id of specified associated writer, or
- *                                   \ref CS_POST_WRITER_ALL_ASSOCIATED for all
- * \param[in]       diag_block_size  block size for diagonal
- * \param[in, out]  var              variable values
+ * Output post-processing variable related to system convergence.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -853,15 +722,10 @@ cs_sles_post_output_var(const char      *name,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return base name associated to a field id, name couple.
+ * Return base name associated to a field id, name couple.
  *
- * This is simply a utility function which will return its name argument
- * if f_id < 0, and the associated field's name otherwise.
- *
- * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
- *
- * \return  pointer to associated linear system object, or NULL
+ * This is simply a utility function which will return its name argument if
+ * f_id < 0, and the associated field's name otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -871,12 +735,7 @@ cs_sles_base_name(int          f_id,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return name associated to a field id, name couple.
- *
- * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
- *
- * \return  pointer to name associated to the field id, name couple
+ * Return name associated to a field id, name couple.
  */
 /*----------------------------------------------------------------------------*/
 

@@ -437,10 +437,8 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Retrieve the number of saddle-point systems which have been added
- *
- * \return the current number of systems
+/*
+ * Retrieve the number of saddle-point systems which have been added
  */
 /*----------------------------------------------------------------------------*/
 
@@ -448,47 +446,32 @@ int
 cs_saddle_solver_get_n_systems(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Get a pointer to saddle-point solver from its id
- *
- * \param[in] id  id of the saddle-point system
- *
- * \return a pointer to a saddle-point solver structure
+/*
+ * Get a pointer to saddle-point solver from its id.
  */
 /*----------------------------------------------------------------------------*/
 
 cs_saddle_solver_t *
-cs_saddle_solver_by_id(int  id);
+cs_saddle_solver_by_id(int id);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Add a new solver for solving a saddle-point problem.
- *
- * \param[in] n1_elts         number of elements associated to the (1,1)-block
- * \param[in] n1_dofs_by_elt  number of DoFs by elements in the (1,1)-block
- * \param[in] n2_elts         number of elements associated to the (2,2)-block
- * \param[in] n2_dofs_by_elt  number of DoFs by elements in the (2,2)-block
- * \param[in] saddlep         set of parameters for the saddle-point solver
- * \param[in] sh              pointer to a system helper structure
- * \param[in] main_sles       pointer to the main SLES structure related to
- *                            this saddle-point problem
- *
- * \return a pointer to the new allocated structure
+/*
+ * Add a new solver for solving a saddle-point problem.
  */
 /*----------------------------------------------------------------------------*/
 
 cs_saddle_solver_t *
-cs_saddle_solver_add(cs_lnum_t                 n1_elts,
-                     int                       n1_dofs_by_elt,
-                     cs_lnum_t                 n2_elts,
-                     int                       n2_dofs_by_elt,
-                     const cs_param_saddle_t  *saddlep,
-                     cs_cdo_system_helper_t   *sh,
-                     cs_sles_t                *main_sles);
+cs_saddle_solver_add(cs_lnum_t                n1_elts,
+                     int                      n1_dofs_by_elt,
+                     cs_lnum_t                n2_elts,
+                     int                      n2_dofs_by_elt,
+                     const cs_param_saddle_t *saddlep,
+                     cs_cdo_system_helper_t  *sh,
+                     cs_sles_t               *main_sles);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free all remaining structures related to saddle-point solvers
+/*
+ * Free all remaining structures related to saddle-point solvers.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -496,43 +479,36 @@ void
 cs_saddle_solver_finalize(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free a cs_saddle_solver_t structure
- *
- * \param[in, out] p_solver  double pointer to the structure to free
+/*
+ * Free a cs_saddle_solver_t structure.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_free(cs_saddle_solver_t  **p_solver);
+cs_saddle_solver_free(cs_saddle_solver_t **p_solver);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free/reset only a part of a cs_saddle_solver_t structure
- *
- * \param[in, out] solver  double pointer to the structure to free
+/*
+ * Free/reset only a part of a cs_saddle_solver_t structure.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_clean(cs_saddle_solver_t  *solver);
+cs_saddle_solver_clean(cs_saddle_solver_t *solver);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Update the current monitoring state with n_iter
- *
- * \param[in, out] solver  pointer to a saddle solver structure
- * \param[in]      n_iter  number of iterations needed for a new call
+/*
+ * Update the current monitoring state with n_iter.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_update_monitoring(cs_saddle_solver_t  *solver,
-                                   unsigned             n_iter);
+cs_saddle_solver_update_monitoring(cs_saddle_solver_t *solver,
+                                   unsigned            n_iter);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Log the monitoring performance of all saddle-point systems
+/*
+ * Log the monitoring performance of all saddle-point systems
  */
 /*----------------------------------------------------------------------------*/
 
@@ -540,210 +516,156 @@ void
 cs_saddle_solver_log_monitoring(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Retrieve the lumped matrix the inverse of the diagonal of the
- *        (1,1)-block matrix. The storage of a matrix is in a gather view and
- *        the resulting array is in scatter view.
- *
- * \param[in]      solver       solver for saddle-point problems
- * \param[in]      scaling_coef scaling coefficient of relaxation purpose
- * \param[in]      m11          matrix related to the (1,1) block
- * \param[in]      b11_rset     range set structure for the (1,1) block
- * \param[in, out] xtra_sles    pointer to an extra SLES structure
- * \param[out]     n_iter       number of iterations for this operation
- *
- * \return a pointer to the computed array (scatter view)
+/*
+ * Retrieve the lumped matrix the inverse of the diagonal of the (1,1)-block
+ * matrix. The storage of a matrix is in a gather view and the resulting array
+ * is in scatter view.
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t     *solver,
-                                const cs_real_t         scaling_coef,
-                                const cs_matrix_t      *m11,
-                                const cs_range_set_t   *b11_rset,
-                                cs_sles_t              *xtra_sles,
-                                int                    *n_iter);
+cs_saddle_solver_m11_inv_lumped(cs_saddle_solver_t   *solver,
+                                const cs_real_t       scaling_coef,
+                                const cs_matrix_t    *m11,
+                                const cs_range_set_t *b11_rset,
+                                cs_sles_t            *xtra_sles,
+                                int                  *n_iter);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the resulting vector of the operation m12*x2
- *        The stride is equal to 3 for the operator m21 (unassembled)
- *        x2 corresponds to a "scatter" view
+/*
+ * Compute the resulting vector of the operation m12*x2
+ * The stride is equal to 3 for the operator m21 (unassembled) x2 corresponds
+ * to a "scatter" view
  *
- *        This is an update operation. Be careful that the resulting array has
- *        to be initialized.
- *
- * \param[in]      n2_dofs  number of DoFs for x2
- * \param[in]      x2       array for the second set
- * \param[in]      m21_adj  adjacency related to the M21 operator
- * \param[in]      m21_val  array associated to the M21 operator (unassembled)
- * \param[in, out] m12x2    resulting array (have to be allocated)
+ * This is an update operation. Be careful that the resulting array has to be
+ * initialized.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_m12_multiply_vector(cs_lnum_t              n2_dofs,
-                                     const cs_real_t       *x2,
-                                     const cs_adjacency_t  *m21_adj,
-                                     const cs_real_t       *m21_val,
-                                     cs_real_t             *m12x2);
+cs_saddle_solver_m12_multiply_vector(cs_lnum_t             n2_dofs,
+                                     const cs_real_t      *x2,
+                                     const cs_adjacency_t *m21_adj,
+                                     const cs_real_t      *m21_val,
+                                     cs_real_t            *m12x2);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the resulting vector of the operation m12*x2
- *        The stride is equal to 1 for the operator m21 (unassembled)
- *        x2 corresponds to a "scatter" view.
+/*
+ * Compute the resulting vector of the operation m12*x2
+ * The stride is equal to 1 for the operator m21 (unassembled) x2 corresponds
+ * to a "scatter" view.
  *
- *        This is an update operation. Be careful that the resulting array has
- *        to be initialized.
- *
- * \param[in]      n2_elts  number of elements for x2 (not DoFs)
- * \param[in]      x2       array for the second set
- * \param[in]      m21_adj  adjacency related to the M21 operator
- * \param[in]      m21_val  array associated to the M21 operator (unassembled)
- * \param[in, out] m12x2    resulting array (have to be allocated)
+ * This is an update operation. Be careful that the resulting array has to be
+ * initialized.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_m12_multiply_scalar(cs_lnum_t              n2_elts,
-                                     const cs_real_t       *x2,
-                                     const cs_adjacency_t  *m21_adj,
-                                     const cs_real_t       *m21_val,
-                                     cs_real_t             *m12x2);
+cs_saddle_solver_m12_multiply_scalar(cs_lnum_t             n2_elts,
+                                     const cs_real_t      *x2,
+                                     const cs_adjacency_t *m21_adj,
+                                     const cs_real_t      *m21_val,
+                                     cs_real_t            *m12x2);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the resulting vector of the operation m21*x1
+/*
+ * Compute the resulting vector of the operation m21*x1
  *        The stride is equal to 3 for the operator m21 operator
  *        x1 corresponds to a "scatter" view
- *
- * \param[in]      n2_dofs  number of (scatter) DoFs for (2,2)-block
- * \param[in]      x1       array for the first part
- * \param[in]      m21_adj  adjacency related to the M21 operator
- * \param[in]      m21_val  values associated to the M21 operator (unassembled)
- * \param[in, out] m21x1    resulting vector (have to be allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_m21_multiply_vector(cs_lnum_t              n2_dofs,
-                                     const cs_real_t       *x1,
-                                     const cs_adjacency_t  *m21_adj,
-                                     const cs_real_t       *m21_val,
-                                     cs_real_t             *m21x1);
+cs_saddle_solver_m21_multiply_vector(cs_lnum_t             n2_dofs,
+                                     const cs_real_t      *x1,
+                                     const cs_adjacency_t *m21_adj,
+                                     const cs_real_t      *m21_val,
+                                     cs_real_t            *m21x1);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the resulting vector of the operation m21*x1
- *        The stride is equal to 1 for the operator m21 operator
- *        x1 corresponds to a "scatter" view
- *
- * \param[in]      n2_dofs  number of (scatter) DoFs for (2,2)-block
- * \param[in]      x1       array for the first part
- * \param[in]      m21_adj  adjacency related to the M21 operator
- * \param[in]      m21_val  values associated to the M21 operator (unassembled)
- * \param[in, out] m21x1    resulting vector (have to be allocated)
+/*
+ * Compute the resulting vector of the operation m21*x1
+ * The stride is equal to 1 for the operator m21 operator x1 corresponds to a
+ * "scatter" view
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_m21_multiply_scalar(cs_lnum_t              n2_dofs,
-                                     const cs_real_t       *x1,
-                                     const cs_adjacency_t  *m21_adj,
-                                     const cs_real_t       *m21_val,
-                                     cs_real_t             *m21x1);
+cs_saddle_solver_m21_multiply_scalar(cs_lnum_t             n2_dofs,
+                                     const cs_real_t      *x1,
+                                     const cs_adjacency_t *m21_adj,
+                                     const cs_real_t      *m21_val,
+                                     cs_real_t            *m21x1);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Create and initialize the context structure for an algorithm related
- *        to the ALU algorithm
- *
- * \param[in, out] solver  pointer to a saddle-point solver structure
+/*
+ * Create and initialize the context structure for an algorithm related to the
+ * ALU algorithm.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_alu_create(cs_saddle_solver_t  *solver);
+cs_saddle_solver_context_alu_create(cs_saddle_solver_t *solver);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free main memory consuming part of the context structure associated
- *        to an ALU algorithm
- *
- * \param[in, out] ctx  pointer to the context structure to clean
+/*
+ * Free main memory consuming part of the context structure associated to an
+ * ALU algorithm.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_alu_clean
-(
- cs_saddle_solver_context_alu_t  *ctx
-);
+cs_saddle_solver_context_alu_clean(cs_saddle_solver_context_alu_t *ctx);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free the context structure associated to an ALU algorithm
- *
- * \param[in, out] p_ctx  double pointer to the context structure to free
+/*
+ * Free the context structure associated to an ALU algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_alu_free
-(
- cs_saddle_solver_context_alu_t  **p_ctx
-);
+cs_saddle_solver_context_alu_free(cs_saddle_solver_context_alu_t **p_ctx);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Create and initialize the context structure for a block preconditioner
- *        used in combination with a Krylov solver such as MINRES or GCR.
- *
- * \param[in]      b22_max_size  max. size for the second part of unknows
- * \param[in, out] solver        pointer to a saddle-point solver structure
+/*
+ * Create and initialize the context structure for a block preconditioner used
+ * in combination with a Krylov solver such as MINRES or GCR.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_block_pcd_create(cs_lnum_t            b22_max_size,
-                                          cs_saddle_solver_t  *solver);
+cs_saddle_solver_context_block_pcd_create(cs_lnum_t           b22_max_size,
+                                          cs_saddle_solver_t *solver);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free the context structure for a block preconditioner used in
- *        combination with a Krylov solver such as MINRES or GCR.
- *
- * \param[in, out] ctx  pointer to the context structure to clean
+/*
+ * Free the context structure for a block preconditioner used in combination
+ * with a Krylov solver such as MINRES or GCR.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_saddle_solver_context_block_pcd_clean
 (
- cs_saddle_solver_context_block_pcd_t  *ctx
+ cs_saddle_solver_context_block_pcd_t *ctx
 );
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free the context structure for a block preconditioner used in
- *        combination with a Krylov solver such as MINRES or GCR.
- *
- * \param[in, out] p_ctx  double pointer to the context structure to free
+/*
+ * Free the context structure for a block preconditioner used in combination
+ * with a Krylov solver such as MINRES or GCR.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_saddle_solver_context_block_pcd_free
 (
- cs_saddle_solver_context_block_pcd_t  **p_ctx
+ cs_saddle_solver_context_block_pcd_t **p_ctx
 );
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Create and initialize the context structure for the GKB algorithm
- *
- * \param[in, out] solver  pointer to a saddle-point solver structure
+/*
+ * Create and initialize the context structure for the GKB algorithm.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -751,37 +673,31 @@ void
 cs_saddle_solver_context_gkb_create(cs_saddle_solver_t  *solver);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free the main memory consuming part of the context structure
- *        associated to the GKB algorithm
- *
- * \param[in, out] ctx  pointer to the context structure to clean
+/*
+ * Free the main memory consuming part of the context structure associated to
+ * the GKB algorithm.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_gkb_clean(cs_saddle_solver_context_gkb_t  *ctx);
+cs_saddle_solver_context_gkb_clean(cs_saddle_solver_context_gkb_t *ctx);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free the context structure associated to the GKB algorithm
- *
- * \param[in, out] p_ctx  double pointer to the context structure to free
+/*
+ * Free the context structure associated to the GKB algorithm.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_saddle_solver_context_gkb_free
 (
- cs_saddle_solver_context_gkb_t  **p_ctx
+ cs_saddle_solver_context_gkb_t **p_ctx
 );
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Create and initialize the context structure for the algorithm relying
- *        on the Notay's algebraic transformation
- *
- * \param[in, out] solver  pointer to a saddle-point solver structure
+/*
+ * Create and initialize the context structure for the algorithm relying on the
+ * Notay's algebraic transformation.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -789,82 +705,65 @@ void
 cs_saddle_solver_context_notay_create(cs_saddle_solver_t  *solver);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Create and initialize the context structure for an algorithm related
- *        to the Uzawa-CG algorithm
- *
- * \param[in]      b22_max_size  max. size for the second part of unknows
- * \param[in, out] solver        pointer to a saddle-point solver structure
+/*
+ * Create and initialize the context structure for an algorithm related to the
+ * Uzawa-CG algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t            b22_max_size,
-                                         cs_saddle_solver_t  *solver);
+cs_saddle_solver_context_uzawa_cg_create(cs_lnum_t           b22_max_size,
+                                         cs_saddle_solver_t *solver);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free main memory consuming part of the context structure associated
- *        to a Uzawa-CG algorithm
- *
- * \param[in, out] ctx  pointer to the context structure to clean
+/*
+ * Free main memory consuming part of the context structure associated to a
+ * Uzawa-CG algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_saddle_solver_context_uzawa_cg_clean
 (
- cs_saddle_solver_context_uzawa_cg_t  *ctx
+ cs_saddle_solver_context_uzawa_cg_t *ctx
 );
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free the context structure associated to a Uzawa-CG algorithm
- *
- * \param[in, out] p_ctx  double pointer to the context structure to free
+/*
+ * Free the context structure associated to a Uzawa-CG algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_saddle_solver_context_uzawa_cg_free
 (
- cs_saddle_solver_context_uzawa_cg_t  **p_ctx
+ cs_saddle_solver_context_uzawa_cg_t **p_ctx
 );
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Create and initialize the context structure for an algorithm related
- *        to the SIMPLE algorithm
- *
- * \param[in]      b22_max_size  max. size for the second part of unknows
- * \param[in, out] solver        pointer to a saddle-point solver structure
+/*
+ * Create and initialize the context structure for an algorithm related to the
+ * SIMPLE algorithm.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_simple_create(cs_lnum_t            b22_max_size,
-                                       cs_saddle_solver_t  *solver);
+cs_saddle_solver_context_simple_create(cs_lnum_t           b22_max_size,
+                                       cs_saddle_solver_t *solver);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free main memory consuming part of the context structure associated
- *        to a SIMPLE algorithm
- *
- * \param[in, out] ctx  pointer to the context structure to clean
+/*
+ * Free main memory consuming part of the context structure associated to a
+ * SIMPLE algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_context_simple_clean
-(
- cs_saddle_solver_context_simple_t  *ctx
-);
+cs_saddle_solver_context_simple_clean(cs_saddle_solver_context_simple_t *ctx);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free the context structure associated to a Uzawa-CG algorithm
- *
- * \param[in, out] p_ctx  double pointer to the context structure to free
+/*
+ * Free the context structure associated to a SIMPLE algorithm.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -875,160 +774,120 @@ cs_saddle_solver_context_simple_free
 );
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Apply the Augmented Lagrangian-Uzawa algorithm to a saddle point
- *        problem (the system is stored in a hybrid way). The stride is equal
- *        to 1 for the matrix (db_size[3] = 1) and the vector.
- *
- * \param[in, out] solver  pointer to a saddle_point solver structure
- * \param[in, out] x1      array for the first part
- * \param[in, out] x2      array for the second part
+/*
+ * Apply the Augmented Lagrangian-Uzawa algorithm to a saddle point problem
+ * (the system is stored in a hybrid way). The stride is equal to 1 for the
+ * matrix (db_size[3] = 1) and the vector.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
-                          cs_real_t           *x1,
-                          cs_real_t           *x2);
+cs_saddle_solver_alu_incr(cs_saddle_solver_t *solver,
+                          cs_real_t          *x1,
+                          cs_real_t          *x2);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Apply the GCR algorithm to a saddle point problem (the system is
- *        stored in a hybrid way).
- *        The stride is equal to 1 for the matrix in the (1,1) block
- *        (db_size[3] = 1).
+/*
+ * Apply the GCR algorithm to a saddle point problem (the system is stored in a
+ * hybrid way).  The stride is equal to 1 for the matrix in the (1,1) block
+ * (db_size[3] = 1).
  *
- *        This algorithm is taken from 2010 Notay's paper:
- *        "An aggregation-based algebraic multigrid method" ETNA (vol. 37)
- *
- * \param[in, out] solver  pointer to a saddle_point solver structure
- * \param[in, out] x1      array for the first part
- * \param[in, out] x2      array for the second part
+ * This algorithm is taken from 2010 Notay's paper:
+ * "An aggregation-based algebraic multigrid method" ETNA (vol. 37)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
-                     cs_real_t           *x1,
-                     cs_real_t           *x2);
+cs_saddle_solver_gcr(cs_saddle_solver_t *solver,
+                     cs_real_t          *x1,
+                     cs_real_t          *x2);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Apply the GKB algorithm to a saddle point problem (the system is
- *        stored in a hybrid way).
- *        The stride is equal to 1 for the matrix in the (1,1) block
- *        (db_size[3] = 1).
- *
- * \param[in, out] solver  pointer to a saddle_point solver structure
- * \param[in, out] x1      array for the first part
- * \param[in, out] x2      array for the second part
+/*
+ * Apply the GKB algorithm to a saddle point problem (the system is stored in a
+ * hybrid way).  The stride is equal to 1 for the matrix in the (1,1) block
+ * (db_size[3] = 1).
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_gkb_inhouse(cs_saddle_solver_t  *solver,
-                             cs_real_t           *x1,
-                             cs_real_t           *x2);
+cs_saddle_solver_gkb_inhouse(cs_saddle_solver_t *solver,
+                             cs_real_t          *x1,
+                             cs_real_t          *x2);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Apply an (external) solver to solve a saddle point problem (the
- *        system is stored in a monolithic way).
- *
- * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
- * \param[in, out] x1      array for the first part
- * \param[in, out] x2      array for the second part
+/*
+ * Apply an (external) solver to solve a saddle point problem (the system is
+ * stored in a monolithic way).
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_sles_full_system(cs_saddle_solver_t  *solver,
-                                  cs_real_t           *x1,
-                                  cs_real_t           *x2);
+cs_saddle_solver_sles_full_system(cs_saddle_solver_t *solver,
+                                  cs_real_t          *x1,
+                                  cs_real_t          *x2);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Apply the MINRES algorithm to a saddle point problem (the system is
- *        stored in a hybrid way).
- *        The stride is equal to 1 for the matrix (db_size[3] = 1) and the
- *        vector.
- *
- * \param[in, out] solver  pointer to a saddle_point solver structure
- * \param[in, out] x1      array for the first part
- * \param[in, out] x2      array for the second part
+/*
+ * Apply the MINRES algorithm to a saddle point problem (the system is stored
+ * in a hybrid way).  The stride is equal to 1 for the matrix (db_size[3] = 1)
+ * and the vector.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
-                        cs_real_t           *x1,
-                        cs_real_t           *x2);
+cs_saddle_solver_minres(cs_saddle_solver_t *solver,
+                        cs_real_t          *x1,
+                        cs_real_t          *x2);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Apply the Notay's transformation algorithm to solve a saddle point
- *        problem (the system is stored in a monolithic way).
- *
- * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
- * \param[in, out] x1      array for the first part
- * \param[in, out] x2      array for the second part
+/*
+ * Apply the Notay's transformation algorithm to solve a saddle point problem
+ * (the system is stored in a monolithic way).
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_notay(cs_saddle_solver_t  *solver,
-                       cs_real_t           *x1,
-                       cs_real_t           *x2);
+cs_saddle_solver_notay(cs_saddle_solver_t *solver,
+                       cs_real_t          *x1,
+                       cs_real_t          *x2);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Apply the Uzawa-CG algorithm to solve a saddle point problem (the
- *        system is stored in a hybrid way). This algorithm is based on Koko's
- *        paper "Uzawa conjugate gradient method for the Stokes problem: Matlab
- *        implementation with P1-iso-P2/ P1 finite element"
- *
- * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
- * \param[in, out] x1      array for the first part
- * \param[in, out] x2      array for the second part
+/*
+ * Apply the Uzawa-CG algorithm to solve a saddle point problem (the system is
+ * stored in a hybrid way). This algorithm is based on Koko's paper "Uzawa
+ * conjugate gradient method for the Stokes problem: Matlab implementation with
+ * P1-iso-P2/ P1 finite element".
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
-                          cs_real_t           *x1,
-                          cs_real_t           *x2);
+cs_saddle_solver_uzawa_cg(cs_saddle_solver_t *solver,
+                          cs_real_t          *x1,
+                          cs_real_t          *x2);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Apply the SIMPLE-like algorithm to solve a saddle point problem
- *
- * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
- * \param[in, out] x1      array for the first part
- * \param[in, out] x2      array for the second part
+/*
+ * Apply the SIMPLE-like algorithm to solve a saddle point problem.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
-                        cs_real_t           *x1,
-                        cs_real_t           *x2);
+cs_saddle_solver_simple(cs_saddle_solver_t *solver,
+                        cs_real_t          *x1,
+                        cs_real_t          *x2);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Apply the AFS (Algebraic Fractional Step) algorithm to solve a saddle
- *        point problem
- *        cf. Bonelle & Ma (HAL preprint available online)
- *
- * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
- * \param[in, out] x1      array for the first part
- * \param[in, out] x2      array for the second part
+/*
+ * Apply the AFS (Algebraic Fractional Step) algorithm to solve a saddle point
+ * problem cf. Bonelle & Ma (HAL preprint available online).
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_saddle_solver_afs(cs_saddle_solver_t  *solver,
-                     cs_real_t           *x1,
-                     cs_real_t           *x2);
+cs_saddle_solver_afs(cs_saddle_solver_t *solver,
+                     cs_real_t          *x1,
+                     cs_real_t          *x2);
 
 /*----------------------------------------------------------------------------*/
 

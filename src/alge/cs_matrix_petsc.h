@@ -66,44 +66,34 @@ extern "C" void
 cs_matrix_petsc_finalize(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Switch matrix type to PETSc.
+/*
+ * Switch matrix type to PETSc.
  *
  * This releases previous coefficients if present, so should be called
  * just after matrix creation, before assigning coefficients.
- *
- * \param[in, out]  matrix      pointer to matrix structure
- * \param[in]       type_name   string matching PETSc matrix type name,
- *                              defaults to "MATAIJ" if NULL
  */
 /*----------------------------------------------------------------------------*/
 
 extern "C" void
-cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
-                         const char   *type_name);
+cs_matrix_set_type_petsc(cs_matrix_t *matrix,
+                         const char  *type_name);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Function pointer for adding one row to a petsc matrix.
+ * Function pointer for adding one row to a petsc matrix.
  *
- * \warning The matrix pointer must point to valid data when the selection
- *          function is called, so the life cycle of the data pointed to should
- *          be at least as long as that of the assembler values structure.
- *
- * \param[in]      n_cols      number of column values to add
- * \param[in]      row_g_id    row global id
- * \param[in]      col_g_ids   column global id list with n_cols elements
- * \param[in]      vals        value list with n_cols elements to add
- * \param[in, out] matrix_p    untyped pointer to matrix description structure
+ * The matrix pointer must point to valid data when the selection function is
+ * called, so the life cycle of the data pointed to should be at least as long
+ * as that of the assembler values structure.
  */
 /*----------------------------------------------------------------------------*/
 
 extern "C" void
-cs_matrix_petsc_add_scal_row_values(const cs_lnum_t                n_cols,
-                                    const cs_gnum_t                row_g_id,
-                                    const cs_gnum_t               *col_g_ids,
-                                    const cs_real_t               *vals,
-                                    void                          *matrix_p);
+cs_matrix_petsc_add_scal_row_values(const cs_lnum_t  n_cols,
+                                    const cs_gnum_t  row_g_id,
+                                    const cs_gnum_t *col_g_ids,
+                                    const cs_real_t *vals,
+                                    void            *matrix_p);
 
 /*----------------------------------------------------------------------------*/
 

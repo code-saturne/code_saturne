@@ -100,24 +100,19 @@ typedef enum {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the different terms of the balance of a given scalar,
- *        on a volume zone defined by selected cell ids/
+/*
+ * Compute the different terms of the balance of a given scalar, on a volume
+ * zone defined by selected cell ids/
  *
- * This function computes the balance relative to a given scalar
- * on a selected zone of the mesh.
- * We assume that we want to compute balances (convective and diffusive)
- * at the boundaries of the calculation domain represented below
- * (with different boundary types).
+ * This function computes the balance relative to a given scalar on a selected
+ * zone of the mesh.
+
+ * We assume that we want to compute balances (convective and diffusive) at the
+ * boundaries of the calculation domain represented below (with different
+ * boundary types).
  *
  * In the case of the temperature, the energy balance in Joules will be
  * computed by multiplying by the specific heat.
- *
- * \param[in]     scalar_name         scalar name
- * \param[in]     n_cells_sel         number of selected cells
- * \param[in]     cell_sel_ids        ids of selected cells
- * \param[out]    balance             array of computed balance terms
- *                                    (see \ref cs_balance_term_t)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -128,25 +123,21 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                            cs_real_t        balance[CS_BALANCE_N_TERMS]);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute and log the different terms of the balance of a given scalar,
- *        on a volumic zone defined by selection criteria.
- *        The different contributions to the balance are printed in the
- *        run_solver.log.
+/*
+ * Compute and log the different terms of the balance of a given scalar, on a
+ * volumic zone defined by selection criteria.
+ * The different contributions to the balance are printed in the
+ * run_solver.log.
  *
- * This function computes the balance relative to a given scalar
- * on a selected zone of the mesh.
- * We assume that we want to compute balances (convective and diffusive)
- * at the boundaries of the calculation domain represented below
- * (with different boundary types).
+ * This function computes the balance relative to a given scalar on a selected
+ * zone of the mesh.
+ * We assume that we want to compute balances (convective and diffusive) at the
+ * boundaries of the calculation domain represented below (with different
+ * boundary types).
  *
- * The scalar and the zone are selected at the top of the routine
- * by the user.
+ * The scalar and the zone are selected at the top of the routine by the user.
  * In the case of the temperature, the energy balance in Joules will be
  * computed by multiplying by the specific heat.
- *
- * \param[in]     selection_crit      zone selection criterion
- * \param[in]     scalar_name         scalar name
  */
 /*----------------------------------------------------------------------------*/
 
@@ -155,14 +146,9 @@ cs_balance_by_zone(const char  *selection_crit,
                    const char  *scalar_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Computes one term of the head loss balance (pressure drop) on a
- *        on a volume zone defined by selected cell ids/
- *
- * \param[in]     n_cells_sel         number of selected cells
- * \param[in]     cell_sel_ids        ids of selected cells
- * \param[out]    balance             array of computed balance terms
- *                                    (see \ref cs_balance_p_term_t)
+/*
+ * Computes one term of the head loss balance (pressure drop) on a on a volume
+ * zone defined by selected cell ids
  */
 /*----------------------------------------------------------------------------*/
 
@@ -172,12 +158,10 @@ cs_pressure_drop_by_zone_compute(cs_lnum_t        n_cells_sel,
                                  cs_real_t        balance[CS_BALANCE_P_N_TERMS]);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Computes one term of the head loss balance (pressure drop) on a
- * volumic zone defined by the criterion also given as argument.
+/*
+ * Computes one term of the head loss balance (pressure drop) on a volumic zone
+ * defined by the criterion also given as argument.
  * The different contributions are printed in the run_solver.log.
- *
- * \param[in]     selection_crit      zone selection criterion
  */
 /*----------------------------------------------------------------------------*/
 
@@ -185,18 +169,8 @@ void
 cs_pressure_drop_by_zone(const char  *selection_crit);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the surface balance of a given scalar.
- *
- * For interior faces, the flux is counted negatively relative to the given
- * normal (as neighboring interior faces may have differently-aligned normals).
- *
- * For boundary faces, the flux is counted negatively in the outwards-facing
- * direction.
- *
- * \param[in]     selection_crit      zone selection criterion
- * \param[in]     scalar_name         scalar name
- * \param[in]     normal              outwards normal direction
+/*
+ * Compute the surface balance of a given scalar.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -206,29 +180,15 @@ cs_surface_balance(const char       *selection_crit,
                    const cs_real_t   normal[3]);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the face by face surface flux of a given scalar, through a
- *        surface area defined by the given face ids.
+/*
+ * Get the face by face surface flux of a given scalar, through a surface area
+ * defined by the given face ids.
  *
  * For interior faces, the flux is counted negatively relative to the given
  * normal (as neighboring interior faces may have differently-aligned normals).
  *
  * For boundary faces, the flux is counted negatively in the outwards-facing
  * direction.
- *
- * \param[in]   scalar_name       scalar name
- * \param[in]   normal            outwards normal direction
- * \param[in]   n_b_faces_sel     number of selected boundary faces
- * \param[in]   n_i_faces_sel     number of selected internal faces
- * \param[in]   b_face_sel_ids    ids of selected boundary faces
- * \param[in]   i_face_sel_ids    ids of selected internal faces
- * \param[out]  balance           optional array of computed balance terms
- *                                (see \ref cs_balance_term_t), of
- *                                size CS_BALANCE_N_TERMS, or NULL
- * \param[out]  flux_b_faces      optional surface flux through selected
- *                                boundary faces, or NULL
- * \param[out]  flux_i_faces      optional surface flux through selected
- *                                interior faces, or NULL
  */
 /*----------------------------------------------------------------------------*/
 

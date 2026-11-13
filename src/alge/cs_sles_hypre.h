@@ -112,34 +112,23 @@ typedef struct _cs_sles_hypre_t  cs_sles_hypre_t;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define and associate a HYPRE linear system solver
- *        for a given field or equation name.
+/*
+ * Define and associate a HYPRE linear system solver for a given field or
+ * equation name.
  *
- * If this system did not previously exist, it is added to the list of
- * "known" systems. Otherwise, its definition is replaced by the one
- * defined here.
+ * If this system did not previously exist, it is added to the list of "known"
+ * systems. Otherwise, its definition is replaced by the one defined here.
  *
- * This is a utility function: if finer control is needed, see
- * \ref cs_sles_define and \ref cs_sles_petsc_create.
+ * This is a utility function: if finer control is needed, see cs_sles_define
+ * and cs_sles_petsc_create.
  *
  * The associated solver required that the matrix passed to it is a HYPRE
  * matrix (see cs_matrix_set_type_hypre).
  *
  * Note that this function returns a pointer directly to the iterative solver
- * management structure. This may be used to set further options.
- * If needed, \ref cs_sles_find may be used to obtain a pointer to the matching
- * \ref cs_sles_t container.
- *
- * \param[in]      f_id          associated field id, or < 0
- * \param[in]      name          associated name if f_id < 0, or NULL
- * \param[in]      solver_type   HYPRE solver type
- * \param[in]      precond_type  HYPRE preconditioner type
- * \param[in]      setup_hook    pointer to optional setup epilogue function
- * \param[in,out]  context       pointer to optional (untyped) value or
- *                               structure for setup_hook, or NULL
- *
- * \return  pointer to newly created iterative solver info object.
+ * management structure. This may be used to set further options. If needed,
+ * cs_sles_find may be used to obtain a pointer to the matching cs_sles_t
+ * container.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -152,20 +141,12 @@ cs_sles_hypre_define(int                          f_id,
                      void                        *context);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Create HYPRE linear system solver info and context.
+/*
+ * Create HYPRE linear system solver info and context.
  *
- * In case of rotational periodicity for a block (non-scalar) matrix,
- * the matrix type will be forced to MATSHELL ("shell") regardless
- * of the option used.
- *
- * \param[in]  solver_type   HYPRE solver type
- * \param[in]  precond_type  HYPRE preconditioner type
- * \param[in]  setup_hook    pointer to optional setup epilogue function
- * \param[in]  context       pointer to optional (untyped) value or structure
- *                           for setup_hook, or NULL
- *
- * \return  pointer to newly created linear system object.
+ * In case of rotational periodicity for a block (non-scalar) matrix, the
+ * matrix type will be forced to MATSHELL ("shell") regardless of the option
+ * used.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -175,43 +156,30 @@ cs_sles_hypre_create(cs_sles_hypre_type_t         solver_type,
                      cs_sles_hypre_setup_hook_t  *setup_hook,
                      void                        *context);
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*
  * Destroy HYPRE linear system solver info and context.
- *
- * parameters:
- *   context  <-> pointer to HYPRE linear solver info
- *                (actual type: cs_sles_hypre_t  **)
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 extern "C" void
 cs_sles_hypre_destroy(void  **context);
 
-/*----------------------------------------------------------------------------
- * Create HYPRE linear system solver info and context
- * based on existing info and context.
- *
- * parameters:
- *   context <-- pointer to reference info and context
- *               (actual type: cs_sles_hypre_t  *)
- *
- * returns:
- *   pointer to newly created solver info object
- *   (actual type: cs_sles_hypre_t  *)
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*
+ * Create HYPRE linear system solver info and context based on existing info
+ * and context.
+ */
+/*----------------------------------------------------------------------------*/
 
 extern "C" void *
 cs_sles_hypre_copy(const void  *context);
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*
  * Setup HYPRE linear equation solver.
- *
- * parameters:
- *   context   <-> pointer to HYPRE linear solver info
- *                 (actual type: cs_sles_hypre_t  *)
- *   name      <-- pointer to system name
- *   a         <-- associated matrix
- *   verbosity <-- verbosity level
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 extern "C" void
 cs_sles_hypre_setup(void               *context,
@@ -219,29 +187,11 @@ cs_sles_hypre_setup(void               *context,
                     const cs_matrix_t  *a,
                     int                 verbosity);
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*
  * Call HYPRE linear equation solver.
- *
- * parameters:
- *   context       <-> pointer to HYPRE linear solver info
- *                     (actual type: cs_sles_hypre_t  *)
- *   name          <-- pointer to system name
- *   a             <-- matrix
- *   verbosity     <-- verbosity level
- *   precision     <-- solver precision
- *   r_norm        <-- residual normalization
- *   n_iter        --> number of iterations
- *   residual      --> residual
- *   rhs           <-- right hand side
- *   vx_ini        <-- initial system solution
- *                     (vx if nonzero, nullptr if zero)
- *   vx            <-> system solution
- *   aux_size      <-- number of elements in aux_vectors (in bytes)
- *   aux_vectors   --- optional working area (internal allocation if NULL)
- *
- * returns:
- *   convergence state
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 extern "C" cs_sles_convergence_state_t
 cs_sles_hypre_solve(void                *context,
@@ -258,36 +208,25 @@ cs_sles_hypre_solve(void                *context,
                     size_t               aux_size,
                     void                *aux_vectors);
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*
  * Free HYPRE linear equation solver setup context.
  *
- * This function frees resolution-related data, such as
- * buffers and preconditioning but does not free the whole context,
- * as info used for logging (especially performance data) is maintained.
-
- * parameters:
- *   context <-> pointer to HYPRE linear solver info
- *               (actual type: cs_sles_hypre_t  *)
- *----------------------------------------------------------------------------*/
+ * This function frees resolution-related data, such as buffers and
+ * preconditioning but does not free the whole context, as info used for
+ * logging (especially performance data) is maintained.
+ */
+/*----------------------------------------------------------------------------*/
 
 extern "C" void
 cs_sles_hypre_free(void  *context);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Error handler for HYPRE solver.
+/*
+ * Error handler for HYPRE solver.
  *
  * In case of divergence or breakdown, this error handler outputs an error
- * message
- * It does nothing in case the maximum iteration count is reached.
-
- * \param[in, out]  sles           pointer to solver object
- * \param[in]       state          convergence state
- * \param[in]       a              matrix
- * \param[in]       rhs            right hand side
- * \param[in, out]  vx             system solution
- *
- * \return  false (do not attempt new solve)
+ * message. It does nothing in case the maximum iteration count is reached.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -298,26 +237,19 @@ cs_sles_hypre_error_post_and_abort(cs_sles_t                    *sles,
                                    const cs_real_t              *rhs,
                                    cs_real_t                    *vx);
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*
  * Log sparse linear equation solver info.
- *
- * parameters:
- *   context  <-> pointer to HYPRE linear solver info
- *                (actual type: cs_sles_hypre_t  *)
- *   log_type <-- log type
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 extern "C" void
 cs_sles_hypre_log(const void  *context,
                   cs_log_t     log_type);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the max. number of iterations associated to the given HYPRE
- *        contrext
- *
- * \param[in,out]  context       pointer to HYPRE linear solver info
- * \param[in]      n_max_iter    max. number of iterations
+/*
+ * Set the max. number of iterations associated to the given HYPRE context
  */
 /*----------------------------------------------------------------------------*/
 
@@ -326,14 +258,10 @@ cs_sles_hypre_set_n_max_iter(cs_sles_hypre_t   *context,
                              int                n_max_iter);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define whether the solver should run on the host or
- *        accelerated device.
+/*
+ * Define whether the solver should run on the host or accelerated device.
  *
  * If no device is available, this setting is ignored.
- *
- * \param[in,out]  context       pointer to HYPRE linear solver info
- * \param[in]      use_device    0 for host, 1 for device (GPU)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -342,12 +270,8 @@ cs_sles_hypre_set_host_device(cs_sles_hypre_t   *context,
                               int                use_device);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Query whether the solver should run on the host or accelerated device.
- *
- * \param[in,out]  context       pointer to HYPRE linear solver info
- *
- * \return   0 for host, 1 for device (GPU)
+/*
+ * Query whether the solver should run on the host or accelerated device.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -355,10 +279,8 @@ extern "C" int
 cs_sles_hypre_get_host_device(const cs_sles_hypre_t   *context);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Print information on hypre library.
- *
- * \param[in]  log_type  log type
+/*
+ * Print information on hypre library.
  */
 /*----------------------------------------------------------------------------*/
 

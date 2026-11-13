@@ -59,87 +59,66 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define cs_sles_t structure in accordance with the settings of a
- *        cs_param_sles_t structure (SLES = Sparse Linear Equation Solver)
- *
- * \param[in]      use_field_id  if false use system name to define a SLES
- * \param[in, out] slesp         pointer to a cs_param_sles_t structure
- *
- * \return an error code (-1 if a problem is encountered, 0 otherwise)
+/*
+ * Define cs_sles_t structure in accordance with the settings of a
+ * cs_param_sles_t structure (SLES = Sparse Linear Equation Solver).
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_param_sles_setup(bool              use_field_id,
-                    cs_param_sles_t  *slesp);
+cs_param_sles_setup(bool             use_field_id,
+                    cs_param_sles_t *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Update the settings associated to a cs_sles_t structure and apply
- *        those defined in the given cs_param_sles_t structure.
- *        This function is used only when a first setup has been performed.
+/*
+ * Update the settings associated to a cs_sles_t structure and apply those
+ * defined in the given cs_param_sles_t structure.
+ * This function is used only when a first setup has been performed.
  *
- *        One modifies only some specific options like the max. number of
- *        iterations or the relative tolerance
- *
- * \param[in] use_field_id  if false use a name to retrieve the cs_sles_t struc.
- * \param[in] slesp         pointer to a cs_param_sles_t structure
+ * One modifies only some specific options like the max. number of iterations
+ * or the relative tolerance
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_setup_cvg_param(bool                    use_field_id,
-                              const cs_param_sles_t  *slesp);
+cs_param_sles_setup_cvg_param(bool                   use_field_id,
+                              const cs_param_sles_t *slesp);
 
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the command line option for PETSc
- *
- * \param[in]      use_prefix    need a prefix
- * \param[in]      prefix        optional prefix
- * \param[in]      keyword       command keyword
- * \param[in]      keyval        command value
+/*
+ * Set the command line option for PETSc.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_setup_petsc_cmd(bool         use_prefix,
-                              const char  *prefix,
-                              const char  *keyword,
-                              const char  *keyval);
+cs_param_sles_setup_petsc_cmd(bool        use_prefix,
+                              const char *prefix,
+                              const char *keyword,
+                              const char *keyval);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set a KSP structure in PETSc. This is equivalent to set a solver and
- *        its related preconditioner
- *
- * \param[in]      label  label to identify this (part of) system
- * \param[in, out] slesp  pointer to a set of SLES parameters
- * \param[in, out] p_ksp  solver structure for PETSc
+/*
+ * Set a KSP structure in PETSc. This is equivalent to set a solver and its
+ * related preconditioner.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_setup_petsc_ksp(const char       *label,
-                              cs_param_sles_t  *slesp,
-                              void             *p_ksp);
+cs_param_sles_setup_petsc_ksp(const char      *label,
+                              cs_param_sles_t *slesp,
+                              void            *p_ksp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set an AMG preconditioner in PETSc
- *
- * \param[in]      prefix  label to identify this (part of) system
- * \param[in]      slesp   pointer to a set of SLES parameters
- * \param[in, out] p_pc    preconditioner structure for PETsc
+/*
+ * Set an AMG preconditioner in PETSc.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_setup_petsc_pc_amg(const char       *prefix,
-                                 cs_param_sles_t  *slesp,
-                                 void             *p_pc);
+cs_param_sles_setup_petsc_pc_amg(const char      *prefix,
+                                 cs_param_sles_t *slesp,
+                                 void            *p_pc);
 #endif
 
 /*----------------------------------------------------------------------------*/

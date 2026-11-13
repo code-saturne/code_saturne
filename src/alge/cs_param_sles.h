@@ -126,14 +126,8 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Create a \ref cs_param_sles_t structure and assign a default
- *         settings
- *
- * \param[in]  field_id      id related to to the variable field or -1
- * \param[in]  system_name   name of the system to solve or NULL
- *
- * \return a pointer to a cs_param_sles_t stucture
+/*
+ * Create a cs_param_sles_t structure and assign a default settings
  */
 /*----------------------------------------------------------------------------*/
 
@@ -142,10 +136,8 @@ cs_param_sles_create(int           field_id,
                      const char   *system_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Free a \ref cs_param_sles_t structure
- *
- * \param[in, out] p_slesp  pointer to a \ref cs_param_sles_t structure to free
+/*
+ * Free a cs_param_sles_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -153,11 +145,8 @@ void
 cs_param_sles_free(cs_param_sles_t  **p_slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Log information related to the linear settings stored in the
- *        structure
- *
- * \param[in] slesp    pointer to a \ref cs_param_sles_log
+/*
+ * Log information related to the linear settings stored in the structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -165,11 +154,8 @@ void
 cs_param_sles_log(cs_param_sles_t   *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy a cs_param_sles_t structure from src to dst
- *
- * \param[in]      src    reference cs_param_sles_t structure to copy
- * \param[in, out] dst    copy of the reference at exit
+/*
+ * Copy a cs_param_sles_t structure from src to dst.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -178,13 +164,8 @@ cs_param_sles_copy_from(const cs_param_sles_t  *src,
                         cs_param_sles_t        *dst);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the solver associated to this SLES from its keyval
- *
- * \param[in]      keyval  value of the key
- * \param[in, out] slesp   pointer to a cs_param_sles_t structure
- *
- * \return an error code (> 0) or 0 if there is no error
+/*
+ * Set the solver associated to this SLES from its keyval.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -193,13 +174,8 @@ cs_param_sles_set_solver(const char       *keyval,
                          cs_param_sles_t  *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the preconditioner associated to this SLES from its keyval
- *
- * \param[in]      keyval  value of the key
- * \param[in, out] slesp   pointer to a cs_param_sles_t structure
- *
- * \return an error code (> 0) or 0 if there is no error
+/*
+ * Set the preconditioner associated to this SLES from its keyval.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -208,14 +184,9 @@ cs_param_sles_set_precond(const char       *keyval,
                           cs_param_sles_t  *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the class of solvers associated to this SLES from its keyval
- *        Common choices are "petsc", "hypre" or "mumps"
- *
- * \param[in]      keyval  value of the key
- * \param[in, out] slesp   pointer to a cs_param_sles_t structure
- *
- * \return an error code (> 0) or 0 if there is no error
+/*
+ * Set the class of solvers associated to this SLES from its keyval.
+ * Common choices are "petsc", "hypre" or "mumps".
  */
 /*----------------------------------------------------------------------------*/
 
@@ -224,14 +195,9 @@ cs_param_sles_set_solver_class(const char       *keyval,
                                cs_param_sles_t  *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the type of algebraic multigrid (AMG) associated to this SLES
- *        from its keyval
- *
- * \param[in]      keyval  value of the key
- * \param[in, out] slesp   pointer to a cs_param_sles_t structure
- *
- * \return an error code (> 0) or 0 if there is no error
+/*
+ * Set the type of algebraic multigrid (AMG) associated to this SLES from its
+ * keyval.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -240,14 +206,9 @@ cs_param_sles_set_amg_type(const char       *keyval,
                            cs_param_sles_t  *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the type of block preconditioner associated to this SLES from its
- *        keyval
- *
- * \param[in]      keyval  value of the key
- * \param[in, out] slesp   pointer to a cs_param_sles_t structure
- *
- * \return an error code (> 0) or 0 if there is no error
+/*
+ * Set the type of block preconditioner associated to this SLES from its
+ * keyval.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -256,16 +217,9 @@ cs_param_sles_set_precond_block_type(const char       *keyval,
                                      cs_param_sles_t  *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the convergence criteria for the given SLES parameters. One can
- *        use the parameter value CS_CDO_KEEP_DEFAULT to let unchange the
- *        settings.
- *
- * \param[in, out] slesp    pointer to a cs_param_sles_t structure
- * \param[in]      rtol     relative tolerance
- * \param[in]      atol     absolute tolerance
- * \param[in]      dtol     divergence tolerance
- * \param[in]      max_iter max. number of iterations
+/*
+ * Set the convergence criteria for the given SLES parameters. One can use the
+ * parameter value CS_CDO_KEEP_DEFAULT to let unchange the settings.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -277,13 +231,9 @@ cs_param_sles_set_cvg_param(cs_param_sles_t  *slesp,
                             int               max_iter);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and initialize a new context structure for the in-house AMG
- *        settings.
- *
- * \param[in, out] slesp            pointer to a cs_param_sles_t structure
- * \param[in]      used_as_solver   true or false
- * \param[in]      used_as_k_cycle  true or false
+/*
+ * Allocate and initialize a new context structure for the in-house AMG
+ * settings.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -293,22 +243,8 @@ cs_param_sles_amg_inhouse_reset(cs_param_sles_t  *slesp,
                                 bool              used_as_k_cycle);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the main members of a cs_param_amg_inhouse_t structure. This
- *        structure is not reset before applying the given parameter. Please
- *        call \ref cs_param_sles_amg_inhouse_reset to do so.
- *
- * \param[in, out] slesp           pointer to a cs_param_sles_t structure
- * \param[in]      n_down_iter     number of smoothing steps for the down cycle
- * \param[in]      down_smoother   type of smoother for the down cycle
- * \param[in]      down_poly_deg   poly. degree for the down smoother
- * \param[in]      n_up_iter       number of smoothing steps for the up cycle
- * \param[in]      up_smoother     type of smoother for the up cycle
- * \param[in]      up_poly_deg     poly. degree for the up smoother
- * \param[in]      coarse_solver   solver at the coarsest level
- * \param[in]      coarse_poly_deg poly. degree for the coarse solver
- * \param[in]      coarsen_algo    type of algorithm to coarsen grids
- * \param[in]      aggreg_limit    limit for the aggregation process
+/*
+ * Set the main members of a cs_param_amg_inhouse_t structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -326,22 +262,9 @@ cs_param_sles_amg_inhouse(cs_param_sles_t                *slesp,
                           int                             aggreg_limit);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the members of a cs_param_amg_inhouse_t structure used in
- *        advanced settings. CS_CDO_KEEP_DEFAULT can be used to let unchange
- *        the parameter value.
- *
- *        The parameter "fine_coarsening" is only used if the "fine_lvl_agg" is
- *        greater than -1
- *
- * \param[in, out] slesp             pointer to a cs_param_sles_t structure
- * \param[in]      max_levels        max. number of levels
- * \param[in]      min_n_g_rows      do not coarsen anymore below this number
- * \param[in]      p0p1_relax        p0/p1 relaxation parameter
- * \param[in]      coarse_max_iter   max. number of iter. for the coarse solver
- * \param[in]      coarse_rtol_mult  scaling on the coarse solver relative tol.
- * \param[in]      fine_lvl_agg      fine levels for aggressive coarsening or -1
- * \param[in]      fine_coarsening   aggregation limit for fine levels
+/*
+ * Set the members of a cs_param_amg_inhouse_t structure used in advanced
+ * settings.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -356,11 +279,8 @@ cs_param_sles_amg_inhouse_advanced(cs_param_sles_t  *slesp,
                                    int               fine_coarsening);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and initialize a new context structure for the boomerAMG
- *        settings.
- *
- * \param[in, out] slesp        pointer to a cs_param_sles_t structure
+/*
+ * Allocate and initialize a new context structure for the boomerAMG settings.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -368,19 +288,8 @@ void
 cs_param_sles_boomeramg_reset(cs_param_sles_t  *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the main members of a cs_param_amg_boomer_t structure. This
- *        structure is allocated and initialized and then one sets the main
- *        given parameters. Please refer to the HYPRE user guide for more
- *        details about the following options.
- *
- * \param[in, out] slesp           pointer to a cs_param_sles_t structure
- * \param[in]      n_down_iter     number of smoothing steps for the down cycle
- * \param[in]      down_smoother   type of smoother for the down cycle
- * \param[in]      n_up_iter       number of smoothing steps for the up cycle
- * \param[in]      up_smoother     type of smoother for the up cycle
- * \param[in]      coarse_solver   solver at the coarsest level
- * \param[in]      coarsen_algo    type of algorithm to coarsen grids
+/*
+ * Set the main members of a cs_param_amg_boomer_t structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -394,35 +303,23 @@ cs_param_sles_boomeramg(cs_param_sles_t                    *slesp,
                         cs_param_amg_boomer_coarsen_algo_t  coarsen_algo);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the members of a cs_param_amg_boomer_t structure used in
- *        advanced settings. This structure is allocated if needed. Other
- *        members are kept to their values. Please refer to the HYPRE user
- *        guide for more details about the following options.
- *
- * \param[in, out] slesp            pointer to a cs_param_sles_t structure
- * \param[in]      strong_thr       value of the strong threshold (coarsening)
- * \param[in]      interp_algo      algorithm used for the interpolation
- * \param[in]      p_max            max number of elements per row (interp)
- * \param[in]      n_agg_lv         aggressive coarsening (number of levels)
- * \param[in]      n_agg_paths      aggressive coarsening (number of paths)
+/*
+ * Set the members of a cs_param_amg_boomer_t structure used in advanced
+ * settings.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_sles_boomeramg_advanced(cs_param_sles_t                   *slesp,
-                                 double                             strong_thr,
-                                 cs_param_amg_boomer_interp_algo_t  interp_algo,
-                                 int                                p_max,
-                                 int                                n_agg_lv,
-                                 int                                n_agg_paths);
+cs_param_sles_boomeramg_advanced(cs_param_sles_t                  *slesp,
+                                 double                            strong_thr,
+                                 cs_param_amg_boomer_interp_algo_t interp_algo,
+                                 int                               p_max,
+                                 int                               n_agg_lv,
+                                 int                               n_agg_paths);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and initialize a new context structure for the GAMG
- *        settings in PETSc.
- *
- * \param[in, out] slesp  pointer to a cs_param_sles_t structure
+/*
+ * Allocate and initialize a new context structure for GAMG in PETSc.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -430,18 +327,8 @@ void
 cs_param_sles_gamg_reset(cs_param_sles_t  *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the main members of a cs_param_amg_gamg_t structure. This
- *        structure is allocated, initialized by default and then one sets the
- *        main given parameters. Please refer to the PETSc user guide for more
- *        details about the following options.
- *
- * \param[in, out] slesp           pointer to a cs_param_sles_t structure
- * \param[in]      n_down_iter     number of smoothing steps for the down cycle
- * \param[in]      down_smoother   type of smoother for the down cycle
- * \param[in]      n_up_iter       number of smoothing steps for the up cycle
- * \param[in]      up_smoother     type of smoother for the up cycle
- * \param[in]      coarse_solver   solver at the coarsest level
+/*
+ * Set the main members of a cs_param_amg_gamg_t structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -454,17 +341,8 @@ cs_param_sles_gamg(cs_param_sles_t                  *slesp,
                    cs_param_amg_gamg_coarse_solver_t coarse_solver);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the members of a cs_param_amg_gamg_t structure used in
- *        advanced settings. This structure is allocated if needed. Other
- *        members are kept to their values. Please refer to the PETSc user
- *        guide for more details about the following options.
- *
- * \param[in, out] slesp         pointer to a cs_param_sles_t structure
- * \param[in]      threshold     value of the coarsening threshold
- * \param[in]      n_agg_lv      aggressive coarsening (number of levels)
- * \param[in]      use_sq_grph   use previous square graph for aggressive coa.
- * \param[in]      n_smooth_agg  smooth aggregation (number of sweeps)
+/*
+ * Set the members of a cs_param_amg_gamg_t structure used in advanced settings.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -476,11 +354,8 @@ cs_param_sles_gamg_advanced(cs_param_sles_t *slesp,
                             int              n_smooth_agg);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and initialize a new context structure for the HMG settings
- *        in PETSc.
- *
- * \param[in, out] slesp  pointer to a cs_param_sles_t structure
+/*
+ * Allocate and initialize a new context structure for HMG in PETSc.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -488,18 +363,8 @@ void
 cs_param_sles_hmg_reset(cs_param_sles_t  *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the main members of a cs_param_amg_hmg_t structure. This
- *        structure is allocated, initialized by default and then one sets the
- *        main given parameters. Please refer to the PETSc user guide for more
- *        details about the following options.
- *
- * \param[in, out] slesp           pointer to a cs_param_sles_t structure
- * \param[in]      n_down_iter     number of smoothing steps for the down cycle
- * \param[in]      down_smoother   type of smoother for the down cycle
- * \param[in]      n_up_iter       number of smoothing steps for the up cycle
- * \param[in]      up_smoother     type of smoother for the up cycle
- * \param[in]      coarse_solver   solver at the coarsest level
+/*
+ * Set the main members of a cs_param_amg_hmg_t structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -512,16 +377,8 @@ cs_param_sles_hmg(cs_param_sles_t                   *slesp,
                   cs_param_amg_gamg_coarse_solver_t  coarse_solver);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the members of a cs_param_amg_gamg_t structure used in
- *        advanced settings. This structure is allocated if needed. Other
- *        members are kept to their values. Please refer to the PETSc user
- *        guide for more details about the following options.
- *
- * \param[in, out] slesp                 pointer to a cs_param_sles_t structure
- * \param[in]      use_boomer_coarsening coarsening done by HYPRE ?
- * \param[in]      reuse_interpolation   reuse interpolation for new mat. values
- * \param[in]      subspace_coarsening   use coarsening of submatrices
+/*
+ * Set the members of a cs_param_amg_gamg_t structure used in advanced settings.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -532,11 +389,8 @@ cs_param_sles_hmg_advanced(cs_param_sles_t *slesp,
                            bool             subspace_coarsening);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and initialize a new context structure for the MUMPS
- *        settings.
- *
- * \param[in, out] slesp         pointer to a cs_param_sles_t structure
+/*
+ * Allocate and initialize a new context structure for MUMPS settings.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -544,15 +398,8 @@ void
 cs_param_sles_mumps_reset(cs_param_sles_t  *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the main members of a cs_param_mumps_t structure. This structure
- *        is allocated and initialized with default settings if needed. If the
- *        structure exists already, then advanced members are kept to their
- *        values.
- *
- * \param[in, out] slesp         pointer to a cs_param_sles_t structure
- * \param[in]      is_single     single-precision or double-precision
- * \param[in]      facto_type    type of factorization to consider
+/*
+ * Set the main members of a cs_param_mumps_t structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -562,21 +409,8 @@ cs_param_sles_mumps(cs_param_sles_t             *slesp,
                     cs_param_mumps_facto_type_t  facto_type);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the members related to an advanced settings of a cs_param_mumps_t
- *        structure. This structure is allocated and initialized if
- *        needed. Please refer to the MUMPS user guide for more details about
- *        the following advanced options.
- *
- * \param[in, out] slesp            pointer to a cs_param_sles_t structure
- * \param[in]      analysis_algo    algorithm used for the analysis step
- * \param[in]      block_analysis   > 1: fixed block size; otherwise do nothing
- * \param[in]      keep_ordering    true: keep the initial ordering to save time
- * \param[in]      mem_coef         percentage increase in the memory workspace
- * \param[in]      blr_threshold    Accuracy in BLR compression (0: not used)
- * \param[in]      ir_steps         0: No, otherwise the number of iterations
- * \param[in]      mem_usage        strategy to adopt for the memory usage
- * \param[in]      advanced_optim   activate advanced optimization (MPI/openMP)
+/*
+ * Set the members related to an advanced settings of a cs_param_mumps_t structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -592,11 +426,8 @@ cs_param_sles_mumps_advanced(cs_param_sles_t                *slesp,
                              bool                            advanced_optim);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set keep_data option for MUMPS solver in SLES parameters.
- *
- * \param[in, out] slesp      pointer to a cs_param_sles_t structure
- * \param[in]      keep_data  true to keep data across calls
+/*
+ * Set keep_data option for MUMPS solver in SLES parameters.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -605,12 +436,8 @@ cs_param_sles_mumps_set_keep_data(cs_param_sles_t  *slesp,
                                   bool              keep_data);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Query keep_data option for MUMPS solver in SLES parameters.
- *
- * \param[in] slesp  pointer to a cs_param_sles_t structure
- *
- * \return true if data is kept across calls, false otherwise
+/*
+ * Query keep_data option for MUMPS solver in SLES parameters.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -618,11 +445,8 @@ bool
 cs_param_sles_mumps_get_keep_data(const cs_param_sles_t  *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and initialize a new context structure for the HPDDM
- *        settings.
- *
- * \param[in, out] slesp         pointer to a cs_param_sles_t structure
+/*
+ * Allocate and initialize a new context structure for HPDDM settings.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -630,22 +454,8 @@ void
 cs_param_sles_hpddm_reset(cs_param_sles_t *slesp);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the members related to an settings of a cs_param_hpddm_t
- *        structure. This structure is allocated and initialized if
- *        needed. Please refer to the HPDDM user guide for more details about
- *        the following options.
- *
- * \param[in, out] slesp            pointer to a cs_param_sles_t structure
- * \param[in]      use_neumann      use neumann matrix on each subdomains
- * \param[in]      nb_eigenvector   number of eigenvector to compute
- * \param[in]      harmonic_overlap number of harmonic overlap if do not
- *                                  use_neumann
- * \param[in]      relative_threshold thresold on eigenvalue to keep if do not
- *                                  use_neumann
- * \param[in]      p                number of mpi process used to solve coarse
- *                                  problem. If value < 1, we use
- *                                  automatic value.
+/*
+ * Set the members related to an settings of a cs_param_hpddm_t structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -658,19 +468,9 @@ cs_param_sles_hpddm(cs_param_sles_t *slesp,
                     const int        p = -1);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the members related to an advanced settings of a cs_param_hpddm_t
- *        structure. This structure is allocated and initialized if
- *        needed. Please refer to the HPDDM user guide for more details about
- *        the following advanced options.
- *
- * \param[in, out] slesp            pointer to a cs_param_sles_t structure
- * \param[in]      min_iter         min number of iterations
- * \param[in]      max_iter         max number of iterations
- * \param[in]      min_harmonic_overlap  min number of harmonic overlap
- * \param[in]      max_harmonic_overlap  max number of harmonic overlap
- * \param[in]      min_nb_eigenvector  min number of eigenvector to compute
- * \param[in]      max_nb_eigenvector  max number of of eigenvector to compute
+/*
+ * Set the members related to an advanced settings of a cs_param_hpddm_t
+ * structure.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -684,10 +484,8 @@ cs_param_sles_hpddm_advanced(cs_param_sles_t *slesp,
                              const int        max_nb_eigenvector);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Check the availability of Hypre solvers from the PETSc library
- *
- * \return return true or false
+/*
+ * Check the availability of Hypre solvers from the PETSc library
  */
 /*----------------------------------------------------------------------------*/
 
@@ -695,14 +493,10 @@ bool
 cs_param_sles_hypre_from_petsc(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Check the availability of a solver library and return the requested
- *        one if this is possible or an alternative or CS_PARAM_N_SOLVER_CLASSES
- *        if no alternative is available.
- *
- * \param[in] wanted_class  requested class of solvers
- *
- * \return the available solver class related to the requested class
+/*
+ * Check the availability of a solver library and return the requested one if
+ * this is possible or an alternative or CS_PARAM_N_SOLVER_CLASSES if no
+ * alternative is available.
  */
 /*----------------------------------------------------------------------------*/
 

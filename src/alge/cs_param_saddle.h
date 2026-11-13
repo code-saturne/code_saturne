@@ -644,12 +644,9 @@ cs_param_saddle_set_simple_relaxation_scaling(cs_param_saddle_t  *saddlep,
                                               const double        scaling_coef);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the scaling in front of the augmentation term when an ALU, a GKB
- *        or a block Krylov algorithm is considered
- *
- * \param[in, out] saddlep  set of parameters for solving a saddle-point
- * \param[in]      coef     value of the scaling coefficient
+/*
+ * Set the scaling in front of the augmentation term when an ALU, a GKB
+ * or a block Krylov algorithm is considered.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -658,13 +655,9 @@ cs_param_saddle_set_augmentation_coef(cs_param_saddle_t  *saddlep,
                                       double              coef);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the scaling coefficient in front of the augmentation term when an
- *        ALU, GKB or block Krylov algorithm is considered.
- *
- * \param[in] saddlep  set of parameters for solving a saddle-point
- *
- * \return 0 if not relevant or the value of the augmentation coefficient
+/*
+ * Get the scaling coefficient in front of the augmentation term when an
+ * ALU, GKB or block Krylov algorithm is considered.
  */
 /*----------------------------------------------------------------------------*/
 
