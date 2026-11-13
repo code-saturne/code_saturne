@@ -520,20 +520,7 @@ int                      _n_user_properties = 0;
 cs_user_variable_def_t  *_user_variable_defs = nullptr;
 cs_user_property_def_t  *_user_property_defs = nullptr;
 
-static cs_solving_info_t _solving_info =
-{
-  0,     /* n_it: number of iterations for the linear solver */
-  0.,    /* rhs_norm: right hand side norm                   */
-  0.,    /* res_norm: normed residual                        */
-  0.,    /* derive: norm of the time derivative              */
-  0.,    /* l2residual: L2 time residual                     */
-  0,     /* n_clip_min */
-  0,     /* n_clip_max */
-  {0, 0, 0, 0, 0, 0, 0, 0, 0},          /* n_clip_min_comp */
-  {0, 0, 0, 0, 0, 0, 0, 0, 0},          /* n_clip_max_comp */
-  {0., 0., 0., 0., 0., 0., 0., 0., 0.}, /* min_pre_clip */
-  {0., 0., 0., 0., 0., 0., 0., 0., 0.}  /* max_pre_clip */
-};
+static cs_solving_info_t _solving_info;
 
 /*============================================================================
  * Global variables

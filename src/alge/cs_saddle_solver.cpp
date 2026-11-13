@@ -603,11 +603,7 @@ _solve_m11_approximation(cs_saddle_solver_t                   *solver,
 
   cs_array_real_fill_zero(n_x1_elts, z);
 
-  cs_solving_info_t m11_info = { .n_it       = 0,
-                                 .rhs_norm   = r_norm,
-                                 .res_norm   = DBL_MAX,
-                                 .derive     = DBL_MAX,
-                                 .l2residual = DBL_MAX };
+  cs_solving_info_t m11_info(r_norm, DBL_MAX, DBL_MAX, DBL_MAX);
 
   const cs_param_saddle_t  *saddlep = solver->param;
   const cs_param_sles_t  *m11_slesp = saddlep->block11_sles_param;

@@ -168,6 +168,7 @@ cs_search.h \
 cs_selector.h \
 cs_setup.h \
 cs_solid_zone.h \
+cs_solving_info.h \
 cs_solve_all.h \
 cs_solve_equation.h \
 cs_solve_navier_stokes.h \
@@ -385,6 +386,7 @@ cs_search.cpp \
 cs_selector.cpp \
 cs_setup.cpp \
 cs_solid_zone.cpp \
+cs_solving_info.cpp \
 cs_solve_all.cpp \
 cs_solve_equation.cpp \
 cs_solve_navier_stokes.cpp \

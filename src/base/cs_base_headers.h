@@ -106,6 +106,7 @@
 #include "base/cs_scalar_clipping.h"
 #include "base/cs_search.h"
 #include "base/cs_selector.h"
+#include "base/cs_solving_info.h"
 #include "base/cs_syr_coupling.h"
 #include "base/cs_sys_coupling.h"
 #include "base/cs_thermal_model.h"

@@ -63,31 +63,29 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 {
   /*! [extra_stopping_criterion] */
 
-  /* get total number of fields */
+  /* Get total number of fields */
   int n_fields = cs_field_n_fields();
 
-  /* get time step structure */
+  /* Get time step structure */
   cs_time_step_t *ts = cs_get_glob_time_step();
-
-  /* declare a C structure holding solving information values */
-  cs_solving_info_t sinfo;
 
   bool cved = true;
 
-  /* criterion is set here to 1e-3 */
+  /* Criterion is set here to 1e-3 */
   cs_real_t epsres = 1e-3;
 
-  /* loop over all fields */
+  /* Loop over all fields */
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field(f_id);
 
     /* filter fields of type variable (i.e. the solved ones) */
     if (f->type & CS_FIELD_VARIABLE) {
       /* get solving info structure for current field */
-      cs_field_get_key_struct(f, cs_field_key_id("solving_info"), &sinfo);
+      auto sinfo = static_cast<const cs_solving_info_t *>
+        (cs_field_get_key_struct_ptr(f, cs_field_key_id("solving_info")));
 
       /* has the value of the L2 time residual decreased below criterion ? */
-      cved = cved && (sinfo.l2residual  <= epsres);
+      cved = cved && (sinfo->l2residual  <= epsres);
     }
   }
 
