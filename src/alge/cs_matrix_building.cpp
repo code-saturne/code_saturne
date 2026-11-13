@@ -2592,6 +2592,7 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
     cs_matrix_assembler_values_add_g(mav,
                                      flags,
                                      n_cells,
+                                     1,
                                      const_cast<cs_gnum_t *>(r_g_id),
                                      const_cast<cs_gnum_t *>(r_g_id),
                                      d_val);
@@ -2601,6 +2602,7 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
     cs_matrix_assembler_values_add_g(mav,
                                      flags,
                                      n_extra,
+                                     1,
                                      g_row_ids,
                                      g_col_ids,
                                      e_val);
@@ -2998,6 +3000,7 @@ cs_matrix_compute_coeffs
     cs_matrix_assembler_values_add_g(mav,
                                      flags,
                                      n_cells,
+                                     stride,
                                      const_cast<cs_gnum_t *>(r_g_id),
                                      const_cast<cs_gnum_t *>(r_g_id),
                                      d_val);
@@ -3007,6 +3010,7 @@ cs_matrix_compute_coeffs
     cs_matrix_assembler_values_add_g(mav,
                                      flags,
                                      n_extra,
+                                     eb_size,
                                      g_row_ids,
                                      g_col_ids,
                                      e_val);

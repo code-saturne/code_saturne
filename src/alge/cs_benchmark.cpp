@@ -1073,7 +1073,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
         else if (f_type[f_id] == CS_MATRIX_BLOCK_D)
           mav = cs_matrix_assembler_values_init(m, d_block_size, 1);
 
-        cs_matrix_assembler_values_add_g(mav, flags, n_rows,
+        cs_matrix_assembler_values_add_g(mav, flags, n_rows, d_block_size,
                                          r_g_id, r_g_id, da);
 
         if (c_id == 0) { /* Rank contributions through global edges */
@@ -1096,13 +1096,13 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
               val[jj] = xa[ii*2+1]*0.5;
             jj++;
             if (jj >= block_size - 1) {
-              cs_matrix_assembler_values_add_g(mav, flags, jj,
+              cs_matrix_assembler_values_add_g(mav, flags, jj, 1,
                                                g_row_id, g_col_id, val);
               jj = 0;
             }
           }
 
-          cs_matrix_assembler_values_add_g(mav, flags, jj,
+          cs_matrix_assembler_values_add_g(mav, flags, jj, 1,
                                            g_row_id, g_col_id, val);
         }
         else { /* Rank contributions are local */
@@ -1123,12 +1123,12 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
               jj++;
             }
             if (jj >= block_size - 1) {
-              cs_matrix_assembler_values_add_g(mav, flags, jj,
+              cs_matrix_assembler_values_add_g(mav, flags, jj, 1,
                                                g_row_id, g_col_id, val);
               jj = 0;
             }
           }
-          cs_matrix_assembler_values_add_g(mav, flags, jj,
+          cs_matrix_assembler_values_add_g(mav, flags, jj, 1,
                                            g_row_id, g_col_id, val);
         }
 

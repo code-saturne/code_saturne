@@ -947,12 +947,12 @@ main(int argc, char *argv[])
           val[j] = cos(g_row_id[j] + 0.1) + sin(g_col_id[j] + 0.1);
           j++;
           if (j == 6) {
-            cs_matrix_assembler_values_add_g(mav, flags, j,
+            cs_matrix_assembler_values_add_g(mav, flags, j, 1,
                                              g_row_id, g_col_id, val);
             j = 0;
           }
         }
-        cs_matrix_assembler_values_add_g(mav, flags, j,
+        cs_matrix_assembler_values_add_g(mav, flags, j, 1,
                                          g_row_id, g_col_id, val);
         j = 0;
 
@@ -964,12 +964,12 @@ main(int argc, char *argv[])
           val[j] = cos(g_row_id[j] + 0.1) + sin(g_col_id[j] + 0.1);
           j++;
           if (j == 6) {
-            cs_matrix_assembler_values_add_g(mav, flags, j,
+            cs_matrix_assembler_values_add_g(mav, flags, j, 1,
                                              g_row_id, g_col_id, val);
             j = 0;
           }
         }
-        cs_matrix_assembler_values_add_g(mav, flags, j,
+        cs_matrix_assembler_values_add_g(mav, flags, j, 1,
                                          g_row_id, g_col_id, val);
         j = 0;
       }

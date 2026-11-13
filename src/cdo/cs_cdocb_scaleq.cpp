@@ -493,7 +493,7 @@ _full_assembly(const cs_cell_sys_t   *csys,
       if (bufsize == CS_CDO_ASSEMBLY_BUFSIZE) {
 #       pragma omp critical
         cs_matrix_assembler_values_add_g(xb->mav, CS_MATRIX_VALUES_NO_CONFLICT,
-                                         bufsize, r_gids, c_gids, values);
+                                         bufsize, 1, r_gids, c_gids, values);
         bufsize = 0;
       }
 
@@ -509,7 +509,7 @@ _full_assembly(const cs_cell_sys_t   *csys,
     if (bufsize == CS_CDO_ASSEMBLY_BUFSIZE) {
 #     pragma omp critical
       cs_matrix_assembler_values_add_g(xb->mav, CS_MATRIX_VALUES_NO_CONFLICT,
-                                       bufsize, r_gids, c_gids, values);
+                                       bufsize, 1, r_gids, c_gids, values);
       bufsize = 0;
     }
 
@@ -523,7 +523,7 @@ _full_assembly(const cs_cell_sys_t   *csys,
     if (bufsize == CS_CDO_ASSEMBLY_BUFSIZE) {
 #     pragma omp critical
       cs_matrix_assembler_values_add_g(xb->mav, CS_MATRIX_VALUES_NO_CONFLICT,
-                                       bufsize, r_gids, c_gids, values);
+                                       bufsize, 1, r_gids, c_gids, values);
       bufsize = 0;
     }
 
@@ -532,7 +532,7 @@ _full_assembly(const cs_cell_sys_t   *csys,
   if (bufsize > 0) {
 #   pragma omp critical
     cs_matrix_assembler_values_add_g(xb->mav, CS_MATRIX_VALUES_NO_CONFLICT,
-                                     bufsize, r_gids, c_gids, values);
+                                     bufsize, 1, r_gids, c_gids, values);
     bufsize = 0;
   }
 

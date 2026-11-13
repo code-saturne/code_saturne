@@ -2798,7 +2798,7 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav)
  * If the matching matrix coefficients use a block structure, the
  * values passed to this function should use the same block size.
  * An entry should be provided by block, one pair of ids represents
- * one block, with (interleaved) stride*stride values.
+ * one block, with (interleaved) block_size*block_size values.
  *
  * Note also that if the matrix has different diagonal and extradiagonal
  * block sizes, separate calls to this function should be used for both
@@ -2811,12 +2811,13 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav)
  * in the case of external libraries so that their builder functions
  * have the same property).
  *
- * \param[in, out]  mav     pointer to matrix assembler values structure
- * \param[in]       flags   optional info flag, 0 otherwise
- * \param[in]       n       number of entries
- * \param[in]       col_id  local column ids associated with entries
- * \param[in]       row_id  local row ids associated with entries
- * \param[in]       val     values associated with entries
+ * \param[in, out]  mav         pointer to matrix assembler values structure
+ * \param[in]       flags       optional info flag, 0 otherwise
+ * \param[in]       n           number of entries
+ * \param[in]       block_size  associated data block size
+ * \param[in]       row_id      local row ids associated with entries
+ * \param[in]       col_id      local column ids associated with entries
+ * \param[in]       val         values associated with entries
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2824,21 +2825,19 @@ void
 cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
                                int                            flags,
                                cs_lnum_t                      n,
+                               cs_lnum_t                      block_size,
                                const cs_lnum_t                row_id[],
                                const cs_lnum_t                col_id[],
                                const cs_real_t                val[])
 {
-  cs_lnum_t stride = 0;
-
   if (n < 1)
     return;
 
-  /* Base stride on first type of value encountered */
+  /* Base stride on block_size */
 
-  if (row_id[0] == col_id[0])
-    stride = mav->db_size * mav->db_size;
-  else
-    stride = mav->eb_size * mav->eb_size;
+  cs_lnum_t stride = block_size * block_size;
+
+  assert(block_size == mav->db_size || block_size == mav->eb_size);
 
   /* Case where we compute a column index first */
 
@@ -2875,7 +2874,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  * If the matching matrix coefficients use a block structure, the
  * values passed to this function should use the same block size.
  * An entry should be provided by block, one pair of global ids represents
- * one block, with (interleaved) stride*stride values.
+ * one block, with (interleaved) block_size*block_size values.
  *
  * Note also that if the matrix has different diagonal and extradiagonal
  * block sizes, separate calls to this function should be used for both
@@ -2892,12 +2891,13 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  * with certain matrix types if col_g_id references values on
  * distant ranks.
  *
- * \param[in, out]  mav       pointer to matrix assembler values structure
- * \param[in]       flags     optional info flag, 0 otherwise
- * \param[in]       n         number of entries
- * \param[in, out]  col_g_id  global column ids associated with entries
- * \param[in, out]  row_g_id  global row ids associated with entries
- * \param[in, out]  val       values associated with entries
+ * \param[in, out]  mav         pointer to matrix assembler values structure
+ * \param[in]       flags       optional info flag, 0 otherwise
+ * \param[in]       n           number of entries
+ * \param[in]       block_size  associated data block size
+ * \param[in, out]  row_g_id    global row ids associated with entries
+ * \param[in, out]  col_g_id    global column ids associated with entries
+ * \param[in, out]  val         values associated with entries
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2905,23 +2905,21 @@ void
 cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
                                  int                            flags,
                                  cs_lnum_t                      n,
+                                 cs_lnum_t                      block_size,
                                  cs_gnum_t                      row_g_id[],
                                  cs_gnum_t                      col_g_id[],
                                  cs_real_t                      val[])
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_lnum_t stride = 0;
-
   if (n < 1)
     return;
 
-  /* Base stride on first type of value encountered */
+  /* Base stride on block_size */
 
-  if (row_g_id[0] == col_g_id[0])
-    stride = mav->db_size * mav->db_size;
-  else
-    stride = mav->eb_size * mav->eb_size;
+  cs_lnum_t stride = block_size * block_size;
+
+  assert(block_size == mav->db_size || block_size == mav->eb_size);
 
 #if defined(HAVE_MPI)
 

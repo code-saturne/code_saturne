@@ -132,7 +132,7 @@ typedef void
 
 typedef void
 (cs_matrix_assembler_values_add_t) (void             *matrix,
-                                    int              flags,
+                                    int               flags,
                                     cs_lnum_t         n,
                                     cs_lnum_t         stride,
                                     const cs_lnum_t   row_id[],
@@ -295,20 +295,16 @@ cs_matrix_assembler_compute(cs_matrix_assembler_t  *ma);
  * the final structure.
  *
  * Flags are defined as a sum (bitwise or) of constants, described below:
- * - \ref CS_MATRIX_DISTANT_ROW_USE_COL_IDX indicates that column indexes
- *   matching distant row data are computed and maintained, so the
- *   associated coefficient contributions can be added more efficiently.
- * - \ref CS_MATRIX_DISTANT_ROW_USE_COL_G_ID  indicates that columns
- *   global ids matching distant row data are maintained directly,
- *   so no lookup to a global id description of matrix columns is needed;
- *   this option is useful only when using an external library allowing
+ * - \ref CS_MATRIX_DISTANT_ROW_USE_LOCAL_IDS indicates that local row and
+ *   column ids matching distant row data are computed and maintained, so the
+ *   associated coefficient contributions can be added more efficiently
+ *   by using simpler local assembly functions.
+ * - \ref CS_MATRIX_DISTANT_ROW_USE_GLOBAL_IDS indicates that row and column
+ *   global ids matching distant row data are maintained directly.
+ *   This option is preferred when using an external library allowing
  *   incremental setting or accumulation of coefficients using global
- *   column ids, such as with PETSc's MatSetValues. When building matrices
- *   locally first (which includes most cases, whether internal matrices,
- *   or using library conversion or import functions such as PETSc's
- *   MatCreateMPIAIJWithArrays) this is slightly less efficient, as
- *   column ids will need to be matched to each row's columns a second
- *   time for those (exchanged) coefficients.
+ *   column ids, such as with PETSc's MatSetValues, as it does not
+ *   require any additional conversion.
  * - \ref CS_MATRIX_EXTERNAL_HALO indicates that we do not need to
  *   build an associated halo structure, as it will be built externally
  *   (i.e. by an external library such as PETSc, HYPRE, ...) using its
@@ -629,7 +625,7 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav);
  * If the matching matrix coefficients use a block structure, the
  * values passed to this function should use the same block size.
  * An entry should be provided by block, one pair of ids represents
- * one block, with (interleaved) stride*stride values.
+ * one block, with (interleaved) block_size*block_size values.
  *
  * Note also that if the matrix has different diagonal and extradiagonal
  * block sizes, separate calls to this function should be used for both
@@ -642,12 +638,13 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav);
  * in the case of external libraries so that their builder functions
  * have the same property).
  *
- * \param[in, out]  mav     pointer to matrix assembler values structure
- * \param[in]       flags   optional info flag, 0 otherwise
- * \param[in]       n       number of entries
- * \param[in]       col_id  local column ids associated with entries
- * \param[in]       row_id  local row ids associated with entries
- * \param[in]       val     values associated with entries
+ * \param[in, out]  mav         pointer to matrix assembler values structure
+ * \param[in]       flags       optional info flag, 0 otherwise
+ * \param[in]       n           number of entries
+ * \param[in]       block_size  associated data block size
+ * \param[in]       row_id      local row ids associated with entries
+ * \param[in]       col_id      local column ids associated with entries
+ * \param[in]       val         values associated with entries
  */
 /*----------------------------------------------------------------------------*/
 
@@ -655,6 +652,7 @@ void
 cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
                                int                            flags,
                                cs_lnum_t                      n,
+                               cs_lnum_t                      block_size,
                                const cs_lnum_t                row_id[],
                                const cs_lnum_t                col_id[],
                                const cs_real_t                val[]);
@@ -667,7 +665,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  * If the matching matrix coefficients use a block structure, the
  * values passed to this function should use the same block size.
  * An entry should be provided by block, one pair of global ids represents
- * one block, with (interleaved) stride*stride values.
+ * one block, with (interleaved) block_size*block_size values.
  *
  * Note also that if the matrix has different diagonal and extradiagonal
  * block sizes, separate calls to this function should be used for both
@@ -684,12 +682,13 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  * with certain matrix types if col_g_id references values on
  * distant ranks.
  *
- * \param[in, out]  mav       pointer to matrix assembler values structure
- * \param[in]       flags     optional info flag, 0 otherwise
- * \param[in]       n         number of entries
- * \param[in, out]  col_g_id  global column ids associated with entries
- * \param[in, out]  row_g_id  global row ids associated with entries
- * \param[in, out]  val       values associated with entries
+ * \param[in, out]  mav         pointer to matrix assembler values structure
+ * \param[in]       flags       optional info flag, 0 otherwise
+ * \param[in]       n           number of entries
+ * \param[in]       block_size  associated data block size
+ * \param[in, out]  row_g_id    global row ids associated with entries
+ * \param[in, out]  col_g_id    global column ids associated with entries
+ * \param[in, out]  val         values associated with entries
  */
 /*----------------------------------------------------------------------------*/
 
@@ -697,6 +696,7 @@ void
 cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
                                  int                            flags,
                                  cs_lnum_t                      n,
+                                 cs_lnum_t                      block_size,
                                  cs_gnum_t                      row_g_id[],
                                  cs_gnum_t                      col_g_id[],
                                  cs_real_t                      val[]);
