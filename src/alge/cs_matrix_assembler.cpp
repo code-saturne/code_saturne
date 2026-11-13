@@ -47,6 +47,7 @@
 
 #include "base/cs_algorithm.h"
 #include "base/cs_defs.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
@@ -280,7 +281,7 @@ _sort_and_compact_local(cs_matrix_assembler_t  *ma)
     assert(ma->_r_idx[n_rows] < tmpr_idx[n_rows]);
 
     CS_FREE(tmpr_idx);
-    CS_REALLOC(ma->_c_id, (ma->_r_idx[n_rows]), cs_lnum_t);
+    CS_REALLOC_HD(ma->_c_id, (ma->_r_idx[n_rows]), cs_lnum_t, cs_alloc_mode);
     ma->c_id = ma->_c_id;
 
   }
@@ -390,7 +391,7 @@ _sort_and_compact_distant(cs_matrix_assembler_t  *ma)
     assert(ma->d_r_idx[n_rows] < tmpr_idx[n_rows]);
 
     CS_FREE(tmpr_idx);
-    CS_REALLOC(ma->d_g_c_id, (ma->d_r_idx[n_rows]), cs_gnum_t);
+    CS_REALLOC_HD(ma->d_g_c_id, (ma->d_r_idx[n_rows]), cs_gnum_t, cs_alloc_mode);
 
   }
 }
@@ -434,7 +435,8 @@ _complete_local(cs_matrix_assembler_t  *ma,
   /* Expand matrix, starting copies from end to avoid overwrites
      (first line untouched) */
 
-  CS_REALLOC(ma->_c_id, ma->r_idx[n_rows] + l_r_idx[n_rows], cs_lnum_t);
+  CS_REALLOC_HD(ma->_c_id, ma->r_idx[n_rows] + l_r_idx[n_rows],
+                cs_lnum_t, cs_alloc_mode);
   ma->c_id = ma->_c_id;
 
   for (cs_lnum_t i = n_rows-1; i > 0; i--) {
@@ -514,7 +516,8 @@ _complete_distant(cs_matrix_assembler_t  *ma,
   /* Expand matrix, starting copies from end to avoid overwrites
      (first line untouched) */
 
-  CS_REALLOC(ma->d_g_c_id, ma->d_r_idx[n_rows] + d_r_idx[n_rows], cs_gnum_t);
+  CS_REALLOC_HD(ma->d_g_c_id, ma->d_r_idx[n_rows] + d_r_idx[n_rows],
+                cs_gnum_t, cs_alloc_mode);
 
   for (cs_lnum_t i = n_rows-1; i > 0; i--) {
     cs_lnum_t n_cols = ma->d_r_idx[i+1] - ma->d_r_idx[i];
@@ -589,7 +592,8 @@ _append_local_and_distant(cs_matrix_assembler_t  *ma,
   /* Expand matrix, starting copies from end to avoid overwrites
      (first line untouched) */
 
-  CS_REALLOC(ma->_c_id, ma->_r_idx[n_rows] + ma->d_r_idx[n_rows], cs_lnum_t);
+  CS_REALLOC_HD(ma->_c_id, ma->_r_idx[n_rows] + ma->d_r_idx[n_rows],
+                cs_lnum_t, cs_alloc_mode);
   ma->c_id = ma->_c_id;
 
   for (cs_lnum_t i = n_rows-1; i > 0; i--) {
@@ -1128,9 +1132,12 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
     cs_lnum_t row_count = 0;
 
-    CS_MALLOC(ma->coeff_send_index, ma->coeff_send_n_rows+1, cs_lnum_t);
-    CS_MALLOC(ma->coeff_send_row_g_id, ma->coeff_send_n_rows, cs_gnum_t);
-    CS_MALLOC(ma->coeff_send_col_g_id, ma->coeff_send_size, cs_gnum_t);
+    CS_MALLOC_HD(ma->coeff_send_index, ma->coeff_send_n_rows+1,
+                 cs_lnum_t, cs_alloc_mode);
+    CS_MALLOC_HD(ma->coeff_send_row_g_id, ma->coeff_send_n_rows,
+                 cs_gnum_t, cs_alloc_mode);
+    CS_MALLOC_HD(ma->coeff_send_col_g_id, ma->coeff_send_size,
+                 cs_gnum_t, cs_alloc_mode);
 
     g_r_id_prev = max_gnum; /* impossible value here */
 
@@ -1530,8 +1537,8 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
 
   cs_lnum_t  *l_c_count, *d_c_count;
 
-  CS_MALLOC(ma->_r_idx, n_rows+1, cs_lnum_t);
-  CS_MALLOC(ma->d_r_idx, n_rows+1, cs_lnum_t);
+  CS_MALLOC_HD(ma->_r_idx, n_rows+1, cs_lnum_t, cs_alloc_mode);
+  CS_MALLOC_HD(ma->d_r_idx, n_rows+1, cs_lnum_t, cs_alloc_mode);
   ma->r_idx = ma->_r_idx;
 
   CS_MALLOC(l_c_count, n_rows, cs_lnum_t);
@@ -1594,8 +1601,8 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
 
   /* Allocate structures holding data */
 
-  CS_MALLOC(ma->_c_id, ma->_r_idx[n_rows], cs_lnum_t);
-  CS_MALLOC(ma->d_g_c_id, ma->d_r_idx[n_rows], cs_gnum_t);
+  CS_MALLOC_HD(ma->_c_id, ma->_r_idx[n_rows], cs_lnum_t, cs_alloc_mode);
+  CS_MALLOC_HD(ma->d_g_c_id, ma->d_r_idx[n_rows], cs_gnum_t, cs_alloc_mode);
   ma->c_id = ma->_c_id;
 
   cs_gnum_t *e_g_ij;
@@ -1696,7 +1703,7 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
 
   cs_lnum_t d_size = ma->d_r_idx[ma->n_rows];
 
-  CS_MALLOC(e_g_id, d_size, cs_gnum_t);
+  CS_MALLOC_HD(e_g_id, d_size, cs_gnum_t, cs_alloc_mode);
 
   /* Initial pass to reduce data a bit before sorting */
 
@@ -1712,7 +1719,7 @@ _matrix_assembler_compute_mpi(cs_matrix_assembler_t  *ma)
   }
 
   n_e_g_ids = cs_sort_and_compact_gnum(n_e_g_ids, e_g_id);
-  CS_REALLOC(e_g_id, n_e_g_ids, cs_gnum_t);
+  CS_REALLOC_HD(e_g_id, n_e_g_ids, cs_gnum_t, cs_alloc_mode);
 
   /* Finally, append distant row to local rows, and build matching halo */
 
@@ -2157,7 +2164,8 @@ cs_matrix_assembler_create_from_shared(cs_lnum_t         n_rows,
     for (cs_lnum_t i = 0; i < ma->n_rows; i++)
       ma->d_r_idx[i+1] += ma->d_r_idx[i];
 
-    CS_MALLOC(ma->d_g_c_id, ma->d_r_idx[ma->n_rows], cs_gnum_t);
+    CS_MALLOC_HD(ma->d_g_c_id, ma->d_r_idx[ma->n_rows],
+                 cs_gnum_t, cs_alloc_mode);
     for (cs_lnum_t i = 0; i < ma->n_rows; i++) {
       cs_lnum_t offset = ma->d_r_idx[i];
       cs_lnum_t n_cols = ma->r_idx[i+1] - ma->r_idx[i];
@@ -2320,7 +2328,7 @@ cs_matrix_assembler_add_g_ids(cs_matrix_assembler_t  *ma,
       ma->max_size = 4;
     while (ma->size + n >= ma->max_size)
       ma->max_size *= 2;
-    CS_REALLOC(ma->g_rc_id, ma->max_size*2, cs_gnum_t);
+    CS_REALLOC_HD(ma->g_rc_id, ma->max_size*2, cs_gnum_t, cs_alloc_mode);
   }
 
   cs_gnum_t *_g_rc_id = ma->g_rc_id + ma->size*2;
@@ -2740,7 +2748,7 @@ cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
 
   cs_lnum_t  alloc_size = ma->coeff_send_size * eb_size_2;
 
-  CS_MALLOC(mav->coeff_send, alloc_size, cs_real_t);
+  CS_MALLOC_HD(mav->coeff_send, alloc_size, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t i = 0; i < alloc_size; i++)
     mav->coeff_send[i] = 0;

@@ -177,9 +177,12 @@ cs_internal_coupling_add_volume_zones(int        n_zones,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_add_boundary_groups(cs_internal_coupling_t  *cpl,
-                                         const char              *interior_name,
-                                         const char              *exterior_name);
+cs_internal_coupling_add_boundary_groups
+(
+  cs_internal_coupling_t  *cpl,
+  const char              *interior_name,
+  const char              *exterior_name
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -297,8 +300,8 @@ cs_internal_coupling_initialize(void);
 void
 cs_internal_coupling_spmv_contribution(bool               exclude_diag,
                                        const cs_field_t  *f,
-                                       const cs_real_t            *x,
-                                       cs_real_t                  *y);
+                                       const cs_real_t   *x,
+                                       cs_real_t         *y);
 
 /*----------------------------------------------------------------------------
  * Add coupling term coordinates to matrix assembler.

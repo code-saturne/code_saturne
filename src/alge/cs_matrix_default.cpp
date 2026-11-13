@@ -202,7 +202,7 @@ _update_block_row_g_id(cs_lnum_t         n_rows,
 
   if (_n_cols_ext > _row_num_size) {
     CS_FREE(_global_row_id);
-    CS_MALLOC(_global_row_id, _n_cols_ext, cs_gnum_t);
+    CS_MALLOC_HD(_global_row_id, _n_cols_ext, cs_gnum_t, cs_alloc_mode);
     _row_num_size = _n_cols_ext;
   }
 

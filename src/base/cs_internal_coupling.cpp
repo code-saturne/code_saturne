@@ -114,7 +114,7 @@ static int                      _n_internal_couplings = 0;
  *   value of equivalent exchange coefficient
  *----------------------------------------------------------------------------*/
 
-static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 _calc_heq(cs_real_t h1,
           cs_real_t h2)
 {
@@ -614,7 +614,7 @@ _volume_face_initialize(cs_mesh_t               *m,
   cpl->n_local = n_selected_faces; /* WARNING: only numerically
                                       valid for conformal meshes */
 
-  CS_MALLOC(cpl->faces_local, cpl->n_local, cs_lnum_t);
+  CS_MALLOC_HD(cpl->faces_local, cpl->n_local, cs_lnum_t, cs_alloc_mode);
   CS_MALLOC(cpl->c_tag, cpl->n_local, int);
 
   for (cs_lnum_t ii = 0; ii < cpl->n_local; ii++) {
@@ -1025,11 +1025,14 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
-                                   cs_lnum_t                     *n_local,
-                                   const cs_lnum_t               *faces_local[],
-                                   cs_lnum_t                     *n_distant,
-                                   const cs_lnum_t               *faces_distant[])
+cs_internal_coupling_coupled_faces
+(
+  const cs_internal_coupling_t  *cpl,
+  cs_lnum_t                     *n_local,
+  const cs_lnum_t               *faces_local[],
+  cs_lnum_t                     *n_distant,
+  const cs_lnum_t               *faces_distant[]
+)
 {
   if (n_local != nullptr)
     *n_local = cpl->n_local;
@@ -1261,8 +1264,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
                                        cs_matrix_assembler_values_t  *mav)
 {
   const cs_real_t* b_face_surf = cs_glob_mesh_quantities->b_face_surf;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)cs_glob_mesh->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = cs_glob_mesh->b_face_cells;
 
   int coupling_id = f->get_key_int("coupling_entity");
   const cs_internal_coupling_t *cpl
@@ -1270,6 +1272,8 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
 
   const cs_lnum_t n_distant = cpl->n_distant;
   const cs_lnum_t n_local = cpl->n_local;
+  const cs_lnum_t *faces_distant = cpl->faces_distant;
+  const cs_lnum_t *faces_local = cpl->faces_local;
 
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
   cs_real_t thetap = 0.0;
@@ -1278,7 +1282,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   if (eqp->icoupl > 0) {
     if (eqp->verbosity >= 2)
       bft_printf("INTERNAL COUPLING of %s, add contribution to the matrix.\n",
-          f->name);
+                 f->name);
     thetap = eqp->theta;
     idiffp = eqp->idiff;
   }
@@ -1292,11 +1296,11 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   /* local to global preparation and exchange */
 
   cs_gnum_t *g_id_l, *g_id_d;
-  CS_MALLOC(g_id_l, cs::max(n_local, n_distant), cs_gnum_t);
-  CS_MALLOC(g_id_d, n_local, cs_gnum_t);
+  CS_MALLOC_HD(g_id_l, cs::max(n_local, n_distant), cs_gnum_t, cs_alloc_mode);
+  CS_MALLOC_HD(g_id_d, n_local, cs_gnum_t, cs_alloc_mode);
 
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-    cs_lnum_t face_id = cpl->faces_distant[ii];
+    cs_lnum_t face_id = faces_distant[ii];
     cs_lnum_t cell_id = b_face_cells[face_id]; /* boundary to cell */
     g_id_l[ii] = r_g_id[cell_id];
   }
@@ -1319,41 +1323,35 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
 
   /* Compute contributions to matrix */
 
-  const cs_lnum_t block_size = 514;
-  cs_gnum_t d_g_row_id[514];
-  cs_real_t d_aij[514];
-  cs_gnum_t e_g_row_id[514];
-  cs_gnum_t e_g_col_id[514];
-  cs_real_t e_aij[514];
-
   cs_lnum_t db_stride = db_size*db_size;
   cs_lnum_t eb_stride = eb_size*eb_size;
 
+  cs_real_t *d_aij, *e_aij;
+  CS_MALLOC_HD(d_aij, db_stride * n_local, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(e_aij, eb_stride * n_local, cs_real_t, cs_alloc_mode);
+
   int flags = 0;
 
-  assert(block_size > db_stride && block_size > eb_size);
+  cs_dispatch_context ctx;
 
-  cs_lnum_t jj = 0, kk = 0, db_fill = 0, eb_fill = 0;
   if (h_rad == nullptr ) {
-    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-      cs_lnum_t face_id = cpl->faces_local[ii];
+    ctx.parallel_for(n_local, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      cs_lnum_t face_id = faces_local[ii];
 
       cs_real_t surf = b_face_surf[face_id];
       cs_real_t hint = hintp[face_id];
       cs_real_t hext = hextp[face_id];
       //TODO simply this with new BC coeffs
-      //
       //TODO is it already taken into account with
       // cs_internal_coupling_spmv_contribution
       cs_real_t heq = _calc_heq(hint, hext) * surf;
       cs_real_t c = thetap * idiffp * heq;
 
-      d_g_row_id[jj] = g_id_l[ii];
-      e_g_row_id[kk] = g_id_l[ii]; e_g_col_id[kk] = g_id_d[ii];
+      cs_lnum_t db_fill = ii*db_stride, eb_fill = ii*eb_stride;
 
       for (cs_lnum_t ib = 0; ib < db_stride; ib++)
         d_aij[db_fill + ib] = 0;
-      /* Note that the diagonal part is taken into account by standard BC coefs */
+      /* Note: the diagonal part is taken into account by standard BC coefs */
       for (cs_lnum_t ib = 0; ib < db_size; ib++)
         d_aij[db_fill + ib*(db_size + 1)] = 0;
 
@@ -1361,32 +1359,15 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
         e_aij[eb_fill + ib] = 0;
       for (cs_lnum_t ib = 0; ib < eb_size; ib++)
         e_aij[eb_fill + ib*(eb_size + 1)] = -c;
-
-      jj += 1;
-      kk += 1;
-      db_fill += db_stride;
-      eb_fill += eb_stride;
-
-      if (db_fill >= block_size - 1) {
-        cs_matrix_assembler_values_add_g(mav, flags, jj, db_size,
-                                         d_g_row_id, d_g_row_id, d_aij);
-        jj = 0;
-        db_fill = 0;
-      }
-
-      if (eb_fill >= block_size - 1) {
-        cs_matrix_assembler_values_add_g(mav, flags, kk, eb_size,
-                                         e_g_row_id, e_g_col_id, e_aij);
-        kk = 0;
-        eb_fill = 0;
-      }
-    }
+    });
   }
+
   /* Contribution additional for radiative transfer */
   else {
     cs_real_t *h_rad_ext = f->bc_coeffs->h_rad_ext;
-    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-      cs_lnum_t face_id = cpl->faces_local[ii];
+
+    ctx.parallel_for(n_local, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      cs_lnum_t face_id = faces_local[ii];
 
       cs_real_t surf = b_face_surf[face_id];
       cs_real_t hint = hintp[face_id];
@@ -1400,12 +1381,11 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
       cs_real_t heqj = hint * hext * dhsum;
       cs_real_t c = thetap * idiffp * heqj * surf;
 
-      d_g_row_id[jj] = g_id_l[ii];
-      e_g_row_id[kk] = g_id_l[ii]; e_g_col_id[kk] = g_id_d[ii];
+      cs_lnum_t db_fill = ii*db_stride, eb_fill = ii*eb_stride;
 
       for (cs_lnum_t ib = 0; ib < db_stride; ib++)
         d_aij[db_fill + ib] = 0;
-      /* Note that the diagonal part is taken into account by standard BC coefs */
+      /* Note: the diagonal part is taken into account by standard BC coefs */
       for (cs_lnum_t ib = 0; ib < db_size; ib++)
         d_aij[db_fill + ib*(db_size + 1)] = 0;
 
@@ -1413,38 +1393,23 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
         e_aij[eb_fill + ib] = 0;
       for (cs_lnum_t ib = 0; ib < eb_size; ib++)
         e_aij[eb_fill + ib*(eb_size + 1)] = -c;
-
-      jj += 1;
-      kk += 1;
-      db_fill += db_stride;
-      eb_fill += eb_stride;
-
-      if (db_fill >= block_size - 1) {
-        cs_matrix_assembler_values_add_g(mav, flags, jj, db_size,
-                                         d_g_row_id, d_g_row_id, d_aij);
-        jj = 0;
-        db_fill = 0;
-      }
-
-      if (eb_fill >= block_size - 1) {
-        cs_matrix_assembler_values_add_g(mav, flags, kk, eb_size,
-                                         e_g_row_id, e_g_col_id, e_aij);
-        kk = 0;
-        eb_fill = 0;
-      }
-    }
+    });
 
   }
+  ctx.wait();
 
-  cs_matrix_assembler_values_add_g(mav, flags, jj, db_size,
-                                   d_g_row_id, d_g_row_id, d_aij);
-  cs_matrix_assembler_values_add_g(mav, flags, kk, eb_size,
-                                   e_g_row_id, e_g_col_id, e_aij);
+  cs_matrix_assembler_values_add_g(mav, flags, n_local, db_size,
+                                   g_id_l, g_id_l, d_aij);
+  cs_matrix_assembler_values_add_g(mav, flags, n_local, eb_size,
+                                   g_id_l, g_id_d, e_aij);
 
   /* Free memory */
 
   CS_FREE(g_id_l);
   CS_FREE(g_id_d);
+
+  CS_FREE(d_aij);
+  CS_FREE(e_aij);
 }
 
 /*----------------------------------------------------------------------------*/
