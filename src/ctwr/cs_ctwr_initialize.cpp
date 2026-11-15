@@ -104,29 +104,29 @@ cs_ctwr_fields_init0(void)
 
   cs_field_t *t_h = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
-    t_h = cs_field_by_name("real_temperature"); /* Humid air temp */
+    t_h = cs_field("real_temperature"); /* Humid air temp */
   else
-    t_h = cs_field_by_name("temperature"); /* Humid air temp */
+    t_h = cs_field("temperature"); /* Humid air temp */
 
-  cs_field_t *y_l_p = cs_field_by_name("y_l_packing");
-  cs_field_t *ym_w  = cs_field_by_name("ym_water");
+  cs_field_t *y_l_p = cs_field("y_l_packing");
+  cs_field_t *ym_w  = cs_field("ym_water");
 
   cs_field_t *ym_l_r = nullptr;
   if (ct_opt->mixture_model)
-    ym_l_r  = cs_field_by_name("x_p_01");
+    ym_l_r  = cs_field("x_p_01");
   else
-    ym_l_r  = cs_field_by_name("ym_l_r");
-  cs_field_t *yh_l_p = cs_field_by_name("yh_l_packing");
+    ym_l_r  = cs_field("ym_l_r");
+  cs_field_t *yh_l_p = cs_field("yh_l_packing");
   cs_field_t *t_l_p = CS_F_(t_l_pack);
 
   cs_real_t tkelvin = cs_physical_constants_celsius_to_kelvin;
   const cs_real_t xhum = air_prop->humidity0;
 
   int rho_l_pack_id = CS_F_(y_l_pack)->get_key_int("density_id");
-  cs_real_t *rho_l_pack = cs_field_by_id(rho_l_pack_id)->val;
+  auto rho_l_pack = cs_field(rho_l_pack_id)->get_val_s();
 
   /* Initialize liquid density used for packing zones */
-  cs_array_real_set_scalar(n_cells_ext, air_prop->rho_l, rho_l_pack);
+  rho_l_pack.set_to_val(air_prop->rho_l, n_cells_ext);
 
   /* Cooling tower zones */
 
@@ -202,21 +202,21 @@ cs_ctwr_fields_init1(void)
 
   cs_field_t *t_h = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
-    t_h = cs_field_by_name("real_temperature"); /* Humid air temp */
+    t_h = cs_field("real_temperature"); /* Humid air temp */
   else
-    t_h = cs_field_by_name("temperature"); /* Humid air temp */
+    t_h = cs_field("temperature"); /* Humid air temp */
 
-  cs_field_t *y_l_p = cs_field_by_name("y_l_packing");
-  cs_field_t *ym_w  = cs_field_by_name("ym_water");
+  cs_field_t *y_l_p = cs_field("y_l_packing");
+  cs_field_t *ym_w  = cs_field("ym_water");
   cs_field_t *t_l_p = CS_F_(t_l_pack);
 
   /* Liquid inner mass flux */
   cs_lnum_t iflmas = y_l_p->get_key_int("inner_mass_flux_id");
-  cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
+  cs_real_t *i_mass_flux = cs_field(iflmas)->val;
 
   /* Liquid boundary mass flux */
   cs_lnum_t iflmab = y_l_p->get_key_int("boundary_mass_flux_id");
-  cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
+  cs_real_t *b_mass_flux = cs_field(iflmab)->val;
 
   cs_ctwr_init_flow_vars(i_mass_flux);
 
@@ -261,83 +261,84 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 
   cs_ctwr_option_t *ct_opt = cs_get_glob_ctwr_option();
   /* Fields necessary for humid atmosphere model */
-  cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
-  cs_field_t *yw_liq = cs_field_by_name_try("liquid_water");
-  cs_field_t *real_temp = cs_field_by_name_try("real_temperature");
-  cs_field_t *beta_h = cs_field_by_name_try("thermal_expansion");
+  cs_field_t *meteo_pressure = cs_field_try("meteo_pressure");
+  cs_field_t *yw_liq = cs_field_try("liquid_water");
+  cs_field_t *real_temp = cs_field_try("real_temperature");
+  cs_field_t *beta_h = cs_field_try("thermal_expansion");
 
   /* Initialize the fields - based on map */
-  cs_real_t *rho_m = nullptr;
-  cs_real_t *rho_h = nullptr;
+  cs_span<cs_real_t> rho_m;
+  cs_span<cs_real_t> rho_h;
   if (ct_opt->mixture_model) {
-    rho_m = (cs_real_t *)CS_F_(rho)->val; /* Air + rain (mixture)
-                                                      density */
-    rho_h = cs_field_by_name("rho_humid_air")->val;
+    rho_m = CS_F_(rho)->get_val_s(); /* Air + rain (mixture) density */
+    rho_h = cs_field("rho_humid_air")->get_val_s();
   }
   else
-    rho_h = (cs_real_t *)CS_F_(rho)->val; /* Humid air density */;
+    rho_h = CS_F_(rho)->get_val_s(); /* Humid air density */;
 
   int rho_l_pack_id = CS_F_(y_l_pack)->get_key_int("density_id");
-  cs_real_t *rho_l_pack = cs_field_by_id(rho_l_pack_id)->val;
+  auto rho_l_pack = cs_field(rho_l_pack_id)->get_val_s();
 
-  cs_real_t *t_h = nullptr;
-  cs_real_t *t_h_a = nullptr;
-  cs_real_t *theta_liq = nullptr;
+  cs_span<cs_real_t> t_h;
+  cs_span<cs_real_t> t_h_a;
+  cs_span<cs_real_t> theta_liq;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-    t_h = cs_field_by_name("real_temperature")->val; /* Humid air temp */
-    t_h_a = cs_field_by_name("real_temperature")->val_pre; /* Humid air temp */
-    theta_liq = cs_field_by_name("temperature")->val; /* Liq. pot. temp. */
+    t_h = cs_field("real_temperature")->get_val_s(); /* Humid air temp */
+    t_h_a = cs_field("real_temperature")->get_val_s(1); /* Humid air temp */
+    theta_liq = cs_field("temperature")->get_val_s(); /* Liq. pot. temp. */
   }
   else {
-    t_h = cs_field_by_name("temperature")->val; /* Humid air temp */
-    t_h_a = cs_field_by_name("temperature")->val_pre; /* Humid air temp */
+    t_h = cs_field("temperature")->get_val_s(); /* Humid air temp */
+    t_h_a = cs_field("temperature")->get_val_s(1); /* Humid air temp */
   }
-  cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;     /* Humid air enthalpy */
-  cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val;  /* Water mass fraction in
-                                                      humid air */
-  cs_real_t *x_s = cs_field_by_name("x_s")->val;
-  cs_real_t *x = (cs_real_t *)CS_F_(humid)->val; /* Humidity in air (bulk) */
+  auto h_h  = CS_F_(h)->get_val_s();     /* Humid air enthalpy */
+  auto ym_w = CS_F_(ym_w)->get_val_s();  /* Water mass fraction in humid air */
+  auto x_s = cs_field("x_s")->get_val_s();
+  auto x   = CS_F_(humid)->get_val_s(); /* Humidity in air (bulk) */
 
-  cs_real_t *t_l_p = (cs_real_t *)CS_F_(t_l_pack)->val;  /* Liquid temperature */
-  cs_real_t *yh_l_p = (cs_real_t *)CS_F_(yh_l_pack)->val;  /* Liquid enthalpy */
-  cs_real_t *y_l_p = (cs_real_t *)CS_F_(y_l_pack)->val; /* Liquid mass per unit */
+  auto t_l_p  = CS_F_(t_l_pack)->get_val_s();  /* Liquid temperature */
+  auto yh_l_p = CS_F_(yh_l_pack)->get_val_s();  /* Liquid enthalpy */
+  auto y_l_p  = CS_F_(y_l_pack)->get_val_s(); /* Liquid mass per unit */
 
   /* Packing zone liquid vertical velocity component */
-  cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val;
+  auto vel_l = cs_field("vertvel_l")->get_val_s();
 
   /* Rain drops variables */
   cs_field_t *cfld_yp = nullptr;
   if (ct_opt->mixture_model)
-    cfld_yp = cs_field_by_name_try("x_p_01"); /* Rain mass fraction */
+    cfld_yp = cs_field_try("x_p_01"); /* Rain mass fraction */
   else
-    cfld_yp = cs_field_by_name_try("ym_l_r"); /* Rain mass fraction */
+    cfld_yp = cs_field_try("ym_l_r"); /* Rain mass fraction */
 
-  cs_real_t *ym_l_r = cfld_yp->val; /* Rain mass fraction */
+  auto ym_l_r = cfld_yp->get_val_s(); /* Rain mass fraction */
   cs_field_t *cfld_taup = cs_field_by_composite_name(cfld_yp->name,"drift_tau");
   cs_field_t *cfld_drift_vel = cs_field_by_composite_name(cfld_yp->name,"drift_vel");
 
-  const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
-  cs_field_t *cfld_vc = cs_field_by_name_try("v_c");
-  cs_real_3_t *v_c = nullptr;
+  const cs_span_2d<cs_real_t> vel = CS_F_(vel)->get_val_v();
+  cs_field_t *cfld_vc = cs_field_try("v_c");
+  cs_span_2d<cs_real_t> v_c;
   if (cfld_vc != nullptr)
-    v_c = (cs_real_3_t *)cfld_vc->val;
+    v_c = cfld_vc->get_val_v();
 
-  cs_real_t *vol_f_r = cs_field_by_name("vol_f_r")->val;
+  auto vol_f_r = cs_field("vol_f_r")->get_val_s();
 
   /* If mixture model is on, continuous phase has its own velocity and volume fraction */
-  cs_real_t *vol_f_c = nullptr;
+  cs_span<cs_real_t> vol_f_c;
   if (ct_opt->mixture_model) {
     if (cfld_vc != nullptr) {
-      v_c = (cs_real_3_t *)cfld_vc->val;
-      vol_f_c = cs_field_by_name("vol_f_c")->val;
+      v_c = cfld_vc->get_val_v();
+      vol_f_c = cs_field("vol_f_c")->get_val_s();
     }
   }
 
-  cs_real_t *cpro_taup = nullptr;
+  cs_span<cs_real_t> cpro_taup;
+  cs_array<cs_real_t> _cpro_taup;
   if (cfld_taup != nullptr)
-    cpro_taup = cfld_taup->val;
-  else
-    CS_MALLOC(cpro_taup, n_cells_with_ghosts, cs_real_t);
+    cpro_taup = cfld_taup->get_val_s();
+  else {
+    _cpro_taup = cs_array<cs_real_t>(n_cells_with_ghosts, cs_alloc_mode);
+   cpro_taup = _cpro_taup.view_1d();
+  }
 
   const cs_air_fluid_props_t  *air_prop = cs_glob_air_props;
   cs_real_t rho_l = air_prop->rho_l;
@@ -425,7 +426,7 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 
     if (ct_opt->mixture_model) {
       rho_m[cell_id] = 1. / ((1. - ym_l_r[cell_id])/rho_h[cell_id]
-          + ym_l_r[cell_id]/rho_l);
+          	     + ym_l_r[cell_id]/rho_l);
 
       /* Update volume fractions */
       vol_f_c[cell_id] = (1 - ym_l_r[cell_id]) * rho_m[cell_id] / rho_h[cell_id];
@@ -479,15 +480,15 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 
     /* Initialize rain velocity variables */
     if (cfld_vc != nullptr && ct_opt->mixture_model) {
-      v_c[cell_id][0] = vel[cell_id][0];
-      v_c[cell_id][1] = vel[cell_id][1];
-      v_c[cell_id][2] = vel[cell_id][2];
+      v_c(cell_id, 0) = vel(cell_id, 0);
+      v_c(cell_id, 1) = vel(cell_id, 1);
+      v_c(cell_id, 2) = vel(cell_id, 2);
     }
   }
   /* Parallel synchronization */
   if (halo != nullptr) {
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, rho_h);
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_taup);
+    cs_halo_sync(halo, CS_HALO_STANDARD, rho_h);
+    cs_halo_sync(halo, CS_HALO_STANDARD, cpro_taup);
   }
 
   /* Cooling tower zones */
@@ -528,8 +529,8 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 
   /* Parallel synchronization */
   if (halo != nullptr) {
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, vel_l);
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, rho_l_pack);
+    cs_halo_sync(halo, CS_HALO_STANDARD, vel_l);
+    cs_halo_sync(halo, CS_HALO_STANDARD, rho_l_pack);
     if (cfld_yp != nullptr)
       cs_halo_sync_var(halo, CS_HALO_STANDARD, cfld_yp->val);
     if (cfld_drift_vel != nullptr) {
@@ -540,9 +541,6 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
     }
   }
 
-  /* Free memory */
-  if (cfld_taup == nullptr)
-    CS_FREE(cpro_taup);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -557,18 +555,14 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
 void
 cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 {
-  cs_real_t *y_l_p = (cs_real_t *)CS_F_(y_l_pack)->val; /* Liquid mass fraction
-                                                         in packing */
-  cs_real_t *yh_l_p = (cs_real_t *)CS_F_(yh_l_pack)->val;      /* Liquid enthalpy
-                                                         in packing */
-  cs_real_t *t_l_p = (cs_real_t *)CS_F_(t_l_pack)->val;      /* Liquid temperature
-                                                         in packing */
+  auto y_l_p  = CS_F_(y_l_pack)->get_val_s();  /* Liquid mass fraction in packing */
+  auto yh_l_p = CS_F_(yh_l_pack)->get_val_s(); /* Liquid enthalpy in packing */
+  auto t_l_p  = CS_F_(t_l_pack)->get_val_s();  /* Liquid temperature in packing */
 
   int rho_l_pack_id = CS_F_(y_l_pack)->get_key_int("density_id");
-  cs_real_t *rho_l_pack = cs_field_by_id(rho_l_pack_id)->val;
+  auto rho_l_pack = cs_field(rho_l_pack_id)->get_val_s();
 
-  cs_real_t *vel_l = cs_field_by_name("vertvel_l")->val; /* Liquid velocity
-                                                            in packing */
+  auto vel_l = cs_field("vertvel_l")->get_val_s(); /* Liquid velocity in packing */
 
   const cs_nreal_3_t *restrict i_face_u_normal
     = cs_glob_mesh_quantities->i_face_u_normal;
@@ -578,7 +572,6 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
   const cs_real_t *restrict i_face_surf = cs_glob_mesh_quantities->i_face_surf;
   const cs_halo_t *halo = cs_glob_mesh->halo;
-  cs_lnum_t *packing_cell;
 
   /* Normalized gravity vector */
 
@@ -594,9 +587,8 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 
   /* Tag and initialize the ct values in the packing zone cells */
 
-  CS_MALLOC(packing_cell, n_cells_with_ghosts, int);
-
-  cs_array_int_set_value(n_cells_with_ghosts, -1, packing_cell);
+  cs_array<cs_lnum_t> packing_cell(n_cells_with_ghosts);
+  packing_cell.set_to_val(-1);
 
   /* Cooling tower zones */
   cs_ctwr_zone_t **_ct_zone = cs_get_glob_ctwr_zone();
@@ -619,7 +611,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 
   /* Parallel synchronization */
   if (halo != nullptr)
-    cs_halo_sync_untyped(halo, CS_HALO_STANDARD, sizeof(int), packing_cell);
+    cs_halo_sync(halo, CS_HALO_STANDARD, packing_cell);
 
   /* Initialize the liquid mass flux at packing zone faces
    * and the ghost cells for the liquid mass and enthalpy
@@ -782,10 +774,9 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
     CS_REALLOC(ct->outlet_faces_ids, ct->n_outlet_faces, cs_lnum_t);
     CS_REALLOC(ct->outlet_cells_ids, ct->n_outlet_cells, cs_lnum_t);
 
-    cs_parall_sum_scalars(ct->surface_in, ct->surface_out);
+    cs::parall::sum(ct->surface_in, ct->surface_out);
   }
 
-  CS_FREE(packing_cell);
 }
 
 /*----------------------------------------------------------------------------*/
