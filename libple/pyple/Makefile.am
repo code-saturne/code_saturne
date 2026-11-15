@@ -24,7 +24,7 @@
 if HAVE_PYPLE
 
 EXTRA_DIST = \
-pyple_coupler.py.in \
+pyple_coupler.py \
 ple_coupling_wrapper.c
 
 pyple_coupler.py: Makefile
