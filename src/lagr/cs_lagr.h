@@ -667,7 +667,9 @@ typedef struct {
 /*! Particle injection parameters for a given zone and particle set */
 /*------------------------------------------------------------------*/
 
-typedef struct {
+class cs_lagr_injection_set_t {
+
+public:
 
   int         zone_id;               /*!< associated zone id */
   int         set_id;                /*!< associated set id */
@@ -697,8 +699,8 @@ typedef struct {
   int         temperature_profile;
 
   int         coal_number;          /*!< particle coal number (if
-                                      \ref cs_lagr_model_t::physical_model "physical_model"
-                                      =2) */
+                                      \ref cs_lagr_model_t::physical_model
+                                      "physical_model" = 2) */
 
   int         cluster;              /*!< statistical cluster id */
 
@@ -739,12 +741,14 @@ typedef struct {
 
   cs_real_t   emissivity;           /*!< particle emissivity */
 
-} cs_lagr_injection_set_t;
+};
 
 /*! 2-way coupling and source term information. */
 /*----------------------------------------------*/
 
-typedef struct {
+class cs_lagr_source_terms_t {
+
+public:
 
   /*! activation (=1) or not (=0) of the two-way coupling on the dynamics
     of the continuous phase.
@@ -774,13 +778,14 @@ typedef struct {
 
   /*! activation (=1) or not (=0) of the two-way coupling on evaporation.
     Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING,
-    and \ref cs_lagr_model_t::physical_model "physical_model" = CS_LAGR_PHYS_CTWR */
+    and \ref cs_lagr_model_t::physical_model "physical_model"
+    = CS_LAGR_PHYS_CTWR */
   int  has_twoway_evap{0};
 
   /*! number of absolute time steps (including the restarts)
     after which a time-average of the two-way coupling source terms is
-    calculated.
-    Indeed, if the flow is steady (\ref cs_lagr_time_scheme_t::isttio "isttio"=1),
+    calculated. Indeed, if the flow is steady
+    (\ref cs_lagr_time_scheme_t::isttio "isttio"=1),
     the average quantities that appear in the two-way coupling source terms can
     be calculated over different time steps, in order to get a better precision.
     if the number of absolute time steps is strictly inferior to
@@ -835,7 +840,7 @@ typedef struct {
   /* Langrangian source term for evaporation over one time step */
   cs_real_t     *t_st_evap{nullptr};
 
-} cs_lagr_source_terms_t;
+};
 
 /*! Boundary or volume condition definitions and data */
 /*----------------------------------------------------*/

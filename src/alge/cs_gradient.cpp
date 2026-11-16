@@ -2448,18 +2448,12 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
-  const cs_lnum_t *restrict c2f = nullptr;
   const int *restrict c_disable_flag = nullptr;
   cs_lnum_t has_dc = 0;
-  const cs_real_t *restrict i_face_surf = nullptr;
-  const cs_real_t *restrict b_face_surf = nullptr;
   if (is_porous) {
     cs_mesh_adjacencies_update_cell_i_faces();
-    c2f = ma->cell_i_faces;
     c_disable_flag = fvq->c_disable_flag;
     has_dc = fvq->has_disable_flag; /* Has cells disabled? */
-    i_face_surf = fvq->i_face_surf;
-    b_face_surf = fvq->b_face_surf;
   }
 
   cs_cocg_6_t  *restrict cocgb = nullptr, *restrict cocg = nullptr;
@@ -2671,8 +2665,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_lnum_t *restrict cell_cells_e_idx = m->cell_cells_idx;
@@ -2683,11 +2675,9 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
-  [[maybe_unused]] const cs_lnum_t *restrict c2f = nullptr;
   const cs_real_t *restrict i_face_surf = nullptr;
   const cs_real_t *restrict b_face_surf = nullptr;
   if (is_porous) {
-    c2f = ma->cell_i_faces;
     i_face_surf = fvq->i_face_surf;
     b_face_surf = fvq->b_face_surf;
   }
