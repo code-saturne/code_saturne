@@ -2297,6 +2297,117 @@ _matrix_anisotropic_diffusion_strided
   CS_FREE(_b_f_face_factor);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Partial values assembly from a temporary MSR matrix.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_matrix_assembler_values_add_from_msr
+(
+  cs_matrix_assembler_values_t *mav,      /*!< [in,out] matrix assembler
+                                            values structure */
+  const cs_matrix_t            *a_msr,    /*!< [in] associated MSR matrix */
+  cs_alloc_mode_t               amode,    /*!< allocation mode */
+  cs_lnum_t                     db_size,  /*!< diagonal block size */
+  cs_lnum_t                     eb_size,  /*!< extra-diagonal block size */
+  const cs_gnum_t              *r_g_id,   /* global id associated to each row */
+  cs_real_t                    *d_val,    /*!< diagonal values */
+  cs_real_t                    *e_val     /*!< extra-diagonal values */
+)
+{
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(amode >= CS_ALLOC_HOST_DEVICE_SHARED);
+
+  const cs_lnum_t *row_index = nullptr;
+  const cs_lnum_t *col_id = nullptr;
+
+  cs_matrix_get_msr_arrays(a_msr,
+                           &row_index,
+                           &col_id,
+                           nullptr,
+                           nullptr);
+
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a_msr);
+  const cs_lnum_t n_extra = cs_get_host_value(&(row_index[n_rows]));
+
+  int flags = CS_MATRIX_VALUES_ARE_LOCAL;
+
+  if (cs_matrix_has_direct_assembly(a_msr))
+    flags |= CS_MATRIX_VALUES_NO_CONFLICT;
+
+  /* If local id-based assembly is available
+     --------------------------------------- */
+
+  if (cs_matrix_assembler_implements_values_add(mav)) {
+    cs_lnum_t *row_id = nullptr;
+    cs_lnum_t *diag_id = nullptr;
+    CS_MALLOC_HD(diag_id, n_extra, cs_lnum_t, amode);
+    CS_MALLOC_HD(row_id, n_extra, cs_lnum_t, amode);
+
+    cs_matrix_build_msr_e_row_ids(a_msr, row_id, diag_id);
+
+    /* Diagonal values */
+
+    cs_matrix_assembler_values_add(mav,
+                                   flags,
+                                   n_rows,
+                                   db_size,
+                                   diag_id,
+                                   diag_id,
+                                   d_val);
+
+    /* Extradiagonal values */
+
+    cs_matrix_assembler_values_add(mav,
+                                   flags,
+                                   n_extra,
+                                   eb_size,
+                                   row_id,
+                                   col_id,
+                                   e_val);
+
+    CS_FREE(row_id);
+    CS_FREE(diag_id);
+  }
+
+  /* If only global id-based assembly is available
+     --------------------------------------------- */
+
+  else {
+    cs_gnum_t *g_row_ids = nullptr;
+    cs_gnum_t *g_col_ids = nullptr;
+    CS_MALLOC_HD(g_row_ids, n_extra, cs_gnum_t, amode);
+    CS_MALLOC_HD(g_col_ids, n_extra, cs_gnum_t, amode);
+
+    cs_matrix_build_msr_e_g_ids(a_msr, r_g_id, g_row_ids, g_col_ids);
+
+    /* Diagonal values */
+
+    cs_matrix_assembler_values_add_g(mav,
+                                     flags,
+                                     n_rows,
+                                     db_size,
+                                     const_cast<cs_gnum_t *>(r_g_id),
+                                     const_cast<cs_gnum_t *>(r_g_id),
+                                     d_val);
+
+    /* Extradiagonal values */
+
+    cs_matrix_assembler_values_add_g(mav,
+                                     flags,
+                                     n_extra,
+                                     eb_size,
+                                     g_row_ids,
+                                     g_col_ids,
+                                     e_val);
+
+    CS_FREE(g_row_ids);
+    CS_FREE(g_col_ids);
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2552,8 +2663,6 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
 
   if (ma != nullptr) {
 
-    int flags = CS_MATRIX_VALUES_ARE_LOCAL;
-
     cs_real_t *d_val = nullptr;
     cs_real_t *e_val = nullptr;
 
@@ -2563,54 +2672,22 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
                                  &d_val,
                                  &e_val);
 
-    const cs_lnum_t *row_index = nullptr;
-    const cs_lnum_t *col_id = nullptr;
-
-    cs_matrix_get_msr_arrays(a_msr,
-                             &row_index,
-                             &col_id,
-                             nullptr,
-                             nullptr);
-
     const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a, m->halo);
-
-    const cs_lnum_t n_extra = row_index[n_cells];
-    cs_gnum_t *g_row_ids = nullptr;
-    cs_gnum_t *g_col_ids = nullptr;
-
-    CS_MALLOC_HD(g_row_ids, n_extra, cs_gnum_t, amode);
-    CS_MALLOC_HD(g_col_ids, n_extra, cs_gnum_t, amode);
-
-    cs_matrix_build_msr_e_g_ids(a_msr, r_g_id, g_row_ids, g_col_ids);
 
     cs_matrix_assembler_values_t *mav
       = cs_matrix_assembler_values_init(a, 1, 1);
-    assert(n_cells == cs_matrix_get_n_rows(a));
 
-    /* Diagonal values */
-
-    cs_matrix_assembler_values_add_g(mav,
-                                     flags,
-                                     n_cells,
-                                     1,
-                                     const_cast<cs_gnum_t *>(r_g_id),
-                                     const_cast<cs_gnum_t *>(r_g_id),
-                                     d_val);
-
-    /* Extradiagonal values */
-
-    cs_matrix_assembler_values_add_g(mav,
-                                     flags,
-                                     n_extra,
-                                     1,
-                                     g_row_ids,
-                                     g_col_ids,
-                                     e_val);
+    _matrix_assembler_values_add_from_msr(mav,
+                                          a_msr,
+                                          amode,
+                                          1,
+                                          1,
+                                          r_g_id,
+                                          d_val,
+                                          e_val);
 
     CS_FREE(d_val);
     CS_FREE(e_val);
-    CS_FREE(g_row_ids);
-    CS_FREE(g_col_ids);
 
     /* Set extended contribution for domain coupling */
 
@@ -2960,8 +3037,6 @@ cs_matrix_compute_coeffs
 
   if (ma != nullptr) {
 
-    int flags = CS_MATRIX_VALUES_ARE_LOCAL;
-
     cs_real_t *d_val = nullptr;
     cs_real_t *e_val = nullptr;
 
@@ -2971,54 +3046,24 @@ cs_matrix_compute_coeffs
                                  &d_val,
                                  &e_val);
 
-    const cs_lnum_t *row_index = nullptr;
-    const cs_lnum_t *col_id = nullptr;
-
-    cs_matrix_get_msr_arrays(a_msr,
-                             &row_index,
-                             &col_id,
-                             nullptr,
-                             nullptr);
-
     const cs_gnum_t *r_g_id = cs_matrix_get_block_row_g_id(a, m->halo);
-
-    const cs_lnum_t n_extra = row_index[n_cells];
-    cs_gnum_t *g_row_ids = nullptr;
-    cs_gnum_t *g_col_ids = nullptr;
-
-    CS_MALLOC_HD(g_row_ids, n_extra, cs_gnum_t, amode);
-    CS_MALLOC_HD(g_col_ids, n_extra, cs_gnum_t, amode);
-
-    cs_matrix_build_msr_e_g_ids(a_msr, r_g_id, g_row_ids, g_col_ids);
 
     cs_matrix_assembler_values_t *mav
       = cs_matrix_assembler_values_init(a, stride, eb_size);
     assert(n_cells == cs_matrix_get_n_rows(a));
 
-    /* Diagonal values */
+    _matrix_assembler_values_add_from_msr(mav,
+                                          a_msr,
+                                          amode,
+                                          stride,
+                                          eb_size,
+                                          r_g_id,
+                                          d_val,
+                                          e_val);
 
-    cs_matrix_assembler_values_add_g(mav,
-                                     flags,
-                                     n_cells,
-                                     stride,
-                                     const_cast<cs_gnum_t *>(r_g_id),
-                                     const_cast<cs_gnum_t *>(r_g_id),
-                                     d_val);
-
-    /* Extradiagonal values */
-
-    cs_matrix_assembler_values_add_g(mav,
-                                     flags,
-                                     n_extra,
-                                     eb_size,
-                                     g_row_ids,
-                                     g_col_ids,
-                                     e_val);
 
     CS_FREE(d_val);
     CS_FREE(e_val);
-    CS_FREE(g_row_ids);
-    CS_FREE(g_col_ids);
 
     /* Set extended contribution for domain coupling */
 

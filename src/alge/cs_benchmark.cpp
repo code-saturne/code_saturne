@@ -27,7 +27,7 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C and C++ library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <chrono>
@@ -831,7 +831,8 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
   const char *t_name[] = {"general assembly",
                           "local rows assembly",
-                          "assembly from shared"};
+                          "assembly from shared MSR (global ids)",
+                          "assembly from shared MSR (local ids)"};
 
   /* Allocate and initialize  working arrays */
 
@@ -948,19 +949,20 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
     cs_matrix_assembler_t *ma = nullptr;
 
-    /* 3 variant construction methods, 2 coefficient methods */
+    /* 4 variant construction methods, 2 coefficient methods */
 
     const char *ma_name[] = {"distributed contribution assember",
                              "local rows assembler",
-                             "shared index assembler"};
+                             "gather, global ids",
+                             "gather, local ids"};
 
-    for (int c_id = 0; c_id < 3; c_id++) {
+    for (int c_id = 0; c_id < 4; c_id++) {
 
       /* Matrix created from shared index may not always handle
          periodic elements in the same manner */
 
       if (halo != nullptr) {
-        if (halo->n_transforms > 0 && c_id == 2)
+        if (halo->n_rotations > 0 && c_id >= 2)
           continue;
       }
 
@@ -1024,7 +1026,8 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
                                                     halo);
       }
 
-      if (f_id == 0) /* no need to log multiple identical assemblers */
+      /* No need to log multiple identical assemblers */
+      if (f_id == 0 && c_id < 3)
         cs_matrix_assembler_log_rank_counts(ma, CS_LOG_DEFAULT, ma_name[c_id]);
 
       cs_matrix_structure_t  *ms
@@ -1066,17 +1069,25 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
         cs_matrix_assembler_values_t *mav = nullptr;
 
-        int flags = CS_MATRIX_VALUES_ARE_LOCAL;
+        int flags = 0;
+        if (c_id > 0)
+          flags |= CS_MATRIX_VALUES_ARE_LOCAL;
 
         if (f_type[f_id] == CS_MATRIX_SCALAR)
           mav = cs_matrix_assembler_values_init(m, 1, 1);
         else if (f_type[f_id] == CS_MATRIX_BLOCK_D)
           mav = cs_matrix_assembler_values_init(m, d_block_size, 1);
 
-        cs_matrix_assembler_values_add_g(mav, flags, n_rows, d_block_size,
-                                         r_g_id, r_g_id, da);
+        if (cs_matrix_assembler_implements_values_add(mav) == false
+            && c_id == 3)
+          continue;
+
+        std::chrono::high_resolution_clock::time_point wt0, wt1;
 
         if (c_id == 0) { /* Rank contributions through global edges */
+          wt0 = std::chrono::high_resolution_clock::now();
+          cs_matrix_assembler_values_add_g(mav, flags, n_rows, d_block_size,
+                                           r_g_id, r_g_id, da);
           cs_lnum_t jj = 0;
           for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
             cs_lnum_t i0 = edges[ii][0];
@@ -1104,8 +1115,13 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
           cs_matrix_assembler_values_add_g(mav, flags, jj, 1,
                                            g_row_id, g_col_id, val);
+          cs_matrix_assembler_values_finalize(&mav);
+          wt1 = std::chrono::high_resolution_clock::now();
         }
-        else { /* Rank contributions are local */
+        else if (c_id == 1) { /* Rank contributions are local */
+          wt0 = std::chrono::high_resolution_clock::now();
+          cs_matrix_assembler_values_add_g(mav, flags, n_rows, d_block_size,
+                                           r_g_id, r_g_id, da);
           cs_lnum_t jj = 0;
           for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
             cs_lnum_t i0 = edges[ii][0];
@@ -1130,9 +1146,128 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
           }
           cs_matrix_assembler_values_add_g(mav, flags, jj, 1,
                                            g_row_id, g_col_id, val);
+          cs_matrix_assembler_values_finalize(&mav);
+          wt1 = std::chrono::high_resolution_clock::now();
+        }
+        else if (c_id == 2) { /* Gather logic using global ids */
+          cs_matrix_t *m_msr = cs_matrix_msr();
+          cs_matrix_set_coefficients(m_msr,
+                                     false,
+                                     d_block_size,
+                                     1,
+                                     n_edges,
+                                     edges,
+                                     da,
+                                     xa);
+
+          const cs_lnum_t *row_index = nullptr;
+          const cs_lnum_t *col_id = nullptr;
+          const cs_real_t *d_val = nullptr;
+          const cs_real_t *x_val = nullptr;
+
+          cs_matrix_get_msr_arrays(m_msr,
+                                   &row_index,
+                                   &col_id,
+                                   &d_val,
+                                   &x_val);
+
+          const cs_lnum_t n_extra = row_index[n_rows];
+          cs_gnum_t *g_row_ids = nullptr;
+          cs_gnum_t *g_col_ids = nullptr;
+
+          CS_MALLOC_HD(g_row_ids, n_extra, cs_gnum_t, cs_alloc_mode);
+          CS_MALLOC_HD(g_col_ids, n_extra, cs_gnum_t, cs_alloc_mode);
+
+          wt0 = std::chrono::high_resolution_clock::now();
+
+          cs_matrix_build_msr_e_g_ids(m_msr, r_g_id, g_row_ids, g_col_ids);
+
+          cs_matrix_assembler_values_add_g(mav,
+                                           flags,
+                                           n_rows,
+                                           d_block_size,
+                                           const_cast<cs_gnum_t *>(r_g_id),
+                                           const_cast<cs_gnum_t *>(r_g_id),
+                                           const_cast<cs_real_t *>(d_val));
+
+          cs_matrix_assembler_values_add_g(mav,
+                                           flags,
+                                           n_extra,
+                                           1,
+                                           g_row_ids,
+                                           g_col_ids,
+                                           const_cast<cs_real_t *>(x_val));
+
+          cs_matrix_assembler_values_finalize(&mav);
+
+          wt1 = std::chrono::high_resolution_clock::now();
+
+          CS_FREE(g_row_ids);
+          CS_FREE(g_col_ids);
+
+          cs_matrix_release_coefficients(m_msr);
+        }
+        else if (c_id == 3) { /* Gather logic using local ids */
+          cs_matrix_t *m_msr = cs_matrix_msr();
+          cs_matrix_set_coefficients(m_msr,
+                                     false,
+                                     d_block_size,
+                                     1,
+                                     n_edges,
+                                     edges,
+                                     da,
+                                     xa);
+
+          const cs_lnum_t *row_index = nullptr;
+          const cs_lnum_t *col_id = nullptr;
+          const cs_real_t *d_val = nullptr;
+          const cs_real_t *x_val = nullptr;
+
+          cs_matrix_get_msr_arrays(m_msr,
+                                   &row_index,
+                                   &col_id,
+                                   &d_val,
+                                   &x_val);
+
+          const cs_lnum_t n_extra = row_index[n_rows];
+
+          cs_lnum_t *row_ids = nullptr, *diag_row_ids = nullptr;
+          CS_MALLOC_HD(row_ids, n_extra, cs_lnum_t, cs_alloc_mode);
+          CS_MALLOC_HD(diag_row_ids, n_rows, cs_lnum_t, cs_alloc_mode);
+
+          wt0 = std::chrono::high_resolution_clock::now();
+
+          cs_matrix_build_msr_e_row_ids(m_msr, row_ids, diag_row_ids);
+
+          cs_matrix_assembler_values_add(mav,
+                                         flags,
+                                         n_rows,
+                                         d_block_size,
+                                         diag_row_ids,
+                                         diag_row_ids,
+                                         const_cast<cs_real_t *>(d_val));
+
+          cs_matrix_assembler_values_add(mav,
+                                         flags,
+                                         n_extra,
+                                         1,
+                                         row_ids,
+                                         col_id,
+                                         const_cast<cs_real_t *>(x_val));
+
+          cs_matrix_assembler_values_finalize(&mav);
+
+          wt1 = std::chrono::high_resolution_clock::now();
+
+          CS_FREE(diag_row_ids);
+          CS_FREE(row_ids);
+
+          cs_matrix_release_coefficients(m_msr);
         }
 
-        cs_matrix_assembler_values_finalize(&mav);
+        std::chrono::microseconds wt_m
+          = std::chrono::duration_cast<std::chrono::microseconds>(wt1 - wt0);
+        double t_asmb = wt_m.count() * 1.e-6;
 
         cs_matrix_vector_multiply(m, x, y);
 
@@ -1142,9 +1277,10 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
         bft_printf("\n%s (%s)\n",
                    _matrix_operation_name[f_type[f_id]][0],
                    cs_matrix_get_type_name(m));
-        bft_printf("  %-32s : %12.5e\n",
+        bft_printf("  %s: %12.5e  (asmb: %10.4e s)\n",
                    t_name[c_id],
-                   dmax);
+                   dmax,
+                   t_asmb);
         bft_printf_flush();
 
         cs_matrix_destroy(&m);

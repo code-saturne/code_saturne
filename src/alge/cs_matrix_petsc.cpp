@@ -710,9 +710,9 @@ static void
 _assembler_values_add_block_d_e(cs_matrix_coeffs_petsc_t *coeffs,
                                 PetscInt                  n,
                                 PetscInt                  b_size,
-                                const cs_gnum_t            row_g_id[],
-                                const cs_gnum_t            col_g_id[],
-                                const cs_real_t            vals[])
+                                const cs_gnum_t           row_g_id[],
+                                const cs_gnum_t           col_g_id[],
+                                const cs_real_t           vals[])
 {
   Mat hm = coeffs->hm;
   assert(hm != nullptr);
@@ -781,7 +781,7 @@ _assembler_values_add_g(void                    *matrix_p,
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
   auto coeffs = static_cast<cs_matrix_coeffs_petsc_t *>(matrix->coeffs);
 
-  PetscInt nrows = n;
+  PetscInt n_ids = n;
   PetscInt b_size = matrix->db_size;
 
   /* Scalar matrix
@@ -789,22 +789,53 @@ _assembler_values_add_g(void                    *matrix_p,
 
   if (b_size == 1) {
 
+    assert(stride == 1);
+
     Mat hm = coeffs->hm;
     assert(hm != nullptr);
+
+    /* Try to group MatSetValues calls for successive elements of
+       a same row (so performance is expected to be better when
+       using the function with row-wise assemby). */
+
+    const cs_lnum_t max_chunk_size = 32;
+
+    PetscInt idxm[1];
+    PetscInt idxn[max_chunk_size];
+    PetscScalar v[max_chunk_size];
 
     PetscInt l_b = coeffs->l_range[0];
     PetscInt u_b = coeffs->l_range[1];
 
-    for (PetscInt i = 0; i < nrows; i++) {
+    PetscInt r_g_id_prev = -1;
+    PetscInt l = 0;
+
+    for (PetscInt i = 0; i < n_ids; i++) {
       PetscInt r_g_id = row_g_id[i];
       if (   r_g_id >= l_b
           && r_g_id < u_b
           && cs::abs(vals[i]) > cs_dbl_epsilon) {
-        PetscInt idxm[] = {r_g_id};
-        PetscInt idxn[] = {(PetscInt)col_g_id[i]};
-        PetscScalar v[] = {vals[i]};
-        MatSetValues(hm, 1, idxm, 1, idxn, v, ADD_VALUES);
+        if (r_g_id != r_g_id_prev) {
+          if (l > 0) {
+            MatSetValues(hm, 1, idxm, l, idxn, v, ADD_VALUES);
+            l = 0;
+          }
+          r_g_id_prev = r_g_id;
+          idxm[0] = r_g_id;
+        }
+        idxn[l] = (PetscInt)col_g_id[i];
+        v[l] = vals[i];
+        l++;
       }
+      if (l >= max_chunk_size) {
+        MatSetValues(hm, 1, idxm, l, idxn, v, ADD_VALUES);
+        l = 0;
+      }
+    }
+
+    if (l > 0) {
+      MatSetValues(hm, 1, idxm, l, idxn, v, ADD_VALUES);
+      l = 0;
     }
   }
 
@@ -816,9 +847,9 @@ _assembler_values_add_g(void                    *matrix_p,
     /* Full blocks (including diagonal terms for diagonal fill) */
 
     if (   matrix->fill_type >= CS_MATRIX_BLOCK
-        || row_g_id[0] == col_g_id[0])
+        || stride == b_size)
       _assembler_values_add_block_cc(coeffs,
-                                     nrows,
+                                     n_ids,
                                      b_size,
                                      stride,
                                      row_g_id,
@@ -829,7 +860,7 @@ _assembler_values_add_g(void                    *matrix_p,
 
     else if (matrix->fill_type >= CS_MATRIX_BLOCK_D)
       _assembler_values_add_block_d_e(coeffs,
-                                      nrows,
+                                      n_ids,
                                       b_size,
                                       row_g_id,
                                       col_g_id,
@@ -1663,15 +1694,15 @@ cs_matrix_petsc_add_scal_row_values(const cs_lnum_t                n_cols,
   Mat hm = mc->hm;
   assert(hm != nullptr);
 
-  const cs_lnum_t max_chunck_size = 32;
+  const cs_lnum_t max_chunk_size = 32;
 
   PetscInt idxm[1] = {0};
-  PetscInt idxn[max_chunck_size] = {0};
-  PetscScalar v[max_chunck_size] = {0.};
+  PetscInt idxn[max_chunk_size] = {0};
+  PetscScalar v[max_chunk_size] = {0.};
 
-  for (PetscInt s_id = 0; s_id < n_cols; s_id += max_chunck_size) {
+  for (PetscInt s_id = 0; s_id < n_cols; s_id += max_chunk_size) {
 
-    PetscInt n_group = max_chunck_size;
+    PetscInt n_group = max_chunk_size;
     if (s_id + n_group > n_cols)
       n_group = n_cols - s_id;
 

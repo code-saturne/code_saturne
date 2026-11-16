@@ -96,6 +96,34 @@ binary_search
   return mid_id;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Linear search for a given local id in a given array of
+ *        local ids, when the id might not be present.
+ *
+ * \tparam T integer variant
+ *
+ * \return  index of id in id_array, or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+CS_F_HOST_DEVICE inline cs_lnum_t
+linear_search
+(
+  cs_lnum_t  id_array_size,  /*!< [in] array_size */
+  T          id,             /*!< [in] id to search for */
+  const T    id_array[]      /*!< [in] ordered unique ids array */
+)
+{
+  for (cs_lnum_t i = 0; i < id_array_size; i++) {
+    if (id_array[i] == id)
+      return i;
+  }
+
+  return -1;
+}
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

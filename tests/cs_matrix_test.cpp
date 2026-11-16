@@ -776,6 +776,47 @@ _test_msr_build_e_g_ids(void)
   cs_matrix_structure_destroy(&ms);
 }
 
+/*----------------------------------------------------------------------------
+ * Test MSR extra-diagonal local row id builder.
+ *----------------------------------------------------------------------------*/
+
+static void
+_test_msr_build_e_row_ids(void)
+{
+  cs_matrix_structure_t *ms
+    = cs_matrix_structure_create(CS_MATRIX_MSR,
+                                 _n_vtx,
+                                 _n_vtx,
+                                 _n_edges,
+                                 _edges,
+                                 nullptr,
+                                 nullptr);
+
+  cs_matrix_t *m = cs_matrix_create(ms);
+
+  const cs_lnum_t *row_index = nullptr;
+  cs_matrix_get_msr_arrays(m, &row_index, nullptr, nullptr, nullptr);
+
+  const cs_lnum_t n_extra = row_index[_n_vtx];
+  cs_lnum_t *row_id = nullptr;
+
+  CS_MALLOC(row_id, n_extra, cs_lnum_t);
+
+  cs_matrix_build_msr_e_row_ids(m, row_id, nullptr);
+
+  /* Verify mapping */
+  for (cs_lnum_t row = 0; row < _n_vtx; row++) {
+    for (cs_lnum_t i = row_index[row]; i < row_index[row + 1]; i++) {
+      assert(row_id[i] == row);
+    }
+  }
+
+  CS_FREE(row_id);
+
+  cs_matrix_destroy(&m);
+  cs_matrix_structure_destroy(&ms);
+}
+
 /*----------------------------------------------------------------------------*/
 
 int
@@ -1045,6 +1086,9 @@ main(int argc, char *argv[])
 
   /* Test MSR extra-diagonal global id builder */
   _test_msr_build_e_g_ids();
+
+  /* Test MSR extra-diagonal local row id builder */
+  _test_msr_build_e_row_ids();
 
   bft_printf("\n");
 

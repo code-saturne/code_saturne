@@ -616,7 +616,10 @@ _compact_struct_csr(cs_matrix_struct_csr_t  *ms,
   ms->row_index = ms->_row_index;
   ms->col_id = ms->_col_id;
 
-  ms->nnz = ms->row_index[ms->n_rows];
+  if (ms->row_index != nullptr)
+    ms->nnz = ms->row_index[ms->n_rows];
+  else
+    ms->nnz = 0;
 }
 
 /*----------------------------------------------------------------------------
@@ -2680,6 +2683,8 @@ _msr_assembler_values_add(void                    *matrix_p,
   cs_real_t *d_val = mc->_d_val;
   cs_real_t *e_val = mc->_e_val;
 
+  constexpr cs_lnum_t search_threshold = 16;
+
   cs_dispatch_context  ctx;
 
   if (matrix->alloc_mode == CS_ALLOC_HOST)
@@ -2727,9 +2732,14 @@ _msr_assembler_values_add(void                    *matrix_p,
       cs_lnum_t n_cols = row_index[r_id+1] - r_idx_s;
       cs_lnum_t col_idx;
 
-      col_idx = cs::algorithm::binary_search(n_cols,
-                                             c_id,
-                                             e_col_id + r_idx_s);
+      if (n_cols < search_threshold)
+        col_idx = cs::algorithm::linear_search(n_cols,
+                                               c_id,
+                                               e_col_id + r_idx_s);
+      else
+        col_idx = cs::algorithm::binary_search(n_cols,
+                                               c_id,
+                                               e_col_id + r_idx_s);
 
       assert(col_idx > -1);
 
@@ -2798,6 +2808,8 @@ _msr_assembler_values_add_g(void                    *matrix_p,
                                     d_r_idx,
                                     d_g_c_id);
 
+  constexpr cs_lnum_t search_threshold = 16;
+
   cs_dispatch_context  ctx;
 
   if (matrix->alloc_mode == CS_ALLOC_HOST)
@@ -2854,9 +2866,14 @@ _msr_assembler_values_add_g(void                    *matrix_p,
 
         cs_lnum_t l_c_id = g_c_id - l_range[0];
 
-        col_idx = cs::algorithm::binary_search(n_cols,
-                                               l_c_id,
-                                               col_id + r_idx_s);
+        if (n_cols < search_threshold)
+          col_idx = cs::algorithm::linear_search(n_cols,
+                                                 l_c_id,
+                                                 col_id + r_idx_s);
+        else
+          col_idx = cs::algorithm::binary_search(n_cols,
+                                                 l_c_id,
+                                                 col_id + r_idx_s);
 
         assert(col_idx > -1);
 
@@ -2869,11 +2886,18 @@ _msr_assembler_values_add_g(void                    *matrix_p,
         cs_lnum_t d_r_idx_s = d_r_idx[r_id];
         cs_lnum_t n_d_cols = d_r_idx[r_id+1] - d_r_idx_s;
         cs_lnum_t n_l_cols = n_cols - n_d_cols;
+        cs_lnum_t d_c_idx;
 
-        cs_lnum_t d_c_idx
-          = cs::algorithm::binary_search(n_d_cols,
-                                         g_c_id,
-                                         d_g_c_id + d_r_idx_s);
+        if (n_d_cols < search_threshold)
+          d_c_idx
+            = cs::algorithm::linear_search(n_d_cols,
+                                           g_c_id,
+                                           d_g_c_id + d_r_idx_s);
+        else
+          d_c_idx
+            = cs::algorithm::binary_search(n_d_cols,
+                                           g_c_id,
+                                           d_g_c_id + d_r_idx_s);
 
         assert(d_c_idx > -1);
 
@@ -4618,7 +4642,7 @@ _matrix_create(cs_matrix_type_t  type,
     m->destroy_structure = _destroy_struct_native;
     m->destroy_coefficients = _destroy_coeff;
     m->assembler_values_create = nullptr;
- break;
+    break;
 
   case CS_MATRIX_CSR:
     m->set_coefficients = _set_coeffs_csr;
@@ -5903,6 +5927,57 @@ cs_matrix_get_fill_type(bool       symmetric,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Indicate if matrix structure allows direct assembly.
+ *
+ * \return  true if the matrix is guaranteed not to have multiple entries
+ *          for any given row and column.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_matrix_has_direct_assembly
+(
+  const cs_matrix_t  *matrix  /*<! [in]  pointer to matrix structure */
+)
+{
+  bool retval = false;
+
+  switch(matrix->type) {
+
+  case CS_MATRIX_CSR:
+    {
+      auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
+      retval = ms->direct_assembly;
+    }
+    break;
+
+  case CS_MATRIX_MSR:
+    {
+      auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
+      const cs_matrix_struct_csr_t *ms_e = &(ms->e);
+      retval = ms_e->direct_assembly;
+    }
+    break;
+
+  case CS_MATRIX_DIST:
+    {
+      auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
+      const cs_matrix_struct_csr_t *ms_e = &(ms->e);
+      const cs_matrix_struct_csr_t *ms_h = &(ms->h);
+      if (ms_e->direct_assembly && ms_h->direct_assembly)
+        retval = true;
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set matrix coefficients defined relative to a "native" edge graph,
  * sharing arrays with the caller when possible.
  *
@@ -6966,6 +7041,49 @@ cs_matrix_build_msr_e_g_ids(const cs_matrix_t  *matrix,
       g_col_id[i] = r_g_id[col_id[i]];
     }
   });
+
+  ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build local row ids for extra-diagonal MSR entries.
+ *
+ * The d[id] = id array of diagonal ids may also be built as an option.
+ *
+ * \param[in]   matrix   pointer to matrix structure
+ * \param[out]  row_id   local row ids for extra-diagonal entries
+ * \param[out]  diag_id  local id for diagonal entries, or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_build_msr_e_row_ids(const cs_matrix_t  *matrix,
+                              cs_lnum_t          *row_id,
+                              cs_lnum_t          *diag_id)
+{
+  const cs_lnum_t *row_index = nullptr;
+
+  cs_matrix_get_msr_arrays(matrix, &row_index, nullptr, nullptr, nullptr);
+
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(matrix);
+
+  cs_dispatch_context ctx;
+
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t row) {
+    for (cs_lnum_t i = row_index[row]; i < row_index[row + 1]; i++) {
+      row_id[i] = row;
+    }
+  });
+
+  if (diag_id != nullptr) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t row) {
+      diag_id[row] = row;
+    });
+  }
 
   ctx.wait();
 }

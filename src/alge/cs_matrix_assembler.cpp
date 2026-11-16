@@ -1916,69 +1916,6 @@ _matrix_assembler_values_diag_idx(cs_matrix_assembler_values_t  *mav)
   }
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add coefficient values based on local row ids and column ids,
- *        using a global addition function.
- *
- * This function may be called by different threads if the caller
- * ensures different threads will not write to the same final parts of
- * the matrix coefficients.
- *
- * \param[in, out]  mav     pointer to matrix assembler values structure
- * \param[in]       n       number of values to add
- * \param[in]       stride  matrix block stride
- * \param[in]       row_id  matrix row ids
- * \param[in]       col_id  matrix assembler column ids
- * \param[in]       val     values to add
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_matrix_assembler_values_add_ll_g(cs_matrix_assembler_values_t  *mav,
-                                  cs_lnum_t                      n,
-                                  cs_lnum_t                      stride,
-                                  const cs_lnum_t                row_id[],
-                                  const cs_lnum_t                col_id[],
-                                  const cs_real_t                val[])
-
-{
-  const cs_matrix_assembler_t  *ma = mav->ma;
-
-  cs_gnum_t row_g_id[COEFF_GROUP_SIZE];
-  cs_gnum_t col_g_id[COEFF_GROUP_SIZE];
-
-  for (cs_lnum_t i = 0; i < n; i+= COEFF_GROUP_SIZE) {
-
-    cs_lnum_t b_size = COEFF_GROUP_SIZE;
-    if (i + COEFF_GROUP_SIZE > n)
-      b_size = n - i;
-
-    for (cs_lnum_t j = 0; j < b_size; j++) {
-
-      cs_lnum_t k = i+j;
-
-      row_g_id[j] = row_id[k] + ma->l_range[0];
-
-      cs_lnum_t l_c_id = col_id[k];
-      if (l_c_id < ma->n_rows)
-        col_g_id[j] = row_id[i+j] + ma->l_range[0];
-      else
-        col_g_id[j] = ma->e_g_id[l_c_id - ma->n_rows];
-
-    }
-
-    mav->add_values_g(mav->matrix,
-                      0,
-                      b_size,
-                      stride,
-                      row_g_id,
-                      col_g_id,
-                      val + (i*stride));
-
-  }
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2799,6 +2736,29 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav)
 }
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Indicate if a matrix assembler values structure has a local
+ *        implementation function for \ref cs_matrix_assembler_values_add.
+ *
+ * If this function is not implemented, only
+ * \ref cs_matrix_assembler_values_add_g may be used.
+ *
+ * \return  true if \ref cs_matrix_assembler_values_add is implemented,
+ *          false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_matrix_assembler_implements_values_add
+(
+  const cs_matrix_assembler_values_t  *mav /*!< [in] matrix assembler
+                                             values structure */
+)
+{
+  return (mav->add_values != nullptr);
+}
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Add values to a matrix assembler values structure using local
  *        row and column ids.
@@ -2863,14 +2823,12 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
 
   else { /* use a global id-based function */
 
-    assert(mav->add_values_g != nullptr);
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: missing 'add_values' function for matrix assembler.\n"
+                "Use 'add_values_g' function in this case.\n"
+                "Check with 'cs_matrix_assembler_implements_values_add'."),
+              __func__);
 
-    _matrix_assembler_values_add_ll_g(mav,
-                                      n,
-                                      stride,
-                                      row_id,
-                                      col_id,
-                                      val);
   }
 }
 

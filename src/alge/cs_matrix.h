@@ -667,6 +667,21 @@ cs_matrix_get_fill_type(bool       symmetric,
                         cs_lnum_t  diag_block_size,
                         cs_lnum_t  extra_diag_block_size);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Indicate if matrix structure allows direct assembly.
+ *
+ * \return  true if the matrix is guaranteed not to have multiple entries
+ *          for any given row and column.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_matrix_has_direct_assembly
+(
+  const cs_matrix_t  *matrix  /*<! [in]  pointer to matrix structure */
+);
+
 /*----------------------------------------------------------------------------
  * Set matrix coefficients defined relative to a "native" edge graph,
  * sharing arrays with the caller when possible.
@@ -1072,6 +1087,23 @@ cs_matrix_build_msr_e_g_ids(const cs_matrix_t  *matrix,
                             const cs_gnum_t    *r_g_id,
                             cs_gnum_t          *g_row_id,
                             cs_gnum_t          *g_col_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build local row ids for extra-diagonal MSR entries.
+ *
+ * The d[id] = id array of diagonal ids may also be built as an option.
+ *
+ * \param[in]   matrix   pointer to matrix structure
+ * \param[out]  row_id   local row ids for extra-diagonal entries
+ * \param[out]  diag_id  local id for diagonal entries, or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_build_msr_e_row_ids(const cs_matrix_t  *matrix,
+                              cs_lnum_t          *row_id,
+                              cs_lnum_t          *diag_id);
 
 /*----------------------------------------------------------------------------*/
 /*

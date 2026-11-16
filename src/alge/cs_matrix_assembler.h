@@ -619,6 +619,26 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav);
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief Indicate if a matrix assembler values structure has a local
+ *        implementation function for \ref cs_matrix_assembler_values_add.
+ *
+ * If this function is not implemented, only
+ * \ref cs_matrix_assembler_values_add_g may be used.
+ *
+ * \return  true if \ref cs_matrix_assembler_values_add is implemented,
+ *          false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_matrix_assembler_implements_values_add
+(
+  const cs_matrix_assembler_values_t  *mav /*!< [in] matrix assembler
+                                             values structure */
+);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Add values to a matrix assembler values structure using local
  *        row and column ids.
  *
