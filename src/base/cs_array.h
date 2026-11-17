@@ -537,6 +537,44 @@ cs_array_copy(const cs_lnum_t  size,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Copy values from an array to another of the same dimensions.
+ *
+ * Template parmeters.
+ *                 T       type name
+ *
+ * \param[in]   size    number of elements * dimension
+ * \param[in]   src     source array values
+ * \param[out]  dest    destination array values
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_array_copy(cs_dispatch_context  &ctx,
+              const cs_lnum_t       size,
+              const T*              src,
+              T*                    dest)
+{
+#if defined (__CUDACC__) || defined (__HIPCC__)
+  if (ctx.use_gpu()) {
+    cs_stream_t stream_ = ctx.stream();
+    cs_array_copy<T>(stream_, true, size, src, dest);
+    return;
+  }
+#endif
+
+# ifdef _OPENMP
+  int n_threads = ctx.n_cpu_threads();
+  if (n_threads < 0)
+    n_threads = cs_parall_n_threads(size, CS_THR_MIN);
+# pragma omp parallel for  num_threads(n_threads)
+# endif
+  for (cs_lnum_t ii = 0; ii < size; ii++)
+    dest[ii] = src[ii];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the difference diff = x - y. All arrays have the same
  * dimension.
  *

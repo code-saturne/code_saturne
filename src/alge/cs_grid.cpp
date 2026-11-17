@@ -9458,6 +9458,7 @@ _build_coarse_matrix_null(cs_grid_t         *c,
  * Compute fine row integer values from coarse row values
  *
  * parameters:
+ *   ctx     <-> Reference to dispatch context
  *   c       <-- Fine grid structure
  *   f       <-- Fine grid structure
  *   c_num   --> Variable (rank) defined on coarse grid rows
@@ -9465,10 +9466,11 @@ _build_coarse_matrix_null(cs_grid_t         *c,
  *----------------------------------------------------------------------------*/
 
 static void
-_prolong_row_int(const cs_grid_t  *c,
-                 const cs_grid_t  *f,
-                 int              *c_num,
-                 int              *f_num)
+_prolong_row_int(cs_dispatch_context  &ctx,
+                 const cs_grid_t      *c,
+                 const cs_grid_t      *f,
+                 int                  *c_num,
+                 int                  *f_num)
 {
   const cs_lnum_t *coarse_row;
   const int *_c_num = c_num;
@@ -9490,14 +9492,13 @@ _prolong_row_int(const cs_grid_t  *c,
 
   coarse_row = c->coarse_row;
 
-# pragma omp parallel for if(f_n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+  ctx.parallel_for(f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     cs_lnum_t i = coarse_row[ii];
     if (i >= 0)
       f_num[ii] = _c_num[i];
     else
       f_num[ii] = -1;
-  }
+  });
 }
 
 /*============================================================================
@@ -10836,10 +10837,8 @@ cs_grid_project_row_num(const cs_grid_t  *g,
                         int               max_num,
                         int               c_row_num[])
 {
-  cs_lnum_t ii = 0;
   cs_gnum_t base_shift = 1;
   cs_gnum_t _max_num = max_num;
-  cs_lnum_t n_max_rows = 0;
   int *tmp_num_1 = nullptr, *tmp_num_2 = nullptr;
   const cs_grid_t *_g = g;
 
@@ -10848,13 +10847,21 @@ cs_grid_project_row_num(const cs_grid_t  *g,
 
   /* Initialize array */
 
-  n_max_rows = g->n_rows;
+  cs_lnum_t n_max_rows = g->n_rows;
   for (_g = g; _g != nullptr; _g = _g->parent) {
     if (_g->n_rows > n_max_rows)
       n_max_rows = _g->n_rows;
   }
 
-  CS_MALLOC(tmp_num_1, n_max_rows, int);
+  cs_alloc_mode_t amode = cs_check_device_ptr(c_row_num);
+  if (amode == CS_ALLOC_DEVICE)
+    amode = CS_ALLOC_HOST_DEVICE_SHARED;
+
+  cs_dispatch_context ctx;
+  if (amode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
+  CS_MALLOC_HD(tmp_num_1, n_max_rows, int, amode);
 
   /* Compute local base starting row number in parallel mode */
 
@@ -10868,16 +10875,20 @@ cs_grid_project_row_num(const cs_grid_t  *g,
   }
 #endif
 
-  for (ii = 0; ii < g->n_rows; ii++)
+  ctx.parallel_for(g->n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     tmp_num_1[ii] = (cs_gnum_t)(ii + base_shift) % _max_num;
+  });
 
   if (g->level > 0) {
 
     /* Allocate temporary arrays */
 
-    CS_MALLOC(tmp_num_2, n_max_rows, int);
-    for (cs_lnum_t i = 0; i < n_max_rows; i++)
-      tmp_num_2[i] = -1;        /* singleton */
+    CS_MALLOC_HD(tmp_num_2, n_max_rows, int, amode);
+    cs_arrays_set_value<int, 1>(ctx,
+                                n_max_rows,
+                                -1, /* singleton */
+                                tmp_num_2);
+    ctx.wait();
 
     for (_g = g; _g->level > 0; _g = _g->parent) {
 
@@ -10888,26 +10899,28 @@ cs_grid_project_row_num(const cs_grid_t  *g,
         cs_grid_rank_merge_scatter_row_data(_g, CS_LNUM_TYPE, 1, tmp_num_1);
 #endif /* defined(HAVE_MPI) */
 
-      for (ii = 0; ii < n_parent_rows; ii++) {
-        cs_lnum_t ic = _g->coarse_row[ii];
+      const cs_lnum_t *coarse_row = _g->coarse_row;
+      ctx.parallel_for(n_parent_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        cs_lnum_t ic = coarse_row[ii];
         if (ic >= 0)
           tmp_num_2[ii] = tmp_num_1[ic];
-      }
+      });
 
-      for (ii = 0; ii < n_parent_rows; ii++)
-        tmp_num_1[ii] = tmp_num_2[ii];
+      cs_array_copy(ctx, n_parent_rows, tmp_num_2, tmp_num_1);
 
     }
 
     assert(_g->level == 0);
     assert(_g->n_rows == n_base_rows);
+    ctx.wait();
 
     /* Free temporary arrays */
 
     CS_FREE(tmp_num_2);
   }
 
-  memcpy(c_row_num, tmp_num_1, n_base_rows*sizeof(int));
+  cs_array_copy(n_base_rows, tmp_num_1, c_row_num);
+  ctx.wait();
 
   CS_FREE(tmp_num_1);
 }
@@ -10926,24 +10939,28 @@ cs_grid_project_row_rank(const cs_grid_t  *g,
                          cs_lnum_t         n_base_rows,
                          int               f_row_rank[])
 {
-  cs_lnum_t ii;
-  cs_lnum_t n_max_rows = 0;
   int *tmp_rank_1 = nullptr, *tmp_rank_2 = nullptr;
   const cs_grid_t *_g = g;
 
   assert(g != nullptr);
   assert(f_row_rank != nullptr || g->n_rows == 0);
 
-  n_max_rows = g->n_rows;
+  cs_lnum_t n_max_rows = g->n_rows;
   for (_g = g; _g != nullptr; _g = _g->parent) {
     if (_g->n_rows > n_max_rows)
       n_max_rows = _g->n_rows;
   }
 
-  CS_MALLOC(tmp_rank_1, n_max_rows, int);
+  cs_alloc_mode_t amode = cs_check_device_ptr(f_row_rank);
+  if (amode == CS_ALLOC_DEVICE)
+    amode = CS_ALLOC_HOST_DEVICE_SHARED;
 
-  for (ii = 0; ii < g->n_rows; ii++)
-    tmp_rank_1[ii] = cs_glob_rank_id;
+  cs_dispatch_context ctx;
+  if (amode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
+  CS_MALLOC_HD(tmp_rank_1, n_max_rows, int, amode);
+  cs_arrays_set_value<int, 1>(ctx, g->n_rows, cs_glob_rank_id, tmp_rank_1);
 
   /* Project to finer levels */
 
@@ -10951,31 +10968,31 @@ cs_grid_project_row_rank(const cs_grid_t  *g,
 
     /* Allocate temporary arrays */
 
-    CS_MALLOC(tmp_rank_2, n_max_rows, int);
+    CS_MALLOC_HD(tmp_rank_2, n_max_rows, int, amode);
 
     for (_g = g; _g->level > 0; _g = _g->parent) {
 
-      cs_lnum_t n_parent_rows = _g->parent->n_rows;
-
-      _prolong_row_int(_g,
+      _prolong_row_int(ctx,
+                       _g,
                        _g->parent,
                        tmp_rank_1,
                        tmp_rank_2);
 
-      for (ii = 0; ii < n_parent_rows; ii++)
-        tmp_rank_1[ii] = tmp_rank_2[ii];
+      cs_array_copy(ctx, _g->parent->n_rows, tmp_rank_2, tmp_rank_1);
 
     }
 
     assert(_g->level == 0);
     assert(_g->n_rows == n_base_rows);
+    ctx.wait();
 
     /* Free temporary arrays */
 
     CS_FREE(tmp_rank_2);
   }
 
-  memcpy(f_row_rank, tmp_rank_1, n_base_rows*sizeof(int));
+  cs_array_copy(ctx, n_base_rows, tmp_rank_1, f_row_rank);
+  ctx.wait();
 
   CS_FREE(tmp_rank_1);
 }
@@ -10996,9 +11013,6 @@ cs_grid_project_var(const cs_grid_t  *g,
                     const cs_real_t   c_var[],
                     cs_real_t         f_var[])
 {
-  cs_lnum_t ii;
-  int i;
-  cs_lnum_t n_max_rows = 0;
   cs_real_t *tmp_var_1 = nullptr, *tmp_var_2 = nullptr;
   const cs_grid_t *_g = g;
 
@@ -11008,32 +11022,32 @@ cs_grid_project_var(const cs_grid_t  *g,
   assert(c_var != nullptr || g->n_rows == 0);
   assert(f_var != nullptr);
 
-  n_max_rows = g->n_rows;
+  cs_lnum_t n_max_rows = g->n_rows;
   for (_g = g; _g != nullptr; _g = _g->parent) {
     if (_g->n_rows > n_max_rows)
       n_max_rows = _g->n_rows;
   }
 
   cs_alloc_mode_t amode = cs_check_device_ptr(f_var);
+  if (amode == CS_ALLOC_DEVICE)
+    amode = CS_ALLOC_HOST_DEVICE_SHARED;
+
+  cs_dispatch_context ctx;
+  if (amode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
   CS_MALLOC_HD(tmp_var_1, n_max_rows*db_size, cs_real_t, amode);
-  memcpy(tmp_var_1, c_var, g->n_rows*db_size*sizeof(cs_real_t));
+  cs_array_copy(ctx, g->n_rows*db_size, c_var, tmp_var_1);
 
   /* Project to finer levels */
 
   if (g->level > 0) {
-
-    cs_dispatch_context ctx;
-    if (amode == CS_ALLOC_HOST)
-      ctx.set_use_gpu(false);
-    ctx.set_use_gpu(false);
 
     /* Allocate temporary arrays */
 
     CS_MALLOC_HD(tmp_var_2, n_max_rows*db_size, cs_real_t, amode);
 
     for (_g = g; _g->level > 0; _g = _g->parent) {
-
-      cs_lnum_t n_parent_rows = _g->parent->n_rows;
 
       cs_grid_prolong_row_var(ctx,
                               _g,
@@ -11042,21 +11056,21 @@ cs_grid_project_var(const cs_grid_t  *g,
                               tmp_var_1,
                               tmp_var_2);
 
-      for (ii = 0; ii < n_parent_rows; ii++)
-        for (i = 0; i < db_size; i++)
-          tmp_var_1[ii*db_size+i] = tmp_var_2[ii*db_size+i];
+      cs_array_copy(ctx, _g->parent->n_rows*db_size, tmp_var_2, tmp_var_1);
 
     }
 
     assert(_g->level == 0);
     assert(_g->n_rows == n_base_rows);
+    ctx.wait();
 
     /* Free temporary arrays */
 
     CS_FREE(tmp_var_2);
   }
 
-  memcpy(f_var, tmp_var_1, n_base_rows*db_size*sizeof(cs_real_t));
+  cs_array_copy(ctx, n_base_rows*db_size, tmp_var_1, f_var);
+  ctx.wait();
 
   CS_FREE(tmp_var_1);
 }
