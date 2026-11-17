@@ -15,16 +15,6 @@ AC_DEFUN([PLE_AC_PYTHON_DEV],[
     AC_MSG_ERROR([User asked for python $PYTHON_VERSION, but it was not found.])
   fi
 
-  # Check for distutils
-  AC_MSG_CHECKING([if distutils is available])
-  ac_distutils_av=`$PYTHON -c "import distutils" 2>&1`
-  if test $? -eq 0; then
-    AC_MSG_RESULT([yes])
-  else
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR(["distutils" package is missing])
-  fi
-
   # Find the python include path
   AC_MSG_CHECKING([for Python *.h path])
   # Get generic include path
