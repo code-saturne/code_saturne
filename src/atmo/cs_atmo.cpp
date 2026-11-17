@@ -4229,7 +4229,7 @@ cs_atmo_read_meteo_profile(int mode)
            "Check the format (integers, real) for the date."));
     }
 
-    if (seconde < 0.0 || quant < 1 || quant > 366)
+    if (seconde < 0.0 || quant < 0 || quant > 366)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("Meteorological profile data"),

@@ -885,7 +885,7 @@ cs_atmo_read_chemistry_profile(int mode)
            "Check format: year, quant, hour, minute, second."));
     }
 
-    if (second < 0.0 || quant < 1 || quant > 366)
+    if (second < 0.0 || quant < 0 || quant > 366)
       cs_parameters_error
         (CS_ABORT_IMMEDIATE,
          _("Error in the chemistry profile file:\n"),
