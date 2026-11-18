@@ -442,7 +442,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         # Thermodynamic pressure
 
-        if self.gas.getUniformVariableThermodynamicalPressure() == 'on':
+        if self.gas.getUniformVariableThermodynamicPressure() == 'on':
             self.checkBoxPther.setChecked(True)
         else:
             self.checkBoxPther.setChecked(False)
@@ -673,7 +673,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             if self.checkPrev == 'ReactiveFlows':
                 self.gas.setGasCombustionModel('off')
                 self.pcoal.setCoalCombustionModel('off')
-                self.gas.setUniformVariableThermodynamicalPressure("off")
+                self.gas.setUniformVariableThermodynamicPressure("off")
 
                 self.comboBoxGasCombustion.hide()
                 self.comboBoxCoalCombustion.hide()
@@ -862,7 +862,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.comboBoxCoalCombustion.show()
             model = self.__stringModelFromCombo('CoalCombustion')
             self.slotCoalCombustion(model)
-            self.gas.setUniformVariableThermodynamicalPressure("off")
+            self.gas.setUniformVariableThermodynamicPressure("off")
             self.checkBoxPther.hide()
 
 
@@ -964,9 +964,9 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         """
 
         if self.checkBoxPther.isChecked():
-            self.gas.setUniformVariableThermodynamicalPressure("on")
+            self.gas.setUniformVariableThermodynamicPressure("on")
         else:
-            self.gas.setUniformVariableThermodynamicalPressure("off")
+            self.gas.setUniformVariableThermodynamicPressure("off")
 
         self.browser.configureTree(self.case)
 

@@ -64,7 +64,7 @@
  *
  *  \brief Thermodynamic of a compressible homogeneous two-phase flow
  *
- *  In order to define the thermodynamical behaviour of the compressible
+ *  In order to define the thermodynamic behaviour of the compressible
  *  homogeneous two-phase flow, an Equation Of States (EOS) has to be specified
  *  for both phases (see the file \ref cs_hgn_phase_thermo.cpp).
  *

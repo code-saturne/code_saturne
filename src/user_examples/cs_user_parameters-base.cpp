@@ -1163,7 +1163,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
     fp->ivivar = 1;
     fp->icp = -1;
 
-    /* Account the thermodynamical pressure variation in time
+    /* Account the thermodynamic pressure variation in time
        (only if cs_glob_velocity_pressure_param->idilat = 3)
 
       By default:

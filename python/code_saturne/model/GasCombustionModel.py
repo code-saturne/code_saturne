@@ -409,25 +409,30 @@ class GasCombustionModel(Variables, Model):
         return self.default
 
     @Variables.noUndo
-    def getUniformVariableThermodynamicalPressure(self):
+    def getUniformVariableThermodynamicPressure(self):
         """
-        Return status of uniform variable thermodynamical pressure
+        Return status of uniform variable thermodynamic pressure
         """
-        node = self.node_gas.xmlInitNode('thermodynamical_pressure', 'status')
-        status = node['status']
-        if not status:
+        node = self.node_gas.xmlGetNode('thermodynamical_pressure', 'status')
+        if node:
+            status = node['status']
+        else:
             status = self._defaultValues()['thermodynamical_pressure']
-            self.setUniformVariableThermodynamicalPressure(status)
         return status
 
     @Variables.undoLocal
-    def setUniformVariableThermodynamicalPressure(self, status):
+    def setUniformVariableThermodynamicPressure(self, status):
         """
-        Put status of uniform variable thermodynamical pressure
+        Put status of uniform variable thermodynamic pressure
         """
         self.isOnOff(status)
-        node = self.node_gas.xmlInitNode('thermodynamical_pressure', 'status')
-        node['status'] = status
+        if status == 'on':
+            node = self.node_gas.xmlInitNode('thermodynamical_pressure', 'status')
+            node['status'] = status
+        else:
+            node = self.node_gas.xmlGetNode('thermodynamical_pressure', 'status')
+            if node:
+                node.xmlRemoveNode()
 
     @Variables.noUndo
     def getSootModel(self):

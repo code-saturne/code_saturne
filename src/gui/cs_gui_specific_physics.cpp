@@ -820,7 +820,7 @@ cs_gui_physical_model_select(void)
 
         cs_combustion_gas_model_t  *cm = cs_glob_combustion_gas_model;
 
-        /* Read uniform variable thermodynamical pressure (ipthrm) */
+        /* Read uniform variable thermodynamic pressure (ipthrm) */
         cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
         cs_gui_node_get_child_status_int(tn, "thermodynamical_pressure",
                                          &(phys_pp->ipthrm));

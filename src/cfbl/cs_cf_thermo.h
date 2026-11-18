@@ -667,7 +667,7 @@ cs_cf_thermo_eps_sup(const cs_real_t  *dens,
 
 /*----------------------------------------------------------------------------
  * This function is a driver allowing to call the appropriate
- * thermodynamical functions depending on the quantities provided by the user.
+ * thermodynamic functions depending on the quantities provided by the user.
  * Hence it is only used during the initialization step and at the boundaries
  * of type supersonic inlet. It is described in the following how to select the
  * quantity to be returned.
