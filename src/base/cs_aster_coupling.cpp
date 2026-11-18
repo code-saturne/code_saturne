@@ -376,7 +376,7 @@ _cs_ast_sync_recv_value(int         rank_id,
             __func__);
 #endif
 
-  if (_verbosity > 0) {
+  if (_verbosity > 1) {
     bft_printf(
       "[ok] receving value %s from code_aster at iteration %d: %14.7e.\n",
       var_name,
@@ -428,7 +428,7 @@ _cs_ast_sync_send_value(int         rank_id,
             __func__);
 #endif
 
-  if (_verbosity > 0) {
+  if (_verbosity > 1) {
     bft_printf("[ok] sending value %s to code_aster at iteration %d: %14.7e.\n",
                var_name,
                iteration,
