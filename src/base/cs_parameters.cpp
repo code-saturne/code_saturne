@@ -52,6 +52,7 @@
 #include "model/cs_fields_rules_manager.h"
 #include "base/cs_field_pointer.h"
 #include "alge/cs_gradient.h"
+#include "alge/cs_gradient_boundary.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
 #include "base/cs_math.h"
@@ -2773,6 +2774,18 @@ cs_space_disc_log_setup(void)
   cs_log_printf(CS_LOG_SETUP,
                 _("      itbrrb:    %s\n"),
                 _(itbrrb_value_str[cs_glob_space_disc->itbrrb]));
+
+  /* Also log related global values not in structure
+     ----------------------------------------------- */
+
+  cs_real_t b_rc_threshold
+    = cs_gradient_boundary_get_reconstruction_threshold();
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                 "    Relative II' threshold for boundary gradient"
+                 " reconstruction\n"
+                 "       %g\n"), b_rc_threshold);
 }
 
 /*----------------------------------------------------------------------------*/

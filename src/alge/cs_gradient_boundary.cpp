@@ -95,8 +95,8 @@
  *  Global variables
  *============================================================================*/
 
-/* reconstruction threshold, squared */
-const cs_real_t _eps_r_2 = 1e-3 * 1e-3;
+/* reconstruction threshold */
+static cs_real_t _reconstruction_threshold = 1e-3;
 
 /*============================================================================
  * Private function definitions
@@ -244,8 +244,10 @@ _gradient_boundary_iprime_lsq_s
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
   const auto *restrict diipb = fvq->diipb;
 
-  const cs_real_t *restrict i_face_surf = (is_porous) ? fvq->i_face_surf : nullptr;
-  const cs_real_t *restrict b_face_surf = (is_porous) ? fvq->b_face_surf : nullptr;
+  const cs_real_t *restrict i_face_surf = (is_porous) ?
+    fvq->i_face_surf : nullptr;
+  const cs_real_t *restrict b_face_surf = (is_porous) ?
+    fvq->b_face_surf : nullptr;
 
   const cs_real_t *bc_coeff_a = bc_coeffs->a;
   const cs_real_t *bc_coeff_b = bc_coeffs->b;
@@ -260,6 +262,8 @@ _gradient_boundary_iprime_lsq_s
     i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
   }
+
+ const cs_real_t eps_r_2 = cs_math_pow2(_reconstruction_threshold);
 
   /* Loop on selected boundary faces */
 
@@ -278,7 +282,7 @@ _gradient_boundary_iprime_lsq_s
     /* No reconstruction needed if I and I' are coincident' */
 
     if (  cs_math_3_square_norm(diipb[f_id])
-        < cs_math_pow2(b_dist[f_id]) * _eps_r_2) {
+        < cs_math_pow2(b_dist[f_id]) * eps_r_2) {
       var_iprime[f_idx] = var[c_id];
       if (var_iprime_flux != nullptr)
         var_iprime_flux[f_idx] = var[c_id];
@@ -755,6 +759,8 @@ _gradient_boundary_iprime_lsq_strided
   cs_cocg_6_t  *restrict cocg_c
     = cs_gradient_get_cell_cocg_lsq(m, halo_type, ctx.use_gpu(), fvq);
 
+ const cs_real_t eps_r_2 = cs_math_pow2(_reconstruction_threshold);
+
   /* Loop on selected boundary faces */
 
   ctx.parallel_for(n_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_idx) {
@@ -774,7 +780,7 @@ _gradient_boundary_iprime_lsq_strided
     /* No reconstruction needed if I and I' are coincident' */
 
     if (  cs_math_3_square_norm(diipb[f_id])
-        < cs_math_pow2(b_dist[f_id]) * _eps_r_2) {
+        < cs_math_pow2(b_dist[f_id]) * eps_r_2) {
 
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
         var_iprime[f_idx][ii] = var[c_id][ii];
@@ -1191,6 +1197,43 @@ _gradient_boundary_iprime_lsq_strided
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the threshold under which boundary gradient is not used.
+ *
+ * When I and I' are coincident, no reconstruction is needed. This function
+ * sets a relative distance under which they are considered coincident.
+ *
+ * \return relative distance under which I and I' are considered coincident
+ *         and no reconstruction occurs
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_gradient_boundary_get_reconstruction_threshold()
+{
+  return _reconstruction_threshold;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the threshold under which boundary gradient is not used.
+ *
+ * When I and I' are coincident, no reconstruction is needed. This function
+ * sets a relative distance under which they are considered coincident.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_boundary_set_reconstruction_threshold
+(
+  cs_real_t  threshold  /*!< relative distance under which I and I' are
+                          considered coincident and no reconstruction occurs */
+)
+{
+  _reconstruction_threshold = threshold;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

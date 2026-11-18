@@ -56,6 +56,37 @@
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief  Get the threshold under which boundary gradient is not used.
+ *
+ * When I and I' are coincident, no reconstruction is needed. This function
+ * sets a relative distance under which they are considered coincident.
+ *
+ * \return relative distance under which I and I' are considered coincident
+ *         and no reconstruction occurs
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_gradient_boundary_get_reconstruction_threshold();
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Set the threshold under which boundary gradient is not used.
+ *
+ * When I and I' are coincident, no reconstruction is needed. This function
+ * sets a relative distance under which they are considered coincident.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_boundary_set_reconstruction_threshold
+(
+  cs_real_t  threshold  /*!< relative distance under which I and I' are
+                          considered coincident and no reconstruction occurs */
+);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief  Compute the values of a scalar at boundary face I' positions
  *         using least-squares interpolation.
  *
