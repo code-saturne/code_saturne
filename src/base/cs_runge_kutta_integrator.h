@@ -1,5 +1,5 @@
-#ifndef RK_INTEGRATOR_H
-#define RK_INTEGRATOR_H
+#ifndef CS_RK_INTEGRATOR_H
+#define CS_RK_INTEGRATOR_H
 
 /*============================================================================
  * Explicit Runge-Kutta integrator utilities.
@@ -865,4 +865,4 @@ cs_runge_kutta_integrators_destroy();
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __RK_INTEGRATOR_H */
+#endif /* CS_RK_INTEGRATOR_H */
