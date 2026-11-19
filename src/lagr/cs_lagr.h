@@ -1531,5 +1531,47 @@ cs_lagr_solve_time_step(const int         itypfb[],
                         const cs_real_t  *dt);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Integrate mass and temperature of the humid air bulk droplets.
+ *
+ * With the Lagrangian cloud microphysics, the plume condensate belongs to
+ * the humid air bulk: its water is part of the transported total water, so
+ * its condensation is an internal transfer and must be integrated together
+ * with the Eulerian microphysics, at the point where the liquid water
+ * content is built, rather than during the Lagrangian tracking. The cooling
+ * tower rain is a separate phase and stays on the tracking path.
+ *
+ * Integrates at most once per time step, the Eulerian physical properties
+ * being possibly updated several times.
+ *
+ * \param[in]  dt  time step
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_droplet_bulk_microphysics(const cs_real_t  dt);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Liquid water carried by the Lagrangian droplets, per unit volume.
+ *
+ * Computes, for every cell,
+ * \f[ \frac{1}{V_c} \sum_{p \in c} w_p m_p \f]
+ * in kg/m^3, the instantaneous liquid water concentration of the droplet
+ * population. Dividing by the humid air density gives the liquid water mass
+ * fraction \f$ q_l^{Lag} \f$ of the cell.
+ *
+ * This is deliberately a direct sum over the particle set rather than the
+ * "particle_volume_fraction" statistic, which may be a time average: the
+ * thermodynamic coupling needs the instantaneous value.
+ *
+ * \param[out]  m_l  liquid water concentration, size n_cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_droplet_liquid_concentration(cs_real_t  m_l[]);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_LAGR_H */

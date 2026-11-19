@@ -61,6 +61,7 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "turb/cs_turbulence_model.h"
 
+#include "atmo/cs_atmo.h"
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_particle.h"
 
@@ -388,7 +389,20 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
   /* Mass source terms
      ================= */
 
+  /* A droplet of the humid air bulk carries water that is already part of
+     the transported total water, so its condensation is an internal
+     transfer and must not appear as a mass source term on the carrier
+     phase; counting it here would remove the same water twice. Only the
+     cooling tower rain, which is a separate phase, exchanges mass. */
+
+  const bool is_bulk_droplet
+    = (   cs_glob_atmo_option->lagrangian_microphysics == 1
+       && cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR
+       && (  p_set.attr_real(p_id, CS_LAGR_DIAMETER)
+           <= cs_glob_atmo_option->bulk_droplet_d_max));
+
   if (    lag_st->has_twoway_mass == 1
+      && !is_bulk_droplet
       && (   cs_glob_lagr_specific_physics->solve_mass == 1
           || cs_glob_lagr_specific_physics->solve_diameter == 1
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
@@ -396,7 +410,7 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
       t_st_p[c_id] += - p_stat_w * (p_mass - prev_p_mass) / dtp * dvol * rel_dt;
   }
 
-  if (t_st_evap != nullptr) {
+  if (t_st_evap != nullptr && !is_bulk_droplet) {
       t_st_evap[c_id] += - p_stat_w * (p_mass - prev_p_mass) / dtp * dvol * rel_dt;
   }
 

@@ -71,6 +71,7 @@
 #include "base/cs_thermal_model.h"
 #include "turb/cs_turbulence_model.h"
 #include "pprt/cs_physical_model.h"
+#include "atmo/cs_atmo.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
 #include "base/cs_post_default.h"
@@ -1119,16 +1120,59 @@ cs_lagr_add_fields(void)
     f->set_key_int(k_log, 1);
   }
 
-  /* Add field used for injection of particle with Lagrangian module */
-  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
-    f = cs_field_create("lagr_injection_profile",
-                        CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
-                        CS_MESH_LOCATION_CELLS,
-                        1,
-                        false);
+  /* Fields used to inject the plume condensate from the aerosol activation.
+     They are filled by cs_atmo_aerosol_nuclea and used as spatial profiles
+     for the Lagrangian volume injection, so they are only meaningful when
+     the cooling tower droplet model runs inside the humid atmosphere with
+     an activation model. They used to be declared by hand as user
+     properties in the setup; created here so that activating the model is
+     enough. */
 
-    f->set_key_int(k_log, 1);
-    f->set_key_int(k_vis, 0);
+  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR
+      && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID
+      && cs_glob_atmo_option->nucleation_model != CS_ATMO_NUCLEATION_NONE) {
+
+    /* Number of newly activated droplets, all modes together */
+
+    if (cs_field_by_name_try("lagr_injection_profile") == nullptr) {
+      f = cs_field_create("lagr_injection_profile",
+                          CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                          CS_MESH_LOCATION_CELLS,
+                          1,
+                          false);
+
+      f->set_key_int(k_log, 1);
+      f->set_key_int(k_vis, 0);
+    }
+
+    /* Mass of activated aerosol of each log-normal mode, one field per
+       mode. Only the Abdul-Razzak parameterization resolves the modes. */
+
+    if (cs_glob_atmo_option->nucleation_model == CS_ATMO_NUCLEATION_ABDUL_RAZZAK) {
+
+      const int n_modes = cs_glob_atmo_option->n_aerosol_modes;
+
+      for (int mode_id = 1; mode_id <= n_modes; mode_id++) {
+
+        char f_name[64];
+        snprintf(f_name, 63, "lagr_injection_profile_%1d", mode_id);
+        f_name[63] = '\0';
+
+        if (cs_field_by_name_try(f_name) != nullptr)
+          continue;
+
+        f = cs_field_create(f_name,
+                            CS_FIELD_EXTENSIVE | CS_FIELD_PROPERTY,
+                            CS_MESH_LOCATION_CELLS,
+                            1,
+                            false);
+
+        f->set_key_int(k_log, 1);
+        f->set_key_int(k_vis, 0);
+      }
+
+    }
+
   }
 }
 
@@ -2465,8 +2509,15 @@ cs_lagr_solve_time_step(const int         itypfb[],
       cs_lagr_resuspension_init_deposited();
 
 
+    /* Open the per-cell water vapour budget shared by the cooling tower
+       droplets, so that condensation over the time step cannot draw more
+       water than each cell actually holds as vapour. */
+    cs_lagr_sde_model_vapour_budget_init();
+
     cs_lnum_t particle_range[2] = {0, p_set.n_particles};
     cs_lagr_integ_track_particles(vislen, particle_range, true);
+
+    cs_lagr_sde_model_vapour_budget_finalize();
 
     if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
       cs_lagr_coupling_finalize();

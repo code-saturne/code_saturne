@@ -83,6 +83,38 @@ typedef enum {
 } cs_atmo_universal_functions_t;
 
 /*----------------------------------------------------------------------------
+ * Cloud droplet nucleation (activation) model
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  /*! No nucleation */
+  CS_ATMO_NUCLEATION_NONE = 0,
+  /*! Pruppacher and Klett 1997 */
+  CS_ATMO_NUCLEATION_PRUPPACHER_KLETT = 1,
+  /*! Cohard and Pinty 1998, 1999 */
+  CS_ATMO_NUCLEATION_COHARD_PINTY = 2,
+  /*! Abdul-Razzak et al. 1998, 2000 */
+  CS_ATMO_NUCLEATION_ABDUL_RAZZAK = 3,
+
+} cs_atmo_nucleation_model_t;
+
+/*----------------------------------------------------------------------------
+ * Aerosol background for the Cohard and Pinty activation spectrum
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  /*! Continental air parcel, the general case of Cohard and Pinty (1998) */
+  CS_ATMO_CP_AEROSOL_CONTINENTAL = 0,
+  /*! Maritime air parcel */
+  CS_ATMO_CP_AEROSOL_MARITIME = 1,
+  /*! Polluted air, Hudson and Li (1995) */
+  CS_ATMO_CP_AEROSOL_POLLUTED = 2,
+
+} cs_atmo_cp_aerosol_t;
+
+/*----------------------------------------------------------------------------
  * Atmospheric ground model
  *----------------------------------------------------------------------------*/
 
@@ -229,16 +261,25 @@ struct cs_atmo_option_t {
   int sedimentation_model{0};
   /*! Deposition flag */
   int deposition_model{0};
-  /*!
-   * Option for nucleation
-   *  0: without nucleation
-   *  1: Pruppacher and Klett 1997
-   *  2: Cohard et al. 1998,1999
-   *  3: Abdul-Razzak et al. 1998,2000
-   *  logaritmic standard deviation of the log-normal law of the
-   *  droplet spectrum
+  /*! Cloud droplet nucleation (activation) model */
+  cs_atmo_nucleation_model_t
+    nucleation_model{CS_ATMO_NUCLEATION_NONE};
+  /*! Constants of the Cohard and Pinty (1998) activation spectrum
+   *
+   *  \f[ N = C\,S^k\,F(\mu, k/2, k/2+1, -\beta S^2) \f]
+   *
+   *  They describe the aerosol background and are therefore
+   *  case-dependent. Default is the continental air parcel; use
+   *  \ref cs_atmo_set_cohard_pinty_aerosol to select another background,
+   *  or set the four values directly.
    */
-  int nucleation_model{0};
+  cs_real_t nucleation_cp_c{3270.};
+  /*! Exponent k of the Cohard and Pinty activation spectrum */
+  cs_real_t nucleation_cp_k{1.56};
+  /*! Exponent mu of the Cohard and Pinty activation spectrum */
+  cs_real_t nucleation_cp_mu{0.7};
+  /*! Coefficient beta of the Cohard and Pinty activation spectrum */
+  cs_real_t nucleation_cp_beta{136.};
   /*!  Option for subgrid models
    *   0: the simplest parameterization (for numerical verifications)
    *   1: Bechtold et al. 1995 (Luc Musson-Genon)
@@ -252,6 +293,52 @@ struct cs_atmo_option_t {
    *  2: Gaussian distribution
    */
   int distribution_model{1};
+  /*! Lagrangian cloud microphysics.
+   *  - 0: off, the liquid water content is diagnosed from the Eulerian
+   *       thermodynamic state by the saturation adjustment (default,
+   *       unchanged behaviour)
+   *  - 1: on, the liquid water content is reconstructed from the Lagrangian
+   *       droplet population, q_l = sum_p w_p m_p / (rho V), and feeds the
+   *       real temperature and the humid air density. The saturation
+   *       adjustment no longer transfers mass, so supersaturation can live
+   *       and drive the activation; condensation then goes exclusively
+   *       through the droplet mass transfer.
+   *  Requires the Lagrangian cooling tower droplet model
+   *  (CS_LAGR_PHYS_CTWR) together with the humid atmosphere model.
+   */
+  int lagrangian_microphysics{0};
+  /*! Largest droplet diameter, in m, for a Lagrangian droplet to be counted
+   *  as part of the humid air bulk.
+   *
+   *  The cooling tower rain (large drops released by the packing) and the
+   *  plume condensate (small droplets nucleated on the aerosols) are not
+   *  the same phase. The condensate is small enough to follow the humid
+   *  air, so its water belongs to the bulk: its mass is part of the
+   *  transported total water "ym_water" and its condensation is an internal
+   *  transfer, with no mass source term on the carrier phase. The rain is a
+   *  separate phase, outside "ym_water", and keeps exchanging mass with the
+   *  humid air through the usual two-way coupling source terms.
+   *
+   *  Only used when lagrangian_microphysics = 1.
+   */
+  cs_real_t bulk_droplet_d_max{1.e-4};
+  /*! Number of log-normal modes describing the dry aerosol population fed
+   *  to the activation parameterization.
+   *
+   *  Each mode is injected as its own Lagrangian class, with its own number
+   *  of parcels and its own statistical weight w_i = N_i V / n_i, so that
+   *  the droplet number of the mode is represented exactly whatever the
+   *  number of parcels. Only the convergence of the liquid mass depends on
+   *  that number, and the modes cannot share a single global parcel count:
+   *  their mass weighting reverses along the plume, the coarse mode
+   *  carrying almost all the condensate at activation while the d^2 growth
+   *  law brings every droplet to the same size further downstream, where
+   *  the mass follows the number instead.
+   *
+   *  The Abdul-Razzak parameterization is currently implemented for three
+   *  modes only.
+   */
+  int n_aerosol_modes{3};
   /*! Use meteo profile:
    *  - 0: not use
    *  - 1: use a meteo file
@@ -770,6 +857,23 @@ cs_atmo_compute_solar_angles(cs_real_t  latitude,
 
 void
 cs_atmo_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the Cohard and Pinty (1998) activation spectrum constants from
+ *        a standard aerosol background.
+ *
+ * The four constants C, k, mu and beta of
+ * \f$ N = C\,S^k\,F(\mu, k/2, k/2+1, -\beta S^2) \f$ describe the aerosol
+ * population and are case-dependent. This sets them to published values;
+ * they may also be assigned individually in cs_glob_atmo_option.
+ *
+ * \param[in]  aerosol  aerosol background
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_set_cohard_pinty_aerosol(cs_atmo_cp_aerosol_t  aerosol);
 
 /*----------------------------------------------------------------------------*/
 /*!

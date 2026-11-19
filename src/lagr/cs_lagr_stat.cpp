@@ -508,7 +508,7 @@ _vol_fraction(const void                 *input,
       cs_real_t diam = p_set.attr_real(p_id, CS_LAGR_DIAMETER);
 
       /* Increment statistic in the ending cell when a single subiter is made
-       * and the starting cell when a cell-wie-integration is considered */
+       * and the starting cell when a cell-wise-integration is considered */
       cs_lnum_t cell_id;
       if (cs_glob_lagr_time_scheme->cell_wise_integ == 0)
         cell_id = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
@@ -521,8 +521,10 @@ _vol_fraction(const void                 *input,
         continue;
 
       cs_real_t vol = cs_glob_mesh_quantities->cell_vol[cell_id];
+      cs_real_t dvol = (vol > 0.) ? 1. / vol : 0.;
 
-      vals[cell_id] += diam*diam*diam * cs_math_pi / 6.0 * p_weight / vol;
+      vals[cell_id] += diam*diam*diam * cs_math_pi / 6.0 * p_weight * dvol;
+      assert(!isnan(vals[cell_id]));
     }
 
   }
@@ -551,8 +553,11 @@ _vol_fraction(const void                 *input,
           continue;
 
         cs_real_t vol = cs_glob_mesh_quantities->cell_vol[cell_id];
+        cs_real_t dvol = (vol > 0.) ? 1. / vol : 0.;
 
-        vals[cell_id] += diam*diam*diam * cs_math_pi / 6.0 * p_weight / vol;
+        vals[cell_id] += diam*diam*diam * cs_math_pi / 6.0 * p_weight * dvol;
+
+        assert(!isnan(vals[cell_id]));
       }
     }
 
@@ -2810,6 +2815,9 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
         double m_n = m[j] + r;
         val[j] = (val[j]*wa_sum[k] + (w[k]*delta*(x[j]-m_n))) / wa_sum_n;
         m[j] += r;
+        assert(!isnan(val[j]));
+        assert(!isnan(m[j]));
+
       }
     }
 
@@ -2822,6 +2830,8 @@ _cs_lagr_stat_update_mesh_moment(cs_lagr_moment_t           *mt,
       const cs_lnum_t k = (j*wa_stride) / mt->dim;
       double wa_sum_n = cs::max(w[k] + wa_sum[k], 1e-100);
       val[j] += (x[j] - val[j]) * (w[k] / wa_sum_n);
+
+      assert(!isnan(val[j]));
     }
 
   }
@@ -3001,8 +3011,10 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t &p_set,
                 CS_MALLOC(pval, mt->data_dim, cs_real_t);
                 mt->p_data_func(mt->data_input, particle, p_set.p_am, pval);
               }
-              else
+              else {
                 pval = p_set.attr_real_ptr(p_id, attr_id);
+                assert(!isnan(pval[0]));
+              }
 
               /* update weight sum with new particle weight */
               new_wa_sum = prev_wa_sum + p_weight;
@@ -3083,6 +3095,8 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t &p_set,
 
                     mean_val[cell_id * dim + l] += r;
 
+                    assert(!isnan(mean_val[cell_id * dim + l]));
+
                     /* Indicates that tower order statistics have been computed*/
                     mt_mean->nt_cur = ts->nt_cur + 1;
 
@@ -3096,10 +3110,12 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t &p_set,
 
                 const cs_lnum_t dim = mt->dim;
 
-                for (cs_lnum_t l = 0; l < dim; l++)
+                for (cs_lnum_t l = 0; l < dim; l++) {
                   val[cell_id*dim+l] += p_weight / wa_sum_n
                     * (pval[dim * carrier_phase + l] - val[cell_id*dim+l]);
 
+                    assert(!isnan(val[cell_id * dim + l]));
+                }
               } /* End of test if moment is a variance or a mean */
 
               if (mt->p_data_func != nullptr)
@@ -3915,7 +3931,7 @@ cs_lagr_stat_event_define(const char                *name,
                               nullptr,         /* m_data_func */
                               data_input,
                               nullptr,         /* w_p_data_func */
-                              w_data_func,  /* w_e_data_func */
+                              w_data_func,     /* w_e_data_func */
                               nullptr,         /* w_m_data_func */
                               w_data_input,
                               nt_start,
@@ -4178,11 +4194,11 @@ cs_lagr_stat_time_moment_define(const char                *name,
                              component_id,
                              nullptr,                 /* p_data_func */
                              nullptr,                 /* e_data_func */
-                             data_func,            /* m_data_func */
+                             data_func,               /* m_data_func */
                              data_input,
                              nullptr,                 /* w_p_data_func */
                              nullptr,                 /* w_e_data_func */
-                             _unit_value_m_elts,   /* w_data_func */
+                             _unit_value_m_elts,      /* w_m_data_func */
                              nullptr,                 /* w_data_input */
                              nt_start,
                              t_start,
@@ -4564,7 +4580,7 @@ cs_lagr_stat_initialize(void)
                dim,
                -1,                   /* component_id, */
                _vol_fraction,        /* data_func */
-               nullptr,                 /* data_input */
+               nullptr,              /* data_input */
                0,
                -1,
                restart_mode);

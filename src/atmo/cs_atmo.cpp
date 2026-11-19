@@ -3765,6 +3765,53 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the Cohard and Pinty (1998) activation spectrum constants from
+ *        a standard aerosol background.
+ *
+ * \param[in]  aerosol  aerosol background
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_set_cohard_pinty_aerosol(cs_atmo_cp_aerosol_t  aerosol)
+{
+  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+
+  switch (aerosol) {
+
+  case CS_ATMO_CP_AEROSOL_CONTINENTAL:
+    at_opt->nucleation_cp_c    = 3270.;
+    at_opt->nucleation_cp_k    = 1.56;
+    at_opt->nucleation_cp_mu   = 0.7;
+    at_opt->nucleation_cp_beta = 136.;
+    break;
+
+  case CS_ATMO_CP_AEROSOL_MARITIME:
+    at_opt->nucleation_cp_c    = 1.3e8;
+    at_opt->nucleation_cp_k    = 4.16;
+    at_opt->nucleation_cp_mu   = 2.76;
+    at_opt->nucleation_cp_beta = 1370.;
+    break;
+
+  case CS_ATMO_CP_AEROSOL_POLLUTED:
+    /* Hudson and Li (1995); C = 8700 was used with Cohard and Pinty on
+       the ParisFog case. */
+    at_opt->nucleation_cp_c    = 1865.;
+    at_opt->nucleation_cp_k    = 0.86;
+    at_opt->nucleation_cp_mu   = 1.50;
+    at_opt->nucleation_cp_beta = 6.80;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: unknown aerosol background %d."),
+              __func__, (int)aerosol);
+    break;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Print the atmospheric module options to setup.log.
  */
 /*----------------------------------------------------------------------------*/
@@ -3896,11 +3943,11 @@ cs_atmo_log_setup(void)
       subgrid_model_name = _("Sommeria-Deardorff 1977");
 
     const char *nucl_model_name = _("none");
-    if (at_opt->nucleation_model == 1)
+    if (at_opt->nucleation_model == CS_ATMO_NUCLEATION_PRUPPACHER_KLETT)
       nucl_model_name = _("Pruppacher and Klett 1997");
-    else if (at_opt->nucleation_model == 2)
+    else if (at_opt->nucleation_model == CS_ATMO_NUCLEATION_COHARD_PINTY)
       nucl_model_name = _("Cohard et al. 1998, 1999");
-    else if (at_opt->nucleation_model == 3)
+    else if (at_opt->nucleation_model == CS_ATMO_NUCLEATION_ABDUL_RAZZAK)
       nucl_model_name = _("Abdul-Razzak et al. 1998, 2000");
 
     cs_log_printf(CS_LOG_SETUP,
@@ -3935,6 +3982,36 @@ cs_atmo_log_setup(void)
                     at_opt->evaporation ? _("yes") : _("no"),
                     at_opt->rupture ? _("yes") : _("no"));
     }
+
+    if (at_opt->nucleation_model == CS_ATMO_NUCLEATION_COHARD_PINTY) {
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    Cohard and Pinty activation spectrum:\n"
+                      "      C:                                 %12.5e\n"
+                      "      k:                                 %12.5e\n"
+                      "      mu:                                %12.5e\n"
+                      "      beta:                              %12.5e\n"),
+                    at_opt->nucleation_cp_c,
+                    at_opt->nucleation_cp_k,
+                    at_opt->nucleation_cp_mu,
+                    at_opt->nucleation_cp_beta);
+    }
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    Lagrangian cloud microphysics:       %s\n"),
+                  (at_opt->lagrangian_microphysics == 1) ? _("active")
+                                                         : _("inactive"));
+
+    if (at_opt->lagrangian_microphysics == 1) {
+      cs_log_printf(CS_LOG_SETUP,
+                    _("      Liquid water from:                 "
+                      "Lagrangian droplets\n"
+                      "      Number of aerosol modes:           %d\n"
+                      "      Bulk droplet diameter limit:       "
+                      "%12.5e m\n"),
+                    at_opt->n_aerosol_modes,
+                    at_opt->bulk_droplet_d_max);
+    }
+
     cs_log_printf(CS_LOG_SETUP, "\n");
   }
 

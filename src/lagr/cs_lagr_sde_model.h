@@ -81,6 +81,34 @@ cs_lagr_sde_model(cs_lagr_particle_set_t  &p_set,
                   cs_real_t                *cpgd2,
                   cs_real_t                *cpght);
 #endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Open the per-cell water vapour budget used by the cooling tower
+ *        droplet model.
+ *
+ * Condensation on the droplets of a cell cannot draw more water than the
+ * cell actually holds as vapour. The budget is filled once per Lagrangian
+ * time step and consumed by the droplets as they grow, so that the mass
+ * transfer stays bounded by the available vapour without sub-cycling.
+ *
+ * Does nothing unless the cooling tower droplet model is active.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_sde_model_vapour_budget_init(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Release the per-cell water vapour budget.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_sde_model_vapour_budget_finalize(void);
+
+
 /*----------------------------------------------------------------------------*/
 
 #endif /* CS_LAGR_SDE_MODEL_H */

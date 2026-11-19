@@ -212,7 +212,7 @@ cs_user_model(void)
    *  logarithmic standard deviation of the log-normal law of the droplet
    *  spectrum
    */
-  at_opt->nucleation_model = 3;
+  at_opt->nucleation_model = CS_ATMO_NUCLEATION_ABDUL_RAZZAK;
 
   /* Option for liquid water content distribution models
    *  1: all or nothing

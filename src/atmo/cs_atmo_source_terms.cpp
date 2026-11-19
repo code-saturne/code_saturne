@@ -69,6 +69,7 @@
 #include "pprt/cs_physical_model.h"
 #include "rayt/cs_rad_transfer.h"
 #include "turb/cs_turbulence_model.h"
+#include "lagr/cs_lagr.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1183,17 +1184,64 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
 
   if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_HUMID
       || cs_glob_atmo_option->sedimentation_model != 1
-      || cs_glob_atmo_option->nucleation_model <= 0)
+      || cs_glob_atmo_option->nucleation_model == CS_ATMO_NUCLEATION_NONE)
     return;
 
-  cs_dispatch_context ctx;
+  cs_real_t *lagr_injection_profile = nullptr;
 
-  cs_real_t *nc = f_ntdrp->val;
+  cs_real_t *lagr_injection_profile_1 = nullptr;
+  cs_real_t *lagr_injection_profile_2 = nullptr;
+  cs_real_t *lagr_injection_profile_3 = nullptr;
+  /* Lagrangian injection profiles of the plume condensate, filled from the
+     activated aerosol number of each mode. */
+  if (   cs_glob_lagr_model != nullptr
+      && cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+
+    cs_field_t *f_lagr_in = cs_field_by_name_try("lagr_injection_profile");
+    if (f_lagr_in != nullptr)
+      lagr_injection_profile = f_lagr_in->val;
+
+    cs_field_t *f_lagr_in_1 = cs_field_by_name_try("lagr_injection_profile_1");
+    if (f_lagr_in_1 != nullptr)
+      lagr_injection_profile_1 = f_lagr_in_1->val;
+
+    cs_field_t *f_lagr_in_2 = cs_field_by_name_try("lagr_injection_profile_2");
+    if (f_lagr_in_2 != nullptr)
+      lagr_injection_profile_2 = f_lagr_in_2->val;
+
+    cs_field_t *f_lagr_in_3 = cs_field_by_name_try("lagr_injection_profile_3");
+    if (f_lagr_in_3 != nullptr)
+      lagr_injection_profile_3 = f_lagr_in_3->val;
+  }
+
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_3_t *restrict cell_cen = mq->cell_cen;
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+  if (lagr_injection_profile != nullptr) {
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      lagr_injection_profile[i] = 0.0;
+  }
+  if (lagr_injection_profile_1 != nullptr) {
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      lagr_injection_profile_1[i] = 0.0;
+  }
+
+  if (lagr_injection_profile_2 != nullptr) {
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      lagr_injection_profile_2[i] = 0.0;
+  }
+
+  if (lagr_injection_profile_3 != nullptr) {
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      lagr_injection_profile_3[i] = 0.0;
+  }
+  cs_dispatch_context ctx;
+
+  cs_real_t *nc = f_ntdrp->val;  //number of droplets
+
+  const cs_real_3_t *restrict cell_cen = mq->cell_cen;
+
 
   const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
   const cs_real_t *tempc = cs_field_by_name("real_temperature")->val;
@@ -1230,8 +1278,17 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
   ctx.wait();
   cs_parall_max(1, CS_REAL_TYPE, &_qliqmax);
 
+  /* With the Lagrangian cloud microphysics, the liquid water of a cell is
+     the one carried by the droplets, so requiring liquid water before
+     allowing nucleation would be circular: no droplet means no liquid
+     water, hence no activation, hence no droplet ever. Activation is then
+     driven by the supersaturation alone, as it should be. */
+
+  const bool lagr_microphysics
+    = (cs_glob_atmo_option->lagrangian_microphysics == 1);
+
   //FIXME not coherent with cs_math_epzero used after
-  if (_qliqmax <= 1.e-8)
+  if (_qliqmax <= 1.e-8 && !lagr_microphysics)
     return;
 
   /* Time derivative of ambient reference pressure (dp0/dt) */
@@ -1311,9 +1368,10 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
   cs_real_t constmu = 0;
   cs_real_t constbeta = 0;
   cs_real_t rvap = rair*rvsra;
-  const int modnuc = cs_glob_atmo_option->nucleation_model;
+  const cs_atmo_nucleation_model_t modnuc
+    = cs_glob_atmo_option->nucleation_model;
 
-  if (modnuc == 1) {
+  if (modnuc == CS_ATMO_NUCLEATION_PRUPPACHER_KLETT) {
     /* Constants for the model of Pruppacher and Klett (1997)
      * Case of Buffalo, New-York, Kocmond [1965] */
     constc = 3500.;
@@ -1322,19 +1380,16 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
     /* fbeta : beta function (constk/2, 3/2) */
     fbeta = _beta(constk/2., 1.5);
   }
-  else if (modnuc == 2) {
-    /* Constants for model of Cohard and Pinty (1998)
-     * (general case) */
-    constc    = 3270.;
-    constk    = 1.56;
-    constmu   = 0.7;
-    constbeta = 136.;
+  else if (modnuc == CS_ATMO_NUCLEATION_COHARD_PINTY) {
+    /* Constants of the Cohard and Pinty (1998) activation spectrum.
+       They describe the aerosol background, so they belong to the case
+       and not to the code: see cs_atmo_set_cohard_pinty_aerosol for the
+       continental, maritime and polluted backgrounds. */
+    constc    = cs_glob_atmo_option->nucleation_cp_c;
+    constk    = cs_glob_atmo_option->nucleation_cp_k;
+    constmu   = cs_glob_atmo_option->nucleation_cp_mu;
+    constbeta = cs_glob_atmo_option->nucleation_cp_beta;
 
-    /* Polluted Air Case. See Hudson and Li (1995)
-     * constc    = 1865. ! 8700.d0 if Cohard and Pinty used on PARISFOG
-     * constk    = 0.86
-     * constmu   = 1.50
-     * constbeta = 6.80 */
     fbeta = _beta(constk/2., 1.5);
   }
 
@@ -1343,12 +1398,20 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    if (cpro_liqwt[c_id] <= cs_math_epzero) {
+    /* Without the Lagrangian microphysics, activation is only considered
+       where the saturation adjustment has already produced liquid water.
+       With it, the cell is a candidate as soon as it holds water: whether
+       it is actually supersaturated is decided below, by s_prod. */
+
+    const bool cell_active = (lagr_microphysics) ?
+      true : (cpro_liqwt[c_id] > cs_math_epzero);
+
+    if (!cell_active) {
 
       nc[c_id] = 0.;
 
     }
-    else { /* cpro_liqwt[c_id] > cs_math_epzero */
+    else {
 
       cs_real_t tempk = tempc[c_id] + tkelvi;
       cs_real_t esat = cs_air_pwv_sat(tempc[c_id]);
@@ -1377,7 +1440,7 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
       if (s_prod > cs_math_epzero) {
 
         // 1.1  Model of Pruppacher and Klett (1997)
-        if (modnuc == 1) {
+        if (modnuc == CS_ATMO_NUCLEATION_PRUPPACHER_KLETT) {
           const cs_real_t cons2 = pow(constc, 2./(constk+2.));
           const cs_real_t cons3 = cs::pow3ov2(0.01*s_prod);
           const cs_real_t cons4
@@ -1386,7 +1449,7 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
         }
 
         // 1.2  Modele of Cohard and Pinty (1998)
-        else if (modnuc == 2) {
+        else if (modnuc == CS_ATMO_NUCLEATION_COHARD_PINTY) {
           /* compute max supersaturation: sursat */
           cs_real_t yy = 1.0;
           cs_real_t sursat = 0;
@@ -1421,13 +1484,24 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
 
         /* 1.3  Model of Abdul-Razzak and al. (1998)
          * This model requires a fine knowledge of aerosols chemistry. */
-        else if (modnuc == 3) {
+        else if (modnuc == CS_ATMO_NUCLEATION_ABDUL_RAZZAK) {
 
           /* Warning: this set of constants fits for PARISFOG case.
            * They were determined using fine data on aerosols measured
            * during PARISFOG POI 13 */
           cs_real_t sigaero3 = 1.3;
           cs_real_t sigaero2 = 1.59;
+          /* The expressions below resolve the three modes explicitly.
+             Guard the parameter against a value this implementation
+             cannot honour, rather than silently ignoring the extra or
+             missing modes. */
+          if (cs_glob_atmo_option->n_aerosol_modes != 3)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("%s: the Abdul-Razzak and al. (1998) activation\n"
+                        "parameterization is implemented for 3 aerosol\n"
+                        "modes, but n_aerosol_modes = %d was requested."),
+                      __func__, cs_glob_atmo_option->n_aerosol_modes);
+
           cs_real_t sigaero1 = 1.570;
           cs_real_t ntotal1 = 8700.;
           cs_real_t ntotal2 = 8300.;
@@ -1545,11 +1619,45 @@ cs_atmo_aerosol_nuclea(cs_field_t        *f_ntdrp,
 
           nuc = nuc1 + nuc2 + nuc3;
 
+          /* Mean particle mass for each log-normal aerosol mode [kg]
+           * For a log-normal size distribution with geometric mean radius r_m
+           * and geometric standard deviation sigma:
+           * <r^3> = r_m^3 * exp(4.5 * ln^2(sigma))
+           * m_p = (4/3) * pi * rho_aero * <r^3> */
+          const cs_real_t rho_aero = 1.0 / dencb;
+          const cs_real_t vol_factor = (4.0 / 3.0) * cs_math_pi * rho_aero;
+          const cs_real_t mp1
+            = vol_factor * cs::pow3(rayonm1)
+              * exp(4.5 * cs::pow2(log(sigaero1)));
+          const cs_real_t mp2
+            = vol_factor * cs::pow3(rayonm2)
+              * exp(4.5 * cs::pow2(log(sigaero2)));
+          const cs_real_t mp3
+            = vol_factor * cs::pow3(rayonm3)
+              * exp(4.5 * cs::pow2(log(sigaero3)));
+
+          /* Mass of activated aerosol of each mode, per unit volume.
+             The number concentrations are in cm^-3, hence the 1e6. */
+
+          if (lagr_injection_profile_1 != nullptr)
+            lagr_injection_profile_1[c_id] = nuc1 * mp1 * 1e6;
+
+          if (lagr_injection_profile_2 != nullptr)
+            lagr_injection_profile_2[c_id] = nuc2 * mp2 * 1e6;
+
+          if (lagr_injection_profile_3 != nullptr)
+            lagr_injection_profile_3[c_id] = nuc3 * mp3 * 1e6;
+
         } /* end nucleation model */
 
         /* 2. Compute difference */
         nuc = cs::max(nuc - nc[c_id], 0.0);
         nc[c_id] += nuc;
+
+        if (lagr_injection_profile != nullptr)
+          /* Number of newly activated droplets. Unlike the per-mode
+             profiles above this one carries a number, not a mass. */
+          lagr_injection_profile[c_id] = nuc;
 
       } /* end s_prod > cs_math_epzero */
 

@@ -44,6 +44,7 @@
 
 #include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_atmo.h"
+#include "lagr/cs_lagr.h"
 #include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_atmo_imbrication.h"
 #include "atmo/cs_at_data_assim.h"
@@ -165,6 +166,35 @@ _gaussian(const cs_mesh_t             *m,
   cs_field_gradient_scalar(cs_field("ym_water"), true, 1,
                            dqsd.data<cs_real_3_t>());
 
+  /* Lagrangian cloud microphysics: the liquid water of the cell is the one
+     actually carried by the droplets, not the one the saturation adjustment
+     would condense. It is reconstructed as
+       q_l^Lag = (1 / (rho_c V_c)) sum_{p in c} w_p m_p
+     and then drives the real temperature and the humid air density exactly
+     as the diagnosed value used to, so that the thermodynamic chain
+       {w_p, m_p} -> q_l^Lag -> rho_c
+     is closed. The saturation adjustment no longer moves any mass, hence
+     supersaturation can exist and drive the activation. */
+
+  cs_array<cs_real_t> _m_l_lagr;
+  const cs_real_t *m_l_lagr = nullptr;
+
+  const bool lagr_microphysics
+    = (cs_glob_atmo_option->lagrangian_microphysics == 1);
+
+  if (lagr_microphysics) {
+
+    /* Mass and temperature of the bulk droplets are integrated here, with
+       the Eulerian microphysics, so that the liquid water content built
+       just below is the one of the current time step and not of the
+       previous one. */
+    cs_lagr_droplet_bulk_microphysics(cs_glob_time_step->dt[0]);
+
+    _m_l_lagr.reshape(n_cells);
+    cs_lagr_droplet_liquid_concentration(_m_l_lagr.data());
+    m_l_lagr = _m_l_lagr.data();
+  }
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     // coeff = 2 cmu/c2 * k^3 / eps^2
@@ -205,53 +235,67 @@ _gaussian(const cs_mesh_t             *m,
     else
       pp = cpro_met_p[c_id];
 
-    // thermal scalar: liquid potential temperature
-     const cs_real_t xvart = cvar_vart[c_id];
-     const cs_real_t tliq = xvart*pow(pp/ps, rscp); // liquid temperature
-     const cs_real_t qsl = cs_air_yw_sat(tliq-tkelvi, pp); // saturated vapor content
-     const cs_real_t alpha = (clatev*qsl/(rvap*cs::pow2(tliq)))*pow(pp/ps, rscp);
-     const cs_real_t var_q_tl = a_coeff *
-                                (  cs::pow2(dqsd(c_id, 0) - alpha * dtlsd(c_id, 0))
-                                 + cs::pow2(dqsd(c_id, 1) - alpha * dtlsd(c_id, 1))
-                                 + cs::pow2(dqsd(c_id, 2) - alpha * dtlsd(c_id, 2))  );
+    /* Thermal scalar: liquid potential temperature */
+    const cs_real_t xvart = cvar_vart[c_id];
+    const cs_real_t tliq = xvart*pow(pp/ps, rscp); // liquid temperature
+    const cs_real_t qsl = cs_air_yw_sat(tliq-tkelvi, pp);
+    const cs_real_t alpha = (clatev*qsl/(rvap*cs::pow2(tliq)))*pow(pp/ps, rscp);
+    const cs_real_t var_q_tl
+      = a_coeff * (  cs::pow2(dqsd(c_id, 0) - alpha * dtlsd(c_id, 0))
+                   + cs::pow2(dqsd(c_id, 1) - alpha * dtlsd(c_id, 1))
+                   + cs::pow2(dqsd(c_id, 2) - alpha * dtlsd(c_id, 2))  );
 
-     const cs_real_t sig_flu = fmax(sqrt(var_q_tl), 1e-30);
-     const cs_real_t qwt = cvar_totwt[c_id]; // total water content
-     cs_real_t deltaq = qwt - qsl;
-     const cs_real_t q1 = deltaq/sig_flu;
+    const cs_real_t sig_flu = fmax(sqrt(var_q_tl), 1e-30);
+    const cs_real_t qwt = cvar_totwt[c_id]; // total water content
+    cs_real_t deltaq = qwt - qsl;
+    const cs_real_t q1 = deltaq/sig_flu;
 
-     nebdia[c_id] = 0.5*(1.0 + erf(q1/sqrt(2.0)));
+    nebdia[c_id] = 0.5*(1.0 + erf(q1/sqrt(2.0)));
 
-     // FIXME MF : put in input of the global function...
-     cs_real_t yw_liq
-       =   (sig_flu /(1.0 + qsl*cs::pow2(clatev)/(rvap*cp0*cs::pow2(tliq))))
-         * (nebdia[c_id]*q1 + exp(-cs::pow2(q1)/2.0)/sqrt(2.0*cs_math_pi));
-     yw_liq   = fmax(yw_liq, 0.0);
-     nn[c_id] = nebdia[c_id] - (  nebdia[c_id]*q1
-                                + exp(-cs::pow2(q1)/2.0)/sqrt(2.0*cs_math_pi))
-                                * exp(-cs::pow2(q1)/2.0)/sqrt(2.0*cs_math_pi);
+    // FIXME MF : put in input of the global function...
+    cs_real_t yw_liq
+      =   (sig_flu /(1.0 + qsl*cs::pow2(clatev)/(rvap*cp0*cs::pow2(tliq))))
+        * (nebdia[c_id]*q1 + exp(-cs::pow2(q1)/2.0)/sqrt(2.0*cs_math_pi));
+    yw_liq   = fmax(yw_liq, 0.0);
+    nn[c_id] = nebdia[c_id] - (  nebdia[c_id]*q1
+                               + exp(-cs::pow2(q1)/2.0)/sqrt(2.0*cs_math_pi))
+                               * exp(-cs::pow2(q1)/2.0)/sqrt(2.0*cs_math_pi);
 
-     // go back to all or nothing
-     if (qwt < yw_liq) {
-       nn[c_id] = 0.0;
-       // deltaq set to 0 if unsaturted air parcel
-       if (deltaq < 0.0) {
-         deltaq = 0.0;
-         nebdia[c_id] = 0.0;
-       }
-       else {
-         nebdia[c_id] = 1.0;
-       }
+    // go back to all or nothing
+    if (qwt < yw_liq) {
+      nn[c_id] = 0.0;
+      // deltaq set to 0 if unsaturted air parcel
+      if (deltaq < 0.0) {
+        deltaq = 0.0;
+        nebdia[c_id] = 0.0;
+      }
+      else {
+        nebdia[c_id] = 1.0; // the entire cell is considered saturated
+      }
 
-       /* TODO input ?
-        * 0 if unsaturated air parcel */
-       yw_liq = deltaq / (1.0 + qsl*cs::pow2(clatev)/(rvap*cp0*cs::pow2(tliq)));
-     }
+      /* TODO input ?
+       * 0 if unsaturated air parcel */
+      yw_liq = deltaq / (1.0 + qsl*cs::pow2(clatev)/(rvap*cp0*cs::pow2(tliq)));
+    }
 
-     // Celcius temperature of the air parcel
-     cpro_tempc[c_id] = tliq + (clatev/cp0)*yw_liq - tkelvi;
-     // liquid water content
-     cpro_liqwt[c_id] = yw_liq;
+    /* Lagrangian cloud microphysics: discard what the saturation adjustment
+       just diagnosed and take the liquid water actually carried by the
+       droplets. crom still holds the density of the previous update, which
+       is what turns the liquid concentration into a mass fraction. The
+       cloud fraction is set from the presence of liquid, the subgrid
+       variance of the adjustment no longer being meaningful. */
+
+    if (lagr_microphysics) {
+      yw_liq = (crom[c_id] > 0.) ? m_l_lagr[c_id] / crom[c_id] : 0.;
+      yw_liq = cs::min(fmax(yw_liq, 0.), qwt);
+      nebdia[c_id] = (yw_liq > 0.) ? 1.0 : 0.0;
+      nn[c_id] = 0.0;
+    }
+
+    // Celcius temperature of the air parcel
+    cpro_tempc[c_id] = tliq + (clatev/cp0)*yw_liq - tkelvi;
+    // liquid water content
+    cpro_liqwt[c_id] = yw_liq;
      //density
      const cs_real_t lrhum = rair*(1.0 - yw_liq + (rvsra - 1.0)*(qwt - yw_liq));
      crom[c_id] = pp/(lrhum*(tliq + (clatev/cp0)*yw_liq));
@@ -511,10 +555,10 @@ cs_atmo_add_property_fields(void)
 
     /* Continuous phase density (humid air) */
     f = cs_field_create("rho_humid_air",
-                        field_type,
-                        CS_MESH_LOCATION_CELLS,
-                        1,
-                        has_previous);
+        field_type,
+        CS_MESH_LOCATION_CELLS,
+        1,
+        has_previous);
     f->set_key_int(keyvis, post_flag);
     f->set_key_int(keylog, 1);
     f->set_key_str(klbl, "Density humid air");

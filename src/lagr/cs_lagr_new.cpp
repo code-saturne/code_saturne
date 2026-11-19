@@ -719,8 +719,13 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   }
 
-  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)
-    cval_t_l = cs_field_by_name("temp_l_packing")->val;
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+    /* Absent when the cooling tower model runs without packing, as in the
+       humid atmosphere plume configuration. */
+    const cs_field_t *f_t_l = cs_field_by_name_try("temp_l_packing");
+    if (f_t_l != nullptr)
+      cval_t_l = f_t_l->val;
+  }
 
   const cs_real_t pis6 = cs_math_pi / 6.0;
   const int shape = cs_glob_lagr_model->shape;
@@ -1033,15 +1038,14 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
       double    random;
       cs_random_normal(1, &random);
-      cs_real_t v = zis->diameter_variance;
-      cs_real_t m = zis->diameter;
+      cs_real_t v = zis->diameter_variance; //variance of mean diameter
+      cs_real_t m = zis->diameter; //mean diameter
       cs_real_t m2 = m * m;
       //The diameter follows a log-normal law
       cs_real_t diam = m2 / (sqrt(m2 + v))
         * exp(sqrt(log(1. + v/m2)) * random);
 
       p_set.attr_real(p_id, CS_LAGR_DIAMETER) = diam;
-
     }
 
     /* Shape for spheroids without inertia */
@@ -1352,18 +1356,36 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
       p_set.attr_real(p_id, CS_LAGR_CP) = zis->cp;
 
-      p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = cval_t_l[c_id];
-
-      cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
-      if (   cs_glob_lagr_time_scheme->interpol_field
-             != CS_LAGR_INTERPOL_NONE
-          && extra->grad_tempf != nullptr) { /* gradients have been computed */
-        cs_real_t *part_coord
-          = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
-        for (int i = 0; i < 3; i++)
-          loc_fluid_temp +=   extra->grad_tempf[c_id][i]
-                            * (part_coord[i] - cell_cen[c_id][i]);
+      cs_real_t loc_fluid_temp = 0.;
+      if (cval_t != nullptr) {
+        loc_fluid_temp = cval_t[c_id] + tscl_shift;
+        if (   cs_glob_lagr_time_scheme->interpol_field
+               != CS_LAGR_INTERPOL_NONE
+            && extra->grad_tempf != nullptr) { /* gradients computed */
+          cs_real_t *part_coord
+            = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
+          for (int i = 0; i < 3; i++)
+            loc_fluid_temp +=   extra->grad_tempf[c_id][i]
+                              * (part_coord[i] - cell_cen[c_id][i]);
+        }
       }
+
+      /* Initial droplet temperature.
+
+         In a cooling tower the droplets detach from the liquid film
+         trickling through the packing, so they start at the packing liquid
+         temperature. In the humid atmosphere model there is no packing:
+         the droplets are nucleated from the ambient vapour and start in
+         thermal equilibrium with the local air. "temp_l_packing" is then
+         identically zero, which used to inject plume droplets at 0 degC
+         into air at ambient temperature. */
+
+      if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID
+          || cval_t_l == nullptr)
+        p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = loc_fluid_temp;
+      else
+        p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = cval_t_l[c_id];
+
       p_set.attr_real(p_id, CS_LAGR_TEMPERATURE_SEEN) =
         loc_fluid_temp;
     }
@@ -1393,6 +1415,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     /* statistical weight */
     p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT) = zis->stat_weight;
 
+    fflush(stdout);
     /* Fouling index */
     p_set.attr_real(p_id, CS_LAGR_FOULING_INDEX) =
       zis->fouling_index;
@@ -1546,7 +1569,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
     if (dmass > 0.0) {
       cs_real_t s_weight =   zis->flow_rate * cs_glob_lagr_time_step->dtp
-                           / dmass;
+        / dmass;
       for (cs_lnum_t p_id = p_s_id; p_id < p_e_id; p_id++)
         p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT) = s_weight;
     }
@@ -1570,6 +1593,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
 
   }
+
+
 }
 
 /*----------------------------------------------------------------------------*/

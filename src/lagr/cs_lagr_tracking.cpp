@@ -2732,6 +2732,8 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
          ------------------      boundary condition
          K
       */
+      assert(!isnan(p_set.attr_real(p_id, CS_LAGR_MASS)));
+
       particle_state
         = _internal_treatment(p_set,
                               p_id,
@@ -2817,6 +2819,8 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
 
       cs_lnum_t face_id = exit_face - mesh->n_i_faces;
 
+      assert(!isnan(p_set.attr_real(p_id, CS_LAGR_MASS)));
+
       particle_state
         = _boundary_treatment(p_set,
                               events,
@@ -2894,6 +2898,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
         /* if no rebound nor leaving, nor deposition nor oscillation around a
          * given face.
          * Integrate of the stochastic particle over estimated residence time */
+        assert(!isnan(p_set.attr_real(p_id, CS_LAGR_MASS)));
 
         _integ_particle_quantities(p_set,
                                    p_id,
@@ -2976,7 +2981,9 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
 
       assert(dt_incr >= 0.);
       /* Increment two-way-coupling source terms */
-      if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
+      if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
+        assert(!isnan(p_set.attr_real(p_id, CS_LAGR_MASS)));
+
         cs_lagr_coupling_increment_part_contrib(p_set,
                                                 p_id,
                                                 dt_incr,
@@ -2984,11 +2991,15 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
                                                 taup[0],
                                                 force_p,
                                                 tempct);
+      }
 
       /* Increment stat in the previous cell */
-      if (cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt)
+      if (cs_glob_time_step->nt_cur >= cs_glob_lagr_stat_options->idstnt) {
+        assert(!isnan(p_set.attr_real(p_id, CS_LAGR_MASS)));
+
         cs_lagr_stat_update_all_incr(p_set, p_id,
-                                     dt_incr /cs_glob_lagr_time_step->dtp);
+                                     dt_incr / cs_glob_lagr_time_step->dtp);
+      }
 
       /* Returning to the same cell through an INTERIOR face means the
          particle oscillates around that face, and tracking of the virtual
