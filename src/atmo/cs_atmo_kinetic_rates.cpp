@@ -230,7 +230,7 @@ cs_atmo_kinetic_rates_compute(void)
                                &omega,
                                &fo);
 
-  cs_real_t azi = cs::abs(za*18.0/cs_math_pi);  // zenith angle (degree)
+  cs_real_t azi = cs::abs(za*180.0/cs_math_pi);  // zenith angle (degree)
 
   /* Computation of kinetic rates in each cell
      ----------------------------------------- */
