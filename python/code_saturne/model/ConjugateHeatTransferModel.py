@@ -61,7 +61,7 @@ class ConjugateHeatTransferModel(Variables, Model):
         self.__node_models = self.case.xmlGetNode('thermophysical_models')
         self.__node_cht    = self.__node_models.xmlInitNode('conjugate_heat_transfer')
         self.__node_syr = self.__node_cht.xmlInitNode('external_coupling')
-        self.__node_inst = self.__node_syr.xmlInitNode('syrthes_instances')
+        self.__node_inst = self.__node_syr.xmlGetNode('syrthes_instances')
 
     @Variables.undoLocal
     def deleteConjugateHeatTransfer(self):
@@ -70,10 +70,14 @@ class ConjugateHeatTransferModel(Variables, Model):
         @type status: C{String}
         @param status: set to "on" or "off" the conjugate heat transfer
         """
-        self.__node_inst.xmlRemoveNode()
+        if self.__node_inst is not None:
+            self.__node_inst.xmlRemoveNode()
 
     def getNumberOfSyrthesCoupling(self):
-        return len(self.__node_inst.xmlGetNodeList('instance'))
+        if self.__node_inst is not None:
+            return len(self.__node_inst.xmlGetNodeList('instance'))
+        else:
+            return 0
 
     @Variables.noUndo
     def getSyrthesInstancesList(self):
@@ -82,6 +86,9 @@ class ConjugateHeatTransferModel(Variables, Model):
         """
 
         lst = []
+        if self.__node_inst is None:
+            return lst
+
         node_list = self.__node_inst.xmlGetNodeList('instance')
 
         for node in node_list:
@@ -97,8 +104,11 @@ class ConjugateHeatTransferModel(Variables, Model):
         @return: list of Syrthes coupling description.
         @rtype: C{List}
         """
-        node_list = self.__node_inst.xmlGetNodeList('instance')
         lst = []
+        if self.__node_inst is None:
+            return lst
+
+        node_list = self.__node_inst.xmlGetNodeList('instance')
         for node in node_list:
             syrthes_name = node.xmlGetAttribute("name")
             boundary_labels = self.getBoundaryLabelList(syrthes_name)
@@ -113,9 +123,10 @@ class ConjugateHeatTransferModel(Variables, Model):
         @type syrthes_name: C{String}
         @param syrthes_name: Syrthes instance name
         """
+        self.__node_syr = self.__node_cht.xmlInitNode('external_coupling')
+        self.__node_inst = self.__node_syr.xmlInitNode('syrthes_instances')
         node_new = self.__node_inst.xmlInitChildNode('instance', name=syrthes_name)
         return
-
 
     @Variables.undoGlobal
     def deleteSyrthesCoupling(self, syrthes_name, boundary_label):
@@ -123,6 +134,9 @@ class ConjugateHeatTransferModel(Variables, Model):
         Delete a syrthes coupling. If the syrthes instance has no
         other coupled boundaries, remove it from the instances list.
         """
+
+        if self.__node_inst is None:
+            return
 
         node = self.__node_inst.xmlGetChildNode('instance', name=syrthes_name)
         if node:
@@ -136,7 +150,10 @@ class ConjugateHeatTransferModel(Variables, Model):
             if not node.xmlGetChildNodeList("coupled_boundary"):
                 node.xmlRemoveNode()
 
-
+        if len(self.__node_inst.xmlGetNodeList('instance')) < 1:
+            self.__node_inst.xmlRemoveNode()
+            self.__node_inst = None
+            self.__node_syr.xmlRemoveChildren()
 
     def addBoundaryLabel(self, syrthes_name, boundary_label):
 
@@ -144,20 +161,29 @@ class ConjugateHeatTransferModel(Variables, Model):
         if boundary_label in self.getBoundaryLabelList(syrthes_name):
             return
 
-        node_instance = self.__node_inst.xmlGetChildNode('instance', name=syrthes_name)
+        if self.__node_inst is not None:
+            node_instance = self.__node_inst.xmlGetChildNode('instance', name=syrthes_name)
+        else:
+            node_instance = None
+
         if node_instance is None:
             raise ValueError("SYRTHES instance not found : ", syrthes_name)
         node_zone = node_instance.xmlInitChildNode('coupled_boundary', label=boundary_label)
 
     def getBoundaryLabelList(self, syrthes_name):
-        node_instance = self.__node_inst.xmlGetChildNode('instance', name=syrthes_name)
+        if self.__node_inst is not None:
+            node_instance = self.__node_inst.xmlGetChildNode('instance', name=syrthes_name)
+        else:
+            node_instance = None
+
         if node_instance is None:
             raise ValueError("SYRTHES instance not found : ", syrthes_name)
         return [n.xmlGetAttribute("label") for n in node_instance.xmlGetChildNodeList("coupled_boundary")]
 
     def flushBoundaryLabels(self):
-        for node_instance in self.__node_inst.xmlGetChildNodeList('instance'):
-            node_instance.xmlRemoveChildren()
+        if self.__node_inst is not None:
+            for node_instance in self.__node_inst.xmlGetChildNodeList('instance'):
+                node_instance.xmlRemoveChildren()
 
     @Variables.undoLocal
     def setSyrthesVerbosity(self, value):
