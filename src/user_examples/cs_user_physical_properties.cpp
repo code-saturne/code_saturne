@@ -252,8 +252,13 @@ cs_user_physical_properties_turb_viscosity
   [[maybe_unused]] cs_domain_t  *domain
 )
 {
+  //![dynamic_les_global_average]
 
-  cs_lnum_t n_cells_ext = domain->mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = domain->mesh->n_cells; // number of cells
+  const cs_lnum_t n_cells_ext = domain->mesh->n_cells_with_ghosts; //  number of cells with ghosts
+
+  const cs_real_t tot_vol = domain->mesh_quantities->tot_vol; // total volume of domain
+  const cs_real_t *cell_vol = domain->mesh_quantities->cell_vol; // volume by cell
 
   /* Recompute Mij:Mij and Lij:Mij */
   cs_array<cs_real_t> mijlij(n_cells_ext);
@@ -275,10 +280,6 @@ cs_user_physical_properties_turb_viscosity
                                 mijmij,
                                 mijlij);
 
-  const cs_lnum_t n_cells = domain->mesh->n_cells;
-  const cs_real_t tot_vol = domain->mesh_quantities->tot_vol;
-  const cs_real_t *cell_vol = domain->mesh_quantities->cell_vol;
-
   /* Overwrite Smagorinsky constant */
   auto cpro_smago = cs_field("smagorinsky_constant^2")->get_val_s();
 
@@ -294,20 +295,27 @@ cs_user_physical_properties_turb_viscosity
   mijmijmoy /= tot_vol;
   mijlijmoy /= tot_vol;
 
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-    cpro_smago[c_id] = mijlijmoy/mijmijmoy;
+  /* Compute a global volume-weighted average of the dynamic
+   * LES model coefficient and apply the resulting uniform
+   * value to all cells in the domain.
+   */
+  const cs_real_t c = mijlijmoy / mijmijmoy;
+  cs_arrays_set_value<cs_real_t, 1>(n_cells, c, cpro_smago);
 
   /* Calculation of (dynamic) viscosity
    * ================================== */
 
-  auto visct = CS_F_(mu_t)->get_val_s();
-  const auto crom  = CS_F_(rho)->get_val_s();
+  auto cpro_visct = CS_F_(mu_t)->get_val_s();
+  const auto cpro_rho  = CS_F_(rho)->get_val_s(); // density
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     const cs_real_t coef = cpro_smago[c_id];
     const cs_real_t delta = cs_turb_xlesfl * pow(cs_turb_ales*cell_vol[c_id],
                                                  cs_turb_bles);
-    visct[c_id] = crom[c_id]*coef*cs_math_pow2(delta)*s_n[c_id];
+    cpro_visct[c_id] = cpro_rho[c_id] * coef*cs_math_pow2(delta) * s_n[c_id];
   }
+
+  //![dynamic_les_global_average]
 }
 
 /*----------------------------------------------------------------------------*/

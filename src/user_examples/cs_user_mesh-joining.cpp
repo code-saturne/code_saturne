@@ -75,7 +75,7 @@ cs_user_join(void)
   int    visualization = 1; /* debug level if >= 3 */
   float  fraction = 0.10, plane = 25.;
 
-  join_num = cs_join_add("98 or 99",
+  join_num = cs_join_add("join_a or join_b",
                          fraction,
                          plane,
                          verbosity,

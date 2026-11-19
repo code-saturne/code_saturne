@@ -307,7 +307,7 @@ try to generate faces from initial faces on different surfaces.
 
 This operation can be specified either using the GUI or the
 user-defined functions, as shown in various
-[examples](@ref cs_user_mesh_h_cs_user_mesh_joining).
+[examples](@ref sec_preprocessing_mesh_joining).
 
 ### Advanced parameters for mesh joining
 <!-- -->
@@ -340,7 +340,7 @@ can be defined.
 
 This operation can be specified either using the GUI, as shown below, or
 by user-defined functions, as shown in various
-[examples](@ref cs_user_mesh_h_cs_user_mesh_periodicity).
+[examples](@ref sec_preprocessing_periodicity).
 
 \anchor fig_periodicities
 \image html gui_mesh_periodicity.png "Defining a periodicity relation"
@@ -424,6 +424,31 @@ in the calculation mesh.
 Be aware that, in some cases, this algorithm may degrade other mesh quality
 criteria.
 
+Examples of mesh preprocessing {#sec_preprocessing_examples}
+--------------------------------
+
+### Mesh joining {#sec_preprocessing_mesh_joining}
+
+The following example illustrates how to define a simple mesh joining
+using the cs_user_join user function.
+
+\snippet cs_user_mesh-joining.cpp mesh_add_simple_joining
+
+### Advanced mesh joining parameters
+
+The following example illustrates how to define advanced parameters
+for mesh joining.
+
+\snippet cs_user_mesh-joining.cpp mesh_add_advanced_joining
+
+### Mesh periodicity {#sec_preprocessing_periodicity}
+Examples of mesh periodicity definitions are provided below.
+
+\snippet cs_user_mesh-periodicity.cpp mesh_periodicity_1
+\snippet cs_user_mesh-periodicity.cpp mesh_periodicity_2
+\snippet cs_user_mesh-periodicity.cpp mesh_periodicity_3
+\snippet cs_user_mesh-periodicity.cpp mesh_periodicity_4
+
 <!-- ======================================================================= -->
 
 \page volume_zones Volume zones
@@ -443,7 +468,7 @@ all matching elements, as they maintain lists of corresponding elements.
 
 The GUI naturally builds and associates zones for boundary and volume
 conditions. The \ref cs_user_zones user-defined functions (from
-`cs_user_zones.c`) can be used to build such zones.
+`cs_user_zones.cpp`) can be used to build such zones.
 
 In many cases, zones should simply correspond to mesh groups,
 but explicitely defining them allows merging or splitting selections
@@ -452,6 +477,34 @@ when needed.
 
 \anchor gui_volume_zone_def
 \image html gui_volume_zone_def.png "Definition of mesh zones"
+
+Examples of volume zones {#sec_volume_zones_examples}
+------------------------
+
+### Simple volume zone example
+
+Most zones may be defined using general selection criteria,
+as illustrated in the following example.
+
+\snippet cs_user_zones.cpp user_zones_head_loss_1
+
+Three spherical source term zones can also be defined using
+geometrical criteria.
+
+\snippet cs_user_zones.cpp user_zones_volume_1
+
+### Advanced volume zone examples
+
+More complex selections can be defined using a selection function.
+
+The following example defines a function to select cells adjacent
+to boundary faces belonging to a group named "G3".
+
+\snippet cs_user_zones.cpp select_func_vol2
+
+This function can then be used in a volume zone definition.
+
+\snippet cs_user_zones.cpp user_zones_volume_2
 
 <!-- ======================================================================= -->
 
@@ -499,4 +552,18 @@ definitions can be imported directly by the GUI under the
 For advanced cases, or when it is necessary to define zones which overlap,
 or whose section is based on a (possibly time-varying) function,
 the \ref cs_user_zones function may be used.
-A few [examples](@ref cs_user_zones_examples) are also provided.
+A few [examples](@ref sec_boundary_zones_examples) are also provided below.
+
+Examples of boundary zones {#sec_boundary_zones_examples}
+---------------------------
+
+### Advanced boundary zone examples
+
+You can define simple boundary zones, allowing all faces not in the
+"INLET" or "OUTLET" groups to be considered as walls.
+
+\snippet cs_user_zones.cpp user_zones_boundary_1
+
+You can also allow overlapping for an existing zone.
+
+\snippet cs_user_zones.cpp user_zones_boundary_2

@@ -1429,14 +1429,12 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 
   /*! [param_iturt] */
   {
-    const int kturt = cs_field_key_id("turbulent_flux_model");
-
     const int turb_flux_model = 10;
 
     /* GGDH for thermal scalar */
     cs_field_t *f_t = cs_thermal_model_field();
     if (f_t != nullptr)
-      f_t->set_key_int(kturt, turb_flux_model);
+      f_t->set_key_int("turbulent_flux_model", turb_flux_model);
 
     /* GGDH for all user-defined scalars */
     const int n_fields = cs_field_n_fields();
@@ -1449,7 +1447,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
         int s_num = f->get_key_int(k_scal);
         int iscavr = f->get_key_int(kscavr);
         if (s_num > 0 && iscavr <= 0)
-          f->set_key_int(kturt, turb_flux_model);
+          f->set_key_int("turbulent_flux_model", turb_flux_model);
       }
     }
   }

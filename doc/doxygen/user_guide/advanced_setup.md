@@ -1408,21 +1408,75 @@ solidification or melting of solid can be found [here](@ref cs_ug_cdo_solidifica
 
 \page thermal_model Thermal model
 
+Depending on the physical model used, code_saturne may use a thermal
+model based on temperature, enthalpy, or total energy for the strongly
+compressible case. In each case, if a thermal model is actuve, the
+temperature is computed, but it may be solved directly or computed
+based on another thermal variable.
+
+Using the temperature is usually simpler, and a natural choice if
+the temperature is prescribed at some boundaries, but some specific models
+require solving for enthalpy (and deducing the temperature from that
+quantity). Solving the enthalpy allows for for natural handling of
+conservation of heat with variable physical properties, but usually requires
+some form of tabulation or interpolation of enthalpy as a function of
+temperature (and possibly other variables) to handle boundary conditions
+and compute physical quantities.
+
+Setting the thermal model {#sec_thermal_model_examples}
+-------------------------------------------------------
+
+The thermal model can be selected using the GUI:
+
 \anchor gui_thermal_scalar
 \image html gui_thermal_scalar.png "Thermal model selection"
+
+### Thermal model selection with user-defined functions
+
+Alternatively, it can be selected in the `cs_user_model`
+function (in `cs_user_parameters.cpp`) by setting the `thermal_variable`
+member of the variable returned by `cs_get_glob_thermal_model()`:
+
+The following example illustrates how to select a thermal model
+using a user-defined function.
+
+\snippet cs_user_parameters-base.cpp thermal_model_choice
 
 <!-- ======================================================================= -->
 
 \page body_forces Body forces
 
-Setup gravity and coriolis forces.
+Body forces and Coriolis forces can be defined using the GUI.
 
 \anchor gui_body_forces
 \image html gui_body_forces.png "Body forces definition"
 
+Alternatively, gravity and Coriolis forces can be defined using
+user-defined functions.
+
+Examples of body forces definition {#sec_body_forces_examples}
+-----------------------------------
+
+### Gravity
+
+The following example illustrates how to define the gravity
+direction and acceleration. No gravity force is applied if
+the acceleration is zero.
+
+\snippet cs_user_parameters-base.cpp user_model_gravity
+
+### Coriolis forces
+
+The following example illustrates how to activate a rotating
+reference frame and specify the associated rotation.
+
+\snippet cs_user_parameters-base.cpp user_model_coriolis
+
 <!-- ======================================================================= -->
 
 \page turbulence_models Turbulence models
+
+The turbulence models can be selected using the GUI.
 
 \anchor gui_turbulence_models
 \image html gui_turbulence_models.png "Turbulence model selection"
@@ -1434,7 +1488,7 @@ The \ref cs_user_physical_properties_turb_viscosity user-defined function
 can be used to modify the calculation
 of the turbulent viscosity, *i.e.* <em>μ<sub>t</sub></em> in \f$kg.m^{-1}.s^{-1}\f$.
 The correspondig field, `turbulent_viscosity`, can be accessed by calling
-`field_get_val_s(ivisct, cpro_visct)`. The
+`field->get_val_s()`. The
 subroutine is called at the beginning of every time step, after the
 calculation of the physical parameters of the flow and of the
 "conventional" value of <em>μ<sub>t</sub></em> corresponding to the chosen
@@ -1522,6 +1576,62 @@ for example possible to compute the local average after having computed the
 \f[
 C=\widetilde{\left[\frac{M_{ij}L{ij}}{M_{kl}M_{kl}}\right]}
 \f]
+
+Examples of turbulence model modifications {#sec_turbulence_models_examples}
+-------------------------------------------
+
+### Turbulence model selection
+
+The following example illustrates how to select a turbulence model
+among the available models.
+
+\snippet cs_user_parameters-base.cpp turbulence_model_choice
+
+### RANS model settings
+
+The following example illustrates how to configure the coupled
+solver for the Rij components (when the Rij model is used), as well
+as other RANS model-specific settings.
+
+\snippet cs_user_parameters-base.cpp turb_rans_model_settings
+
+### Turbulent flux model selection
+
+The following example illustrates how to select a turbulent flux
+model for the scalar *T*, among algebraic models and models
+based on transport equations:
+
+- Algebraic models:
+  - SGDH (0)
+  - GGDH (10)
+  - EB-GGDH (11, Elliptic Blending)
+  - AFM (20)
+  - EB-AFM (21, Elliptic Blending)
+- Models with transport equations:
+  - DFM (30)
+  - EB-DFM (31, Elliptic Blending)
+
+\snippet cs_user_parameters-base.cpp param_iturt
+
+### Modification of the dynamic LES model coefficient
+
+The following example illustrates how to modify the coefficient
+*C* of the dynamic LES model by computing a global volume-weighted
+average of the terms involved in its calculation.
+
+The turbulent viscosity is then recomputed using the modified
+coefficient.
+
+\snippet cs_user_physical_properties.cpp dynamic_les_global_average
+
+### Turbulence model flux reconstruction
+
+For difficult cases, additional numerical stability may be obtained
+by disabling the reconstruction of convective and diffusive fluxes
+for turbulence model variables, such as those of *k-ε* models.
+
+\snippet cs_user_parameters-base.cpp param_ircflu
+
 
 <!-- ======================================================================= -->
 
