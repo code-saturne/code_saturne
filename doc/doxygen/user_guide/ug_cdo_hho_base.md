@@ -538,10 +538,32 @@ settings, please proceed as follows:
 \snippet cs_user_parameters-cdo-condif.cpp param_cdo_time_schemes
 
 The mass matrix associated to the unsteady term is also a parameter. One can
-use either a mass matrix like in FV scheme using a `"voronoi"` algorithm
-(default) or the `"wbs"` algorithm like in Finite Element (FE) schemes.
+use either a mass matrix like in FV schemes, obtained with the `"voronoi"`
+algorithm, or a mass matrix like in Finite Element (FE) schemes, obtained with
+the `"wbs"` algorithm. The algorithm is set with the key
+\ref CS_EQKEY_HODGE_TIME_ALGO
 
 \snippet cs_user_parameters-cdo-condif.cpp param_cdo_time_hodge
+
+The available choices depend on the space discretization scheme:
+
+key value | algorithm | available with | default for
+:--- | :--- | :--- | :---
+`"voronoi"` | \ref CS_HODGE_ALGO_VORONOI The mass matrix is diagonal. This corresponds to a mass lumping. | `CDO vb`, `CDO vcb`, `CDO fb` | `CDO vb`, `CDO fb`
+`"wbs"` | \ref CS_HODGE_ALGO_WBS The mass matrix is the one encountered in FE schemes. It needs a correct computation of the cell barycenter. | `CDO vb`, `CDO vcb` | `CDO vcb`
+`"cost"`, `"ocs"` | \ref CS_HODGE_ALGO_COST The mass matrix couples the face and cell unknowns. The scaling coefficient in front of the stabilization part is set with the key `CS_EQKEY_HODGE_TIME_COEF` | `CDO fb` | --
+
+With `CDO fb` schemes, a mass matrix is built only when the `"cost"` algorithm
+is used and when mass lumping is not requested (see the key
+`CS_EQKEY_DO_LUMPING`). In the other cases, the unsteady term only contributes
+to the cell row of the local system.
+
+The algorithm used for the reaction term is set with the key
+\ref CS_EQKEY_HODGE_REAC_ALGO The `"voronoi"` and `"wbs"` values behave as
+described above. `"voronoi"` is available with `CDO vb`, `CDO vcb` and
+`CDO fb` schemes and is equivalent to a lumping of the reaction term. `"wbs"`
+is available with `CDO vb` and `CDO vcb` schemes and is the default choice for
+`CDO vcb`.
 
 ### Modify the numerical scheme for the diffusion term
 
@@ -552,6 +574,32 @@ specify the value of the scaling coefficient in front of the stabilization
 part. This is done using the key \ref CS_EQKEY_HODGE_DIFF_COEF
 
 \snippet cs_user_parameters-cdo-condif.cpp param_cdo_diff_numerics
+
+The diffusion term relies on a discrete Hodge operator. Its type is imposed by
+the space discretization scheme and cannot be modified, whereas the algorithm
+used to build it is set by the user:
+
+space scheme | discrete Hodge operator for the diffusion term
+:--- | :---
+`CDO vb` | \ref CS_HODGE_TYPE_EPFD
+`CDO vcb` | \ref CS_HODGE_TYPE_VC
+`CDO fb` | \ref CS_HODGE_TYPE_EDFP
+`CDO cb` | \ref CS_HODGE_TYPE_FPED (built with the inverse of the diffusion property)
+
+The algorithms available for each space discretization scheme are the
+following:
+
+key value | algorithm | available with | default for
+:--- | :--- | :--- | :---
+`"voronoi"` | \ref CS_HODGE_ALGO_VORONOI This yields a diagonal operator and the least expensive construction, but it requires an orthogonal (admissible) mesh. On a general mesh, the consistency error does not decrease under mesh refinement. | `CDO vb`, `CDO fb`, `CDO cb` | --
+`"cost"`, `"ocs"` | \ref CS_HODGE_ALGO_COST The stabilization part is piecewise constant on a partition of each cell. | `CDO vb`, `CDO fb`, `CDO cb` | `CDO fb`, `CDO cb`
+`"bubble"` | \ref CS_HODGE_ALGO_BUBBLE The stabilization part relies on a bubble function. Setting this value also sets the stabilization coefficient to \f$ 2/3 \f$. | `CDO vb`, `CDO fb`, `CDO cb` | `CDO vb`
+`"wbs"` | \ref CS_HODGE_ALGO_WBS This choice is robust and accurate on general polyhedral meshes but is more expensive. It needs a correct computation of the cell barycenter. On tetrahedral meshes, the stiffness matrix is the same as the one obtained with FE P1 schemes. | `CDO vb`, `CDO vcb` | `CDO vcb`
+
+With `CDO vb`, `CDO fb` and `CDO cb` schemes, a value which is not available
+for the selected space discretization raises an error during the setup stage.
+With `CDO vcb` schemes, the diffusion term always relies on the `"wbs"`
+algorithm. This key has no effect with `HHO` schemes.
 
 
 Linear algebra settings {#cs_ug_cdo_hho_base_linalg}
