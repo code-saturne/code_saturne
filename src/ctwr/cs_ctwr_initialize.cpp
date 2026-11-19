@@ -283,8 +283,12 @@ cs_ctwr_init_field_vars(cs_real_t  rho0,
   cs_span<cs_real_t> t_h_a;
   cs_span<cs_real_t> theta_liq;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-    t_h = cs_field("real_temperature")->get_val_s(); /* Humid air temp */
-    t_h_a = cs_field("real_temperature")->get_val_s(1); /* Humid air temp */
+    cs_field_t *f_t_h = cs_field("real_temperature");
+    t_h = f_t_h->get_val_s(); /* Humid air temp */
+    /* "real_temperature" is defined as a property, hence without previous
+       time values in the humid atmosphere model; map t_h_a on the current
+       values so that the initialization below is a no-op for it. */
+    t_h_a = (f_t_h->n_time_vals > 1) ? f_t_h->get_val_s(1) : t_h;
     theta_liq = cs_field("temperature")->get_val_s(); /* Liq. pot. temp. */
   }
   else {

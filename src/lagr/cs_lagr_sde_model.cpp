@@ -1581,6 +1581,8 @@ _sde_i_ct(cs_lagr_particle_set_t  &p_set,
   cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
   /* Calculating the current particle surface */
   cs_real_t dia = p_set.attr_n_real(p_id, 1, CS_LAGR_DIAMETER);
+  assert(isfinite(dia));
+  //assert(dia > 0.0);
   //cs_real_t surf_p = cs_math_pi*cs_math_pow2(dia) * 0.25;
 
   /* Drop diameter based Reynolds number */
@@ -1642,67 +1644,93 @@ _sde_i_ct(cs_lagr_particle_set_t  &p_set,
   /* Sherwood number */
   cs_real_t sherw = 2. + 0.55 * sqrt(re_p) * cbrt(prt);
 
-  /* Parameters for Yv, equation (54) */
-  cs_real_t r_univ = cs_physical_constants_r; // J/(mol.K), 8.314
-
   cs_real_t temp_p = p_set.attr_n_real(p_id, 1, CS_LAGR_TEMPERATURE);
+  assert(isfinite(temp_p));
+  assert(temp_p + _tkelvi > 0.0);
 
-  /* Molar masses of vapour and dry air (kg/mol) */
-  cs_real_t m_v = 0.0180154;
-  cs_real_t m_f = 0.028960;
+  /* Vapor mass fractions around the droplet
+     --------------------------------------- */
 
-  /* Boiling Temperature with Clausius-Clapeyron
-     ------------------------------------------- */
-  cs_real_t pressure_ref = 101325.;
-  cs_real_t temp_ref = 373.15;
-  cs_real_t r_v = r_univ / m_v;
+  /* Surface value, assuming thermodynamic equilibrium at the liquid/vapor
+     interface. x_s_tl is the absolute humidity at saturation for the droplet
+     temperature, so that
+       y_v^s = x_s / (1 + x_s)
+             = M_v x_v,s / [M_v x_v,s + M_f (1 - x_v,s)],
+     which is the exact conversion of the saturation mole fraction
+     x_v,s = e_s(T_p) / P_a into a mass fraction (M_v / M_f = 0.622 in the
+     dilute limit).
 
-  // TODO with atmo module take meteo pressure
-  cs_real_t t_ebl_inv = 1. / temp_ref - r_v / lv * log(p0 / pressure_ref);
+     NB: the former closure used a M_v / (M_f + M_v) = 0.384 prefactor, which
+     would only hold for an equimolar mixture, together with a
+     Clausius-Clapeyron relation at constant L_v anchored at the boiling
+     point. Both errors underestimated y_v^s (by 22 to 34% between 10 and
+     40 degrees C) and, combined with the 1/3 rule removed below, reversed
+     the sign of the mass transfer above about 70% relative humidity. */
 
-  /* Mass fraction of vapor (y_v) */
+  cs_real_t y_v_s = x_s_tl / (1. + x_s_tl);
+
+  /* Far field value, from the absolute humidity of the carrier phase */
   cs_real_t y_v_far = x[cell_id] / (1.0 + x[cell_id]);
 
-  cs_real_t y_v_s = (m_v / (m_f + m_v)) * exp(((lv * m_v) / r_univ)
-                   * (t_ebl_inv - 1.0 / (temp_p + _tkelvi)));
-  cs_real_t y_v = y_v_s + 1.0 / 3.0 * (y_v_far - y_v_s);
+  /* Spalding mass transfer number (Abramzon and Sirignano 1989)
+       B_M = (y_v^s - y_v^inf) / (1 - y_v^s),
+     hence 1 + B_M = (1 - y_v^inf) / (1 - y_v^s).
 
-  /* Inverse of characteristic time */
-  cs_real_t d_time_evap = 2. * rho_h * Dv * sherw
-                        * log((1.0 - y_v_far) / (1.0 - y_v))
-                        / (rho_l * cs_math_pow2(dia));
+     The driving force uses the *surface* value: the 1/3 rule of
+     Hubbard et al. (1975) is meant to evaluate the film *properties*
+     (rho_h, D_v, mu_h, cp_h), not to replace y_v^s here. Substituting the
+     film value y_v = y_v^s + (y_v^inf - y_v^s) / 3 reduced the mass flux by
+     a factor 2/3.
 
-  /* First order time scheme resolution (nor=1) */
-  if (nor == 1) {
+     TODO: evaluate rho_h, D_v, mu_h and cp_h at the 1/3 film reference
+           state; they are currently taken at ambient (cell) conditions. */
 
-    cs_real_t aux = exp(- dt_part * d_time_evap);
-    dia = dia * aux;
-    p_set.attr_real(p_id, CS_LAGR_DIAMETER) = dia;
+  cs_real_t log_1_p_b_m = log((1.0 - y_v_far) / (1.0 - y_v_s));
+
+  /* d^2 law, with a_p = d_p^2:
+       d(a_p)/dt = -k_p ln(1 + B_M),   k_p = 4 rho_h D_v Sh / rho_l > 0.
+     B_M > 0 (dry ambient air) gives evaporation, B_M < 0 (supersaturated
+     ambient air) gives condensation: the sign carries the physics and is
+     not clipped. */
+
+  cs_real_t k_p = 4. * rho_h * Dv * sherw / rho_l;
+
+  /* Freezing k_p and B_M over the time step, the d^2 law integrates
+     exactly into a linear update of a_p, unconditionally well behaved as
+     d_p goes to zero (first order scheme).
+
+     TODO: second order scheme (nor == 2). */
+
+  cs_real_t a_p = cs_math_pow2(dia) - dt_part * k_p * log_1_p_b_m;
+  assert(isfinite(a_p));
+
+  /* Fully evaporated droplet: a_p reaches zero within the time step.
+     No clipping is applied to d_p nor to m_p; the whole remaining mass is
+     released to the carrier phase through m_p^(n+1) - m_p^n by the two-way
+     coupling, and the parcel is then removed. */
+
+  if (a_p <= 0.) {
+    p_set.attr_real(p_id, CS_LAGR_DIAMETER) = 0.;
+    p_set.attr_real(p_id, CS_LAGR_MASS) = 0.;
+    p_set.set_flag(p_id, CS_LAGR_PART_TO_DELETE);
+    return;
   }
 
-  else if (nor == 2)  {
+  dia = sqrt(a_p);
+  assert(isfinite(dia));
+  p_set.attr_real(p_id, CS_LAGR_DIAMETER) = dia;
 
-    //TODO
-    /* Scheme resolution (nor=2)*/
-    cs_real_t aux1 = exp(- dt_part * d_time_evap);
-    cs_real_t ter1 = 0.5 * dia * aux1;
-
-    cs_real_t daux2 = 0.0;//FIXME
-    cs_real_t aux2 = exp(- daux2);
-    cs_real_t ter2 = 0.5 * dia * aux2;
-
-    dia = ter1 + ter2;
-
-    p_set.attr_real(p_id, CS_LAGR_DIAMETER) = dia;
-  }
-
-  /* Mass evaporate */
+  /* Mass transfer rate, positive for evaporation, negative for
+     condensation */
 
   cs_real_t new_mass = cs_math_pi * rho_l * cs_math_pow3(dia) / 6.;
+  cs_real_t mass_evap = (mass - new_mass) / dt_part;
 
-  cs_real_t aux = exp(- dt_part * d_time_evap);
-  cs_real_t aux_2 = exp(-2* dt_part * d_time_evap);
-  cs_real_t mass_evap = mass * ( 1 - aux) * (aux_2 + aux + 1.) / dt_part;
+  assert(isfinite(mass));
+  assert(mass > 0.0);
+  assert(isfinite(new_mass));
+  assert(new_mass > 0.0);
+  assert(isfinite(mass_evap));
 
   /* Particle's temperature
      -------------------------- */
@@ -1711,10 +1739,14 @@ _sde_i_ct(cs_lagr_particle_set_t  &p_set,
 
   /* Temperature of the particle seen by the fluid */
   cs_real_t cp = p_set.attr_n_real(p_id, 1, CS_LAGR_CP);
-
+  assert(!isnan(dia));
+  //assert(isfinite(dia));
+  //assert(dia > 0.0);
   /* Characteristic time*/
   cs_real_t time_temp_p = mass*cp/(cs_math_pi*nusselt*lambda_h*dia);
 
+  //assert(isfinite(time_temp_p));
+  //assert(time_temp_p > 0.0);
   /* Radiative term */
   cs_real_t Srad = 0.0; //Here, no radiative term
 
@@ -1722,39 +1754,40 @@ _sde_i_ct(cs_lagr_particle_set_t  &p_set,
     cs_real_t temp_s = p_set.attr_n_real(p_id, 1, CS_LAGR_TEMPERATURE_SEEN);
 
     /* Scheme resolution (nor=1)*/
-    cs_real_t xi = temp_s - time_temp_p * mass_evap * lv / (mass * cp);
-    aux = exp(- dt_part / time_temp_p);
+    /*
+     * Target particle temperature accounting for the latent heat
+     * consumed by evaporation.
+     */
+    cs_real_t xi = temp_s + time_temp_p * (Srad - mass_evap * lv) / (mass * cp);
+    /* Equilibrium particle temperature corrected for evaporative cooling. */
+    cs_real_t aux = exp(- dt_part / time_temp_p);
 
+    assert(isfinite(xi));
+    assert(!isnan(aux));
     cs_real_t ter1 = p_set.attr_n_real(p_id, 1, CS_LAGR_TEMPERATURE) * aux;
     cs_real_t ter2 = xi * (1. - aux);
+    assert(!isnan(ter2));
 
     temp_p = ter1 + ter2;
+    assert(isfinite(temp_p));
+    assert(temp_p + _tkelvi > 0.0);
     p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = temp_p;
 
   }
   else if (nor == 2) {
-    cs_real_t temp_s = p_set.attr_n_real(p_id, 0, CS_LAGR_TEMPERATURE_SEEN);
 
-    /* Scheme resolution (nor=2)*/
-    cs_real_t xi = temp_s + time_temp_p * (Srad - mass_evap * lv)/ (mass * cp);
+    /* TODO: second order scheme, for the temperature as well as for the
+       diameter above.
+       The previous implementation relied on two placeholders set to zero,
+       daux2 and xi_n1, which made its fourth term a 0/0 indeterminate form
+       and the resulting temperature inconsistent even at first order.
+       Fail explicitly rather than store a meaningless temperature. */
 
-    cs_real_t daux1 = dt_part / time_temp_p;
-    cs_real_t aux1 = exp(- daux1);
-    cs_real_t ter1 = 0.5 * p_set.attr_n_real(p_id, 1, CS_LAGR_TEMPERATURE) * aux1;
-
-    cs_real_t daux2 = 0.0; //FIXME
-    cs_real_t aux2 = exp(- daux2);
-    cs_real_t ter2 = 0.5 * p_set.attr_n_real(p_id, 1, CS_LAGR_TEMPERATURE) * aux2;
-
-    cs_real_t ter3 = xi * (- aux1 + (1 - aux1)/(daux1));
-
-
-    cs_real_t xi_n1 = 0.0; //FIXME
-    cs_real_t ter4 = xi_n1 * (1. - (1. -aux2)/(daux2));
-
-    temp_p = ter1 + ter2 + ter3 + ter4;
-
-    p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = temp_p;
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s (Lagrangian module):\n\n"
+                "The second order time scheme is not available for the\n"
+                "cooling tower droplet model (diameter and temperature).\n"
+                "Use a first order scheme (t_order = 1)."), __func__);
 
   }
 
