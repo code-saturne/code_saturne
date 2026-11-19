@@ -439,8 +439,6 @@ p, li { white-space: pre-wrap; }
     </spacer>
    </item>
   </layout>
-  <zorder>groupBoxManageCases</zorder>
-  <zorder></zorder>
  </widget>
  <resources>
   <include location="resource_base.qrc"/>

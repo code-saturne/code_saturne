@@ -225,6 +225,165 @@
        <property name="spacing">
         <number>6</number>
        </property>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBoxFrequency">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the writing frequency for the selected writer between:&lt;br/&gt;- No periodic output,&lt;br/&gt;- Output every 'n' time steps,&lt;br/&gt;- Output every 'x' seconds,&lt;br/&gt;- Output using a formula, in which case, the formula editor has to be filled. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;An output can be written at the end of the calculation by checking the corresponding box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="title">
+          <string>Frequency</string>
+         </property>
+         <layout class="QGridLayout">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>9</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
+           <number>9</number>
+          </property>
+          <property name="spacing">
+           <number>6</number>
+          </property>
+          <item row="0" column="0">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="comboBoxFrequency">
+            <property name="minimumSize">
+             <size>
+              <width>325</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLineEdit" name="lineEditFrequency">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="5">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLineEdit" name="lineEditFrequencyTime">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QPushButton" name="pushButtonFrequency">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>:data/icons/22x22/preferences-system.png</normaloff>:data/icons/22x22/preferences-system.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QCheckBox" name="checkBoxOutputStart">
+            <property name="text">
+             <string>Output at start of calculation</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QCheckBox" name="checkBoxOutputEnd">
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="text">
+             <string>Output at end of calculation</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QGroupBox" name="groupBoxGlobalCatalystOptions">
+         <property name="title">
+          <string>Global Catalyst options</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_9">
+          <item row="0" column="3">
+           <spacer name="horizontalSpacer_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="labelImplementC">
+            <property name="text">
+             <string>Implementation type</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" rowspan="2" colspan="2">
+           <widget class="QComboBox" name="comboBoxImplementC">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Catalyst implementation type.&lt;/p&gt;&lt;p&gt;- ParaView implementation is used by default.&lt;/p&gt;&lt;p&gt;- Stub implementation can be used for debugging. If the CATALYST_DATA_DUMP_DIRECTORY environment variable is defined, a data dump into the matching directory will be output, allowing debugging with &lt;span style=&quot; font-weight:600;&quot;&gt;catalyst_replay&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;- The legacy Catalyst implementation can be chosen here if the compute build supports both Catalyst1 and Catalyst2. If the build only supports Catalyst1, that implementation will be used and this option will be ignored.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
        <item row="0" column="0">
         <layout class="QVBoxLayout">
          <property name="spacing">
@@ -288,7 +447,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="resources_pages.qrc">
+              <iconset>
                <normaloff>:data/icons/22x22/add.png</normaloff>:data/icons/22x22/add.png</iconset>
              </property>
             </widget>
@@ -302,7 +461,7 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="resources_pages.qrc">
+              <iconset>
                <normaloff>:data/icons/22x22/remove.png</normaloff>:data/icons/22x22/remove.png</iconset>
              </property>
             </widget>
@@ -592,164 +751,18 @@
          </layout>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QGroupBox" name="groupBoxFrequency">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the writing frequency for the selected writer between:&lt;br/&gt;- No periodic output,&lt;br/&gt;- Output every 'n' time steps,&lt;br/&gt;- Output every 'x' seconds,&lt;br/&gt;- Output using a formula, in which case, the formula editor has to be filled. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;An output can be written at the end of the calculation by checking the corresponding box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <item row="5" column="0">
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
          </property>
-         <property name="title">
-          <string>Frequency</string>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
          </property>
-         <layout class="QGridLayout">
-          <property name="leftMargin">
-           <number>9</number>
-          </property>
-          <property name="topMargin">
-           <number>9</number>
-          </property>
-          <property name="rightMargin">
-           <number>9</number>
-          </property>
-          <property name="bottomMargin">
-           <number>9</number>
-          </property>
-          <property name="spacing">
-           <number>6</number>
-          </property>
-          <item row="0" column="0">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="1">
-           <widget class="QComboBox" name="comboBoxFrequency">
-            <property name="minimumSize">
-             <size>
-              <width>325</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="toolTip">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QLineEdit" name="lineEditFrequency">
-            <property name="minimumSize">
-             <size>
-              <width>100</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="5">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="3">
-           <widget class="QLineEdit" name="lineEditFrequencyTime">
-            <property name="minimumSize">
-             <size>
-              <width>100</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="4">
-           <widget class="QPushButton" name="pushButtonFrequency">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-            <property name="icon">
-             <iconset resource="resources_pages.qrc">
-              <normaloff>:data/icons/22x22/preferences-system.png</normaloff>:data/icons/22x22/preferences-system.png</iconset>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QCheckBox" name="checkBoxOutputStart">
-            <property name="text">
-             <string>Output at start of calculation</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QCheckBox" name="checkBoxOutputEnd">
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="text">
-             <string>Output at end of calculation</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QGroupBox" name="groupBoxGlobalCatalystOptions">
-         <property name="title">
-          <string>Global Catalyst options</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_9">
-          <item row="0" column="3">
-           <spacer name="horizontalSpacer_5">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="labelImplementC">
-            <property name="text">
-             <string>Implementation type</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1" rowspan="2" colspan="2">
-           <widget class="QComboBox" name="comboBoxImplementC">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Catalyst implementation type.&lt;/p&gt;&lt;p&gt;- ParaView implementation is used by default.&lt;/p&gt;&lt;p&gt;- Stub implementation can be used for debugging. If the CATALYST_DATA_DUMP_DIRECTORY environment variable is defined, a data dump into the matching directory will be output, allowing debugging with &lt;span style=&quot; font-weight:600;&quot;&gt;catalyst_replay&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;- The legacy Catalyst implementation can be chosen here if the compute build supports both Catalyst1 and Catalyst2. If the build only supports Catalyst1, that implementation will be used and this option will be ignored.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
+        </spacer>
        </item>
       </layout>
      </widget>
@@ -773,168 +786,6 @@
        <property name="spacing">
         <number>6</number>
        </property>
-       <item row="0" column="0">
-        <layout class="QVBoxLayout">
-         <property name="spacing">
-          <number>6</number>
-         </property>
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QTableView" name="tableViewMesh">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select or create mesh parts and associate them with previously defined writers. A mesh part has the following properties:&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Name&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Id&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: a negative id indicates that the mesh part cannot be destroyed, whereas a positive ID denotes a user mesh part.&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Type&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: cells, interior faces or boundary faces,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Selection criteria&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: similar to the selection criteria of the boundary and volume conditions.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout">
-           <property name="spacing">
-            <number>6</number>
-           </property>
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <spacer>
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButtonAddMesh">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="icon">
-              <iconset resource="resources_pages.qrc">
-               <normaloff>:data/icons/22x22/add.png</normaloff>:data/icons/22x22/add.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButtonDeleteMesh">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Delete the selected mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="icon">
-              <iconset resource="resources_pages.qrc">
-               <normaloff>:data/icons/22x22/remove.png</normaloff>:data/icons/22x22/remove.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer>
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </item>
-       <item row="1" column="0">
-        <widget class="QGroupBox" name="groupBoxVariable">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This box has to be checked if no variable is associated in the  &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_postprocess_values &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;user-defined function&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is negative, only the variables selected in the Volume solution control heading will be taken into account by the writer associated to the selected mesh part,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is positive, all variables are taken into account by the writer associated to the selected mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="title">
-          <string>Variables</string>
-         </property>
-         <layout class="QGridLayout">
-          <property name="leftMargin">
-           <number>9</number>
-          </property>
-          <property name="topMargin">
-           <number>9</number>
-          </property>
-          <property name="rightMargin">
-           <number>9</number>
-          </property>
-          <property name="bottomMargin">
-           <number>9</number>
-          </property>
-          <property name="spacing">
-           <number>6</number>
-          </property>
-          <item row="0" column="2">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="0">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="1">
-           <widget class="QCheckBox" name="checkBoxAllVariables">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This box has to be checked if no variable is associated in the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_postprocess_values &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;user-defined function&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is negative, only the variables selected in the Volume solution control heading will be taken into account by the writer associated to the selected mesh part,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is positive, all variables are taken into account by the writer associated to the selected mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>Auto</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
        <item row="2" column="0">
         <widget class="QGroupBox" name="groupBoxAssociatedWriter">
          <property name="toolTip">
@@ -1050,7 +901,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="resources_pages.qrc">
+               <iconset>
                 <normaloff>:data/icons/22x22/add.png</normaloff>:data/icons/22x22/add.png</iconset>
               </property>
              </widget>
@@ -1064,7 +915,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="resources_pages.qrc">
+               <iconset>
                 <normaloff>:data/icons/22x22/remove.png</normaloff>:data/icons/22x22/remove.png</iconset>
               </property>
              </widget>
@@ -1087,28 +938,6 @@
          </layout>
         </widget>
        </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="tab_lagrangian">
-      <attribute name="title">
-       <string>Particles mesh</string>
-      </attribute>
-      <layout class="QGridLayout">
-       <property name="leftMargin">
-        <number>9</number>
-       </property>
-       <property name="topMargin">
-        <number>9</number>
-       </property>
-       <property name="rightMargin">
-        <number>9</number>
-       </property>
-       <property name="bottomMargin">
-        <number>9</number>
-       </property>
-       <property name="spacing">
-        <number>6</number>
-       </property>
        <item row="0" column="0">
         <layout class="QVBoxLayout">
          <property name="spacing">
@@ -1127,9 +956,9 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QTableView" name="tableViewLagrangianMesh">
+          <widget class="QTableView" name="tableViewMesh">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select or create particle mesh parts and associate them with previously defined writers. A particle mesh part has the following properties:&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Name&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Id&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: a negative id indicates that the mesh part cannot be destroyed, whereas a positive ID denotes a user mesh part&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Type&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: particles or trajectories; note that the type should match the associated writer type&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Density&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: if &amp;lt; 1, the amount of output particles is multiplied by this amount. This allows reducing the size of the output, and is based on selecting only particles whose associated random number (following a uniform law) is lower than the given density&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Selection criteria&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: only particles in cells within the selected volume criteria are output&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select or create mesh parts and associate them with previously defined writers. A mesh part has the following properties:&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Name&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Id&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: a negative id indicates that the mesh part cannot be destroyed, whereas a positive ID denotes a user mesh part.&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Type&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: cells, interior faces or boundary faces,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Selection criteria&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: similar to the selection criteria of the boundary and volume conditions.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
@@ -1164,29 +993,29 @@
             </spacer>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButtonAddLagrangianMesh">
+            <widget class="QPushButton" name="pushButtonAddMesh">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a particle mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="resources_pages.qrc">
+              <iconset>
                <normaloff>:data/icons/22x22/add.png</normaloff>:data/icons/22x22/add.png</iconset>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButtonDeleteLagrangianMesh">
+            <widget class="QPushButton" name="pushButtonDeleteMesh">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Delete the selected particle mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Delete the selected mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string/>
              </property>
              <property name="icon">
-              <iconset resource="resources_pages.qrc">
+              <iconset>
                <normaloff>:data/icons/22x22/remove.png</normaloff>:data/icons/22x22/remove.png</iconset>
              </property>
             </widget>
@@ -1208,6 +1037,104 @@
          </item>
         </layout>
        </item>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBoxVariable">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This box has to be checked if no variable is associated in the  &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_postprocess_values &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;user-defined function&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is negative, only the variables selected in the Volume solution control heading will be taken into account by the writer associated to the selected mesh part,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is positive, all variables are taken into account by the writer associated to the selected mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="title">
+          <string>Variables</string>
+         </property>
+         <layout class="QGridLayout">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>9</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
+           <number>9</number>
+          </property>
+          <property name="spacing">
+           <number>6</number>
+          </property>
+          <item row="0" column="2">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="0">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="1">
+           <widget class="QCheckBox" name="checkBoxAllVariables">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;This box has to be checked if no variable is associated in the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-style:italic;&quot;&gt;cs_user_postprocess_values &lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;user-defined function&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is negative, only the variables selected in the Volume solution control heading will be taken into account by the writer associated to the selected mesh part,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- If the mesh part ID is positive, all variables are taken into account by the writer associated to the selected mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Auto</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <spacer name="verticalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_lagrangian">
+      <attribute name="title">
+       <string>Particles mesh</string>
+      </attribute>
+      <layout class="QGridLayout">
+       <property name="leftMargin">
+        <number>9</number>
+       </property>
+       <property name="topMargin">
+        <number>9</number>
+       </property>
+       <property name="rightMargin">
+        <number>9</number>
+       </property>
+       <property name="bottomMargin">
+        <number>9</number>
+       </property>
+       <property name="spacing">
+        <number>6</number>
+       </property>
        <item row="1" column="0">
         <widget class="QGroupBox" name="groupBoxLagrangianVariable">
          <property name="toolTip">
@@ -1386,7 +1313,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="resources_pages.qrc">
+               <iconset>
                 <normaloff>:data/icons/22x22/add.png</normaloff>:data/icons/22x22/add.png</iconset>
               </property>
              </widget>
@@ -1400,7 +1327,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="resources_pages.qrc">
+               <iconset>
                 <normaloff>:data/icons/22x22/remove.png</normaloff>:data/icons/22x22/remove.png</iconset>
               </property>
              </widget>
@@ -1422,6 +1349,118 @@
           </item>
          </layout>
         </widget>
+       </item>
+       <item row="0" column="0">
+        <layout class="QVBoxLayout">
+         <property name="spacing">
+          <number>6</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QTableView" name="tableViewLagrangianMesh">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select or create particle mesh parts and associate them with previously defined writers. A particle mesh part has the following properties:&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Name&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;,&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Id&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: a negative id indicates that the mesh part cannot be destroyed, whereas a positive ID denotes a user mesh part&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Type&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: particles or trajectories; note that the type should match the associated writer type&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Density&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: if &amp;lt; 1, the amount of output particles is multiplied by this amount. This allows reducing the size of the output, and is based on selecting only particles whose associated random number (following a uniform law) is lower than the given density&lt;br/&gt;- &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Selection criteria&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;: only particles in cells within the selected volume criteria are output&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout">
+           <property name="spacing">
+            <number>6</number>
+           </property>
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <spacer>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButtonAddLagrangianMesh">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add a particle mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:data/icons/22x22/add.png</normaloff>:data/icons/22x22/add.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButtonDeleteLagrangianMesh">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Delete the selected particle mesh part.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:data/icons/22x22/remove.png</normaloff>:data/icons/22x22/remove.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item row="3" column="0">
+        <spacer name="verticalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>
@@ -1686,7 +1725,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="resources_pages.qrc">
+               <iconset>
                 <normaloff>:data/icons/22x22/add.png</normaloff>:data/icons/22x22/add.png</iconset>
               </property>
              </widget>
@@ -1715,7 +1754,7 @@
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="resources_pages.qrc">
+               <iconset>
                 <normaloff>:data/icons/22x22/remove.png</normaloff>:data/icons/22x22/remove.png</iconset>
               </property>
              </widget>
@@ -1801,7 +1840,7 @@
          </property>
          <layout class="QGridLayout" name="gridLayout">
           <item row="0" column="0">
-           <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
              <spacer name="horizontalSpacer">
               <property name="orientation">
@@ -1816,25 +1855,21 @@
              </spacer>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout">
-              <item>
-               <widget class="QLabel" name="labelProbesRadius">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Display monitoring points on SALOME VTK Viewer. The probe's radius has to be defined in meters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>Probe's radius (m)</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="lineEditProbesRadius">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Display monitoring points on SALOME VTK Viewer. The probe's radius has to be defined in meters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
+             <widget class="QLabel" name="labelProbesRadius">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Display monitoring points on SALOME VTK Viewer. The probe's radius has to be defined in meters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Probe's radius (m)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEditProbesRadius">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Display monitoring points on SALOME VTK Viewer. The probe's radius has to be defined in meters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item>
              <spacer name="horizontalSpacer_2">
