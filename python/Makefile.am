@@ -23,38 +23,38 @@
 #-------------------------------------------------------------------------------
 
 if HAVE_GUI
-ENABLE_GUI = --with-gui
+ENV_GUI = CS_ENABLE_GUI=1
 
 # QT
 
 if HAVE_PYSIDE6
-USE_QT = --use-qt=pyside6
+ENV_QT = CS_USE_QT=pyside6
 if HAVE_PYUIC
-  CMD_UIC = --pyuic $(PYSIDE6UIC)
+  ENV_UIC = CS_PYUIC="$(PYSIDE6UIC)"
 else
-  CMD_UIC = --uic $(UIC)
+  ENV_UIC = CS_UIC="$(UIC)"
 endif
 if HAVE_PYRCC
-  CMD_RCC = --pyrcc $(PYSIDE6RCC)
+  ENV_RCC = CS_PYRCC="$(PYSIDE6RCC)"
 else
-  CMD_RCC = --rcc $(RCC)
+  ENV_RCC = CS_RCC="$(RCC)"
 endif
 endif
 
 if HAVE_PYQT6
-USE_QT = --use-qt=pyqt6
-CMD_UIC = --pyuic $(PYUIC6)
-CMD_RCC = --rcc $(RCC)
+ENV_QT = CS_USE_QT=pyqt6
+ENV_UIC = CS_PYUIC="$(PYUIC6)"
+ENV_RCC = CS_RCC="$(RCC)"
 endif
 
 if HAVE_PYQT5
-USE_QT = --use-qt=pyqt5
-CMD_UIC = --pyuic $(PYUIC5)
-CMD_RCC = --pyrcc $(PYRCC5)
+ENV_QT = CS_USE_QT=pyqt5
+ENV_UIC = CS_PYUIC="$(PYUIC5)"
+ENV_RCC = CS_PYRCC="$(PYRCC5)"
 endif
 
 else
-ENABLE_GUI = --without-gui
+ENV_GUI = CS_ENABLE_GUI=0
 endif
 
 # Copy all files in pythondir
@@ -84,18 +84,18 @@ clean-local:
 		echo "rm -rf build"; \
 		rm -rf build; \
 	fi
+	if test -d dist; then \
+		echo "rm -rf dist"; \
+		rm -rf dist; \
+	fi
 
 all-local: clean-local
-	$(PYTHON) ${abs_top_srcdir}/python/setup.py build \
-		--build-base ${abs_top_builddir}/python/build \
-		$(ENABLE_GUI) $(USE_QT) $(CMD_UIC) $(CMD_RCC) \
-		--version $(VERSION) \
-		--verbose
+	$(ENV_GUI) $(ENV_QT) $(ENV_UIC) $(ENV_RCC) CS_VERSION="$(VERSION)" \
+	$(PYTHON) -m pip wheel --no-deps --no-build-isolation \
+		--wheel-dir ${abs_top_builddir}/python/dist \
+		${abs_top_srcdir}/python
 
 install-exec-local:
-	$(PYTHON) ${abs_top_srcdir}/python/setup.py install \
-		--install-lib $(DESTDIR)/$(pythondir) \
-		--single-version-externally-managed \
-		--record $(DESTDIR)/$(pkgpythondir)/install_files.txt \
-		--version $(VERSION) \
-		--verbose
+	$(PYTHON) -m pip install --no-deps --no-build-isolation --no-warn-script-location --upgrade \
+		--target "$(DESTDIR)$(pythondir)" \
+		${abs_top_builddir}/python/dist/*.whl

@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=40.8.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "code_saturne"
+dynamic = ["version"]
+description = "Python CLI and GUI of code_saturne multiphysics CFD package"
+authors = [
+    { name = "code_saturne dev team", email = "saturne-support@edf.fr" }
+]
+requires-python = ">=3.8"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+namespaces = true
