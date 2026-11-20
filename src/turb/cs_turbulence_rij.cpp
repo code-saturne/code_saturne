@@ -3966,7 +3966,7 @@ _solve_epsilon(int              phase_id,
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t tke = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
-        const cs_real_t mut = cmu_ref * tke * tke / cvara_ep[c_id];
+        const cs_real_t mut = crom[c_id] * cmu_ref * tke * tke / cvara_ep[c_id];
         w1[c_id] = viscl[c_id] + mut * dsigmae;
       });
       ctx.wait();
