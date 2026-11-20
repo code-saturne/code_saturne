@@ -39,7 +39,7 @@
 #include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <math.h>
@@ -65,6 +65,10 @@
 
 #if defined(HAVE_CLOCK_GETTIME) && defined(__CYGWIN__)
 #undef HAVE_CLOCK_GETTIME
+#endif
+
+#if !defined(HAVE_CLOCK_GETTIME)
+#include <chrono>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -133,24 +137,6 @@ typedef void
  * Local function prototypes (descriptions later).
  *-----------------------------------------------------------------------------*/
 
-/* Wall-clock timer functions */
-
-void
-_cs_timer_wall_null(cs_timer_t  *timer);
-
-#if defined (HAVE_CLOCK_GETTIME)
-void
-_cs_timer_wall_clock_gettime(cs_timer_t  *timer);
-#endif
-
-#if defined (HAVE_GETTIMEOFDAY)
-void
-_cs_timer_wall_gettimeofday(cs_timer_t  *timer);
-#endif
-
-void
-_cs_timer_wall_stdc_time(cs_timer_t  *timer);
-
 /* CPU timer functions */
 
 void
@@ -174,14 +160,8 @@ _cs_timer_cpu_stdc_clock(cs_timer_t  *timer);
  *-----------------------------------------------------------------------------*/
 
 static bool  _cs_timer_initialized = false;
-static cs_timer_method_t _cs_timer_wall_method = CS_TIMER_DISABLE;
 static cs_timer_method_t _cs_timer_cpu_method = CS_TIMER_DISABLE;
-static _cs_timer_wall_func_t *_cs_timer_wall = _cs_timer_wall_null;
 static _cs_timer_cpu_func_t *_cs_timer_cpu = _cs_timer_cpu_null;
-
-/* Wall-clock time */
-
-static time_t _cs_timer_stdc_time_start;
 
 /* CPU time */
 
@@ -206,21 +186,6 @@ int cs_glob_timer_kernels_flag = 0;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Null function to get wall-clock time.
- *
- * parameters:
- *   timer  <-- pointer to timing structure (ignored)
- *----------------------------------------------------------------------------*/
-
-void
-_cs_timer_wall_null(cs_timer_t  *timer)
-{
-  CS_UNUSED(timer);
-}
-
-#if defined (HAVE_CLOCK_GETTIME)
-
-/*----------------------------------------------------------------------------
  * Get wall-clock time using clock_gettime().
  *
  * parameters:
@@ -228,52 +193,29 @@ _cs_timer_wall_null(cs_timer_t  *timer)
  *----------------------------------------------------------------------------*/
 
 void
-_cs_timer_wall_clock_gettime(cs_timer_t  *timer)
+_cs_timer_wall(cs_timer_t  *timer)
 {
+#if defined (HAVE_CLOCK_GETTIME)
+
   struct timespec w_time;
-  (void)clock_gettime(CLOCK_REALTIME, &w_time);
+# if defined(__linux__)
+  (void)clock_gettime(CLOCK_MONOTONIC_RAW, &w_time);
+#else
+  (void)clock_gettime(CLOCK_MONOTONIC, &w_time);
+#endif
   timer->sec = w_time.tv_sec;
   timer->nsec = w_time.tv_nsec;
-}
+
+#else
+
+  auto t = std::chrono::steady_clock::now();
+  auto tse = t.time_since_epoch();
+  const auto int_ms
+    = std::chrono::duration_cast<std::chrono::microseconds>(tse).count();
+  timer->sec = 0;
+  timer->nsec = int_ms * 1000;
 
 #endif /* defined (HAVE_CLOCK_GETTIME) */
-
-#if defined (HAVE_GETTIMEOFDAY)
-
-/*----------------------------------------------------------------------------
- * Get wall-clock time using gettimeofday().
- *
- * parameters:
- *   timer  <-- pointer to timing structure
- *----------------------------------------------------------------------------*/
-
-void
-_cs_timer_wall_gettimeofday(cs_timer_t  *timer)
-{
-  struct timeval  tv_time;
-  (void)gettimeofday(&tv_time, nullptr);
-  timer->sec = tv_time.tv_sec;
-  timer->nsec = tv_time.tv_usec*1000;
-}
-
-#endif /* defined (HAVE_GETTIMEOFDAY) */
-
-/*----------------------------------------------------------------------------
- * Get wall-clock time using time().
- *
- * parameters:
- *   timer  <-- pointer to timing structure
- *----------------------------------------------------------------------------*/
-
-void
-_cs_timer_wall_stdc_time(cs_timer_t  *timer)
-{
-  time_t wtime_current;
-  double dt;
-  time(&wtime_current);
-  dt = difftime(wtime_current, _cs_timer_stdc_time_start);
-  timer->sec = floor(dt);
-  timer->nsec = (dt - timer->sec) * 1.0e-9;
 }
 
 /*----------------------------------------------------------------------------
@@ -284,9 +226,8 @@ _cs_timer_wall_stdc_time(cs_timer_t  *timer)
  *----------------------------------------------------------------------------*/
 
 void
-_cs_timer_cpu_null(cs_timer_t  *timer)
+_cs_timer_cpu_null([[maybe_unused]] cs_timer_t  *timer)
 {
-  CS_UNUSED(timer);
 }
 
 #if defined (HAVE_CLOCK_GETTIME)
@@ -354,31 +295,18 @@ _cs_timer_initialize(void)
   if (getenv("CS_TIME_KERNELS") != nullptr)
     cs_glob_timer_kernels_flag = atoi(getenv("CS_TIME_KERNELS"));
 
-  _cs_timer_start.sec = 0;
-  _cs_timer_start.nsec = 0;
+  _cs_timer_wall(&_cs_timer_start);
 
   _cs_timer_cpu_start.sec = 0;
   _cs_timer_cpu_start.nsec = 0;
 
   /* Select timing methods, trying highest resolution first */
 
-#if defined (HAVE_CLOCK_GETTIME)
-
-  struct timespec ts_time;
-
-  if (_cs_timer_wall_method == CS_TIMER_DISABLE) {
-    if (clock_gettime(CLOCK_REALTIME, &ts_time) == 0) {
-      _cs_timer_start.sec = ts_time.tv_sec;
-      _cs_timer_start.nsec = ts_time.tv_nsec;
-      _cs_timer_wall_method = CS_TIMER_CLOCK_GETTIME;
-      _cs_timer_wall = _cs_timer_wall_clock_gettime;
-    }
-  }
-
-#if defined (HAVE_CLOCK_GETCPUCLOCKID)
+#if defined (HAVE_CLOCK_GETTIME) && defined (HAVE_CLOCK_GETCPUCLOCKID)
   if (_cs_timer_cpu_method == CS_TIMER_DISABLE) {
     clockid_t clock_id;
     if (clock_getcpuclockid(0, &clock_id) == 0) {
+      struct timespec ts_time;
       /* ENOENT could be allowed with process binding,
          but binding needs to be checked. */
       if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_time) == 0) {
@@ -387,22 +315,6 @@ _cs_timer_initialize(void)
       }
     }
   }
-#endif
-
-#endif
-
-#if defined (HAVE_GETTIMEOFDAY)
-
-  if (_cs_timer_wall_method == CS_TIMER_DISABLE) {
-    static struct timeval  tv_time;
-    if (gettimeofday(&tv_time, nullptr) == 0) {
-      _cs_timer_start.sec = tv_time.tv_sec;
-      _cs_timer_start.nsec = tv_time.tv_usec*1000;
-      _cs_timer_wall_method = CS_TIMER_GETTIMEOFDAY;
-      _cs_timer_wall = _cs_timer_wall_gettimeofday;
-    }
-  }
-
 #endif
 
 #if defined(HAVE_GETRUSAGE)
@@ -418,15 +330,6 @@ _cs_timer_initialize(void)
 #endif
 
   /* Use minimal C library functions */
-
-  if (_cs_timer_wall_method == CS_TIMER_DISABLE) {
-    time_t wtime_current;
-    if (time(&wtime_current) != (time_t)-1) {
-      _cs_timer_stdc_time_start = time(&wtime_current);
-      _cs_timer_wall_method = CS_TIMER_TIME;
-      _cs_timer_wall = _cs_timer_wall_stdc_time;
-    }
-  }
 
   if (_cs_timer_cpu_method == CS_TIMER_DISABLE) {
     _cs_timer_clock_start = clock();
@@ -626,7 +529,7 @@ cs_timer_cpu_time_method(void)
   if (_cs_timer_initialized == 0)
     _cs_timer_initialize();
 
-  switch(_cs_timer_wall_method) {
+  switch(_cs_timer_cpu_method) {
 
   case CS_TIMER_CLOCK_GETTIME:
     return _("clock_gettime() function");
@@ -636,8 +539,6 @@ cs_timer_cpu_time_method(void)
     return _("Posix times() function");
   case CS_TIMER_CLOCK:
     return _("Iso C clock() function");
-  case CS_TIMER_DISABLE:
-    return _("Disabled");
   default:
     return _("Disabled");
 

@@ -41,8 +41,8 @@
 
 typedef struct {
 
-  long long    sec;       /* seconds */
-  long long    nsec;      /* nanoseconds */
+  uint64_t    sec;       /* seconds */
+  uint64_t    nsec;      /* nanoseconds */
 
 } cs_timer_t;
 
@@ -50,7 +50,7 @@ typedef struct {
 
 typedef struct {
 
-  long long    nsec;      /* wall-time nanoseconds */
+  uint64_t  nsec;      /* wall-time nanoseconds */
 
 } cs_timer_counter_t;
 
