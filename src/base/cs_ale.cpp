@@ -2442,7 +2442,6 @@ cs_ale_initialize_volume_fields(void)
 {
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_t *mq_cell_vol = mq->cell_vol;
 
   cs_field_t *f_cellvol = cs_field_by_name("cell_vol");
   cs_real_t *cell_vol = f_cellvol->val;
