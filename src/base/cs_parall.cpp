@@ -39,6 +39,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
+#include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 
@@ -158,6 +159,10 @@ static size_t _cs_parall_min_coll_buf_size = 1024*1024;
 
 cs_e2n_sum_t cs_glob_e2n_sum_type = CS_E2N_SUM_SCATTER;
 
+/* Timers */
+static uint64_t  _parall_timers[CS_TIMER_N_OPS] = {0};
+static size_t    _parall_calls[CS_TIMER_N_OPS] = {0};
+
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -220,8 +225,77 @@ _get_array_distribution(MPI_Comm  comm,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
+ * Utility class member function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Timer objects (start and stop at construction and destruction)
+ *----------------------------------------------------------------------------*/
+
+cs_parall_timer_t::cs_parall_timer_t
+(
+  cs_parall_timer_op_t  op  /*!< Parallel operation type */
+)
+{
+  op_ = op;
+  t0_ = cs_timer_time();
+  _parall_calls[op_] += 1;
+}
+
+cs_parall_timer_t::cs_parall_timer_t
+(
+  cs_parall_timer_op_t  op,  /*!< parallel operation type */
+  int                   n    /*!< numer of operations */
+)
+{
+  op_ = op;
+  t0_ = cs_timer_time();
+  _parall_calls[op_] += n;
+}
+
+cs_parall_timer_t::~cs_parall_timer_t()
+{
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_t dt = cs_timer_diff(&t0_, &t1);
+
+  _parall_timers[op_] += dt.nsec;
+}
+
+/*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reset parallel operation cumulative timers.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_timers_reset()
+{
+  for (int i = 0; i < (int)CS_TIMER_N_OPS; i++)
+    _parall_timers[i] = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to parallel operation cumulative timers.
+ *
+ * There is one timer per cs_parall_timer_op_t value under CS_TIMER_N_OPS.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_stats
+(
+  const uint64_t  *&timer_ns,    /*!<[out] pointer to array of timers, in ns */
+  const size_t    *&call_counts  /*!<[out] pointer to array of call counts */
+)
+{
+  timer_ns = _parall_timers;
+  call_counts = _parall_calls;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -249,12 +323,18 @@ cs_parall_max_loc_vals(int         n,
     val_in.val  = *max;
     val_in.rank = cs_glob_rank_id;
 
-    MPI_Allreduce(&val_in, &val_max, 1, MPI_DOUBLE_INT, MPI_MAXLOC,
-                  cs_glob_mpi_comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      MPI_Allreduce(&val_in, &val_max, 1, MPI_DOUBLE_INT, MPI_MAXLOC,
+                    cs_glob_mpi_comm);
+    }
 
     *max = val_max.val;
 
-    MPI_Bcast(max_loc_vals, n, CS_MPI_REAL, val_max.rank, cs_glob_mpi_comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_BCAST);
+      MPI_Bcast(max_loc_vals, n, CS_MPI_REAL, val_max.rank, cs_glob_mpi_comm);
+    }
 
   }
 
@@ -287,12 +367,18 @@ cs_parall_min_loc_vals(int         n,
     val_in.val  = *min;
     val_in.rank = cs_glob_rank_id;
 
-    MPI_Allreduce(&val_in, &val_min, 1, MPI_DOUBLE_INT, MPI_MINLOC,
-                  cs_glob_mpi_comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      MPI_Allreduce(&val_in, &val_min, 1, MPI_DOUBLE_INT, MPI_MINLOC,
+                    cs_glob_mpi_comm);
+    }
 
     *min = val_min.val;
 
-    MPI_Bcast(min_loc_vals, n, CS_MPI_REAL, val_min.rank, cs_glob_mpi_comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_BCAST);
+      MPI_Bcast(min_loc_vals, n, CS_MPI_REAL, val_min.rank, cs_glob_mpi_comm);
+    }
 
   }
 
@@ -330,15 +416,21 @@ cs_parall_min_id_rank_r(cs_lnum_t  *elt_id,
     val_in.val  = val;
     val_in.rank = cs_glob_rank_id;
 
-    MPI_Allreduce(&val_in, &val_min, 1, MPI_DOUBLE_INT, MPI_MINLOC,
-                  cs_glob_mpi_comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      MPI_Allreduce(&val_in, &val_min, 1, MPI_DOUBLE_INT, MPI_MINLOC,
+                    cs_glob_mpi_comm);
+    }
 
     *rank_id = cs_glob_rank_id;
 
     buf[0] = *elt_id;
     buf[1] = *rank_id;
 
-    MPI_Bcast(buf, 2, CS_MPI_LNUM, val_min.rank, cs_glob_mpi_comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_BCAST);
+      MPI_Bcast(buf, 2, CS_MPI_LNUM, val_min.rank, cs_glob_mpi_comm);
+    }
 
     *elt_id = buf[0];
     *rank_id = buf[1];
@@ -376,7 +468,8 @@ cs_parall_allgather_r(int        n_elts,
 
   if (cs_glob_n_ranks > 1) {
 
-    int  i;
+    cs_parall_timer_t timer(CS_TIMER_ALLGATHER);
+
     int  *count = nullptr;
     int  *shift = nullptr;
 
@@ -391,7 +484,7 @@ cs_parall_allgather_r(int        n_elts,
                   cs_glob_mpi_comm);
 
     shift[0] = 0;
-    for (i = 1; i < n_domains; i++)
+    for (int i = 1; i < n_domains; i++)
       shift[i] = shift[i-1] + count[i-1];
 
     if (n_g_elts != (shift[n_domains - 1] + count[n_domains - 1]))
@@ -498,6 +591,8 @@ cs_parall_gather_r(int               root_rank,
 
   if (cs_glob_n_ranks > 1) {
 
+    cs_parall_timer_t timer(CS_TIMER_GATHERV);
+
     /* Sanity check */
 
     if (cs_glob_rank_id == root_rank && g_array == nullptr)
@@ -507,7 +602,8 @@ cs_parall_gather_r(int               root_rank,
 
     int  *count = nullptr, *shift = nullptr;
 
-    _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
+    _get_array_distribution(cs_glob_mpi_comm,
+                            root_rank, n_elts, n_g_elts, &count, &shift);
 
     MPI_Gatherv(array, n_elts, CS_MPI_REAL,
                 g_array, count, shift, CS_MPI_REAL,
@@ -616,6 +712,8 @@ cs_parall_scatter_r(int               root_rank,
 
   if (cs_glob_n_ranks > 1) {
 
+    cs_parall_timer_t timer(CS_TIMER_SCATTERV);
+
     /* Sanity check */
 
     if (cs_glob_rank_id == root_rank && g_array == nullptr)
@@ -625,7 +723,8 @@ cs_parall_scatter_r(int               root_rank,
 
     int  *count = nullptr, *shift = nullptr;
 
-    _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
+    _get_array_distribution(cs_glob_mpi_comm,
+                            root_rank, n_elts, n_g_elts, &count, &shift);
 
     MPI_Scatterv(g_array, count, shift, CS_MPI_REAL,
                  array, n_elts, CS_MPI_REAL, root_rank, cs_glob_mpi_comm);
@@ -681,6 +780,8 @@ cs_parall_gather_f(int             root_rank,
 
   if (cs_glob_n_ranks > 1) {
 
+    cs_parall_timer_t timer(CS_TIMER_GATHERV);
+
     /* Sanity check */
 
     if (cs_glob_rank_id == root_rank && g_array == nullptr)
@@ -690,7 +791,8 @@ cs_parall_gather_f(int             root_rank,
 
     int  *count = nullptr, *shift = nullptr;
 
-    _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
+    _get_array_distribution(cs_glob_mpi_comm,
+                            root_rank, n_elts, n_g_elts, &count, &shift);
 
     MPI_Gatherv(array, n_elts, MPI_FLOAT,
                 g_array, count, shift, MPI_FLOAT, root_rank, cs_glob_mpi_comm);
@@ -746,6 +848,8 @@ cs_parall_scatter_f(int           root_rank,
 
   if (cs_glob_n_ranks > 1) {
 
+    cs_parall_timer_t timer(CS_TIMER_SCATTERV);
+
     /* Sanity check */
 
     if (cs_glob_rank_id == root_rank && g_array == nullptr)
@@ -755,7 +859,8 @@ cs_parall_scatter_f(int           root_rank,
 
     int  *count = nullptr, *shift = nullptr;
 
-    _get_array_distribution(cs_glob_mpi_comm, root_rank, n_elts, n_g_elts, &count, &shift);
+    _get_array_distribution(cs_glob_mpi_comm,
+                            root_rank, n_elts, n_g_elts, &count, &shift);
 
     MPI_Scatterv(g_array, count, shift, MPI_FLOAT,
                  array, n_elts, MPI_FLOAT, root_rank, cs_glob_mpi_comm);
@@ -818,8 +923,72 @@ cs_parall_set_min_coll_buf_size(size_t buffer_size)
 #endif
 }
 
-/*=============================================================================
- * Public C++ overloaded functions
- *============================================================================*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log performance information relative to instrumented MPI operations.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_log_finalize(void)
+{
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks < 2)
+    return;
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\nCommon MPI operations:\n\n"));
+
+  /* Print times */
+
+  unsigned long ncalls[CS_TIMER_N_OPS] = {0};
+  double wtimes[CS_TIMER_N_OPS] = {0};
+  double wtimes_mean[CS_TIMER_N_OPS];
+  double wtimes_max[CS_TIMER_N_OPS], wtimes_min[CS_TIMER_N_OPS];
+  for (int i = 0; i < (int)CS_TIMER_N_OPS; i++) {
+    ncalls[i] = _parall_calls[i];
+  }
+  MPI_Allreduce(MPI_IN_PLACE, ncalls, CS_TIMER_N_OPS, MPI_UNSIGNED_LONG, MPI_MAX,
+                cs_glob_mpi_comm);
+
+  for (int i = 0; i < (int)CS_TIMER_N_OPS; i++) {
+    if (ncalls[i] > 0)
+      wtimes[i] = (_parall_timers[i])*1e-9;
+    wtimes_mean[i] = wtimes[i];
+    wtimes_max[i] = wtimes[i];
+    wtimes_min[i] = wtimes[i];
+  }
+  MPI_Allreduce(wtimes, wtimes_mean, CS_TIMER_N_OPS, MPI_DOUBLE, MPI_SUM,
+                cs_glob_mpi_comm);
+  MPI_Allreduce(wtimes, wtimes_max, CS_TIMER_N_OPS, MPI_DOUBLE, MPI_MAX,
+                cs_glob_mpi_comm);
+  MPI_Allreduce(wtimes, wtimes_min, CS_TIMER_N_OPS, MPI_DOUBLE, MPI_MIN,
+                cs_glob_mpi_comm);
+  for (int i = 0; i < CS_TIMER_N_OPS; i++)
+    wtimes_mean[i] /= cs_glob_n_ranks;
+
+  const char *names[] = {"MPI_Allreduce:", "MPI_Bcast:", "MPI_Allgather:",
+                         "MPI_Gather:", "MPI_Gatherv:", "MPI_Scatterv:",
+                         "MPI_Scan:"};
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("                          mean           minimum        maximum"
+       "     calls\n"));
+
+  for (int i = 0; i < CS_TIMER_N_OPS; i++) {
+    if (ncalls[i] < 1)
+      continue;
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("  %-15s    %12.5f s %12.5f s %12.5f s   %lu\n"),
+       names[i], wtimes_mean[i], wtimes_min[i], wtimes_max[i], ncalls[i]);
+  }
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+
+  cs_log_separator(CS_LOG_PERFORMANCE);
+
+#endif /* defined(HAVE_MPI) */
+}
 
 /*----------------------------------------------------------------------------*/

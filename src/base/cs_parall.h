@@ -33,6 +33,7 @@
 
 #include "base/cs_defs.h"
 #include "base/cs_execution_context.h"
+#include "base/cs_timer.h"
 
 /*============================================================================
  * General types and macros used throughout code_saturne
@@ -53,6 +54,35 @@ typedef enum {
 
 } cs_e2n_sum_t;
 
+typedef enum {
+
+  CS_TIMER_ALLREDUCE,  /*!< Timings for MPI_Allreduce operations */
+  CS_TIMER_BCAST,      /*!< Timings for MPI_Bcast operations */
+  CS_TIMER_ALLGATHER,  /*!< Timings for MPI_Allgather operations */
+  CS_TIMER_GATHER,     /*!< Timings for MPI_Gather operations */
+  CS_TIMER_GATHERV,    /*!< Timings for MPI_Gatherv operations */
+  CS_TIMER_SCATTERV,   /*!< Timings for MPI_Scatterv operations */
+  CS_TIMER_SCAN,       /*!< Timings for MPI_Scan operations */
+  CS_TIMER_N_OPS
+
+} cs_parall_timer_op_t;
+
+/*----------------------------------------------------------------------------
+ * Timer objects (start and stop at construction and destruction)
+ *----------------------------------------------------------------------------*/
+
+class cs_parall_timer_t {
+public:
+  cs_parall_timer_t(cs_parall_timer_op_t  op);
+  cs_parall_timer_t(cs_parall_timer_op_t  op,
+                    int                   n);
+  ~cs_parall_timer_t();
+
+private:
+  cs_parall_timer_op_t op_;
+  cs_timer_t t0_;
+};
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -64,6 +94,30 @@ extern cs_e2n_sum_t cs_glob_e2n_sum_type;
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Reset parallel operation cumulative timers.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_timers_reset();
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Get pointer to parallel operation cumulative timers.
+ *
+ * There is one timer per cs_parall_timer_op_t value under CS_TIMER_N_OPS.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_stats
+(
+  const uint64_t  *&timer_ns,    /*!<[out] pointer to array of timers, in ns */
+  const size_t    *&call_counts  /*!<[out] pointer to array of call counts */
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -81,6 +135,7 @@ cs_parall_counter([[maybe_unused]]cs_gnum_t   cpt[],
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, cpt, n, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
   }
@@ -104,6 +159,7 @@ cs_parall_counter_max([[maybe_unused]] cs_lnum_t  cpt[],
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, cpt, n, CS_MPI_LNUM, MPI_MAX,
                   cs_glob_mpi_comm);
   }
@@ -129,6 +185,7 @@ cs_parall_sum([[maybe_unused]] int             n,
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, val, n, cs_datatype_to_mpi[datatype], MPI_SUM,
                   cs_glob_mpi_comm);
   }
@@ -155,6 +212,7 @@ cs_parall_max([[maybe_unused]] int             n,
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, val, n, cs_datatype_to_mpi[datatype], MPI_MAX,
                   cs_glob_mpi_comm);
   }
@@ -181,6 +239,7 @@ cs_parall_min([[maybe_unused]] int             n,
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, val, n, cs_datatype_to_mpi[datatype], MPI_MIN,
                   cs_glob_mpi_comm);
   }
@@ -209,9 +268,11 @@ cs_parall_bcast([[maybe_unused]] int             root_rank,
 {
 #if defined(HAVE_MPI)
 
-  if (cs_glob_n_ranks > 1)
+  if (cs_glob_n_ranks > 1) {
+    cs_parall_timer_t timer(CS_TIMER_BCAST);
     MPI_Bcast(val, n, cs_datatype_to_mpi[datatype], root_rank,
               cs_glob_mpi_comm);
+  }
 
 #endif
 }
@@ -495,6 +556,15 @@ void
 cs_parall_set_min_coll_buf_size(size_t buffer_size);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Log performance information relative to instrumented MPI operations.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_log_finalize(void);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute recommended number of threads for a section.
  *
@@ -655,6 +725,7 @@ cs_parall_counter
 #if defined(HAVE_MPI)
 
   if (mpi_w.active()) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, cpt, n, CS_MPI_GNUM, MPI_SUM,
                   mpi_w.comm());
   }
@@ -683,6 +754,7 @@ cs_parall_counter_max
 #if defined(HAVE_MPI)
 
   if (mpi_w.active()) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, cpt, n, CS_MPI_LNUM, MPI_MAX,
                   mpi_w.comm());
   }
@@ -713,6 +785,7 @@ cs_parall_sum
 #if defined(HAVE_MPI)
 
   if (mpi_w.active()) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, val, n,
                   cs_datatype_to_mpi[datatype], MPI_SUM,
                   mpi_w.comm());
@@ -745,6 +818,7 @@ cs_parall_max
 #if defined(HAVE_MPI)
 
   if (mpi_w.active()) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, val, n,
                   cs_datatype_to_mpi[datatype], MPI_MAX,
                   mpi_w.comm());
@@ -777,6 +851,7 @@ cs_parall_min
 #if defined(HAVE_MPI)
 
   if (mpi_w.active()) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, val, n,
                   cs_datatype_to_mpi[datatype], MPI_MIN,
                   mpi_w.comm());

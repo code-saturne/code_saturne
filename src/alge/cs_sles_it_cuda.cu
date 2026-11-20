@@ -74,6 +74,7 @@
 #include "alge/cs_sles_it.h"
 #include "alge/cs_sles_pc.h"
 #include "alge/cs_sles_it_priv.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -997,6 +998,7 @@ _sync_reduction_sum(const cs_sles_it_t  *c,
 
 #if defined(HAVE_NCCL)
   if (c->nccl_comm != nullptr) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     ncclAllReduce((const void *)res,    // send buffer (device)
                   (void *)res,          // recv buffer (same)
                   tuple_size,           // number of elements
@@ -1021,8 +1023,10 @@ _sync_reduction_sum(const cs_sles_it_t  *c,
      (assumes 'res' is host-visible or CUDA-aware MPI is used).
      ---------------------------------------------------------- */
 
-  if (c->comm != MPI_COMM_NULL)
+  if (c->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, res, tuple_size, MPI_DOUBLE, MPI_SUM, c->comm);
+  }
 
 #endif /* defined(HAVE_MPI) */
 }
@@ -1059,13 +1063,20 @@ _sync_reduction_sum(const cs_sles_it_t  *c,
 
 #if defined(HAVE_NCCL)
   if (c->nccl_comm != nullptr) {
-    ncclAllReduce((const void *)res_d,  // send buffer (device)
-                  (void *)res_d,        // recv buffer (same)
-                  tuple_size,           // number of elements
-                  ncclDouble,           // data type
-                  ncclSum,              // reduction operation
-                  c->nccl_comm,
-                  stream);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      ncclAllReduce((const void *)res_d,  // send buffer (device)
+                    (void *)res_d,        // recv buffer (same)
+                    tuple_size,           // number of elements
+                    ncclDouble,           // data type
+                    ncclSum,              // reduction operation
+                    c->nccl_comm,
+                    stream);
+
+      /* Wait until the collective has finished before returning */
+      CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+      CS_CUDA_CHECK(cudaGetLastError());
+    }
 
     CS_CUDA_CHECK(cudaMemcpyAsync(res_h, res_d, sizeof(double)*tuple_size,
                                   cudaMemcpyDeviceToHost, stream));
@@ -1087,9 +1098,11 @@ _sync_reduction_sum(const cs_sles_it_t  *c,
 
   /* Without NCCL: host-side reduction via MPI */
 
-  if (c->comm != MPI_COMM_NULL)
+  if (c->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, res_h, tuple_size, MPI_DOUBLE, MPI_SUM,
                   c->comm);
+  }
 
 #endif /* defined(HAVE_MPI) */
 }
@@ -1121,8 +1134,10 @@ _sync_reduction_sum_h(const cs_sles_it_t  *c,
 
 #if defined(HAVE_MPI)
 
-  if (c->comm != MPI_COMM_NULL)
+  if (c->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, res, tuple_size, MPI_DOUBLE, MPI_SUM, c->comm);
+  }
 
 #endif /* defined(HAVE_MPI) */
 }
@@ -1162,8 +1177,10 @@ _dot_product(const cs_sles_it_t  *c,
 
 #if defined(HAVE_MPI)
 
-  if (c->comm != MPI_COMM_NULL)
+  if (c->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, &s, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+  }
 
 #endif /* defined(HAVE_MPI) */
 
@@ -1541,6 +1558,7 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
 #if defined(HAVE_MPI)
 
     if (c->comm != MPI_COMM_NULL) {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(MPI_IN_PLACE, s, 4, MPI_DOUBLE, MPI_SUM, c->comm);
     }
 
@@ -1621,6 +1639,7 @@ cs_sles_it_dot_product
 #if defined(HAVE_MPI)
 
     if (c->comm != MPI_COMM_NULL) {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(MPI_IN_PLACE, s, 1, MPI_DOUBLE, MPI_SUM, c->comm);
     }
 
@@ -1692,6 +1711,7 @@ cs_sles_it_dot_product_xx
 #if defined(HAVE_MPI)
 
     if (c->comm != MPI_COMM_NULL) {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(MPI_IN_PLACE, s, 1, MPI_DOUBLE, MPI_SUM, c->comm);
     }
 
@@ -1767,6 +1787,7 @@ cs_sles_it_dot_products_xx_xy
 #if defined(HAVE_MPI)
 
     if (c->comm != MPI_COMM_NULL) {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(MPI_IN_PLACE, s, 2, MPI_DOUBLE, MPI_SUM, c->comm);
     }
 
@@ -1845,6 +1866,7 @@ cs_sles_it_dot_products_xy_yz
 #if defined(HAVE_MPI)
 
     if (c->comm != MPI_COMM_NULL) {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(MPI_IN_PLACE, s, 2, MPI_DOUBLE, MPI_SUM, c->comm);
     }
 
@@ -1926,6 +1948,7 @@ cs_sles_it_dot_products_xx_xy_yz
 #if defined(HAVE_MPI)
 
     if (c->comm != MPI_COMM_NULL) {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(MPI_IN_PLACE, s, 3, MPI_DOUBLE, MPI_SUM, c->comm);
     }
 
@@ -2014,6 +2037,7 @@ cs_sles_it_dot_products_xx_yy_xy_xz_yz
 #if defined(HAVE_MPI)
 
     if (c->comm != MPI_COMM_NULL) {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(MPI_IN_PLACE, s, 4, MPI_DOUBLE, MPI_SUM, c->comm);
     }
 

@@ -54,10 +54,12 @@
 #include "base/cs_base_hip.h"
 #endif
 #include "base/cs_interface.h"
+#include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_profiling.h"
 #include "base/cs_rank_neighbors.h"
+#include "base/cs_timer.h"
 
 #include "fvm/fvm_periodicity.h"
 
@@ -184,6 +186,38 @@ static cs_halo_state_t *_halo_state = nullptr;
 /* Halo communications mode */
 static cs_halo_comm_mode_t _halo_comm_mode = CS_HALO_COMM_P2P;
 
+/* Timers */
+static uint64_t  _halo_sync_wait_tot = 0;
+static size_t    _halo_sync_wait_n = 0;
+
+/*=============================================================================
+ * Local type definitions referencing static global variables.
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Timer objects (start and stop at construction and destruction)
+ *----------------------------------------------------------------------------*/
+
+class _cs_halo_timer_t {
+public:
+  _cs_halo_timer_t()
+  {
+    t0_ = cs_timer_time();
+  }
+
+  ~_cs_halo_timer_t()
+  {
+    cs_timer_t t1 = cs_timer_time();
+    cs_timer_counter_t dt = cs_timer_diff(&t0_, &t1);
+
+    _halo_sync_wait_tot += dt.nsec;
+    _halo_sync_wait_n += 1;
+  }
+
+private:
+  cs_timer_t t0_;
+};
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -300,7 +334,10 @@ _exchange_send_shift(cs_halo_t  *halo)
               &(request[halo->n_c_domains + i]));
   }
 
-  MPI_Waitall(halo->n_c_domains*2, request, status);
+  {
+    _cs_halo_timer_t timer;
+    MPI_Waitall(halo->n_c_domains*2, request, status);
+  }
 
   CS_FREE(request);
   CS_FREE(status);
@@ -593,6 +630,26 @@ _sync_start_nccl(const cs_halo_t  *halo,
 /*============================================================================
  * Public C++ function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get statistics for halo sync wait times.
+ *
+ * In case of communication/computation overlap, only the non-overlapped
+ * time should be returned here.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_wait_stats
+(
+  uint64_t  &timer_ns,   /*!<[out] total timestimers, in ns */
+  size_t    &call_count  /*!<[out] call count */
+)
+{
+  timer_ns = _halo_sync_wait_tot;
+  call_count = _halo_sync_wait_n;
+};
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1080,7 +1137,10 @@ cs_halo_create_from_rank_neighbors
               &(request[request_count++]));
   }
 
-  MPI_Waitall(request_count, request, status);
+  {
+    _cs_halo_timer_t timer;
+    MPI_Waitall(request_count, request, status);
+  }
 
   /* Now build send and receive indexes to exchange data;
      the receive index can be directly assigned to the halo;
@@ -1245,7 +1305,10 @@ cs_halo_create_from_rank_neighbors
     memcpy(halo->send_list, elt_id + loc_r_displ, s_size * sizeof(cs_lnum_t));
   }
 
-  MPI_Waitall(request_count, request, status);
+  {
+    _cs_halo_timer_t timer;
+    MPI_Waitall(request_count, request, status);
+  }
 
   CS_FREE(request);
   CS_FREE(status);
@@ -1586,7 +1649,10 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
 
     /* Wait for all exchanges */
 
-    MPI_Waitall(request_count, request, status);
+    {
+      _cs_halo_timer_t timer;
+      MPI_Waitall(request_count, request, status);
+    }
 
     CS_FREE(request);
     CS_FREE(status);
@@ -2152,6 +2218,8 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
 
   CS_PROFILE_FUNC_RANGE();
 
+  _cs_halo_timer_t timer;
+
   cs_halo_state_t  *_hs = (hs != nullptr) ? hs : _halo_state;
 
 #if (MPI_VERSION >= 3)
@@ -2667,6 +2735,58 @@ cs_halo_dump(const cs_halo_t  *halo,
 
   bft_printf("\n\n");
   bft_printf_flush();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log performance information relative to halo exchanges.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_log_finalize(void)
+{
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks < 2)
+    return;
+
+  /* Print times */
+
+  unsigned long ncalls = _halo_sync_wait_n;
+  double wtimes = _halo_sync_wait_tot*1e-9;
+  double wtimes_mean, wtimes_max, wtimes_min;
+
+  MPI_Allreduce(&wtimes, &wtimes_mean, 1, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
+  MPI_Allreduce(&wtimes, &wtimes_max, 1, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
+  MPI_Allreduce(&wtimes, &wtimes_min, 1, MPI_DOUBLE, MPI_MIN, cs_glob_mpi_comm);
+  wtimes_mean /= cs_glob_n_ranks;
+
+  if (wtimes_max <= 0)
+    return;
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("\nHalo exchanges:\n"
+       "  Only wait times are measured, so possibly overlapped communication\n"
+       "  is not counted. The cost of starting asynchronous sends and receives\n"
+       "  is also assumed to be minor, and is ignored.\n\n"));
+
+  const char *names[] = {"Halo sync wait:"};
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("                          mean           minimum        maximum"
+       "     calls\n"));
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("  %-15s    %12.5f s %12.5f s %12.5f s   %lu\n"),
+     names[0], wtimes_mean, wtimes_min, wtimes_max, ncalls);
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+
+  // cs_log_separator(CS_LOG_PERFORMANCE);
+
+#endif /* defined(HAVE_MPI) */
 }
 
 /*----------------------------------------------------------------------------*/

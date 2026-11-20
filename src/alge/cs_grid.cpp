@@ -676,9 +676,12 @@ _aggregation_stats_log(const cs_grid_t  *f,
 #if defined(HAVE_MPI)
   if (f->comm != MPI_COMM_NULL) {
     cs_gnum_t tot[2] = {aggr_tot, c_n_rows_g};
-    MPI_Allreduce(MPI_IN_PLACE, &aggr_min, 1, CS_MPI_LNUM, MPI_MIN, f->comm);
-    MPI_Allreduce(MPI_IN_PLACE, &aggr_max, 1, CS_MPI_LNUM, MPI_MAX, f->comm);
-    MPI_Allreduce(MPI_IN_PLACE, &tot, 2, CS_MPI_GNUM, MPI_SUM, f->comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE, 3);
+      MPI_Allreduce(MPI_IN_PLACE, &aggr_min, 1, CS_MPI_LNUM, MPI_MIN, f->comm);
+      MPI_Allreduce(MPI_IN_PLACE, &aggr_max, 1, CS_MPI_LNUM, MPI_MAX, f->comm);
+      MPI_Allreduce(MPI_IN_PLACE, &tot, 2, CS_MPI_GNUM, MPI_SUM, f->comm);
+    }
     aggr_tot = tot[0];
     c_n_rows_g = tot[1];
   }
@@ -698,8 +701,10 @@ _aggregation_stats_log(const cs_grid_t  *f,
   }
 
 #if defined(HAVE_MPI)
-  if (f->comm != MPI_COMM_NULL)
+  if (f->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, &n_unaggr, 1, CS_MPI_GNUM, MPI_SUM, f->comm);
+  }
 #endif
 
   if (c_n_rows_g > 0)  // May be locally 0 in case of grid merging
@@ -729,9 +734,11 @@ _aggregation_stats_log(const cs_grid_t  *f,
     });
     ctx.wait();
 #if defined(HAVE_MPI)
-    if (f->comm != MPI_COMM_NULL)
+    if (f->comm != MPI_COMM_NULL) {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(MPI_IN_PLACE, histogram, aggr_count, CS_MPI_LNUM, MPI_SUM,
                     f->comm);
+    }
 #endif
     for (cs_lnum_t i = 0; i < aggr_count; i++) {
       double epsp = 100. * histogram[i] / c_n_rows_g;
@@ -1450,6 +1457,7 @@ _coarse_row_count_and_halo(const cs_grid_t   *f,
     MPI_Comm comm = f->comm;
     if (comm != MPI_COMM_NULL) {
       cs_gnum_t _c_n_rows = c_n_rows;
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(&_c_n_rows, &(c->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM,
                     comm);
     }
@@ -6853,8 +6861,11 @@ _verify_matrix(const cs_grid_t  *g)
 #if defined(HAVE_MPI)
   if (g->comm != MPI_COMM_NULL) {
     cs_real_t _vmin = vmin, _vmax = vmax;
-    MPI_Allreduce(&_vmin, &vmin, 1, CS_MPI_REAL, MPI_MIN, g->comm);
-    MPI_Allreduce(&_vmax, &vmax, 1, CS_MPI_REAL, MPI_MAX, g->comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE, 2);
+      MPI_Allreduce(&_vmin, &vmin, 1, CS_MPI_REAL, MPI_MIN, g->comm);
+      MPI_Allreduce(&_vmax, &vmax, 1, CS_MPI_REAL, MPI_MAX, g->comm);
+    }
   }
 #endif
 
@@ -6901,6 +6912,7 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
 #if defined(HAVE_MPI)
   MPI_Comm comm = grid->comm;
   if (comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, n_clips, 2, CS_MPI_GNUM, MPI_SUM, comm);
   }
 #endif
@@ -6951,8 +6963,11 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
 
 #if defined(HAVE_MPI)
   if (comm != MPI_COMM_NULL) {
-    MPI_Allreduce(MPI_IN_PLACE, &anmin, 1, MPI_DOUBLE, MPI_MIN, comm);
-    MPI_Allreduce(MPI_IN_PLACE, &anmax, 1, MPI_DOUBLE, MPI_MAX, comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE, 2);
+      MPI_Allreduce(MPI_IN_PLACE, &anmin, 1, MPI_DOUBLE, MPI_MIN, comm);
+      MPI_Allreduce(MPI_IN_PLACE, &anmax, 1, MPI_DOUBLE, MPI_MAX, comm);
+    }
   }
 #endif
 
@@ -6970,8 +6985,11 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
     }
 #if defined(HAVE_MPI)
     if (comm != MPI_COMM_NULL) {
-      MPI_Allreduce(MPI_IN_PLACE, &rmin, 1, MPI_DOUBLE, MPI_MIN, comm);
-      MPI_Allreduce(MPI_IN_PLACE, &rmax, 1, MPI_DOUBLE, MPI_MAX, comm);
+      {
+        cs_parall_timer_t timer(CS_TIMER_ALLREDUCE, 2);
+        MPI_Allreduce(MPI_IN_PLACE, &rmin, 1, MPI_DOUBLE, MPI_MIN, comm);
+        MPI_Allreduce(MPI_IN_PLACE, &rmax, 1, MPI_DOUBLE, MPI_MAX, comm);
+      }
     }
 #endif
     bft_printf(_("       minimum xag_p1 / xag_p0          = %12.5e\n"
@@ -7003,6 +7021,7 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
 #if defined(HAVE_MPI)
   MPI_Comm comm = grid->comm;
   if (comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, n_clips, 2, CS_MPI_GNUM, MPI_SUM, comm);
   }
 #endif
@@ -7094,7 +7113,10 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
 #if defined(HAVE_MPI)
   if (comm != MPI_COMM_NULL) {
     double t[4] = {anmin, -anmax, rmin, -rmax};
-    MPI_Allreduce(MPI_IN_PLACE, t, 4, MPI_DOUBLE, MPI_MIN, comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      MPI_Allreduce(MPI_IN_PLACE, t, 4, MPI_DOUBLE, MPI_MIN, comm);
+    }
     anmin = t[0]; anmax = -t[1]; rmin = t[2]; rmax = -t[3];
   }
 #endif
@@ -7125,8 +7147,10 @@ _warn_neg_diag(const cs_grid_t  *g,
                cs_gnum_t        *n_g_neg_diag)
 {
 #if defined(HAVE_MPI)
-  if (g->comm != MPI_COMM_NULL)
+  if (g->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, n_g_neg_diag, 1, CS_MPI_GNUM, MPI_SUM, g->comm);
+  }
 #endif
   if (*n_g_neg_diag > 0) {
     // Do not use higher-level CS_LOG_WARNING here, as the following
@@ -9358,9 +9382,11 @@ _force_diag_dom(const cs_grid_t  *g,
     ctx.wait();
 
 #if defined(HAVE_MPI)
-    if (g->comm != MPI_COMM_NULL)
+    if (g->comm != MPI_COMM_NULL) {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(MPI_IN_PLACE, &n_g_neg_diag, 1, CS_MPI_GNUM, MPI_SUM,
                     g->comm);
+    }
 #endif
 
     bft_printf("mg level %d: force diagonal dominance of %llu elements.\n",
@@ -9560,6 +9586,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     cs_gnum_t _n_rows = g->n_rows;
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(&_n_rows, &(g->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
   }
@@ -9737,6 +9764,7 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
 #if defined(HAVE_MPI)
   if (g->halo != nullptr && g->comm != MPI_COMM_NULL) {
     cs_gnum_t _g_n_rows = g->n_rows;
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(&_g_n_rows, &(g->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM, g->comm);
   }
 #endif
@@ -10620,8 +10648,11 @@ cs_grid_coarsen(cs_grid_t            *f,
      need to be updated, as they may be used in local tests */
   if (c->n_ranks < cs_glob_n_ranks) {
     cs_gnum_t buf[2] = {c->n_g_rows, (cs_gnum_t)c->n_ranks};
-    MPI_Allreduce(MPI_IN_PLACE, buf, 2, CS_MPI_GNUM, MPI_MAX,
-                  _root_grid(f)->comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      MPI_Allreduce(MPI_IN_PLACE, buf, 2, CS_MPI_GNUM, MPI_MAX,
+                    _root_grid(f)->comm);
+    }
     c->n_g_rows = buf[0];
     c->n_ranks = (int)(buf[1]);
   }

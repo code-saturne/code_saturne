@@ -168,6 +168,22 @@ cs_interface_get_tr_index(const cs_interface_t  *itf);
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief Get statistics for interface set sync wait times.
+ *
+ * In case of communication/computation overlap, only the non-overlapped
+ * time should be returned here.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_interface_set_wait_stats
+(
+  uint64_t  &timer_ns,   /*!<[out] total timestimers, in ns */
+  size_t    &call_count  /*!<[out] call count */
+);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Creation of a list of interfaces between elements of a same type.
  *
  * These interfaces may be used to identify equivalent vertices or faces using
@@ -643,6 +659,15 @@ cs_interface_tag_local_matches(const cs_interface_t     *itf,
 
 void
 cs_interface_set_dump(const cs_interface_set_t  *ifs);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Log performance information relative to interface set exchanges.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_interface_set_log_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 

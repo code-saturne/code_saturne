@@ -67,6 +67,7 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "alge/cs_multigrid_smoother.h"
 #include "base/cs_post.h"
+#include "base/cs_parall.h"
 #include "base/cs_profiling.h"
 #include "alge/cs_sles.h"
 #include "alge/cs_sles_it.h"
@@ -1123,10 +1124,13 @@ _update_level_info(cs_multigrid_t  *mg)
       cs_gnum_t tot_sizes[3], max_sizes[3];
       cs_gnum_t loc_sizes[3] = {
         (cs_gnum_t)n_rows, (cs_gnum_t)n_rows_with_ghosts, (cs_gnum_t)n_entries};
-      MPI_Allreduce(loc_sizes, tot_sizes, 3, CS_MPI_GNUM, MPI_SUM,
-                    mg->caller_comm);
-      MPI_Allreduce(loc_sizes, max_sizes, 3, CS_MPI_GNUM, MPI_MAX,
-                    mg->caller_comm);
+      {
+        cs_parall_timer_t timer(CS_TIMER_ALLREDUCE, 2);
+        MPI_Allreduce(loc_sizes, tot_sizes, 3, CS_MPI_GNUM, MPI_SUM,
+                      mg->caller_comm);
+        MPI_Allreduce(loc_sizes, max_sizes, 3, CS_MPI_GNUM, MPI_MAX,
+                      mg->caller_comm);
+      }
       for (unsigned ii = 0; ii < 3; ii++) {
         if (tot_sizes[ii] > 0)
           lv_info->imbalance[ii][0] = (  max_sizes[ii]
@@ -2555,8 +2559,11 @@ _setup_hierarchy(void             *context,
           else {
             lcount[2] = -INT_MAX; lcount[3] = -INT_MAX;
           }
-          MPI_Allreduce(lcount, gcount, 4, MPI_INT, MPI_MAX,
-                        mg->caller_comm);
+          {
+            cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+            MPI_Allreduce(lcount, gcount, 4, MPI_INT, MPI_MAX,
+                          mg->caller_comm);
+          }
           n_c_max = gcount[0]; n_f_max = gcount[1];
           n_c_min = -gcount[2]; n_f_min = -gcount[3];
 
@@ -2639,12 +2646,13 @@ _setup_hierarchy(void             *context,
     }
 #if defined(HAVE_MPI)
     if (mg->caller_n_ranks > 1) {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE, 2);
       int _l_id = l_id;
       MPI_Allreduce(&_l_id, &l_id, 1, MPI_INT, MPI_MAX, mg->caller_comm);
       if (l_id != _l_id)
         _l_id = CS_MESH_LOCATION_NONE;
       MPI_Allreduce(&_l_id, &l_id, 1, MPI_INT, MPI_MIN, mg->caller_comm);
-      }
+    }
 #endif
     if (l_id != CS_MESH_LOCATION_NONE) {
       if (mg->info.n_calls[0] == 0)
@@ -2675,10 +2683,13 @@ _setup_hierarchy(void             *context,
         _n_elts_l[i*3 + j] = mg_inf->n_elts[j][0];
     }
 
-    MPI_Allreduce(_n_elts_l, _n_elts_s, 3*grid_lv, CS_MPI_GNUM, MPI_SUM,
-                  mg->caller_comm);
-    MPI_Allreduce(_n_elts_l, _n_elts_m, 3*grid_lv, CS_MPI_GNUM, MPI_MAX,
-                  mg->caller_comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE, 2);
+      MPI_Allreduce(_n_elts_l, _n_elts_s, 3*grid_lv, CS_MPI_GNUM, MPI_SUM,
+                    mg->caller_comm);
+      MPI_Allreduce(_n_elts_l, _n_elts_m, 3*grid_lv, CS_MPI_GNUM, MPI_MAX,
+                    mg->caller_comm);
+    }
 
     for (i = 0; i < grid_lv; i++) {
       cs_multigrid_level_info_t *mg_inf = mg->lv_info + i;
@@ -2810,8 +2821,10 @@ _dot_xx_yy(const cs_multigrid_t  *mg,
   s[1] = cs_dot_xx(ctx, n, y);
 
 #if defined(HAVE_MPI)
-  if (mg->comm != MPI_COMM_NULL)
+  if (mg->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, s, 2, MPI_DOUBLE, MPI_SUM, mg->comm);
+  }
 #endif
 
   *s1 = s[0];
@@ -2848,7 +2861,10 @@ _dot_xy_yz(const cs_multigrid_t  *mg,
 
   if (mg->comm != MPI_COMM_NULL) {
     double _sum[2];
-    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, mg->comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, mg->comm);
+    }
     s[0] = _sum[0];
     s[1] = _sum[1];
   }
@@ -2894,7 +2910,10 @@ _dot_xu_xv_xw(const cs_multigrid_t  *mg,
 
   if (mg->comm != MPI_COMM_NULL) {
     double _sum[3];
-    MPI_Allreduce(s, _sum, 3, MPI_DOUBLE, MPI_SUM, mg->comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      MPI_Allreduce(s, _sum, 3, MPI_DOUBLE, MPI_SUM, mg->comm);
+    }
     s[0] = _sum[0];
     s[1] = _sum[1];
     s[2] = _sum[2];
@@ -2965,8 +2984,10 @@ _convergence_test(cs_multigrid_t        *mg,
 
   double r2 = cs_dot_xx(ctx, n_f_rows, rhs);
 #if defined(HAVE_MPI)
-  if (mg->comm != MPI_COMM_NULL)
+  if (mg->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, &r2, 1, MPI_DOUBLE, MPI_SUM, mg->comm);
+  }
 #endif
 
   *residual = sqrt(r2);

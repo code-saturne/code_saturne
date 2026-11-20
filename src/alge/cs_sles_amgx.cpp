@@ -62,6 +62,7 @@
 #include "base/cs_mem.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
+#include "base/cs_parall.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -1181,6 +1182,7 @@ cs_sles_amgx_setup(void               *context,
 #if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {
       double dmaxg;
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(&dmax, &dmaxg, 1, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
       dmax = dmaxg;
     }

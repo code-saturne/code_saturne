@@ -63,6 +63,7 @@
 #include "base/cs_mem.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
+#include "base/cs_parall.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -232,7 +233,10 @@ _setup_matrix(cs_sles_cudss_t    *c,
     MPI_Scan(&local_shift, &global_shift, 1, CS_MPI_GNUM, MPI_SUM,
              c->comm);
     global_shift -= n_rows;
-    MPI_Allreduce(MPI_IN_PLACE, &n_g_rows, 2, CS_MPI_GNUM, MPI_SUM, c->comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      MPI_Allreduce(MPI_IN_PLACE, &n_g_rows, 2, CS_MPI_GNUM, MPI_SUM, c->comm);
+    }
   }
 #endif
 

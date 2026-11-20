@@ -183,6 +183,22 @@ typedef struct _cs_halo_state_t  cs_halo_state_t;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Get statistics for halo sync wait times.
+ *
+ * In case of communication/computation overlap, only the non-overlapped
+ * time should be returned here.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_wait_stats
+(
+  uint64_t  &timer_ns,   /*!<[out] total timestimers, in ns */
+  size_t    &call_count  /*!<[out] call count */
+);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Create a halo structure given an interface set.
  *
@@ -770,6 +786,15 @@ void
 cs_halo_dump(const cs_halo_t  *halo,
              int               print_level);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Log performance information relative to halo exchanges.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_log_finalize(void);
+
 /*=============================================================================
  * Public C++ functions
  *============================================================================*/
@@ -851,8 +876,10 @@ void
 cs_halo_sync
 (
   const cs_halo_t       *halo,      /*!<[in] pointer to halo structure */
-  cs_halo_type_t         sync_mode, /*!<[in] synchronization mode (std or ext) */
-  [[maybe_unused]] bool  on_device, /*!<[in] run on accelerated device if possible */
+  cs_halo_type_t         sync_mode, /*!<[in] synchronization mode
+                                      (std or ext) */
+  [[maybe_unused]] bool  on_device, /*!<[in] run on accelerated device
+                                      if possible */
   cs_mdspan_r<T, N>      span       /*!<[in,out] reference to mdspan_r */
 )
 {
@@ -1104,8 +1131,10 @@ void
 cs_halo_sync_r
 (
   const cs_halo_t       *halo,      /*!<[in] pointer to halo structure */
-  cs_halo_type_t         sync_mode, /*!<[in] synchronization mode (std or ext) */
-  [[maybe_unused]] bool  on_device, /*!<[in] run on accelerated device if possible */
+  cs_halo_type_t         sync_mode, /*!<[in] synchronization mode
+                                      (std or ext) */
+  [[maybe_unused]] bool  on_device, /*!<[in] run on accelerated device
+                                      if possible */
   cs_mdspan_r<T, N>      span       /*!<[in,out] reference to mdspan_r */
 )
 {

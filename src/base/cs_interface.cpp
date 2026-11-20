@@ -46,9 +46,11 @@
 #include "base/cs_all_to_all.h"
 #include "base/cs_base.h"
 #include "base/cs_block_dist.h"
+#include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
+#include "base/cs_timer.h"
 
 #include "fvm/fvm_periodicity.h"
 
@@ -147,6 +149,42 @@ typedef struct {
   cs_lnum_t   *num;       /* Local numbers associated with periodic elements */
 
 } _per_block_period_t;
+
+/*============================================================================
+ * Static global variables
+ *============================================================================*/
+
+/* Timers and counters */
+static uint64_t  _interface_set_sync_wait_tot = 0;
+static size_t    _interface_set_sync_wait_n = 0;
+
+/*=============================================================================
+ * Local type definitions referencing static global variables.
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Timer objects (start and stop at construction and destruction)
+ *----------------------------------------------------------------------------*/
+
+class _cs_interface_set_timer_t {
+public:
+  _cs_interface_set_timer_t()
+  {
+    t0_ = cs_timer_time();
+  }
+
+  ~_cs_interface_set_timer_t()
+  {
+    cs_timer_t t1 = cs_timer_time();
+    cs_timer_counter_t dt = cs_timer_diff(&t0_, &t1);
+
+    _interface_set_sync_wait_tot += dt.nsec;
+    _interface_set_sync_wait_n++;
+  }
+
+private:
+  cs_timer_t t0_;
+};
 
 /*=============================================================================
  * Private function definitions
@@ -3036,7 +3074,10 @@ _set_renumber_update_ids(cs_interface_set_t  *ifs,
       j += itf->size;
     }
 
-    MPI_Waitall(request_count, request, status);
+    {
+      _cs_interface_set_timer_t timer;
+      MPI_Waitall(request_count, request, status);
+    }
 
     CS_FREE(request);
     CS_FREE(status);
@@ -3186,7 +3227,10 @@ _interface_set_copy_array_ni(const cs_interface_set_t  *ifs,
       j += itf->size;
     }
 
-    MPI_Waitall(request_count, request, status);
+    {
+      _cs_interface_set_timer_t timer;
+      MPI_Waitall(request_count, request, status);
+    }
 
     CS_FREE(request);
     CS_FREE(status);
@@ -3455,6 +3499,26 @@ cs_interface_get_tr_index(const cs_interface_t  *itf)
 
   return tr_index;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get statistics for interface set sync wait times.
+ *
+ * In case of communication/computation overlap, only the non-overlapped
+ * time should be returned here.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_interface_set_wait_stats
+(
+  uint64_t  &timer_ns,   /*!<[out] total timestimers, in ns */
+  size_t    &call_count  /*!<[out] call count */
+)
+{
+  timer_ns = _interface_set_sync_wait_tot;
+  call_count = _interface_set_sync_wait_n;
+};
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3764,7 +3828,10 @@ cs_interface_set_dup_blocks(cs_interface_set_t  *ifs,
                   &(request[request_count++]));
     }
 
-    MPI_Waitall(request_count, request, status);
+    {
+      _cs_interface_set_timer_t timer;
+      MPI_Waitall(request_count, request, status);
+    }
 
     CS_FREE(request);
     CS_FREE(status);
@@ -4142,7 +4209,10 @@ cs_interface_set_copy_array(const cs_interface_set_t  *ifs,
       j += itf->size;
     }
 
-    MPI_Waitall(request_count, request, status);
+    {
+      _cs_interface_set_timer_t timer;
+      MPI_Waitall(request_count, request, status);
+    }
 
     CS_FREE(request);
     CS_FREE(status);
@@ -4350,7 +4420,10 @@ cs_interface_set_copy_indexed(const cs_interface_set_t  *ifs,
                     &(request[request_count++]));
     }
 
-    MPI_Waitall(request_count, request, status);
+    {
+      _cs_interface_set_timer_t timer;
+      MPI_Waitall(request_count, request, status);
+    }
 
     CS_FREE(request);
     CS_FREE(status);
@@ -5980,7 +6053,10 @@ cs_interface_set_add_match_ids(cs_interface_set_t  *ifs)
       j += itf->size;
     }
 
-    MPI_Waitall(request_count, request, status);
+    {
+      _cs_interface_set_timer_t timer;
+      MPI_Waitall(request_count, request, status);
+    }
 
     CS_FREE(request);
     CS_FREE(status);
@@ -6119,6 +6195,56 @@ cs_interface_set_dump(const cs_interface_set_t  *ifs)
 
   if (ifs->periodicity != nullptr)
     bft_printf("\n  periodicity %p:\n", (const void *)(ifs->periodicity));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log performance information relative to interface set exchanges.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_interface_set_log_finalize(void)
+{
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks < 2)
+    return;
+
+  /* Print times */
+
+  unsigned long ncalls = _interface_set_sync_wait_n;
+  double wtimes = _interface_set_sync_wait_tot*1e-9;
+  double wtimes_mean, wtimes_max, wtimes_min;
+
+  MPI_Allreduce(&wtimes, &wtimes_mean, 1, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
+  MPI_Allreduce(&wtimes, &wtimes_max, 1, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
+  MPI_Allreduce(&wtimes, &wtimes_min, 1, MPI_DOUBLE, MPI_MIN, cs_glob_mpi_comm);
+  wtimes_mean /= cs_glob_n_ranks;
+
+  if (wtimes_max <= 0)
+    return;
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("\nInterface_Set exchanges:\n"
+       "  Only wait times are measured, as per halo exchanges.\n\n"));
+
+  const char *names[] = {"Set sync wait:"};
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("                          mean           minimum        maximum"
+       "     calls\n"));
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("  %-15s    %12.5f s %12.5f s %12.5f s   %lu\n"),
+     names[0], wtimes_mean, wtimes_min, wtimes_max, ncalls);
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+
+  // cs_log_separator(CS_LOG_PERFORMANCE);
+
+#endif /* defined(HAVE_MPI) */
 }
 
 /*----------------------------------------------------------------------------*/

@@ -3606,11 +3606,11 @@ cs_all_to_all_log_finalize(void)
 
   cs_log_printf
     (CS_LOG_PERFORMANCE,
-     _("                             mean        minimum      maximum"
+     _("                          mean           minimum        maximum"
        "     calls\n"
-       "  Total:             %12.5f s %12.5f %12.5f s   %lu\n"
-       "  Metadata exchange: %12.5f s %12.5f %12.5f s   %lu\n"
-       "  Data exchange:     %12.5f s %12.5f %12.5f s   %lu\n\n"),
+       "  Total:             %12.5f s %12.5f s %12.5f s   %lu\n"
+       "  Metadata exchange: %12.5f s %12.5f s %12.5f s   %lu\n"
+       "  Data exchange:     %12.5f s %12.5f s %12.5f s   %lu\n\n"),
      wtimes_mean[0], wtimes_min[0], wtimes_max[0],
      (unsigned long)(_all_to_all_calls[0]),
      wtimes_mean[1], wtimes_min[1], wtimes_max[1],

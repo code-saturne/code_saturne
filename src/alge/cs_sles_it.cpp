@@ -369,6 +369,7 @@ _dot_product
 #if defined(HAVE_MPI)
 
   if (c->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, s, 1, MPI_DOUBLE, MPI_SUM, c->comm);
   }
 
@@ -420,6 +421,7 @@ _dot_product_xx
 #if defined(HAVE_MPI)
 
   if (c->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, s, 1, MPI_DOUBLE, MPI_SUM, c->comm);
   }
 
@@ -478,6 +480,7 @@ _dot_products_xx_xy
 #if defined(HAVE_MPI)
 
   if (c->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, s, 2, MPI_DOUBLE, MPI_SUM, c->comm);
   }
 
@@ -533,7 +536,10 @@ _dot_products_xy_yz
 
   if (c->comm != MPI_COMM_NULL) {
     double _sum[2];
-    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, c->comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, c->comm);
+    }
     s[0] = _sum[0];
     s[1] = _sum[1];
   }
@@ -592,6 +598,7 @@ _dot_products_xx_xy_yz
 #if defined(HAVE_MPI)
 
   if (c->comm != MPI_COMM_NULL) {
+    cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
     MPI_Allreduce(MPI_IN_PLACE, s, 3, MPI_DOUBLE, MPI_SUM, c->comm);
   }
 
@@ -661,7 +668,10 @@ _dot_products_xx_yy_xy_xz_yz
 
   if (c->comm != MPI_COMM_NULL) {
     double _sum[5];
-    MPI_Allreduce(s, _sum, 5, MPI_DOUBLE, MPI_SUM, c->comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      MPI_Allreduce(s, _sum, 5, MPI_DOUBLE, MPI_SUM, c->comm);
+    }
     memcpy(s, _sum, 5*sizeof(double));
   }
 
@@ -711,7 +721,10 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
 
   if (c->comm != MPI_COMM_NULL) {
     double _sum[4];
-    MPI_Allreduce(s, _sum, 4, MPI_DOUBLE, MPI_SUM, c->comm);
+    {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+      MPI_Allreduce(s, _sum, 4, MPI_DOUBLE, MPI_SUM, c->comm);
+    }
     memcpy(s, _sum, 4*sizeof(double));
   }
 
@@ -1568,8 +1581,10 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
       ctx.wait();
 
 #if defined(HAVE_MPI)
-      if (c->comm != MPI_COMM_NULL)
+      if (c->comm != MPI_COMM_NULL) {
+        cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
         MPI_Allreduce(MPI_IN_PLACE, &residual, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      }
 #endif /* defined(HAVE_MPI) */
 
       residual = sqrt(residual);
@@ -1796,8 +1811,10 @@ _conjugate_gradient_sr_npc(cs_sles_it_t              *c,
       ctx.wait();
 
 #if defined(HAVE_MPI)
-      if (c->comm != MPI_COMM_NULL)
+      if (c->comm != MPI_COMM_NULL) {
+        cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
         MPI_Allreduce(MPI_IN_PLACE, &residual, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      }
 #endif /* defined(HAVE_MPI) */
 
       residual = sqrt(residual);
@@ -2010,6 +2027,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 
 #if defined(HAVE_MPI)
     if (c->comm != MPI_COMM_NULL) {
+      cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
       MPI_Allreduce(MPI_IN_PLACE, rd.r, 5, MPI_DOUBLE, MPI_SUM, c->comm);
     }
 #endif /* defined(HAVE_MPI) */
@@ -2059,8 +2077,10 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 
     if (update_residual) {
 #if defined(HAVE_MPI)
-      if (c->comm != MPI_COMM_NULL)
+      if (c->comm != MPI_COMM_NULL) {
+        cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
         MPI_Allreduce(MPI_IN_PLACE, &res_2, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      }
 #endif /* defined(HAVE_MPI) */
 
       residual = sqrt(res_2);
@@ -2173,7 +2193,10 @@ _jacobi(cs_sles_it_t              *c,
 
       if (c->comm != MPI_COMM_NULL) {
         double _sum;
-        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+        {
+          cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+          MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+        }
         res2 = _sum;
       }
 
@@ -2238,7 +2261,10 @@ _jacobi(cs_sles_it_t              *c,
 
       if (c->comm != MPI_COMM_NULL) {
         double _sum;
-        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+        {
+          cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+          MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+        }
         res2 = _sum;
       }
 
@@ -2375,7 +2401,10 @@ _block_3_jacobi(cs_sles_it_t                *c,
 
     if (c->comm != MPI_COMM_NULL) {
       double _sum;
-      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      {
+        cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      }
       res2 = _sum;
     }
 
@@ -2426,7 +2455,10 @@ _block_3_jacobi(cs_sles_it_t                *c,
 
     if (c->comm != MPI_COMM_NULL) {
       double _sum;
-      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      {
+        cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      }
       res2 = _sum;
     }
 
@@ -2556,7 +2588,10 @@ _block_jacobi(cs_sles_it_t              *c,
 
     if (c->comm != MPI_COMM_NULL) {
       double _sum;
-      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      {
+        cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      }
       res2 = _sum;
     }
 
@@ -2608,7 +2643,10 @@ _block_jacobi(cs_sles_it_t              *c,
 
     if (c->comm != MPI_COMM_NULL) {
       double _sum;
-      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      {
+        cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      }
       res2 = _sum;
     }
 
@@ -3918,7 +3956,10 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 
     if (c->comm != MPI_COMM_NULL) {
       double _sum;
-      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      {
+        cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      }
       res2 = _sum;
     }
 
@@ -4096,7 +4137,10 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
       if (c->comm != MPI_COMM_NULL) {
         double _sum;
-        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+        {
+          cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+          MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+        }
         res2 = _sum;
       }
 
@@ -4351,7 +4395,10 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
       if (c->comm != MPI_COMM_NULL) {
         double _sum;
-        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+        {
+          cs_parall_timer_t timer(CS_TIMER_ALLREDUCE);
+          MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+        }
         res2 = _sum;
       }
 

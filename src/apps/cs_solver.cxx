@@ -69,6 +69,7 @@
 #include "base/cs_fp_exception.h"
 #include "base/cs_function.h"
 #include "base/cs_ibm.h"
+#include "base/cs_interface.h"
 #include "base/cs_io.h"
 #include "base/cs_log.h"
 #include "base/cs_log_iteration.h"
@@ -688,6 +689,9 @@ _run(void)
 
   /* CPU times and memory management finalization */
 
+  cs_parall_log_finalize();
+  cs_halo_log_finalize();
+  cs_interface_set_log_finalize();
   cs_all_to_all_log_finalize();
   cs_io_log_finalize();
 
