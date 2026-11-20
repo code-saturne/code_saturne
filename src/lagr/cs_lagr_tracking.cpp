@@ -2990,7 +2990,27 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
         cs_lagr_stat_update_all_incr(p_set, p_id,
                                      dt_incr /cs_glob_lagr_time_step->dtp);
 
-      if (  (cell_id == save_old_cell_id && exit_face >= 0)
+      /* Returning to the same cell through an INTERIOR face means the
+         particle oscillates around that face, and tracking of the virtual
+         partner must go on without deducting any time.
+
+         Crossing a BOUNDARY face and staying in the same cell is instead
+         the normal outcome of a rebound (symmetry plane, specular wall):
+         it must fall through to the specific_face_interaction branch below,
+         which deducts the time actually spent reaching the face. The
+         interior-face restriction below mirrors the one already applied to
+         is_micro_crossing.
+
+         Without it, a parcel rebounding on a boundary face of its own cell
+         kept re-intersecting that same face with remain_time frozen, each
+         pass consuming a few 1e-7 of the trajectory, until the propagation
+         loop limit was reached and the parcel was lost with
+         CS_LAGR_TRACKING_ERR_MAX_LOOPS. In a single-cell mesh, where every
+         face is a boundary face, this lost nearly the whole population at
+         every time step. */
+
+      if (  (   cell_id == save_old_cell_id && exit_face >= 0
+             && exit_face < mesh->n_i_faces)
           || is_micro_crossing) {
         /* save the incremented time but continue tracking virtual partner
          * until next face to avoid spurious oscillation around a face */
