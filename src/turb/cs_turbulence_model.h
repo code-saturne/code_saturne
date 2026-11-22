@@ -331,6 +331,97 @@ typedef struct cs_turb_rans_model_t {
                                0: Default: Production term clipped to 0
                                1: For EM-RSM */
 
+  /* BFH second-moment closure options */
+  int     bfh_slow_model;      /*!< Slow redistribution model for BFH:
+                                    0: Rotta (default)
+                                    1: Chung & Kim
+                                    2: Speziale & Sarkar
+                                    3: Universal 2C-3C */
+  double  bfh_c2_prime_inf;    /*!< Asymptotic constant for Chung & Kim
+                                    (default: 15.5) */
+  double  bfh_aw;              /*!< Wall damping coefficient Aw
+                                    (default: 150.0) */
+  double  bfh_pw;              /*!< Wall damping power exponent pw
+                                    (default: 2.0) */
+  int     bfh_use_beta2;       /*!< Use beta2 damping on slow term:
+                                    0: false (default)
+                                    1: true */
+  int     bfh_ck_damping;      /*!< Reynolds-number function of the
+                                    Chung & Kim slow term:
+                                    1: 1/beta(R_t) of the original model
+                                       (default), calibrated on homogeneous
+                                       decaying turbulence
+                                    0: the tau/T2 activation of the power
+                                       mean, shared with the Rotta branch */
+  int     bfh_beta2_form;      /*!< Form of the rapid coefficient beta2:
+                                    0: 9/10 lambda_min / tr(R) (default,
+                                       90 percent of the stability bound)
+                                    1: 3/5 lambda_min
+                                       / (lambda_max + lambda_min) */
+  int     bfh_use_durbin_time; /*!< Use Durbin time scale T_drb for Rotta:
+                                    0: false (default: T = k/eps or dt_wall)
+                                    1: true: T_R = T_drb, T_eps = k/eps */
+  double  bfh_t2_ct;           /*!< Constant C_T2 of the Rotta redistribution
+                                    time scale T2 = (k/eps) [1 + (Re_s/Re_t)^p]
+                                    with Re_s = C_T2^2, used when
+                                    bfh_use_durbin_time = 1
+                                    (default: -1, i.e. cs_turb_xct) */
+  double  bfh_t2_pow;          /*!< Exponent p of the Rotta redistribution
+                                    time scale (default: 0.5). It fixes the
+                                    near-wall asymptotics: with p >= 1 the
+                                    isotropic Rotta source vanishes at least
+                                    as y^4 at the wall */
+  double  bfh_t2_n;            /*!< Order n of the power mean blending the
+                                    integral and near-wall time scales,
+                                    T2 = tau (1 + X^n)^(1/n) with
+                                    X = (Re_s/Re_t)^p. It fixes the sharpness
+                                    of the transition only, not the
+                                    asymptotics: n = 1 is the harmonic blend
+                                    of the two rates, n -> infinity gives
+                                    max(tau, T_v) (default: 1) */
+  int     bfh_c2_mod;          /*!< Reynolds-number function carried by the
+                                    quadratic constant C'_2 of the Chung &
+                                    Kim slow term, independently of the
+                                    function carried by the overall
+                                    amplitude (bfh_ck_damping):
+                                    - 0: 1 / beta(R_t) (Chung & Kim 1995)
+                                    - 1: tau / T2 sigmoid of the power mean
+                                    - 2: no damping, C'_2 constant
+                                    Mode 2 makes a negative C'_2 meaningful,
+                                    which reverses the transfer driven by the
+                                    quadratic block while the Schumann
+                                    two-component constraint A_1 = 2 +
+                                    A_2 (II_b - 1/3) still holds, so
+                                    realizability is preserved for either
+                                    sign (default: 0) */
+  double  bfh_ck_cr_add;       /*!< Additional linear return to isotropy
+                                    added to the Chung & Kim slow term,
+                                    - dC_R F (eps / k) dev(R), where
+                                    F = 27 det R / (tr R)^3 is the flatness
+                                    parameter. F vanishes on the
+                                    two-component surface, so the extra
+                                    return does not break realizability,
+                                    while it lifts the linear coefficient
+                                    above the value A_1 = 2 at which the
+                                    Schumann constraint locks it in the
+                                    fully three-component state
+                                    (default: 0) */
+  double  bfh_wall_stab;       /*!< Constant c_w of the implicit-only
+                                    stabilisation - c_w R / tau of the wall
+                                    tensor. The remainder left explicit by
+                                    the exact implicitation of 2 imp_phiw N
+                                    is not sign definite, and c_w covers it.
+                                    The sufficient condition
+                                    c_w / tau >= imp_phiw (n.R.n)(n.R^-1.n)
+                                    is not a bound valid for every
+                                    realizable state, so c_w may have to be
+                                    raised on meshes whose first cell is
+                                    much thinner than y+ = 0.1, where the
+                                    2 nu / z^2 prefactor grows. A negative
+                                    value selects the default, 6 for
+                                    uncoupled components and 2 for coupled
+                                    ones (default: -1) */
+
   /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
   DISABLE_WARNING_PUSH
   DISABLE_WARNING(-Wdeprecated-declarations)
@@ -356,7 +447,21 @@ typedef struct cs_turb_rans_model_t {
       iclptr(0),
       ikwcln(1),
       xlomlg(-1e13),
-      dissip_buo_mdl(0)
+      dissip_buo_mdl(0),
+      bfh_slow_model(0),
+      bfh_c2_prime_inf(15.5),
+      bfh_aw(150.0),
+      bfh_pw(2.0),
+      bfh_use_beta2(0),
+      bfh_ck_damping(1),
+      bfh_beta2_form(0),
+      bfh_use_durbin_time(0),
+      bfh_t2_ct(-1.0),
+      bfh_t2_pow(0.5),
+      bfh_t2_n(1.0),
+      bfh_c2_mod(0),
+      bfh_ck_cr_add(0.0),
+      bfh_wall_stab(-1.0)
   {}
   /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
   DISABLE_WARNING_POP

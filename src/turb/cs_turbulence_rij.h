@@ -101,6 +101,112 @@ cs_turbulence_rij_clip(int        phase_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief BFH slow return-to-isotropy model variants.
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef enum {
+  CS_TURB_BFH_SLOW_ROTTA           = 0, /*!< Baseline Rotta (Lai & So) */
+  CS_TURB_BFH_SLOW_CHUNG_KIM       = 1, /*!< Chung & Kim (1995) nonlinear */
+  CS_TURB_BFH_SLOW_SPEZIALE_SARKAR = 2, /*!< Speziale & Sarkar (1990) SSG */
+  CS_TURB_BFH_SLOW_UNIVERSAL_2C3C  = 3  /*!< Universal 2C-to-3C
+                                             target transition */
+} cs_turb_bfh_slow_model_t;
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the BFH slow return-to-isotropy model variant.
+ *
+ * \param[in]  model  0: baseline Rotta with wall damping (Lai & So)
+ *                    1: Chung & Kim (1995) nonlinear model
+ *                    2: Speziale & Sarkar (1990) quadratic SSG model
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_bfh_set_slow_model(int model);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the current BFH slow return-to-isotropy model variant.
+ *
+ * \return 0 for baseline Rotta, 1 for Chung & Kim, 2 for Speziale-Sarkar
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_turb_bfh_get_slow_model(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the C2'_infty constant for the Chung & Kim slow model.
+ *
+ * \param[in]  c2_prime_inf  high-Reynolds value (default: 15.5)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_bfh_set_c2_prime_inf(cs_real_t c2_prime_inf);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the current C2'_infty constant for the Chung & Kim slow model.
+ *
+ * \return current value of C2'_infty
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_turb_bfh_get_c2_prime_inf(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the Aw constant in the Lai & So wall damping function
+ *        fw = 1 - exp(-(Ret / Aw)^2).
+ *
+ * \param[in]  aw  damping scale parameter (default: 150.0)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_bfh_set_aw(cs_real_t aw);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the current Aw constant in the Lai & So wall damping function.
+ *
+ * \return current value of Aw
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_turb_bfh_get_aw(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the power exponent pw in the generalized wall damping function
+ *        fw = 1 - exp(-(Ret / Aw)^pw).
+ *
+ * \param[in]  pw  power exponent (default: 2.0)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_bfh_set_pw(cs_real_t pw);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the current power exponent pw in the wall damping function.
+ *
+ * \return current value of pw
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_turb_bfh_get_pw(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the turbulent viscosity for the Reynolds Stress model.
  *
  * \param[in]     phase_id   turbulent phase id (-1 for single phase flow)

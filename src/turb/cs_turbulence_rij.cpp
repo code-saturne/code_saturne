@@ -119,6 +119,58 @@
  * Static global variables
  *============================================================================*/
 
+/* Static option to select BFH slow return-to-isotropy model:
+ * 0: baseline Rotta with wall damping alpha3 (Lai & So)
+ * 1: Chung & Kim (1995) nonlinear model
+ */
+void
+cs_turb_bfh_set_slow_model(int model)
+{
+  cs_get_glob_turb_rans_model()->bfh_slow_model = model;
+}
+
+int
+cs_turb_bfh_get_slow_model(void)
+{
+  return cs_glob_turb_rans_model->bfh_slow_model;
+}
+
+void
+cs_turb_bfh_set_c2_prime_inf(cs_real_t c2_prime_inf)
+{
+  cs_get_glob_turb_rans_model()->bfh_c2_prime_inf = c2_prime_inf;
+}
+
+cs_real_t
+cs_turb_bfh_get_c2_prime_inf(void)
+{
+  return cs_glob_turb_rans_model->bfh_c2_prime_inf;
+}
+
+void
+cs_turb_bfh_set_aw(cs_real_t aw)
+{
+  cs_get_glob_turb_rans_model()->bfh_aw = aw;
+}
+
+cs_real_t
+cs_turb_bfh_get_aw(void)
+{
+  return cs_glob_turb_rans_model->bfh_aw;
+}
+
+void
+cs_turb_bfh_set_pw(cs_real_t pw)
+{
+  cs_get_glob_turb_rans_model()->bfh_pw = pw;
+}
+
+cs_real_t
+cs_turb_bfh_get_pw(void)
+{
+  return cs_glob_turb_rans_model->bfh_pw;
+}
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -2733,6 +2785,26 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
 
   const cs_real_t crij1 = cs_turb_crij1;
 
+  const cs_real_t cssgs1 = cs_turb_cssgs1;
+  const cs_real_t cssgs2 = cs_turb_cssgs2;
+  const cs_real_t d1s3 = 1.0 / 3.0;
+
+  const cs_turb_rans_model_t *rans_mdl = cs_glob_turb_rans_model;
+  const int slow_model = rans_mdl->bfh_slow_model;
+  const cs_real_t c2_prime_inf = rans_mdl->bfh_c2_prime_inf;
+  const cs_real_t aw = rans_mdl->bfh_aw;
+  const cs_real_t pw = rans_mdl->bfh_pw;
+  const int use_beta2 = rans_mdl->bfh_use_beta2;
+  const int beta2_form = rans_mdl->bfh_beta2_form;
+  const int ck_damping = rans_mdl->bfh_ck_damping;
+  const int use_drb_time = rans_mdl->bfh_use_durbin_time;
+  const cs_real_t t2_ct = (rans_mdl->bfh_t2_ct > 0.) ? rans_mdl->bfh_t2_ct
+                                                     : cs_turb_xct;
+  const cs_real_t t2_pow = rans_mdl->bfh_t2_pow;
+  const cs_real_t t2_n = cs::max(rans_mdl->bfh_t2_n, cs_math_epzero);
+  const int c2_mod = rans_mdl->bfh_c2_mod;
+  const cs_real_t ck_cr_add = rans_mdl->bfh_ck_cr_add;
+
   const int t2v[3][3] = _T2V;
   const int iv2t[6] = _IV2T;
   const int jv2t[6] = _JV2T;
@@ -2800,10 +2872,12 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     if (ret != nullptr)
       ret[c_id] = ret_c;
 
-    // Lai and So 1990 p645
-    const cs_real_t alpha3 = 1.0 - exp(- cs_math_pow2(ret_c / 150.0));
-    if (a3 != nullptr)
-      a3[c_id] = alpha3;
+    /* Damping function of Ret:
+     * - BFH baseline (Lai & So 1990 p645): f_w = 1 - exp(-(Re_t / aw)^pw)
+     * - Chung & Kim (1995): f_w = 1 / beta(R_t) */
+    cs_real_t f_w = (cs::abs(pw - 2.0) < 1.e-12)
+                    ? (1.0 - exp(- cs_math_pow2(ret_c / aw)))
+                    : (1.0 - exp(- pow(ret_c / aw, pw)));
 
     /* Sij */
     m_sij[0][0] = gradv[c_id][0][0];
@@ -2866,33 +2940,274 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     cs_real_t eig_vals[3];
     _sym_33_eigen(matrn, eig_vals);
     cs_real_t lambda_min = eig_vals[0]; /* lambda^min(R)/k */
+    cs_real_t lambda_max = eig_vals[2]; /* lambda^max(R)/k */
 
-    /* beta2 = 9/10 * Lambda_min/tr(R) = 9/20 * Lambda_min / k
-     *       = 0.6 * 3/4 * Lambda_min / k */
-    cs_real_t beta2 = 0.75 * crij2 * lambda_min;
+    /* Rapid coefficient. Both forms give beta2 = 3/10 in isotropic
+     * turbulence, where lambda_min = lambda_max = tr(R)/3.
+     *   form 0: beta2 = 9/10 lambda_min / tr(R) = 9/20 lambda_min / k
+     *           = 0.6 * 3/4 * lambda_min / k, i.e. 90 percent of the
+     *           hyperbolic stability bound beta2 <= lambda_min / tr(R).
+     *   form 1: beta2 = 3/5 lambda_min / (lambda_max + lambda_min).
+     * Form 1 is not bounded by lambda_min / tr(R): their ratio is
+     * 3/5 tr(R) / (lambda_max + lambda_min), which equals 9/10 in the
+     * isotropic state but grows to 6/5 when the intermediate eigenvalue
+     * approaches lambda_max, i.e. in near two-component states. */
+    cs_real_t beta2;
+    if (beta2_form == 1)
+      beta2 = 0.6 * lambda_min / cs::max(lambda_max + lambda_min,
+                                         cs_math_epzero);
+    else
+      beta2 = 0.75 * crij2 * lambda_min;
+
+    if (use_beta2 != 0) {
+      const cs_real_t r_b2 = cs::min(1.0, beta2 / 0.12);
+      if (use_beta2 == 3) {
+        /* Direct beta2 scaling with power 1.5 to delay buffer takeoff */
+        f_w = r_b2 * sqrt(r_b2);
+      }
+      else if (use_beta2 == 2) {
+        f_w = r_b2;
+      }
+      else if (use_beta2 == 4) {
+        f_w = 1.0;
+      }
+      else {
+        f_w *= r_b2;
+      }
+    }
 
     /* Wall-normal unit vector from wall distance gradient */
     cs_real_t xnal[3];
     cs_math_3_normalize(grad_wd.sub_array(c_id), xnal);
 
+    cs_real_t r_n[3] = {0., 0., 0.};
     cs_real_t rnn = 0.;
-    for (cs_lnum_t k = 0; k < 3; k++) {
-      // Rnn n (x) n
-      for (cs_lnum_t l = 0; l < 3; l++) {
-        rnn += m_rij[l][k] * xnal[k] * xnal[l];
-      }
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t k = 0; k < 3; k++)
+        r_n[i] += m_rij[i][k] * xnal[k];
+      rnn += r_n[i] * xnal[i];
     }
-    const cs_real_t five_ov_two = 1.5;
-    cs_real_t t_wall = (tke + five_ov_two* rnn*(1.-alpha3)) / cvara_ep[c_id];
-
-    /* Wall distance */
+    /* Wall distance and viscous time scale */
     const cs_real_t y = cs::max(w_dist[c_id], cs_math_epzero);
     const cs_real_t dtvisc = 2. * viscl[c_id] / (crom[c_id] * y * y);
-    t_wall = cs::min(t_wall, 1./dtvisc);
+    const cs_real_t inv_twall = cs::max(1. / xttke, dtvisc);
+    const cs_real_t fact_trace = 1.;
 
-    const cs_real_t imp_phiw = dtvisc;
+    const cs_real_t imp_phiw = dtvisc * fact_trace;
+
+    /* Realizability of the wall term (decomposition theorem, increment
+     * form). With 2 imp_phiw N implicited exactly, the remainder left in
+     * the explicit balance is imp_phiw Rnn (5/2 P - N), whose -Rnn N part
+     * is not positive. It is compensated by the implicit-only term
+     *
+     *   - c_w R / T_visc,      1 / T_visc = 2 nu / z^2,
+     *
+     * which adds c_w R^n / T_visc to the explicit balance of the theorem
+     * and is therefore admissible for any c_w >= 0; only the convergence
+     * path is affected, not the converged state.
+     *
+     * Each term of the source is implicited with its own time scale: the
+     * dissipation with tau = k / eps, the deviatoric return to isotropy
+     * with T2, and the wall block with the wall scale
+     *
+     *   1 / T_wall = max(eps / k, 2 nu / z^2),
+     *
+     * rather than with eps / k. The two coincide at a wall in RANS, where
+     * eps / k -> 2 nu / z^2, which is why c_w / tau worked there; they do
+     * not coincide in the first cell of a fine mesh, where 2 nu / z^2 is
+     * the larger, nor for a subgrid closure whose dissipation is
+     * algebraic. Taking the larger of the two covers the remainder where
+     * the viscous scale dominates, and keeps eps / k in the core, where
+     * 2 nu / z^2 vanishes but the implicit operator still needs the
+     * diagonal dominance that this term provides: scaling on 2 nu / z^2
+     * alone destroys the convergence away from the wall.
+     * The 2C-3C slow model has no explicit wall term, so neither the wall
+     * implicitation nor the stabilisation apply to it. */
+    const bool has_wall_term
+      = (slow_model != CS_TURB_BFH_SLOW_UNIVERSAL_2C3C);
+    const cs_real_t c_w
+      = (rans_mdl->bfh_wall_stab > 0.) ? rans_mdl->bfh_wall_stab
+      : ((coupled_components != 0) ? 2.0 : 6.0);
+    const cs_real_t imp_phiw_n = (has_wall_term) ? imp_phiw : 0.;
+    const cs_real_t inv_tau_w
+      = (has_wall_term) ? c_w * inv_twall * fact_trace : 0.;
+
+    /* Rotta redistribution time scale T2. The integral scale tau = k/eps
+     * and the near-wall scale T_v = tau (Re_s/Re_t)^p, with Re_s = C_T2^2,
+     * are combined through a power mean of order n:
+     *
+     *   T2 = tau (1 + X^n)^(1/n),      X = (Re_s/Re_t)^p.
+     *
+     * n = 1 is the harmonic blend of the two rates (T2 = tau + T_v) and
+     * n -> infinity gives max(tau, T_v); n only sets the sharpness of the
+     * transition, which is smooth for any finite n, whereas max is not
+     * differentiable. The activation of the deviatoric term,
+     *
+     *   tau / T2 = [ Re_t^q / (Re_t^q + Re_s^q) ]^(1/n),   q = p n,
+     *
+     * is the form evaluated below, using a base of modulus at most one so
+     * that no overflow occurs at either end of the Re_t range.
+     * The asymptotics depend on p only: near a wall tau = O(z^2) and
+     * Re_t = O(z^4), hence T2 = O(z^(2-4p)) and the isotropic Rotta source
+     * (2/3) (C_R - 1) k / T2 = O(z^(4p)). p = 1/2 is resonant with the
+     * 12 nu / z^2 sink of R_nn, which then behaves as z^4 ln(1/z);
+     * p >= 1 preserves R_nn = O(z^4) without any damping function. */
+    const cs_real_t t2_q = t2_pow * t2_n;
+    const cs_real_t ret_s = cs::max(ret_c, 0.) / (t2_ct * t2_ct);
+
+    cs_real_t f_t2;
+    if (ret_s >= 1.) {
+      const cs_real_t xn = pow(1. / ret_s, t2_q);
+      f_t2 = pow(1. / (1. + xn), 1. / t2_n);
+    }
+    else {
+      const cs_real_t xn = pow(ret_s, t2_q);
+      f_t2 = pow(xn / (1. + xn), 1. / t2_n);
+    }
+
+    const cs_real_t inv_tdrb = f_t2 / xttke;
 
     cpro_beta2[c_id] = beta2;
+
+    /* Chung & Kim (1995) symmetric tensor Q */
+    cs_real_t q_mat[3][3] = {{0., 0., 0.},
+                             {0., 0., 0.},
+                             {0., 0., 0.}};
+
+    /* Shift keeping the implicit operator 2 f_w (Q + q_shift I) positive
+       (decomposition theorem): q_shift = max(0, -lambda_min(Q)). */
+    cs_real_t q_shift = 0.;
+
+    if (slow_model == 1) {
+      /* M = 1.5 * R / k */
+      const cs_real_t fact_m = 1.5 / tke;
+      cs_real_t m_mat[3][3];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          m_mat[i][j] = fact_m * m_rij[i][j];
+      }
+
+      /* M^2 = M * M */
+      cs_real_t m2[3][3];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          m2[i][j] = 0.;
+          for (cs_lnum_t k = 0; k < 3; k++)
+            m2[i][j] += m_mat[i][k] * m_mat[k][j];
+        }
+      }
+
+      /* Q_2 = tr(M^2) */
+      const cs_real_t q2 = m2[0][0] + m2[1][1] + m2[2][2];
+
+      /* M^3 = M^2 * M */
+      cs_real_t m3[3][3];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          m3[i][j] = 0.;
+          for (cs_lnum_t k = 0; k < 3; k++)
+            m3[i][j] += m2[i][k] * m_mat[k][j];
+        }
+      }
+
+      /* Q_3 = tr(M^3) */
+      const cs_real_t q3 = m3[0][0] + m3[1][1] + m3[2][2];
+
+      /* Turbulent Reynolds number Rt = (4/9) * ret_c */
+      const cs_real_t r_t = (4.0 / 9.0) * ret_c;
+
+      /* Coherent scaling of beta(Rt) constants with C2'_inf */
+      const cs_real_t c2_ratio = cs::abs(c2_prime_inf) / 15.5;
+      const cs_real_t c_beta = 2.7 * c2_ratio;
+      const cs_real_t d_beta = 90.0 * c2_ratio;
+
+      /* 1 / beta(Rt) = Rt^2 / (Rt^2 + c_beta * Rt^(3/2) + d_beta) */
+      const cs_real_t r_t_sqrt = sqrt(cs::max(r_t, 0.0));
+      const cs_real_t r_t_3s2 = r_t * r_t_sqrt;
+      const cs_real_t r_t_sq = r_t * r_t;
+      const cs_real_t den_beta = r_t_sq + c_beta * r_t_3s2 + d_beta;
+      const cs_real_t inv_beta = (den_beta > 0.0) ? (r_t_sq / den_beta) : 0.0;
+
+      /* C'_{2, infinity} (default: 15.5), carried by its own
+       * Reynolds-number function. Chung & Kim calibrated 1 / beta(R_t) on
+       * homogeneous decaying turbulence; it is kept as mode 0, but the
+       * quadratic block can also be driven by the tau / T2 sigmoid of the
+       * power mean (mode 1) or left undamped (mode 2). */
+      const cs_real_t f_c2
+        = (c2_mod == 1) ? f_t2 : (c2_mod == 2) ? 1.0 : inv_beta;
+      const cs_real_t c2_prime = c2_prime_inf * f_c2;
+
+      /* Polynomial coefficients L_1, L_2, L_3 */
+      const cs_real_t l1 = d2s3 - (c2_prime / 378.0)
+                                  * (5.0 * q2 * q2 + 17.0 * q2 - 18.0 * q3);
+      const cs_real_t l2 = (c2_prime / 378.0) * (15.0 * q2 - 4.0 * q3 + 51.0);
+      const cs_real_t l3 = (c2_prime / 189.0) * (2.0 * q2 - 27.0);
+
+      /* Symmetric tensor Q = (3 eps / (4 k)) * (L1 * I + L2 * M + L3 * M^2) */
+      const cs_real_t ep_c = cvara_ep[c_id];
+      const cs_real_t fact_q = 0.75 * ep_c / tke;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          const cs_real_t delta = (i == j) ? 1.0 : 0.0;
+          q_mat[i][j] = fact_q * (l1 * delta
+                                  + l2 * m_mat[i][j]
+                                  + l3 * m2[i][j]);
+        }
+      }
+
+      /* Q is a polynomial in M = 1.5 R/k: same eigenvectors, and its
+         eigenvalues follow from those of R/k. L1 < 0 makes Q indefinite
+         in two-component states. */
+      for (cs_lnum_t e = 0; e < 3; e++) {
+        const cs_real_t mu = 1.5 * eig_vals[e];
+        q_shift = cs::max(q_shift, -fact_q * (l1 + l2 * mu + l3 * mu * mu));
+      }
+
+      /* Reynolds-number function of the slow term. The original
+       * 1 / beta(R_t) was calibrated on homogeneous decaying turbulence
+       * and activates far too early in a wall layer; the tau / T2
+       * activation of the power mean is available as an alternative, so
+       * that the tensor structure of Chung & Kim can be tested
+       * independently of its Reynolds-number function. */
+      f_w = (ck_damping != 0) ? inv_beta : f_t2;
+    }
+    else if (slow_model == CS_TURB_BFH_SLOW_SPEZIALE_SARKAR) {
+      /* Speziale & Sarkar (1990) quadratic slow model (SSG) */
+      const cs_real_t c_lin = cssgs1 - (4.0 / 3.0) * cssgs2; /* 3.10 */
+      const cs_real_t fact_q = 0.5 * cvara_ep[c_id] / tke;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          const cs_real_t delta = (i == j) ? 1.0 : 0.0;
+          q_mat[i][j] = fact_q * (c_lin * delta
+                                  + (cssgs2 / tke) * m_rij[i][j]);
+        }
+      }
+
+      /* Eigenvalues of Q from those of R/k (positive for the standard
+         constants, kept as a safeguard) */
+      for (cs_lnum_t e = 0; e < 3; e++)
+        q_shift = cs::max(q_shift,
+                          -fact_q * (c_lin + cssgs2 * eig_vals[e]));
+      /* Damping function: Lai & So wall damping f_w */
+      f_w = (cs::abs(pw - 2.0) < 1.e-12)
+            ? (1.0 - exp(- cs_math_pow2(ret_c / aw)))
+            : (1.0 - exp(- pow(ret_c / aw, pw)));
+    }
+    else if (slow_model == CS_TURB_BFH_SLOW_UNIVERSAL_2C3C) {
+      /* Universal 2C-to-3C target transition: Q = 0.5 * (c1 * eps / k) * I */
+      const cs_real_t fact_q = 0.5 * crij1 * cvara_ep[c_id] / tke;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          q_mat[i][j] = (i == j) ? fact_q : 0.0;
+        }
+      }
+      f_w = (cs::abs(pw - 2.0) < 1.e-12)
+            ? (1.0 - exp(- cs_math_pow2(ret_c / aw)))
+            : (1.0 - exp(- pow(ret_c / aw, pw)));
+    }
+
+    if (a3 != nullptr)
+      a3[c_id] = f_w;
 
     // Implicitation
     if (coupled_components != 0) {
@@ -2914,42 +3229,38 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
                                      0., 0., 0.,
                                      0., 0., 0.};
 
-#if 0
-      /* Compute inverse matrix of R^n
-         (scaling by tr(R) for numerical stability) */
-      cs_real_t oo_matrn[6];
-      cs_math_sym_33_inv_cramer(matrn, oo_matrn);
-      for (int ij = 0; ij < 6; ij++)
-        oo_matrn[ij] /= tke;
-#endif
-
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
           const cs_lnum_t ij = t2v[i][j];
-#if 0
-          cs_real_t nink_invrkj = 0.;
-          for (cs_lnum_t k = 0; k < 3; k++) {
-            const cs_lnum_t kj = t2v[k][j];
-            nink_invrkj += xnal[i] * xnal[k] * oo_matrn[kj];
-          }
-#endif
-          /* Rotation in Pij and Coriolis is implicited */
+
+          /* Rotation in Pij and Coriolis is implicited.
+           *
+           * Wall term: the explicit contribution is
+           *   - imp_phiw [2 (R N + N R) + Rnn N - 5/2 Rnn (I - N)].
+           * Only its sink part is implicited, exactly, through
+           * M_w = 2 imp_phiw N, since M_w R + R M_w^t = 2 imp_phiw (N R
+           * + R N). The Rnn N part would require R^-1 to be linearised
+           * (ill-conditioned near two-component states) and only carries
+           * 1/5 of the wall-normal sink, so it stays explicit.
+           * The -5/2 Rnn (I - N) part is a *source* on the tangential
+           * components, proportional to Rnn and not to R11 or R22:
+           * implicitating it as an isotropic sink 5/2 delta_ij adds a
+           * spurious damping of order 2 nu / y^2 on the tangential
+           * components, with no counterpart in the right-hand side. */
           implmat2add[i][j] = gradv[c_id][i][j] - ccorio * matrot[i][j]
                            // 2 beta2 (S R + R S)
                            - 2. * beta2 * st_sij[ij]
-#if 0
-            +(2. * xnal[i] * xnal[j]
-                /* 1/2 * Ni Nk (R^-1)kj Rnn */
-                + 0.5 * nink_invrkj * rnn
-                )
-#else
-            // 5/2
-             + 2.5 * st_deltaij[ij]
-#endif
-              * imp_phiw
-              //* 2.
-            + impl_lin_cst * st_deltaij[ij] //NBF2023
-            ;
+                           // 2 imp_phiw N
+                           + 2. * xnal[i] * xnal[j] * imp_phiw_n
+                           + impl_lin_cst * st_deltaij[ij] //NBF2023
+                           ;
+
+          if (slow_model == CS_TURB_BFH_SLOW_CHUNG_KIM
+              || slow_model == CS_TURB_BFH_SLOW_SPEZIALE_SARKAR)
+            implmat2add[i][j] += (q_mat[i][j] + q_shift * st_deltaij[ij])
+                                 * f_w;
+          else if (slow_model == CS_TURB_BFH_SLOW_UNIVERSAL_2C3C)
+            implmat2add[i][j] += q_mat[i][j];
         }
       }
       /* compute the 6x6 matrix a which verifies
@@ -2959,6 +3270,19 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
       cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
 
     } /* end if irijco != 0 */
+
+    /* Anisotropy tensor for Speziale & Sarkar model */
+    cs_real_t m_aij[3][3];
+    cs_real_t aii = 0.;
+    if (slow_model == CS_TURB_BFH_SLOW_SPEZIALE_SARKAR) {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          const cs_real_t delta = (i == j) ? 1.0 : 0.0;
+          m_aij[i][j] = m_rij[i][j] / tke - d2s3 * delta;
+          aii += m_aij[i][j] * m_aij[i][j];
+        }
+      }
+    }
 
     for (cs_lnum_t ij = 0; ij < 6; ij++) {
       cs_lnum_t i = iv2t[ij];
@@ -2980,21 +3304,92 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
       const cs_real_t omij = st_corio[ij];
 
       /* BFH slow and wall terms */
-      cs_real_t phiij1 = - crij1 / xttke * (m_rij[i][j] - d2s3 * st_deltaij[ij] * tke) * alpha3;
+      const cs_real_t phiijw = 2.0 * (r_n[i] * xnal[j] + r_n[j] * xnal[i])
+                               + rnn * xnal[i] * xnal[j]
+                               - 2.5 * rnn * (st_deltaij[ij]
+                                              - xnal[i] * xnal[j]);
 
-      cs_real_t phiijw = 0.0;
-      for (cs_lnum_t k = 0; k < 3; k++) {
-        phiijw += 2.0 * m_rij[i][k] * xnal[j] * xnal[k];
-        phiijw += 2.0 * m_rij[k][j] * xnal[i] * xnal[k];
-        for (cs_lnum_t l = 0; l < 3; l++)
-          phiijw += m_rij[l][k] * xnal[k] * xnal[l] * xnal[i] * xnal[j];
+      cs_real_t phiij1 = 0.;
+
+      if (slow_model == CS_TURB_BFH_SLOW_ROTTA) {
+        /* Dual time scale decomposition:
+         *   R_ij / T + (C_R - 1) / T_2 * (R_ij - (2/3)*k*delta_ij)
+         * with T = k/eps (exact trace 2*eps) and T_2 = T_drb.
+         * When no beta2 damping is applied (fw=1 / use_beta2 == 4 or 0),
+         * c_slow = C_R - 1.0 reduces the near-wall parasitic source by 56%
+         * without locking 2D turbulence in free flows! */
+        const cs_real_t c_slow
+          = (use_drb_time != 0 && (use_beta2 == 4 || use_beta2 == 0))
+          ? (crij1 - 1.0)
+          : crij1;
+        const cs_real_t inv_t_rotta
+          = (use_drb_time != 0) ? inv_tdrb : inv_twall;
+
+        phiij1 = - (c_slow * inv_t_rotta) * f_w
+                 * (m_rij[i][j] - d2s3 * st_deltaij[ij] * tke)
+                 - phiijw * imp_phiw;
       }
-      phiij1 += - phiijw * imp_phiw;
+      else if (slow_model == CS_TURB_BFH_SLOW_CHUNG_KIM) {
+        /* Chung & Kim: (Q R + R Q)_{ij} */
+        cs_real_t qr_rq_ij = 0.;
+        for (cs_lnum_t k = 0; k < 3; k++)
+          qr_rq_ij += q_mat[i][k] * m_rij[k][j] + m_rij[i][k] * q_mat[k][j];
+
+        /* Traceless slow term: Phi^(s) = - (Q R + R Q) + (2/3) eps I */
+        const cs_real_t phi_s_ck_ij
+          = - qr_rq_ij + d2s3 * cvara_ep[c_id] * st_deltaij[ij];
+
+        phiij1 = phi_s_ck_ij * f_w - phiijw * imp_phiw;
+
+        /* The Schumann two-component constraint locks the linear
+         * coefficient of the Chung & Kim block at A_1 = 2 in a
+         * three-component state, i.e. at the equivalent of C_R - 1 = 1,
+         * well below the value 1.8 that the channel calls for. The extra
+         * return below is weighted by the flatness F, which vanishes on the
+         * two-component surface, so it lifts the linear rate in the core
+         * without touching the constrained limit. */
+        if (ck_cr_add != 0.) {
+          const cs_real_t flat
+            = 3.375 * eig_vals[0] * eig_vals[1] * eig_vals[2];
+          phiij1 -=   ck_cr_add * flat * inv_tdrb
+                    * (m_rij[i][j] - d2s3 * st_deltaij[ij] * tke);
+        }
+      }
+      else if (slow_model == CS_TURB_BFH_SLOW_SPEZIALE_SARKAR) {
+        /* Speziale & Sarkar (1990) SSG quadratic slow term */
+        cs_real_t aikakj = 0.;
+        for (cs_lnum_t k = 0; k < 3; k++)
+          aikakj += m_aij[i][k] * m_aij[k][j];
+
+        const cs_real_t phi_s_ssg_ij
+          = - cvara_ep[c_id]
+            * (  cssgs1 * m_aij[i][j]
+               + cssgs2 * (aikakj - d1s3 * st_deltaij[ij] * aii));
+
+        phiij1 = phi_s_ssg_ij * f_w - phiijw * imp_phiw;
+      }
+      else if (slow_model == CS_TURB_BFH_SLOW_UNIVERSAL_2C3C) {
+        /* Universal 2C-to-3C target anisotropy */
+        const cs_real_t nn_ij = xnal[i] * xnal[j];
+        const cs_real_t delta_ij = st_deltaij[ij];
+        const cs_real_t a_target_ij
+          = m_rij[i][j] / tke
+            - (1.0 - d1s3 * f_w) * delta_ij
+            + (1.0 - f_w) * nn_ij;
+
+        phiij1 = - crij1 * cvara_ep[c_id] * a_target_ij;
+      }
 
       cs_real_t phiij2 = 2.0 * beta2 * (riksjk + k_prod * m_rij[i][j] / tke);
 
-      /* Dissipation term: Rotta model with wall time scale */
-      const cs_real_t epsij = - crijeps * m_rij[i][j] / t_wall;
+      /* Dissipation term:
+       * - If use_drb_time != 0: dissipation retains T_eps = k/eps (1.0 / xttke)
+       * - Otherwise: classical inv_twall with wall viscous time scale */
+      const cs_real_t inv_t_rotta
+        = (use_drb_time != 0) ? inv_tdrb : inv_twall;
+      const cs_real_t inv_t_eps
+        = (use_drb_time != 0) ? (1.0 / xttke) : inv_twall;
+      const cs_real_t epsij = - crijeps * m_rij[i][j] * inv_t_eps * fact_trace;
 
       w1[c_id] =   cromo[c_id] * cell_f_vol[c_id]
                    * (pij + omij + phiij1 + phiij2 + epsij);
@@ -3008,9 +3403,28 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
       else {
         rhs[c_id][ij] += w1[c_id];
 
+        const cs_real_t c_slow
+          = (use_drb_time != 0 && (use_beta2 == 4 || use_beta2 == 0))
+          ? (crij1 - 1.0)
+          : crij1;
+        const cs_real_t imp_slow
+          = (slow_model == CS_TURB_BFH_SLOW_ROTTA)
+          ? (c_slow * inv_t_rotta * f_w + crijeps * inv_t_eps * fact_trace)
+          : (slow_model == CS_TURB_BFH_SLOW_UNIVERSAL_2C3C)
+          ? ( (coupled_components == 0 ? 2.0 * q_mat[i][i] : 0.0)
+             + crijeps * inv_t_eps * fact_trace)
+          : ( (coupled_components == 0 ? 2.0 * q_mat[i][i] * f_w : 0.0)
+             + crijeps * inv_t_eps * fact_trace
+             + ((slow_model == CS_TURB_BFH_SLOW_CHUNG_KIM && ck_cr_add > 0.)
+                ? ck_cr_add * 3.375 * eig_vals[0] * eig_vals[1] * eig_vals[2]
+                  * inv_tdrb
+                : 0.0));
+
+        /* Same value on the six components: equivalent to an isotropic
+           M = c/2 I in M.R + R.M^t, as required by the theorem */
         fimp[c_id][ij][ij] += crom[c_id] * cell_f_vol[c_id]
-          * ( (crij1 / xttke * alpha3 + crijeps / t_wall)
-              - 2.0 * beta2 * (cs::min(k_prod, 0.0) / tke) );
+          * (  imp_slow - 2.0 * beta2 * (cs::min(k_prod, 0.0) / tke)
+             + inv_tau_w);
 
         if (coupled_components != 0) {
           for (cs_lnum_t kl = 0; kl < 6; kl++)
@@ -3496,6 +3910,7 @@ _solve_epsilon(int              phase_id,
   cs_field_t *f_vel = CS_F_(vel);
   cs_field_t *f_rho = CS_F_(rho);
   cs_field_t *f_mu = CS_F_(mu);
+  cs_field_t *f_mut = CS_F_(mu_t);
 
   if (phase_id >= 0) {
     f_rij = CS_FI_(rij, phase_id);
@@ -3504,11 +3919,13 @@ _solve_epsilon(int              phase_id,
     f_vel = CS_FI_(vel, phase_id);
     f_rho = CS_FI_(rho, phase_id);
     f_mu = CS_FI_(mu, phase_id);
+    f_mut = CS_FI_(mu_t, phase_id);
   }
 
   const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *crom = f_rho->val;
   const cs_real_t *viscl = f_mu->val;
+  const cs_real_t *visct = f_mut->val;
   const cs_real_t *cvara_ep = f_eps->val_pre;
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
 
@@ -3794,18 +4211,18 @@ _solve_epsilon(int              phase_id,
         = xct*sqrt(viscl[c_id] / crom[c_id] / cvara_ep[c_id]);
       const cs_real_t xttdrb = cs::max(xttke, xttkmg);
 
-      /* Definition of Re_t of Moore and Moore,
-       * without the factor 4/9.
-       * Also definition of Lai and So 1990 */
+      /* Definition of Re_t of Lai and So 1990 */
       const cs_real_t ret_c = tke * tke / (cvara_ep[c_id] * viscl[c_id] / crom[c_id]);
 
       // Moore and Moore
-      const cs_real_t alpha3 = (1.0 - exp(- 0.0138 * pow(ret_c, 0.75)));
+      const cs_real_t f_e = 1.0 - exp(- 0.0138 * pow(ret_c, 0.75));
       const cs_real_t prdeps = k_prod / cvara_ep[c_id];
 
       /* Production (explicit) */
       const cs_real_t cromo_vol = crom[c_id] * cell_f_vol[c_id];
-      const cs_real_t _ce1 = ce1 * cs::max(1.0 + xa1 * (1.0 - alpha3) * prdeps, 0.0);
+      const cs_real_t _ce1 =   ce1
+                             * cs::min(cs::max(1.0 + xa1 * (1.0 - f_e)
+                                                     * prdeps, 0.0), 3.0);
 
       const cs_real_t _rhs = cromo_vol * _ce1 / xttdrb * k_prod;
 
@@ -3961,13 +4378,10 @@ _solve_epsilon(int              phase_id,
   else {
 
     if (eqp->idifft == 1) {
-      const cs_real_t cmu_ref = cs_turb_cmu;
       const cs_real_t dsigmae = 1.0 / sigmae;
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        const cs_real_t tke = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
-        const cs_real_t mut = crom[c_id] * cmu_ref * tke * tke / cvara_ep[c_id];
-        w1[c_id] = viscl[c_id] + mut * dsigmae;
+        w1[c_id] = viscl[c_id] + visct[c_id] * dsigmae;
       });
       ctx.wait();
     }
@@ -4360,6 +4774,118 @@ cs_turbulence_rij(int phase_id)
 
     cs_field_current_to_previous(f_vel);
     cs_field_current_to_previous(f_rij);
+  }
+
+  /* Same advanced re-initialization for BFH, which has no elliptic blending
+   * field: the blending alpha = 1 - exp(-y+/50) assumed above is evaluated
+   * directly from the wall distance, and the wall-normal direction from its
+   * gradient. Without it, the start from a uniform velocity and an isotropic
+   * R up to the wall gives a wall value eps = 2 nu k / y^2 several orders of
+   * magnitude too large, which destroys k in the buffer layer within a few
+   * time steps (cells then pinned at the clipping floor). */
+
+  if (   time_step->nt_cur == 1
+      && turb_rans_model->reinit_turb == 1
+      && turb_model->model == CS_TURB_RIJ_EPSILON_BFH) {
+
+    const cs_field_t *f_wd = cs_field("wall_distance");
+    const cs_real_t *w_dist = f_wd->val;
+    cs_real_3_t *vel = (cs_real_3_t *)f_vel->val;
+    cs_real_t *cvar_ep = f_eps->val;
+
+    const cs_real_t uref = cs_glob_turb_ref_values->uref;
+    const cs_real_t utaurf = 0.05 * uref;
+    const cs_real_t nu0 = viscl0 / ro0;
+    const cs_real_t xkappa = cs_turb_xkappa;
+
+    cs_array_2d<cs_real_t> grad_wd(n_cells_ext, 3, cs_alloc_mode);
+    cs_array<cs_real_t> k_ratio(n_cells_ext, cs_alloc_mode);
+
+    cs_field_gradient_scalar(f_wd,
+                             false,  /* use_previous_t */
+                             1,      /* inc */
+                             grad_wd.data<cs_real_3_t>());
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+      const cs_real_t xunorm = cs_math_3_norm(vel[c_id]);
+
+      /* y+ bounded by 400 (saturation of the Reichard profile), as the
+         alpha <= 1 - exp(-8) bound does for EBRSM */
+      const cs_real_t ya
+        = cs::min(cs::max(w_dist[c_id], 0.), 400. * nu0 / utaurf);
+      const cs_real_t ypa = ya / (nu0 / utaurf);
+      const cs_real_t alpha3 = cs_math_pow3(1. - exp(-ypa / 50.));
+
+      cs_real_t xnal[3] = {0., 0., 0.};
+      const cs_real_t xnoral = cs_math_3_norm(grad_wd.sub_array(c_id));
+      if (xnoral > cs_math_epzero / cbrt(cell_f_vol[c_id])) {
+        for (int i = 0; i < 3; i++)
+          xnal[i] = grad_wd(c_id, i) / xnoral;
+      }
+
+      cs_real_t limiter = 1.0;
+      if (xunorm > 1.e-12 * uref)
+        limiter = cs::min(   utaurf / xunorm
+                          * (  2.5 * log(1. + 0.4 * ypa)
+                             + 7.80 * (  1. - exp(-ypa / 11.0)
+                                       - (ypa / 11.) * exp(-0.33 * ypa))),
+                          1.0);
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        vel[c_id][i] = limiter * vel[c_id][i];
+
+      const cs_real_t ut2 = 0.050 * uref;
+      cvar_ep[c_id] =   cs_math_pow3(utaurf)
+                      * cs::min(1. / (xkappa * 15.0 * nu0 / utaurf),
+                                1. / (xkappa * cs::max(ya, cs_math_epzero)));
+      const cs_real_t tke =     cvar_ep[c_id] * 0.5 / nu0 * cs_math_pow2(ya)
+                              * cs_math_pow2(exp(-ypa / 25.))
+                            +   cs_math_pow2(ut2) / 0.3
+                              * cs_math_pow2((1. - exp(-ypa / 25.)));
+
+      const cs_real_t tke_prev = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
+      k_ratio[c_id] = tke / cs::max(tke_prev, cs_math_epzero * tke);
+
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_lnum_t i = iv2t[ij];
+        cs_lnum_t j = jv2t[ij];
+        cvar_rij[c_id][ij] =        alpha3  * 2./3 * tke * st_deltaij[ij]
+                            + (1. - alpha3) * (st_deltaij[ij] - xnal[i]*xnal[j])
+                                            * tke;
+      }
+
+    }); /* End of loop on cells */
+
+    ctx.wait();
+
+    /* The wall Dirichlet value of eps (2 nu k_I' / d^2, see
+       cs_boundary_conditions_set_coeffs_turb) was computed at the beginning
+       of the time step, i.e. from the k preceding this re-initialization.
+       For a Dirichlet condition both a = eps_w and af = -h_int eps_w are
+       proportional to eps_w: rescale them with the re-initialized k, so that
+       the first resolution of eps is not driven by the initial k. */
+    {
+      const cs_mesh_t *m_r = cs_glob_mesh;
+      const cs_lnum_t *b_face_cells = m_r->b_face_cells;
+      const int *bc_type = cs_glob_bc_type;
+      cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
+      cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
+
+      ctx.parallel_for(m_r->n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        if (   bc_type[f_id] == CS_SMOOTHWALL
+            || bc_type[f_id] == CS_ROUGHWALL) {
+          const cs_real_t ratio = k_ratio[b_face_cells[f_id]];
+          coefa_ep[f_id] *= ratio;
+          cofaf_ep[f_id] *= ratio;
+        }
+      });
+      ctx.wait();
+    }
+
+    cs_field_current_to_previous(f_vel);
+    cs_field_current_to_previous(f_rij);
+    cs_field_current_to_previous(f_eps);
   }
 
   /* Compute the velocity gradient */
@@ -5623,6 +6149,8 @@ cs_turbulence_rij_mu_t(int  phase_id)
 
       const cs_real_t beta2 = cpro_beta2[c_id];
 
+      /* BFH equilibrium relation:
+       *   Cmu = (2 beta2 / C2) C0 (1 - 2 beta2) / (CR - 2 beta2)^2 */
       const cs_real_t cmu = (beta2 * 2.0 / c2_ref)
         * c0_ref * (1.0 - 2.0 * beta2)
         / cs_math_pow2(c1_ref - 2.0 * beta2);
