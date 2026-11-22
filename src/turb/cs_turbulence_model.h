@@ -406,6 +406,32 @@ typedef struct cs_turb_rans_model_t {
                                     Schumann constraint locks it in the
                                     fully three-component state
                                     (default: 0) */
+  double  bfh_wall_split;      /*!< Unequal tangential split of the wall
+                                    tensor. The redistribution
+                                    - (5/2) R_nn P of the trace-free wall
+                                    model shares equally between the two
+                                    tangential directions; it is replaced by
+                                    - R_nn [(5/2 + d) t.t + (5/2 - d) s.s],
+                                    where t is the unit vector along the
+                                    tangential part of R.n (the shear
+                                    direction) and s = n x t. The sum of the
+                                    two coefficients is unchanged, so W stays
+                                    trace free, the wall asymptotics are
+                                    untouched, and d > 0 removes more from
+                                    the streamwise component and relatively
+                                    less from the spanwise one
+                                    (default: 0, equal split) */
+  double  bfh_wall_split_eta;  /*!< Regularisation of the shear-aligned frame
+                                    of the wall tensor split: the split is
+                                    weighted by
+                                    |r_t|^2 / (|r_t|^2 + (eta k)^2) so that
+                                    it switches off smoothly where the
+                                    tangential part r_t of R.n no longer
+                                    defines a direction. Since |r_t| / k is
+                                    of order 10^-2 throughout the viscous
+                                    sublayer, eta must stay well below that
+                                    for the split to act where the budgets
+                                    ask for it (default: 1e-3) */
   double  bfh_wall_stab;       /*!< Constant c_w of the implicit-only
                                     stabilisation - c_w R / tau of the wall
                                     tensor. The remainder left explicit by
@@ -461,6 +487,8 @@ typedef struct cs_turb_rans_model_t {
       bfh_t2_n(1.0),
       bfh_c2_mod(0),
       bfh_ck_cr_add(0.0),
+      bfh_wall_split(0.0),
+      bfh_wall_split_eta(1.e-3),
       bfh_wall_stab(-1.0)
   {}
   /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

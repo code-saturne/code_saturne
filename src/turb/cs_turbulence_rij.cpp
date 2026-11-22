@@ -2804,6 +2804,9 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
   const cs_real_t t2_n = cs::max(rans_mdl->bfh_t2_n, cs_math_epzero);
   const int c2_mod = rans_mdl->bfh_c2_mod;
   const cs_real_t ck_cr_add = rans_mdl->bfh_ck_cr_add;
+  const cs_real_t w_split = rans_mdl->bfh_wall_split;
+  const cs_real_t w_eta
+    = cs::max(rans_mdl->bfh_wall_split_eta, 1.e-12);
 
   const int t2v[3][3] = _T2V;
   const int iv2t[6] = _IV2T;
@@ -3031,6 +3034,28 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     const cs_real_t imp_phiw_n = (has_wall_term) ? imp_phiw : 0.;
     const cs_real_t inv_tau_w
       = (has_wall_term) ? c_w * inv_twall * fact_trace : 0.;
+
+    /* Shear-aligned tangential frame for the unequal split of the wall
+     * tensor. t is the unit vector along the tangential part of R.n, which
+     * in a plane channel is the streamwise direction, and s = n x t is the
+     * spanwise one. The decomposition is only used when the tangential part
+     * of R.n is large enough to define a direction; otherwise the split
+     * falls back to the isotropic tangential projector. */
+    cs_real_t rt_v[3] = {0., 0., 0.};
+    cs_real_t w_lambda = 0., rt_sq = 0.;
+    const bool has_split = (w_split != 0.);
+    if (has_split) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        rt_v[i] = r_n[i] - rnn * xnal[i];
+      rt_sq = cs_math_3_square_norm(rt_v);
+      /* t.t - s.s = 2 t.t - P with t = rt / |rt|. The regularisation below
+       * replaces 1 / |rt|^2 by 1 / (|rt|^2 + (eta k)^2) on both terms, so
+       * that the split switches itself off smoothly where the tangential
+       * part of R.n no longer defines a direction, such as at the centre of
+       * a channel. There the wall tensor itself is already negligible. */
+      const cs_real_t eta_k = w_eta * cs::max(tke, cs_math_epzero);
+      w_lambda = 1. / (rt_sq + eta_k * eta_k);
+    }
 
     /* Rotta redistribution time scale T2. The integral scale tau = k/eps
      * and the near-wall scale T_v = tau (Re_s/Re_t)^p, with Re_s = C_T2^2,
@@ -3304,10 +3329,19 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
       const cs_real_t omij = st_corio[ij];
 
       /* BFH slow and wall terms */
-      const cs_real_t phiijw = 2.0 * (r_n[i] * xnal[j] + r_n[j] * xnal[i])
-                               + rnn * xnal[i] * xnal[j]
-                               - 2.5 * rnn * (st_deltaij[ij]
-                                              - xnal[i] * xnal[j]);
+      cs_real_t phiijw = 2.0 * (r_n[i] * xnal[j] + r_n[j] * xnal[i])
+                         + rnn * xnal[i] * xnal[j]
+                         - 2.5 * rnn * (st_deltaij[ij]
+                                        - xnal[i] * xnal[j]);
+
+      /* Unequal tangential split: the sum of the two coefficients is kept
+       * at 5, so the trace of W and the wall asymptotics are unchanged. */
+      if (has_split) {
+        const cs_real_t p_ij = st_deltaij[ij] - xnal[i] * xnal[j];
+        const cs_real_t lam_ij
+          = w_lambda * (2. * rt_v[i] * rt_v[j] - rt_sq * p_ij);
+        phiijw -= w_split * rnn * lam_ij;
+      }
 
       cs_real_t phiij1 = 0.;
 
