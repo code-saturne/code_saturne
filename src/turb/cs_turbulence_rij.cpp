@@ -5785,6 +5785,60 @@ cs_turbulence_rij_init_by_ref_quantities(cs_real_t  uref,
   }
 }
 
+/* Structures for clipping reduction */
+
+struct cs_data_7i_12r {
+  cs_lnum_t i[7];
+  double    r[12];
+};
+
+struct cs_reduce_7i_sum_12r_min_max {
+  using T = cs_data_7i_12r;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    for (int j = 0; j < 7; j++)
+      a.i[j] = 0;
+    for (int j = 0; j < 6; j++) {
+      a.r[j] = cs_math_infinite_r;
+      a.r[6 + j] = -cs_math_infinite_r;
+    }
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(T &a, const T &b) const {
+    for (int j = 0; j < 7; j++)
+      a.i[j] += b.i[j];
+    for (int j = 0; j < 6; j++) {
+      a.r[j] = cs::min(a.r[j], b.r[j]);
+      a.r[6 + j] = cs::max(a.r[6 + j], b.r[6 + j]);
+    }
+  }
+};
+
+struct cs_data_1i_2r {
+  cs_lnum_t i[1];
+  double    r[2];
+};
+
+struct cs_reduce_1i_sum_2r_min_max {
+  using T = cs_data_1i_2r;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.i[0] = 0;
+    a.r[0] = cs_math_infinite_r;
+    a.r[1] = -cs_math_infinite_r;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(T &a, const T &b) const {
+    a.i[0] += b.i[0];
+    a.r[0] = cs::min(a.r[0], b.r[0]);
+    a.r[1] = cs::max(a.r[1], b.r[1]);
+  }
+};
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Clip the turbulent Reynods stress tensor and the turbulent
@@ -5842,20 +5896,16 @@ cs_turbulence_rij_clip(int        phase_id,
     });
   }
 
-  /* Compute and store Min Max values for the log. */
+  /* Compute diagonal max for trref/rijref */
 
-  struct cs_double_n<14> rd;
-  struct cs_reduce_min_max_nr<7> reducer;
+  struct cs_data_double_n<3> rd_diag;
+  struct cs_reduce_max_nr<3> reducer_diag;
 
   ctx.parallel_for_reduce
-    (n_cells, rd, reducer,
-     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<14> &res) {
-    for (cs_lnum_t ii = 0; ii < 6; ii++) {
+    (n_cells, rd_diag, reducer_diag,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_data_double_n<3> &res) {
+    for (cs_lnum_t ii = 0; ii < 3; ii++)
       res.r[ii] = cvar_rij[c_id][ii];
-      res.r[ii + 7] = cvar_rij[c_id][ii];
-    }
-    res.r[6] = (cvar_epom != nullptr) ? cvar_epom[c_id] : 0.;
-    res.r[13] = (cvar_epom != nullptr) ? cvar_epom[c_id] : 0.;
   });
 
   ctx.wait();
@@ -5871,11 +5921,7 @@ cs_turbulence_rij_clip(int        phase_id,
    * small is then calculated as: rijref = (r11max + r22max + r33max)/3.
    * New test is rii < epzero*rijref  */
 
-  cs_real_t rijmax[3] = {0, 0, 0};
-  for (cs_lnum_t i = 0; i < 3; i++) {
-    if (rd.r[i + 7] > rijmax[i])
-      rijmax[i] = rd.r[i + 7];
-  }
+  cs_real_t rijmax[3] = {rd_diag.r[0], rd_diag.r[1], rd_diag.r[2]};
 
   cs_parall_max(3, CS_REAL_TYPE, rijmax);
 
@@ -5896,20 +5942,20 @@ cs_turbulence_rij_clip(int        phase_id,
   if (c_is_solid == nullptr)
     c_is_solid = c_is_solid_ref;
 
-  cs_lnum_t iclep = 0;
-  struct cs_int_n<7> rd_sum;
-  struct cs_reduce_sum_ni<7> reducer_sum;
-
-  for (int j = 0; j < 7; j++)
-    rd_sum.i[j] = 0;
+  struct cs_data_7i_12r rd_rij;
+  struct cs_reduce_7i_sum_12r_min_max reducer_rij;
 
   if (is_rij_clipped > -1) {
     ctx.parallel_for_reduce
-      (n_cells, rd_sum, reducer_sum, [=] CS_F_HOST_DEVICE
-       (cs_lnum_t c_id, cs_int_n<7> &res) {
+      (n_cells, rd_rij, reducer_rij, [=] CS_F_HOST_DEVICE
+       (cs_lnum_t c_id, cs_data_7i_12r &res) {
 
        for (int j = 0; j < 7; j++)
          res.i[j] = 0;
+       for (int j = 0; j < 6; j++) {
+         res.r[j] = cs_math_infinite_r;
+         res.r[6 + j] = -cs_math_infinite_r;
+       }
 
       /* Special case for solid cells (which are set to 0 but should
          not count as clippings) */
@@ -5922,6 +5968,16 @@ cs_turbulence_rij_clip(int        phase_id,
         }
         return;
       }
+
+      /* Save initial values prior to clipping on this cell */
+      cs_real_t init_rij[6];
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        init_rij[ij] = cvar_rij[c_id][ij];
+
+      /* Set when the clipping is triggered by a negative eigenvalue,
+         that is by an actual loss of positive-definiteness, as opposed
+         to the Cauchy-Schwarz bound on the off-diagonal terms. */
+      bool spd_loss = false;
 
       /* Check if R is positive and ill-conditioned (since the former
        * will induce the latter after clipping...) */
@@ -5966,6 +6022,7 @@ cs_turbulence_rij_clip(int        phase_id,
             || (eigen_min < cs_math_epzero)) {
 
           res.i[6] = 1;
+          spd_loss = true;
 
           eigen_min = cs::min(eigen_min, -eigen_tol);
           cs_real_t eigen_offset
@@ -6013,15 +6070,49 @@ cs_turbulence_rij_clip(int        phase_id,
         }
       }
 
+      /* Record bounds of the initial values, for clipped components
+       * only.
+       *
+       * Diagonal components: the raw value is recorded, since a negative
+       * R_ii is itself the signature of the loss of positivity.
+       *
+       * Off-diagonal components: the raw value carries no such
+       * information, R_ij being of either sign in a perfectly admissible
+       * state. What is wanted is the magnitude |R_ij| reached when an
+       * eigenvalue actually went negative, so the modulus is recorded,
+       * and only for the clippings triggered by the eigenvalue
+       * criterion. A clipping caused by the Cauchy-Schwarz bound alone
+       * is still counted, but leaves the bounds untouched. */
+      for (cs_lnum_t ij = 0; ij < 3; ij++) {
+        if (res.i[ij] > 0) {
+          res.r[ij] = init_rij[ij];
+          res.r[6 + ij] = init_rij[ij];
+        }
+      }
+
+      if (spd_loss) {
+        for (cs_lnum_t ij = 3; ij < 6; ij++) {
+          const cs_real_t mod_rij = cs::abs(init_rij[ij]);
+          res.r[ij] = mod_rij;
+          res.r[6 + ij] = mod_rij;
+        }
+      }
+
     });  /* End of loop on cells */
   }
 
   /* Epsilon / Omega */
+  struct cs_data_1i_2r rd_ep;
+  struct cs_reduce_1i_sum_2r_min_max reducer_ep;
+
   if (is_eps_clipped > -1 && cvar_epom != nullptr) {
-    ctx.parallel_for_reduce_sum
-      (n_cells, iclep, [=] CS_F_HOST_DEVICE
-       (cs_lnum_t c_id,
-        CS_DISPATCH_REDUCER_TYPE(cs_lnum_t) &sum) {
+    ctx.parallel_for_reduce
+      (n_cells, rd_ep, reducer_ep, [=] CS_F_HOST_DEVICE
+       (cs_lnum_t c_id, cs_data_1i_2r &res) {
+
+      res.i[0] = 0;
+      res.r[0] = cs_math_infinite_r;
+      res.r[1] = -cs_math_infinite_r;
 
       /* Special case for solid cells (which are set to 0 but should
          not count as clippings) */
@@ -6031,17 +6122,23 @@ cs_turbulence_rij_clip(int        phase_id,
         return;
       }
 
-      if (cs::abs(cvar_epom[c_id]) < epz2) {
-        sum += 1;
+      const cs_real_t ep_init = cvar_epom[c_id];
+
+      if (cs::abs(ep_init) < epz2) {
+        res.i[0] = 1;
+        res.r[0] = ep_init;
+        res.r[1] = ep_init;
         if (cpro_epsom_clipped != nullptr)
-          cpro_epsom_clipped[c_id] = cs::abs(cvar_epom[c_id]-epz2);
-        cvar_epom[c_id] = cs::max(cvar_epom[c_id],epz2);
+          cpro_epsom_clipped[c_id] = cs::abs(ep_init - epz2);
+        cvar_epom[c_id] = cs::max(ep_init, epz2);
       }
-      else if (cvar_epom[c_id] <= 0) {
-        sum += 1;
+      else if (ep_init <= 0) {
+        res.i[0] = 1;
+        res.r[0] = ep_init;
+        res.r[1] = ep_init;
         if (cpro_epsom_clipped != nullptr)
-          cpro_epsom_clipped[c_id] = 2*cs::abs(cvar_epom[c_id]);
-        cvar_epom[c_id] = cs::min(cs::abs(cvar_epom[c_id]),
+          cpro_epsom_clipped[c_id] = 2*cs::abs(ep_init);
+        cvar_epom[c_id] = cs::min(cs::abs(ep_init),
                                   varrel*cs::abs(cvara_epom[c_id]));
       }
 
@@ -6052,18 +6149,34 @@ cs_turbulence_rij_clip(int        phase_id,
 
   CS_FREE(c_is_solid_zone_flag);
 
-  /* Store number of clippings for logging */
+  /* Store number of clippings and bounds of clipped values for logging */
 
-  cs_lnum_t iclrij_max[6] = {0, 0, 0, 0, 0, 0}, iclep_max[1] = {0};
+  cs_real_t min_rij_clip[6], max_rij_clip[6];
+  for (int ij = 0; ij < 6; ij++) {
+    if (rd_rij.i[ij] > 0) {
+      min_rij_clip[ij] = rd_rij.r[ij];
+      max_rij_clip[ij] = rd_rij.r[6 + ij];
+    }
+    else {
+      min_rij_clip[ij] = 0.;
+      max_rij_clip[ij] = 0.;
+    }
+  }
 
-  cs_log_iteration_clipping_field(f_rij->id, rd_sum.i[6], 0,
-                                  rd.r,
-                                  rd.r + 7, rd_sum.i, iclrij_max);
+  cs_lnum_t iclrij_max[6] = {0, 0, 0, 0, 0, 0};
+
+  cs_log_iteration_clipping_field(f_rij->id, rd_rij.i[6], 0,
+                                  min_rij_clip, max_rij_clip,
+                                  rd_rij.i, iclrij_max);
 
   if (f_epsom != nullptr) {
-    cs_log_iteration_clipping_field(f_epsom->id, iclep, 0,
-                                    rd.r + 6,
-                                    rd.r + 13, &iclep, iclep_max);
+    cs_real_t min_eps_clip = (rd_ep.i[0] > 0) ? rd_ep.r[0] : 0.;
+    cs_real_t max_eps_clip = (rd_ep.i[0] > 0) ? rd_ep.r[1] : 0.;
+    cs_lnum_t iclep_max[1] = {0};
+
+    cs_log_iteration_clipping_field(f_epsom->id, rd_ep.i[0], 0,
+                                    &min_eps_clip, &max_eps_clip,
+                                    &rd_ep.i[0], iclep_max);
   }
 }
 

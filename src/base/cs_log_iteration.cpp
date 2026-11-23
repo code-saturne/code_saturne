@@ -564,8 +564,8 @@ _log_clip_info(const char        *prefix,
 
   for (c_id = 0; c_id < _dim; c_id++) {
 
-    int    _count_max, _count_min;
-    double _vmin, _vmax;
+    int    _count_max = 0, _count_min = 0;
+    double _vmin = 0., _vmax = 0.;
     const char *_name = (c_id == 0) ? name : " ";
 
     if (c_id < _dim) {
@@ -575,6 +575,9 @@ _log_clip_info(const char        *prefix,
       _vmax = vmax[c_id];
     }
 
+    if (_count_min == 0 && _count_max == 0)
+      continue;
+
     if (dim > 1) {
       if (c_id == 0) {
         snprintf(tmp_s[1], 63, "%s", _name);
@@ -582,18 +585,20 @@ _log_clip_info(const char        *prefix,
         cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
         _vmin = 0.;
         _vmax = 0.;
-        for (int i = 0; i< dim; i++) {
-          _vmin += vmin[i]*vmin[i];
-          _vmax += vmax[i]*vmax[i];
+        for (int i = 0; i < dim; i++) {
+          _vmin += vmin[i + 1]*vmin[i + 1];
+          _vmax += vmax[i + 1]*vmax[i + 1];
         }
         _vmin = sqrt(_vmin);
         _vmax = sqrt(_vmax);
       }
       else {
         if (dim == 3)
-          snprintf(tmp_s[1], 63, "%s%s", name, cs_glob_field_comp_name_3[c_id - 1]);
+          snprintf(tmp_s[1], 63, "%s%s", name,
+                   cs_glob_field_comp_name_3[c_id - 1]);
         else if (dim == 6)
-          snprintf(tmp_s[1], 63, "%s%s", name, cs_glob_field_comp_name_6[c_id - 1]);
+          snprintf(tmp_s[1], 63, "%s%s", name,
+                   cs_glob_field_comp_name_6[c_id - 1]);
         tmp_s[1][63] = '\0';
         cs_log_strpad(tmp_s[0], tmp_s[1], name_width, 64);
       }
@@ -624,11 +629,6 @@ _log_clip_info(const char        *prefix,
                     tmp_s[0],
                     _vmax,
                     (unsigned long long)_count_max);
-    else
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "%s%s\n",
-                    prefix,
-                    tmp_s[0]);
   }
 }
 
@@ -1615,6 +1615,15 @@ _log_clips(void)
     if (end_id - start_id < 1)
       continue;
 
+    /* Check if there are any clippings in this category */
+    cs_gnum_t cat_clips = 0;
+    for (clip_id = start_id; clip_id < end_id; clip_id++) {
+      int v_idx = _clips[clip_id].v_idx;
+      cat_clips += vcount[v_idx*2] + vcount[v_idx*2 + 1];
+    }
+    if (cat_clips == 0)
+      continue;
+
     /* Print headers */
 
     if (cat_id == 0)
@@ -1661,6 +1670,8 @@ _log_clips(void)
     for (clip_id = start_id; clip_id < end_id; clip_id++) {
 
       int v_idx = _clips[clip_id].v_idx;
+      if (vcount[v_idx*2] == 0 && vcount[v_idx*2 + 1] == 0)
+        continue;
 
       const char *name = nullptr;
       int f_id = _clips[clip_id].f_id;
