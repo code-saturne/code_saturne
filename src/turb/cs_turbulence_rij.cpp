@@ -5398,14 +5398,36 @@ cs_turbulence_rij(int phase_id)
 
     const cs_real_t *cell_vol = fvq->cell_vol;
     const cs_real_t *w_dist = cs_field("wall_distance")->val;
+    const cs_real_t *viscl_e = CS_F_(mu)->val;
+    const cs_real_t *crom_e = CS_F_(rho)->val;
     cs_real_t *cvar_ep = f_eps->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      /* Calculation of epsilon */
+      /* Calculation of epsilon.
+       *
+       * The near-wall closure of the source term assumes that the
+       * dissipation tends to the exact viscous dissipation of the
+       * tangential stresses, eps -> 2 nu a with k ~ a z^2, so that
+       * eps / k -> 2 nu / z^2 = 1 / T_visc. That limit is what gives
+       * tau = O(z^2) and Re_t = O(z^4), hence the asymptotics of the
+       * redistribution time scale T2 and the factors of the wall tensor.
+       *
+       * The algebraic form k^(3/2) / delta does not have it: even with
+       * delta damped as kappa z, it gives eps / k = sqrt(k) / (kappa z)
+       * = O(z), which vanishes at the wall instead of diverging, and
+       * leaves Re_t = O(z^2). Adding the viscous rate 2 nu / z^2 restores
+       * the correct limit. The added term is negligible as soon as
+       * z^2 sqrt(k) / kappa >> 2 nu, that is outside the viscous
+       * sublayer, so the subgrid behaviour away from the wall is
+       * unchanged. */
 
       const cs_real_t delta = xlesfl * cs::min(pow(ales*cell_vol[c_id], bles),
                                                xkappa * w_dist[c_id]);
-      cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
-      cvar_ep[c_id] = cs::pow3ov2(tke) / delta; //TODO: add constant ?
+      const cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
+      const cs_real_t y = cs::max(w_dist[c_id], cs_math_epzero);
+      const cs_real_t nu = viscl_e[c_id] / crom_e[c_id];
+
+      cvar_ep[c_id] =   cs::pow3ov2(tke) / delta  //TODO: add constant ?
+                      + 2. * nu * tke / (y * y);
     });
     ctx.wait();
 
