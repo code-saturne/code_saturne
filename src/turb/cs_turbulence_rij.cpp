@@ -3043,7 +3043,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
      * falls back to the isotropic tangential projector. */
     cs_real_t rt_v[3] = {0., 0., 0.};
     cs_real_t w_lambda = 0., rt_sq = 0.;
-    const bool has_split = (w_split != 0.);
+    const bool has_split = (cs::abs(w_split) > 0.);
     if (has_split) {
       for (cs_lnum_t i = 0; i < 3; i++)
         rt_v[i] = r_n[i] - rnn * xnal[i];
@@ -3382,7 +3382,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
          * return below is weighted by the flatness F, which vanishes on the
          * two-component surface, so it lifts the linear rate in the core
          * without touching the constrained limit. */
-        if (ck_cr_add != 0.) {
+        if (cs::abs(ck_cr_add) > 0.) {
           const cs_real_t flat
             = 3.375 * eig_vals[0] * eig_vals[1] * eig_vals[2];
           phiij1 -=   ck_cr_add * flat * inv_tdrb
