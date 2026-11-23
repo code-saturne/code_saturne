@@ -70,7 +70,8 @@ _cs_opts = {'enable_gui': os.environ.get('CS_ENABLE_GUI', '').lower() in ('1', '
             'uic': os.environ.get('CS_UIC', None),
             'pyrcc': os.environ.get('CS_PYRCC', None),
             'rcc': os.environ.get('CS_RCC', None),
-            'version': _parse_saturne_version_string(os.environ.get('CS_VERSION', None))
+            'version': _parse_saturne_version_string(os.environ.get('CS_VERSION', None)),
+            'build_base': os.environ.get('CS_PYBUILD_DIR', None)
             }
 
 def _pop_option(arg_name):
@@ -81,6 +82,11 @@ def _pop_option(arg_name):
         if idx < len(sys.argv):
             return sys.argv.pop(idx)
     return None
+
+# Build directory CLI flag
+val = _pop_option('--build-base')
+if val:
+    _cs_opts['build_base'] = val
 
 # Version CLI flag
 val = _pop_option('--version')
@@ -301,12 +307,17 @@ class build_py(_build_py):
             self.run_command("build_cs_ui_files")
             self.run_command("build_cs_rc_files")
 
+setup_options = {}
+if _cs_opts.get('build_base'):
+    setup_options['build'] = {'build_base': _cs_opts['build_base']}
+
 setup(name='code_saturne',
       author='code_saturne dev team',
       author_email='saturne-support@edf.fr',
       description='Python CLI and GUI of code_saturne multiphysics CFD package',
       package_dir={'':SRC_PATH},
       package_data={'code_saturne.data.icons': ['COPYING.Tango', 'code_saturne.ico', '22x22/*', '32x32/*'],},
+      options=setup_options,
       cmdclass={'build_py':build_py,
                 'build_cs_qt_files':_build_qt_files,
                 'build_cs_ui_files':_build_ui_files,
@@ -314,5 +325,5 @@ setup(name='code_saturne',
                 'egg_info':_cs_egg_info,
                 'install_egg_info':_cs_install_egg_info},
       version=_cs_opts['version'],
-      packages=find_namespace_packages(where=SRC_PATH, exclude=_cs_opts['exclude_dirs'])
+      packages=find_namespace_packages(where=SRC_PATH, exclude=_cs_opts['exclude_dirs'] + ['build*'])
       )

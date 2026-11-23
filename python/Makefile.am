@@ -68,11 +68,6 @@ images_DATA = \
 ${abs_top_srcdir}/python/code_saturne/data/icons/splashscreen.png \
 ${abs_top_srcdir}/python/code_saturne/data/icons/logo_salome_cfd.png
 
-# iconsdir = ${pkgdatadir}/icons
-
-# icons_DATA = \
-# ${abs_top_srcdir}/python/code_saturne/data/icons/22x22 \
-# ${abs_top_srcdir}/python/code_saturne/data/icons/32x32
 
 themesdir = ${pkgdatadir}/themes
 
@@ -88,9 +83,14 @@ clean-local:
 		echo "rm -rf dist"; \
 		rm -rf dist; \
 	fi
+	if test "$(abs_top_builddir)" != "$(abs_top_srcdir)" && test -d $(srcdir)/build; then \
+		echo "rm -rf $(srcdir)/build"; \
+		rm -rf $(srcdir)/build; \
+	fi
 
 all-local: clean-local
 	$(ENV_GUI) $(ENV_QT) $(ENV_UIC) $(ENV_RCC) CS_VERSION="$(VERSION)" \
+	CS_PYBUILD_DIR="${abs_top_builddir}/python/build" \
 	$(PYTHON) -m pip wheel --no-deps --no-build-isolation \
 		--wheel-dir ${abs_top_builddir}/python/dist \
 		${abs_top_srcdir}/python
