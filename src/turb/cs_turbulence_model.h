@@ -481,13 +481,13 @@ typedef struct cs_turb_rans_model_t {
       bfh_use_beta2(0),
       bfh_ck_damping(1),
       bfh_beta2_form(0),
-      bfh_use_durbin_time(0),
-      bfh_t2_ct(-1.0),
-      bfh_t2_pow(0.5),
-      bfh_t2_n(1.0),
+      bfh_use_durbin_time(1),
+      bfh_t2_ct(20.0),
+      bfh_t2_pow(2.0),
+      bfh_t2_n(2.5),
       bfh_c2_mod(0),
       bfh_ck_cr_add(0.0),
-      bfh_wall_split(0.0),
+      bfh_wall_split(-10.0),
       bfh_wall_split_eta(1.e-3),
       bfh_wall_stab(-1.0)
   {}

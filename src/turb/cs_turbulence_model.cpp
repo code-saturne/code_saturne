@@ -1254,9 +1254,11 @@ cs_turb_compute_constants(int phase_id)
     if (f_eps != nullptr)
       f_eps->set_key_double(k_turb_schmidt, 1.22);
   }
-  else if (cs::any_eq(cs_glob_turb_model->model,
-                      CS_TURB_RIJ_EPSILON_BFH,
-                      CS_TURB_LES_TAUSGS)) {
+  else if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH) {
+    if (f_eps != nullptr)
+      f_eps->set_key_double(k_turb_schmidt, 1.15);
+  }
+  else if (cs_glob_turb_model->model == CS_TURB_LES_TAUSGS) {
     if (f_eps != nullptr)
       f_eps->set_key_double(k_turb_schmidt, 1.0 / 0.477000);
   }
@@ -1330,17 +1332,28 @@ cs_turb_compute_constants(int phase_id)
   cs_turb_csmago_max = cs_turb_csmago*cs_turb_csmago;
   cs_turb_csmago_min = 0.;
 
-  /* Rotta constant for BFH */
+  /* Rotta constant for BFH and TAU-SGS */
   if (cs::any_eq(cs_glob_turb_model->model,
                  CS_TURB_RIJ_EPSILON_BFH,
                  CS_TURB_LES_TAUSGS)) {
-    cs_turb_crij_c0 = (2.974546 - 2.0) / 1.5; /* ~0.64969733
-                                                 (equivalent to CR-1) */
-    cs_turb_crij1 = 1.5 * cs_turb_crij_c0 + 1.0; /* ~1.974546 */
     cs_turb_ce1 = 1.44;
     cs_turb_c1trit = 2.0; /* Thermal return-to-isotropy constant (C_theta) */
     cs_turb_c3trit = cs_turb_crij3; /* C_theta3 = C_B
                                        (Eq. 38 of Ferrand et al. 2027) */
+  }
+
+  if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH) {
+    /* Calibration of the near-wall closure on the plane channel at
+       Re_tau = 1020 (Kawamura), with the dual time scale and the unequal
+       tangential split of the wall tensor active by default. */
+    cs_turb_crij_c0 = (2.8 - 1.0) / 1.5;         /* C0 = 2/3 (C_R - 1) */
+    cs_turb_crij1 = 1.5 * cs_turb_crij_c0 + 1.0; /* C_R = 2.8 */
+    cs_turb_cmu = 0.0535;
+  }
+  else if (cs_glob_turb_model->model == CS_TURB_LES_TAUSGS) {
+    cs_turb_crij_c0 = (2.974546 - 2.0) / 1.5; /* ~0.64969733
+                                                 (equivalent to CR-1) */
+    cs_turb_crij1 = 1.5 * cs_turb_crij_c0 + 1.0; /* ~1.974546 */
   }
 
   /* In case of Rotta model (ie LRR + Cr2 = 0) compute
