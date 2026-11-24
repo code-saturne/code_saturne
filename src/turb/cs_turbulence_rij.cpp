@@ -3769,24 +3769,22 @@ _solve_omega(int              phase_id,
       = (1. + 85.*chi_omega) / (1. + 100.*chi_omega);
     const cs_real_t xbeta = beta0 * f_beta;
 
-    /* Production */
-    cs_real_t p_omega = 0.;
-    const cs_real_t nut = xk / cs::max(xw, 1.e-10);
-    if (nut > 1.e-10) {
-      p_omega = alpha * (k_prod / nut);
-    }
+    /* Explicit part of production.
+     * The source is kept in the explicit balance even when negative: it
+     * must appear there, otherwise it vanishes from the converged
+     * equation, where the increment is zero and only rhs survives. */
+    w1[c_id] =   cell_f_vol[c_id] * ro * alpha * k_prod * xw
+               / cs::max(xk, 1.e-10);
 
     /* Implicit part of production if negative */
-    if (p_omega < 0.) {
-      fimp[c_id] -= cell_f_vol[c_id] * ro * p_omega / cs::max(xw, 1.e-10);
-      p_omega = 0.;
-    }
+    if (w1[c_id] < 0.)
+      fimp[c_id] -= w1[c_id] / cs::max(xw, 1.e-10);
 
-    w1[c_id] =   cell_f_vol[c_id] * ro * p_omega
-               - cell_f_vol[c_id] * xbeta * ro * cs_math_pow2(xw);
-
-    /* Dissipation (implicit) */
-    fimp[c_id] += cell_f_vol[c_id] * xbeta * ro * xw;
+    /* Dissipation. The source is - beta rho omega^2, whose linearisation
+     * about omega^n has slope - 2 beta rho omega^n: the implicit
+     * coefficient is twice the explicit rate, not once. */
+    w1[c_id] -= cell_f_vol[c_id] * xbeta * ro * cs_math_pow2(xw);
+    fimp[c_id] += 2. * cell_f_vol[c_id] * xbeta * ro * xw;
 
     /* Cross-diffusion */
     if (gdkgdw[c_id] > 0.) {
