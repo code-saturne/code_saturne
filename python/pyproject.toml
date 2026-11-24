@@ -9,7 +9,7 @@ description = "Python CLI and GUI of code_saturne multiphysics CFD package"
 authors = [
     { name = "code_saturne dev team", email = "saturne-support@edf.fr" }
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.6"
 
 [tool.setuptools]
 include-package-data = true

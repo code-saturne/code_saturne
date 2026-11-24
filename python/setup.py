@@ -1,8 +1,13 @@
 # ==============================================================================
 # IMPORTS
 # ==============================================================================
+try:
+    from setuptools import find_namespace_packages
+except ImportError:
+    # Fallback for setuptools < 40.1.0 (Python 3.6 environments)
+    from setuptools import find_packages as find_namespace_packages
 
-from setuptools import setup, find_namespace_packages, Command
+from setuptools import setup, Command
 from setuptools.command.egg_info import egg_info
 from setuptools.command.install_egg_info import install_egg_info
 from setuptools.command.build_py import build_py as _build_py

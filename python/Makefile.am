@@ -57,6 +57,12 @@ else
 ENV_GUI = CS_ENABLE_GUI=0
 endif
 
+if HAVE_PIP_10
+PY_BUILD_ISOLATION_FLAG=--no-build-isolation
+else
+PY_BUILD_ISOLATION_FLAG=
+endif
+
 # Copy all files in pythondir
 EXTRA_DIST = ${srcdir}/*
 
@@ -88,14 +94,32 @@ clean-local:
 		rm -rf $(srcdir)/build; \
 	fi
 
+if HAVE_PY_WHEEL
 all-local: clean-local
 	$(ENV_GUI) $(ENV_QT) $(ENV_UIC) $(ENV_RCC) CS_VERSION="$(VERSION)" \
 	CS_PYBUILD_DIR="${abs_top_builddir}/python/build" \
-	$(PYTHON) -m pip wheel --no-deps --no-build-isolation \
+	$(PYTHON) -m pip wheel --no-deps ${PY_BUILD_ISOLATION_FLAG} \
 		--wheel-dir ${abs_top_builddir}/python/dist \
 		${abs_top_srcdir}/python
 
 install-exec-local:
-	$(PYTHON) -m pip install --no-deps --no-build-isolation --no-warn-script-location --upgrade \
+	$(PYTHON) -m pip install --no-deps ${PY_BUILD_ISOLATION_FLAG} --no-warn-script-location --upgrade \
 		--target "$(DESTDIR)$(pythondir)" \
 		${abs_top_builddir}/python/dist/*.whl
+else
+all-local: clean-local
+	$(ENV_GUI) $(ENV_QT) $(ENV_UIC) $(ENV_RCC) CS_VERSION="$(VERSION)" \
+	CS_PYBUILD_DIR="${abs_top_builddir}/python/build" \
+	$(PYTHON) ${abs_top_srcdir}/python/setup.py build \
+	--build-base "${abs_top_builddir}/python/build" \
+	--version "$(VERSION)"
+
+install-exec-local:
+	$(ENV_GUI) $(ENV_QT) $(ENV_UIC) $(ENV_RCC) CS_VERSION="$(VERSION)" \
+	CS_PYBUILD_DIR="${abs_top_builddir}/python/build" \
+	$(PYTHON) ${abs_top_srcdir}/python/setup.py install \
+	--install-lib "$(DESTDIR)$(pythondir)" \
+	--single-version-externally-managed \
+	--record "$(DESTDIR)$(pkgpythondir)/install_files.txt" \
+	--version "$(VERSION)"
+endif

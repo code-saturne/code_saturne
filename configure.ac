@@ -804,6 +804,26 @@ if test "$cs_have_numpy" = "no" ; then
   AC_MSG_WARN([numpy support not found but necessary for studymanager.])
 fi
 
+# Check pip version necessary for python cli build process
+AC_MSG_CHECKING([whether pip is version 10.0 or greater])
+#PIP_VERSION=`$PYTHON -m pip --version 2>/dev/null | sed 's/.*pip \([[0-9.]]*\).*/\1/'`
+PIP_VERSION=`$PYTHON -m pip --version 2>/dev/null | $AWK '{print $2}'`
+
+AS_VERSION_COMPARE([$PIP_VERSION], [10.0],
+                   [have_pip_10=no; AC_MSG_RESULT([no])],
+                   [have_pip_10=yes; AC_MSG_RESULT([yes])],
+                   [have_pip_10=yes; AC_MSG_RESULT([yes])])
+AM_CONDITIONAL([HAVE_PIP_10], [test "x$have_pip_10" = "xyes"])
+
+AC_MSG_CHECKING([whether python wheel module is available])
+if $PYTHON -c "import wheel" 2>/dev/null; then
+  have_py_wheel=yes
+else
+  have_py_wheel=no
+fi
+AC_MSG_RESULT([$have_py_wheel])
+AM_CONDITIONAL([HAVE_PY_WHEEL], [test "x$have_py_wheel" = "xyes"])
+
 # On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths
 # It seems better to use the standard way of installing Python modules,
 # as it is on Unix systems (whichever is chosen, Python modules will be
