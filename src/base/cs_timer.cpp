@@ -614,34 +614,6 @@ cs_timer_diff(const cs_timer_t  *t0,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return method used to return wall clock time.
- *
- * \return short description of method used to return wall clock time.
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_timer_wtime_method(void)
-{
-  if (_cs_timer_initialized == 0)
-    _cs_timer_initialize();
-
-  switch(_cs_timer_wall_method) {
-
-  case CS_TIMER_CLOCK_GETTIME:
-    return _("clock_gettime() function");
-  case CS_TIMER_GETTIMEOFDAY:
-    return _("gettimeofday() function");
-  case CS_TIMER_TIME:
-    return _("Iso C time() function");
-  default:
-    return _("Disabled");
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Return method used to return CPU time.
  *
  * \return short description of method used to return CPU time.

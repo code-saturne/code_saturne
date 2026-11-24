@@ -182,19 +182,6 @@ cs_timer_counter_add_diff(cs_timer_counter_t  *tc,
 }
 
 /*----------------------------------------------------------------------------
- * Return method used to return wall clock time.
- *
- * Note that in the rare case that only the minimal C library clock()
- * method is available, this function will return -1 values.
- *
- * returns:
- *   short description of method used to return wall clock time.
- *----------------------------------------------------------------------------*/
-
-const char *
-cs_timer_wtime_method(void);
-
-/*----------------------------------------------------------------------------
  * Return method used to return CPU time.
  *
  * returns:
