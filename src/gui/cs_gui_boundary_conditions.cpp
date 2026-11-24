@@ -3120,7 +3120,12 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
     else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
       int iwall = CS_SMOOTHWALL;
 
-      if (boundaries->rough[izone] >= 0.0) {
+      /* A strictly positive roughness is required here: the
+         "boundary_roughness" field is only created under the same
+         condition, so accepting a zero roughness would dereference a
+         null pointer below. */
+
+      if (boundaries->rough[izone] > 0.0) {
 
         iwall = CS_ROUGHWALL;
         cs_field_t *f_roughness = cs_field_by_name_try("boundary_roughness");
@@ -3307,7 +3312,7 @@ cs_gui_boundary_conditions_verify(void)
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
       inature = CS_ROUGHWALL;
-      if (boundaries->rough[izone] < 0.0)
+      if (boundaries->rough[izone] <= 0.0)
         inature = CS_SMOOTHWALL;
     }
     else if (   cs_gui_strcmp(boundaries->nature[izone], "outlet")
