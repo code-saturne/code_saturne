@@ -33,6 +33,7 @@
 
 #include <string.h>
 #include <tuple>
+#include <utility>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -265,12 +266,12 @@ public:
   /*!
    * \brief Overloaded [] operator to access the ith value (val[i]).
    *
-   * \returns raw pointer to the i-th value
+   * \returns reference to the i-th value
    */
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  inline
+  CS_ALWAYS_INLINE
   T& operator[]
   (
     cs_lnum_t i /*!<[in] Index of value to get */
@@ -280,19 +281,22 @@ public:
 #if defined(CS_ARRAY_DBG_BOUNDS)
     check_bounds_(i);
 #endif
-    return _data[i];
+    if constexpr (cs::any_eq(L, layout::right, layout::left))
+      return _data[i];
+    else if constexpr (L == layout::strided)
+      return _data[i*_offset[0]];
   }
 
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Overloaded [] operator to access the ith value (val[i]).
    *
-   * \returns raw pointer to the i-th value
+   * \returns reference to the i-th value
    */
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  inline
+  CS_ALWAYS_INLINE
   T& operator[]
   (
     cs_lnum_t i /*!<[in] Index of value to get */
@@ -302,20 +306,23 @@ public:
 #if defined(CS_ARRAY_DBG_BOUNDS)
     check_bounds_(i);
 #endif
-    return _data[i];
+    if constexpr (cs::any_eq(L, layout::right, layout::left))
+      return _data[i];
+    else if constexpr (L == layout::strided)
+      return _data[i*_offset[0]];
   }
 
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Overloaded () operator to access the ith value (val[i]).
    *
-   * \returns raw pointer to the i-th value
+   * \returns reference to the i-th value
    */
   /*--------------------------------------------------------------------------*/
 
   template<typename Id1>
   CS_F_HOST_DEVICE
-  inline
+  CS_ALWAYS_INLINE
   std::enable_if_t<cs::always_true<Id1>::value && N==1, T&>
   operator()
   (
@@ -337,15 +344,15 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Overloaded [] operator to access the ith value (val[i]).
+   * \brief Overloaded () operator to access the ith value (val[i]).
    *
-   * \returns raw pointer to the i-th value
+   * \returns reference to the i-th value
    */
   /*--------------------------------------------------------------------------*/
 
   template<typename Id1>
   CS_F_HOST_DEVICE
-  inline
+  CS_ALWAYS_INLINE
   std::enable_if_t<cs::always_true<Id1>::value && N==1, T&>
   operator()
   (
@@ -375,7 +382,7 @@ public:
 
   template<typename Id1, typename Id2>
   CS_F_HOST_DEVICE
-  inline
+  CS_ALWAYS_INLINE
   std::enable_if_t<cs::always_true<Id1, Id2>::value && N==2, T&>
   operator()
   (
@@ -409,7 +416,7 @@ public:
 
   template<typename Id1, typename Id2>
   CS_F_HOST_DEVICE
-  inline
+  CS_ALWAYS_INLINE
   std::enable_if_t<cs::always_true<Id1, Id2>::value && N==2, T&>
   operator()
   (
@@ -437,14 +444,156 @@ public:
   /*!
    * \brief Overloaded () operator to access the (i,j,k)-th value tuple.
    *
+   * \returns reference to the (i,j,k)-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename Id1, typename Id2, typename Id3>
+  CS_F_HOST_DEVICE
+  CS_ALWAYS_INLINE
+  std::enable_if_t<cs::always_true<Id1, Id2, Id3>::value && N==3, T&>
+  operator()
+  (
+    Id1 i, /*!<[in] Index along first dimension */
+    Id2 j, /*!<[in] Index along second dimension */
+    Id3 k  /*!<[in] Index along third dimension */
+  )
+  {
+    check_operator_args_(i,j,k);
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(i,j,k);
+#endif
+
+    static_assert(cs::any_eq(L, layout::right, layout::left, layout::strided),
+                  "Unknown layout.");
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j*_offset[1] + k];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1] + k*_offset[2]];
+    else if constexpr (L == layout::strided)
+      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded () operator to access the (i,j,k)-th value tuple.
+   *
    * \returns const reference to the (i,j,k)-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename Id1, typename Id2, typename Id3>
+  CS_F_HOST_DEVICE
+  CS_ALWAYS_INLINE
+  std::enable_if_t<cs::always_true<Id1, Id2, Id3>::value && N==3, T&>
+  operator()
+  (
+    Id1 i, /*!<[in] Index along first dimension */
+    Id2 j, /*!<[in] Index along second dimension */
+    Id3 k  /*!<[in] Index along third dimension */
+  ) const
+  {
+    check_operator_args_(i,j,k);
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(i,j,k);
+#endif
+
+    static_assert(cs::any_eq(L, layout::right, layout::left, layout::strided),
+                  "Unknown layout.");
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j*_offset[1] + k];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1] + k*_offset[2]];
+    else if constexpr (L == layout::strided)
+      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded () operator to access the (i,j,k,l)-th value 4-tuple.
+   *
+   * \returns reference to the (i,j,k,l)-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename Id1, typename Id2, typename Id3, typename Id4>
+  CS_F_HOST_DEVICE
+  CS_ALWAYS_INLINE
+  std::enable_if_t<cs::always_true<Id1, Id2, Id3, Id4>::value && N==4, T&>
+  operator()
+  (
+    Id1 i, /*!<[in] Index along first dimension */
+    Id2 j, /*!<[in] Index along second dimension */
+    Id3 k, /*!<[in] Index along third dimension */
+    Id4 l  /*!<[in] Index along fourth dimension */
+  )
+  {
+    check_operator_args_(i,j,k,l);
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(i,j,k,l);
+#endif
+
+    static_assert(cs::any_eq(L, layout::right, layout::left, layout::strided),
+                  "Unknown layout.");
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2] + l];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1] + k*_offset[2] + l*_offset[3]];
+    else if constexpr (L == layout::strided)
+      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2] + l*_offset[3]];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded () operator to access the (i,j,k,l)-th value 4-tuple.
+   *
+   * \returns const reference to the (i,j,k,l)-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename Id1, typename Id2, typename Id3, typename Id4>
+  CS_F_HOST_DEVICE
+  CS_ALWAYS_INLINE
+  std::enable_if_t<cs::always_true<Id1, Id2, Id3, Id4>::value && N==4, T&>
+  operator()
+  (
+    Id1 i, /*!<[in] Index along first dimension */
+    Id2 j, /*!<[in] Index along second dimension */
+    Id3 k, /*!<[in] Index along third dimension */
+    Id4 l  /*!<[in] Index along fourth dimension */
+  ) const
+  {
+    check_operator_args_(i,j,k,l);
+#if defined(CS_ARRAY_DBG_BOUNDS)
+    check_bounds_(i,j,k,l);
+#endif
+
+    static_assert(cs::any_eq(L, layout::right, layout::left, layout::strided),
+                  "Unknown layout.");
+
+    if constexpr (L == layout::right)
+      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2] + l];
+    else if constexpr (L == layout::left)
+      return _data[i + j*_offset[1] + k*_offset[2] + l*_offset[3]];
+    else if constexpr (L == layout::strided)
+      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2] + l*_offset[3]];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded () operator to access the value tuple for N > 4.
+   *
+   * \returns reference to the value
    */
   /*--------------------------------------------------------------------------*/
 
   template<typename... Args>
   CS_F_HOST_DEVICE
-  inline
-  std::enable_if_t<cs::always_true<Args...>::value && (N!=2) && (N!=1), T&>
+  CS_ALWAYS_INLINE
+  std::enable_if_t<cs::always_true<Args...>::value && (N > 4), T&>
   operator()
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
@@ -463,16 +612,16 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Overloaded () operator to access the (i,j,k)-th value tuple.
+   * \brief Overloaded () operator to access the value tuple for N > 4.
    *
-   * \returns const reference to the (i,j,k)-th value
+   * \returns const reference to the value
    */
   /*--------------------------------------------------------------------------*/
 
   template<typename... Args>
   CS_F_HOST_DEVICE
-  inline
-  std::enable_if_t<cs::always_true<Args...>::value && (N!=2) && (N!=1), T&>
+  CS_ALWAYS_INLINE
+  std::enable_if_t<cs::always_true<Args...>::value && (N > 4), T&>
   operator()
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
@@ -1201,8 +1350,8 @@ protected:
 
   template<typename... Args>
   CS_F_HOST_DEVICE
-  static inline
-  void
+  CS_ALWAYS_INLINE
+  static void
   check_operator_args_
   (
     Args... /*!<[in] Input arguments (parameter pack) */
@@ -1221,8 +1370,8 @@ protected:
 
   template<typename... Args>
   CS_F_HOST_DEVICE
-  static inline
-  void
+  CS_ALWAYS_INLINE
+  static void
   check_sub_function_args_
   (
     Args... /*!<[in] Input arguments (parameter pack) */
@@ -1235,32 +1384,21 @@ protected:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Helper function to compute value offset.
+   * \brief Helper function to compute value offset (implementation with index sequence).
    */
   /*--------------------------------------------------------------------------*/
 
-  template<typename... Args>
+  template<typename... Args, std::size_t... Is>
   CS_F_HOST_DEVICE
-  inline
+  CS_ALWAYS_INLINE
   cs_lnum_t
-  data_offset_
+  data_offset_impl_
   (
+    std::index_sequence<Is...>,
     Args... indices /*!<[in] Input arguments (parameter pack) */
   ) const
   {
-    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
-                  "Number of indices is out of bounds");
-
-    constexpr int n_idx = sizeof...(Args);
-
-    cs_lnum_t _indices[n_idx] = {indices...};
-
-    cs_lnum_t retval = 0;
-
-    for (int i = 0; i < n_idx; i++)
-      retval +=_indices[i] * _offset[i];
-
-    return retval;
+    return ((static_cast<cs_lnum_t>(indices) * _offset[Is]) + ...);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1271,7 +1409,55 @@ protected:
 
   template<typename... Args>
   CS_F_HOST_DEVICE
-  inline
+  CS_ALWAYS_INLINE
+  cs_lnum_t
+  data_offset_
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  ) const
+  {
+    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
+                  "Number of indices is out of bounds");
+
+    return data_offset_impl_(std::index_sequence_for<Args...>{}, indices...);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Helper function to compute contiguous data offset (implementation with index sequence).
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args, std::size_t... Is>
+  CS_F_HOST_DEVICE
+  CS_ALWAYS_INLINE
+  cs_lnum_t
+  contiguous_data_offset_impl_
+  (
+    std::index_sequence<Is...>,
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  ) const
+  {
+    if constexpr (L == layout::right) {
+      return ((static_cast<cs_lnum_t>(indices) * _offset[Is]) + ...);
+    }
+    else if constexpr (L == layout::left) {
+      return ((static_cast<cs_lnum_t>(indices) * _offset[N - 1 - Is]) + ...);
+    }
+    else {
+      return ((static_cast<cs_lnum_t>(indices) * _offset[Is]) + ...);
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Helper function to compute value offset.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  CS_ALWAYS_INLINE
   cs_lnum_t
   contiguous_data_offset_
   (
@@ -1281,21 +1467,7 @@ protected:
     static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
                   "Number of indices is out of bounds");
 
-    constexpr int n_idx = sizeof...(Args);
-
-    cs_lnum_t _indices[n_idx] = {indices...};
-
-    cs_lnum_t retval = 0;
-    if constexpr (L == layout::right) {
-      for (int i = 0; i < n_idx; i++)
-        retval +=_indices[i] * _offset[i];
-    }
-    else if constexpr (L == layout::left) {
-      for (int i = 0; i < n_idx; i++)
-        retval +=_indices[i] * _offset[N-1-i];
-    }
-
-    return retval;
+    return contiguous_data_offset_impl_(std::index_sequence_for<Args...>{}, indices...);
   }
 
   /*===========================================================================

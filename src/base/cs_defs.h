@@ -562,6 +562,20 @@ typedef enum {
 #endif
 
 /*----------------------------------------------------------------------------
+ * Macro for force inlining
+ *----------------------------------------------------------------------------*/
+
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) || defined(__CUDACC__) || defined(__HIPCC__)
+#define CS_ALWAYS_INLINE __forceinline__
+#elif defined(__GNUC__) || defined(__clang__)
+#define CS_ALWAYS_INLINE inline __attribute__((always_inline))
+#elif defined(_MSC_VER)
+#define CS_ALWAYS_INLINE __forceinline
+#else
+#define CS_ALWAYS_INLINE inline
+#endif
+
+/*----------------------------------------------------------------------------
  * Macros for lambda specifiers
  *----------------------------------------------------------------------------*/
 
