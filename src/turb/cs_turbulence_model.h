@@ -337,17 +337,22 @@ typedef struct cs_turb_rans_model_t {
                                     1: Chung & Kim
                                     2: Speziale & Sarkar
                                     3: Universal 2C-3C */
-  double  bfh_c2_prime_inf;    /*!< Asymptotic constant for Chung & Kim
+  double  bfh_c2_prime_inf;    /*!< Asymptotic constant C'_2,inf of the
+                                    Chung & Kim quadratic slow term.
+                                    Without effect unless
+                                    bfh_slow_model = CS_TURB_BFH_SLOW_CHUNG_KIM
                                     (default: 15.5) */
-  double  bfh_aw;              /*!< Wall damping coefficient Aw
+  double  bfh_aw;              /*!< Coefficient A_w of the Lai & So wall
+                                    damping f_w = 1 - exp(-(Re_t/A_w)^p_w),
+                                    used by the Speziale & Sarkar and
+                                    2C-3C slow models only
                                     (default: 150.0) */
-  double  bfh_pw;              /*!< Wall damping power exponent pw
-                                    (default: 2.0) */
-  int     bfh_use_beta2;       /*!< Use beta2 damping on slow term:
-                                    0: false (default)
-                                    1: true */
+  double  bfh_pw;              /*!< Exponent p_w of the Lai & So wall
+                                    damping, see bfh_aw (default: 2.0) */
   int     bfh_ck_damping;      /*!< Reynolds-number function of the
-                                    Chung & Kim slow term:
+                                    Chung & Kim slow term. Without effect
+                                    unless bfh_slow_model =
+                                    CS_TURB_BFH_SLOW_CHUNG_KIM:
                                     1: 1/beta(R_t) of the original model
                                        (default), calibrated on homogeneous
                                        decaying turbulence
@@ -379,7 +384,9 @@ typedef struct cs_turb_rans_model_t {
                                     asymptotics: n = 1 is the harmonic blend
                                     of the two rates, n -> infinity gives
                                     max(tau, T_v) (default: 1) */
-  int     bfh_c2_mod;          /*!< Reynolds-number function carried by the
+  int     bfh_c2_mod;          /*!< Without effect unless bfh_slow_model =
+                                    CS_TURB_BFH_SLOW_CHUNG_KIM.
+                                    Reynolds-number function carried by the
                                     quadratic constant C'_2 of the Chung &
                                     Kim slow term, independently of the
                                     function carried by the overall
@@ -394,7 +401,9 @@ typedef struct cs_turb_rans_model_t {
                                     A_2 (II_b - 1/3) still holds, so
                                     realizability is preserved for either
                                     sign (default: 0) */
-  double  bfh_ck_cr_add;       /*!< Additional linear return to isotropy
+  double  bfh_ck_cr_add;       /*!< Without effect unless bfh_slow_model =
+                                    CS_TURB_BFH_SLOW_CHUNG_KIM.
+                                    Additional linear return to isotropy
                                     added to the Chung & Kim slow term,
                                     - dC_R F (eps / k) dev(R), where
                                     F = 27 det R / (tr R)^3 is the flatness
@@ -478,7 +487,6 @@ typedef struct cs_turb_rans_model_t {
       bfh_c2_prime_inf(15.5),
       bfh_aw(150.0),
       bfh_pw(2.0),
-      bfh_use_beta2(0),
       bfh_ck_damping(1),
       bfh_beta2_form(0),
       bfh_use_durbin_time(1),

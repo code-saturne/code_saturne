@@ -2794,7 +2794,6 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
   const cs_real_t c2_prime_inf = rans_mdl->bfh_c2_prime_inf;
   const cs_real_t aw = rans_mdl->bfh_aw;
   const cs_real_t pw = rans_mdl->bfh_pw;
-  const int use_beta2 = rans_mdl->bfh_use_beta2;
   const int beta2_form = rans_mdl->bfh_beta2_form;
   const int ck_damping = rans_mdl->bfh_ck_damping;
   const int use_drb_time = rans_mdl->bfh_use_durbin_time;
@@ -2875,12 +2874,11 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     if (ret != nullptr)
       ret[c_id] = ret_c;
 
-    /* Damping function of Ret:
-     * - BFH baseline (Lai & So 1990 p645): f_w = 1 - exp(-(Re_t / aw)^pw)
-     * - Chung & Kim (1995): f_w = 1 / beta(R_t) */
-    cs_real_t f_w = (cs::abs(pw - 2.0) < 1.e-12)
-                    ? (1.0 - exp(- cs_math_pow2(ret_c / aw)))
-                    : (1.0 - exp(- pow(ret_c / aw, pw)));
+    /* Amplitude of the slow term. Only the Rotta branch uses the value
+     * set here; the other slow models recompute f_w in their own branch.
+     * Rotta needs no damping function: with p >= 1 the two-scale T2
+     * already makes the deviatoric return vanish as z^(4p) at a wall. */
+    cs_real_t f_w = 1.0;
 
     /* Sij */
     m_sij[0][0] = gradv[c_id][0][0];
@@ -2961,23 +2959,6 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
                                          cs_math_epzero);
     else
       beta2 = 0.75 * crij2 * lambda_min;
-
-    if (use_beta2 != 0) {
-      const cs_real_t r_b2 = cs::min(1.0, beta2 / 0.12);
-      if (use_beta2 == 3) {
-        /* Direct beta2 scaling with power 1.5 to delay buffer takeoff */
-        f_w = r_b2 * sqrt(r_b2);
-      }
-      else if (use_beta2 == 2) {
-        f_w = r_b2;
-      }
-      else if (use_beta2 == 4) {
-        f_w = 1.0;
-      }
-      else {
-        f_w *= r_b2;
-      }
-    }
 
     /* Wall-normal unit vector from wall distance gradient */
     cs_real_t xnal[3];
@@ -3349,13 +3330,11 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
         /* Dual time scale decomposition:
          *   R_ij / T + (C_R - 1) / T_2 * (R_ij - (2/3)*k*delta_ij)
          * with T = k/eps (exact trace 2*eps) and T_2 = T_drb.
-         * When no beta2 damping is applied (fw=1 / use_beta2 == 4 or 0),
-         * c_slow = C_R - 1.0 reduces the near-wall parasitic source by 56%
-         * without locking 2D turbulence in free flows! */
+         * With the two-scale time, c_slow = C_R - 1.0 reduces the
+         * near-wall parasitic source by 56% without locking 2D turbulence
+         * in free flows. */
         const cs_real_t c_slow
-          = (use_drb_time != 0 && (use_beta2 == 4 || use_beta2 == 0))
-          ? (crij1 - 1.0)
-          : crij1;
+          = (use_drb_time != 0) ? (crij1 - 1.0) : crij1;
         const cs_real_t inv_t_rotta
           = (use_drb_time != 0) ? inv_tdrb : inv_twall;
 
@@ -3438,9 +3417,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
         rhs[c_id][ij] += w1[c_id];
 
         const cs_real_t c_slow
-          = (use_drb_time != 0 && (use_beta2 == 4 || use_beta2 == 0))
-          ? (crij1 - 1.0)
-          : crij1;
+          = (use_drb_time != 0) ? (crij1 - 1.0) : crij1;
         const cs_real_t imp_slow
           = (slow_model == CS_TURB_BFH_SLOW_ROTTA)
           ? (c_slow * inv_t_rotta * f_w + crijeps * inv_t_eps * fact_trace)
