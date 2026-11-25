@@ -122,7 +122,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources_pages.qrc">
+                <iconset>
                  <normaloff>:data/icons/22x22/add.png</normaloff>:data/icons/22x22/add.png</iconset>
                </property>
               </widget>
@@ -136,7 +136,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources_pages.qrc">
+                <iconset>
                  <normaloff>:data/icons/22x22/remove.png</normaloff>:data/icons/22x22/remove.png</iconset>
                </property>
               </widget>
@@ -150,6 +150,46 @@
                 <size>
                  <width>16</width>
                  <height>16</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButtonPlotTimeTable">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Plot variables for the selected time table as a function of time.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Plot</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
                 </size>
                </property>
               </spacer>

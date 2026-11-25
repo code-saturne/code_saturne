@@ -50,6 +50,7 @@ from code_saturne.gui.base.QtWidgets import *
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, RegExpValidator, IntValidator, BasicTableModel, LabelDelegate
 from code_saturne.gui.case.TimeTablesForm import Ui_TimeTablesForm
+from code_saturne.gui.case.TimeTablePlotDialog import TimeTablePlotDialog
 from code_saturne.model.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainModel
 from code_saturne.model.TimeTablesModel import TimeTablesModel
 
@@ -263,6 +264,8 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         #Connections
         self.pushButtonAddTimeTable.clicked.connect(self.slotSearchTable)
         self.pushButtonDeleteTimeTable.clicked.connect(self.slotDeleteTable)
+        self.pushButtonPlotTimeTable.clicked.connect(self.slotPlotTable)
+        self.pushButtonPlotTimeTable.setEnabled(False)
         self.tableViewTimeTables.clicked.connect(self.slotSelectTable)
 
         self.spinBoxRows.valueChanged[int].connect(self.slotRowsToSkip)
@@ -284,8 +287,10 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         Update state of widgets
         """
         if self.table_id < 0:
+            self.pushButtonPlotTimeTable.setEnabled(False)
             return
 
+        self.pushButtonPlotTimeTable.setEnabled(True)
         self.groupBoxTableParameters.show()
 
         # Columns
@@ -355,8 +360,12 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         """
         current = self.tableViewTimeTables.currentIndex()
         idx = current.row()
-        self.tableModelTimeTables.deleteRow(idx)
-        self.mdl.deleteTable(idx)
+        if idx >= 0:
+            self.tableModelTimeTables.deleteRow(idx)
+            self.mdl.deleteTable(idx)
+            self.table_id = -1
+            self.groupBoxTableParameters.hide()
+            self.pushButtonPlotTimeTable.setEnabled(False)
 
 
     @Slot(int)
@@ -513,3 +522,164 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         """
         """
         return self.mdl.getTableProperty(self.table_id, ppty)
+
+
+    @Slot()
+    def slotPlotTable(self):
+        """
+        Plot selected time table variables as a function of time.
+        """
+        if self.table_id < 0:
+            return
+
+        fname = self.mdl.getTableFileName(self.table_id)
+        table_name = self.mdl.getTableName(self.table_id)
+
+        # Resolve file path
+        filepath = fname
+        if not os.path.isabs(filepath):
+            datap = os.path.join(self.case['case_path'], 'DATA', fname)
+            if os.path.isfile(datap):
+                filepath = datap
+
+        if not os.path.isfile(filepath):
+            QMessageBox.warning(
+                self,
+                self.tr("File Not Found"),
+                self.tr("Time table file '%s' was not found.") % fname
+            )
+            return
+
+        delimiter = self.mdl.getTableDelimiter(self.table_id)
+        delim = delimiter if (delimiter and len(delimiter.strip()) > 0) else None
+        if delim and delim.strip():
+            delim = delim.strip()
+
+        try:
+            skip_rows = int(self._get_mdl_property('skip_rows'))
+        except (ValueError, TypeError):
+            skip_rows = 0
+
+        cols2import = self._get_mdl_property('cols2import')
+        col_ids_str = self._get_mdl_property('col_ids')
+
+        col_indices = None
+        if cols2import != 'all' and col_ids_str:
+            try:
+                # 1-based indexing in GUI
+                col_indices = [int(c.strip()) - 1 for c in col_ids_str.split(',') if c.strip()]
+            except ValueError:
+                col_indices = None
+
+        headers_def = self._get_mdl_property('headers_def')
+        headers_list_str = self._get_mdl_property('headers_list')
+
+        labels = []
+        if headers_def == 'user' and headers_list_str:
+            labels = [h.strip() for h in headers_list_str.split(',') if h.strip()]
+        elif headers_def == 'import':
+            hl = self._get_headers_from_file(filepath, delimiter)
+            if hl:
+                labels = [h.strip() for h in hl.split(',') if h.strip()]
+        elif headers_list_str:
+            labels = [h.strip() for h in headers_list_str.split(',') if h.strip()]
+
+        # Read and parse numerical lines
+        try:
+            with open(filepath, 'r') as fp:
+                all_lines = fp.readlines()
+        except Exception as e:
+            QMessageBox.warning(
+                self,
+                self.tr("Error Reading File"),
+                self.tr("Could not read file '%s':\n%s") % (fname, str(e))
+            )
+            return
+
+        data_rows = []
+        start_idx = max(0, skip_rows)
+        for line in all_lines[start_idx:]:
+            sline = line.strip()
+            if not sline or sline.startswith('#') or sline.startswith('!'):
+                continue
+
+            if delim:
+                tokens = [t.strip() for t in sline.split(delim)]
+            else:
+                tokens = sline.split()
+
+            row_floats = []
+            valid_row = True
+            for tok in tokens:
+                try:
+                    row_floats.append(float(tok))
+                except ValueError:
+                    valid_row = False
+                    break
+
+            if not valid_row or not row_floats:
+                continue
+
+            if col_indices:
+                filtered_row = []
+                for idx in col_indices:
+                    if 0 <= idx < len(row_floats):
+                        filtered_row.append(row_floats[idx])
+                if filtered_row:
+                    data_rows.append(filtered_row)
+            else:
+                data_rows.append(row_floats)
+
+        if not data_rows:
+            QMessageBox.warning(
+                self,
+                self.tr("No Data"),
+                self.tr("No numeric data rows found in '%s'.") % fname
+            )
+            return
+
+        num_cols = len(data_rows[0])
+        if num_cols < 2:
+            QMessageBox.warning(
+                self,
+                self.tr("Insufficient Columns"),
+                self.tr("At least 2 columns (time and at least one variable) are required to plot.")
+            )
+            return
+
+        # Separate time and variables
+        times = [row[0] for row in data_rows]
+
+        time_offset_choice = self._get_mdl_property('time_offset_choice')
+        try:
+            time_offset_value = float(self._get_mdl_property('time_offset_value'))
+        except (ValueError, TypeError):
+            time_offset_value = 0.0
+
+        if time_offset_choice == 'yes':
+            times = [t - time_offset_value for t in times]
+
+        # Determine variable labels
+        time_label = "Time (s)"
+        if labels and len(labels) == num_cols:
+            time_label = labels[0]
+            var_names = labels[1:]
+        elif labels and len(labels) == num_cols - 1:
+            var_names = labels
+        else:
+            var_names = [labels[i] if i < len(labels) else f"Variable {i}" for i in range(1, num_cols)]
+
+        variables_dict = {}
+        for var_idx, var_name in enumerate(var_names):
+            col_idx = var_idx + 1
+            if col_idx < num_cols:
+                variables_dict[var_name] = [row[col_idx] for row in data_rows]
+
+        dialog = TimeTablePlotDialog(
+            parent=self,
+            table_name=table_name,
+            times=times,
+            variables_dict=variables_dict,
+            time_label=time_label
+        )
+        dialog.exec()
