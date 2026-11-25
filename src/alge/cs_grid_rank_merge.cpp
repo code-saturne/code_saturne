@@ -76,7 +76,6 @@
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_profiling.h"
-#include "base/cs_reducers.h"
 #include "base/cs_sort.h"
 
 #include "fvm/fvm_defs.h"
@@ -145,7 +144,7 @@ _root_grid(cs_grid_t  *g)
  * Empty a halo that is only useful for global synchronization
  *
  * parameters:
- *   h <-> pointer to halo structure being emptyied
+ *   h <-> pointer to halo structure being emptied
  *----------------------------------------------------------------------------*/
 
 static void
@@ -156,6 +155,7 @@ _empty_halo(cs_halo_t  *h)
 
   h->n_c_domains = 0;
   CS_FREE(h->c_domain_rank);
+  CS_FREE(h->c_domain_s_shift);
 
   h->n_send_elts[0] = 0;
   h->n_send_elts[1] = 0;
@@ -258,7 +258,7 @@ _append_halos(cs_grid_t  *g,
      so as to have blocs of fixed n_transforms size, easier
      to work with for append + merge operations */
 
-  int *perio_lst_tr_s = nullptr, *perio_lst_tr_r = nullptr;
+  cs_lnum_t *perio_lst_tr_s = nullptr, *perio_lst_tr_r = nullptr;
   if (n_transforms > 0) {
     CS_MALLOC(perio_lst_tr_s, send_counts[0]*n_transforms*2, cs_lnum_t);
     CS_MALLOC(perio_lst_tr_r, recv_counts[0]*n_transforms*2, cs_lnum_t);
@@ -432,7 +432,7 @@ _append_halos(cs_grid_t  *g,
     int prev_rank_tr_id = -1;
     cs_lnum_t prev_src_id = -1, n_elts_m = 0;
 
-    CS_MALLOC(halo_o2n, n_elts_ini, int);
+    CS_MALLOC(halo_o2n, n_elts_ini, cs_lnum_t);
 
     for (cs_lnum_t ii = 0; ii < n_elts_ini; ii++) {
       bool is_same = true;
@@ -1648,7 +1648,7 @@ cs_grid_merge_ranks(cs_grid_t  *g,
                     int         verbosity,
                     int         rank_stride)
 {
-  if (sub_size < 2)
+  if (sub_size < 2 || g->conv_diff)
     return;
 
   std::chrono::high_resolution_clock::time_point tm_start;
@@ -1919,6 +1919,9 @@ cs_grid_merge_bottom(cs_grid_t      *g,
                      int             n_max_ranks,
                      float           max_row_factor)
 {
+  if (g->conv_diff)
+    return;
+
 #if defined(HAVE_MPI)
   if (g->n_ranks == 1 && g->halo == nullptr)
     return;

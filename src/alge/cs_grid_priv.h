@@ -102,7 +102,7 @@ public:
   ~grid_rank_merge();
 
   /*--------------------------------------------------------------------------
-   * Public memeber functions
+   * Public member functions
    *--------------------------------------------------------------------------*/
 
   void
@@ -370,7 +370,7 @@ cs_grid_has_rank_merge(const cs_grid_t  *g);
  *   g <-- Grid structure
  *
  * returns:
- *   memory allocation typt
+ *   memory allocation type
  *----------------------------------------------------------------------------*/
 
 cs_alloc_mode_t
@@ -697,12 +697,9 @@ cs_grid_dump(const cs_grid_t  *g);
  * parameters:
  *   ctx     <-> Reference to dispatch context
  *   f       <-- Fine grid structure
- *   c       <-- Fine grid structure
+ *   c       <-- Coarse grid structure
  *   f_var   <-- Variable defined on fine grid rows
  *   c_var   --> Variable defined on coarse grid rows
- *
- * returns:
- *   coarse grid structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -717,7 +714,7 @@ cs_grid_restrict_row_var(cs_dispatch_context  &ctx,
  *
  * parameters:
  *   ctx       <-> Reference to dispatch context
- *   c         <-- Fine grid structure
+ *   c         <-- Coarse grid structure
  *   f         <-- Fine grid structure
  *   increment <-- if true, add value to f_var; otherwise, overwrite it
  *   c_var     <-- Variable defined on coarse grid rows

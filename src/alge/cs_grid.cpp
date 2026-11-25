@@ -171,7 +171,7 @@ static cs_real_t _penalization_threshold = 1e4;
 
 static cs_real_t _dd_threshold_pw = 5;
 
-/* ALgorithm variant settings */
+/* Algorithm variant settings */
 
 static char _match_edges_variant = 'd';
 
@@ -6090,11 +6090,11 @@ _reassign_to_singleton(cs_dispatch_context   &ctx,
       if (aggr_row[kk] != kk)
         return;
 
-      cs::atomic::fetch_add(&(aggr_count[kk]), (int)-1);
-
-      aggr_row[ii] = ii;
-      aggr_row[preferred_aggr] = ii;
-      aggr_count[ii] += 1;
+      if (cs::atomic::compare_exchange(&(aggr_row[preferred_aggr]), kk, ii)) {
+        cs::atomic::fetch_add(&(aggr_count[kk]), (int)-1);
+        aggr_row[ii] = ii;
+        aggr_count[ii] += 1;
+      }
     }
 
   });
@@ -6467,7 +6467,7 @@ _automatic_aggregation_dx_msr_nd(const cs_grid_t       *f,
     t_start = std::chrono::high_resolution_clock::now();
 
   // If true, try to reassign a neighboring row to singletons.
-  const bool reassing_to_singletons = true;
+  const bool reassign_to_singletons = true;
 
   // Use constant threshold factor instead of cardinality from previous
   // code versions
@@ -6721,8 +6721,8 @@ _automatic_aggregation_dx_msr_nd(const cs_grid_t       *f,
 
   } /* Loop on passes */
 
-  if (reassing_to_singletons) {
-    /* Reuse ag_queue as work arrray */
+  if (reassign_to_singletons) {
+    /* Reuse ag_queue as work array */
     cs_lnum_t *preferred_singleton
       = reinterpret_cast<cs_lnum_t *>(ag_queue.data());
 
@@ -6852,7 +6852,7 @@ _verify_matrix(const cs_grid_t  *g)
   for (cs_lnum_t i = 0; i < n_ents; i++) {
     if (val[i] < vmin)
       vmin = val[i];
-    else if (val[i] > vmax)
+    if (val[i] > vmax)
       vmax = val[i];
   }
 
@@ -6942,10 +6942,10 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
   for (cs_lnum_t c_face = 0; c_face < n_faces; c_face++) {
     cs_lnum_t ic = face_cell[c_face][0];
     cs_lnum_t jc = face_cell[c_face][1];
-    w3[ic] = cs::max(abs(xa[c_face*isym]), w3[ic]);
-    w4[ic] = cs::min(abs(xa[c_face*isym]), w4[ic]);
-    w3[jc] = cs::max(abs(xa[(c_face +1)*isym -1]), w3[jc]);
-    w4[jc] = cs::min(abs(xa[(c_face +1)*isym -1]), w4[jc]);
+    w3[ic] = cs::max(cs::abs(xa[c_face*isym]), w3[ic]);
+    w4[ic] = cs::min(cs::abs(xa[c_face*isym]), w4[ic]);
+    w3[jc] = cs::max(cs::abs(xa[(c_face +1)*isym -1]), w3[jc]);
+    w4[jc] = cs::min(cs::abs(xa[(c_face +1)*isym -1]), w4[jc]);
   }
 
   for (cs_lnum_t ic = 0; ic < n_cells; ic++)
@@ -6957,7 +6957,7 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
   for (cs_lnum_t ic = 0; ic < n_cells; ic++) {
     if (w3[ic] < anmin)
       anmin = w3[ic];
-    else if (w3[ic] > anmax)
+    if (w3[ic] > anmax)
       anmax = w3[ic];
   }
 
@@ -7087,8 +7087,8 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
 
     for (cs_lnum_t r_idx = s_id; r_idx < e_id; r_idx++) {
       cs_real_t v = x_val[r_idx];
-      w3 = cs::max(abs(v), w3);
-      w4 = cs::min(abs(v), w4);
+      w3 = cs::max(cs::abs(v), w3);
+      w4 = cs::min(cs::abs(v), w4);
 
       if (cell_face != nullptr) {
         cs_real_t v_o_v0 = v / xa0[cell_face[r_idx]];
@@ -7133,12 +7133,12 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
 }
 
 /*----------------------------------------------------------------------------
- * Warn aubout negative diagonal entries (called if verbosity > 2)
+ * Warn about negative diagonal entries (called if verbosity > 2)
  *
  * parameters:
  *   g             <-- grid structure
  *   call_site     <-- caller function name or info
- *   n_g_n_eg_diag <-> number of negative entries (local in, global out)
+ *   n_g_neg_diag  <-> number of negative entries (local in, global out)
  *----------------------------------------------------------------------------*/
 
 static void
@@ -8246,6 +8246,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
             if (ic != jc) {
               /* ids are sorted, so binary search possible */
               cs_lnum_t k = _l_id_binary_search(n_cols, jc, c_col_id + s_id);
+              assert(k > -1);
               row_x_vals[k] += f_x_val[jj];
             }
             else { /* ic == jc */
@@ -9485,10 +9486,10 @@ _build_coarse_matrix_null(cs_grid_t         *c,
  *
  * parameters:
  *   ctx     <-> Reference to dispatch context
- *   c       <-- Fine grid structure
+ *   c       <-- Coarse grid structure
  *   f       <-- Fine grid structure
- *   c_num   --> Variable (rank) defined on coarse grid rows
- *   f_num   <-- Variable (rank) defined on fine grid rows
+ *   c_num   <-- Variable (rank) defined on coarse grid rows
+ *   f_num   --> Variable (rank) defined on fine grid rows
  *----------------------------------------------------------------------------*/
 
 static void
@@ -9951,7 +9952,7 @@ cs_grid_has_rank_merge(const cs_grid_t  *g)
  *   g <-- Grid structure
  *
  * returns:
- *   memory allocation typt
+ *   memory allocation type
  *----------------------------------------------------------------------------*/
 
 cs_alloc_mode_t
@@ -10626,7 +10627,7 @@ cs_grid_coarsen(cs_grid_t            *f,
 
 #if defined(HAVE_MPI)
 
-  if (merge_stride > 1 && c->n_ranks > 1) {
+  if (merge_stride > 1 && c->n_ranks > 1 && c->conv_diff == false) {
     cs_gnum_t  _n_ranks = c->n_ranks;
     cs_gnum_t  _n_mean_g_rows = c->n_g_rows / _n_ranks;
     if (   _n_mean_g_rows < (cs_gnum_t)merge_rows_mean_threshold
@@ -10707,7 +10708,7 @@ cs_grid_coarsen(cs_grid_t            *f,
     break;
   case CS_GRID_COARSENING_CONV_DIFF_DX:
     {
-      snprintf(aggr_type, 64, _("SPD DX, max %d, relax %4.3f"),
+      snprintf(aggr_type, 64, _("CONV DIFF DX, max %d, relax %4.3f"),
                aggregation_limit, relaxation_parameter);
     }
     break;
@@ -10800,7 +10801,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
     _compute_coarse_quantities_msr(f, c, coarse_struct_v_id);
 
 #if defined(HAVE_MPI)
-    if (c->n_ranks > 1 && merge_stride > 1) {
+    if (c->n_ranks > 1 && merge_stride > 1 && c->conv_diff == false) {
       _native_from_msr(c);
       cs_grid_merge_ranks(c, merge_stride, verbosity);
       _matrix_from_native(CS_MATRIX_MSR, c);
@@ -10827,7 +10828,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
     /* Merge grids if we are below the threshold */
 
 #if defined(HAVE_MPI)
-    if (c->n_ranks > 1 && merge_stride > 1)
+    if (c->n_ranks > 1 && merge_stride > 1 && c->conv_diff == false)
       cs_grid_merge_ranks(c, merge_stride, verbosity);
 #endif
 
@@ -10927,7 +10928,7 @@ cs_grid_project_row_num(const cs_grid_t  *g,
 
 #if defined(HAVE_MPI)
       if (_g->rank_merge != nullptr)
-        cs_grid_rank_merge_scatter_row_data(_g, CS_LNUM_TYPE, 1, tmp_num_1);
+        cs_grid_rank_merge_scatter_row_data(_g, CS_INT_TYPE, 1, tmp_num_1);
 #endif /* defined(HAVE_MPI) */
 
       const cs_lnum_t *coarse_row = _g->coarse_row;
@@ -11290,6 +11291,9 @@ void
 cs_grid_set_matrix_tuning(cs_matrix_fill_type_t  fill_type,
                           int                    max_level)
 {
+  if (max_level <= 0)
+    return;
+
   if (_grid_tune_max_level < max_level) {
 
     if (_grid_tune_max_level == 0) {
