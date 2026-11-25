@@ -2797,10 +2797,11 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
   const int beta2_form = rans_mdl->bfh_beta2_form;
   const int ck_damping = rans_mdl->bfh_ck_damping;
   const int use_drb_time = rans_mdl->bfh_use_durbin_time;
-  const cs_real_t t2_ct = (rans_mdl->bfh_t2_ct > 0.) ? rans_mdl->bfh_t2_ct
+  const cs_real_t tred_ct = (rans_mdl->bfh_tred_ct > 0.) ? rans_mdl->bfh_tred_ct
                                                      : cs_turb_xct;
-  const cs_real_t t2_pow = rans_mdl->bfh_t2_pow;
-  const cs_real_t t2_n = cs::max(rans_mdl->bfh_t2_n, cs_math_epzero);
+  const cs_real_t tred_pow = rans_mdl->bfh_tred_pow;
+  const cs_real_t tred_n = cs::max(rans_mdl->bfh_tred_n, cs_math_epzero);
+  const cs_real_t tred_ystar = cs::max(rans_mdl->bfh_tred_ystar, cs_math_epzero);
   const int c2_mod = rans_mdl->bfh_c2_mod;
   const cs_real_t ck_cr_add = rans_mdl->bfh_ck_cr_add;
   const cs_real_t w_split = rans_mdl->bfh_wall_split;
@@ -2876,7 +2877,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
 
     /* Amplitude of the slow term. Only the Rotta branch uses the value
      * set here; the other slow models recompute f_w in their own branch.
-     * Rotta needs no damping function: with p >= 1 the two-scale T2
+     * Rotta needs no damping function: with p >= 1 the two-scale tau_red
      * already makes the deviatoric return vanish as z^(4p) at a wall. */
     cs_real_t f_w = 1.0;
 
@@ -2992,7 +2993,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
      *
      * Each term of the source is implicited with its own time scale: the
      * dissipation with tau = k / eps, the deviatoric return to isotropy
-     * with T2, and the wall block with the wall scale
+     * with tau_red, and the wall block with the wall scale
      *
      *   1 / T_wall = max(eps / k, 2 nu / z^2),
      *
@@ -3038,40 +3039,69 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
       w_lambda = 1. / (rt_sq + eta_k * eta_k);
     }
 
-    /* Rotta redistribution time scale T2. The integral scale tau = k/eps
-     * and the near-wall scale T_v = tau (Re_s/Re_t)^p, with Re_s = C_T2^2,
+    /* Rotta redistribution time scale tau_red. The integral scale tau = k/eps
+     * and the near-wall scale T_v = tau (Re_s/Re_t)^p, with Re_s = C_red^2,
      * are combined through a power mean of order n:
      *
-     *   T2 = tau (1 + X^n)^(1/n),      X = (Re_s/Re_t)^p.
+     *   tau_red = tau (1 + X^n)^(1/n),      X = (Re_s/Re_t)^p.
      *
-     * n = 1 is the harmonic blend of the two rates (T2 = tau + T_v) and
+     * n = 1 is the harmonic blend of the two rates (tau_red = tau + T_v) and
      * n -> infinity gives max(tau, T_v); n only sets the sharpness of the
      * transition, which is smooth for any finite n, whereas max is not
      * differentiable. The activation of the deviatoric term,
      *
-     *   tau / T2 = [ Re_t^q / (Re_t^q + Re_s^q) ]^(1/n),   q = p n,
+     *   tau / tau_red = [ Re_t^q / (Re_t^q + Re_s^q) ]^(1/n),   q = p n,
      *
      * is the form evaluated below, using a base of modulus at most one so
      * that no overflow occurs at either end of the Re_t range.
      * The asymptotics depend on p only: near a wall tau = O(z^2) and
-     * Re_t = O(z^4), hence T2 = O(z^(2-4p)) and the isotropic Rotta source
-     * (2/3) (C_R - 1) k / T2 = O(z^(4p)). p = 1/2 is resonant with the
+     * Re_t = O(z^4), hence tau_red = O(z^(2-4p)) and the isotropic Rotta source
+     * (2/3) (C_R - 1) k / tau_red = O(z^(4p)). p = 1/2 is resonant with the
      * 12 nu / z^2 sink of R_nn, which then behaves as z^4 ln(1/z);
-     * p >= 1 preserves R_nn = O(z^4) without any damping function. */
-    const cs_real_t t2_q = t2_pow * t2_n;
-    const cs_real_t ret_s = cs::max(ret_c, 0.) / (t2_ct * t2_ct);
+     * p >= 1 preserves R_nn = O(z^4) without any damping function.
+     *
+     * Two variables may carry the switch, selected by bfh_tred_var: Re_t,
+     * or the wall distance in Kolmogorov units y* = z / eta with
+     * eta = (nu^3 / eps)^(1/4). Both switch the deviatoric return off at
+     * a wall; y* does so without depending on k, which Re_t does
+     * quadratically.
+     *
+     * They cannot be made equivalent everywhere: Re_t = O(z^4) and
+     * y* = O(z) in the sublayer, Re_t = O(y+) and y* = O(y+^(3/4)) in the
+     * log layer. The effective power 4 p / 3 matches the log layer, which
+     * sets the mean velocity profile, and leaves the sublayer source at
+     * O(z^(4 p / 3)), still clear of the resonance at exponent 2.
+     *
+     * The default threshold matches the two switches in an equilibrium
+     * log layer, where Re_t = kappa y+ / C_mu and
+     * y* = (y+)^(3/4) kappa^(-1/4). Elsewhere it must be recalibrated. */
 
-    cs_real_t f_t2;
-    if (ret_s >= 1.) {
-      const cs_real_t xn = pow(1. / ret_s, t2_q);
-      f_t2 = pow(1. / (1. + xn), 1. / t2_n);
+    cs_real_t tred_s, tred_q;
+
+    if (rans_mdl->bfh_tred_var == 1) {
+      const cs_real_t nu_l = viscl[c_id] / crom[c_id];
+      const cs_real_t eta_k
+        = pow(cs_math_pow3(nu_l) / cs::max(cvara_ep[c_id], cs_math_epzero),
+              0.25);
+      tred_s = y / (cs::max(eta_k, cs_math_epzero) * tred_ystar);
+      tred_q = (4. / 3.) * tred_pow * tred_n;
     }
     else {
-      const cs_real_t xn = pow(ret_s, t2_q);
-      f_t2 = pow(xn / (1. + xn), 1. / t2_n);
+      tred_s = cs::max(ret_c, 0.) / (tred_ct * tred_ct);
+      tred_q = tred_pow * tred_n;
     }
 
-    const cs_real_t inv_tdrb = f_t2 / xttke;
+    cs_real_t f_tred;
+    if (tred_s >= 1.) {
+      const cs_real_t xn = pow(1. / tred_s, tred_q);
+      f_tred = pow(1. / (1. + xn), 1. / tred_n);
+    }
+    else {
+      const cs_real_t xn = pow(tred_s, tred_q);
+      f_tred = pow(xn / (1. + xn), 1. / tred_n);
+    }
+
+    const cs_real_t inv_tdrb = f_tred / xttke;
 
     cpro_beta2[c_id] = beta2;
 
@@ -3137,10 +3167,10 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
       /* C'_{2, infinity} (default: 15.5), carried by its own
        * Reynolds-number function. Chung & Kim calibrated 1 / beta(R_t) on
        * homogeneous decaying turbulence; it is kept as mode 0, but the
-       * quadratic block can also be driven by the tau / T2 sigmoid of the
+       * quadratic block can also be driven by the tau / tau_red sigmoid of the
        * power mean (mode 1) or left undamped (mode 2). */
       const cs_real_t f_c2
-        = (c2_mod == 1) ? f_t2 : (c2_mod == 2) ? 1.0 : inv_beta;
+        = (c2_mod == 1) ? f_tred : (c2_mod == 2) ? 1.0 : inv_beta;
       const cs_real_t c2_prime = c2_prime_inf * f_c2;
 
       /* Polynomial coefficients L_1, L_2, L_3 */
@@ -3171,11 +3201,11 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
 
       /* Reynolds-number function of the slow term. The original
        * 1 / beta(R_t) was calibrated on homogeneous decaying turbulence
-       * and activates far too early in a wall layer; the tau / T2
+       * and activates far too early in a wall layer; the tau / tau_red
        * activation of the power mean is available as an alternative, so
        * that the tensor structure of Chung & Kim can be tested
        * independently of its Reynolds-number function. */
-      f_w = (ck_damping != 0) ? inv_beta : f_t2;
+      f_w = (ck_damping != 0) ? inv_beta : f_tred;
     }
     else if (slow_model == CS_TURB_BFH_SLOW_SPEZIALE_SARKAR) {
       /* Speziale & Sarkar (1990) quadratic slow model (SSG) */
@@ -5384,7 +5414,7 @@ cs_turbulence_rij(int phase_id)
        * tangential stresses, eps -> 2 nu a with k ~ a z^2, so that
        * eps / k -> 2 nu / z^2 = 1 / T_visc. That limit is what gives
        * tau = O(z^2) and Re_t = O(z^4), hence the asymptotics of the
-       * redistribution time scale T2 and the factors of the wall tensor.
+       * redistribution time scale tau_red and the factors of the wall tensor.
        *
        * The algebraic form k^(3/2) / delta does not have it: even with
        * delta damped as kappa z, it gives eps / k = sqrt(k) / (kappa z)

@@ -356,7 +356,7 @@ typedef struct cs_turb_rans_model_t {
                                     1: 1/beta(R_t) of the original model
                                        (default), calibrated on homogeneous
                                        decaying turbulence
-                                    0: the tau/T2 activation of the power
+                                    0: the tau/tau_red activation of the power
                                        mean, shared with the Rotta branch */
   int     bfh_beta2_form;      /*!< Form of the rapid coefficient beta2:
                                     0: 9/10 lambda_min / tr(R) (default,
@@ -366,24 +366,45 @@ typedef struct cs_turb_rans_model_t {
   int     bfh_use_durbin_time; /*!< Use Durbin time scale T_drb for Rotta:
                                     0: false (default: T = k/eps or dt_wall)
                                     1: true: T_R = T_drb, T_eps = k/eps */
-  double  bfh_t2_ct;           /*!< Constant C_T2 of the Rotta redistribution
-                                    time scale T2 = (k/eps) [1 + (Re_s/Re_t)^p]
-                                    with Re_s = C_T2^2, used when
+  double  bfh_tred_ct;           /*!< Constant C_red of the Rotta redistribution
+                                    time scale tau_red = (k/eps) [1 + (Re_s/Re_t)^p]
+                                    with Re_s = C_red^2, used when
                                     bfh_use_durbin_time = 1
                                     (default: -1, i.e. cs_turb_xct) */
-  double  bfh_t2_pow;          /*!< Exponent p of the Rotta redistribution
+  double  bfh_tred_pow;          /*!< Exponent p of the Rotta redistribution
                                     time scale (default: 0.5). It fixes the
                                     near-wall asymptotics: with p >= 1 the
                                     isotropic Rotta source vanishes at least
                                     as y^4 at the wall */
-  double  bfh_t2_n;            /*!< Order n of the power mean blending the
+  double  bfh_tred_n;            /*!< Order n of the power mean blending the
                                     integral and near-wall time scales,
-                                    T2 = tau (1 + X^n)^(1/n) with
+                                    tau_red = tau (1 + X^n)^(1/n) with
                                     X = (Re_s/Re_t)^p. It fixes the sharpness
                                     of the transition only, not the
                                     asymptotics: n = 1 is the harmonic blend
                                     of the two rates, n -> infinity gives
                                     max(tau, T_v) (default: 1) */
+  int     bfh_tred_var;          /*!< Variable carried by the tau_red switch:
+                                    - 0: Re_t = k^2 / (nu eps)
+                                    - 1: y* = z / eta, with the Kolmogorov
+                                         length eta = (nu^3 / eps)^(1/4)
+                                         (default)
+                                    y* carries no k, so the switch cannot
+                                    be shut by a collapse of k; it is less
+                                    reliable far from walls, where eps
+                                    tends to zero. Its effective power is
+                                    4 p / 3, which matches the two
+                                    switches in the logarithmic layer and
+                                    keeps the sublayer source clear of the
+                                    resonance */
+  double  bfh_tred_ystar;        /*!< Threshold of the tau_red switch when
+                                    bfh_tred_var = 1, counterpart of
+                                    Re_s = C_red^2. The default matches the
+                                    two switches in an equilibrium log
+                                    layer, where Re_t = kappa y+ / C_mu
+                                    and y* = (y+)^(3/4) kappa^(-1/4); it
+                                    must be recalibrated elsewhere
+                                    (default: 24) */
   int     bfh_c2_mod;          /*!< Without effect unless bfh_slow_model =
                                     CS_TURB_BFH_SLOW_CHUNG_KIM.
                                     Reynolds-number function carried by the
@@ -392,7 +413,7 @@ typedef struct cs_turb_rans_model_t {
                                     function carried by the overall
                                     amplitude (bfh_ck_damping):
                                     - 0: 1 / beta(R_t) (Chung & Kim 1995)
-                                    - 1: tau / T2 sigmoid of the power mean
+                                    - 1: tau / tau_red sigmoid of the power mean
                                     - 2: no damping, C'_2 constant
                                     Mode 2 makes a negative C'_2 meaningful,
                                     which reverses the transfer driven by the
@@ -490,9 +511,11 @@ typedef struct cs_turb_rans_model_t {
       bfh_ck_damping(1),
       bfh_beta2_form(0),
       bfh_use_durbin_time(1),
-      bfh_t2_ct(20.0),
-      bfh_t2_pow(2.0),
-      bfh_t2_n(2.5),
+      bfh_tred_ct(20.0),
+      bfh_tred_pow(2.0),
+      bfh_tred_n(2.5),
+      bfh_tred_var(1),
+      bfh_tred_ystar(24.0),
       bfh_c2_mod(0),
       bfh_ck_cr_add(0.0),
       bfh_wall_split(-10.0),
