@@ -563,10 +563,13 @@ _turb_flux_st(const char          *name,
        * above) are left showing the standard gradient-based value for
        * reference; only the contribution actually added to rhs_ut is
        * zeroed here. */
+      const bool prod_elsewhere =
+        (   rij_scheme == CS_RIJ_SCHEME_GODUNOV
+         || rij_scheme == CS_RIJ_SCHEME_GODUNOV_PROJECTION);
       const cs_real_t mech_prod_vel =
-        (rij_scheme == CS_RIJ_SCHEME_GODUNOV) ? 0. : prod_by_vel_grad_i;
+        (prod_elsewhere) ? 0. : prod_by_vel_grad_i;
       const cs_real_t mech_prod_scal =
-        (rij_scheme == CS_RIJ_SCHEME_GODUNOV) ? 0. : prod_by_scal_grad_i;
+        (prod_elsewhere) ? 0. : prod_by_scal_grad_i;
 
       rhs_ut[c_id][i] += (  mech_prod_vel + mech_prod_scal
                           + buoyancy_i + phiit[i] - dissip_i)
@@ -1383,6 +1386,27 @@ _solve_rit(const cs_field_t     *f,
     eqp_loc.iconv = 0;
   }
 
+  /* Godunov-type projection: the convection and the production of the
+     turbulent flux are replaced by the explicit increment from the
+     beginning of the time step to the projected turbulent flux */
+
+  else if (rij_scheme == CS_RIJ_SCHEME_GODUNOV_PROJECTION) {
+
+    const std::string p_name
+      = std::string("algo:proj_") + f->name + "_turbulent_flux";
+    const cs_real_3_t *p_ut
+      = (const cs_real_3_t *)cs_field_by_name(p_name.c_str())->val;
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      const cs_real_t rovsdt = crom[c_id]*cell_f_vol[c_id]/dt[c_id];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        rhs_ut(c_id, i) += rovsdt*(p_ut[c_id][i] - xuta[c_id][i]);
+    });
+    ctx.wait();
+
+    eqp_loc.iconv = 0;
+  }
+
   cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                      1, // init
                                      f_ut->id,
@@ -1631,7 +1655,16 @@ cs_turbulence_rit_div(const int        field_id,
   /* Add the divergence of the thermal flux to the thermal transport equation
      ------------------------------------------------------------------------ */
 
-  if (turb_flux_model == 11 || cs::any_eq(turb_flux_model_type, 2, 3)) {
+  /* With the Godunov-type projection, the divergence of the DFM turbulent
+     flux belongs to the projected scalar */
+
+  const bool div_in_projection
+    = (   cs_glob_turb_rans_model->rij_discretization_scheme
+       == CS_RIJ_SCHEME_GODUNOV_PROJECTION)
+      && (turb_flux_model_type == 3);
+
+  if (   (turb_flux_model == 11 || cs::any_eq(turb_flux_model_type, 2, 3))
+      && !div_in_projection) {
 
     cs_field_t *f_dut = cs_field_by_double_composite_name_try
                           ("algo:", f_ut->name, "_divergence");

@@ -425,6 +425,14 @@ _production_and_dissipation_terms(const cs_field_t  *f,
     ctx.wait();
   }
 
+  /* Godunov-type projection: the production of the variance by the mean
+     gradient belongs to the projection */
+  else if (   rij_scheme == CS_RIJ_SCHEME_GODUNOV_PROJECTION
+           && variance_turb_flux_model_type == 3) {
+    CS_MALLOC_HD(prod_godunov, n_cells_ext, cs_real_t, cs_alloc_mode);
+    cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, 0., prod_godunov);
+  }
+
   /* NB: diffusivity is clipped to 0 because in LES, it might be negative.
    * Problematic
    * for the variance even if it is strange to use variance and LES...
@@ -2046,6 +2054,29 @@ cs_solve_equation_scalar(cs_field_t        *f,
     eqp->iconv = 0;
   }
 
+  /* Godunov-type projection: the convection of the DFM scalar and of its
+     variance, the divergence of the turbulent flux and the production of
+     the variance are replaced by the explicit increment from the beginning
+     of the time step to the projected value */
+
+  const bool use_projection
+    = (rij_sch == CS_RIJ_SCHEME_GODUNOV_PROJECTION) && is_dfm;
+
+  if (use_projection) {
+    std::string p_name = std::string("algo:proj_") + f_primary->name;
+    if (is_variance)
+      p_name += "_variance";
+    const cs_real_t *p_var = cs_field_by_name(p_name.c_str())->val;
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      rhs[c_id] +=   xcpp[c_id]*pcrom[c_id]*cell_f_vol[c_id]/dt[c_id]
+                   * (p_var[c_id] - cvara_var[c_id]);
+    });
+    ctx.wait();
+
+    eqp->iconv = 0;
+  }
+
   if (iscdri > 0)
     cs_drift_convective_flux(f,
                              imasfl,
@@ -2161,7 +2192,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
    * 0 above only for the duration of this solve (eqp is a direct
    * mutable pointer into the field's persistent equation parameters,
    * not a local copy). */
-  if (use_rit_convection)
+  if (use_rit_convection || use_projection)
     eqp->iconv = saved_iconv;
 
   CS_FREE(dpvar);

@@ -3425,6 +3425,33 @@ _additional_fields_stage_3(void)
                     1,
                     false);
 
+    /* Scalar with a DFM turbulent flux model, its variance and its
+       turbulent flux */
+    const int n_fields = cs_field_n_fields();
+    for (int i = 0; i < n_fields; i++) {
+      cs_field_t *f = cs_field_by_id(i);
+      if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      if (f->get_key_int("turbulent_flux_model") / 10 != 3)
+        continue;
+      const std::string name = std::string("algo:proj_") + f->name;
+      cs_field_create(name.c_str(),
+                      CS_FIELD_INTENSIVE,
+                      CS_MESH_LOCATION_CELLS,
+                      1,
+                      false);
+      cs_field_create((name + "_variance").c_str(),
+                      CS_FIELD_INTENSIVE,
+                      CS_MESH_LOCATION_CELLS,
+                      1,
+                      false);
+      cs_field_create((name + "_turbulent_flux").c_str(),
+                      CS_FIELD_INTENSIVE,
+                      CS_MESH_LOCATION_CELLS,
+                      3,
+                      false);
+    }
+
   }
 
   /* Boundary mass flux field */

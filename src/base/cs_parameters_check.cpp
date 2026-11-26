@@ -2338,8 +2338,8 @@ cs_parameters_check(void)
   }
 
   /* Godunov-type projection of the convective subsystem: Rij-epsilon
-     models, constant density, uniform time step, and no turbulent heat
-     flux model (thermal part not available yet) */
+     models, constant density, uniform time step, and scalars with a
+     turbulent flux model using the DFM with a variance */
 
   if (   cs_glob_turb_rans_model->rij_discretization_scheme
       == CS_RIJ_SCHEME_GODUNOV_PROJECTION) {
@@ -2373,13 +2373,22 @@ cs_parameters_check(void)
       const cs_field_t *f = cs_field_by_id(f_id);
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
-      if (f->get_key_int(k_tfm) / 10 >= 1)
+      const int tfm_type = f->get_key_int(k_tfm) / 10;
+      if (tfm_type < 1)
+        continue;
+      if (tfm_type != 3)
         cs_parameters_error
           (CS_ABORT_DELAYED,
            _("while reading input data"),
            _("rij_discretization_scheme = CS_RIJ_SCHEME_GODUNOV_PROJECTION\n"
-             "is not available yet with a turbulent flux model\n"
-             "(field \"%s\").\n"),
+             "requires a DFM turbulent flux model (field \"%s\").\n"),
+           f->name);
+      else if (cs_field_get_variance(f) == nullptr)
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("while reading input data"),
+           _("rij_discretization_scheme = CS_RIJ_SCHEME_GODUNOV_PROJECTION\n"
+             "requires the variance of the DFM scalar \"%s\".\n"),
            f->name);
     }
   }

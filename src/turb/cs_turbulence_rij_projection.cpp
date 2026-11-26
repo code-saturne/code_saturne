@@ -31,6 +31,8 @@
 
 #include <assert.h>
 #include <math.h>
+#include <string>
+#include <vector>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -42,6 +44,7 @@
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_field.h"
+#include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_halo.h"
 #include "base/cs_log.h"
@@ -614,44 +617,402 @@ _proj_boundary_state(int              bc_type,
   }
 }
 
-/*! (end of DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Project the mean velocity, the Reynolds stresses and the
- *        dissipation rate over one time step of the convective subsystem.
+ * \brief Exterior state of the scalar part (mean value, variance and
+ *        turbulent flux) at a boundary face.
  *
- * The projected states are stored in the cell fields
- * "algo:proj_velocity", "algo:proj_rij" and "algo:proj_epsilon"
- * (created in cs_setup.cpp when rij_discretization_scheme ==
- * CS_RIJ_SCHEME_GODUNOV_PROJECTION). They are computed once per time step,
- * from the fields at the beginning of the time step; further calls in the
- * same time step return immediately.
+ * Symmetry: scalars unchanged, turbulent flux mirrored like a vector; wall:
+ * cell state; other types: state given by the boundary condition
+ * coefficients.
  *
- * The convective subsystem gathers the convection of the mean velocity,
- * of the Reynolds stresses and of epsilon by the mass flux, the divergence
- * of the Reynolds stresses, their production by the mean velocity gradient
- * and the production of epsilon. The Riemann problem of each face is solved
- * exactly with the jump relation J_T; its solution is averaged over one
- * strip in each adjacent cell, whose thickness is proportional to the
- * largest wave speed of the face, and the new cell state is the convex
- * combination of the strip states. The projection is sub-cycled when the
- * time step exceeds the Courant condition of the strips.
+ * \param[in]   bc_type    boundary condition type
+ * \param[in]   n          unit outward normal
+ * \param[in]   t          cell mean value of the scalar
+ * \param[in]   tv         cell variance
+ * \param[in]   q          cell turbulent flux
+ * \param[in]   coefa_t    scalar boundary coefficient a
+ * \param[in]   coefb_t    scalar boundary coefficient b
+ * \param[in]   coefa_tv   variance boundary coefficient a
+ * \param[in]   coefb_tv   variance boundary coefficient b
+ * \param[in]   coefa_q    turbulent flux boundary coefficient a
+ * \param[in]   coefb_q    turbulent flux boundary coefficient b
+ * \param[out]  t_ext      exterior mean value
+ * \param[out]  tv_ext     exterior variance
+ * \param[out]  q_ext      exterior turbulent flux
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_turbulence_rij_projection(void)
+static CS_F_HOST_DEVICE void
+_proj_boundary_state_scalar(int              bc_type,
+                            const cs_real_t  n[3],
+                            cs_real_t        t,
+                            cs_real_t        tv,
+                            const cs_real_t  q[3],
+                            cs_real_t        coefa_t,
+                            cs_real_t        coefb_t,
+                            cs_real_t        coefa_tv,
+                            cs_real_t        coefb_tv,
+                            const cs_real_t  coefa_q[3],
+                            const cs_real_t  coefb_q[3][3],
+                            cs_real_t       *t_ext,
+                            cs_real_t       *tv_ext,
+                            cs_real_t        q_ext[3])
 {
-  const cs_time_step_t *ts = cs_glob_time_step;
+  if (bc_type == CS_SYMMETRY) {
+    const cs_real_t qn = q[0]*n[0] + q[1]*n[1] + q[2]*n[2];
+    *t_ext = t;
+    *tv_ext = tv;
+    for (int i = 0; i < 3; i++)
+      q_ext[i] = q[i] - 2.*qn*n[i];
+  }
 
-  if (ts->nt_cur == _nt_last)
-    return;
-  _nt_last = ts->nt_cur;
+  else if (bc_type == CS_SMOOTHWALL || bc_type == CS_ROUGHWALL) {
+    *t_ext = t;
+    *tv_ext = tv;
+    for (int i = 0; i < 3; i++)
+      q_ext[i] = q[i];
+  }
+
+  else {
+    *t_ext = coefa_t + coefb_t*t;
+    *tv_ext = coefa_tv + coefb_tv*tv;
+    for (int i = 0; i < 3; i++) {
+      q_ext[i] = coefa_q[i];
+      for (int j = 0; j < 3; j++)
+        q_ext[i] += coefb_q[i][j]*q[j];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Mean state U and generalised covariance C of a cell.
+ *
+ * U = (u, theta) and C = [[R, u'theta'], [u'theta', theta'^2]] when D = 4,
+ * U = u and C = R when D = 3.
+ *
+ * \param[in]   u    velocity
+ * \param[in]   r6   Reynolds stresses (11, 22, 33, 12, 23, 13)
+ * \param[in]   t    scalar mean value (D = 4 only)
+ * \param[in]   tv   scalar variance (D = 4 only)
+ * \param[in]   q    turbulent flux (D = 4 only)
+ * \param[out]  uu   mean state
+ * \param[out]  cc   generalised covariance
+ */
+/*----------------------------------------------------------------------------*/
+
+template <int D>
+static CS_F_HOST_DEVICE void
+_proj_cell_state(const cs_real_t  u[3],
+                 const cs_real_t  r6[6],
+                 cs_real_t        t,
+                 cs_real_t        tv,
+                 const cs_real_t  q[3],
+                 cs_real_t        uu[D],
+                 cs_real_t        cc[D][D])
+{
+  cs_real_t r[3][3];
+  _proj_sym_to_full(r6, r);
+
+  for (int i = 0; i < 3; i++) {
+    uu[i] = u[i];
+    for (int j = 0; j < 3; j++)
+      cc[i][j] = r[i][j];
+  }
+
+  if constexpr (D == 4) {
+    uu[3] = t;
+    for (int i = 0; i < 3; i++) {
+      cc[i][3] = q[i];
+      cc[3][i] = q[i];
+    }
+    cc[3][3] = tv;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Scalar part (mean value, turbulent flux, variance) of a rebuilt
+ *        strip state, with weight s_f.
+ *
+ * \param[in]   u_s    rebuilt mean state (D = 4)
+ * \param[in]   c_s    rebuilt generalised covariance (D = 4)
+ * \param[in]   s_f    weight
+ * \param[out]  a_s    weighted values (5)
+ */
+/*----------------------------------------------------------------------------*/
+
+static CS_F_HOST_DEVICE void
+_proj_scalar_strip_values(const cs_real_t  u_s[4],
+                          const cs_real_t  c_s[4][4],
+                          cs_real_t        s_f,
+                          cs_real_t        a_s[5])
+{
+  a_s[0] = s_f*u_s[3];
+  for (int i = 0; i < 3; i++)
+    a_s[1 + i] = s_f*0.5*(c_s[i][3] + c_s[3][i]);
+  a_s[4] = s_f*c_s[3][3];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Projected fields of a scalar with a DFM turbulent flux.
+ *
+ * \param[in]   f      scalar field
+ * \param[out]  p_th   projected mean value
+ * \param[out]  p_tv   projected variance
+ * \param[out]  p_ut   projected turbulent flux
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_proj_scalar_fields(const cs_field_t   *f,
+                    cs_field_t        **p_th,
+                    cs_field_t        **p_tv,
+                    cs_field_t        **p_ut)
+{
+  const std::string name = std::string("algo:proj_") + f->name;
+  *p_th = cs_field_by_name(name.c_str());
+  *p_tv = cs_field_by_name((name + "_variance").c_str());
+  *p_ut = cs_field_by_name((name + "_turbulent_flux").c_str());
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief One sub-step of the projection of a scalar with a DFM turbulent
+ *        flux.
+ *
+ * The Riemann problem decouples scalar by scalar: the waves (positions
+ * and strips) are those of (u, R), and the scalar components of the
+ * solution only involve the scalar itself. The scalar is projected with
+ * the Riemann problem of (u, theta, R, u'theta', theta'^2), from the
+ * velocity and Reynolds stresses at the beginning of the sub-step.
+ *
+ * \param[in]       f        scalar field
+ * \param[in]       vel      velocity at the beginning of the sub-step
+ * \param[in]       rij      Reynolds stresses at the beginning of the
+ *                           sub-step
+ * \param[in]       i_speed  largest wave speed of the interior faces
+ * \param[in]       b_speed  largest wave speed of the boundary faces
+ * \param[in]       s_sum    sum of |f| speed_f over the faces of the cells
+ * \param[in]       dt_s     sub-step
+ * \param[in, out]  acc      work array (5 values per cell)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_proj_scalar_sub_step(const cs_field_t   *f,
+                      const cs_real_3_t   vel[],
+                      const cs_real_6_t   rij[],
+                      const cs_real_t     i_speed[],
+                      const cs_real_t     b_speed[],
+                      const cs_real_t     s_sum[],
+                      cs_real_t           dt_s,
+                      cs_real_t           acc[])
+{
+  constexpr int stride = 5;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+  const cs_nreal_3_t *i_face_u_normal = mq->i_face_u_normal;
+  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
+  const cs_real_t *i_face_surf = mq->i_face_surf;
+  const cs_real_t *b_face_surf = mq->b_face_surf;
+  const cs_real_t *weight = mq->weight;
+  const cs_real_t *cell_vol = mq->cell_vol;
+
+  const int *bc_type = cs_glob_bc_type;
+
+  cs_field_t *f_vel = CS_F_(vel);
+  cs_field_t *f_rij = CS_F_(rij);
+
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *brom = CS_F_(rho_b)->val;
+
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  const cs_real_t *imasfl
+    = cs_field_by_id(f_vel->get_key_int(kimasf))->val;
+  const cs_real_t *bmasfl
+    = cs_field_by_id(f_vel->get_key_int(kbmasf))->val;
+
+  const cs_real_3_t *coefa_u = (const cs_real_3_t *)f_vel->bc_coeffs->a;
+  const cs_real_33_t *coefb_u = (const cs_real_33_t *)f_vel->bc_coeffs->b;
+  const cs_real_6_t *coefa_r = (const cs_real_6_t *)f_rij->bc_coeffs->a;
+  const cs_real_66_t *coefb_r = (const cs_real_66_t *)f_rij->bc_coeffs->b;
+
+  /* Scalar, variance and turbulent flux: projected fields (work arrays)
+     and boundary coefficients of the transported fields */
+
+  const cs_field_t *f_tv = cs_field_get_variance(f);
+  const cs_field_t *f_ut = cs_field_by_composite_name(f->name,
+                                                      "turbulent_flux");
+
+  cs_field_t *p_th, *p_tv, *p_ut;
+  _proj_scalar_fields(f, &p_th, &p_tv, &p_ut);
+
+  cs_real_t *th = p_th->val;
+  cs_real_t *tv = p_tv->val;
+  cs_real_3_t *ut = (cs_real_3_t *)p_ut->val;
+
+  const cs_real_t *coefa_t = f->bc_coeffs->a;
+  const cs_real_t *coefb_t = f->bc_coeffs->b;
+  const cs_real_t *coefa_tv = f_tv->bc_coeffs->a;
+  const cs_real_t *coefb_tv = f_tv->bc_coeffs->b;
+  const cs_real_3_t *coefa_q = (const cs_real_3_t *)f_ut->bc_coeffs->a;
+  const cs_real_33_t *coefb_q = (const cs_real_33_t *)f_ut->bc_coeffs->b;
+
+  cs_dispatch_context ctx;
+  const cs_dispatch_sum_type_t i_sum_type
+    = ctx.get_parallel_for_i_faces_sum_type(m);
+  const cs_dispatch_sum_type_t b_sum_type
+    = ctx.get_parallel_for_b_faces_sum_type(m);
+
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    for (int i = 0; i < stride; i++)
+      acc[stride*c_id + i] = 0.;
+  });
+  ctx.wait();
+
+  /* Strip means, accumulated with the weights |f| speed_f */
+
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    const cs_real_t sp = i_speed[f_id];
+    if (!(sp > 0.))
+      return;
+
+    const cs_lnum_t c_l = i_face_cells[f_id][0];
+    const cs_lnum_t c_r = i_face_cells[f_id][1];
+
+    const cs_real_t n[4] = {i_face_u_normal[f_id][0],
+                            i_face_u_normal[f_id][1],
+                            i_face_u_normal[f_id][2],
+                            0.};
+    const cs_real_t rho_f
+      = weight[f_id]*crom[c_l] + (1. - weight[f_id])*crom[c_r];
+    const cs_real_t v = imasfl[f_id]/(rho_f*i_face_surf[f_id]);
+    const cs_real_t s_f = sp*i_face_surf[f_id];
+
+    cs_real_t ul[4], cl[4][4], ur[4], cr[4][4];
+    _proj_cell_state<4>(vel[c_l], rij[c_l], th[c_l], tv[c_l], ut[c_l],
+                        ul, cl);
+    _proj_cell_state<4>(vel[c_r], rij[c_r], th[c_r], tv[c_r], ut[c_r],
+                        ur, cr);
+
+    _proj_rp_t<4> rp;
+    _proj_solve<4>(n, v, ul, cl, ur, cr, rp);
+
+    for (int side = 0; side < 2; side++) {
+      const cs_lnum_t c_id = i_face_cells[f_id][side];
+      if (c_id >= n_cells)
+        continue;
+
+      /* Strip width in xi: thickness |K| speed_f / sum / dt_s */
+      const cs_real_t w = cell_vol[c_id]*sp/(s_sum[c_id]*dt_s);
+      const cs_real_t xa = (side == 0) ? -w : 0.;
+      const cs_real_t xb = (side == 0) ? 0. : w;
+
+      cs_real_t u_s[4], c_s[4][4], a_s[stride];
+      _proj_strip_mean<4>(n, rp, xa, xb, u_s, c_s);
+      _proj_scalar_strip_values(u_s, c_s, s_f, a_s);
+
+      cs_dispatch_sum<stride>(&acc[stride*c_id], a_s, i_sum_type);
+    }
+  });
+
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    const cs_real_t sp = b_speed[f_id];
+    if (!(sp > 0.))
+      return;
+
+    const cs_lnum_t c_id = b_face_cells[f_id];
+
+    const cs_real_t n[4] = {b_face_u_normal[f_id][0],
+                            b_face_u_normal[f_id][1],
+                            b_face_u_normal[f_id][2],
+                            0.};
+    const cs_real_t v = bmasfl[f_id]/(brom[f_id]*b_face_surf[f_id]);
+    const cs_real_t s_f = sp*b_face_surf[f_id];
+    const cs_real_t w = cell_vol[c_id]*sp/(s_sum[c_id]*dt_s);
+
+    cs_real_t u_ext[3], r_ext[3][3];
+    _proj_boundary_state(bc_type[f_id], n, vel[c_id], rij[c_id],
+                         coefa_u[f_id], coefb_u[f_id],
+                         coefa_r[f_id], coefb_r[f_id],
+                         u_ext, r_ext);
+
+    cs_real_t t_ext, tv_ext, q_ext[3];
+    _proj_boundary_state_scalar(bc_type[f_id], n, th[c_id], tv[c_id],
+                                ut[c_id], coefa_t[f_id], coefb_t[f_id],
+                                coefa_tv[f_id], coefb_tv[f_id],
+                                coefa_q[f_id], coefb_q[f_id],
+                                &t_ext, &tv_ext, q_ext);
+
+    const cs_real_t r6_ext[6] = {r_ext[0][0], r_ext[1][1], r_ext[2][2],
+                                 r_ext[0][1], r_ext[1][2], r_ext[0][2]};
+
+    cs_real_t ul[4], cl[4][4], ur[4], cr[4][4];
+    _proj_cell_state<4>(vel[c_id], rij[c_id], th[c_id], tv[c_id], ut[c_id],
+                        ul, cl);
+    _proj_cell_state<4>(u_ext, r6_ext, t_ext, tv_ext, q_ext, ur, cr);
+
+    _proj_rp_t<4> rp;
+    _proj_solve<4>(n, v, ul, cl, ur, cr, rp);
+
+    cs_real_t u_s[4], c_s[4][4], a_s[stride];
+    _proj_strip_mean<4>(n, rp, -w, 0., u_s, c_s);
+    _proj_scalar_strip_values(u_s, c_s, s_f, a_s);
+
+    cs_dispatch_sum<stride>(&acc[stride*c_id], a_s, b_sum_type);
+  });
+
+  ctx.wait();
+
+  /* New cell states: convex combination of the strip states */
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    if (!(s_sum[c_id] > 0.))
+      return;
+
+    const cs_real_t inv_s = 1./s_sum[c_id];
+    const cs_real_t *a_c = acc + stride*c_id;
+
+    th[c_id] = a_c[0]*inv_s;
+    for (int i = 0; i < 3; i++)
+      ut[c_id][i] = a_c[1 + i]*inv_s;
+    tv[c_id] = a_c[4]*inv_s;
+  });
+  ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Projection over one time step.
+ *
+ * The projected fields ("algo:proj_*") hold the states at the beginning of
+ * the time step on input, and the projected states on output (local
+ * cells). The velocity, Reynolds stresses and epsilon are projected with
+ * the Riemann problem of (u, R); then, in each sub-step, every scalar with
+ * a DFM turbulent flux is projected in turn (see _proj_scalar_sub_step).
+ *
+ * \param[in]  dfm_scalars  scalar fields with a DFM turbulent flux
+ *
+ * \return  number of sub-steps
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_projection(const std::vector<const cs_field_t *>  &dfm_scalars)
+{
+  /* Accumulated values per cell: U (3), R (6), eps k^(-C_eps1) */
+  constexpr int stride = 10;
 
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -696,6 +1057,13 @@ cs_turbulence_rij_projection(void)
   const cs_real_t *coefa_e = f_eps->bc_coeffs->a;
   const cs_real_t *coefb_e = f_eps->bc_coeffs->b;
 
+  /* Projected fields, used as work arrays */
+
+  cs_real_3_t *vel
+    = (cs_real_3_t *)cs_field_by_name("algo:proj_velocity")->val;
+  cs_real_6_t *rij = (cs_real_6_t *)cs_field_by_name("algo:proj_rij")->val;
+  cs_real_t *eps = cs_field_by_name("algo:proj_epsilon")->val;
+
   /* Uniform time step (local time steps are refused at setup) */
 
   const cs_real_t dt = CS_F_(dt)->val[0];
@@ -706,41 +1074,16 @@ cs_turbulence_rij_projection(void)
   const cs_dispatch_sum_type_t b_sum_type
     = ctx.get_parallel_for_b_faces_sum_type(m);
 
-  /* Work arrays: states, eps k^(-C_eps1), face speeds, sums of
-     |f| x largest wave speed per cell, and accumulated strip states
-     (3 velocity, 6 Reynolds stress and 1 eps k^(-C_eps1) values) */
+  cs_real_t *w_c = nullptr, *i_speed = nullptr, *b_speed = nullptr;
+  cs_real_t *s_sum = nullptr, *acc = nullptr, *acc_s = nullptr;
 
-  cs_real_3_t *vel = nullptr;
-  cs_real_6_t *rij = nullptr;
-  cs_real_t *eps = nullptr, *w_c = nullptr;
-  cs_real_t *i_speed = nullptr, *b_speed = nullptr;
-  cs_real_t *s_sum = nullptr, *acc = nullptr;
-
-  CS_MALLOC_HD(vel, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-  CS_MALLOC_HD(rij, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-  CS_MALLOC_HD(eps, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(w_c, n_cells_ext, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(i_speed, n_i_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(b_speed, n_b_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(s_sum, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(acc, 10*n_cells_ext, cs_real_t, cs_alloc_mode);
-
-  /* States at the beginning of the time step */
-
-  {
-    const cs_real_3_t *vel_pre = (const cs_real_3_t *)f_vel->val_pre;
-    const cs_real_6_t *rij_pre = (const cs_real_6_t *)f_rij->val_pre;
-    const cs_real_t *eps_pre = f_eps->val_pre;
-
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (int i = 0; i < 3; i++)
-        vel[c_id][i] = vel_pre[c_id][i];
-      for (int ij = 0; ij < 6; ij++)
-        rij[c_id][ij] = rij_pre[c_id][ij];
-      eps[c_id] = eps_pre[c_id];
-    });
-    ctx.wait();
-  }
+  CS_MALLOC_HD(acc, stride*n_cells_ext, cs_real_t, cs_alloc_mode);
+  if (! dfm_scalars.empty())
+    CS_MALLOC_HD(acc_s, 5*n_cells_ext, cs_real_t, cs_alloc_mode);
 
   cs_real_t t_done = 0.;
   int n_sub_steps = 0;
@@ -751,6 +1094,13 @@ cs_turbulence_rij_projection(void)
       cs_halo_sync_r(halo, ctx.use_gpu(), vel);
       cs_halo_sync_r(halo, ctx.use_gpu(), rij);
       cs_halo_sync(halo, ctx.use_gpu(), eps);
+      for (const cs_field_t *f : dfm_scalars) {
+        cs_field_t *p_th, *p_tv, *p_ut;
+        _proj_scalar_fields(f, &p_th, &p_tv, &p_ut);
+        cs_halo_sync(halo, ctx.use_gpu(), p_th->val);
+        cs_halo_sync(halo, ctx.use_gpu(), p_tv->val);
+        cs_halo_sync_r(halo, ctx.use_gpu(), (cs_real_3_t *)p_ut->val);
+      }
     }
 
     /* eps k^(-C_eps1), passive scalar of the subsystem */
@@ -759,13 +1109,14 @@ cs_turbulence_rij_projection(void)
       const cs_real_t k = 0.5*(rij[c_id][0] + rij[c_id][1] + rij[c_id][2]);
       w_c[c_id] = (k > 0.) ? eps[c_id]*pow(k, -ce1) : 0.;
       s_sum[c_id] = 0.;
-      for (int i = 0; i < 10; i++)
-        acc[10*c_id + i] = 0.;
+      for (int i = 0; i < stride; i++)
+        acc[stride*c_id + i] = 0.;
     });
     ctx.wait();
 
-    /* Largest wave speed of every face, and their sums over the faces
-       of every cell, weighted by the face areas */
+    /* Largest wave speed of every face (it depends on u_n and R_nn only),
+       and their sums over the faces of every cell, weighted by the face
+       areas */
 
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       const cs_lnum_t c_l = i_face_cells[f_id][0];
@@ -829,7 +1180,8 @@ cs_turbulence_rij_projection(void)
     const bool last_sub_step = !(r_max*t_rem > 1.);
     const cs_real_t dt_s = (last_sub_step) ? t_rem : t_rem/ceil(r_max*t_rem);
 
-    /* Strip means, accumulated with the weights |f| speed_f */
+    /* Velocity, Reynolds stresses and epsilon: strip means, accumulated
+       with the weights |f| speed_f */
 
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       const cs_real_t sp = i_speed[f_id];
@@ -864,10 +1216,8 @@ cs_turbulence_rij_projection(void)
         const cs_real_t xa = (side == 0) ? -w : 0.;
         const cs_real_t xb = (side == 0) ? 0. : w;
 
-        cs_real_t u_s[3], c_s[3][3], a_s[10];
+        cs_real_t u_s[3], c_s[3][3], a_s[stride];
         _proj_strip_mean<3>(n, rp, xa, xb, u_s, c_s);
-        const cs_real_t w_s
-          = _proj_strip_mean_contact(v, xa, xb, w_c[c_l], w_c[c_r]);
 
         for (int i = 0; i < 3; i++)
           a_s[i] = s_f*u_s[i];
@@ -877,9 +1227,10 @@ cs_turbulence_rij_projection(void)
         a_s[6] = s_f*0.5*(c_s[0][1] + c_s[1][0]);
         a_s[7] = s_f*0.5*(c_s[1][2] + c_s[2][1]);
         a_s[8] = s_f*0.5*(c_s[0][2] + c_s[2][0]);
-        a_s[9] = s_f*w_s;
+        a_s[9] = s_f*_proj_strip_mean_contact(v, xa, xb,
+                                              w_c[c_l], w_c[c_r]);
 
-        cs_dispatch_sum<10>(&acc[10*c_id], a_s, i_sum_type);
+        cs_dispatch_sum<stride>(&acc[stride*c_id], a_s, i_sum_type);
       }
     });
 
@@ -895,6 +1246,7 @@ cs_turbulence_rij_projection(void)
                               b_face_u_normal[f_id][2]};
       const cs_real_t v = bmasfl[f_id]/(brom[f_id]*b_face_surf[f_id]);
       const cs_real_t s_f = sp*b_face_surf[f_id];
+      const cs_real_t w = cell_vol[c_id]*sp/(s_sum[c_id]*dt_s);
 
       cs_real_t rl[3][3], u_ext[3], r_ext[3][3];
       _proj_sym_to_full(rij[c_id], rl);
@@ -917,12 +1269,8 @@ cs_turbulence_rij_projection(void)
       _proj_rp_t<3> rp;
       _proj_solve<3>(n, v, vel[c_id], rl, u_ext, r_ext, rp);
 
-      const cs_real_t w = cell_vol[c_id]*sp/(s_sum[c_id]*dt_s);
-
-      cs_real_t u_s[3], c_s[3][3], a_s[10];
+      cs_real_t u_s[3], c_s[3][3], a_s[stride];
       _proj_strip_mean<3>(n, rp, -w, 0., u_s, c_s);
-      const cs_real_t w_s
-        = _proj_strip_mean_contact(v, -w, 0., w_c[c_id], w_ext);
 
       for (int i = 0; i < 3; i++)
         a_s[i] = s_f*u_s[i];
@@ -932,12 +1280,19 @@ cs_turbulence_rij_projection(void)
       a_s[6] = s_f*0.5*(c_s[0][1] + c_s[1][0]);
       a_s[7] = s_f*0.5*(c_s[1][2] + c_s[2][1]);
       a_s[8] = s_f*0.5*(c_s[0][2] + c_s[2][0]);
-      a_s[9] = s_f*w_s;
+      a_s[9] = s_f*_proj_strip_mean_contact(v, -w, 0., w_c[c_id], w_ext);
 
-      cs_dispatch_sum<10>(&acc[10*c_id], a_s, b_sum_type);
+      cs_dispatch_sum<stride>(&acc[stride*c_id], a_s, b_sum_type);
     });
 
     ctx.wait();
+
+    /* Scalars with a DFM turbulent flux, one after the other, from the
+       velocity and Reynolds stresses at the beginning of the sub-step */
+
+    for (const cs_field_t *f : dfm_scalars)
+      _proj_scalar_sub_step(f, vel, rij, i_speed, b_speed, s_sum, dt_s,
+                            acc_s);
 
     /* New cell states: convex combination of the strip states; then
        eps = (mean of eps k^(-C_eps1)) k^C_eps1 with the new cell k */
@@ -947,17 +1302,17 @@ cs_turbulence_rij_projection(void)
         return;
 
       const cs_real_t inv_s = 1./s_sum[c_id];
-      const cs_real_t *a_c = acc + 10*c_id;
+      const cs_real_t *a_c = acc + stride*c_id;
 
       for (int i = 0; i < 3; i++)
         vel[c_id][i] = a_c[i]*inv_s;
       for (int ij = 0; ij < 6; ij++)
         rij[c_id][ij] = a_c[3 + ij]*inv_s;
 
-      const cs_real_t k = 0.5*(rij[c_id][0] + rij[c_id][1] + rij[c_id][2]);
+      const cs_real_t kk = 0.5*(rij[c_id][0] + rij[c_id][1] + rij[c_id][2]);
       const cs_real_t w = a_c[9]*inv_s;
-      if (k > 0. && w > 0.)
-        eps[c_id] = w*pow(k, ce1);
+      if (kk > 0. && w > 0.)
+        eps[c_id] = w*pow(kk, ce1);
     });
     ctx.wait();
 
@@ -972,29 +1327,138 @@ cs_turbulence_rij_projection(void)
                 "to cover the time step."),
               __func__, _N_SUB_STEPS_MAX);
 
-  /* Store the projected states */
+  CS_FREE(w_c);
+  CS_FREE(i_speed);
+  CS_FREE(b_speed);
+  CS_FREE(s_sum);
+  CS_FREE(acc);
+  CS_FREE(acc_s);
+
+  return n_sub_steps;
+}
+
+/*! (end of DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Project the mean velocity, the Reynolds stresses and the
+ *        dissipation rate (and the scalars with a DFM turbulent flux, their
+ *        variances and their turbulent fluxes) over one time step of the
+ *        convective subsystem.
+ *
+ * The projected states are stored in the cell fields
+ * "algo:proj_velocity", "algo:proj_rij", "algo:proj_epsilon" and, for each
+ * DFM scalar, "algo:proj_<scalar>", "algo:proj_<scalar>_variance" and
+ * "algo:proj_<scalar>_turbulent_flux" (created in cs_setup.cpp when
+ * rij_discretization_scheme == CS_RIJ_SCHEME_GODUNOV_PROJECTION). They are
+ * computed once per time step, from the fields at the beginning of the time
+ * step; further calls in the same time step return immediately.
+ *
+ * The convective subsystem gathers the convection by the mass flux of the
+ * mean velocity, of the scalars, of the second moments and of epsilon, the
+ * divergence of the second moments in the mean equations, the production
+ * of the second moments by the mean gradients and the production of
+ * epsilon. The Riemann problem of each face is solved exactly with the
+ * jump relation J_T; its solution is averaged over one strip in each
+ * adjacent cell, whose thickness is proportional to the largest wave speed
+ * of the face, and the new cell state is the convex combination of the
+ * strip states. The projection is sub-cycled when the time step exceeds
+ * the Courant condition of the strips. The covariances between different
+ * scalars are not transported; they do not enter the projection of the
+ * other components.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_projection(void)
+{
+  const cs_time_step_t *ts = cs_glob_time_step;
+
+  if (ts->nt_cur == _nt_last)
+    return;
+  _nt_last = ts->nt_cur;
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells = m->n_cells;
+
+  cs_dispatch_context ctx;
+
+  /* Scalars with a DFM turbulent flux */
+
+  std::vector<const cs_field_t *> dfm_scalars;
+  {
+    const int k_tfm = cs_field_key_id("turbulent_flux_model");
+    const int n_fields = cs_field_n_fields();
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      const cs_field_t *f = cs_field_by_id(f_id);
+      if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      if (f->get_key_int(k_tfm) / 10 == 3)
+        dfm_scalars.push_back(f);
+    }
+  }
+
+  /* Projected fields initialised with the states at the beginning of the
+     time step */
+
+  cs_real_3_t *vel
+    = (cs_real_3_t *)cs_field_by_name("algo:proj_velocity")->val;
+  cs_real_6_t *rij = (cs_real_6_t *)cs_field_by_name("algo:proj_rij")->val;
+  cs_real_t *eps = cs_field_by_name("algo:proj_epsilon")->val;
 
   {
-    cs_real_3_t *p_vel
-      = (cs_real_3_t *)cs_field_by_name("algo:proj_velocity")->val;
-    cs_real_6_t *p_rij
-      = (cs_real_6_t *)cs_field_by_name("algo:proj_rij")->val;
-    cs_real_t *p_eps = cs_field_by_name("algo:proj_epsilon")->val;
+    const cs_real_3_t *vel_pre = (const cs_real_3_t *)CS_F_(vel)->val_pre;
+    const cs_real_6_t *rij_pre = (const cs_real_6_t *)CS_F_(rij)->val_pre;
+    const cs_real_t *eps_pre = CS_F_(eps)->val_pre;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (int i = 0; i < 3; i++)
-        p_vel[c_id][i] = vel[c_id][i];
+        vel[c_id][i] = vel_pre[c_id][i];
       for (int ij = 0; ij < 6; ij++)
-        p_rij[c_id][ij] = rij[c_id][ij];
-      p_eps[c_id] = eps[c_id];
+        rij[c_id][ij] = rij_pre[c_id][ij];
+      eps[c_id] = eps_pre[c_id];
     });
     ctx.wait();
   }
 
+  for (const cs_field_t *f : dfm_scalars) {
+    cs_field_t *p_th, *p_tv, *p_ut;
+    _proj_scalar_fields(f, &p_th, &p_tv, &p_ut);
+
+    cs_real_t *th = p_th->val, *tv = p_tv->val;
+    cs_real_3_t *ut = (cs_real_3_t *)p_ut->val;
+    const cs_real_t *th_pre = f->val_pre;
+    const cs_real_t *tv_pre = cs_field_get_variance(f)->val_pre;
+    const cs_real_3_t *ut_pre = (const cs_real_3_t *)
+      cs_field_by_composite_name(f->name, "turbulent_flux")->val_pre;
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      th[c_id] = th_pre[c_id];
+      tv[c_id] = tv_pre[c_id];
+      for (int i = 0; i < 3; i++)
+        ut[c_id][i] = ut_pre[c_id][i];
+    });
+    ctx.wait();
+  }
+
+  const int n_sub_steps = _projection(dfm_scalars);
+
   /* Realisability: smallest eigenvalue of the projected Reynolds
-     stresses, relative to k */
+     stresses, relative to k, and sign of the projected variances */
 
   if (cs_glob_turb_rans_model->verbosity >= 1) {
+
+    std::vector<const cs_real_t *> tv_p;
+    for (const cs_field_t *f : dfm_scalars) {
+      cs_field_t *p_th, *p_tv, *p_ut;
+      _proj_scalar_fields(f, &p_th, &p_tv, &p_ut);
+      tv_p.push_back(p_tv->val);
+    }
+
     cs_real_t lambda_min = HUGE_VAL;
     cs_gnum_t n_neg = 0;
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -1004,7 +1468,12 @@ cs_turbulence_rij_projection(void)
       const cs_real_t l_min = cs::min(ev[0], cs::min(ev[1], ev[2]));
       const cs_real_t l_rel = (k > 0.) ? l_min/k : l_min;
       lambda_min = cs::min(lambda_min, l_rel);
-      if (l_rel < -1.e-12)
+      bool is_neg = (l_rel < -1.e-12);
+      for (const cs_real_t *tv : tv_p) {
+        if (tv[c_id] < 0.)
+          is_neg = true;
+      }
+      if (is_neg)
         n_neg += 1;
     }
     cs_parall_min(1, CS_REAL_TYPE, &lambda_min);
@@ -1016,15 +1485,6 @@ cs_turbulence_rij_projection(void)
                  " non-realisable cells: %llu\n"),
                n_sub_steps, lambda_min, (unsigned long long)n_neg);
   }
-
-  CS_FREE(vel);
-  CS_FREE(rij);
-  CS_FREE(eps);
-  CS_FREE(w_c);
-  CS_FREE(i_speed);
-  CS_FREE(b_speed);
-  CS_FREE(s_sum);
-  CS_FREE(acc);
 }
 
 /*----------------------------------------------------------------------------*/
