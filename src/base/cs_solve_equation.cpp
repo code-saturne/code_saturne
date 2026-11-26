@@ -2220,11 +2220,18 @@ cs_solve_equation_scalar(cs_field_t        *f,
   cs_scalar_clipping(f);
 
   /* Atmospheric module:
-   * finalize number of droplets due to nucleation for humid atmosphere */
+   * finalize number of droplets due to nucleation for humid atmosphere.
+   *
+   * Anchored on the total water scalar: this is called for every
+   * transported scalar, whereas activation is evaluated once per scalar
+   * sweep, following the velocity-pressure sub-iterations. Running it on
+   * every scalar also let the last ones see p0_prev already realigned on
+   * p0, hence no expansion forcing, resetting the injection profiles. */
 
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
-      cs_atmo_aerosol_nuclea(cs_field("number_of_droplets"),
-                             crom);
+  if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID
+      && f == CS_F_(ym_w))
+    cs_atmo_aerosol_nuclea(cs_field("number_of_droplets"),
+                           crom);
 
   /* Explicit balance
    * (See cs_equation_iterative_solve_scalar: remove the increment)
