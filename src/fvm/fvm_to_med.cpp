@@ -146,6 +146,7 @@ typedef struct {
   bool        discard_polyhedra;  /* Option to discard polyhedral elements */
   bool        divide_polygons;    /* Option to tesselate polygonal elements */
   bool        divide_polyhedra;   /* Option to tesselate polyhedral elements */
+  bool        fp32;               /* Option to use single precision variables */
 
   int         rank;            /* Rank of current process in communicator */
   int         n_ranks;         /* Number of processes in communicator */
@@ -317,10 +318,11 @@ _med_file_close(fvm_to_med_writer_t  *w)
  *
  *----------------------------------------------------------------------------*/
 
+template <typename T>
 static void
 _convert_float_fvm_to_med(const void      *fvm_data,
                           cs_datatype_t    cs_datatype,
-                          med_float       *med_data,
+                          T               *med_data,
                           int              n_elems)
 {
   int  i_elem;
@@ -972,6 +974,7 @@ _get_connect_buffer_size(const fvm_to_med_writer_t   *writer,
  *
  * parameters:
  *   input_cs_datatype   <-- input field datatype in FVM.
+ *   fp32                <-- option to use single precision float output.
  *   output_cs_datatype  --> output field datatype in FVM.
  *   med_datatype        --> associated MED field datatype.
  *   data_sizeof         --> size of datatype to be exported.
@@ -979,36 +982,34 @@ _get_connect_buffer_size(const fvm_to_med_writer_t   *writer,
 
 static void
 _get_datatypes(const cs_datatype_t    input_cs_datatype,
+               bool                   fp32,
                cs_datatype_t         *output_cs_datatype,
                med_field_type        *med_datatype,
                int                   *data_sizeof)
 {
-  int med_int_sizeof, med_float_sizeof;
-
-  assert(sizeof(med_float) == 8);
-
   /* Verify if double define over 8 bytes */
 
 #if (SIZEOF_DOUBLE != 8)
 #error
 #endif
 
-  med_int_sizeof = sizeof(med_int);
-  med_float_sizeof = sizeof(med_float);
+  size_t med_int_sizeof = sizeof(med_int);
 
   /* Define output_cs_datatype and med_datatype by input_cs_datatype */
 
   switch(input_cs_datatype) {
   case CS_DOUBLE:
-    *output_cs_datatype = CS_DOUBLE;
-    *med_datatype = MED_FLOAT64;
-    *data_sizeof = med_float_sizeof;
-    break;
-
   case CS_FLOAT:
-    *output_cs_datatype = CS_DOUBLE;
-    *med_datatype = MED_FLOAT64;
-    *data_sizeof = med_float_sizeof;
+    if (fp32) {
+      *output_cs_datatype = CS_FLOAT;
+      *med_datatype = MED_FLOAT32;
+      *data_sizeof = sizeof(med_float32);
+    }
+    else {
+      *output_cs_datatype = CS_DOUBLE;
+      *med_datatype = MED_FLOAT64;
+      *data_sizeof = sizeof(med_float64);
+    }
     break;
 
   case CS_INT32:
@@ -1060,8 +1061,16 @@ _get_datatypes(const cs_datatype_t    input_cs_datatype,
 
 #if defined(WORKAROUND_MED_READER_INTEGER_BUG)
   /* Some versions of MEDreader crash when reading integer fields */
-  *output_cs_datatype = CS_DOUBLE;
-  *med_datatype = MED_FLOAT64;
+  if (fp32) {
+    *output_cs_datatype = CS_FLOAT;
+    *med_datatype = MED_FLOAT32;
+    *data_sizeof = sizeof(med_float32);
+  }
+  else {
+    *output_cs_datatype = CS_DOUBLE;
+    *med_datatype = MED_FLOAT64;
+    *data_sizeof = sizeof(med_float64);
+  }
 #endif
 
   return;
@@ -1376,7 +1385,7 @@ _med_int_datatype(void)
   else
     bft_error(__FILE__, __LINE__, 0 ,
               "Unexpected med_int datatype size (%d).",
-              (int)(sizeof(med_float)));
+              (int)(sizeof(med_int)));
 
   return cs_med_datatype;
 }
@@ -1419,14 +1428,10 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
                         fvm_to_med_mesh_t    *med_mesh,
                         fvm_to_med_writer_t  *writer)
 {
-  int  i_dim;
-  cs_lnum_t    i_lnod;
   cs_datatype_t  cs_datatype, cs_med_datatype;
 
   cs_lnum_t   n_extra_vertices = 0, n_vertices_tot = 0;
   cs_gnum_t   n_g_extra_vertices = 0, n_g_vertices_tot = 0;
-
-  med_float  *part_coords = nullptr, *block_coords = nullptr;
 
   const int          dim = mesh->dim;
   const int          rank = writer->rank;
@@ -1492,6 +1497,8 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
   /* Build arrays */
 
   cs_lnum_t block_buf_size = (bi.gnum_range[1] - bi.gnum_range[0]);
+
+  med_float  *part_coords, *block_coords;
   CS_MALLOC(block_coords, block_buf_size*dim, med_float);
   CS_MALLOC(part_coords, n_vertices_tot*dim, med_float);
 
@@ -1501,17 +1508,17 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
   cs_lnum_t idx = 0;
 
   if (parent_vertex_id != nullptr) {
-    for (i_lnod = 0; i_lnod < n_vertices; i_lnod++) {
-      for (i_dim = 0; i_dim < dim; i_dim++)
-        part_coords[idx++]
-          = (med_float)vertex_coords[parent_vertex_id[i_lnod]*dim + i_dim];
+    for (cs_lnum_t i_lnod = 0; i_lnod < n_vertices; i_lnod++) {
+      for (cs_lnum_t i_dim = 0; i_dim < dim; i_dim++)
+        part_coords[idx++] = vertex_coords[parent_vertex_id[i_lnod]*dim + i_dim];
     }
   }
-  else
-    _convert_float_fvm_to_med(vertex_coords,
-                              cs_datatype,
-                              part_coords,
-                              n_vertices * dim);
+  else {
+    cs_lnum_t n = n_vertices * dim;
+    for (cs_lnum_t i= 0; i < n; i++) {
+      part_coords[i] = vertex_coords[i];
+    }
+  }
 
   /* Get local extra vertex coords if present */
 
@@ -1521,9 +1528,9 @@ _export_vertex_coords_g(const fvm_nodal_t    *mesh,
 
     idx = n_vertices*dim;
 
-    for (i_lnod = 0; i_lnod < n_extra_vertices; i_lnod++) {
-      for (i_dim = 0; i_dim < dim; i_dim++)
-        part_coords[idx++] = (med_float)extra_vertex_coords[i_lnod*dim + i_dim];
+    for (cs_lnum_t i_lnod = 0; i_lnod < n_extra_vertices; i_lnod++) {
+      for (cs_lnum_t i_dim = 0; i_dim < dim; i_dim++)
+        part_coords[idx++] = extra_vertex_coords[i_lnod*dim + i_dim];
     }
 
     CS_FREE(extra_vertex_coords);
@@ -1629,8 +1636,6 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
                         fvm_to_med_mesh_t     *med_mesh,
                         fvm_to_med_writer_t   *writer)
 {
-  int  i_dim;
-  cs_lnum_t   i_vtx;
   cs_datatype_t  datatype;
 
   cs_lnum_t   idx = 0;
@@ -1676,46 +1681,36 @@ _export_vertex_coords_l(const fvm_nodal_t     *mesh,
                         nullptr,
                         &n_extra_vertices);
 
-  extra_vertex_coords = _extra_vertex_coords(writer,
-                                             mesh);
+  extra_vertex_coords = _extra_vertex_coords(writer, mesh);
 
   /* Vertex coordinates export */
   /*---------------------------*/
 
-  CS_MALLOC(med_coords, n_vertices * dim, med_float);
+  CS_MALLOC(med_coords,
+            (n_vertices + n_extra_vertices)*dim,
+            med_float);
 
   if (parent_vertex_id != nullptr) {
-
-    for (i_vtx = 0; i_vtx < n_vertices; i_vtx++) {
-      for (i_dim = 0; i_dim < dim; i_dim++)
-        med_coords[idx++] = (med_float)
-          vertex_coords[parent_vertex_id[i_vtx]*dim + i_dim];
+    for (cs_lnum_t i_vtx = 0; i_vtx < n_vertices; i_vtx++) {
+      for (cs_lnum_t i_dim = 0; i_dim < dim; i_dim++)
+        med_coords[idx++] = vertex_coords[parent_vertex_id[i_vtx]*dim + i_dim];
     }
-
   }
-  else
-    _convert_float_fvm_to_med(vertex_coords,
-                              datatype,
-                              med_coords,
-                              n_vertices * dim);
-
+  else {
+    cs_lnum_t n = n_vertices * dim;
+    for (cs_lnum_t i = 0; i < n; i++)
+      med_coords[i] = vertex_coords[i];
+  }
 
   /* Extra vertices coordinates */
   /*----------------------------*/
 
   if (n_extra_vertices > 0) {
-
-    CS_REALLOC(med_coords,
-               (n_vertices + n_extra_vertices)*dim,
-               med_float);
-
-    /* Convert cs_coord_t to med_float */
-
-    _convert_float_fvm_to_med(extra_vertex_coords,
-                              datatype,
-                              med_coords + n_vertices * dim,
-                              n_extra_vertices * dim);
-
+    idx = n_vertices*dim;
+    for (cs_lnum_t i_lnod = 0; i_lnod < n_extra_vertices; i_lnod++) {
+      for (cs_lnum_t i_dim = 0; i_dim < dim; i_dim++)
+        med_coords[idx++] = extra_vertex_coords[i_lnod*dim + i_dim];
+    }
   } /* End if n_extra_vertices > 0 */
 
   /* Write all coordinates */
@@ -3754,20 +3749,14 @@ _export_point_elements(fvm_to_med_writer_t   *writer,
  *----------------------------------------------------------------------------*/
 
 static void
-_field_output(void           *context,
-              cs_datatype_t   datatype,
-              int             dimension,
-              int             component_id,
-              cs_gnum_t       block_start,
-              cs_gnum_t       block_end,
-              void           *buffer)
+_field_output(void                            *context,
+              [[maybe_unused]] cs_datatype_t   datatype,
+              [[maybe_unused]] int             dimension,
+              [[maybe_unused]] int             component_id,
+              cs_gnum_t                        block_start,
+              cs_gnum_t                        block_end,
+              void                            *buffer)
 {
-  CS_UNUSED(datatype);
-#if !defined(HAVE_MED_MPI)
-  CS_UNUSED(dimension);
-#endif
-  CS_UNUSED(component_id);
-
   bool serial_io = true;
 
   med_err retval = 0;
@@ -4106,13 +4095,14 @@ fvm_to_med_version_string(int string_index,
  * Initialize FVM to MED file writer.
  *
  * Options are:
- *   discard_polygons    do not output polygons or related values
- *   discard_polyhedra   do not output polyhedra or related values
- *   divide_polygons     tesselate polygons with triangles
- *   divide_polyhedra    tesselate polyhedra with tetrahedra and pyramids
- *                       (adding a vertex near each polyhedron's center)
- *   serial_io           force serial IO even when parallel IO is available
- *   update              open file in update mode
+ *   discard_polygons         do not output polygons or related values
+ *   discard_polyhedra        do not output polyhedra or related values
+ *   divide_polygons          tesselate polygons with triangles
+ *   divide_polyhedra         tesselate polyhedra with tetrahedra and pyramids
+ *                            (adding a vertex near each polyhedron's center)
+ *   fp32                     use single-precision float output for variables
+ *   serial_io                force serial IO even when parallel IO is available
+ *   update                   open file in update mode
  *
  * parameters:
  *   name           <-- base output case name.
@@ -4215,6 +4205,7 @@ fvm_to_med_init_writer(const char                   *name,
   writer->discard_polyhedra = false;
   writer->divide_polygons = false;
   writer->divide_polyhedra = false;
+  writer->fp32 = false;
 
   if (options != nullptr) {
 
@@ -4250,6 +4241,14 @@ fvm_to_med_init_writer(const char                   *name,
         writer->block_comm = MPI_COMM_NULL;
 #endif
       }
+
+      else if (   (l_opt == 4)
+               && (strncmp(options + i1, "fp32", l_opt) == 0))
+        writer->fp32 = true;
+
+      else if (   (l_opt == 4)
+               && (strncmp(options + i1, "fp64", l_opt) == 0))
+        writer->fp32 = false;
 
       else if (   (l_opt == 6)
                && (strncmp(options + i1, "update", l_opt) == 0))
@@ -4821,6 +4820,7 @@ fvm_to_med_export_field(void                            *this_writer,
   /* Adapt cs_datatype and find corresponding MED datatype */
 
   _get_datatypes(datatype,
+                 writer->fp32,
                  &datatype_convert,
                  &datatype_med,
                  &data_sizeof);

@@ -1190,6 +1190,8 @@ fvm_writer_filter_option(char        *format_options,
  *   divide_polyhedra    tesselate polyhedra with tetrahedra and pyramids
  *                       (adding a vertex near each polyhedron's center)
  *   separate_meshes     use a different writer for each mesh
+ *   sp                  use single-precision float for variables (MED)
+ *   sp-coords           use single-precision float for coordinates (MED)
  *
  * parameters:
  *   name            <-- base name of output

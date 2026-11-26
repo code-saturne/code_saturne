@@ -258,11 +258,15 @@ typedef void
  *         therefore not appear in the post-processing mesh.
  * - \c \b divide_polygons to divide faces with more than four edges into
  *         triangles, so that any post-processing tool can recognize them.
- * - \c \b divide_polyhedra} to divide elements which are neither tetrahedra,
+ * - \c \b divide_polyhedra to divide elements which are neither tetrahedra,
  *         prisms, pyramids nor hexahedra into simpler elements (tetrahedra and
  *         pyramids), so that any post-processing tool can recognize them.
  * - \c \b separate_meshes to multiple meshes and associated fields to
  *         separate outputs.
+ * - \c \b fp32 to use single-precision float output for variables
+ *         (for \c \b MED).
+ * - \c \b fp64 to use doublee-precision float output for variables
+ *         (for \c \b MED).
  *
  * Note that the white-spaces in the beginning or in the end of the
  * character strings given as arguments here are suppressed automatically.

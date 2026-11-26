@@ -98,12 +98,14 @@ fvm_to_med_version_string(int string_index,
  * Initialize FVM to MED file writer.
  *
  * Options are:
- *   discard_polygons    do not output polygons or related values
- *   discard_polyhedra   do not output polyhedra or related values
- *   divide_polygons     tesselate polygons with triangles
- *   divide_polyhedra    tesselate polyhedra with tetrahedra and pyramids
- *                       (adding a vertex near each polyhedron's center)
- *   serial_io           force serial IO even when parallel IO is available
+ *   discard_polygons         do not output polygons or related values
+ *   discard_polyhedra        do not output polyhedra or related values
+ *   divide_polygons          tesselate polygons with triangles
+ *   divide_polyhedra         tesselate polyhedra with tetrahedra and pyramids
+ *                            (adding a vertex near each polyhedron's center)
+ *   fp32                     use single-precision float output for variables
+ *   serial_io                force serial IO even when parallel IO is available
+ *   update                   open file in update mode
  *
  * parameters:
  *   name           <-- base output case name.
