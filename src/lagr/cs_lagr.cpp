@@ -1120,19 +1120,16 @@ cs_lagr_add_fields(void)
     f->set_key_int(k_log, 1);
   }
 
-  /* Fields used to inject the plume condensate from the aerosol activation.
-     They are filled by cs_atmo_aerosol_nuclea and used as spatial profiles
-     for the Lagrangian volume injection, so they are only meaningful when
-     the cooling tower droplet model runs inside the humid atmosphere with
-     an activation model. They used to be declared by hand as user
-     properties in the setup; created here so that activating the model is
-     enough. */
+  /* Fields used as spatial profiles for the Lagrangian volume injection of
+     the plume condensate, filled by cs_atmo_aerosol_nuclea. They used to be
+     declared by hand as user properties in the setup. */
 
-  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR
-      && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID
-      && cs_glob_atmo_option->nucleation_model != CS_ATMO_NUCLEATION_NONE) {
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
-    /* Number of newly activated droplets, all modes together */
+    /* Number of newly activated droplets, all modes together.
+
+       Created for every cooling tower droplet computation, matching the
+       guard under which cs_ctwr_source_terms reads it. */
 
     if (cs_field_by_name_try("lagr_injection_profile") == nullptr) {
       f = cs_field_create("lagr_injection_profile",
@@ -1146,9 +1143,12 @@ cs_lagr_add_fields(void)
     }
 
     /* Mass of activated aerosol of each log-normal mode, one field per
-       mode. Only the Abdul-Razzak parameterization resolves the modes. */
+       mode. Filled by the activation of the humid atmosphere model, and
+       only the Abdul-Razzak parameterization resolves the modes. */
 
-    if (cs_glob_atmo_option->nucleation_model == CS_ATMO_NUCLEATION_ABDUL_RAZZAK) {
+    if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID
+        && cs_glob_atmo_option->nucleation_model
+             == CS_ATMO_NUCLEATION_ABDUL_RAZZAK) {
 
       const int n_modes = cs_glob_atmo_option->n_aerosol_modes;
 
