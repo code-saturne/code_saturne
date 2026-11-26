@@ -1372,16 +1372,25 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
       /* Initial droplet temperature.
 
-         In a cooling tower the droplets detach from the liquid film
-         trickling through the packing, so they start at the packing liquid
-         temperature. In the humid atmosphere model there is no packing:
-         the droplets are nucleated from the ambient vapour and start in
-         thermal equilibrium with the local air. "temp_l_packing" is then
-         identically zero, which used to inject plume droplets at 0 degC
-         into air at ambient temperature. */
+         Cooling tower rain detaches from the liquid film trickling through
+         the packing, so it starts at the packing liquid temperature, which
+         the rain source terms copy into the rain cells below the packing.
+         Plume droplets are nucleated from the ambient vapour and start in
+         thermal equilibrium with the local air; so do all droplets when
+         there is no packing ("temp_l_packing" absent).
 
-      if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID
-          || cval_t_l == nullptr)
+         The two populations are told apart as in the rest of the cloud
+         microphysics (bulk_droplet_d_max), not by the atmospheric model
+         flag: the cooling tower model with packing is commonly run on top
+         of the humid atmosphere model, and its rain must keep the packing
+         temperature. */
+
+      const bool is_bulk_droplet
+        = (   cs_glob_atmo_option->lagrangian_microphysics == 1
+           && (  p_set.attr_real(p_id, CS_LAGR_DIAMETER)
+               <= cs_glob_atmo_option->bulk_droplet_d_max));
+
+      if (is_bulk_droplet || cval_t_l == nullptr)
         p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = loc_fluid_temp;
       else
         p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = cval_t_l[c_id];
