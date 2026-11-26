@@ -116,7 +116,8 @@ typedef enum {
   CS_RIJ_SCHEME_DEFAULT = 0,
   CS_RIJ_SCHEME_IMPLICIT_VISCOSITY = 1,
   CS_RIJ_SCHEME_RUSANOV = 2,
-  CS_RIJ_SCHEME_GODUNOV = 3
+  CS_RIJ_SCHEME_GODUNOV = 3,
+  CS_RIJ_SCHEME_GODUNOV_PROJECTION = 4
 
 } cs_rij_scheme_t;
 
@@ -284,7 +285,11 @@ typedef struct cs_turb_rans_model_t {
                                                 (true)
                                            - 2: CS_RIJ_SCHEME_RUSANOV (Rusanov)
                                            - 3: CS_RIJ_SCHEME_GODUNOV
-                                                (exact Godunov) */
+                                                (exact Godunov)
+                                           - 4: CS_RIJ_SCHEME_GODUNOV_PROJECTION
+                                                (Godunov-type projection
+                                                of the convective
+                                                subsystem) */
   [[deprecated("renamed to rij_discretization_scheme")]] \
   int&    irijnu{rij_discretization_scheme}; /*!< Deprecated */
   int     verbosity;    /*!< verbosity level for Rij / Rit schemes

@@ -2337,6 +2337,53 @@ cs_parameters_check(void)
               "requires cs_turb_ce4 == 0.", __func__);
   }
 
+  /* Godunov-type projection of the convective subsystem: Rij-epsilon
+     models, constant density, uniform time step, and no turbulent heat
+     flux model (thermal part not available yet) */
+
+  if (   cs_glob_turb_rans_model->rij_discretization_scheme
+      == CS_RIJ_SCHEME_GODUNOV_PROJECTION) {
+
+    if (   turb_model->order != CS_TURB_SECOND_ORDER
+        || turb_model->model == CS_TURB_RIJ_OMEGA
+        || turb_model->model == CS_TURB_LES_TAUSGS)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("while reading input data"),
+         _("rij_discretization_scheme = CS_RIJ_SCHEME_GODUNOV_PROJECTION\n"
+           "requires a Rij-epsilon model.\n"));
+
+    if (cs_glob_fluid_properties->irovar != 0)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("while reading input data"),
+         _("rij_discretization_scheme = CS_RIJ_SCHEME_GODUNOV_PROJECTION\n"
+           "requires a constant density.\n"));
+
+    if (   cs_glob_time_step_options->idtvar != CS_TIME_STEP_CONSTANT
+        && cs_glob_time_step_options->idtvar != CS_TIME_STEP_ADAPTIVE)
+      cs_parameters_error
+        (CS_ABORT_DELAYED,
+         _("while reading input data"),
+         _("rij_discretization_scheme = CS_RIJ_SCHEME_GODUNOV_PROJECTION\n"
+           "requires a uniform time step (constant or adaptive).\n"));
+
+    const int k_tfm = cs_field_key_id("turbulent_flux_model");
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      const cs_field_t *f = cs_field_by_id(f_id);
+      if (!(f->type & CS_FIELD_VARIABLE))
+        continue;
+      if (f->get_key_int(k_tfm) / 10 >= 1)
+        cs_parameters_error
+          (CS_ABORT_DELAYED,
+           _("while reading input data"),
+           _("rij_discretization_scheme = CS_RIJ_SCHEME_GODUNOV_PROJECTION\n"
+             "is not available yet with a turbulent flux model\n"
+             "(field \"%s\").\n"),
+           f->name);
+    }
+  }
+
   /* In Lagrangian with two-way coupling, k-omega SST is forbidden (not
      properly implemented) */
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
@@ -2528,7 +2575,7 @@ cs_parameters_check(void)
       _("while reading input data"),
       "cs_glob_turb_rans_model->rij_discretization_scheme",
       cs_glob_turb_rans_model->rij_discretization_scheme,
-      0, 4);
+      0, 5);
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("while reading input data"),

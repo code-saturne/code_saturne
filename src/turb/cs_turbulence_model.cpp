@@ -205,6 +205,12 @@
              \f$ \divv \left( \rho \tens{R} \right) \f$
         - 2: CS_RIJ_SCHEME_RUSANOV (Rusanov)
         - 3: CS_RIJ_SCHEME_GODUNOV (Godunov)
+        - 4: CS_RIJ_SCHEME_GODUNOV_PROJECTION: Godunov-type projection of the
+             convective subsystem (convection of the mean velocity, of the
+             Reynolds stresses and of epsilon, divergence of the Reynolds
+             stresses, production of the Reynolds stresses and of epsilon),
+             solved exactly with the jump relation J_T and averaged over
+             strips of the cells
         The goal is to improve the stability of the calculation.
         The usefulness of option 1 has however
         not been clearly demonstrated.\n Since the system is solved in

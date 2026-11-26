@@ -102,6 +102,7 @@
 #include "base/cs_turbomachinery.h"
 #include "turb/cs_turbulence_model.h"
 #include "turb/cs_turbulence_rij.h"
+#include "turb/cs_turbulence_rij_projection.h"
 #include "base/cs_velocity_pressure.h"
 #include "base/cs_vof.h"
 #include "base/cs_volume_mass_injection.h"
@@ -873,6 +874,14 @@ _div_rij(const cs_mesh_t     *m,
     if (rij_scheme == CS_RIJ_SCHEME_GODUNOV) {
 
       cs_turbulence_rij_godunov_div_rij_flux(crom, brom, tflmas, tflmab);
+    }
+
+    /* Godunov-type projection: div(R) belongs to the convective subsystem,
+       included in the projected velocity */
+    else if (rij_scheme == CS_RIJ_SCHEME_GODUNOV_PROJECTION) {
+
+      cs_array_real_fill_zero(3*n_i_faces, (cs_real_t *)tflmas);
+      cs_array_real_fill_zero(3*n_b_faces, (cs_real_t *)tflmab);
     }
     else {
 
@@ -1876,6 +1885,8 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   if (rij_scheme == CS_RIJ_SCHEME_GODUNOV)
     cs_turbulence_rij_godunov_interface_states();
+  else if (rij_scheme == CS_RIJ_SCHEME_GODUNOV_PROJECTION)
+    cs_turbulence_rij_projection();
 
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
@@ -3078,6 +3089,23 @@ _velocity_prediction(const cs_mesh_t             *m,
     ctx.wait();
   }
 
+  /* Godunov-type projection: the convection of the velocity and div(R)
+     are replaced by the explicit increment from the beginning of the time
+     step to the projected velocity */
+
+  if (rij_scheme == CS_RIJ_SCHEME_GODUNOV_PROJECTION) {
+
+    const cs_real_3_t *p_vel
+      = (const cs_real_3_t *)cs_field_by_name("algo:proj_velocity")->val;
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      const cs_real_t rovsdt = pcrom[c_id]*cell_f_vol[c_id]/dt[c_id];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        smbr[c_id][i] += rovsdt*(p_vel[c_id][i] - vela[c_id][i]);
+    });
+    ctx.wait();
+  }
+
   /* Cancel RHS in disabled cells in case spurious terms were added
      by "generic" code */
 
@@ -3133,7 +3161,8 @@ _velocity_prediction(const cs_mesh_t             *m,
      * or convection would be assembled twice for the velocity
      * equation as well -- same double-counting risk as for R (see
      * GODUNOV scheme notes in cs_turbulence_rij.cpp). */
-    if (rij_scheme == CS_RIJ_SCHEME_GODUNOV)
+    if (   rij_scheme == CS_RIJ_SCHEME_GODUNOV
+        || rij_scheme == CS_RIJ_SCHEME_GODUNOV_PROJECTION)
       eqp_loc.iconv = 0;
 
     /* Warning: in case of convergence estimators, eswork gives the estimator

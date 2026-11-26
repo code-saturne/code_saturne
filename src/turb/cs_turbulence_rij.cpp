@@ -1180,6 +1180,12 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   const int coupled_components = cs_glob_turb_rans_model->irijco;
 
+  /* Godunov-type projection: the production by the mean velocity gradient
+     belongs to the projection, so that its implicit part is removed */
+  const cs_real_t c_prod
+    = (   cs_glob_turb_rans_model->rij_discretization_scheme
+       == CS_RIJ_SCHEME_GODUNOV_PROJECTION) ? 0. : 1.;
+
   cs_real_6_t *c_st_prv = nullptr;
   int kstprv = cs_field_key_id("source_term_prev_id");
   int st_prv_id = f_rij->get_key_int(kstprv);
@@ -1394,19 +1400,20 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
                             cs::abs(eigen_vals[i]));
 
       /* Constant for the dissipation */
-      cs_real_t ceps_impl = d1s3 * cvara_ep[c_id];
+      cs_real_t ceps_impl = d1s3 * crijeps * cvara_ep[c_id];
 
       /* Identity constant */
       cs_real_t impl_id_cst = -d1s3 * crij2 * cs::min(k_prod, 0);
 
       /* Linear constant */
-      cs_real_t impl_lin_cst = eigen_max * (1.0 - crij2); /* Production + Phi2 */
+      /* Production + Phi2 */
+      cs_real_t impl_lin_cst = c_prod * eigen_max * (1.0 - crij2);
 
       cs_real_t implmat2add[3][3];
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
           cs_lnum_t ij = t2v[i][j];
-          implmat2add[i][j] =   (1.0 - crij2) * gradv[c_id][i][j]
+          implmat2add[i][j] =   c_prod * (1.0 - crij2) * gradv[c_id][i][j]
                                 - ccorio * matrot[i][j]
                                 + impl_lin_cst * st_deltaij[ij]
                                 + impl_id_cst * d1s2 * oo_matrn[ij]
@@ -1707,6 +1714,12 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
   const int coupled_components = cs_glob_turb_rans_model->irijco;
 
+  /* Godunov-type projection: the production by the mean velocity gradient
+     belongs to the projection, so that its implicit part is removed */
+  const cs_real_t c_prod
+    = (   cs_glob_turb_rans_model->rij_discretization_scheme
+       == CS_RIJ_SCHEME_GODUNOV_PROJECTION) ? 0. : 1.;
+
   cs_real_6_t *c_st_prv = nullptr;
   int st_prv_id = f_rij->get_key_int("source_term_prev_id");
   if (st_prv_id > -1)
@@ -1950,7 +1963,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                             cs::abs(eigen_vals[i]));
 
       /* Constant for the dissipation */
-      const cs_real_t ceps_impl = d1s3 * cvara_ep[c_id];
+      const cs_real_t ceps_impl = d1s3 * crijeps * cvara_ep[c_id];
 
       if (model == CS_TURB_RIJ_EPSILON_SSG) {
 
@@ -1965,13 +1978,14 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                       + d2s3 * tke * cssgr4 * cs::max(aklskl, 0);
 
         /* Linear constant */
-        impl_lin_cst = eigen_max * (1. + cssgr4 + cssgr5);
+        impl_lin_cst = eigen_max * (c_prod + cssgr4 + cssgr5);
 
         cs_real_t implmat2add[3][3];
         for (cs_lnum_t i = 0; i < 3; i++) {
           for (cs_lnum_t j = 0; j < 3; j++) {
             const cs_lnum_t _ij = t2v[i][j];
-            implmat2add[i][j] = gradv[c_id][i][j] - ccorio * matrot[i][j]
+            implmat2add[i][j] =   c_prod * gradv[c_id][i][j]
+                                - ccorio * matrot[i][j]
                                 + impl_lin_cst * st_deltaij[_ij]
                                 + impl_id_cst * d1s2 * oo_matrn[_ij]
                                 + ceps_impl * oo_matrn[_ij];
@@ -2001,13 +2015,14 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
         /* Linear constant, of type -R^(n+1)/tau */
         impl_lin_cst
-          = eigen_max * (1 + cebmr4*alpha3 + cebmr5*alpha3);
+          = eigen_max * (c_prod + cebmr4*alpha3 + cebmr5*alpha3);
 
         cs_real_t implmat2add[3][3];
         for (cs_lnum_t i = 0; i < 3; i++) {
           for (cs_lnum_t j = 0; j < 3; j++) {
             const cs_lnum_t _ij = t2v[i][j];
-            implmat2add[i][j] = gradv[c_id][i][j] - ccorio * matrot[i][j]
+            implmat2add[i][j] =   c_prod * gradv[c_id][i][j]
+                                - ccorio * matrot[i][j]
             /* time stepping of version 9 and before*/
 #if 1
                                 + (impl_lin_cst + cphiw_impl) * st_deltaij[_ij]
@@ -2342,6 +2357,12 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
   }
 
   const int coupled_components = cs_glob_turb_rans_model->irijco;
+
+  /* Godunov-type projection: the production by the mean velocity gradient
+     belongs to the projection, so that its implicit part is removed */
+  const cs_real_t c_prod
+    = (   cs_glob_turb_rans_model->rij_discretization_scheme
+       == CS_RIJ_SCHEME_GODUNOV_PROJECTION) ? 0. : 1.;
   const int st_scheme = cs_glob_turb_rans_model->source_time_stepping;
 
   cs_real_6_t *c_st_prv = nullptr;
@@ -2520,20 +2541,20 @@ _pre_solve_rij_omega(const cs_field_t  *f_rij,
                             cs::abs(eigen_vals[i]));
 
       /* Constant for the dissipation */
-      const cs_real_t ceps_impl = d1s3 * cvara_ep_c;
+      const cs_real_t ceps_impl = d1s3 * crijeps * cvara_ep_c;
 
       /* Identity constant */
       cs_real_t impl_id_cst = - d2s3 * crij1 * cs::min(k_prod, 0.)
                               + ccorio * cs::max(k_prod, 0.);
 
       /* Linear constant */
-      cs_real_t impl_lin_cst = eigen_max * (1.0 - crij2);
+      cs_real_t impl_lin_cst = c_prod * eigen_max * (1.0 - crij2);
 
       cs_real_t implmat2add[3][3];
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
           cs_lnum_t _ij = t2v[i][j];
-          implmat2add[i][j] = (1.0 - crij2) * gradv[c_id][i][j]
+          implmat2add[i][j] = c_prod * (1.0 - crij2) * gradv[c_id][i][j]
                               - ccorio * matrot[i][j]
                               + impl_lin_cst * st_deltaij[_ij]
                               + impl_id_cst * d1s2 * oo_matrn[_ij]
@@ -2727,6 +2748,12 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
   }
 
   const int coupled_components = cs_glob_turb_rans_model->irijco;
+
+  /* Godunov-type projection: the production by the mean velocity gradient
+     belongs to the projection, so that its implicit part is removed */
+  const cs_real_t c_prod
+    = (   cs_glob_turb_rans_model->rij_discretization_scheme
+       == CS_RIJ_SCHEME_GODUNOV_PROJECTION) ? 0. : 1.;
 
   cs_real_6_t *c_st_prv = nullptr;
   int st_prv_id = f_rij->get_key_int("source_term_prev_id");
@@ -3258,7 +3285,9 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
                             cs::abs(eigen_vals[i]));
 
       /* Linear constant */
-      cs_real_t impl_lin_cst = eigen_max * (1.0 - 2. * beta2); /* Production + Phi2? */
+      /* Production (absent with the projection) + Phi2: shift of
+         G - 2 beta2 S */
+      cs_real_t impl_lin_cst = eigen_max * cs::abs(c_prod - 2. * beta2);
 
 
       cs_real_t implmat2add[3][3] = {0., 0., 0.,
@@ -3283,7 +3312,8 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
            * implicitating it as an isotropic sink 5/2 delta_ij adds a
            * spurious damping of order 2 nu / y^2 on the tangential
            * components, with no counterpart in the right-hand side. */
-          implmat2add[i][j] = gradv[c_id][i][j] - ccorio * matrot[i][j]
+          implmat2add[i][j] =   c_prod * gradv[c_id][i][j]
+                           - ccorio * matrot[i][j]
                            // 2 beta2 (S R + R S)
                            - 2. * beta2 * st_sij[ij]
                            // 2 imp_phiw N
@@ -4448,6 +4478,23 @@ _solve_epsilon(int              phase_id,
     ctx.wait();
   }
 
+  /* Godunov-type projection: the convection and the production of epsilon
+     are replaced by the explicit increment from the beginning of the time
+     step to the projected epsilon (prod is zero) */
+
+  const bool is_projection
+    = (   cs_glob_turb_rans_model->rij_discretization_scheme
+       == CS_RIJ_SCHEME_GODUNOV_PROJECTION);
+
+  if (is_projection) {
+    const cs_real_t *p_eps = cs_field_by_name("algo:proj_epsilon")->val;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      rhs[c_id] +=   crom[c_id]*cell_f_vol[c_id]/dt[c_id]
+                   * (p_eps[c_id] - cvara_ep[c_id]);
+    });
+    ctx.wait();
+  }
+
   cs_solid_zone_set_zero_on_cells(1, rhs);
 
   /* Get boundary conditions coefficients */
@@ -4462,6 +4509,9 @@ _solve_epsilon(int              phase_id,
   eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
   eqp_loc.theta = thetv;
   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
+
+  if (is_projection)
+    eqp_loc.iconv = 0;
 
   cs_array<cs_real_t> dpvar(n_cells_ext, cs_alloc_mode);
 
@@ -4935,7 +4985,8 @@ cs_turbulence_rij(int phase_id)
   /* Compute the production term for Rij
    * ----------------------------------- */
 
-  if (rij_scheme != CS_RIJ_SCHEME_GODUNOV) {
+  if (   rij_scheme != CS_RIJ_SCHEME_GODUNOV
+      && rij_scheme != CS_RIJ_SCHEME_GODUNOV_PROJECTION) {
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
@@ -4953,6 +5004,27 @@ cs_turbulence_rij(int phase_id)
                             + gradv(c_id, i, 2) * cvara_rij[c_id][t2v[2][j]]);
       }
 
+    });
+    ctx.wait();
+  }
+
+  /* Godunov-type projection: the convection and the production of Rij are
+     replaced by the explicit increment from the beginning of the time step
+     to the projected Reynolds stresses; the production is zero for the
+     other terms of the model (pressure-strain, epsilon) */
+
+  else if (rij_scheme == CS_RIJ_SCHEME_GODUNOV_PROJECTION) {
+
+    cs_array_real_fill_zero(6*n_cells_ext,
+                            (cs_real_t *)prod.data<cs_real_6_t>());
+
+    const cs_real_6_t *p_rij
+      = (const cs_real_6_t *)cs_field_by_name("algo:proj_rij")->val;
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      const cs_real_t rovsdt = crom[c_id]*cell_f_vol[c_id]/dt[c_id];
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        rhs(c_id, ij) += rovsdt*(p_rij[c_id][ij] - cvara_rij[c_id][ij]);
     });
     ctx.wait();
   }
@@ -5329,7 +5401,8 @@ cs_turbulence_rij(int phase_id)
    * here) -- this exact double-counting was the cause of a real
    * regression (reduced mixing-layer growth rate) in a previous
    * iteration of this scheme. */
-  if (rij_scheme == CS_RIJ_SCHEME_GODUNOV)
+  if (   rij_scheme == CS_RIJ_SCHEME_GODUNOV
+      || rij_scheme == CS_RIJ_SCHEME_GODUNOV_PROJECTION)
     eqp_loc.iconv = 0;
 
   cs_equation_iterative_solve_tensor(cs_glob_time_step_options->idtvar,

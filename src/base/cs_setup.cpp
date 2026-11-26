@@ -3403,6 +3403,30 @@ _additional_fields_stage_3(void)
 
   }
 
+  /* Godunov-type projection: projected cell states */
+
+  if (rij_scheme == CS_RIJ_SCHEME_GODUNOV_PROJECTION) {
+
+    cs_field_create("algo:proj_velocity",
+                    CS_FIELD_INTENSIVE,
+                    CS_MESH_LOCATION_CELLS,
+                    3,
+                    false);
+
+    cs_field_create("algo:proj_rij",
+                    CS_FIELD_INTENSIVE,
+                    CS_MESH_LOCATION_CELLS,
+                    6,
+                    false);
+
+    cs_field_create("algo:proj_epsilon",
+                    CS_FIELD_INTENSIVE,
+                    CS_MESH_LOCATION_CELLS,
+                    1,
+                    false);
+
+  }
+
   /* Boundary mass flux field */
 
   previous_val = false;
