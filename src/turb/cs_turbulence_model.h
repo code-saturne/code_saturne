@@ -53,6 +53,7 @@ typedef enum {
   CS_TURB_K_EPSILON_LIN_PROD = 21,
   CS_TURB_K_EPSILON_LS = 22,
   CS_TURB_K_EPSILON_QUAD = 23,
+  CS_TURB_K_EPSILON_CUBIC = 24,
   CS_TURB_RIJ_EPSILON_LRR = 30,
   CS_TURB_RIJ_EPSILON_SSG = 31,
   CS_TURB_RIJ_EPSILON_EBRSM = 32,
@@ -182,6 +183,7 @@ struct cs_turb_model_t {
                          k-epsilon model
                      - CS_TURB_K_EPSILON_QUAD: Baglietto et al. low Re
                          k epsilon model
+                     - CS_TURB_K_EPSILON_CUBIC: cubic k epsilon model
                      - CS_TURB_RIJ_EPSILON_LRR: Rij-epsilon (LRR)
                      - CS_TURB_RIJ_EPSILON_SSG: Rij-epsilon (SSG)
                      - CS_TURB_RIJ_EPSILON_EBRSM: Rij-epsilon (EBRSM)
@@ -268,6 +270,12 @@ typedef struct cs_turb_rans_model_t {
                                - 0: false
                                Useful if and only if RANS models are activated
                                and gravity is non-zero. */
+
+  int     has_yap_term; /*!< take yap term in k-epsilon models
+                               - 1: true
+                               - 0: false (default)
+                               Useful if and only if RANS models are activated. */
+
   int     ikecou;       /*!< partially coupled version of
                            k-epsilon (only for iturb=20)
                            - 1: true (default)
@@ -495,6 +503,7 @@ typedef struct cs_turb_rans_model_t {
       idirsm(0),
       igrhok(0),
       has_buoyant_term(1),
+      has_yap_term(1),
       ikecou(0),
       reinit_turb(1),
       irijco(1),
@@ -658,6 +667,7 @@ extern double cs_turb_cddes;
 extern double cs_turb_csas;
 extern double cs_turb_csas_eta2;
 extern double cs_turb_chtles_bt0;
+extern double cs_turb_cnl0;
 extern double cs_turb_cnl1;
 extern double cs_turb_cnl2;
 extern double cs_turb_cnl3;

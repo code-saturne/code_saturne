@@ -2242,8 +2242,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* Quadratic Baglietto k-epsilon model
          =================================== */
 
-      else if (model == CS_TURB_K_EPSILON_QUAD
-          && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
+      else if (  (   model == CS_TURB_K_EPSILON_QUAD
+                  || model == CS_TURB_K_EPSILON_CUBIC)
+               && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
 
         cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
         cs_real_t *coefb_ep = f_eps->bc_coeffs->b;

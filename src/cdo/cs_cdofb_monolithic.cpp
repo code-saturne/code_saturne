@@ -2384,6 +2384,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
       case CS_TURB_K_EPSILON_LIN_PROD:
       case CS_TURB_K_EPSILON_LS:
       case CS_TURB_K_EPSILON_QUAD:
+      case CS_TURB_K_EPSILON_CUBIC:
       case CS_TURB_K_OMEGA:
         switch (mom_eqp->default_enforcement) {
           case CS_PARAM_BC_ENFORCE_ALGEBRAIC:

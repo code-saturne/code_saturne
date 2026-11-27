@@ -512,10 +512,11 @@
       <Model>CS_TURB_K_EPSILON_LIN_PROD</Model>
       <Model>CS_TURB_K_EPSILON_LS</Model>
       <Model>CS_TURB_K_EPSILON_QUAD</Model>
+      <Model>CS_TURB_K_EPSILON_CUBIC</Model>
       <Model>CS_TURB_V2F_PHI</Model>
       <Model>CS_TURB_V2F_BL_V2K</Model>
     </ForModels>
-    <ErrorMessage>ikecou must be 0 for k-epsilon-PL, k-epsilon-LS, k-epsilon-Quad, v2f-phi, and v2f-BL-v2/k models</ErrorMessage>
+    <ErrorMessage>ikecou must be 0 for k-epsilon-PL, k-epsilon-LS, k-epsilon-Quad, k-epsilon-cubic, v2f-phi, and v2f-BL-v2/k models</ErrorMessage>
   </Constraint>
 
   <Constraint Target="iclkep" Type="not_available_for_models">

@@ -96,6 +96,7 @@
         - CS_TURB_K_EPSILON_LS: Launder-Sharma \f$ k-\varepsilon \f$ model
         - CS_TURB_K_EPSILON_QUAD: Baglietto et al. quadratic
                                    \f$ k-\varepsilon \f$ model
+        - CS_TURB_K_EPSILON_CUBIC: Cubic model
         - CS_TURB_RIJ_EPSILON_LRR: \f$ R_{ij}-\epsilon \f$ (LRR)
         - CS_TURB_RIJ_EPSILON_SSG: \f$ R_{ij}-\epsilon \f$ (SSG)
         - CS_TURB_RIJ_EPSILON_EBRSM: \f$ R_{ij}-\epsilon \f$ (EBRSM)
@@ -178,6 +179,12 @@
         Useful if and only if RANS models are activated and
         (\ref cs_physical_constants_t::gravity "gravity")
         \f$\ne\f$ (0,0,0) and the density is not uniform.
+  \var  cs_turb_rans_model_t::has_yap_term
+        Indicates if the yap term is taken
+        into account in the equations of \f$k-\epsilon\f$.\n
+        - 1: true
+        - 0: false (default)
+        Useful if and only if RANS models are activated.
   \var  cs_turb_rans_model_t::ikecou
         Indicates if the coupling of the source terms of
         \f$k\f$ and \f$\epsilon\f$ or \f$k\f$ and \f$\omega\f$
@@ -964,7 +971,9 @@ double cs_turb_cv2fet = 110.0;
 /*!
  * Constants for the Baglietto et al. quadratic k-epsilon model.
  * Useful if and only if \ref model = CS_TURB_K_EPSILON_QUAD
+ * or CS_TURB_K_EPSILON_CUBIC
  */
+double cs_turb_cnl0 = 0.3;
 double cs_turb_cnl1 = 0.8;
 double cs_turb_cnl2 = 11.;
 double cs_turb_cnl3 = 4.5;
@@ -1062,6 +1071,9 @@ _turbulence_model_enum_name(cs_turb_model_type_t  id)
   case CS_TURB_K_EPSILON_QUAD:
     s = "CS_TURB_K_EPSILON_QUAD";
     break;
+  case CS_TURB_K_EPSILON_CUBIC:
+    s = "CS_TURB_K_EPSILON_CUBIC";
+    break;
   case CS_TURB_RIJ_EPSILON_LRR:
     s = "CS_TURB_RIJ_EPSILON_LRR";
     break;
@@ -1138,6 +1150,7 @@ cs_turbulence_init_models(void)
   else if (cs::any_eq(_turb_model.model,
                       CS_TURB_K_EPSILON, CS_TURB_K_EPSILON_LIN_PROD,
                       CS_TURB_K_EPSILON_LS, CS_TURB_K_EPSILON_QUAD,
+                      CS_TURB_K_EPSILON_CUBIC,
                       CS_TURB_V2F_PHI, CS_TURB_V2F_BL_V2K,
                       CS_TURB_K_OMEGA, CS_TURB_SPALART_ALLMARAS) ) {
     _turb_model.type = CS_TURB_RANS;
@@ -1473,6 +1486,9 @@ cs_turbulence_model_name(cs_turb_model_type_t  id)
   case CS_TURB_K_EPSILON_QUAD:
     s = _("Baglietto et al. quadratic k-epsilon model");
     break;
+  case CS_TURB_K_EPSILON_CUBIC:
+    s = _("cubic k-epsilon model");
+    break;
   case CS_TURB_RIJ_EPSILON_LRR:
     s = _("Rij-epsilon (LRR) model");
     break;
@@ -1618,16 +1634,19 @@ cs_turb_model_log_setup(void)
   }
   else if (cs::any_eq(turb_model->model,
                       CS_TURB_K_EPSILON, CS_TURB_K_EPSILON_LIN_PROD,
-                      CS_TURB_K_EPSILON_LS, CS_TURB_K_EPSILON_QUAD)) {
+                      CS_TURB_K_EPSILON_LS, CS_TURB_K_EPSILON_QUAD,
+                      CS_TURB_K_EPSILON_CUBIC)) {
 
     cs_log_printf
       (CS_LOG_SETUP,
        _("    uref:             %14.5e (Characteristic velocity)\n"
          "    ikecou:           %14d (k-epsilon coupling mode)\n"
-         "    has_buoyant_term: %14d (Account for gravity)\n"),
+         "    has_buoyant_term: %14d (Account for gravity)\n"
+         "    has_yap_term:     %14d\n"),
        cs_glob_turb_ref_values->uref,
        cs_glob_turb_rans_model->ikecou,
-       cs_glob_turb_rans_model->has_buoyant_term);
+       cs_glob_turb_rans_model->has_buoyant_term,
+       cs_glob_turb_rans_model->has_yap_term);
 
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
@@ -1919,7 +1938,8 @@ cs_turb_constants_log_setup(void)
 
   if (cs::any_eq(turb_model->model,
                  CS_TURB_K_EPSILON, CS_TURB_K_EPSILON_LIN_PROD,
-                 CS_TURB_K_EPSILON_LS, CS_TURB_K_EPSILON_QUAD))
+                 CS_TURB_K_EPSILON_LS, CS_TURB_K_EPSILON_QUAD,
+                 CS_TURB_K_EPSILON_CUBIC))
     cs_log_printf
       (CS_LOG_SETUP,
        _("    ce1:         %14.5e (Cepsilon 1: production coef.)\n"

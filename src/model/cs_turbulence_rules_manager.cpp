@@ -658,6 +658,7 @@ cs_turbulence_rules_manager::get_model_constant_name
     case 21: return "CS_TURB_K_EPSILON_LIN_PROD";
     case 22: return "CS_TURB_K_EPSILON_LS";
     case 23: return "CS_TURB_K_EPSILON_QUAD";
+    case 24: return "CS_TURB_K_EPSILON_CUBIC";
     case 30: return "CS_TURB_RIJ_EPSILON_LRR";
     case 31: return "CS_TURB_RIJ_EPSILON_SSG";
     case 32: return "CS_TURB_RIJ_EPSILON_EBRSM";

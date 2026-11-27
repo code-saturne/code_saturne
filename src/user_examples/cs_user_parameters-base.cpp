@@ -450,6 +450,7 @@ cs_user_model(void)
    *     Linear Production (LP) correction
    *   CS_TURB_K_EPSILON_LS: Launder-Sharma low Re k-epsilon model
    *   CS_TURB_K_EPSILON_QUAD: Baglietto et al. low Re
+   *   CS_TURB_K_EPSILON_CUBIC: Cubic model
    *   CS_TURB_RIJ_EPSILON_LRR: Rij-epsilon (LRR)
    *   CS_TURB_RIJ_EPSILON_SSG: Rij-epsilon (SSG)
    *   CS_TURB_RIJ_EPSILON_EBRSM: Rij-epsilon (EBRSM)

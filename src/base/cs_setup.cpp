@@ -2329,6 +2329,7 @@ _additional_fields_stage_2(void)
    * and for Lagrangian multilayer deposition for DRSM models, needed for inlets */
   cs_wall_distance_options_t *wdo = cs_get_glob_wall_distance_options();
   if (   cs_glob_turb_model->model == CS_TURB_K_EPSILON_QUAD
+      || cs_glob_turb_model->model == CS_TURB_K_EPSILON_CUBIC
       || cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
       || (   cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_LRR
           && cs_glob_turb_rans_model->irijec == 1)

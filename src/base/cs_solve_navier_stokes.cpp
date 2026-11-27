@@ -909,8 +909,9 @@ _div_rij(const cs_mesh_t     *m,
     }
   }
 
-  /* Baglietto et al. quadratic k-epislon model */
-  else if (cs_glob_turb_model->model == CS_TURB_K_EPSILON_QUAD) {
+  /* Baglietto et al. quadratic k-epsilon model */
+  else if (   cs_glob_turb_model->model == CS_TURB_K_EPSILON_QUAD
+           || cs_glob_turb_model->model == CS_TURB_K_EPSILON_CUBIC) {
 
     cs_real_6_t *rij = nullptr;
     CS_MALLOC_HD(rij, n_cells_ext, cs_real_6_t, cs_alloc_mode);
@@ -2701,7 +2702,8 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   if (   iterns == 1
       && (   cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
-          || cs_glob_turb_model->model == CS_TURB_K_EPSILON_QUAD)) {
+          || cs_glob_turb_model->model == CS_TURB_K_EPSILON_QUAD
+          || cs_glob_turb_model->model == CS_TURB_K_EPSILON_CUBIC)) {
 
     cs_field_t *f_drij = cs_field_by_name_try("algo:rij_divergence");
     if (f_drij != nullptr) {
