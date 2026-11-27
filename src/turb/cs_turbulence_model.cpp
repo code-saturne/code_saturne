@@ -1595,8 +1595,7 @@ cs_turb_model_log_setup(void)
 
   if (wall_fns->iwallf != CS_WALL_F_UNSET)
     cs_log_printf(CS_LOG_SETUP,
-                  _("    iwallf                      (wall function:\n"
-                    "                                 %s)\n"),
+                  _("    iwallf:             %s (wall function)\n"),
                   iwallf_value_str[wall_fns->iwallf]);
 
   const char *iwalfs_value_str[]
@@ -1609,12 +1608,11 @@ cs_turb_model_log_setup(void)
   if (wall_fns->iwalfs != CS_WALL_F_S_UNSET)
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    iwalfs                      (Scalar wall function:\n"
-         "                                 %s)\n"),
+       _("    iwalfs:             %s (Scalar wall function)\n"),
        iwalfs_value_str[wall_fns->iwalfs]);
 
   cs_log_printf(CS_LOG_SETUP,
-                _("    ypluli:      %14.5e (Limit Y+)\n\n"),
+                _("    ypluli:             %g (Limit Y+)\n\n"),
                 wall_fns->ypluli);
 
   const char *igrhok_value_str[]
@@ -1622,13 +1620,13 @@ cs_turb_model_log_setup(void)
        N_("1 (Grad(rho k) in velocity equation)")};
 
   cs_log_printf(CS_LOG_SETUP,
-                _("    igrhok:        %s\n"),
+                _("    igrhok:             %s\n"),
                 _(igrhok_value_str[cs_glob_turb_rans_model->igrhok]));
 
   if (turb_model->model == CS_TURB_MIXING_LENGTH) {
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("    xlomlg:      %14.5e (Characteristic length)\n"),
+                  _("    xlomlg:             %ge (Characteristic length)\n"),
                   cs_glob_turb_rans_model->xlomlg);
 
   }
@@ -1639,10 +1637,10 @@ cs_turb_model_log_setup(void)
 
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    uref:             %14.5e (Characteristic velocity)\n"
-         "    ikecou:           %14d (k-epsilon coupling mode)\n"
-         "    has_buoyant_term: %14d (Account for gravity)\n"
-         "    has_yap_term:     %14d\n"),
+       _("    uref:               %g (Characteristic velocity)\n"
+         "    ikecou:             %d (k-epsilon coupling mode)\n"
+         "    has_buoyant_term:   %d (Account for gravity)\n"
+         "    has_yap_term:       %d\n"),
        cs_glob_turb_ref_values->uref,
        cs_glob_turb_rans_model->ikecou,
        cs_glob_turb_rans_model->has_buoyant_term,
@@ -1663,8 +1661,8 @@ cs_turb_model_log_setup(void)
                   __func__);
 
       cs_log_printf(CS_LOG_SETUP,
-                    _("    relaxv:      %14.5e for k (Relaxation)\n"
-                      "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
+                    _("    relaxv:             %g for k (Relaxation)\n"
+                      "    relaxv:             %g for epsilon (Relaxation)\n"),
                     eqp_k->relaxv, eqp_e->relaxv);
 
     }
@@ -1674,33 +1672,32 @@ cs_turb_model_log_setup(void)
   }
   else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
-    cs_log_printf(CS_LOG_SETUP,
-                  _("    uref:             %14.5e (Characteristic velocity)\n"
-                    "    reinit_turb:      %14d (Advanced re-init)\n"
-                    "    irijco:           %14d (Coupled resolution)\n"
-                    "    rij_discret_sch:  %14d\n"
-                    "                      (1: Stab, 2: Rusanov, 3: Godunov)\n"
-                    "    source_time_step: %14d\n"
-                    "                      (0: Standard, 1: Exp, 2: Var tau)\n"
-                    "    irijrb:           %14d (Reconstruct at boundaries)\n"
-                    "    has_buoyant_term: %14d (Account for gravity)\n"
-                    "    iclsyr:           %14d (Symmetry implicitation)\n"
-                    "    iclptr:           %14d (Wall implicitation)\n"
-                    "    ikwcln:           %14d (Wall boundary condition"
-                                                " on omega in k-omega SST)\n"
-                    "    dissip_buo_mdl    %14d (Turbulent dissipation"
-                                                " buoyant production model)\n"),
-                  cs_glob_turb_ref_values->uref,
-                  cs_glob_turb_rans_model->reinit_turb,
-                  cs_glob_turb_rans_model->irijco,
-                  cs_glob_turb_rans_model->rij_discretization_scheme,
-                  cs_glob_turb_rans_model->source_time_stepping,
-                  cs_glob_turb_rans_model->irijrb,
-                  cs_glob_turb_rans_model->has_buoyant_term,
-                  cs_glob_turb_rans_model->iclsyr,
-                  cs_glob_turb_rans_model->iclptr,
-                  cs_glob_turb_rans_model->ikwcln,
-                  cs_glob_turb_rans_model->dissip_buo_mdl);
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    uref:               %g (Characteristic velocity)\n"
+         "    reinit_turb:        %d (Advanced re-init)\n"
+         "    irijco:             %d (Coupled resolution)\n"
+         "    rij_discret_sch:    %d (1: Stab, 2: Rusanov, 3: Godunov)\n"
+         "    source_time_step:   %d (0: Standard, 1: Exp, 2: Var tau)\n"
+         "    irijrb:             %d (Reconstruct at boundaries)\n"
+         "    has_buoyant_term:   %d (Account for gravity)\n"
+         "    iclsyr:             %d (Symmetry implicitation)\n"
+         "    iclptr:             %d (Wall implicitation)\n"
+         "    ikwcln:             %d (Wall boundary condition"
+         " on omega in k-omega SST)\n"
+         "    dissip_buo_mdl      %d (Turbulent dissipation"
+         " buoyant production model)\n"),
+       cs_glob_turb_ref_values->uref,
+       cs_glob_turb_rans_model->reinit_turb,
+       cs_glob_turb_rans_model->irijco,
+       cs_glob_turb_rans_model->rij_discretization_scheme,
+       cs_glob_turb_rans_model->source_time_stepping,
+       cs_glob_turb_rans_model->irijrb,
+       cs_glob_turb_rans_model->has_buoyant_term,
+       cs_glob_turb_rans_model->iclsyr,
+       cs_glob_turb_rans_model->iclptr,
+       cs_glob_turb_rans_model->ikwcln,
+       cs_glob_turb_rans_model->dissip_buo_mdl);
 
     int idirsm = cs_glob_turb_rans_model->idirsm;
     if (idirsm < 0 || idirsm > 1)
@@ -1712,12 +1709,12 @@ cs_turb_model_log_setup(void)
          "<unknown>"};
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("    idirsm:      %14d (%s)\n"),
+                  _("    idirsm:             %d (%s)\n"),
                   idirsm, s_turb_diff_model[idirsm]);
 
     if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR) {
       cs_log_printf(CS_LOG_SETUP,
-                    _("    irijec:      %14d (Wall echo terms)\n"),
+                    _("    irijec:           %d (Wall echo terms)\n"),
                     cs_glob_turb_rans_model->irijec);
     }
 
@@ -1728,28 +1725,30 @@ cs_turb_model_log_setup(void)
                    CS_TURB_LES_SMAGO_CONST,
                    CS_TURB_LES_SMAGO_DYN,
                    CS_TURB_LES_KSGS) )
-      cs_log_printf(CS_LOG_SETUP,
-                    _("    csmago:      %14.5e (Smagorinsky constant)\n"
-                      "    xlesfl:      %14.5e (Filter with in a cell is)\n"
-                      "    ales:        %14.5e (written as)\n"
-                      "    bles:        %14.5e (xlesfl*(ales*volume)**(bles))\n"
-                      "    idries:      %14d (=1 Van Driest damping)\n"
-                      "    cdries:      %14.5e (Van Driest constant)\n"),
-                    cs_turb_csmago, cs_turb_xlesfl,
-                    cs_turb_ales, cs_turb_bles, cs_glob_turb_les_model->idries,
-                    cs_turb_cdries);
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    csmago:             %g (Smagorinsky constant)\n"
+           "    xlesfl:             %g (Filter with in a cell is)\n"
+           "    ales:               %g (written as)\n"
+           "    bles:               %g (xlesfl*(ales*volume)**(bles))\n"
+           "    idries:             %d (=1 Van Driest damping)\n"
+           "    cdries:             %g (Van Driest constant)\n"),
+         cs_turb_csmago, cs_turb_xlesfl,
+         cs_turb_ales, cs_turb_bles, cs_glob_turb_les_model->idries,
+         cs_turb_cdries);
     if (turb_model->model == CS_TURB_LES_SMAGO_DYN)
-      cs_log_printf(CS_LOG_SETUP,
-                    _("    xlesfd:      %14.5e (Ratio between the explicit)\n"
-                      "                                (filter and LES filter)\n"
-                      "                                (recommended value: 1.5)\n"
-                      "    smagmx:      %14.5e (Max Smagorinsky in the)\n"
-                      "                                (dynamic model case)\n"),
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    xlesfd:             %g (Ratio between the explicit)\n"
+           "                                (filter and LES filter)\n"
+           "                                (recommended value: 1.5)\n"
+           "    smagmx:             %g (Max Smagorinsky in the)\n"
+           "                                (dynamic model case)\n"),
                    cs_turb_xlesfd, cs_turb_csmago_max);
 
     if (turb_model->model == CS_TURB_LES_WALE)
       cs_log_printf(CS_LOG_SETUP,
-                    _("    cwale:       %14.5e (WALE model constant)\n"),
+                    _("    cwale:              %g (WALE model constant)\n"),
                     cs_turb_cwale);
 
 
@@ -1757,9 +1756,9 @@ cs_turb_model_log_setup(void)
   else if (turb_model->model == CS_TURB_V2F_PHI) {
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("    uref:             %14.5e (Characteristic velocity)\n"
-                    "    ikecou:           %14d (k-epsilon coupling mode)\n"
-                    "    has_buoyant_term: %14d (Account for gravity)\n"),
+                  _("    uref:               %g (Characteristic velocity)\n"
+                    "    ikecou:             %d (k-epsilon coupling mode)\n"
+                    "    has_buoyant_term:   %d (Account for gravity)\n"),
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->ikecou,
                   cs_glob_turb_rans_model->has_buoyant_term);
@@ -1779,8 +1778,8 @@ cs_turb_model_log_setup(void)
                   __func__);
 
       cs_log_printf(CS_LOG_SETUP,
-                    _("    relaxv:      %14.5e for k (Relaxation)\n"
-                      "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
+                    _("    relaxv:             %g for k (Relaxation)\n"
+                      "    relaxv:             %g for epsilon (Relaxation)\n"),
                     eqp_k->relaxv, eqp_e->relaxv);
 
     }
@@ -1798,10 +1797,10 @@ cs_turb_model_log_setup(void)
          N_("CS_HYBRID_HTLES (Hybrid Temporal LES)")};
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("    uref:             %14.5e (Characteristic velocity)\n"
-                    "    ikecou:           %14d (k-epsilon coupling mode)\n"
-                    "    hybrid_turb:      %s\n"
-                    "    has_buoyant_term: %14d (Account for gravity)\n"),
+                  _("    uref:               %g (Characteristic velocity)\n"
+                    "    ikecou:             %d (k-epsilon coupling mode)\n"
+                    "    hybrid_turb:        %s\n"
+                    "    has_buoyant_term:   %d (Account for gravity)\n"),
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->ikecou,
                   hybrid_turb_value_str[turb_model->hybrid_turb],
@@ -1822,8 +1821,8 @@ cs_turb_model_log_setup(void)
                   __func__);
 
       cs_log_printf(CS_LOG_SETUP,
-                    _("    relaxv:      %14.5e for k (Relaxation)\n"
-                      "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
+                    _("    relaxv:             %g for k (Relaxation)\n"
+                      "    relaxv:             %g for epsilon (Relaxation)\n"),
                     eqp_k->relaxv, eqp_e->relaxv);
 
     }
@@ -1841,11 +1840,11 @@ cs_turb_model_log_setup(void)
          N_("CS_HYBRID_HTLES (Hybrid Temporal LES)")};
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("    uref:             %14.5e (Characteristic velocity)\n"
-                    "    ikecou:           %14d (k-epsilon coupling mode)\n"
-                    "    reinit_turb:      %14d (Advanced re-init)\n"
-                    "    hybrid_turb:      %s\n"
-                    "    has_buoyant_term: %14d (Account for gravity)\n"),
+                  _("    uref:               %g (Characteristic velocity)\n"
+                    "    ikecou:             %d (k-epsilon coupling mode)\n"
+                    "    reinit_turb:        %d (Advanced re-init)\n"
+                    "    hybrid_turb:        %s\n"
+                    "    has_buoyant_term:   %d (Account for gravity)\n"),
                   cs_glob_turb_ref_values->uref,
                   cs_glob_turb_rans_model->ikecou,
                   cs_glob_turb_rans_model->reinit_turb,
@@ -1867,8 +1866,8 @@ cs_turb_model_log_setup(void)
                   __func__);
 
       cs_log_printf(CS_LOG_SETUP,
-                    _("    relaxv:      %14.5e for k (Relaxation)\n"
-                      "    relaxv:      %14.5e for omega (Relaxation)\n"),
+                    _("    relaxv:             %g for k (Relaxation)\n"
+                      "    relaxv:             %g for omega (Relaxation)\n"),
                     eqp_k->relaxv, eqp_o->relaxv);
 
     }
@@ -1888,8 +1887,8 @@ cs_turb_model_log_setup(void)
                 __func__);
 
     cs_log_printf(CS_LOG_SETUP,
-                  _("    uref:        %14.5e (Characteristic velocity)\n"
-                    "    relaxv:      %14.5e for nu (Relaxation)\n"),
+                  _("    uref:               %g (Characteristic velocity)\n"
+                    "    relaxv:             %g for nu (Relaxation)\n"),
                   cs_glob_turb_ref_values->uref,
                   eqp_nusa->relaxv);
 
@@ -1902,7 +1901,7 @@ cs_turb_model_log_setup(void)
       = {N_("0 (no rotation/curvature correction)"),
          N_("1 (rotation/curvature correction)")};
     cs_log_printf(CS_LOG_SETUP,
-                  _("    irccor:        %s\n"),
+                  _("    irccor:             %s\n"),
                   irccor_value_str[cs_glob_turb_rans_model->irccor]);
   }
 }
