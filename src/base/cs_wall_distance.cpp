@@ -498,7 +498,7 @@ cs_wall_distance(int iterns)
 
         mmprpl = rd_1i_1r.i[0];
         cs_parall_sum(1, CS_LNUM_TYPE, &mmprpl);
-        cs_parall_min(1, CS_REAL_TYPE, &rd_1i_1r.r[0]);
+        cs_parall_min(1, CS_FLOAT, &rd_1i_1r.r[0]);
 
         n_iter++;
         if (n_iter > 10)

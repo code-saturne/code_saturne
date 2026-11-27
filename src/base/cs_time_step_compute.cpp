@@ -445,7 +445,7 @@ cs_local_time_step_compute(int  itrale)
 
           ctx.wait();
 
-          cs_parall_min(1, CS_REAL_TYPE, &w1min.r[0]);
+          cs_parall_min(1, CS_DOUBLE, &w1min.r[0]);
 
           ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
             w1[c_id] = w1min.r[0];
@@ -503,7 +503,7 @@ cs_local_time_step_compute(int  itrale)
 
           ctx.wait();
 
-          cs_parall_min(1, CS_REAL_TYPE, &w2min.r[0]);
+          cs_parall_min(1, CS_DOUBLE, &w2min.r[0]);
 
           ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
             w2[c_id] = w2min.r[0];
@@ -549,7 +549,7 @@ cs_local_time_step_compute(int  itrale)
 
           ctx.wait();
 
-          cs_parall_min(1, CS_REAL_TYPE, &w3min.r[0]);
+          cs_parall_min(1, CS_DOUBLE, &w3min.r[0]);
 
           ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
             dam[c_id] = w3min.r[0];
@@ -658,7 +658,7 @@ cs_local_time_step_compute(int  itrale)
 
           ctx.wait();
 
-          cs_parall_min(1, CS_REAL_TYPE, &w3min.r[0]);
+          cs_parall_min(1, CS_DOUBLE, &w3min.r[0]);
 
           ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
             dt[c_id] = w3min.r[0];

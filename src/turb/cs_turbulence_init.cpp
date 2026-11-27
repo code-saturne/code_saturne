@@ -256,7 +256,7 @@ cs_turbulence_init_clip_and_verify(void)
     });
     ctx.wait();
 
-    cs_parall_min(2, CS_REAL_TYPE, &rd_ke.r[0]);
+    cs_parall_min(2, CS_DOUBLE, &rd_ke.r[0]);
 
     cs_real_t xekmin = rd_ke.r[0], xepmin = rd_ke.r[1];
 
@@ -309,8 +309,8 @@ cs_turbulence_init_clip_and_verify(void)
 
       ctx.wait();
 
-      cs_parall_min(n_minmax, CS_REAL_TYPE, &rd.r[0]);
-      cs_parall_max(n_minmax, CS_REAL_TYPE, &rd.r[2]);
+      cs_parall_min(n_minmax, CS_DOUBLE, &rd.r[0]);
+      cs_parall_max(n_minmax, CS_DOUBLE, &rd.r[2]);
 
       /* For consistency with cs_turbulence_v2f.c:_clip_v2f,
          we clip only to 0 and not to 2 */
@@ -386,7 +386,7 @@ cs_turbulence_init_clip_and_verify(void)
 
     ctx.wait();
 
-    cs_parall_min(4, CS_REAL_TYPE, &rd_rij.r[0]);
+    cs_parall_min(4, CS_DOUBLE, &rd_rij.r[0]);
 
     if (   rd_rij.r[0] >= 0 && rd_rij.r[1] >= 0
         && rd_rij.r[2] >= 0 && rd_rij.r[3] >= 0) {
@@ -445,7 +445,7 @@ cs_turbulence_init_clip_and_verify(void)
     });
 
     ctx.wait();
-    cs_parall_min(2, CS_REAL_TYPE, &rd_komg.r[0]);
+    cs_parall_min(2, CS_DOUBLE, &rd_komg.r[0]);
 
     /* For k-omega, clip only to 0 */
     if (rd_komg.r[0] < 0. || rd_komg.r[1] <= 0.) {
@@ -474,7 +474,7 @@ cs_turbulence_init_clip_and_verify(void)
       res.r[0] = cvar_nusa[c_id];
     });
     ctx.wait();
-    cs_parall_min(1, CS_REAL_TYPE, &rd_sa.r[0]);
+    cs_parall_min(1, CS_DOUBLE, &rd_sa.r[0]);
 
     /* For Spalart-Allmaras, clip only to 0 */
 

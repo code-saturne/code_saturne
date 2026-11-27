@@ -1628,7 +1628,7 @@ _rad_transfer_solve(int bc_type[])
       ctx.wait();
 
       /* Parallel reductions */
-      cs_parall_max(2, CS_REAL_TYPE, rd_ck.r);
+      cs_parall_max(2, CS_DOUBLE, rd_ck.r);
 
       cs_real_t ckumax = rd_ck.r[0], ckdmax = rd_ck.r[1];
 
