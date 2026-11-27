@@ -984,23 +984,23 @@ cs_turbulence_ke(int              phase_id,
       /* Cubic terms */
       if (cubic) {
         cs_real_t xcmu2 = cs_math_pow2(xcmu);
-        double cs_turb_cnl6 = -10 * xcmu2;
-        double cs_turb_cnl7 = 0.;
-        double cs_turb_cnl8 = -5 * xcmu2;
-        double cs_turb_cnl9 = -5 * xcmu2;
+        double cnl6 = -10. * xcmu2;
+        double cnl7 = 0.;
+        double cnl8 = -5. * xcmu2;
+        double cnl9 = -5. * xcmu2;
 
-        cs_real_t xqc4 =   cs_turb_cnl6
-                         / ((  cs_turb_cnl4
-                             + cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
-        cs_real_t xqc5 =   cs_turb_cnl7
-                         / ((  cs_turb_cnl4
-                             + cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
-        cs_real_t xqc6 =   cs_turb_cnl8
-                         /  ((  cs_turb_cnl4
-                              + cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
-        cs_real_t xqc7 =   cs_turb_cnl9
-                         /((  cs_turb_cnl4
-                            + cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
+        cs_real_t xqc4 =   cnl6
+                         / ((  cnl4
+                             + cnl5*cs_math_pow3(xss))*xcmu);
+        cs_real_t xqc5 =   cnl7
+                         / ((  cnl4
+                             + cnl5*cs_math_pow3(xss))*xcmu);
+        cs_real_t xqc6 =   cnl8
+                         /  ((  cnl4
+                              + cnl5*cs_math_pow3(xss))*xcmu);
+        cs_real_t xqc7 =   cnl9
+                         /((  cnl4
+                            + cnl5*cs_math_pow3(xss))*xcmu);
 
         smbrk[c_id] -= + xqc4*visct*xttke* sikwklwlj
                        + xqc5*visct*xttke* sklskiwlj
