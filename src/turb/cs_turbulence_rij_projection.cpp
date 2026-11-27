@@ -52,6 +52,7 @@
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
+#include "base/cs_reducers.h"
 #include "base/cs_time_step.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -1452,38 +1453,55 @@ cs_turbulence_rij_projection(void)
 
   if (cs_glob_turb_rans_model->verbosity >= 1) {
 
-    std::vector<const cs_real_t *> tv_p;
-    for (const cs_field_t *f : dfm_scalars) {
-      cs_field_t *p_th, *p_tv, *p_ut;
-      _proj_scalar_fields(f, &p_th, &p_tv, &p_ut);
-      tv_p.push_back(p_tv->val);
-    }
+    cs_array<bool> is_neg(n_cells, cs_alloc_mode);
 
-    cs_real_t lambda_min = HUGE_VAL;
-    cs_gnum_t n_neg = 0;
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    struct cs_data_double_n<1> lambda_min;
+    struct cs_reduce_min_nr<1> reducer_lambda;
+
+    // FIXME: cs_math_sym_33_eigen needs to run on GPU first.
+    ctx.set_use_gpu(false);
+
+    ctx.parallel_for_reduce(n_cells, lambda_min, reducer_lambda, CS_LAMBDA
+                            (cs_lnum_t c_id, cs_data_double_n<1> &res) {
       cs_real_t ev[3];
       cs_math_sym_33_eigen(rij[c_id], ev);
       const cs_real_t k = 0.5*(rij[c_id][0] + rij[c_id][1] + rij[c_id][2]);
       const cs_real_t l_min = cs::min(ev[0], cs::min(ev[1], ev[2]));
       const cs_real_t l_rel = (k > 0.) ? l_min/k : l_min;
-      lambda_min = cs::min(lambda_min, l_rel);
-      bool is_neg = (l_rel < -1.e-12);
-      for (const cs_real_t *tv : tv_p) {
-        if (tv[c_id] < 0.)
-          is_neg = true;
-      }
-      if (is_neg)
-        n_neg += 1;
+      res.r[0] = l_rel;
+      is_neg[c_id] = (l_rel < -1.e-12);
+    });
+    ctx.wait();
+
+    cs_parall_min(1, CS_DOUBLE, &lambda_min.r[0]);
+
+    for (const cs_field_t *f : dfm_scalars) {
+      cs_field_t *p_th, *p_tv, *p_ut;
+      _proj_scalar_fields(f, &p_th, &p_tv, &p_ut);
+      const cs_real_t * val = f->val;
+
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        if (val[c_id] < 0.)
+          is_neg[c_id] = true;
+      });
     }
-    cs_parall_min(1, CS_REAL_TYPE, &lambda_min);
+
+    cs_gnum_t n_neg = 0;
+    ctx.parallel_for_reduce_sum(n_cells, n_neg, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum)
+    {
+      if (is_neg[c_id])
+        sum += 1;
+    });
+    ctx.wait();
     cs_parall_counter(&n_neg, 1);
 
     bft_printf(_(" ** Godunov-type projection of the convective subsystem\n"
                  "    ----------------------------------------------------\n"
                  "    sub-steps: %d, smallest eigenvalue of R / k: %12.5e,"
                  " non-realisable cells: %llu\n"),
-               n_sub_steps, lambda_min, (unsigned long long)n_neg);
+               n_sub_steps, lambda_min.r[0], (unsigned long long)n_neg);
   }
 }
 
