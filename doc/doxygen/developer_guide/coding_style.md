@@ -220,6 +220,9 @@ The following coding rules are strongly recommended:
   [placement new](https://en.cppreference.com/cpp/language/new)
   and associated `delete`.
 
+- For the same reason, avoid using STL objects without a specified
+  allocator using code_saturne's memory allocation scheme.
+
 Line spacing
 ------------
 
@@ -688,6 +691,41 @@ Other parts of the code tend to use a camelCase naming, but should otherwise
 adhere to the same standards. Moving the to PEP-8 style would be ideal,
 though to avoid confusion, this should be done in an *atomic* step
 for each module.
+
+Python data model (used in GUI)
+===============================
+
+For the data model, when simply checking for settings, avoid using
+`xmlInitNode` as much as possible, as this creates XML entries even
+where not needed, and leasds to cluttered XML files with many mentions
+of models unrelated to the current model.
+Ideally, simply checking a valid XML model should not modify it,
+whereas using `xmlInitNode` will do so.
+
+Use `xmlInitNode` instead where possible. If a node is not present,
+`xmlInitNode` will return `None`, so this must be checked for.
+
+Also, when setting a node's value, if the new value matches the default value,
+it is preferrable to completely remove the redundant node.
+
+An alternative, at least with attributes, is to provide a default
+attribute value. For example, instead of
+
+```{.py}
+n = xmlInitNode('some_model', status="off")
+```
+
+to initialize a node defining whether `some_model` is \c on or \c off,
+with a default value of \c off, use:
+
+```{.py}
+n = xmlInitNode('some_model', status="off", _status="off")
+```
+
+For each attribute, the code will automatically check for a matching
+attribute starting with `_`, and if all values are the same, will not write
+the node in the XML file. The node will still be written if it contains
+sub-nodes, so cleaning all unneeded values is still recommended.
 
 Documentation
 =============
