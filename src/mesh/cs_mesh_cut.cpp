@@ -74,7 +74,8 @@
 cs_mesh_cut_options_t cs_glob_mesh_cut_options = {
   0.05,  /* poro_min */
   0.1,   /* eps_corr_grad_lin */
-  0      /* verbosity */
+  0,     /* verbosity */
+  false  /* keep interior of stl (false) */
 };
 
 /*----------------------------------------------------------------------------*/
@@ -2161,6 +2162,20 @@ _cut_edges(const cs_stl_mesh_t    *stl_mesh,
 {
   const int verbosity = cs_glob_mesh_cut_options.verbosity;
 
+  /* Adapt code to keep outside or inside */
+  const bool keep_outside = cs_glob_mesh_cut_options.keep_outside;
+
+  int vtx_type_1 = VTX_UNKNOWN;
+  int vtx_type_2 = VTX_UNKNOWN;
+  if (keep_outside) {
+    vtx_type_1 = VTX_SOLID;
+    vtx_type_2 = VTX_FLUID;
+  }
+  else {
+    vtx_type_1 = VTX_FLUID;
+    vtx_type_2 = VTX_SOLID;
+  }
+
   const cs_lnum_t n_vtx = mesh->n_vertices;
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
   cs_lnum_t *v2v_idx = v2v->idx;
@@ -2378,8 +2393,8 @@ _cut_edges(const cs_stl_mesh_t    *stl_mesh,
     cs_real_t t_best = (n_up > n_down) ? best_t_up : best_t_down;
     cs_real_t w_best = (n_up > n_down) ? best_w_up : best_w_down;
 
-    int s1 = (n_up > n_down) ? VTX_FLUID  : VTX_SOLID;
-    int s0 = (s1 == VTX_FLUID) ? VTX_SOLID : VTX_FLUID;
+    int s1 = (n_up > n_down) ? vtx_type_1  : vtx_type_2;
+    int s0 = (s1 == vtx_type_1) ? vtx_type_2 : vtx_type_1;
 
     intx[edge_id] = t_best;
     e_v_idx[edge_id + 1] = 1;
