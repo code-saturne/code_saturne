@@ -99,8 +99,8 @@ fvm_to_cgns_version_string(int string_index,
  *   discard_polygons    do not output polygons or related values
  *   discard_polyhedra   do not output polyhedra or related values
  *   divide_polygons     tesselate polygons with triangles
- *   preserve_precision  do not convert double precision to single
- *                       precision types (leads to larger files)
+ *   fp32                convert double precision to single precision types
+ *   fp64                maintain double-precision float output for variables
  *   adf                 use ADF file type
  *   hdf5                use HDF5 file type (default if available)
  *   links               split output to separate files using links

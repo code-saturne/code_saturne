@@ -4135,10 +4135,10 @@ _cs_post_define_probe_mesh(int                    mesh_id,
  *         pyramids), so that any post-processing tool can recognize them.
  * - \c \b separate_meshes to multiple meshes and associated fields to
  *         separate outputs.
- * - \c \b fp32 to use single-precision float output for variables
- *         (for \c \b MED).
- * - \c \b fp64 to use doublee-precision float output for variables
- *         (for \c \b MED).
+ * - \c \b fp32 to convert double precision to single precision types
+ *         (for CGNS and \c \b MED; this is the default)
+ * - \c \b fp64 to maintain double-precision float output for variables
+ *         (for CGNS and \c \b MED).
  *
  * Note that the white-spaces in the beginning or in the end of the
  * character strings given as arguments here are suppressed automatically.

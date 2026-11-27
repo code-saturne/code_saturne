@@ -146,7 +146,7 @@ typedef struct {
   bool        discard_polyhedra;  /* Option to discard polyhedral elements */
   bool        divide_polygons;    /* Option to tesselate polygonal elements */
   bool        divide_polyhedra;   /* Option to tesselate polyhedral elements */
-  bool        fp32;               /* Option to use single precision variables */
+  bool        fp64;               /* Preserve double precision variables */
 
   int         rank;            /* Rank of current process in communicator */
   int         n_ranks;         /* Number of processes in communicator */
@@ -974,7 +974,7 @@ _get_connect_buffer_size(const fvm_to_med_writer_t   *writer,
  *
  * parameters:
  *   input_cs_datatype   <-- input field datatype in FVM.
- *   fp32                <-- option to use single precision float output.
+ *   fp64                <-- option to use single precision float output.
  *   output_cs_datatype  --> output field datatype in FVM.
  *   med_datatype        --> associated MED field datatype.
  *   data_sizeof         --> size of datatype to be exported.
@@ -982,7 +982,7 @@ _get_connect_buffer_size(const fvm_to_med_writer_t   *writer,
 
 static void
 _get_datatypes(const cs_datatype_t    input_cs_datatype,
-               bool                   fp32,
+               bool                   fp64,
                cs_datatype_t         *output_cs_datatype,
                med_field_type        *med_datatype,
                int                   *data_sizeof)
@@ -999,17 +999,22 @@ _get_datatypes(const cs_datatype_t    input_cs_datatype,
 
   switch(input_cs_datatype) {
   case CS_DOUBLE:
-  case CS_FLOAT:
-    if (fp32) {
-      *output_cs_datatype = CS_FLOAT;
-      *med_datatype = MED_FLOAT32;
-      *data_sizeof = sizeof(med_float32);
-    }
-    else {
+    if (fp64) {
       *output_cs_datatype = CS_DOUBLE;
       *med_datatype = MED_FLOAT64;
       *data_sizeof = sizeof(med_float64);
     }
+    else {
+      *output_cs_datatype = CS_FLOAT;
+      *med_datatype = MED_FLOAT32;
+      *data_sizeof = sizeof(med_float32);
+    }
+    break;
+
+  case CS_FLOAT:
+    *output_cs_datatype = CS_FLOAT;
+    *med_datatype = MED_FLOAT32;
+    *data_sizeof = sizeof(med_float32);
     break;
 
   case CS_INT32:
@@ -1061,7 +1066,7 @@ _get_datatypes(const cs_datatype_t    input_cs_datatype,
 
 #if defined(WORKAROUND_MED_READER_INTEGER_BUG)
   /* Some versions of MEDreader crash when reading integer fields */
-  if (fp32) {
+  if (*data_sizeof == 4) {
     *output_cs_datatype = CS_FLOAT;
     *med_datatype = MED_FLOAT32;
     *data_sizeof = sizeof(med_float32);
@@ -4095,14 +4100,15 @@ fvm_to_med_version_string(int string_index,
  * Initialize FVM to MED file writer.
  *
  * Options are:
- *   discard_polygons         do not output polygons or related values
- *   discard_polyhedra        do not output polyhedra or related values
- *   divide_polygons          tesselate polygons with triangles
- *   divide_polyhedra         tesselate polyhedra with tetrahedra and pyramids
- *                            (adding a vertex near each polyhedron's center)
- *   fp32                     use single-precision float output for variables
- *   serial_io                force serial IO even when parallel IO is available
- *   update                   open file in update mode
+ *   discard_polygons    do not output polygons or related values
+ *   discard_polyhedra   do not output polyhedra or related values
+ *   divide_polygons     tesselate polygons with triangles
+ *   divide_polyhedra    tesselate polyhedra with tetrahedra and pyramids
+ *                       (adding a vertex near each polyhedron's center)
+ *   fp32                convert double precision to single precision types
+ *   fp64                maintain double-precision float output for variables
+ *   serial_io           force serial IO even when parallel IO is available
+ *   update              open file in update mode
  *
  * parameters:
  *   name           <-- base output case name.
@@ -4205,7 +4211,7 @@ fvm_to_med_init_writer(const char                   *name,
   writer->discard_polyhedra = false;
   writer->divide_polygons = false;
   writer->divide_polyhedra = false;
-  writer->fp32 = false;
+  writer->fp64 = false;
 
   if (options != nullptr) {
 
@@ -4244,11 +4250,11 @@ fvm_to_med_init_writer(const char                   *name,
 
       else if (   (l_opt == 4)
                && (strncmp(options + i1, "fp32", l_opt) == 0))
-        writer->fp32 = true;
+        writer->fp64 = false;
 
       else if (   (l_opt == 4)
                && (strncmp(options + i1, "fp64", l_opt) == 0))
-        writer->fp32 = false;
+        writer->fp64 = true;
 
       else if (   (l_opt == 6)
                && (strncmp(options + i1, "update", l_opt) == 0))
@@ -4820,7 +4826,7 @@ fvm_to_med_export_field(void                            *this_writer,
   /* Adapt cs_datatype and find corresponding MED datatype */
 
   _get_datatypes(datatype,
-                 writer->fp32,
+                 writer->fp64,
                  &datatype_convert,
                  &datatype_med,
                  &data_sizeof);

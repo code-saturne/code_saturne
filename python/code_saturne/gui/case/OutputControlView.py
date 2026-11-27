@@ -1387,6 +1387,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelStructureC     = ComboModel(self.comboBoxStructureC,2,1)
         self.modelPolygon        = ComboModel(self.comboBoxPolygon,3,1)
         self.modelPolyhedra      = ComboModel(self.comboBoxPolyhedra,3,1)
+        self.modelPrecision      = ComboModel(self.comboBoxPrecision,2,1)
         self.modelImplementC     = ComboModel(self.comboBoxImplementC,2,1)
         self.modelTimePlot       = ComboModel(self.comboBoxTimePlot,3,1)
         self.modelProbeFmt       = ComboModel(self.comboBoxProbeFmt,2,1)
@@ -1430,6 +1431,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelPolyhedra.addItem(self.tr("display"), 'display')
         self.modelPolyhedra.addItem(self.tr("discard"), 'discard_polyhedra')
         self.modelPolyhedra.addItem(self.tr("subdivide"), 'divide_polyhedra')
+
+        self.modelPrecision.addItem(self.tr("double"), 'fp64')
+        self.modelPrecision.addItem(self.tr("single"), 'fp32')
 
         self.modelTimePlot.addItem(self.tr("No monitoring points file"), 'None')
         self.modelTimePlot.addItem(self.tr("Monitoring points files at each time step"), 'At each step')
@@ -1593,6 +1597,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.comboBoxStructureC.activated[int].connect(self.slotWriterOptions)
         self.comboBoxPolygon.activated[int].connect(self.slotWriterOptions)
         self.comboBoxPolyhedra.activated[int].connect(self.slotWriterOptions)
+        self.comboBoxPrecision.activated[int].connect(self.slotWriterOptions)
         self.comboBoxImplementC.activated[int].connect(self.slotCatalystImplementation)
         self.comboBoxTimePlot.activated[int].connect(self.slotMonitoringPoint)
         self.comboBoxProbeFmt.activated[int].connect(self.slotOutputProbeFmt)
@@ -2283,10 +2288,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # remove previous settings matching this slot
         for m in (self.modelFormatE, self.modelFormatH, self.modelStructureC,
-                  self.modelPolygon, self.modelPolyhedra):
+                  self.modelPolygon, self.modelPolyhedra,
+                  self.modelPrecision):
             for s in m.items:
                 if s in options:
                     options.remove(s)
+        if 'fp64' in options:
+            options.remove('fp64')
 
         # now append options
         if format == 'ensight':
@@ -2297,6 +2305,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             opt_format = self.modelFormatH.dicoV2M[str(self.comboBoxFormatH.currentText())]
             if opt_format != 'text':
                 options.append(opt_format)
+        elif format in ['cgns', 'med']:
+            opt_prec = self.modelPrecision.dicoV2M[
+                str(self.comboBoxPrecision.currentText())
+            ]
+            if opt_prec != 'fp32':
+                options.append(opt_prec)
 
         opt_polygon = self.modelPolygon.dicoV2M[str(self.comboBoxPolygon.currentText())]
         opt_polyhed = self.modelPolyhedra.dicoV2M[str(self.comboBoxPolyhedra.currentText())]
@@ -2336,6 +2350,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             elif format == 'catalyst':
                 if opt in ['multiblock=1', 'multiblock=0']:
                     self.modelStructureC.setItem(str_model=opt)
+            elif format in ['cgns', 'med'] and opt in ['fp32', 'fp64']:
+                self.modelPrecision.setItem(str_model=opt)
             elif opt == 'discard_polygons' or opt == 'divide_polygons':
                 self.modelPolygon.setItem(str_model=opt)
             elif opt == 'discard_polyhedra' or opt == 'divide_polyhedra':
@@ -2353,6 +2369,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.modelPolyhedra.setItem(str_model="display")
         if 'separate_meshes' not in opts:
             self.checkBoxSeparateMeshes.setChecked(False)
+        if 'fp64' not in opts:
+            self.modelPrecision.setItem(str_model="fp32")
 
         # enable and disable options related to the format
 
@@ -2420,6 +2438,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         else:
             self.modelTimeDependency.enableItem(str_model="transient_coordinates")
             self.modelTimeDependency.enableItem(str_model="transient_connectivity")
+
+        if format in ["cgns", "med"]:
+            self.modelPrecision.show()
+            self.labelPrecision.show()
+        else:
+            self.modelPrecision.hide()
+            self.labelPrecision.hide()
 
     def __insertMesh(self, name, mesh_id, mesh_type, selection):
         """
@@ -3248,6 +3273,50 @@ class OutputControlViewTestCase(unittest.TestCase):
         self.assertTrue(dlg.show_wireframe)
         self.assertTrue(dlg.show_volume)
         dlg.close()
+
+    def testWriterPrecisionMedOption(self):
+        """
+        Verify that comboBoxPrecision is shown for MED format and updates
+        options.
+        """
+        writer_id = self.view.mdl.addWriter()
+        self.view.mdl.setWriterFormat(writer_id, 'med')
+        row = 0
+        for i, w_id in enumerate(self.view.mdl.getWriterIdList()):
+            if w_id == writer_id:
+                row = i
+                break
+        self.view.modelWriter.newData(
+            self.view.mdl.getWriterLabel(writer_id),
+            writer_id,
+            'med',
+            'postprocessing'
+        )
+        idx = self.view.modelWriter.index(row, 0)
+        self.view.tableViewWriter.setCurrentIndex(idx)
+        self.view.slotSelectWriter(idx)
+
+        self.assertFalse(self.view.comboBoxPrecision.isHidden())
+        self.assertFalse(self.view.labelPrecision.isHidden())
+        cur_text = str(self.view.comboBoxPrecision.currentText())
+        self.assertEqual(
+            self.view.modelPrecision.dicoV2M[cur_text], 'default'
+        )
+
+        self.view.modelPrecision.setItem(str_model='fp32')
+        self.view.slotWriterOptions(0)
+        options = self.view.mdl.getWriterOptions(writer_id)
+        self.assertIn('fp32', options)
+
+        self.view.modelPrecision.setItem(str_model='default')
+        self.view.slotWriterOptions(0)
+        options = self.view.mdl.getWriterOptions(writer_id)
+        self.assertNotIn('fp32', options)
+
+        self.view.mdl.setWriterFormat(writer_id, 'ensight')
+        self.view.slotSelectWriter(idx)
+        self.assertTrue(self.view.comboBoxPrecision.isHidden())
+        self.assertTrue(self.view.labelPrecision.isHidden())
 
 
 def suite():

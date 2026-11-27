@@ -181,7 +181,7 @@ struct _fvm_to_cgns_writer_t {
   bool         divide_polygons;    /* Option to tesselate polygonal elements */
   bool         divide_polyhedra;   /* Option to tesselate polygonal elements */
 
-  bool         preserve_precision; /* Preserve double precison variable type */
+  bool         fp64;               /* Preserve double precision variables */
 
   int          rank;               /* Rank of current process in communicator */
   int          n_ranks;            /* Number of processes in communicator */
@@ -336,7 +336,7 @@ _create_writer(const char           *name,
   w->divide_polygons = false;
   w->divide_polyhedra = true;
 
-  w->preserve_precision = false;
+  w->fp64 = false;
 
   w->rank = 0;
   w->n_ranks = 1;
@@ -354,7 +354,7 @@ _create_writer(const char           *name,
     w->divide_polygons = reference->divide_polygons;
     w->discard_polyhedra = reference->discard_polyhedra;
     w->divide_polyhedra = reference->divide_polyhedra;
-    w->preserve_precision = reference->preserve_precision;
+    w->fp64 = reference->fp64;
     w->rank = reference->rank;
     w->n_ranks = reference->n_ranks;
 #if defined(HAVE_MPI)
@@ -3459,8 +3459,8 @@ fvm_to_cgns_version_string(int string_index,
  *   discard_polygons    do not output polygons or related values
  *   discard_polyhedra   do not output polyhedra or related values
  *   divide_polygons     tesselate polygons with triangles
- *   preserve_precision  do not convert double precision to single
- *                       precision types (leads to larger files)
+ *   fp32                convert double precision to single precision types
+ *   fp64                maintain double-precision float output for variables
  *   adf                 use ADF file type
  *   hdf5                use HDF5 file type (default if available)
  *   links               split output to separate files using links
@@ -3552,6 +3552,16 @@ fvm_to_cgns_init_writer(const char             *name,
                && (strncmp(options + i1, "divide_polygons", l_opt) == 0))
         writer->divide_polygons = true;
 
+      else if (   (l_opt == 4)
+               && (strncmp(options + i1, "fp32", l_opt) == 0))
+        writer->fp64 = false;
+
+      else if (   (l_opt == 4)
+               && (strncmp(options + i1, "fp64", l_opt) == 0))
+        writer->fp64 = true;
+
+      /* Legacy option, replaced by "fp64", preserved for
+         backwards compatibility, so not documented/advertised anymore. */
       else if (   (l_opt == 18)
                && (strncmp(options + i1, "preserve_precision", l_opt) == 0))
         writer->preserve_precision = true;
@@ -4112,7 +4122,7 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
 
   switch (datatype) {
   case CS_DOUBLE:
-    if (writer->preserve_precision)
+    if (writer->fp64)
       export_datatype = CS_DOUBLE;
     else
       export_datatype = CS_FLOAT;

@@ -614,30 +614,14 @@
               <property name="spacing">
                <number>6</number>
               </property>
-              <item row="6" column="0">
-               <widget class="QLabel" name="labelPolyhedra">
-                <property name="toolTip">
-                 <string/>
-                </property>
+              <item row="3" column="0">
+               <widget class="QLabel" name="labelFormatH">
                 <property name="text">
-                 <string>Polyhedra</string>
+                 <string>Output type</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="1">
-               <widget class="QComboBox" name="comboBoxFormatE">
-                <property name="minimumSize">
-                 <size>
-                  <width>120</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a format for the selected writer:&lt;br/&gt;- Binary(native),&lt;br/&gt;- Binary (big endian),&lt;br/&gt;- Text.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="1">
+              <item row="6" column="1">
                <widget class="QComboBox" name="comboBoxPolygon">
                 <property name="minimumSize">
                  <size>
@@ -660,7 +644,7 @@
                 </property>
                </widget>
               </item>
-              <item row="6" column="1">
+              <item row="7" column="1">
                <widget class="QComboBox" name="comboBoxPolyhedra">
                 <property name="minimumSize">
                  <size>
@@ -673,16 +657,6 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="0" colspan="2">
-               <widget class="QCheckBox" name="checkBoxSeparateMeshes">
-                <property name="toolTip">
-                 <string>If checked, separate outputs (i.e. files) will be used for each mesh associated with this writer.</string>
-                </property>
-                <property name="text">
-                 <string>Separate sub-writer for each mesh</string>
-                </property>
-               </widget>
-              </item>
               <item row="3" column="1">
                <widget class="QComboBox" name="comboBoxFormatH">
                 <property name="toolTip">
@@ -690,28 +664,14 @@
                 </property>
                </widget>
               </item>
-              <item row="4" column="0">
+              <item row="5" column="0">
                <widget class="QLabel" name="labelStructureC">
                 <property name="text">
                  <string>Structure</string>
                 </property>
                </widget>
               </item>
-              <item row="3" column="0">
-               <widget class="QLabel" name="labelFormatH">
-                <property name="text">
-                 <string>Output type</string>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="1">
-               <widget class="QComboBox" name="comboBoxStructureC">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select output structure for the selected Catalyst channel. This should match the structure produced by the reader used to prepare the Catalyst pipeline.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Multi-block dataset&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Partitioned Dataset Collection&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Ignored for legacy Catalyst (i.e. Catalyst1).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="0">
+              <item row="6" column="0">
                <widget class="QLabel" name="labelPolygon">
                 <property name="toolTip">
                  <string/>
@@ -730,6 +690,56 @@
                  <string>File type</string>
                 </property>
                </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QComboBox" name="comboBoxStructureC">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select output structure for the selected Catalyst channel. This should match the structure produced by the reader used to prepare the Catalyst pipeline.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Multi-block dataset&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Partitioned Dataset Collection&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Ignored for legacy Catalyst (i.e. Catalyst1).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QLabel" name="labelPolyhedra">
+                <property name="toolTip">
+                 <string/>
+                </property>
+                <property name="text">
+                 <string>Polyhedra</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0" colspan="2">
+               <widget class="QCheckBox" name="checkBoxSeparateMeshes">
+                <property name="toolTip">
+                 <string>If checked, separate outputs (i.e. files) will be used for each mesh associated with this writer.</string>
+                </property>
+                <property name="text">
+                 <string>Separate sub-writer for each mesh</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QComboBox" name="comboBoxFormatE">
+                <property name="minimumSize">
+                 <size>
+                  <width>120</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select a format for the selected writer:&lt;br/&gt;- Binary(native),&lt;br/&gt;- Binary (big endian),&lt;br/&gt;- Text.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="labelPrecision">
+                <property name="text">
+                 <string>Output precision</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QComboBox" name="comboBoxPrecision"/>
               </item>
              </layout>
             </item>

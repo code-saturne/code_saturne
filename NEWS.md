@@ -3,6 +3,12 @@
 
 ### User changes:
 
+- CGNS and MED output: allow choice of single or double precision in GUI.
+  * For MED, add option for use of single precision output for field data,
+    and use 32-bit floats by default (leads to smaller files than before).
+  * For CGNS, align writer with MED, replacing `preserve_precision`
+    writer option with `fp64` option, and enable choice in the GUI.
+
 - Improved handling of SIGINT and SIGTERM signals: when first received,
   set current time step as last; if received again, abort.
 
