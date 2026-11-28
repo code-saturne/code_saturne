@@ -3564,7 +3564,7 @@ fvm_to_cgns_init_writer(const char             *name,
          backwards compatibility, so not documented/advertised anymore. */
       else if (   (l_opt == 18)
                && (strncmp(options + i1, "preserve_precision", l_opt) == 0))
-        writer->preserve_precision = true;
+        writer->fp64 = true;
 
       else if (   (l_opt == 3)
                && (strncmp(options + i1, "adf", l_opt) == 0))
